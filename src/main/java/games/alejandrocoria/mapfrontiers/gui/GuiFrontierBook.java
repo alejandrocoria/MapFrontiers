@@ -643,8 +643,8 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             String name2 = frontier.name2;
 
             if (name1.isEmpty() && name2.isEmpty()) {
-                name1 = "§oUnnamed";
-                name2 = "§oFrontier";
+                name1 = I18n.format("mapfrontiers.index_unnamed_1", TextFormatting.ITALIC);
+                name2 = I18n.format("mapfrontiers.index_unnamed_2", TextFormatting.ITALIC);
             }
 
             IndexEntryButton button = new IndexEntryButton(id, posX, posY, bookImageWidth / 2 - 20, page, name1, name2,

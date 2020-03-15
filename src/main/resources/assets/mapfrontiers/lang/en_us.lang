@@ -1,6 +1,8 @@
 # Book
 mapfrontiers.index=%1$sIndex
 mapfrontiers.index_number=%2$sIndex %1$d
+mapfrontiers.index_unnamed_1=%1$sUnnamed
+mapfrontiers.index_unnamed_2=%1$sFrontier
 mapfrontiers.frontier_number=Frontier %1$d of %2$d
 mapfrontiers.color=Color
 mapfrontiers.area=Area: %1$dm²
