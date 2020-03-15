@@ -1,0 +1,31 @@
+# Book
+mapfrontiers.index=%1$sIndex
+mapfrontiers.index_number=%2$sIndex %1$d
+mapfrontiers.frontier_number=Frontier %1$d of %2$d
+mapfrontiers.color=Color
+mapfrontiers.area=Area: %1$dm²
+mapfrontiers.perimeter=Perimeter: %1$dm
+mapfrontiers.vertex_number=Vertex %1$d/%2$d
+mapfrontiers.no_vertex_selected=%1$sNo vertex selected
+mapfrontiers.new=New
+mapfrontiers.delete=Delete
+mapfrontiers.confirm_delete=Confirm
+mapfrontiers.hide_name=Hide name
+mapfrontiers.show_name=Show name
+mapfrontiers.show_name_warn=Global settings: always show
+mapfrontiers.hide_name_warn=Global settings: always hide
+mapfrontiers.add_vertex=Add vertex
+mapfrontiers.remove_vertex=Remove vertex
+mapfrontiers.finish=Finish
+mapfrontiers.reopen=Reopen
+mapfrontiers.close=Close
+mapfrontiers.previous_page=Previous page
+mapfrontiers.next_page=Next page
+mapfrontiers.back_to_index=Back to index
+mapfrontiers.previous_vertex=Previous vertex
+mapfrontiers.next_vertex=Next vertex
+mapfrontiers.vertical_chunk=Vertical chunk: %1$d
+mapfrontiers.vertical_chunk_surface=Vertical chunk: Surface
+
+# Item
+item.mapfrontiers.frontier_book.name=Frontier Book

@@ -1,0 +1,23 @@
+{
+  "open_book": {
+    "category": "items",
+    "sounds": [ "mapfrontiers:open_book" ]
+  },
+  "turn_page": {
+    "category": "items",
+    "sounds": [
+      {
+        "name": "mapfrontiers:turn_page",
+        "pitch": 1.0
+      },
+      {
+        "name": "mapfrontiers:turn_page",
+        "pitch": 1.2
+      },
+      {
+        "name": "mapfrontiers:turn_page",
+        "pitch": 0.9
+      }
+    ]
+  }
+}
