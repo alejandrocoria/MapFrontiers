@@ -2,7 +2,8 @@ package games.alejandrocoria.mapfrontiers;
 
 import org.apache.logging.log4j.Logger;
 
-import games.alejandrocoria.mapfrontiers.item.ItemFrontierBook;
+import games.alejandrocoria.mapfrontiers.common.IProxy;
+import games.alejandrocoria.mapfrontiers.common.item.ItemFrontierBook;
 import net.minecraft.item.Item;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -25,7 +26,7 @@ public class MapFrontiers {
     @Mod.Instance(MapFrontiers.MODID)
     public static MapFrontiers instance;
 
-    @SidedProxy(clientSide = "games.alejandrocoria.mapfrontiers.ClientProxy", serverSide = "games.alejandrocoria.mapfrontiers.ServerProxy")
+    @SidedProxy(clientSide = "games.alejandrocoria.mapfrontiers.client.ClientProxy", serverSide = "games.alejandrocoria.mapfrontiers.ServerProxy")
     public static IProxy proxy;
 
     @ObjectHolder("mapfrontiers:frontier_book")

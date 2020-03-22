@@ -1,7 +1,7 @@
-package games.alejandrocoria.mapfrontiers.item;
+package games.alejandrocoria.mapfrontiers.common.item;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.MapFrontiersPlugin;
+import games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;

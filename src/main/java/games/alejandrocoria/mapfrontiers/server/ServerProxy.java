@@ -1,5 +1,6 @@
-package games.alejandrocoria.mapfrontiers;
+package games.alejandrocoria.mapfrontiers.server;
 
+import games.alejandrocoria.mapfrontiers.common.IProxy;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;

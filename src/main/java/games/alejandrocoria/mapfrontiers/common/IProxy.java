@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers;
+package games.alejandrocoria.mapfrontiers.common;
 
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;

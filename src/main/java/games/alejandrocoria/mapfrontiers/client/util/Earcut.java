@@ -18,7 +18,7 @@
 // From https://github.com/earcut4j/earcut4j/blob/a5b26b5644940bba9bd529a741491d90f16d1a31/src/main/java/earcut4j/Earcut.java
 
 
-package games.alejandrocoria.mapfrontiers.util;
+package games.alejandrocoria.mapfrontiers.client.util;
 
 import java.util.ArrayList;
 import java.util.Comparator;

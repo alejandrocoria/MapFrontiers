@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers;
+package games.alejandrocoria.mapfrontiers.client;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -6,8 +6,11 @@ import java.util.List;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import games.alejandrocoria.mapfrontiers.gui.GuiFrontierBook;
-import games.alejandrocoria.mapfrontiers.util.Earcut;
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
+import games.alejandrocoria.mapfrontiers.client.util.Earcut;
+import games.alejandrocoria.mapfrontiers.common.ConfigData;
+import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.MarkerOverlay;
 import journeymap.client.api.display.PolygonOverlay;
@@ -19,8 +22,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTUtil;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -28,7 +29,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 
 @ParametersAreNonnullByDefault
-public class Frontier {
+public class FrontierOverlay extends FrontierData {
     private static MapImage markerVertex = new MapImage(new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"), 0,
             0, 12, 12, 0xffffff, 1.f);
     private static MapImage markerDot = new MapImage(new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"), 12, 0,
@@ -39,10 +40,6 @@ public class Frontier {
             new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"), 20, 0, 10, 10, 0xffffff, 1.f);
 
     private static float targetDotSelectedOpacity = 0.3f;
-    private static int id = 0;
-
-    public static int NoSlice = -1;
-    public static int SurfaceSlice = 16;
 
     static {
         markerVertex.setAnchorX(markerVertex.getDisplayWidth() / 2.0).setAnchorY(markerVertex.getDisplayHeight() / 2.0);
@@ -56,14 +53,6 @@ public class Frontier {
         markerDotSelected.setRotation(0);
     }
 
-    public List<BlockPos> vertices = new ArrayList<BlockPos>();
-    public boolean closed = false;
-    public String name1 = "New";
-    public String name2 = "Frontier";
-    public boolean nameVisible = true;
-    public int color = 0xff0000;
-    public int dimension = 0;
-    public int mapSlice = NoSlice;
     public BlockPos topLeft;
     public BlockPos bottomRight;
     public float perimeter = 0.f;
@@ -76,7 +65,7 @@ public class Frontier {
     private List<MarkerOverlay> markerOverlays = new ArrayList<MarkerOverlay>();
     private final String displayId = "frontier_" + String.valueOf(id++);
 
-    public Frontier(IClientAPI jmAPI) {
+    public FrontierOverlay(IClientAPI jmAPI) {
         this.jmAPI = jmAPI;
     }
 
@@ -172,15 +161,57 @@ public class Frontier {
         }
     }
 
+    @Override
+    public void addVertex(BlockPos pos, int index) {
+        super.addVertex(pos, index);
+        updateOverlay();
+    }
+
+    @Override
     public void addVertex(BlockPos pos) {
-        int snapDistance = ConfigData.snapDistance;
-        if (snapDistance != 0) {
-            pos = MapFrontiersPlugin.instance.snapVertex(pos, snapDistance, this);
-        }
+        super.addVertex(pos);
+        updateOverlay();
+    }
 
-        ++vertexSelected;
+    @Override
+    public void removeVertex(int index) {
+        super.removeVertex(index);
+        updateOverlay();
+    }
 
-        vertices.add(vertexSelected, new BlockPos(pos.getX(), 70, pos.getZ()));
+    @Override
+    public void setClosed(boolean closed) {
+        this.closed = closed;
+        updateOverlay();
+    }
+
+    @Override
+    public void setName1(String name) {
+        name1 = name;
+        updateOverlay();
+    }
+
+    @Override
+    public void setName2(String name) {
+        name2 = name;
+        updateOverlay();
+    }
+
+    @Override
+    public void setNameVisible(boolean nameVisible) {
+        this.nameVisible = nameVisible;
+        updateOverlay();
+    }
+
+    @Override
+    public void setColor(int color) {
+        this.color = color;
+        updateOverlay();
+    }
+
+    @Override
+    public void setDimension(int dimension) {
+        this.dimension = dimension;
         updateOverlay();
     }
 
@@ -189,7 +220,7 @@ public class Frontier {
             return;
         }
 
-        vertices.remove(vertexSelected);
+        super.removeVertex(vertexSelected);
         if (vertexSelected > 0) {
             --vertexSelected;
         } else {
@@ -217,45 +248,6 @@ public class Frontier {
             vertexSelected = vertices.size() - 1;
         }
         updateOverlay();
-    }
-
-    public void readFromNBT(NBTTagCompound nbt) {
-        closed = nbt.getBoolean("closed");
-        color = nbt.getInteger("color");
-        name1 = nbt.getString("name1");
-        name2 = nbt.getString("name2");
-        vertexSelected = nbt.getInteger("selected");
-        mapSlice = nbt.getInteger("slice");
-        mapSlice = Math.min(Math.max(mapSlice, -1), 16);
-
-        NBTTagList verticesTagList = nbt.getTagList("vertices", 10);
-        for (int i = 0; i < verticesTagList.tagCount(); ++i) {
-            vertices.add(NBTUtil.getPosFromTag(verticesTagList.getCompoundTagAt(i)));
-        }
-
-        if (vertexSelected < -1) {
-            vertexSelected = -1;
-        } else if (vertexSelected >= vertices.size()) {
-            vertexSelected = vertices.size() - 1;
-        }
-
-        updateOverlay();
-    }
-
-    public void writeToNBT(NBTTagCompound nbt) {
-        nbt.setBoolean("closed", closed);
-        nbt.setInteger("color", color);
-        nbt.setString("name1", name1);
-        nbt.setString("name2", name2);
-        nbt.setInteger("selected", vertexSelected);
-        nbt.setInteger("slice", mapSlice);
-
-        NBTTagList verticesTagList = new NBTTagList();
-        for (BlockPos pos : vertices) {
-            verticesTagList.appendTag(NBTUtil.createPosTag(pos));
-        }
-
-        nbt.setTag("vertices", verticesTagList);
     }
 
     private void recalculateOverlays() {

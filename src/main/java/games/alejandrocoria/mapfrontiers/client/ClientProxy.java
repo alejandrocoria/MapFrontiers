@@ -1,5 +1,7 @@
-package games.alejandrocoria.mapfrontiers;
+package games.alejandrocoria.mapfrontiers.client;
 
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.IProxy;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -23,7 +25,7 @@ public class ClientProxy implements IProxy {
 
     @Override
     public void postInit(FMLPostInitializationEvent event) {
-        MinecraftForge.EVENT_BUS.register(Frontier.class);
+        MinecraftForge.EVENT_BUS.register(FrontierOverlay.class);
     }
 
     @SubscribeEvent

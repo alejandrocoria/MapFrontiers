@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers;
+package games.alejandrocoria.mapfrontiers.client.plugin;
 
 import java.awt.Color;
 import java.io.File;
@@ -12,7 +12,10 @@ import java.util.Random;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import games.alejandrocoria.mapfrontiers.gui.GuiFrontierBook;
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
+import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
+import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.IClientPlugin;
 import journeymap.client.api.event.ClientEvent;
@@ -54,7 +57,7 @@ public class MapFrontiersPlugin implements IClientPlugin {
 
     private final Random rand = new Random();
 
-    private HashMap<Integer, ArrayList<Frontier>> dimensionsFrontiers;
+    private HashMap<Integer, ArrayList<FrontierOverlay>> dimensionsFrontiers;
     private HashMap<Integer, Integer> frontiersSelected;
 
     private static final int dataVersion = 1;
@@ -66,7 +69,7 @@ public class MapFrontiersPlugin implements IClientPlugin {
 
         MinecraftForge.EVENT_BUS.register(this);
 
-        dimensionsFrontiers = new HashMap<Integer, ArrayList<Frontier>>();
+        dimensionsFrontiers = new HashMap<Integer, ArrayList<FrontierOverlay>>();
         frontiersSelected = new HashMap<Integer, Integer>();
     }
 
@@ -111,10 +114,10 @@ public class MapFrontiersPlugin implements IClientPlugin {
 
     @SideOnly(Side.CLIENT)
     public void openGUIFrontierBook(int dimension) {
-        ArrayList<Frontier> frontiers = dimensionsFrontiers.get(Integer.valueOf(dimension));
+        ArrayList<FrontierOverlay> frontiers = dimensionsFrontiers.get(Integer.valueOf(dimension));
 
         if (frontiers == null) {
-            frontiers = new ArrayList<Frontier>();
+            frontiers = new ArrayList<FrontierOverlay>();
             dimensionsFrontiers.put(Integer.valueOf(dimension), frontiers);
         }
 
@@ -125,9 +128,9 @@ public class MapFrontiersPlugin implements IClientPlugin {
 
     @SideOnly(Side.CLIENT)
     public void createNewfrontier(int dimension) {
-        ArrayList<Frontier> frontiers = dimensionsFrontiers.get(Integer.valueOf(dimension));
+        ArrayList<FrontierOverlay> frontiers = dimensionsFrontiers.get(Integer.valueOf(dimension));
         if (frontiers == null) {
-            frontiers = new ArrayList<Frontier>();
+            frontiers = new ArrayList<FrontierOverlay>();
             dimensionsFrontiers.put(Integer.valueOf(dimension), frontiers);
         }
 
@@ -136,7 +139,7 @@ public class MapFrontiersPlugin implements IClientPlugin {
         final float luminance = (rand.nextInt(3000) + 7000) / 10000f;
         Color color = Color.getHSBColor(hue, saturation, luminance);
 
-        Frontier frontier = new Frontier(jmAPI);
+        FrontierOverlay frontier = new FrontierOverlay(jmAPI);
         frontier.dimension = dimension;
         frontier.color = color.getRGB();
 
@@ -150,7 +153,7 @@ public class MapFrontiersPlugin implements IClientPlugin {
 
     @SideOnly(Side.CLIENT)
     public void deleteFrontier(int dimension, int index) {
-        List<Frontier> frontiers = dimensionsFrontiers.get(Integer.valueOf(dimension));
+        List<FrontierOverlay> frontiers = dimensionsFrontiers.get(Integer.valueOf(dimension));
         if (frontiers == null) {
             return;
         }
@@ -162,8 +165,8 @@ public class MapFrontiersPlugin implements IClientPlugin {
 
     @SideOnly(Side.CLIENT)
     public void updateAllOverlays() {
-        for (List<Frontier> frontiers : dimensionsFrontiers.values()) {
-            for (Frontier frontier : frontiers) {
+        for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
+            for (FrontierOverlay frontier : frontiers) {
                 frontier.updateOverlay();
             }
         }
@@ -181,10 +184,10 @@ public class MapFrontiersPlugin implements IClientPlugin {
     public void setFrontierIndexSelected(int dimension, int frontier) {
         Integer dim = Integer.valueOf(dimension);
         int prevSelected = frontiersSelected.getOrDefault(dim, -1);
-        List<Frontier> frontiers = dimensionsFrontiers.get(dimension);
+        List<FrontierOverlay> frontiers = dimensionsFrontiers.get(dimension);
 
         if (prevSelected >= 0 && prevSelected < frontiers.size()) {
-            Frontier f = frontiers.get(prevSelected);
+            FrontierOverlay f = frontiers.get(prevSelected);
             f.selected = false;
             f.updateOverlay();
         }
@@ -192,7 +195,7 @@ public class MapFrontiersPlugin implements IClientPlugin {
         frontiersSelected.put(dim, Integer.valueOf(frontier));
 
         if (frontier >= 0) {
-            Frontier f = frontiers.get(frontier);
+            FrontierOverlay f = frontiers.get(frontier);
             f.selected = true;
             f.updateOverlay();
         }
@@ -210,11 +213,11 @@ public class MapFrontiersPlugin implements IClientPlugin {
         Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(turnPageSoundEvent, 1.0F));
     }
 
-    public BlockPos snapVertex(BlockPos vertex, int snapDistance, Frontier owner) {
+    public BlockPos snapVertex(BlockPos vertex, int snapDistance, FrontierOverlay owner) {
         float snapDistanceSq = snapDistance * snapDistance;
         BlockPos closest = new BlockPos(vertex.getX(), 70, vertex.getZ());
         double closestDistance = Double.MAX_VALUE;
-        for (Frontier frontier : dimensionsFrontiers.get(Integer.valueOf(owner.dimension))) {
+        for (FrontierOverlay frontier : dimensionsFrontiers.get(Integer.valueOf(owner.dimension))) {
             if (frontier == owner) {
                 continue;
             }
@@ -246,9 +249,9 @@ public class MapFrontiersPlugin implements IClientPlugin {
             NBTTagCompound dimensionTag = dimensionsTagList.getCompoundTagAt(i);
             int dimension = dimensionTag.getInteger("dimension");
             NBTTagList frontiersTagList = dimensionTag.getTagList("frontiers", 10);
-            ArrayList<Frontier> frontiers = new ArrayList<Frontier>();
+            ArrayList<FrontierOverlay> frontiers = new ArrayList<FrontierOverlay>();
             for (int i2 = 0; i2 < frontiersTagList.tagCount(); ++i2) {
-                Frontier frontier = new Frontier(jmAPI);
+                FrontierOverlay frontier = new FrontierOverlay(jmAPI);
                 frontier.dimension = dimension;
                 NBTTagCompound frontierTag = frontiersTagList.getCompoundTagAt(i2);
                 frontier.readFromNBT(frontierTag);
@@ -271,9 +274,9 @@ public class MapFrontiersPlugin implements IClientPlugin {
     @SideOnly(Side.CLIENT)
     public void writeToNBT(NBTTagCompound nbt) {
         NBTTagList dimensionsTagList = new NBTTagList();
-        for (Map.Entry<Integer, ArrayList<Frontier>> frontiers : dimensionsFrontiers.entrySet()) {
+        for (Map.Entry<Integer, ArrayList<FrontierOverlay>> frontiers : dimensionsFrontiers.entrySet()) {
             NBTTagList frontiersTagList = new NBTTagList();
-            for (Frontier frontier : frontiers.getValue()) {
+            for (FrontierOverlay frontier : frontiers.getValue()) {
                 NBTTagCompound frontierTag = new NBTTagCompound();
                 frontier.writeToNBT(frontierTag);
                 frontiersTagList.appendTag(frontierTag);

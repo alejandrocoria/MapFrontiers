@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.gui;
+package games.alejandrocoria.mapfrontiers.client.gui;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
