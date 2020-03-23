@@ -4,6 +4,7 @@ import org.apache.logging.log4j.Logger;
 
 import games.alejandrocoria.mapfrontiers.common.IProxy;
 import games.alejandrocoria.mapfrontiers.common.item.ItemFrontierBook;
+import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import net.minecraft.item.Item;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -52,6 +53,7 @@ public class MapFrontiers {
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
+        PacketHandler.init();
         proxy.init(event);
         LOGGER.info("MapFrontiers init done");
     }

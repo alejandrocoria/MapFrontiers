@@ -40,6 +40,10 @@ public class FrontiersManager {
         dimensionsFrontiers = new HashMap<Integer, ArrayList<FrontierData>>();
     }
 
+    public Map<Integer, ArrayList<FrontierData>> getAllFrontiers() {
+        return dimensionsFrontiers;
+    }
+
     public void createNewfrontier(int dimension, EntityPlayer player) {
         ArrayList<FrontierData> frontiers = dimensionsFrontiers.get(Integer.valueOf(dimension));
         if (frontiers == null) {
@@ -141,7 +145,7 @@ public class FrontiersManager {
         nbt.setInteger("Version", dataVersion);
     }
 
-    private void loadOrCreateData() {
+    public void loadOrCreateData() {
         try {
             if (Minecraft.getMinecraft().isIntegratedServerRunning()) {
                 ModDir = new File(Minecraft.getMinecraft().mcDataDir, "mapfrontiers");
@@ -167,7 +171,7 @@ public class FrontiersManager {
         }
     }
 
-    private void saveData() {
+    public void saveData() {
         try {
             File f = new File(WorldDir, "frontiers.dat");
             NBTTagCompound nbt = new NBTTagCompound();
