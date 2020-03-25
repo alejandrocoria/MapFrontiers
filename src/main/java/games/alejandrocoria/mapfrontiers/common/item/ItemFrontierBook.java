@@ -1,7 +1,9 @@
 package games.alejandrocoria.mapfrontiers.common.item;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin;
+import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
@@ -18,6 +20,7 @@ import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+@ParametersAreNonnullByDefault
 public class ItemFrontierBook extends Item {
 
     protected String name;
@@ -67,7 +70,7 @@ public class ItemFrontierBook extends Item {
             itemStack.setTagCompound(nbt);
         }
 
-        MapFrontiersPlugin.instance.openGUIFrontierBook(dimension);
+        ((ClientProxy) MapFrontiers.proxy).openGUIFrontierBook(dimension);
         return new ActionResult<ItemStack>(EnumActionResult.PASS, itemStack);
     }
 }

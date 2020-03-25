@@ -27,8 +27,11 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 @ParametersAreNonnullByDefault
+@SideOnly(Side.CLIENT)
 public class FrontierOverlay extends FrontierData {
     private static MapImage markerVertex = new MapImage(new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"), 0,
             0, 12, 12, 0xffffff, 1.f);
@@ -160,6 +163,9 @@ public class FrontierOverlay extends FrontierData {
             jmAPI.remove(marker);
         }
     }
+
+    // @Incomplete: All of these methods need to communicate with the server to
+    // synchronize
 
     @Override
     public void addVertex(BlockPos pos, int index) {

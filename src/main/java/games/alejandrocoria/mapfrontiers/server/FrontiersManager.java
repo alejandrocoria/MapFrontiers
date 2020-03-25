@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
@@ -23,6 +25,7 @@ import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+@ParametersAreNonnullByDefault
 @SideOnly(Side.SERVER)
 public class FrontiersManager {
     public static FrontiersManager instance;
@@ -37,6 +40,7 @@ public class FrontiersManager {
     private static final int dataVersion = 1;
 
     FrontiersManager() {
+        instance = this;
         dimensionsFrontiers = new HashMap<Integer, ArrayList<FrontierData>>();
     }
 

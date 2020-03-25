@@ -1,5 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.nbt.NBTTagCompound;
@@ -9,6 +11,7 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
 
+@ParametersAreNonnullByDefault
 public class PacketFrontier implements IMessage {
     private FrontierData frontier;
 

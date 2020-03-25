@@ -2,6 +2,8 @@ package games.alejandrocoria.mapfrontiers.server;
 
 import java.util.ArrayList;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.IProxy;
@@ -19,6 +21,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent;
 import net.minecraftforge.fml.relauncher.Side;
 
+@ParametersAreNonnullByDefault
 @Mod.EventBusSubscriber(Side.SERVER)
 public class ServerProxy implements IProxy {
     private FrontiersManager frontiersManager;
@@ -50,7 +53,7 @@ public class ServerProxy implements IProxy {
     }
 
     @SubscribeEvent
-    public void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
+    public void playerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (frontiersManager == null) {
             return;
         }
