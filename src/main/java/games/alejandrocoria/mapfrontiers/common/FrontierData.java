@@ -5,7 +5,6 @@ import java.util.List;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import games.alejandrocoria.mapfrontiers.server.FrontiersManager;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTUtil;
@@ -27,7 +26,18 @@ public class FrontierData {
     protected int mapSlice = NoSlice;
 
     public FrontierData() {
+    }
 
+    public FrontierData(FrontierData other) {
+        id = other.id;
+        vertices = other.vertices;
+        closed = other.closed;
+        name1 = other.name1;
+        name2 = other.name2;
+        nameVisible = other.nameVisible;
+        color = other.color;
+        dimension = other.dimension;
+        mapSlice = other.mapSlice;
     }
 
     public void setId(int id) {

@@ -38,7 +38,7 @@ public class MapFrontiersPlugin implements IClientPlugin {
         instance = this;
 
         this.jmAPI = jmAPI;
-        ((ClientProxy) MapFrontiers.proxy).jmAPI = jmAPI;
+        ((ClientProxy) MapFrontiers.proxy).setjmAPI(jmAPI);
     }
 
     @Override

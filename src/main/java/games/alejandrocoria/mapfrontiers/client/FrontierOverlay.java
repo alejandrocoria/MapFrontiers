@@ -72,6 +72,11 @@ public class FrontierOverlay extends FrontierData {
         this.jmAPI = jmAPI;
     }
 
+    public FrontierOverlay(FrontierData data, IClientAPI jmAPI) {
+        super(data);
+        this.jmAPI = jmAPI;
+    }
+
     @SubscribeEvent
     static public void onRenderTick(TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {

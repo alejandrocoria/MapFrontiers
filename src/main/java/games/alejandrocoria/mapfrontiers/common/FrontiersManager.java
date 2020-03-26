@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.server;
+package games.alejandrocoria.mapfrontiers.common;
 
 import java.awt.Color;
 import java.io.File;
@@ -13,8 +13,6 @@ import java.util.Random;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.common.ConfigData;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.CompressedStreamTools;
@@ -22,11 +20,8 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
 @ParametersAreNonnullByDefault
-@SideOnly(Side.SERVER)
 public class FrontiersManager {
     public static FrontiersManager instance;
 
@@ -39,9 +34,27 @@ public class FrontiersManager {
 
     private static final int dataVersion = 1;
 
-    FrontiersManager() {
+    public FrontiersManager() {
         instance = this;
         dimensionsFrontiers = new HashMap<Integer, ArrayList<FrontierData>>();
+
+        ArrayList<FrontierData> frontiers = dimensionsFrontiers.get(Integer.valueOf(0));
+        if (frontiers == null) {
+            frontiers = new ArrayList<FrontierData>();
+            dimensionsFrontiers.put(Integer.valueOf(0), frontiers);
+        }
+
+        FrontierData frontier = new FrontierData();
+        frontier.setDimension(0);
+        frontier.setColor(0xffff00);
+        frontier.addVertex(new BlockPos(0, 70, 0));
+        frontier.addVertex(new BlockPos(20, 70, 0));
+        frontier.addVertex(new BlockPos(20, 70, 20));
+        frontier.addVertex(new BlockPos(0, 70, 20));
+        frontier.setClosed(true);
+
+        frontiers.add(frontier);
+        saveData();
     }
 
     public Map<Integer, ArrayList<FrontierData>> getAllFrontiers() {
@@ -150,6 +163,9 @@ public class FrontiersManager {
     }
 
     public void loadOrCreateData() {
+        if (true)
+            return;
+
         try {
             if (Minecraft.getMinecraft().isIntegratedServerRunning()) {
                 ModDir = new File(Minecraft.getMinecraft().mcDataDir, "mapfrontiers");

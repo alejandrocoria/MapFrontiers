@@ -2,7 +2,7 @@ package games.alejandrocoria.mapfrontiers;
 
 import org.apache.logging.log4j.Logger;
 
-import games.alejandrocoria.mapfrontiers.common.IProxy;
+import games.alejandrocoria.mapfrontiers.common.CommonProxy;
 import games.alejandrocoria.mapfrontiers.common.item.ItemFrontierBook;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import net.minecraft.item.Item;
@@ -12,6 +12,8 @@ import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
+import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.registry.GameRegistry.ObjectHolder;
 import net.minecraftforge.fml.relauncher.Side;
@@ -27,8 +29,8 @@ public class MapFrontiers {
     @Mod.Instance(MapFrontiers.MODID)
     public static MapFrontiers instance;
 
-    @SidedProxy(clientSide = "games.alejandrocoria.mapfrontiers.client.ClientProxy", serverSide = "games.alejandrocoria.mapfrontiers.ServerProxy")
-    public static IProxy proxy;
+    @SidedProxy(clientSide = "games.alejandrocoria.mapfrontiers.client.ClientProxy", serverSide = "games.alejandrocoria.mapfrontiers.server.ServerProxy")
+    public static CommonProxy proxy;
 
     @ObjectHolder("mapfrontiers:frontier_book")
     public static ItemFrontierBook frontierBook = new ItemFrontierBook();
@@ -62,5 +64,17 @@ public class MapFrontiers {
     public void postInit(FMLPostInitializationEvent event) {
         proxy.postInit(event);
         LOGGER.info("MapFrontiers postInit done");
+    }
+
+    @Mod.EventHandler
+    public void serverStarting(FMLServerStartingEvent event) {
+        proxy.serverStarting(event);
+        LOGGER.info("MapFrontiers serverStarting done");
+    }
+
+    @Mod.EventHandler
+    public void serverStopping(FMLServerStoppingEvent event) {
+        proxy.serverStopping(event);
+        LOGGER.info("MapFrontiers serverStopping done");
     }
 }

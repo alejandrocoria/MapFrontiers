@@ -347,11 +347,12 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             if (labelDeleteConfirm.visible && x >= buttonDelete.x && y >= labelDeleteConfirm.y
                     && x <= buttonDelete.x + buttonDelete.width && y <= labelDeleteConfirm.y + 12) {
                 if (isInFrontierPage()) {
-                    MapFrontiersPlugin.instance.deleteFrontier(dimension, getCurrentFrontierIndex());
-                    int frontier = getCurrentFrontierIndex();
+                    FrontiersOverlayManager.instance.deleteFrontier(dimension, getCurrentFrontierIndex());
+                    // @Incomplete: wait for packet
+                    // int frontier = getCurrentFrontierIndex();
 
-                    updateIndexEntries();
-                    changePage(frontier + frontiersPageStart);
+                    // updateIndexEntries();
+                    // changePage(frontier + frontiersPageStart);
                 }
             }
         }
@@ -474,9 +475,10 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             resetLabels();
             updateButtonsVisibility();
         } else if (button == buttonNew) {
-            MapFrontiersPlugin.instance.createNewfrontier(dimension);
-            updateIndexEntries();
-            changePage(getPageCount() - 1);
+            FrontiersOverlayManager.instance.createNewfrontier(dimension);
+            // @Incomplete: wait for packet
+            // updateIndexEntries();
+            // changePage(getPageCount() - 1);
         } else if (button == buttonDelete) {
             if (deleteBookmarkPosition == DeleteBookmarkPosition.Normal) {
                 changeDeleteBookmarkPosition(DeleteBookmarkPosition.Open);

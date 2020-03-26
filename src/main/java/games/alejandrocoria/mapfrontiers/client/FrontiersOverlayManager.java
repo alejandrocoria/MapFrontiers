@@ -7,6 +7,7 @@ import java.util.Map;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import journeymap.client.api.IClientAPI;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -26,6 +27,23 @@ public class FrontiersOverlayManager {
         this.jmAPI = jmAPI;
         dimensionsFrontiers = new HashMap<Integer, ArrayList<FrontierOverlay>>();
         frontiersSelected = new HashMap<Integer, Integer>();
+    }
+
+    public void addFrontier(FrontierData data) {
+        if (jmAPI == null) {
+            return;
+        }
+
+        List<FrontierOverlay> frontiers = getAllFrontiers(data.getDimension());
+        frontiers.add(new FrontierOverlay(data, jmAPI));
+    }
+
+    public void createNewfrontier(int dimension) {
+        // @Incomplete: send packet with creation and first vertex
+    }
+
+    public void deleteFrontier(int dimension, int index) {
+        // @Incomplete: send packet with deletion
     }
 
     public Map<Integer, ArrayList<FrontierOverlay>> getAllFrontiers() {

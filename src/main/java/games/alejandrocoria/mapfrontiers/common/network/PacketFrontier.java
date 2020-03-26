@@ -2,8 +2,10 @@ package games.alejandrocoria.mapfrontiers.common.network;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import io.netty.buffer.ByteBuf;
+import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
@@ -26,6 +28,7 @@ public class PacketFrontier implements IMessage {
     @Override
     public void fromBytes(ByteBuf buf) {
         frontier.readFromNBT(ByteBufUtils.readTag(buf));
+        frontier.setId(buf.readInt());
     }
 
     @Override
@@ -33,13 +36,16 @@ public class PacketFrontier implements IMessage {
         NBTTagCompound nbt = new NBTTagCompound();
         frontier.writeToNBT(nbt);
         ByteBufUtils.writeTag(buf, nbt);
+        buf.writeInt(frontier.getId());
     }
 
     public static class Handler implements IMessageHandler<PacketFrontier, IMessage> {
         @Override
         public IMessage onMessage(PacketFrontier message, MessageContext ctx) {
             if (ctx.side == Side.CLIENT) {
-                // @Incomplete
+                Minecraft.getMinecraft().addScheduledTask(() -> {
+                    FrontiersOverlayManager.instance.addFrontier(message.frontier);
+                });
             }
 
             return null;
