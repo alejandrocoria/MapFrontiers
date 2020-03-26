@@ -169,18 +169,22 @@ public class FrontierOverlay extends FrontierData {
         }
     }
 
+    public void addVertex(BlockPos pos) {
+        addVertex(pos, ConfigData.snapDistance);
+    }
+
     // @Incomplete: All of these methods need to communicate with the server to
     // synchronize
 
     @Override
-    public void addVertex(BlockPos pos, int index) {
-        super.addVertex(pos, index);
+    public void addVertex(BlockPos pos, int index, int snapDistance) {
+        super.addVertex(pos, index, snapDistance);
         updateOverlay();
     }
 
     @Override
-    public void addVertex(BlockPos pos) {
-        super.addVertex(pos);
+    public void addVertex(BlockPos pos, int snapDistance) {
+        super.addVertex(pos, snapDistance);
         updateOverlay();
     }
 

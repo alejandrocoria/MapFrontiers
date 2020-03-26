@@ -337,8 +337,6 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                 drawHoveringText(prefix + I18n.format("mapfrontiers.hide_name_warn"), mouseX, mouseY);
             }
         }
-
-
     }
 
     @Override
@@ -543,6 +541,15 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     @Override
     public boolean doesGuiPauseGame() {
         return true;
+    }
+
+    public void newFrontierMessage(FrontierOverlay frontierOverlay, int playerID) {
+        if (Minecraft.getMinecraft().player.getEntityId() == playerID) {
+            int index = frontiersOverlayManager.getFrontierIndex(frontierOverlay);
+            if (index >= 0) {
+                changePage(frontiersPageStart + index);
+            }
+        }
     }
 
     private void changePage(int newPage) {

@@ -2,7 +2,9 @@ package games.alejandrocoria.mapfrontiers.common.network;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
@@ -16,6 +18,7 @@ import net.minecraftforge.fml.relauncher.Side;
 @ParametersAreNonnullByDefault
 public class PacketFrontier implements IMessage {
     private FrontierData frontier;
+    private int playerID = -1;
 
     public PacketFrontier() {
         frontier = new FrontierData();
@@ -25,10 +28,16 @@ public class PacketFrontier implements IMessage {
         this.frontier = frontier;
     }
 
+    public PacketFrontier(FrontierData frontier, int playerID) {
+        this.frontier = frontier;
+        this.playerID = playerID;
+    }
+
     @Override
     public void fromBytes(ByteBuf buf) {
         frontier.readFromNBT(ByteBufUtils.readTag(buf));
         frontier.setId(buf.readInt());
+        playerID = buf.readInt();
     }
 
     @Override
@@ -37,6 +46,7 @@ public class PacketFrontier implements IMessage {
         frontier.writeToNBT(nbt);
         ByteBufUtils.writeTag(buf, nbt);
         buf.writeInt(frontier.getId());
+        buf.writeInt(playerID);
     }
 
     public static class Handler implements IMessageHandler<PacketFrontier, IMessage> {
@@ -44,7 +54,12 @@ public class PacketFrontier implements IMessage {
         public IMessage onMessage(PacketFrontier message, MessageContext ctx) {
             if (ctx.side == Side.CLIENT) {
                 Minecraft.getMinecraft().addScheduledTask(() -> {
-                    FrontiersOverlayManager.instance.addFrontier(message.frontier);
+                    FrontierOverlay frontierOverlay = FrontiersOverlayManager.instance.addFrontier(message.frontier);
+
+                    if (frontierOverlay != null && Minecraft.getMinecraft().currentScreen instanceof GuiFrontierBook) {
+                        ((GuiFrontierBook) Minecraft.getMinecraft().currentScreen).newFrontierMessage(frontierOverlay,
+                                message.playerID);
+                    }
                 });
             }
 

@@ -13,6 +13,7 @@ public class PacketHandler {
 
     public static void init() {
         int id = 0;
-        INSTANCE.registerMessage(PacketFrontier.Handler.class, PacketFrontier.class, id, Side.CLIENT);
+        INSTANCE.registerMessage(PacketFrontier.Handler.class, PacketFrontier.class, id++, Side.CLIENT);
+        INSTANCE.registerMessage(PacketNewFrontier.Handler.class, PacketNewFrontier.class, id++, Side.SERVER);
     }
 }

@@ -15,6 +15,8 @@ public class FrontierData {
     public static final int NoSlice = -1;
     public static final int SurfaceSlice = 16;
 
+    private static int lastID = 0;
+
     protected int id;
     protected List<BlockPos> vertices = new ArrayList<BlockPos>();
     protected boolean closed = false;
@@ -26,6 +28,7 @@ public class FrontierData {
     protected int mapSlice = NoSlice;
 
     public FrontierData() {
+        id = ++lastID;
     }
 
     public FrontierData(FrontierData other) {
@@ -56,8 +59,7 @@ public class FrontierData {
         return vertices.get(index);
     }
 
-    public void addVertex(BlockPos pos, int index) {
-        int snapDistance = ConfigData.snapDistance;
+    public void addVertex(BlockPos pos, int index, int snapDistance) {
         if (snapDistance != 0) {
             pos = FrontiersManager.instance.snapVertex(pos, snapDistance, this);
         }
@@ -65,8 +67,8 @@ public class FrontierData {
         vertices.add(index, new BlockPos(pos.getX(), 70, pos.getZ()));
     }
 
-    public void addVertex(BlockPos pos) {
-        addVertex(pos, vertices.size());
+    public void addVertex(BlockPos pos, int snapDistance) {
+        addVertex(pos, vertices.size(), snapDistance);
     }
 
     public void removeVertex(int index) {

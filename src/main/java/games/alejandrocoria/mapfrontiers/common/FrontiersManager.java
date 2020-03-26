@@ -47,10 +47,10 @@ public class FrontiersManager {
         FrontierData frontier = new FrontierData();
         frontier.setDimension(0);
         frontier.setColor(0xffff00);
-        frontier.addVertex(new BlockPos(0, 70, 0));
-        frontier.addVertex(new BlockPos(20, 70, 0));
-        frontier.addVertex(new BlockPos(20, 70, 20));
-        frontier.addVertex(new BlockPos(0, 70, 20));
+        frontier.addVertex(new BlockPos(0, 70, 0), 0);
+        frontier.addVertex(new BlockPos(20, 70, 0), 0);
+        frontier.addVertex(new BlockPos(20, 70, 20), 0);
+        frontier.addVertex(new BlockPos(0, 70, 20), 0);
         frontier.setClosed(true);
 
         frontiers.add(frontier);
@@ -61,7 +61,7 @@ public class FrontiersManager {
         return dimensionsFrontiers;
     }
 
-    public void createNewfrontier(int dimension, EntityPlayer player) {
+    public FrontierData createNewfrontier(int dimension, EntityPlayer player, boolean addVertex, int snapDistance) {
         ArrayList<FrontierData> frontiers = dimensionsFrontiers.get(Integer.valueOf(dimension));
         if (frontiers == null) {
             frontiers = new ArrayList<FrontierData>();
@@ -77,12 +77,14 @@ public class FrontiersManager {
         frontier.setDimension(dimension);
         frontier.setColor(color.getRGB());
 
-        if (ConfigData.addVertexToNewFrontier) {
-            frontier.addVertex(player.getPosition());
+        if (addVertex) {
+            frontier.addVertex(player.getPosition(), snapDistance);
         }
 
         frontiers.add(frontier);
         saveData();
+
+        return frontier;
     }
 
     public void deleteFrontier(int dimension, int index) {

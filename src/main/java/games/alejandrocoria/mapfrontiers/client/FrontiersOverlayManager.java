@@ -7,7 +7,10 @@ import java.util.Map;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
+import games.alejandrocoria.mapfrontiers.common.network.PacketNewFrontier;
 import journeymap.client.api.IClientAPI;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -29,21 +32,34 @@ public class FrontiersOverlayManager {
         frontiersSelected = new HashMap<Integer, Integer>();
     }
 
-    public void addFrontier(FrontierData data) {
+    public FrontierOverlay addFrontier(FrontierData data) {
         if (jmAPI == null) {
-            return;
+            return null;
         }
 
         List<FrontierOverlay> frontiers = getAllFrontiers(data.getDimension());
-        frontiers.add(new FrontierOverlay(data, jmAPI));
+        FrontierOverlay frontierOverlay = new FrontierOverlay(data, jmAPI);
+        frontiers.add(frontierOverlay);
+
+        return frontierOverlay;
     }
 
     public void createNewfrontier(int dimension) {
-        // @Incomplete: send packet with creation and first vertex
+        PacketHandler.INSTANCE
+                .sendToServer(new PacketNewFrontier(dimension, ConfigData.addVertexToNewFrontier, ConfigData.snapDistance));
     }
 
     public void deleteFrontier(int dimension, int index) {
         // @Incomplete: send packet with deletion
+    }
+
+    public int getFrontierIndex(FrontierOverlay frontierOverlay) {
+        List<FrontierOverlay> frontiers = getAllFrontiers(frontierOverlay.getDimension());
+        if (frontiers == null) {
+            return -1;
+        }
+
+        return frontiers.lastIndexOf(frontierOverlay);
     }
 
     public Map<Integer, ArrayList<FrontierOverlay>> getAllFrontiers() {
