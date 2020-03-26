@@ -87,13 +87,13 @@ public class FrontiersManager {
         return frontier;
     }
 
-    public void deleteFrontier(int dimension, int index) {
+    public void deleteFrontier(int dimension, int id) {
         List<FrontierData> frontiers = dimensionsFrontiers.get(Integer.valueOf(dimension));
         if (frontiers == null) {
             return;
         }
 
-        frontiers.remove(index);
+        frontiers.removeIf(x -> x.id == id);
         saveData();
     }
 

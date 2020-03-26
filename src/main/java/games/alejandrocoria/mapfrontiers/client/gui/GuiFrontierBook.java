@@ -345,12 +345,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             if (labelDeleteConfirm.visible && x >= buttonDelete.x && y >= labelDeleteConfirm.y
                     && x <= buttonDelete.x + buttonDelete.width && y <= labelDeleteConfirm.y + 12) {
                 if (isInFrontierPage()) {
-                    FrontiersOverlayManager.instance.deleteFrontier(dimension, getCurrentFrontierIndex());
-                    // @Incomplete: wait for packet
-                    // int frontier = getCurrentFrontierIndex();
-
-                    // updateIndexEntries();
-                    // changePage(frontier + frontiersPageStart);
+                    FrontiersOverlayManager.instance.clientDeleteFrontier(dimension, getCurrentFrontierIndex());
                 }
             }
         }
@@ -473,10 +468,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             resetLabels();
             updateButtonsVisibility();
         } else if (button == buttonNew) {
-            FrontiersOverlayManager.instance.createNewfrontier(dimension);
-            // @Incomplete: wait for packet
-            // updateIndexEntries();
-            // changePage(getPageCount() - 1);
+            FrontiersOverlayManager.instance.clientCreateNewfrontier(dimension);
         } else if (button == buttonDelete) {
             if (deleteBookmarkPosition == DeleteBookmarkPosition.Normal) {
                 changeDeleteBookmarkPosition(DeleteBookmarkPosition.Open);
@@ -547,9 +539,16 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         if (Minecraft.getMinecraft().player.getEntityId() == playerID) {
             int index = frontiersOverlayManager.getFrontierIndex(frontierOverlay);
             if (index >= 0) {
+                updateIndexEntries();
                 changePage(frontiersPageStart + index);
             }
         }
+    }
+
+    public void deleteFrontierMessage(int index, int playerID) {
+        int currentFrontierIndex = getCurrentFrontierIndex();
+        updateIndexEntries();
+        changePage(frontiersPageStart + currentFrontierIndex);
     }
 
     private void changePage(int newPage) {
