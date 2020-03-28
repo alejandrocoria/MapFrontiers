@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.IntStream;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -95,6 +96,24 @@ public class FrontiersManager {
 
         frontiers.removeIf(x -> x.id == id);
         saveData();
+    }
+
+    public boolean updateFrontier(FrontierData frontier) {
+        List<FrontierData> frontiers = dimensionsFrontiers.get(Integer.valueOf(frontier.getDimension()));
+        if (frontiers == null) {
+            return false;
+        }
+
+        // @Note: copied from FrontiersOverlayManager.deleteFrontier(int,int)
+        int index = IntStream.range(0, frontiers.size()).filter(i -> frontiers.get(i).getId() == frontier.getId()).findFirst()
+                .orElse(-1);
+
+        if (index < 0) {
+            return false;
+        }
+
+        frontiers.set(index, frontier);
+        return true;
     }
 
     public BlockPos snapVertex(BlockPos vertex, int snapDistance, FrontierData owner) {

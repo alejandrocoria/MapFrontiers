@@ -13,6 +13,7 @@ import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketDeleteFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketNewFrontier;
+import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateFrontier;
 import journeymap.client.api.IClientAPI;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -53,9 +54,6 @@ public class FrontiersOverlayManager {
 
     public void clientDeleteFrontier(int dimension, int index) {
         List<FrontierOverlay> frontiers = getAllFrontiers(dimension);
-        if (frontiers == null) {
-            return;
-        }
 
         FrontierOverlay frontier = frontiers.get(index);
 
@@ -64,20 +62,38 @@ public class FrontiersOverlayManager {
         }
     }
 
+    public void clientUpdatefrontier(int dimension, int index) {
+        PacketHandler.INSTANCE.sendToServer(new PacketUpdateFrontier(getAllFrontiers(dimension).get(index)));
+    }
+
     public int deleteFrontier(int dimension, int id) {
         List<FrontierOverlay> frontiers = getAllFrontiers(dimension);
-        if (frontiers == null) {
-            return -1;
-        }
 
         int index = IntStream.range(0, frontiers.size()).filter(i -> frontiers.get(i).getId() == id).findFirst().orElse(-1);
 
-        if (index == -1) {
+        if (index < 0) {
             return -1;
         }
 
         frontiers.remove(index);
         return index;
+    }
+
+    public FrontierOverlay updateFrontier(FrontierData data) {
+        List<FrontierOverlay> frontiers = getAllFrontiers(data.getDimension());
+
+        // @Note: copied from FrontiersOverlayManager.deleteFrontier(int,int)
+        int index = IntStream.range(0, frontiers.size()).filter(i -> frontiers.get(i).getId() == data.getId()).findFirst()
+                .orElse(-1);
+
+        if (index < 0) {
+            // @Note: this should not happen...
+            return null;
+        } else {
+            FrontierOverlay frontierOverlay = new FrontierOverlay(data, jmAPI);
+            frontiers.set(index, frontierOverlay);
+            return frontierOverlay;
+        }
     }
 
     public int getFrontierIndex(FrontierOverlay frontierOverlay) {

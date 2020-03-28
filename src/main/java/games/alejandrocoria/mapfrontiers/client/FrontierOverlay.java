@@ -68,6 +68,9 @@ public class FrontierOverlay extends FrontierData {
     private List<MarkerOverlay> markerOverlays = new ArrayList<MarkerOverlay>();
     private final String displayId = "frontier_" + String.valueOf(id++);
 
+    private int hash;
+    private boolean dirty = true;
+
     public FrontierOverlay(IClientAPI jmAPI) {
         this.jmAPI = jmAPI;
     }
@@ -75,6 +78,26 @@ public class FrontierOverlay extends FrontierData {
     public FrontierOverlay(FrontierData data, IClientAPI jmAPI) {
         super(data);
         this.jmAPI = jmAPI;
+    }
+
+    public int getHash() {
+        if (dirty) {
+            dirty = false;
+
+            int prime = 31;
+            hash = 1;
+            hash = prime * hash + (closed ? 1231 : 1237);
+            hash = prime * hash + color;
+            hash = prime * hash + dimension;
+            hash = prime * hash + id;
+            hash = prime * hash + mapSlice;
+            hash = prime * hash + ((name1 == null) ? 0 : name1.hashCode());
+            hash = prime * hash + ((name2 == null) ? 0 : name2.hashCode());
+            hash = prime * hash + (nameVisible ? 1231 : 1237);
+            hash = prime * hash + ((vertices == null) ? 0 : vertices.hashCode());
+        }
+
+        return hash;
     }
 
     @SubscribeEvent
@@ -143,6 +166,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void updateOverlay() {
+        dirty = true;
         removeOverlay();
         recalculateOverlays();
 
@@ -172,9 +196,6 @@ public class FrontierOverlay extends FrontierData {
     public void addVertex(BlockPos pos) {
         addVertex(pos, ConfigData.snapDistance);
     }
-
-    // @Incomplete: All of these methods need to communicate with the server to
-    // synchronize
 
     @Override
     public void addVertex(BlockPos pos, int index, int snapDistance) {

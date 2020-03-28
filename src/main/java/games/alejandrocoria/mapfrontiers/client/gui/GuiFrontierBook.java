@@ -51,6 +51,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
     private FrontiersOverlayManager frontiersOverlayManager;
     private List<FrontierOverlay> frontiers;
+    private int lastFrontierHash;
     private int currPage = 0;
     private int currentDimension;
     private int dimension;
@@ -214,9 +215,9 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         updateIndexEntries();
 
         if (currPage < 0) {
-            changePage(0);
+            changePage(0, false);
         } else {
-            changePage(currPage + frontiersPageStart);
+            changePage(currPage + frontiersPageStart, false);
         }
     }
 
@@ -528,6 +529,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     @Override
     public void onGuiClosed() {
         Keyboard.enableRepeatEvents(false);
+        sendChangesToServer();
     }
 
     @Override
@@ -545,14 +547,44 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         }
     }
 
+    public void updateFrontierMessage(FrontierOverlay frontierOverlay) {
+        boolean updatePage = false;
+        if (isInFrontierPage()) {
+            FrontierOverlay currentFrontier = frontiers.get(getCurrentFrontierIndex());
+            if (currentFrontier.getId() == frontierOverlay.getId()) {
+                updatePage = true;
+            }
+        } else {
+            updatePage = true;
+        }
+
+        if (updatePage) {
+            this.changePage(currPage, false);
+        }
+    }
+
     public void deleteFrontierMessage(int index, int playerID) {
         int currentFrontierIndex = getCurrentFrontierIndex();
         updateIndexEntries();
         changePage(frontiersPageStart + currentFrontierIndex);
     }
 
+    private void sendChangesToServer() {
+        if (isInFrontierPage() && lastFrontierHash != frontiers.get(getCurrentFrontierIndex()).getHash()) {
+            frontiersOverlayManager.clientUpdatefrontier(dimension, getCurrentFrontierIndex());
+        }
+    }
+
     private void changePage(int newPage) {
+        changePage(newPage, true);
+    }
+
+    private void changePage(int newPage, boolean syncFrontierWithServer) {
         MapFrontiersPlugin.instance.playSoundTurnPage();
+
+        if (syncFrontierWithServer) {
+            sendChangesToServer();
+        }
 
         if (newPage >= getPageCount()) {
             newPage = getPageCount() - 1;
@@ -564,6 +596,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
         if (isInFrontierPage()) {
             frontiersOverlayManager.setFrontierIndexSelected(dimension, getCurrentFrontierIndex());
+            lastFrontierHash = frontiers.get(getCurrentFrontierIndex()).getHash();
         } else {
             frontiersOverlayManager.setFrontierIndexSelected(dimension, -1);
         }
