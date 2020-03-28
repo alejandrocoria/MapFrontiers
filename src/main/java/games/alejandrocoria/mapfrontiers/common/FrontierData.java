@@ -28,11 +28,15 @@ public class FrontierData {
     protected int mapSlice = NoSlice;
 
     public FrontierData() {
-        id = ++lastID;
+        id = lastID++;
     }
 
     public FrontierData(FrontierData other) {
         id = other.id;
+        if (id >= lastID) {
+            lastID = id + 1;
+        }
+
         vertices = other.vertices;
         closed = other.closed;
         name1 = other.name1;
@@ -45,6 +49,9 @@ public class FrontierData {
 
     public void setId(int id) {
         this.id = id;
+        if (id >= lastID) {
+            lastID = id + 1;
+        }
     }
 
     public int getId() {
@@ -140,6 +147,9 @@ public class FrontierData {
         color = nbt.getInteger("color");
         name1 = nbt.getString("name1");
         name2 = nbt.getString("name2");
+        if (nbt.hasKey("nameVisible")) {
+            nameVisible = nbt.getBoolean("nameVisible");
+        }
         mapSlice = nbt.getInteger("slice");
         mapSlice = Math.min(Math.max(mapSlice, -1), 16);
 
@@ -154,6 +164,7 @@ public class FrontierData {
         nbt.setInteger("color", color);
         nbt.setString("name1", name1);
         nbt.setString("name2", name2);
+        nbt.setBoolean("nameVisible", nameVisible);
         nbt.setInteger("slice", mapSlice);
 
         NBTTagList verticesTagList = new NBTTagList();

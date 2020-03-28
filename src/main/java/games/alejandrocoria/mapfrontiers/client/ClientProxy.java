@@ -1,7 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client;
 
-import java.util.List;
-
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
@@ -81,6 +79,7 @@ public class ClientProxy extends CommonProxy {
 
     @SubscribeEvent
     public void clientDisconnectionFromServer(ClientDisconnectionFromServerEvent event) {
+        frontiersOverlayManager.removeAllOverlays();
         frontiersOverlayManager = null;
     }
 
@@ -88,8 +87,6 @@ public class ClientProxy extends CommonProxy {
         if (frontiersOverlayManager == null) {
             return;
         }
-
-        List<FrontierOverlay> frontiers = frontiersOverlayManager.getAllFrontiers(dimension);
 
         int currentDimension = Minecraft.getMinecraft().player.dimension;
         Minecraft.getMinecraft().displayGuiScreen(new GuiFrontierBook(frontiersOverlayManager, currentDimension, dimension));

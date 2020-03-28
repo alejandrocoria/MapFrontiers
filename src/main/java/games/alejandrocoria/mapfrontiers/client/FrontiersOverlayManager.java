@@ -75,6 +75,7 @@ public class FrontiersOverlayManager {
             return -1;
         }
 
+        frontiers.get(index).removeOverlay();
         frontiers.remove(index);
         return index;
     }
@@ -124,6 +125,14 @@ public class FrontiersOverlayManager {
         for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
             for (FrontierOverlay frontier : frontiers) {
                 frontier.updateOverlay();
+            }
+        }
+    }
+
+    public void removeAllOverlays() {
+        for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
+            for (FrontierOverlay frontier : frontiers) {
+                frontier.removeOverlay();
             }
         }
     }

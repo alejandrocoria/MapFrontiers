@@ -28,9 +28,6 @@ public class FrontiersManager {
 
     private HashMap<Integer, ArrayList<FrontierData>> dimensionsFrontiers;
     private final Random rand = new Random();
-    private File ModDir;
-    private File DataDir;
-    private File TypeDir;
     private File WorldDir;
 
     private static final int dataVersion = 1;
@@ -113,6 +110,8 @@ public class FrontiersManager {
         }
 
         frontiers.set(index, frontier);
+        saveData();
+
         return true;
     }
 
@@ -184,29 +183,37 @@ public class FrontiersManager {
     }
 
     public void loadOrCreateData() {
-        if (true)
-            return;
-
         try {
+            File mcDir;
+            String typeFolder;
+            String worldFolder;
             if (Minecraft.getMinecraft().isIntegratedServerRunning()) {
-                ModDir = new File(Minecraft.getMinecraft().mcDataDir, "mapfrontiers");
-                DataDir = new File(ModDir, "data");
-                TypeDir = new File(DataDir, "sp");
-                WorldDir = new File(TypeDir, Minecraft.getMinecraft().getIntegratedServer().getFolderName());
-                if (WorldDir.isFile()) {
-                    /// @Incomplete copy file to correct folder
-                    File correctFolder = new File(FMLCommonHandler.instance().getSavesDirectory(),
-                            Minecraft.getMinecraft().getIntegratedServer().getFolderName());
-                }
+                mcDir = Minecraft.getMinecraft().mcDataDir;
+                typeFolder = "sp";
+                worldFolder = Minecraft.getMinecraft().getIntegratedServer().getFolderName();
+            } else {
+                mcDir = FMLCommonHandler.instance().getMinecraftServerInstance().getDataDirectory();
+                typeFolder = "mp";
+                worldFolder = "";
             }
+
+            File ModDir = new File(mcDir, "mapfrontiers");
+            File DataDir = new File(ModDir, "data");
+            File TypeDir = new File(DataDir, typeFolder);
+            WorldDir = new File(TypeDir, worldFolder);
             WorldDir.mkdirs();
 
             File f = new File(WorldDir, "frontiers.dat");
             if (!f.exists()) {
                 saveData();
             }
-            NBTTagCompound nbt = CompressedStreamTools.readCompressed(new FileInputStream(f));
-            readFromNBT(nbt);
+
+            try (FileInputStream inputStream = new FileInputStream(f)) {
+                NBTTagCompound nbt = CompressedStreamTools.readCompressed(inputStream);
+                readFromNBT(nbt);
+            } catch (Exception e) {
+                MapFrontiers.LOGGER.error(e.getMessage(), e);
+            }
         } catch (Exception e) {
             MapFrontiers.LOGGER.error(e.getMessage(), e);
         }
@@ -217,7 +224,11 @@ public class FrontiersManager {
             File f = new File(WorldDir, "frontiers.dat");
             NBTTagCompound nbt = new NBTTagCompound();
             writeToNBT(nbt);
-            CompressedStreamTools.writeCompressed(nbt, new FileOutputStream(f));
+            try (FileOutputStream outputStream = new FileOutputStream(f)) {
+                CompressedStreamTools.writeCompressed(nbt, outputStream);
+            } catch (Exception e) {
+                MapFrontiers.LOGGER.error(e.getMessage(), e);
+            }
         } catch (Exception e) {
             MapFrontiers.LOGGER.error(e.getMessage(), e);
         }

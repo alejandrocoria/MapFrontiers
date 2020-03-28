@@ -66,18 +66,16 @@ public class FrontierOverlay extends FrontierData {
     private final IClientAPI jmAPI;
     private List<PolygonOverlay> polygonOverlays = new ArrayList<PolygonOverlay>();
     private List<MarkerOverlay> markerOverlays = new ArrayList<MarkerOverlay>();
-    private final String displayId = "frontier_" + String.valueOf(id++);
+    private String displayId;
 
     private int hash;
     private boolean dirty = true;
 
-    public FrontierOverlay(IClientAPI jmAPI) {
-        this.jmAPI = jmAPI;
-    }
-
     public FrontierOverlay(FrontierData data, IClientAPI jmAPI) {
         super(data);
         this.jmAPI = jmAPI;
+        displayId = "frontier_" + String.valueOf(id);
+        updateOverlay();
     }
 
     public int getHash() {
@@ -191,6 +189,13 @@ public class FrontierOverlay extends FrontierData {
         for (MarkerOverlay marker : markerOverlays) {
             jmAPI.remove(marker);
         }
+    }
+
+    @Override
+    public void setId(int id) {
+        super.setId(id);
+        displayId = "frontier_" + String.valueOf(id);
+        updateOverlay();
     }
 
     public void addVertex(BlockPos pos) {
