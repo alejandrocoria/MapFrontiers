@@ -566,7 +566,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     public void deleteFrontierMessage(int index, int playerID) {
         int currentFrontierIndex = getCurrentFrontierIndex();
         updateIndexEntries();
-        changePage(frontiersPageStart + currentFrontierIndex);
+        changePage(frontiersPageStart + currentFrontierIndex, index != currentFrontierIndex);
     }
 
     private void sendChangesToServer() {
@@ -772,6 +772,19 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             String perimeter = I18n.format("mapfrontiers.perimeter", frontier.perimeter);
             labels.add(new GuiSimpleLabel(mc.fontRenderer, rightPageCornerX + 13, rightPageCornerY + 52,
                     GuiSimpleLabel.Align.Left, perimeter));
+
+            String ownerString;
+            if (frontier.getOwnerName() != null && !frontier.getOwnerName().isEmpty()) {
+                ownerString = frontier.getOwnerName();
+            } else if (frontier.getOwnerUUID() != null) {
+                ownerString = frontier.getOwnerUUID().toString();
+                ownerString = ownerString.substring(0, 14) + '\n' + ownerString.substring(14);
+            } else {
+                ownerString = I18n.format("mapfrontiers.unknown", TextFormatting.ITALIC);
+            }
+            String owner = I18n.format("mapfrontiers.owner", ownerString);
+            labels.add(new GuiSimpleLabel(mc.fontRenderer, rightPageCornerX + 13, rightPageCornerY + 64,
+                    GuiSimpleLabel.Align.Left, owner));
 
             if (dimension == currentDimension) {
                 if (frontier.vertexSelected >= 0) {

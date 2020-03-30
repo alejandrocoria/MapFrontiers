@@ -47,6 +47,8 @@ public class CommonProxy {
             return;
         }
 
+        frontiersManager.ensureOwners();
+
         for (ArrayList<FrontierData> frontiers : frontiersManager.getAllFrontiers().values()) {
             for (FrontierData frontier : frontiers) {
                 PacketHandler.INSTANCE.sendTo(new PacketFrontier(frontier), (EntityPlayerMP) event.player);

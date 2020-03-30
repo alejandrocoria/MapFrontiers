@@ -2,13 +2,20 @@ package games.alejandrocoria.mapfrontiers.common;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
+import net.minecraft.client.Minecraft;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTUtil;
 import net.minecraft.util.math.BlockPos;
+import net.minecraftforge.common.util.Constants;
 
 @ParametersAreNonnullByDefault
 public class FrontierData {
@@ -26,6 +33,8 @@ public class FrontierData {
     protected int color = 0xffffff;
     protected int dimension = 0;
     protected int mapSlice = NoSlice;
+    protected UUID ownerUUID;
+    protected String ownerName;
 
     public FrontierData() {
         id = lastID++;
@@ -45,6 +54,55 @@ public class FrontierData {
         color = other.color;
         dimension = other.dimension;
         mapSlice = other.mapSlice;
+        ownerUUID = other.ownerUUID;
+        ownerName = other.ownerName;
+    }
+
+    public void setOwner(EntityPlayer player) {
+        ownerName = player.getName();
+        ownerUUID = player.getUniqueID();
+    }
+
+    public void setOwner(UUID uuid) {
+        ownerUUID = uuid;
+        String username = UUIDHelper.getNameFromUUID(ownerUUID);
+        if (username != null && !username.isEmpty()) {
+            ownerName = username;
+        }
+    }
+
+    public void setOwner(String username) {
+        ownerName = username;
+        UUID uuid = UUIDHelper.getUUIDFromName(ownerName);
+        if (uuid != null) {
+            ownerUUID = uuid;
+        }
+    }
+
+    public void ensureOwner() {
+        if (ownerUUID == null && (ownerName == null || ownerName.isEmpty())) {
+            if (Minecraft.getMinecraft().isIntegratedServerRunning()) {
+                List<EntityPlayerMP> playerList = Minecraft.getMinecraft().getIntegratedServer().getPlayerList().getPlayers();
+                if (!playerList.isEmpty()) {
+                    ownerName = playerList.get(0).getName();
+                    ownerUUID = UUIDHelper.getUUIDFromName(ownerName);
+                }
+            } else {
+                // @Incomplete?
+            }
+        } else if (ownerUUID == null) {
+            ownerUUID = UUIDHelper.getUUIDFromName(ownerName);
+        } else {
+            ownerName = UUIDHelper.getNameFromUUID(ownerUUID);
+        }
+    }
+
+    public UUID getOwnerUUID() {
+        return ownerUUID;
+    }
+
+    public String getOwnerName() {
+        return ownerName;
     }
 
     public void setId(int id) {
@@ -152,8 +210,18 @@ public class FrontierData {
         }
         mapSlice = nbt.getInteger("slice");
         mapSlice = Math.min(Math.max(mapSlice, -1), 16);
+        if (nbt.hasKey("ownerUUID")) {
+            try {
+                ownerUUID = UUID.fromString(nbt.getString("ownerUUID"));
+            } catch (Exception e) {
+                MapFrontiers.LOGGER.error(e.getMessage(), e);
+            }
+        }
+        if (nbt.hasKey("ownerName")) {
+            ownerName = nbt.getString("ownerName");
+        }
 
-        NBTTagList verticesTagList = nbt.getTagList("vertices", 10);
+        NBTTagList verticesTagList = nbt.getTagList("vertices", Constants.NBT.TAG_COMPOUND);
         for (int i = 0; i < verticesTagList.tagCount(); ++i) {
             vertices.add(NBTUtil.getPosFromTag(verticesTagList.getCompoundTagAt(i)));
         }
@@ -166,6 +234,12 @@ public class FrontierData {
         nbt.setString("name2", name2);
         nbt.setBoolean("nameVisible", nameVisible);
         nbt.setInteger("slice", mapSlice);
+        if (ownerUUID != null) {
+            nbt.setString("ownerUUID", ownerUUID.toString());
+        }
+        if (ownerName != null && !ownerName.isEmpty()) {
+            nbt.setString("ownerName", ownerName);
+        }
 
         NBTTagList verticesTagList = new NBTTagList();
         for (BlockPos pos : vertices) {

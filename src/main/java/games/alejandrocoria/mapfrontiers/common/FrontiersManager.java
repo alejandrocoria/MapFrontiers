@@ -20,6 +20,7 @@ import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.math.BlockPos;
+import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 
 @ParametersAreNonnullByDefault
@@ -27,32 +28,15 @@ public class FrontiersManager {
     public static FrontiersManager instance;
 
     private HashMap<Integer, ArrayList<FrontierData>> dimensionsFrontiers;
-    private final Random rand = new Random();
+    private Random rand = new Random();
     private File WorldDir;
+    private boolean frontierOwnersChecked = false;
 
     private static final int dataVersion = 1;
 
     public FrontiersManager() {
         instance = this;
         dimensionsFrontiers = new HashMap<Integer, ArrayList<FrontierData>>();
-
-        ArrayList<FrontierData> frontiers = dimensionsFrontiers.get(Integer.valueOf(0));
-        if (frontiers == null) {
-            frontiers = new ArrayList<FrontierData>();
-            dimensionsFrontiers.put(Integer.valueOf(0), frontiers);
-        }
-
-        FrontierData frontier = new FrontierData();
-        frontier.setDimension(0);
-        frontier.setColor(0xffff00);
-        frontier.addVertex(new BlockPos(0, 70, 0), 0);
-        frontier.addVertex(new BlockPos(20, 70, 0), 0);
-        frontier.addVertex(new BlockPos(20, 70, 20), 0);
-        frontier.addVertex(new BlockPos(0, 70, 20), 0);
-        frontier.setClosed(true);
-
-        frontiers.add(frontier);
-        saveData();
     }
 
     public Map<Integer, ArrayList<FrontierData>> getAllFrontiers() {
@@ -72,6 +56,7 @@ public class FrontiersManager {
         Color color = Color.getHSBColor(hue, saturation, luminance);
 
         FrontierData frontier = new FrontierData();
+        frontier.setOwner(player);
         frontier.setDimension(dimension);
         frontier.setColor(color.getRGB());
 
@@ -109,6 +94,15 @@ public class FrontiersManager {
             return false;
         }
 
+        FrontierData currentFrontier = frontiers.get(index);
+        if (currentFrontier.getOwnerUUID() != null) {
+            frontier.setOwner(currentFrontier.getOwnerUUID());
+        }
+        if ((frontier.getOwnerName() == null || frontier.getOwnerName().isEmpty()) && currentFrontier.getOwnerName() != null
+                && !currentFrontier.getOwnerName().isEmpty()) {
+            frontier.setOwner(currentFrontier.getOwnerName());
+        }
+
         frontiers.set(index, frontier);
         saveData();
 
@@ -138,6 +132,20 @@ public class FrontiersManager {
         return closest;
     }
 
+    public void ensureOwners() {
+        if (frontierOwnersChecked) {
+            return;
+        }
+
+        for (ArrayList<FrontierData> frontiers : dimensionsFrontiers.values()) {
+            for (FrontierData frontier : frontiers) {
+                frontier.ensureOwner();
+            }
+        }
+
+        frontierOwnersChecked = true;
+    }
+
     private void readFromNBT(NBTTagCompound nbt) {
         int version = nbt.getInteger("Version");
         if (version == 0) {
@@ -146,11 +154,11 @@ public class FrontiersManager {
             MapFrontiers.LOGGER.warn("Data version higher than expected. The mod uses " + String.valueOf(dataVersion));
         }
 
-        NBTTagList dimensionsTagList = nbt.getTagList("MapFrontiers", 10);
+        NBTTagList dimensionsTagList = nbt.getTagList("MapFrontiers", Constants.NBT.TAG_COMPOUND);
         for (int i = 0; i < dimensionsTagList.tagCount(); ++i) {
             NBTTagCompound dimensionTag = dimensionsTagList.getCompoundTagAt(i);
             int dimension = dimensionTag.getInteger("dimension");
-            NBTTagList frontiersTagList = dimensionTag.getTagList("frontiers", 10);
+            NBTTagList frontiersTagList = dimensionTag.getTagList("frontiers", Constants.NBT.TAG_COMPOUND);
             ArrayList<FrontierData> frontiers = new ArrayList<FrontierData>();
             for (int i2 = 0; i2 < frontiersTagList.tagCount(); ++i2) {
                 FrontierData frontier = new FrontierData();
