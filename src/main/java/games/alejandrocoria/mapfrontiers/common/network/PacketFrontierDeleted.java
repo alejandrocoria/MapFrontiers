@@ -49,7 +49,7 @@ public class PacketFrontierDeleted implements IMessage {
 
                     if (frontierIndex != -1 && Minecraft.getMinecraft().currentScreen instanceof GuiFrontierBook) {
                         ((GuiFrontierBook) Minecraft.getMinecraft().currentScreen).deleteFrontierMessage(frontierIndex,
-                                message.playerID);
+                                message.dimension, message.playerID);
                     }
                 });
             }

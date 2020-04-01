@@ -54,7 +54,6 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     private static final TextFormatting chatPlayerColor = TextFormatting.YELLOW;
 
     private FrontiersOverlayManager frontiersOverlayManager;
-    private List<FrontierOverlay> frontiers;
     private int lastFrontierHash;
     private int currPage = 0;
     private int currentDimension;
@@ -96,10 +95,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
     public GuiFrontierBook(FrontiersOverlayManager frontiersOverlayManager, int currentDimension, int dimension) {
         this.frontiersOverlayManager = frontiersOverlayManager;
-
-        frontiers = frontiersOverlayManager.getAllFrontiers(dimension);
         this.currentDimension = currentDimension;
-        currPage = frontiersOverlayManager.getFrontierIndexSelected(dimension);
         this.dimension = dimension;
 
         bookPageTexture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/book.png");
@@ -218,10 +214,11 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
         updateIndexEntries();
 
-        if (currPage < 0) {
+        int selected = frontiersOverlayManager.getFrontierIndexSelected(dimension);
+        if (selected < 0) {
             changePage(0, false);
         } else {
-            changePage(currPage + frontiersPageStart, false);
+            changePage(selected + frontiersPageStart, false);
         }
     }
 
@@ -263,7 +260,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         int rightPageCornerY = (height - bookImageHeight) / 2;
 
         if (isInFrontierPage()) {
-            FrontierOverlay frontier = frontiers.get(getCurrentFrontierIndex());
+            FrontierOverlay frontier = getCurrentFrontier();
 
             textRed.drawTextBox();
             textGreen.drawTextBox();
@@ -404,7 +401,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     @Override
     public void updatedValue(int id, int value) {
         if (isInFrontierPage()) {
-            FrontierOverlay frontier = frontiers.get(getCurrentFrontierIndex());
+            FrontierOverlay frontier = getCurrentFrontier();
 
             if (textRed.getId() == id) {
                 int newColor = (frontier.getColor() & 0x00ffff) | (value << 16);
@@ -434,7 +431,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     @Override
     public void updatedValue(int id, String value) {
         if (isInFrontierPage()) {
-            FrontierOverlay frontier = frontiers.get(getCurrentFrontierIndex());
+            FrontierOverlay frontier = getCurrentFrontier();
 
             if (textName1.getId() == id) {
                 if (frontier.getName1() != value) {
@@ -463,12 +460,12 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         } else if (button == buttonBackToIndex) {
             changePage(0);
         } else if (button == buttonNextVertex) {
-            FrontierOverlay frontier = frontiers.get(getCurrentFrontierIndex());
+            FrontierOverlay frontier = getCurrentFrontier();
             frontier.selectNextVertex();
             resetLabels();
             updateButtonsVisibility();
         } else if (button == buttonPreviousVertex) {
-            FrontierOverlay frontier = frontiers.get(getCurrentFrontierIndex());
+            FrontierOverlay frontier = getCurrentFrontier();
             frontier.selectPreviousVertex();
             resetLabels();
             updateButtonsVisibility();
@@ -481,42 +478,42 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                 changeDeleteBookmarkPosition(DeleteBookmarkPosition.Normal);
             }
         } else if (button == buttonNameVisible) {
-            FrontierOverlay frontier = frontiers.get(getCurrentFrontierIndex());
+            FrontierOverlay frontier = getCurrentFrontier();
             frontier.setNameVisible(!frontier.getNameVisible());
             resetTextName();
         } else if (button == buttonAddVertex) {
-            FrontierOverlay frontier = frontiers.get(getCurrentFrontierIndex());
+            FrontierOverlay frontier = getCurrentFrontier();
             frontier.addVertex(Minecraft.getMinecraft().player.getPosition());
             resetLabels();
             updateButtonsVisibility();
             updateGridRenderer();
         } else if (button == buttonRemoveVertex) {
-            FrontierOverlay frontier = frontiers.get(getCurrentFrontierIndex());
+            FrontierOverlay frontier = getCurrentFrontier();
             frontier.removeSelectedVertex();
             resetLabels();
             resetFinishButton();
             updateButtonsVisibility();
             updateGridRenderer();
         } else if (button == buttonFinish) {
-            FrontierOverlay frontier = frontiers.get(getCurrentFrontierIndex());
+            FrontierOverlay frontier = getCurrentFrontier();
             frontier.setClosed(!frontier.getClosed());
             resetFinishButton();
             updateButtonsVisibility();
             updateGridRenderer();
         } else if (button == buttonSliceUp) {
-            FrontierOverlay frontier = frontiers.get(getCurrentFrontierIndex());
+            FrontierOverlay frontier = getCurrentFrontier();
             frontier.setMapSlice(frontier.getMapSlice() + 1);
             resetSliceSlider();
             updateButtonsVisibility();
             updateGridRenderer();
         } else if (button == buttonSliceDown) {
-            FrontierOverlay frontier = frontiers.get(getCurrentFrontierIndex());
+            FrontierOverlay frontier = getCurrentFrontier();
             frontier.setMapSlice(frontier.getMapSlice() - 1);
             resetSliceSlider();
             updateButtonsVisibility();
             updateGridRenderer();
         } else if (button == sliderSlice) {
-            FrontierOverlay frontier = frontiers.get(getCurrentFrontierIndex());
+            FrontierOverlay frontier = getCurrentFrontier();
             frontier.setMapSlice(sliderSlice.getSlice());
             updateButtonsVisibility();
             updateGridRenderer();
@@ -542,6 +539,10 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     }
 
     public void newFrontierMessage(FrontierOverlay frontierOverlay, int playerID) {
+        if (frontierOverlay.getDimension() != dimension) {
+            return;
+        }
+
         EntityPlayer player = Minecraft.getMinecraft().player;
         if (player.getEntityId() == playerID) {
             int index = frontiersOverlayManager.getFrontierIndex(frontierOverlay);
@@ -564,9 +565,13 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     }
 
     public void updateFrontierMessage(FrontierOverlay frontierOverlay, int playerID) {
+        if (frontierOverlay.getDimension() != dimension) {
+            return;
+        }
+
         boolean updatePage = false;
         if (isInFrontierPage()) {
-            FrontierOverlay currentFrontier = frontiers.get(getCurrentFrontierIndex());
+            FrontierOverlay currentFrontier = getCurrentFrontier();
             if (currentFrontier.getId() == frontierOverlay.getId()) {
                 updatePage = true;
             }
@@ -594,7 +599,11 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         }
     }
 
-    public void deleteFrontierMessage(int index, int playerID) {
+    public void deleteFrontierMessage(int index, int dimension, int playerID) {
+        if (dimension != this.dimension) {
+            return;
+        }
+
         int currentFrontierIndex = getCurrentFrontierIndex();
         if (index < currentFrontierIndex) {
             --currentFrontierIndex;
@@ -619,7 +628,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     }
 
     private void sendChangesToServer() {
-        if (isInFrontierPage() && lastFrontierHash != frontiers.get(getCurrentFrontierIndex()).getHash()) {
+        if (isInFrontierPage() && lastFrontierHash != getCurrentFrontier().getHash()) {
             frontiersOverlayManager.clientUpdatefrontier(dimension, getCurrentFrontierIndex());
         }
     }
@@ -645,7 +654,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
         if (isInFrontierPage()) {
             frontiersOverlayManager.setFrontierIndexSelected(dimension, getCurrentFrontierIndex());
-            lastFrontierHash = frontiers.get(getCurrentFrontierIndex()).getHash();
+            lastFrontierHash = getCurrentFrontier().getHash();
         } else {
             frontiersOverlayManager.setFrontierIndexSelected(dimension, -1);
         }
@@ -670,7 +679,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         if (!isInFrontierPage())
             return;
 
-        FrontierOverlay frontier = frontiers.get(getCurrentFrontierIndex());
+        FrontierOverlay frontier = getCurrentFrontier();
 
         if (frontier.getVertexCount() == 0) {
             return;
@@ -717,7 +726,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         buttonList.removeAll(indexEntryButtons);
         indexEntryButtons.clear();
 
-        frontiersPageStart = ((frontiers.size() - 1) / 6 + 1) / 2 + 1;
+        frontiersPageStart = ((frontiersOverlayManager.getFrontierCount(dimension) - 1) / 6 + 1) / 2 + 1;
 
         int offsetFromScreenLeft = (width - bookImageWidth) / 2;
         int offsetFromScreenTop = (height - bookImageHeight) / 2;
@@ -727,7 +736,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         int page = frontiersPageStart;
         int count = 0;
         boolean rightPage = true;
-        for (FrontierOverlay frontier : frontiers) {
+        for (FrontierOverlay frontier : frontiersOverlayManager.getAllFrontiers(dimension)) {
             String name1 = frontier.getName1();
             String name2 = frontier.getName2();
 
@@ -804,7 +813,8 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         int rightPageCornerY = (height - bookImageHeight) / 2;
 
         if (isInFrontierPage()) {
-            String frontierNumber = I18n.format("mapfrontiers.frontier_number", getCurrentFrontierIndex() + 1, frontiers.size());
+            String frontierNumber = I18n.format("mapfrontiers.frontier_number", getCurrentFrontierIndex() + 1,
+                    frontiersOverlayManager.getFrontierCount(dimension));
             labels.add(new GuiSimpleLabel(mc.fontRenderer, offsetFromScreenLeft + bookImageWidth - 28,
                     offsetFromScreenTop + bookImageHeight - 15, GuiSimpleLabel.Align.Right, frontierNumber));
 
@@ -812,7 +822,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             labels.add(new GuiSimpleLabel(mc.fontRenderer, rightPageCornerX + 13, rightPageCornerY + 20,
                     GuiSimpleLabel.Align.Left, color));
 
-            FrontierOverlay frontier = frontiers.get(getCurrentFrontierIndex());
+            FrontierOverlay frontier = getCurrentFrontier();
 
             String area = I18n.format("mapfrontiers.area", frontier.area);
             labels.add(new GuiSimpleLabel(mc.fontRenderer, rightPageCornerX + 13, rightPageCornerY + 40,
@@ -854,7 +864,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                         GuiSimpleLabel.Align.Center, index));
             }
 
-            if (currPage < frontiersPageStart - 1 || (frontiers.size() - 1) / 6 % 2 == 0) {
+            if (currPage < frontiersPageStart - 1 || (frontiersOverlayManager.getFrontierCount(dimension) - 1) / 6 % 2 == 0) {
                 String index;
                 if (currPage > 0) {
                     index = I18n.format("mapfrontiers.index_number", currPage * 2 + 1, TextFormatting.BOLD);
@@ -869,7 +879,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
     private void resetTextColor() {
         if (isInFrontierPage()) {
-            FrontierOverlay frontier = frontiers.get(getCurrentFrontierIndex());
+            FrontierOverlay frontier = getCurrentFrontier();
             textRed.setText((frontier.getColor() & 0xff0000) >> 16);
             textGreen.setText((frontier.getColor() & 0x00ff00) >> 8);
             textBlue.setText(frontier.getColor() & 0x0000ff);
@@ -878,7 +888,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
     private void resetTextName() {
         if (isInFrontierPage()) {
-            FrontierOverlay frontier = frontiers.get(getCurrentFrontierIndex());
+            FrontierOverlay frontier = getCurrentFrontier();
             textName1.setText(frontier.getName1());
             textName2.setText(frontier.getName2());
 
@@ -897,7 +907,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
     private void resetFinishButton() {
         if (isInFrontierPage()) {
-            FrontierOverlay frontier = frontiers.get(getCurrentFrontierIndex());
+            FrontierOverlay frontier = getCurrentFrontier();
             if (frontier.getClosed()) {
                 buttonFinish.setText(I18n.format("mapfrontiers.reopen"));
             } else {
@@ -908,7 +918,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
     private void resetSliceSlider() {
         if (isInFrontierPage()) {
-            FrontierOverlay frontier = frontiers.get(getCurrentFrontierIndex());
+            FrontierOverlay frontier = getCurrentFrontier();
             if (frontier.getMapSlice() != FrontierOverlay.NoSlice) {
                 sliderSlice.changeSlice(frontier.getMapSlice());
             }
@@ -921,7 +931,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         buttonPreviousPage.visible = currPage > 0;
 
         if (isInFrontierPage()) {
-            FrontierOverlay frontier = frontiers.get(getCurrentFrontierIndex());
+            FrontierOverlay frontier = getCurrentFrontier();
             buttonBackToIndex.visible = true;
             buttonNameVisible.visible = true;
             if (frontier.getVertexCount() > 0) {
@@ -952,7 +962,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         }
 
         if (isInFrontierPage() && (currentDimension == dimension)) {
-            FrontierOverlay frontier = frontiers.get(getCurrentFrontierIndex());
+            FrontierOverlay frontier = getCurrentFrontier();
             buttonFinish.visible = frontier.getVertexCount() > 2;
             buttonAddVertex.visible = true;
             if (frontier.getVertexCount() == 0) {
@@ -989,7 +999,11 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     }
 
     private int getPageCount() {
-        return frontiers.size() + frontiersPageStart;
+        return frontiersOverlayManager.getFrontierCount(dimension) + frontiersPageStart;
+    }
+
+    private FrontierOverlay getCurrentFrontier() {
+        return frontiersOverlayManager.getFrontier(dimension, getCurrentFrontierIndex());
     }
 
     private int getCurrentFrontierIndex() {

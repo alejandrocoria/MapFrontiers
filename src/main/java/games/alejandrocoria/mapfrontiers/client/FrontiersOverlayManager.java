@@ -137,6 +137,15 @@ public class FrontiersOverlayManager {
         }
     }
 
+    public FrontierOverlay getFrontier(int dimension, int index) {
+        List<FrontierOverlay> frontiers = getAllFrontiers(dimension);
+        return frontiers.get(index);
+    }
+
+    public int getFrontierCount(int dimension) {
+        return getAllFrontiers(dimension).size();
+    }
+
     public int getFrontierIndexSelected(int dimension) {
         Integer selected = frontiersSelected.get(Integer.valueOf(dimension));
         if (selected == null)
