@@ -32,8 +32,11 @@ import net.minecraft.client.gui.GuiLabel;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -48,6 +51,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     private static final int bookImageHeight = 182;
     private static final int bookImageWidth = 312;
     private static final int bookTextureSize = 512;
+    private static final TextFormatting chatPlayerColor = TextFormatting.YELLOW;
 
     private FrontiersOverlayManager frontiersOverlayManager;
     private List<FrontierOverlay> frontiers;
@@ -538,16 +542,28 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     }
 
     public void newFrontierMessage(FrontierOverlay frontierOverlay, int playerID) {
-        if (Minecraft.getMinecraft().player.getEntityId() == playerID) {
+        EntityPlayer player = Minecraft.getMinecraft().player;
+        if (player.getEntityId() == playerID) {
             int index = frontiersOverlayManager.getFrontierIndex(frontierOverlay);
             if (index >= 0) {
                 updateIndexEntries();
                 changePage(frontiersPageStart + index);
             }
+        } else {
+            String message;
+            Entity otherPlayer = Minecraft.getMinecraft().world.getEntityByID(playerID);
+            if (otherPlayer == null) {
+                message = I18n.format("mapfrontiers.chat.frontier_created_unknown");
+            } else {
+                message = I18n.format("mapfrontiers.chat.frontier_created", TextFormatting.RESET, chatPlayerColor,
+                        otherPlayer.getName());
+            }
+
+            player.sendMessage(new TextComponentString(message));
         }
     }
 
-    public void updateFrontierMessage(FrontierOverlay frontierOverlay) {
+    public void updateFrontierMessage(FrontierOverlay frontierOverlay, int playerID) {
         boolean updatePage = false;
         if (isInFrontierPage()) {
             FrontierOverlay currentFrontier = frontiers.get(getCurrentFrontierIndex());
@@ -561,12 +577,45 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         if (updatePage) {
             this.changePage(currPage, false);
         }
+
+        EntityPlayer player = Minecraft.getMinecraft().player;
+        if (player.getEntityId() != playerID) {
+            String message;
+            Entity otherPlayer = Minecraft.getMinecraft().world.getEntityByID(playerID);
+            int index = frontiersOverlayManager.getFrontierIndex(frontierOverlay);
+            if (otherPlayer == null) {
+                message = I18n.format("mapfrontiers.chat.frontier_updated_unknown", index);
+            } else {
+                message = I18n.format("mapfrontiers.chat.frontier_updated", TextFormatting.RESET, chatPlayerColor,
+                        otherPlayer.getName(), index);
+            }
+
+            player.sendMessage(new TextComponentString(message));
+        }
     }
 
     public void deleteFrontierMessage(int index, int playerID) {
         int currentFrontierIndex = getCurrentFrontierIndex();
+        if (index < currentFrontierIndex) {
+            --currentFrontierIndex;
+        }
+
         updateIndexEntries();
         changePage(frontiersPageStart + currentFrontierIndex, index != currentFrontierIndex);
+
+        EntityPlayer player = Minecraft.getMinecraft().player;
+        if (player.getEntityId() != playerID) {
+            String message;
+            Entity otherPlayer = Minecraft.getMinecraft().world.getEntityByID(playerID);
+            if (otherPlayer == null) {
+                message = I18n.format("mapfrontiers.chat.frontier_deleted_unknown", index);
+            } else {
+                message = I18n.format("mapfrontiers.chat.frontier_deleted", TextFormatting.RESET, chatPlayerColor,
+                        otherPlayer.getName(), index);
+            }
+
+            player.sendMessage(new TextComponentString(message));
+        }
     }
 
     private void sendChangesToServer() {
