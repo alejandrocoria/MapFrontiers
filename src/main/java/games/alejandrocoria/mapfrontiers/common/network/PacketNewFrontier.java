@@ -5,7 +5,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.client.Minecraft;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
@@ -44,7 +44,7 @@ public class PacketNewFrontier implements IMessage {
         @Override
         public IMessage onMessage(PacketNewFrontier message, MessageContext ctx) {
             if (ctx.side == Side.SERVER) {
-                Minecraft.getMinecraft().addScheduledTask(() -> {
+                FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
                     FrontierData frontier = FrontiersManager.instance.createNewfrontier(message.dimension,
                             ctx.getServerHandler().player, message.addVertex, message.snapDistance);
 

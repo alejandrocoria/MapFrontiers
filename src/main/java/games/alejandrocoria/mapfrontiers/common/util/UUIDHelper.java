@@ -4,18 +4,12 @@ import java.util.UUID;
 
 import com.mojang.authlib.GameProfile;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 
 public class UUIDHelper {
     public static UUID getUUIDFromName(String username) {
-        MinecraftServer server;
-        if (Minecraft.getMinecraft().isIntegratedServerRunning()) {
-            server = Minecraft.getMinecraft().getIntegratedServer();
-        } else {
-            server = FMLCommonHandler.instance().getMinecraftServerInstance();
-        }
+        MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
 
         GameProfile profile = server.getServer().getPlayerProfileCache().getGameProfileForUsername(username);
         if (profile != null)
@@ -25,12 +19,7 @@ public class UUIDHelper {
     }
 
     public static String getNameFromUUID(UUID uuid) {
-        MinecraftServer server;
-        if (Minecraft.getMinecraft().isIntegratedServerRunning()) {
-            server = Minecraft.getMinecraft().getIntegratedServer();
-        } else {
-            server = FMLCommonHandler.instance().getMinecraftServerInstance();
-        }
+        MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
 
         GameProfile profile = server.getServer().getPlayerProfileCache().getProfileByUUID(uuid);
         if (profile != null)

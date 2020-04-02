@@ -92,6 +92,7 @@ public class FrontiersOverlayManager {
             return null;
         } else {
             FrontierOverlay frontierOverlay = new FrontierOverlay(data, jmAPI);
+            frontiers.get(index).removeOverlay();
             frontiers.set(index, frontierOverlay);
             return frontierOverlay;
         }

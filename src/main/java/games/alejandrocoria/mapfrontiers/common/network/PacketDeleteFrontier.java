@@ -4,7 +4,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.client.Minecraft;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
@@ -39,7 +39,7 @@ public class PacketDeleteFrontier implements IMessage {
         @Override
         public IMessage onMessage(PacketDeleteFrontier message, MessageContext ctx) {
             if (ctx.side == Side.SERVER) {
-                Minecraft.getMinecraft().addScheduledTask(() -> {
+                FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
                     FrontiersManager.instance.deleteFrontier(message.dimension, message.frontierID);
 
                     PacketHandler.INSTANCE.sendToAll(new PacketFrontierDeleted(message.dimension, message.frontierID,

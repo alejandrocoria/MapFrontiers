@@ -8,7 +8,6 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
-import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
@@ -16,6 +15,7 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTUtil;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.Constants;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 
 @ParametersAreNonnullByDefault
 public class FrontierData {
@@ -81,8 +81,9 @@ public class FrontierData {
 
     public void ensureOwner() {
         if (ownerUUID == null && (ownerName == null || ownerName.isEmpty())) {
-            if (Minecraft.getMinecraft().isIntegratedServerRunning()) {
-                List<EntityPlayerMP> playerList = Minecraft.getMinecraft().getIntegratedServer().getPlayerList().getPlayers();
+            if (!FMLCommonHandler.instance().getMinecraftServerInstance().isDedicatedServer()) {
+                List<EntityPlayerMP> playerList = FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList()
+                        .getPlayers();
                 if (!playerList.isEmpty()) {
                     ownerName = playerList.get(0).getName();
                     ownerUUID = UUIDHelper.getUUIDFromName(ownerName);
@@ -126,7 +127,7 @@ public class FrontierData {
 
     public void addVertex(BlockPos pos, int index, int snapDistance) {
         if (snapDistance != 0) {
-            pos = FrontiersManager.instance.snapVertex(pos, snapDistance, this);
+            pos = MapFrontiers.proxy.snapVertex(pos, snapDistance, this);
         }
 
         vertices.add(index, new BlockPos(pos.getX(), 70, pos.getZ()));

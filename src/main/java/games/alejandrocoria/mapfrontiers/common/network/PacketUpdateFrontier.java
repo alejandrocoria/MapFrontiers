@@ -5,8 +5,8 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
@@ -49,7 +49,7 @@ public class PacketUpdateFrontier implements IMessage {
         @Override
         public IMessage onMessage(PacketUpdateFrontier message, MessageContext ctx) {
             if (ctx.side == Side.SERVER) {
-                Minecraft.getMinecraft().addScheduledTask(() -> {
+                FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
                     boolean updated = FrontiersManager.instance.updateFrontier(message.frontier);
 
                     if (updated) {

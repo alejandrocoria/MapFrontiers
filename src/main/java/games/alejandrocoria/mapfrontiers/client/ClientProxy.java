@@ -5,8 +5,10 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
 import games.alejandrocoria.mapfrontiers.common.CommonProxy;
+import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import journeymap.client.api.IClientAPI;
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Config;
@@ -61,6 +63,31 @@ public class ClientProxy extends CommonProxy {
         }
     }
 
+    // Note: copied from CommonProxy, needs an abstraction
+    @Override
+    public BlockPos snapVertex(BlockPos vertex, int snapDistance, FrontierData owner) {
+        float snapDistanceSq = snapDistance * snapDistance;
+        BlockPos closest = new BlockPos(vertex.getX(), 70, vertex.getZ());
+        double closestDistance = Double.MAX_VALUE;
+        for (FrontierData frontier : frontiersOverlayManager.getAllFrontiers(owner.getDimension())) {
+            if (frontier == owner) {
+                continue;
+            }
+
+            for (int i = 0; i < frontier.getVertexCount(); ++i) {
+                BlockPos v = frontier.getVertex(i);
+                BlockPos v2 = new BlockPos(v.getX(), 70, v.getZ());
+                double distance = v2.distanceSq(closest);
+                if (distance < snapDistanceSq && distance < closestDistance) {
+                    closestDistance = distance;
+                    closest = v2;
+                }
+            }
+        }
+
+        return closest;
+    }
+
     @SubscribeEvent
     public static void registerModels(ModelRegistryEvent event) {
         MapFrontiers.initModels();
@@ -73,6 +100,9 @@ public class ClientProxy extends CommonProxy {
     @SubscribeEvent
     public void clientConnectedToServer(ClientConnectedToServerEvent event) {
         if (jmAPI != null) {
+            if (frontiersOverlayManager != null) {
+                frontiersOverlayManager.removeAllOverlays();
+            }
             frontiersOverlayManager = new FrontiersOverlayManager(jmAPI);
         }
     }

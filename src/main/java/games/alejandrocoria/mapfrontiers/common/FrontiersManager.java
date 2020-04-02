@@ -19,7 +19,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
-import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 
@@ -41,6 +40,17 @@ public class FrontiersManager {
 
     public Map<Integer, ArrayList<FrontierData>> getAllFrontiers() {
         return dimensionsFrontiers;
+    }
+
+    public List<FrontierData> getAllFrontiers(int dimension) {
+        ArrayList<FrontierData> frontiers = dimensionsFrontiers.get(Integer.valueOf(dimension));
+
+        if (frontiers == null) {
+            frontiers = new ArrayList<FrontierData>();
+            dimensionsFrontiers.put(Integer.valueOf(dimension), frontiers);
+        }
+
+        return frontiers;
     }
 
     public FrontierData createNewfrontier(int dimension, EntityPlayer player, boolean addVertex, int snapDistance) {
@@ -109,29 +119,6 @@ public class FrontiersManager {
         return true;
     }
 
-    public BlockPos snapVertex(BlockPos vertex, int snapDistance, FrontierData owner) {
-        float snapDistanceSq = snapDistance * snapDistance;
-        BlockPos closest = new BlockPos(vertex.getX(), 70, vertex.getZ());
-        double closestDistance = Double.MAX_VALUE;
-        for (FrontierData frontier : dimensionsFrontiers.get(Integer.valueOf(owner.getDimension()))) {
-            if (frontier == owner) {
-                continue;
-            }
-
-            for (int i = 0; i < frontier.getVertexCount(); ++i) {
-                BlockPos v = frontier.getVertex(i);
-                BlockPos v2 = new BlockPos(v.getX(), 70, v.getZ());
-                double distance = v2.distanceSq(closest);
-                if (distance < snapDistanceSq && distance < closestDistance) {
-                    closestDistance = distance;
-                    closest = v2;
-                }
-            }
-        }
-
-        return closest;
-    }
-
     public void ensureOwners() {
         if (frontierOwnersChecked) {
             return;
@@ -195,14 +182,14 @@ public class FrontiersManager {
             File mcDir;
             String typeFolder;
             String worldFolder;
-            if (Minecraft.getMinecraft().isIntegratedServerRunning()) {
-                mcDir = Minecraft.getMinecraft().mcDataDir;
-                typeFolder = "sp";
-                worldFolder = Minecraft.getMinecraft().getIntegratedServer().getFolderName();
-            } else {
+            if (FMLCommonHandler.instance().getMinecraftServerInstance().isDedicatedServer()) {
                 mcDir = FMLCommonHandler.instance().getMinecraftServerInstance().getDataDirectory();
                 typeFolder = "mp";
                 worldFolder = "";
+            } else {
+                mcDir = Minecraft.getMinecraft().mcDataDir;
+                typeFolder = "sp";
+                worldFolder = Minecraft.getMinecraft().getIntegratedServer().getFolderName();
             }
 
             File ModDir = new File(mcDir, "mapfrontiers");

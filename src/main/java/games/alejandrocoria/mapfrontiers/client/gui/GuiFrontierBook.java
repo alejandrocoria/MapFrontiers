@@ -84,6 +84,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     private TextColorBox textBlue;
     private TextBox textName1;
     private TextBox textName2;
+    private GuiSimpleLabel labelFrontiernumber;
 
     private List<IndexEntryButton> indexEntryButtons;
     private List<GuiSimpleLabel> labels;
@@ -347,6 +348,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             if (labelDeleteConfirm.visible && x >= buttonDelete.x && y >= labelDeleteConfirm.y
                     && x <= buttonDelete.x + buttonDelete.width && y <= labelDeleteConfirm.y + 12) {
                 if (isInFrontierPage()) {
+                    changeDeleteBookmarkPosition(DeleteBookmarkPosition.Normal);
                     FrontiersOverlayManager.instance.clientDeleteFrontier(dimension, getCurrentFrontierIndex());
                 }
             }
@@ -551,6 +553,16 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                 changePage(frontiersPageStart + index);
             }
         } else {
+            if (isInFrontierPage()) {
+                int currentFrontierIndex = getCurrentFrontierIndex();
+                updateIndexEntries();
+                currPage = frontiersPageStart + currentFrontierIndex;
+                updatePageControls();
+            } else {
+                updateIndexEntries();
+                changePage(currPage, false);
+            }
+
             String message;
             Entity otherPlayer = Minecraft.getMinecraft().world.getEntityByID(playerID);
             if (otherPlayer == null) {
@@ -589,10 +601,10 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             Entity otherPlayer = Minecraft.getMinecraft().world.getEntityByID(playerID);
             int index = frontiersOverlayManager.getFrontierIndex(frontierOverlay);
             if (otherPlayer == null) {
-                message = I18n.format("mapfrontiers.chat.frontier_updated_unknown", index);
+                message = I18n.format("mapfrontiers.chat.frontier_updated_unknown", index + 1);
             } else {
                 message = I18n.format("mapfrontiers.chat.frontier_updated", TextFormatting.RESET, chatPlayerColor,
-                        otherPlayer.getName(), index);
+                        otherPlayer.getName(), index + 1);
             }
 
             player.sendMessage(new TextComponentString(message));
@@ -604,23 +616,38 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             return;
         }
 
-        int currentFrontierIndex = getCurrentFrontierIndex();
-        if (index < currentFrontierIndex) {
-            --currentFrontierIndex;
-        }
+        if (isInFrontierPage()) {
+            int currentFrontierIndex = getCurrentFrontierIndex();
+            updateIndexEntries();
 
-        updateIndexEntries();
-        changePage(frontiersPageStart + currentFrontierIndex, index != currentFrontierIndex);
+            if (index == currentFrontierIndex) {
+                changePage(frontiersPageStart + currentFrontierIndex, false);
+            } else {
+                if (index < currentFrontierIndex) {
+                    --currentFrontierIndex;
+                }
+
+                currPage = frontiersPageStart + currentFrontierIndex;
+                updatePageControls();
+            }
+        } else {
+            updateIndexEntries();
+            if (currPage > 0 && currPage == frontiersPageStart) {
+                changePage(currPage - 1, false);
+            } else {
+                changePage(currPage, false);
+            }
+        }
 
         EntityPlayer player = Minecraft.getMinecraft().player;
         if (player.getEntityId() != playerID) {
             String message;
             Entity otherPlayer = Minecraft.getMinecraft().world.getEntityByID(playerID);
             if (otherPlayer == null) {
-                message = I18n.format("mapfrontiers.chat.frontier_deleted_unknown", index);
+                message = I18n.format("mapfrontiers.chat.frontier_deleted_unknown", index + 1);
             } else {
                 message = I18n.format("mapfrontiers.chat.frontier_deleted", TextFormatting.RESET, chatPlayerColor,
-                        otherPlayer.getName(), index);
+                        otherPlayer.getName(), index + 1);
             }
 
             player.sendMessage(new TextComponentString(message));
@@ -747,6 +774,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
             IndexEntryButton button = new IndexEntryButton(id, posX, posY, bookImageWidth / 2 - 20, page, name1, name2,
                     frontier.getColor(), rightPage);
+            button.visible = false;
             indexEntryButtons.add(button);
             buttonList.add(button);
 
@@ -815,8 +843,9 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         if (isInFrontierPage()) {
             String frontierNumber = I18n.format("mapfrontiers.frontier_number", getCurrentFrontierIndex() + 1,
                     frontiersOverlayManager.getFrontierCount(dimension));
-            labels.add(new GuiSimpleLabel(mc.fontRenderer, offsetFromScreenLeft + bookImageWidth - 28,
-                    offsetFromScreenTop + bookImageHeight - 15, GuiSimpleLabel.Align.Right, frontierNumber));
+            labelFrontiernumber = new GuiSimpleLabel(mc.fontRenderer, offsetFromScreenLeft + bookImageWidth - 28,
+                    offsetFromScreenTop + bookImageHeight - 15, GuiSimpleLabel.Align.Right, frontierNumber);
+            labels.add(labelFrontiernumber);
 
             String color = I18n.format("mapfrontiers.color");
             labels.add(new GuiSimpleLabel(mc.fontRenderer, rightPageCornerX + 13, rightPageCornerY + 20,
@@ -990,6 +1019,26 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             buttonNew.visible = true;
         } else {
             buttonNew.visible = false;
+        }
+    }
+
+    private void updatePageControls() {
+        buttonNextPage.visible = (currPage < getPageCount() - 1);
+        buttonPreviousPage.visible = currPage > 0;
+
+        if (isInFrontierPage()) {
+            int offsetFromScreenLeft = (width - bookImageWidth) / 2;
+            int offsetFromScreenTop = (height - bookImageHeight) / 2;
+
+            if (labelFrontiernumber != null) {
+                labels.remove(labelFrontiernumber);
+            }
+
+            String frontierNumber = I18n.format("mapfrontiers.frontier_number", getCurrentFrontierIndex() + 1,
+                    frontiersOverlayManager.getFrontierCount(dimension));
+            labelFrontiernumber = new GuiSimpleLabel(mc.fontRenderer, offsetFromScreenLeft + bookImageWidth - 28,
+                    offsetFromScreenTop + bookImageHeight - 15, GuiSimpleLabel.Align.Right, frontierNumber);
+            labels.add(labelFrontiernumber);
         }
     }
 
