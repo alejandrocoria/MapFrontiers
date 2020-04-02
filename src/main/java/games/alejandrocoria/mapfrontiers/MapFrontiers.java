@@ -29,7 +29,7 @@ public class MapFrontiers {
     @Mod.Instance(MapFrontiers.MODID)
     public static MapFrontiers instance;
 
-    @SidedProxy(clientSide = "games.alejandrocoria.mapfrontiers.client.ClientProxy", serverSide = "games.alejandrocoria.mapfrontiers.server.ServerProxy")
+    @SidedProxy(clientSide = "games.alejandrocoria.mapfrontiers.client.ClientProxy", serverSide = "games.alejandrocoria.mapfrontiers.common.CommonProxy")
     public static CommonProxy proxy;
 
     @ObjectHolder("mapfrontiers:frontier_book")
