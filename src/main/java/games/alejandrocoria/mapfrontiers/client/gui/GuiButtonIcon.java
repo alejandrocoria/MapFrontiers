@@ -48,6 +48,8 @@ public class GuiButtonIcon extends GuiButton {
             }
 
             drawModalRectWithCustomSizedTexture(x, y, textureX, textureY, width, height, textureSize, textureSize);
+        } else {
+            hovered = false;
         }
     }
 }

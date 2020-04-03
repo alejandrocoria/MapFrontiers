@@ -61,6 +61,8 @@ public class IndexEntryButton extends GuiButton {
 
             drawRect(colorBoxX, colorBoxY, colorBoxX + 6, colorBoxY + 14, 0xff000000);
             drawRect(colorBoxX + 1, colorBoxY + 1, colorBoxX + 5, colorBoxY + 13, 0xff000000 | color);
+        } else {
+            hovered = false;
         }
     }
 

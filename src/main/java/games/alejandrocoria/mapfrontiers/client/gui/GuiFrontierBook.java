@@ -875,8 +875,8 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                     GuiSimpleLabel.Align.Left, owner));
 
             if (dimension == currentDimension) {
-                if (frontier.vertexSelected >= 0) {
-                    String vertex = I18n.format("mapfrontiers.vertex_number", frontier.vertexSelected + 1,
+                if (frontier.getSelectedVertexIndex() >= 0) {
+                    String vertex = I18n.format("mapfrontiers.vertex_number", frontier.getSelectedVertexIndex() + 1,
                             frontier.getVertexCount());
                     labels.add(new GuiSimpleLabel(mc.fontRenderer, offsetFromScreenLeft + bookImageWidth / 4,
                             rightPageCornerY + 150, GuiSimpleLabel.Align.Center, vertex));
@@ -1002,7 +1002,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                 buttonPreviousVertex.visible = true;
             }
 
-            if (frontier.vertexSelected == -1) {
+            if (frontier.getSelectedVertexIndex() == -1) {
                 buttonRemoveVertex.visible = false;
             } else {
                 buttonRemoveVertex.visible = true;

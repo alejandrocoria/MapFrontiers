@@ -108,6 +108,8 @@ public class GuiBookmark extends GuiButton {
             for (GuiLabel label : labels) {
                 label.drawLabel(mc, mouseX, mouseY);
             }
+        } else {
+            hovered = false;
         }
     }
 

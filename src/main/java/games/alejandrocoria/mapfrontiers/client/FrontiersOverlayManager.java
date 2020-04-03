@@ -8,6 +8,7 @@ import java.util.stream.IntStream;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketDeleteFrontier;
@@ -15,6 +16,12 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketNewFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateFrontier;
 import journeymap.client.api.IClientAPI;
+import journeymap.client.api.display.MarkerOverlay;
+import journeymap.client.api.model.MapImage;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.BlockPos;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -25,14 +32,52 @@ public class FrontiersOverlayManager {
 
     private IClientAPI jmAPI;
     private HashMap<Integer, ArrayList<FrontierOverlay>> dimensionsFrontiers;
-    private HashMap<Integer, Integer> frontiersSelected;
+    private HashMap<Integer, FrontierOverlay> frontiersSelected;
+    private HashMap<Integer, MarkerOverlay> markersSelected;
+
+    private static MapImage markerDotSelected = new MapImage(
+            new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"), 20, 0, 10, 10, 0xffffff, 1.f);
+    private static float targetDotSelectedOpacity = 0.3f;
+
+    static {
+        markerDotSelected.setAnchorX(markerDotSelected.getDisplayWidth() / 2.0)
+                .setAnchorY(markerDotSelected.getDisplayHeight() / 2.0);
+        markerDotSelected.setRotation(0);
+    }
 
     public FrontiersOverlayManager(IClientAPI jmAPI) {
         instance = this;
 
         this.jmAPI = jmAPI;
         dimensionsFrontiers = new HashMap<Integer, ArrayList<FrontierOverlay>>();
-        frontiersSelected = new HashMap<Integer, Integer>();
+        frontiersSelected = new HashMap<Integer, FrontierOverlay>();
+        markersSelected = new HashMap<Integer, MarkerOverlay>();
+    }
+
+    @SubscribeEvent
+    static public void onRenderTick(TickEvent.RenderTickEvent event) {
+        if (event.phase == TickEvent.Phase.START) {
+            if (ClientProxy.hasBookItemInHand()) {
+                float opacity = markerDotSelected.getOpacity();
+                if (opacity < targetDotSelectedOpacity) {
+                    opacity += event.renderTickTime * 0.5f;
+                    if (opacity >= targetDotSelectedOpacity) {
+                        opacity = targetDotSelectedOpacity;
+                        targetDotSelectedOpacity = 0.f;
+                    }
+                } else {
+                    opacity -= event.renderTickTime * 0.07f;
+                    if (opacity <= targetDotSelectedOpacity) {
+                        opacity = targetDotSelectedOpacity;
+                        targetDotSelectedOpacity = 1.f;
+                    }
+                }
+                markerDotSelected.setOpacity(opacity);
+            } else {
+                markerDotSelected.setOpacity(0.f);
+                targetDotSelectedOpacity = 1.f;
+            }
+        }
     }
 
     public FrontierOverlay addFrontier(FrontierData data) {
@@ -148,29 +193,48 @@ public class FrontiersOverlayManager {
     }
 
     public int getFrontierIndexSelected(int dimension) {
-        Integer selected = frontiersSelected.get(Integer.valueOf(dimension));
+        FrontierOverlay selected = frontiersSelected.get(Integer.valueOf(dimension));
         if (selected == null)
             return -1;
-        return selected;
+
+        return getFrontierIndex(selected);
     }
 
-    public void setFrontierIndexSelected(int dimension, int frontier) {
-        Integer dim = Integer.valueOf(dimension);
-        int prevSelected = frontiersSelected.getOrDefault(dim, -1);
-        List<FrontierOverlay> frontiers = dimensionsFrontiers.get(dimension);
+    public void setFrontierIndexSelected(int dimension, int index) {
+        if (index < 0) {
+            updateSelectedMarker(dimension, null);
+        } else {
+            List<FrontierOverlay> frontiers = getAllFrontiers(dimension);
+            FrontierOverlay frontier = frontiers.get(index);
+            updateSelectedMarker(dimension, frontier);
+        }
+    }
 
-        if (prevSelected >= 0 && prevSelected < frontiers.size()) {
-            FrontierOverlay f = frontiers.get(prevSelected);
-            f.selected = false;
-            f.updateOverlay();
+    public void updateSelectedMarker(int dimension, FrontierOverlay frontier) {
+        Integer dim = Integer.valueOf(dimension);
+        MarkerOverlay marker = markersSelected.get(dim);
+        if (marker != null) {
+            jmAPI.remove(marker);
         }
 
-        frontiersSelected.put(dim, Integer.valueOf(frontier));
+        if (frontier != null) {
+            frontiersSelected.put(dim, frontier);
+            BlockPos pos = frontier.getSelectedVertex();
+            if (pos != null) {
+                marker = new MarkerOverlay(MapFrontiers.MODID, "selected_vertex_" + String.valueOf(dimension), pos,
+                        markerDotSelected);
+                marker.setDimension(dimension);
+                marker.setDisplayOrder(101);
 
-        if (frontier >= 0) {
-            FrontierOverlay f = frontiers.get(frontier);
-            f.selected = true;
-            f.updateOverlay();
+                try {
+                    jmAPI.show(marker);
+                    markersSelected.put(dim, marker);
+                } catch (Throwable t) {
+                    MapFrontiers.LOGGER.error(t.getMessage(), t);
+                }
+            }
+        } else {
+            frontiersSelected.remove(dim);
         }
     }
 }

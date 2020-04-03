@@ -19,9 +19,6 @@ import journeymap.client.api.model.MapPolygon;
 import journeymap.client.api.model.ShapeProperties;
 import journeymap.client.api.model.TextProperties;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.EntityPlayerSP;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -39,10 +36,6 @@ public class FrontierOverlay extends FrontierData {
             8, 8, 0xffffff, 1.f);
     private static MapImage markerDotExtra = new MapImage(new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"),
             12, 0, 8, 8, 0xffffff, 0.4f);
-    private static MapImage markerDotSelected = new MapImage(
-            new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"), 20, 0, 10, 10, 0xffffff, 1.f);
-
-    private static float targetDotSelectedOpacity = 0.3f;
 
     static {
         markerVertex.setAnchorX(markerVertex.getDisplayWidth() / 2.0).setAnchorY(markerVertex.getDisplayHeight() / 2.0);
@@ -51,17 +44,13 @@ public class FrontierOverlay extends FrontierData {
         markerDot.setRotation(0);
         markerDotExtra.setAnchorX(markerDotExtra.getDisplayWidth() / 2.0).setAnchorY(markerDotExtra.getDisplayHeight() / 2.0);
         markerDotExtra.setRotation(0);
-        markerDotSelected.setAnchorX(markerDotSelected.getDisplayWidth() / 2.0)
-                .setAnchorY(markerDotSelected.getDisplayHeight() / 2.0);
-        markerDotSelected.setRotation(0);
     }
 
     public BlockPos topLeft;
     public BlockPos bottomRight;
     public float perimeter = 0.f;
     public float area = 0.f;
-    public int vertexSelected = -1;
-    public boolean selected = false;
+    private int vertexSelected = -1;
 
     private final IClientAPI jmAPI;
     private List<PolygonOverlay> polygonOverlays = new ArrayList<PolygonOverlay>();
@@ -75,6 +64,7 @@ public class FrontierOverlay extends FrontierData {
         super(data);
         this.jmAPI = jmAPI;
         displayId = "frontier_" + String.valueOf(id);
+        vertexSelected = vertices.size() - 1;
         updateOverlay();
     }
 
@@ -101,56 +91,7 @@ public class FrontierOverlay extends FrontierData {
     @SubscribeEvent
     static public void onRenderTick(TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
-            EntityPlayerSP player = Minecraft.getMinecraft().player;
-            if (player == null) {
-                return;
-            }
-
-            ItemStack itemMainhand = player.getHeldItemMainhand();
-            ItemStack itemOffhand = player.getHeldItemOffhand();
-
-            boolean hasTheBook = false;
-
-            if (itemMainhand != null && itemMainhand.getItem() == MapFrontiers.frontierBook) {
-                if (itemMainhand.hasTagCompound()) {
-                    NBTTagCompound nbt = itemMainhand.getTagCompound();
-                    if (nbt.hasKey("Dimension") && nbt.getInteger("Dimension") == player.dimension) {
-                        hasTheBook = true;
-                    }
-                }
-            }
-
-            if (!hasTheBook && itemOffhand != null && itemOffhand.getItem() == MapFrontiers.frontierBook) {
-                if (itemOffhand.hasTagCompound()) {
-                    NBTTagCompound nbt = itemOffhand.getTagCompound();
-                    if (nbt.hasKey("Dimension") && nbt.getInteger("Dimension") == player.dimension) {
-                        hasTheBook = true;
-                    }
-                }
-            }
-
-            if (hasTheBook) {
-                float opacity = markerDotSelected.getOpacity();
-                if (opacity < targetDotSelectedOpacity) {
-                    opacity += event.renderTickTime * 0.5f;
-                    if (opacity >= targetDotSelectedOpacity) {
-                        opacity = targetDotSelectedOpacity;
-                        targetDotSelectedOpacity = 0.f;
-                    }
-                } else {
-                    opacity -= event.renderTickTime * 0.07f;
-                    if (opacity <= targetDotSelectedOpacity) {
-                        opacity = targetDotSelectedOpacity;
-                        targetDotSelectedOpacity = 1.f;
-                    }
-                }
-                markerDotSelected.setOpacity(opacity);
-            } else {
-                markerDotSelected.setOpacity(0.f);
-                targetDotSelectedOpacity = 1.f;
-            }
-
-            if (ConfigData.alwaysShowUnfinishedFrontiers || hasTheBook
+            if (ConfigData.alwaysShowUnfinishedFrontiers || ClientProxy.hasBookItemInHand()
                     || Minecraft.getMinecraft().currentScreen instanceof GuiFrontierBook) {
                 markerVertex.setOpacity(1.f);
                 markerDot.setOpacity(1.f);
@@ -210,7 +151,8 @@ public class FrontierOverlay extends FrontierData {
 
     @Override
     public void addVertex(BlockPos pos, int snapDistance) {
-        super.addVertex(pos, snapDistance);
+        super.addVertex(pos, vertexSelected + 1, snapDistance);
+        selectNextVertex();
         updateOverlay();
     }
 
@@ -262,7 +204,9 @@ public class FrontierOverlay extends FrontierData {
         }
 
         super.removeVertex(vertexSelected);
-        if (vertexSelected > 0) {
+        if (vertices.size() == 0) {
+            vertexSelected = -1;
+        } else if (vertexSelected > 0) {
             --vertexSelected;
         } else {
             vertexSelected = vertices.size() - 1;
@@ -272,6 +216,7 @@ public class FrontierOverlay extends FrontierData {
             closed = false;
         }
 
+        FrontiersOverlayManager.instance.updateSelectedMarker(getDimension(), this);
         updateOverlay();
     }
 
@@ -280,7 +225,7 @@ public class FrontierOverlay extends FrontierData {
         if (vertexSelected >= vertices.size()) {
             vertexSelected = -1;
         }
-        updateOverlay();
+        FrontiersOverlayManager.instance.updateSelectedMarker(getDimension(), this);
     }
 
     public void selectPreviousVertex() {
@@ -288,7 +233,19 @@ public class FrontierOverlay extends FrontierData {
         if (vertexSelected < -1) {
             vertexSelected = vertices.size() - 1;
         }
-        updateOverlay();
+        FrontiersOverlayManager.instance.updateSelectedMarker(getDimension(), this);
+    }
+
+    public int getSelectedVertexIndex() {
+        return vertexSelected;
+    }
+
+    public BlockPos getSelectedVertex() {
+        if (vertexSelected >= 0 && vertexSelected < vertices.size()) {
+            return vertices.get(vertexSelected);
+        }
+
+        return null;
     }
 
     private void recalculateOverlays() {
@@ -350,14 +307,6 @@ public class FrontierOverlay extends FrontierData {
                 markerOverlays.add(marker);
                 addMarkerDots(markerId, vertices.get(i), vertices.get((i + 1) % vertices.size()), i == vertices.size() - 1);
             }
-        }
-
-        if (selected && vertexSelected >= 0) {
-            BlockPos pos = vertices.get(vertexSelected);
-            MarkerOverlay dot = new MarkerOverlay(MapFrontiers.MODID, displayId + "_selected", pos, markerDotSelected);
-            dot.setDimension(dimension);
-            dot.setDisplayOrder(101);
-            markerOverlays.add(dot);
         }
 
         updatePerimeter();

@@ -64,6 +64,8 @@ public class GuiSliderSlice extends GuiButton {
 
             drawModalRectWithCustomSizedTexture(x, y, 312, 1, width, height, textureSize, textureSize);
             drawModalRectWithCustomSizedTexture(x, y + height - slice * 4 - 5, 312, 71, width, 5, textureSize, textureSize);
+        } else {
+            hovered = false;
         }
     }
 

@@ -8,6 +8,9 @@ import games.alejandrocoria.mapfrontiers.common.CommonProxy;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import journeymap.client.api.IClientAPI;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -21,6 +24,7 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.network.FMLNetworkEvent.ClientConnectedToServerEvent;
 import net.minecraftforge.fml.common.network.FMLNetworkEvent.ClientDisconnectionFromServerEvent;
 import net.minecraftforge.fml.relauncher.Side;
@@ -30,6 +34,8 @@ import net.minecraftforge.fml.relauncher.Side;
 public class ClientProxy extends CommonProxy {
     public IClientAPI jmAPI;
     public FrontiersOverlayManager frontiersOverlayManager;
+
+    private static ItemStack bookItemInHand;
 
     @Override
     public void preInit(FMLPreInitializationEvent event) {
@@ -47,6 +53,7 @@ public class ClientProxy extends CommonProxy {
     public void postInit(FMLPostInitializationEvent event) {
         super.postInit(event);
         MinecraftForge.EVENT_BUS.register(FrontierOverlay.class);
+        MinecraftForge.EVENT_BUS.register(FrontiersOverlayManager.class);
     }
 
     @Override
@@ -98,8 +105,44 @@ public class ClientProxy extends CommonProxy {
     }
 
     @SubscribeEvent
+    static public void onRenderTick(TickEvent.RenderTickEvent event) {
+        if (event.phase == TickEvent.Phase.START) {
+            EntityPlayerSP player = Minecraft.getMinecraft().player;
+            if (player == null) {
+                return;
+            }
+
+            ItemStack itemMainhand = player.getHeldItemMainhand();
+            ItemStack itemOffhand = player.getHeldItemOffhand();
+
+            if (itemMainhand != bookItemInHand && itemOffhand != bookItemInHand) {
+                bookItemInHand = null;
+
+                if (itemMainhand != null && itemMainhand.getItem() == MapFrontiers.frontierBook) {
+                    if (itemMainhand.hasTagCompound()) {
+                        NBTTagCompound nbt = itemMainhand.getTagCompound();
+                        if (nbt.hasKey("Dimension") && nbt.getInteger("Dimension") == player.dimension) {
+                            bookItemInHand = itemMainhand;
+                        }
+                    }
+                }
+
+                if (bookItemInHand == null && itemOffhand != null && itemOffhand.getItem() == MapFrontiers.frontierBook) {
+                    if (itemOffhand.hasTagCompound()) {
+                        NBTTagCompound nbt = itemOffhand.getTagCompound();
+                        if (nbt.hasKey("Dimension") && nbt.getInteger("Dimension") == player.dimension) {
+                            bookItemInHand = itemOffhand;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
     public void clientConnectedToServer(ClientConnectedToServerEvent event) {
         if (jmAPI != null) {
+            bookItemInHand = null;
             if (frontiersOverlayManager != null) {
                 frontiersOverlayManager.removeAllOverlays();
             }
@@ -109,6 +152,7 @@ public class ClientProxy extends CommonProxy {
 
     @SubscribeEvent
     public void clientDisconnectionFromServer(ClientDisconnectionFromServerEvent event) {
+        bookItemInHand = null;
         frontiersOverlayManager.removeAllOverlays();
         frontiersOverlayManager = null;
     }
@@ -120,6 +164,10 @@ public class ClientProxy extends CommonProxy {
 
         int currentDimension = Minecraft.getMinecraft().player.dimension;
         Minecraft.getMinecraft().displayGuiScreen(new GuiFrontierBook(frontiersOverlayManager, currentDimension, dimension));
+    }
+
+    static boolean hasBookItemInHand() {
+        return bookItemInHand != null;
     }
 
     @SubscribeEvent

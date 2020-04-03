@@ -65,6 +65,8 @@ public class GuiBookTag extends GuiButton {
                         height, textureSize, textureSize);
                 drawRightLabel(mc.fontRenderer);
             }
+        } else {
+            hovered = false;
         }
     }
 
