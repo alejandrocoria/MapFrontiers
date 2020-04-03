@@ -89,7 +89,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     @SubscribeEvent
-    static public void onRenderTick(TickEvent.RenderTickEvent event) {
+    public static void onRenderTick(TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
             if (ConfigData.alwaysShowUnfinishedFrontiers || ClientProxy.hasBookItemInHand()
                     || Minecraft.getMinecraft().currentScreen instanceof GuiFrontierBook) {

@@ -12,7 +12,7 @@ import org.lwjgl.opengl.GL11;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
-import games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin;
+import games.alejandrocoria.mapfrontiers.client.Sounds;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import journeymap.client.api.display.Context;
 import journeymap.client.api.impl.ClientAPI;
@@ -106,7 +106,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
     @Override
     public void initGui() {
-        MapFrontiersPlugin.instance.playSoundOpenBook();
+        Sounds.playSoundOpenBook();
 
         buttonList.clear();
         Keyboard.enableRepeatEvents(true);
@@ -665,7 +665,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     }
 
     private void changePage(int newPage, boolean syncFrontierWithServer) {
-        MapFrontiersPlugin.instance.playSoundTurnPage();
+        Sounds.playSoundTurnPage();
 
         if (syncFrontierWithServer) {
             sendChangesToServer();

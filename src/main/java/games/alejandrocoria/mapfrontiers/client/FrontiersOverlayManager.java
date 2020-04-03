@@ -55,7 +55,7 @@ public class FrontiersOverlayManager {
     }
 
     @SubscribeEvent
-    static public void onRenderTick(TickEvent.RenderTickEvent event) {
+    public static void onRenderTick(TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
             if (ClientProxy.hasBookItemInHand()) {
                 float opacity = markerDotSelected.getOpacity();

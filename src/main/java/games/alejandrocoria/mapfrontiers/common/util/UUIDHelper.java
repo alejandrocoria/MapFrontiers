@@ -27,4 +27,7 @@ public class UUIDHelper {
 
         return null;
     }
+
+    private UUIDHelper() {
+    }
 }

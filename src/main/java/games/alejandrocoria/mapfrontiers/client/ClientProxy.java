@@ -47,6 +47,7 @@ public class ClientProxy extends CommonProxy {
     @Override
     public void init(FMLInitializationEvent event) {
         super.init(event);
+        MinecraftForge.EVENT_BUS.register(Sounds.class);
     }
 
     @Override
@@ -105,7 +106,7 @@ public class ClientProxy extends CommonProxy {
     }
 
     @SubscribeEvent
-    static public void onRenderTick(TickEvent.RenderTickEvent event) {
+    public static void onRenderTick(TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
             EntityPlayerSP player = Minecraft.getMinecraft().player;
             if (player == null) {
@@ -166,7 +167,7 @@ public class ClientProxy extends CommonProxy {
         Minecraft.getMinecraft().displayGuiScreen(new GuiFrontierBook(frontiersOverlayManager, currentDimension, dimension));
     }
 
-    static boolean hasBookItemInHand() {
+    public static boolean hasBookItemInHand() {
         return bookItemInHand != null;
     }
 
