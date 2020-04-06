@@ -9,6 +9,7 @@ import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import journeymap.client.api.IClientAPI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
@@ -179,5 +180,15 @@ public class ClientProxy extends CommonProxy {
                 frontiersOverlayManager.updateAllOverlays();
             }
         }
+    }
+
+    @Override
+    public boolean isOPorHost(EntityPlayer player) {
+        if (Minecraft.getMinecraft().isIntegratedServerRunning()) {
+            return super.isOPorHost(player);
+        }
+        // @Incomplete: needs to check if it is OP on the server, it needs to check the
+        // parameter player and not the local player.
+        return Minecraft.getMinecraft().isSingleplayer();
     }
 }

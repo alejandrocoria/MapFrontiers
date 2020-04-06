@@ -2,8 +2,13 @@ package games.alejandrocoria.mapfrontiers.common.network;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
+import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import io.netty.buffer.ByteBuf;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
@@ -40,10 +45,21 @@ public class PacketDeleteFrontier implements IMessage {
         public IMessage onMessage(PacketDeleteFrontier message, MessageContext ctx) {
             if (ctx.side == Side.SERVER) {
                 FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
-                    FrontiersManager.instance.deleteFrontier(message.dimension, message.frontierID);
+                    EntityPlayerMP player = ctx.getServerHandler().player;
 
-                    PacketHandler.INSTANCE.sendToAll(new PacketFrontierDeleted(message.dimension, message.frontierID,
-                            ctx.getServerHandler().player.getEntityId()));
+                    FrontierData frontier = FrontiersManager.instance.getFrontierFromID(message.dimension, message.frontierID);
+                    if (frontier == null) {
+                        return;
+                    }
+
+                    if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.DeleteFrontier,
+                            new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player),
+                            new SettingsUser(frontier.getOwnerName(), frontier.getOwnerUUID()))) {
+                        FrontiersManager.instance.deleteFrontier(message.dimension, message.frontierID);
+
+                        PacketHandler.INSTANCE.sendToAll(new PacketFrontierDeleted(message.dimension, message.frontierID,
+                                ctx.getServerHandler().player.getEntityId()));
+                    }
                 });
             }
 

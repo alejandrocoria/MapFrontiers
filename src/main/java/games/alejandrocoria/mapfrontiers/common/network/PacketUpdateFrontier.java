@@ -2,9 +2,13 @@ package games.alejandrocoria.mapfrontiers.common.network;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
+import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import io.netty.buffer.ByteBuf;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
@@ -50,11 +54,28 @@ public class PacketUpdateFrontier implements IMessage {
         public IMessage onMessage(PacketUpdateFrontier message, MessageContext ctx) {
             if (ctx.side == Side.SERVER) {
                 FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
-                    boolean updated = FrontiersManager.instance.updateFrontier(message.frontier);
+                    EntityPlayerMP player = ctx.getServerHandler().player;
 
-                    if (updated) {
-                        PacketHandler.INSTANCE.sendToAll(
-                                new PacketFrontierUpdated(message.frontier, ctx.getServerHandler().player.getEntityId()));
+                    FrontierData currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontier.getDimension(),
+                            message.frontier.getId());
+
+                    if (currentFrontier.getOwnerUUID() != null) {
+                        message.frontier.setOwner(currentFrontier.getOwnerUUID());
+                    }
+                    if ((message.frontier.getOwnerName() == null || message.frontier.getOwnerName().isEmpty())
+                            && currentFrontier.getOwnerName() != null && !currentFrontier.getOwnerName().isEmpty()) {
+                        message.frontier.setOwner(currentFrontier.getOwnerName());
+                    }
+
+                    if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.UpdateFrontier,
+                            new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player),
+                            new SettingsUser(message.frontier.getOwnerName(), message.frontier.getOwnerUUID()))) {
+                        boolean updated = FrontiersManager.instance.updateFrontier(message.frontier);
+
+                        if (updated) {
+                            PacketHandler.INSTANCE.sendToAll(
+                                    new PacketFrontierUpdated(message.frontier, ctx.getServerHandler().player.getEntityId()));
+                        }
                     }
                 });
             }

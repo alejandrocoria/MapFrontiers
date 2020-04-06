@@ -2,9 +2,13 @@ package games.alejandrocoria.mapfrontiers.common.network;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
+import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import io.netty.buffer.ByteBuf;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
@@ -45,10 +49,14 @@ public class PacketNewFrontier implements IMessage {
         public IMessage onMessage(PacketNewFrontier message, MessageContext ctx) {
             if (ctx.side == Side.SERVER) {
                 FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
-                    FrontierData frontier = FrontiersManager.instance.createNewfrontier(message.dimension,
-                            ctx.getServerHandler().player, message.addVertex, message.snapDistance);
+                    EntityPlayerMP player = ctx.getServerHandler().player;
+                    if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.CreateFrontier,
+                            new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), null)) {
+                        FrontierData frontier = FrontiersManager.instance.createNewfrontier(message.dimension, player,
+                                message.addVertex, message.snapDistance);
 
-                    PacketHandler.INSTANCE.sendToAll(new PacketFrontier(frontier, ctx.getServerHandler().player.getEntityId()));
+                        PacketHandler.INSTANCE.sendToAll(new PacketFrontier(frontier, player.getEntityId()));
+                    }
                 });
             }
 

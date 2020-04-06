@@ -6,9 +6,13 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.management.UserListOpsEntry;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
@@ -78,5 +82,20 @@ public class CommonProxy {
         }
 
         return closest;
+    }
+
+    public boolean isOPorHost(EntityPlayer player) {
+        MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
+        UserListOpsEntry opEntry = server.getPlayerList().getOppedPlayers().getEntry(player.getGameProfile());
+
+        if (opEntry != null) {
+            return true;
+        }
+
+        if (server.isSinglePlayer()) {
+            return server.getServerOwner() == player.getName();
+        }
+
+        return false;
     }
 }

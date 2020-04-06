@@ -14,6 +14,7 @@ import java.util.stream.IntStream;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.CompressedStreamTools;
@@ -27,6 +28,7 @@ public class FrontiersManager {
     public static FrontiersManager instance;
 
     private HashMap<Integer, ArrayList<FrontierData>> dimensionsFrontiers;
+    private FrontierSettings frontierSettings;
     private Random rand = new Random();
     private File WorldDir;
     private boolean frontierOwnersChecked = false;
@@ -36,6 +38,11 @@ public class FrontiersManager {
     public FrontiersManager() {
         instance = this;
         dimensionsFrontiers = new HashMap<Integer, ArrayList<FrontierData>>();
+        frontierSettings = new FrontierSettings();
+    }
+
+    public FrontierSettings getSettings() {
+        return frontierSettings;
     }
 
     public Map<Integer, ArrayList<FrontierData>> getAllFrontiers() {
@@ -51,6 +58,24 @@ public class FrontiersManager {
         }
 
         return frontiers;
+    }
+
+    public FrontierData getFrontierFromIndex(int dimension, int index) {
+        List<FrontierData> frontiers = getAllFrontiers(dimension);
+        return frontiers.get(index);
+    }
+
+    public FrontierData getFrontierFromID(int dimension, int id) {
+        List<FrontierData> frontiers = getAllFrontiers(dimension);
+
+        // @Note: copied from FrontiersOverlayManager.deleteFrontier(int,int)
+        int index = IntStream.range(0, frontiers.size()).filter(i -> frontiers.get(i).getId() == id).findFirst().orElse(-1);
+
+        if (index < 0) {
+            return null;
+        }
+
+        return frontiers.get(index);
     }
 
     public FrontierData createNewfrontier(int dimension, EntityPlayer player, boolean addVertex, int snapDistance) {
@@ -104,15 +129,6 @@ public class FrontiersManager {
             return false;
         }
 
-        FrontierData currentFrontier = frontiers.get(index);
-        if (currentFrontier.getOwnerUUID() != null) {
-            frontier.setOwner(currentFrontier.getOwnerUUID());
-        }
-        if ((frontier.getOwnerName() == null || frontier.getOwnerName().isEmpty()) && currentFrontier.getOwnerName() != null
-                && !currentFrontier.getOwnerName().isEmpty()) {
-            frontier.setOwner(currentFrontier.getOwnerName());
-        }
-
         frontiers.set(index, frontier);
         saveData();
 
@@ -136,9 +152,10 @@ public class FrontiersManager {
     private void readFromNBT(NBTTagCompound nbt) {
         int version = nbt.getInteger("Version");
         if (version == 0) {
-            MapFrontiers.LOGGER.warn("Data version not found, expected " + String.valueOf(dataVersion));
+            MapFrontiers.LOGGER.warn("Data version in frontiers not found, expected " + String.valueOf(dataVersion));
         } else if (version > dataVersion) {
-            MapFrontiers.LOGGER.warn("Data version higher than expected. The mod uses " + String.valueOf(dataVersion));
+            MapFrontiers.LOGGER
+                    .warn("Data version in frontiers higher than expected. The mod uses " + String.valueOf(dataVersion));
         }
 
         NBTTagList dimensionsTagList = nbt.getTagList("MapFrontiers", Constants.NBT.TAG_COMPOUND);
@@ -198,16 +215,21 @@ public class FrontiersManager {
             WorldDir = new File(TypeDir, worldFolder);
             WorldDir.mkdirs();
 
-            File f = new File(WorldDir, "frontiers.dat");
-            if (!f.exists()) {
-                saveData();
+            NBTTagCompound nbtFrontiers = loadFile("frontiers.dat");
+            if (nbtFrontiers.hasNoTags()) {
+                writeToNBT(nbtFrontiers);
+                saveFile("frontiers.dat", nbtFrontiers);
+            } else {
+                readFromNBT(nbtFrontiers);
             }
 
-            try (FileInputStream inputStream = new FileInputStream(f)) {
-                NBTTagCompound nbt = CompressedStreamTools.readCompressed(inputStream);
-                readFromNBT(nbt);
-            } catch (Exception e) {
-                MapFrontiers.LOGGER.error(e.getMessage(), e);
+            NBTTagCompound nbtSettings = loadFile("settings.dat");
+            if (nbtSettings.hasNoTags()) {
+                frontierSettings.resetToDefault();
+                frontierSettings.writeToNBT(nbtSettings);
+                saveFile("settings.dat", nbtSettings);
+            } else {
+                frontierSettings.readFromNBT(nbtSettings);
             }
         } catch (Exception e) {
             MapFrontiers.LOGGER.error(e.getMessage(), e);
@@ -215,10 +237,32 @@ public class FrontiersManager {
     }
 
     public void saveData() {
+        NBTTagCompound nbtFrontiers = new NBTTagCompound();
+        writeToNBT(nbtFrontiers);
+        saveFile("frontiers.dat", nbtFrontiers);
+
+        NBTTagCompound nbtSettings = new NBTTagCompound();
+        frontierSettings.writeToNBT(nbtSettings);
+        saveFile("settings.dat", nbtSettings);
+    }
+
+    private NBTTagCompound loadFile(String filename) {
+        File f = new File(WorldDir, filename);
+        if (f.exists()) {
+            try (FileInputStream inputStream = new FileInputStream(f)) {
+                NBTTagCompound nbt = CompressedStreamTools.readCompressed(inputStream);
+                return nbt;
+            } catch (Exception e) {
+                MapFrontiers.LOGGER.error(e.getMessage(), e);
+            }
+        }
+
+        return new NBTTagCompound();
+    }
+
+    private void saveFile(String fileName, NBTTagCompound nbt) {
         try {
-            File f = new File(WorldDir, "frontiers.dat");
-            NBTTagCompound nbt = new NBTTagCompound();
-            writeToNBT(nbt);
+            File f = new File(WorldDir, fileName);
             try (FileOutputStream outputStream = new FileOutputStream(f)) {
                 CompressedStreamTools.writeCompressed(nbt, outputStream);
             } catch (Exception e) {
