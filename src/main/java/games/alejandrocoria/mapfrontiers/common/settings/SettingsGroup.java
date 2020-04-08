@@ -47,6 +47,10 @@ public class SettingsGroup {
         return actions.contains(action);
     }
 
+    public Set<FrontierSettings.Action> getActions() {
+        return actions;
+    }
+
     public void addUser(SettingsUser user) {
         users.add(user);
     }

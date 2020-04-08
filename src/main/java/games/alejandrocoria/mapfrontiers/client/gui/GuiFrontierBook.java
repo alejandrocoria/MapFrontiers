@@ -14,6 +14,8 @@ import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.Sounds;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import journeymap.client.api.display.Context;
 import journeymap.client.api.impl.ClientAPI;
 import journeymap.client.data.DataCache;
@@ -692,13 +694,6 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         resetTextName();
         resetFinishButton();
         resetSliceSlider();
-
-        if (isInFrontierPage()) {
-            changeDeleteBookmarkPosition(DeleteBookmarkPosition.Normal);
-        } else {
-            changeDeleteBookmarkPosition(DeleteBookmarkPosition.Hidden);
-        }
-
         updateButtonsVisibility();
     }
 
@@ -874,7 +869,14 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             labels.add(new GuiSimpleLabel(mc.fontRenderer, rightPageCornerX + 13, rightPageCornerY + 64,
                     GuiSimpleLabel.Align.Left, owner));
 
-            if (dimension == currentDimension) {
+            SettingsProfile profile = frontiersOverlayManager.getSettingsProfile();
+            boolean isOwner = new SettingsUser(frontier.getOwnerName(),
+                    frontier.getOwnerUUID()) == new SettingsUser(Minecraft.getMinecraft().player);
+
+            boolean canUpdate = profile.updateFrontier == SettingsProfile.State.Enabled
+                    || (isOwner && profile.updateFrontier == SettingsProfile.State.Owner);
+
+            if (dimension == currentDimension && canUpdate) {
                 if (frontier.getSelectedVertexIndex() >= 0) {
                     String vertex = I18n.format("mapfrontiers.vertex_number", frontier.getSelectedVertexIndex() + 1,
                             frontier.getVertexCount());
@@ -959,11 +961,33 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         buttonNextPage.visible = (currPage < getPageCount() - 1);
         buttonPreviousPage.visible = currPage > 0;
 
+        SettingsProfile profile = frontiersOverlayManager.getSettingsProfile();
+        FrontierOverlay frontier = null;
+        boolean isOwner = false;
+
         if (isInFrontierPage()) {
-            FrontierOverlay frontier = getCurrentFrontier();
+            frontier = getCurrentFrontier();
+            isOwner = new SettingsUser(frontier.getOwnerName(),
+                    frontier.getOwnerUUID()) == new SettingsUser(Minecraft.getMinecraft().player);
+        }
+
+        boolean canCreate = profile.createFrontier == SettingsProfile.State.Enabled;
+        boolean canDelete = profile.deleteFrontier == SettingsProfile.State.Enabled
+                || (isOwner && profile.deleteFrontier == SettingsProfile.State.Owner);
+        boolean canUpdate = profile.updateFrontier == SettingsProfile.State.Enabled
+                || (isOwner && profile.updateFrontier == SettingsProfile.State.Owner);
+
+        if (isInFrontierPage()) {
+            if (canDelete) {
+                changeDeleteBookmarkPosition(DeleteBookmarkPosition.Normal);
+            } else {
+                changeDeleteBookmarkPosition(DeleteBookmarkPosition.Hidden);
+            }
+
             buttonBackToIndex.visible = true;
-            buttonNameVisible.visible = true;
-            if (frontier.getVertexCount() > 0) {
+            buttonNameVisible.visible = canUpdate;
+
+            if (canUpdate && frontier.getVertexCount() > 0) {
                 buttonSliceUp.visible = frontier.getMapSlice() < 16;
                 buttonSliceDown.visible = frontier.getMapSlice() > 0;
                 sliderSlice.visible = true;
@@ -976,6 +1000,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                 indexButton.visible = false;
             }
         } else {
+            changeDeleteBookmarkPosition(DeleteBookmarkPosition.Hidden);
             buttonBackToIndex.visible = false;
             buttonNameVisible.visible = false;
             buttonSliceUp.visible = false;
@@ -990,8 +1015,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             }
         }
 
-        if (isInFrontierPage() && (currentDimension == dimension)) {
-            FrontierOverlay frontier = getCurrentFrontier();
+        if (isInFrontierPage() && (currentDimension == dimension) && canUpdate) {
             buttonFinish.visible = frontier.getVertexCount() > 2;
             buttonAddVertex.visible = true;
             if (frontier.getVertexCount() == 0) {
@@ -1015,7 +1039,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             buttonRemoveVertex.visible = false;
         }
 
-        if (currentDimension == dimension) {
+        if (currentDimension == dimension && canCreate) {
             buttonNew.visible = true;
         } else {
             buttonNew.visible = false;

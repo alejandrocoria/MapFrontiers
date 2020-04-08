@@ -6,6 +6,7 @@ import java.util.List;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraftforge.common.util.Constants;
@@ -64,6 +65,39 @@ public class FrontierSettings {
         }
 
         return false;
+    }
+
+    public SettingsProfile getProfile(EntityPlayer player) {
+        SettingsProfile profile = new SettingsProfile();
+        SettingsUser user = new SettingsUser(player);
+
+        for (Action action : owners.getActions()) {
+            profile.setAction(action, SettingsProfile.State.Owner);
+        }
+
+        if (MapFrontiers.proxy.isOPorHost(player)) {
+            for (Action action : OPs.getActions()) {
+                profile.setAction(action, SettingsProfile.State.Enabled);
+            }
+        }
+
+        for (Action action : everyone.getActions()) {
+            profile.setAction(action, SettingsProfile.State.Enabled);
+        }
+
+        if (profile.isAllEnabled()) {
+            return profile;
+        }
+
+        for (SettingsGroup group : customGroups) {
+            if (group.hasUser(user)) {
+                for (Action action : group.getActions()) {
+                    profile.setAction(action, SettingsProfile.State.Enabled);
+                }
+            }
+        }
+
+        return profile;
     }
 
     public void readFromNBT(NBTTagCompound nbt) {

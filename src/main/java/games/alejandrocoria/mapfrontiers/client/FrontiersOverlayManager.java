@@ -15,6 +15,7 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketDeleteFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketNewFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateFrontier;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.MarkerOverlay;
 import journeymap.client.api.model.MapImage;
@@ -34,6 +35,7 @@ public class FrontiersOverlayManager {
     private HashMap<Integer, ArrayList<FrontierOverlay>> dimensionsFrontiers;
     private HashMap<Integer, FrontierOverlay> frontiersSelected;
     private HashMap<Integer, MarkerOverlay> markersSelected;
+    private SettingsProfile settingsProfile;
 
     private static MapImage markerDotSelected = new MapImage(
             new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"), 20, 0, 10, 10, 0xffffff, 1.f);
@@ -236,5 +238,13 @@ public class FrontiersOverlayManager {
         } else {
             frontiersSelected.remove(dim);
         }
+    }
+
+    public void setSettingsProfile(SettingsProfile settingsProfile) {
+        this.settingsProfile = settingsProfile;
+    }
+
+    public SettingsProfile getSettingsProfile() {
+        return settingsProfile;
     }
 }

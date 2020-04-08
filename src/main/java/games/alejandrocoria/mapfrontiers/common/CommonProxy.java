@@ -6,6 +6,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
+import games.alejandrocoria.mapfrontiers.common.network.PacketSettingsProfile;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
@@ -59,6 +60,9 @@ public class CommonProxy {
                 PacketHandler.INSTANCE.sendTo(new PacketFrontier(frontier), (EntityPlayerMP) event.player);
             }
         }
+
+        PacketHandler.INSTANCE.sendTo(new PacketSettingsProfile(frontiersManager.getSettings().getProfile(event.player)),
+                (EntityPlayerMP) event.player);
     }
 
     public BlockPos snapVertex(BlockPos vertex, int snapDistance, FrontierData owner) {
