@@ -21,6 +21,7 @@ public class FrontierSettings {
     private SettingsGroup owners;
     private SettingsGroup everyone;
     private List<SettingsGroup> customGroups;
+    private int changeNonce = 1;
 
     private static final int dataVersion = 1;
 
@@ -164,5 +165,13 @@ public class FrontierSettings {
         actions.add(Action.UpdateFrontier);
 
         return actions;
+    }
+
+    public void setChangeNonce(int changeNonce) {
+        this.changeNonce = changeNonce;
+    }
+
+    public int getChangeNonce() {
+        return changeNonce;
     }
 }

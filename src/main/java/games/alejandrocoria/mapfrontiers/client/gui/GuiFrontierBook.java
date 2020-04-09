@@ -656,6 +656,14 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         }
     }
 
+    public void updateSettingsMessage() {
+        if (!isInFrontierPage()) {
+            return;
+        }
+
+        changePage(currPage, true);
+    }
+
     private void sendChangesToServer() {
         if (isInFrontierPage() && lastFrontierHash != getCurrentFrontier().getHash()) {
             frontiersOverlayManager.clientUpdatefrontier(dimension, getCurrentFrontierIndex());
