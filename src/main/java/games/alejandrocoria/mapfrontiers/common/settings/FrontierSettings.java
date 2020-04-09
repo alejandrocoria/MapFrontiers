@@ -42,6 +42,22 @@ public class FrontierSettings {
         owners.addAction(Action.UpdateFrontier);
     }
 
+    public SettingsGroup getOPsGroup() {
+        return OPs;
+    }
+
+    public SettingsGroup getOwnersGroup() {
+        return owners;
+    }
+
+    public SettingsGroup getEveryoneGroup() {
+        return everyone;
+    }
+
+    public List<SettingsGroup> getCustomGroups() {
+        return customGroups;
+    }
+
     public boolean checkAction(Action action, SettingsUser player, boolean isOP, SettingsUser owner) {
         if (player == null) {
             return false;

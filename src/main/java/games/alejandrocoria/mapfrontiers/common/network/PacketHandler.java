@@ -19,6 +19,9 @@ public class PacketHandler {
         INSTANCE.registerMessage(PacketFrontierDeleted.Handler.class, PacketFrontierDeleted.class, id++, Side.CLIENT);
         INSTANCE.registerMessage(PacketUpdateFrontier.Handler.class, PacketUpdateFrontier.class, id++, Side.SERVER);
         INSTANCE.registerMessage(PacketFrontierUpdated.Handler.class, PacketFrontierUpdated.class, id++, Side.CLIENT);
+        INSTANCE.registerMessage(PacketRequestFrontierSettings.Handler.class, PacketRequestFrontierSettings.class, id++,
+                Side.SERVER);
+        INSTANCE.registerMessage(PacketFrontierSettings.Handler.class, PacketFrontierSettings.class, id++, Side.CLIENT);
         INSTANCE.registerMessage(PacketSettingsProfile.Handler.class, PacketSettingsProfile.class, id++, Side.CLIENT);
     }
 }
