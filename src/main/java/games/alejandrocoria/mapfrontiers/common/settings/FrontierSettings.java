@@ -26,9 +26,9 @@ public class FrontierSettings {
     private static final int dataVersion = 1;
 
     public FrontierSettings() {
-        OPs = new SettingsGroup("OPs");
-        owners = new SettingsGroup("Owner");
-        everyone = new SettingsGroup("Everyone");
+        OPs = new SettingsGroup("OPs", true);
+        owners = new SettingsGroup("Owner", true);
+        everyone = new SettingsGroup("Everyone", true);
         customGroups = new ArrayList<SettingsGroup>();
     }
 
@@ -127,13 +127,13 @@ public class FrontierSettings {
         }
 
         NBTTagCompound OPsTag = nbt.getCompoundTag("OPs");
-        OPs.readFromNBT(OPsTag, false);
+        OPs.readFromNBT(OPsTag);
 
         NBTTagCompound ownersTag = nbt.getCompoundTag("Owners");
-        owners.readFromNBT(ownersTag, false);
+        owners.readFromNBT(ownersTag);
 
         NBTTagCompound everyoneTag = nbt.getCompoundTag("Everyone");
-        everyone.readFromNBT(everyoneTag, false);
+        everyone.readFromNBT(everyoneTag);
 
         customGroups.clear();
         NBTTagList customGroupsTagList = nbt.getTagList("customGroups", Constants.NBT.TAG_COMPOUND);
@@ -147,15 +147,15 @@ public class FrontierSettings {
 
     public void writeToNBT(NBTTagCompound nbt) {
         NBTTagCompound OPsTag = new NBTTagCompound();
-        OPs.writeToNBT(OPsTag, false);
+        OPs.writeToNBT(OPsTag);
         nbt.setTag("OPs", OPsTag);
 
         NBTTagCompound ownersTag = new NBTTagCompound();
-        owners.writeToNBT(ownersTag, false);
+        owners.writeToNBT(ownersTag);
         nbt.setTag("Owners", ownersTag);
 
         NBTTagCompound everyoneTag = new NBTTagCompound();
-        everyone.writeToNBT(everyoneTag, false);
+        everyone.writeToNBT(everyoneTag);
         nbt.setTag("Everyone", everyoneTag);
 
         NBTTagList customGroupsTagList = new NBTTagList();

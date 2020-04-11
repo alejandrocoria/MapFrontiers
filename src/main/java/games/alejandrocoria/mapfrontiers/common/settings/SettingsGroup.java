@@ -18,17 +18,20 @@ public class SettingsGroup {
     private String name;
     private List<SettingsUser> users;
     private Set<FrontierSettings.Action> actions;
+    private boolean special;
 
     public SettingsGroup() {
         name = "";
         users = new ArrayList<SettingsUser>();
         actions = EnumSet.noneOf(FrontierSettings.Action.class);
+        special = false;
     }
 
-    public SettingsGroup(String name) {
+    public SettingsGroup(String name, boolean special) {
         this.name = name;
         users = new ArrayList<SettingsUser>();
         actions = EnumSet.noneOf(FrontierSettings.Action.class);
+        this.special = special;
     }
 
     public void setName(String name) {
@@ -68,21 +71,16 @@ public class SettingsGroup {
     }
 
     public void readFromNBT(NBTTagCompound nbt) {
-        readFromNBT(nbt, true);
-    }
-
-    public void readFromNBT(NBTTagCompound nbt, boolean readName) {
-        if (readName) {
+        if (!special) {
             name = nbt.getString("name");
-        }
-
-        users.clear();
-        NBTTagList usersTagList = nbt.getTagList("users", Constants.NBT.TAG_COMPOUND);
-        for (int i = 0; i < usersTagList.tagCount(); ++i) {
-            SettingsUser user = new SettingsUser();
-            NBTTagCompound userTag = usersTagList.getCompoundTagAt(i);
-            user.readFromNBT(userTag);
-            users.add(user);
+            users.clear();
+            NBTTagList usersTagList = nbt.getTagList("users", Constants.NBT.TAG_COMPOUND);
+            for (int i = 0; i < usersTagList.tagCount(); ++i) {
+                SettingsUser user = new SettingsUser();
+                NBTTagCompound userTag = usersTagList.getCompoundTagAt(i);
+                user.readFromNBT(userTag);
+                users.add(user);
+            }
         }
 
         actions.clear();
@@ -114,22 +112,17 @@ public class SettingsGroup {
     }
 
     public void writeToNBT(NBTTagCompound nbt) {
-        writeToNBT(nbt, true);
-    }
-
-    public void writeToNBT(NBTTagCompound nbt, boolean writeName) {
-        if (writeName) {
+        if (!special) {
             nbt.setString("name", name);
-        }
+            NBTTagList usersTagList = new NBTTagList();
+            for (SettingsUser user : users) {
+                NBTTagCompound userTag = new NBTTagCompound();
+                user.writeToNBT(userTag);
+                usersTagList.appendTag(userTag);
+            }
 
-        NBTTagList usersTagList = new NBTTagList();
-        for (SettingsUser user : users) {
-            NBTTagCompound userTag = new NBTTagCompound();
-            user.writeToNBT(userTag);
-            usersTagList.appendTag(userTag);
+            nbt.setTag("users", usersTagList);
         }
-
-        nbt.setTag("users", usersTagList);
 
         NBTTagList actionsTagList = new NBTTagList();
         for (FrontierSettings.Action action : actions) {
