@@ -20,11 +20,13 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 public class GuiFrontierSettings extends GuiScreen implements GuiGroupElement.GroupResponder {
     private FrontierSettings settings;
     private GuiScrollBox groups;
+    private GuiScrollBox groupsActions;
     private List<GuiSimpleLabel> labels;
 
     public GuiFrontierSettings() {
         labels = new ArrayList<GuiSimpleLabel>();
         groups = new GuiScrollBox(50, 50, 200, 400, 16);
+        groupsActions = new GuiScrollBox(300, 50, 200, 400, 16);
     }
 
     @Override
