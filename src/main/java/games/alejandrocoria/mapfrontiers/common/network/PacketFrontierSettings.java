@@ -2,11 +2,16 @@ package games.alejandrocoria.mapfrontiers.common.network;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierSettings;
+import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
@@ -28,7 +33,7 @@ public class PacketFrontierSettings implements IMessage {
     @Override
     public void fromBytes(ByteBuf buf) {
         settings.readFromNBT(ByteBufUtils.readTag(buf));
-        settings.setChangeNonce(buf.readInt());
+        settings.setChangeCounter(buf.readInt());
     }
 
     @Override
@@ -36,7 +41,7 @@ public class PacketFrontierSettings implements IMessage {
         NBTTagCompound nbt = new NBTTagCompound();
         settings.writeToNBT(nbt);
         ByteBufUtils.writeTag(buf, nbt);
-        buf.writeInt(settings.getChangeNonce());
+        buf.writeInt(settings.getChangeCounter());
     }
 
     public static class Handler implements IMessageHandler<PacketFrontierSettings, IMessage> {
@@ -46,6 +51,14 @@ public class PacketFrontierSettings implements IMessage {
                 Minecraft.getMinecraft().addScheduledTask(() -> {
                     if (Minecraft.getMinecraft().currentScreen instanceof GuiFrontierSettings) {
                         ((GuiFrontierSettings) Minecraft.getMinecraft().currentScreen).setFrontierSettings(message.settings);
+                    }
+                });
+            } else {
+                FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
+                    EntityPlayerMP player = ctx.getServerHandler().player;
+                    if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.UpdateSettings,
+                            new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), null)) {
+                        FrontiersManager.instance.setSettings(message.settings);
                     }
                 });
             }

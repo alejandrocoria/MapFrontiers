@@ -24,7 +24,7 @@ public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
 
     public GuiGroupActionElement(FontRenderer fontRenderer, SettingsGroup group, boolean ownersGroup,
             GroupActionResponder responder) {
-        super(400, 16);
+        super(370, 16);
         this.fontRenderer = fontRenderer;
         this.group = group;
         this.responder = responder;
@@ -49,14 +49,14 @@ public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
             fontRenderer.drawString(group.getName(), x + 4, y + 4, color);
 
             if (!ownersGroup) {
-                drawBox(x + 300, y + 1, createFrontier);
+                drawBox(x + 154, y + 2, createFrontier);
             }
 
-            drawBox(x + 320, y + 1, deleteFrontier);
-            drawBox(x + 340, y + 1, updateFrontier);
+            drawBox(x + 214, y + 2, deleteFrontier);
+            drawBox(x + 274, y + 2, updateFrontier);
 
             if (!ownersGroup) {
-                drawBox(x + 360, y + 1, updateSettings);
+                drawBox(x + 334, y + 2, updateSettings);
             }
         } else {
             hovered = false;
@@ -66,16 +66,16 @@ public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
     @Override
     public void mousePressed(Minecraft mc, int mouseX, int mouseY) {
         if (visible && hovered && responder != null) {
-            if (!ownersGroup && mouseX >= x + 300 && mouseX <= x + 320) {
+            if (!ownersGroup && mouseX >= x + 130 && mouseX <= x + 190) {
                 createFrontier = !createFrontier;
                 responder.actionChanged(group, FrontierSettings.Action.CreateFrontier, createFrontier);
-            } else if (mouseX >= x + 320 && mouseX <= x + 340) {
+            } else if (mouseX >= x + 190 && mouseX <= x + 250) {
                 deleteFrontier = !deleteFrontier;
                 responder.actionChanged(group, FrontierSettings.Action.DeleteFrontier, deleteFrontier);
-            } else if (mouseX >= x + 340 && mouseX <= x + 360) {
+            } else if (mouseX >= x + 250 && mouseX <= x + 310) {
                 updateFrontier = !updateFrontier;
                 responder.actionChanged(group, FrontierSettings.Action.UpdateFrontier, updateFrontier);
-            } else if (!ownersGroup && mouseX >= x + 360 && mouseX <= x + 380) {
+            } else if (!ownersGroup && mouseX >= x + 310 && mouseX <= x + 370) {
                 updateSettings = !updateSettings;
                 responder.actionChanged(group, FrontierSettings.Action.UpdateSettings, updateSettings);
             }
@@ -83,10 +83,10 @@ public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
     }
 
     private void drawBox(int x, int y, boolean checked) {
-        Gui.drawRect(x, y, x + 10, y + 10, 0xff444444);
-        Gui.drawRect(x + 1, y + 1, x + 8, y + 8, 0xff000000);
+        Gui.drawRect(x, y, x + 12, y + 12, 0xff444444);
+        Gui.drawRect(x + 1, y + 1, x + 11, y + 11, 0xff000000);
         if (checked) {
-            Gui.drawRect(x + 2, y + 2, x + 6, y + 6, 0xff555555);
+            Gui.drawRect(x + 2, y + 2, x + 10, y + 10, 0xff666666);
         }
     }
 

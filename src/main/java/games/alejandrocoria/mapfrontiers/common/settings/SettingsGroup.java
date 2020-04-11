@@ -43,6 +43,10 @@ public class SettingsGroup {
         actions.add(action);
     }
 
+    public void removeAction(FrontierSettings.Action action) {
+        actions.remove(action);
+    }
+
     public boolean hasAction(FrontierSettings.Action action) {
         return actions.contains(action);
     }

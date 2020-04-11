@@ -16,24 +16,24 @@ import net.minecraftforge.fml.relauncher.Side;
 
 @ParametersAreNonnullByDefault
 public class PacketRequestFrontierSettings implements IMessage {
-    private int changeNonce;
+    private int changeCounter;
 
     public PacketRequestFrontierSettings() {
-        changeNonce = 0;
+        changeCounter = 0;
     }
 
     public PacketRequestFrontierSettings(int changeNonce) {
-        this.changeNonce = changeNonce;
+        this.changeCounter = changeNonce;
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        changeNonce = buf.readInt();
+        changeCounter = buf.readInt();
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
-        buf.writeInt(changeNonce);
+        buf.writeInt(changeCounter);
     }
 
     public static class Handler implements IMessageHandler<PacketRequestFrontierSettings, IMessage> {
@@ -45,7 +45,7 @@ public class PacketRequestFrontierSettings implements IMessage {
                     FrontierSettings settings = FrontiersManager.instance.getSettings();
 
                     if (settings.checkAction(FrontierSettings.Action.UpdateSettings, new SettingsUser(player),
-                            MapFrontiers.proxy.isOPorHost(player), null) && settings.getChangeNonce() > message.changeNonce) {
+                            MapFrontiers.proxy.isOPorHost(player), null) && settings.getChangeCounter() > message.changeCounter) {
                         PacketHandler.INSTANCE.sendToAll(new PacketFrontierSettings(settings));
                     }
                 });

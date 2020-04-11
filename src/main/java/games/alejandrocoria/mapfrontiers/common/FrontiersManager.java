@@ -41,6 +41,11 @@ public class FrontiersManager {
         frontierSettings = new FrontierSettings();
     }
 
+    public void setSettings(FrontierSettings frontierSettings) {
+        this.frontierSettings = frontierSettings;
+        saveData();
+    }
+
     public FrontierSettings getSettings() {
         return frontierSettings;
     }

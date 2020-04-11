@@ -21,7 +21,7 @@ public class FrontierSettings {
     private SettingsGroup owners;
     private SettingsGroup everyone;
     private List<SettingsGroup> customGroups;
-    private int changeNonce = 1;
+    private int changeCounter = 1;
 
     private static final int dataVersion = 1;
 
@@ -183,11 +183,15 @@ public class FrontierSettings {
         return actions;
     }
 
-    public void setChangeNonce(int changeNonce) {
-        this.changeNonce = changeNonce;
+    public void setChangeCounter(int changeCounter) {
+        this.changeCounter = changeCounter;
     }
 
-    public int getChangeNonce() {
-        return changeNonce;
+    public int getChangeCounter() {
+        return changeCounter;
+    }
+
+    public void advanceChangeCounter() {
+        ++changeCounter;
     }
 }

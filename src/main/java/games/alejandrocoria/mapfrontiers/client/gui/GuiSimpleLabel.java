@@ -21,14 +21,20 @@ public class GuiSimpleLabel extends Gui {
     private final FontRenderer fontRenderer;
     private final int x;
     private final int y;
+    private final int color;
     private final Align align;
     private List<String> texts;
     private List<Integer> widths;
 
     public GuiSimpleLabel(FontRenderer fontRenderer, int x, int y, Align align, String text) {
+        this(fontRenderer, x, y, align, text, 0);
+    }
+
+    public GuiSimpleLabel(FontRenderer fontRenderer, int x, int y, Align align, String text, int color) {
         this.fontRenderer = fontRenderer;
         this.x = x;
         this.y = y;
+        this.color = color;
         this.align = align;
         texts = new ArrayList<String>();
         widths = new ArrayList<Integer>();
@@ -42,15 +48,15 @@ public class GuiSimpleLabel extends Gui {
     public void drawLabel(Minecraft mc, int mouseX, int mouseY) {
         if (align == Align.Left) {
             for (int i = 0; i < texts.size(); ++i) {
-                fontRenderer.drawString(texts.get(i), x, y + i * 12, 0);
+                fontRenderer.drawString(texts.get(i), x, y + i * 12, color);
             }
         } else if (align == Align.Center) {
             for (int i = 0; i < texts.size(); ++i) {
-                fontRenderer.drawString(texts.get(i), x - widths.get(i) / 2, y + i * 12, 0);
+                fontRenderer.drawString(texts.get(i), x - widths.get(i) / 2, y + i * 12, color);
             }
         } else {
             for (int i = 0; i < texts.size(); ++i) {
-                fontRenderer.drawString(texts.get(i), x - widths.get(i), y + i * 12, 0);
+                fontRenderer.drawString(texts.get(i), x - widths.get(i), y + i * 12, color);
             }
         }
     }
