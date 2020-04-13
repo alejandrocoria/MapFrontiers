@@ -19,9 +19,9 @@ public class GuiSimpleLabel extends Gui {
     };
 
     private final FontRenderer fontRenderer;
-    private final int x;
-    private final int y;
-    private final int color;
+    private int x;
+    private int y;
+    private int color;
     private final Align align;
     private List<String> texts;
     private List<Integer> widths;
@@ -43,6 +43,18 @@ public class GuiSimpleLabel extends Gui {
             texts.add(t);
             widths.add(Integer.valueOf(fontRenderer.getStringWidth(t)));
         }
+    }
+
+    public void setColor(int color) {
+        this.color = color;
+    }
+
+    public void setX(int x) {
+        this.x = x;
+    }
+
+    public void setY(int y) {
+        this.y = y;
     }
 
     public void drawLabel(Minecraft mc, int mouseX, int mouseY) {

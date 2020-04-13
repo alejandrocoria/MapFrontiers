@@ -143,6 +143,8 @@ public class FrontierSettings {
             group.readFromNBT(groupTag);
             customGroups.add(group);
         }
+
+        ensureUpdateSettingsAction();
     }
 
     public void writeToNBT(NBTTagCompound nbt) {
@@ -193,5 +195,20 @@ public class FrontierSettings {
 
     public void advanceChangeCounter() {
         ++changeCounter;
+    }
+
+    private void ensureUpdateSettingsAction() {
+        if (OPs.hasAction(Action.UpdateSettings) || owners.hasAction(Action.UpdateSettings)
+                || everyone.hasAction(Action.UpdateSettings)) {
+            return;
+        }
+
+        for (SettingsGroup group : customGroups) {
+            if (group.hasAction(Action.UpdateSettings)) {
+                return;
+            }
+        }
+
+        OPs.addAction(Action.UpdateSettings);
     }
 }

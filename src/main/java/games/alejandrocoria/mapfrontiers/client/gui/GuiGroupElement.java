@@ -7,13 +7,14 @@ import net.minecraft.client.gui.Gui;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+@SideOnly(Side.CLIENT)
 public class GuiGroupElement extends GuiScrollBox.ScrollElement {
     private final FontRenderer fontRenderer;
     private SettingsGroup group;
     private GroupResponder responder;
 
     public GuiGroupElement(FontRenderer fontRenderer, SettingsGroup group, GroupResponder responder) {
-        super(200, 16);
+        super(160, 16);
         this.fontRenderer = fontRenderer;
         this.group = group;
         this.responder = responder;

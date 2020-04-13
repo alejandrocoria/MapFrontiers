@@ -1,3 +1,5 @@
+#PARSE_ESCAPES
+
 # Book
 mapfrontiers.index=%1$sIndex
 mapfrontiers.index_number=%2$sIndex %1$d
@@ -30,6 +32,14 @@ mapfrontiers.previous_vertex=Previous vertex
 mapfrontiers.next_vertex=Next vertex
 mapfrontiers.vertical_chunk=Vertical chunk: %1$d
 mapfrontiers.vertical_chunk_surface=Vertical chunk: Surface
+
+# Settings
+mapfrontiers.groups=Groups
+mapfrontiers.actions=Actions
+mapfrontiers.create_frontier=Create\nfrontier
+mapfrontiers.delete_frontier=Delete\nfrontier
+mapfrontiers.update_frontier=Update\nfrontier
+mapfrontiers.update_settings=Update\nsettings
 
 # Chat
 mapfrontiers.chat.frontier_deleted=%2$s%3$s%1$s deleted the frontier %4$d

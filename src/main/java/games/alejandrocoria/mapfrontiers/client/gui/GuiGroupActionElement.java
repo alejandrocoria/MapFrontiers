@@ -8,6 +8,7 @@ import net.minecraft.client.gui.Gui;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+@SideOnly(Side.CLIENT)
 public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
     private final FontRenderer fontRenderer;
     private SettingsGroup group;

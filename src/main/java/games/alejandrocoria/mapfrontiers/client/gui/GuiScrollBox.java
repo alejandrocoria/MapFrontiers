@@ -8,6 +8,7 @@ import net.minecraft.client.gui.Gui;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+@SideOnly(Side.CLIENT)
 public class GuiScrollBox extends Gui {
     public boolean visible = true;
     private int x = 0;
