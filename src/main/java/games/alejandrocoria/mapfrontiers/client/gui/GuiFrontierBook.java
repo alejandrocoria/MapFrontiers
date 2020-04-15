@@ -193,10 +193,11 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
         int textNameX = offsetFromScreenLeft + bookImageWidth / 4 - 56;
         int textNameY = offsetFromScreenTop + 10;
-        textName1 = new TextBox(++id, fontRenderer, textNameX, textNameY, 113);
+        String defaultText = "Add name";
+        textName1 = new TextBox(++id, fontRenderer, textNameX, textNameY, 113, defaultText);
         textName1.setMaxStringLength(17);
         textName1.setResponder(this);
-        textName2 = new TextBox(++id, fontRenderer, textNameX, textNameY + 14, 113);
+        textName2 = new TextBox(++id, fontRenderer, textNameX, textNameY + 14, 113, defaultText);
         textName2.setMaxStringLength(17);
         textName2.setResponder(this);
 
@@ -451,6 +452,10 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                 }
             }
         }
+    }
+
+    @Override
+    public void lostFocus(int id, String value) {
     }
 
     @Override

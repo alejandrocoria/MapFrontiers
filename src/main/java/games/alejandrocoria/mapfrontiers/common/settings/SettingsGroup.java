@@ -70,6 +70,10 @@ public class SettingsGroup {
         return users.contains(user);
     }
 
+    public boolean isSpecial() {
+        return special;
+    }
+
     public void readFromNBT(NBTTagCompound nbt) {
         if (!special) {
             name = nbt.getString("name");

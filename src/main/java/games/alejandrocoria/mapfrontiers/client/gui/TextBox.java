@@ -12,10 +12,12 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 public class TextBox extends GuiTextField {
     private final FontRenderer fontRenderer;
     private TextBoxResponder responder;
+    private String defaultText;
 
-    public TextBox(int componentId, FontRenderer fontRenderer, int x, int y, int width) {
+    public TextBox(int componentId, FontRenderer fontRenderer, int x, int y, int width, String defaultText) {
         super(componentId, fontRenderer, x, y, width, 12);
         this.fontRenderer = fontRenderer;
+        this.defaultText = defaultText;
     }
 
     public void setResponder(TextBoxResponder responderIn) {
@@ -54,7 +56,7 @@ public class TextBox extends GuiTextField {
             String text = getText();
             boolean empty = false;
             if (text.isEmpty()) {
-                text = "Add name";
+                text = defaultText;
                 empty = true;
             }
             int widthOfString = fontRenderer.getStringWidth(text);
@@ -62,8 +64,24 @@ public class TextBox extends GuiTextField {
         }
     }
 
+    @Override
+    public void setFocused(boolean isFocusedIn) {
+        boolean lostFocus = false;
+        if (!isFocusedIn && isFocused()) {
+            lostFocus = true;
+        }
+
+        super.setFocused(isFocusedIn);
+
+        if (lostFocus && responder != null) {
+            responder.lostFocus(getId(), getText());
+        }
+    }
+
     @SideOnly(Side.CLIENT)
     public interface TextBoxResponder {
         public void updatedValue(int id, String value);
+
+        public void lostFocus(int id, String value);
     }
 }

@@ -20,12 +20,13 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 @ParametersAreNonnullByDefault
 @SideOnly(Side.CLIENT)
-public class GuiFrontierSettings extends GuiScreen
-        implements GuiGroupElement.GroupResponder, GuiGroupActionElement.GroupActionResponder, GuiTabbedBox.TabbedBoxResponder {
+public class GuiFrontierSettings extends GuiScreen implements GuiGroupElement.GroupResponder,
+        GuiGroupActionElement.GroupActionResponder, GuiTabbedBox.TabbedBoxResponder, TextBox.TextBoxResponder {
     private FrontierSettings settings;
     private GuiTabbedBox tabbedBox;
     private GuiScrollBox groups;
     private GuiScrollBox groupsActions;
+    private TextBox groupName;
     private List<GuiSimpleLabel> labels;
     private int tabSelected = 1;
 
@@ -42,6 +43,11 @@ public class GuiFrontierSettings extends GuiScreen
         tabbedBox.setTabSelected(tabSelected);
         groups = new GuiScrollBox(50, 50, 160, 400, 16);
         groupsActions = new GuiScrollBox(width / 2 - 185, 80, 370, 400, 16);
+
+        groupName = new TextBox(0, fontRenderer, 250, 50, 140, "Edit group name");
+        groupName.setMaxStringLength(30);
+        groupName.setResponder(this);
+        groupName.setEnabled(false);
     }
 
     @Override
@@ -57,6 +63,10 @@ public class GuiFrontierSettings extends GuiScreen
         groups.drawBox(mc, mouseX, mouseY);
         groupsActions.drawBox(mc, mouseX, mouseY);
 
+        if (tabSelected == 0 && groups.getSelectedElement() != null) {
+            groupName.drawTextBox();
+        }
+
         for (GuiSimpleLabel label : labels) {
             label.drawLabel(mc, mouseX, mouseY);
         }
@@ -69,8 +79,15 @@ public class GuiFrontierSettings extends GuiScreen
         tabbedBox.mousePressed(mc, x, y);
         groups.mousePressed(mc, x, y);
         groupsActions.mousePressed(mc, x, y);
+        groupName.mouseClicked(x, y, btn);
 
         super.mouseClicked(x, y, btn);
+    }
+
+    @Override
+    protected void keyTyped(char typedChar, int keyCode) throws IOException {
+        super.keyTyped(typedChar, keyCode);
+        groupName.textboxKeyTyped(typedChar, keyCode);
     }
 
     @Override
@@ -137,6 +154,8 @@ public class GuiFrontierSettings extends GuiScreen
     @Override
     public void groupClicked(GuiGroupElement element) {
         groups.selectElement(element);
+        groupName.setText(element.getGroup().getName());
+        groupName.setEnabled(!element.getGroup().isSpecial());
     }
 
     @Override
@@ -147,8 +166,7 @@ public class GuiFrontierSettings extends GuiScreen
             group.removeAction(action);
         }
 
-        settings.advanceChangeCounter();
-        PacketHandler.INSTANCE.sendToServer(new PacketFrontierSettings(settings));
+        sendChangesToServer();
     }
 
     @Override
@@ -156,5 +174,25 @@ public class GuiFrontierSettings extends GuiScreen
         tabSelected = tab;
         resetLabels();
         updateButtonsVisibility();
+    }
+
+    @Override
+    public void updatedValue(int id, String value) {
+    }
+
+    @Override
+    public void lostFocus(int id, String value) {
+        if (groupName.getId() == id && tabSelected == 0) {
+            GuiGroupElement groupElement = (GuiGroupElement) groups.getSelectedElement();
+            if (groupElement != null) {
+                groupElement.getGroup().setName(value);
+                sendChangesToServer();
+            }
+        }
+    }
+
+    private void sendChangesToServer() {
+        settings.advanceChangeCounter();
+        PacketHandler.INSTANCE.sendToServer(new PacketFrontierSettings(settings));
     }
 }

@@ -20,6 +20,10 @@ public class GuiGroupElement extends GuiScrollBox.ScrollElement {
         this.responder = responder;
     }
 
+    public SettingsGroup getGroup() {
+        return group;
+    }
+
     @Override
     public void draw(Minecraft mc, int mouseX, int mouseY, boolean selected) {
         if (visible) {
