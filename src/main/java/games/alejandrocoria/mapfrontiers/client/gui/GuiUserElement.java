@@ -2,7 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 
 import java.util.List;
 
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
@@ -13,21 +13,18 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
-public class GuiGroupElement extends GuiScrollBox.ScrollElement {
+public class GuiUserElement extends GuiScrollBox.ScrollElement {
     private final FontRenderer fontRenderer;
-    private SettingsGroup group;
+    private SettingsUser user;
     private GuiButtonIcon buttonDelete;
     List<GuiButton> buttonList;
 
-    public GuiGroupElement(FontRenderer fontRenderer, List<GuiButton> buttonList, int id, SettingsGroup group,
+    public GuiUserElement(FontRenderer fontRenderer, List<GuiButton> buttonList, int id, SettingsUser user,
             ResourceLocation texture, int textureSize) {
         super(160, 16);
         this.fontRenderer = fontRenderer;
-        this.group = group;
-
+        this.user = user;
         buttonDelete = new GuiButtonIcon(id, 0, 0, 13, 13, 494, 132, -23, texture, textureSize);
-        buttonDelete.visible = false;
-
         this.buttonList = buttonList;
         this.buttonList.add(buttonDelete);
     }
@@ -37,8 +34,8 @@ public class GuiGroupElement extends GuiScrollBox.ScrollElement {
         buttonList.remove(buttonDelete);
     }
 
-    public SettingsGroup getGroup() {
-        return group;
+    public SettingsUser getUser() {
+        return user;
     }
 
     @Override
@@ -65,17 +62,18 @@ public class GuiGroupElement extends GuiScrollBox.ScrollElement {
 
             if (hovered) {
                 Gui.drawRect(x, y, x + width, y + height, 0xff222222);
-            }
-
-            if (hovered && !group.isSpecial()) {
                 buttonDelete.visible = true;
             } else {
                 buttonDelete.visible = false;
             }
 
-            String text = group.getName();
+            String text = user.username;
             if (text.isEmpty()) {
-                text = String.format("%1$sUnnamed", TextFormatting.ITALIC);
+                if (user.uuid == null) {
+                    text = String.format("%1$sUnnamed", TextFormatting.ITALIC);
+                } else {
+                    text = user.uuid.toString();
+                }
             }
 
             fontRenderer.drawString(text, x + 4, y + 4, color);

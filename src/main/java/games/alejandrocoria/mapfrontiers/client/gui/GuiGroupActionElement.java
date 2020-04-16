@@ -65,7 +65,7 @@ public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
     }
 
     @Override
-    public void mousePressed(Minecraft mc, int mouseX, int mouseY) {
+    public GuiScrollBox.ScrollElement.Action mousePressed(Minecraft mc, int mouseX, int mouseY) {
         if (visible && hovered && responder != null) {
             if (!ownersGroup && mouseX >= x + 130 && mouseX <= x + 190) {
                 createFrontier = !createFrontier;
@@ -81,6 +81,8 @@ public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
                 responder.actionChanged(group, FrontierSettings.Action.UpdateSettings, updateSettings);
             }
         }
+
+        return GuiScrollBox.ScrollElement.Action.None;
     }
 
     private void drawBox(int x, int y, boolean checked) {

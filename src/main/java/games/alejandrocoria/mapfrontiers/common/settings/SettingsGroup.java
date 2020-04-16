@@ -46,6 +46,10 @@ public class SettingsGroup {
         actions.add(action);
     }
 
+    public List<SettingsUser> getUsers() {
+        return users;
+    }
+
     public void removeAction(FrontierSettings.Action action) {
         actions.remove(action);
     }

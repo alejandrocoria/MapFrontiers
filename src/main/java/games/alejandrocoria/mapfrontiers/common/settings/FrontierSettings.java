@@ -58,6 +58,12 @@ public class FrontierSettings {
         return customGroups;
     }
 
+    public SettingsGroup createCustomGroup(String name) {
+        SettingsGroup group = new SettingsGroup(name, false);
+        customGroups.add(group);
+        return group;
+    }
+
     public boolean checkAction(Action action, SettingsUser player, boolean isOP, SettingsUser owner) {
         if (player == null) {
             return false;

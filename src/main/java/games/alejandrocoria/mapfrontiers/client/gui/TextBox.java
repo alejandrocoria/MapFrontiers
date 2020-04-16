@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -13,6 +14,9 @@ public class TextBox extends GuiTextField {
     private final FontRenderer fontRenderer;
     private TextBoxResponder responder;
     private String defaultText;
+    private boolean centered = true;
+    private int color = 0;
+    private boolean frame = false;
 
     public TextBox(int componentId, FontRenderer fontRenderer, int x, int y, int width, String defaultText) {
         super(componentId, fontRenderer, x, y, width, 12);
@@ -22,6 +26,18 @@ public class TextBox extends GuiTextField {
 
     public void setResponder(TextBoxResponder responderIn) {
         responder = responderIn;
+    }
+
+    public void setCentered(boolean centered) {
+        this.centered = centered;
+    }
+
+    public void setColor(int color) {
+        this.color = color;
+    }
+
+    public void setFrame(boolean frame) {
+        this.frame = frame;
     }
 
     @Override
@@ -59,8 +75,19 @@ public class TextBox extends GuiTextField {
                 text = defaultText;
                 empty = true;
             }
+
             int widthOfString = fontRenderer.getStringWidth(text);
-            fontRenderer.drawString(text, x - widthOfString / 2 + width / 2, y + 2, empty ? 0xbbbbbb : 0);
+            int posX = x + 4;
+            if (centered) {
+                posX = x - widthOfString / 2 + width / 2;
+            }
+
+            if (frame) {
+                Gui.drawRect(x, y, x + width, y + height, 0xff444444);
+                Gui.drawRect(x + 1, y + 1, x + width - 1, y + height - 1, 0xff000000);
+            }
+
+            fontRenderer.drawString(text, posX, y + 2, empty ? 0xbbbbbb : color);
         }
     }
 
