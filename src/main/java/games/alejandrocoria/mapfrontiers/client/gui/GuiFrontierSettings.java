@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -36,6 +37,8 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     private GuiScrollBox groupsActions;
     private TextBox textNewGroupName;
     private GuiButtonIcon buttonNewGroup;
+    private TextBox textNewUser;
+    private GuiButtonIcon buttonNewUser;
     private TextBox textGroupName;
     private List<GuiSimpleLabel> labels;
     private int tabSelected = 0;
@@ -54,7 +57,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         tabbedBox.addTab(I18n.format("mapfrontiers.actions"));
         tabbedBox.setTabSelected(tabSelected);
         groups = new GuiScrollBox(++id, 50, 50, 160, 400, 16, this);
-        users = new GuiScrollBox(++id, 50, 80, 160, 400, 16, this);
+        users = new GuiScrollBox(++id, 250, 80, 160, 400, 16, this);
         groupsActions = new GuiScrollBox(++id, width / 2 - 185, 80, 370, 400, 16, this);
 
         textNewGroupName = new TextBox(++id, fontRenderer, 50, 284, 140, "New group name");
@@ -64,7 +67,17 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         textNewGroupName.setColor(0xffffffff);
         textNewGroupName.setFrame(true);
 
-        buttonNewGroup = new GuiButtonIcon(++id, 191, 284, 13, 13, 494, 119, -23, guiTexture, guiTextureSize);
+        buttonNewGroup = new GuiButtonIcon(++id, 192, 284, 13, 13, 494, 119, -23, guiTexture, guiTextureSize);
+
+        textNewUser = new TextBox(++id, fontRenderer, 250, 284, 238, "New user");
+        textNewUser.setMaxStringLength(38);
+        textNewUser.setResponder(this);
+        textNewUser.setCentered(false);
+        textNewUser.setColor(0xffffffff);
+        textNewUser.setFrame(true);
+
+        buttonNewUser = new GuiButtonIcon(++id, 490, 284, 13, 13, 494, 119, -23, guiTexture, guiTextureSize);
+        buttonNewUser.visible = false;
 
         textGroupName = new TextBox(++id, fontRenderer, 250, 50, 140, "Edit group name");
         textGroupName.setMaxStringLength(22);
@@ -74,6 +87,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         textGroupName.setColor(0xffffffff);
 
         buttonList.add(buttonNewGroup);
+        buttonList.add(buttonNewUser);
     }
 
     @Override
@@ -97,6 +111,10 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
             }
         }
 
+        if (canAddNewUser()) {
+            textNewUser.drawTextBox();
+        }
+
         for (GuiSimpleLabel label : labels) {
             label.drawLabel(mc, mouseX, mouseY);
         }
@@ -110,6 +128,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         groups.mousePressed(mc, x, y);
         users.mousePressed(mc, x, y);
         textNewGroupName.mouseClicked(x, y, btn);
+        textNewUser.mouseClicked(x, y, btn);
         groupsActions.mousePressed(mc, x, y);
         textGroupName.mouseClicked(x, y, btn);
 
@@ -120,6 +139,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     protected void keyTyped(char typedChar, int keyCode) throws IOException {
         super.keyTyped(typedChar, keyCode);
         textNewGroupName.textboxKeyTyped(typedChar, keyCode);
+        textNewUser.textboxKeyTyped(typedChar, keyCode);
         textGroupName.textboxKeyTyped(typedChar, keyCode);
     }
 
@@ -131,7 +151,49 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
             groups.addElement(element);
 
             groupClicked(element);
-            textNewGroupName.setText("New group name");
+            textNewGroupName.setText("");
+
+            sendChangesToServer();
+        } else if (button == buttonNewUser) {
+            SettingsGroup group = ((GuiGroupElement) groups.getSelectedElement()).getGroup();
+            SettingsUser user = new SettingsUser();
+
+            String usernameOrUUID = textNewUser.getText();
+            if (usernameOrUUID.isEmpty()) {
+                return;
+            } else if (usernameOrUUID.length() < 28) {
+                user.username = usernameOrUUID;
+                user.fillMissingInfo(false);
+            } else {
+                usernameOrUUID = usernameOrUUID.replaceAll("[^0-9a-fA-F]", "");
+                if (usernameOrUUID.length() != 32) {
+                    // @Incomplete: announce error
+                    return;
+                }
+                usernameOrUUID = usernameOrUUID.toLowerCase();
+                String uuid = usernameOrUUID.substring(0, 8) + "-" + usernameOrUUID.substring(8, 12) + "-"
+                        + usernameOrUUID.substring(12, 16) + "-" + usernameOrUUID.substring(16, 20) + "-"
+                        + usernameOrUUID.substring(20, 32);
+
+                try {
+                    user.uuid = UUID.fromString(uuid);
+                    user.fillMissingInfo(true);
+                } catch (Exception e) {
+                    // @Incomplete: announce error
+                    return;
+                }
+            }
+
+            if (group.hasUser(user)) {
+                // @Incomplete: announce error
+                return;
+            }
+
+            group.addUser(user);
+            GuiUserElement element = new GuiUserElement(fontRenderer, buttonList, id, user, guiTexture, guiTextureSize);
+            users.addElement(element);
+
+            textNewUser.setText("");
 
             sendChangesToServer();
         }
@@ -161,14 +223,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
             groups.addElement(new GuiGroupElement(fontRenderer, buttonList, id, group, guiTexture, guiTextureSize));
         }
 
-        groupsActions.removeAll();
-        groupsActions.addElement(new GuiGroupActionElement(fontRenderer, settings.getOPsGroup(), this));
-        groupsActions.addElement(new GuiGroupActionElement(fontRenderer, settings.getOwnersGroup(), true, this));
-        groupsActions.addElement(new GuiGroupActionElement(fontRenderer, settings.getEveryoneGroup(), this));
-
-        for (SettingsGroup group : settings.getCustomGroups()) {
-            groupsActions.addElement(new GuiGroupActionElement(fontRenderer, group, this));
-        }
+        updateGroupsActions();
 
         resetLabels();
         updateButtonsVisibility();
@@ -193,6 +248,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     private void updateButtonsVisibility() {
         groups.visible = tabSelected == 0;
         buttonNewGroup.visible = tabSelected == 0;
+        buttonNewUser.visible = canAddNewUser();
         groupsActions.visible = tabSelected == 1;
     }
 
@@ -210,9 +266,8 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
             GuiGroupElement group = (GuiGroupElement) element;
             textGroupName.setText(group.getGroup().getName());
             textGroupName.setEnabled(!group.getGroup().isSpecial());
+            updateUsers();
         }
-
-        updateUsers();
     }
 
     @Override
@@ -221,9 +276,11 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
             if (groups.getSelectedElement() != null) {
                 groupClicked((GuiGroupElement) groups.getSelectedElement());
             }
+            settings.removeCustomGroup(((GuiGroupElement) element).getGroup());
             sendChangesToServer();
         } else if (id == users.getId()) {
-            updateUsers();
+            SettingsGroup group = ((GuiGroupElement) groups.getSelectedElement()).getGroup();
+            group.removeUser(((GuiUserElement) element).getUser());
             sendChangesToServer();
         }
     }
@@ -242,6 +299,11 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     @Override
     public void tabChanged(int tab) {
         tabSelected = tab;
+
+        if (tabSelected == 1) {
+            updateGroupsActions();
+        }
+
         resetLabels();
         updateButtonsVisibility();
     }
@@ -274,5 +336,29 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
                 users.addElement(new GuiUserElement(fontRenderer, buttonList, id, user, guiTexture, guiTextureSize));
             }
         }
+
+        buttonNewUser.visible = canAddNewUser();
+    }
+
+    private void updateGroupsActions() {
+        groupsActions.removeAll();
+        groupsActions.addElement(new GuiGroupActionElement(fontRenderer, settings.getOPsGroup(), this));
+        groupsActions.addElement(new GuiGroupActionElement(fontRenderer, settings.getOwnersGroup(), true, this));
+        groupsActions.addElement(new GuiGroupActionElement(fontRenderer, settings.getEveryoneGroup(), this));
+
+        for (SettingsGroup group : settings.getCustomGroups()) {
+            groupsActions.addElement(new GuiGroupActionElement(fontRenderer, group, this));
+        }
+    }
+
+    private boolean canAddNewUser() {
+        if (tabSelected == 0 && groups.getSelectedElement() != null) {
+            SettingsGroup group = ((GuiGroupElement) groups.getSelectedElement()).getGroup();
+            if (!group.isSpecial()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

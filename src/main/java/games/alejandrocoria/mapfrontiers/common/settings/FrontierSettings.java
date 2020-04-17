@@ -64,6 +64,10 @@ public class FrontierSettings {
         return group;
     }
 
+    public void removeCustomGroup(SettingsGroup group) {
+        customGroups.remove(group);
+    }
+
     public boolean checkAction(Action action, SettingsUser player, boolean isOP, SettingsUser owner) {
         if (player == null) {
             return false;

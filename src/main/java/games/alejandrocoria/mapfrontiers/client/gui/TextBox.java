@@ -2,6 +2,8 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import org.lwjgl.input.Keyboard;
+
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiTextField;
@@ -58,7 +60,11 @@ public class TextBox extends GuiTextField {
         boolean res = super.textboxKeyTyped(typedChar, keyCode);
 
         if (responder != null) {
-            responder.updatedValue(getId(), getText());
+            if (keyCode == Keyboard.KEY_RETURN || keyCode == Keyboard.KEY_NUMPADENTER) {
+                setFocused(false);
+            } else {
+                responder.updatedValue(getId(), getText());
+            }
         }
 
         return res;
@@ -83,8 +89,8 @@ public class TextBox extends GuiTextField {
             }
 
             if (frame) {
-                Gui.drawRect(x, y, x + width, y + height, 0xff444444);
-                Gui.drawRect(x + 1, y + 1, x + width - 1, y + height - 1, 0xff000000);
+                Gui.drawRect(x - 1, y - 1, x + width + 1, y + height + 1, 0xff444444);
+                Gui.drawRect(x, y, x + width, y + height, 0xff000000);
             }
 
             fontRenderer.drawString(text, posX, y + 2, empty ? 0xbbbbbb : color);

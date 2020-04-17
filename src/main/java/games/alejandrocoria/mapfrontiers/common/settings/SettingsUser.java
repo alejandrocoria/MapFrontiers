@@ -72,7 +72,7 @@ public class SettingsUser {
         fillMissingInfo(false);
         user.fillMissingInfo(false);
 
-        return uuid == user.uuid;
+        return uuid.equals(user.uuid);
     }
 
     public void fillMissingInfo(boolean forceNameUpdate) {
@@ -84,6 +84,9 @@ public class SettingsUser {
             uuid = UUIDHelper.getUUIDFromName(username);
         } else if (username.isEmpty() || forceNameUpdate) {
             username = UUIDHelper.getNameFromUUID(uuid);
+            if (username == null) {
+                username = "";
+            }
         }
     }
 }

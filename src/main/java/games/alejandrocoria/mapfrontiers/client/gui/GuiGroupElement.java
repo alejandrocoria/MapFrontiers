@@ -81,6 +81,7 @@ public class GuiGroupElement extends GuiScrollBox.ScrollElement {
             fontRenderer.drawString(text, x + 4, y + 4, color);
         } else {
             hovered = false;
+            buttonDelete.visible = false;
         }
     }
 

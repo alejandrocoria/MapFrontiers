@@ -21,7 +21,7 @@ public class GuiUserElement extends GuiScrollBox.ScrollElement {
 
     public GuiUserElement(FontRenderer fontRenderer, List<GuiButton> buttonList, int id, SettingsUser user,
             ResourceLocation texture, int textureSize) {
-        super(160, 16);
+        super(258, 16);
         this.fontRenderer = fontRenderer;
         this.user = user;
         buttonDelete = new GuiButtonIcon(id, 0, 0, 13, 13, 494, 132, -23, texture, textureSize);
@@ -41,7 +41,7 @@ public class GuiUserElement extends GuiScrollBox.ScrollElement {
     @Override
     public void setX(int x) {
         super.setX(x);
-        buttonDelete.x = this.x + 145;
+        buttonDelete.x = this.x + 243;
     }
 
     @Override
@@ -79,6 +79,7 @@ public class GuiUserElement extends GuiScrollBox.ScrollElement {
             fontRenderer.drawString(text, x + 4, y + 4, color);
         } else {
             hovered = false;
+            buttonDelete.visible = false;
         }
     }
 
