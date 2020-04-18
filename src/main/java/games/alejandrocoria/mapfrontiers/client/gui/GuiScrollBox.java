@@ -21,6 +21,11 @@ public class GuiScrollBox extends Gui {
     private int elementHeight;
     private int scrollStart = 0;
     private int scrollHeight = 0;
+    private int scrollBarPos = 0;
+    private int scrollBarHeight = 0;
+    private boolean scrollBarHovered = false;
+    private boolean scrollBarGrabbed = false;
+    private int scrollBarGrabbedYPos = 0;
     private List<ScrollElement> elements;
     private int selected;
     private ScrollBoxResponder responder;
@@ -32,9 +37,9 @@ public class GuiScrollBox extends Gui {
         this.x = x;
         this.y = y;
         this.width = width;
-        this.height = height;
         this.elementHeight = elementHeight;
         scrollHeight = height / elementHeight;
+        this.height = scrollHeight * elementHeight;
         this.responder = responder;
     }
 
@@ -46,7 +51,9 @@ public class GuiScrollBox extends Gui {
         element.setX(x);
         element.setY(y + elements.size() * elementHeight);
         elements.add(element);
+        scrollBarGrabbed = false;
         updateScrollWindow();
+        updateScrollBar();
     }
 
     public void selectElement(ScrollElement element) {
@@ -74,7 +81,9 @@ public class GuiScrollBox extends Gui {
             elements.get(i).setY(y + i * elementHeight);
         }
 
+        scrollBarGrabbed = false;
         updateScrollWindow();
+        updateScrollBar();
 
         if (responder != null) {
             responder.elementDelete(id, removed);
@@ -84,11 +93,13 @@ public class GuiScrollBox extends Gui {
     public void removeAll() {
         elements.clear();
         selected = -1;
+        scrollBarGrabbed = false;
         updateScrollWindow();
+        updateScrollBar();
     }
 
     public void scroll(int amount) {
-        if (visible && hovered) {
+        if (visible && (hovered || scrollBarHovered) && !scrollBarGrabbed) {
             if (amount < 0 && scrollStart == 0) {
                 return;
             } else if (amount > 0 && scrollStart + scrollHeight >= elements.size()) {
@@ -97,12 +108,15 @@ public class GuiScrollBox extends Gui {
 
             scrollStart += amount;
             updateScrollWindow();
+            updateScrollBar();
         }
     }
 
     public void scrollBottom() {
         scrollStart = elements.size() - scrollHeight;
+        scrollBarGrabbed = false;
         updateScrollWindow();
+        updateScrollBar();
     }
 
     public void drawBox(Minecraft mc, int mouseX, int mouseY) {
@@ -112,24 +126,84 @@ public class GuiScrollBox extends Gui {
             for (int i = 0; i < elements.size(); ++i) {
                 elements.get(i).draw(mc, mouseX, mouseY, selected == i);
             }
+
+            if (scrollBarHeight > 0) {
+                scrollBarHovered = mouseX >= x + width + 5 && mouseY >= y && mouseX < x + width + 15 && mouseY < y + height;
+
+                int barColor = 0xff777777;
+                if (scrollBarGrabbed) {
+                    barColor = 0xff666666;
+                } else if (scrollBarHovered) {
+                    barColor = 0xffaaaaaa;
+                }
+
+                Gui.drawRect(x + width + 5, y, x + width + 15, y + height, 0x1affffff);
+                Gui.drawRect(x + width + 5, y + scrollBarPos, x + width + 15, y + scrollBarPos + scrollBarHeight, barColor);
+            }
+        } else {
+            hovered = false;
+            scrollBarHovered = false;
         }
     }
 
     public void mousePressed(Minecraft mc, int mouseX, int mouseY) {
-        if (visible && hovered) {
-            ListIterator<ScrollElement> it = elements.listIterator();
-            while (it.hasNext()) {
-                ScrollElement element = it.next();
-                ScrollElement.Action action = element.mousePressed(mc, mouseX, mouseY);
-                if (action == ScrollElement.Action.Deleted) {
-                    removeElement(element, it);
-                } else if (action == ScrollElement.Action.Clicked) {
-                    selectElement(element);
-                    if (responder != null) {
-                        responder.elementClicked(id, element);
+        if (visible) {
+            if (scrollBarHovered) {
+                if (mouseY < y + scrollBarPos) {
+                    scroll(-1);
+                } else if (mouseY > y + scrollBarPos + scrollBarHeight) {
+                    scroll(1);
+                } else {
+                    scrollBarGrabbed = true;
+                    scrollBarGrabbedYPos = mouseY - y - scrollBarPos;
+                }
+            }
+
+            if (hovered && !scrollBarGrabbed) {
+                ListIterator<ScrollElement> it = elements.listIterator();
+                while (it.hasNext()) {
+                    ScrollElement element = it.next();
+                    ScrollElement.Action action = element.mousePressed(mc, mouseX, mouseY);
+                    if (action == ScrollElement.Action.Deleted) {
+                        removeElement(element, it);
+                    } else if (action == ScrollElement.Action.Clicked) {
+                        selectElement(element);
+                        if (responder != null) {
+                            responder.elementClicked(id, element);
+                        }
                     }
                 }
+            }
+        }
+    }
 
+    public void mouseReleased(Minecraft mc, int mouseX, int mouseY) {
+        if (visible && scrollBarHeight > 0 && scrollBarGrabbed) {
+            scrollBarGrabbed = false;
+            updateScrollBar();
+        }
+    }
+
+    public void mouseClickMove(Minecraft mc, int mouseX, int mouseY) {
+        if (visible && scrollBarHeight > 0 && scrollBarGrabbed) {
+            int delta = mouseY - y - scrollBarPos - scrollBarGrabbedYPos;
+
+            if (delta == 0) {
+                return;
+            }
+
+            scrollBarPos += delta;
+            if (scrollBarPos < 0) {
+                scrollBarPos = 0;
+            } else if (scrollBarPos + scrollBarHeight > height) {
+                scrollBarPos = height - scrollBarHeight;
+            }
+
+            int newScrollStart = Math.round(((float) scrollBarPos) / height * elements.size());
+
+            if (newScrollStart != scrollStart) {
+                scrollStart = newScrollStart;
+                updateScrollWindow();
             }
         }
     }
@@ -155,6 +229,21 @@ public class GuiScrollBox extends Gui {
                 elements.get(i).visible = true;
                 elements.get(i).setY(y + (i - scrollStart) * elementHeight);
             }
+        }
+    }
+
+    private void updateScrollBar() {
+        if (elements.size() <= scrollHeight) {
+            scrollBarHeight = 0;
+            scrollBarHovered = false;
+            scrollBarGrabbed = false;
+            return;
+        }
+
+        scrollBarHeight = Math.round(((float) scrollHeight) / elements.size() * height);
+        scrollBarPos = Math.round(((float) scrollStart) / elements.size() * height);
+        if (scrollBarPos + scrollBarHeight > height) {
+            scrollBarPos = height - scrollBarHeight;
         }
     }
 

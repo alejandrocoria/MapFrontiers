@@ -59,7 +59,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         tabbedBox.addTab(I18n.format("mapfrontiers.actions"));
         tabbedBox.setTabSelected(tabSelected);
         groups = new GuiScrollBox(++id, 50, 50, 160, height - 120, 16, this);
-        users = new GuiScrollBox(++id, 250, 82, 160, height - 150, 16, this);
+        users = new GuiScrollBox(++id, 250, 82, 258, height - 150, 16, this);
         groupsActions = new GuiScrollBox(++id, width / 2 - 185, 82, 370, height - 128, 16, this);
 
         textNewGroupName = new TextBox(++id, fontRenderer, 50, height - 61, 140, "New group name");
@@ -139,15 +139,39 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
 
     @Override
     protected void mouseClicked(int x, int y, int btn) throws IOException {
-        tabbedBox.mousePressed(mc, x, y);
-        groups.mousePressed(mc, x, y);
-        users.mousePressed(mc, x, y);
-        textNewGroupName.mouseClicked(x, y, btn);
-        textNewUser.mouseClicked(x, y, btn);
-        groupsActions.mousePressed(mc, x, y);
-        textGroupName.mouseClicked(x, y, btn);
+        if (btn == 0) {
+            tabbedBox.mousePressed(mc, x, y);
+            groups.mousePressed(mc, x, y);
+            users.mousePressed(mc, x, y);
+            textNewGroupName.mouseClicked(x, y, btn);
+            textNewUser.mouseClicked(x, y, btn);
+            groupsActions.mousePressed(mc, x, y);
+            textGroupName.mouseClicked(x, y, btn);
+        }
 
         super.mouseClicked(x, y, btn);
+    }
+
+    @Override
+    protected void mouseReleased(int x, int y, int state) {
+        if (state == 0) {
+            groups.mouseReleased(mc, x, y);
+            users.mouseReleased(mc, x, y);
+            groupsActions.mouseReleased(mc, x, y);
+        }
+
+        super.mouseReleased(x, y, state);
+    }
+
+    @Override
+    protected void mouseClickMove(int x, int y, int btn, long timeSinceLastClick) {
+        if (btn == 0) {
+            groups.mouseClickMove(mc, x, y);
+            users.mouseClickMove(mc, x, y);
+            groupsActions.mouseClickMove(mc, x, y);
+        }
+
+        super.mouseClickMove(x, y, btn, timeSinceLastClick);
     }
 
     @Override
