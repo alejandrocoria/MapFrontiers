@@ -7,6 +7,8 @@ import java.util.UUID;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import org.lwjgl.input.Mouse;
+
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiScrollBox.ScrollElement;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSettings;
@@ -56,27 +58,27 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         tabbedBox.addTab(I18n.format("mapfrontiers.groups"));
         tabbedBox.addTab(I18n.format("mapfrontiers.actions"));
         tabbedBox.setTabSelected(tabSelected);
-        groups = new GuiScrollBox(++id, 50, 50, 160, 400, 16, this);
-        users = new GuiScrollBox(++id, 250, 80, 160, 400, 16, this);
-        groupsActions = new GuiScrollBox(++id, width / 2 - 185, 80, 370, 400, 16, this);
+        groups = new GuiScrollBox(++id, 50, 50, 160, height - 120, 16, this);
+        users = new GuiScrollBox(++id, 250, 82, 160, height - 150, 16, this);
+        groupsActions = new GuiScrollBox(++id, width / 2 - 185, 82, 370, height - 128, 16, this);
 
-        textNewGroupName = new TextBox(++id, fontRenderer, 50, 284, 140, "New group name");
+        textNewGroupName = new TextBox(++id, fontRenderer, 50, height - 61, 140, "New group name");
         textNewGroupName.setMaxStringLength(22);
         textNewGroupName.setResponder(this);
         textNewGroupName.setCentered(false);
         textNewGroupName.setColor(0xffffffff);
         textNewGroupName.setFrame(true);
 
-        buttonNewGroup = new GuiButtonIcon(++id, 192, 284, 13, 13, 494, 119, -23, guiTexture, guiTextureSize);
+        buttonNewGroup = new GuiButtonIcon(++id, 192, height - 61, 13, 13, 494, 119, -23, guiTexture, guiTextureSize);
 
-        textNewUser = new TextBox(++id, fontRenderer, 250, 284, 238, "New user");
+        textNewUser = new TextBox(++id, fontRenderer, 250, height - 61, 238, "New user");
         textNewUser.setMaxStringLength(38);
         textNewUser.setResponder(this);
         textNewUser.setCentered(false);
         textNewUser.setColor(0xffffffff);
         textNewUser.setFrame(true);
 
-        buttonNewUser = new GuiButtonIcon(++id, 490, 284, 13, 13, 494, 119, -23, guiTexture, guiTextureSize);
+        buttonNewUser = new GuiButtonIcon(++id, 490, height - 61, 13, 13, 494, 119, -23, guiTexture, guiTextureSize);
         buttonNewUser.visible = false;
 
         textGroupName = new TextBox(++id, fontRenderer, 250, 50, 140, "Edit group name");
@@ -123,6 +125,19 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     }
 
     @Override
+    public void handleMouseInput() throws IOException {
+        super.handleMouseInput();
+        int i = -Mouse.getEventDWheel();
+
+        if (i != 0) {
+            i = Integer.signum(i);
+            groups.scroll(i);
+            users.scroll(i);
+            groupsActions.scroll(i);
+        }
+    }
+
+    @Override
     protected void mouseClicked(int x, int y, int btn) throws IOException {
         tabbedBox.mousePressed(mc, x, y);
         groups.mousePressed(mc, x, y);
@@ -149,8 +164,10 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
             SettingsGroup group = settings.createCustomGroup(textNewGroupName.getText());
             GuiGroupElement element = new GuiGroupElement(fontRenderer, buttonList, id, group, guiTexture, guiTextureSize);
             groups.addElement(element);
-
             groupClicked(element);
+            groups.scrollBottom();
+            groupsActions.scrollBottom();
+
             textNewGroupName.setText("");
 
             sendChangesToServer();
@@ -192,6 +209,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
             group.addUser(user);
             GuiUserElement element = new GuiUserElement(fontRenderer, buttonList, id, user, guiTexture, guiTextureSize);
             users.addElement(element);
+            users.scrollBottom();
 
             textNewUser.setText("");
 
@@ -247,6 +265,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
 
     private void updateButtonsVisibility() {
         groups.visible = tabSelected == 0;
+        users.visible = tabSelected == 0;
         buttonNewGroup.visible = tabSelected == 0;
         buttonNewUser.visible = canAddNewUser();
         groupsActions.visible = tabSelected == 1;

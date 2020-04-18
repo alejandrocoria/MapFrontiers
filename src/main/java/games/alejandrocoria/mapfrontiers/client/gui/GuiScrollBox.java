@@ -17,7 +17,10 @@ public class GuiScrollBox extends Gui {
     private int y = 0;
     private int width;
     private int height;
+    private boolean hovered = false;
     private int elementHeight;
+    private int scrollStart = 0;
+    private int scrollHeight = 0;
     private List<ScrollElement> elements;
     private int selected;
     private ScrollBoxResponder responder;
@@ -31,6 +34,7 @@ public class GuiScrollBox extends Gui {
         this.width = width;
         this.height = height;
         this.elementHeight = elementHeight;
+        scrollHeight = height / elementHeight;
         this.responder = responder;
     }
 
@@ -42,6 +46,7 @@ public class GuiScrollBox extends Gui {
         element.setX(x);
         element.setY(y + elements.size() * elementHeight);
         elements.add(element);
+        updateScrollWindow();
     }
 
     public void selectElement(ScrollElement element) {
@@ -69,6 +74,8 @@ public class GuiScrollBox extends Gui {
             elements.get(i).setY(y + i * elementHeight);
         }
 
+        updateScrollWindow();
+
         if (responder != null) {
             responder.elementDelete(id, removed);
         }
@@ -77,10 +84,31 @@ public class GuiScrollBox extends Gui {
     public void removeAll() {
         elements.clear();
         selected = -1;
+        updateScrollWindow();
+    }
+
+    public void scroll(int amount) {
+        if (visible && hovered) {
+            if (amount < 0 && scrollStart == 0) {
+                return;
+            } else if (amount > 0 && scrollStart + scrollHeight >= elements.size()) {
+                return;
+            }
+
+            scrollStart += amount;
+            updateScrollWindow();
+        }
+    }
+
+    public void scrollBottom() {
+        scrollStart = elements.size() - scrollHeight;
+        updateScrollWindow();
     }
 
     public void drawBox(Minecraft mc, int mouseX, int mouseY) {
         if (visible) {
+            hovered = mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height;
+
             for (int i = 0; i < elements.size(); ++i) {
                 elements.get(i).draw(mc, mouseX, mouseY, selected == i);
             }
@@ -88,7 +116,7 @@ public class GuiScrollBox extends Gui {
     }
 
     public void mousePressed(Minecraft mc, int mouseX, int mouseY) {
-        if (visible) {
+        if (visible && hovered) {
             ListIterator<ScrollElement> it = elements.listIterator();
             while (it.hasNext()) {
                 ScrollElement element = it.next();
@@ -102,6 +130,30 @@ public class GuiScrollBox extends Gui {
                     }
                 }
 
+            }
+        }
+    }
+
+    private void updateScrollWindow() {
+        if (elements.size() <= scrollHeight) {
+            scrollStart = 0;
+        } else {
+            int bottomExtra = elements.size() - (scrollStart + scrollHeight);
+            if (bottomExtra < 0) {
+                scrollStart += bottomExtra;
+            }
+
+            if (scrollStart < 0) {
+                scrollStart = 0;
+            }
+        }
+
+        for (int i = 0; i < elements.size(); ++i) {
+            if (i < scrollStart || i >= scrollStart + scrollHeight) {
+                elements.get(i).visible = false;
+            } else {
+                elements.get(i).visible = true;
+                elements.get(i).setY(y + (i - scrollStart) * elementHeight);
             }
         }
     }
