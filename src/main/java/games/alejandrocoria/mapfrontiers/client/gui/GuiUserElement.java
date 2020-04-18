@@ -17,6 +17,7 @@ public class GuiUserElement extends GuiScrollBox.ScrollElement {
     private final FontRenderer fontRenderer;
     private SettingsUser user;
     private GuiButtonIcon buttonDelete;
+    private int pingBar = 0;
     List<GuiButton> buttonList;
 
     public GuiUserElement(FontRenderer fontRenderer, List<GuiButton> buttonList, int id, SettingsUser user,
@@ -36,6 +37,16 @@ public class GuiUserElement extends GuiScrollBox.ScrollElement {
 
     public SettingsUser getUser() {
         return user;
+    }
+
+    public void setPingBar(int value) {
+        pingBar = value;
+
+        if (pingBar < 0) {
+            pingBar = 0;
+        } else if (pingBar > 5) {
+            pingBar = 5;
+        }
     }
 
     @Override
@@ -77,10 +88,30 @@ public class GuiUserElement extends GuiScrollBox.ScrollElement {
             }
 
             fontRenderer.drawString(text, x + 4, y + 4, color);
+
+            if (pingBar > 0) {
+                drawPingLine(x - 11, y + 11, 2);
+            }
+            if (pingBar > 1) {
+                drawPingLine(x - 9, y + 11, 3);
+            }
+            if (pingBar > 2) {
+                drawPingLine(x - 7, y + 11, 4);
+            }
+            if (pingBar > 3) {
+                drawPingLine(x - 5, y + 11, 5);
+            }
+            if (pingBar > 4) {
+                drawPingLine(x - 3, y + 11, 6);
+            }
         } else {
             hovered = false;
             buttonDelete.visible = false;
         }
+    }
+
+    private void drawPingLine(int posX, int posY, int height) {
+        Gui.drawRect(posX, posY - height, posX + 1, posY, 0xffffffff);
     }
 
     @Override

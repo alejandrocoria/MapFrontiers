@@ -47,6 +47,10 @@ public class GuiScrollBox extends Gui {
         return id;
     }
 
+    public List<ScrollElement> getElements() {
+        return elements;
+    }
+
     public void addElement(ScrollElement element) {
         element.setX(x);
         element.setY(y + elements.size() * elementHeight);

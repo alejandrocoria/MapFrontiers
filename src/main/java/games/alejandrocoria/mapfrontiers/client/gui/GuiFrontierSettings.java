@@ -20,6 +20,8 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.network.NetHandlerPlayClient;
+import net.minecraft.client.network.NetworkPlayerInfo;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.relauncher.Side;
@@ -44,7 +46,8 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     private TextBox textGroupName;
     private List<GuiSimpleLabel> labels;
     private int tabSelected = 0;
-    int id = 0;
+    private int ticksSinceLastUpdate = 0;
+    private int id = 0;
 
     public GuiFrontierSettings() {
         guiTexture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/book.png");
@@ -94,7 +97,48 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
 
     @Override
     public void updateScreen() {
+        ++ticksSinceLastUpdate;
 
+        if (ticksSinceLastUpdate >= 100) {
+            ticksSinceLastUpdate = 0;
+            PacketHandler.INSTANCE.sendToServer(new PacketRequestFrontierSettings(settings.getChangeCounter()));
+
+            NetHandlerPlayClient handler = mc.getConnection();
+            if (handler == null) {
+                return;
+            }
+
+            for (ScrollElement element : users.getElements()) {
+                GuiUserElement userElement = (GuiUserElement) element;
+                SettingsUser user = userElement.getUser();
+                NetworkPlayerInfo networkplayerinfo = null;
+
+                if (user.uuid != null) {
+                    networkplayerinfo = handler.getPlayerInfo(user.uuid);
+                } else if (!user.username.isEmpty()) {
+                    networkplayerinfo = handler.getPlayerInfo(user.username);
+                }
+
+                if (networkplayerinfo == null) {
+                    userElement.setPingBar(0);
+                    continue;
+                }
+
+                if (networkplayerinfo.getResponseTime() <= 0) {
+                    userElement.setPingBar(0);
+                } else if (networkplayerinfo.getResponseTime() < 150) {
+                    userElement.setPingBar(5);
+                } else if (networkplayerinfo.getResponseTime() < 300) {
+                    userElement.setPingBar(4);
+                } else if (networkplayerinfo.getResponseTime() < 600) {
+                    userElement.setPingBar(3);
+                } else if (networkplayerinfo.getResponseTime() < 1000) {
+                    userElement.setPingBar(2);
+                } else {
+                    userElement.setPingBar(1);
+                }
+            }
+        }
     }
 
     @Override
