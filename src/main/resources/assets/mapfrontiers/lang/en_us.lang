@@ -40,6 +40,8 @@ mapfrontiers.create_frontier=Create\nfrontier
 mapfrontiers.delete_frontier=Delete\nfrontier
 mapfrontiers.update_frontier=Update\nfrontier
 mapfrontiers.update_settings=Update\nsettings
+mapfrontiers.new_group_name=New group name
+mapfrontiers.new_user=New user
 
 # Chat
 mapfrontiers.chat.frontier_deleted=%2$s%3$s%1$s deleted the frontier %4$d

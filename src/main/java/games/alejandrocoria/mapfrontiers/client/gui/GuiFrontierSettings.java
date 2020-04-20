@@ -50,7 +50,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     private int id = 0;
 
     public GuiFrontierSettings() {
-        guiTexture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/book.png");
+        guiTexture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/gui.png");
         labels = new ArrayList<GuiSimpleLabel>();
     }
 
@@ -65,7 +65,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         users = new GuiScrollBox(++id, 250, 82, 258, height - 150, 16, this);
         groupsActions = new GuiScrollBox(++id, width / 2 - 185, 82, 370, height - 128, 16, this);
 
-        textNewGroupName = new TextBox(++id, fontRenderer, 50, height - 61, 140, "New group name");
+        textNewGroupName = new TextBox(++id, fontRenderer, 50, height - 61, 140, I18n.format("mapfrontiers.new_group_name"));
         textNewGroupName.setMaxStringLength(22);
         textNewGroupName.setResponder(this);
         textNewGroupName.setCentered(false);
@@ -74,7 +74,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
 
         buttonNewGroup = new GuiButtonIcon(++id, 192, height - 61, 13, 13, 494, 119, -23, guiTexture, guiTextureSize);
 
-        textNewUser = new TextBox(++id, fontRenderer, 250, height - 61, 238, "New user");
+        textNewUser = new TextBox(++id, fontRenderer, 250, height - 61, 238, I18n.format("mapfrontiers.new_user"));
         textNewUser.setMaxStringLength(38);
         textNewUser.setResponder(this);
         textNewUser.setCentered(false);
@@ -84,7 +84,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         buttonNewUser = new GuiButtonIcon(++id, 490, height - 61, 13, 13, 494, 119, -23, guiTexture, guiTextureSize);
         buttonNewUser.visible = false;
 
-        textGroupName = new TextBox(++id, fontRenderer, 250, 50, 140, "Edit group name");
+        textGroupName = new TextBox(++id, fontRenderer, 250, 50, 140, I18n.format("mapfrontiers.edit_group_name"));
         textGroupName.setMaxStringLength(22);
         textGroupName.setResponder(this);
         textGroupName.setEnabled(false);

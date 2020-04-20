@@ -101,7 +101,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         this.currentDimension = currentDimension;
         this.dimension = dimension;
 
-        bookPageTexture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/book.png");
+        bookPageTexture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/gui.png");
         indexEntryButtons = new ArrayList<IndexEntryButton>();
         labels = new ArrayList<GuiSimpleLabel>();
     }
