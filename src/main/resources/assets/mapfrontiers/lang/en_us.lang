@@ -43,6 +43,9 @@ mapfrontiers.update_settings=Update\nsettings
 mapfrontiers.new_group_name=New group name
 mapfrontiers.new_user=New user
 mapfrontiers.edit_group_name=Edit group name
+mapfrontiers.group_ops_desc=In multiplayer this group represents players with OP permissions.\nIn singleplayer it represents the main player of the game.
+mapfrontiers.group_owners_desc=This group represents the owners of the frontiers.\nThe only actions that can be configured are Delete and Update frontiers.
+mapfrontiers.group_everyone_desc=This group represents all players without exception.
 mapfrontiers.unnamed=%1$sUnnamed
 
 # Chat

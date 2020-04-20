@@ -318,7 +318,22 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     private void resetLabels() {
         labels.clear();
 
-        if (tabSelected == 1) {
+        if (tabSelected == 0) {
+            GuiGroupElement element = (GuiGroupElement) groups.getSelectedElement();
+            if (element != null && element.getGroup().isSpecial()) {
+                SettingsGroup group = element.getGroup();
+                if (group == settings.getOPsGroup()) {
+                    labels.add(new GuiSimpleLabel(fontRenderer, 250, 82, GuiSimpleLabel.Align.Left,
+                            I18n.format("mapfrontiers.group_ops_desc"), 0xffdddddd));
+                } else if (group == settings.getOwnersGroup()) {
+                    labels.add(new GuiSimpleLabel(fontRenderer, 250, 82, GuiSimpleLabel.Align.Left,
+                            I18n.format("mapfrontiers.group_owners_desc"), 0xffdddddd));
+                } else if (group == settings.getEveryoneGroup()) {
+                    labels.add(new GuiSimpleLabel(fontRenderer, 250, 82, GuiSimpleLabel.Align.Left,
+                            I18n.format("mapfrontiers.group_everyone_desc"), 0xffdddddd));
+                }
+            }
+        } else if (tabSelected == 1) {
             int x = width / 2 - 25;
             labels.add(new GuiSimpleLabel(fontRenderer, x, 54, GuiSimpleLabel.Align.Center,
                     I18n.format("mapfrontiers.create_frontier"), 0xffffffff));
@@ -344,6 +359,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         textGroupName.setText(element.getGroup().getName());
         textGroupName.setEnabled(!element.getGroup().isSpecial());
 
+        resetLabels();
         updateUsers();
     }
 
@@ -353,6 +369,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
             GuiGroupElement group = (GuiGroupElement) element;
             textGroupName.setText(group.getGroup().getName());
             textGroupName.setEnabled(!group.getGroup().isSpecial());
+            resetLabels();
             updateUsers();
         }
     }
