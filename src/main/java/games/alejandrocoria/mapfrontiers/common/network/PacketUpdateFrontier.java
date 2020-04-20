@@ -59,17 +59,12 @@ public class PacketUpdateFrontier implements IMessage {
                     FrontierData currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontier.getDimension(),
                             message.frontier.getId());
 
-                    if (currentFrontier.getOwnerUUID() != null) {
-                        message.frontier.setOwner(currentFrontier.getOwnerUUID());
-                    }
-                    if ((message.frontier.getOwnerName() == null || message.frontier.getOwnerName().isEmpty())
-                            && currentFrontier.getOwnerName() != null && !currentFrontier.getOwnerName().isEmpty()) {
-                        message.frontier.setOwner(currentFrontier.getOwnerName());
+                    if (!currentFrontier.getOwner().isEmpty()) {
+                        message.frontier.setOwner(currentFrontier.getOwner());
                     }
 
                     if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.UpdateFrontier,
-                            new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player),
-                            new SettingsUser(message.frontier.getOwnerName(), message.frontier.getOwnerUUID()))) {
+                            new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), message.frontier.getOwner())) {
                         boolean updated = FrontiersManager.instance.updateFrontier(message.frontier);
 
                         if (updated) {

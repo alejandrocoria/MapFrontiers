@@ -32,6 +32,40 @@ public class SettingsUser {
         fillMissingInfo(false);
     }
 
+    public SettingsUser(String username) {
+        if (username == null) {
+            this.username = "";
+        } else {
+            this.username = username;
+        }
+
+        fillMissingInfo(false);
+    }
+
+    public SettingsUser(UUID uuid) {
+        this.uuid = uuid;
+        fillMissingInfo(true);
+    }
+
+    public boolean isEmpty() {
+        return uuid == null && username.isEmpty();
+    }
+
+    public void fillMissingInfo(boolean forceNameUpdate) {
+        if (isEmpty()) {
+            return;
+        }
+
+        if (uuid == null) {
+            uuid = UUIDHelper.getUUIDFromName(username);
+        } else if (username.isEmpty() || forceNameUpdate) {
+            username = UUIDHelper.getNameFromUUID(uuid);
+            if (username == null) {
+                username = "";
+            }
+        }
+    }
+
     public void readFromNBT(NBTTagCompound nbt) {
         username = nbt.getString("username");
         try {
@@ -73,20 +107,5 @@ public class SettingsUser {
         user.fillMissingInfo(false);
 
         return uuid.equals(user.uuid);
-    }
-
-    public void fillMissingInfo(boolean forceNameUpdate) {
-        if (username.isEmpty() && uuid == null) {
-            return;
-        }
-
-        if (uuid == null) {
-            uuid = UUIDHelper.getUUIDFromName(username);
-        } else if (username.isEmpty() || forceNameUpdate) {
-            username = UUIDHelper.getNameFromUUID(uuid);
-            if (username == null) {
-                username = "";
-            }
-        }
     }
 }

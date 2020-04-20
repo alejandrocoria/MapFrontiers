@@ -53,8 +53,7 @@ public class PacketDeleteFrontier implements IMessage {
                     }
 
                     if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.DeleteFrontier,
-                            new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player),
-                            new SettingsUser(frontier.getOwnerName(), frontier.getOwnerUUID()))) {
+                            new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), frontier.getOwner())) {
                         FrontiersManager.instance.deleteFrontier(message.dimension, message.frontierID);
 
                         PacketHandler.INSTANCE.sendToAll(new PacketFrontierDeleted(message.dimension, message.frontierID,

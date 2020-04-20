@@ -15,6 +15,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.CompressedStreamTools;
@@ -33,7 +34,7 @@ public class FrontiersManager {
     private File WorldDir;
     private boolean frontierOwnersChecked = false;
 
-    private static final int dataVersion = 1;
+    public static final int dataVersion = 2;
 
     public FrontiersManager() {
         instance = this;
@@ -96,7 +97,7 @@ public class FrontiersManager {
         Color color = Color.getHSBColor(hue, saturation, luminance);
 
         FrontierData frontier = new FrontierData();
-        frontier.setOwner(player);
+        frontier.setOwner(new SettingsUser(player));
         frontier.setDimension(dimension);
         frontier.setColor(color.getRGB());
 
@@ -173,7 +174,7 @@ public class FrontiersManager {
                 FrontierData frontier = new FrontierData();
                 frontier.setDimension(dimension);
                 NBTTagCompound frontierTag = frontiersTagList.getCompoundTagAt(i2);
-                frontier.readFromNBT(frontierTag);
+                frontier.readFromNBT(frontierTag, version);
                 frontiers.add(frontier);
             }
             dimensionsFrontiers.put(Integer.valueOf(dimension), frontiers);

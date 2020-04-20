@@ -870,10 +870,10 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                     GuiSimpleLabel.Align.Left, perimeter));
 
             String ownerString;
-            if (frontier.getOwnerName() != null && !frontier.getOwnerName().isEmpty()) {
-                ownerString = frontier.getOwnerName();
-            } else if (frontier.getOwnerUUID() != null) {
-                ownerString = frontier.getOwnerUUID().toString();
+            if (!frontier.getOwner().username.isEmpty()) {
+                ownerString = frontier.getOwner().username;
+            } else if (frontier.getOwner().uuid != null) {
+                ownerString = frontier.getOwner().uuid.toString();
                 ownerString = ownerString.substring(0, 14) + '\n' + ownerString.substring(14);
             } else {
                 ownerString = I18n.format("mapfrontiers.unknown", TextFormatting.ITALIC);
@@ -883,8 +883,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                     GuiSimpleLabel.Align.Left, owner));
 
             SettingsProfile profile = frontiersOverlayManager.getSettingsProfile();
-            boolean isOwner = new SettingsUser(frontier.getOwnerName(),
-                    frontier.getOwnerUUID()) == new SettingsUser(Minecraft.getMinecraft().player);
+            boolean isOwner = frontier.getOwner() == new SettingsUser(Minecraft.getMinecraft().player);
 
             boolean canUpdate = profile.updateFrontier == SettingsProfile.State.Enabled
                     || (isOwner && profile.updateFrontier == SettingsProfile.State.Owner);
@@ -980,8 +979,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
         if (isInFrontierPage()) {
             frontier = getCurrentFrontier();
-            isOwner = new SettingsUser(frontier.getOwnerName(),
-                    frontier.getOwnerUUID()) == new SettingsUser(Minecraft.getMinecraft().player);
+            isOwner = frontier.getOwner() == new SettingsUser(Minecraft.getMinecraft().player);
         }
 
         boolean canCreate = profile.createFrontier == SettingsProfile.State.Enabled;

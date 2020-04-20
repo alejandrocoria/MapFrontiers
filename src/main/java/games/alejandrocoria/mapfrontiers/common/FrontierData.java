@@ -7,12 +7,12 @@ import java.util.UUID;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
-import net.minecraft.entity.player.EntityPlayer;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTUtil;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fml.common.FMLCommonHandler;
@@ -33,8 +33,7 @@ public class FrontierData {
     protected int color = 0xffffff;
     protected int dimension = 0;
     protected int mapSlice = NoSlice;
-    protected UUID ownerUUID;
-    protected String ownerName;
+    protected SettingsUser owner = new SettingsUser();
 
     public FrontierData() {
         id = lastID++;
@@ -54,56 +53,31 @@ public class FrontierData {
         color = other.color;
         dimension = other.dimension;
         mapSlice = other.mapSlice;
-        ownerUUID = other.ownerUUID;
-        ownerName = other.ownerName;
+        owner = other.owner;
     }
 
-    public void setOwner(EntityPlayer player) {
-        ownerName = player.getName();
-        ownerUUID = player.getUniqueID();
-    }
-
-    public void setOwner(UUID uuid) {
-        ownerUUID = uuid;
-        String username = UUIDHelper.getNameFromUUID(ownerUUID);
-        if (username != null && !username.isEmpty()) {
-            ownerName = username;
-        }
-    }
-
-    public void setOwner(String username) {
-        ownerName = username;
-        UUID uuid = UUIDHelper.getUUIDFromName(ownerName);
-        if (uuid != null) {
-            ownerUUID = uuid;
-        }
+    public void setOwner(SettingsUser owner) {
+        this.owner = owner;
     }
 
     public void ensureOwner() {
-        if (ownerUUID == null && (ownerName == null || ownerName.isEmpty())) {
-            if (!FMLCommonHandler.instance().getMinecraftServerInstance().isDedicatedServer()) {
-                List<EntityPlayerMP> playerList = FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList()
-                        .getPlayers();
-                if (!playerList.isEmpty()) {
-                    ownerName = playerList.get(0).getName();
-                    ownerUUID = UUIDHelper.getUUIDFromName(ownerName);
-                }
+        if (owner.isEmpty()) {
+            MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
+            if (server.isDedicatedServer()) {
+                owner = new SettingsUser(server.getServerOwner());
             } else {
-                // @Incomplete?
+                List<EntityPlayerMP> playerList = server.getPlayerList().getPlayers();
+                if (!playerList.isEmpty()) {
+                    owner = new SettingsUser(playerList.get(0));
+                }
             }
-        } else if (ownerUUID == null) {
-            ownerUUID = UUIDHelper.getUUIDFromName(ownerName);
         } else {
-            ownerName = UUIDHelper.getNameFromUUID(ownerUUID);
+            owner.fillMissingInfo(false);
         }
     }
 
-    public UUID getOwnerUUID() {
-        return ownerUUID;
-    }
-
-    public String getOwnerName() {
-        return ownerName;
+    public SettingsUser getOwner() {
+        return owner;
     }
 
     public void setId(int id) {
@@ -202,6 +176,10 @@ public class FrontierData {
     }
 
     public void readFromNBT(NBTTagCompound nbt) {
+        readFromNBT(nbt, FrontiersManager.dataVersion);
+    }
+
+    public void readFromNBT(NBTTagCompound nbt, int version) {
         closed = nbt.getBoolean("closed");
         color = nbt.getInteger("color");
         name1 = nbt.getString("name1");
@@ -211,15 +189,24 @@ public class FrontierData {
         }
         mapSlice = nbt.getInteger("slice");
         mapSlice = Math.min(Math.max(mapSlice, -1), 16);
-        if (nbt.hasKey("ownerUUID")) {
-            try {
-                ownerUUID = UUID.fromString(nbt.getString("ownerUUID"));
-            } catch (Exception e) {
-                MapFrontiers.LOGGER.error(e.getMessage(), e);
+
+        owner = new SettingsUser();
+        if (version == 1) {
+            if (nbt.hasKey("ownerUUID")) {
+                try {
+                    owner.uuid = UUID.fromString(nbt.getString("ownerUUID"));
+                } catch (Exception e) {
+                    MapFrontiers.LOGGER.error(e.getMessage(), e);
+                }
             }
-        }
-        if (nbt.hasKey("ownerName")) {
-            ownerName = nbt.getString("ownerName");
+
+            if (nbt.hasKey("ownerName")) {
+                owner.username = nbt.getString("ownerName");
+            }
+
+            owner.fillMissingInfo(true);
+        } else {
+            owner.readFromNBT(nbt.getCompoundTag("owner"));
         }
 
         NBTTagList verticesTagList = nbt.getTagList("vertices", Constants.NBT.TAG_COMPOUND);
@@ -235,12 +222,10 @@ public class FrontierData {
         nbt.setString("name2", name2);
         nbt.setBoolean("nameVisible", nameVisible);
         nbt.setInteger("slice", mapSlice);
-        if (ownerUUID != null) {
-            nbt.setString("ownerUUID", ownerUUID.toString());
-        }
-        if (ownerName != null && !ownerName.isEmpty()) {
-            nbt.setString("ownerName", ownerName);
-        }
+
+        NBTTagCompound nbtOwner = new NBTTagCompound();
+        owner.writeToNBT(nbtOwner);
+        nbt.setTag("owner", nbtOwner);
 
         NBTTagList verticesTagList = new NBTTagList();
         for (BlockPos pos : vertices) {
