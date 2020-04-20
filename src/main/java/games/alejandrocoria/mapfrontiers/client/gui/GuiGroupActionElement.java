@@ -5,6 +5,8 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
+import net.minecraft.client.resources.I18n;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -47,7 +49,12 @@ public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
                 Gui.drawRect(x, y, x + width, y + height, 0xff222222);
             }
 
-            fontRenderer.drawString(group.getName(), x + 4, y + 4, color);
+            String text = group.getName();
+            if (text.isEmpty()) {
+                text = I18n.format("mapfrontiers.unnamed", TextFormatting.ITALIC);
+            }
+
+            fontRenderer.drawString(text, x + 4, y + 4, color);
 
             if (!ownersGroup) {
                 drawBox(x + 154, y + 2, createFrontier);

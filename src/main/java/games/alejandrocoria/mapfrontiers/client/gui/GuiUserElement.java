@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.fml.relauncher.Side;
@@ -81,7 +82,7 @@ public class GuiUserElement extends GuiScrollBox.ScrollElement {
             String text = user.username;
             if (text.isEmpty()) {
                 if (user.uuid == null) {
-                    text = String.format("%1$sUnnamed", TextFormatting.ITALIC);
+                    text = I18n.format("mapfrontiers.unnamed", TextFormatting.ITALIC);
                 } else {
                     text = user.uuid.toString();
                 }

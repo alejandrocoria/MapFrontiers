@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.fml.relauncher.Side;
@@ -75,7 +76,7 @@ public class GuiGroupElement extends GuiScrollBox.ScrollElement {
 
             String text = group.getName();
             if (text.isEmpty()) {
-                text = String.format("%1$sUnnamed", TextFormatting.ITALIC);
+                text = I18n.format("mapfrontiers.unnamed", TextFormatting.ITALIC);
             }
 
             fontRenderer.drawString(text, x + 4, y + 4, color);
