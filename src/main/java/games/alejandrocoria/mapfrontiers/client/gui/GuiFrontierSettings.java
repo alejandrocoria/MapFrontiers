@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.input.Mouse;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
@@ -41,7 +42,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     private GuiScrollBox groupsActions;
     private TextBox textNewGroupName;
     private GuiButtonIcon buttonNewGroup;
-    private TextBox textNewUser;
+    private TextUserBox textNewUser;
     private GuiButtonIcon buttonNewUser;
     private TextBox textGroupName;
     private List<GuiSimpleLabel> labels;
@@ -74,7 +75,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
 
         buttonNewGroup = new GuiButtonIcon(++id, 192, height - 61, 13, 13, 494, 119, -23, guiTexture, guiTextureSize);
 
-        textNewUser = new TextBox(++id, fontRenderer, 250, height - 61, 238, I18n.format("mapfrontiers.new_user"));
+        textNewUser = new TextUserBox(++id, mc, fontRenderer, 250, height - 61, 238, I18n.format("mapfrontiers.new_user"));
         textNewUser.setMaxStringLength(38);
         textNewUser.setResponder(this);
         textNewUser.setCentered(false);
@@ -115,7 +116,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
 
                 if (user.uuid != null) {
                     networkplayerinfo = handler.getPlayerInfo(user.uuid);
-                } else if (!user.username.isEmpty()) {
+                } else if (!StringUtils.isBlank(user.username)) {
                     networkplayerinfo = handler.getPlayerInfo(user.username);
                 }
 
@@ -244,7 +245,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
             SettingsUser user = new SettingsUser();
 
             String usernameOrUUID = textNewUser.getText();
-            if (usernameOrUUID.isEmpty()) {
+            if (StringUtils.isBlank(usernameOrUUID)) {
                 return;
             } else if (usernameOrUUID.length() < 28) {
                 user.username = usernameOrUUID;

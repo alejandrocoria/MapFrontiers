@@ -2,6 +2,8 @@ package games.alejandrocoria.mapfrontiers.common.settings;
 
 import java.util.UUID;
 
+import org.apache.commons.lang3.StringUtils;
+
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.entity.player.EntityPlayer;
@@ -48,7 +50,7 @@ public class SettingsUser {
     }
 
     public boolean isEmpty() {
-        return uuid == null && username.isEmpty();
+        return uuid == null && StringUtils.isBlank(username);
     }
 
     public void fillMissingInfo(boolean forceNameUpdate) {
@@ -58,7 +60,7 @@ public class SettingsUser {
 
         if (uuid == null) {
             uuid = UUIDHelper.getUUIDFromName(username);
-        } else if (username.isEmpty() || forceNameUpdate) {
+        } else if (StringUtils.isBlank(username) || forceNameUpdate) {
             username = UUIDHelper.getNameFromUUID(uuid);
             if (username == null) {
                 username = "";

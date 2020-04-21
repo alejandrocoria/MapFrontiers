@@ -13,7 +13,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 @ParametersAreNonnullByDefault
 @SideOnly(Side.CLIENT)
 public class TextBox extends GuiTextField {
-    private final FontRenderer fontRenderer;
+    protected final FontRenderer fontRenderer;
     private TextBoxResponder responder;
     private String defaultText;
     private boolean centered = true;
@@ -59,7 +59,7 @@ public class TextBox extends GuiTextField {
     public boolean textboxKeyTyped(char typedChar, int keyCode) {
         boolean res = super.textboxKeyTyped(typedChar, keyCode);
 
-        if (responder != null) {
+        if (isFocused() && responder != null) {
             if (keyCode == Keyboard.KEY_RETURN || keyCode == Keyboard.KEY_NUMPADENTER) {
                 setFocused(false);
             } else {

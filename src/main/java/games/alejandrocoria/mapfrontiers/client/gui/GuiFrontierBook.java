@@ -6,6 +6,7 @@ import java.util.List;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 
@@ -870,7 +871,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                     GuiSimpleLabel.Align.Left, perimeter));
 
             String ownerString;
-            if (!frontier.getOwner().username.isEmpty()) {
+            if (!StringUtils.isBlank(frontier.getOwner().username)) {
                 ownerString = frontier.getOwner().username;
             } else if (frontier.getOwner().uuid != null) {
                 ownerString = frontier.getOwner().uuid.toString();

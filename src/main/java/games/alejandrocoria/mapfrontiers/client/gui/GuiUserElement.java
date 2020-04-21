@@ -2,6 +2,8 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
+
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
@@ -80,7 +82,7 @@ public class GuiUserElement extends GuiScrollBox.ScrollElement {
             }
 
             String text = user.username;
-            if (text.isEmpty()) {
+            if (StringUtils.isBlank(text)) {
                 if (user.uuid == null) {
                     text = I18n.format("mapfrontiers.unnamed", TextFormatting.ITALIC);
                 } else {
