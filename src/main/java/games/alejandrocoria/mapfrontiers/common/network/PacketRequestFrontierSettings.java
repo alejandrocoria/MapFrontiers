@@ -46,7 +46,10 @@ public class PacketRequestFrontierSettings implements IMessage {
 
                     if (settings.checkAction(FrontierSettings.Action.UpdateSettings, new SettingsUser(player),
                             MapFrontiers.proxy.isOPorHost(player), null) && settings.getChangeCounter() > message.changeCounter) {
-                        PacketHandler.INSTANCE.sendToAll(new PacketFrontierSettings(settings));
+                        PacketHandler.INSTANCE.sendTo(new PacketFrontierSettings(settings), player);
+                    } else {
+                        PacketHandler.INSTANCE.sendTo(
+                                new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
                     }
                 });
             }

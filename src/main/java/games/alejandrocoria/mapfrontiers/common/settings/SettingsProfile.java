@@ -56,4 +56,20 @@ public class SettingsProfile {
             return State.Disabled;
         }
     }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+
+        if (other == null || !(other instanceof SettingsProfile)) {
+            return false;
+        }
+
+        SettingsProfile profile = (SettingsProfile) other;
+
+        return createFrontier == profile.createFrontier && deleteFrontier == profile.deleteFrontier
+                && updateFrontier == profile.updateFrontier && updateSettings == profile.updateSettings;
+    }
 }

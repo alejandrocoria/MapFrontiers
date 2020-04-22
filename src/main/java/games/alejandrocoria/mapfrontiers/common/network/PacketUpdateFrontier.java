@@ -71,6 +71,9 @@ public class PacketUpdateFrontier implements IMessage {
                             PacketHandler.INSTANCE.sendToAll(
                                     new PacketFrontierUpdated(message.frontier, ctx.getServerHandler().player.getEntityId()));
                         }
+                    } else {
+                        PacketHandler.INSTANCE.sendTo(
+                                new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
                     }
                 });
             }

@@ -568,7 +568,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                 updatePageControls();
             } else {
                 updateIndexEntries();
-                changePage(currPage, false);
+                reloadPage(false);
             }
 
             String message;
@@ -600,7 +600,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         }
 
         if (updatePage) {
-            this.changePage(currPage, false);
+            reloadPage(false);
         }
 
         EntityPlayer player = Minecraft.getMinecraft().player;
@@ -643,7 +643,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             if (currPage > 0 && currPage == frontiersPageStart) {
                 changePage(currPage - 1, false);
             } else {
-                changePage(currPage, false);
+                reloadPage(false);
             }
         }
 
@@ -667,13 +667,17 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             return;
         }
 
-        changePage(currPage, true);
+        reloadPage(true);
     }
 
     private void sendChangesToServer() {
         if (isInFrontierPage() && lastFrontierHash != getCurrentFrontier().getHash()) {
             frontiersOverlayManager.clientUpdatefrontier(dimension, getCurrentFrontierIndex());
         }
+    }
+
+    public void reloadPage(boolean syncFrontierWithServer) {
+        changePage(currPage, syncFrontierWithServer);
     }
 
     private void changePage(int newPage) {

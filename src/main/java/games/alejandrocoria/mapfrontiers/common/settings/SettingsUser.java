@@ -61,8 +61,10 @@ public class SettingsUser {
         if (uuid == null) {
             uuid = UUIDHelper.getUUIDFromName(username);
         } else if (StringUtils.isBlank(username) || forceNameUpdate) {
-            username = UUIDHelper.getNameFromUUID(uuid);
-            if (username == null) {
+            String newUsername = UUIDHelper.getNameFromUUID(uuid);
+            if (newUsername != null) {
+                username = newUsername;
+            } else if (username == null) {
                 username = "";
             }
         }

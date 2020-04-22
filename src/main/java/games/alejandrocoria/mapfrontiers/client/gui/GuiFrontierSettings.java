@@ -125,7 +125,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
                     continue;
                 }
 
-                if (networkplayerinfo.getResponseTime() <= 0) {
+                if (networkplayerinfo.getResponseTime() < 0) {
                     userElement.setPingBar(0);
                 } else if (networkplayerinfo.getResponseTime() < 150) {
                     userElement.setPingBar(5);

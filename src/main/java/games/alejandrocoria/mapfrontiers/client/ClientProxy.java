@@ -94,6 +94,11 @@ public class ClientProxy extends CommonProxy {
             }
 
             SettingsProfile profile = frontiersOverlayManager.getSettingsProfile();
+
+            if (profile == null) {
+                return;
+            }
+
             if (profile.updateSettings == SettingsProfile.State.Enabled) {
                 Minecraft.getMinecraft().displayGuiScreen(new GuiFrontierSettings());
             }
@@ -188,7 +193,7 @@ public class ClientProxy extends CommonProxy {
     }
 
     public void openGUIFrontierBook(int dimension) {
-        if (frontiersOverlayManager == null) {
+        if (frontiersOverlayManager == null || frontiersOverlayManager.getSettingsProfile() == null) {
             return;
         }
 

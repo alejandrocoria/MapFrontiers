@@ -58,6 +58,9 @@ public class PacketDeleteFrontier implements IMessage {
 
                         PacketHandler.INSTANCE.sendToAll(new PacketFrontierDeleted(message.dimension, message.frontierID,
                                 ctx.getServerHandler().player.getEntityId()));
+                    } else {
+                        PacketHandler.INSTANCE.sendTo(
+                                new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
                     }
                 });
             }

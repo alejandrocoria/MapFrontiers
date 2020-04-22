@@ -66,6 +66,9 @@ public class PacketFrontierSettings implements IMessage {
                             PacketHandler.INSTANCE
                                     .sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(p)), p);
                         }
+                    } else {
+                        PacketHandler.INSTANCE.sendTo(
+                                new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
                     }
                 });
             }

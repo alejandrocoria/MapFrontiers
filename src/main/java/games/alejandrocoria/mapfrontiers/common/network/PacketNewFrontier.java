@@ -56,6 +56,9 @@ public class PacketNewFrontier implements IMessage {
                                 message.addVertex, message.snapDistance);
 
                         PacketHandler.INSTANCE.sendToAll(new PacketFrontier(frontier, player.getEntityId()));
+                    } else {
+                        PacketHandler.INSTANCE.sendTo(
+                                new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
                     }
                 });
             }

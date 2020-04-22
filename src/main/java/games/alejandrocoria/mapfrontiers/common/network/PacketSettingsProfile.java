@@ -3,9 +3,12 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
+import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
@@ -42,7 +45,18 @@ public class PacketSettingsProfile implements IMessage {
         public IMessage onMessage(PacketSettingsProfile message, MessageContext ctx) {
             if (ctx.side == Side.CLIENT) {
                 Minecraft.getMinecraft().addScheduledTask(() -> {
-                    FrontiersOverlayManager.instance.setSettingsProfile(message.profile);
+                    SettingsProfile currentProfile = FrontiersOverlayManager.instance.getSettingsProfile();
+                    if (currentProfile == null || !currentProfile.equals(message.profile)) {
+                        FrontiersOverlayManager.instance.setSettingsProfile(message.profile);
+
+                        if (Minecraft.getMinecraft().currentScreen instanceof GuiFrontierSettings) {
+                            if (message.profile.updateSettings == SettingsProfile.State.Disabled) {
+                                Minecraft.getMinecraft().displayGuiScreen((GuiScreen) null);
+                            }
+                        } else if (Minecraft.getMinecraft().currentScreen instanceof GuiFrontierBook) {
+                            ((GuiFrontierBook) Minecraft.getMinecraft().currentScreen).reloadPage(false);
+                        }
+                    }
                 });
             }
 
