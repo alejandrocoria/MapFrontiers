@@ -11,6 +11,7 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
@@ -59,6 +60,12 @@ public class PacketFrontierSettings implements IMessage {
                     if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.UpdateSettings,
                             new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), null)) {
                         FrontiersManager.instance.setSettings(message.settings);
+
+                        MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
+                        for (EntityPlayerMP p : server.getPlayerList().getPlayers()) {
+                            PacketHandler.INSTANCE
+                                    .sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(p)), p);
+                        }
                     }
                 });
             }

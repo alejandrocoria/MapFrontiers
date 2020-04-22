@@ -884,7 +884,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                     GuiSimpleLabel.Align.Left, owner));
 
             SettingsProfile profile = frontiersOverlayManager.getSettingsProfile();
-            boolean isOwner = frontier.getOwner() == new SettingsUser(Minecraft.getMinecraft().player);
+            boolean isOwner = frontier.getOwner().equals(new SettingsUser(Minecraft.getMinecraft().player));
 
             boolean canUpdate = profile.updateFrontier == SettingsProfile.State.Enabled
                     || (isOwner && profile.updateFrontier == SettingsProfile.State.Owner);
@@ -980,7 +980,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
         if (isInFrontierPage()) {
             frontier = getCurrentFrontier();
-            isOwner = frontier.getOwner() == new SettingsUser(Minecraft.getMinecraft().player);
+            isOwner = frontier.getOwner().equals(new SettingsUser(Minecraft.getMinecraft().player));
         }
 
         boolean canCreate = profile.createFrontier == SettingsProfile.State.Enabled;

@@ -16,12 +16,16 @@ public class SettingsProfile {
         switch (action) {
         case CreateFrontier:
             createFrontier = state;
+            break;
         case DeleteFrontier:
             deleteFrontier = state;
+            break;
         case UpdateFrontier:
             updateFrontier = state;
+            break;
         case UpdateSettings:
             updateSettings = state;
+            break;
         }
     }
 
@@ -33,7 +37,7 @@ public class SettingsProfile {
     public void readFromNBT(NBTTagCompound nbt) {
         createFrontier = stringToState(nbt.getString("createFrontier"));
         deleteFrontier = stringToState(nbt.getString("deleteFrontier"));
-        updateFrontier = stringToState(nbt.getString("createFrontier"));
+        updateFrontier = stringToState(nbt.getString("updateFrontier"));
         updateSettings = stringToState(nbt.getString("updateSettings"));
     }
 
