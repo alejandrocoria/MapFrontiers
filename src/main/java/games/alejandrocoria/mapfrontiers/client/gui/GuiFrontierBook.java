@@ -440,13 +440,13 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             FrontierOverlay frontier = getCurrentFrontier();
 
             if (textName1.getId() == id) {
-                if (frontier.getName1() != value) {
+                if (!frontier.getName1().equals(value)) {
                     frontier.setName1(value);
                     updateIndexEntries();
                     updateButtonsVisibility();
                 }
             } else if (textName2.getId() == id) {
-                if (frontier.getName2() != value) {
+                if (!frontier.getName2().equals(value)) {
                     frontier.setName2(value);
                     updateIndexEntries();
                     updateButtonsVisibility();

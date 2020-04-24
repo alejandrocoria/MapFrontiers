@@ -97,7 +97,7 @@ public class CommonProxy {
         }
 
         if (server.isSinglePlayer()) {
-            return server.getServerOwner() == player.getName();
+            return server.getServerOwner().equals(player.getName());
         }
 
         return false;

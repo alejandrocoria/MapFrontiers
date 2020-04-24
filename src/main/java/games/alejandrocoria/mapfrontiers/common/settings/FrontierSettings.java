@@ -77,7 +77,7 @@ public class FrontierSettings {
             return true;
         }
 
-        if (owner != null && player == owner && owners.hasAction(action)) {
+        if (owner != null && player.equals(owner) && owners.hasAction(action)) {
             return true;
         }
 
