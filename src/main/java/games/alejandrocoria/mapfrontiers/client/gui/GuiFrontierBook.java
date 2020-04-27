@@ -33,10 +33,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiLabel;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.renderer.BannerTextures;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.TileEntityBanner;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentString;
@@ -63,6 +66,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     private int dimension;
     private ResourceLocation bookPageTexture;
     private int frontiersPageStart;
+    private ItemStack heldBanner;
 
     private GuiButtonIcon buttonClose;
     private GuiButtonIcon buttonNextPage;
@@ -97,10 +101,13 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     private static final MiniMapProperties miniMapProperties = new MiniMapProperties(777);
     private static int zoom = 1;
 
-    public GuiFrontierBook(FrontiersOverlayManager frontiersOverlayManager, int currentDimension, int dimension) {
+    public GuiFrontierBook(FrontiersOverlayManager frontiersOverlayManager, int currentDimension, int dimension,
+            ItemStack heldBanner) {
         this.frontiersOverlayManager = frontiersOverlayManager;
         this.currentDimension = currentDimension;
         this.dimension = dimension;
+
+        this.heldBanner = heldBanner;
 
         bookPageTexture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/gui.png");
         indexEntryButtons = new ArrayList<IndexEntryButton>();
@@ -280,6 +287,17 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
             if (frontier.getVertexCount() > 0) {
                 drawMap();
+            }
+
+            if (heldBanner != null) {
+                TileEntityBanner banner = new TileEntityBanner();
+                banner.setItemValues(heldBanner, true);
+
+                mc.getTextureManager().bindTexture(BannerTextures.BANNER_DESIGNS.getResourceLocation(
+                        banner.getPatternResourceLocation(), banner.getPatternList(), banner.getColorList()));
+
+                drawModalRectWithCustomSizedTexture(offsetFromScreenLeft + bookImageWidth + 10, offsetFromScreenTop + 30, 0, 3,
+                        22 * 3, 40 * 3, 192, 192);
             }
         }
 

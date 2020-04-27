@@ -15,6 +15,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemBanner;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
@@ -197,8 +198,19 @@ public class ClientProxy extends CommonProxy {
             return;
         }
 
+        ItemStack mainhand = Minecraft.getMinecraft().player.getHeldItemMainhand();
+        ItemStack offhand = Minecraft.getMinecraft().player.getHeldItemOffhand();
+        ItemStack heldBanner = null;
+
+        if (mainhand.getItem() instanceof ItemBanner) {
+            heldBanner = mainhand;
+        } else if (offhand.getItem() instanceof ItemBanner) {
+            heldBanner = offhand;
+        }
+
         int currentDimension = Minecraft.getMinecraft().player.dimension;
-        Minecraft.getMinecraft().displayGuiScreen(new GuiFrontierBook(frontiersOverlayManager, currentDimension, dimension));
+        Minecraft.getMinecraft()
+                .displayGuiScreen(new GuiFrontierBook(frontiersOverlayManager, currentDimension, dimension, heldBanner));
     }
 
     public static boolean hasBookItemInHand() {
