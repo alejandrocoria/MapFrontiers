@@ -82,6 +82,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     private GuiBookTag buttonAddVertex;
     private GuiBookTag buttonRemoveVertex;
     private GuiBookTag buttonFinish;
+    private GuiBookTag buttonBanner;
     private GuiButtonIcon buttonSliceUp;
     private GuiButtonIcon buttonSliceDown;
     private GuiSliderSlice sliderSlice;
@@ -161,22 +162,30 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         buttonDelete.addlabel(labelDeleteConfirm);
 
         int leftTagsX = offsetFromScreenLeft + 3;
-        int tagsWidth = getMaxWidth(I18n.format("mapfrontiers.show_name"), I18n.format("mapfrontiers.hide_name"),
+        int leftTagsWidth = getMaxWidth(I18n.format("mapfrontiers.show_name"), I18n.format("mapfrontiers.hide_name"),
                 I18n.format("mapfrontiers.finish"), I18n.format("mapfrontiers.reopen"), I18n.format("mapfrontiers.add_vertex"),
                 I18n.format("mapfrontiers.remove_vertex"));
-        tagsWidth += 12;
+        leftTagsWidth += 12;
 
-        buttonNameVisible = new GuiBookTag(++id, leftTagsX, offsetFromScreenTop + 12, tagsWidth, true, "", bookPageTexture,
+        int rightTagsWidth = getMaxWidth(I18n.format("mapfrontiers.assign_banner") + " !",
+                I18n.format("mapfrontiers.remove_banner"));
+        rightTagsWidth += 12;
+        rightTagsWidth = Math.max(rightTagsWidth, 89);
+
+        buttonNameVisible = new GuiBookTag(++id, leftTagsX, offsetFromScreenTop + 12, leftTagsWidth, true, "", bookPageTexture,
                 bookTextureSize);
 
-        buttonAddVertex = new GuiBookTag(++id, leftTagsX, offsetFromScreenTop + 32, tagsWidth, true,
+        buttonAddVertex = new GuiBookTag(++id, leftTagsX, offsetFromScreenTop + 32, leftTagsWidth, true,
                 I18n.format("mapfrontiers.add_vertex"), bookPageTexture, bookTextureSize);
 
-        buttonRemoveVertex = new GuiBookTag(++id, leftTagsX, offsetFromScreenTop + 52, tagsWidth, true,
+        buttonRemoveVertex = new GuiBookTag(++id, leftTagsX, offsetFromScreenTop + 52, leftTagsWidth, true,
                 I18n.format("mapfrontiers.remove_vertex"), bookPageTexture, bookTextureSize);
 
-        buttonFinish = new GuiBookTag(++id, leftTagsX, offsetFromScreenTop + 72, tagsWidth, true, "", bookPageTexture,
+        buttonFinish = new GuiBookTag(++id, leftTagsX, offsetFromScreenTop + 72, leftTagsWidth, true, "", bookPageTexture,
                 bookTextureSize);
+
+        buttonBanner = new GuiBookTag(++id, offsetFromScreenLeft + bookImageWidth - 3, offsetFromScreenTop + 12, rightTagsWidth,
+                false, "", bookPageTexture, bookTextureSize);
 
         buttonSliceUp = new GuiButtonIcon(++id, offsetFromScreenLeft + bookImageWidth / 2 - 21,
                 offsetFromScreenTop + bookImageHeight / 2 - 45, 13, 9, 471, 102, 23, bookPageTexture, bookTextureSize);
@@ -220,6 +229,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         buttonList.add(buttonAddVertex);
         buttonList.add(buttonRemoveVertex);
         buttonList.add(buttonFinish);
+        buttonList.add(buttonBanner);
         buttonList.add(buttonSliceUp);
         buttonList.add(buttonSliceDown);
         buttonList.add(sliderSlice);
@@ -289,14 +299,12 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                 drawMap();
             }
 
-            if (heldBanner != null) {
-                TileEntityBanner banner = new TileEntityBanner();
-                banner.setItemValues(heldBanner, true);
-
+            TileEntityBanner banner = frontier.getBanner();
+            if (banner != null) {
                 mc.getTextureManager().bindTexture(BannerTextures.BANNER_DESIGNS.getResourceLocation(
                         banner.getPatternResourceLocation(), banner.getPatternList(), banner.getColorList()));
 
-                drawModalRectWithCustomSizedTexture(offsetFromScreenLeft + bookImageWidth + 10, offsetFromScreenTop + 30, 0, 3,
+                drawModalRectWithCustomSizedTexture(offsetFromScreenLeft + bookImageWidth + 6, offsetFromScreenTop + 27, 0, 3,
                         22 * 3, 40 * 3, 192, 192);
             }
         }
@@ -360,6 +368,14 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                 drawHoveringText(prefix + I18n.format("mapfrontiers.show_name_warn"), mouseX, mouseY);
             } else if (ConfigData.nameVisibility == ConfigData.NameVisibility.Hide) {
                 drawHoveringText(prefix + I18n.format("mapfrontiers.hide_name_warn"), mouseX, mouseY);
+            }
+        }
+
+        if (buttonBanner.visible && buttonBanner.isMouseOver()) {
+            FrontierOverlay frontier = getCurrentFrontier();
+            if (frontier.getBanner() == null && heldBanner == null) {
+                String prefix = TextFormatting.YELLOW + "! " + TextFormatting.RESET;
+                drawHoveringText(prefix + I18n.format("mapfrontiers.assign_banner_warn"), mouseX, mouseY);
             }
         }
     }
@@ -528,6 +544,16 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             resetFinishButton();
             updateButtonsVisibility();
             updateGridRenderer();
+        } else if (button == buttonBanner) {
+            FrontierOverlay frontier = getCurrentFrontier();
+            if (frontier.getBanner() == null) {
+                if (heldBanner != null) {
+                    frontier.setBanner(heldBanner);
+                }
+            } else {
+                frontier.setBanner(null);
+            }
+            resetBannerButton();
         } else if (button == buttonSliceUp) {
             FrontierOverlay frontier = getCurrentFrontier();
             frontier.setMapSlice(frontier.getMapSlice() + 1);
@@ -729,6 +755,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         resetTextColor();
         resetTextName();
         resetFinishButton();
+        resetBannerButton();
         resetSliceSlider();
         updateButtonsVisibility();
     }
@@ -982,6 +1009,22 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         }
     }
 
+    private void resetBannerButton() {
+        if (isInFrontierPage()) {
+            FrontierOverlay frontier = getCurrentFrontier();
+            if (frontier.getBanner() == null) {
+                String suffix = "";
+                if (heldBanner == null) {
+                    suffix += " " + TextFormatting.YELLOW + "!";
+                }
+
+                buttonBanner.setText(I18n.format("mapfrontiers.assign_banner") + suffix);
+            } else {
+                buttonBanner.setText(I18n.format("mapfrontiers.remove_banner"));
+            }
+        }
+    }
+
     private void resetSliceSlider() {
         if (isInFrontierPage()) {
             FrontierOverlay frontier = getCurrentFrontier();
@@ -1051,6 +1094,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
         if (isInFrontierPage() && (currentDimension == dimension) && canUpdate) {
             buttonFinish.visible = frontier.getVertexCount() > 2;
+            buttonBanner.visible = true;
             buttonAddVertex.visible = true;
             if (frontier.getVertexCount() == 0) {
                 buttonNextVertex.visible = false;
@@ -1067,6 +1111,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             }
         } else {
             buttonFinish.visible = false;
+            buttonBanner.visible = false;
             buttonAddVertex.visible = false;
             buttonNextVertex.visible = false;
             buttonPreviousVertex.visible = false;

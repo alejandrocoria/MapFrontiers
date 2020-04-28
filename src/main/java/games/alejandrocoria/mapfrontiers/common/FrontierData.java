@@ -9,10 +9,12 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTUtil;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.tileentity.TileEntityBanner;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fml.common.FMLCommonHandler;
@@ -34,6 +36,7 @@ public class FrontierData {
     protected int dimension = 0;
     protected int mapSlice = NoSlice;
     protected SettingsUser owner = new SettingsUser();
+    protected TileEntityBanner banner;
 
     public FrontierData() {
         id = lastID++;
@@ -54,6 +57,7 @@ public class FrontierData {
         dimension = other.dimension;
         mapSlice = other.mapSlice;
         owner = other.owner;
+        banner = other.banner;
     }
 
     public void setOwner(SettingsUser owner) {
@@ -175,6 +179,20 @@ public class FrontierData {
         return mapSlice;
     }
 
+    public void setBanner(ItemStack itemBanner) {
+        if (itemBanner == null) {
+            banner = null;
+            return;
+        }
+
+        banner = new TileEntityBanner();
+        banner.setItemValues(itemBanner, true);
+    }
+
+    public TileEntityBanner getBanner() {
+        return banner;
+    }
+
     public void readFromNBT(NBTTagCompound nbt) {
         readFromNBT(nbt, FrontiersManager.dataVersion);
     }
@@ -209,6 +227,11 @@ public class FrontierData {
             owner.readFromNBT(nbt.getCompoundTag("owner"));
         }
 
+        if (nbt.hasKey("banner")) {
+            banner = new TileEntityBanner();
+            banner.readFromNBT(nbt.getCompoundTag("banner"));
+        }
+
         NBTTagList verticesTagList = nbt.getTagList("vertices", Constants.NBT.TAG_COMPOUND);
         for (int i = 0; i < verticesTagList.tagCount(); ++i) {
             vertices.add(NBTUtil.getPosFromTag(verticesTagList.getCompoundTagAt(i)));
@@ -226,6 +249,12 @@ public class FrontierData {
         NBTTagCompound nbtOwner = new NBTTagCompound();
         owner.writeToNBT(nbtOwner);
         nbt.setTag("owner", nbtOwner);
+
+        if (banner != null) {
+            NBTTagCompound nbtBanner = new NBTTagCompound();
+            banner.writeToNBT(nbtBanner);
+            nbt.setTag("banner", nbtBanner);
+        }
 
         NBTTagList verticesTagList = new NBTTagList();
         for (BlockPos pos : vertices) {

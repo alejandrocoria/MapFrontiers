@@ -81,6 +81,6 @@ public class GuiBookTag extends GuiButton {
     }
 
     private void drawRightLabel(FontRenderer fontRenderer) {
-        fontRenderer.drawString(displayString, x + 4, y + 4, 0xeeeeee);
+        fontRenderer.drawString(displayString, x + 5, y + 4, 0xeeeeee);
     }
 }

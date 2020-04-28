@@ -19,6 +19,7 @@ import journeymap.client.api.model.MapPolygon;
 import journeymap.client.api.model.ShapeProperties;
 import journeymap.client.api.model.TextProperties;
 import net.minecraft.client.Minecraft;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -83,6 +84,7 @@ public class FrontierOverlay extends FrontierData {
             hash = prime * hash + ((name2 == null) ? 0 : name2.hashCode());
             hash = prime * hash + (nameVisible ? 1231 : 1237);
             hash = prime * hash + ((vertices == null) ? 0 : vertices.hashCode());
+            hash = prime * hash + ((banner == null) ? 0 : banner.hashCode());
         }
 
         return hash;
@@ -196,6 +198,12 @@ public class FrontierOverlay extends FrontierData {
     public void setDimension(int dimension) {
         this.dimension = dimension;
         updateOverlay();
+    }
+
+    @Override
+    public void setBanner(ItemStack itemBanner) {
+        super.setBanner(itemBanner);
+        dirty = true;
     }
 
     public void removeSelectedVertex() {
