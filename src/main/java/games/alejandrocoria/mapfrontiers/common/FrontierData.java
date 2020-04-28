@@ -9,12 +9,14 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.item.EnumDyeColor;
+import net.minecraft.item.ItemBanner;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTUtil;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.tileentity.TileEntityBanner;
+import net.minecraft.tileentity.BannerPattern;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fml.common.FMLCommonHandler;
@@ -36,7 +38,7 @@ public class FrontierData {
     protected int dimension = 0;
     protected int mapSlice = NoSlice;
     protected SettingsUser owner = new SettingsUser();
-    protected TileEntityBanner banner;
+    protected BannerData banner;
 
     public FrontierData() {
         id = lastID++;
@@ -185,12 +187,11 @@ public class FrontierData {
             return;
         }
 
-        banner = new TileEntityBanner();
-        banner.setItemValues(itemBanner, true);
+        banner = new BannerData(itemBanner);
     }
 
-    public TileEntityBanner getBanner() {
-        return banner;
+    public boolean hasBanner() {
+        return banner != null;
     }
 
     public void readFromNBT(NBTTagCompound nbt) {
@@ -228,7 +229,7 @@ public class FrontierData {
         }
 
         if (nbt.hasKey("banner")) {
-            banner = new TileEntityBanner();
+            banner = new BannerData();
             banner.readFromNBT(nbt.getCompoundTag("banner"));
         }
 
@@ -262,5 +263,70 @@ public class FrontierData {
         }
 
         nbt.setTag("vertices", verticesTagList);
+    }
+
+    public class BannerData {
+        public EnumDyeColor baseColor;
+        public NBTTagList patterns;
+        public List<BannerPattern> patternList;
+        public List<EnumDyeColor> colorList;
+        public String patternResourceLocation;
+
+        public BannerData() {
+            baseColor = EnumDyeColor.BLACK;
+            patternList = new ArrayList<BannerPattern>();
+            colorList = new ArrayList<EnumDyeColor>();
+            patternResourceLocation = "";
+        }
+
+        public BannerData(ItemStack itemBanner) {
+            NBTTagCompound blockEntityTag = itemBanner.getSubCompound("BlockEntityTag");
+
+            if (blockEntityTag != null && blockEntityTag.hasKey("Patterns", Constants.NBT.TAG_LIST)) {
+                patterns = blockEntityTag.getTagList("Patterns", Constants.NBT.TAG_COMPOUND);
+            } else {
+                return;
+            }
+
+            baseColor = ItemBanner.getBaseColor(itemBanner);
+            initializeBannerData();
+        }
+
+        public void readFromNBT(NBTTagCompound nbt) {
+            baseColor = EnumDyeColor.byDyeDamage(nbt.getInteger("Base"));
+            patterns = nbt.getTagList("Patterns", 10);
+
+            initializeBannerData();
+        }
+
+        public void writeToNBT(NBTTagCompound nbt) {
+            nbt.setInteger("Base", baseColor.getDyeDamage());
+
+            if (patterns != null) {
+                nbt.setTag("Patterns", patterns);
+            }
+        }
+
+        private void initializeBannerData() {
+            patternList = new ArrayList<BannerPattern>();
+            colorList = new ArrayList<EnumDyeColor>();
+            patternList.add(BannerPattern.BASE);
+            colorList.add(baseColor);
+            patternResourceLocation = "b" + baseColor.getDyeDamage();
+
+            if (patterns != null) {
+                for (int i = 0; i < patterns.tagCount(); ++i) {
+                    NBTTagCompound nbttagcompound = patterns.getCompoundTagAt(i);
+                    BannerPattern bannerpattern = BannerPattern.byHash(nbttagcompound.getString("Pattern"));
+
+                    if (bannerpattern != null) {
+                        patternList.add(bannerpattern);
+                        int j = nbttagcompound.getInteger("Color");
+                        colorList.add(EnumDyeColor.byDyeDamage(j));
+                        patternResourceLocation = patternResourceLocation + bannerpattern.getHashname() + j;
+                    }
+                }
+            }
+        }
     }
 }

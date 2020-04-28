@@ -19,6 +19,7 @@ import journeymap.client.api.model.MapPolygon;
 import journeymap.client.api.model.ShapeProperties;
 import journeymap.client.api.model.TextProperties;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.BannerTextures;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
@@ -204,6 +205,15 @@ public class FrontierOverlay extends FrontierData {
     public void setBanner(ItemStack itemBanner) {
         super.setBanner(itemBanner);
         dirty = true;
+    }
+
+    public void bindBannerTexture(Minecraft mc) {
+        if (banner == null) {
+            return;
+        }
+
+        mc.getTextureManager().bindTexture(BannerTextures.BANNER_DESIGNS.getResourceLocation(banner.patternResourceLocation,
+                banner.patternList, banner.colorList));
     }
 
     public void removeSelectedVertex() {

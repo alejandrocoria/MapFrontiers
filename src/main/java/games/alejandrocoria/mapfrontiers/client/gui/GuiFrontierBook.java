@@ -33,13 +33,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiLabel;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.renderer.BannerTextures;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntityBanner;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentString;
@@ -299,11 +297,8 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                 drawMap();
             }
 
-            TileEntityBanner banner = frontier.getBanner();
-            if (banner != null) {
-                mc.getTextureManager().bindTexture(BannerTextures.BANNER_DESIGNS.getResourceLocation(
-                        banner.getPatternResourceLocation(), banner.getPatternList(), banner.getColorList()));
-
+            if (frontier.hasBanner()) {
+                frontier.bindBannerTexture(mc);
                 drawModalRectWithCustomSizedTexture(offsetFromScreenLeft + bookImageWidth + 6, offsetFromScreenTop + 27, 0, 3,
                         22 * 3, 40 * 3, 192, 192);
             }
@@ -373,7 +368,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
         if (buttonBanner.visible && buttonBanner.isMouseOver()) {
             FrontierOverlay frontier = getCurrentFrontier();
-            if (frontier.getBanner() == null && heldBanner == null) {
+            if (!frontier.hasBanner() && heldBanner == null) {
                 String prefix = TextFormatting.YELLOW + "! " + TextFormatting.RESET;
                 drawHoveringText(prefix + I18n.format("mapfrontiers.assign_banner_warn"), mouseX, mouseY);
             }
@@ -546,7 +541,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             updateGridRenderer();
         } else if (button == buttonBanner) {
             FrontierOverlay frontier = getCurrentFrontier();
-            if (frontier.getBanner() == null) {
+            if (!frontier.hasBanner()) {
                 if (heldBanner != null) {
                     frontier.setBanner(heldBanner);
                 }
@@ -1012,7 +1007,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     private void resetBannerButton() {
         if (isInFrontierPage()) {
             FrontierOverlay frontier = getCurrentFrontier();
-            if (frontier.getBanner() == null) {
+            if (!frontier.hasBanner()) {
                 String suffix = "";
                 if (heldBanner == null) {
                     suffix += " " + TextFormatting.YELLOW + "!";
