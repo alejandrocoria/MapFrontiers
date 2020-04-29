@@ -299,8 +299,9 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
             if (frontier.hasBanner()) {
                 frontier.bindBannerTexture(mc);
+                int bannerSize = 3;
                 drawModalRectWithCustomSizedTexture(offsetFromScreenLeft + bookImageWidth + 6, offsetFromScreenTop + 27, 0, 3,
-                        22 * 3, 40 * 3, 192, 192);
+                        22 * bannerSize, 40 * bannerSize, 64 * bannerSize, 64 * bannerSize);
             }
         }
 

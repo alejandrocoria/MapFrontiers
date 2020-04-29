@@ -7,6 +7,7 @@ import org.lwjgl.input.Keyboard;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierSettings;
+import games.alejandrocoria.mapfrontiers.client.gui.GuiInGameRenderer;
 import games.alejandrocoria.mapfrontiers.common.CommonProxy;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
@@ -46,6 +47,7 @@ public class ClientProxy extends CommonProxy {
     public FrontiersOverlayManager frontiersOverlayManager;
 
     private KeyBinding openSettingsKey;
+    private GuiInGameRenderer guiRenderer;
 
     private static ItemStack bookItemInHand;
 
@@ -183,14 +185,25 @@ public class ClientProxy extends CommonProxy {
                 frontiersOverlayManager.removeAllOverlays();
             }
             frontiersOverlayManager = new FrontiersOverlayManager(jmAPI);
+
+            guiRenderer = new GuiInGameRenderer(frontiersOverlayManager);
+            MinecraftForge.EVENT_BUS.register(guiRenderer);
         }
     }
 
     @SubscribeEvent
     public void clientDisconnectionFromServer(ClientDisconnectionFromServerEvent event) {
         bookItemInHand = null;
-        frontiersOverlayManager.removeAllOverlays();
-        frontiersOverlayManager = null;
+
+        if (frontiersOverlayManager != null) {
+            frontiersOverlayManager.removeAllOverlays();
+            frontiersOverlayManager = null;
+        }
+
+        if (guiRenderer != null) {
+            MinecraftForge.EVENT_BUS.unregister(guiRenderer);
+            guiRenderer = null;
+        }
     }
 
     public void openGUIFrontierBook(int dimension) {

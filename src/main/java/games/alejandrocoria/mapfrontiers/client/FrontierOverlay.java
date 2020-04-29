@@ -135,6 +135,21 @@ public class FrontierOverlay extends FrontierData {
         }
     }
 
+    public boolean pointIsInside(BlockPos point) {
+        if (closed && vertices.size() > 2) {
+            for (PolygonOverlay polygon : polygonOverlays) {
+                MapPolygon map = polygon.getOuterArea();
+                List<BlockPos> points = map.getPoints();
+
+                for (int i = 0; i < points.size(); ++i) {
+                    // @Incomplete
+                }
+            }
+        }
+
+        return false;
+    }
+
     @Override
     public void setId(int id) {
         super.setId(id);

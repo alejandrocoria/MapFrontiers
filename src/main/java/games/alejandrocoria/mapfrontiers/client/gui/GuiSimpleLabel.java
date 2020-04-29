@@ -36,6 +36,11 @@ public class GuiSimpleLabel extends Gui {
         this.y = y;
         this.color = color;
         this.align = align;
+
+        setText(text);
+    }
+
+    public void setText(String text) {
         texts = new ArrayList<String>();
         widths = new ArrayList<Integer>();
 

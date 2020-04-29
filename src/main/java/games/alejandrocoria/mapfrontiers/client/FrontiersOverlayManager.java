@@ -169,6 +169,20 @@ public class FrontiersOverlayManager {
         return frontiers;
     }
 
+    public FrontierOverlay getFrontierInPosition(int dimension, BlockPos pos) {
+        ArrayList<FrontierOverlay> frontiers = dimensionsFrontiers.get(Integer.valueOf(dimension));
+        if (frontiers != null) {
+            for (FrontierOverlay frontier : frontiers) {
+                if (pos.getX() >= frontier.topLeft.getX() && pos.getX() <= frontier.bottomRight.getX()
+                        && pos.getZ() >= frontier.topLeft.getZ() && pos.getZ() <= frontier.bottomRight.getZ()) {
+                    return frontier;
+                }
+            }
+        }
+
+        return null;
+    }
+
     public void updateAllOverlays() {
         for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
             for (FrontierOverlay frontier : frontiers) {
