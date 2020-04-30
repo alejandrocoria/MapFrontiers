@@ -141,9 +141,59 @@ public class FrontierOverlay extends FrontierData {
                 MapPolygon map = polygon.getOuterArea();
                 List<BlockPos> points = map.getPoints();
 
-                for (int i = 0; i < points.size(); ++i) {
-                    // @Incomplete
+                if (points.get(0) == points.get(1)) {
+                    continue;
                 }
+
+                /////////////////////////////////////////////////////////////////
+                // Copyright (c) Justas (https://stackoverflow.com/users/407108)
+                // Licensed under cc by-sa 4.0
+                // https://creativecommons.org/licenses/by-sa/4.0/
+                //
+                // Adapted from https://stackoverflow.com/a/34689268
+                // by Alejandro Coria - 29/04/2020
+                /////////////////////////////////////////////////////////////////
+
+                int pos = 0;
+                int neg = 0;
+
+                boolean inside = true;
+
+                for (int i = 0; i < points.size(); ++i) {
+                    if (points.get(i).equals(point)) {
+                        break;
+                    }
+
+                    int x1 = points.get(i).getX();
+                    int z1 = points.get(i).getZ();
+
+                    int i2 = (i + 1) % points.size();
+
+                    int x2 = points.get(i2).getX();
+                    int z2 = points.get(i2).getZ();
+
+                    int x = point.getX();
+                    int z = point.getZ();
+
+                    int d = (x - x1) * (z2 - z1) - (z - z1) * (x2 - x1);
+
+                    if (d > 0) {
+                        pos++;
+                    } else if (d < 0) {
+                        neg++;
+                    }
+
+                    if (pos > 0 && neg > 0) {
+                        inside = false;
+                        break;
+                    }
+                }
+
+                if (inside) {
+                    return true;
+                }
+
+                /////////////////////////////////////////////////////////////////
             }
         }
 

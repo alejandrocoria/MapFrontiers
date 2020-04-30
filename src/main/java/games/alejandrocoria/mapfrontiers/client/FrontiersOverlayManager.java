@@ -175,7 +175,9 @@ public class FrontiersOverlayManager {
             for (FrontierOverlay frontier : frontiers) {
                 if (pos.getX() >= frontier.topLeft.getX() && pos.getX() <= frontier.bottomRight.getX()
                         && pos.getZ() >= frontier.topLeft.getZ() && pos.getZ() <= frontier.bottomRight.getZ()) {
-                    return frontier;
+                    if (frontier.pointIsInside(pos)) {
+                        return frontier;
+                    }
                 }
             }
         }
