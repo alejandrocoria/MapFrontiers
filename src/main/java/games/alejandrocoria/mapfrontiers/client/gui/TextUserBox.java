@@ -10,6 +10,7 @@ import org.lwjgl.input.Keyboard;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.Gui;
 import net.minecraft.client.network.NetHandlerPlayClient;
 import net.minecraft.client.network.NetworkPlayerInfo;
 import net.minecraftforge.fml.relauncher.Side;
@@ -93,12 +94,12 @@ public class TextUserBox extends TextBox {
     }
 
     @Override
-    public void drawTextBox() {
-        super.drawTextBox();
+    public void drawTextBox(int mouseX, int mouseY) {
+        super.drawTextBox(mouseX, mouseY);
 
         if (!suggestionsToDraw.isEmpty()) {
-            drawRect(x - 1, y - suggestionsToDraw.size() * 12 - 5, x + maxSuggestionWidth + 9, y - 1, 0xffa0a0a0);
-            drawRect(x, y - suggestionsToDraw.size() * 12 - 4, x + maxSuggestionWidth + 8, y - 1, 0xff000000);
+            Gui.drawRect(x - 1, y - suggestionsToDraw.size() * 12 - 5, x + maxSuggestionWidth + 9, y - 1, 0xffa0a0a0);
+            Gui.drawRect(x, y - suggestionsToDraw.size() * 12 - 4, x + maxSuggestionWidth + 8, y - 1, 0xff000000);
 
             int posX = x + 4;
             int posY = y - 12;

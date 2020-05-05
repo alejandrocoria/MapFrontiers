@@ -286,8 +286,8 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             textGreen.drawTextBox();
             textBlue.drawTextBox();
 
-            textName1.drawTextBox();
-            textName2.drawTextBox();
+            textName1.drawTextBox(mouseX, mouseY);
+            textName2.drawTextBox(mouseX, mouseY);
 
             drawRect(rightPageCornerX + 123, rightPageCornerY + 14, rightPageCornerX + 143, rightPageCornerY + 33, 0xff000000);
             drawRect(rightPageCornerX + 125, rightPageCornerY + 16, rightPageCornerX + 141, rightPageCornerY + 31,

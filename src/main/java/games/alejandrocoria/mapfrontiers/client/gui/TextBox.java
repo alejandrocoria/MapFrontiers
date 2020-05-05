@@ -18,6 +18,7 @@ public class TextBox extends GuiTextField {
     private String defaultText;
     private boolean centered = true;
     private int color = 0;
+    private int highlightedColor = 0;
     private boolean frame = false;
 
     public TextBox(int componentId, FontRenderer fontRenderer, int x, int y, int width, String defaultText) {
@@ -36,15 +37,16 @@ public class TextBox extends GuiTextField {
 
     public void setColor(int color) {
         this.color = color;
+        highlightedColor = color;
+    }
+
+    public void setColor(int color, int highlightedColor) {
+        this.color = color;
+        this.highlightedColor = highlightedColor;
     }
 
     public void setFrame(boolean frame) {
         this.frame = frame;
-    }
-
-    @Override
-    public void writeText(String textToWrite) {
-        super.writeText(textToWrite);
     }
 
     public void setText(Object object) {
@@ -72,9 +74,15 @@ public class TextBox extends GuiTextField {
 
     @Override
     public void drawTextBox() {
+        drawTextBox(-1, -1);
+    }
+
+    public void drawTextBox(int mouseX, int mouseY) {
         if (isFocused()) {
             super.drawTextBox();
         } else {
+            boolean hovered = (mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height);
+
             String text = getText();
             boolean empty = false;
             if (text.isEmpty()) {
@@ -93,7 +101,7 @@ public class TextBox extends GuiTextField {
                 Gui.drawRect(x, y, x + width, y + height, 0xff000000);
             }
 
-            fontRenderer.drawString(text, posX, y + 2, empty ? 0xbbbbbb : color);
+            fontRenderer.drawString(text, posX, y + 2, empty ? 0xbbbbbb : (hovered ? highlightedColor : color));
         }
     }
 

@@ -11,7 +11,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.input.Mouse;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiScrollBox.ScrollElement;
+import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketRequestFrontierSettings;
@@ -37,6 +39,11 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     private ResourceLocation guiTexture;
     private FrontierSettings settings;
     private GuiTabbedBox tabbedBox;
+    private GuiOptionButton buttonAddVertexToNewFrontier;
+    private GuiOptionButton buttonAlwaysShowUnfinishedFrontiers;
+    private GuiOptionButton buttonNameVisibility;
+    private TextBox textPolygonsOpacity;
+    private TextBox textSnapDistance;
     private GuiScrollBox groups;
     private GuiScrollBox users;
     private GuiScrollBox groupsActions;
@@ -59,9 +66,43 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     public void initGui() {
         PacketHandler.INSTANCE.sendToServer(new PacketRequestFrontierSettings());
         tabbedBox = new GuiTabbedBox(fontRenderer, 40, 24, width - 80, height - 64, this);
+        tabbedBox.addTab(I18n.format("mapfrontiers.general"));
         tabbedBox.addTab(I18n.format("mapfrontiers.groups"));
         tabbedBox.addTab(I18n.format("mapfrontiers.actions"));
         tabbedBox.setTabSelected(tabSelected);
+
+        buttonAddVertexToNewFrontier = new GuiOptionButton(++id, mc.fontRenderer, width / 2 + 50, 50, 100);
+        buttonAddVertexToNewFrontier.addOption("true");
+        buttonAddVertexToNewFrontier.addOption("false");
+        buttonAddVertexToNewFrontier.setSelected(ConfigData.addVertexToNewFrontier ? 0 : 1);
+
+        buttonAlwaysShowUnfinishedFrontiers = new GuiOptionButton(++id, mc.fontRenderer, width / 2 + 50, 66, 100);
+        buttonAlwaysShowUnfinishedFrontiers.addOption("true");
+        buttonAlwaysShowUnfinishedFrontiers.addOption("false");
+        buttonAlwaysShowUnfinishedFrontiers.setSelected(ConfigData.alwaysShowUnfinishedFrontiers ? 0 : 1);
+
+        buttonNameVisibility = new GuiOptionButton(++id, mc.fontRenderer, width / 2 + 50, 82, 100);
+        buttonNameVisibility.addOption(ConfigData.NameVisibility.Manual.name());
+        buttonNameVisibility.addOption(ConfigData.NameVisibility.Show.name());
+        buttonNameVisibility.addOption(ConfigData.NameVisibility.Hide.name());
+        buttonNameVisibility.setSelected(ConfigData.nameVisibility.ordinal());
+
+        textPolygonsOpacity = new TextBox(++id, mc.fontRenderer, width / 2 + 50, 98, 100, "");
+        textPolygonsOpacity.setText(String.valueOf(ConfigData.polygonsOpacity));
+        textPolygonsOpacity.setMaxStringLength(10);
+        textPolygonsOpacity.setResponder(this);
+        textPolygonsOpacity.setCentered(false);
+        textPolygonsOpacity.setColor(0xffbbbbbb, 0xffffffff);
+        textPolygonsOpacity.setFrame(true);
+
+        textSnapDistance = new TextBox(++id, mc.fontRenderer, width / 2 + 50, 114, 100, "");
+        textSnapDistance.setText(String.valueOf(ConfigData.snapDistance));
+        textSnapDistance.setMaxStringLength(2);
+        textSnapDistance.setResponder(this);
+        textSnapDistance.setCentered(false);
+        textSnapDistance.setColor(0xffbbbbbb, 0xffffffff);
+        textSnapDistance.setFrame(true);
+
         groups = new GuiScrollBox(++id, 50, 50, 160, height - 120, 16, this);
         users = new GuiScrollBox(++id, 250, 82, 258, height - 150, 16, this);
         groupsActions = new GuiScrollBox(++id, width / 2 - 185, 82, 370, height - 128, 16, this);
@@ -92,6 +133,9 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         textGroupName.setCentered(false);
         textGroupName.setColor(0xffffffff);
 
+        buttonList.add(buttonAddVertexToNewFrontier);
+        buttonList.add(buttonAlwaysShowUnfinishedFrontiers);
+        buttonList.add(buttonNameVisibility);
         buttonList.add(buttonNewGroup);
         buttonList.add(buttonNewUser);
     }
@@ -152,14 +196,17 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         groupsActions.drawBox(mc, mouseX, mouseY);
 
         if (tabSelected == 0) {
-            textNewGroupName.drawTextBox();
+            textPolygonsOpacity.drawTextBox(mouseX, mouseY);
+            textSnapDistance.drawTextBox(mouseX, mouseY);
+        } else if (tabSelected == 1) {
+            textNewGroupName.drawTextBox(mouseX, mouseY);
             if (groups.getSelectedElement() != null) {
-                textGroupName.drawTextBox();
+                textGroupName.drawTextBox(mouseX, mouseY);
             }
         }
 
         if (canAddNewUser()) {
-            textNewUser.drawTextBox();
+            textNewUser.drawTextBox(mouseX, mouseY);
         }
 
         for (GuiSimpleLabel label : labels) {
@@ -186,6 +233,8 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     protected void mouseClicked(int x, int y, int btn) throws IOException {
         if (btn == 0) {
             tabbedBox.mousePressed(mc, x, y);
+            textPolygonsOpacity.mouseClicked(x, y, btn);
+            textSnapDistance.mouseClicked(x, y, btn);
             groups.mousePressed(mc, x, y);
             users.mousePressed(mc, x, y);
             textNewGroupName.mouseClicked(x, y, btn);
@@ -222,6 +271,8 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     @Override
     protected void keyTyped(char typedChar, int keyCode) throws IOException {
         super.keyTyped(typedChar, keyCode);
+        textPolygonsOpacity.textboxKeyTyped(typedChar, keyCode);
+        textSnapDistance.textboxKeyTyped(typedChar, keyCode);
         textNewGroupName.textboxKeyTyped(typedChar, keyCode);
         textNewUser.textboxKeyTyped(typedChar, keyCode);
         textGroupName.textboxKeyTyped(typedChar, keyCode);
@@ -229,7 +280,16 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
 
     @Override
     protected void actionPerformed(GuiButton button) {
-        if (button == buttonNewGroup) {
+        if (button == buttonAddVertexToNewFrontier) {
+            ConfigData.addVertexToNewFrontier = buttonAddVertexToNewFrontier.getSelected() == 0;
+            ((ClientProxy) MapFrontiers.proxy).configUpdated();
+        } else if (button == buttonAlwaysShowUnfinishedFrontiers) {
+            ConfigData.alwaysShowUnfinishedFrontiers = buttonAlwaysShowUnfinishedFrontiers.getSelected() == 0;
+            ((ClientProxy) MapFrontiers.proxy).configUpdated();
+        } else if (button == buttonNameVisibility) {
+            ConfigData.nameVisibility = ConfigData.NameVisibility.values()[buttonNameVisibility.getSelected()];
+            ((ClientProxy) MapFrontiers.proxy).configUpdated();
+        } else if (button == buttonNewGroup) {
             SettingsGroup group = settings.createCustomGroup(textNewGroupName.getText());
             GuiGroupElement element = new GuiGroupElement(fontRenderer, buttonList, id, group, guiTexture, guiTextureSize);
             groups.addElement(element);
@@ -320,6 +380,17 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         labels.clear();
 
         if (tabSelected == 0) {
+            labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 54, GuiSimpleLabel.Align.Left, "addVertexToNewFrontier",
+                    0xffdddddd));
+            labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 70, GuiSimpleLabel.Align.Left,
+                    "alwaysShowUnfinishedFrontiers", 0xffdddddd));
+            labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 86, GuiSimpleLabel.Align.Left, "nameVisibility",
+                    0xffdddddd));
+            labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 102, GuiSimpleLabel.Align.Left, "polygonsOpacity",
+                    0xffdddddd));
+            labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 118, GuiSimpleLabel.Align.Left, "snapDistance",
+                    0xffdddddd));
+        } else if (tabSelected == 1) {
             GuiGroupElement element = (GuiGroupElement) groups.getSelectedElement();
             if (element != null && element.getGroup().isSpecial()) {
                 SettingsGroup group = element.getGroup();
@@ -334,7 +405,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
                             I18n.format("mapfrontiers.group_everyone_desc"), 0xffdddddd));
                 }
             }
-        } else if (tabSelected == 1) {
+        } else if (tabSelected == 2) {
             int x = width / 2 - 25;
             labels.add(new GuiSimpleLabel(fontRenderer, x, 54, GuiSimpleLabel.Align.Center,
                     I18n.format("mapfrontiers.create_frontier"), 0xffffffff));
@@ -348,11 +419,14 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     }
 
     private void updateButtonsVisibility() {
-        groups.visible = tabSelected == 0;
-        users.visible = tabSelected == 0;
-        buttonNewGroup.visible = tabSelected == 0;
+        buttonAddVertexToNewFrontier.visible = tabSelected == 0;
+        buttonAlwaysShowUnfinishedFrontiers.visible = tabSelected == 0;
+        buttonNameVisibility.visible = tabSelected == 0;
+        groups.visible = tabSelected == 1;
+        users.visible = tabSelected == 1;
+        buttonNewGroup.visible = tabSelected == 1;
         buttonNewUser.visible = canAddNewUser();
-        groupsActions.visible = tabSelected == 1;
+        groupsActions.visible = tabSelected == 2;
     }
 
     public void groupClicked(GuiGroupElement element) {
@@ -405,7 +479,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     public void tabChanged(int tab) {
         tabSelected = tab;
 
-        if (tabSelected == 1) {
+        if (tabSelected == 2) {
             updateGroupsActions();
         }
 
@@ -419,7 +493,37 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
 
     @Override
     public void lostFocus(int id, String value) {
-        if (textGroupName.getId() == id && tabSelected == 0) {
+        if (textPolygonsOpacity.getId() == id && tabSelected == 0) {
+            if (StringUtils.isBlank(value)) {
+                textPolygonsOpacity.setText(ConfigData.getDefault("polygonsOpacity"));
+                ((ClientProxy) MapFrontiers.proxy).configUpdated();
+            } else {
+                try {
+                    Double opacity = Double.valueOf(value);
+                    if (ConfigData.isInRange("polygonsOpacity", opacity)) {
+                        ConfigData.polygonsOpacity = opacity;
+                        ((ClientProxy) MapFrontiers.proxy).configUpdated();
+                    }
+                } catch (Exception e) {
+                    MapFrontiers.LOGGER.warn(e.getMessage(), e);
+                }
+            }
+        } else if (textSnapDistance.getId() == id && tabSelected == 0) {
+            if (StringUtils.isBlank(value)) {
+                textSnapDistance.setText(ConfigData.getDefault("snapDistance"));
+                ((ClientProxy) MapFrontiers.proxy).configUpdated();
+            } else {
+                try {
+                    Integer distance = Integer.valueOf(value);
+                    if (ConfigData.isInRange("snapDistance", distance)) {
+                        ConfigData.snapDistance = distance;
+                        ((ClientProxy) MapFrontiers.proxy).configUpdated();
+                    }
+                } catch (Exception e) {
+                    MapFrontiers.LOGGER.warn(e.getMessage(), e);
+                }
+            }
+        } else if (textGroupName.getId() == id && tabSelected == 1) {
             GuiGroupElement groupElement = (GuiGroupElement) groups.getSelectedElement();
             if (groupElement != null) {
                 groupElement.getGroup().setName(value);
@@ -457,7 +561,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     }
 
     private boolean canAddNewUser() {
-        if (tabSelected == 0 && groups.getSelectedElement() != null) {
+        if (tabSelected == 1 && groups.getSelectedElement() != null) {
             SettingsGroup group = ((GuiGroupElement) groups.getSelectedElement()).getGroup();
             if (!group.isSpecial()) {
                 return true;

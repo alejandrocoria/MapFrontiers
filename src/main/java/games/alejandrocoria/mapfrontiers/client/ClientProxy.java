@@ -233,10 +233,14 @@ public class ClientProxy extends CommonProxy {
     @SubscribeEvent
     public void onConfigChanged(ConfigChangedEvent.OnConfigChangedEvent event) {
         if (event.getModID().equals(MapFrontiers.MODID)) {
-            ConfigManager.sync(MapFrontiers.MODID, Config.Type.INSTANCE);
-            if (frontiersOverlayManager != null) {
-                frontiersOverlayManager.updateAllOverlays();
-            }
+            configUpdated();
+        }
+    }
+
+    public void configUpdated() {
+        ConfigManager.sync(MapFrontiers.MODID, Config.Type.INSTANCE);
+        if (frontiersOverlayManager != null) {
+            frontiersOverlayManager.updateAllOverlays();
         }
     }
 

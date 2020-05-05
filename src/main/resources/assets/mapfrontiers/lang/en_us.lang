@@ -37,6 +37,7 @@ mapfrontiers.vertical_chunk=Vertical chunk: %1$d
 mapfrontiers.vertical_chunk_surface=Vertical chunk: Surface
 
 # Settings
+mapfrontiers.general=General
 mapfrontiers.groups=Groups
 mapfrontiers.actions=Actions
 mapfrontiers.create_frontier=Create\nfrontier
