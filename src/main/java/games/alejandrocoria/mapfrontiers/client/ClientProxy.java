@@ -7,7 +7,7 @@ import org.lwjgl.input.Keyboard;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierSettings;
-import games.alejandrocoria.mapfrontiers.client.gui.GuiInGameRenderer;
+import games.alejandrocoria.mapfrontiers.client.gui.GuiHUD;
 import games.alejandrocoria.mapfrontiers.common.CommonProxy;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
@@ -47,7 +47,7 @@ public class ClientProxy extends CommonProxy {
     public FrontiersOverlayManager frontiersOverlayManager;
 
     private KeyBinding openSettingsKey;
-    private GuiInGameRenderer guiRenderer;
+    private GuiHUD guiHUD;
 
     private static ItemStack bookItemInHand;
 
@@ -186,8 +186,8 @@ public class ClientProxy extends CommonProxy {
             }
             frontiersOverlayManager = new FrontiersOverlayManager(jmAPI);
 
-            guiRenderer = new GuiInGameRenderer(frontiersOverlayManager);
-            MinecraftForge.EVENT_BUS.register(guiRenderer);
+            guiHUD = new GuiHUD(frontiersOverlayManager);
+            MinecraftForge.EVENT_BUS.register(guiHUD);
         }
     }
 
@@ -200,9 +200,9 @@ public class ClientProxy extends CommonProxy {
             frontiersOverlayManager = null;
         }
 
-        if (guiRenderer != null) {
-            MinecraftForge.EVENT_BUS.unregister(guiRenderer);
-            guiRenderer = null;
+        if (guiHUD != null) {
+            MinecraftForge.EVENT_BUS.unregister(guiHUD);
+            guiHUD = null;
         }
     }
 
@@ -239,8 +239,13 @@ public class ClientProxy extends CommonProxy {
 
     public void configUpdated() {
         ConfigManager.sync(MapFrontiers.MODID, Config.Type.INSTANCE);
+
         if (frontiersOverlayManager != null) {
             frontiersOverlayManager.updateAllOverlays();
+        }
+
+        if (guiHUD != null) {
+            guiHUD.configUpdated();
         }
     }
 
