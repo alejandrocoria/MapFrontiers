@@ -21,6 +21,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings.Action;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.network.NetHandlerPlayClient;
@@ -45,6 +46,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     private TextBox textPolygonsOpacity;
     private TextBox textSnapDistance;
     private GuiOptionButton buttonHUDEnabled;
+    private GuiSettingsButton buttonEditHUD;
     private GuiScrollBox groups;
     private GuiScrollBox users;
     private GuiScrollBox groupsActions;
@@ -109,6 +111,8 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         buttonHUDEnabled.addOption("false");
         buttonHUDEnabled.setSelected(ConfigData.hud.enabled ? 0 : 1);
 
+        buttonEditHUD = new GuiSettingsButton(++id, mc.fontRenderer, width / 2 - 50, 208, 100, "Edit HUD");
+
         groups = new GuiScrollBox(++id, 50, 50, 160, height - 120, 16, this);
         users = new GuiScrollBox(++id, 250, 82, 258, height - 150, 16, this);
         groupsActions = new GuiScrollBox(++id, width / 2 - 185, 82, 370, height - 128, 16, this);
@@ -143,6 +147,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         buttonList.add(buttonAlwaysShowUnfinishedFrontiers);
         buttonList.add(buttonNameVisibility);
         buttonList.add(buttonHUDEnabled);
+        buttonList.add(buttonEditHUD);
         buttonList.add(buttonNewGroup);
         buttonList.add(buttonNewUser);
 
@@ -302,6 +307,8 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         } else if (button == buttonHUDEnabled) {
             ConfigData.hud.enabled = buttonHUDEnabled.getSelected() == 0;
             ((ClientProxy) MapFrontiers.proxy).configUpdated();
+        } else if (button == buttonEditHUD) {
+            Minecraft.getMinecraft().displayGuiScreen(new GuiHUDSettings(this));
         } else if (button == buttonNewGroup) {
             SettingsGroup group = settings.createCustomGroup(textNewGroupName.getText());
             GuiGroupElement element = new GuiGroupElement(fontRenderer, buttonList, id, group, guiTexture, guiTextureSize);
@@ -394,15 +401,15 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
 
         if (tabSelected == 0) {
             labels.add(new GuiSimpleLabel(fontRenderer, width / 2, 54, GuiSimpleLabel.Align.Center, "Frontiers", 0xffffffff));
-            labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 74, GuiSimpleLabel.Align.Left, "addVertexToNewFrontier",
+            labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 72, GuiSimpleLabel.Align.Left, "addVertexToNewFrontier",
                     0xffdddddd));
-            labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 90, GuiSimpleLabel.Align.Left,
+            labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 88, GuiSimpleLabel.Align.Left,
                     "alwaysShowUnfinishedFrontiers", 0xffdddddd));
-            labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 106, GuiSimpleLabel.Align.Left, "nameVisibility",
+            labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 104, GuiSimpleLabel.Align.Left, "nameVisibility",
                     0xffdddddd));
-            labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 122, GuiSimpleLabel.Align.Left, "polygonsOpacity",
+            labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 120, GuiSimpleLabel.Align.Left, "polygonsOpacity",
                     0xffdddddd));
-            labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 138, GuiSimpleLabel.Align.Left, "snapDistance",
+            labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 136, GuiSimpleLabel.Align.Left, "snapDistance",
                     0xffdddddd));
             labels.add(new GuiSimpleLabel(fontRenderer, width / 2, 170, GuiSimpleLabel.Align.Center, "HUD", 0xffffffff));
             labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 190, GuiSimpleLabel.Align.Left, "enabled", 0xffdddddd));
@@ -439,6 +446,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         buttonAlwaysShowUnfinishedFrontiers.visible = tabSelected == 0;
         buttonNameVisibility.visible = tabSelected == 0;
         buttonHUDEnabled.visible = tabSelected == 0;
+        buttonEditHUD.visible = tabSelected == 0;
         groups.visible = tabSelected == 1;
         users.visible = tabSelected == 1;
         buttonNewGroup.visible = tabSelected == 1;

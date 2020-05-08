@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
@@ -210,9 +211,20 @@ public class ConfigData {
         }
 
         properties = new HashMap<String, IConfigElement>();
+        addProperties(ConfigElement.from(ConfigData.class).getChildElements(), "");
+    }
 
-        for (IConfigElement configElement : ConfigElement.from(ConfigData.class).getChildElements()) {
-            properties.put(configElement.getName(), configElement);
+    private static void addProperties(List<IConfigElement> elements, String prefix) {
+        if (elements == null) {
+            return;
+        }
+
+        for (IConfigElement configElement : elements) {
+            if (configElement.isProperty()) {
+                properties.put(prefix + configElement.getName(), configElement);
+            } else {
+                addProperties(configElement.getChildElements(), prefix + configElement.getName() + ".");
+            }
         }
     }
 
