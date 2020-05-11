@@ -5,6 +5,10 @@ import java.util.List;
 import java.util.Map;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.util.ReflectionHelper;
+import journeymap.client.ui.UIManager;
+import journeymap.client.ui.minimap.DisplayVars;
+import journeymap.client.ui.minimap.MiniMap;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.common.config.Config;
 import net.minecraftforge.common.config.Config.Comment;
@@ -13,6 +17,8 @@ import net.minecraftforge.common.config.Config.RangeDouble;
 import net.minecraftforge.common.config.Config.RangeInt;
 import net.minecraftforge.common.config.ConfigElement;
 import net.minecraftforge.fml.client.config.IConfigElement;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 @Config(modid = MapFrontiers.MODID)
 public class ConfigData {
@@ -59,6 +65,9 @@ public class ConfigData {
         @Comment({ "Automatically switch to nearest anchor when HUD position is edited (on settings screen)." })
         public boolean autoAdjustAnchor = true;
 
+        @Comment({ "Automatically snap to closest border when HUD position is edited (on settings screen)." })
+        public boolean snapToBorder = true;
+
         @Comment({ "Size of the HUD banner." })
         @RangeInt(min = 1, max = 8)
         public int bannerSize = 3;
@@ -82,25 +91,31 @@ public class ConfigData {
 
 
     public static boolean isInRange(String fieldName, int value) {
-        try {
-            RangeInt range = ConfigData.class.getField(fieldName).getAnnotation(RangeInt.class);
-            return value >= range.min() && value <= range.max();
-        } catch (Exception e) {
-            MapFrontiers.LOGGER.warn(e.getMessage(), e);
+        ensureProperties();
+
+        IConfigElement configElement = properties.get(fieldName);
+        if (configElement == null) {
+            return false;
         }
 
-        return false;
+        int min = Integer.parseInt((String) configElement.getMinValue());
+        int max = Integer.parseInt((String) configElement.getMaxValue());
+
+        return value >= min && value <= max;
     }
 
     public static boolean isInRange(String fieldName, double value) {
-        try {
-            RangeDouble range = ConfigData.class.getField(fieldName).getAnnotation(RangeDouble.class);
-            return value >= range.min() && value <= range.max();
-        } catch (Exception e) {
-            MapFrontiers.LOGGER.warn(e.getMessage(), e);
+        ensureProperties();
+
+        IConfigElement configElement = properties.get(fieldName);
+        if (configElement == null) {
+            return false;
         }
 
-        return false;
+        double min = Double.parseDouble((String) configElement.getMinValue());
+        double max = Double.parseDouble((String) configElement.getMaxValue());
+
+        return value >= min && value <= max;
     }
 
     public static Object getDefault(String fieldName) {
@@ -114,11 +129,11 @@ public class ConfigData {
         return configElement.getDefault();
     }
 
-    public static Point getHUDAnchor() {
+    public static Point getHUDAnchor(HUDAnchor anchor) {
         Minecraft mc = Minecraft.getMinecraft();
         Point p = new Point();
 
-        switch (ConfigData.hud.anchor) {
+        switch (anchor) {
         case ScreenTop:
             p.x = mc.displayWidth / 2;
             break;
@@ -146,24 +161,33 @@ public class ConfigData {
         case ScreenTopLeft:
             break;
         case Minimap:
-            // @Incomplete
-            p.x = mc.displayWidth;
+            p = getMinimapCorner();
             break;
         case MinimapHorizontal:
-            p.x = mc.displayWidth;
+            p = getMinimapCorner();
+            if (p.y < mc.displayHeight / 2) {
+                p.y = 0;
+            } else if (p.y > mc.displayHeight / 2) {
+                p.y = mc.displayHeight;
+            }
             break;
         case MinimapVertical:
-            p.x = mc.displayWidth;
+            p = getMinimapCorner();
+            if (p.x < mc.displayWidth / 2) {
+                p.x = 0;
+            } else if (p.x > mc.displayWidth / 2) {
+                p.x = mc.displayWidth;
+            }
             break;
         }
 
         return p;
     }
 
-    public static Point getHUDOrigin(int hudWidth, int hudHeight) {
+    public static Point getHUDOrigin(HUDAnchor anchor, int hudWidth, int hudHeight) {
         Point p = new Point();
 
-        switch (ConfigData.hud.anchor) {
+        switch (anchor) {
         case ScreenTop:
             p.x = hudWidth / 2;
             break;
@@ -191,18 +215,117 @@ public class ConfigData {
         case ScreenTopLeft:
             break;
         case Minimap:
-            // @Incomplete
-            p.x = hudWidth;
-            break;
         case MinimapHorizontal:
-            p.x = hudWidth;
-            break;
         case MinimapVertical:
-            p.x = hudWidth;
+            p = getHUDOriginFromMinimap(hudWidth, hudHeight);
             break;
         }
 
         return p;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static Point getMinimapCorner() {
+        Minecraft mc = Minecraft.getMinecraft();
+
+        Point corner = new Point();
+        MiniMap minimap = UIManager.INSTANCE.getMiniMap();
+
+        switch (minimap.getCurrentMinimapProperties().position.get()) {
+        case TopRight:
+            corner.x = mc.displayWidth;
+            break;
+        case BottomRight:
+            corner.x = mc.displayWidth;
+            corner.y = mc.displayHeight;
+            break;
+        case BottomLeft:
+            corner.y = mc.displayHeight;
+            break;
+        case TopLeft:
+            break;
+        case TopCenter:
+            corner.x = mc.displayWidth / 2;
+            break;
+        case Center:
+            corner.x = mc.displayWidth / 2;
+            corner.y = mc.displayHeight / 2;
+            break;
+        }
+
+        if (UIManager.INSTANCE.isMiniMapEnabled()) {
+            try {
+                DisplayVars dv = ReflectionHelper.getPrivateField(minimap, "dv", DisplayVars.class);
+
+                int minimapWidth = ReflectionHelper.getPrivateField(dv, "minimapWidth", int.class);
+                int minimapHeight = ReflectionHelper.getPrivateField(dv, "minimapHeight", int.class);
+                int translateX = ReflectionHelper.getPrivateField(dv, "translateX", int.class);
+                int translateY = ReflectionHelper.getPrivateField(dv, "translateY", int.class);
+
+                translateX += mc.displayWidth / 2;
+                translateY += mc.displayHeight / 2;
+
+                switch (minimap.getCurrentMinimapProperties().position.get()) {
+                case TopRight:
+                    corner.x = translateX - minimapWidth / 2;
+                    corner.y = translateY + minimapHeight / 2;
+                    break;
+                case BottomRight:
+                    corner.x = translateX - minimapWidth / 2;
+                    corner.y = translateY - minimapHeight / 2;
+                    break;
+                case BottomLeft:
+                    corner.x = translateX + minimapWidth / 2;
+                    corner.y = translateY - minimapHeight / 2;
+                    break;
+                case TopLeft:
+                    corner.x = translateX + minimapWidth / 2;
+                    corner.y = translateY + minimapHeight / 2;
+                    break;
+                case TopCenter:
+                    corner.x = translateX;
+                    corner.y = translateY + minimapHeight / 2;
+                    break;
+                case Center:
+                    corner.x = translateX;
+                    corner.y = translateY;
+                    break;
+                }
+            } catch (Exception e) {
+                MapFrontiers.LOGGER.warn(e.getMessage(), e);
+            }
+        }
+
+        return corner;
+    }
+
+    public static Point getHUDOriginFromMinimap(int hudWidth, int hudHeight) {
+        Point origin = new Point();
+        MiniMap minimap = UIManager.INSTANCE.getMiniMap();
+
+        switch (minimap.getCurrentMinimapProperties().position.get()) {
+        case TopRight:
+            origin.x = hudWidth;
+            break;
+        case BottomRight:
+            origin.x = hudWidth;
+            origin.y = hudHeight;
+            break;
+        case BottomLeft:
+            origin.y = hudHeight;
+            break;
+        case TopLeft:
+            break;
+        case TopCenter:
+            origin.x = hudWidth / 2;
+            break;
+        case Center:
+            origin.x = hudWidth / 2;
+            origin.y = hudHeight / 2;
+            break;
+        }
+
+        return origin;
     }
 
     private static void ensureProperties() {

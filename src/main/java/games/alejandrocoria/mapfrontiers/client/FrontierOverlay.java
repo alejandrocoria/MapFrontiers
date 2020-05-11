@@ -109,6 +109,11 @@ public class FrontierOverlay extends FrontierData {
 
     public void updateOverlay() {
         dirty = true;
+
+        if (jmAPI == null) {
+            return;
+        }
+
         removeOverlay();
         recalculateOverlays();
 

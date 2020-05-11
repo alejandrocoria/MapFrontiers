@@ -8,14 +8,19 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.input.Keyboard;
+import org.lwjgl.opengl.GL11;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
+import journeymap.client.ui.UIManager;
+import journeymap.client.ui.minimap.MiniMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -35,40 +40,46 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
     private TextBox textPositionX;
     private TextBox textPositionY;
     private GuiOptionButton buttonAutoAdjustAnchor;
+    private GuiOptionButton buttonSnapToBorder;
     private GuiSettingsButton buttonDone;
     private List<GuiSimpleLabel> labels;
     private int id = 0;
+    private MiniMap minimap;
+    private GuiHUD guiHUD;
+    private int anchorLineColor = 0xffdddddd;
+    private int anchorLineColorTick = 0;
 
     public GuiHUDSettings(GuiFrontierSettings parent) {
         guiTexture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/gui.png");
         labels = new ArrayList<GuiSimpleLabel>();
         this.parent = parent;
+        guiHUD = GuiHUD.asPreview();
     }
 
     @Override
     public void initGui() {
-        buttonSlot1 = new GuiOptionButton(++id, mc.fontRenderer, width / 2 - 140, height / 2 - 24, 60);
+        buttonSlot1 = new GuiOptionButton(++id, mc.fontRenderer, width / 2 - 108, height / 2 - 32, 50);
         buttonSlot1.addOption(ConfigData.HUDSlot.None.name());
         buttonSlot1.addOption(ConfigData.HUDSlot.Name.name());
         buttonSlot1.addOption(ConfigData.HUDSlot.Owner.name());
         buttonSlot1.addOption(ConfigData.HUDSlot.Banner.name());
         buttonSlot1.setSelected(ConfigData.hud.slot1.ordinal());
 
-        buttonSlot2 = new GuiOptionButton(++id, mc.fontRenderer, width / 2 - 140, height / 2 - 8, 60);
+        buttonSlot2 = new GuiOptionButton(++id, mc.fontRenderer, width / 2 - 108, height / 2 - 16, 50);
         buttonSlot2.addOption(ConfigData.HUDSlot.None.name());
         buttonSlot2.addOption(ConfigData.HUDSlot.Name.name());
         buttonSlot2.addOption(ConfigData.HUDSlot.Owner.name());
         buttonSlot2.addOption(ConfigData.HUDSlot.Banner.name());
         buttonSlot2.setSelected(ConfigData.hud.slot2.ordinal());
 
-        buttonSlot3 = new GuiOptionButton(++id, mc.fontRenderer, width / 2 - 140, height / 2 + 8, 60);
+        buttonSlot3 = new GuiOptionButton(++id, mc.fontRenderer, width / 2 - 108, height / 2, 50);
         buttonSlot3.addOption(ConfigData.HUDSlot.None.name());
         buttonSlot3.addOption(ConfigData.HUDSlot.Name.name());
         buttonSlot3.addOption(ConfigData.HUDSlot.Owner.name());
         buttonSlot3.addOption(ConfigData.HUDSlot.Banner.name());
         buttonSlot3.setSelected(ConfigData.hud.slot3.ordinal());
 
-        textBannerSize = new TextBox(++id, mc.fontRenderer, width / 2 + 70, height / 2 - 32, 100, "");
+        textBannerSize = new TextBox(++id, mc.fontRenderer, width / 2 - 108, height / 2 + 16, 50, "");
         textBannerSize.setText(String.valueOf(ConfigData.hud.bannerSize));
         textBannerSize.setMaxStringLength(1);
         textBannerSize.setResponder(this);
@@ -76,7 +87,7 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         textBannerSize.setColor(0xffbbbbbb, 0xffffffff);
         textBannerSize.setFrame(true);
 
-        buttonAnchor = new GuiOptionButton(++id, mc.fontRenderer, width / 2 + 70, height / 2 - 16, 100);
+        buttonAnchor = new GuiOptionButton(++id, mc.fontRenderer, width / 2 + 70, height / 2 - 32, 100);
         buttonAnchor.addOption(ConfigData.HUDAnchor.ScreenTop.name());
         buttonAnchor.addOption(ConfigData.HUDAnchor.ScreenTopRight.name());
         buttonAnchor.addOption(ConfigData.HUDAnchor.ScreenRight.name());
@@ -90,7 +101,7 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         buttonAnchor.addOption(ConfigData.HUDAnchor.MinimapVertical.name());
         buttonAnchor.setSelected(ConfigData.hud.anchor.ordinal());
 
-        textPositionX = new TextBox(++id, mc.fontRenderer, width / 2 + 70, height / 2, 44, "");
+        textPositionX = new TextBox(++id, mc.fontRenderer, width / 2 + 70, height / 2 - 16, 44, "");
         textPositionX.setText(String.valueOf(ConfigData.hud.position.x));
         textPositionX.setMaxStringLength(5);
         textPositionX.setResponder(this);
@@ -98,7 +109,7 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         textPositionX.setColor(0xffbbbbbb, 0xffffffff);
         textPositionX.setFrame(true);
 
-        textPositionY = new TextBox(++id, mc.fontRenderer, width / 2 + 125, height / 2, 45, "");
+        textPositionY = new TextBox(++id, mc.fontRenderer, width / 2 + 125, height / 2 - 16, 45, "");
         textPositionY.setText(String.valueOf(ConfigData.hud.position.y));
         textPositionY.setMaxStringLength(5);
         textPositionY.setResponder(this);
@@ -106,10 +117,15 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         textPositionY.setColor(0xffbbbbbb, 0xffffffff);
         textPositionY.setFrame(true);
 
-        buttonAutoAdjustAnchor = new GuiOptionButton(++id, mc.fontRenderer, width / 2 + 70, height / 2 + 16, 100);
+        buttonAutoAdjustAnchor = new GuiOptionButton(++id, mc.fontRenderer, width / 2 + 70, height / 2, 100);
         buttonAutoAdjustAnchor.addOption("true");
         buttonAutoAdjustAnchor.addOption("false");
         buttonAutoAdjustAnchor.setSelected(ConfigData.hud.autoAdjustAnchor ? 0 : 1);
+
+        buttonSnapToBorder = new GuiOptionButton(++id, mc.fontRenderer, width / 2 + 70, height / 2 + 16, 100);
+        buttonSnapToBorder.addOption("true");
+        buttonSnapToBorder.addOption("false");
+        buttonSnapToBorder.setSelected(ConfigData.hud.snapToBorder ? 0 : 1);
 
         buttonDone = new GuiSettingsButton(++id, mc.fontRenderer, width / 2 - 50, height / 2 + 36, 100, "Done");
 
@@ -118,18 +134,47 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         buttonList.add(buttonSlot3);
         buttonList.add(buttonAnchor);
         buttonList.add(buttonAutoAdjustAnchor);
+        buttonList.add(buttonSnapToBorder);
         buttonList.add(buttonDone);
+
+        if (UIManager.INSTANCE.isMiniMapEnabled()) {
+            minimap = UIManager.INSTANCE.getMiniMap();
+        }
 
         resetLabels();
     }
 
     @Override
     public void updateScreen() {
+        ++anchorLineColorTick;
 
+        if (anchorLineColorTick >= 3) {
+            anchorLineColorTick = 0;
+            if (anchorLineColor == 0xffdddddd) {
+                anchorLineColor = 0xff222222;
+            } else {
+                anchorLineColor = 0xffdddddd;
+            }
+        }
     }
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        if (minimap != null) {
+            GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+            GlStateManager.pushMatrix();
+            GlStateManager.matrixMode(GL11.GL_PROJECTION);
+            GlStateManager.pushMatrix();
+            minimap.drawMap(true);
+            GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+            GlStateManager.popMatrix();
+            GlStateManager.matrixMode(GL11.GL_PROJECTION);
+            GlStateManager.popMatrix();
+        }
+
+        guiHUD.draw();
+        drawAnchor();
+
         Gui.drawRect(width / 2 - 178, height / 2 - 40, width / 2 + 178, height / 2 + 60, 0xc7101010);
 
         textBannerSize.drawTextBox(mouseX, mouseY);
@@ -141,6 +186,51 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         }
 
         super.drawScreen(mouseX, mouseY, partialTicks);
+    }
+
+    private void drawAnchor() {
+        ScaledResolution scaledresolution = new ScaledResolution(mc);
+        int factor = scaledresolution.getScaleFactor();
+        GlStateManager.pushMatrix();
+        GlStateManager.scale(1.0 / factor, 1.0 / factor, 1.0);
+
+        int directionX = 0;
+        int directionY = 0;
+        int length = 25;
+        ConfigData.Point anchor = ConfigData.getHUDAnchor(ConfigData.hud.anchor);
+
+        if (anchor.x < mc.displayWidth / 2) {
+            directionX = 1;
+        } else if (anchor.x > mc.displayWidth / 2) {
+            directionX = -1;
+            --anchor.x;
+        }
+
+        if (anchor.y < mc.displayHeight / 2) {
+            directionY = 1;
+        } else if (anchor.y > mc.displayHeight / 2) {
+            directionY = -1;
+            --anchor.y;
+        }
+
+        if (ConfigData.hud.anchor == ConfigData.HUDAnchor.Minimap) {
+            directionX = -directionX;
+            directionY = -directionY;
+        }
+
+        if (directionX == 0) {
+            drawHorizontalLine(anchor.x - length, anchor.x + length, anchor.y, anchorLineColor);
+        } else {
+            drawHorizontalLine(anchor.x, anchor.x + length * directionX, anchor.y, anchorLineColor);
+        }
+
+        if (directionY == 0) {
+            drawVerticalLine(anchor.x, anchor.y - length, anchor.y + length, anchorLineColor);
+        } else {
+            drawVerticalLine(anchor.x, anchor.y, anchor.y + length * directionY, anchorLineColor);
+        }
+
+        GlStateManager.popMatrix();
     }
 
     @Override
@@ -180,19 +270,22 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
     protected void actionPerformed(GuiButton button) {
         if (button == buttonSlot1) {
             ConfigData.hud.slot1 = ConfigData.HUDSlot.values()[buttonSlot1.getSelected()];
-            ((ClientProxy) MapFrontiers.proxy).configUpdated();
+            guiHUD.configUpdated();
         } else if (button == buttonSlot2) {
             ConfigData.hud.slot2 = ConfigData.HUDSlot.values()[buttonSlot2.getSelected()];
-            ((ClientProxy) MapFrontiers.proxy).configUpdated();
+            guiHUD.configUpdated();
         } else if (button == buttonSlot3) {
             ConfigData.hud.slot3 = ConfigData.HUDSlot.values()[buttonSlot3.getSelected()];
-            ((ClientProxy) MapFrontiers.proxy).configUpdated();
+            guiHUD.configUpdated();
         } else if (button == buttonAnchor) {
             ConfigData.hud.anchor = ConfigData.HUDAnchor.values()[buttonAnchor.getSelected()];
-            ((ClientProxy) MapFrontiers.proxy).configUpdated();
+            guiHUD.configUpdated();
         } else if (button == buttonAutoAdjustAnchor) {
             ConfigData.hud.autoAdjustAnchor = buttonAutoAdjustAnchor.getSelected() == 0;
-            ((ClientProxy) MapFrontiers.proxy).configUpdated();
+            guiHUD.configUpdated();
+        } else if (button == buttonSnapToBorder) {
+            ConfigData.hud.snapToBorder = buttonSnapToBorder.getSelected() == 0;
+            guiHUD.configUpdated();
         } else if (button == buttonDone) {
             Minecraft.getMinecraft().displayGuiScreen(parent);
         }
@@ -200,7 +293,7 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
 
     @Override
     public void onGuiClosed() {
-
+        ((ClientProxy) MapFrontiers.proxy).configUpdated();
     }
 
     @Override
@@ -211,22 +304,24 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
     private void resetLabels() {
         labels.clear();
 
-        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 170, height / 2 - 22, GuiSimpleLabel.Align.Left, "slot1",
+        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 170, height / 2 - 30, GuiSimpleLabel.Align.Left, "slot1",
                 0xffdddddd));
-        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 170, height / 2 - 6, GuiSimpleLabel.Align.Left, "slot2",
+        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 170, height / 2 - 14, GuiSimpleLabel.Align.Left, "slot2",
                 0xffdddddd));
-        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 170, height / 2 + 10, GuiSimpleLabel.Align.Left, "slot3",
+        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 170, height / 2 + 2, GuiSimpleLabel.Align.Left, "slot3",
                 0xffdddddd));
-        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 30, height / 2 - 30, GuiSimpleLabel.Align.Left, "bannerSize",
+        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 170, height / 2 + 18, GuiSimpleLabel.Align.Left, "bannerSize",
                 0xffdddddd));
-        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 30, height / 2 - 14, GuiSimpleLabel.Align.Left, "anchor",
+        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 30, height / 2 - 30, GuiSimpleLabel.Align.Left, "anchor",
                 0xffdddddd));
-        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 30, height / 2 + 2, GuiSimpleLabel.Align.Left, "position",
+        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 30, height / 2 - 14, GuiSimpleLabel.Align.Left, "position",
                 0xffdddddd));
         labels.add(
-                new GuiSimpleLabel(fontRenderer, width / 2 + 120, height / 2 + 2, GuiSimpleLabel.Align.Center, "x", 0xff777777));
-        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 30, height / 2 + 18, GuiSimpleLabel.Align.Left,
-                "autoAdjustAnchor", 0xffdddddd));
+                new GuiSimpleLabel(fontRenderer, width / 2 + 120, height / 2 - 14, GuiSimpleLabel.Align.Center, "x", 0xff777777));
+        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 30, height / 2 + 2, GuiSimpleLabel.Align.Left, "autoAdjustAnchor",
+                0xffdddddd));
+        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 30, height / 2 + 18, GuiSimpleLabel.Align.Left, "snapToBorder",
+                0xffdddddd));
     }
 
     @Override
@@ -238,13 +333,13 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         if (textBannerSize.getId() == id) {
             if (StringUtils.isBlank(value)) {
                 textBannerSize.setText(ConfigData.getDefault("hud.bannerSize"));
-                ((ClientProxy) MapFrontiers.proxy).configUpdated();
+                guiHUD.configUpdated();
             } else {
                 try {
                     Integer size = Integer.valueOf(value);
                     if (ConfigData.isInRange("hud.bannerSize", size)) {
                         ConfigData.hud.bannerSize = size;
-                        ((ClientProxy) MapFrontiers.proxy).configUpdated();
+                        guiHUD.configUpdated();
                     }
                 } catch (Exception e) {
                     MapFrontiers.LOGGER.warn(e.getMessage(), e);
@@ -253,12 +348,13 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         } else if (textPositionX.getId() == id) {
             if (StringUtils.isBlank(value)) {
                 textPositionX.setText(ConfigData.getDefault("hud.position.x"));
-                ((ClientProxy) MapFrontiers.proxy).configUpdated();
+                ConfigData.hud.position.x = Integer.parseInt(textPositionX.getText());
+                guiHUD.configUpdated();
             } else {
                 try {
                     Integer x = Integer.valueOf(value);
                     ConfigData.hud.position.x = x;
-                    ((ClientProxy) MapFrontiers.proxy).configUpdated();
+                    guiHUD.configUpdated();
                 } catch (Exception e) {
                     MapFrontiers.LOGGER.warn(e.getMessage(), e);
                 }
@@ -266,12 +362,13 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         } else if (textPositionY.getId() == id) {
             if (StringUtils.isBlank(value)) {
                 textPositionY.setText(ConfigData.getDefault("hud.position.y"));
-                ((ClientProxy) MapFrontiers.proxy).configUpdated();
+                ConfigData.hud.position.y = Integer.parseInt(textPositionY.getText());
+                guiHUD.configUpdated();
             } else {
                 try {
                     Integer y = Integer.valueOf(value);
                     ConfigData.hud.position.y = y;
-                    ((ClientProxy) MapFrontiers.proxy).configUpdated();
+                    guiHUD.configUpdated();
                 } catch (Exception e) {
                     MapFrontiers.LOGGER.warn(e.getMessage(), e);
                 }

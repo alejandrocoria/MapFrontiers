@@ -8,6 +8,8 @@ import org.apache.commons.lang3.StringUtils;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
+import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import journeymap.client.io.ThemeLoader;
 import journeymap.client.ui.minimap.Shape;
 import journeymap.client.ui.theme.Theme;
@@ -17,6 +19,10 @@ import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.EnumDyeColor;
+import net.minecraft.item.ItemBanner;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
@@ -43,6 +49,44 @@ public class GuiHUD {
     private int hudHeight = 0;
     private int bannerScale = 1;
     private boolean initialized = false;
+    private boolean previewMode = false;
+
+    public static GuiHUD asPreview() {
+        GuiHUD guiHUD = new GuiHUD(null);
+        guiHUD.previewMode = true;
+
+        NBTTagCompound pattern = new NBTTagCompound();
+        NBTTagList nbtBanner = new NBTTagList();
+
+        pattern.setInteger("Color", EnumDyeColor.GREEN.getDyeDamage());
+        pattern.setString("Pattern", "flo");
+        nbtBanner.appendTag(pattern.copy());
+        pattern.setInteger("Color", EnumDyeColor.SILVER.getDyeDamage());
+        pattern.setString("Pattern", "bri");
+        nbtBanner.appendTag(pattern.copy());
+        pattern.setInteger("Color", EnumDyeColor.LIGHT_BLUE.getDyeDamage());
+        pattern.setString("Pattern", "bo");
+        nbtBanner.appendTag(pattern.copy());
+        pattern.setInteger("Color", EnumDyeColor.LIGHT_BLUE.getDyeDamage());
+        pattern.setString("Pattern", "tts");
+        nbtBanner.appendTag(pattern.copy());
+        pattern.setInteger("Color", EnumDyeColor.BLACK.getDyeDamage());
+        pattern.setString("Pattern", "bt");
+        nbtBanner.appendTag(pattern.copy());
+        pattern.setInteger("Color", EnumDyeColor.GREEN.getDyeDamage());
+        pattern.setString("Pattern", "bs");
+        nbtBanner.appendTag(pattern);
+
+        FrontierData frontierData = new FrontierData();
+        frontierData.setOwner(new SettingsUser(mc.player));
+        frontierData.setName1("Preview Frontier");
+        frontierData.setName2("-----------------");
+        frontierData.setBanner(ItemBanner.makeBanner(EnumDyeColor.BLACK, nbtBanner));
+
+        guiHUD.frontier = new FrontierOverlay(frontierData, null);
+
+        return guiHUD;
+    }
 
     public GuiHUD(FrontiersOverlayManager frontiersOverlayManager) {
         this.frontiersOverlayManager = frontiersOverlayManager;
@@ -53,6 +97,10 @@ public class GuiHUD {
 
     @SubscribeEvent()
     public void RenderGameOverlayEvent(RenderGameOverlayEvent.Post event) {
+        if (previewMode) {
+            return;
+        }
+
         if (event.getType() == RenderGameOverlayEvent.ElementType.TEXT) {
             if (mc.currentScreen != null) {
                 return;
@@ -72,6 +120,10 @@ public class GuiHUD {
 
     @SubscribeEvent
     public void livingUpdateEvent(LivingUpdateEvent event) {
+        if (previewMode) {
+            return;
+        }
+
         if (event.getEntityLiving() == mc.player) {
             EntityPlayer player = (EntityPlayer) event.getEntityLiving();
 
@@ -212,8 +264,8 @@ public class GuiHUD {
             }
         }
 
-        ConfigData.Point anchorPos = ConfigData.getHUDAnchor();
-        ConfigData.Point originPos = ConfigData.getHUDOrigin(hudWidth, hudHeight);
+        ConfigData.Point anchorPos = ConfigData.getHUDAnchor(ConfigData.hud.anchor);
+        ConfigData.Point originPos = ConfigData.getHUDOrigin(ConfigData.hud.anchor, hudWidth, hudHeight);
         posX = anchorPos.x - originPos.x + ConfigData.hud.position.x;
         posY = anchorPos.y - originPos.y + ConfigData.hud.position.y;
 
