@@ -48,12 +48,17 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
     private GuiHUD guiHUD;
     private int anchorLineColor = 0xffdddddd;
     private int anchorLineColorTick = 0;
+    private ConfigData.Point positionHUD = new ConfigData.Point();
+    private ConfigData.Point grabOffset = new ConfigData.Point();
+    private boolean grabbed = false;
 
     public GuiHUDSettings(GuiFrontierSettings parent) {
         guiTexture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/gui.png");
         labels = new ArrayList<GuiSimpleLabel>();
         this.parent = parent;
         guiHUD = GuiHUD.asPreview();
+        guiHUD.configUpdated();
+        updatePosition();
     }
 
     @Override
@@ -236,9 +241,16 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
     @Override
     protected void mouseClicked(int x, int y, int btn) throws IOException {
         if (btn == 0) {
-            textBannerSize.mouseClicked(x, y, btn);
-            textPositionX.mouseClicked(x, y, btn);
-            textPositionY.mouseClicked(x, y, btn);
+            boolean textClicked = false;
+            textClicked |= textBannerSize.mouseClicked(x, y, btn);
+            textClicked |= textPositionX.mouseClicked(x, y, btn);
+            textClicked |= textPositionY.mouseClicked(x, y, btn);
+
+            if (!textClicked && guiHUD.isInside(x, y)) {
+                grabbed = true;
+                grabOffset.x = x - positionHUD.x;
+                grabOffset.y = y - positionHUD.y;
+            }
         }
 
         super.mouseClicked(x, y, btn);
@@ -247,11 +259,52 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
     @Override
     protected void mouseReleased(int x, int y, int state) {
         super.mouseReleased(x, y, state);
+        grabbed = false;
     }
 
     @Override
     protected void mouseClickMove(int x, int y, int btn, long timeSinceLastClick) {
         super.mouseClickMove(x, y, btn, timeSinceLastClick);
+        if (grabbed) {
+            positionHUD.x = x - grabOffset.x;
+            positionHUD.y = y - grabOffset.y;
+
+            ConfigData.Point anchorPoint = ConfigData.getHUDAnchor(ConfigData.hud.anchor);
+            ConfigData.Point originPoint = ConfigData.getHUDOrigin(ConfigData.hud.anchor, guiHUD.getWidth(), guiHUD.getHeight());
+
+            ConfigData.Point snapOffset = new ConfigData.Point();
+            if (ConfigData.hud.snapToBorder) {
+                snapOffset.x = 9999;
+                snapOffset.y = 9999;
+                for (ConfigData.HUDAnchor anchor : ConfigData.HUDAnchor.values()) {
+                    ConfigData.Point anchorP = ConfigData.getHUDAnchor(anchor);
+                    ConfigData.Point originP = ConfigData.getHUDOrigin(anchor, guiHUD.getWidth(), guiHUD.getHeight());
+                    int offsetX = positionHUD.x - anchorP.x + originP.x;
+                    int offsetY = positionHUD.y - anchorP.y + originP.y;
+                    if (Math.abs(offsetX) < 16 && Math.abs(offsetX) < Math.abs(snapOffset.x)) {
+                        snapOffset.x = offsetX;
+                    }
+                    if (Math.abs(offsetY) < 16 && Math.abs(offsetY) < Math.abs(snapOffset.y)) {
+                        snapOffset.y = offsetY;
+                    }
+                }
+
+                if (snapOffset.x == 9999) {
+                    snapOffset.x = 0;
+                }
+                if (snapOffset.y == 9999) {
+                    snapOffset.y = 0;
+                }
+            }
+
+            ConfigData.hud.position.x = positionHUD.x - anchorPoint.x + originPoint.x - snapOffset.x;
+            ConfigData.hud.position.y = positionHUD.y - anchorPoint.y + originPoint.y - snapOffset.y;
+
+            guiHUD.configUpdated();
+
+            textPositionX.setText(String.valueOf(ConfigData.hud.position.x));
+            textPositionY.setText(String.valueOf(ConfigData.hud.position.y));
+        }
     }
 
     @Override
@@ -271,15 +324,19 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         if (button == buttonSlot1) {
             ConfigData.hud.slot1 = ConfigData.HUDSlot.values()[buttonSlot1.getSelected()];
             guiHUD.configUpdated();
+            updatePosition();
         } else if (button == buttonSlot2) {
             ConfigData.hud.slot2 = ConfigData.HUDSlot.values()[buttonSlot2.getSelected()];
             guiHUD.configUpdated();
+            updatePosition();
         } else if (button == buttonSlot3) {
             ConfigData.hud.slot3 = ConfigData.HUDSlot.values()[buttonSlot3.getSelected()];
             guiHUD.configUpdated();
+            updatePosition();
         } else if (button == buttonAnchor) {
             ConfigData.hud.anchor = ConfigData.HUDAnchor.values()[buttonAnchor.getSelected()];
             guiHUD.configUpdated();
+            updatePosition();
         } else if (button == buttonAutoAdjustAnchor) {
             ConfigData.hud.autoAdjustAnchor = buttonAutoAdjustAnchor.getSelected() == 0;
             guiHUD.configUpdated();
@@ -333,13 +390,16 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         if (textBannerSize.getId() == id) {
             if (StringUtils.isBlank(value)) {
                 textBannerSize.setText(ConfigData.getDefault("hud.bannerSize"));
+                ConfigData.hud.bannerSize = Integer.parseInt(textBannerSize.getText());
                 guiHUD.configUpdated();
+                updatePosition();
             } else {
                 try {
                     Integer size = Integer.valueOf(value);
                     if (ConfigData.isInRange("hud.bannerSize", size)) {
                         ConfigData.hud.bannerSize = size;
                         guiHUD.configUpdated();
+                        updatePosition();
                     }
                 } catch (Exception e) {
                     MapFrontiers.LOGGER.warn(e.getMessage(), e);
@@ -350,6 +410,7 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
                 textPositionX.setText(ConfigData.getDefault("hud.position.x"));
                 ConfigData.hud.position.x = Integer.parseInt(textPositionX.getText());
                 guiHUD.configUpdated();
+                updatePosition();
             } else {
                 try {
                     Integer x = Integer.valueOf(value);
@@ -364,6 +425,7 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
                 textPositionY.setText(ConfigData.getDefault("hud.position.y"));
                 ConfigData.hud.position.y = Integer.parseInt(textPositionY.getText());
                 guiHUD.configUpdated();
+                updatePosition();
             } else {
                 try {
                     Integer y = Integer.valueOf(value);
@@ -374,5 +436,12 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
                 }
             }
         }
+    }
+
+    private void updatePosition() {
+        ConfigData.Point anchorPoint = ConfigData.getHUDAnchor(ConfigData.hud.anchor);
+        ConfigData.Point originPoint = ConfigData.getHUDOrigin(ConfigData.hud.anchor, guiHUD.getWidth(), guiHUD.getHeight());
+        positionHUD.x = ConfigData.hud.position.x + anchorPoint.x - originPoint.x;
+        positionHUD.y = ConfigData.hud.position.y + anchorPoint.y - originPoint.y;
     }
 }

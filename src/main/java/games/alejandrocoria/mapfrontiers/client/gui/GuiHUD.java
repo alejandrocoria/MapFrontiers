@@ -95,6 +95,18 @@ public class GuiHUD {
         frontierName2 = new GuiSimpleLabel(mc.fontRenderer, 0, 0, GuiSimpleLabel.Align.Center, "", 0xffffffff);
     }
 
+    public int getWidth() {
+        return hudWidth;
+    }
+
+    public int getHeight() {
+        return hudHeight;
+    }
+
+    public boolean isInside(int x, int y) {
+        return x >= posX && x < posX + hudWidth && y >= posY && y < posY + hudHeight;
+    }
+
     @SubscribeEvent()
     public void RenderGameOverlayEvent(RenderGameOverlayEvent.Post event) {
         if (previewMode) {
