@@ -253,10 +253,15 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
             textClicked |= textPositionX.mouseClicked(x, y, btn);
             textClicked |= textPositionY.mouseClicked(x, y, btn);
 
-            if (!textClicked && guiHUD.isInside(x, y)) {
+            ScaledResolution scaledresolution = new ScaledResolution(mc);
+            int factor = scaledresolution.getScaleFactor();
+            int xScaled = x * factor;
+            int yScaled = y * factor;
+
+            if (!textClicked && guiHUD.isInside(xScaled, yScaled)) {
                 grabbed = true;
-                grabOffset.x = x - positionHUD.x;
-                grabOffset.y = y - positionHUD.y;
+                grabOffset.x = xScaled - positionHUD.x;
+                grabOffset.y = yScaled - positionHUD.y;
             }
         }
 
@@ -273,6 +278,11 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
     protected void mouseClickMove(int x, int y, int btn, long timeSinceLastClick) {
         super.mouseClickMove(x, y, btn, timeSinceLastClick);
         if (grabbed) {
+            ScaledResolution scaledresolution = new ScaledResolution(mc);
+            int factor = scaledresolution.getScaleFactor();
+            x *= factor;
+            y *= factor;
+
             positionHUD.x = x - grabOffset.x;
             positionHUD.y = y - grabOffset.y;
 
