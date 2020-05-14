@@ -20,6 +20,7 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketRequestFrontierSet
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings.Action;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
@@ -56,13 +57,15 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     private GuiButtonIcon buttonNewUser;
     private TextBox textGroupName;
     private List<GuiSimpleLabel> labels;
+    private boolean canEditGroups;
     private int tabSelected = 0;
     private int ticksSinceLastUpdate = 0;
     private int id = 0;
 
-    public GuiFrontierSettings() {
+    public GuiFrontierSettings(SettingsProfile profile) {
         guiTexture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/gui.png");
         labels = new ArrayList<GuiSimpleLabel>();
+        canEditGroups = profile.updateSettings == SettingsProfile.State.Enabled;
     }
 
     @Override
@@ -70,8 +73,12 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         PacketHandler.INSTANCE.sendToServer(new PacketRequestFrontierSettings());
         tabbedBox = new GuiTabbedBox(fontRenderer, 40, 24, width - 80, height - 64, this);
         tabbedBox.addTab(I18n.format("mapfrontiers.general"));
-        tabbedBox.addTab(I18n.format("mapfrontiers.groups"));
-        tabbedBox.addTab(I18n.format("mapfrontiers.actions"));
+        if (canEditGroups) {
+            tabbedBox.addTab(I18n.format("mapfrontiers.groups"));
+            tabbedBox.addTab(I18n.format("mapfrontiers.actions"));
+        } else {
+            tabSelected = 0;
+        }
         tabbedBox.setTabSelected(tabSelected);
 
         buttonAddVertexToNewFrontier = new GuiOptionButton(++id, mc.fontRenderer, width / 2 + 50, 70, 100);
@@ -394,6 +401,14 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
 
         resetLabels();
         updateButtonsVisibility();
+    }
+
+    public void updateSettingsProfile(SettingsProfile profile) {
+        if ((profile.updateSettings == SettingsProfile.State.Enabled) == canEditGroups) {
+            return;
+        }
+
+        mc.displayGuiScreen(new GuiFrontierSettings(profile));
     }
 
     private void resetLabels() {

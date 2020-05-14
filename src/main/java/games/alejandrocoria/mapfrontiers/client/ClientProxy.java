@@ -102,9 +102,7 @@ public class ClientProxy extends CommonProxy {
                 return;
             }
 
-            if (profile.updateSettings == SettingsProfile.State.Enabled) {
-                Minecraft.getMinecraft().displayGuiScreen(new GuiFrontierSettings());
-            }
+            Minecraft.getMinecraft().displayGuiScreen(new GuiFrontierSettings(profile));
         }
     }
 

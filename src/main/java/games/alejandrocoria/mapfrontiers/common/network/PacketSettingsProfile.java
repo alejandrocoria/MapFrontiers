@@ -8,7 +8,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
@@ -50,9 +49,7 @@ public class PacketSettingsProfile implements IMessage {
                         FrontiersOverlayManager.instance.setSettingsProfile(message.profile);
 
                         if (Minecraft.getMinecraft().currentScreen instanceof GuiFrontierSettings) {
-                            if (message.profile.updateSettings == SettingsProfile.State.Disabled) {
-                                Minecraft.getMinecraft().displayGuiScreen((GuiScreen) null);
-                            }
+                            ((GuiFrontierSettings) Minecraft.getMinecraft().currentScreen).updateSettingsProfile(message.profile);
                         } else if (Minecraft.getMinecraft().currentScreen instanceof GuiFrontierBook) {
                             ((GuiFrontierBook) Minecraft.getMinecraft().currentScreen).reloadPage(false);
                         }
