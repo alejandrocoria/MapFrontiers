@@ -6,9 +6,12 @@ import java.util.Map;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.util.ReflectionHelper;
+import journeymap.client.io.ThemeLoader;
 import journeymap.client.ui.UIManager;
 import journeymap.client.ui.minimap.DisplayVars;
 import journeymap.client.ui.minimap.MiniMap;
+import journeymap.client.ui.minimap.Shape;
+import journeymap.client.ui.theme.Theme;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.common.config.Config;
 import net.minecraftforge.common.config.Config.Comment;
@@ -262,6 +265,15 @@ public class ConfigData {
                 int translateX = ReflectionHelper.getPrivateField(dv, "translateX", int.class);
                 int translateY = ReflectionHelper.getPrivateField(dv, "translateY", int.class);
 
+                Theme.Minimap.MinimapSpec minimapSpec;
+                if (minimap.getCurrentMinimapProperties().shape.get() == Shape.Circle) {
+                    minimapSpec = ThemeLoader.getCurrentTheme().minimap.circle;
+                } else {
+                    minimapSpec = ThemeLoader.getCurrentTheme().minimap.square;
+                }
+
+                minimapWidth += minimapSpec.margin * 2;
+                minimapHeight += minimapSpec.margin * 2;
                 translateX += mc.displayWidth / 2;
                 translateY += mc.displayHeight / 2;
 

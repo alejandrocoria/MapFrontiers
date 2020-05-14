@@ -221,6 +221,13 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         if (ConfigData.hud.anchor == ConfigData.HUDAnchor.Minimap) {
             directionX = -directionX;
             directionY = -directionY;
+
+            if (directionX == 1) {
+                ++anchor.x;
+            }
+            if (directionY == 1) {
+                ++anchor.y;
+            }
         }
 
         if (directionX == 0) {
@@ -272,24 +279,75 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
             ConfigData.Point anchorPoint = ConfigData.getHUDAnchor(ConfigData.hud.anchor);
             ConfigData.Point originPoint = ConfigData.getHUDOrigin(ConfigData.hud.anchor, guiHUD.getWidth(), guiHUD.getHeight());
 
+            if (ConfigData.hud.autoAdjustAnchor) {
+                ConfigData.HUDAnchor closestAnchor = null;
+                int closestDistance = 99999;
+
+                for (ConfigData.HUDAnchor anchor : ConfigData.HUDAnchor.values()) {
+                    if ((anchor == ConfigData.HUDAnchor.Minimap || anchor == ConfigData.HUDAnchor.MinimapHorizontal
+                            || anchor == ConfigData.HUDAnchor.MinimapVertical) && minimap == null) {
+                        continue;
+                    }
+
+                    ConfigData.Point anchorP = ConfigData.getHUDAnchor(anchor);
+                    ConfigData.Point originP = ConfigData.getHUDOrigin(anchor, guiHUD.getWidth(), guiHUD.getHeight());
+
+                    int distance = Math.abs(anchorP.x - positionHUD.x - originP.x)
+                            + Math.abs(anchorP.y - positionHUD.y - originP.y);
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestAnchor = anchor;
+                    }
+                }
+                if (closestAnchor != null && closestAnchor != ConfigData.hud.anchor) {
+                    ConfigData.hud.anchor = closestAnchor;
+                    anchorPoint = ConfigData.getHUDAnchor(ConfigData.hud.anchor);
+                    originPoint = ConfigData.getHUDOrigin(ConfigData.hud.anchor, guiHUD.getWidth(), guiHUD.getHeight());
+                    buttonAnchor.setSelected(ConfigData.hud.anchor.ordinal());
+                }
+            }
+
             ConfigData.Point snapOffset = new ConfigData.Point();
             if (ConfigData.hud.snapToBorder) {
-                snapOffset.x = 9999;
-                snapOffset.y = 9999;
+                snapOffset.x = 16;
+                snapOffset.y = 16;
                 for (ConfigData.HUDAnchor anchor : ConfigData.HUDAnchor.values()) {
+                    if (anchor == ConfigData.HUDAnchor.MinimapHorizontal || anchor == ConfigData.HUDAnchor.MinimapVertical) {
+                        continue;
+                    }
+
                     ConfigData.Point anchorP = ConfigData.getHUDAnchor(anchor);
                     ConfigData.Point originP = ConfigData.getHUDOrigin(anchor, guiHUD.getWidth(), guiHUD.getHeight());
                     int offsetX = positionHUD.x - anchorP.x + originP.x;
                     int offsetY = positionHUD.y - anchorP.y + originP.y;
-                    if (Math.abs(offsetX) < 16 && Math.abs(offsetX) < Math.abs(snapOffset.x)) {
+
+                    if (anchor == ConfigData.HUDAnchor.Minimap) {
+                        if (minimap == null) {
+                            continue;
+                        }
+
+                        if (anchorP.x < mc.displayWidth / 2 && offsetX >= 16) {
+                            continue;
+                        } else if (anchorP.x > mc.displayWidth / 2 && offsetX <= -16) {
+                            continue;
+                        }
+
+                        if (anchorP.y < mc.displayHeight / 2 && offsetY >= 16) {
+                            continue;
+                        } else if (anchorP.y > mc.displayHeight / 2 && offsetY <= -16) {
+                            continue;
+                        }
+                    }
+
+                    if (Math.abs(offsetX) < Math.abs(snapOffset.x)) {
                         snapOffset.x = offsetX;
                     }
-                    if (Math.abs(offsetY) < 16 && Math.abs(offsetY) < Math.abs(snapOffset.y)) {
+                    if (Math.abs(offsetY) < Math.abs(snapOffset.y)) {
                         snapOffset.y = offsetY;
                     }
                 }
 
-                if (snapOffset.x == 9999) {
+                if (snapOffset.x == 16) {
                     snapOffset.x = 0;
                 }
                 if (snapOffset.y == 9999) {
