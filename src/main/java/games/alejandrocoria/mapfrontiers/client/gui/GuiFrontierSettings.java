@@ -536,6 +536,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         if (textPolygonsOpacity.getId() == id && tabSelected == 0) {
             if (StringUtils.isBlank(value)) {
                 textPolygonsOpacity.setText(ConfigData.getDefault("polygonsOpacity"));
+                ConfigData.polygonsOpacity = Double.valueOf(textPolygonsOpacity.getText());
                 ((ClientProxy) MapFrontiers.proxy).configUpdated();
             } else {
                 try {
@@ -551,6 +552,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         } else if (textSnapDistance.getId() == id && tabSelected == 0) {
             if (StringUtils.isBlank(value)) {
                 textSnapDistance.setText(ConfigData.getDefault("snapDistance"));
+                ConfigData.snapDistance = Integer.valueOf(textSnapDistance.getText());
                 ((ClientProxy) MapFrontiers.proxy).configUpdated();
             } else {
                 try {
