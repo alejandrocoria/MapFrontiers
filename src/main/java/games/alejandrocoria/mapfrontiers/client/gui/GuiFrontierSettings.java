@@ -2,7 +2,9 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -29,6 +31,7 @@ import net.minecraft.client.network.NetHandlerPlayClient;
 import net.minecraft.client.network.NetworkPlayerInfo;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.fml.client.config.GuiUtils;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -57,6 +60,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     private GuiButtonIcon buttonNewUser;
     private TextBox textGroupName;
     private List<GuiSimpleLabel> labels;
+    private Map<GuiSimpleLabel, List<String>> labelTooltips;
     private boolean canEditGroups;
     private int tabSelected = 0;
     private int ticksSinceLastUpdate = 0;
@@ -65,6 +69,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     public GuiFrontierSettings(SettingsProfile profile) {
         guiTexture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/gui.png");
         labels = new ArrayList<GuiSimpleLabel>();
+        labelTooltips = new HashMap<GuiSimpleLabel, List<String>>();
         canEditGroups = profile.updateSettings == SettingsProfile.State.Enabled;
     }
 
@@ -236,6 +241,17 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         }
 
         super.drawScreen(mouseX, mouseY, partialTicks);
+
+        for (GuiSimpleLabel label : labels) {
+            if (label.isMouseOver()) {
+                List<String> tooltip = labelTooltips.get(label);
+                if (tooltip == null) {
+                    continue;
+                }
+
+                GuiUtils.drawHoveringText(tooltip, mouseX, mouseY, width, height, 300, fontRenderer);
+            }
+        }
     }
 
     @Override
@@ -413,21 +429,25 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
 
     private void resetLabels() {
         labels.clear();
+        labelTooltips.clear();
 
         if (tabSelected == 0) {
             labels.add(new GuiSimpleLabel(fontRenderer, width / 2, 54, GuiSimpleLabel.Align.Center, "Frontiers", 0xffffffff));
-            labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 72, GuiSimpleLabel.Align.Left, "addVertexToNewFrontier",
-                    0xffdddddd));
-            labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 88, GuiSimpleLabel.Align.Left,
-                    "alwaysShowUnfinishedFrontiers", 0xffdddddd));
-            labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 104, GuiSimpleLabel.Align.Left, "nameVisibility",
-                    0xffdddddd));
-            labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 120, GuiSimpleLabel.Align.Left, "polygonsOpacity",
-                    0xffdddddd));
-            labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 136, GuiSimpleLabel.Align.Left, "snapDistance",
-                    0xffdddddd));
+            addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 72, GuiSimpleLabel.Align.Left,
+                    "addVertexToNewFrontier", 0xffdddddd), ConfigData.getTooltip("addVertexToNewFrontier"));
+            addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 88, GuiSimpleLabel.Align.Left,
+                    "alwaysShowUnfinishedFrontiers", 0xffdddddd), ConfigData.getTooltip("alwaysShowUnfinishedFrontiers"));
+            addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 104, GuiSimpleLabel.Align.Left,
+                    "nameVisibility", 0xffdddddd), ConfigData.getTooltip("nameVisibility"));
+            addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 120, GuiSimpleLabel.Align.Left,
+                    "polygonsOpacity", 0xffdddddd), ConfigData.getTooltip("polygonsOpacity"));
+            addLabelWithTooltip(
+                    new GuiSimpleLabel(fontRenderer, width / 2 - 120, 136, GuiSimpleLabel.Align.Left, "snapDistance", 0xffdddddd),
+                    ConfigData.getTooltip("snapDistance"));
             labels.add(new GuiSimpleLabel(fontRenderer, width / 2, 170, GuiSimpleLabel.Align.Center, "HUD", 0xffffffff));
-            labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 190, GuiSimpleLabel.Align.Left, "enabled", 0xffdddddd));
+            addLabelWithTooltip(
+                    new GuiSimpleLabel(fontRenderer, width / 2 - 120, 190, GuiSimpleLabel.Align.Left, "enabled", 0xffdddddd),
+                    ConfigData.getTooltip("hud.enabled"));
         } else if (tabSelected == 1) {
             GuiGroupElement element = (GuiGroupElement) groups.getSelectedElement();
             if (element != null && element.getGroup().isSpecial()) {
@@ -453,6 +473,13 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
                     I18n.format("mapfrontiers.update_frontier"), 0xffffffff));
             labels.add(new GuiSimpleLabel(fontRenderer, x + 180, 54, GuiSimpleLabel.Align.Center,
                     I18n.format("mapfrontiers.update_settings"), 0xffffffff));
+        }
+    }
+
+    private void addLabelWithTooltip(GuiSimpleLabel label, List<String> tooltip) {
+        labels.add(label);
+        if (tooltip != null) {
+            labelTooltips.put(label, tooltip);
         }
     }
 

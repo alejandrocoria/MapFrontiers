@@ -2,7 +2,9 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -22,6 +24,8 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraftforge.fml.client.config.GuiUtils;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -43,6 +47,7 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
     private GuiOptionButton buttonSnapToBorder;
     private GuiSettingsButton buttonDone;
     private List<GuiSimpleLabel> labels;
+    private Map<GuiSimpleLabel, List<String>> labelTooltips;
     private int id = 0;
     private MiniMap minimap;
     private GuiHUD guiHUD;
@@ -55,6 +60,7 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
     public GuiHUDSettings(GuiFrontierSettings parent) {
         guiTexture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/gui.png");
         labels = new ArrayList<GuiSimpleLabel>();
+        labelTooltips = new HashMap<GuiSimpleLabel, List<String>>();
         this.parent = parent;
         guiHUD = GuiHUD.asPreview();
         guiHUD.configUpdated();
@@ -191,6 +197,17 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         }
 
         super.drawScreen(mouseX, mouseY, partialTicks);
+
+        for (GuiSimpleLabel label : labels) {
+            if (label.isMouseOver()) {
+                List<String> tooltip = labelTooltips.get(label);
+                if (tooltip == null) {
+                    continue;
+                }
+
+                GuiUtils.drawHoveringText(tooltip, mouseX, mouseY, width, height, 300, fontRenderer);
+            }
+        }
     }
 
     private void drawAnchor() {
@@ -429,24 +446,34 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
     private void resetLabels() {
         labels.clear();
 
-        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 170, height / 2 - 30, GuiSimpleLabel.Align.Left, "slot1",
-                0xffdddddd));
-        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 170, height / 2 - 14, GuiSimpleLabel.Align.Left, "slot2",
-                0xffdddddd));
-        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 170, height / 2 + 2, GuiSimpleLabel.Align.Left, "slot3",
-                0xffdddddd));
-        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 170, height / 2 + 18, GuiSimpleLabel.Align.Left, "bannerSize",
-                0xffdddddd));
-        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 30, height / 2 - 30, GuiSimpleLabel.Align.Left, "anchor",
-                0xffdddddd));
-        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 30, height / 2 - 14, GuiSimpleLabel.Align.Left, "position",
-                0xffdddddd));
+        addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 170, height / 2 - 30, GuiSimpleLabel.Align.Left, "slot1",
+                0xffdddddd), ConfigData.getTooltip("hud.slot1"));
+        addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 170, height / 2 - 14, GuiSimpleLabel.Align.Left, "slot2",
+                0xffdddddd), ConfigData.getTooltip("hud.slot2"));
+        addLabelWithTooltip(
+                new GuiSimpleLabel(fontRenderer, width / 2 - 170, height / 2 + 2, GuiSimpleLabel.Align.Left, "slot3", 0xffdddddd),
+                ConfigData.getTooltip("hud.slot3"));
+        addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 170, height / 2 + 18, GuiSimpleLabel.Align.Left,
+                "bannerSize", 0xffdddddd), ConfigData.getTooltip("hud.bannerSize"));
+        addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 30, height / 2 - 30, GuiSimpleLabel.Align.Left, "anchor",
+                0xffdddddd), ConfigData.getTooltip("hud.anchor"));
+        List<String> positionTooltip = ConfigData.getTooltip("hud.position");
+        positionTooltip.add(TextFormatting.AQUA + "Default: [0 x 0]");
+        addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 30, height / 2 - 14, GuiSimpleLabel.Align.Left,
+                "position", 0xffdddddd), positionTooltip);
         labels.add(
                 new GuiSimpleLabel(fontRenderer, width / 2 + 120, height / 2 - 14, GuiSimpleLabel.Align.Center, "x", 0xff777777));
-        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 30, height / 2 + 2, GuiSimpleLabel.Align.Left, "autoAdjustAnchor",
-                0xffdddddd));
-        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 - 30, height / 2 + 18, GuiSimpleLabel.Align.Left, "snapToBorder",
-                0xffdddddd));
+        addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 30, height / 2 + 2, GuiSimpleLabel.Align.Left,
+                "autoAdjustAnchor", 0xffdddddd), ConfigData.getTooltip("hud.autoAdjustAnchor"));
+        addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 30, height / 2 + 18, GuiSimpleLabel.Align.Left,
+                "snapToBorder", 0xffdddddd), ConfigData.getTooltip("hud.snapToBorder"));
+    }
+
+    private void addLabelWithTooltip(GuiSimpleLabel label, List<String> tooltip) {
+        labels.add(label);
+        if (tooltip != null) {
+            labelTooltips.put(label, tooltip);
+        }
     }
 
     @Override

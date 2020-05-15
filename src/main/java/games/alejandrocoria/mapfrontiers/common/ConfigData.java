@@ -1,5 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +15,7 @@ import journeymap.client.ui.minimap.MiniMap;
 import journeymap.client.ui.minimap.Shape;
 import journeymap.client.ui.theme.Theme;
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.common.config.Config;
 import net.minecraftforge.common.config.Config.Comment;
 import net.minecraftforge.common.config.Config.Ignore;
@@ -130,6 +133,26 @@ public class ConfigData {
         }
 
         return configElement.getDefault();
+    }
+
+    public static List<String> getTooltip(String fieldName) {
+        ensureProperties();
+
+        IConfigElement configElement = properties.get(fieldName);
+        if (configElement == null) {
+            return null;
+        }
+
+        String tooltip = TextFormatting.GREEN + configElement.getName() + "\n";
+        tooltip += TextFormatting.YELLOW + configElement.getComment() + "\n";
+
+        if (configElement.getDefault() != null) {
+            tooltip += TextFormatting.AQUA + "Default: " + (String) configElement.getDefault();
+        }
+
+        List<String> tooltipList = new ArrayList<String>();
+        Collections.addAll(tooltipList, tooltip.split("\n"));
+        return tooltipList;
     }
 
     public static Point getHUDAnchor(HUDAnchor anchor) {
@@ -355,9 +378,8 @@ public class ConfigData {
         }
 
         for (IConfigElement configElement : elements) {
-            if (configElement.isProperty()) {
-                properties.put(prefix + configElement.getName(), configElement);
-            } else {
+            properties.put(prefix + configElement.getName(), configElement);
+            if (!configElement.isProperty()) {
                 addProperties(configElement.getChildElements(), prefix + configElement.getName() + ".");
             }
         }
