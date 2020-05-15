@@ -34,6 +34,11 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponder {
     private static final int guiTextureSize = 512;
 
+    private static final int colorText = 0xffbbbbbb;
+    private static final int colorTextHighlight = 0xffffffff;
+    private static final int colorTextError = 0xffdd1111;
+    private static final int colorTextErrorHighlight = 0xffff4444;
+
     private ResourceLocation guiTexture;
     private GuiFrontierSettings parent;
     private GuiOptionButton buttonSlot1;
@@ -95,7 +100,7 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         textBannerSize.setMaxStringLength(1);
         textBannerSize.setResponder(this);
         textBannerSize.setCentered(false);
-        textBannerSize.setColor(0xffbbbbbb, 0xffffffff);
+        textBannerSize.setColor(colorText, colorTextHighlight);
         textBannerSize.setFrame(true);
 
         buttonAnchor = new GuiOptionButton(++id, mc.fontRenderer, width / 2 + 70, height / 2 - 32, 100);
@@ -117,7 +122,7 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         textPositionX.setMaxStringLength(5);
         textPositionX.setResponder(this);
         textPositionX.setCentered(false);
-        textPositionX.setColor(0xffbbbbbb, 0xffffffff);
+        textPositionX.setColor(colorText, colorTextHighlight);
         textPositionX.setFrame(true);
 
         textPositionY = new TextBox(++id, mc.fontRenderer, width / 2 + 125, height / 2 - 16, 45, "");
@@ -125,7 +130,7 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         textPositionY.setMaxStringLength(5);
         textPositionY.setResponder(this);
         textPositionY.setCentered(false);
-        textPositionY.setColor(0xffbbbbbb, 0xffffffff);
+        textPositionY.setColor(colorText, colorTextHighlight);
         textPositionY.setFrame(true);
 
         buttonAutoAdjustAnchor = new GuiOptionButton(++id, mc.fontRenderer, width / 2 + 70, height / 2, 100);
@@ -389,6 +394,8 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
 
             textPositionX.setText(String.valueOf(ConfigData.hud.position.x));
             textPositionY.setText(String.valueOf(ConfigData.hud.position.y));
+            textPositionX.setColor(colorText, colorTextHighlight);
+            textPositionY.setColor(colorText, colorTextHighlight);
         }
     }
 
@@ -407,17 +414,26 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
     @Override
     protected void actionPerformed(GuiButton button) {
         if (button == buttonSlot1) {
-            ConfigData.hud.slot1 = ConfigData.HUDSlot.values()[buttonSlot1.getSelected()];
-            guiHUD.configUpdated();
-            updatePosition();
+            updateSlotsValidity();
+            if (buttonSlot1.getColor() == colorText || buttonSlot1.getColor() == colorTextHighlight) {
+                ConfigData.hud.slot1 = ConfigData.HUDSlot.values()[buttonSlot1.getSelected()];
+                guiHUD.configUpdated();
+                updatePosition();
+            }
         } else if (button == buttonSlot2) {
-            ConfigData.hud.slot2 = ConfigData.HUDSlot.values()[buttonSlot2.getSelected()];
-            guiHUD.configUpdated();
-            updatePosition();
+            updateSlotsValidity();
+            if (buttonSlot2.getColor() == colorText || buttonSlot2.getColor() == colorTextHighlight) {
+                ConfigData.hud.slot2 = ConfigData.HUDSlot.values()[buttonSlot2.getSelected()];
+                guiHUD.configUpdated();
+                updatePosition();
+            }
         } else if (button == buttonSlot3) {
-            ConfigData.hud.slot3 = ConfigData.HUDSlot.values()[buttonSlot3.getSelected()];
-            guiHUD.configUpdated();
-            updatePosition();
+            updateSlotsValidity();
+            if (buttonSlot3.getColor() == colorText || buttonSlot3.getColor() == colorTextHighlight) {
+                ConfigData.hud.slot3 = ConfigData.HUDSlot.values()[buttonSlot3.getSelected()];
+                guiHUD.configUpdated();
+                updatePosition();
+            }
         } else if (button == buttonAnchor) {
             ConfigData.hud.anchor = ConfigData.HUDAnchor.values()[buttonAnchor.getSelected()];
             guiHUD.configUpdated();
@@ -430,6 +446,31 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
             guiHUD.configUpdated();
         } else if (button == buttonDone) {
             Minecraft.getMinecraft().displayGuiScreen(parent);
+        }
+    }
+
+    private void updateSlotsValidity() {
+        ConfigData.HUDSlot slot1 = ConfigData.HUDSlot.values()[buttonSlot1.getSelected()];
+        ConfigData.HUDSlot slot2 = ConfigData.HUDSlot.values()[buttonSlot2.getSelected()];
+        ConfigData.HUDSlot slot3 = ConfigData.HUDSlot.values()[buttonSlot3.getSelected()];
+
+        buttonSlot1.setColor(colorText, colorTextHighlight);
+        buttonSlot2.setColor(colorText, colorTextHighlight);
+        buttonSlot3.setColor(colorText, colorTextHighlight);
+
+        if (slot1 != ConfigData.HUDSlot.None && slot1 == slot2) {
+            buttonSlot1.setColor(colorTextError, colorTextErrorHighlight);
+            buttonSlot2.setColor(colorTextError, colorTextErrorHighlight);
+        }
+
+        if (slot1 != ConfigData.HUDSlot.None && slot1 == slot3) {
+            buttonSlot1.setColor(colorTextError, colorTextErrorHighlight);
+            buttonSlot3.setColor(colorTextError, colorTextErrorHighlight);
+        }
+
+        if (slot2 != ConfigData.HUDSlot.None && slot2 == slot3) {
+            buttonSlot2.setColor(colorTextError, colorTextErrorHighlight);
+            buttonSlot3.setColor(colorTextError, colorTextErrorHighlight);
         }
     }
 
@@ -484,50 +525,56 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
     public void lostFocus(int id, String value) {
         if (textBannerSize.getId() == id) {
             if (StringUtils.isBlank(value)) {
+                textBannerSize.setColor(colorText, colorTextHighlight);
                 textBannerSize.setText(ConfigData.getDefault("hud.bannerSize"));
                 ConfigData.hud.bannerSize = Integer.parseInt(textBannerSize.getText());
                 guiHUD.configUpdated();
                 updatePosition();
             } else {
                 try {
+                    textBannerSize.setColor(colorTextError, colorTextErrorHighlight);
                     Integer size = Integer.valueOf(value);
                     if (ConfigData.isInRange("hud.bannerSize", size)) {
+                        textBannerSize.setColor(colorText, colorTextHighlight);
                         ConfigData.hud.bannerSize = size;
                         guiHUD.configUpdated();
                         updatePosition();
                     }
                 } catch (Exception e) {
-                    MapFrontiers.LOGGER.warn(e.getMessage(), e);
                 }
             }
         } else if (textPositionX.getId() == id) {
             if (StringUtils.isBlank(value)) {
+                textPositionX.setColor(colorText, colorTextHighlight);
                 textPositionX.setText(ConfigData.getDefault("hud.position.x"));
                 ConfigData.hud.position.x = Integer.parseInt(textPositionX.getText());
                 guiHUD.configUpdated();
                 updatePosition();
             } else {
                 try {
+                    textPositionX.setColor(colorTextError, colorTextErrorHighlight);
                     Integer x = Integer.valueOf(value);
                     ConfigData.hud.position.x = x;
                     guiHUD.configUpdated();
+                    textPositionX.setColor(colorText, colorTextHighlight);
                 } catch (Exception e) {
-                    MapFrontiers.LOGGER.warn(e.getMessage(), e);
                 }
             }
         } else if (textPositionY.getId() == id) {
             if (StringUtils.isBlank(value)) {
+                textPositionY.setColor(colorText, colorTextHighlight);
                 textPositionY.setText(ConfigData.getDefault("hud.position.y"));
                 ConfigData.hud.position.y = Integer.parseInt(textPositionY.getText());
                 guiHUD.configUpdated();
                 updatePosition();
             } else {
                 try {
+                    textPositionY.setColor(colorTextError, colorTextErrorHighlight);
                     Integer y = Integer.valueOf(value);
                     ConfigData.hud.position.y = y;
                     guiHUD.configUpdated();
+                    textPositionY.setColor(colorText, colorTextHighlight);
                 } catch (Exception e) {
-                    MapFrontiers.LOGGER.warn(e.getMessage(), e);
                 }
             }
         }

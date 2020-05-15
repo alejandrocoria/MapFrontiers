@@ -18,6 +18,8 @@ public class GuiOptionButton extends GuiButton {
     protected final FontRenderer fontRenderer;
     private List<String> options;
     private int selected = 0;
+    private int color = 0xbbbbbb;
+    private int highlightedColor = 0xffffff;
 
     public GuiOptionButton(int componentId, FontRenderer fontRenderer, int x, int y, int width) {
         super(componentId, x, y, width, 12, "");
@@ -43,20 +45,34 @@ public class GuiOptionButton extends GuiButton {
         return selected;
     }
 
+    public void setColor(int color) {
+        this.color = color;
+        highlightedColor = color;
+    }
+
+    public void setColor(int color, int highlightedColor) {
+        this.color = color;
+        this.highlightedColor = highlightedColor;
+    }
+
+    public int getColor() {
+        return color;
+    }
+
     @Override
     public void drawButton(Minecraft mc, int mouseX, int mouseY, float partialTicks) {
         if (visible) {
             hovered = (mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height);
 
-            int color = 0xbbbbbb;
+            int c = color;
             if (hovered) {
-                color = 0xffffff;
+                c = highlightedColor;
             }
 
             Gui.drawRect(x - 1, y - 1, x + width + 1, y + height + 1, 0xff444444);
             Gui.drawRect(x, y, x + width, y + height, 0xff000000);
 
-            fontRenderer.drawString(options.get(selected), x + 4, y + 2, color);
+            fontRenderer.drawString(options.get(selected), x + 4, y + 2, c);
         } else {
             hovered = false;
         }

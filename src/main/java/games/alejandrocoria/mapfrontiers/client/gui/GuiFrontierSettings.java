@@ -41,6 +41,11 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         GuiGroupActionElement.GroupActionResponder, GuiTabbedBox.TabbedBoxResponder, TextBox.TextBoxResponder {
     private static final int guiTextureSize = 512;
 
+    private static final int colorText = 0xffbbbbbb;
+    private static final int colorTextHighlight = 0xffffffff;
+    private static final int colorTextError = 0xffdd1111;
+    private static final int colorTextErrorHighlight = 0xffff4444;
+
     private ResourceLocation guiTexture;
     private FrontierSettings settings;
     private GuiTabbedBox tabbedBox;
@@ -107,7 +112,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         textPolygonsOpacity.setMaxStringLength(10);
         textPolygonsOpacity.setResponder(this);
         textPolygonsOpacity.setCentered(false);
-        textPolygonsOpacity.setColor(0xffbbbbbb, 0xffffffff);
+        textPolygonsOpacity.setColor(colorText, colorTextHighlight);
         textPolygonsOpacity.setFrame(true);
 
         textSnapDistance = new TextBox(++id, mc.fontRenderer, width / 2 + 50, 134, 100, "");
@@ -115,7 +120,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         textSnapDistance.setMaxStringLength(2);
         textSnapDistance.setResponder(this);
         textSnapDistance.setCentered(false);
-        textSnapDistance.setColor(0xffbbbbbb, 0xffffffff);
+        textSnapDistance.setColor(colorText, colorTextHighlight);
         textSnapDistance.setFrame(true);
 
         buttonHUDEnabled = new GuiOptionButton(++id, mc.fontRenderer, width / 2 + 50, 188, 100);
@@ -562,34 +567,38 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     public void lostFocus(int id, String value) {
         if (textPolygonsOpacity.getId() == id && tabSelected == 0) {
             if (StringUtils.isBlank(value)) {
+                textPolygonsOpacity.setColor(colorText, colorTextHighlight);
                 textPolygonsOpacity.setText(ConfigData.getDefault("polygonsOpacity"));
                 ConfigData.polygonsOpacity = Double.valueOf(textPolygonsOpacity.getText());
                 ((ClientProxy) MapFrontiers.proxy).configUpdated();
             } else {
                 try {
+                    textPolygonsOpacity.setColor(colorTextError, colorTextErrorHighlight);
                     Double opacity = Double.valueOf(value);
                     if (ConfigData.isInRange("polygonsOpacity", opacity)) {
                         ConfigData.polygonsOpacity = opacity;
                         ((ClientProxy) MapFrontiers.proxy).configUpdated();
+                        textPolygonsOpacity.setColor(colorText, colorTextHighlight);
                     }
                 } catch (Exception e) {
-                    MapFrontiers.LOGGER.warn(e.getMessage(), e);
                 }
             }
         } else if (textSnapDistance.getId() == id && tabSelected == 0) {
             if (StringUtils.isBlank(value)) {
+                textSnapDistance.setColor(colorText, colorTextHighlight);
                 textSnapDistance.setText(ConfigData.getDefault("snapDistance"));
                 ConfigData.snapDistance = Integer.valueOf(textSnapDistance.getText());
                 ((ClientProxy) MapFrontiers.proxy).configUpdated();
             } else {
                 try {
+                    textSnapDistance.setColor(colorTextError, colorTextErrorHighlight);
                     Integer distance = Integer.valueOf(value);
                     if (ConfigData.isInRange("snapDistance", distance)) {
                         ConfigData.snapDistance = distance;
                         ((ClientProxy) MapFrontiers.proxy).configUpdated();
+                        textSnapDistance.setColor(colorText, colorTextHighlight);
                     }
                 } catch (Exception e) {
-                    MapFrontiers.LOGGER.warn(e.getMessage(), e);
                 }
             }
         } else if (textGroupName.getId() == id && tabSelected == 1) {
