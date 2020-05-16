@@ -11,6 +11,7 @@ import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import journeymap.client.io.ThemeLoader;
+import journeymap.client.ui.UIManager;
 import journeymap.client.ui.minimap.Shape;
 import journeymap.client.ui.theme.Theme;
 import journeymap.common.Journeymap;
@@ -49,6 +50,7 @@ public class GuiHUD {
     private int bannerOffsetY = 0;
     private int hudWidth = 0;
     private int hudHeight = 0;
+    private int textScale = 1;
     private int bannerScale = 1;
     private boolean initialized = false;
     private boolean previewMode = false;
@@ -225,7 +227,7 @@ public class GuiHUD {
     }
 
     private void drawName(int frameColor, int textColor) {
-        Gui.drawRect(posX, posY + nameOffsetY, posX + hudWidth, posY + nameOffsetY + 24, frameColor);
+        Gui.drawRect(posX, posY + nameOffsetY, posX + hudWidth, posY + nameOffsetY + 24 * textScale, frameColor);
 
         frontierName1.setColor(textColor);
         frontierName2.setColor(textColor);
@@ -235,7 +237,7 @@ public class GuiHUD {
     }
 
     private void drawOwner(int frameColor, int textColor) {
-        Gui.drawRect(posX, posY + ownerOffsetY, posX + hudWidth, posY + ownerOffsetY + 12, frameColor);
+        Gui.drawRect(posX, posY + ownerOffsetY, posX + hudWidth, posY + ownerOffsetY + 12 * textScale, frameColor);
 
         frontierOwner.setColor(textColor);
         frontierOwner.drawLabel(mc, 0, 0);
@@ -276,21 +278,23 @@ public class GuiHUD {
         hudWidth = 0;
         hudHeight = 0;
 
+        textScale = UIManager.INSTANCE.getMiniMap().getCurrentMinimapProperties().fontScale.get().intValue();
+
         for (ConfigData.HUDSlot slot : slots) {
             switch (slot) {
             case Name:
-                int name1Width = mc.fontRenderer.getStringWidth(frontier.getName1()) + 4;
-                int name2Width = mc.fontRenderer.getStringWidth(frontier.getName2()) + 4;
-                int nameWidth = Math.max(name1Width, name2Width);
+                int name1Width = mc.fontRenderer.getStringWidth(frontier.getName1()) + 3;
+                int name2Width = mc.fontRenderer.getStringWidth(frontier.getName2()) + 3;
+                int nameWidth = Math.max(name1Width, name2Width) * textScale;
                 hudWidth = Math.max(hudWidth, nameWidth);
-                hudHeight += 24;
+                hudHeight += 24 * textScale;
                 break;
             case Owner:
                 if (!frontier.getOwner().isEmpty()) {
                     String owner = getOwnerString(frontier.getOwner());
-                    int ownerWidth = mc.fontRenderer.getStringWidth(owner) + 4;
+                    int ownerWidth = (mc.fontRenderer.getStringWidth(owner) + 3) * textScale;
                     hudWidth = Math.max(hudWidth, ownerWidth);
-                    hudHeight += 12;
+                    hudHeight += 12 * textScale;
                 }
                 break;
             case Banner:
@@ -318,14 +322,16 @@ public class GuiHUD {
                 nameOffsetY = offsetY;
 
                 frontierName1.setX(posX + hudWidth / 2);
-                frontierName1.setY(posY + nameOffsetY + 2);
+                frontierName1.setY(posY + nameOffsetY + 2 * textScale);
+                frontierName1.setScale(textScale);
                 frontierName1.setText(frontier.getName1());
 
                 frontierName2.setX(posX + hudWidth / 2);
-                frontierName2.setY(posY + nameOffsetY + 14);
+                frontierName2.setY(posY + nameOffsetY + 14 * textScale);
+                frontierName2.setScale(textScale);
                 frontierName2.setText(frontier.getName2());
 
-                offsetY += 24;
+                offsetY += 24 * textScale;
                 break;
             case Owner:
                 if (!frontier.getOwner().isEmpty()) {
@@ -334,9 +340,10 @@ public class GuiHUD {
 
                     frontierOwner.setX(posX + hudWidth / 2);
                     frontierOwner.setY(posY + ownerOffsetY + 2);
+                    frontierOwner.setScale(textScale);
                     frontierOwner.setText(owner);
 
-                    offsetY += 12;
+                    offsetY += 12 * textScale;
                 }
                 break;
             case Banner:

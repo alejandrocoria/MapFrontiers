@@ -9,6 +9,7 @@ import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -22,6 +23,7 @@ public class GuiSimpleLabel extends Gui {
     private final FontRenderer fontRenderer;
     private int x;
     private int y;
+    private int scale = 1;
     private int color;
     private boolean hovered;
     private final Align align;
@@ -84,6 +86,10 @@ public class GuiSimpleLabel extends Gui {
         }
     }
 
+    public void setScale(int scale) {
+        this.scale = scale;
+    }
+
     public void setColor(int color) {
         this.color = color;
     }
@@ -101,25 +107,30 @@ public class GuiSimpleLabel extends Gui {
     }
 
     public void drawLabel(Minecraft mc, int mouseX, int mouseY) {
+        GlStateManager.scale(scale, scale, 1.0);
+
         if (align == Align.Left) {
             for (int i = 0; i < texts.size(); ++i) {
-                fontRenderer.drawString(texts.get(i), x, y + i * 12, color);
+                fontRenderer.drawString(texts.get(i), x / scale, (y + i * 12) / scale, color);
             }
         } else if (align == Align.Center) {
             for (int i = 0; i < texts.size(); ++i) {
-                fontRenderer.drawString(texts.get(i), x - widths.get(i) / 2, y + i * 12, color);
+                fontRenderer.drawString(texts.get(i), x / scale - (widths.get(i) - 1) / 2, (y + i * 12) / scale, color);
             }
         } else {
             for (int i = 0; i < texts.size(); ++i) {
-                fontRenderer.drawString(texts.get(i), x - widths.get(i), y + i * 12, color);
+                fontRenderer.drawString(texts.get(i), x / scale - widths.get(i), (y + i * 12) / scale, color);
             }
         }
 
-        hovered = (mouseX >= topLeft.x + x && mouseY >= topLeft.y + y && mouseX < bottomRight.x + x
-                && mouseY < bottomRight.y + y);
+        hovered = (mouseX >= topLeft.x * scale + x && mouseY >= topLeft.y * scale + y && mouseX < bottomRight.x * scale + x
+                && mouseY < bottomRight.y * scale + y);
+
+        GlStateManager.scale(1.0 / scale, 1.0 / scale, 1.0);
     }
 
     public boolean isMouseOver() {
         return hovered;
     }
 }
+
