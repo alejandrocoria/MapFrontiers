@@ -40,10 +40,12 @@ public class GuiHUD {
     private BlockPos lastPlayerPosition = new BlockPos(0, 0, 0);
     private GuiSimpleLabel frontierName1;
     private GuiSimpleLabel frontierName2;
+    private GuiSimpleLabel frontierOwner;
     private List<ConfigData.HUDSlot> slots;
     private int posX = 0;
     private int posY = 0;
     private int nameOffsetY = 0;
+    private int ownerOffsetY = 0;
     private int bannerOffsetY = 0;
     private int hudWidth = 0;
     private int hudHeight = 0;
@@ -93,6 +95,7 @@ public class GuiHUD {
         slots = new ArrayList<ConfigData.HUDSlot>();
         frontierName1 = new GuiSimpleLabel(mc.fontRenderer, 0, 0, GuiSimpleLabel.Align.Center, "", 0xffffffff);
         frontierName2 = new GuiSimpleLabel(mc.fontRenderer, 0, 0, GuiSimpleLabel.Align.Center, "", 0xffffffff);
+        frontierOwner = new GuiSimpleLabel(mc.fontRenderer, 0, 0, GuiSimpleLabel.Align.Center, "", 0xffffffff);
     }
 
     public int getWidth() {
@@ -157,10 +160,19 @@ public class GuiHUD {
                     updateData();
                 }
             }
-        }
 
+            if (frontier != null && frontierHash != frontier.getHash()) {
+                frontierHash = frontier.getHash();
+                updateData();
+            }
+        }
     }
 
+    /*
+     * @SubscribeEvent public void livingUpdateEvent(LivingUpdateEvent event) { if
+     * (frontierHash != frontier.getHash()) { frontierHash = frontier.getHash();
+     * updateData(); } }
+     */
     public void configUpdated() {
         bannerScale = ConfigData.hud.bannerSize;
         updateData();
@@ -199,6 +211,7 @@ public class GuiHUD {
                 drawName(frameColor, textColor);
                 break;
             case Owner:
+                drawOwner(frameColor, textColor);
                 break;
             case Banner:
                 drawBanner(frameColor);
@@ -219,6 +232,13 @@ public class GuiHUD {
 
         frontierName1.drawLabel(mc, 0, 0);
         frontierName2.drawLabel(mc, 0, 0);
+    }
+
+    private void drawOwner(int frameColor, int textColor) {
+        Gui.drawRect(posX, posY + ownerOffsetY, posX + hudWidth, posY + ownerOffsetY + 12, frameColor);
+
+        frontierOwner.setColor(textColor);
+        frontierOwner.drawLabel(mc, 0, 0);
     }
 
     private void drawBanner(int frameColor) {
@@ -266,6 +286,12 @@ public class GuiHUD {
                 hudHeight += 24;
                 break;
             case Owner:
+                if (!frontier.getOwner().isEmpty()) {
+                    String owner = getOwnerString(frontier.getOwner());
+                    int ownerWidth = mc.fontRenderer.getStringWidth(owner) + 4;
+                    hudWidth = Math.max(hudWidth, ownerWidth);
+                    hudHeight += 12;
+                }
                 break;
             case Banner:
                 hudWidth = Math.max(hudWidth, 22 * bannerScale + 4);
@@ -283,6 +309,7 @@ public class GuiHUD {
 
         int offsetY = 0;
         nameOffsetY = 0;
+        ownerOffsetY = 0;
         bannerOffsetY = 0;
 
         for (ConfigData.HUDSlot slot : slots) {
@@ -301,6 +328,16 @@ public class GuiHUD {
                 offsetY += 24;
                 break;
             case Owner:
+                if (!frontier.getOwner().isEmpty()) {
+                    String owner = getOwnerString(frontier.getOwner());
+                    ownerOffsetY = offsetY;
+
+                    frontierOwner.setX(posX + hudWidth / 2);
+                    frontierOwner.setY(posY + ownerOffsetY + 2);
+                    frontierOwner.setText(owner);
+
+                    offsetY += 12;
+                }
                 break;
             case Banner:
                 bannerOffsetY = offsetY;
@@ -310,6 +347,18 @@ public class GuiHUD {
                 break;
             }
         }
+    }
+
+    private String getOwnerString(SettingsUser user) {
+        String ownerString = "";
+        if (!StringUtils.isBlank(frontier.getOwner().username)) {
+            ownerString = frontier.getOwner().username;
+        } else if (frontier.getOwner().uuid != null) {
+            ownerString = frontier.getOwner().uuid.toString();
+            ownerString = ownerString.substring(0, 8) + "...";
+        }
+
+        return ownerString;
     }
 
     private void addSlot(ConfigData.HUDSlot slot) {
