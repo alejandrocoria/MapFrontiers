@@ -242,14 +242,17 @@ public class GuiHUD {
         int factor = scaledresolution.getScaleFactor();
 
         int frameColor = 0xff000000;
-        int textColor = 0xffffffff;
+        int textNameColor = 0xffffffff;
+        int textOwnerColor = 0xffdfdfdf;
 
         if (Journeymap.getClient().getActiveMiniMapProperties().shape.get() == Shape.Circle) {
             frameColor = getIntColor(ThemeLoader.getCurrentTheme().minimap.circle.labelTop.background);
-            textColor = getIntColor(ThemeLoader.getCurrentTheme().minimap.circle.labelTop.foreground);
+            textNameColor = getIntColor(ThemeLoader.getCurrentTheme().minimap.circle.labelTop.highlight);
+            textOwnerColor = getIntColor(ThemeLoader.getCurrentTheme().minimap.circle.labelTop.foreground);
         } else {
             frameColor = getIntColor(ThemeLoader.getCurrentTheme().minimap.square.labelTop.background);
-            textColor = getIntColor(ThemeLoader.getCurrentTheme().minimap.square.labelTop.foreground);
+            textNameColor = getIntColor(ThemeLoader.getCurrentTheme().minimap.square.labelTop.highlight);
+            textOwnerColor = getIntColor(ThemeLoader.getCurrentTheme().minimap.square.labelTop.foreground);
         }
 
         GlStateManager.pushMatrix();
@@ -259,10 +262,10 @@ public class GuiHUD {
         for (ConfigData.HUDSlot slot : slots) {
             switch (slot) {
             case Name:
-                drawName(frameColor, textColor);
+                drawName(frameColor, textNameColor);
                 break;
             case Owner:
-                drawOwner(frameColor, textColor);
+                drawOwner(frameColor, textOwnerColor);
                 break;
             case Banner:
                 drawBanner(frameColor);
