@@ -247,6 +247,10 @@ public class ClientProxy extends CommonProxy {
         }
     }
 
+    public void frontierChanged(FrontierOverlay frontier) {
+        guiHUD.frontierChanged(frontier);
+    }
+
     @Override
     public boolean isOPorHost(EntityPlayer player) {
         if (Minecraft.getMinecraft().isIntegratedServerRunning()) {
