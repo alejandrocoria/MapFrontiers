@@ -334,6 +334,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
             ((ClientProxy) MapFrontiers.proxy).configUpdated();
         } else if (button == buttonHUDEnabled) {
             ConfigData.hud.enabled = buttonHUDEnabled.getSelected() == 0;
+            buttonEditHUD.visible = ConfigData.hud.enabled;
             ((ClientProxy) MapFrontiers.proxy).configUpdated();
         } else if (button == buttonEditHUD) {
             Minecraft.getMinecraft().displayGuiScreen(new GuiHUDSettings(this));
@@ -493,7 +494,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         buttonAlwaysShowUnfinishedFrontiers.visible = tabSelected == 0;
         buttonNameVisibility.visible = tabSelected == 0;
         buttonHUDEnabled.visible = tabSelected == 0;
-        buttonEditHUD.visible = tabSelected == 0;
+        buttonEditHUD.visible = tabSelected == 0 && ConfigData.hud.enabled;
         groups.visible = tabSelected == 1;
         users.visible = tabSelected == 1;
         buttonNewGroup.visible = tabSelected == 1;
