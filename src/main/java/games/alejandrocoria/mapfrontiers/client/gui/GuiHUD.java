@@ -11,9 +11,12 @@ import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import journeymap.client.io.ThemeLoader;
+import journeymap.client.properties.MiniMapProperties;
 import journeymap.client.ui.UIManager;
+import journeymap.client.ui.minimap.Position;
 import journeymap.client.ui.minimap.Shape;
 import journeymap.client.ui.theme.Theme;
+import journeymap.client.ui.theme.ThemeLabelSource;
 import journeymap.common.Journeymap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
@@ -52,8 +55,20 @@ public class GuiHUD {
     private int hudHeight = 0;
     private int textScale = 1;
     private int bannerScale = 1;
-    private boolean initialized = false;
+    private boolean needUpdate = true;
     private boolean previewMode = false;
+    private int displayWidth;
+    private int displayHeight;
+    private boolean minimapEnabled;
+    private int minimapSize;
+    private Shape minimapShape;
+    private Position minimapPosition;
+    private ThemeLabelSource minimapInfo1;
+    private ThemeLabelSource minimapInfo2;
+    private ThemeLabelSource minimapInfo3;
+    private ThemeLabelSource minimapInfo4;
+    private int minimapFontScale;
+    private int minimapCompassFontScale;
 
     public static GuiHUD asPreview() {
         GuiHUD guiHUD = new GuiHUD(null);
@@ -154,36 +169,48 @@ public class GuiHUD {
                     if (frontierHash != newFrontier.getHash()) {
                         frontier = newFrontier;
                         frontierHash = newFrontier.getHash();
-                        updateData();
+                        needUpdate = true;
                     }
                 } else if (frontier != null) {
                     frontier = null;
                     frontierHash = 0;
-                    updateData();
+                    needUpdate = true;
                 }
             }
 
             if (frontier != null && frontierHash != frontier.getHash()) {
                 frontierHash = frontier.getHash();
-                updateData();
+                needUpdate = true;
             }
         }
     }
 
-    /*
-     * @SubscribeEvent public void livingUpdateEvent(LivingUpdateEvent event) { if
-     * (frontierHash != frontier.getHash()) { frontierHash = frontier.getHash();
-     * updateData(); } }
-     */
     public void configUpdated() {
-        bannerScale = ConfigData.hud.bannerSize;
-        updateData();
+        needUpdate = true;
     }
 
     public void draw() {
-        if (!initialized) {
-            initialized = true;
-            configUpdated();
+        if (displayWidth != mc.displayWidth || displayHeight != mc.displayHeight) {
+            needUpdate = true;
+        }
+
+        if (ConfigData.hud.anchor == ConfigData.HUDAnchor.Minimap
+                || ConfigData.hud.anchor == ConfigData.HUDAnchor.MinimapHorizontal
+                || ConfigData.hud.anchor == ConfigData.HUDAnchor.MinimapVertical) {
+            MiniMapProperties minimapProperties = UIManager.INSTANCE.getMiniMap().getCurrentMinimapProperties();
+            if (minimapEnabled != minimapProperties.enabled.get() || minimapSize != minimapProperties.sizePercent.get().intValue()
+                    || minimapShape != minimapProperties.shape.get() || minimapPosition != minimapProperties.position.get()
+                    || minimapInfo1 != minimapProperties.info1Label.get() || minimapInfo2 != minimapProperties.info1Label.get()
+                    || minimapInfo3 != minimapProperties.info1Label.get() || minimapInfo4 != minimapProperties.info1Label.get()
+                    || minimapFontScale != minimapProperties.fontScale.get().intValue()
+                    || minimapCompassFontScale != minimapProperties.compassFontScale.get().intValue()) {
+                needUpdate = true;
+            }
+        }
+
+        if (needUpdate) {
+            needUpdate = false;
+            updateData();
         }
 
         if (slots.isEmpty()) {
@@ -261,6 +288,25 @@ public class GuiHUD {
     }
 
     private void updateData() {
+        displayWidth = mc.displayWidth;
+        displayHeight = mc.displayHeight;
+
+        if (ConfigData.hud.anchor == ConfigData.HUDAnchor.Minimap
+                || ConfigData.hud.anchor == ConfigData.HUDAnchor.MinimapHorizontal
+                || ConfigData.hud.anchor == ConfigData.HUDAnchor.MinimapVertical) {
+            MiniMapProperties minimapProperties = UIManager.INSTANCE.getMiniMap().getCurrentMinimapProperties();
+            minimapEnabled = minimapProperties.enabled.get();
+            minimapSize = minimapProperties.sizePercent.get().intValue();
+            minimapShape = minimapProperties.shape.get();
+            minimapPosition = minimapProperties.position.get();
+            minimapInfo1 = minimapProperties.info1Label.get();
+            minimapInfo2 = minimapProperties.info1Label.get();
+            minimapInfo3 = minimapProperties.info1Label.get();
+            minimapInfo4 = minimapProperties.info1Label.get();
+            minimapFontScale = minimapProperties.fontScale.get().intValue();
+            minimapCompassFontScale = minimapProperties.compassFontScale.get().intValue();
+        }
+
         slots.clear();
 
         if (frontier == null) {
@@ -277,6 +323,7 @@ public class GuiHUD {
 
         hudWidth = 0;
         hudHeight = 0;
+        bannerScale = ConfigData.hud.bannerSize;
 
         textScale = UIManager.INSTANCE.getMiniMap().getCurrentMinimapProperties().fontScale.get().intValue();
 
