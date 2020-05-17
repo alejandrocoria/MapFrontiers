@@ -186,7 +186,11 @@ public class GuiHUD {
     }
 
     public void configUpdated() {
-        needUpdate = true;
+        if (previewMode) {
+            updateData();
+        } else {
+            needUpdate = true;
+        }
     }
 
     public void frontierChanged(FrontierOverlay frontierChanged) {
