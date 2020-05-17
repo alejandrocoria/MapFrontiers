@@ -128,12 +128,12 @@ public class GuiHUD {
     }
 
     @SubscribeEvent()
-    public void RenderGameOverlayEvent(RenderGameOverlayEvent.Post event) {
+    public void RenderGameOverlayEvent(RenderGameOverlayEvent.Pre event) {
         if (previewMode) {
             return;
         }
 
-        if (event.getType() == RenderGameOverlayEvent.ElementType.TEXT) {
+        if (event.getType() == RenderGameOverlayEvent.ElementType.HOTBAR) {
             if (mc.currentScreen != null) {
                 return;
             }
@@ -250,6 +250,7 @@ public class GuiHUD {
 
         GlStateManager.pushMatrix();
         GlStateManager.scale(1.0 / factor, 1.0 / factor, 1.0);
+        GlStateManager.translate(0.0, 0.0, -100.0);
 
         for (ConfigData.HUDSlot slot : slots) {
             switch (slot) {
@@ -268,6 +269,7 @@ public class GuiHUD {
         }
 
         GlStateManager.popMatrix();
+        GlStateManager.enableBlend();
     }
 
     private void drawName(int frameColor, int textColor) {
