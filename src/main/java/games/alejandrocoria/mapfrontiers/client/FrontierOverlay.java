@@ -274,7 +274,7 @@ public class FrontierOverlay extends FrontierData {
     @Override
     public void setBanner(ItemStack itemBanner) {
         super.setBanner(itemBanner);
-        dirty = true;
+        updateOverlay();
     }
 
     public void bindBannerTexture(Minecraft mc) {

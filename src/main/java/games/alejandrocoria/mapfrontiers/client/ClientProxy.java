@@ -247,9 +247,9 @@ public class ClientProxy extends CommonProxy {
         }
     }
 
-    public void frontierChanged(FrontierOverlay frontier) {
+    public void frontierChanged() {
         if (guiHUD != null) {
-            guiHUD.frontierChanged(frontier);
+            guiHUD.frontierChanged();
         }
     }
 

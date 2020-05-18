@@ -49,7 +49,7 @@ public class PacketFrontierDeleted implements IMessage {
                 Minecraft.getMinecraft().addScheduledTask(() -> {
                     int frontierIndex = FrontiersOverlayManager.instance.deleteFrontier(message.dimension, message.frontierID);
 
-                    ((ClientProxy) MapFrontiers.proxy).frontierChanged(null);
+                    ((ClientProxy) MapFrontiers.proxy).frontierChanged();
 
                     if (frontierIndex != -1 && Minecraft.getMinecraft().currentScreen instanceof GuiFrontierBook) {
                         ((GuiFrontierBook) Minecraft.getMinecraft().currentScreen).deleteFrontierMessage(frontierIndex,

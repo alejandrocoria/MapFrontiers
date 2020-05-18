@@ -174,6 +174,10 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
 
     @Override
     public void updateScreen() {
+        if (!canEditGroups) {
+            return;
+        }
+
         ++ticksSinceLastUpdate;
 
         if (ticksSinceLastUpdate >= 100) {

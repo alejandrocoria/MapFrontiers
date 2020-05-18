@@ -61,7 +61,7 @@ public class PacketFrontierUpdated implements IMessage {
                     if (message.playerID != Minecraft.getMinecraft().player.getEntityId()) {
                         FrontierOverlay frontierOverlay = FrontiersOverlayManager.instance.updateFrontier(message.frontier);
 
-                        ((ClientProxy) MapFrontiers.proxy).frontierChanged(frontierOverlay);
+                        ((ClientProxy) MapFrontiers.proxy).frontierChanged();
 
                         if (frontierOverlay != null && Minecraft.getMinecraft().currentScreen instanceof GuiFrontierBook) {
                             ((GuiFrontierBook) Minecraft.getMinecraft().currentScreen).updateFrontierMessage(frontierOverlay,

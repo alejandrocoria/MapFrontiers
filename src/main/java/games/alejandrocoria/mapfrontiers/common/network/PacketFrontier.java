@@ -60,7 +60,7 @@ public class PacketFrontier implements IMessage {
                 Minecraft.getMinecraft().addScheduledTask(() -> {
                     FrontierOverlay frontierOverlay = FrontiersOverlayManager.instance.addFrontier(message.frontier);
 
-                    ((ClientProxy) MapFrontiers.proxy).frontierChanged(null);
+                    ((ClientProxy) MapFrontiers.proxy).frontierChanged();
 
                     if (frontierOverlay != null && Minecraft.getMinecraft().currentScreen instanceof GuiFrontierBook) {
                         ((GuiFrontierBook) Minecraft.getMinecraft().currentScreen).newFrontierMessage(frontierOverlay,

@@ -884,6 +884,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         GlStateManager.popMatrix();
 
         endStencil();
+        GlStateManager.color(1.f, 1.f, 1.f);
     }
 
     private void resetLabels() {

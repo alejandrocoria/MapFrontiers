@@ -134,7 +134,7 @@ public class GuiHUD {
         }
 
         if (event.getType() == RenderGameOverlayEvent.ElementType.HOTBAR) {
-            if (mc.currentScreen != null) {
+            if (mc.currentScreen != null && !(mc.currentScreen instanceof net.minecraft.client.gui.GuiChat)) {
                 return;
             }
 
@@ -193,20 +193,18 @@ public class GuiHUD {
         }
     }
 
-    public void frontierChanged(FrontierOverlay frontierChanged) {
-        if (frontier == null || frontierChanged == null || frontier == frontierChanged) {
-            FrontierOverlay newFrontier = frontiersOverlayManager.getFrontierInPosition(mc.player.dimension, lastPlayerPosition);
-            if (newFrontier != null) {
-                if (frontierHash != newFrontier.getHash()) {
-                    frontier = newFrontier;
-                    frontierHash = newFrontier.getHash();
-                    needUpdate = true;
-                }
-            } else if (frontier != null) {
-                frontier = null;
-                frontierHash = 0;
+    public void frontierChanged() {
+        FrontierOverlay newFrontier = frontiersOverlayManager.getFrontierInPosition(mc.player.dimension, lastPlayerPosition);
+        if (newFrontier != null) {
+            if (frontierHash != newFrontier.getHash()) {
+                frontier = newFrontier;
+                frontierHash = newFrontier.getHash();
                 needUpdate = true;
             }
+        } else if (frontier != null) {
+            frontier = null;
+            frontierHash = 0;
+            needUpdate = true;
         }
     }
 
