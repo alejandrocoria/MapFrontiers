@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -16,6 +15,7 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketNewFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateFrontier;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
+import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.MarkerOverlay;
 import journeymap.client.api.model.MapImage;
@@ -116,7 +116,7 @@ public class FrontiersOverlayManager {
     public int deleteFrontier(int dimension, int id) {
         List<FrontierOverlay> frontiers = getAllFrontiers(dimension);
 
-        int index = IntStream.range(0, frontiers.size()).filter(i -> frontiers.get(i).getId() == id).findFirst().orElse(-1);
+        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId() == id);
 
         if (index < 0) {
             return -1;
@@ -132,9 +132,7 @@ public class FrontiersOverlayManager {
     public FrontierOverlay updateFrontier(FrontierData data) {
         List<FrontierOverlay> frontiers = getAllFrontiers(data.getDimension());
 
-        // @Note: copied from FrontiersOverlayManager.deleteFrontier(int,int)
-        int index = IntStream.range(0, frontiers.size()).filter(i -> frontiers.get(i).getId() == data.getId()).findFirst()
-                .orElse(-1);
+        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId() == data.getId());
 
         if (index < 0) {
             // @Note: this should not happen...

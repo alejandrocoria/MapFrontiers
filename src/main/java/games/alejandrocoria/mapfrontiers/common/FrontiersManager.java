@@ -9,13 +9,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.stream.IntStream;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.CompressedStreamTools;
@@ -74,8 +74,7 @@ public class FrontiersManager {
     public FrontierData getFrontierFromID(int dimension, int id) {
         List<FrontierData> frontiers = getAllFrontiers(dimension);
 
-        // @Note: copied from FrontiersOverlayManager.deleteFrontier(int,int)
-        int index = IntStream.range(0, frontiers.size()).filter(i -> frontiers.get(i).getId() == id).findFirst().orElse(-1);
+        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId() == id);
 
         if (index < 0) {
             return null;
@@ -127,9 +126,7 @@ public class FrontiersManager {
             return false;
         }
 
-        // @Note: copied from FrontiersOverlayManager.deleteFrontier(int,int)
-        int index = IntStream.range(0, frontiers.size()).filter(i -> frontiers.get(i).getId() == frontier.getId()).findFirst()
-                .orElse(-1);
+        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId() == frontier.getId());
 
         if (index < 0) {
             return false;
