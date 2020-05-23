@@ -147,7 +147,6 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         textNewUser.setMaxStringLength(38);
         textNewUser.setResponder(this);
         textNewUser.setCentered(false);
-        textNewUser.setColor(0xffffffff);
         textNewUser.setFrame(true);
 
         buttonNewUser = new GuiButtonIcon(++id, 490, height - 61, 13, 13, 494, 119, -23, guiTexture, guiTextureSize);
@@ -366,7 +365,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
             } else {
                 usernameOrUUID = usernameOrUUID.replaceAll("[^0-9a-fA-F]", "");
                 if (usernameOrUUID.length() != 32) {
-                    // @Incomplete: announce error
+                    textNewUser.setError(I18n.format("mapfrontiers.new_user_error_uuid_size"));
                     return;
                 }
                 usernameOrUUID = usernameOrUUID.toLowerCase();
@@ -378,13 +377,13 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
                     user.uuid = UUID.fromString(uuid);
                     user.fillMissingInfo(true);
                 } catch (Exception e) {
-                    // @Incomplete: announce error
+                    textNewUser.setError(I18n.format("mapfrontiers.new_user_error_uuid_format"));
                     return;
                 }
             }
 
             if (group.hasUser(user)) {
-                // @Incomplete: announce error
+                textNewUser.setError(I18n.format("mapfrontiers.new_user_error_user_repeated"));
                 return;
             }
 

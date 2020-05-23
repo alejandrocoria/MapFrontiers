@@ -23,6 +23,7 @@ public class TextUserBox extends TextBox {
     private String partialText;
     private List<String> suggestions;
     private List<String> suggestionsToDraw;
+    private String error;
     private int maxSuggestionWidth = 0;
     private int suggestionIndex = 0;
 
@@ -31,6 +32,20 @@ public class TextUserBox extends TextBox {
         this.mc = mc;
         suggestions = new ArrayList<String>();
         suggestionsToDraw = new ArrayList<String>();
+
+        setError("");
+    }
+
+    public void setError(String error) {
+        this.error = error;
+
+        if (this.error.isEmpty()) {
+            setColor(0xffffffff);
+        } else {
+            setColor(0xffdd1111, 0xffff4444);
+            suggestions.clear();
+            suggestionsToDraw.clear();
+        }
     }
 
     @Override
@@ -97,7 +112,27 @@ public class TextUserBox extends TextBox {
     public void drawTextBox(int mouseX, int mouseY) {
         super.drawTextBox(mouseX, mouseY);
 
-        if (!suggestionsToDraw.isEmpty()) {
+        if (!error.isEmpty()) {
+            List<String> errorList = fontRenderer.listFormattedStringToWidth(error, width - 8);
+            int maxErrorWidth = 0;
+
+            for (String e : errorList) {
+                int errorWidth = fontRenderer.getStringWidth(e);
+                if (errorWidth > maxErrorWidth) {
+                    maxErrorWidth = errorWidth;
+                }
+            }
+
+            Gui.drawRect(x - 1, y - errorList.size() * 12 - 5, x + maxErrorWidth + 9, y - 1, 0xffa0a0a0);
+            Gui.drawRect(x, y - errorList.size() * 12 - 4, x + maxErrorWidth + 8, y - 1, 0xff000000);
+
+            int posX = x + 4;
+            int posY = y - errorList.size() * 12;
+            for (String e : errorList) {
+                fontRenderer.drawString(e, posX, posY, 0xffffff);
+                posY += 12;
+            }
+        } else if (!suggestionsToDraw.isEmpty()) {
             Gui.drawRect(x - 1, y - suggestionsToDraw.size() * 12 - 5, x + maxSuggestionWidth + 9, y - 1, 0xffa0a0a0);
             Gui.drawRect(x, y - suggestionsToDraw.size() * 12 - 4, x + maxSuggestionWidth + 8, y - 1, 0xff000000);
 
@@ -125,6 +160,8 @@ public class TextUserBox extends TextBox {
             suggestions.clear();
             suggestionsToDraw.clear();
         }
+
+        setError("");
 
         super.setFocused(isFocusedIn);
     }
