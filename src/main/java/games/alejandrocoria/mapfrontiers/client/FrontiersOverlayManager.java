@@ -135,7 +135,6 @@ public class FrontiersOverlayManager {
         int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId() == data.getId());
 
         if (index < 0) {
-            // @Note: this should not happen...
             return null;
         } else {
             FrontierOverlay frontierOverlay = new FrontierOverlay(data, jmAPI);
