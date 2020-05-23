@@ -258,8 +258,11 @@ public class ClientProxy extends CommonProxy {
         if (Minecraft.getMinecraft().isIntegratedServerRunning()) {
             return super.isOPorHost(player);
         }
-        // @Incomplete: needs to check if it is OP on the server, it needs to check the
-        // parameter player and not the local player.
-        return Minecraft.getMinecraft().isSingleplayer();
+
+        // @Note: This function does not have to be called on the remote client.
+        // The information is not here.
+
+        MapFrontiers.LOGGER.error("ClientProxy.isOPorHost called on the remote client. This should not happen!");
+        return false;
     }
 }
