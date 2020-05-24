@@ -106,7 +106,7 @@ public class ClientProxy extends CommonProxy {
         }
     }
 
-    // Note: copied from CommonProxy, needs an abstraction
+    // @Note: copied from CommonProxy, needs an abstraction
     @Override
     public BlockPos snapVertex(BlockPos vertex, int snapDistance, FrontierData owner) {
         float snapDistanceSq = snapDistance * snapDistance;
