@@ -2,6 +2,8 @@ package games.alejandrocoria.mapfrontiers.common.util;
 
 import java.util.UUID;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
 import com.mojang.authlib.GameProfile;
 
 import net.minecraft.client.Minecraft;
@@ -10,6 +12,7 @@ import net.minecraft.client.network.NetworkPlayerInfo;
 import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 
+@ParametersAreNonnullByDefault
 public class UUIDHelper {
     public static UUID getUUIDFromName(String username) {
         GameProfile profile = null;
@@ -56,5 +59,6 @@ public class UUIDHelper {
     }
 
     private UUIDHelper() {
+
     }
 }

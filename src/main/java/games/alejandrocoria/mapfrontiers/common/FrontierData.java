@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
@@ -181,7 +182,7 @@ public class FrontierData {
         return mapSlice;
     }
 
-    public void setBanner(ItemStack itemBanner) {
+    public void setBanner(@Nullable ItemStack itemBanner) {
         if (itemBanner == null) {
             banner = null;
             return;

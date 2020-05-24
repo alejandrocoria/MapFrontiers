@@ -6,6 +6,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
+
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.util.ReflectionHelper;
 import journeymap.client.io.ThemeLoader;
@@ -26,6 +29,7 @@ import net.minecraftforge.fml.client.config.IConfigElement;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+@ParametersAreNonnullByDefault
 @Config(modid = MapFrontiers.MODID)
 public class ConfigData {
     public enum NameVisibility {
@@ -372,7 +376,7 @@ public class ConfigData {
         addProperties(ConfigElement.from(ConfigData.class).getChildElements(), "");
     }
 
-    private static void addProperties(List<IConfigElement> elements, String prefix) {
+    private static void addProperties(@Nullable List<IConfigElement> elements, String prefix) {
         if (elements == null) {
             return;
         }

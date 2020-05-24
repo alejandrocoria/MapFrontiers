@@ -362,7 +362,7 @@ public class GuiHUD {
                 break;
             case Owner:
                 if (!frontier.getOwner().isEmpty()) {
-                    String owner = getOwnerString(frontier.getOwner());
+                    String owner = getOwnerString();
                     int ownerWidth = (mc.fontRenderer.getStringWidth(owner) + 3) * textScale;
                     hudWidth = Math.max(hudWidth, ownerWidth);
                     hudHeight += 12 * textScale;
@@ -406,7 +406,7 @@ public class GuiHUD {
                 break;
             case Owner:
                 if (!frontier.getOwner().isEmpty()) {
-                    String owner = getOwnerString(frontier.getOwner());
+                    String owner = getOwnerString();
                     ownerOffsetY = offsetY;
 
                     frontierOwner.setX(posX + hudWidth / 2);
@@ -427,7 +427,7 @@ public class GuiHUD {
         }
     }
 
-    private String getOwnerString(SettingsUser user) {
+    private String getOwnerString() {
         String ownerString = "";
         if (!StringUtils.isBlank(frontier.getOwner().username)) {
             ownerString = frontier.getOwner().username;

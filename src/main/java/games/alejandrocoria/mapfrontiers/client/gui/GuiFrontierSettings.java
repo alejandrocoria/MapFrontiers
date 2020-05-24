@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import org.apache.commons.lang3.StringUtils;
@@ -484,7 +485,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         }
     }
 
-    private void addLabelWithTooltip(GuiSimpleLabel label, List<String> tooltip) {
+    private void addLabelWithTooltip(GuiSimpleLabel label, @Nullable List<String> tooltip) {
         labels.add(label);
         if (tooltip != null) {
             labelTooltips.put(label, tooltip);

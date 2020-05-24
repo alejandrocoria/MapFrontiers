@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.common.settings;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
@@ -68,7 +69,7 @@ public class FrontierSettings {
         customGroups.remove(group);
     }
 
-    public boolean checkAction(Action action, SettingsUser player, boolean isOP, SettingsUser owner) {
+    public boolean checkAction(Action action, @Nullable SettingsUser player, boolean isOP, @Nullable SettingsUser owner) {
         if (player == null) {
             return false;
         }

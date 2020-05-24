@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import org.apache.commons.lang3.StringUtils;
@@ -509,7 +510,7 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
                 "snapToBorder", 0xffdddddd), ConfigData.getTooltip("hud.snapToBorder"));
     }
 
-    private void addLabelWithTooltip(GuiSimpleLabel label, List<String> tooltip) {
+    private void addLabelWithTooltip(GuiSimpleLabel label, @Nullable List<String> tooltip) {
         labels.add(label);
         if (tooltip != null) {
             labelTooltips.put(label, tooltip);
