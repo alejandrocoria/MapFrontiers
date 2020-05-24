@@ -13,7 +13,6 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import journeymap.client.ui.UIManager;
 import journeymap.client.ui.minimap.MiniMap;
@@ -476,7 +475,7 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
 
     @Override
     public void onGuiClosed() {
-        ((ClientProxy) MapFrontiers.proxy).configUpdated();
+        MapFrontiers.proxy.configUpdated();
     }
 
     @Override

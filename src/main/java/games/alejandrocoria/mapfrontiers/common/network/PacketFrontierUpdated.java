@@ -3,7 +3,6 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
@@ -61,7 +60,7 @@ public class PacketFrontierUpdated implements IMessage {
                     if (message.playerID != Minecraft.getMinecraft().player.getEntityId()) {
                         FrontierOverlay frontierOverlay = FrontiersOverlayManager.instance.updateFrontier(message.frontier);
 
-                        ((ClientProxy) MapFrontiers.proxy).frontierChanged();
+                        MapFrontiers.proxy.frontierChanged();
 
                         if (frontierOverlay != null && Minecraft.getMinecraft().currentScreen instanceof GuiFrontierBook) {
                             ((GuiFrontierBook) Minecraft.getMinecraft().currentScreen).updateFrontierMessage(frontierOverlay,

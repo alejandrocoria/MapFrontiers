@@ -22,7 +22,6 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 @ParametersAreNonnullByDefault
 public class ItemFrontierBook extends Item {
-
     protected String name;
 
     public ItemFrontierBook() {

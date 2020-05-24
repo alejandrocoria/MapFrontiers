@@ -102,4 +102,12 @@ public class CommonProxy {
 
         return false;
     }
+
+    public void configUpdated() {
+
+    }
+
+    public void frontierChanged() {
+
+    }
 }

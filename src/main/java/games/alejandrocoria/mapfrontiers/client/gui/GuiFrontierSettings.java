@@ -13,7 +13,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.input.Mouse;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiScrollBox.ScrollElement;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSettings;
@@ -328,17 +327,17 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     protected void actionPerformed(GuiButton button) {
         if (button == buttonAddVertexToNewFrontier) {
             ConfigData.addVertexToNewFrontier = buttonAddVertexToNewFrontier.getSelected() == 0;
-            ((ClientProxy) MapFrontiers.proxy).configUpdated();
+            MapFrontiers.proxy.configUpdated();
         } else if (button == buttonAlwaysShowUnfinishedFrontiers) {
             ConfigData.alwaysShowUnfinishedFrontiers = buttonAlwaysShowUnfinishedFrontiers.getSelected() == 0;
-            ((ClientProxy) MapFrontiers.proxy).configUpdated();
+            MapFrontiers.proxy.configUpdated();
         } else if (button == buttonNameVisibility) {
             ConfigData.nameVisibility = ConfigData.NameVisibility.values()[buttonNameVisibility.getSelected()];
-            ((ClientProxy) MapFrontiers.proxy).configUpdated();
+            MapFrontiers.proxy.configUpdated();
         } else if (button == buttonHUDEnabled) {
             ConfigData.hud.enabled = buttonHUDEnabled.getSelected() == 0;
             buttonEditHUD.visible = ConfigData.hud.enabled;
-            ((ClientProxy) MapFrontiers.proxy).configUpdated();
+            MapFrontiers.proxy.configUpdated();
         } else if (button == buttonEditHUD) {
             Minecraft.getMinecraft().displayGuiScreen(new GuiHUDSettings(this));
         } else if (button == buttonNewGroup) {
@@ -574,14 +573,14 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
                 textPolygonsOpacity.setColor(colorText, colorTextHighlight);
                 textPolygonsOpacity.setText(ConfigData.getDefault("polygonsOpacity"));
                 ConfigData.polygonsOpacity = Double.valueOf(textPolygonsOpacity.getText());
-                ((ClientProxy) MapFrontiers.proxy).configUpdated();
+                MapFrontiers.proxy.configUpdated();
             } else {
                 try {
                     textPolygonsOpacity.setColor(colorTextError, colorTextErrorHighlight);
                     Double opacity = Double.valueOf(value);
                     if (ConfigData.isInRange("polygonsOpacity", opacity)) {
                         ConfigData.polygonsOpacity = opacity;
-                        ((ClientProxy) MapFrontiers.proxy).configUpdated();
+                        MapFrontiers.proxy.configUpdated();
                         textPolygonsOpacity.setColor(colorText, colorTextHighlight);
                     }
                 } catch (Exception e) {
@@ -592,14 +591,14 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
                 textSnapDistance.setColor(colorText, colorTextHighlight);
                 textSnapDistance.setText(ConfigData.getDefault("snapDistance"));
                 ConfigData.snapDistance = Integer.valueOf(textSnapDistance.getText());
-                ((ClientProxy) MapFrontiers.proxy).configUpdated();
+                MapFrontiers.proxy.configUpdated();
             } else {
                 try {
                     textSnapDistance.setColor(colorTextError, colorTextErrorHighlight);
                     Integer distance = Integer.valueOf(value);
                     if (ConfigData.isInRange("snapDistance", distance)) {
                         ConfigData.snapDistance = distance;
-                        ((ClientProxy) MapFrontiers.proxy).configUpdated();
+                        MapFrontiers.proxy.configUpdated();
                         textSnapDistance.setColor(colorText, colorTextHighlight);
                     }
                 } catch (Exception e) {

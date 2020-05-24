@@ -235,6 +235,7 @@ public class ClientProxy extends CommonProxy {
         }
     }
 
+    @Override
     public void configUpdated() {
         ConfigManager.sync(MapFrontiers.MODID, Config.Type.INSTANCE);
 
@@ -247,6 +248,7 @@ public class ClientProxy extends CommonProxy {
         }
     }
 
+    @Override
     public void frontierChanged() {
         if (guiHUD != null) {
             guiHUD.frontierChanged();
