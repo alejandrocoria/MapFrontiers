@@ -14,6 +14,7 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.Sounds;
+import games.alejandrocoria.mapfrontiers.client.util.StringHelper;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -160,12 +161,12 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         buttonDelete.addlabel(labelDeleteConfirm);
 
         int leftTagsX = offsetFromScreenLeft + 3;
-        int leftTagsWidth = getMaxWidth(I18n.format("mapfrontiers.show_name"), I18n.format("mapfrontiers.hide_name"),
-                I18n.format("mapfrontiers.finish"), I18n.format("mapfrontiers.reopen"), I18n.format("mapfrontiers.add_vertex"),
-                I18n.format("mapfrontiers.remove_vertex"));
+        int leftTagsWidth = StringHelper.getMaxWidth(fontRenderer, I18n.format("mapfrontiers.show_name"),
+                I18n.format("mapfrontiers.hide_name"), I18n.format("mapfrontiers.finish"), I18n.format("mapfrontiers.reopen"),
+                I18n.format("mapfrontiers.add_vertex"), I18n.format("mapfrontiers.remove_vertex"));
         leftTagsWidth += 12;
 
-        int rightTagsWidth = getMaxWidth(I18n.format("mapfrontiers.assign_banner") + " !",
+        int rightTagsWidth = StringHelper.getMaxWidth(fontRenderer, I18n.format("mapfrontiers.assign_banner") + " !",
                 I18n.format("mapfrontiers.remove_banner"));
         rightTagsWidth += 12;
         rightTagsWidth = Math.max(rightTagsWidth, 89);
@@ -1161,18 +1162,5 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
     private boolean isInFrontierPage() {
         return currPage >= frontiersPageStart;
-    }
-
-    private int getMaxWidth(String... strings) {
-        int maxWidth = 0;
-
-        for (String s : strings) {
-            int width = fontRenderer.getStringWidth(s);
-            if (width > maxWidth) {
-                maxWidth = width;
-            }
-        }
-
-        return maxWidth;
     }
 }

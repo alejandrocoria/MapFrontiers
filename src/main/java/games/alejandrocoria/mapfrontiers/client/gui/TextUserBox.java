@@ -8,6 +8,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.input.Keyboard;
 
+import games.alejandrocoria.mapfrontiers.client.util.StringHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
@@ -114,14 +115,7 @@ public class TextUserBox extends TextBox {
 
         if (!error.isEmpty()) {
             List<String> errorList = fontRenderer.listFormattedStringToWidth(error, width - 8);
-            int maxErrorWidth = 0;
-
-            for (String e : errorList) {
-                int errorWidth = fontRenderer.getStringWidth(e);
-                if (errorWidth > maxErrorWidth) {
-                    maxErrorWidth = errorWidth;
-                }
-            }
+            int maxErrorWidth = StringHelper.getMaxWidth(fontRenderer, errorList);
 
             Gui.drawRect(x - 1, y - errorList.size() * 12 - 5, x + maxErrorWidth + 9, y - 1, 0xffa0a0a0);
             Gui.drawRect(x, y - errorList.size() * 12 - 4, x + maxErrorWidth + 8, y - 1, 0xff000000);
