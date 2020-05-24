@@ -272,6 +272,12 @@ public class FrontierOverlay extends FrontierData {
     }
 
     @Override
+    public void setMapSlice(int mapSlice) {
+        super.setMapSlice(mapSlice);
+        dirty = true;
+    }
+
+    @Override
     public void setBanner(ItemStack itemBanner) {
         super.setBanner(itemBanner);
         updateOverlay();
