@@ -42,15 +42,15 @@ public class IndexEntryButton extends GuiButton {
         if (visible) {
             hovered = mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height;
 
-            int textColor = 0x777777;
+            int textColor = GuiColors.INDEX_TEXT;
             if (hovered) {
-                textColor = 0;
+                textColor = GuiColors.INDEX_TEXT_HIGHLIGHT;
             }
 
-            drawHorizontalLine(x, x + width, y, 0x1a999999);
+            drawHorizontalLine(x, x + width, y, GuiColors.INDEX_SEPARATOR);
             drawLabel(mc.fontRenderer, label1, x, y + 3, textColor);
             drawLabel(mc.fontRenderer, label2, x, y + 12, textColor);
-            drawHorizontalLine(x, x + width, y + 21, 0x1a999999);
+            drawHorizontalLine(x, x + width, y + 21, GuiColors.INDEX_SEPARATOR);
 
             int colorBoxX = x + 2;
             int colorBoxY = y + 4;
@@ -59,7 +59,7 @@ public class IndexEntryButton extends GuiButton {
                 colorBoxX = x + width - 8;
             }
 
-            drawRect(colorBoxX, colorBoxY, colorBoxX + 6, colorBoxY + 14, 0xff000000);
+            drawRect(colorBoxX, colorBoxY, colorBoxX + 6, colorBoxY + 14, GuiColors.COLOR_INDICATOR_BORDER);
             drawRect(colorBoxX + 1, colorBoxY + 1, colorBoxX + 5, colorBoxY + 13, 0xff000000 | color);
         } else {
             hovered = false;

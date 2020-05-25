@@ -7,6 +7,7 @@ import java.util.List;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.gui.GuiColors;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
 import games.alejandrocoria.mapfrontiers.client.util.Earcut;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
@@ -33,11 +34,11 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 @SideOnly(Side.CLIENT)
 public class FrontierOverlay extends FrontierData {
     private static MapImage markerVertex = new MapImage(new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"), 0,
-            0, 12, 12, 0xffffff, 1.f);
+            0, 12, 12, GuiColors.WHITE, 1.f);
     private static MapImage markerDot = new MapImage(new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"), 12, 0,
-            8, 8, 0xffffff, 1.f);
+            8, 8, GuiColors.WHITE, 1.f);
     private static MapImage markerDotExtra = new MapImage(new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"),
-            12, 0, 8, 8, 0xffffff, 0.4f);
+            12, 0, 8, 8, GuiColors.WHITE, 0.4f);
 
     static {
         markerVertex.setAnchorX(markerVertex.getDisplayWidth() / 2.0).setAnchorY(markerVertex.getDisplayHeight() / 2.0);

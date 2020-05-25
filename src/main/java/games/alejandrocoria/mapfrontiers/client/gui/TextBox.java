@@ -17,8 +17,8 @@ public class TextBox extends GuiTextField {
     private TextBoxResponder responder;
     private String defaultText;
     private boolean centered = true;
-    private int color = 0;
-    private int highlightedColor = 0;
+    private int color = GuiColors.SETTINGS_TEXT_BOX_TEXT;
+    private int highlightedColor = GuiColors.SETTINGS_TEXT_BOX_TEXT_HIGHLIGHT;
     private boolean frame = false;
 
     public TextBox(int componentId, FontRenderer fontRenderer, int x, int y, int width, String defaultText) {
@@ -97,11 +97,12 @@ public class TextBox extends GuiTextField {
             }
 
             if (frame) {
-                Gui.drawRect(x - 1, y - 1, x + width + 1, y + height + 1, 0xff444444);
-                Gui.drawRect(x, y, x + width, y + height, 0xff000000);
+                Gui.drawRect(x - 1, y - 1, x + width + 1, y + height + 1, GuiColors.SETTINGS_TEXT_BOX_BORDER);
+                Gui.drawRect(x, y, x + width, y + height, GuiColors.SETTINGS_TEXT_BOX_BG);
             }
 
-            fontRenderer.drawString(text, posX, y + 2, empty ? 0xbbbbbb : (hovered ? highlightedColor : color));
+            fontRenderer.drawString(text, posX, y + 2,
+                    empty ? GuiColors.SETTINGS_TEXT_BOX_TEXT_DEFAULT : (hovered ? highlightedColor : color));
         }
     }
 

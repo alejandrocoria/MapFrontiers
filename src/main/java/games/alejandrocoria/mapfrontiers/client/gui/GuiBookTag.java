@@ -77,10 +77,10 @@ public class GuiBookTag extends GuiButton {
 
     private void drawLeftLabel(FontRenderer fontRenderer) {
         int labelWidth = fontRenderer.getStringWidth(displayString);
-        fontRenderer.drawString(displayString, x - labelWidth - 4, y + 4, 0xeeeeee);
+        fontRenderer.drawString(displayString, x - labelWidth - 4, y + 4, GuiColors.BOOKTAG_TEXT);
     }
 
     private void drawRightLabel(FontRenderer fontRenderer) {
-        fontRenderer.drawString(displayString, x + 5, y + 4, 0xeeeeee);
+        fontRenderer.drawString(displayString, x + 5, y + 4, GuiColors.BOOKTAG_TEXT);
     }
 }

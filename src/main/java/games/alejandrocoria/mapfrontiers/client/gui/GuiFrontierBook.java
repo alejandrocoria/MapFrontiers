@@ -56,7 +56,6 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     private static final int bookImageHeight = 182;
     private static final int bookImageWidth = 312;
     private static final int bookTextureSize = 512;
-    private static final TextFormatting chatPlayerColor = TextFormatting.YELLOW;
 
     private FrontiersOverlayManager frontiersOverlayManager;
     private int lastFrontierHash;
@@ -155,7 +154,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         deleteBookmarkPosition = DeleteBookmarkPosition.Normal;
 
         labelDeleteConfirm = new GuiLabel(fontRenderer, ++id, buttonDelete.x, buttonDelete.y + 30, buttonDelete.width, 12,
-                0xffffff);
+                GuiColors.WHITE);
         labelDeleteConfirm.setCentered();
         labelDeleteConfirm.addLine(I18n.format("mapfrontiers.confirm_delete"));
         buttonDelete.addlabel(labelDeleteConfirm);
@@ -290,7 +289,8 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             textName1.drawTextBox(mouseX, mouseY);
             textName2.drawTextBox(mouseX, mouseY);
 
-            drawRect(rightPageCornerX + 123, rightPageCornerY + 14, rightPageCornerX + 143, rightPageCornerY + 33, 0xff000000);
+            drawRect(rightPageCornerX + 123, rightPageCornerY + 14, rightPageCornerX + 143, rightPageCornerY + 33,
+                    GuiColors.COLOR_INDICATOR_BORDER);
             drawRect(rightPageCornerX + 125, rightPageCornerY + 16, rightPageCornerX + 141, rightPageCornerY + 31,
                     frontier.getColor() | 0xff000000);
 
@@ -360,7 +360,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         }
 
         if (buttonNameVisible.visible && buttonNameVisible.isMouseOver()) {
-            String prefix = TextFormatting.YELLOW + "! " + TextFormatting.RESET;
+            String prefix = GuiColors.WARNING + "! " + TextFormatting.RESET;
             if (ConfigData.nameVisibility == ConfigData.NameVisibility.Show) {
                 drawHoveringText(prefix + I18n.format("mapfrontiers.show_name_warn"), mouseX, mouseY);
             } else if (ConfigData.nameVisibility == ConfigData.NameVisibility.Hide) {
@@ -371,7 +371,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         if (buttonBanner.visible && buttonBanner.isMouseOver()) {
             FrontierOverlay frontier = getCurrentFrontier();
             if (!frontier.hasBanner() && heldBanner == null) {
-                String prefix = TextFormatting.YELLOW + "! " + TextFormatting.RESET;
+                String prefix = GuiColors.WARNING + "! " + TextFormatting.RESET;
                 drawHoveringText(prefix + I18n.format("mapfrontiers.assign_banner_warn"), mouseX, mouseY);
             }
         }
@@ -617,7 +617,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             if (otherPlayer == null) {
                 message = I18n.format("mapfrontiers.chat.frontier_created_unknown");
             } else {
-                message = I18n.format("mapfrontiers.chat.frontier_created", TextFormatting.RESET, chatPlayerColor,
+                message = I18n.format("mapfrontiers.chat.frontier_created", TextFormatting.RESET, GuiColors.CHAT_PLAYER,
                         otherPlayer.getName());
             }
 
@@ -652,7 +652,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             if (otherPlayer == null) {
                 message = I18n.format("mapfrontiers.chat.frontier_updated_unknown", index + 1);
             } else {
-                message = I18n.format("mapfrontiers.chat.frontier_updated", TextFormatting.RESET, chatPlayerColor,
+                message = I18n.format("mapfrontiers.chat.frontier_updated", TextFormatting.RESET, GuiColors.CHAT_PLAYER,
                         otherPlayer.getName(), index + 1);
             }
 
@@ -695,7 +695,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             if (otherPlayer == null) {
                 message = I18n.format("mapfrontiers.chat.frontier_deleted_unknown", index + 1);
             } else {
-                message = I18n.format("mapfrontiers.chat.frontier_deleted", TextFormatting.RESET, chatPlayerColor,
+                message = I18n.format("mapfrontiers.chat.frontier_deleted", TextFormatting.RESET, GuiColors.CHAT_PLAYER,
                         otherPlayer.getName(), index + 1);
             }
 
@@ -985,7 +985,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
             String suffix = "";
             if (ConfigData.nameVisibility != ConfigData.NameVisibility.Manual) {
-                suffix += " " + TextFormatting.YELLOW + "!";
+                suffix += " " + GuiColors.WARNING + "!";
             }
 
             if (frontier.getNameVisible()) {
@@ -1013,7 +1013,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             if (!frontier.hasBanner()) {
                 String suffix = "";
                 if (heldBanner == null) {
-                    suffix += " " + TextFormatting.YELLOW + "!";
+                    suffix += " " + GuiColors.WARNING + "!";
                 }
 
                 buttonBanner.setText(I18n.format("mapfrontiers.assign_banner") + suffix);

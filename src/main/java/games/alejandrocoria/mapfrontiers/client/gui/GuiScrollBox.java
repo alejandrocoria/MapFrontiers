@@ -134,14 +134,14 @@ public class GuiScrollBox extends Gui {
             if (scrollBarHeight > 0) {
                 scrollBarHovered = mouseX >= x + width + 5 && mouseY >= y && mouseX < x + width + 15 && mouseY < y + height;
 
-                int barColor = 0xff777777;
+                int barColor = GuiColors.SETTINGS_SCROLLBAR;
                 if (scrollBarGrabbed) {
-                    barColor = 0xff666666;
+                    barColor = GuiColors.SETTINGS_SCROLLBAR_GRABBED;
                 } else if (scrollBarHovered) {
-                    barColor = 0xffaaaaaa;
+                    barColor = GuiColors.SETTINGS_SCROLLBAR_HOVERED;
                 }
 
-                Gui.drawRect(x + width + 5, y, x + width + 15, y + height, 0x1affffff);
+                Gui.drawRect(x + width + 5, y, x + width + 15, y + height, GuiColors.SETTINGS_SCROLLBAR_BG);
                 Gui.drawRect(x + width + 5, y + scrollBarPos, x + width + 15, y + scrollBarPos + scrollBarHeight, barColor);
             }
         } else {

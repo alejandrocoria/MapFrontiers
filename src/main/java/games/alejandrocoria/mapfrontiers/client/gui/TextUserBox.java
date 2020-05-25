@@ -41,9 +41,9 @@ public class TextUserBox extends TextBox {
         this.error = error;
 
         if (this.error.isEmpty()) {
-            setColor(0xffffffff);
+            setColor(GuiColors.SETTINGS_TEXT_HIGHLIGHT);
         } else {
-            setColor(0xffdd1111, 0xffff4444);
+            setColor(GuiColors.SETTINGS_TEXT_ERROR, GuiColors.SETTINGS_TEXT_ERROR_HIGHLIGHT);
             suggestions.clear();
             suggestionsToDraw.clear();
         }
@@ -117,30 +117,34 @@ public class TextUserBox extends TextBox {
             List<String> errorList = fontRenderer.listFormattedStringToWidth(error, width - 8);
             int maxErrorWidth = StringHelper.getMaxWidth(fontRenderer, errorList);
 
-            Gui.drawRect(x - 1, y - errorList.size() * 12 - 5, x + maxErrorWidth + 9, y - 1, 0xffa0a0a0);
-            Gui.drawRect(x, y - errorList.size() * 12 - 4, x + maxErrorWidth + 8, y - 1, 0xff000000);
+            Gui.drawRect(x - 1, y - errorList.size() * 12 - 5, x + maxErrorWidth + 9, y - 1,
+                    GuiColors.SETTINGS_TEXT_BOX_EXTRA_BORDER);
+            Gui.drawRect(x, y - errorList.size() * 12 - 4, x + maxErrorWidth + 8, y - 1, GuiColors.SETTINGS_TEXT_BOX_EXTRA_BG);
 
             int posX = x + 4;
             int posY = y - errorList.size() * 12;
             for (String e : errorList) {
-                fontRenderer.drawString(e, posX, posY, 0xffffff);
+                fontRenderer.drawString(e, posX, posY, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                 posY += 12;
             }
         } else if (!suggestionsToDraw.isEmpty()) {
-            Gui.drawRect(x - 1, y - suggestionsToDraw.size() * 12 - 5, x + maxSuggestionWidth + 9, y - 1, 0xffa0a0a0);
-            Gui.drawRect(x, y - suggestionsToDraw.size() * 12 - 4, x + maxSuggestionWidth + 8, y - 1, 0xff000000);
+            Gui.drawRect(x - 1, y - suggestionsToDraw.size() * 12 - 5, x + maxSuggestionWidth + 9, y - 1,
+                    GuiColors.SETTINGS_TEXT_BOX_EXTRA_BORDER);
+            Gui.drawRect(x, y - suggestionsToDraw.size() * 12 - 4, x + maxSuggestionWidth + 8, y - 1,
+                    GuiColors.SETTINGS_TEXT_BOX_EXTRA_BG);
 
             int posX = x + 4;
             int posY = y - 12;
             for (int i = suggestionsToDraw.size() - 1; i >= 0; --i) {
                 String t = suggestionsToDraw.get(i);
                 if (suggestionsToDraw.get(i) == suggestions.get(suggestionIndex)) {
-                    fontRenderer.drawString(t, posX, posY, 0xffffff);
+                    fontRenderer.drawString(t, posX, posY, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                 } else {
                     String suffix = t.substring(0, partialText.length());
                     String rest = t.substring(partialText.length());
-                    fontRenderer.drawString(suffix, posX, posY, 0xffffff);
-                    fontRenderer.drawString(rest, posX + fontRenderer.getStringWidth(suffix), posY, 0xaaaaaa);
+                    fontRenderer.drawString(suffix, posX, posY, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
+                    fontRenderer.drawString(rest, posX + fontRenderer.getStringWidth(suffix), posY,
+                            GuiColors.SETTINGS_TEXT_MEDIUM);
                 }
 
                 posY -= 12;

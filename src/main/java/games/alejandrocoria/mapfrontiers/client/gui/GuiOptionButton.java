@@ -18,8 +18,8 @@ public class GuiOptionButton extends GuiButton {
     protected final FontRenderer fontRenderer;
     private List<String> options;
     private int selected = 0;
-    private int color = 0xbbbbbb;
-    private int highlightedColor = 0xffffff;
+    private int color = GuiColors.SETTINGS_TEXT;
+    private int highlightedColor = GuiColors.SETTINGS_TEXT_HIGHLIGHT;
 
     public GuiOptionButton(int componentId, FontRenderer fontRenderer, int x, int y, int width) {
         super(componentId, x, y, width, 12, "");
@@ -69,8 +69,8 @@ public class GuiOptionButton extends GuiButton {
                 c = highlightedColor;
             }
 
-            Gui.drawRect(x - 1, y - 1, x + width + 1, y + height + 1, 0xff444444);
-            Gui.drawRect(x, y, x + width, y + height, 0xff000000);
+            Gui.drawRect(x - 1, y - 1, x + width + 1, y + height + 1, GuiColors.SETTINGS_OPTION_BORDER);
+            Gui.drawRect(x, y, x + width, y + height, GuiColors.SETTINGS_OPTION_BG);
 
             fontRenderer.drawString(options.get(selected), x + 4, y + 2, c);
         } else {

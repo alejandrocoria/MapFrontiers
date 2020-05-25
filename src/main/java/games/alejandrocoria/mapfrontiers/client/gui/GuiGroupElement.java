@@ -59,13 +59,13 @@ public class GuiGroupElement extends GuiScrollBox.ScrollElement {
         if (visible) {
             hovered = mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height;
 
-            int color = 0xbbbbbb;
+            int color = GuiColors.SETTINGS_TEXT;
             if (selected) {
-                color = 0xffffff;
+                color = GuiColors.SETTINGS_TEXT_HIGHLIGHT;
             }
 
             if (hovered) {
-                Gui.drawRect(x, y, x + width, y + height, 0xff222222);
+                Gui.drawRect(x, y, x + width, y + height, GuiColors.SETTINGS_ELEMENT_HOVERED);
             }
 
             if (hovered && !group.isSpecial()) {

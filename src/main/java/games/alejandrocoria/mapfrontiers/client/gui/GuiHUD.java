@@ -15,7 +15,6 @@ import journeymap.client.properties.MiniMapProperties;
 import journeymap.client.ui.UIManager;
 import journeymap.client.ui.minimap.Position;
 import journeymap.client.ui.minimap.Shape;
-import journeymap.client.ui.theme.Theme;
 import journeymap.client.ui.theme.ThemeLabelSource;
 import journeymap.common.Journeymap;
 import net.minecraft.client.Minecraft;
@@ -110,9 +109,9 @@ public class GuiHUD {
     public GuiHUD(FrontiersOverlayManager frontiersOverlayManager) {
         this.frontiersOverlayManager = frontiersOverlayManager;
         slots = new ArrayList<ConfigData.HUDSlot>();
-        frontierName1 = new GuiSimpleLabel(mc.fontRenderer, 0, 0, GuiSimpleLabel.Align.Center, "", 0xffffffff);
-        frontierName2 = new GuiSimpleLabel(mc.fontRenderer, 0, 0, GuiSimpleLabel.Align.Center, "", 0xffffffff);
-        frontierOwner = new GuiSimpleLabel(mc.fontRenderer, 0, 0, GuiSimpleLabel.Align.Center, "", 0xffffffff);
+        frontierName1 = new GuiSimpleLabel(mc.fontRenderer, 0, 0, GuiSimpleLabel.Align.Center, "", GuiColors.WHITE);
+        frontierName2 = new GuiSimpleLabel(mc.fontRenderer, 0, 0, GuiSimpleLabel.Align.Center, "", GuiColors.WHITE);
+        frontierOwner = new GuiSimpleLabel(mc.fontRenderer, 0, 0, GuiSimpleLabel.Align.Center, "", GuiColors.WHITE);
     }
 
     public int getWidth() {
@@ -239,18 +238,18 @@ public class GuiHUD {
         ScaledResolution scaledresolution = new ScaledResolution(mc);
         int factor = scaledresolution.getScaleFactor();
 
-        int frameColor = 0xff000000;
-        int textNameColor = 0xffffffff;
-        int textOwnerColor = 0xffdfdfdf;
+        int frameColor = GuiColors.HUD_FRAME_DEFAULT;
+        int textNameColor = GuiColors.HUD_TEXT_NAME_DEFAULT;
+        int textOwnerColor = GuiColors.HUD_TEXT_OWNER_DEFAULT;
 
         if (Journeymap.getClient().getActiveMiniMapProperties().shape.get() == Shape.Circle) {
-            frameColor = getIntColor(ThemeLoader.getCurrentTheme().minimap.circle.labelTop.background);
-            textNameColor = getIntColor(ThemeLoader.getCurrentTheme().minimap.circle.labelTop.highlight);
-            textOwnerColor = getIntColor(ThemeLoader.getCurrentTheme().minimap.circle.labelTop.foreground);
+            frameColor = GuiColors.colorSpecToInt(ThemeLoader.getCurrentTheme().minimap.circle.labelTop.background);
+            textNameColor = GuiColors.colorSpecToInt(ThemeLoader.getCurrentTheme().minimap.circle.labelTop.highlight);
+            textOwnerColor = GuiColors.colorSpecToInt(ThemeLoader.getCurrentTheme().minimap.circle.labelTop.foreground);
         } else {
-            frameColor = getIntColor(ThemeLoader.getCurrentTheme().minimap.square.labelTop.background);
-            textNameColor = getIntColor(ThemeLoader.getCurrentTheme().minimap.square.labelTop.highlight);
-            textOwnerColor = getIntColor(ThemeLoader.getCurrentTheme().minimap.square.labelTop.foreground);
+            frameColor = GuiColors.colorSpecToInt(ThemeLoader.getCurrentTheme().minimap.square.labelTop.background);
+            textNameColor = GuiColors.colorSpecToInt(ThemeLoader.getCurrentTheme().minimap.square.labelTop.highlight);
+            textOwnerColor = GuiColors.colorSpecToInt(ThemeLoader.getCurrentTheme().minimap.square.labelTop.foreground);
         }
 
         GlStateManager.pushMatrix();
@@ -302,13 +301,6 @@ public class GuiHUD {
         GlStateManager.color(1.f, 1.f, 1.f);
         Gui.drawModalRectWithCustomSizedTexture(posX + hudWidth / 2 - 11 * bannerScale, posY + bannerOffsetY + 2, 0, bannerScale,
                 22 * bannerScale, 40 * bannerScale, 64 * bannerScale, 64 * bannerScale);
-    }
-
-    private static int getIntColor(Theme.ColorSpec colorSpec) {
-        int color = colorSpec.getColor();
-        color |= Math.round(colorSpec.alpha * 255) << 24;
-
-        return color;
     }
 
     private void updateData() {

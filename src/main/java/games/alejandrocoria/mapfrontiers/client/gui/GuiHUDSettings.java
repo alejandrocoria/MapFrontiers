@@ -24,7 +24,6 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.fml.client.config.GuiUtils;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -33,11 +32,6 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 @SideOnly(Side.CLIENT)
 public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponder {
     private static final int guiTextureSize = 512;
-
-    private static final int colorText = 0xffbbbbbb;
-    private static final int colorTextHighlight = 0xffffffff;
-    private static final int colorTextError = 0xffdd1111;
-    private static final int colorTextErrorHighlight = 0xffff4444;
 
     private ResourceLocation guiTexture;
     private GuiFrontierSettings parent;
@@ -56,7 +50,7 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
     private int id = 0;
     private MiniMap minimap;
     private GuiHUD guiHUD;
-    private int anchorLineColor = 0xffdddddd;
+    private int anchorLineColor = GuiColors.SETTINGS_ANCHOR_LIGHT;
     private int anchorLineColorTick = 0;
     private ConfigData.Point positionHUD = new ConfigData.Point();
     private ConfigData.Point grabOffset = new ConfigData.Point();
@@ -100,7 +94,7 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         textBannerSize.setMaxStringLength(1);
         textBannerSize.setResponder(this);
         textBannerSize.setCentered(false);
-        textBannerSize.setColor(colorText, colorTextHighlight);
+        textBannerSize.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
         textBannerSize.setFrame(true);
 
         buttonAnchor = new GuiOptionButton(++id, mc.fontRenderer, width / 2 + 70, height / 2 - 32, 100);
@@ -122,7 +116,7 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         textPositionX.setMaxStringLength(5);
         textPositionX.setResponder(this);
         textPositionX.setCentered(false);
-        textPositionX.setColor(colorText, colorTextHighlight);
+        textPositionX.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
         textPositionX.setFrame(true);
 
         textPositionY = new TextBox(++id, mc.fontRenderer, width / 2 + 125, height / 2 - 16, 45, "");
@@ -130,7 +124,7 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         textPositionY.setMaxStringLength(5);
         textPositionY.setResponder(this);
         textPositionY.setCentered(false);
-        textPositionY.setColor(colorText, colorTextHighlight);
+        textPositionY.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
         textPositionY.setFrame(true);
 
         buttonAutoAdjustAnchor = new GuiOptionButton(++id, mc.fontRenderer, width / 2 + 70, height / 2, 100);
@@ -166,10 +160,10 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
 
         if (anchorLineColorTick >= 3) {
             anchorLineColorTick = 0;
-            if (anchorLineColor == 0xffdddddd) {
-                anchorLineColor = 0xff222222;
+            if (anchorLineColor == GuiColors.SETTINGS_ANCHOR_LIGHT) {
+                anchorLineColor = GuiColors.SETTINGS_ANCHOR_DARK;
             } else {
-                anchorLineColor = 0xffdddddd;
+                anchorLineColor = GuiColors.SETTINGS_ANCHOR_LIGHT;
             }
         }
     }
@@ -191,7 +185,7 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         guiHUD.draw();
         drawAnchor();
 
-        Gui.drawRect(width / 2 - 178, height / 2 - 40, width / 2 + 178, height / 2 + 60, 0xc7101010);
+        Gui.drawRect(width / 2 - 178, height / 2 - 40, width / 2 + 178, height / 2 + 60, GuiColors.SETTINGS_BG);
 
         textBannerSize.drawTextBox(mouseX, mouseY);
         textPositionX.drawTextBox(mouseX, mouseY);
@@ -394,8 +388,8 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
 
             textPositionX.setText(String.valueOf(ConfigData.hud.position.x));
             textPositionY.setText(String.valueOf(ConfigData.hud.position.y));
-            textPositionX.setColor(colorText, colorTextHighlight);
-            textPositionY.setColor(colorText, colorTextHighlight);
+            textPositionX.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
+            textPositionY.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
         }
     }
 
@@ -415,21 +409,24 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
     protected void actionPerformed(GuiButton button) {
         if (button == buttonSlot1) {
             updateSlotsValidity();
-            if (buttonSlot1.getColor() == colorText || buttonSlot1.getColor() == colorTextHighlight) {
+            if (buttonSlot1.getColor() == GuiColors.SETTINGS_TEXT
+                    || buttonSlot1.getColor() == GuiColors.SETTINGS_TEXT_HIGHLIGHT) {
                 ConfigData.hud.slot1 = ConfigData.HUDSlot.values()[buttonSlot1.getSelected()];
                 guiHUD.configUpdated();
                 updatePosition();
             }
         } else if (button == buttonSlot2) {
             updateSlotsValidity();
-            if (buttonSlot2.getColor() == colorText || buttonSlot2.getColor() == colorTextHighlight) {
+            if (buttonSlot2.getColor() == GuiColors.SETTINGS_TEXT
+                    || buttonSlot2.getColor() == GuiColors.SETTINGS_TEXT_HIGHLIGHT) {
                 ConfigData.hud.slot2 = ConfigData.HUDSlot.values()[buttonSlot2.getSelected()];
                 guiHUD.configUpdated();
                 updatePosition();
             }
         } else if (button == buttonSlot3) {
             updateSlotsValidity();
-            if (buttonSlot3.getColor() == colorText || buttonSlot3.getColor() == colorTextHighlight) {
+            if (buttonSlot3.getColor() == GuiColors.SETTINGS_TEXT
+                    || buttonSlot3.getColor() == GuiColors.SETTINGS_TEXT_HIGHLIGHT) {
                 ConfigData.hud.slot3 = ConfigData.HUDSlot.values()[buttonSlot3.getSelected()];
                 guiHUD.configUpdated();
                 updatePosition();
@@ -454,23 +451,23 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         ConfigData.HUDSlot slot2 = ConfigData.HUDSlot.values()[buttonSlot2.getSelected()];
         ConfigData.HUDSlot slot3 = ConfigData.HUDSlot.values()[buttonSlot3.getSelected()];
 
-        buttonSlot1.setColor(colorText, colorTextHighlight);
-        buttonSlot2.setColor(colorText, colorTextHighlight);
-        buttonSlot3.setColor(colorText, colorTextHighlight);
+        buttonSlot1.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
+        buttonSlot2.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
+        buttonSlot3.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
 
         if (slot1 != ConfigData.HUDSlot.None && slot1 == slot2) {
-            buttonSlot1.setColor(colorTextError, colorTextErrorHighlight);
-            buttonSlot2.setColor(colorTextError, colorTextErrorHighlight);
+            buttonSlot1.setColor(GuiColors.SETTINGS_TEXT_ERROR, GuiColors.SETTINGS_TEXT_ERROR_HIGHLIGHT);
+            buttonSlot2.setColor(GuiColors.SETTINGS_TEXT_ERROR, GuiColors.SETTINGS_TEXT_ERROR_HIGHLIGHT);
         }
 
         if (slot1 != ConfigData.HUDSlot.None && slot1 == slot3) {
-            buttonSlot1.setColor(colorTextError, colorTextErrorHighlight);
-            buttonSlot3.setColor(colorTextError, colorTextErrorHighlight);
+            buttonSlot1.setColor(GuiColors.SETTINGS_TEXT_ERROR, GuiColors.SETTINGS_TEXT_ERROR_HIGHLIGHT);
+            buttonSlot3.setColor(GuiColors.SETTINGS_TEXT_ERROR, GuiColors.SETTINGS_TEXT_ERROR_HIGHLIGHT);
         }
 
         if (slot2 != ConfigData.HUDSlot.None && slot2 == slot3) {
-            buttonSlot2.setColor(colorTextError, colorTextErrorHighlight);
-            buttonSlot3.setColor(colorTextError, colorTextErrorHighlight);
+            buttonSlot2.setColor(GuiColors.SETTINGS_TEXT_ERROR, GuiColors.SETTINGS_TEXT_ERROR_HIGHLIGHT);
+            buttonSlot3.setColor(GuiColors.SETTINGS_TEXT_ERROR, GuiColors.SETTINGS_TEXT_ERROR_HIGHLIGHT);
         }
     }
 
@@ -488,26 +485,25 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         labels.clear();
 
         addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 170, height / 2 - 30, GuiSimpleLabel.Align.Left, "slot1",
-                0xffdddddd), ConfigData.getTooltip("hud.slot1"));
+                GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.slot1"));
         addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 170, height / 2 - 14, GuiSimpleLabel.Align.Left, "slot2",
-                0xffdddddd), ConfigData.getTooltip("hud.slot2"));
-        addLabelWithTooltip(
-                new GuiSimpleLabel(fontRenderer, width / 2 - 170, height / 2 + 2, GuiSimpleLabel.Align.Left, "slot3", 0xffdddddd),
-                ConfigData.getTooltip("hud.slot3"));
+                GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.slot2"));
+        addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 170, height / 2 + 2, GuiSimpleLabel.Align.Left, "slot3",
+                GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.slot3"));
         addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 170, height / 2 + 18, GuiSimpleLabel.Align.Left,
-                "bannerSize", 0xffdddddd), ConfigData.getTooltip("hud.bannerSize"));
+                "bannerSize", GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.bannerSize"));
         addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 30, height / 2 - 30, GuiSimpleLabel.Align.Left, "anchor",
-                0xffdddddd), ConfigData.getTooltip("hud.anchor"));
+                GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.anchor"));
         List<String> positionTooltip = ConfigData.getTooltip("hud.position");
-        positionTooltip.add(TextFormatting.AQUA + "Default: [0 x 0]");
+        positionTooltip.add(GuiColors.DEFAULT_CONFIG + "Default: [0 x 0]");
         addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 30, height / 2 - 14, GuiSimpleLabel.Align.Left,
-                "position", 0xffdddddd), positionTooltip);
-        labels.add(
-                new GuiSimpleLabel(fontRenderer, width / 2 + 120, height / 2 - 14, GuiSimpleLabel.Align.Center, "x", 0xff777777));
+                "position", GuiColors.SETTINGS_TEXT), positionTooltip);
+        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 + 120, height / 2 - 14, GuiSimpleLabel.Align.Center, "x",
+                GuiColors.SETTINGS_TEXT_DARK));
         addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 30, height / 2 + 2, GuiSimpleLabel.Align.Left,
-                "autoAdjustAnchor", 0xffdddddd), ConfigData.getTooltip("hud.autoAdjustAnchor"));
+                "autoAdjustAnchor", GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.autoAdjustAnchor"));
         addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 30, height / 2 + 18, GuiSimpleLabel.Align.Left,
-                "snapToBorder", 0xffdddddd), ConfigData.getTooltip("hud.snapToBorder"));
+                "snapToBorder", GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.snapToBorder"));
     }
 
     private void addLabelWithTooltip(GuiSimpleLabel label, @Nullable List<String> tooltip) {
@@ -525,17 +521,17 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
     public void lostFocus(int id, String value) {
         if (textBannerSize.getId() == id) {
             if (StringUtils.isBlank(value)) {
-                textBannerSize.setColor(colorText, colorTextHighlight);
+                textBannerSize.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                 textBannerSize.setText(ConfigData.getDefault("hud.bannerSize"));
                 ConfigData.hud.bannerSize = Integer.parseInt(textBannerSize.getText());
                 guiHUD.configUpdated();
                 updatePosition();
             } else {
                 try {
-                    textBannerSize.setColor(colorTextError, colorTextErrorHighlight);
+                    textBannerSize.setColor(GuiColors.SETTINGS_TEXT_ERROR, GuiColors.SETTINGS_TEXT_ERROR_HIGHLIGHT);
                     Integer size = Integer.valueOf(value);
                     if (ConfigData.isInRange("hud.bannerSize", size)) {
-                        textBannerSize.setColor(colorText, colorTextHighlight);
+                        textBannerSize.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                         ConfigData.hud.bannerSize = size;
                         guiHUD.configUpdated();
                         updatePosition();
@@ -545,35 +541,35 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
             }
         } else if (textPositionX.getId() == id) {
             if (StringUtils.isBlank(value)) {
-                textPositionX.setColor(colorText, colorTextHighlight);
+                textPositionX.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                 textPositionX.setText(ConfigData.getDefault("hud.position.x"));
                 ConfigData.hud.position.x = Integer.parseInt(textPositionX.getText());
                 guiHUD.configUpdated();
                 updatePosition();
             } else {
                 try {
-                    textPositionX.setColor(colorTextError, colorTextErrorHighlight);
+                    textPositionX.setColor(GuiColors.SETTINGS_TEXT_ERROR, GuiColors.SETTINGS_TEXT_ERROR_HIGHLIGHT);
                     Integer x = Integer.valueOf(value);
                     ConfigData.hud.position.x = x;
                     guiHUD.configUpdated();
-                    textPositionX.setColor(colorText, colorTextHighlight);
+                    textPositionX.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                 } catch (Exception e) {
                 }
             }
         } else if (textPositionY.getId() == id) {
             if (StringUtils.isBlank(value)) {
-                textPositionY.setColor(colorText, colorTextHighlight);
+                textPositionY.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                 textPositionY.setText(ConfigData.getDefault("hud.position.y"));
                 ConfigData.hud.position.y = Integer.parseInt(textPositionY.getText());
                 guiHUD.configUpdated();
                 updatePosition();
             } else {
                 try {
-                    textPositionY.setColor(colorTextError, colorTextErrorHighlight);
+                    textPositionY.setColor(GuiColors.SETTINGS_TEXT_ERROR, GuiColors.SETTINGS_TEXT_ERROR_HIGHLIGHT);
                     Integer y = Integer.valueOf(value);
                     ConfigData.hud.position.y = y;
                     guiHUD.configUpdated();
-                    textPositionY.setColor(colorText, colorTextHighlight);
+                    textPositionY.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                 } catch (Exception e) {
                 }
             }

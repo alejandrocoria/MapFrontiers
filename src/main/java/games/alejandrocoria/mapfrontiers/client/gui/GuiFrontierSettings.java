@@ -41,11 +41,6 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         GuiGroupActionElement.GroupActionResponder, GuiTabbedBox.TabbedBoxResponder, TextBox.TextBoxResponder {
     private static final int guiTextureSize = 512;
 
-    private static final int colorText = 0xffbbbbbb;
-    private static final int colorTextHighlight = 0xffffffff;
-    private static final int colorTextError = 0xffdd1111;
-    private static final int colorTextErrorHighlight = 0xffff4444;
-
     private ResourceLocation guiTexture;
     private FrontierSettings settings;
     private GuiTabbedBox tabbedBox;
@@ -112,7 +107,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         textPolygonsOpacity.setMaxStringLength(10);
         textPolygonsOpacity.setResponder(this);
         textPolygonsOpacity.setCentered(false);
-        textPolygonsOpacity.setColor(colorText, colorTextHighlight);
+        textPolygonsOpacity.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
         textPolygonsOpacity.setFrame(true);
 
         textSnapDistance = new TextBox(++id, mc.fontRenderer, width / 2 + 50, 134, 100, "");
@@ -120,7 +115,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         textSnapDistance.setMaxStringLength(2);
         textSnapDistance.setResponder(this);
         textSnapDistance.setCentered(false);
-        textSnapDistance.setColor(colorText, colorTextHighlight);
+        textSnapDistance.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
         textSnapDistance.setFrame(true);
 
         buttonHUDEnabled = new GuiOptionButton(++id, mc.fontRenderer, width / 2 + 50, 188, 100);
@@ -138,7 +133,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         textNewGroupName.setMaxStringLength(22);
         textNewGroupName.setResponder(this);
         textNewGroupName.setCentered(false);
-        textNewGroupName.setColor(0xffffffff);
+        textNewGroupName.setColor(GuiColors.SETTINGS_TEXT_HIGHLIGHT);
         textNewGroupName.setFrame(true);
 
         buttonNewGroup = new GuiButtonIcon(++id, 192, height - 61, 13, 13, 494, 119, -23, guiTexture, guiTextureSize);
@@ -157,7 +152,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         textGroupName.setResponder(this);
         textGroupName.setEnabled(false);
         textGroupName.setCentered(false);
-        textGroupName.setColor(0xffffffff);
+        textGroupName.setColor(GuiColors.SETTINGS_TEXT_HIGHLIGHT);
 
         buttonList.add(buttonAddVertexToNewFrontier);
         buttonList.add(buttonAlwaysShowUnfinishedFrontiers);
@@ -441,47 +436,49 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         labelTooltips.clear();
 
         if (tabSelected == 0) {
-            labels.add(new GuiSimpleLabel(fontRenderer, width / 2, 54, GuiSimpleLabel.Align.Center, "Frontiers", 0xffffffff));
+            labels.add(new GuiSimpleLabel(fontRenderer, width / 2, 54, GuiSimpleLabel.Align.Center, "Frontiers",
+                    GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 72, GuiSimpleLabel.Align.Left,
-                    "addVertexToNewFrontier", 0xffdddddd), ConfigData.getTooltip("addVertexToNewFrontier"));
-            addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 88, GuiSimpleLabel.Align.Left,
-                    "alwaysShowUnfinishedFrontiers", 0xffdddddd), ConfigData.getTooltip("alwaysShowUnfinishedFrontiers"));
+                    "addVertexToNewFrontier", GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("addVertexToNewFrontier"));
+            addLabelWithTooltip(
+                    new GuiSimpleLabel(fontRenderer, width / 2 - 120, 88, GuiSimpleLabel.Align.Left,
+                            "alwaysShowUnfinishedFrontiers", GuiColors.SETTINGS_TEXT),
+                    ConfigData.getTooltip("alwaysShowUnfinishedFrontiers"));
             addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 104, GuiSimpleLabel.Align.Left,
-                    "nameVisibility", 0xffdddddd), ConfigData.getTooltip("nameVisibility"));
+                    "nameVisibility", GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("nameVisibility"));
             addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 120, GuiSimpleLabel.Align.Left,
-                    "polygonsOpacity", 0xffdddddd), ConfigData.getTooltip("polygonsOpacity"));
-            addLabelWithTooltip(
-                    new GuiSimpleLabel(fontRenderer, width / 2 - 120, 136, GuiSimpleLabel.Align.Left, "snapDistance", 0xffdddddd),
-                    ConfigData.getTooltip("snapDistance"));
-            labels.add(new GuiSimpleLabel(fontRenderer, width / 2, 170, GuiSimpleLabel.Align.Center, "HUD", 0xffffffff));
-            addLabelWithTooltip(
-                    new GuiSimpleLabel(fontRenderer, width / 2 - 120, 190, GuiSimpleLabel.Align.Left, "enabled", 0xffdddddd),
-                    ConfigData.getTooltip("hud.enabled"));
+                    "polygonsOpacity", GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("polygonsOpacity"));
+            addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 136, GuiSimpleLabel.Align.Left, "snapDistance",
+                    GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("snapDistance"));
+            labels.add(new GuiSimpleLabel(fontRenderer, width / 2, 170, GuiSimpleLabel.Align.Center, "HUD",
+                    GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+            addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 190, GuiSimpleLabel.Align.Left, "enabled",
+                    GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.enabled"));
         } else if (tabSelected == 1) {
             GuiGroupElement element = (GuiGroupElement) groups.getSelectedElement();
             if (element != null && element.getGroup().isSpecial()) {
                 SettingsGroup group = element.getGroup();
                 if (group == settings.getOPsGroup()) {
                     labels.add(new GuiSimpleLabel(fontRenderer, 250, 82, GuiSimpleLabel.Align.Left,
-                            I18n.format("mapfrontiers.group_ops_desc"), 0xffdddddd));
+                            I18n.format("mapfrontiers.group_ops_desc"), GuiColors.SETTINGS_TEXT));
                 } else if (group == settings.getOwnersGroup()) {
                     labels.add(new GuiSimpleLabel(fontRenderer, 250, 82, GuiSimpleLabel.Align.Left,
-                            I18n.format("mapfrontiers.group_owners_desc"), 0xffdddddd));
+                            I18n.format("mapfrontiers.group_owners_desc"), GuiColors.SETTINGS_TEXT));
                 } else if (group == settings.getEveryoneGroup()) {
                     labels.add(new GuiSimpleLabel(fontRenderer, 250, 82, GuiSimpleLabel.Align.Left,
-                            I18n.format("mapfrontiers.group_everyone_desc"), 0xffdddddd));
+                            I18n.format("mapfrontiers.group_everyone_desc"), GuiColors.SETTINGS_TEXT));
                 }
             }
         } else if (tabSelected == 2) {
             int x = width / 2 - 25;
             labels.add(new GuiSimpleLabel(fontRenderer, x, 54, GuiSimpleLabel.Align.Center,
-                    I18n.format("mapfrontiers.create_frontier"), 0xffffffff));
+                    I18n.format("mapfrontiers.create_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             labels.add(new GuiSimpleLabel(fontRenderer, x + 60, 54, GuiSimpleLabel.Align.Center,
-                    I18n.format("mapfrontiers.delete_frontier"), 0xffffffff));
+                    I18n.format("mapfrontiers.delete_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             labels.add(new GuiSimpleLabel(fontRenderer, x + 120, 54, GuiSimpleLabel.Align.Center,
-                    I18n.format("mapfrontiers.update_frontier"), 0xffffffff));
+                    I18n.format("mapfrontiers.update_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             labels.add(new GuiSimpleLabel(fontRenderer, x + 180, 54, GuiSimpleLabel.Align.Center,
-                    I18n.format("mapfrontiers.update_settings"), 0xffffffff));
+                    I18n.format("mapfrontiers.update_settings"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
         }
     }
 
@@ -571,36 +568,36 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     public void lostFocus(int id, String value) {
         if (textPolygonsOpacity.getId() == id && tabSelected == 0) {
             if (StringUtils.isBlank(value)) {
-                textPolygonsOpacity.setColor(colorText, colorTextHighlight);
+                textPolygonsOpacity.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                 textPolygonsOpacity.setText(ConfigData.getDefault("polygonsOpacity"));
                 ConfigData.polygonsOpacity = Double.valueOf(textPolygonsOpacity.getText());
                 MapFrontiers.proxy.configUpdated();
             } else {
                 try {
-                    textPolygonsOpacity.setColor(colorTextError, colorTextErrorHighlight);
+                    textPolygonsOpacity.setColor(GuiColors.SETTINGS_TEXT_ERROR, GuiColors.SETTINGS_TEXT_ERROR_HIGHLIGHT);
                     Double opacity = Double.valueOf(value);
                     if (ConfigData.isInRange("polygonsOpacity", opacity)) {
                         ConfigData.polygonsOpacity = opacity;
                         MapFrontiers.proxy.configUpdated();
-                        textPolygonsOpacity.setColor(colorText, colorTextHighlight);
+                        textPolygonsOpacity.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                     }
                 } catch (Exception e) {
                 }
             }
         } else if (textSnapDistance.getId() == id && tabSelected == 0) {
             if (StringUtils.isBlank(value)) {
-                textSnapDistance.setColor(colorText, colorTextHighlight);
+                textSnapDistance.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                 textSnapDistance.setText(ConfigData.getDefault("snapDistance"));
                 ConfigData.snapDistance = Integer.valueOf(textSnapDistance.getText());
                 MapFrontiers.proxy.configUpdated();
             } else {
                 try {
-                    textSnapDistance.setColor(colorTextError, colorTextErrorHighlight);
+                    textSnapDistance.setColor(GuiColors.SETTINGS_TEXT_ERROR, GuiColors.SETTINGS_TEXT_ERROR_HIGHLIGHT);
                     Integer distance = Integer.valueOf(value);
                     if (ConfigData.isInRange("snapDistance", distance)) {
                         ConfigData.snapDistance = distance;
                         MapFrontiers.proxy.configUpdated();
-                        textSnapDistance.setColor(colorText, colorTextHighlight);
+                        textSnapDistance.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                     }
                 } catch (Exception e) {
                 }

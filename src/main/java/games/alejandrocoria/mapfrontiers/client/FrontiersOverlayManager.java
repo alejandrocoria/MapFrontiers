@@ -8,6 +8,7 @@ import java.util.Map;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.gui.GuiColors;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketDeleteFrontier;
@@ -38,7 +39,7 @@ public class FrontiersOverlayManager {
     private SettingsProfile settingsProfile;
 
     private static MapImage markerDotSelected = new MapImage(
-            new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"), 20, 0, 10, 10, 0xffffff, 1.f);
+            new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"), 20, 0, 10, 10, GuiColors.WHITE, 1.f);
     private static float targetDotSelectedOpacity = 0.3f;
 
     static {

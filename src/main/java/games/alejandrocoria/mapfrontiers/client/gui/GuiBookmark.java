@@ -103,7 +103,7 @@ public class GuiBookmark extends GuiButton {
             }
 
             drawModalRectWithCustomSizedTexture(x, y, textureX, textureY, width, height, textureSize, textureSize);
-            drawCenteredLabel(mc.fontRenderer, displayString, x + width / 2, y + 9, 0xffffff);
+            drawCenteredLabel(mc.fontRenderer, displayString, x + width / 2, y + 9, GuiColors.BOOKMARK_TEXT);
 
             for (GuiLabel label : labels) {
                 label.drawLabel(mc, mouseX, mouseY);

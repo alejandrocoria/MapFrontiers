@@ -11,8 +11,6 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
 public class GuiTabbedBox extends Gui {
-    private static int lineColor = 0xff777777;
-
     private final FontRenderer fontRenderer;
     private TabbedBoxResponder responder;
     public boolean visible = true;
@@ -54,16 +52,16 @@ public class GuiTabbedBox extends Gui {
             }
 
             if (selected == -1) {
-                drawHorizontalLine(x, x + width, y + 16, lineColor);
+                drawHorizontalLine(x, x + width, y + 16, GuiColors.SETTINGS_TAB_BORDER);
             } else {
                 int selectedX = tabs.get(selected).x;
-                drawHorizontalLine(x, selectedX, y + 16, lineColor);
-                drawHorizontalLine(selectedX + 70, x + width, y + 16, lineColor);
+                drawHorizontalLine(x, selectedX, y + 16, GuiColors.SETTINGS_TAB_BORDER);
+                drawHorizontalLine(selectedX + 70, x + width, y + 16, GuiColors.SETTINGS_TAB_BORDER);
             }
 
-            drawHorizontalLine(x, x + width, y + height, lineColor);
-            drawVerticalLine(x, y + 16, y + height, lineColor);
-            drawVerticalLine(x + width, y + 16, y + height, lineColor);
+            drawHorizontalLine(x, x + width, y + height, GuiColors.SETTINGS_TAB_BORDER);
+            drawVerticalLine(x, y + 16, y + height, GuiColors.SETTINGS_TAB_BORDER);
+            drawVerticalLine(x + width, y + 16, y + height, GuiColors.SETTINGS_TAB_BORDER);
         }
     }
 
@@ -101,20 +99,20 @@ public class GuiTabbedBox extends Gui {
         private GuiSimpleLabel label;
 
         public Tab(FontRenderer fontRenderer, String label) {
-            this.label = new GuiSimpleLabel(fontRenderer, 0, 0, GuiSimpleLabel.Align.Center, label, 0xff777777);
+            this.label = new GuiSimpleLabel(fontRenderer, 0, 0, GuiSimpleLabel.Align.Center, label, GuiColors.SETTINGS_TAB_TEXT);
         }
 
         public void draw(Minecraft mc, int mouseX, int mouseY, boolean selected) {
             hovered = mouseX >= x && mouseY >= y && mouseX < x + 71 && mouseY < y + 16;
 
-            drawHorizontalLine(x, x + 70, y, lineColor);
-            drawVerticalLine(x, y, y + 16, lineColor);
-            drawVerticalLine(x + 70, y, y + 16, lineColor);
+            drawHorizontalLine(x, x + 70, y, GuiColors.SETTINGS_TAB_BORDER);
+            drawVerticalLine(x, y, y + 16, GuiColors.SETTINGS_TAB_BORDER);
+            drawVerticalLine(x + 70, y, y + 16, GuiColors.SETTINGS_TAB_BORDER);
 
             if (selected || hovered) {
-                label.setColor(0xffffffff);
+                label.setColor(GuiColors.SETTINGS_TAB_TEXT_HIGHLIGHT);
             } else {
-                label.setColor(0xff777777);
+                label.setColor(GuiColors.SETTINGS_TAB_TEXT);
             }
 
             label.setX(x + 35);

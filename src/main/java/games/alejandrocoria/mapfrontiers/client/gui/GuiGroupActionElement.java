@@ -43,10 +43,8 @@ public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
         if (visible) {
             hovered = mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height;
 
-            int color = 0xffffff;
-
             if (hovered) {
-                Gui.drawRect(x, y, x + width, y + height, 0xff222222);
+                Gui.drawRect(x, y, x + width, y + height, GuiColors.SETTINGS_ELEMENT_HOVERED);
             }
 
             String text = group.getName();
@@ -54,7 +52,7 @@ public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
                 text = I18n.format("mapfrontiers.unnamed", TextFormatting.ITALIC);
             }
 
-            fontRenderer.drawString(text, x + 4, y + 4, color);
+            fontRenderer.drawString(text, x + 4, y + 4, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
 
             if (!ownersGroup) {
                 drawBox(x + 154, y + 2, createFrontier);
@@ -93,10 +91,10 @@ public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
     }
 
     private void drawBox(int x, int y, boolean checked) {
-        Gui.drawRect(x, y, x + 12, y + 12, 0xff444444);
-        Gui.drawRect(x + 1, y + 1, x + 11, y + 11, 0xff000000);
+        Gui.drawRect(x, y, x + 12, y + 12, GuiColors.SETTINGS_CHECKBOX_BORDER);
+        Gui.drawRect(x + 1, y + 1, x + 11, y + 11, GuiColors.SETTINGS_CHECKBOX_BG);
         if (checked) {
-            Gui.drawRect(x + 2, y + 2, x + 10, y + 10, 0xff666666);
+            Gui.drawRect(x + 2, y + 2, x + 10, y + 10, GuiColors.SETTINGS_CHECKBOX_CHECK);
         }
     }
 

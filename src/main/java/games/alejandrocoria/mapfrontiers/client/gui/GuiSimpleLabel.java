@@ -33,7 +33,7 @@ public class GuiSimpleLabel extends Gui {
     private ConfigData.Point bottomRight;
 
     public GuiSimpleLabel(FontRenderer fontRenderer, int x, int y, Align align, String text) {
-        this(fontRenderer, x, y, align, text, 0);
+        this(fontRenderer, x, y, align, text, GuiColors.LABEL_TEXT_DEFAULT);
     }
 
     public GuiSimpleLabel(FontRenderer fontRenderer, int x, int y, Align align, String text, int color) {
