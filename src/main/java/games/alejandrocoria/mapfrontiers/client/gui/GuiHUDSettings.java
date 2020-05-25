@@ -23,7 +23,6 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.client.config.GuiUtils;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -31,9 +30,6 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 @ParametersAreNonnullByDefault
 @SideOnly(Side.CLIENT)
 public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponder {
-    private static final int guiTextureSize = 512;
-
-    private ResourceLocation guiTexture;
     private GuiFrontierSettings parent;
     private GuiOptionButton buttonSlot1;
     private GuiOptionButton buttonSlot2;
@@ -57,7 +53,6 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
     private boolean grabbed = false;
 
     public GuiHUDSettings(GuiFrontierSettings parent) {
-        guiTexture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/gui.png");
         labels = new ArrayList<GuiSimpleLabel>();
         labelTooltips = new HashMap<GuiSimpleLabel, List<String>>();
         this.parent = parent;
