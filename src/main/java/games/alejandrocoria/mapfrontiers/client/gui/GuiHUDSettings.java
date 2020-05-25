@@ -493,7 +493,7 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         positionTooltip.add(GuiColors.DEFAULT_CONFIG + "Default: [0 x 0]");
         addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 30, height / 2 - 14, GuiSimpleLabel.Align.Left,
                 "position", GuiColors.SETTINGS_TEXT), positionTooltip);
-        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 + 120, height / 2 - 14, GuiSimpleLabel.Align.Center, "x",
+        labels.add(new GuiSimpleLabel(fontRenderer, width / 2 + 119, height / 2 - 14, GuiSimpleLabel.Align.Center, "x",
                 GuiColors.SETTINGS_TEXT_DARK));
         addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 30, height / 2 + 2, GuiSimpleLabel.Align.Left,
                 "autoAdjustAnchor", GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.autoAdjustAnchor"));
