@@ -64,7 +64,7 @@ mapfrontiers.chat.frontier_created=%2$s%3$s%1$s создал территори�
 mapfrontiers.chat.frontier_created_unknown=Кто-то создал новую территорию
 
 # Item
-item.mapfrontiers.frontier_book.name=:map: §6Карта Территорий
+item.mapfrontiers.frontier_book.name=Карта Территорий
 
 # Key
 mapfrontiers.key.category=Карта Территорий
