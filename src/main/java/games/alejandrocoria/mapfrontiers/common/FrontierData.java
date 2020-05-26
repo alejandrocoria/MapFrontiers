@@ -285,8 +285,6 @@ public class FrontierData {
 
             if (blockEntityTag != null && blockEntityTag.hasKey("Patterns", Constants.NBT.TAG_LIST)) {
                 patterns = blockEntityTag.getTagList("Patterns", Constants.NBT.TAG_COMPOUND);
-            } else {
-                return;
             }
 
             baseColor = ItemBanner.getBaseColor(itemBanner);
