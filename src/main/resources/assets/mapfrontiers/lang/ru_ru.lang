@@ -1,0 +1,71 @@
+# Created by Articuno
+# https://pixelmon.pro
+# Book
+mapfrontiers.index=%1$sОглавление
+mapfrontiers.index_number=%2$sОглавление %1$d
+mapfrontiers.index_unnamed_1=%1$sБез имени
+mapfrontiers.index_unnamed_2=%1$sТерритория
+mapfrontiers.frontier_number=Территория %1$d из %2$d
+mapfrontiers.color=Цвет
+mapfrontiers.area=Площадь: %1$.2fм²
+mapfrontiers.perimeter=Периметр: %1$.2fм
+mapfrontiers.owner=Владелец: %1$s
+mapfrontiers.unknown=%1$s<Неизвестно>
+mapfrontiers.vertex_number=Точка %1$d/%2$d
+mapfrontiers.no_vertex_selected=%1$sТочка не выбрана
+mapfrontiers.new=Создать
+mapfrontiers.delete=Удалить
+mapfrontiers.confirm_delete=Подтвердить
+mapfrontiers.hide_name=Скрыть имя
+mapfrontiers.show_name=Показать имя
+mapfrontiers.show_name_warn=Всегда показывать имя
+mapfrontiers.hide_name_warn=Всегда скрывать имя
+mapfrontiers.add_vertex=Добавить точку
+mapfrontiers.remove_vertex=Убрать точку
+mapfrontiers.finish=Завершить
+mapfrontiers.reopen=Переделать
+mapfrontiers.assign_banner=Добавить баннер
+mapfrontiers.remove_banner=Удалить баннер
+mapfrontiers.assign_banner_warn=Вы должны иметь баннер в другой руке!
+mapfrontiers.close=Закрыть
+mapfrontiers.previous_page=Пред. страница
+mapfrontiers.next_page=След. страница
+mapfrontiers.back_to_index=Вернуться в оглавленние
+mapfrontiers.previous_vertex=Пред. точка
+mapfrontiers.next_vertex=След. точка
+mapfrontiers.vertical_chunk=Вертикаль чанков: %1$d
+mapfrontiers.vertical_chunk_surface=Вертикаль чанков: Поверхность
+
+# Settings
+mapfrontiers.general=Основные
+mapfrontiers.groups=Группы
+mapfrontiers.actions=Действия
+mapfrontiers.create_frontier=Сделать\nтерриторию
+mapfrontiers.delete_frontier=Удалить\nтерриторию
+mapfrontiers.update_frontier=Обновить\nтерриторию
+mapfrontiers.update_settings=Обновить\nнастройки
+mapfrontiers.new_group_name=Новая Группа
+mapfrontiers.new_user=Новый Игрок
+mapfrontiers.new_user_error_uuid_size=UUID быть ровно 32 символа и может иметь разделители
+mapfrontiers.new_user_error_uuid_format=UUID неправильно сформирован
+mapfrontiers.new_user_error_user_repeated=Игрок уже состоит в другой группе
+mapfrontiers.edit_group_name=Редактировать название группы
+mapfrontiers.group_ops_desc=В мультиплеере эта группа представляет игроков с правами OP.\nВ одиночной игре она представляет основного игрока в игре.
+mapfrontiers.group_owners_desc=Эта группа представляет владельцев территорий.\nНа единственные действия, которые можно настроить, это удаление и обновление границ.
+mapfrontiers.group_everyone_desc=Эта группа представляет всех игроков без исключения.
+mapfrontiers.unnamed=%1$sБез имени
+
+# Chat
+mapfrontiers.chat.frontier_deleted=%2$s%3$s%1$s удалил территорию %4$d
+mapfrontiers.chat.frontier_deleted_unknown=Кто-то удалил территорию %1$d
+mapfrontiers.chat.frontier_updated=%2$s%3$s%1$s обновил территорию %4$d
+mapfrontiers.chat.frontier_updated_unknown=Кто-то обновил территорию %1$d
+mapfrontiers.chat.frontier_created=%2$s%3$s%1$s создал территорию
+mapfrontiers.chat.frontier_created_unknown=Кто-то создал новую территорию
+
+# Item
+item.mapfrontiers.frontier_book.name=:map: §6Карта Территорий
+
+# Key
+mapfrontiers.key.category=Карта Территорий
+mapfrontiers.key.open_settings=Открыть настройки
