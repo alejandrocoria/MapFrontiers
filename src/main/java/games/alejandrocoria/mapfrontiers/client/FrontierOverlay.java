@@ -21,7 +21,10 @@ import journeymap.client.api.model.ShapeProperties;
 import journeymap.client.api.model.TextProperties;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BannerTextures;
+import net.minecraft.item.EnumDyeColor;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.tileentity.BannerPattern;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -59,6 +62,7 @@ public class FrontierOverlay extends FrontierData {
     private List<PolygonOverlay> polygonOverlays = new ArrayList<PolygonOverlay>();
     private List<MarkerOverlay> markerOverlays = new ArrayList<MarkerOverlay>();
     private String displayId;
+    private BannerDisplayData bannerDisplay;
 
     private int hash;
     private boolean dirty = true;
@@ -69,6 +73,10 @@ public class FrontierOverlay extends FrontierData {
         displayId = "frontier_" + String.valueOf(id);
         vertexSelected = vertices.size() - 1;
         updateOverlay();
+
+        if (banner != null) {
+            bannerDisplay = new BannerDisplayData(banner);
+        }
     }
 
     public int getHash() {
@@ -282,15 +290,21 @@ public class FrontierOverlay extends FrontierData {
     public void setBanner(ItemStack itemBanner) {
         super.setBanner(itemBanner);
         updateOverlay();
+
+        if (itemBanner == null) {
+            bannerDisplay = null;
+        } else {
+            bannerDisplay = new BannerDisplayData(banner);
+        }
     }
 
     public void bindBannerTexture(Minecraft mc) {
-        if (banner == null) {
+        if (bannerDisplay == null) {
             return;
         }
 
-        mc.getTextureManager().bindTexture(BannerTextures.BANNER_DESIGNS.getResourceLocation(banner.patternResourceLocation,
-                banner.patternList, banner.colorList));
+        mc.getTextureManager().bindTexture(BannerTextures.BANNER_DESIGNS
+                .getResourceLocation(bannerDisplay.patternResourceLocation, bannerDisplay.patternList, bannerDisplay.colorList));
     }
 
     public void removeSelectedVertex() {
@@ -475,5 +489,34 @@ public class FrontierOverlay extends FrontierData {
         }
 
         return textProperties.setMinZoom(zoom);
+    }
+
+    @SideOnly(Side.CLIENT)
+    public class BannerDisplayData {
+        public List<BannerPattern> patternList;
+        public List<EnumDyeColor> colorList;
+        public String patternResourceLocation;
+
+        public BannerDisplayData(FrontierData.BannerData bannerData) {
+            patternList = new ArrayList<BannerPattern>();
+            colorList = new ArrayList<EnumDyeColor>();
+            patternList.add(BannerPattern.BASE);
+            colorList.add(bannerData.baseColor);
+            patternResourceLocation = "b" + bannerData.baseColor.getDyeDamage();
+
+            if (bannerData.patterns != null) {
+                for (int i = 0; i < bannerData.patterns.tagCount(); ++i) {
+                    NBTTagCompound nbttagcompound = bannerData.patterns.getCompoundTagAt(i);
+                    BannerPattern bannerpattern = BannerPattern.byHash(nbttagcompound.getString("Pattern"));
+
+                    if (bannerpattern != null) {
+                        patternList.add(bannerpattern);
+                        int j = nbttagcompound.getInteger("Color");
+                        colorList.add(EnumDyeColor.byDyeDamage(j));
+                        patternResourceLocation = patternResourceLocation + bannerpattern.getHashname() + j;
+                    }
+                }
+            }
+        }
     }
 }

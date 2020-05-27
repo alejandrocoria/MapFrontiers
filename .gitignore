@@ -8,3 +8,4 @@ run/
 *.txt
 .gradle/
 .settings/
+build.bat

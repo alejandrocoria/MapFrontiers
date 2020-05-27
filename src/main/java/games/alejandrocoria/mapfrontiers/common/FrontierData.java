@@ -17,7 +17,6 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTUtil;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.tileentity.BannerPattern;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fml.common.FMLCommonHandler;
@@ -269,15 +268,9 @@ public class FrontierData {
     public class BannerData {
         public EnumDyeColor baseColor;
         public NBTTagList patterns;
-        public List<BannerPattern> patternList;
-        public List<EnumDyeColor> colorList;
-        public String patternResourceLocation;
 
         public BannerData() {
-            baseColor = EnumDyeColor.BLACK;
-            patternList = new ArrayList<BannerPattern>();
-            colorList = new ArrayList<EnumDyeColor>();
-            patternResourceLocation = "";
+            baseColor = EnumDyeColor.WHITE;
         }
 
         public BannerData(ItemStack itemBanner) {
@@ -288,14 +281,11 @@ public class FrontierData {
             }
 
             baseColor = ItemBanner.getBaseColor(itemBanner);
-            initializeBannerData();
         }
 
         public void readFromNBT(NBTTagCompound nbt) {
             baseColor = EnumDyeColor.byDyeDamage(nbt.getInteger("Base"));
             patterns = nbt.getTagList("Patterns", 10);
-
-            initializeBannerData();
         }
 
         public void writeToNBT(NBTTagCompound nbt) {
@@ -303,28 +293,6 @@ public class FrontierData {
 
             if (patterns != null) {
                 nbt.setTag("Patterns", patterns);
-            }
-        }
-
-        private void initializeBannerData() {
-            patternList = new ArrayList<BannerPattern>();
-            colorList = new ArrayList<EnumDyeColor>();
-            patternList.add(BannerPattern.BASE);
-            colorList.add(baseColor);
-            patternResourceLocation = "b" + baseColor.getDyeDamage();
-
-            if (patterns != null) {
-                for (int i = 0; i < patterns.tagCount(); ++i) {
-                    NBTTagCompound nbttagcompound = patterns.getCompoundTagAt(i);
-                    BannerPattern bannerpattern = BannerPattern.byHash(nbttagcompound.getString("Pattern"));
-
-                    if (bannerpattern != null) {
-                        patternList.add(bannerpattern);
-                        int j = nbttagcompound.getInteger("Color");
-                        colorList.add(EnumDyeColor.byDyeDamage(j));
-                        patternResourceLocation = patternResourceLocation + bannerpattern.getHashname() + j;
-                    }
-                }
             }
         }
     }
