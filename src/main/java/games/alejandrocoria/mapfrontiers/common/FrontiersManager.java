@@ -271,7 +271,7 @@ public class FrontiersManager {
             owner.readFromNBT(ownerTag);
 
             HashMap<Integer, ArrayList<FrontierData>> dimensionsPersonalFrontiers = new HashMap<Integer, ArrayList<FrontierData>>();
-            dimensionsTagList = nbt.getTagList("frontiers", Constants.NBT.TAG_COMPOUND);
+            dimensionsTagList = personalTag.getTagList("frontiers", Constants.NBT.TAG_COMPOUND);
             readFrontiersFromTagList(dimensionsTagList, dimensionsPersonalFrontiers, true, version);
 
             usersDimensionsPersonalFrontiers.put(owner, dimensionsPersonalFrontiers);
