@@ -65,6 +65,7 @@ mapfrontiers.chat.frontier_created_unknown=Someone created a new frontier
 
 # Item
 item.mapfrontiers.frontier_book.name=Frontier Book
+item.mapfrontiers.personal_frontier_book.name=Personal Frontier Book
 
 # Key
 mapfrontiers.key.category=MapFrontiers

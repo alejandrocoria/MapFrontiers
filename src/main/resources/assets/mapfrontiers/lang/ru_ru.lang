@@ -1,5 +1,6 @@
 #PARSE_ESCAPES
 # Created by Articuno https://pixelmon.pro
+
 # Book
 mapfrontiers.index=%1$sОглавление
 mapfrontiers.index_number=%2$sОглавление %1$d
@@ -65,6 +66,7 @@ mapfrontiers.chat.frontier_created_unknown=Кто-то создал новую �
 
 # Item
 item.mapfrontiers.frontier_book.name=Карта Территорий
+item.mapfrontiers.personal_frontier_book.name=Карта личных территорий
 
 # Key
 mapfrontiers.key.category=Карта Территорий

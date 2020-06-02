@@ -325,7 +325,7 @@ public class FrontierOverlay extends FrontierData {
             closed = false;
         }
 
-        FrontiersOverlayManager.instance.updateSelectedMarker(getDimension(), this);
+        ((ClientProxy) MapFrontiers.proxy).getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);
         updateOverlay();
     }
 
@@ -334,7 +334,7 @@ public class FrontierOverlay extends FrontierData {
         if (vertexSelected >= vertices.size()) {
             vertexSelected = -1;
         }
-        FrontiersOverlayManager.instance.updateSelectedMarker(getDimension(), this);
+        ((ClientProxy) MapFrontiers.proxy).getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);
     }
 
     public void selectPreviousVertex() {
@@ -342,7 +342,7 @@ public class FrontierOverlay extends FrontierData {
         if (vertexSelected < -1) {
             vertexSelected = vertices.size() - 1;
         }
-        FrontiersOverlayManager.instance.updateSelectedMarker(getDimension(), this);
+        ((ClientProxy) MapFrontiers.proxy).getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);
     }
 
     public int getSelectedVertexIndex() {

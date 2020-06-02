@@ -11,6 +11,7 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.Sounds;
@@ -94,13 +95,14 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
     private List<IndexEntryButton> indexEntryButtons;
     private List<GuiSimpleLabel> labels;
+    private boolean personal;
 
     private static final MapState state = new MapState();
     private static final GridRenderer gridRenderer = new GridRenderer(Context.UI.Minimap, 3);
     private static final MiniMapProperties miniMapProperties = new MiniMapProperties(777);
     private static int zoom = 1;
 
-    public GuiFrontierBook(FrontiersOverlayManager frontiersOverlayManager, int currentDimension, int dimension,
+    public GuiFrontierBook(FrontiersOverlayManager frontiersOverlayManager, boolean personal, int currentDimension, int dimension,
             ItemStack heldBanner) {
         this.frontiersOverlayManager = frontiersOverlayManager;
         this.currentDimension = currentDimension;
@@ -111,6 +113,8 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         bookPageTexture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/gui.png");
         indexEntryButtons = new ArrayList<IndexEntryButton>();
         labels = new ArrayList<GuiSimpleLabel>();
+
+        this.personal = personal;
     }
 
     @Override
@@ -253,13 +257,19 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        GlStateManager.color(1.f, 1.f, 1.f);
+        if (personal) {
+            GlStateManager.color(0.f, 0.5f, 1.f);
+        } else {
+            GlStateManager.color(0.5f, 0.5f, 0.5f);
+        }
         mc.getTextureManager().bindTexture(bookPageTexture);
         int offsetFromScreenLeft = (width - bookImageWidth) / 2;
         int offsetFromScreenTop = (height - bookImageHeight) / 2;
 
         drawModalRectWithCustomSizedTexture(offsetFromScreenLeft, offsetFromScreenTop, 0, 0, bookImageWidth, bookImageHeight,
                 bookTextureSize, bookTextureSize);
+
+        GlStateManager.color(1.f, 1.f, 1.f);
 
         if (buttonDelete.visible) {
             buttonDelete.drawButton(mc, mouseX, mouseY, partialTicks);
@@ -384,7 +394,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                     && x <= buttonDelete.x + buttonDelete.width && y <= labelDeleteConfirm.y + 12) {
                 if (isInFrontierPage()) {
                     changeDeleteBookmarkPosition(DeleteBookmarkPosition.Normal);
-                    FrontiersOverlayManager.instance.clientDeleteFrontier(dimension, getCurrentFrontierIndex());
+                    frontiersOverlayManager.clientDeleteFrontier(dimension, getCurrentFrontierIndex());
                 }
             }
         }
@@ -511,7 +521,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             resetLabels();
             updateButtonsVisibility();
         } else if (button == buttonNew) {
-            FrontiersOverlayManager.instance.clientCreateNewfrontier(dimension);
+            frontiersOverlayManager.clientCreateNewfrontier(dimension);
         } else if (button == buttonDelete) {
             if (deleteBookmarkPosition == DeleteBookmarkPosition.Normal) {
                 changeDeleteBookmarkPosition(DeleteBookmarkPosition.Open);
@@ -590,7 +600,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     }
 
     public void newFrontierMessage(FrontierOverlay frontierOverlay, int playerID) {
-        if (frontierOverlay.getDimension() != dimension) {
+        if (frontierOverlay.getDimension() != dimension || frontierOverlay.getPersonal() != personal) {
             return;
         }
 
@@ -626,7 +636,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     }
 
     public void updateFrontierMessage(FrontierOverlay frontierOverlay, int playerID) {
-        if (frontierOverlay.getDimension() != dimension) {
+        if (frontierOverlay.getDimension() != dimension || frontierOverlay.getPersonal() != personal) {
             return;
         }
 
@@ -660,8 +670,8 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         }
     }
 
-    public void deleteFrontierMessage(int index, int dimension, int playerID) {
-        if (dimension != this.dimension) {
+    public void deleteFrontierMessage(int index, int dimension, boolean personal, int playerID) {
+        if (dimension != this.dimension || personal != this.personal) {
             return;
         }
 
@@ -930,7 +940,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             labels.add(new GuiSimpleLabel(mc.fontRenderer, rightPageCornerX + 13, rightPageCornerY + 64,
                     GuiSimpleLabel.Align.Left, owner));
 
-            SettingsProfile profile = frontiersOverlayManager.getSettingsProfile();
+            SettingsProfile profile = ((ClientProxy) MapFrontiers.proxy).getSettingsProfile();
             boolean isOwner = frontier.getOwner().equals(new SettingsUser(Minecraft.getMinecraft().player));
 
             boolean canUpdate = profile.updateFrontier == SettingsProfile.State.Enabled
@@ -1037,7 +1047,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         buttonNextPage.visible = (currPage < getPageCount() - 1);
         buttonPreviousPage.visible = currPage > 0;
 
-        SettingsProfile profile = frontiersOverlayManager.getSettingsProfile();
+        SettingsProfile profile = ((ClientProxy) MapFrontiers.proxy).getSettingsProfile();
         FrontierOverlay frontier = null;
         boolean isOwner = false;
 

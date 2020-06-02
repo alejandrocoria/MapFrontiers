@@ -1,0 +1,29 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern":
+    [
+        " l ",
+        "cbc",
+        " l "
+    ],
+    "key":
+    {
+        "c":
+        {
+            "item": "minecraft:compass"
+        },
+        "b":
+        {
+            "item": "minecraft:writable_book"
+        },
+        "l":
+        {
+            "item": "minecraft:lapis_lazuli"
+        }
+    },
+    "result":
+    {
+        "item": "mapfrontiers:personal_frontier_book",
+        "count": 1
+    }
+}

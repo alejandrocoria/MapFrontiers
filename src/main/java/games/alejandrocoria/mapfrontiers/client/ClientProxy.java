@@ -43,8 +43,10 @@ import net.minecraftforge.fml.relauncher.Side;
 @ParametersAreNonnullByDefault
 @Mod.EventBusSubscriber(value = Side.CLIENT, modid = MapFrontiers.MODID)
 public class ClientProxy extends CommonProxy {
-    public IClientAPI jmAPI;
-    public FrontiersOverlayManager frontiersOverlayManager;
+    private IClientAPI jmAPI;
+    private FrontiersOverlayManager frontiersOverlayManager;
+    private FrontiersOverlayManager personalFrontiersOverlayManager;
+    private SettingsProfile settingsProfile;
 
     private KeyBinding openSettingsKey;
     private GuiHUD guiHUD;
@@ -96,13 +98,11 @@ public class ClientProxy extends CommonProxy {
                 return;
             }
 
-            SettingsProfile profile = frontiersOverlayManager.getSettingsProfile();
-
-            if (profile == null) {
+            if (settingsProfile == null) {
                 return;
             }
 
-            Minecraft.getMinecraft().displayGuiScreen(new GuiFrontierSettings(profile));
+            Minecraft.getMinecraft().displayGuiScreen(new GuiFrontierSettings(settingsProfile));
         }
     }
 
@@ -154,7 +154,8 @@ public class ClientProxy extends CommonProxy {
             if (itemMainhand != bookItemInHand && itemOffhand != bookItemInHand) {
                 bookItemInHand = null;
 
-                if (itemMainhand != null && itemMainhand.getItem() == MapFrontiers.frontierBook) {
+                if (itemMainhand != null && (itemMainhand.getItem() == MapFrontiers.frontierBook
+                        || itemMainhand.getItem() == MapFrontiers.personalFrontierBook)) {
                     if (itemMainhand.hasTagCompound()) {
                         NBTTagCompound nbt = itemMainhand.getTagCompound();
                         if (nbt.hasKey("Dimension") && nbt.getInteger("Dimension") == player.dimension) {
@@ -163,7 +164,8 @@ public class ClientProxy extends CommonProxy {
                     }
                 }
 
-                if (bookItemInHand == null && itemOffhand != null && itemOffhand.getItem() == MapFrontiers.frontierBook) {
+                if (bookItemInHand == null && itemOffhand != null && (itemOffhand.getItem() == MapFrontiers.frontierBook
+                        || itemMainhand.getItem() == MapFrontiers.personalFrontierBook)) {
                     if (itemOffhand.hasTagCompound()) {
                         NBTTagCompound nbt = itemOffhand.getTagCompound();
                         if (nbt.hasKey("Dimension") && nbt.getInteger("Dimension") == player.dimension) {
@@ -181,10 +183,12 @@ public class ClientProxy extends CommonProxy {
             bookItemInHand = null;
             if (frontiersOverlayManager != null) {
                 frontiersOverlayManager.removeAllOverlays();
+                personalFrontiersOverlayManager.removeAllOverlays();
             }
-            frontiersOverlayManager = new FrontiersOverlayManager(jmAPI);
+            frontiersOverlayManager = new FrontiersOverlayManager(jmAPI, false);
+            personalFrontiersOverlayManager = new FrontiersOverlayManager(jmAPI, true);
 
-            guiHUD = new GuiHUD(frontiersOverlayManager);
+            guiHUD = new GuiHUD(frontiersOverlayManager, personalFrontiersOverlayManager);
             MinecraftForge.EVENT_BUS.register(guiHUD);
         }
     }
@@ -196,6 +200,8 @@ public class ClientProxy extends CommonProxy {
         if (frontiersOverlayManager != null) {
             frontiersOverlayManager.removeAllOverlays();
             frontiersOverlayManager = null;
+            personalFrontiersOverlayManager.removeAllOverlays();
+            personalFrontiersOverlayManager = null;
         }
 
         if (guiHUD != null) {
@@ -204,8 +210,8 @@ public class ClientProxy extends CommonProxy {
         }
     }
 
-    public void openGUIFrontierBook(int dimension) {
-        if (frontiersOverlayManager == null || frontiersOverlayManager.getSettingsProfile() == null) {
+    public void openGUIFrontierBook(int dimension, boolean personal) {
+        if (frontiersOverlayManager == null || settingsProfile == null) {
             return;
         }
 
@@ -220,12 +226,34 @@ public class ClientProxy extends CommonProxy {
         }
 
         int currentDimension = Minecraft.getMinecraft().player.dimension;
-        Minecraft.getMinecraft()
-                .displayGuiScreen(new GuiFrontierBook(frontiersOverlayManager, currentDimension, dimension, heldBanner));
+
+        if (personal) {
+            Minecraft.getMinecraft().displayGuiScreen(
+                    new GuiFrontierBook(personalFrontiersOverlayManager, personal, currentDimension, dimension, heldBanner));
+        } else {
+            Minecraft.getMinecraft().displayGuiScreen(
+                    new GuiFrontierBook(frontiersOverlayManager, personal, currentDimension, dimension, heldBanner));
+        }
     }
 
     public static boolean hasBookItemInHand() {
         return bookItemInHand != null;
+    }
+
+    public FrontiersOverlayManager getFrontiersOverlayManager(boolean personal) {
+        if (personal) {
+            return personalFrontiersOverlayManager;
+        } else {
+            return frontiersOverlayManager;
+        }
+    }
+
+    public void setSettingsProfile(SettingsProfile settingsProfile) {
+        this.settingsProfile = settingsProfile;
+    }
+
+    public SettingsProfile getSettingsProfile() {
+        return settingsProfile;
     }
 
     @SubscribeEvent
@@ -241,6 +269,7 @@ public class ClientProxy extends CommonProxy {
 
         if (frontiersOverlayManager != null) {
             frontiersOverlayManager.updateAllOverlays();
+            personalFrontiersOverlayManager.updateAllOverlays();
         }
 
         if (guiHUD != null) {

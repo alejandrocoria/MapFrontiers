@@ -15,7 +15,6 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketDeleteFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketNewFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateFrontier;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.MarkerOverlay;
@@ -30,13 +29,11 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 @ParametersAreNonnullByDefault
 @SideOnly(Side.CLIENT)
 public class FrontiersOverlayManager {
-    public static FrontiersOverlayManager instance;
-
     private IClientAPI jmAPI;
     private HashMap<Integer, ArrayList<FrontierOverlay>> dimensionsFrontiers;
     private HashMap<Integer, FrontierOverlay> frontiersSelected;
     private HashMap<Integer, MarkerOverlay> markersSelected;
-    private SettingsProfile settingsProfile;
+    private boolean personal;
 
     private static MapImage markerDotSelected = new MapImage(
             new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"), 20, 0, 10, 10, GuiColors.WHITE, 1.f);
@@ -48,13 +45,12 @@ public class FrontiersOverlayManager {
         markerDotSelected.setRotation(0);
     }
 
-    public FrontiersOverlayManager(IClientAPI jmAPI) {
-        instance = this;
-
+    public FrontiersOverlayManager(IClientAPI jmAPI, boolean personal) {
         this.jmAPI = jmAPI;
         dimensionsFrontiers = new HashMap<Integer, ArrayList<FrontierOverlay>>();
         frontiersSelected = new HashMap<Integer, FrontierOverlay>();
         markersSelected = new HashMap<Integer, MarkerOverlay>();
+        this.personal = personal;
     }
 
     @SubscribeEvent
@@ -96,8 +92,8 @@ public class FrontiersOverlayManager {
     }
 
     public void clientCreateNewfrontier(int dimension) {
-        PacketHandler.INSTANCE
-                .sendToServer(new PacketNewFrontier(dimension, ConfigData.addVertexToNewFrontier, ConfigData.snapDistance));
+        PacketHandler.INSTANCE.sendToServer(
+                new PacketNewFrontier(dimension, ConfigData.addVertexToNewFrontier, ConfigData.snapDistance, personal));
     }
 
     public void clientDeleteFrontier(int dimension, int index) {
@@ -106,7 +102,7 @@ public class FrontiersOverlayManager {
         FrontierOverlay frontier = frontiers.get(index);
 
         if (frontier != null) {
-            PacketHandler.INSTANCE.sendToServer(new PacketDeleteFrontier(dimension, frontier.getId()));
+            PacketHandler.INSTANCE.sendToServer(new PacketDeleteFrontier(frontier));
         }
     }
 
@@ -261,13 +257,5 @@ public class FrontiersOverlayManager {
         } else {
             frontiersSelected.remove(dim);
         }
-    }
-
-    public void setSettingsProfile(SettingsProfile settingsProfile) {
-        this.settingsProfile = settingsProfile;
-    }
-
-    public SettingsProfile getSettingsProfile() {
-        return settingsProfile;
     }
 }

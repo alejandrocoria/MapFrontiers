@@ -38,6 +38,7 @@ public class GuiHUD {
     private static Minecraft mc = Minecraft.getMinecraft();
 
     private FrontiersOverlayManager frontiersOverlayManager;
+    private FrontiersOverlayManager personalFrontiersOverlayManager;
     private FrontierOverlay frontier;
     private int frontierHash;
     private BlockPos lastPlayerPosition = new BlockPos(0, 0, 0);
@@ -70,7 +71,7 @@ public class GuiHUD {
     private int minimapCompassFontScale;
 
     public static GuiHUD asPreview() {
-        GuiHUD guiHUD = new GuiHUD(null);
+        GuiHUD guiHUD = new GuiHUD(null, null);
         guiHUD.previewMode = true;
 
         NBTTagCompound pattern = new NBTTagCompound();
@@ -106,8 +107,9 @@ public class GuiHUD {
         return guiHUD;
     }
 
-    public GuiHUD(FrontiersOverlayManager frontiersOverlayManager) {
+    public GuiHUD(FrontiersOverlayManager frontiersOverlayManager, FrontiersOverlayManager personalFrontiersOverlayManager) {
         this.frontiersOverlayManager = frontiersOverlayManager;
+        this.personalFrontiersOverlayManager = personalFrontiersOverlayManager;
         slots = new ArrayList<ConfigData.HUDSlot>();
         frontierName1 = new GuiSimpleLabel(mc.fontRenderer, 0, 0, GuiSimpleLabel.Align.Center, "", GuiColors.WHITE);
         frontierName2 = new GuiSimpleLabel(mc.fontRenderer, 0, 0, GuiSimpleLabel.Align.Center, "", GuiColors.WHITE);
@@ -163,7 +165,11 @@ public class GuiHUD {
                     || currentPlayerPosition.getZ() != lastPlayerPosition.getZ()) {
                 lastPlayerPosition = currentPlayerPosition;
 
-                FrontierOverlay newFrontier = frontiersOverlayManager.getFrontierInPosition(player.dimension, lastPlayerPosition);
+                FrontierOverlay newFrontier = personalFrontiersOverlayManager.getFrontierInPosition(player.dimension,
+                        lastPlayerPosition);
+                if (newFrontier == null) {
+                    newFrontier = frontiersOverlayManager.getFrontierInPosition(player.dimension, lastPlayerPosition);
+                }
                 if (newFrontier != null) {
                     if (frontierHash != newFrontier.getHash()) {
                         frontier = newFrontier;
@@ -193,7 +199,12 @@ public class GuiHUD {
     }
 
     public void frontierChanged() {
-        FrontierOverlay newFrontier = frontiersOverlayManager.getFrontierInPosition(mc.player.dimension, lastPlayerPosition);
+        FrontierOverlay newFrontier = personalFrontiersOverlayManager.getFrontierInPosition(mc.player.dimension,
+                lastPlayerPosition);
+        if (newFrontier == null) {
+            newFrontier = frontiersOverlayManager.getFrontierInPosition(mc.player.dimension, lastPlayerPosition);
+        }
+
         if (newFrontier != null) {
             if (frontierHash != newFrontier.getHash()) {
                 frontier = newFrontier;

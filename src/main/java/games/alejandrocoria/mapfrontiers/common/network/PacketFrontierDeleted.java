@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
@@ -16,14 +16,17 @@ import net.minecraftforge.fml.relauncher.Side;
 public class PacketFrontierDeleted implements IMessage {
     private int dimension;
     private int frontierID = -1;
+    private boolean personal;
     private int playerID = -1;
 
     public PacketFrontierDeleted() {
+
     }
 
-    public PacketFrontierDeleted(int dimension, int frontierID, int playerID) {
+    public PacketFrontierDeleted(int dimension, int frontierID, boolean personal, int playerID) {
         this.dimension = dimension;
         this.frontierID = frontierID;
+        this.personal = personal;
         this.playerID = playerID;
     }
 
@@ -31,6 +34,7 @@ public class PacketFrontierDeleted implements IMessage {
     public void fromBytes(ByteBuf buf) {
         dimension = buf.readInt();
         frontierID = buf.readInt();
+        personal = buf.readBoolean();
         playerID = buf.readInt();
     }
 
@@ -38,6 +42,7 @@ public class PacketFrontierDeleted implements IMessage {
     public void toBytes(ByteBuf buf) {
         buf.writeInt(dimension);
         buf.writeInt(frontierID);
+        buf.writeBoolean(personal);
         buf.writeInt(playerID);
     }
 
@@ -46,13 +51,14 @@ public class PacketFrontierDeleted implements IMessage {
         public IMessage onMessage(PacketFrontierDeleted message, MessageContext ctx) {
             if (ctx.side == Side.CLIENT) {
                 Minecraft.getMinecraft().addScheduledTask(() -> {
-                    int frontierIndex = FrontiersOverlayManager.instance.deleteFrontier(message.dimension, message.frontierID);
+                    int frontierIndex = ((ClientProxy) MapFrontiers.proxy).getFrontiersOverlayManager(message.personal)
+                            .deleteFrontier(message.dimension, message.frontierID);
 
                     MapFrontiers.proxy.frontierChanged();
 
                     if (frontierIndex != -1 && Minecraft.getMinecraft().currentScreen instanceof GuiFrontierBook) {
                         ((GuiFrontierBook) Minecraft.getMinecraft().currentScreen).deleteFrontierMessage(frontierIndex,
-                                message.dimension, message.playerID);
+                                message.dimension, message.personal, message.playerID);
                     }
                 });
             }

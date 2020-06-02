@@ -29,15 +29,12 @@ public class PacketUpdateFrontier implements IMessage {
         this.frontier = frontier;
     }
 
-    public PacketUpdateFrontier(FrontierData frontier, int playerID) {
-        this.frontier = frontier;
-    }
-
     @Override
     public void fromBytes(ByteBuf buf) {
         frontier.readFromNBT(ByteBufUtils.readTag(buf));
         frontier.setId(buf.readInt());
         frontier.setDimension(buf.readInt());
+        frontier.setPersonal(buf.readBoolean());
     }
 
     @Override
@@ -47,6 +44,7 @@ public class PacketUpdateFrontier implements IMessage {
         ByteBufUtils.writeTag(buf, nbt);
         buf.writeInt(frontier.getId());
         buf.writeInt(frontier.getDimension());
+        buf.writeBoolean(frontier.getPersonal());
     }
 
     public static class Handler implements IMessageHandler<PacketUpdateFrontier, IMessage> {
@@ -56,24 +54,41 @@ public class PacketUpdateFrontier implements IMessage {
                 FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
                     EntityPlayerMP player = ctx.getServerHandler().player;
 
-                    FrontierData currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontier.getDimension(),
-                            message.frontier.getId());
-
-                    if (!currentFrontier.getOwner().isEmpty()) {
-                        message.frontier.setOwner(currentFrontier.getOwner());
+                    FrontierData currentFrontier = null;
+                    if (message.frontier.getPersonal()) {
+                        currentFrontier = FrontiersManager.instance.getPersonalFrontierFromID(message.frontier.getOwner(),
+                                message.frontier.getDimension(), message.frontier.getId());
+                    } else {
+                        currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontier.getDimension(),
+                                message.frontier.getId());
                     }
 
-                    if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.UpdateFrontier,
-                            new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), message.frontier.getOwner())) {
-                        boolean updated = FrontiersManager.instance.updateFrontier(message.frontier);
-
-                        if (updated) {
-                            PacketHandler.INSTANCE.sendToAll(
-                                    new PacketFrontierUpdated(message.frontier, ctx.getServerHandler().player.getEntityId()));
+                    if (currentFrontier != null) {
+                        if (!currentFrontier.getOwner().isEmpty()) {
+                            message.frontier.setOwner(currentFrontier.getOwner());
                         }
-                    } else {
-                        PacketHandler.INSTANCE.sendTo(
-                                new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
+
+                        if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.UpdateFrontier,
+                                new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), message.frontier.getOwner())) {
+                            if (message.frontier.getPersonal()) {
+                                boolean updated = FrontiersManager.instance.updatePersonalFrontier(message.frontier);
+                                if (updated) {
+                                    // @Incomplete: send to all players with access to this personal frontier
+                                    PacketHandler.INSTANCE.sendTo(new PacketFrontierUpdated(message.frontier,
+                                            ctx.getServerHandler().player.getEntityId()), player);
+                                }
+                            } else {
+                                boolean updated = FrontiersManager.instance.updateFrontier(message.frontier);
+                                if (updated) {
+                                    PacketHandler.INSTANCE.sendToAll(new PacketFrontierUpdated(message.frontier,
+                                            ctx.getServerHandler().player.getEntityId()));
+                                }
+                            }
+                        } else {
+                            PacketHandler.INSTANCE.sendTo(
+                                    new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)),
+                                    player);
+                        }
                     }
                 });
             }

@@ -3,8 +3,8 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import io.netty.buffer.ByteBuf;
@@ -39,6 +39,7 @@ public class PacketFrontierUpdated implements IMessage {
         frontier.readFromNBT(ByteBufUtils.readTag(buf));
         frontier.setId(buf.readInt());
         frontier.setDimension(buf.readInt());
+        frontier.setPersonal(buf.readBoolean());
         playerID = buf.readInt();
     }
 
@@ -49,6 +50,7 @@ public class PacketFrontierUpdated implements IMessage {
         ByteBufUtils.writeTag(buf, nbt);
         buf.writeInt(frontier.getId());
         buf.writeInt(frontier.getDimension());
+        buf.writeBoolean(frontier.getPersonal());
         buf.writeInt(playerID);
     }
 
@@ -58,7 +60,8 @@ public class PacketFrontierUpdated implements IMessage {
             if (ctx.side == Side.CLIENT) {
                 Minecraft.getMinecraft().addScheduledTask(() -> {
                     if (message.playerID != Minecraft.getMinecraft().player.getEntityId()) {
-                        FrontierOverlay frontierOverlay = FrontiersOverlayManager.instance.updateFrontier(message.frontier);
+                        FrontierOverlay frontierOverlay = ((ClientProxy) MapFrontiers.proxy)
+                                .getFrontiersOverlayManager(message.frontier.getPersonal()).updateFrontier(message.frontier);
 
                         MapFrontiers.proxy.frontierChanged();
 

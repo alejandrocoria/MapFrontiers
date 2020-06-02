@@ -20,14 +20,16 @@ public class PacketNewFrontier implements IMessage {
     private int dimension = 0;
     private boolean addVertex = false;
     private int snapDistance = 0;
+    private boolean personal = false;
 
     public PacketNewFrontier() {
     }
 
-    public PacketNewFrontier(int dimension, boolean addVertex, int snapDistance) {
+    public PacketNewFrontier(int dimension, boolean addVertex, int snapDistance, boolean personal) {
         this.dimension = dimension;
         this.addVertex = addVertex;
         this.snapDistance = snapDistance;
+        this.personal = personal;
     }
 
     @Override
@@ -35,6 +37,7 @@ public class PacketNewFrontier implements IMessage {
         dimension = buf.readInt();
         addVertex = buf.readBoolean();
         snapDistance = buf.readInt();
+        personal = buf.readBoolean();
     }
 
     @Override
@@ -42,6 +45,7 @@ public class PacketNewFrontier implements IMessage {
         buf.writeInt(dimension);
         buf.writeBoolean(addVertex);
         buf.writeInt(snapDistance);
+        buf.writeBoolean(personal);
     }
 
     public static class Handler implements IMessageHandler<PacketNewFrontier, IMessage> {
@@ -52,10 +56,17 @@ public class PacketNewFrontier implements IMessage {
                     EntityPlayerMP player = ctx.getServerHandler().player;
                     if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.CreateFrontier,
                             new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), null)) {
-                        FrontierData frontier = FrontiersManager.instance.createNewfrontier(message.dimension, player,
-                                message.addVertex, message.snapDistance);
-
-                        PacketHandler.INSTANCE.sendToAll(new PacketFrontier(frontier, player.getEntityId()));
+                        FrontierData frontier = null;
+                        if (message.personal) {
+                            frontier = FrontiersManager.instance.createNewPersonalFrontier(message.dimension, player,
+                                    message.addVertex, message.snapDistance);
+                            // @Incomplete: send to all players with access to this personal frontier
+                            PacketHandler.INSTANCE.sendTo(new PacketFrontier(frontier, player.getEntityId()), player);
+                        } else {
+                            frontier = FrontiersManager.instance.createNewFrontier(message.dimension, player, message.addVertex,
+                                    message.snapDistance);
+                            PacketHandler.INSTANCE.sendToAll(new PacketFrontier(frontier, player.getEntityId()));
+                        }
                     } else {
                         PacketHandler.INSTANCE.sendTo(
                                 new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);

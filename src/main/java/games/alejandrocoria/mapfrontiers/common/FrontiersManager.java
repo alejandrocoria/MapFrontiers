@@ -29,16 +29,18 @@ public class FrontiersManager {
     public static FrontiersManager instance;
 
     private HashMap<Integer, ArrayList<FrontierData>> dimensionsFrontiers;
+    private HashMap<SettingsUser, HashMap<Integer, ArrayList<FrontierData>>> usersDimensionsPersonalFrontiers;
     private FrontierSettings frontierSettings;
     private Random rand = new Random();
     private File WorldDir;
     private boolean frontierOwnersChecked = false;
 
-    public static final int dataVersion = 2;
+    public static final int dataVersion = 3;
 
     public FrontiersManager() {
         instance = this;
         dimensionsFrontiers = new HashMap<Integer, ArrayList<FrontierData>>();
+        usersDimensionsPersonalFrontiers = new HashMap<SettingsUser, HashMap<Integer, ArrayList<FrontierData>>>();
         frontierSettings = new FrontierSettings();
     }
 
@@ -66,6 +68,36 @@ public class FrontiersManager {
         return frontiers;
     }
 
+    public Map<Integer, ArrayList<FrontierData>> getAllPersonalFrontiers(SettingsUser user) {
+        HashMap<Integer, ArrayList<FrontierData>> dimensionsPersonalFrontiers = usersDimensionsPersonalFrontiers.get(user);
+
+        if (dimensionsPersonalFrontiers == null) {
+            dimensionsPersonalFrontiers = new HashMap<Integer, ArrayList<FrontierData>>();
+            usersDimensionsPersonalFrontiers.put(user, dimensionsPersonalFrontiers);
+        }
+
+        return dimensionsPersonalFrontiers;
+    }
+
+    public List<FrontierData> getAllPersonalFrontiers(SettingsUser user, int dimension) {
+        HashMap<Integer, ArrayList<FrontierData>> dimensionsPersonalFrontiers = usersDimensionsPersonalFrontiers.get(user);
+
+        if (dimensionsPersonalFrontiers == null) {
+            dimensionsPersonalFrontiers = new HashMap<Integer, ArrayList<FrontierData>>();
+            usersDimensionsPersonalFrontiers.put(user, dimensionsPersonalFrontiers);
+        }
+
+        ArrayList<FrontierData> frontiers = dimensionsPersonalFrontiers.get(Integer.valueOf(dimension));
+
+        if (frontiers == null) {
+            frontiers = new ArrayList<FrontierData>();
+            dimensionsPersonalFrontiers.put(Integer.valueOf(dimension), frontiers);
+        }
+
+        return frontiers;
+    }
+
+    // @Note: unnused
     public FrontierData getFrontierFromIndex(int dimension, int index) {
         List<FrontierData> frontiers = getAllFrontiers(dimension);
         return frontiers.get(index);
@@ -83,13 +115,32 @@ public class FrontiersManager {
         return frontiers.get(index);
     }
 
-    public FrontierData createNewfrontier(int dimension, EntityPlayer player, boolean addVertex, int snapDistance) {
-        ArrayList<FrontierData> frontiers = dimensionsFrontiers.get(Integer.valueOf(dimension));
-        if (frontiers == null) {
-            frontiers = new ArrayList<FrontierData>();
-            dimensionsFrontiers.put(Integer.valueOf(dimension), frontiers);
+    public FrontierData getPersonalFrontierFromID(SettingsUser user, int dimension, int id) {
+        List<FrontierData> frontiers = getAllPersonalFrontiers(user, dimension);
+
+        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId() == id);
+
+        if (index < 0) {
+            return null;
         }
 
+        return frontiers.get(index);
+    }
+
+    public FrontierData createNewFrontier(int dimension, EntityPlayer player, boolean addVertex, int snapDistance) {
+        List<FrontierData> frontiers = getAllFrontiers(dimension);
+
+        return createNewFrontier(frontiers, dimension, false, player, addVertex, snapDistance);
+    }
+
+    public FrontierData createNewPersonalFrontier(int dimension, EntityPlayer player, boolean addVertex, int snapDistance) {
+        List<FrontierData> frontiers = getAllPersonalFrontiers(new SettingsUser(player), dimension);
+
+        return createNewFrontier(frontiers, dimension, true, player, addVertex, snapDistance);
+    }
+
+    private FrontierData createNewFrontier(List<FrontierData> frontiers, int dimension, boolean personal, EntityPlayer player,
+            boolean addVertex, int snapDistance) {
         final float hue = rand.nextFloat();
         final float saturation = (rand.nextInt(4000) + 6000) / 10000f;
         final float luminance = (rand.nextInt(3000) + 7000) / 10000f;
@@ -98,6 +149,7 @@ public class FrontiersManager {
         FrontierData frontier = new FrontierData();
         frontier.setOwner(new SettingsUser(player));
         frontier.setDimension(dimension);
+        frontier.setPersonal(personal);
         frontier.setColor(color.getRGB());
 
         if (addVertex) {
@@ -110,18 +162,61 @@ public class FrontiersManager {
         return frontier;
     }
 
-    public void deleteFrontier(int dimension, int id) {
+    public boolean deleteFrontier(int dimension, int id) {
         List<FrontierData> frontiers = dimensionsFrontiers.get(Integer.valueOf(dimension));
         if (frontiers == null) {
-            return;
+            return false;
         }
 
-        frontiers.removeIf(x -> x.id == id);
+        boolean deleted = frontiers.removeIf(x -> x.id == id);
         saveData();
+
+        return deleted;
+    }
+
+    public boolean deletePersonalFrontier(SettingsUser user, int dimension, int id) {
+        Map<Integer, ArrayList<FrontierData>> dimensionsPersonalFrontiers = usersDimensionsPersonalFrontiers.get(user);
+        if (dimensionsPersonalFrontiers == null) {
+            return false;
+        }
+
+        List<FrontierData> frontiers = dimensionsPersonalFrontiers.get(Integer.valueOf(dimension));
+        if (frontiers == null) {
+            return false;
+        }
+
+        boolean deleted = frontiers.removeIf(x -> x.id == id);
+        saveData();
+
+        return deleted;
     }
 
     public boolean updateFrontier(FrontierData frontier) {
         List<FrontierData> frontiers = dimensionsFrontiers.get(Integer.valueOf(frontier.getDimension()));
+        if (frontiers == null) {
+            return false;
+        }
+
+        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId() == frontier.getId());
+
+        if (index < 0) {
+            return false;
+        }
+
+        frontiers.set(index, frontier);
+        saveData();
+
+        return true;
+    }
+
+    public boolean updatePersonalFrontier(FrontierData frontier) {
+        Map<Integer, ArrayList<FrontierData>> dimensionsPersonalFrontiers = usersDimensionsPersonalFrontiers
+                .get(frontier.getOwner());
+        if (dimensionsPersonalFrontiers == null) {
+            return false;
+        }
+
+        List<FrontierData> frontiers = dimensionsPersonalFrontiers.get(Integer.valueOf(frontier.getDimension()));
         if (frontiers == null) {
             return false;
         }
@@ -161,7 +256,30 @@ public class FrontiersManager {
                     .warn("Data version in frontiers higher than expected. The mod uses " + String.valueOf(dataVersion));
         }
 
-        NBTTagList dimensionsTagList = nbt.getTagList("MapFrontiers", Constants.NBT.TAG_COMPOUND);
+        NBTTagList dimensionsTagList = nbt.getTagList(version < 3 ? "MapFrontiers" : "global", Constants.NBT.TAG_COMPOUND);
+        readFrontiersFromTagList(dimensionsTagList, dimensionsFrontiers, false, version);
+
+        NBTTagList personalTagList = nbt.getTagList("personal", Constants.NBT.TAG_COMPOUND);
+        for (int i = 0; i < personalTagList.tagCount(); ++i) {
+            NBTTagCompound personalTag = personalTagList.getCompoundTagAt(i);
+
+            SettingsUser owner = new SettingsUser();
+            NBTTagCompound ownerTag = personalTag.getCompoundTag("owner");
+            if (ownerTag.hasNoTags()) {
+                continue;
+            }
+            owner.readFromNBT(ownerTag);
+
+            HashMap<Integer, ArrayList<FrontierData>> dimensionsPersonalFrontiers = new HashMap<Integer, ArrayList<FrontierData>>();
+            dimensionsTagList = nbt.getTagList("frontiers", Constants.NBT.TAG_COMPOUND);
+            readFrontiersFromTagList(dimensionsTagList, dimensionsPersonalFrontiers, true, version);
+
+            usersDimensionsPersonalFrontiers.put(owner, dimensionsPersonalFrontiers);
+        }
+    }
+
+    private void readFrontiersFromTagList(NBTTagList dimensionsTagList, Map<Integer, ArrayList<FrontierData>> dimensionsFrontiers,
+            boolean personal, int version) {
         for (int i = 0; i < dimensionsTagList.tagCount(); ++i) {
             NBTTagCompound dimensionTag = dimensionsTagList.getCompoundTagAt(i);
             int dimension = dimensionTag.getInteger("dimension");
@@ -170,6 +288,7 @@ public class FrontiersManager {
             for (int i2 = 0; i2 < frontiersTagList.tagCount(); ++i2) {
                 FrontierData frontier = new FrontierData();
                 frontier.setDimension(dimension);
+                frontier.setPersonal(personal);
                 NBTTagCompound frontierTag = frontiersTagList.getCompoundTagAt(i2);
                 frontier.readFromNBT(frontierTag, version);
                 frontiers.add(frontier);
@@ -180,6 +299,39 @@ public class FrontiersManager {
 
     private void writeToNBT(NBTTagCompound nbt) {
         NBTTagList dimensionsTagList = new NBTTagList();
+        writeFrontiersToTagList(dimensionsTagList, dimensionsFrontiers);
+        nbt.setTag("global", dimensionsTagList);
+
+        NBTTagList personalTagList = new NBTTagList();
+        for (Map.Entry<SettingsUser, HashMap<Integer, ArrayList<FrontierData>>> personal : usersDimensionsPersonalFrontiers
+                .entrySet()) {
+            if (personal.getValue().isEmpty()) {
+                continue;
+            }
+
+            NBTTagCompound userFrontiers = new NBTTagCompound();
+
+            dimensionsTagList = new NBTTagList();
+            writeFrontiersToTagList(dimensionsTagList, personal.getValue());
+            userFrontiers.setTag("frontiers", dimensionsTagList);
+
+            if (dimensionsTagList.hasNoTags()) {
+                continue;
+            }
+
+            NBTTagCompound nbtOwner = new NBTTagCompound();
+            personal.getKey().writeToNBT(nbtOwner);
+            userFrontiers.setTag("owner", nbtOwner);
+
+            personalTagList.appendTag(userFrontiers);
+        }
+        nbt.setTag("personal", personalTagList);
+
+        nbt.setInteger("Version", dataVersion);
+    }
+
+    private void writeFrontiersToTagList(NBTTagList dimensionsTagList,
+            Map<Integer, ArrayList<FrontierData>> dimensionsFrontiers) {
         for (Map.Entry<Integer, ArrayList<FrontierData>> frontiers : dimensionsFrontiers.entrySet()) {
             NBTTagList frontiersTagList = new NBTTagList();
             for (FrontierData frontier : frontiers.getValue()) {
@@ -187,14 +339,16 @@ public class FrontiersManager {
                 frontier.writeToNBT(frontierTag);
                 frontiersTagList.appendTag(frontierTag);
             }
+
+            if (frontiersTagList.hasNoTags()) {
+                continue;
+            }
+
             NBTTagCompound dimensionTag = new NBTTagCompound();
             dimensionTag.setInteger("dimension", frontiers.getKey());
             dimensionTag.setTag("frontiers", frontiersTagList);
             dimensionsTagList.appendTag(dimensionTag);
         }
-        nbt.setTag("MapFrontiers", dimensionsTagList);
-
-        nbt.setInteger("Version", dataVersion);
     }
 
     public void loadOrCreateData() {

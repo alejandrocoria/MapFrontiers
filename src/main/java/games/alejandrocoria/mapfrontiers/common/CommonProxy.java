@@ -7,6 +7,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSettingsProfile;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
@@ -61,10 +62,18 @@ public class CommonProxy {
             }
         }
 
+        for (ArrayList<FrontierData> frontiers : frontiersManager.getAllPersonalFrontiers(new SettingsUser(event.player))
+                .values()) {
+            for (FrontierData frontier : frontiers) {
+                PacketHandler.INSTANCE.sendTo(new PacketFrontier(frontier), (EntityPlayerMP) event.player);
+            }
+        }
+
         PacketHandler.INSTANCE.sendTo(new PacketSettingsProfile(frontiersManager.getSettings().getProfile(event.player)),
                 (EntityPlayerMP) event.player);
     }
 
+    // @Note: remove from here, do it only in client side
     public BlockPos snapVertex(BlockPos vertex, int snapDistance, FrontierData owner) {
         float snapDistanceSq = snapDistance * snapDistance;
         BlockPos closest = new BlockPos(vertex.getX(), 70, vertex.getZ());

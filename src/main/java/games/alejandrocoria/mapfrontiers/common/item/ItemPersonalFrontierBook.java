@@ -21,12 +21,12 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 @ParametersAreNonnullByDefault
-public class ItemFrontierBook extends Item {
+public class ItemPersonalFrontierBook extends Item {
     protected String name;
 
-    public ItemFrontierBook() {
-        setUnlocalizedName(MapFrontiers.MODID + "." + "frontier_book");
-        setRegistryName("frontier_book");
+    public ItemPersonalFrontierBook() {
+        setUnlocalizedName(MapFrontiers.MODID + "." + "personal_frontier_book");
+        setRegistryName("personal_frontier_book");
         setCreativeTab(CreativeTabs.TOOLS);
     }
 
@@ -69,7 +69,7 @@ public class ItemFrontierBook extends Item {
             itemStack.setTagCompound(nbt);
         }
 
-        ((ClientProxy) MapFrontiers.proxy).openGUIFrontierBook(dimension, false);
+        ((ClientProxy) MapFrontiers.proxy).openGUIFrontierBook(dimension, true);
         return new ActionResult<ItemStack>(EnumActionResult.PASS, itemStack);
     }
 }

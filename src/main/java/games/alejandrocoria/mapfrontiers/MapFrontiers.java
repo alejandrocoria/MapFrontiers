@@ -4,6 +4,7 @@ import org.apache.logging.log4j.Logger;
 
 import games.alejandrocoria.mapfrontiers.common.CommonProxy;
 import games.alejandrocoria.mapfrontiers.common.item.ItemFrontierBook;
+import games.alejandrocoria.mapfrontiers.common.item.ItemPersonalFrontierBook;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import net.minecraft.item.Item;
 import net.minecraftforge.event.RegistryEvent;
@@ -35,14 +36,19 @@ public class MapFrontiers {
     @ObjectHolder("mapfrontiers:frontier_book")
     public static ItemFrontierBook frontierBook = new ItemFrontierBook();
 
+    @ObjectHolder("mapfrontiers:personal_frontier_book")
+    public static ItemPersonalFrontierBook personalFrontierBook = new ItemPersonalFrontierBook();
+
     @SideOnly(Side.CLIENT)
     public static void initModels() {
         frontierBook.initModel();
+        personalFrontierBook.initModel();
     }
 
     @SubscribeEvent
     public static void registerItems(RegistryEvent.Register<Item> event) {
         event.getRegistry().register(frontierBook);
+        event.getRegistry().register(personalFrontierBook);
     }
 
     @Mod.EventHandler

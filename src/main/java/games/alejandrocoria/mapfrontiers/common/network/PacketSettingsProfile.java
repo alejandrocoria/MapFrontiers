@@ -2,7 +2,8 @@ package games.alejandrocoria.mapfrontiers.common.network;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
@@ -44,9 +45,9 @@ public class PacketSettingsProfile implements IMessage {
         public IMessage onMessage(PacketSettingsProfile message, MessageContext ctx) {
             if (ctx.side == Side.CLIENT) {
                 Minecraft.getMinecraft().addScheduledTask(() -> {
-                    SettingsProfile currentProfile = FrontiersOverlayManager.instance.getSettingsProfile();
+                    SettingsProfile currentProfile = ((ClientProxy) MapFrontiers.proxy).getSettingsProfile();
                     if (currentProfile == null || !currentProfile.equals(message.profile)) {
-                        FrontiersOverlayManager.instance.setSettingsProfile(message.profile);
+                        ((ClientProxy) MapFrontiers.proxy).setSettingsProfile(message.profile);
 
                         if (Minecraft.getMinecraft().currentScreen instanceof GuiFrontierSettings) {
                             ((GuiFrontierSettings) Minecraft.getMinecraft().currentScreen).updateSettingsProfile(message.profile);

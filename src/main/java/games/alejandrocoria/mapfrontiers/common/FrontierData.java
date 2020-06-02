@@ -39,6 +39,7 @@ public class FrontierData {
     protected int mapSlice = NoSlice;
     protected SettingsUser owner = new SettingsUser();
     protected BannerData banner;
+    protected boolean personal = false;
 
     public FrontierData() {
         id = lastID++;
@@ -60,6 +61,7 @@ public class FrontierData {
         mapSlice = other.mapSlice;
         owner = other.owner;
         banner = other.banner;
+        personal = other.personal;
     }
 
     public void setOwner(SettingsUser owner) {
@@ -192,6 +194,14 @@ public class FrontierData {
 
     public boolean hasBanner() {
         return banner != null;
+    }
+
+    public void setPersonal(boolean personal) {
+        this.personal = personal;
+    }
+
+    public boolean getPersonal() {
+        return personal;
     }
 
     public void readFromNBT(NBTTagCompound nbt) {

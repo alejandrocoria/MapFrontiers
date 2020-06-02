@@ -9,7 +9,9 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
@@ -17,27 +19,32 @@ import net.minecraftforge.fml.relauncher.Side;
 
 @ParametersAreNonnullByDefault
 public class PacketDeleteFrontier implements IMessage {
-    private int dimension;
-    private int frontierID = -1;
+    private FrontierData frontier;
 
     public PacketDeleteFrontier() {
+        frontier = new FrontierData();
     }
 
-    public PacketDeleteFrontier(int dimension, int frontierID) {
-        this.dimension = dimension;
-        this.frontierID = frontierID;
+    public PacketDeleteFrontier(FrontierData frontier) {
+        this.frontier = frontier;
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        dimension = buf.readInt();
-        frontierID = buf.readInt();
+        frontier.readFromNBT(ByteBufUtils.readTag(buf));
+        frontier.setId(buf.readInt());
+        frontier.setDimension(buf.readInt());
+        frontier.setPersonal(buf.readBoolean());
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
-        buf.writeInt(dimension);
-        buf.writeInt(frontierID);
+        NBTTagCompound nbt = new NBTTagCompound();
+        frontier.writeToNBT(nbt);
+        ByteBufUtils.writeTag(buf, nbt);
+        buf.writeInt(frontier.getId());
+        buf.writeInt(frontier.getDimension());
+        buf.writeBoolean(frontier.getPersonal());
     }
 
     public static class Handler implements IMessageHandler<PacketDeleteFrontier, IMessage> {
@@ -47,17 +54,24 @@ public class PacketDeleteFrontier implements IMessage {
                 FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
                     EntityPlayerMP player = ctx.getServerHandler().player;
 
-                    FrontierData frontier = FrontiersManager.instance.getFrontierFromID(message.dimension, message.frontierID);
-                    if (frontier == null) {
-                        return;
-                    }
-
                     if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.DeleteFrontier,
-                            new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), frontier.getOwner())) {
-                        FrontiersManager.instance.deleteFrontier(message.dimension, message.frontierID);
-
-                        PacketHandler.INSTANCE.sendToAll(new PacketFrontierDeleted(message.dimension, message.frontierID,
-                                ctx.getServerHandler().player.getEntityId()));
+                            new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), message.frontier.getOwner())) {
+                        if (message.frontier.getPersonal()) {
+                            boolean deleted = FrontiersManager.instance.deletePersonalFrontier(message.frontier.getOwner(),
+                                    message.frontier.getDimension(), message.frontier.getId());
+                            if (deleted) {
+                                // @Incomplete: send to all players with access to this personal frontier
+                                PacketHandler.INSTANCE.sendTo(new PacketFrontierDeleted(message.frontier.getDimension(),
+                                        message.frontier.getId(), message.frontier.getPersonal(), player.getEntityId()), player);
+                            }
+                        } else {
+                            boolean deleted = FrontiersManager.instance.deleteFrontier(message.frontier.getDimension(),
+                                    message.frontier.getId());
+                            if (deleted) {
+                                PacketHandler.INSTANCE.sendToAll(new PacketFrontierDeleted(message.frontier.getDimension(),
+                                        message.frontier.getId(), message.frontier.getPersonal(), player.getEntityId()));
+                            }
+                        }
                     } else {
                         PacketHandler.INSTANCE.sendTo(
                                 new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
