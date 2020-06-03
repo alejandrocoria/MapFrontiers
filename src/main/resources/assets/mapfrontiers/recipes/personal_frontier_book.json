@@ -18,7 +18,8 @@
         },
         "l":
         {
-            "item": "minecraft:lapis_lazuli"
+            "item": "minecraft:dye",
+            "data": 4
         }
     },
     "result":
