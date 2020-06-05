@@ -551,6 +551,13 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             resetFinishButton();
             updateButtonsVisibility();
             updateGridRenderer();
+
+            // @Note: for testing
+            if (personal) {
+                sendChangesToServer();
+                frontiersOverlayManager.clientShareFrontier(dimension, getCurrentFrontierIndex(),
+                        new SettingsUser(Minecraft.getMinecraft().player));
+            }
         } else if (button == buttonBanner) {
             FrontierOverlay frontier = getCurrentFrontier();
             if (!frontier.hasBanner()) {

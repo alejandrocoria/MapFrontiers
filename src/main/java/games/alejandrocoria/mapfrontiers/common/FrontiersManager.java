@@ -233,6 +233,11 @@ public class FrontiersManager {
         return true;
     }
 
+    public int addShareMessage(SettingsUser playerSharing, SettingsUser owner, SettingsUser targetUser, int dimension, int id) {
+        // @Incomplete
+        return 0;
+    }
+
     public void ensureOwners() {
         if (frontierOwnersChecked) {
             return;

@@ -24,5 +24,8 @@ public class PacketHandler {
         INSTANCE.registerMessage(PacketFrontierSettings.Handler.class, PacketFrontierSettings.class, id++, Side.SERVER);
         INSTANCE.registerMessage(PacketFrontierSettings.Handler.class, PacketFrontierSettings.class, id++, Side.CLIENT);
         INSTANCE.registerMessage(PacketSettingsProfile.Handler.class, PacketSettingsProfile.class, id++, Side.CLIENT);
+        INSTANCE.registerMessage(PacketSharePersonalFrontier.Handler.class, PacketSharePersonalFrontier.class, id++, Side.SERVER);
+        INSTANCE.registerMessage(PacketPersonalFrontierShared.Handler.class, PacketPersonalFrontierShared.class, id++,
+                Side.CLIENT);
     }
 }

@@ -14,7 +14,9 @@ import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketDeleteFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketNewFrontier;
+import games.alejandrocoria.mapfrontiers.common.network.PacketSharePersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateFrontier;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.MarkerOverlay;
@@ -108,6 +110,10 @@ public class FrontiersOverlayManager {
 
     public void clientUpdatefrontier(int dimension, int index) {
         PacketHandler.INSTANCE.sendToServer(new PacketUpdateFrontier(getAllFrontiers(dimension).get(index)));
+    }
+
+    public void clientShareFrontier(int dimension, int index, SettingsUser targetUser) {
+        PacketHandler.INSTANCE.sendToServer(new PacketSharePersonalFrontier(getAllFrontiers(dimension).get(index), targetUser));
     }
 
     public int deleteFrontier(int dimension, int id) {
