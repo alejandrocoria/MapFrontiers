@@ -11,6 +11,7 @@ public class SettingsProfile {
     public State deleteFrontier = State.Disabled;
     public State updateFrontier = State.Disabled;
     public State updateSettings = State.Disabled;
+    public State personalFrontier = State.Disabled;
 
     public void setAction(FrontierSettings.Action action, State state) {
         switch (action) {
@@ -26,12 +27,15 @@ public class SettingsProfile {
         case UpdateSettings:
             updateSettings = state;
             break;
+        case PersonalFrontier:
+            personalFrontier = state;
+            break;
         }
     }
 
     public boolean isAllEnabled() {
         return createFrontier == State.Enabled && deleteFrontier == State.Enabled && updateFrontier == State.Enabled
-                && updateSettings == State.Enabled;
+                && updateSettings == State.Enabled && personalFrontier == State.Enabled;
     }
 
     public void readFromNBT(NBTTagCompound nbt) {
@@ -39,6 +43,7 @@ public class SettingsProfile {
         deleteFrontier = stringToState(nbt.getString("deleteFrontier"));
         updateFrontier = stringToState(nbt.getString("updateFrontier"));
         updateSettings = stringToState(nbt.getString("updateSettings"));
+        personalFrontier = stringToState(nbt.getString("personalFrontier"));
     }
 
     public void writeToNBT(NBTTagCompound nbt) {
@@ -46,6 +51,7 @@ public class SettingsProfile {
         nbt.setString("deleteFrontier", deleteFrontier.name());
         nbt.setString("updateFrontier", updateFrontier.name());
         nbt.setString("updateSettings", updateSettings.name());
+        nbt.setString("personalFrontier", personalFrontier.name());
     }
 
     private State stringToState(String string) {
@@ -70,6 +76,7 @@ public class SettingsProfile {
         SettingsProfile profile = (SettingsProfile) other;
 
         return createFrontier == profile.createFrontier && deleteFrontier == profile.deleteFrontier
-                && updateFrontier == profile.updateFrontier && updateSettings == profile.updateSettings;
+                && updateFrontier == profile.updateFrontier && updateSettings == profile.updateSettings
+                && personalFrontier == profile.personalFrontier;
     }
 }

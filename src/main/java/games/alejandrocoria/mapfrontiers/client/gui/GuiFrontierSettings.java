@@ -127,7 +127,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
 
         groups = new GuiScrollBox(++id, 50, 50, 160, height - 120, 16, this);
         users = new GuiScrollBox(++id, 250, 82, 258, height - 150, 16, this);
-        groupsActions = new GuiScrollBox(++id, width / 2 - 185, 82, 370, height - 128, 16, this);
+        groupsActions = new GuiScrollBox(++id, width / 2 - 215, 82, 430, height - 128, 16, this);
 
         textNewGroupName = new TextBox(++id, fontRenderer, 50, height - 61, 140, I18n.format("mapfrontiers.new_group_name"));
         textNewGroupName.setMaxStringLength(22);
@@ -470,7 +470,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
                 }
             }
         } else if (tabSelected == 2) {
-            int x = width / 2 - 25;
+            int x = width / 2 - 55;
             labels.add(new GuiSimpleLabel(fontRenderer, x, 54, GuiSimpleLabel.Align.Center,
                     I18n.format("mapfrontiers.create_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             labels.add(new GuiSimpleLabel(fontRenderer, x + 60, 54, GuiSimpleLabel.Align.Center,
@@ -479,6 +479,8 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
                     I18n.format("mapfrontiers.update_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             labels.add(new GuiSimpleLabel(fontRenderer, x + 180, 54, GuiSimpleLabel.Align.Center,
                     I18n.format("mapfrontiers.update_settings"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+            labels.add(new GuiSimpleLabel(fontRenderer, x + 240, 54, GuiSimpleLabel.Align.Center,
+                    I18n.format("mapfrontiers.personal_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
         }
     }
 

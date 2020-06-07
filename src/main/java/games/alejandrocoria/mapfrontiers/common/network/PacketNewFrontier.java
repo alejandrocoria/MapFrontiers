@@ -54,23 +54,30 @@ public class PacketNewFrontier implements IMessage {
             if (ctx.side == Side.SERVER) {
                 FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
                     EntityPlayerMP player = ctx.getServerHandler().player;
-                    if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.CreateFrontier,
-                            new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), null)) {
-                        FrontierData frontier = null;
-                        if (message.personal) {
+                    FrontierData frontier = null;
+
+                    if (message.personal) {
+                        if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier,
+                                new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), null)) {
                             frontier = FrontiersManager.instance.createNewPersonalFrontier(message.dimension, player,
                                     message.addVertex, message.snapDistance);
                             // @Incomplete: send to all players with access to this personal frontier
                             PacketHandler.INSTANCE.sendTo(new PacketFrontier(frontier, player.getEntityId()), player);
-                        } else {
+
+                            return;
+                        }
+                    } else {
+                        if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.CreateFrontier,
+                                new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), null)) {
                             frontier = FrontiersManager.instance.createNewFrontier(message.dimension, player, message.addVertex,
                                     message.snapDistance);
                             PacketHandler.INSTANCE.sendToAll(new PacketFrontier(frontier, player.getEntityId()));
+
+                            return;
                         }
-                    } else {
-                        PacketHandler.INSTANCE.sendTo(
-                                new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
                     }
+                    PacketHandler.INSTANCE.sendTo(
+                            new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
                 });
             }
 

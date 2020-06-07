@@ -20,6 +20,7 @@ public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
     private boolean deleteFrontier;
     private boolean updateFrontier;
     private boolean updateSettings;
+    private boolean personalFrontier;
 
     public GuiGroupActionElement(FontRenderer fontRenderer, SettingsGroup group, GroupActionResponder responder) {
         this(fontRenderer, group, false, responder);
@@ -27,7 +28,7 @@ public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
 
     public GuiGroupActionElement(FontRenderer fontRenderer, SettingsGroup group, boolean ownersGroup,
             GroupActionResponder responder) {
-        super(370, 16);
+        super(430, 16);
         this.fontRenderer = fontRenderer;
         this.group = group;
         this.responder = responder;
@@ -36,6 +37,7 @@ public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
         deleteFrontier = group.hasAction(FrontierSettings.Action.DeleteFrontier);
         updateFrontier = group.hasAction(FrontierSettings.Action.UpdateFrontier);
         updateSettings = group.hasAction(FrontierSettings.Action.UpdateSettings);
+        personalFrontier = group.hasAction(FrontierSettings.Action.PersonalFrontier);
     }
 
     @Override
@@ -63,6 +65,7 @@ public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
 
             if (!ownersGroup) {
                 drawBox(x + 334, y + 2, updateSettings);
+                drawBox(x + 394, y + 2, personalFrontier);
             }
         } else {
             hovered = false;
@@ -84,6 +87,9 @@ public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
             } else if (!ownersGroup && mouseX >= x + 310 && mouseX <= x + 370) {
                 updateSettings = !updateSettings;
                 responder.actionChanged(group, FrontierSettings.Action.UpdateSettings, updateSettings);
+            } else if (!ownersGroup && mouseX >= x + 370 && mouseX <= x + 430) {
+                personalFrontier = !personalFrontier;
+                responder.actionChanged(group, FrontierSettings.Action.PersonalFrontier, personalFrontier);
             }
         }
 

@@ -554,9 +554,13 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
             // @Note: for testing
             if (personal) {
-                sendChangesToServer();
-                frontiersOverlayManager.clientShareFrontier(dimension, getCurrentFrontierIndex(),
-                        new SettingsUser(Minecraft.getMinecraft().player));
+                SettingsProfile profile = ((ClientProxy) MapFrontiers.proxy).getSettingsProfile();
+
+                if (profile.personalFrontier == SettingsProfile.State.Enabled) {
+                    sendChangesToServer();
+                    frontiersOverlayManager.clientShareFrontier(dimension, getCurrentFrontierIndex(),
+                            new SettingsUser(Minecraft.getMinecraft().player));
+                }
             }
         } else if (button == buttonBanner) {
             FrontierOverlay frontier = getCurrentFrontier();

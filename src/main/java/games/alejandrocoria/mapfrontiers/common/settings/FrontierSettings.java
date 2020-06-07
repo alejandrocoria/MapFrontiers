@@ -15,7 +15,7 @@ import net.minecraftforge.common.util.Constants;
 @ParametersAreNonnullByDefault
 public class FrontierSettings {
     public enum Action {
-        CreateFrontier, DeleteFrontier, UpdateFrontier, UpdateSettings
+        CreateFrontier, DeleteFrontier, UpdateFrontier, UpdateSettings, PersonalFrontier
     }
 
     private SettingsGroup OPs;
@@ -24,7 +24,7 @@ public class FrontierSettings {
     private List<SettingsGroup> customGroups;
     private int changeCounter = 1;
 
-    private static final int dataVersion = 1;
+    private static final int dataVersion = 2;
 
     public FrontierSettings() {
         OPs = new SettingsGroup("OPs", true);
@@ -41,6 +41,8 @@ public class FrontierSettings {
 
         owners.addAction(Action.DeleteFrontier);
         owners.addAction(Action.UpdateFrontier);
+
+        everyone.addAction(Action.PersonalFrontier);
     }
 
     public SettingsGroup getOPsGroup() {
@@ -155,6 +157,10 @@ public class FrontierSettings {
             customGroups.add(group);
         }
 
+        if (version < 2) {
+            everyone.addAction(Action.PersonalFrontier);
+        }
+
         ensureUpdateSettingsAction();
     }
 
@@ -188,6 +194,7 @@ public class FrontierSettings {
         if (!groupName.contentEquals("Owner")) {
             actions.add(Action.CreateFrontier);
             actions.add(Action.UpdateSettings);
+            actions.add(Action.PersonalFrontier);
         }
 
         actions.add(Action.DeleteFrontier);
