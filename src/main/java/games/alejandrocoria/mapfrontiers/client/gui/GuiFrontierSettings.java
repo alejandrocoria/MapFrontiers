@@ -11,6 +11,7 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import org.apache.commons.lang3.StringUtils;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
@@ -76,6 +77,9 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     @Override
     public void initGui() {
         PacketHandler.INSTANCE.sendToServer(new PacketRequestFrontierSettings());
+
+        Keyboard.enableRepeatEvents(true);
+
         tabbedBox = new GuiTabbedBox(fontRenderer, 40, 24, width - 80, height - 64, this);
         tabbedBox.addTab(I18n.format("mapfrontiers.general"));
         if (canEditGroups) {
@@ -395,7 +399,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
 
     @Override
     public void onGuiClosed() {
-
+        Keyboard.enableRepeatEvents(false);
     }
 
     @Override

@@ -63,6 +63,8 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
 
     @Override
     public void initGui() {
+        Keyboard.enableRepeatEvents(true);
+
         buttonSlot1 = new GuiOptionButton(++id, mc.fontRenderer, width / 2 - 108, height / 2 - 32, 50);
         buttonSlot1.addOption(ConfigData.HUDSlot.None.name());
         buttonSlot1.addOption(ConfigData.HUDSlot.Name.name());
@@ -468,6 +470,7 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
 
     @Override
     public void onGuiClosed() {
+        Keyboard.enableRepeatEvents(false);
         MapFrontiers.proxy.configUpdated();
     }
 
