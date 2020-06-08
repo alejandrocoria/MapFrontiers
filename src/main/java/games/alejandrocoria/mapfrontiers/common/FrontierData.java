@@ -107,16 +107,12 @@ public class FrontierData {
         return vertices.get(index);
     }
 
-    public void addVertex(BlockPos pos, int index, int snapDistance) {
-        if (snapDistance != 0) {
-            pos = MapFrontiers.proxy.snapVertex(pos, snapDistance, this);
-        }
-
+    public void addVertex(BlockPos pos, int index) {
         vertices.add(index, new BlockPos(pos.getX(), 70, pos.getZ()));
     }
 
-    public void addVertex(BlockPos pos, int snapDistance) {
-        addVertex(pos, vertices.size(), snapDistance);
+    public void addVertex(BlockPos pos) {
+        addVertex(pos, vertices.size());
     }
 
     public void removeVertex(int index) {

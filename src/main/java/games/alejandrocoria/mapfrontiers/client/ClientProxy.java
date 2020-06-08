@@ -106,13 +106,28 @@ public class ClientProxy extends CommonProxy {
         }
     }
 
-    // @Note: copied from CommonProxy, needs an abstraction
-    @Override
-    public BlockPos snapVertex(BlockPos vertex, int snapDistance, FrontierData owner) {
+    public BlockPos snapVertex(BlockPos vertex, int snapDistance, int dimension, FrontierData owner) {
         float snapDistanceSq = snapDistance * snapDistance;
         BlockPos closest = new BlockPos(vertex.getX(), 70, vertex.getZ());
         double closestDistance = Double.MAX_VALUE;
-        for (FrontierData frontier : frontiersOverlayManager.getAllFrontiers(owner.getDimension())) {
+
+        for (FrontierData frontier : personalFrontiersOverlayManager.getAllFrontiers(dimension)) {
+            if (frontier == owner) {
+                continue;
+            }
+
+            for (int i = 0; i < frontier.getVertexCount(); ++i) {
+                BlockPos v = frontier.getVertex(i);
+                BlockPos v2 = new BlockPos(v.getX(), 70, v.getZ());
+                double distance = v2.distanceSq(closest);
+                if (distance < snapDistanceSq && distance < closestDistance) {
+                    closestDistance = distance;
+                    closest = v2;
+                }
+            }
+        }
+
+        for (FrontierData frontier : frontiersOverlayManager.getAllFrontiers(dimension)) {
             if (frontier == owner) {
                 continue;
             }

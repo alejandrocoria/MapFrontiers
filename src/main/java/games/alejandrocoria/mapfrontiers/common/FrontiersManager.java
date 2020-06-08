@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
@@ -21,6 +22,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 
@@ -127,20 +129,20 @@ public class FrontiersManager {
         return frontiers.get(index);
     }
 
-    public FrontierData createNewFrontier(int dimension, EntityPlayer player, boolean addVertex, int snapDistance) {
+    public FrontierData createNewFrontier(int dimension, EntityPlayer player, @Nullable BlockPos vertex) {
         List<FrontierData> frontiers = getAllFrontiers(dimension);
 
-        return createNewFrontier(frontiers, dimension, false, player, addVertex, snapDistance);
+        return createNewFrontier(frontiers, dimension, false, player, vertex);
     }
 
-    public FrontierData createNewPersonalFrontier(int dimension, EntityPlayer player, boolean addVertex, int snapDistance) {
+    public FrontierData createNewPersonalFrontier(int dimension, EntityPlayer player, @Nullable BlockPos vertex) {
         List<FrontierData> frontiers = getAllPersonalFrontiers(new SettingsUser(player), dimension);
 
-        return createNewFrontier(frontiers, dimension, true, player, addVertex, snapDistance);
+        return createNewFrontier(frontiers, dimension, true, player, vertex);
     }
 
     private FrontierData createNewFrontier(List<FrontierData> frontiers, int dimension, boolean personal, EntityPlayer player,
-            boolean addVertex, int snapDistance) {
+            @Nullable BlockPos vertex) {
         final float hue = rand.nextFloat();
         final float saturation = (rand.nextInt(4000) + 6000) / 10000f;
         final float luminance = (rand.nextInt(3000) + 7000) / 10000f;
@@ -152,8 +154,8 @@ public class FrontiersManager {
         frontier.setPersonal(personal);
         frontier.setColor(color.getRGB());
 
-        if (addVertex) {
-            frontier.addVertex(player.getPosition(), snapDistance);
+        if (vertex != null) {
+            frontier.addVertex(vertex);
         }
 
         frontiers.add(frontier);

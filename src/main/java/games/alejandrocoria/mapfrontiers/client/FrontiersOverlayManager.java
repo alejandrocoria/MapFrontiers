@@ -21,6 +21,7 @@ import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.MarkerOverlay;
 import journeymap.client.api.model.MapImage;
+import net.minecraft.client.Minecraft;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -94,8 +95,14 @@ public class FrontiersOverlayManager {
     }
 
     public void clientCreateNewfrontier(int dimension) {
-        PacketHandler.INSTANCE.sendToServer(
-                new PacketNewFrontier(dimension, ConfigData.addVertexToNewFrontier, ConfigData.snapDistance, personal));
+        BlockPos vertex = null;
+
+        if (ConfigData.addVertexToNewFrontier) {
+            vertex = ((ClientProxy) MapFrontiers.proxy).snapVertex(Minecraft.getMinecraft().player.getPosition(),
+                    ConfigData.snapDistance, dimension, null);
+        }
+
+        PacketHandler.INSTANCE.sendToServer(new PacketNewFrontier(dimension, personal, vertex));
     }
 
     public void clientDeleteFrontier(int dimension, int index) {

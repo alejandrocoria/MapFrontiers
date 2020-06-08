@@ -12,7 +12,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.management.UserListOpsEntry;
-import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
@@ -71,30 +70,6 @@ public class CommonProxy {
 
         PacketHandler.INSTANCE.sendTo(new PacketSettingsProfile(frontiersManager.getSettings().getProfile(event.player)),
                 (EntityPlayerMP) event.player);
-    }
-
-    // @Note: remove from here, do it only in client side
-    public BlockPos snapVertex(BlockPos vertex, int snapDistance, FrontierData owner) {
-        float snapDistanceSq = snapDistance * snapDistance;
-        BlockPos closest = new BlockPos(vertex.getX(), 70, vertex.getZ());
-        double closestDistance = Double.MAX_VALUE;
-        for (FrontierData frontier : frontiersManager.getAllFrontiers(owner.getDimension())) {
-            if (frontier == owner) {
-                continue;
-            }
-
-            for (int i = 0; i < frontier.getVertexCount(); ++i) {
-                BlockPos v = frontier.getVertex(i);
-                BlockPos v2 = new BlockPos(v.getX(), 70, v.getZ());
-                double distance = v2.distanceSq(closest);
-                if (distance < snapDistanceSq && distance < closestDistance) {
-                    closestDistance = distance;
-                    closest = v2;
-                }
-            }
-        }
-
-        return closest;
     }
 
     public boolean isOPorHost(EntityPlayer player) {

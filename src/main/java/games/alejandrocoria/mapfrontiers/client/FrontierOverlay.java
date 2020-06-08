@@ -221,20 +221,18 @@ public class FrontierOverlay extends FrontierData {
         updateOverlay();
     }
 
+    @Override
     public void addVertex(BlockPos pos) {
-        addVertex(pos, ConfigData.snapDistance);
-    }
-
-    @Override
-    public void addVertex(BlockPos pos, int index, int snapDistance) {
-        super.addVertex(pos, index, snapDistance);
-        updateOverlay();
-    }
-
-    @Override
-    public void addVertex(BlockPos pos, int snapDistance) {
-        super.addVertex(pos, vertexSelected + 1, snapDistance);
+        addVertex(pos, vertexSelected + 1, ConfigData.snapDistance);
         selectNextVertex();
+    }
+
+    public void addVertex(BlockPos pos, int index, int snapDistance) {
+        if (snapDistance != 0) {
+            pos = ((ClientProxy) MapFrontiers.proxy).snapVertex(pos, snapDistance, dimension, this);
+        }
+
+        super.addVertex(pos, index);
         updateOverlay();
     }
 
