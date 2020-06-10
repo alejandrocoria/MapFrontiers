@@ -32,9 +32,6 @@ public class PacketUpdateFrontier implements IMessage {
     @Override
     public void fromBytes(ByteBuf buf) {
         frontier.readFromNBT(ByteBufUtils.readTag(buf));
-        frontier.setId(buf.readInt());
-        frontier.setDimension(buf.readInt());
-        frontier.setPersonal(buf.readBoolean());
     }
 
     @Override
@@ -42,9 +39,6 @@ public class PacketUpdateFrontier implements IMessage {
         NBTTagCompound nbt = new NBTTagCompound();
         frontier.writeToNBT(nbt);
         ByteBufUtils.writeTag(buf, nbt);
-        buf.writeInt(frontier.getId());
-        buf.writeInt(frontier.getDimension());
-        buf.writeBoolean(frontier.getPersonal());
     }
 
     public static class Handler implements IMessageHandler<PacketUpdateFrontier, IMessage> {
@@ -54,16 +48,10 @@ public class PacketUpdateFrontier implements IMessage {
                 FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
                     EntityPlayerMP player = ctx.getServerHandler().player;
 
-                    FrontierData currentFrontier = null;
-                    if (message.frontier.getPersonal()) {
-                        currentFrontier = FrontiersManager.instance.getPersonalFrontierFromID(message.frontier.getOwner(),
-                                message.frontier.getDimension(), message.frontier.getId());
-                    } else {
-                        currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontier.getDimension(),
-                                message.frontier.getId());
-                    }
+                    FrontierData currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontier.getId());
 
                     if (currentFrontier != null) {
+                        message.frontier.setPersonal(currentFrontier.getPersonal());
                         if (!currentFrontier.getOwner().isEmpty()) {
                             message.frontier.setOwner(currentFrontier.getOwner());
                         }
@@ -85,7 +73,7 @@ public class PacketUpdateFrontier implements IMessage {
                             if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.UpdateFrontier,
                                     new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player),
                                     message.frontier.getOwner())) {
-                                boolean updated = FrontiersManager.instance.updateFrontier(message.frontier);
+                                boolean updated = FrontiersManager.instance.updateGlobalFrontier(message.frontier);
                                 if (updated) {
                                     PacketHandler.INSTANCE.sendToAll(new PacketFrontierUpdated(message.frontier,
                                             ctx.getServerHandler().player.getEntityId()));

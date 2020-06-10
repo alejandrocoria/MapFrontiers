@@ -36,10 +36,6 @@ public class PacketSharePersonalFrontier implements IMessage {
     @Override
     public void fromBytes(ByteBuf buf) {
         frontier.readFromNBT(ByteBufUtils.readTag(buf));
-        frontier.setId(buf.readInt());
-        frontier.setDimension(buf.readInt());
-        frontier.setPersonal(buf.readBoolean());
-
         targetUser.readFromNBT(ByteBufUtils.readTag(buf));
     }
 
@@ -48,9 +44,6 @@ public class PacketSharePersonalFrontier implements IMessage {
         NBTTagCompound nbt = new NBTTagCompound();
         frontier.writeToNBT(nbt);
         ByteBufUtils.writeTag(buf, nbt);
-        buf.writeInt(frontier.getId());
-        buf.writeInt(frontier.getDimension());
-        buf.writeBoolean(frontier.getPersonal());
 
         nbt = new NBTTagCompound();
         targetUser.writeToNBT(nbt);
@@ -81,10 +74,9 @@ public class PacketSharePersonalFrontier implements IMessage {
                         return;
                     }
 
-                    FrontierData currentFrontier = FrontiersManager.instance.getPersonalFrontierFromID(
-                            message.frontier.getOwner(), message.frontier.getDimension(), message.frontier.getId());
+                    FrontierData currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontier.getId());
 
-                    if (currentFrontier != null) {
+                    if (currentFrontier != null && currentFrontier.getPersonal()) {
                         if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier,
                                 playerUser, MapFrontiers.proxy.isOPorHost(player), currentFrontier.getOwner())) {
                             int shareMessageID = FrontiersManager.instance.addShareMessage(playerUser, currentFrontier.getOwner(),

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -111,7 +112,7 @@ public class FrontiersOverlayManager {
         FrontierOverlay frontier = frontiers.get(index);
 
         if (frontier != null) {
-            PacketHandler.INSTANCE.sendToServer(new PacketDeleteFrontier(frontier));
+            PacketHandler.INSTANCE.sendToServer(new PacketDeleteFrontier(frontier.getId()));
         }
     }
 
@@ -123,10 +124,10 @@ public class FrontiersOverlayManager {
         PacketHandler.INSTANCE.sendToServer(new PacketSharePersonalFrontier(getAllFrontiers(dimension).get(index), targetUser));
     }
 
-    public int deleteFrontier(int dimension, int id) {
+    public int deleteFrontier(int dimension, UUID id) {
         List<FrontierOverlay> frontiers = getAllFrontiers(dimension);
 
-        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId() == id);
+        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId().equals(id));
 
         if (index < 0) {
             return -1;
@@ -142,7 +143,7 @@ public class FrontiersOverlayManager {
     public FrontierOverlay updateFrontier(FrontierData data) {
         List<FrontierOverlay> frontiers = getAllFrontiers(data.getDimension());
 
-        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId() == data.getId());
+        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId().equals(data.getId()));
 
         if (index < 0) {
             return null;

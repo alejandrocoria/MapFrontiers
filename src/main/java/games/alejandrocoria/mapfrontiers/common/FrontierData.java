@@ -26,9 +26,7 @@ public class FrontierData {
     public static final int NoSlice = -1;
     public static final int SurfaceSlice = 16;
 
-    private static int lastID = 0;
-
-    protected int id;
+    protected UUID id;
     protected List<BlockPos> vertices = new ArrayList<BlockPos>();
     protected boolean closed = false;
     protected String name1 = "New";
@@ -42,15 +40,11 @@ public class FrontierData {
     protected boolean personal = false;
 
     public FrontierData() {
-        id = lastID++;
+        id = new UUID(0, 0);
     }
 
     public FrontierData(FrontierData other) {
         id = other.id;
-        if (id >= lastID) {
-            lastID = id + 1;
-        }
-
         vertices = other.vertices;
         closed = other.closed;
         name1 = other.name1;
@@ -88,14 +82,11 @@ public class FrontierData {
         return owner;
     }
 
-    public void setId(int id) {
+    public void setId(UUID id) {
         this.id = id;
-        if (id >= lastID) {
-            lastID = id + 1;
-        }
     }
 
-    public int getId() {
+    public UUID getId() {
         return id;
     }
 
@@ -205,6 +196,12 @@ public class FrontierData {
     }
 
     public void readFromNBT(NBTTagCompound nbt, int version) {
+        if (version >= 4) {
+            id = UUID.fromString(nbt.getString("id"));
+            dimension = nbt.getInteger("dimension");
+            personal = nbt.getBoolean("personal");
+        }
+
         closed = nbt.getBoolean("closed");
         color = nbt.getInteger("color");
         name1 = nbt.getString("name1");
@@ -246,12 +243,15 @@ public class FrontierData {
     }
 
     public void writeToNBT(NBTTagCompound nbt) {
+        nbt.setString("id", id.toString());
         nbt.setBoolean("closed", closed);
         nbt.setInteger("color", color);
+        nbt.setInteger("dimension", dimension);
         nbt.setString("name1", name1);
         nbt.setString("name2", name2);
         nbt.setBoolean("nameVisible", nameVisible);
         nbt.setInteger("slice", mapSlice);
+        nbt.setBoolean("personal", personal);
 
         NBTTagCompound nbtOwner = new NBTTagCompound();
         owner.writeToNBT(nbtOwner);

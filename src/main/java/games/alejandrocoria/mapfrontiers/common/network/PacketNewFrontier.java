@@ -75,7 +75,7 @@ public class PacketNewFrontier implements IMessage {
                     } else {
                         if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.CreateFrontier,
                                 new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), null)) {
-                            frontier = FrontiersManager.instance.createNewFrontier(message.dimension, player, message.vertex);
+                            frontier = FrontiersManager.instance.createNewGlobalFrontier(message.dimension, player, message.vertex);
                             PacketHandler.INSTANCE.sendToAll(new PacketFrontier(frontier, player.getEntityId()));
 
                             return;

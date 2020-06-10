@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -70,7 +71,7 @@ public class FrontierOverlay extends FrontierData {
     public FrontierOverlay(FrontierData data, IClientAPI jmAPI) {
         super(data);
         this.jmAPI = jmAPI;
-        displayId = "frontier_" + String.valueOf(id);
+        displayId = "frontier_" + id.toString();
         vertexSelected = vertices.size() - 1;
         updateOverlay();
 
@@ -85,10 +86,10 @@ public class FrontierOverlay extends FrontierData {
 
             int prime = 31;
             hash = 1;
+            hash = prime * hash + id.hashCode();
             hash = prime * hash + (closed ? 1231 : 1237);
             hash = prime * hash + color;
             hash = prime * hash + dimension;
-            hash = prime * hash + id;
             hash = prime * hash + mapSlice;
             hash = prime * hash + ((name1 == null) ? 0 : name1.hashCode());
             hash = prime * hash + ((name2 == null) ? 0 : name2.hashCode());
@@ -215,9 +216,9 @@ public class FrontierOverlay extends FrontierData {
     }
 
     @Override
-    public void setId(int id) {
+    public void setId(UUID id) {
         super.setId(id);
-        displayId = "frontier_" + String.valueOf(id);
+        displayId = "frontier_" + id.toString();
         updateOverlay();
     }
 

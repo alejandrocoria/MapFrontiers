@@ -1,5 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
+import java.util.UUID;
+
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
@@ -15,7 +17,7 @@ import net.minecraftforge.fml.relauncher.Side;
 @ParametersAreNonnullByDefault
 public class PacketFrontierDeleted implements IMessage {
     private int dimension;
-    private int frontierID = -1;
+    private UUID frontierID;
     private boolean personal;
     private int playerID = -1;
 
@@ -23,7 +25,7 @@ public class PacketFrontierDeleted implements IMessage {
 
     }
 
-    public PacketFrontierDeleted(int dimension, int frontierID, boolean personal, int playerID) {
+    public PacketFrontierDeleted(int dimension, UUID frontierID, boolean personal, int playerID) {
         this.dimension = dimension;
         this.frontierID = frontierID;
         this.personal = personal;
@@ -33,7 +35,7 @@ public class PacketFrontierDeleted implements IMessage {
     @Override
     public void fromBytes(ByteBuf buf) {
         dimension = buf.readInt();
-        frontierID = buf.readInt();
+        frontierID = new UUID(buf.readLong(), buf.readLong());
         personal = buf.readBoolean();
         playerID = buf.readInt();
     }
@@ -41,7 +43,8 @@ public class PacketFrontierDeleted implements IMessage {
     @Override
     public void toBytes(ByteBuf buf) {
         buf.writeInt(dimension);
-        buf.writeInt(frontierID);
+        buf.writeLong(frontierID.getMostSignificantBits());
+        buf.writeLong(frontierID.getLeastSignificantBits());
         buf.writeBoolean(personal);
         buf.writeInt(playerID);
     }

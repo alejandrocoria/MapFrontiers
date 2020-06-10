@@ -37,9 +37,6 @@ public class PacketFrontier implements IMessage {
     @Override
     public void fromBytes(ByteBuf buf) {
         frontier.readFromNBT(ByteBufUtils.readTag(buf));
-        frontier.setId(buf.readInt());
-        frontier.setDimension(buf.readInt());
-        frontier.setPersonal(buf.readBoolean());
         playerID = buf.readInt();
     }
 
@@ -48,9 +45,6 @@ public class PacketFrontier implements IMessage {
         NBTTagCompound nbt = new NBTTagCompound();
         frontier.writeToNBT(nbt);
         ByteBufUtils.writeTag(buf, nbt);
-        buf.writeInt(frontier.getId());
-        buf.writeInt(frontier.getDimension());
-        buf.writeBoolean(frontier.getPersonal());
         buf.writeInt(playerID);
     }
 

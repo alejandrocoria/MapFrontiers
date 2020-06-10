@@ -1,5 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
+import java.util.UUID;
+
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
@@ -9,9 +11,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
@@ -19,32 +19,25 @@ import net.minecraftforge.fml.relauncher.Side;
 
 @ParametersAreNonnullByDefault
 public class PacketDeleteFrontier implements IMessage {
-    private FrontierData frontier;
+    private UUID frontierID;
 
     public PacketDeleteFrontier() {
-        frontier = new FrontierData();
+
     }
 
-    public PacketDeleteFrontier(FrontierData frontier) {
-        this.frontier = frontier;
+    public PacketDeleteFrontier(UUID frontierID) {
+        this.frontierID = frontierID;
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        frontier.readFromNBT(ByteBufUtils.readTag(buf));
-        frontier.setId(buf.readInt());
-        frontier.setDimension(buf.readInt());
-        frontier.setPersonal(buf.readBoolean());
+        frontierID = new UUID(buf.readLong(), buf.readLong());
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
-        NBTTagCompound nbt = new NBTTagCompound();
-        frontier.writeToNBT(nbt);
-        ByteBufUtils.writeTag(buf, nbt);
-        buf.writeInt(frontier.getId());
-        buf.writeInt(frontier.getDimension());
-        buf.writeBoolean(frontier.getPersonal());
+        buf.writeLong(frontierID.getMostSignificantBits());
+        buf.writeLong(frontierID.getLeastSignificantBits());
     }
 
     public static class Handler implements IMessageHandler<PacketDeleteFrontier, IMessage> {
@@ -54,35 +47,39 @@ public class PacketDeleteFrontier implements IMessage {
                 FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
                     EntityPlayerMP player = ctx.getServerHandler().player;
 
-                    if (message.frontier.getPersonal()) {
-                        if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier,
-                                new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), message.frontier.getOwner())) {
-                            boolean deleted = FrontiersManager.instance.deletePersonalFrontier(message.frontier.getOwner(),
-                                    message.frontier.getDimension(), message.frontier.getId());
-                            if (deleted) {
-                                // @Incomplete: send to all players with access to this personal frontier
-                                PacketHandler.INSTANCE.sendTo(new PacketFrontierDeleted(message.frontier.getDimension(),
-                                        message.frontier.getId(), message.frontier.getPersonal(), player.getEntityId()), player);
-                            }
+                    FrontierData frontier = FrontiersManager.instance.getFrontierFromID(message.frontierID);
 
-                            return;
-                        }
-                    } else {
-                        if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.DeleteFrontier,
-                                new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), message.frontier.getOwner())) {
-                            boolean deleted = FrontiersManager.instance.deleteFrontier(message.frontier.getDimension(),
-                                    message.frontier.getId());
-                            if (deleted) {
-                                PacketHandler.INSTANCE.sendToAll(new PacketFrontierDeleted(message.frontier.getDimension(),
-                                        message.frontier.getId(), message.frontier.getPersonal(), player.getEntityId()));
-                            }
+                    if (frontier != null) {
+                        if (frontier.getPersonal()) {
+                            if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier,
+                                    new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), frontier.getOwner())) {
+                                boolean deleted = FrontiersManager.instance.deletePersonalFrontier(frontier.getOwner(),
+                                        frontier.getDimension(), frontier.getId());
+                                if (deleted) {
+                                    // @Incomplete: send to all players with access to this personal frontier
+                                    PacketHandler.INSTANCE.sendTo(new PacketFrontierDeleted(frontier.getDimension(),
+                                            frontier.getId(), frontier.getPersonal(), player.getEntityId()), player);
+                                }
 
-                            return;
+                                return;
+                            }
+                        } else {
+                            if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.DeleteFrontier,
+                                    new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), frontier.getOwner())) {
+                                boolean deleted = FrontiersManager.instance.deleteGlobalFrontier(frontier.getDimension(),
+                                        frontier.getId());
+                                if (deleted) {
+                                    PacketHandler.INSTANCE.sendToAll(new PacketFrontierDeleted(frontier.getDimension(),
+                                            frontier.getId(), frontier.getPersonal(), player.getEntityId()));
+                                }
+
+                                return;
+                            }
                         }
+
+                        PacketHandler.INSTANCE.sendTo(
+                                new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
                     }
-
-                    PacketHandler.INSTANCE.sendTo(
-                            new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
                 });
             }
 
