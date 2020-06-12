@@ -205,7 +205,7 @@ public class FrontiersManager {
             return false;
         }
 
-        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId() == frontier.getId());
+        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId().equals(frontier.getId()));
 
         if (index < 0) {
             return false;
@@ -297,6 +297,7 @@ public class FrontiersManager {
                     NBTTagCompound frontierTag = frontiersTagList.getCompoundTagAt(i2);
                     FrontierData frontier = allFrontiers.get(UUID.fromString(frontierTag.getString("id")));
                     if (frontier != null) {
+                        frontier.removePendingUsersShared();
                         frontiers.add(frontier);
                     } else {
                         String message = "Nonexistent frontier with UUID %1$s referenced in frontiers.dat";

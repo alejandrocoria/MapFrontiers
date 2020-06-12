@@ -11,6 +11,7 @@ mapfrontiers.area=Area: %1$.2fm²
 mapfrontiers.perimeter=Perimeter: %1$.2fm
 mapfrontiers.owner=Owner: %1$s
 mapfrontiers.unknown=%1$s<Unknown>
+mapfrontiers.shared=Shared with %1$d players
 mapfrontiers.vertex_number=Vertex %1$d/%2$d
 mapfrontiers.no_vertex_selected=%1$sNo vertex selected
 mapfrontiers.new=New

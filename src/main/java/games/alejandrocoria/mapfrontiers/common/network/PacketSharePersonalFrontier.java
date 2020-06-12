@@ -1,5 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
+import java.util.UUID;
+
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
@@ -7,6 +9,7 @@ import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -20,32 +23,30 @@ import net.minecraftforge.fml.relauncher.Side;
 
 @ParametersAreNonnullByDefault
 public class PacketSharePersonalFrontier implements IMessage {
-    private FrontierData frontier;
+    private UUID frontierID;
     private SettingsUser targetUser;
 
     public PacketSharePersonalFrontier() {
-        frontier = new FrontierData();
         targetUser = new SettingsUser();
     }
 
-    public PacketSharePersonalFrontier(FrontierData frontier, SettingsUser user) {
-        this.frontier = frontier;
+    public PacketSharePersonalFrontier(UUID frontierID, SettingsUser user) {
+        this.frontierID = frontierID;
         targetUser = user;
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        frontier.readFromNBT(ByteBufUtils.readTag(buf));
+        frontierID = new UUID(buf.readLong(), buf.readLong());
         targetUser.readFromNBT(ByteBufUtils.readTag(buf));
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
-        NBTTagCompound nbt = new NBTTagCompound();
-        frontier.writeToNBT(nbt);
-        ByteBufUtils.writeTag(buf, nbt);
+        buf.writeLong(frontierID.getMostSignificantBits());
+        buf.writeLong(frontierID.getLeastSignificantBits());
 
-        nbt = new NBTTagCompound();
+        NBTTagCompound nbt = new NBTTagCompound();
         targetUser.writeToNBT(nbt);
         ByteBufUtils.writeTag(buf, nbt);
     }
@@ -74,13 +75,15 @@ public class PacketSharePersonalFrontier implements IMessage {
                         return;
                     }
 
-                    FrontierData currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontier.getId());
+                    FrontierData currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontierID);
 
                     if (currentFrontier != null && currentFrontier.getPersonal()) {
                         if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier,
                                 playerUser, MapFrontiers.proxy.isOPorHost(player), currentFrontier.getOwner())) {
                             int shareMessageID = FrontiersManager.instance.addShareMessage(playerUser, currentFrontier.getOwner(),
                                     message.targetUser, currentFrontier.getDimension(), currentFrontier.getId());
+
+                            currentFrontier.addUserShared(new SettingsUserShared(message.targetUser, true));
 
                             PacketHandler.INSTANCE.sendTo(new PacketPersonalFrontierShared(shareMessageID, playerUser,
                                     currentFrontier.getOwner(), currentFrontier.getName1(), currentFrontier.getName2()),

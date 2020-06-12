@@ -13,6 +13,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
 import games.alejandrocoria.mapfrontiers.client.util.Earcut;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.MarkerOverlay;
 import journeymap.client.api.display.PolygonOverlay;
@@ -96,6 +97,7 @@ public class FrontierOverlay extends FrontierData {
             hash = prime * hash + (nameVisible ? 1231 : 1237);
             hash = prime * hash + ((vertices == null) ? 0 : vertices.hashCode());
             hash = prime * hash + ((banner == null) ? 0 : banner.hashCode());
+            hash = prime * hash + ((usersShared == null) ? 0 : usersShared.hashCode());
         }
 
         return hash;
@@ -295,6 +297,24 @@ public class FrontierOverlay extends FrontierData {
         } else {
             bannerDisplay = new BannerDisplayData(banner);
         }
+    }
+
+    @Override
+    public void addUserShared(SettingsUserShared userShared) {
+        super.addUserShared(userShared);
+        dirty = true;
+    }
+
+    @Override
+    public void removeUserShared(int index) {
+        super.removeUserShared(index);
+        dirty = true;
+    }
+
+    @Override
+    public void setUsersShared(List<SettingsUserShared> usersShared) {
+        super.setUsersShared(usersShared);
+        dirty = true;
     }
 
     public void bindBannerTexture(Minecraft mc) {

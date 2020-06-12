@@ -9,6 +9,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.EnumDyeColor;
 import net.minecraft.item.ItemBanner;
@@ -38,6 +39,7 @@ public class FrontierData {
     protected SettingsUser owner = new SettingsUser();
     protected BannerData banner;
     protected boolean personal = false;
+    protected List<SettingsUserShared> usersShared;
 
     public FrontierData() {
         id = new UUID(0, 0);
@@ -56,6 +58,7 @@ public class FrontierData {
         owner = other.owner;
         banner = other.banner;
         personal = other.personal;
+        usersShared = other.usersShared;
     }
 
     public void setOwner(SettingsUser owner) {
@@ -191,6 +194,42 @@ public class FrontierData {
         return personal;
     }
 
+    public void addUserShared(SettingsUserShared userShared) {
+        if (usersShared == null) {
+            usersShared = new ArrayList<SettingsUserShared>();
+        }
+
+        usersShared.add(userShared);
+    }
+
+    public void removeUserShared(int index) {
+        if (usersShared == null) {
+            return;
+        }
+
+        usersShared.remove(index);
+
+        if (usersShared.isEmpty()) {
+            usersShared = null;
+        }
+    }
+
+    public void setUsersShared(List<SettingsUserShared> usersShared) {
+        this.usersShared = usersShared;
+    }
+
+    public void removePendingUsersShared() {
+        if (usersShared == null) {
+            return;
+        }
+
+        usersShared.removeIf(x -> x.isPending());
+    }
+
+    public List<SettingsUserShared> getUserShared() {
+        return usersShared;
+    }
+
     public void readFromNBT(NBTTagCompound nbt) {
         readFromNBT(nbt, FrontiersManager.dataVersion);
     }
@@ -236,6 +275,19 @@ public class FrontierData {
             banner.readFromNBT(nbt.getCompoundTag("banner"));
         }
 
+        if (personal) {
+            NBTTagList usersSharedTagList = nbt.getTagList("usersShared", Constants.NBT.TAG_COMPOUND);
+            if (!usersSharedTagList.hasNoTags()) {
+                usersShared = new ArrayList<SettingsUserShared>();
+
+                for (int i = 0; i < usersSharedTagList.tagCount(); ++i) {
+                    SettingsUserShared userShared = new SettingsUserShared();
+                    userShared.readFromNBT(usersSharedTagList.getCompoundTagAt(i));
+                    usersShared.add(userShared);
+                }
+            }
+        }
+
         NBTTagList verticesTagList = nbt.getTagList("vertices", Constants.NBT.TAG_COMPOUND);
         for (int i = 0; i < verticesTagList.tagCount(); ++i) {
             vertices.add(NBTUtil.getPosFromTag(verticesTagList.getCompoundTagAt(i)));
@@ -261,6 +313,15 @@ public class FrontierData {
             NBTTagCompound nbtBanner = new NBTTagCompound();
             banner.writeToNBT(nbtBanner);
             nbt.setTag("banner", nbtBanner);
+        }
+
+        if (personal && usersShared != null) {
+            NBTTagList usersSharedTagList = new NBTTagList();
+            for (SettingsUserShared userShared : usersShared) {
+                NBTTagCompound nbtUserShared = new NBTTagCompound();
+                userShared.writeToNBT(nbtUserShared);
+                usersSharedTagList.appendTag(nbtUserShared);
+            }
         }
 
         NBTTagList verticesTagList = new NBTTagList();

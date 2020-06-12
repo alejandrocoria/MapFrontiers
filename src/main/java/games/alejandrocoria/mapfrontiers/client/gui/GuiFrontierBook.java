@@ -19,6 +19,7 @@ import games.alejandrocoria.mapfrontiers.client.util.StringHelper;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import journeymap.client.api.display.Context;
 import journeymap.client.api.impl.ClientAPI;
 import journeymap.client.data.DataCache;
@@ -557,6 +558,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                 SettingsProfile profile = ((ClientProxy) MapFrontiers.proxy).getSettingsProfile();
 
                 if (profile.personalFrontier == SettingsProfile.State.Enabled) {
+                    frontier.addUserShared(new SettingsUserShared(new SettingsUser(Minecraft.getMinecraft().player), true));
                     sendChangesToServer();
                     frontiersOverlayManager.clientShareFrontier(dimension, getCurrentFrontierIndex(),
                             new SettingsUser(Minecraft.getMinecraft().player));
@@ -616,7 +618,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         }
 
         EntityPlayer player = Minecraft.getMinecraft().player;
-        if (player.getEntityId() == playerID) {
+        if (playerID == -1 || player.getEntityId() == playerID) {
             int index = frontiersOverlayManager.getFrontierIndex(frontierOverlay);
             if (index >= 0) {
                 updateIndexEntries();
@@ -654,7 +656,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         boolean updatePage = false;
         if (isInFrontierPage()) {
             FrontierOverlay currentFrontier = getCurrentFrontier();
-            if (currentFrontier.getId() == frontierOverlay.getId()) {
+            if (currentFrontier.getId().equals(frontierOverlay.getId())) {
                 updatePage = true;
             }
         } else {
@@ -666,7 +668,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         }
 
         EntityPlayer player = Minecraft.getMinecraft().player;
-        if (player.getEntityId() != playerID) {
+        if (playerID != -1 && player.getEntityId() != playerID) {
             String message;
             Entity otherPlayer = Minecraft.getMinecraft().world.getEntityByID(playerID);
             int index = frontiersOverlayManager.getFrontierIndex(frontierOverlay);
@@ -710,7 +712,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         }
 
         EntityPlayer player = Minecraft.getMinecraft().player;
-        if (player.getEntityId() != playerID) {
+        if (playerID != -1 && player.getEntityId() != playerID) {
             String message;
             Entity otherPlayer = Minecraft.getMinecraft().world.getEntityByID(playerID);
             if (otherPlayer == null) {
@@ -950,6 +952,17 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             String owner = I18n.format("mapfrontiers.owner", ownerString);
             labels.add(new GuiSimpleLabel(mc.fontRenderer, rightPageCornerX + 13, rightPageCornerY + 64,
                     GuiSimpleLabel.Align.Left, owner));
+
+            if (personal) {
+                int sharedCount = 0;
+                if (frontier.getUserShared() != null) {
+                    sharedCount = frontier.getUserShared().size();
+                }
+
+                String shared = I18n.format("mapfrontiers.shared", sharedCount);
+                labels.add(new GuiSimpleLabel(mc.fontRenderer, rightPageCornerX + 13, rightPageCornerY + 76,
+                        GuiSimpleLabel.Align.Left, shared));
+            }
 
             SettingsProfile profile = ((ClientProxy) MapFrontiers.proxy).getSettingsProfile();
             boolean isOwner = frontier.getOwner().equals(new SettingsUser(Minecraft.getMinecraft().player));

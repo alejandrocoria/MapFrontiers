@@ -56,6 +56,8 @@ public class PacketUpdateFrontier implements IMessage {
                             message.frontier.setOwner(currentFrontier.getOwner());
                         }
 
+                        message.frontier.setUsersShared(currentFrontier.getUserShared());
+
                         if (message.frontier.getPersonal()) {
                             if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier,
                                     new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player),

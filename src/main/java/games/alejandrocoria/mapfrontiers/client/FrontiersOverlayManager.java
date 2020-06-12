@@ -121,7 +121,8 @@ public class FrontiersOverlayManager {
     }
 
     public void clientShareFrontier(int dimension, int index, SettingsUser targetUser) {
-        PacketHandler.INSTANCE.sendToServer(new PacketSharePersonalFrontier(getAllFrontiers(dimension).get(index), targetUser));
+        PacketHandler.INSTANCE
+                .sendToServer(new PacketSharePersonalFrontier(getAllFrontiers(dimension).get(index).getId(), targetUser));
     }
 
     public int deleteFrontier(int dimension, UUID id) {

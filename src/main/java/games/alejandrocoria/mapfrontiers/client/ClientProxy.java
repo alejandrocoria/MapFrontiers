@@ -242,7 +242,7 @@ public class ClientProxy extends CommonProxy {
 
         int currentDimension = Minecraft.getMinecraft().player.dimension;
 
-        if (personal) {
+        if (personal && settingsProfile.personalFrontier == SettingsProfile.State.Enabled) {
             Minecraft.getMinecraft().displayGuiScreen(
                     new GuiFrontierBook(personalFrontiersOverlayManager, personal, currentDimension, dimension, heldBanner));
         } else {
