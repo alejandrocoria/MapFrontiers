@@ -75,13 +75,15 @@ public class PacketSharePersonalFrontier implements IMessage {
                         return;
                     }
 
+                    // @Incomplete: check if target is the owner or is already in the list
+
                     FrontierData currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontierID);
 
                     if (currentFrontier != null && currentFrontier.getPersonal()) {
                         if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier,
                                 playerUser, MapFrontiers.proxy.isOPorHost(player), currentFrontier.getOwner())) {
-                            int shareMessageID = FrontiersManager.instance.addShareMessage(playerUser, currentFrontier.getOwner(),
-                                    message.targetUser, currentFrontier.getDimension(), currentFrontier.getId());
+                            int shareMessageID = FrontiersManager.instance.addShareMessage(message.targetUser,
+                                    currentFrontier.getId());
 
                             currentFrontier.addUserShared(new SettingsUserShared(message.targetUser, true));
 

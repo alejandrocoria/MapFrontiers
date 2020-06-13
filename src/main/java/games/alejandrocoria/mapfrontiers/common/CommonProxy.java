@@ -41,9 +41,12 @@ public class CommonProxy {
     public void serverStarting(FMLServerStartingEvent event) {
         frontiersManager = new FrontiersManager();
         frontiersManager.loadOrCreateData();
+
+        MinecraftForge.EVENT_BUS.register(frontiersManager);
     }
 
     public void serverStopping(FMLServerStoppingEvent event) {
+        MinecraftForge.EVENT_BUS.unregister(frontiersManager);
         frontiersManager = null;
     }
 

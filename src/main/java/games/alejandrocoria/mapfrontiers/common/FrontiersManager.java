@@ -15,17 +15,22 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierUpdated;
+import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
 
 @ParametersAreNonnullByDefault
 public class FrontiersManager {
@@ -34,19 +39,57 @@ public class FrontiersManager {
     private HashMap<UUID, FrontierData> allFrontiers;
     private HashMap<Integer, ArrayList<FrontierData>> dimensionsGlobalFrontiers;
     private HashMap<SettingsUser, HashMap<Integer, ArrayList<FrontierData>>> usersDimensionsPersonalFrontiers;
+    private HashMap<Integer, PendingShareFrontier> pendingShareFrontiers;
+    private int pendingShareFrontiersTick = 0;
     private FrontierSettings frontierSettings;
     private Random rand = new Random();
     private File WorldDir;
     private boolean frontierOwnersChecked = false;
 
     public static final int dataVersion = 4;
+    private static int pendingShareFrontierID = 0;
+    private static final int pendingShareFrontierTickDuration = 1200;
 
     public FrontiersManager() {
         instance = this;
         allFrontiers = new HashMap<UUID, FrontierData>();
         dimensionsGlobalFrontiers = new HashMap<Integer, ArrayList<FrontierData>>();
         usersDimensionsPersonalFrontiers = new HashMap<SettingsUser, HashMap<Integer, ArrayList<FrontierData>>>();
+        pendingShareFrontiers = new HashMap<Integer, PendingShareFrontier>();
         frontierSettings = new FrontierSettings();
+    }
+
+    @SubscribeEvent
+    public void onServerTick(TickEvent.ServerTickEvent event) {
+        if (event.phase == TickEvent.Phase.START) {
+            ++pendingShareFrontiersTick;
+
+            if (pendingShareFrontiersTick >= 100) {
+                pendingShareFrontiersTick -= 100;
+
+                for (PendingShareFrontier pending : pendingShareFrontiers.values()) {
+                    pending.tickCount += 100;
+
+                    if (pending.tickCount >= pendingShareFrontierTickDuration) {
+                        FrontierData frontier = getFrontierFromID(pending.frontierID);
+                        if (frontier == null) {
+                            continue;
+                        }
+
+                        boolean removed = frontier.getUserShared().removeIf(x -> x.getUser().equals(pending.targetUser));
+
+                        if (removed) {
+                            EntityPlayerMP player = (EntityPlayerMP) FMLCommonHandler.instance().getMinecraftServerInstance()
+                                    .getEntityFromUuid(frontier.getOwner().uuid);
+                            // @Incomplete: send to all players with access to this personal frontier
+                            PacketHandler.INSTANCE.sendTo(new PacketFrontierUpdated(frontier), player);
+                        }
+                    }
+                }
+
+                pendingShareFrontiers.entrySet().removeIf(x -> x.getValue().tickCount >= pendingShareFrontierTickDuration);
+            }
+        }
     }
 
     public void setSettings(FrontierSettings frontierSettings) {
@@ -218,9 +261,11 @@ public class FrontiersManager {
         return true;
     }
 
-    public int addShareMessage(SettingsUser playerSharing, SettingsUser owner, SettingsUser targetUser, int dimension, UUID id) {
-        // @Incomplete
-        return 0;
+    public int addShareMessage(SettingsUser targetUser, UUID frontierID) {
+        ++pendingShareFrontierID;
+        pendingShareFrontiers.put(Integer.valueOf(pendingShareFrontierID), new PendingShareFrontier(frontierID, targetUser));
+
+        return pendingShareFrontierID;
     }
 
     public void ensureOwners() {

@@ -296,8 +296,10 @@ public class GuiShareSettings extends GuiScreen
 
     private void updateUsers() {
         List<SettingsUserShared> usersShared = frontier.getUserShared();
-        for (SettingsUserShared user : usersShared) {
-            users.addElement(new GuiUserSharedElement(fontRenderer, buttonList, id, user, this, guiTexture, guiTextureSize));
+        if (usersShared != null) {
+            for (SettingsUserShared user : usersShared) {
+                users.addElement(new GuiUserSharedElement(fontRenderer, buttonList, id, user, this, guiTexture, guiTextureSize));
+            }
         }
     }
 
