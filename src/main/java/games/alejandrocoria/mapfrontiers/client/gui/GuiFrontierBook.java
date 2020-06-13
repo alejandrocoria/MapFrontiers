@@ -19,7 +19,6 @@ import games.alejandrocoria.mapfrontiers.client.util.StringHelper;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import journeymap.client.api.display.Context;
 import journeymap.client.api.impl.ClientAPI;
 import journeymap.client.data.DataCache;
@@ -555,14 +554,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
             // @Note: for testing
             if (personal) {
-                SettingsProfile profile = ((ClientProxy) MapFrontiers.proxy).getSettingsProfile();
-
-                if (profile.personalFrontier == SettingsProfile.State.Enabled) {
-                    frontier.addUserShared(new SettingsUserShared(new SettingsUser(Minecraft.getMinecraft().player), true));
-                    sendChangesToServer();
-                    frontiersOverlayManager.clientShareFrontier(dimension, getCurrentFrontierIndex(),
-                            new SettingsUser(Minecraft.getMinecraft().player));
-                }
+                mc.displayGuiScreen(new GuiShareSettings(frontiersOverlayManager, frontier));
             }
         } else if (button == buttonBanner) {
             FrontierOverlay frontier = getCurrentFrontier();

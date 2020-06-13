@@ -230,6 +230,20 @@ public class FrontierData {
         return usersShared;
     }
 
+    public boolean hasUserShared(SettingsUser user) {
+        if (usersShared == null) {
+            return false;
+        }
+
+        for (SettingsUserShared u : usersShared) {
+            if (u.getUser().equals(user)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public void readFromNBT(NBTTagCompound nbt) {
         readFromNBT(nbt, FrontiersManager.dataVersion);
     }
