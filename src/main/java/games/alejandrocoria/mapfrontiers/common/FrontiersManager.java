@@ -268,6 +268,15 @@ public class FrontiersManager {
         return pendingShareFrontierID;
     }
 
+    public PendingShareFrontier getPendingShareFrontier(int messageID) {
+        return pendingShareFrontiers.get(Integer.valueOf(messageID));
+    }
+
+    public boolean canSendCommandAcceptFrontier(EntityPlayer player) {
+        return frontierSettings.checkAction(FrontierSettings.Action.PersonalFrontier, new SettingsUser(player),
+                MapFrontiers.proxy.isOPorHost(player), null);
+    }
+
     public void ensureOwners() {
         if (frontierOwnersChecked) {
             return;
