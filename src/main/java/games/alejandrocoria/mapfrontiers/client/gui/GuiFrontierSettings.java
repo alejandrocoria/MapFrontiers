@@ -127,7 +127,8 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         buttonHUDEnabled.addOption("false");
         buttonHUDEnabled.setSelected(ConfigData.hud.enabled ? 0 : 1);
 
-        buttonEditHUD = new GuiSettingsButton(++id, mc.fontRenderer, width / 2 - 50, 208, 100, "Edit HUD");
+        buttonEditHUD = new GuiSettingsButton(++id, mc.fontRenderer, width / 2 - 50, 208, 100,
+                I18n.format("mapfrontiers.edit_hub"));
 
         groups = new GuiScrollBox(++id, 50, 50, 160, height - 120, 16, this);
         users = new GuiScrollBox(++id, 250, 82, 258, height - 150, 16, this);
@@ -440,8 +441,8 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         labelTooltips.clear();
 
         if (tabSelected == 0) {
-            labels.add(new GuiSimpleLabel(fontRenderer, width / 2, 54, GuiSimpleLabel.Align.Center, "Frontiers",
-                    GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+            labels.add(new GuiSimpleLabel(fontRenderer, width / 2, 54, GuiSimpleLabel.Align.Center,
+                    I18n.format("mapfrontiers.frontiers"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 72, GuiSimpleLabel.Align.Left,
                     "addVertexToNewFrontier", GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("addVertexToNewFrontier"));
             addLabelWithTooltip(
@@ -454,8 +455,8 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
                     "polygonsOpacity", GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("polygonsOpacity"));
             addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 136, GuiSimpleLabel.Align.Left, "snapDistance",
                     GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("snapDistance"));
-            labels.add(new GuiSimpleLabel(fontRenderer, width / 2, 170, GuiSimpleLabel.Align.Center, "HUD",
-                    GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+            labels.add(new GuiSimpleLabel(fontRenderer, width / 2, 170, GuiSimpleLabel.Align.Center,
+                    I18n.format("mapfrontiers.hud"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 190, GuiSimpleLabel.Align.Left, "enabled",
                     GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.enabled"));
         } else if (tabSelected == 1) {

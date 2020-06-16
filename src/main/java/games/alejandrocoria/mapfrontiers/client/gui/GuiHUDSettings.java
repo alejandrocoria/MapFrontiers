@@ -23,6 +23,7 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.resources.I18n;
 import net.minecraftforge.fml.client.config.GuiUtils;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -134,7 +135,8 @@ public class GuiHUDSettings extends GuiScreen implements TextBox.TextBoxResponde
         buttonSnapToBorder.addOption("false");
         buttonSnapToBorder.setSelected(ConfigData.hud.snapToBorder ? 0 : 1);
 
-        buttonDone = new GuiSettingsButton(++id, mc.fontRenderer, width / 2 - 50, height / 2 + 36, 100, "Done");
+        buttonDone = new GuiSettingsButton(++id, mc.fontRenderer, width / 2 - 50, height / 2 + 36, 100,
+                I18n.format("mapfrontiers.done"));
 
         buttonList.add(buttonSlot1);
         buttonList.add(buttonSlot2);

@@ -30,6 +30,7 @@ public final class GuiColors {
     public static final int SETTINGS_BUTTON_BORDER = 0xff777777;
     public static final int SETTINGS_BUTTON_TEXT = 0xff777777;
     public static final int SETTINGS_BUTTON_TEXT_HIGHLIGHT = 0xffffffff;
+    public static final int SETTINGS_BUTTON_TEXT_DARK = 0xff444444;
     public static final int SETTINGS_TAB_BORDER = 0xff777777;
     public static final int SETTINGS_TAB_TEXT = 0xff777777;
     public static final int SETTINGS_TAB_TEXT_HIGHLIGHT = 0xffffffff;

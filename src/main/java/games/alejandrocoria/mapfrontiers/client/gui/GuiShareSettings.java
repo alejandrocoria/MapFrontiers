@@ -208,6 +208,7 @@ public class GuiShareSettings extends GuiScreen
                 }
             }
 
+
             if (user.username.equals(mc.player.getName())) {
                 textNewUser.setError(I18n.format("mapfrontiers.new_user_shared_error_self"));
                 return;
@@ -217,6 +218,7 @@ public class GuiShareSettings extends GuiScreen
                 textNewUser.setError(I18n.format("mapfrontiers.new_user_shared_error_owner"));
                 return;
             }
+
 
             if (frontier.hasUserShared(user)) {
                 textNewUser.setError(I18n.format("mapfrontiers.new_user_shared_error_user_repeated"));
@@ -234,6 +236,7 @@ public class GuiShareSettings extends GuiScreen
             users.scrollBottom();
 
             textNewUser.setText("");
+            resetLabels();
         }
     }
 
@@ -250,11 +253,13 @@ public class GuiShareSettings extends GuiScreen
     private void resetLabels() {
         labels.clear();
 
-        int x = width / 2 + 35;
-        labels.add(new GuiSimpleLabel(fontRenderer, x, 54, GuiSimpleLabel.Align.Center,
-                I18n.format("mapfrontiers.update_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
-        labels.add(new GuiSimpleLabel(fontRenderer, x + 60, 54, GuiSimpleLabel.Align.Center,
-                I18n.format("mapfrontiers.update_settings"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+        if (!users.getElements().isEmpty()) {
+            int x = width / 2 + 35;
+            labels.add(new GuiSimpleLabel(fontRenderer, x, 54, GuiSimpleLabel.Align.Center,
+                    I18n.format("mapfrontiers.update_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+            labels.add(new GuiSimpleLabel(fontRenderer, x + 60, 54, GuiSimpleLabel.Align.Center,
+                    I18n.format("mapfrontiers.update_settings"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+        }
 
     }
 
@@ -272,6 +277,7 @@ public class GuiShareSettings extends GuiScreen
     public void elementDelete(int id, ScrollElement element) {
         if (id == users.getId()) {
             // @Incomplete
+            resetLabels();
         }
     }
 
@@ -301,6 +307,8 @@ public class GuiShareSettings extends GuiScreen
                 users.addElement(new GuiUserSharedElement(fontRenderer, buttonList, id, user, this, guiTexture, guiTextureSize));
             }
         }
+
+        resetLabels();
     }
 
     private boolean canAddNewUser() {

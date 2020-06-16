@@ -85,6 +85,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     private GuiButtonIcon buttonSliceUp;
     private GuiButtonIcon buttonSliceDown;
     private GuiSliderSlice sliderSlice;
+    private GuiBookButton buttonEditShareSettings;
 
     private TextColorBox textRed;
     private TextColorBox textGreen;
@@ -198,6 +199,10 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         sliderSlice = new GuiSliderSlice(++id, offsetFromScreenLeft + bookImageWidth / 2 - 21,
                 offsetFromScreenTop + bookImageHeight / 2 - 35, bookPageTexture, bookTextureSize);
 
+        String shareSettingsText = I18n.format("mapfrontiers.share_settings");
+        buttonEditShareSettings = new GuiBookButton(++id, mc.fontRenderer, rightPageCornerX + 12, rightPageCornerY + 88,
+                fontRenderer.getStringWidth(shareSettingsText) + 4, shareSettingsText);
+
         int textColorX = rightPageCornerX + 44;
         int textColorY = rightPageCornerY + 18;
 
@@ -235,6 +240,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         buttonList.add(buttonSliceUp);
         buttonList.add(buttonSliceDown);
         buttonList.add(sliderSlice);
+        buttonList.add(buttonEditShareSettings);
 
         updateIndexEntries();
 
@@ -551,11 +557,6 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             resetFinishButton();
             updateButtonsVisibility();
             updateGridRenderer();
-
-            // @Note: for testing
-            if (personal) {
-                mc.displayGuiScreen(new GuiShareSettings(frontiersOverlayManager, frontier));
-            }
         } else if (button == buttonBanner) {
             FrontierOverlay frontier = getCurrentFrontier();
             if (!frontier.hasBanner()) {
@@ -583,6 +584,9 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             frontier.setMapSlice(sliderSlice.getSlice());
             updateButtonsVisibility();
             updateGridRenderer();
+        } else if (button == buttonEditShareSettings) {
+            FrontierOverlay frontier = getCurrentFrontier();
+            mc.displayGuiScreen(new GuiShareSettings(frontiersOverlayManager, frontier));
         } else {
             for (IndexEntryButton indexButton : indexEntryButtons) {
                 if (button == indexButton) {
@@ -1088,6 +1092,9 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             buttonBackToIndex.visible = true;
             buttonNameVisible.visible = canUpdate;
 
+            // @Incomplete: check permissions
+            buttonEditShareSettings.visible = personal;
+
             if (canUpdate && frontier.getVertexCount() > 0) {
                 buttonSliceUp.visible = frontier.getMapSlice() < 16;
                 buttonSliceDown.visible = frontier.getMapSlice() > 0;
@@ -1107,6 +1114,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             buttonSliceUp.visible = false;
             buttonSliceDown.visible = false;
             sliderSlice.visible = false;
+            buttonEditShareSettings.visible = false;
             for (int i = 0; i < indexEntryButtons.size(); ++i) {
                 if (i >= currPage * 12 - 6 && i < currPage * 12 + 6) {
                     indexEntryButtons.get(i).visible = true;
