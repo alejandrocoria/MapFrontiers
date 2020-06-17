@@ -53,6 +53,10 @@ public class SettingsUserShared {
         return actions;
     }
 
+    public void setPending(boolean pending) {
+        this.pending = pending;
+    }
+
     public boolean isPending() {
         return pending;
     }

@@ -53,12 +53,12 @@ public class PacketDeleteFrontier implements IMessage {
                         if (frontier.getPersonal()) {
                             if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier,
                                     new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), frontier.getOwner())) {
+                                // @Incomplete check if owner or shared user
                                 boolean deleted = FrontiersManager.instance.deletePersonalFrontier(frontier.getOwner(),
                                         frontier.getDimension(), frontier.getId());
                                 if (deleted) {
-                                    // @Incomplete: send to all players with access to this personal frontier
-                                    PacketHandler.INSTANCE.sendTo(new PacketFrontierDeleted(frontier.getDimension(),
-                                            frontier.getId(), frontier.getPersonal(), player.getEntityId()), player);
+                                    PacketHandler.sendToUsersWithAccess(new PacketFrontierDeleted(frontier.getDimension(),
+                                            frontier.getId(), frontier.getPersonal(), player.getEntityId()), frontier);
                                 }
 
                                 return;

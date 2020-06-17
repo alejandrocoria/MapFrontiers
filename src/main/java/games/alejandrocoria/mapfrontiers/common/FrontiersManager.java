@@ -76,13 +76,12 @@ public class FrontiersManager {
                             continue;
                         }
 
-                        boolean removed = frontier.getUserShared().removeIf(x -> x.getUser().equals(pending.targetUser));
+                        boolean removed = frontier.getUsersShared().removeIf(x -> x.getUser().equals(pending.targetUser));
 
                         if (removed) {
                             EntityPlayerMP player = (EntityPlayerMP) FMLCommonHandler.instance().getMinecraftServerInstance()
                                     .getEntityFromUuid(frontier.getOwner().uuid);
-                            // @Incomplete: send to all players with access to this personal frontier
-                            PacketHandler.INSTANCE.sendTo(new PacketFrontierUpdated(frontier), player);
+                            PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier), frontier);
                         }
                     }
                 }
@@ -186,6 +185,11 @@ public class FrontiersManager {
         return frontier;
     }
 
+    public void addPersonalFrontier(SettingsUser user, FrontierData frontier) {
+        List<FrontierData> frontiers = this.getAllPersonalFrontiers(user, frontier.getDimension());
+        frontiers.add(frontier);
+    }
+
     public boolean deleteGlobalFrontier(int dimension, UUID id) {
         List<FrontierData> frontiers = dimensionsGlobalFrontiers.get(Integer.valueOf(dimension));
         if (frontiers == null) {
@@ -261,6 +265,18 @@ public class FrontiersManager {
         return true;
     }
 
+    public boolean hasPersonalFrontier(SettingsUser user, UUID frontierID) {
+        for (List<FrontierData> frontiers : getAllPersonalFrontiers(user).values()) {
+            for (FrontierData frontier : frontiers) {
+                if (frontier.getId().equals(frontierID)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     public int addShareMessage(SettingsUser targetUser, UUID frontierID) {
         ++pendingShareFrontierID;
         pendingShareFrontiers.put(Integer.valueOf(pendingShareFrontierID), new PendingShareFrontier(frontierID, targetUser));
@@ -270,6 +286,10 @@ public class FrontiersManager {
 
     public PendingShareFrontier getPendingShareFrontier(int messageID) {
         return pendingShareFrontiers.get(Integer.valueOf(messageID));
+    }
+
+    public void removePendingShareFrontier(int messageID) {
+        pendingShareFrontiers.remove(messageID);
     }
 
     public boolean canSendCommandAcceptFrontier(EntityPlayer player) {

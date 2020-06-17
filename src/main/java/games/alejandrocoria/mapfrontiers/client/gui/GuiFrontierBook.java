@@ -951,8 +951,8 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
             if (personal) {
                 int sharedCount = 0;
-                if (frontier.getUserShared() != null) {
-                    sharedCount = frontier.getUserShared().size();
+                if (frontier.getUsersShared() != null) {
+                    sharedCount = frontier.getUsersShared().size();
                 }
 
                 String shared = I18n.format("mapfrontiers.shared", sharedCount);

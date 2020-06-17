@@ -56,7 +56,7 @@ public class PacketUpdateFrontier implements IMessage {
                             message.frontier.setOwner(currentFrontier.getOwner());
                         }
 
-                        message.frontier.setUsersShared(currentFrontier.getUserShared());
+                        message.frontier.setUsersShared(currentFrontier.getUsersShared());
 
                         if (message.frontier.getPersonal()) {
                             if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier,
@@ -64,9 +64,8 @@ public class PacketUpdateFrontier implements IMessage {
                                     message.frontier.getOwner())) {
                                 boolean updated = FrontiersManager.instance.updatePersonalFrontier(message.frontier);
                                 if (updated) {
-                                    // @Incomplete: send to all players with access to this personal frontier
-                                    PacketHandler.INSTANCE.sendTo(new PacketFrontierUpdated(message.frontier,
-                                            ctx.getServerHandler().player.getEntityId()), player);
+                                    PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(message.frontier,
+                                            ctx.getServerHandler().player.getEntityId()), message.frontier);
                                 }
 
                                 return;

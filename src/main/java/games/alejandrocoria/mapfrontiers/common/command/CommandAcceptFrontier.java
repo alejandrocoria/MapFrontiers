@@ -5,7 +5,11 @@ import java.util.List;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.PendingShareFrontier;
+import games.alejandrocoria.mapfrontiers.common.network.PacketFrontier;
+import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierUpdated;
+import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
@@ -51,7 +55,24 @@ public class CommandAcceptFrontier extends CommandBase {
                         throw new CommandException("The frontier no longer exists", new Object[0]);
                     }
 
-                    // @Incomplete
+                    SettingsUserShared userShared = frontier.getUserShared(pending.targetUser);
+                    if (userShared == null) {
+                        throw new CommandException("", new Object[0]);
+                    }
+
+                    if (FrontiersManager.instance.hasPersonalFrontier(pending.targetUser, frontier.getId())) {
+                        throw new CommandException("You already have the frontier", new Object[0]);
+                    }
+
+                    userShared.setPending(false);
+
+                    FrontiersManager.instance.addPersonalFrontier(pending.targetUser, frontier);
+                    FrontiersManager.instance.removePendingShareFrontier(messageID);
+
+                    PacketHandler.INSTANCE.sendTo(new PacketFrontier(frontier), getCommandSenderAsPlayer(sender));
+                    PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier), frontier);
+
+                    // @Note: improve message and localize
                     notifyCommandListener(sender, this, "Accepting frontier " + frontier.getName1() + " " + frontier.getName2());
                 } else {
                     throw new CommandException("The invitation is for another player", new Object[0]);

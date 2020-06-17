@@ -226,22 +226,26 @@ public class FrontierData {
         usersShared.removeIf(x -> x.isPending());
     }
 
-    public List<SettingsUserShared> getUserShared() {
+    public List<SettingsUserShared> getUsersShared() {
         return usersShared;
     }
 
-    public boolean hasUserShared(SettingsUser user) {
+    public SettingsUserShared getUserShared(SettingsUser user) {
         if (usersShared == null) {
-            return false;
+            return null;
         }
 
         for (SettingsUserShared u : usersShared) {
             if (u.getUser().equals(user)) {
-                return true;
+                return u;
             }
         }
 
-        return false;
+        return null;
+    }
+
+    public boolean hasUserShared(SettingsUser user) {
+        return getUserShared(user) != null;
     }
 
     public void readFromNBT(NBTTagCompound nbt) {

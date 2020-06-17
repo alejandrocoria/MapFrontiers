@@ -67,15 +67,15 @@ public class PacketNewFrontier implements IMessage {
                                 new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), null)) {
                             frontier = FrontiersManager.instance.createNewPersonalFrontier(message.dimension, player,
                                     message.vertex);
-                            // @Incomplete: send to all players with access to this personal frontier
-                            PacketHandler.INSTANCE.sendTo(new PacketFrontier(frontier, player.getEntityId()), player);
+                            PacketHandler.sendToUsersWithAccess(new PacketFrontier(frontier, player.getEntityId()), frontier);
 
                             return;
                         }
                     } else {
                         if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.CreateFrontier,
                                 new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), null)) {
-                            frontier = FrontiersManager.instance.createNewGlobalFrontier(message.dimension, player, message.vertex);
+                            frontier = FrontiersManager.instance.createNewGlobalFrontier(message.dimension, player,
+                                    message.vertex);
                             PacketHandler.INSTANCE.sendToAll(new PacketFrontier(frontier, player.getEntityId()));
 
                             return;

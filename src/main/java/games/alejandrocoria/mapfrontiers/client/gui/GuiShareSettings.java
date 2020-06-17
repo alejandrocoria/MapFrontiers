@@ -208,7 +208,6 @@ public class GuiShareSettings extends GuiScreen
                 }
             }
 
-
             if (user.username.equals(mc.player.getName())) {
                 textNewUser.setError(I18n.format("mapfrontiers.new_user_shared_error_self"));
                 return;
@@ -301,7 +300,7 @@ public class GuiShareSettings extends GuiScreen
     }
 
     private void updateUsers() {
-        List<SettingsUserShared> usersShared = frontier.getUserShared();
+        List<SettingsUserShared> usersShared = frontier.getUsersShared();
         if (usersShared != null) {
             for (SettingsUserShared user : usersShared) {
                 users.addElement(new GuiUserSharedElement(fontRenderer, buttonList, id, user, this, guiTexture, guiTextureSize));
