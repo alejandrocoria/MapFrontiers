@@ -17,6 +17,7 @@ import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiScrollBox.ScrollElement;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketRemoveSharedUserPersonalFrontier;
+import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateSharedUserPersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.client.gui.GuiButton;
@@ -210,6 +211,19 @@ public class GuiShareSettings extends GuiScreen
                 }
             }
 
+            if (user.uuid == null) {
+                textNewUser.setError(I18n.format("mapfrontiers.new_user_shared_error_user_not_found"));
+                return;
+            }
+
+            NetHandlerPlayClient handler = mc.getConnection();
+            if (handler != null) {
+                if (handler.getPlayerInfo(user.uuid) == null) {
+                    textNewUser.setError(I18n.format("mapfrontiers.new_user_shared_error_user_not_found"));
+                    return;
+                }
+            }
+
             if (user.username.equals(mc.player.getName())) {
                 textNewUser.setError(I18n.format("mapfrontiers.new_user_shared_error_self"));
                 return;
@@ -250,10 +264,6 @@ public class GuiShareSettings extends GuiScreen
         return true;
     }
 
-    private void sendChangesToServer() {
-        frontiersOverlayManager.clientUpdatefrontier(frontier);
-    }
-
     private void resetLabels() {
         labels.clear();
 
@@ -280,8 +290,9 @@ public class GuiShareSettings extends GuiScreen
     @Override
     public void elementDelete(int id, ScrollElement element) {
         if (id == users.getId()) {
-            PacketHandler.INSTANCE.sendToServer(
-                    new PacketRemoveSharedUserPersonalFrontier(frontier.getId(), ((GuiUserSharedElement) element).getUser()));
+            SettingsUser user = ((GuiUserSharedElement) element).getUser();
+            frontier.removeUserShared(user);
+            PacketHandler.INSTANCE.sendToServer(new PacketRemoveSharedUserPersonalFrontier(frontier.getId(), user));
             resetLabels();
         }
     }
@@ -294,7 +305,7 @@ public class GuiShareSettings extends GuiScreen
             user.removeAction(action);
         }
 
-        sendChangesToServer();
+        PacketHandler.INSTANCE.sendToServer(new PacketUpdateSharedUserPersonalFrontier(frontier.getId(), user));
     }
 
     @Override

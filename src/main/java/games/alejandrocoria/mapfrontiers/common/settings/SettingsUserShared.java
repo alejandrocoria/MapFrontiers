@@ -37,6 +37,10 @@ public class SettingsUserShared {
         return user;
     }
 
+    public void setActions(Set<SettingsUserShared.Action> actions) {
+        this.actions = actions;
+    }
+
     public void addAction(SettingsUserShared.Action action) {
         actions.add(action);
     }

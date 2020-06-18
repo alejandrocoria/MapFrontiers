@@ -59,6 +59,7 @@ mapfrontiers.new_user_error_user_repeated=User already in the group
 mapfrontiers.new_user_shared_error_self=Can't add yourself
 mapfrontiers.new_user_shared_error_owner=Cannot add the owner
 mapfrontiers.new_user_shared_error_user_repeated=User already in the list
+mapfrontiers.new_user_shared_error_user_not_found=User is offline
 mapfrontiers.pending=%1$sPending...
 mapfrontiers.edit_group_name=Edit group name
 mapfrontiers.group_ops_desc=In multiplayer this group represents players with OP permissions.\nIn singleplayer it represents the main player of the game.

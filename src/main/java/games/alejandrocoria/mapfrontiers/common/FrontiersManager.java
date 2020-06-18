@@ -188,6 +188,7 @@ public class FrontiersManager {
     public void addPersonalFrontier(SettingsUser user, FrontierData frontier) {
         List<FrontierData> frontiers = this.getAllPersonalFrontiers(user, frontier.getDimension());
         frontiers.add(frontier);
+        saveData();
     }
 
     public boolean deleteGlobalFrontier(int dimension, UUID id) {

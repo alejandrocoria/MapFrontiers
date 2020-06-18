@@ -110,6 +110,10 @@ public class SettingsUser {
         fillMissingInfo(false);
         user.fillMissingInfo(false);
 
-        return uuid.equals(user.uuid);
+        if (uuid != null && user != null) {
+            return uuid.equals(user.uuid);
+        }
+
+        return username.equals(user.username);
     }
 }

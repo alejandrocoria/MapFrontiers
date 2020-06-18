@@ -37,6 +37,8 @@ public class PacketHandler {
                 Side.CLIENT);
         INSTANCE.registerMessage(PacketRemoveSharedUserPersonalFrontier.Handler.class,
                 PacketRemoveSharedUserPersonalFrontier.class, id++, Side.SERVER);
+        INSTANCE.registerMessage(PacketUpdateSharedUserPersonalFrontier.Handler.class,
+                PacketUpdateSharedUserPersonalFrontier.class, id++, Side.SERVER);
     }
 
     public static void sendToUsersWithAccess(IMessage message, FrontierData frontier) {
