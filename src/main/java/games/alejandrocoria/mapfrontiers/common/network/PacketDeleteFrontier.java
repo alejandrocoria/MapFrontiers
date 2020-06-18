@@ -46,26 +46,32 @@ public class PacketDeleteFrontier implements IMessage {
             if (ctx.side == Side.SERVER) {
                 FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
                     EntityPlayerMP player = ctx.getServerHandler().player;
+                    SettingsUser playerUser = new SettingsUser(player);
 
                     FrontierData frontier = FrontiersManager.instance.getFrontierFromID(message.frontierID);
 
                     if (frontier != null) {
                         if (frontier.getPersonal()) {
                             if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier,
-                                    new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), frontier.getOwner())) {
-                                // @Incomplete check if owner or shared user
-                                boolean deleted = FrontiersManager.instance.deletePersonalFrontier(frontier.getOwner(),
-                                        frontier.getDimension(), frontier.getId());
-                                if (deleted) {
-                                    PacketHandler.sendToUsersWithAccess(new PacketFrontierDeleted(frontier.getDimension(),
-                                            frontier.getId(), frontier.getPersonal(), player.getEntityId()), frontier);
+                                    playerUser, MapFrontiers.proxy.isOPorHost(player), frontier.getOwner())) {
+                                if (frontier.getOwner().equals(playerUser)) {
+                                    boolean deleted = FrontiersManager.instance.deletePersonalFrontier(frontier.getOwner(),
+                                            frontier.getDimension(), frontier.getId());
+                                    if (deleted) {
+                                        PacketHandler.sendToUsersWithAccess(new PacketFrontierDeleted(frontier.getDimension(),
+                                                frontier.getId(), frontier.getPersonal(), player.getEntityId()), frontier);
+                                    }
+                                } else if (frontier.hasUserShared(playerUser)) {
+                                    frontier.removeUserShared(playerUser);
+                                    PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier, player.getEntityId()),
+                                            frontier);
                                 }
 
                                 return;
                             }
                         } else {
                             if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.DeleteFrontier,
-                                    new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), frontier.getOwner())) {
+                                    playerUser, MapFrontiers.proxy.isOPorHost(player), frontier.getOwner())) {
                                 boolean deleted = FrontiersManager.instance.deleteGlobalFrontier(frontier.getDimension(),
                                         frontier.getId());
                                 if (deleted) {
