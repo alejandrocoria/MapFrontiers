@@ -292,6 +292,10 @@ public class FrontiersManager {
         pendingShareFrontiers.remove(messageID);
     }
 
+    public void removePendingShareFrontier(SettingsUser user) {
+        pendingShareFrontiers.entrySet().removeIf(x -> x.getValue().targetUser.equals(user));
+    }
+
     public boolean canSendCommandAcceptFrontier(EntityPlayer player) {
         return frontierSettings.checkAction(FrontierSettings.Action.PersonalFrontier, new SettingsUser(player),
                 MapFrontiers.proxy.isOPorHost(player), null);

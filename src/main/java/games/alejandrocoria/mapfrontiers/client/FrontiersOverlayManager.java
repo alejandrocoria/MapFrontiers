@@ -120,6 +120,10 @@ public class FrontiersOverlayManager {
         PacketHandler.INSTANCE.sendToServer(new PacketUpdateFrontier(getAllFrontiers(dimension).get(index)));
     }
 
+    public void clientUpdatefrontier(FrontierOverlay frontier) {
+        PacketHandler.INSTANCE.sendToServer(new PacketUpdateFrontier(frontier));
+    }
+
     public void clientShareFrontier(UUID frontierID, SettingsUser targetUser) {
         PacketHandler.INSTANCE.sendToServer(new PacketSharePersonalFrontier(frontierID, targetUser));
     }

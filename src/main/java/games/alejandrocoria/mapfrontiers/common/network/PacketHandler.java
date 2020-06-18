@@ -35,6 +35,8 @@ public class PacketHandler {
         INSTANCE.registerMessage(PacketSharePersonalFrontier.Handler.class, PacketSharePersonalFrontier.class, id++, Side.SERVER);
         INSTANCE.registerMessage(PacketPersonalFrontierShared.Handler.class, PacketPersonalFrontierShared.class, id++,
                 Side.CLIENT);
+        INSTANCE.registerMessage(PacketRemoveSharedUserPersonalFrontier.Handler.class,
+                PacketRemoveSharedUserPersonalFrontier.class, id++, Side.SERVER);
     }
 
     public static void sendToUsersWithAccess(IMessage message, FrontierData frontier) {
@@ -48,9 +50,11 @@ public class PacketHandler {
         List<SettingsUserShared> usersShared = frontier.getUsersShared();
         if (usersShared != null) {
             for (SettingsUserShared userShared : usersShared) {
-                player = (EntityPlayerMP) server.getEntityFromUuid(userShared.getUser().uuid);
-                if (player != null) {
-                    INSTANCE.sendTo(message, player);
+                if (!userShared.isPending()) {
+                    player = (EntityPlayerMP) server.getEntityFromUuid(userShared.getUser().uuid);
+                    if (player != null) {
+                        INSTANCE.sendTo(message, player);
+                    }
                 }
             }
         }

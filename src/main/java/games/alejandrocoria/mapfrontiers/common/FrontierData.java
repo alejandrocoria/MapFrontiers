@@ -214,6 +214,14 @@ public class FrontierData {
         }
     }
 
+    public void removeUserShared(SettingsUser user) {
+        if (usersShared == null) {
+            return;
+        }
+
+        usersShared.removeIf(x -> x.getUser().equals(user));
+    }
+
     public void setUsersShared(List<SettingsUserShared> usersShared) {
         this.usersShared = usersShared;
     }

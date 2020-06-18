@@ -52,6 +52,7 @@ public class CommandAcceptFrontier extends CommandBase {
                 if (pending.targetUser.equals(new SettingsUser(getCommandSenderAsPlayer(sender)))) {
                     FrontierData frontier = FrontiersManager.instance.getFrontierFromID(pending.frontierID);
                     if (frontier == null) {
+                        FrontiersManager.instance.removePendingShareFrontier(messageID);
                         throw new CommandException("The frontier no longer exists", new Object[0]);
                     }
 
@@ -60,13 +61,16 @@ public class CommandAcceptFrontier extends CommandBase {
                         throw new CommandException("", new Object[0]);
                     }
 
+
                     if (FrontiersManager.instance.hasPersonalFrontier(pending.targetUser, frontier.getId())) {
+                        FrontiersManager.instance.removePendingShareFrontier(messageID);
                         throw new CommandException("You already have the frontier", new Object[0]);
+                    } else {
+                        FrontiersManager.instance.addPersonalFrontier(pending.targetUser, frontier);
                     }
 
                     userShared.setPending(false);
 
-                    FrontiersManager.instance.addPersonalFrontier(pending.targetUser, frontier);
                     FrontiersManager.instance.removePendingShareFrontier(messageID);
 
                     PacketHandler.INSTANCE.sendTo(new PacketFrontier(frontier), getCommandSenderAsPlayer(sender));
