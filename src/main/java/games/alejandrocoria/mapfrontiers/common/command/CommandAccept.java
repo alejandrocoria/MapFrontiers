@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.common.command;
 
+import java.util.Arrays;
 import java.util.List;
 
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
@@ -19,10 +20,12 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
-public class CommandAcceptFrontier extends CommandBase {
+public class CommandAccept extends CommandBase {
+    private static final List<String> aliases = Arrays.asList("mfaccept");
+
     @Override
     public String getName() {
-        return "acceptfrontier";
+        return "mapfrontiersaccept";
     }
 
     @Override
@@ -32,7 +35,12 @@ public class CommandAcceptFrontier extends CommandBase {
 
     @Override
     public String getUsage(ICommandSender sender) {
-        return "/acceptfrontier <invitation id>";
+        return "/mfaccept <invitation id>";
+    }
+
+    @Override
+    public List<String> getAliases() {
+        return aliases;
     }
 
     @Override

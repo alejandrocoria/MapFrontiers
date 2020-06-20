@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import games.alejandrocoria.mapfrontiers.common.command.CommandAcceptFrontier;
+import games.alejandrocoria.mapfrontiers.common.command.CommandAccept;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSettingsProfile;
@@ -44,7 +44,7 @@ public class CommonProxy {
         frontiersManager.loadOrCreateData();
 
         MinecraftForge.EVENT_BUS.register(frontiersManager);
-        event.registerServerCommand(new CommandAcceptFrontier());
+        event.registerServerCommand(new CommandAccept());
     }
 
     public void serverStopping(FMLServerStoppingEvent event) {

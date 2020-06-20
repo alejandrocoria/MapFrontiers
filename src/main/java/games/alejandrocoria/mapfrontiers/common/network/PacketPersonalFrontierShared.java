@@ -87,10 +87,10 @@ public class PacketPersonalFrontierShared implements IMessage {
                     TextComponentString button = new TextComponentString(frontierName);
                     Style style = new Style();
                     style.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                            new TextComponentString("Click to accept or use command /acceptfrontier " + message.shareMessageID)));
+                            new TextComponentString("Click to accept or use command /mfaccept " + message.shareMessageID)));
                     style.setBold(true);
                     style.setClickEvent(
-                            new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/acceptfrontier " + message.shareMessageID));
+                            new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mapfrontiersaccept " + message.shareMessageID));
                     button.setStyle(style);
 
                     TextComponentString text = new TextComponentString(userToString(message.playerSharing) + " ");
