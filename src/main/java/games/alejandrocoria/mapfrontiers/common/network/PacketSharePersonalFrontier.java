@@ -75,8 +75,6 @@ public class PacketSharePersonalFrontier implements IMessage {
                         return;
                     }
 
-                    // @Incomplete: check if target is the owner or is already in the list
-
                     FrontierData currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontierID);
 
                     if (currentFrontier != null && currentFrontier.getPersonal()) {
