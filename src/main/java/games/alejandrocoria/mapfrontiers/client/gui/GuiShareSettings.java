@@ -20,6 +20,7 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketRemoveSharedUserPe
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateSharedUserPersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.network.NetHandlerPlayClient;
@@ -36,6 +37,7 @@ public class GuiShareSettings extends GuiScreen
     private static final int guiTextureSize = 512;
 
     private ResourceLocation guiTexture;
+    private GuiFrontierBook parent;
     private FrontiersOverlayManager frontiersOverlayManager;
     private FrontierOverlay frontier;
     private GuiScrollBox users;
@@ -45,7 +47,8 @@ public class GuiShareSettings extends GuiScreen
     private int ticksSinceLastUpdate = 0;
     private int id = 0;
 
-    public GuiShareSettings(FrontiersOverlayManager frontiersOverlayManager, FrontierOverlay frontier) {
+    public GuiShareSettings(GuiFrontierBook parent, FrontiersOverlayManager frontiersOverlayManager, FrontierOverlay frontier) {
+        this.parent = parent;
         this.frontiersOverlayManager = frontiersOverlayManager;
         this.frontier = frontier;
 
@@ -123,6 +126,8 @@ public class GuiShareSettings extends GuiScreen
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        parent.drawScreen(mouseX, mouseY, partialTicks);
+
         drawDefaultBackground();
 
         users.drawBox(mc, mouseX, mouseY);
@@ -176,8 +181,12 @@ public class GuiShareSettings extends GuiScreen
 
     @Override
     protected void keyTyped(char typedChar, int keyCode) throws IOException {
-        super.keyTyped(typedChar, keyCode);
-        textNewUser.textboxKeyTyped(typedChar, keyCode);
+        if (keyCode == Keyboard.KEY_ESCAPE) {
+            Minecraft.getMinecraft().displayGuiScreen(parent);
+        } else {
+            super.keyTyped(typedChar, keyCode);
+            textNewUser.textboxKeyTyped(typedChar, keyCode);
+        }
     }
 
     @Override
@@ -262,6 +271,32 @@ public class GuiShareSettings extends GuiScreen
     @Override
     public boolean doesGuiPauseGame() {
         return true;
+    }
+
+    public void newFrontierMessage(FrontierOverlay frontierOverlay, int playerID) {
+        parent.newFrontierMessage(frontierOverlay, playerID);
+    }
+
+    public void updateFrontierMessage(FrontierOverlay frontierOverlay, int playerID) {
+        parent.updateFrontierMessage(frontierOverlay, playerID);
+
+        if (frontierOverlay.getId().equals(frontier.getId())) {
+            frontier = frontierOverlay;
+        }
+
+        updateUsers();
+    }
+
+    public void deleteFrontierMessage(int index, int dimension, UUID frontierID, boolean personal, int playerID) {
+        parent.deleteFrontierMessage(index, dimension, personal, playerID);
+
+        if (frontierID.equals(frontier.getId())) {
+            mc.displayGuiScreen(parent);
+        }
+    }
+
+    public void reloadPage(boolean syncFrontierWithServer) {
+        parent.reloadPage(syncFrontierWithServer);
     }
 
     private void resetLabels() {

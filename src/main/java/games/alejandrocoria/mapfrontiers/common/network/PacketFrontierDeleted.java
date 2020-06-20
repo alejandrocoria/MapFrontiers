@@ -7,6 +7,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
+import games.alejandrocoria.mapfrontiers.client.gui.GuiShareSettings;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
@@ -59,9 +60,14 @@ public class PacketFrontierDeleted implements IMessage {
 
                     MapFrontiers.proxy.frontierChanged();
 
-                    if (frontierIndex != -1 && Minecraft.getMinecraft().currentScreen instanceof GuiFrontierBook) {
-                        ((GuiFrontierBook) Minecraft.getMinecraft().currentScreen).deleteFrontierMessage(frontierIndex,
-                                message.dimension, message.personal, message.playerID);
+                    if (frontierIndex != -1) {
+                        if (Minecraft.getMinecraft().currentScreen instanceof GuiFrontierBook) {
+                            ((GuiFrontierBook) Minecraft.getMinecraft().currentScreen).deleteFrontierMessage(frontierIndex,
+                                    message.dimension, message.personal, message.playerID);
+                        } else if (Minecraft.getMinecraft().currentScreen instanceof GuiShareSettings) {
+                            ((GuiShareSettings) Minecraft.getMinecraft().currentScreen).deleteFrontierMessage(frontierIndex,
+                                    message.dimension, message.frontierID, message.personal, message.playerID);
+                        }
                     }
                 });
             }

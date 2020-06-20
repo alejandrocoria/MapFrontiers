@@ -587,7 +587,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             updateGridRenderer();
         } else if (button == buttonEditShareSettings) {
             FrontierOverlay frontier = getCurrentFrontier();
-            mc.displayGuiScreen(new GuiShareSettings(frontiersOverlayManager, frontier));
+            mc.displayGuiScreen(new GuiShareSettings(this, frontiersOverlayManager, frontier));
         } else {
             for (IndexEntryButton indexButton : indexEntryButtons) {
                 if (button == indexButton) {
@@ -721,14 +721,6 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
             player.sendMessage(new TextComponentString(message));
         }
-    }
-
-    public void updateSettingsMessage() {
-        if (!isInFrontierPage()) {
-            return;
-        }
-
-        reloadPage(true);
     }
 
     private void sendChangesToServer() {

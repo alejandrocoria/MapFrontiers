@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierSettings;
+import games.alejandrocoria.mapfrontiers.client.gui.GuiShareSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
@@ -53,6 +54,8 @@ public class PacketSettingsProfile implements IMessage {
                             ((GuiFrontierSettings) Minecraft.getMinecraft().currentScreen).updateSettingsProfile(message.profile);
                         } else if (Minecraft.getMinecraft().currentScreen instanceof GuiFrontierBook) {
                             ((GuiFrontierBook) Minecraft.getMinecraft().currentScreen).reloadPage(false);
+                        } else if (Minecraft.getMinecraft().currentScreen instanceof GuiShareSettings) {
+                            ((GuiShareSettings) Minecraft.getMinecraft().currentScreen).reloadPage(false);
                         }
                     }
                 });
