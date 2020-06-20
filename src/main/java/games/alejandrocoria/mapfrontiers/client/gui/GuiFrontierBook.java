@@ -19,6 +19,7 @@ import games.alejandrocoria.mapfrontiers.client.util.StringHelper;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import journeymap.client.api.display.Context;
 import journeymap.client.api.impl.ClientAPI;
 import journeymap.client.data.DataCache;
@@ -960,11 +961,26 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                         GuiSimpleLabel.Align.Left, shared));
             }
 
-            SettingsProfile profile = ((ClientProxy) MapFrontiers.proxy).getSettingsProfile();
-            boolean isOwner = frontier.getOwner().equals(new SettingsUser(Minecraft.getMinecraft().player));
+            SettingsUser playerUser = new SettingsUser(Minecraft.getMinecraft().player);
+            boolean isOwner = frontier.getOwner().equals(playerUser);
+            boolean canUpdate = false;
 
-            boolean canUpdate = profile.updateFrontier == SettingsProfile.State.Enabled
-                    || (isOwner && profile.updateFrontier == SettingsProfile.State.Owner);
+            if (personal) {
+                if (isOwner) {
+                    canUpdate = true;
+                } else {
+                    SettingsUserShared userShared = frontier.getUserShared(playerUser);
+                    if (userShared != null && userShared.hasAction(SettingsUserShared.Action.UpdateFrontier)) {
+                        canUpdate = true;
+                    }
+                }
+            } else {
+                SettingsProfile profile = ((ClientProxy) MapFrontiers.proxy).getSettingsProfile();
+                if (profile.updateFrontier == SettingsProfile.State.Enabled
+                        || (isOwner && profile.updateFrontier == SettingsProfile.State.Owner)) {
+                    canUpdate = true;
+                }
+            }
 
             if (dimension == currentDimension && canUpdate) {
                 if (frontier.getSelectedVertexIndex() >= 0) {
@@ -1069,18 +1085,37 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
         SettingsProfile profile = ((ClientProxy) MapFrontiers.proxy).getSettingsProfile();
         FrontierOverlay frontier = null;
+        SettingsUser playerUser = new SettingsUser(Minecraft.getMinecraft().player);
         boolean isOwner = false;
+        boolean canCreate = false;
+        boolean canDelete = false;
+        boolean canUpdate = false;
 
         if (isInFrontierPage()) {
             frontier = getCurrentFrontier();
-            isOwner = frontier.getOwner().equals(new SettingsUser(Minecraft.getMinecraft().player));
+            isOwner = frontier.getOwner().equals(playerUser);
         }
 
-        boolean canCreate = profile.createFrontier == SettingsProfile.State.Enabled;
-        boolean canDelete = profile.deleteFrontier == SettingsProfile.State.Enabled
-                || (isOwner && profile.deleteFrontier == SettingsProfile.State.Owner);
-        boolean canUpdate = profile.updateFrontier == SettingsProfile.State.Enabled
-                || (isOwner && profile.updateFrontier == SettingsProfile.State.Owner);
+        if (personal) {
+            canCreate = true;
+            if (isInFrontierPage()) {
+                canDelete = true;
+                if (isOwner) {
+                    canUpdate = true;
+                } else {
+                    SettingsUserShared userShared = frontier.getUserShared(playerUser);
+                    if (userShared != null && userShared.hasAction(SettingsUserShared.Action.UpdateFrontier)) {
+                        canUpdate = true;
+                    }
+                }
+            }
+        } else {
+            canCreate = profile.createFrontier == SettingsProfile.State.Enabled;
+            canDelete = profile.deleteFrontier == SettingsProfile.State.Enabled
+                    || (isOwner && profile.deleteFrontier == SettingsProfile.State.Owner);
+            canUpdate = profile.updateFrontier == SettingsProfile.State.Enabled
+                    || (isOwner && profile.updateFrontier == SettingsProfile.State.Owner);
+        }
 
         if (isInFrontierPage()) {
             if (canDelete) {
@@ -1091,8 +1126,6 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
             buttonBackToIndex.visible = true;
             buttonNameVisible.visible = canUpdate;
-
-            // @Incomplete: check permissions
             buttonEditShareSettings.visible = personal;
 
             if (canUpdate && frontier.getVertexCount() > 0) {
