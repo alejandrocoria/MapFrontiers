@@ -9,6 +9,7 @@ import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraftforge.fml.common.FMLCommonHandler;
@@ -58,6 +59,10 @@ public class PacketDeleteFrontier implements IMessage {
                                     boolean deleted = FrontiersManager.instance.deletePersonalFrontier(frontier.getOwner(),
                                             frontier.getDimension(), frontier.getId());
                                     if (deleted) {
+                                        for (SettingsUserShared userShared : frontier.getUsersShared()) {
+                                            FrontiersManager.instance.deletePersonalFrontier(userShared.getUser(),
+                                                    frontier.getDimension(), frontier.getId());
+                                        }
                                         PacketHandler.sendToUsersWithAccess(new PacketFrontierDeleted(frontier.getDimension(),
                                                 frontier.getId(), frontier.getPersonal(), player.getEntityId()), frontier);
                                     }
