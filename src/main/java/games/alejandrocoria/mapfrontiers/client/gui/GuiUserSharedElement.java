@@ -24,25 +24,32 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
     private boolean updateFrontier;
     private boolean updateSettings;
     private GuiButtonIcon buttonDelete;
+    private boolean enabled;
     private int pingBar = 0;
     List<GuiButton> buttonList;
 
     public GuiUserSharedElement(FontRenderer fontRenderer, List<GuiButton> buttonList, int id, SettingsUserShared user,
-            UserSharedResponder responder, ResourceLocation texture, int textureSize) {
+            boolean enabled, boolean removable, UserSharedResponder responder, ResourceLocation texture, int textureSize) {
         super(430, 16);
         this.fontRenderer = fontRenderer;
         this.user = user;
         this.responder = responder;
         updateFrontier = user.hasAction(SettingsUserShared.Action.UpdateFrontier);
         updateSettings = user.hasAction(SettingsUserShared.Action.UpdateSettings);
-        buttonDelete = new GuiButtonIcon(id, 0, 0, 13, 13, 494, 132, -23, texture, textureSize);
-        this.buttonList = buttonList;
-        this.buttonList.add(buttonDelete);
+        this.enabled = enabled;
+
+        if (removable && enabled) {
+            buttonDelete = new GuiButtonIcon(id, 0, 0, 13, 13, 494, 132, -23, texture, textureSize);
+            this.buttonList = buttonList;
+            this.buttonList.add(buttonDelete);
+        }
     }
 
     @Override
     public void delete() {
-        buttonList.remove(buttonDelete);
+        if (buttonList != null) {
+            buttonList.remove(buttonDelete);
+        }
     }
 
     public SettingsUser getUser() {
@@ -62,13 +69,17 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
     @Override
     public void setX(int x) {
         super.setX(x);
-        buttonDelete.x = this.x + 413;
+        if (buttonDelete != null) {
+            buttonDelete.x = this.x + 413;
+        }
     }
 
     @Override
     public void setY(int y) {
         super.setY(y);
-        buttonDelete.y = this.y + 1;
+        if (buttonDelete != null) {
+            buttonDelete.y = this.y + 1;
+        }
     }
 
     @Override
@@ -78,9 +89,10 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
 
             if (hovered) {
                 Gui.drawRect(x, y, x + width, y + height, GuiColors.SETTINGS_ELEMENT_HOVERED);
-                buttonDelete.visible = true;
-            } else {
-                buttonDelete.visible = false;
+            }
+
+            if (buttonDelete != null) {
+                buttonDelete.visible = hovered;
             }
 
             String text = user.getUser().username;
@@ -119,7 +131,9 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
             }
         } else {
             hovered = false;
-            buttonDelete.visible = false;
+            if (buttonDelete != null) {
+                buttonDelete.visible = false;
+            }
         }
     }
 
@@ -129,7 +143,7 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
 
     @Override
     public GuiScrollBox.ScrollElement.Action mousePressed(Minecraft mc, int mouseX, int mouseY) {
-        if (visible && hovered && responder != null) {
+        if (enabled && visible && hovered && responder != null) {
             if (mouseX >= x + 220 && mouseX <= x + 280) {
                 updateFrontier = !updateFrontier;
                 responder.actionChanged(user, SettingsUserShared.Action.UpdateFrontier, updateFrontier);
@@ -139,7 +153,7 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
             }
         }
 
-        if (visible && hovered) {
+        if (enabled && visible && hovered && buttonDelete != null) {
             if (buttonDelete.mousePressed(mc, mouseX, mouseY)) {
                 return GuiScrollBox.ScrollElement.Action.Deleted;
             }

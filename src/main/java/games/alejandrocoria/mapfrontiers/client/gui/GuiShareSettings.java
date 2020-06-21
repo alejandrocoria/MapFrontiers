@@ -44,6 +44,7 @@ public class GuiShareSettings extends GuiScreen
     private TextUserBox textNewUser;
     private GuiButtonIcon buttonNewUser;
     private List<GuiSimpleLabel> labels;
+    private boolean canUpdate;
     private int ticksSinceLastUpdate = 0;
     private int id = 0;
 
@@ -74,7 +75,7 @@ public class GuiShareSettings extends GuiScreen
 
         buttonList.add(buttonNewUser);
 
-        resetLabels();
+        updateCanUpdate();
         updateButtonsVisibility();
         updateUsers();
     }
@@ -253,8 +254,8 @@ public class GuiShareSettings extends GuiScreen
             frontier.addUserShared(userShared);
             frontiersOverlayManager.clientShareFrontier(frontier.getId(), user);
 
-            GuiUserSharedElement element = new GuiUserSharedElement(fontRenderer, buttonList, id, userShared, this, guiTexture,
-                    guiTextureSize);
+            GuiUserSharedElement element = new GuiUserSharedElement(fontRenderer, buttonList, id, userShared, canUpdate, true,
+                    this, guiTexture, guiTextureSize);
             users.addElement(element);
             users.scrollBottom();
 
@@ -282,9 +283,10 @@ public class GuiShareSettings extends GuiScreen
 
         if (frontierOverlay.getId().equals(frontier.getId())) {
             frontier = frontierOverlay;
+            updateCanUpdate();
+            updateUsers();
+            updateButtonsVisibility();
         }
-
-        updateUsers();
     }
 
     public void deleteFrontierMessage(int index, int dimension, UUID frontierID, boolean personal, int playerID) {
@@ -314,7 +316,10 @@ public class GuiShareSettings extends GuiScreen
 
     private void updateButtonsVisibility() {
         users.visible = true;
-        buttonNewUser.visible = true;
+
+        if (canUpdate) {
+            buttonNewUser.visible = true;
+        }
     }
 
     @Override
@@ -340,6 +345,16 @@ public class GuiShareSettings extends GuiScreen
             user.removeAction(action);
         }
 
+        if (user.getUser().equals(new SettingsUser(Minecraft.getMinecraft().player))) {
+            if (action == SettingsUserShared.Action.UpdateSettings) {
+                updateCanUpdate();
+                updateUsers();
+                updateButtonsVisibility();
+            } else {
+                parent.reloadPage(false);
+            }
+        }
+
         PacketHandler.INSTANCE.sendToServer(new PacketUpdateSharedUserPersonalFrontier(frontier.getId(), user));
     }
 
@@ -356,18 +371,29 @@ public class GuiShareSettings extends GuiScreen
     private void updateUsers() {
         users.removeAll();
 
+        SettingsUser player = new SettingsUser(mc.player);
         List<SettingsUserShared> usersShared = frontier.getUsersShared();
         if (usersShared != null) {
             for (SettingsUserShared user : usersShared) {
-                users.addElement(new GuiUserSharedElement(fontRenderer, buttonList, id, user, this, guiTexture, guiTextureSize));
+                users.addElement(new GuiUserSharedElement(fontRenderer, buttonList, id, user, canUpdate,
+                        !user.getUser().equals(player), this, guiTexture, guiTextureSize));
             }
         }
 
         resetLabels();
     }
 
-    private boolean canAddNewUser() {
-        // @Incomplete
-        return true;
+    private void updateCanUpdate() {
+        canUpdate = false;
+
+        SettingsUser player = new SettingsUser(mc.player);
+        if (frontier.getOwner().equals(player)) {
+            canUpdate = true;
+        } else {
+            SettingsUserShared userShared = frontier.getUserShared(player);
+            if (userShared != null && userShared.getUser().equals(player)) {
+                canUpdate = true;
+            }
+        }
     }
 }
