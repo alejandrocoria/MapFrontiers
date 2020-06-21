@@ -215,8 +215,15 @@ public class FrontiersManager {
             return false;
         }
 
+        for (FrontierData frontier : frontiers) {
+            if (frontier.getOwner().equals(user)) {
+                allFrontiers.remove(id);
+                break;
+            }
+        }
+
         boolean deleted = frontiers.removeIf(x -> x.id.equals(id));
-        deleted |= allFrontiers.remove(id) != null;
+
         saveData();
 
         return deleted;
