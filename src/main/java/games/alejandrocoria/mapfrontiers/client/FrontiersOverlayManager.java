@@ -152,12 +152,12 @@ public class FrontiersOverlayManager {
         if (index < 0) {
             return null;
         } else {
-            FrontierOverlay frontierOverlay = new FrontierOverlay(data, jmAPI);
-
-            int selectedIndex = getFrontierIndexSelected(frontierOverlay.getDimension());
             frontiers.get(index).removeOverlay();
+
+            FrontierOverlay frontierOverlay = new FrontierOverlay(data, jmAPI);
             frontiers.set(index, frontierOverlay);
 
+            int selectedIndex = getFrontierIndexSelected(frontierOverlay.getDimension());
             if (index == selectedIndex) {
                 frontiersSelected.put(frontierOverlay.getDimension(), frontierOverlay);
             }

@@ -730,15 +730,21 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     }
 
     public void reloadPage(boolean syncFrontierWithServer) {
-        changePage(currPage, syncFrontierWithServer);
+        changePage(currPage, syncFrontierWithServer, false);
     }
 
     private void changePage(int newPage) {
-        changePage(newPage, true);
+        changePage(newPage, true, true);
     }
 
     private void changePage(int newPage, boolean syncFrontierWithServer) {
-        Sounds.playSoundTurnPage();
+        changePage(newPage, syncFrontierWithServer, true);
+    }
+
+    private void changePage(int newPage, boolean syncFrontierWithServer, boolean playSound) {
+        if (playSound) {
+            Sounds.playSoundTurnPage();
+        }
 
         if (syncFrontierWithServer) {
             sendChangesToServer();
@@ -958,14 +964,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             boolean canUpdate = false;
 
             if (personal) {
-                if (isOwner) {
-                    canUpdate = true;
-                } else {
-                    SettingsUserShared userShared = frontier.getUserShared(playerUser);
-                    if (userShared != null && userShared.hasAction(SettingsUserShared.Action.UpdateFrontier)) {
-                        canUpdate = true;
-                    }
-                }
+                canUpdate = frontier.checkActionUserShared(playerUser, SettingsUserShared.Action.UpdateFrontier);
             } else {
                 SettingsProfile profile = ((ClientProxy) MapFrontiers.proxy).getSettingsProfile();
                 if (profile.updateFrontier == SettingsProfile.State.Enabled
@@ -1092,14 +1091,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             canCreate = true;
             if (isInFrontierPage()) {
                 canDelete = true;
-                if (isOwner) {
-                    canUpdate = true;
-                } else {
-                    SettingsUserShared userShared = frontier.getUserShared(playerUser);
-                    if (userShared != null && userShared.hasAction(SettingsUserShared.Action.UpdateFrontier)) {
-                        canUpdate = true;
-                    }
-                }
+                canUpdate = frontier.checkActionUserShared(playerUser, SettingsUserShared.Action.UpdateFrontier);
             }
         } else {
             canCreate = profile.createFrontier == SettingsProfile.State.Enabled;
@@ -1119,6 +1111,12 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             buttonBackToIndex.visible = true;
             buttonNameVisible.visible = canUpdate;
             buttonEditShareSettings.visible = personal;
+
+            this.textRed.setEnabled(canUpdate);
+            this.textGreen.setEnabled(canUpdate);
+            this.textBlue.setEnabled(canUpdate);
+            this.textName1.setEnabled(canUpdate);
+            this.textName2.setEnabled(canUpdate);
 
             if (canUpdate && frontier.getVertexCount() > 0) {
                 buttonSliceUp.visible = frontier.getMapSlice() < 16;

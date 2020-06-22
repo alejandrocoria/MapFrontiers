@@ -76,7 +76,11 @@ public class FrontiersManager {
                             continue;
                         }
 
-                        boolean removed = frontier.getUsersShared().removeIf(x -> x.getUser().equals(pending.targetUser));
+                        boolean removed = false;
+
+                        if (frontier.getUsersShared() != null) {
+                            removed = frontier.getUsersShared().removeIf(x -> x.getUser().equals(pending.targetUser));
+                        }
 
                         if (removed) {
                             EntityPlayerMP player = (EntityPlayerMP) FMLCommonHandler.instance().getMinecraftServerInstance()
@@ -248,26 +252,28 @@ public class FrontiersManager {
         return true;
     }
 
-    public boolean updatePersonalFrontier(FrontierData frontier) {
-        Map<Integer, ArrayList<FrontierData>> dimensionsPersonalFrontiers = usersDimensionsPersonalFrontiers
-                .get(frontier.getOwner());
+    public boolean updatePersonalFrontier(SettingsUser user, FrontierData updatedFrontier) {
+        Map<Integer, ArrayList<FrontierData>> dimensionsPersonalFrontiers = usersDimensionsPersonalFrontiers.get(user);
         if (dimensionsPersonalFrontiers == null) {
             return false;
         }
 
-        List<FrontierData> frontiers = dimensionsPersonalFrontiers.get(Integer.valueOf(frontier.getDimension()));
+        List<FrontierData> frontiers = dimensionsPersonalFrontiers.get(Integer.valueOf(updatedFrontier.getDimension()));
         if (frontiers == null) {
             return false;
         }
 
-        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId().equals(frontier.getId()));
+        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId().equals(updatedFrontier.getId()));
 
         if (index < 0) {
             return false;
         }
 
-        frontiers.set(index, frontier);
-        allFrontiers.put(frontier.getId(), frontier);
+        if (frontiers.get(index).getOwner().equals(user)) {
+            allFrontiers.put(updatedFrontier.getId(), updatedFrontier);
+        }
+
+        frontiers.set(index, updatedFrontier);
         saveData();
 
         return true;

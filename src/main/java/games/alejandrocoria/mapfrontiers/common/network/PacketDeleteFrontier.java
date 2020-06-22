@@ -59,15 +59,22 @@ public class PacketDeleteFrontier implements IMessage {
                                     boolean deleted = FrontiersManager.instance.deletePersonalFrontier(frontier.getOwner(),
                                             frontier.getDimension(), frontier.getId());
                                     if (deleted) {
-                                        for (SettingsUserShared userShared : frontier.getUsersShared()) {
-                                            FrontiersManager.instance.deletePersonalFrontier(userShared.getUser(),
-                                                    frontier.getDimension(), frontier.getId());
+                                        if (frontier.getUsersShared() != null) {
+                                            for (SettingsUserShared userShared : frontier.getUsersShared()) {
+                                                FrontiersManager.instance.deletePersonalFrontier(userShared.getUser(),
+                                                        frontier.getDimension(), frontier.getId());
+                                            }
                                         }
                                         PacketHandler.sendToUsersWithAccess(new PacketFrontierDeleted(frontier.getDimension(),
                                                 frontier.getId(), frontier.getPersonal(), player.getEntityId()), frontier);
                                     }
-                                } else if (frontier.hasUserShared(playerUser)) {
+                                } else {
                                     frontier.removeUserShared(playerUser);
+                                    FrontiersManager.instance.deletePersonalFrontier(playerUser, frontier.getDimension(),
+                                            frontier.getId());
+
+                                    PacketHandler.INSTANCE.sendTo(new PacketFrontierDeleted(frontier.getDimension(),
+                                            frontier.getId(), frontier.getPersonal(), player.getEntityId()), player);
                                     PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier, player.getEntityId()),
                                             frontier);
                                 }

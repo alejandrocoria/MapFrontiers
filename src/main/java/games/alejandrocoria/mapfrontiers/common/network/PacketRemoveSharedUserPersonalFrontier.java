@@ -71,29 +71,31 @@ public class PacketRemoveSharedUserPersonalFrontier implements IMessage {
                                 playerUser, MapFrontiers.proxy.isOPorHost(player), currentFrontier.getOwner())) {
                             SettingsUserShared userShared = currentFrontier.getUserShared(message.targetUser);
 
-                            if (userShared == null) {
+                            if (userShared == null || userShared.getUser().equals(playerUser)) {
                                 return;
                             }
 
-                            currentFrontier.removeUserShared(message.targetUser);
+                            if (currentFrontier.checkActionUserShared(playerUser, SettingsUserShared.Action.UpdateSettings)) {
+                                currentFrontier.removeUserShared(message.targetUser);
 
-                            if (userShared.isPending()) {
-                                FrontiersManager.instance.removePendingShareFrontier(message.targetUser);
-                            } else {
-                                FrontiersManager.instance.deletePersonalFrontier(message.targetUser,
-                                        currentFrontier.getDimension(), message.frontierID);
+                                if (userShared.isPending()) {
+                                    FrontiersManager.instance.removePendingShareFrontier(message.targetUser);
+                                } else {
+                                    FrontiersManager.instance.deletePersonalFrontier(message.targetUser,
+                                            currentFrontier.getDimension(), message.frontierID);
 
-                                Entity entity = FMLCommonHandler.instance().getMinecraftServerInstance()
-                                        .getEntityFromUuid(message.targetUser.uuid);
-                                if (entity != null && entity instanceof EntityPlayerMP) {
-                                    PacketHandler.INSTANCE.sendTo(new PacketFrontierDeleted(currentFrontier.getDimension(),
-                                            message.frontierID, true, -1), (EntityPlayerMP) entity);
+                                    Entity entity = FMLCommonHandler.instance().getMinecraftServerInstance()
+                                            .getEntityFromUuid(message.targetUser.uuid);
+                                    if (entity != null && entity instanceof EntityPlayerMP) {
+                                        PacketHandler.INSTANCE.sendTo(new PacketFrontierDeleted(currentFrontier.getDimension(),
+                                                message.frontierID, true, -1), (EntityPlayerMP) entity);
+                                    }
                                 }
-                            }
 
-                            PacketHandler.sendToUsersWithAccess(
-                                    new PacketFrontierUpdated(currentFrontier, ctx.getServerHandler().player.getEntityId()),
-                                    currentFrontier);
+                                PacketHandler.sendToUsersWithAccess(
+                                        new PacketFrontierUpdated(currentFrontier, ctx.getServerHandler().player.getEntityId()),
+                                        currentFrontier);
+                            }
                         } else {
                             PacketHandler.INSTANCE.sendTo(
                                     new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)),

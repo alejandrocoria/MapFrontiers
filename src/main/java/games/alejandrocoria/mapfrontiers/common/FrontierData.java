@@ -256,6 +256,23 @@ public class FrontierData {
         return getUserShared(user) != null;
     }
 
+    public boolean checkActionUserShared(SettingsUser user, SettingsUserShared.Action action) {
+        if (user.equals(owner)) {
+            return true;
+        }
+
+        if (usersShared == null) {
+            return false;
+        }
+
+        SettingsUserShared userShared = getUserShared(user);
+        if (userShared == null) {
+            return false;
+        }
+
+        return userShared.hasAction(action);
+    }
+
     public void readFromNBT(NBTTagCompound nbt) {
         readFromNBT(nbt, FrontiersManager.dataVersion);
     }
@@ -348,6 +365,8 @@ public class FrontierData {
                 userShared.writeToNBT(nbtUserShared);
                 usersSharedTagList.appendTag(nbtUserShared);
             }
+
+            nbt.setTag("usersShared", usersSharedTagList);
         }
 
         NBTTagList verticesTagList = new NBTTagList();

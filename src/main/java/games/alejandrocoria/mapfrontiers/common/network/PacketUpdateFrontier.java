@@ -7,6 +7,7 @@ import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
@@ -47,6 +48,7 @@ public class PacketUpdateFrontier implements IMessage {
             if (ctx.side == Side.SERVER) {
                 FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
                     EntityPlayerMP player = ctx.getServerHandler().player;
+                    SettingsUser playerUser = new SettingsUser(player);
 
                     FrontierData currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontier.getId());
 
@@ -60,20 +62,27 @@ public class PacketUpdateFrontier implements IMessage {
 
                         if (message.frontier.getPersonal()) {
                             if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier,
-                                    new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player),
-                                    message.frontier.getOwner())) {
-                                boolean updated = FrontiersManager.instance.updatePersonalFrontier(message.frontier);
-                                if (updated) {
-                                    PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(message.frontier,
-                                            ctx.getServerHandler().player.getEntityId()), message.frontier);
+                                    playerUser, MapFrontiers.proxy.isOPorHost(player), message.frontier.getOwner())) {
+                                if (currentFrontier.checkActionUserShared(playerUser, SettingsUserShared.Action.UpdateFrontier)) {
+                                    boolean updated = FrontiersManager.instance
+                                            .updatePersonalFrontier(message.frontier.getOwner(), message.frontier);
+                                    if (updated) {
+                                        if (message.frontier.getUsersShared() != null) {
+                                            for (SettingsUserShared userShared : message.frontier.getUsersShared()) {
+                                                FrontiersManager.instance.updatePersonalFrontier(userShared.getUser(),
+                                                        message.frontier);
+                                            }
+                                        }
+                                        PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(message.frontier,
+                                                ctx.getServerHandler().player.getEntityId()), message.frontier);
+                                    }
                                 }
 
                                 return;
                             }
                         } else {
                             if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.UpdateFrontier,
-                                    new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player),
-                                    message.frontier.getOwner())) {
+                                    playerUser, MapFrontiers.proxy.isOPorHost(player), message.frontier.getOwner())) {
                                 boolean updated = FrontiersManager.instance.updateGlobalFrontier(message.frontier);
                                 if (updated) {
                                     PacketHandler.INSTANCE.sendToAll(new PacketFrontierUpdated(message.frontier,

@@ -85,14 +85,16 @@ public class PacketSharePersonalFrontier implements IMessage {
 
                         if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier,
                                 playerUser, MapFrontiers.proxy.isOPorHost(player), currentFrontier.getOwner())) {
-                            int shareMessageID = FrontiersManager.instance.addShareMessage(message.targetUser,
-                                    currentFrontier.getId());
+                            if (currentFrontier.checkActionUserShared(playerUser, SettingsUserShared.Action.UpdateSettings)) {
+                                int shareMessageID = FrontiersManager.instance.addShareMessage(message.targetUser,
+                                        currentFrontier.getId());
 
-                            currentFrontier.addUserShared(new SettingsUserShared(message.targetUser, true));
+                                currentFrontier.addUserShared(new SettingsUserShared(message.targetUser, true));
 
-                            PacketHandler.INSTANCE.sendTo(new PacketPersonalFrontierShared(shareMessageID, playerUser,
-                                    currentFrontier.getOwner(), currentFrontier.getName1(), currentFrontier.getName2()),
-                                    entityPlayerTarget);
+                                PacketHandler.INSTANCE.sendTo(new PacketPersonalFrontierShared(shareMessageID, playerUser,
+                                        currentFrontier.getOwner(), currentFrontier.getName1(), currentFrontier.getName2()),
+                                        entityPlayerTarget);
+                            }
                         } else {
                             PacketHandler.INSTANCE.sendTo(
                                     new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)),

@@ -1,7 +1,5 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
-import java.util.List;
-
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
@@ -49,9 +47,8 @@ public class PacketHandler {
             INSTANCE.sendTo(message, player);
         }
 
-        List<SettingsUserShared> usersShared = frontier.getUsersShared();
-        if (usersShared != null) {
-            for (SettingsUserShared userShared : usersShared) {
+        if (frontier.getUsersShared() != null) {
+            for (SettingsUserShared userShared : frontier.getUsersShared()) {
                 if (!userShared.isPending()) {
                     player = (EntityPlayerMP) server.getEntityFromUuid(userShared.getUser().uuid);
                     if (player != null) {

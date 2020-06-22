@@ -127,12 +127,15 @@ public class GuiShareSettings extends GuiScreen
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        parent.drawScreen(mouseX, mouseY, partialTicks);
+        parent.drawScreen(-1, -1, partialTicks);
 
         drawDefaultBackground();
 
         users.drawBox(mc, mouseX, mouseY);
-        textNewUser.drawTextBox(mouseX, mouseY);
+
+        if (canUpdate) {
+            textNewUser.drawTextBox(mouseX, mouseY);
+        }
 
         for (GuiSimpleLabel label : labels) {
             label.drawLabel(mc, mouseX, mouseY);
@@ -372,9 +375,8 @@ public class GuiShareSettings extends GuiScreen
         users.removeAll();
 
         SettingsUser player = new SettingsUser(mc.player);
-        List<SettingsUserShared> usersShared = frontier.getUsersShared();
-        if (usersShared != null) {
-            for (SettingsUserShared user : usersShared) {
+        if (frontier.getUsersShared() != null) {
+            for (SettingsUserShared user : frontier.getUsersShared()) {
                 users.addElement(new GuiUserSharedElement(fontRenderer, buttonList, id, user, canUpdate,
                         !user.getUser().equals(player), this, guiTexture, guiTextureSize));
             }
@@ -384,16 +386,6 @@ public class GuiShareSettings extends GuiScreen
     }
 
     private void updateCanUpdate() {
-        canUpdate = false;
-
-        SettingsUser player = new SettingsUser(mc.player);
-        if (frontier.getOwner().equals(player)) {
-            canUpdate = true;
-        } else {
-            SettingsUserShared userShared = frontier.getUserShared(player);
-            if (userShared != null && userShared.getUser().equals(player)) {
-                canUpdate = true;
-            }
-        }
+        canUpdate = frontier.checkActionUserShared(new SettingsUser(mc.player), SettingsUserShared.Action.UpdateSettings);
     }
 }
