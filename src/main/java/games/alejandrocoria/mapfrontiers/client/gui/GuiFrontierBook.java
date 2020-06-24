@@ -977,6 +977,8 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                 if (frontier.getSelectedVertexIndex() >= 0) {
                     String vertex = I18n.format("mapfrontiers.vertex_number", frontier.getSelectedVertexIndex() + 1,
                             frontier.getVertexCount());
+                    vertex += String.format("\nX: %1$d  Z: %2$d", frontier.getSelectedVertex().getX(),
+                            frontier.getSelectedVertex().getZ());
                     labels.add(new GuiSimpleLabel(mc.fontRenderer, offsetFromScreenLeft + bookImageWidth / 4,
                             rightPageCornerY + 150, GuiSimpleLabel.Align.Center, vertex));
                 } else if (frontier.getVertexCount() > 0) {
@@ -1112,11 +1114,11 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             buttonNameVisible.visible = canUpdate;
             buttonEditShareSettings.visible = personal;
 
-            this.textRed.setEnabled(canUpdate);
-            this.textGreen.setEnabled(canUpdate);
-            this.textBlue.setEnabled(canUpdate);
-            this.textName1.setEnabled(canUpdate);
-            this.textName2.setEnabled(canUpdate);
+            textRed.setEnabled(canUpdate);
+            textGreen.setEnabled(canUpdate);
+            textBlue.setEnabled(canUpdate);
+            textName1.setEnabled(canUpdate);
+            textName2.setEnabled(canUpdate);
 
             if (canUpdate && frontier.getVertexCount() > 0) {
                 buttonSliceUp.visible = frontier.getMapSlice() < 16;
