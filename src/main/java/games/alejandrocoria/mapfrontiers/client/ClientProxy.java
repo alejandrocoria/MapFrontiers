@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import org.lwjgl.input.Keyboard;
@@ -106,7 +107,7 @@ public class ClientProxy extends CommonProxy {
         }
     }
 
-    public BlockPos snapVertex(BlockPos vertex, int snapDistance, int dimension, FrontierData owner) {
+    public BlockPos snapVertex(BlockPos vertex, int snapDistance, int dimension, @Nullable FrontierData owner) {
         float snapDistanceSq = snapDistance * snapDistance;
         BlockPos closest = new BlockPos(vertex.getX(), 70, vertex.getZ());
         double closestDistance = Double.MAX_VALUE;
@@ -120,7 +121,7 @@ public class ClientProxy extends CommonProxy {
                 BlockPos v = frontier.getVertex(i);
                 BlockPos v2 = new BlockPos(v.getX(), 70, v.getZ());
                 double distance = v2.distanceSq(closest);
-                if (distance < snapDistanceSq && distance < closestDistance) {
+                if (distance < snapDistanceSq && distance < closestDistance && !containsVertex(owner, v2)) {
                     closestDistance = distance;
                     closest = v2;
                 }
@@ -136,7 +137,7 @@ public class ClientProxy extends CommonProxy {
                 BlockPos v = frontier.getVertex(i);
                 BlockPos v2 = new BlockPos(v.getX(), 70, v.getZ());
                 double distance = v2.distanceSq(closest);
-                if (distance < snapDistanceSq && distance < closestDistance) {
+                if (distance < snapDistanceSq && distance < closestDistance && !containsVertex(owner, v2)) {
                     closestDistance = distance;
                     closest = v2;
                 }
@@ -144,6 +145,21 @@ public class ClientProxy extends CommonProxy {
         }
 
         return closest;
+    }
+
+    private static boolean containsVertex(@Nullable FrontierData frontier, BlockPos vertex) {
+        if (frontier == null) {
+            return false;
+        }
+
+        for (int i = 0; i < frontier.getVertexCount(); ++i) {
+            BlockPos v = frontier.getVertex(i);
+            if (vertex.getX() == v.getX() && vertex.getZ() == v.getZ()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @SubscribeEvent
