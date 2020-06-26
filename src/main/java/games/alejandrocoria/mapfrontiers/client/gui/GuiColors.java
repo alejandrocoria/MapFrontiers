@@ -27,6 +27,8 @@ public final class GuiColors {
     public static final int SETTINGS_TEXT_MEDIUM = 0xaaaaaa;
     public static final int SETTINGS_TEXT_DARK = 0xff777777;
     public static final int SETTINGS_TEXT_PENDING = 0xff00dd00;
+    public static final int SETTINGS_LINK = 0xffffffff;
+    public static final int SETTINGS_LINK_HIGHLIGHT = 0xffffff00;
     public static final int SETTINGS_BUTTON_BORDER = 0xff777777;
     public static final int SETTINGS_BUTTON_TEXT = 0xff777777;
     public static final int SETTINGS_BUTTON_TEXT_HIGHLIGHT = 0xffffffff;

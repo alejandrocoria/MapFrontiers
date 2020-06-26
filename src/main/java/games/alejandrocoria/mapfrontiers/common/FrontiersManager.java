@@ -22,7 +22,6 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
@@ -83,8 +82,6 @@ public class FrontiersManager {
                         }
 
                         if (removed) {
-                            EntityPlayerMP player = (EntityPlayerMP) FMLCommonHandler.instance().getMinecraftServerInstance()
-                                    .getEntityFromUuid(frontier.getOwner().uuid);
                             PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier), frontier);
                         }
                     }

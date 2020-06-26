@@ -39,9 +39,15 @@ mapfrontiers.vertical_chunk=Vertical chunk: %1$d
 mapfrontiers.vertical_chunk_surface=Vertical chunk: Surface
 
 # Settings
+mapfrontiers.credits=Credits
 mapfrontiers.general=General
 mapfrontiers.groups=Groups
 mapfrontiers.actions=Actions
+mapfrontiers.credits_created_by=Created by Alejandro Coria (MemeSapiens)
+mapfrontiers.credits_many_thanks=Many thanks to Mojang Studios, Forge and JourneyMap.
+mapfrontiers.credits_project=Follow the project in
+mapfrontiers.credits_patreon=If you like the mod please consider becoming a Patron
+mapfrontiers.credits_translation=
 mapfrontiers.frontiers=Frontiers
 mapfrontiers.hud=HUD
 mapfrontiers.create_frontier=Create\nfrontier
