@@ -1,9 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import java.awt.Desktop;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -54,7 +51,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     private GuiTabbedBox tabbedBox;
     private GuiLinkButton buttonWeb;
     private GuiLinkButton buttonProject;
-    private GuiButtonIcon buttonPatreon;
+    private GuiPatreonButton buttonPatreon;
     private GuiOptionButton buttonAddVertexToNewFrontier;
     private GuiOptionButton buttonAlwaysShowUnfinishedFrontiers;
     private GuiOptionButton buttonNameVisibility;
@@ -103,13 +100,14 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         }
         tabbedBox.setTabSelected(tabSelected.ordinal());
 
-        buttonWeb = new GuiLinkButton(++id, mc.fontRenderer, width / 2, height / 2 - 98, "alejandrocoria.games",
+        buttonWeb = new GuiLinkButton(this, ++id, mc.fontRenderer, width / 2, height / 2 - 98, "alejandrocoria.games",
                 "https://alejandrocoria.games");
 
-        buttonProject = new GuiLinkButton(++id, mc.fontRenderer, width / 2, height / 2 - 20,
+        buttonProject = new GuiLinkButton(this, ++id, mc.fontRenderer, width / 2, height / 2 - 20,
                 "curseforge.com/minecraft/mc-mods/mapfrontiers", "https://www.curseforge.com/minecraft/mc-mods/mapfrontiers");
 
-        buttonPatreon = new GuiButtonIcon(++id, width / 2 - 106, height / 2 + 40, 212, 50, 0, 462, 0, guiTexture, guiTextureSize);
+        buttonPatreon = new GuiPatreonButton(this, ++id, width / 2, height / 2 + 36, 212, 50, 0, 462, guiTexture, guiTextureSize,
+                "https://www.patreon.com/alejandrocoria");
 
         buttonAddVertexToNewFrontier = new GuiOptionButton(++id, mc.fontRenderer, width / 2 + 50, 70, 100);
         buttonAddVertexToNewFrontier.addOption("true");
@@ -349,13 +347,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
 
     @Override
     protected void actionPerformed(GuiButton button) {
-        if (button == buttonPatreon) {
-            try {
-                Desktop.getDesktop().browse(new URI("https://www.patreon.com/alejandrocoria"));
-            } catch (URISyntaxException | IOException e) {
-                MapFrontiers.LOGGER.error(e.getMessage(), e);
-            }
-        } else if (button == buttonAddVertexToNewFrontier) {
+        if (button == buttonAddVertexToNewFrontier) {
             ConfigData.addVertexToNewFrontier = buttonAddVertexToNewFrontier.getSelected() == 0;
             MapFrontiers.proxy.configUpdated();
         } else if (button == buttonAlwaysShowUnfinishedFrontiers) {
@@ -435,6 +427,24 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     @Override
     public boolean doesGuiPauseGame() {
         return true;
+    }
+
+    @Override
+    public void confirmClicked(boolean result, int id) {
+        if (result) {
+            if (id == buttonWeb.id) {
+                buttonWeb.openLink();
+            } else if (id == buttonProject.id) {
+                buttonProject.openLink();
+            } else if (id == buttonPatreon.id) {
+                buttonPatreon.openLink();
+            } else {
+                super.confirmClicked(result, id);
+                return;
+            }
+        }
+
+        mc.displayGuiScreen(this);
     }
 
     public void setFrontierSettings(FrontierSettings settings) {

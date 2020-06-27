@@ -9,28 +9,33 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiConfirmOpenLink;
 import net.minecraft.client.gui.GuiYesNoCallback;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 @ParametersAreNonnullByDefault
 @SideOnly(Side.CLIENT)
-public class GuiLinkButton extends GuiButton {
+public class GuiPatreonButton extends GuiButton {
     private GuiYesNoCallback screen;
-    private GuiSimpleLabel label;
+    private final int texX;
+    private final int texY;
+    private final ResourceLocation texture;
+    private final int textureSize;
     private String uri;
 
-    public GuiLinkButton(GuiYesNoCallback screen, int componentId, FontRenderer fontRenderer, int x, int y, String label,
-            String uri) {
-        super(componentId, x, y, fontRenderer.getStringWidth(label) + 8, 16, "");
+    public GuiPatreonButton(GuiYesNoCallback screen, int id, int x, int y, int width, int height, int texX, int texY,
+            ResourceLocation texture, int textureSize, String uri) {
+        super(id, x, y, width, height, "");
         this.screen = screen;
-        this.x -= width / 2;
-        this.label = new GuiSimpleLabel(fontRenderer, x, y + 5, GuiSimpleLabel.Align.Center, TextFormatting.UNDERLINE + label,
-                GuiColors.SETTINGS_BUTTON_TEXT);
+        this.texX = texX;
+        this.texY = texY;
+        this.texture = texture;
+        this.textureSize = textureSize;
         this.uri = uri;
     }
 
@@ -45,15 +50,22 @@ public class GuiLinkButton extends GuiButton {
     @Override
     public void drawButton(Minecraft mc, int mouseX, int mouseY, float partialTicks) {
         if (visible) {
-            hovered = (mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height);
+            ScaledResolution scaledresolution = new ScaledResolution(mc);
+            int factor = scaledresolution.getScaleFactor();
+
+            hovered = (mouseX >= x - width / 2 / factor && mouseY >= y + 1 / factor && mouseX < x + width / 2 / factor
+                    && mouseY < y + height / factor);
 
             if (hovered) {
-                label.setColor(GuiColors.SETTINGS_LINK_HIGHLIGHT);
+                GlStateManager.color(.9f, .9f, .9f);
             } else {
-                label.setColor(GuiColors.SETTINGS_LINK);
+                GlStateManager.color(1.f, 1.f, 1.f);
             }
 
-            label.drawLabel(mc, mouseX, mouseY);
+            mc.getTextureManager().bindTexture(texture);
+
+            drawModalRectWithCustomSizedTexture(x - width / 2 / factor, y, texX / factor, texY / factor, width / factor,
+                    height / factor, textureSize / factor, textureSize / factor);
         } else {
             hovered = false;
         }
