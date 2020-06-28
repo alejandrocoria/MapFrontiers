@@ -15,6 +15,7 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiScrollBox.ScrollElement;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSettings;
@@ -86,6 +87,8 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         PacketHandler.INSTANCE.sendToServer(new PacketRequestFrontierSettings());
 
         Keyboard.enableRepeatEvents(true);
+
+        tabSelected = ((ClientProxy) MapFrontiers.proxy).getLastSettingsTab();
 
         tabbedBox = new GuiTabbedBox(fontRenderer, 40, 24, width - 80, height - 64, this);
         tabbedBox.addTab(I18n.format("mapfrontiers.credits"));
@@ -422,6 +425,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     @Override
     public void onGuiClosed() {
         Keyboard.enableRepeatEvents(false);
+        ((ClientProxy) MapFrontiers.proxy).setLastSettingsTab(tabSelected);
     }
 
     @Override

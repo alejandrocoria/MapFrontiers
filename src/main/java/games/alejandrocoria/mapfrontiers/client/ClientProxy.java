@@ -48,6 +48,7 @@ public class ClientProxy extends CommonProxy {
     private FrontiersOverlayManager frontiersOverlayManager;
     private FrontiersOverlayManager personalFrontiersOverlayManager;
     private SettingsProfile settingsProfile;
+    private GuiFrontierSettings.Tab lastSettingsTab = GuiFrontierSettings.Tab.Credits;
 
     private KeyBinding openSettingsKey;
     private GuiHUD guiHUD;
@@ -285,6 +286,14 @@ public class ClientProxy extends CommonProxy {
 
     public SettingsProfile getSettingsProfile() {
         return settingsProfile;
+    }
+
+    public void setLastSettingsTab(GuiFrontierSettings.Tab tab) {
+        lastSettingsTab = tab;
+    }
+
+    public GuiFrontierSettings.Tab getLastSettingsTab() {
+        return lastSettingsTab;
     }
 
     @SubscribeEvent
