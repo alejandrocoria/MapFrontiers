@@ -26,15 +26,15 @@ SOFTWARE.
 
 MapFrontiers includes and/or makes use of the following software under their respective licenses:
 
-    JourneyMap 1.12.2-5.7.0 (http://journeymap.info/)
-    Copyright (c) 2011-2018  Techbrew Interactive, LLC <techbrew.net>.  All Rights Reserved.
+    JourneyMap 1.12.2-5.7.1 (http://journeymap.info/)
+    Copyright (c) 2011-2020  Techbrew Interactive, LLC <techbrew.net>.  All Rights Reserved.
 
     JourneyMap API v1.12-1.4 (https://bitbucket.org/TeamJM/journeymap-api)
-    Copyright (c) 2011-2018  Techbrew Interactive, LLC <techbrew.net>.  All Rights Reserved.
+    Copyright (c) 2011-2020  Techbrew Interactive, LLC <techbrew.net>.  All Rights Reserved.
     End-User License Agreement: https://bitbucket.org/TeamJM/journeymap-api/src/master/docs/license.md
 
     Minecraft (http://minecraft.net)
-    Content and materials are trademarks and copyrights of Mojang AB. All rights reserved.
+    Content and materials are trademarks and copyrights of Mojang Studios. All rights reserved.
     End-User License Agreement: http://minecraft.net/terms
 
     Forge Mod Loader
