@@ -7,7 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextComponentString;
@@ -28,6 +28,7 @@ public class PacketPersonalFrontierShared implements IMessage {
     private String name2;
 
     public PacketPersonalFrontierShared() {
+        shareMessageID = -1;
         playerSharing = new SettingsUser();
         owner = new SettingsUser();
         name1 = "";
@@ -102,7 +103,7 @@ public class PacketPersonalFrontierShared implements IMessage {
 
                     text.appendSibling(button);
 
-                    EntityPlayer player = Minecraft.getMinecraft().player;
+                    EntityPlayerSP player = Minecraft.getMinecraft().player;
                     player.sendMessage(text);
                 });
             }
