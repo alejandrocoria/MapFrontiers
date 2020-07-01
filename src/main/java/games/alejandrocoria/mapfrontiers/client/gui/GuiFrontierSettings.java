@@ -197,7 +197,7 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
 
     @Override
     public void updateScreen() {
-        if (!canEditGroups) {
+        if (!canEditGroups || settings == null) {
             return;
         }
 
@@ -366,16 +366,18 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
         } else if (button == buttonEditHUD) {
             Minecraft.getMinecraft().displayGuiScreen(new GuiHUDSettings(this));
         } else if (button == buttonNewGroup) {
-            SettingsGroup group = settings.createCustomGroup(textNewGroupName.getText());
-            GuiGroupElement element = new GuiGroupElement(fontRenderer, buttonList, id, group, guiTexture, guiTextureSize);
-            groups.addElement(element);
-            groupClicked(element);
-            groups.scrollBottom();
-            groupsActions.scrollBottom();
+            if (settings != null) {
+                SettingsGroup group = settings.createCustomGroup(textNewGroupName.getText());
+                GuiGroupElement element = new GuiGroupElement(fontRenderer, buttonList, id, group, guiTexture, guiTextureSize);
+                groups.addElement(element);
+                groupClicked(element);
+                groups.scrollBottom();
+                groupsActions.scrollBottom();
 
-            textNewGroupName.setText("");
+                textNewGroupName.setText("");
 
-            sendChangesToServer();
+                sendChangesToServer();
+            }
         } else if (button == buttonNewUser) {
             SettingsGroup group = ((GuiGroupElement) groups.getSelectedElement()).getGroup();
             SettingsUser user = new SettingsUser();
@@ -516,18 +518,20 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
             addLabelWithTooltip(new GuiSimpleLabel(fontRenderer, width / 2 - 120, 190, GuiSimpleLabel.Align.Left, "enabled",
                     GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.enabled"));
         } else if (tabSelected == Tab.Groups) {
-            GuiGroupElement element = (GuiGroupElement) groups.getSelectedElement();
-            if (element != null && element.getGroup().isSpecial()) {
-                SettingsGroup group = element.getGroup();
-                if (group == settings.getOPsGroup()) {
-                    labels.add(new GuiSimpleLabel(fontRenderer, 250, 82, GuiSimpleLabel.Align.Left,
-                            I18n.format("mapfrontiers.group_ops_desc"), GuiColors.SETTINGS_TEXT));
-                } else if (group == settings.getOwnersGroup()) {
-                    labels.add(new GuiSimpleLabel(fontRenderer, 250, 82, GuiSimpleLabel.Align.Left,
-                            I18n.format("mapfrontiers.group_owners_desc"), GuiColors.SETTINGS_TEXT));
-                } else if (group == settings.getEveryoneGroup()) {
-                    labels.add(new GuiSimpleLabel(fontRenderer, 250, 82, GuiSimpleLabel.Align.Left,
-                            I18n.format("mapfrontiers.group_everyone_desc"), GuiColors.SETTINGS_TEXT));
+            if (settings != null) {
+                GuiGroupElement element = (GuiGroupElement) groups.getSelectedElement();
+                if (element != null && element.getGroup().isSpecial()) {
+                    SettingsGroup group = element.getGroup();
+                    if (group == settings.getOPsGroup()) {
+                        labels.add(new GuiSimpleLabel(fontRenderer, 250, 82, GuiSimpleLabel.Align.Left,
+                                I18n.format("mapfrontiers.group_ops_desc"), GuiColors.SETTINGS_TEXT));
+                    } else if (group == settings.getOwnersGroup()) {
+                        labels.add(new GuiSimpleLabel(fontRenderer, 250, 82, GuiSimpleLabel.Align.Left,
+                                I18n.format("mapfrontiers.group_owners_desc"), GuiColors.SETTINGS_TEXT));
+                    } else if (group == settings.getEveryoneGroup()) {
+                        labels.add(new GuiSimpleLabel(fontRenderer, 250, 82, GuiSimpleLabel.Align.Left,
+                                I18n.format("mapfrontiers.group_everyone_desc"), GuiColors.SETTINGS_TEXT));
+                    }
                 }
             }
         } else if (tabSelected == Tab.Actions) {
@@ -590,16 +594,18 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
 
     @Override
     public void elementDelete(int id, ScrollElement element) {
-        if (id == groups.getId()) {
-            if (groups.getSelectedElement() != null) {
-                groupClicked((GuiGroupElement) groups.getSelectedElement());
+        if (settings != null) {
+            if (id == groups.getId()) {
+                if (groups.getSelectedElement() != null) {
+                    groupClicked((GuiGroupElement) groups.getSelectedElement());
+                }
+                settings.removeCustomGroup(((GuiGroupElement) element).getGroup());
+                sendChangesToServer();
+            } else if (id == users.getId()) {
+                SettingsGroup group = ((GuiGroupElement) groups.getSelectedElement()).getGroup();
+                group.removeUser(((GuiUserElement) element).getUser());
+                sendChangesToServer();
             }
-            settings.removeCustomGroup(((GuiGroupElement) element).getGroup());
-            sendChangesToServer();
-        } else if (id == users.getId()) {
-            SettingsGroup group = ((GuiGroupElement) groups.getSelectedElement()).getGroup();
-            group.removeUser(((GuiUserElement) element).getUser());
-            sendChangesToServer();
         }
     }
 
@@ -678,8 +684,10 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     }
 
     private void sendChangesToServer() {
-        settings.advanceChangeCounter();
-        PacketHandler.INSTANCE.sendToServer(new PacketFrontierSettings(settings));
+        if (settings != null) {
+            settings.advanceChangeCounter();
+            PacketHandler.INSTANCE.sendToServer(new PacketFrontierSettings(settings));
+        }
     }
 
     private void updateUsers() {
@@ -695,13 +703,15 @@ public class GuiFrontierSettings extends GuiScreen implements GuiScrollBox.Scrol
     }
 
     private void updateGroupsActions() {
-        groupsActions.removeAll();
-        groupsActions.addElement(new GuiGroupActionElement(fontRenderer, settings.getOPsGroup(), this));
-        groupsActions.addElement(new GuiGroupActionElement(fontRenderer, settings.getOwnersGroup(), true, this));
-        groupsActions.addElement(new GuiGroupActionElement(fontRenderer, settings.getEveryoneGroup(), this));
+        if (settings != null) {
+            groupsActions.removeAll();
+            groupsActions.addElement(new GuiGroupActionElement(fontRenderer, settings.getOPsGroup(), this));
+            groupsActions.addElement(new GuiGroupActionElement(fontRenderer, settings.getOwnersGroup(), true, this));
+            groupsActions.addElement(new GuiGroupActionElement(fontRenderer, settings.getEveryoneGroup(), this));
 
-        for (SettingsGroup group : settings.getCustomGroups()) {
-            groupsActions.addElement(new GuiGroupActionElement(fontRenderer, group, this));
+            for (SettingsGroup group : settings.getCustomGroups()) {
+                groupsActions.addElement(new GuiGroupActionElement(fontRenderer, group, this));
+            }
         }
     }
 
