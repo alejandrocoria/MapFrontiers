@@ -8,6 +8,7 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiShareSettings;
+import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
@@ -36,7 +37,7 @@ public class PacketFrontierDeleted implements IMessage {
     @Override
     public void fromBytes(ByteBuf buf) {
         dimension = buf.readInt();
-        frontierID = new UUID(buf.readLong(), buf.readLong());
+        frontierID = UUIDHelper.fromBytes(buf);
         personal = buf.readBoolean();
         playerID = buf.readInt();
     }
@@ -44,8 +45,7 @@ public class PacketFrontierDeleted implements IMessage {
     @Override
     public void toBytes(ByteBuf buf) {
         buf.writeInt(dimension);
-        buf.writeLong(frontierID.getMostSignificantBits());
-        buf.writeLong(frontierID.getLeastSignificantBits());
+        UUIDHelper.toBytes(buf, frontierID);
         buf.writeBoolean(personal);
         buf.writeInt(playerID);
     }

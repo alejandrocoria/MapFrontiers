@@ -1,10 +1,12 @@
 package games.alejandrocoria.mapfrontiers.common.settings;
 
-import net.minecraft.nbt.NBTTagCompound;
+import io.netty.buffer.ByteBuf;
 
 public class SettingsProfile {
     public enum State {
-        Enabled, Owner, Disabled
+        Enabled, Owner, Disabled;
+
+        public final static State[] valuesArray = values();
     }
 
     public State createFrontier = State.Disabled;
@@ -38,20 +40,20 @@ public class SettingsProfile {
                 && updateSettings == State.Enabled && personalFrontier == State.Enabled;
     }
 
-    public void readFromNBT(NBTTagCompound nbt) {
-        createFrontier = stringToState(nbt.getString("createFrontier"));
-        deleteFrontier = stringToState(nbt.getString("deleteFrontier"));
-        updateFrontier = stringToState(nbt.getString("updateFrontier"));
-        updateSettings = stringToState(nbt.getString("updateSettings"));
-        personalFrontier = stringToState(nbt.getString("personalFrontier"));
+    public void fromBytes(ByteBuf buf) {
+        createFrontier = State.values()[buf.readInt()];
+        deleteFrontier = State.values()[buf.readInt()];
+        updateFrontier = State.values()[buf.readInt()];
+        updateSettings = State.values()[buf.readInt()];
+        personalFrontier = State.values()[buf.readInt()];
     }
 
-    public void writeToNBT(NBTTagCompound nbt) {
-        nbt.setString("createFrontier", createFrontier.name());
-        nbt.setString("deleteFrontier", deleteFrontier.name());
-        nbt.setString("updateFrontier", updateFrontier.name());
-        nbt.setString("updateSettings", updateSettings.name());
-        nbt.setString("personalFrontier", personalFrontier.name());
+    public void toBytes(ByteBuf buf) {
+        buf.writeInt(createFrontier.ordinal());
+        buf.writeInt(deleteFrontier.ordinal());
+        buf.writeInt(updateFrontier.ordinal());
+        buf.writeInt(updateSettings.ordinal());
+        buf.writeInt(personalFrontier.ordinal());
     }
 
     private State stringToState(String string) {

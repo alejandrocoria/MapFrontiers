@@ -6,8 +6,10 @@ import org.apache.commons.lang3.StringUtils;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraftforge.fml.common.network.ByteBufUtils;
 
 public class SettingsUser {
     public String username;
@@ -86,6 +88,29 @@ public class SettingsUser {
 
         nbt.setString("username", username);
         nbt.setString("UUID", uuid.toString());
+    }
+
+    public void fromBytes(ByteBuf buf) {
+        boolean isUsername = buf.readBoolean();
+        if (isUsername) {
+            username = ByteBufUtils.readUTF8String(buf);
+            uuid = null;
+        } else {
+            username = "";
+            uuid = UUIDHelper.fromBytes(buf);
+        }
+
+        fillMissingInfo(false);
+    }
+
+    public void toBytes(ByteBuf buf) {
+        if (uuid == null) {
+            buf.writeBoolean(true);
+            ByteBufUtils.writeUTF8String(buf, username);
+        } else {
+            buf.writeBoolean(false);
+            UUIDHelper.toBytes(buf, uuid);
+        }
     }
 
     @Override

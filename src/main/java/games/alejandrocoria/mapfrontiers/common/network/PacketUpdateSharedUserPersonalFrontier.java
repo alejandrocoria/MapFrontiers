@@ -10,11 +10,10 @@ import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
@@ -36,18 +35,14 @@ public class PacketUpdateSharedUserPersonalFrontier implements IMessage {
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        frontierID = new UUID(buf.readLong(), buf.readLong());
-        userShared.readFromNBT(ByteBufUtils.readTag(buf));
+        frontierID = UUIDHelper.fromBytes(buf);
+        userShared.fromBytes(buf);
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
-        buf.writeLong(frontierID.getMostSignificantBits());
-        buf.writeLong(frontierID.getLeastSignificantBits());
-
-        NBTTagCompound nbt = new NBTTagCompound();
-        userShared.writeToNBT(nbt);
-        ByteBufUtils.writeTag(buf, nbt);
+        UUIDHelper.toBytes(buf, frontierID);
+        userShared.toBytes(buf);
     }
 
     public static class Handler implements IMessageHandler<PacketUpdateSharedUserPersonalFrontier, IMessage> {

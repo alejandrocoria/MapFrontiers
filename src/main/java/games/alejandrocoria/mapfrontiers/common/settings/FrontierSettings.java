@@ -7,6 +7,7 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
@@ -15,7 +16,9 @@ import net.minecraftforge.common.util.Constants;
 @ParametersAreNonnullByDefault
 public class FrontierSettings {
     public enum Action {
-        CreateFrontier, DeleteFrontier, UpdateFrontier, UpdateSettings, PersonalFrontier
+        CreateFrontier, DeleteFrontier, UpdateFrontier, UpdateSettings, PersonalFrontier;
+
+        public final static Action[] valuesArray = values();
     }
 
     private SettingsGroup OPs;
@@ -186,6 +189,31 @@ public class FrontierSettings {
         nbt.setTag("customGroups", customGroupsTagList);
 
         nbt.setInteger("Version", dataVersion);
+    }
+
+    public void fromBytes(ByteBuf buf) {
+        OPs.fromBytes(buf);
+        owners.fromBytes(buf);
+        everyone.fromBytes(buf);
+
+        customGroups = new ArrayList<SettingsGroup>();
+        int groupsCount = buf.readInt();
+        for (int i = 0; i < groupsCount; ++i) {
+            SettingsGroup group = new SettingsGroup();
+            group.fromBytes(buf);
+            customGroups.add(group);
+        }
+    }
+
+    public void toBytes(ByteBuf buf) {
+        OPs.toBytes(buf);
+        owners.toBytes(buf);
+        everyone.toBytes(buf);
+
+        buf.writeInt(customGroups.size());
+        for (SettingsGroup group : customGroups) {
+            group.toBytes(buf);
+        }
     }
 
     public static List<Action> getAvailableActions(String groupName) {

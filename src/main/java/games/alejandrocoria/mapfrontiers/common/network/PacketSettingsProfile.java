@@ -10,8 +10,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.GuiShareSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
@@ -31,14 +29,12 @@ public class PacketSettingsProfile implements IMessage {
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        profile.readFromNBT(ByteBufUtils.readTag(buf));
+        profile.fromBytes(buf);
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
-        NBTTagCompound nbt = new NBTTagCompound();
-        profile.writeToNBT(nbt);
-        ByteBufUtils.writeTag(buf, nbt);
+        profile.toBytes(buf);
     }
 
     public static class Handler implements IMessageHandler<PacketSettingsProfile, IMessage> {

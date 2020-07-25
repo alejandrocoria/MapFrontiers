@@ -10,6 +10,8 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.EnumDyeColor;
 import net.minecraft.item.ItemBanner;
@@ -21,6 +23,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.network.ByteBufUtils;
 
 @ParametersAreNonnullByDefault
 public class FrontierData {
@@ -273,10 +276,6 @@ public class FrontierData {
         return userShared.hasAction(action);
     }
 
-    public void readFromNBT(NBTTagCompound nbt) {
-        readFromNBT(nbt, FrontiersManager.dataVersion);
-    }
-
     public void readFromNBT(NBTTagCompound nbt, int version) {
         if (version >= 4) {
             id = UUID.fromString(nbt.getString("id"));
@@ -377,6 +376,98 @@ public class FrontierData {
         nbt.setTag("vertices", verticesTagList);
     }
 
+    public void fromBytes(ByteBuf buf) {
+        id = UUIDHelper.fromBytes(buf);
+
+        closed = buf.readBoolean();
+
+        color = buf.readInt();
+
+        dimension = buf.readInt();
+
+        name1 = ByteBufUtils.readUTF8String(buf);
+        name2 = ByteBufUtils.readUTF8String(buf);
+
+        nameVisible = buf.readBoolean();
+
+        mapSlice = buf.readInt();
+
+        personal = buf.readBoolean();
+
+        owner = new SettingsUser();
+        owner.fromBytes(buf);
+
+        if (buf.readBoolean()) {
+            banner = new BannerData();
+            banner.fromBytes(buf);
+        } else {
+            banner = null;
+        }
+
+        if (buf.readBoolean()) {
+            usersShared = new ArrayList<SettingsUserShared>();
+            int usersCount = buf.readInt();
+            for (int i = 0; i < usersCount; ++i) {
+                SettingsUserShared userShared = new SettingsUserShared();
+                userShared.fromBytes(buf);
+                usersShared.add(userShared);
+            }
+        } else {
+            usersShared = null;
+        }
+
+        vertices = new ArrayList<BlockPos>();
+        int vertexCount = buf.readInt();
+        for (int i = 0; i < vertexCount; ++i) {
+            BlockPos vertex = BlockPos.fromLong(buf.readLong());
+            vertices.add(vertex);
+        }
+    }
+
+    public void toBytes(ByteBuf buf) {
+        UUIDHelper.toBytes(buf, id);
+
+        buf.writeBoolean(closed);
+
+        buf.writeInt(color);
+
+        buf.writeInt(dimension);
+
+        ByteBufUtils.writeUTF8String(buf, name1);
+        ByteBufUtils.writeUTF8String(buf, name2);
+
+        buf.writeBoolean(nameVisible);
+
+        buf.writeInt(mapSlice);
+
+        buf.writeBoolean(personal);
+
+        owner.toBytes(buf);
+
+        if (banner == null) {
+            buf.writeBoolean(false);
+        } else {
+            buf.writeBoolean(true);
+            banner.toBytes(buf);
+        }
+
+        if (personal && usersShared != null) {
+            buf.writeBoolean(true);
+
+            buf.writeInt(usersShared.size());
+            for (SettingsUserShared userShared : usersShared) {
+                userShared.toBytes(buf);
+            }
+        } else {
+            buf.writeBoolean(false);
+        }
+
+        buf.writeInt(vertices.size());
+        for (BlockPos pos : vertices) {
+            buf.writeLong(pos.toLong());
+        }
+    }
+
     public class BannerData {
         public EnumDyeColor baseColor;
         public NBTTagList patterns;
@@ -397,7 +488,7 @@ public class FrontierData {
 
         public void readFromNBT(NBTTagCompound nbt) {
             baseColor = EnumDyeColor.byDyeDamage(nbt.getInteger("Base"));
-            patterns = nbt.getTagList("Patterns", 10);
+            patterns = nbt.getTagList("Patterns", Constants.NBT.TAG_COMPOUND);
         }
 
         public void writeToNBT(NBTTagCompound nbt) {
@@ -405,6 +496,27 @@ public class FrontierData {
 
             if (patterns != null) {
                 nbt.setTag("Patterns", patterns);
+            }
+        }
+
+        public void fromBytes(ByteBuf buf) {
+            baseColor = EnumDyeColor.byDyeDamage(buf.readInt());
+
+            NBTTagCompound nbt = ByteBufUtils.readTag(buf);
+            if (nbt != null) {
+                patterns = nbt.getTagList("Patterns", Constants.NBT.TAG_COMPOUND);
+            }
+        }
+
+        public void toBytes(ByteBuf buf) {
+            buf.writeInt(baseColor.getDyeDamage());
+
+            if (patterns == null) {
+                ByteBufUtils.writeTag(buf, null);
+            } else {
+                NBTTagCompound nbt = new NBTTagCompound();
+                nbt.setTag("Patterns", patterns);
+                ByteBufUtils.writeTag(buf, nbt);
             }
         }
     }

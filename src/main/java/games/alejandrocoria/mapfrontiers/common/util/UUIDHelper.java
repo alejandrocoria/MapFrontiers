@@ -6,6 +6,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import com.mojang.authlib.GameProfile;
 
+import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.network.NetHandlerPlayClient;
 import net.minecraft.client.network.NetworkPlayerInfo;
@@ -56,6 +57,15 @@ public class UUIDHelper {
             return profile.getName();
 
         return null;
+    }
+
+    public static UUID fromBytes(ByteBuf buf) {
+        return new UUID(buf.readLong(), buf.readLong());
+    }
+
+    public static void toBytes(ByteBuf buf, UUID uuid) {
+        buf.writeLong(uuid.getMostSignificantBits());
+        buf.writeLong(uuid.getLeastSignificantBits());
     }
 
     private UUIDHelper() {

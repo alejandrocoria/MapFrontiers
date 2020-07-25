@@ -6,6 +6,7 @@ import java.util.Set;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
@@ -14,7 +15,9 @@ import net.minecraftforge.common.util.Constants;
 @ParametersAreNonnullByDefault
 public class SettingsUserShared {
     public enum Action {
-        UpdateFrontier, UpdateSettings
+        UpdateFrontier, UpdateSettings;
+
+        public final static Action[] valuesArray = values();
     }
 
     private SettingsUser user;
@@ -114,6 +117,29 @@ public class SettingsUserShared {
         }
 
         nbt.setTag("actions", actionsTagList);
+    }
+
+    public void fromBytes(ByteBuf buf) {
+        user.fromBytes(buf);
+
+        pending = buf.readBoolean();
+
+        actions.clear();
+        for (Action action : Action.valuesArray) {
+            if (buf.readBoolean()) {
+                actions.add(action);
+            }
+        }
+    }
+
+    public void toBytes(ByteBuf buf) {
+        user.toBytes(buf);
+
+        buf.writeBoolean(pending);
+
+        for (Action action : Action.valuesArray) {
+            buf.writeBoolean(actions.contains(action));
+        }
     }
 
     @Override

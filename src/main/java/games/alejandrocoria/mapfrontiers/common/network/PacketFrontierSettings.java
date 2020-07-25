@@ -10,10 +10,8 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
@@ -33,15 +31,13 @@ public class PacketFrontierSettings implements IMessage {
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        settings.readFromNBT(ByteBufUtils.readTag(buf));
+        settings.fromBytes(buf);
         settings.setChangeCounter(buf.readInt());
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
-        NBTTagCompound nbt = new NBTTagCompound();
-        settings.writeToNBT(nbt);
-        ByteBufUtils.writeTag(buf, nbt);
+        settings.toBytes(buf);
         buf.writeInt(settings.getChangeCounter());
     }
 

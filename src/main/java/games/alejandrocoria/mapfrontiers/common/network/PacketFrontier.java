@@ -10,8 +10,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.GuiShareSettings;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
@@ -37,15 +35,13 @@ public class PacketFrontier implements IMessage {
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        frontier.readFromNBT(ByteBufUtils.readTag(buf));
+        frontier.fromBytes(buf);
         playerID = buf.readInt();
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
-        NBTTagCompound nbt = new NBTTagCompound();
-        frontier.writeToNBT(nbt);
-        ByteBufUtils.writeTag(buf, nbt);
+        frontier.toBytes(buf);
         buf.writeInt(playerID);
     }
 

@@ -8,10 +8,12 @@ import java.util.Set;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
 import net.minecraftforge.common.util.Constants;
+import net.minecraftforge.fml.common.network.ByteBufUtils;
 
 @ParametersAreNonnullByDefault
 public class SettingsGroup {
@@ -139,5 +141,43 @@ public class SettingsGroup {
         }
 
         nbt.setTag("actions", actionsTagList);
+    }
+
+    public void fromBytes(ByteBuf buf) {
+        if (!buf.readBoolean()) {
+            name = ByteBufUtils.readUTF8String(buf);
+
+            users = new ArrayList<SettingsUser>();
+            int usersCount = buf.readInt();
+            for (int i = 0; i < usersCount; ++i) {
+                SettingsUser user = new SettingsUser();
+                user.fromBytes(buf);
+                users.add(user);
+            }
+        }
+
+        actions.clear();
+        for (FrontierSettings.Action action : FrontierSettings.Action.valuesArray) {
+            if (buf.readBoolean()) {
+                actions.add(action);
+            }
+        }
+    }
+
+    public void toBytes(ByteBuf buf) {
+        buf.writeBoolean(special);
+
+        if (!special) {
+            ByteBufUtils.writeUTF8String(buf, name);
+
+            buf.writeInt(users.size());
+            for (SettingsUser user : users) {
+                user.toBytes(buf);
+            }
+        }
+
+        for (FrontierSettings.Action action : FrontierSettings.Action.valuesArray) {
+            buf.writeBoolean(actions.contains(action));
+        }
     }
 }

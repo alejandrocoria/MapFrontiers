@@ -8,7 +8,6 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.event.ClickEvent;
@@ -47,8 +46,8 @@ public class PacketPersonalFrontierShared implements IMessage {
     @Override
     public void fromBytes(ByteBuf buf) {
         shareMessageID = buf.readInt();
-        playerSharing.readFromNBT(ByteBufUtils.readTag(buf));
-        owner.readFromNBT(ByteBufUtils.readTag(buf));
+        playerSharing.fromBytes(buf);
+        owner.fromBytes(buf);
         name1 = ByteBufUtils.readUTF8String(buf);
         name2 = ByteBufUtils.readUTF8String(buf);
     }
@@ -56,15 +55,8 @@ public class PacketPersonalFrontierShared implements IMessage {
     @Override
     public void toBytes(ByteBuf buf) {
         buf.writeInt(shareMessageID);
-
-        NBTTagCompound nbt = new NBTTagCompound();
-        playerSharing.writeToNBT(nbt);
-        ByteBufUtils.writeTag(buf, nbt);
-
-        nbt = new NBTTagCompound();
-        owner.writeToNBT(nbt);
-        ByteBufUtils.writeTag(buf, nbt);
-
+        playerSharing.toBytes(buf);
+        owner.toBytes(buf);
         ByteBufUtils.writeUTF8String(buf, name1);
         ByteBufUtils.writeUTF8String(buf, name2);
     }

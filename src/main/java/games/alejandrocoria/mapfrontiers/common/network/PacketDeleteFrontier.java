@@ -10,6 +10,7 @@ import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraftforge.fml.common.FMLCommonHandler;
@@ -32,13 +33,12 @@ public class PacketDeleteFrontier implements IMessage {
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        frontierID = new UUID(buf.readLong(), buf.readLong());
+        frontierID = UUIDHelper.fromBytes(buf);
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
-        buf.writeLong(frontierID.getMostSignificantBits());
-        buf.writeLong(frontierID.getLeastSignificantBits());
+        UUIDHelper.toBytes(buf, frontierID);
     }
 
     public static class Handler implements IMessageHandler<PacketDeleteFrontier, IMessage> {
