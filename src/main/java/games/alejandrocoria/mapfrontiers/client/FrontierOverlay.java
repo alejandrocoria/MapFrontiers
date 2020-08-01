@@ -74,10 +74,29 @@ public class FrontierOverlay extends FrontierData {
         this.jmAPI = jmAPI;
         displayId = "frontier_" + id.toString();
         vertexSelected = vertices.size() - 1;
-        updateOverlay();
+        updateOverlay(true);
 
         if (banner != null) {
             bannerDisplay = new BannerDisplayData(banner);
+        }
+    }
+
+    @Override
+    public void updateFromData(FrontierData other) {
+        super.updateFromData(other);
+
+        if (vertexSelected >= vertices.size()) {
+            vertexSelected = vertices.size() - 1;
+        }
+
+        updateOverlay();
+
+        if (other.hasChange(Change.Banner)) {
+            if (banner == null) {
+                bannerDisplay = null;
+            } else {
+                bannerDisplay = new BannerDisplayData(banner);
+            }
         }
     }
 
@@ -120,25 +139,31 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void updateOverlay() {
+        updateOverlay(false);
+    }
+
+    public void updateOverlay(boolean forceOverlayUpdate) {
         dirty = true;
 
         if (jmAPI == null) {
             return;
         }
 
-        removeOverlay();
-        recalculateOverlays();
+        if (forceOverlayUpdate || changes.contains(Change.Name) || changes.contains(Change.Vertices)) {
+            removeOverlay();
+            recalculateOverlays();
 
-        try {
-            for (PolygonOverlay polygon : polygonOverlays) {
-                jmAPI.show(polygon);
-            }
+            try {
+                for (PolygonOverlay polygon : polygonOverlays) {
+                    jmAPI.show(polygon);
+                }
 
-            for (MarkerOverlay marker : markerOverlays) {
-                jmAPI.show(marker);
+                for (MarkerOverlay marker : markerOverlays) {
+                    jmAPI.show(marker);
+                }
+            } catch (Throwable t) {
+                MapFrontiers.LOGGER.error(t.getMessage(), t);
             }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(t.getMessage(), t);
         }
     }
 
@@ -247,37 +272,37 @@ public class FrontierOverlay extends FrontierData {
 
     @Override
     public void setClosed(boolean closed) {
-        this.closed = closed;
+        super.setClosed(closed);
         updateOverlay();
     }
 
     @Override
     public void setName1(String name) {
-        name1 = name;
+        super.setName1(name);
         updateOverlay();
     }
 
     @Override
     public void setName2(String name) {
-        name2 = name;
+        super.setName2(name);
         updateOverlay();
     }
 
     @Override
     public void setNameVisible(boolean nameVisible) {
-        this.nameVisible = nameVisible;
+        super.setNameVisible(nameVisible);
         updateOverlay();
     }
 
     @Override
     public void setColor(int color) {
-        this.color = color;
+        super.setColor(color);
         updateOverlay();
     }
 
     @Override
     public void setDimension(int dimension) {
-        this.dimension = dimension;
+        super.setDimension(dimension);
         updateOverlay();
     }
 
@@ -341,7 +366,7 @@ public class FrontierOverlay extends FrontierData {
         }
 
         if (vertices.size() < 3) {
-            closed = false;
+            super.setClosed(false);
         }
 
         ((ClientProxy) MapFrontiers.proxy).getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);

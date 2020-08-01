@@ -41,7 +41,7 @@ public class PacketFrontier implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
-        frontier.toBytes(buf);
+        frontier.toBytes(buf, false);
         buf.writeInt(playerID);
     }
 

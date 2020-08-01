@@ -65,6 +65,7 @@ public class PacketUpdateSharedUserPersonalFrontier implements IMessage {
                             }
 
                             currentUserShared.setActions(message.userShared.getActions());
+                            currentFrontier.addChange(FrontierData.Change.Shared);
 
                             PacketHandler.sendToUsersWithAccess(
                                     new PacketFrontierUpdated(currentFrontier, ctx.getServerHandler().player.getEntityId()),

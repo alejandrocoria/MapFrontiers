@@ -1,7 +1,9 @@
 package games.alejandrocoria.mapfrontiers.common;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.annotation.Nullable;
@@ -27,6 +29,12 @@ import net.minecraftforge.fml.common.network.ByteBufUtils;
 
 @ParametersAreNonnullByDefault
 public class FrontierData {
+    public enum Change {
+        Name, Vertices, Banner, Shared, Other;
+
+        public final static Change[] valuesArray = values();
+    }
+
     public static final int NoSlice = -1;
     public static final int SurfaceSlice = 16;
 
@@ -44,24 +52,64 @@ public class FrontierData {
     protected boolean personal = false;
     protected List<SettingsUserShared> usersShared;
 
+    protected Set<Change> changes = EnumSet.noneOf(Change.class);
+
     public FrontierData() {
         id = new UUID(0, 0);
     }
 
     public FrontierData(FrontierData other) {
         id = other.id;
-        vertices = other.vertices;
+        dimension = other.dimension;
+        owner = other.owner;
+        personal = other.personal;
+
         closed = other.closed;
-        name1 = other.name1;
-        name2 = other.name2;
         nameVisible = other.nameVisible;
         color = other.color;
-        dimension = other.dimension;
         mapSlice = other.mapSlice;
-        owner = other.owner;
+
+        name1 = other.name1;
+        name2 = other.name2;
+
         banner = other.banner;
-        personal = other.personal;
+
         usersShared = other.usersShared;
+
+        vertices = other.vertices;
+    }
+
+    public void updateFromData(FrontierData other) {
+        id = other.id;
+        dimension = other.dimension;
+        owner = other.owner;
+        personal = other.personal;
+
+        if (other.changes.contains(Change.Other)) {
+            closed = other.closed;
+            nameVisible = other.nameVisible;
+            color = other.color;
+            mapSlice = other.mapSlice;
+        }
+
+        if (other.changes.contains(Change.Name)) {
+            name1 = other.name1;
+            name2 = other.name2;
+        }
+
+        if (other.changes.contains(Change.Banner)) {
+            banner = other.banner;
+        }
+
+        if (other.changes.contains(Change.Shared)) {
+            usersShared = other.usersShared;
+        }
+
+        if (other.changes.contains(Change.Vertices)) {
+            vertices = other.vertices;
+        }
+
+        changes = EnumSet.noneOf(Change.class);
     }
 
     public void setOwner(SettingsUser owner) {
@@ -106,6 +154,7 @@ public class FrontierData {
 
     public void addVertex(BlockPos pos, int index) {
         vertices.add(index, new BlockPos(pos.getX(), 70, pos.getZ()));
+        changes.add(Change.Vertices);
     }
 
     public void addVertex(BlockPos pos) {
@@ -118,10 +167,12 @@ public class FrontierData {
         }
 
         vertices.remove(index);
+        changes.add(Change.Vertices);
     }
 
     public void setClosed(boolean closed) {
         this.closed = closed;
+        changes.add(Change.Other);
     }
 
     public boolean getClosed() {
@@ -130,6 +181,7 @@ public class FrontierData {
 
     public void setName1(String name) {
         name1 = name;
+        changes.add(Change.Name);
     }
 
     public String getName1() {
@@ -138,6 +190,7 @@ public class FrontierData {
 
     public void setName2(String name) {
         name2 = name;
+        changes.add(Change.Name);
     }
 
     public String getName2() {
@@ -146,6 +199,7 @@ public class FrontierData {
 
     public void setNameVisible(boolean nameVisible) {
         this.nameVisible = nameVisible;
+        changes.add(Change.Other);
     }
 
     public boolean getNameVisible() {
@@ -154,6 +208,7 @@ public class FrontierData {
 
     public void setColor(int color) {
         this.color = color;
+        changes.add(Change.Other);
     }
 
     public int getColor() {
@@ -170,6 +225,7 @@ public class FrontierData {
 
     public void setMapSlice(int mapSlice) {
         this.mapSlice = mapSlice;
+        changes.add(Change.Other);
     }
 
     public int getMapSlice() {
@@ -177,12 +233,13 @@ public class FrontierData {
     }
 
     public void setBanner(@Nullable ItemStack itemBanner) {
+        changes.add(Change.Banner);
+
         if (itemBanner == null) {
             banner = null;
-            return;
+        } else {
+            banner = new BannerData(itemBanner);
         }
-
-        banner = new BannerData(itemBanner);
     }
 
     public boolean hasBanner() {
@@ -203,6 +260,7 @@ public class FrontierData {
         }
 
         usersShared.add(userShared);
+        changes.add(Change.Shared);
     }
 
     public void removeUserShared(int index) {
@@ -215,6 +273,8 @@ public class FrontierData {
         if (usersShared.isEmpty()) {
             usersShared = null;
         }
+
+        changes.add(Change.Shared);
     }
 
     public void removeUserShared(SettingsUser user) {
@@ -223,10 +283,12 @@ public class FrontierData {
         }
 
         usersShared.removeIf(x -> x.getUser().equals(user));
+        changes.add(Change.Shared);
     }
 
     public void setUsersShared(List<SettingsUserShared> usersShared) {
         this.usersShared = usersShared;
+        changes.add(Change.Shared);
     }
 
     public void removePendingUsersShared() {
@@ -235,6 +297,7 @@ public class FrontierData {
         }
 
         usersShared.removeIf(x -> x.isPending());
+        changes.add(Change.Shared);
     }
 
     public List<SettingsUserShared> getUsersShared() {
@@ -274,6 +337,16 @@ public class FrontierData {
         }
 
         return userShared.hasAction(action);
+    }
+
+    // @Note: To record changes if done outside of this class.
+    // It would be better to change that.
+    public void addChange(Change change) {
+        changes.add(change);
+    }
+
+    public boolean hasChange(Change change) {
+        return changes.contains(change);
     }
 
     public void readFromNBT(NBTTagCompound nbt, int version) {
@@ -377,94 +450,122 @@ public class FrontierData {
     }
 
     public void fromBytes(ByteBuf buf) {
+        changes.clear();
+        for (Change change : Change.valuesArray) {
+            if (buf.readBoolean()) {
+                changes.add(change);
+            }
+        }
+
         id = UUIDHelper.fromBytes(buf);
-
-        closed = buf.readBoolean();
-
-        color = buf.readInt();
-
         dimension = buf.readInt();
-
-        name1 = ByteBufUtils.readUTF8String(buf);
-        name2 = ByteBufUtils.readUTF8String(buf);
-
-        nameVisible = buf.readBoolean();
-
-        mapSlice = buf.readInt();
-
         personal = buf.readBoolean();
-
         owner = new SettingsUser();
         owner.fromBytes(buf);
 
-        if (buf.readBoolean()) {
-            banner = new BannerData();
-            banner.fromBytes(buf);
-        } else {
-            banner = null;
+        if (changes.contains(Change.Other)) {
+            closed = buf.readBoolean();
+            color = buf.readInt();
+            nameVisible = buf.readBoolean();
+            mapSlice = buf.readInt();
         }
 
-        if (buf.readBoolean()) {
-            usersShared = new ArrayList<SettingsUserShared>();
-            int usersCount = buf.readInt();
-            for (int i = 0; i < usersCount; ++i) {
-                SettingsUserShared userShared = new SettingsUserShared();
-                userShared.fromBytes(buf);
-                usersShared.add(userShared);
+
+        if (changes.contains(Change.Name)) {
+            name1 = ByteBufUtils.readUTF8String(buf);
+            name2 = ByteBufUtils.readUTF8String(buf);
+        }
+
+        if (changes.contains(Change.Banner)) {
+            if (buf.readBoolean()) {
+                banner = new BannerData();
+                banner.fromBytes(buf);
+            } else {
+                banner = null;
             }
-        } else {
-            usersShared = null;
         }
 
-        vertices = new ArrayList<BlockPos>();
-        int vertexCount = buf.readInt();
-        for (int i = 0; i < vertexCount; ++i) {
-            BlockPos vertex = BlockPos.fromLong(buf.readLong());
-            vertices.add(vertex);
+        if (changes.contains(Change.Shared)) {
+            if (buf.readBoolean()) {
+                usersShared = new ArrayList<SettingsUserShared>();
+                int usersCount = buf.readInt();
+                for (int i = 0; i < usersCount; ++i) {
+                    SettingsUserShared userShared = new SettingsUserShared();
+                    userShared.fromBytes(buf);
+                    usersShared.add(userShared);
+                }
+            } else {
+                usersShared = null;
+            }
+        }
+
+        if (changes.contains(Change.Vertices)) {
+            vertices = new ArrayList<BlockPos>();
+            int vertexCount = buf.readInt();
+            for (int i = 0; i < vertexCount; ++i) {
+                BlockPos vertex = BlockPos.fromLong(buf.readLong());
+                vertices.add(vertex);
+            }
         }
     }
 
     public void toBytes(ByteBuf buf) {
+        toBytes(buf, true);
+    }
+
+    public void toBytes(ByteBuf buf, boolean onlyChanges) {
+        for (Change change : Change.valuesArray) {
+            if (onlyChanges) {
+                buf.writeBoolean(changes.contains(change));
+            } else {
+                buf.writeBoolean(true);
+            }
+        }
+
         UUIDHelper.toBytes(buf, id);
-
-        buf.writeBoolean(closed);
-
-        buf.writeInt(color);
-
         buf.writeInt(dimension);
-
-        ByteBufUtils.writeUTF8String(buf, name1);
-        ByteBufUtils.writeUTF8String(buf, name2);
-
-        buf.writeBoolean(nameVisible);
-
-        buf.writeInt(mapSlice);
-
         buf.writeBoolean(personal);
-
         owner.toBytes(buf);
 
-        if (banner == null) {
-            buf.writeBoolean(false);
-        } else {
-            buf.writeBoolean(true);
-            banner.toBytes(buf);
+        if (!onlyChanges || changes.contains(Change.Other)) {
+            buf.writeBoolean(closed);
+            buf.writeInt(color);
+            buf.writeBoolean(nameVisible);
+            buf.writeInt(mapSlice);
         }
 
-        if (personal && usersShared != null) {
-            buf.writeBoolean(true);
+        if (!onlyChanges || changes.contains(Change.Name)) {
+            ByteBufUtils.writeUTF8String(buf, name1);
+            ByteBufUtils.writeUTF8String(buf, name2);
+        }
 
-            buf.writeInt(usersShared.size());
-            for (SettingsUserShared userShared : usersShared) {
-                userShared.toBytes(buf);
+        if (!onlyChanges || changes.contains(Change.Banner)) {
+            if (banner == null) {
+                buf.writeBoolean(false);
+            } else {
+                buf.writeBoolean(true);
+                banner.toBytes(buf);
             }
-        } else {
-            buf.writeBoolean(false);
         }
 
-        buf.writeInt(vertices.size());
-        for (BlockPos pos : vertices) {
-            buf.writeLong(pos.toLong());
+        if (!onlyChanges || changes.contains(Change.Shared)) {
+            if (personal && usersShared != null) {
+                buf.writeBoolean(true);
+
+                buf.writeInt(usersShared.size());
+                for (SettingsUserShared userShared : usersShared) {
+                    userShared.toBytes(buf);
+                }
+            } else {
+                buf.writeBoolean(false);
+            }
+        }
+
+        if (!onlyChanges || changes.contains(Change.Vertices)) {
+            buf.writeInt(vertices.size());
+            for (BlockPos pos : vertices) {
+                buf.writeLong(pos.toLong());
+            }
         }
     }
 

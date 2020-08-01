@@ -266,11 +266,9 @@ public class FrontiersManager {
             return false;
         }
 
-        if (frontiers.get(index).getOwner().equals(user)) {
-            allFrontiers.put(updatedFrontier.getId(), updatedFrontier);
-        }
+        FrontierData frontier = frontiers.get(index);
+        frontier.updateFromData(updatedFrontier);
 
-        frontiers.set(index, updatedFrontier);
         saveData();
 
         return true;

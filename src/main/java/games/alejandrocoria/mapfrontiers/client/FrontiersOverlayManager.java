@@ -152,15 +152,8 @@ public class FrontiersOverlayManager {
         if (index < 0) {
             return null;
         } else {
-            frontiers.get(index).removeOverlay();
-
-            FrontierOverlay frontierOverlay = new FrontierOverlay(data, jmAPI);
-            frontiers.set(index, frontierOverlay);
-
-            int selectedIndex = getFrontierIndexSelected(frontierOverlay.getDimension());
-            if (index == selectedIndex) {
-                frontiersSelected.put(frontierOverlay.getDimension(), frontierOverlay);
-            }
+            FrontierOverlay frontierOverlay = frontiers.get(index);
+            frontierOverlay.updateFromData(data);
 
             return frontierOverlay;
         }
@@ -209,7 +202,7 @@ public class FrontiersOverlayManager {
     public void updateAllOverlays() {
         for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
             for (FrontierOverlay frontier : frontiers) {
-                frontier.updateOverlay();
+                frontier.updateOverlay(true);
             }
         }
     }
