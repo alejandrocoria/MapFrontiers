@@ -91,24 +91,35 @@ public class SettingsUser {
     }
 
     public void fromBytes(ByteBuf buf) {
-        boolean isUsername = buf.readBoolean();
-        if (isUsername) {
+        boolean hasUsername = buf.readBoolean();
+        if (hasUsername) {
             username = ByteBufUtils.readUTF8String(buf);
-            uuid = null;
         } else {
             username = "";
+        }
+
+        boolean hasUUID = buf.readBoolean();
+        if (hasUUID) {
             uuid = UUIDHelper.fromBytes(buf);
+        } else {
+            uuid = null;
         }
 
         fillMissingInfo(false);
     }
 
     public void toBytes(ByteBuf buf) {
-        if (uuid == null) {
+        if (StringUtils.isBlank(username)) {
+            buf.writeBoolean(false);
+        } else {
             buf.writeBoolean(true);
             ByteBufUtils.writeUTF8String(buf, username);
-        } else {
+        }
+
+        if (uuid == null) {
             buf.writeBoolean(false);
+        } else {
+            buf.writeBoolean(true);
             UUIDHelper.toBytes(buf, uuid);
         }
     }
