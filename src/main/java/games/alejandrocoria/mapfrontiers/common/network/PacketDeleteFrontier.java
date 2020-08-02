@@ -77,6 +77,8 @@ public class PacketDeleteFrontier implements IMessage {
                                             frontier.getId(), frontier.getPersonal(), player.getEntityId()), player);
                                     PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier, player.getEntityId()),
                                             frontier);
+
+                                    frontier.removeChange(FrontierData.Change.Shared);
                                 }
 
                                 return;

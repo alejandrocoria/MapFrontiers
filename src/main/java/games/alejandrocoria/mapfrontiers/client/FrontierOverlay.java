@@ -74,7 +74,7 @@ public class FrontierOverlay extends FrontierData {
         this.jmAPI = jmAPI;
         displayId = "frontier_" + id.toString();
         vertexSelected = vertices.size() - 1;
-        updateOverlay(true);
+        updateOverlay();
 
         if (banner != null) {
             bannerDisplay = new BannerDisplayData(banner);
@@ -89,7 +89,9 @@ public class FrontierOverlay extends FrontierData {
             vertexSelected = vertices.size() - 1;
         }
 
-        updateOverlay();
+        if (other.hasChange(Change.Name) || other.hasChange(Change.Vertices) || other.hasChange(Change.Other)) {
+            updateOverlay();
+        }
 
         if (other.hasChange(Change.Banner)) {
             if (banner == null) {
@@ -139,31 +141,25 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void updateOverlay() {
-        updateOverlay(false);
-    }
-
-    public void updateOverlay(boolean forceOverlayUpdate) {
         dirty = true;
 
         if (jmAPI == null) {
             return;
         }
 
-        if (forceOverlayUpdate || changes.contains(Change.Name) || changes.contains(Change.Vertices)) {
-            removeOverlay();
-            recalculateOverlays();
+        removeOverlay();
+        recalculateOverlays();
 
-            try {
-                for (PolygonOverlay polygon : polygonOverlays) {
-                    jmAPI.show(polygon);
-                }
-
-                for (MarkerOverlay marker : markerOverlays) {
-                    jmAPI.show(marker);
-                }
-            } catch (Throwable t) {
-                MapFrontiers.LOGGER.error(t.getMessage(), t);
+        try {
+            for (PolygonOverlay polygon : polygonOverlays) {
+                jmAPI.show(polygon);
             }
+
+            for (MarkerOverlay marker : markerOverlays) {
+                jmAPI.show(marker);
+            }
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(t.getMessage(), t);
         }
     }
 
@@ -303,7 +299,7 @@ public class FrontierOverlay extends FrontierData {
     @Override
     public void setDimension(int dimension) {
         super.setDimension(dimension);
-        updateOverlay();
+        dirty = true;
     }
 
     @Override
@@ -365,12 +361,14 @@ public class FrontierOverlay extends FrontierData {
             vertexSelected = vertices.size() - 1;
         }
 
+        ((ClientProxy) MapFrontiers.proxy).getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);
+
         if (vertices.size() < 3) {
             super.setClosed(false);
+            updateOverlay();
+        } else {
+            dirty = true;
         }
-
-        ((ClientProxy) MapFrontiers.proxy).getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);
-        updateOverlay();
     }
 
     public void selectNextVertex() {

@@ -202,7 +202,7 @@ public class FrontiersOverlayManager {
     public void updateAllOverlays() {
         for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
             for (FrontierOverlay frontier : frontiers) {
-                frontier.updateOverlay(true);
+                frontier.updateOverlay();
             }
         }
     }

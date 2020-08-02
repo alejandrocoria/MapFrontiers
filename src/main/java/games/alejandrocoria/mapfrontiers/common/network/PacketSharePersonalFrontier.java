@@ -89,6 +89,8 @@ public class PacketSharePersonalFrontier implements IMessage {
                                 PacketHandler.INSTANCE.sendTo(new PacketPersonalFrontierShared(shareMessageID, playerUser,
                                         currentFrontier.getOwner(), currentFrontier.getName1(), currentFrontier.getName2()),
                                         entityPlayerTarget);
+
+                                currentFrontier.removeChange(FrontierData.Change.Shared);
                             }
                         } else {
                             PacketHandler.INSTANCE.sendTo(

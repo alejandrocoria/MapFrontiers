@@ -90,6 +90,8 @@ public class PacketRemoveSharedUserPersonalFrontier implements IMessage {
                                 PacketHandler.sendToUsersWithAccess(
                                         new PacketFrontierUpdated(currentFrontier, ctx.getServerHandler().player.getEntityId()),
                                         currentFrontier);
+
+                                currentFrontier.removeChange(FrontierData.Change.Shared);
                             }
                         } else {
                             PacketHandler.INSTANCE.sendTo(

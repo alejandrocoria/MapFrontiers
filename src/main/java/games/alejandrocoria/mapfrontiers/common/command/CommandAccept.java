@@ -85,6 +85,8 @@ public class CommandAccept extends CommandBase {
                     PacketHandler.INSTANCE.sendTo(new PacketFrontier(frontier), getCommandSenderAsPlayer(sender));
                     PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier), frontier);
 
+                    frontier.removeChange(FrontierData.Change.Shared);
+
                     // @Note: improve message and localize
                     notifyCommandListener(sender, this, "Accepting frontier " + frontier.getName1() + " " + frontier.getName2());
                 } else {

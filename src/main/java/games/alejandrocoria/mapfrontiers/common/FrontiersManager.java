@@ -230,20 +230,21 @@ public class FrontiersManager {
         return deleted;
     }
 
-    public boolean updateGlobalFrontier(FrontierData frontier) {
-        List<FrontierData> frontiers = dimensionsGlobalFrontiers.get(Integer.valueOf(frontier.getDimension()));
+    public boolean updateGlobalFrontier(FrontierData updatedFrontier) {
+        List<FrontierData> frontiers = dimensionsGlobalFrontiers.get(Integer.valueOf(updatedFrontier.getDimension()));
         if (frontiers == null) {
             return false;
         }
 
-        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId().equals(frontier.getId()));
+        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId().equals(updatedFrontier.getId()));
 
         if (index < 0) {
             return false;
         }
 
-        frontiers.set(index, frontier);
-        allFrontiers.put(frontier.getId(), frontier);
+        FrontierData frontier = frontiers.get(index);
+        frontier.updateFromData(updatedFrontier);
+
         saveData();
 
         return true;

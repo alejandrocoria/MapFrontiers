@@ -55,6 +55,7 @@ public class PacketUpdateFrontier implements IMessage {
                         }
 
                         message.frontier.setUsersShared(currentFrontier.getUsersShared());
+                        message.frontier.removeChange(FrontierData.Change.Shared);
 
                         if (message.frontier.getPersonal()) {
                             if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier,
