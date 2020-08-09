@@ -40,44 +40,38 @@ public class TextColorBox extends GuiTextField {
     @Override
     public boolean textboxKeyTyped(char typedChar, int keyCode) {
         boolean res = super.textboxKeyTyped(typedChar, keyCode);
-        if (isFocused()) {
-            clamp();
-        }
+
+        Integer integer = clamped();
+        setText(integer);
 
         setCursorPositionZero();
         setCursorPositionEnd();
 
         if (responder != null) {
-            responder.updatedValue(getId(), Integer.valueOf(getText()));
+            responder.updatedValue(getId(), integer);
         }
 
         return res;
     }
 
-    public Integer clamp() {
+    public Integer clamped() {
         String text = getText();
         if (text == null || text.length() == 0) {
-            this.setText("0");
             return Integer.valueOf(0);
         }
 
-        try {
-            setText(Integer.valueOf(Math.max(0, Integer.parseInt(text))));
-        } catch (Exception e) {
-            setText(Integer.valueOf(0));
-        }
+        Integer integer = Integer.valueOf(0);
 
         try {
-            setText(Integer.valueOf(Math.min(255, Integer.parseInt(text))));
+            integer = Integer.parseInt(text);
         } catch (Exception e) {
-            setText(Integer.valueOf(255));
+            return Integer.valueOf(0);
         }
 
-        try {
-            return Integer.valueOf(Integer.parseInt(text));
-        } catch (Exception e) {
-            return null;
-        }
+        integer = Math.max(0, integer);
+        integer = Math.min(255, integer);
+
+        return integer;
     }
 
     @SideOnly(Side.CLIENT)
