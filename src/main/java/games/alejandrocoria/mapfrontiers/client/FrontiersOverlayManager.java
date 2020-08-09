@@ -117,11 +117,12 @@ public class FrontiersOverlayManager {
     }
 
     public void clientUpdatefrontier(int dimension, int index) {
-        PacketHandler.INSTANCE.sendToServer(new PacketUpdateFrontier(getAllFrontiers(dimension).get(index)));
+        clientUpdatefrontier(getAllFrontiers(dimension).get(index));
     }
 
     public void clientUpdatefrontier(FrontierOverlay frontier) {
         PacketHandler.INSTANCE.sendToServer(new PacketUpdateFrontier(frontier));
+        frontier.removeChanges();
     }
 
     public void clientShareFrontier(UUID frontierID, SettingsUser targetUser) {

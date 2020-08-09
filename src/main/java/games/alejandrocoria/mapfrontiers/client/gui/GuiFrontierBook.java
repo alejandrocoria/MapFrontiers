@@ -458,25 +458,28 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             FrontierOverlay frontier = getCurrentFrontier();
 
             if (textRed.getId() == id) {
-                int newColor = (frontier.getColor() & 0x00ffff) | (value << 16);
+                int newColor = (frontier.getColor() & 0xff00ffff) | (value << 16);
                 if (newColor != frontier.getColor()) {
                     frontier.setColor(newColor);
                     updateIndexEntries();
                     updateButtonsVisibility();
+                    sendChangesToServer();
                 }
             } else if (textGreen.getId() == id) {
-                int newColor = (frontier.getColor() & 0xff00ff) | (value << 8);
+                int newColor = (frontier.getColor() & 0xffff00ff) | (value << 8);
                 if (newColor != frontier.getColor()) {
                     frontier.setColor(newColor);
                     updateIndexEntries();
                     updateButtonsVisibility();
+                    sendChangesToServer();
                 }
             } else if (textBlue.getId() == id) {
-                int newColor = (frontier.getColor() & 0xffff00) | value;
+                int newColor = (frontier.getColor() & 0xffffff00) | value;
                 if (newColor != frontier.getColor()) {
                     frontier.setColor(newColor);
                     updateIndexEntries();
                     updateButtonsVisibility();
+                    sendChangesToServer();
                 }
             }
         }
@@ -505,6 +508,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
     @Override
     public void lostFocus(int id, String value) {
+        sendChangesToServer();
     }
 
     @Override
@@ -539,12 +543,14 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             FrontierOverlay frontier = getCurrentFrontier();
             frontier.setNameVisible(!frontier.getNameVisible());
             resetTextName();
+            sendChangesToServer();
         } else if (button == buttonAddVertex) {
             FrontierOverlay frontier = getCurrentFrontier();
             frontier.addVertex(Minecraft.getMinecraft().player.getPosition());
             resetLabels();
             updateButtonsVisibility();
             updateGridRenderer();
+            sendChangesToServer();
         } else if (button == buttonRemoveVertex) {
             FrontierOverlay frontier = getCurrentFrontier();
             frontier.removeSelectedVertex();
@@ -552,12 +558,14 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             resetFinishButton();
             updateButtonsVisibility();
             updateGridRenderer();
+            sendChangesToServer();
         } else if (button == buttonFinish) {
             FrontierOverlay frontier = getCurrentFrontier();
             frontier.setClosed(!frontier.getClosed());
             resetFinishButton();
             updateButtonsVisibility();
             updateGridRenderer();
+            sendChangesToServer();
         } else if (button == buttonBanner) {
             FrontierOverlay frontier = getCurrentFrontier();
             if (!frontier.hasBanner()) {
@@ -568,23 +576,27 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                 frontier.setBanner(null);
             }
             resetBannerButton();
+            sendChangesToServer();
         } else if (button == buttonSliceUp) {
             FrontierOverlay frontier = getCurrentFrontier();
             frontier.setMapSlice(frontier.getMapSlice() + 1);
             resetSliceSlider();
             updateButtonsVisibility();
             updateGridRenderer();
+            sendChangesToServer();
         } else if (button == buttonSliceDown) {
             FrontierOverlay frontier = getCurrentFrontier();
             frontier.setMapSlice(frontier.getMapSlice() - 1);
             resetSliceSlider();
             updateButtonsVisibility();
             updateGridRenderer();
+            sendChangesToServer();
         } else if (button == sliderSlice) {
             FrontierOverlay frontier = getCurrentFrontier();
             frontier.setMapSlice(sliderSlice.getSlice());
             updateButtonsVisibility();
             updateGridRenderer();
+            sendChangesToServer();
         } else if (button == buttonEditShareSettings) {
             FrontierOverlay frontier = getCurrentFrontier();
             mc.displayGuiScreen(new GuiShareSettings(this, frontiersOverlayManager, frontier));
@@ -726,6 +738,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     private void sendChangesToServer() {
         if (isInFrontierPage() && lastFrontierHash != getCurrentFrontier().getHash()) {
             frontiersOverlayManager.clientUpdatefrontier(dimension, getCurrentFrontierIndex());
+            lastFrontierHash = getCurrentFrontier().getHash();
         }
     }
 

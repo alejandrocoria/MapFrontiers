@@ -349,6 +349,10 @@ public class FrontierData {
         changes.remove(change);
     }
 
+    public void removeChanges() {
+        changes.clear();
+    }
+
     public boolean hasChange(Change change) {
         return changes.contains(change);
     }
