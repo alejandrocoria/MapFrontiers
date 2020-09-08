@@ -38,12 +38,9 @@ import net.minecraft.client.gui.GuiLabel;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -626,8 +623,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             return;
         }
 
-        EntityPlayer player = Minecraft.getMinecraft().player;
-        if (playerID == -1 || player.getEntityId() == playerID) {
+        if (playerID == -1 || Minecraft.getMinecraft().player.getEntityId() == playerID) {
             int index = frontiersOverlayManager.getFrontierIndex(frontierOverlay);
             if (index >= 0) {
                 updateIndexEntries();
@@ -643,17 +639,6 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                 updateIndexEntries();
                 reloadPage(false);
             }
-
-            String message;
-            Entity otherPlayer = Minecraft.getMinecraft().world.getEntityByID(playerID);
-            if (otherPlayer == null) {
-                message = I18n.format("mapfrontiers.chat.frontier_created_unknown");
-            } else {
-                message = I18n.format("mapfrontiers.chat.frontier_created", TextFormatting.RESET, GuiColors.CHAT_PLAYER,
-                        otherPlayer.getName());
-            }
-
-            player.sendMessage(new TextComponentString(message));
         }
     }
 
@@ -674,21 +659,6 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
         if (updatePage) {
             reloadPage(false);
-        }
-
-        EntityPlayer player = Minecraft.getMinecraft().player;
-        if (playerID != -1 && player.getEntityId() != playerID) {
-            String message;
-            Entity otherPlayer = Minecraft.getMinecraft().world.getEntityByID(playerID);
-            int index = frontiersOverlayManager.getFrontierIndex(frontierOverlay);
-            if (otherPlayer == null) {
-                message = I18n.format("mapfrontiers.chat.frontier_updated_unknown", index + 1);
-            } else {
-                message = I18n.format("mapfrontiers.chat.frontier_updated", TextFormatting.RESET, GuiColors.CHAT_PLAYER,
-                        otherPlayer.getName(), index + 1);
-            }
-
-            player.sendMessage(new TextComponentString(message));
         }
     }
 
@@ -718,20 +688,6 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             } else {
                 reloadPage(false);
             }
-        }
-
-        EntityPlayer player = Minecraft.getMinecraft().player;
-        if (playerID != -1 && player.getEntityId() != playerID) {
-            String message;
-            Entity otherPlayer = Minecraft.getMinecraft().world.getEntityByID(playerID);
-            if (otherPlayer == null) {
-                message = I18n.format("mapfrontiers.chat.frontier_deleted_unknown", index + 1);
-            } else {
-                message = I18n.format("mapfrontiers.chat.frontier_deleted", TextFormatting.RESET, GuiColors.CHAT_PLAYER,
-                        otherPlayer.getName(), index + 1);
-            }
-
-            player.sendMessage(new TextComponentString(message));
         }
     }
 
