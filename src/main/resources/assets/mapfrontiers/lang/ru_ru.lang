@@ -13,7 +13,7 @@ mapfrontiers.perimeter=Периметр: %1$.2fм
 mapfrontiers.owner=Владелец: %1$s
 mapfrontiers.unknown=%1$s<Неизвестно>
 mapfrontiers.shared=Поделили с %1$d игроками
-mapfrontiers.share_settings=Поделиться настройки
+mapfrontiers.share_settings=Публичные настройки
 mapfrontiers.vertex_number=Точка %1$d/%2$d
 mapfrontiers.no_vertex_selected=%1$sТочка не выбрана
 mapfrontiers.new=Создать
@@ -40,14 +40,14 @@ mapfrontiers.vertical_chunk=Вертикаль чанков: %1$d
 mapfrontiers.vertical_chunk_surface=Вертикаль чанков: Поверхность
 
 # Settings
-mapfrontiers.credits=Credits
+mapfrontiers.credits=Информация
 mapfrontiers.general=Основные
 mapfrontiers.groups=Группы
 mapfrontiers.actions=Действия
-mapfrontiers.credits_created_by=создано Alejandro Coria (MemeSapiens)
+mapfrontiers.credits_created_by=Мод создан Alejandro Coria (MemeSapiens)
 mapfrontiers.credits_many_thanks=Большое спасибо Mojang Studios, Forge и JourneyMap.
 mapfrontiers.credits_project=Следите за проектом в
-mapfrontiers.credits_patreon=Если вам нравится мод, пожалуйста, подумайте о том, чтобы стать Patron
+mapfrontiers.credits_patreon=Если вам понравился мод, пожалуйста, подумайте о том, чтобы стать Патроном
 mapfrontiers.credits_translation=Переведено Articuno (https://pixelmon.pro)
 mapfrontiers.frontiers=Территории
 mapfrontiers.hud=HUD
@@ -66,7 +66,7 @@ mapfrontiers.new_user_error_user_repeated=Игрок уже состоит в э
 mapfrontiers.new_user_shared_error_self=Не могу добавить себя
 mapfrontiers.new_user_shared_error_owner=Не могу добавить владельца
 mapfrontiers.new_user_shared_error_user_repeated=Пользователь уже в списке
-mapfrontiers.new_user_shared_error_user_not_found=Пользователь офлайн
+mapfrontiers.new_user_shared_error_user_not_found=Пользователь оффлайн
 mapfrontiers.pending=%1$sВ ожидании...
 mapfrontiers.edit_group_name=Редактировать название группы
 mapfrontiers.group_ops_desc=В мультиплеере эта группа представляет игроков с правами OP.\nВ одиночной игре она представляет основного игрока в игре.
@@ -84,7 +84,7 @@ mapfrontiers.chat.frontier_created_unknown=Кто-то создал новую �
 
 # Item
 item.mapfrontiers.frontier_book.name=Карта Территорий
-item.mapfrontiers.personal_frontier_book.name=Карта личных территорий
+item.mapfrontiers.personal_frontier_book.name=Карта Персональных Территорий
 
 # Key
 mapfrontiers.key.category=Карта Территорий
