@@ -1,8 +1,14 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
 import journeymap.client.ui.theme.Theme;
 import net.minecraft.util.text.TextFormatting;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
+@ParametersAreNonnullByDefault
+@OnlyIn(Dist.CLIENT)
 public final class GuiColors {
     public static final int WHITE = 0xffffffff;
     public static final int BLACK = 0xff000000;
@@ -33,6 +39,8 @@ public final class GuiColors {
     public static final int SETTINGS_BUTTON_TEXT = 0xff777777;
     public static final int SETTINGS_BUTTON_TEXT_HIGHLIGHT = 0xffffffff;
     public static final int SETTINGS_BUTTON_TEXT_DARK = 0xff444444;
+    public static final int SETTINGS_BUTTON_BORDER_LIGHT = 0xffaaaaaa;
+    public static final int SETTINGS_BUTTON_TEXT_LIGHT = 0xffaaaaaa;
     public static final int SETTINGS_TAB_BORDER = 0xff777777;
     public static final int SETTINGS_TAB_TEXT = 0xff777777;
     public static final int SETTINGS_TAB_TEXT_HIGHLIGHT = 0xffffffff;

@@ -4,35 +4,34 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import javax.annotation.ParametersAreNonnullByDefault;
 
-@SideOnly(Side.CLIENT)
-public class GuiScrollBox extends Gui {
-    public boolean visible = true;
-    private int id;
-    private int x = 0;
-    private int y = 0;
-    private int width;
-    private int height;
-    private boolean hovered = false;
-    private int elementHeight;
+import com.mojang.blaze3d.matrix.MatrixStack;
+
+import net.minecraft.client.gui.AbstractGui;
+import net.minecraft.client.gui.widget.Widget;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+
+@ParametersAreNonnullByDefault
+@OnlyIn(Dist.CLIENT)
+public class GuiScrollBox extends Widget {
+    private final int elementHeight;
     private int scrollStart = 0;
-    private int scrollHeight = 0;
+    private final int scrollHeight;
     private int scrollBarPos = 0;
     private int scrollBarHeight = 0;
     private boolean scrollBarHovered = false;
     private boolean scrollBarGrabbed = false;
     private int scrollBarGrabbedYPos = 0;
-    private List<ScrollElement> elements;
+    private final List<ScrollElement> elements;
     private int selected;
-    private ScrollBoxResponder responder;
+    private final ScrollBoxResponder responder;
 
-    public GuiScrollBox(int id, int x, int y, int width, int height, int elementHeight, ScrollBoxResponder responder) {
-        this.id = id;
-        elements = new ArrayList<ScrollElement>();
+    public GuiScrollBox(int x, int y, int width, int height, int elementHeight, ScrollBoxResponder responder) {
+        super(x, y, width, height, StringTextComponent.EMPTY);
+        elements = new ArrayList<>();
         selected = -1;
         this.x = x;
         this.y = y;
@@ -41,10 +40,6 @@ public class GuiScrollBox extends Gui {
         scrollHeight = height / elementHeight;
         this.height = scrollHeight * elementHeight;
         this.responder = responder;
-    }
-
-    public int getId() {
-        return id;
     }
 
     public List<ScrollElement> getElements() {
@@ -73,8 +68,7 @@ public class GuiScrollBox extends Gui {
     }
 
     private void removeElement(ScrollElement element, ListIterator<ScrollElement> it) {
-        ScrollElement removed = element;
-        removed.delete();
+        element.delete();
         it.remove();
 
         if (selected == elements.size()) {
@@ -90,7 +84,7 @@ public class GuiScrollBox extends Gui {
         updateScrollBar();
 
         if (responder != null) {
-            responder.elementDelete(id, removed);
+            responder.elementDelete(this, element);
         }
     }
 
@@ -102,18 +96,23 @@ public class GuiScrollBox extends Gui {
         updateScrollBar();
     }
 
-    public void scroll(int amount) {
-        if (visible && (hovered || scrollBarHovered) && !scrollBarGrabbed) {
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        if (visible && (isHovered || scrollBarHovered) && !scrollBarGrabbed) {
+            int amount = (int) -delta;
             if (amount < 0 && scrollStart == 0) {
-                return;
+                return false;
             } else if (amount > 0 && scrollStart + scrollHeight >= elements.size()) {
-                return;
+                return false;
             }
 
             scrollStart += amount;
             updateScrollWindow();
             updateScrollBar();
+            return true;
         }
+
+        return false;
     }
 
     public void scrollBottom() {
@@ -123,74 +122,81 @@ public class GuiScrollBox extends Gui {
         updateScrollBar();
     }
 
-    public void drawBox(Minecraft mc, int mouseX, int mouseY) {
-        if (visible) {
-            hovered = mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height;
+    @Override
+    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+        for (int i = 0; i < elements.size(); ++i) {
+            elements.get(i).render(matrixStack, mouseX, mouseY, partialTicks, selected == i);
+        }
 
-            for (int i = 0; i < elements.size(); ++i) {
-                elements.get(i).draw(mc, mouseX, mouseY, selected == i);
+        if (scrollBarHeight > 0) {
+            if (mouseX >= x + width + 5 && mouseY >= y && mouseX < x + width + 15 && mouseY < y + height) {
+                scrollBarHovered = true;
+            } else {
+                scrollBarHovered = false;
             }
 
-            if (scrollBarHeight > 0) {
-                scrollBarHovered = mouseX >= x + width + 5 && mouseY >= y && mouseX < x + width + 15 && mouseY < y + height;
-
-                int barColor = GuiColors.SETTINGS_SCROLLBAR;
-                if (scrollBarGrabbed) {
-                    barColor = GuiColors.SETTINGS_SCROLLBAR_GRABBED;
-                } else if (scrollBarHovered) {
-                    barColor = GuiColors.SETTINGS_SCROLLBAR_HOVERED;
-                }
-
-                Gui.drawRect(x + width + 5, y, x + width + 15, y + height, GuiColors.SETTINGS_SCROLLBAR_BG);
-                Gui.drawRect(x + width + 5, y + scrollBarPos, x + width + 15, y + scrollBarPos + scrollBarHeight, barColor);
+            int barColor = GuiColors.SETTINGS_SCROLLBAR;
+            if (scrollBarGrabbed) {
+                barColor = GuiColors.SETTINGS_SCROLLBAR_GRABBED;
+            } else if (scrollBarHovered) {
+                barColor = GuiColors.SETTINGS_SCROLLBAR_HOVERED;
             }
-        } else {
-            hovered = false;
-            scrollBarHovered = false;
+
+            fill(matrixStack, x + width + 5, y, x + width + 15, y + height, GuiColors.SETTINGS_SCROLLBAR_BG);
+            fill(matrixStack, x + width + 5, y + scrollBarPos, x + width + 15, y + scrollBarPos + scrollBarHeight, barColor);
         }
     }
 
-    public void mousePressed(Minecraft mc, int mouseX, int mouseY) {
+    @Override
+    public boolean clicked(double mouseX, double mouseY) {
         if (visible) {
-            if (scrollBarHovered) {
+            if (scrollBarHeight > 0 && mouseX >= x + width + 5 && mouseY >= y && mouseX < x + width + 15 && mouseY < y + height) {
                 if (mouseY < y + scrollBarPos) {
-                    scroll(-1);
+                    mouseScrolled(mouseX, mouseY, -1);
                 } else if (mouseY > y + scrollBarPos + scrollBarHeight) {
-                    scroll(1);
+                    mouseScrolled(mouseX, mouseY, 1);
                 } else {
                     scrollBarGrabbed = true;
-                    scrollBarGrabbedYPos = mouseY - y - scrollBarPos;
+                    scrollBarGrabbedYPos = (int) mouseY - y - scrollBarPos;
                 }
+
+                return true;
             }
 
-            if (hovered && !scrollBarGrabbed) {
+            if (isHovered && !scrollBarGrabbed) {
                 ListIterator<ScrollElement> it = elements.listIterator();
                 while (it.hasNext()) {
                     ScrollElement element = it.next();
-                    ScrollElement.Action action = element.mousePressed(mc, mouseX, mouseY);
+                    ScrollElement.Action action = element.mousePressed(mouseX, mouseY);
                     if (action == ScrollElement.Action.Deleted) {
                         removeElement(element, it);
+                        return true;
                     } else if (action == ScrollElement.Action.Clicked) {
                         selectElement(element);
                         if (responder != null) {
-                            responder.elementClicked(id, element);
+                            responder.elementClicked(this, element);
                         }
+                        return true;
                     }
                 }
             }
         }
+
+        return false;
     }
 
-    public void mouseReleased(Minecraft mc, int mouseX, int mouseY) {
+    // Custom mouseReleased to be called from the Screen.
+    public void mouseReleased() {
         if (visible && scrollBarHeight > 0 && scrollBarGrabbed) {
             scrollBarGrabbed = false;
             updateScrollBar();
         }
     }
 
-    public void mouseClickMove(Minecraft mc, int mouseX, int mouseY) {
-        if (visible && scrollBarHeight > 0 && scrollBarGrabbed) {
-            int delta = mouseY - y - scrollBarPos - scrollBarGrabbedYPos;
+    @Override
+    public void onDrag(double mouseX, double mouseY, double dragX, double dragY) {
+        if (scrollBarHeight > 0 && scrollBarGrabbed) {
+            int delta = (int) mouseY - y - scrollBarPos - scrollBarGrabbedYPos;
 
             if (delta == 0) {
                 return;
@@ -251,25 +257,25 @@ public class GuiScrollBox extends Gui {
         }
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public interface ScrollBoxResponder {
-        public void elementClicked(int id, ScrollElement element);
+        void elementClicked(GuiScrollBox scrollBox, ScrollElement element);
 
-        public void elementDelete(int id, ScrollElement element);
+        void elementDelete(GuiScrollBox scrollBox, ScrollElement element);
     }
 
-    @SideOnly(Side.CLIENT)
-    public static class ScrollElement {
-        static enum Action {
+    @OnlyIn(Dist.CLIENT)
+    public static class ScrollElement extends AbstractGui {
+        enum Action {
             None, Clicked, Deleted
         }
 
         public boolean visible = true;
         protected int x = 0;
         protected int y = 0;
-        protected boolean hovered = false;
-        protected int height;
-        protected int width;
+        protected boolean isHovered = false;
+        protected final int height;
+        protected final int width;
 
         public ScrollElement(int width, int height) {
             this.width = width;
@@ -287,10 +293,19 @@ public class GuiScrollBox extends Gui {
             this.y = y;
         }
 
-        public void draw(Minecraft mc, int mouseX, int mouseY, boolean selected) {
+        public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
+            if (visible) {
+                isHovered = mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height;
+                renderButton(matrixStack, mouseX, mouseY, partialTicks, selected);
+            } else {
+                isHovered = false;
+            }
         }
 
-        public Action mousePressed(Minecraft mc, int mouseX, int mouseY) {
+        public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
+        }
+
+        public Action mousePressed(double mouseX, double mouseY) {
             return Action.None;
         }
     }

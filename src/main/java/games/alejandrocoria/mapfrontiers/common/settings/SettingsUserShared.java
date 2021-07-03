@@ -6,10 +6,10 @@ import java.util.Set;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTTagString;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
+import net.minecraft.nbt.StringNBT;
+import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.common.util.Constants;
 
 @ParametersAreNonnullByDefault
@@ -20,7 +20,7 @@ public class SettingsUserShared {
         public final static Action[] valuesArray = values();
     }
 
-    private SettingsUser user;
+    private final SettingsUser user;
     private Set<SettingsUserShared.Action> actions;
     private boolean pending;
 
@@ -68,14 +68,14 @@ public class SettingsUserShared {
         return pending;
     }
 
-    public void readFromNBT(NBTTagCompound nbt) {
+    public void readFromNBT(CompoundNBT nbt) {
         user.readFromNBT(nbt);
         pending = nbt.getBoolean("pending");
 
         actions.clear();
-        NBTTagList actionsTagList = nbt.getTagList("actions", Constants.NBT.TAG_STRING);
-        for (int i = 0; i < actionsTagList.tagCount(); ++i) {
-            String actionTag = actionsTagList.getStringTagAt(i);
+        ListNBT actionsTagList = nbt.getList("actions", Constants.NBT.TAG_STRING);
+        for (int i = 0; i < actionsTagList.size(); ++i) {
+            String actionTag = actionsTagList.getString(i);
 
             try {
                 SettingsUserShared.Action action = SettingsUserShared.Action.valueOf(actionTag);
@@ -103,23 +103,23 @@ public class SettingsUserShared {
         }
     }
 
-    public void writeToNBT(NBTTagCompound nbt) {
+    public void writeToNBT(CompoundNBT nbt) {
         user.writeToNBT(nbt);
 
         if (pending) {
-            nbt.setBoolean("pending", pending);
+            nbt.putBoolean("pending", pending);
         }
 
-        NBTTagList actionsTagList = new NBTTagList();
+        ListNBT actionsTagList = new ListNBT();
         for (SettingsUserShared.Action action : actions) {
-            NBTTagString actionTag = new NBTTagString(action.name());
-            actionsTagList.appendTag(actionTag);
+            StringNBT actionTag = StringNBT.valueOf(action.name());
+            actionsTagList.add(actionTag);
         }
 
-        nbt.setTag("actions", actionsTagList);
+        nbt.put("actions", actionsTagList);
     }
 
-    public void fromBytes(ByteBuf buf) {
+    public void fromBytes(PacketBuffer buf) {
         user.fromBytes(buf);
 
         pending = buf.readBoolean();
@@ -132,7 +132,7 @@ public class SettingsUserShared {
         }
     }
 
-    public void toBytes(ByteBuf buf) {
+    public void toBytes(PacketBuffer buf) {
         user.toBytes(buf);
 
         buf.writeBoolean(pending);
@@ -158,7 +158,7 @@ public class SettingsUserShared {
             return true;
         }
 
-        if (other == null || !(other instanceof SettingsUserShared)) {
+        if (!(other instanceof SettingsUserShared)) {
             return false;
         }
 

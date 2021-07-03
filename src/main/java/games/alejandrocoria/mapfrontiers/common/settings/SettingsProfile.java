@@ -4,9 +4,7 @@ import io.netty.buffer.ByteBuf;
 
 public class SettingsProfile {
     public enum State {
-        Enabled, Owner, Disabled;
-
-        public final static State[] valuesArray = values();
+        Enabled, Owner, Disabled
     }
 
     public State createFrontier = State.Disabled;
@@ -56,22 +54,13 @@ public class SettingsProfile {
         buf.writeInt(personalFrontier.ordinal());
     }
 
-    private State stringToState(String string) {
-        try {
-            State state = State.valueOf(string);
-            return state;
-        } catch (IllegalArgumentException e) {
-            return State.Disabled;
-        }
-    }
-
     @Override
     public boolean equals(Object other) {
         if (this == other) {
             return true;
         }
 
-        if (other == null || !(other instanceof SettingsProfile)) {
+        if (!(other instanceof SettingsProfile)) {
             return false;
         }
 

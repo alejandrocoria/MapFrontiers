@@ -2,36 +2,39 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 
 import java.util.List;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
 import org.apache.commons.lang3.StringUtils;
+
+import com.mojang.blaze3d.matrix.MatrixStack;
 
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextFormatting;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-@SideOnly(Side.CLIENT)
+@ParametersAreNonnullByDefault
+@OnlyIn(Dist.CLIENT)
 public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
-    private final FontRenderer fontRenderer;
-    private SettingsUserShared user;
-    private UserSharedResponder responder;
+    private final FontRenderer font;
+    private final SettingsUserShared user;
+    private final UserSharedResponder responder;
     private boolean updateFrontier;
     private boolean updateSettings;
     private GuiButtonIcon buttonDelete;
-    private boolean enabled;
+    private final boolean enabled;
     private int pingBar = 0;
-    List<GuiButton> buttonList;
+    List<Widget> buttonList;
 
-    public GuiUserSharedElement(FontRenderer fontRenderer, List<GuiButton> buttonList, int id, SettingsUserShared user,
-            boolean enabled, boolean removable, UserSharedResponder responder, ResourceLocation texture, int textureSize) {
+    public GuiUserSharedElement(FontRenderer font, List<Widget> buttonList, SettingsUserShared user, boolean enabled,
+            boolean removable, UserSharedResponder responder, ResourceLocation texture, int textureSize) {
         super(430, 16);
-        this.fontRenderer = fontRenderer;
+        this.font = font;
         this.user = user;
         this.responder = responder;
         updateFrontier = user.hasAction(SettingsUserShared.Action.UpdateFrontier);
@@ -39,7 +42,8 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
         this.enabled = enabled;
 
         if (removable && enabled) {
-            buttonDelete = new GuiButtonIcon(id, 0, 0, 13, 13, 494, 132, -23, texture, textureSize);
+            buttonDelete = new GuiButtonIcon(0, 0, 13, 13, 494, 132, -23, texture, textureSize, (button) -> {
+            });
             this.buttonList = buttonList;
             this.buttonList.add(buttonDelete);
         }
@@ -83,67 +87,58 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
     }
 
     @Override
-    public void draw(Minecraft mc, int mouseX, int mouseY, boolean selected) {
-        if (visible) {
-            hovered = mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height;
+    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
+        if (isHovered) {
+            fill(matrixStack, x, y, x + width, y + height, GuiColors.SETTINGS_ELEMENT_HOVERED);
+        }
 
-            if (hovered) {
-                Gui.drawRect(x, y, x + width, y + height, GuiColors.SETTINGS_ELEMENT_HOVERED);
-            }
+        if (buttonDelete != null) {
+            buttonDelete.visible = isHovered;
+        }
 
-            if (buttonDelete != null) {
-                buttonDelete.visible = hovered;
+        String text = user.getUser().username;
+        if (StringUtils.isBlank(text)) {
+            if (user.getUser().uuid == null) {
+                text = I18n.get("mapfrontiers.unnamed", TextFormatting.ITALIC);
+            } else {
+                text = user.getUser().uuid.toString();
             }
+        }
 
-            String text = user.getUser().username;
-            if (StringUtils.isBlank(text)) {
-                if (user.getUser().uuid == null) {
-                    text = I18n.format("mapfrontiers.unnamed", TextFormatting.ITALIC);
-                } else {
-                    text = user.getUser().uuid.toString();
-                }
-            }
+        font.draw(matrixStack, text, x + 4.f, y + 4.f, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
 
-            fontRenderer.drawString(text, x + 4, y + 4, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
+        drawBox(matrixStack, x + 244, y + 2, updateFrontier);
+        drawBox(matrixStack, x + 304, y + 2, updateSettings);
 
-            drawBox(x + 244, y + 2, updateFrontier);
-            drawBox(x + 304, y + 2, updateSettings);
+        if (user.isPending()) {
+            font.draw(matrixStack, I18n.get("mapfrontiers.pending", TextFormatting.ITALIC), x + 350.f, y + 4.f,
+                    GuiColors.SETTINGS_TEXT_PENDING);
+        }
 
-            if (user.isPending()) {
-                fontRenderer.drawString(I18n.format("mapfrontiers.pending", TextFormatting.ITALIC), x + 350, y + 4,
-                        GuiColors.SETTINGS_TEXT_PENDING);
-            }
-
-            if (pingBar > 0) {
-                drawPingLine(x - 11, y + 11, 2);
-            }
-            if (pingBar > 1) {
-                drawPingLine(x - 9, y + 11, 3);
-            }
-            if (pingBar > 2) {
-                drawPingLine(x - 7, y + 11, 4);
-            }
-            if (pingBar > 3) {
-                drawPingLine(x - 5, y + 11, 5);
-            }
-            if (pingBar > 4) {
-                drawPingLine(x - 3, y + 11, 6);
-            }
-        } else {
-            hovered = false;
-            if (buttonDelete != null) {
-                buttonDelete.visible = false;
-            }
+        if (pingBar > 0) {
+            drawPingLine(matrixStack, x - 11, y + 11, 2);
+        }
+        if (pingBar > 1) {
+            drawPingLine(matrixStack, x - 9, y + 11, 3);
+        }
+        if (pingBar > 2) {
+            drawPingLine(matrixStack, x - 7, y + 11, 4);
+        }
+        if (pingBar > 3) {
+            drawPingLine(matrixStack, x - 5, y + 11, 5);
+        }
+        if (pingBar > 4) {
+            drawPingLine(matrixStack, x - 3, y + 11, 6);
         }
     }
 
-    private void drawPingLine(int posX, int posY, int height) {
-        Gui.drawRect(posX, posY - height, posX + 1, posY, GuiColors.SETTINGS_PING_BAR);
+    private void drawPingLine(MatrixStack matrixStack, int posX, int posY, int height) {
+        fill(matrixStack, posX, posY - height, posX + 1, posY, GuiColors.SETTINGS_PING_BAR);
     }
 
     @Override
-    public GuiScrollBox.ScrollElement.Action mousePressed(Minecraft mc, int mouseX, int mouseY) {
-        if (enabled && visible && hovered && responder != null) {
+    public GuiScrollBox.ScrollElement.Action mousePressed(double mouseX, double mouseY) {
+        if (enabled && visible && isHovered && responder != null) {
             if (mouseX >= x + 220 && mouseX <= x + 280) {
                 updateFrontier = !updateFrontier;
                 responder.actionChanged(user, SettingsUserShared.Action.UpdateFrontier, updateFrontier);
@@ -153,8 +148,8 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
             }
         }
 
-        if (enabled && visible && hovered && buttonDelete != null) {
-            if (buttonDelete.mousePressed(mc, mouseX, mouseY)) {
+        if (enabled && visible && isHovered && buttonDelete != null) {
+            if (buttonDelete.isMouseOver(mouseX, mouseY)) {
                 return GuiScrollBox.ScrollElement.Action.Deleted;
             }
         }
@@ -162,16 +157,16 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
         return GuiScrollBox.ScrollElement.Action.None;
     }
 
-    private void drawBox(int x, int y, boolean checked) {
-        Gui.drawRect(x, y, x + 12, y + 12, GuiColors.SETTINGS_CHECKBOX_BORDER);
-        Gui.drawRect(x + 1, y + 1, x + 11, y + 11, GuiColors.SETTINGS_CHECKBOX_BG);
+    private void drawBox(MatrixStack matrixStack, int x, int y, boolean checked) {
+        fill(matrixStack, x, y, x + 12, y + 12, GuiColors.SETTINGS_CHECKBOX_BORDER);
+        fill(matrixStack, x + 1, y + 1, x + 11, y + 11, GuiColors.SETTINGS_CHECKBOX_BG);
         if (checked) {
-            Gui.drawRect(x + 2, y + 2, x + 10, y + 10, GuiColors.SETTINGS_CHECKBOX_CHECK);
+            fill(matrixStack, x + 2, y + 2, x + 10, y + 10, GuiColors.SETTINGS_CHECKBOX_CHECK);
         }
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public interface UserSharedResponder {
-        public void actionChanged(SettingsUserShared user, SettingsUserShared.Action action, boolean checked);
+        void actionChanged(SettingsUserShared user, SettingsUserShared.Action action, boolean checked);
     }
 }

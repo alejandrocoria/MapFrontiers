@@ -1,5 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
+import java.util.function.Supplier;
+
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
@@ -7,19 +9,20 @@ import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.network.PacketBuffer;
+import net.minecraft.network.PacketDirection;
 import net.minecraft.server.MinecraftServer;
-import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraftforge.fml.server.ServerLifecycleHooks;
 
 @ParametersAreNonnullByDefault
-public class PacketFrontierSettings implements IMessage {
-    private FrontierSettings settings;
+public class PacketFrontierSettings {
+    private final FrontierSettings settings;
 
     public PacketFrontierSettings() {
         settings = new FrontierSettings();
@@ -29,47 +32,51 @@ public class PacketFrontierSettings implements IMessage {
         this.settings = settings;
     }
 
-    @Override
-    public void fromBytes(ByteBuf buf) {
-        settings.fromBytes(buf);
-        settings.setChangeCounter(buf.readInt());
+    public static PacketFrontierSettings fromBytes(PacketBuffer buf) {
+        PacketFrontierSettings packet = new PacketFrontierSettings();
+        packet.settings.fromBytes(buf);
+        packet.settings.setChangeCounter(buf.readInt());
+        return packet;
     }
 
-    @Override
-    public void toBytes(ByteBuf buf) {
-        settings.toBytes(buf);
-        buf.writeInt(settings.getChangeCounter());
+    public static void toBytes(PacketFrontierSettings packet, PacketBuffer buf) {
+        packet.settings.toBytes(buf);
+        buf.writeInt(packet.settings.getChangeCounter());
     }
 
-    public static class Handler implements IMessageHandler<PacketFrontierSettings, IMessage> {
-        @Override
-        public IMessage onMessage(PacketFrontierSettings message, MessageContext ctx) {
-            if (ctx.side == Side.CLIENT) {
-                Minecraft.getMinecraft().addScheduledTask(() -> {
-                    if (Minecraft.getMinecraft().currentScreen instanceof GuiFrontierSettings) {
-                        ((GuiFrontierSettings) Minecraft.getMinecraft().currentScreen).setFrontierSettings(message.settings);
-                    }
-                });
-            } else {
-                FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
-                    EntityPlayerMP player = ctx.getServerHandler().player;
-                    if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.UpdateSettings,
-                            new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), null)) {
-                        FrontiersManager.instance.setSettings(message.settings);
+    public static void handle(PacketFrontierSettings message, Supplier<NetworkEvent.Context> ctx) {
+        if (ctx.get().getNetworkManager().getDirection() == PacketDirection.CLIENTBOUND) {
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> handleClient(message, ctx.get()));
+        } else {
+            NetworkEvent.Context context = ctx.get();
+            context.enqueueWork(() -> {
+                ServerPlayerEntity player = context.getSender();
+                if (player == null) {
+                    return;
+                }
 
-                        MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
-                        for (EntityPlayerMP p : server.getPlayerList().getPlayers()) {
-                            PacketHandler.INSTANCE
-                                    .sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(p)), p);
-                        }
-                    } else {
-                        PacketHandler.INSTANCE.sendTo(
-                                new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
-                    }
-                });
-            }
+                if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.UpdateSettings,
+                        new SettingsUser(player), MapFrontiers.isOPorHost(player), null)) {
+                    FrontiersManager.instance.setSettings(message.settings);
 
-            return null;
+                    MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+                    for (ServerPlayerEntity p : server.getPlayerList().getPlayers()) {
+                        PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(p)), p);
+                    }
+                } else {
+                    PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)),
+                            player);
+                }
+            });
+            context.setPacketHandled(true);
         }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private static void handleClient(PacketFrontierSettings message, NetworkEvent.Context ctx) {
+        if (Minecraft.getInstance().screen instanceof GuiFrontierSettings) {
+            ((GuiFrontierSettings) Minecraft.getInstance().screen).setFrontierSettings(message.settings);
+        }
+        ctx.setPacketHandled(true);
     }
 }

@@ -2,42 +2,39 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import net.minecraft.client.Minecraft;
+import com.mojang.blaze3d.matrix.MatrixStack;
+
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.client.gui.widget.button.Button;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
-@SideOnly(Side.CLIENT)
-public class GuiSettingsButton extends GuiButton {
-    private GuiSimpleLabel label;
+@OnlyIn(Dist.CLIENT)
+public class GuiSettingsButton extends Button {
+    private final GuiSimpleLabel label;
 
-    public GuiSettingsButton(int componentId, FontRenderer fontRenderer, int x, int y, int width, String label) {
-        super(componentId, x, y, width, 16, "");
-        this.label = new GuiSimpleLabel(fontRenderer, x + width / 2, y + 5, GuiSimpleLabel.Align.Center, label,
+    public GuiSettingsButton(FontRenderer font, int x, int y, int width, ITextComponent text,
+            Button.IPressable pressedAction) {
+        super(x, y, width, 16, text, pressedAction);
+        this.label = new GuiSimpleLabel(font, x + width / 2, y + 5, GuiSimpleLabel.Align.Center, text,
                 GuiColors.SETTINGS_BUTTON_TEXT);
     }
 
     @Override
-    public void drawButton(Minecraft mc, int mouseX, int mouseY, float partialTicks) {
-        if (visible) {
-            hovered = (mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height);
-
-            if (hovered) {
-                label.setColor(GuiColors.SETTINGS_BUTTON_TEXT_HIGHLIGHT);
-            } else {
-                label.setColor(GuiColors.SETTINGS_BUTTON_TEXT);
-            }
-
-            drawHorizontalLine(x, x + width, y, GuiColors.SETTINGS_BUTTON_BORDER);
-            drawHorizontalLine(x, x + width, y + 16, GuiColors.SETTINGS_BUTTON_BORDER);
-            drawVerticalLine(x, y, y + 16, GuiColors.SETTINGS_BUTTON_BORDER);
-            drawVerticalLine(x + width, y, y + 16, GuiColors.SETTINGS_BUTTON_BORDER);
-
-            label.drawLabel(mc, mouseX, mouseY);
+    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+        if (isHovered) {
+            label.setColor(GuiColors.SETTINGS_BUTTON_TEXT_HIGHLIGHT);
         } else {
-            hovered = false;
+            label.setColor(GuiColors.SETTINGS_BUTTON_TEXT);
         }
+
+        hLine(matrixStack, x, x + width, y, GuiColors.SETTINGS_BUTTON_BORDER);
+        hLine(matrixStack, x, x + width, y + 16, GuiColors.SETTINGS_BUTTON_BORDER);
+        vLine(matrixStack, x, y, y + 16, GuiColors.SETTINGS_BUTTON_BORDER);
+        vLine(matrixStack, x + width, y, y + 16, GuiColors.SETTINGS_BUTTON_BORDER);
+
+        label.render(matrixStack, mouseX, mouseY, partialTicks);
     }
 }

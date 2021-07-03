@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
@@ -23,23 +24,25 @@ import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.MarkerOverlay;
 import journeymap.client.api.model.MapImage;
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.RegistryKey;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.world.World;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 @ParametersAreNonnullByDefault
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class FrontiersOverlayManager {
-    private IClientAPI jmAPI;
-    private HashMap<Integer, ArrayList<FrontierOverlay>> dimensionsFrontiers;
-    private HashMap<Integer, FrontierOverlay> frontiersSelected;
-    private HashMap<Integer, MarkerOverlay> markersSelected;
-    private boolean personal;
+    private final IClientAPI jmAPI;
+    private final HashMap<RegistryKey<World>, ArrayList<FrontierOverlay>> dimensionsFrontiers;
+    private final HashMap<RegistryKey<World>, FrontierOverlay> frontiersSelected;
+    private final HashMap<RegistryKey<World>, MarkerOverlay> markersSelected;
+    private final boolean personal;
 
-    private static MapImage markerDotSelected = new MapImage(
+    private static final MapImage markerDotSelected = new MapImage(
             new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"), 20, 0, 10, 10, GuiColors.WHITE, 1.f);
     private static float targetDotSelectedOpacity = 0.3f;
 
@@ -51,9 +54,9 @@ public class FrontiersOverlayManager {
 
     public FrontiersOverlayManager(IClientAPI jmAPI, boolean personal) {
         this.jmAPI = jmAPI;
-        dimensionsFrontiers = new HashMap<Integer, ArrayList<FrontierOverlay>>();
-        frontiersSelected = new HashMap<Integer, FrontierOverlay>();
-        markersSelected = new HashMap<Integer, MarkerOverlay>();
+        dimensionsFrontiers = new HashMap<>();
+        frontiersSelected = new HashMap<>();
+        markersSelected = new HashMap<>();
         this.personal = personal;
     }
 
@@ -84,10 +87,6 @@ public class FrontiersOverlayManager {
     }
 
     public FrontierOverlay addFrontier(FrontierData data) {
-        if (jmAPI == null) {
-            return null;
-        }
-
         List<FrontierOverlay> frontiers = getAllFrontiers(data.getDimension());
         FrontierOverlay frontierOverlay = new FrontierOverlay(data, jmAPI);
         frontiers.add(frontierOverlay);
@@ -95,18 +94,18 @@ public class FrontiersOverlayManager {
         return frontierOverlay;
     }
 
-    public void clientCreateNewfrontier(int dimension) {
+    public void clientCreateNewfrontier(RegistryKey<World> dimension) {
         BlockPos vertex = null;
 
         if (ConfigData.addVertexToNewFrontier) {
-            vertex = ((ClientProxy) MapFrontiers.proxy).snapVertex(Minecraft.getMinecraft().player.getPosition(),
-                    ConfigData.snapDistance, dimension, null);
+            vertex = ClientProxy.snapVertex(Minecraft.getInstance().player.blockPosition(), ConfigData.snapDistance, dimension,
+                    null);
         }
 
         PacketHandler.INSTANCE.sendToServer(new PacketNewFrontier(dimension, personal, vertex));
     }
 
-    public void clientDeleteFrontier(int dimension, int index) {
+    public void clientDeleteFrontier(RegistryKey<World> dimension, int index) {
         List<FrontierOverlay> frontiers = getAllFrontiers(dimension);
 
         FrontierOverlay frontier = frontiers.get(index);
@@ -116,7 +115,7 @@ public class FrontiersOverlayManager {
         }
     }
 
-    public void clientUpdatefrontier(int dimension, int index) {
+    public void clientUpdatefrontier(RegistryKey<World> dimension, int index) {
         clientUpdatefrontier(getAllFrontiers(dimension).get(index));
     }
 
@@ -129,7 +128,7 @@ public class FrontiersOverlayManager {
         PacketHandler.INSTANCE.sendToServer(new PacketSharePersonalFrontier(frontierID, targetUser));
     }
 
-    public int deleteFrontier(int dimension, UUID id) {
+    public int deleteFrontier(RegistryKey<World> dimension, UUID id) {
         List<FrontierOverlay> frontiers = getAllFrontiers(dimension);
 
         int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId().equals(id));
@@ -169,23 +168,16 @@ public class FrontiersOverlayManager {
         return frontiers.lastIndexOf(frontierOverlay);
     }
 
-    public Map<Integer, ArrayList<FrontierOverlay>> getAllFrontiers() {
+    public Map<RegistryKey<World>, ArrayList<FrontierOverlay>> getAllFrontiers() {
         return dimensionsFrontiers;
     }
 
-    public List<FrontierOverlay> getAllFrontiers(int dimension) {
-        ArrayList<FrontierOverlay> frontiers = dimensionsFrontiers.get(Integer.valueOf(dimension));
-
-        if (frontiers == null) {
-            frontiers = new ArrayList<FrontierOverlay>();
-            dimensionsFrontiers.put(Integer.valueOf(dimension), frontiers);
-        }
-
-        return frontiers;
+    public List<FrontierOverlay> getAllFrontiers(RegistryKey<World> dimension) {
+        return dimensionsFrontiers.computeIfAbsent(dimension, k -> new ArrayList<>());
     }
 
-    public FrontierOverlay getFrontierInPosition(int dimension, BlockPos pos) {
-        ArrayList<FrontierOverlay> frontiers = dimensionsFrontiers.get(Integer.valueOf(dimension));
+    public FrontierOverlay getFrontierInPosition(RegistryKey<World> dimension, BlockPos pos) {
+        ArrayList<FrontierOverlay> frontiers = dimensionsFrontiers.get(dimension);
         if (frontiers != null) {
             for (FrontierOverlay frontier : frontiers) {
                 if (pos.getX() >= frontier.topLeft.getX() && pos.getX() <= frontier.bottomRight.getX()
@@ -216,24 +208,24 @@ public class FrontiersOverlayManager {
         }
     }
 
-    public FrontierOverlay getFrontier(int dimension, int index) {
+    public FrontierOverlay getFrontier(RegistryKey<World> dimension, int index) {
         List<FrontierOverlay> frontiers = getAllFrontiers(dimension);
         return frontiers.get(index);
     }
 
-    public int getFrontierCount(int dimension) {
+    public int getFrontierCount(RegistryKey<World> dimension) {
         return getAllFrontiers(dimension).size();
     }
 
-    public int getFrontierIndexSelected(int dimension) {
-        FrontierOverlay selected = frontiersSelected.get(Integer.valueOf(dimension));
+    public int getFrontierIndexSelected(RegistryKey<World> dimension) {
+        FrontierOverlay selected = frontiersSelected.get(dimension);
         if (selected == null)
             return -1;
 
         return getFrontierIndex(selected);
     }
 
-    public void setFrontierIndexSelected(int dimension, int index) {
+    public void setFrontierIndexSelected(RegistryKey<World> dimension, int index) {
         if (index < 0) {
             updateSelectedMarker(dimension, null);
         } else {
@@ -243,31 +235,30 @@ public class FrontiersOverlayManager {
         }
     }
 
-    public void updateSelectedMarker(int dimension, FrontierOverlay frontier) {
-        Integer dim = Integer.valueOf(dimension);
-        MarkerOverlay marker = markersSelected.get(dim);
+    public void updateSelectedMarker(RegistryKey<World> dimension, @Nullable FrontierOverlay frontier) {
+        MarkerOverlay marker = markersSelected.get(dimension);
         if (marker != null) {
             jmAPI.remove(marker);
         }
 
         if (frontier != null) {
-            frontiersSelected.put(dim, frontier);
+            frontiersSelected.put(dimension, frontier);
             BlockPos pos = frontier.getSelectedVertex();
             if (pos != null) {
-                marker = new MarkerOverlay(MapFrontiers.MODID, "selected_vertex_" + String.valueOf(dimension), pos,
+                marker = new MarkerOverlay(MapFrontiers.MODID, "selected_vertex_" + dimension.location(), pos,
                         markerDotSelected);
                 marker.setDimension(dimension);
                 marker.setDisplayOrder(101);
 
                 try {
                     jmAPI.show(marker);
-                    markersSelected.put(dim, marker);
+                    markersSelected.put(dimension, marker);
                 } catch (Throwable t) {
                     MapFrontiers.LOGGER.error(t.getMessage(), t);
                 }
             }
         } else {
-            frontiersSelected.remove(dim);
+            frontiersSelected.remove(dimension);
         }
     }
 }

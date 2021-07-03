@@ -2,31 +2,35 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 
 import java.util.List;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
+import com.mojang.blaze3d.matrix.MatrixStack;
+
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextFormatting;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-@SideOnly(Side.CLIENT)
+@ParametersAreNonnullByDefault
+@OnlyIn(Dist.CLIENT)
 public class GuiGroupElement extends GuiScrollBox.ScrollElement {
-    private final FontRenderer fontRenderer;
-    private SettingsGroup group;
-    private GuiButtonIcon buttonDelete;
-    List<GuiButton> buttonList;
+    private final FontRenderer font;
+    private final SettingsGroup group;
+    private final GuiButtonIcon buttonDelete;
+    final List<Widget> buttonList;
 
-    public GuiGroupElement(FontRenderer fontRenderer, List<GuiButton> buttonList, int id, SettingsGroup group,
-            ResourceLocation texture, int textureSize) {
+    public GuiGroupElement(FontRenderer font, List<Widget> buttonList, SettingsGroup group, ResourceLocation texture,
+            int textureSize) {
         super(160, 16);
-        this.fontRenderer = fontRenderer;
+        this.font = font;
         this.group = group;
 
-        buttonDelete = new GuiButtonIcon(id, 0, 0, 13, 13, 494, 132, -23, texture, textureSize);
+        buttonDelete = new GuiButtonIcon(0, 0, 13, 13, 494, 132, -23, texture, textureSize, (button) -> {
+        });
         buttonDelete.visible = false;
 
         this.buttonList = buttonList;
@@ -55,41 +59,30 @@ public class GuiGroupElement extends GuiScrollBox.ScrollElement {
     }
 
     @Override
-    public void draw(Minecraft mc, int mouseX, int mouseY, boolean selected) {
-        if (visible) {
-            hovered = mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height;
-
-            int color = GuiColors.SETTINGS_TEXT;
-            if (selected) {
-                color = GuiColors.SETTINGS_TEXT_HIGHLIGHT;
-            }
-
-            if (hovered) {
-                Gui.drawRect(x, y, x + width, y + height, GuiColors.SETTINGS_ELEMENT_HOVERED);
-            }
-
-            if (hovered && !group.isSpecial()) {
-                buttonDelete.visible = true;
-            } else {
-                buttonDelete.visible = false;
-            }
-
-            String text = group.getName();
-            if (text.isEmpty()) {
-                text = I18n.format("mapfrontiers.unnamed", TextFormatting.ITALIC);
-            }
-
-            fontRenderer.drawString(text, x + 4, y + 4, color);
-        } else {
-            hovered = false;
-            buttonDelete.visible = false;
+    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
+        int color = GuiColors.SETTINGS_TEXT;
+        if (selected) {
+            color = GuiColors.SETTINGS_TEXT_HIGHLIGHT;
         }
+
+        if (isHovered) {
+            fill(matrixStack, x, y, x + width, y + height, GuiColors.SETTINGS_ELEMENT_HOVERED);
+        }
+
+        buttonDelete.visible = isHovered && !group.isSpecial();
+
+        String text = group.getName();
+        if (text.isEmpty()) {
+            text = I18n.get("mapfrontiers.unnamed", TextFormatting.ITALIC);
+        }
+
+        font.draw(matrixStack, text, x + 4, y + 4, color);
     }
 
     @Override
-    public GuiScrollBox.ScrollElement.Action mousePressed(Minecraft mc, int mouseX, int mouseY) {
-        if (visible && hovered) {
-            if (buttonDelete.mousePressed(mc, mouseX, mouseY)) {
+    public GuiScrollBox.ScrollElement.Action mousePressed(double mouseX, double mouseY) {
+        if (visible && isHovered) {
+            if (buttonDelete.isMouseOver(mouseX, mouseY)) {
                 return GuiScrollBox.ScrollElement.Action.Deleted;
             } else {
                 return GuiScrollBox.ScrollElement.Action.Clicked;

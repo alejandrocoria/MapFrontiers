@@ -1,35 +1,38 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
+import com.mojang.blaze3d.matrix.MatrixStack;
+
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.Gui;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.TextFormatting;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-@SideOnly(Side.CLIENT)
+@ParametersAreNonnullByDefault
+@OnlyIn(Dist.CLIENT)
 public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
-    private final FontRenderer fontRenderer;
-    private SettingsGroup group;
-    private GroupActionResponder responder;
-    private boolean ownersGroup;
+    private final FontRenderer font;
+    private final SettingsGroup group;
+    private final GroupActionResponder responder;
+    private final boolean ownersGroup;
     private boolean createFrontier;
     private boolean deleteFrontier;
     private boolean updateFrontier;
     private boolean updateSettings;
     private boolean personalFrontier;
 
-    public GuiGroupActionElement(FontRenderer fontRenderer, SettingsGroup group, GroupActionResponder responder) {
-        this(fontRenderer, group, false, responder);
+    public GuiGroupActionElement(FontRenderer font, SettingsGroup group, GroupActionResponder responder) {
+        this(font, group, false, responder);
     }
 
-    public GuiGroupActionElement(FontRenderer fontRenderer, SettingsGroup group, boolean ownersGroup,
+    public GuiGroupActionElement(FontRenderer font, SettingsGroup group, boolean ownersGroup,
             GroupActionResponder responder) {
         super(430, 16);
-        this.fontRenderer = fontRenderer;
+        this.font = font;
         this.group = group;
         this.responder = responder;
         this.ownersGroup = ownersGroup;
@@ -41,40 +44,34 @@ public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
     }
 
     @Override
-    public void draw(Minecraft mc, int mouseX, int mouseY, boolean selected) {
-        if (visible) {
-            hovered = mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height;
+    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
+        if (isHovered) {
+            fill(matrixStack, x, y, x + width, y + height, GuiColors.SETTINGS_ELEMENT_HOVERED);
+        }
 
-            if (hovered) {
-                Gui.drawRect(x, y, x + width, y + height, GuiColors.SETTINGS_ELEMENT_HOVERED);
-            }
+        String text = group.getName();
+        if (text.isEmpty()) {
+            text = I18n.get("mapfrontiers.unnamed", TextFormatting.ITALIC);
+        }
 
-            String text = group.getName();
-            if (text.isEmpty()) {
-                text = I18n.format("mapfrontiers.unnamed", TextFormatting.ITALIC);
-            }
+        font.draw(matrixStack, text, x + 4, y + 4, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
 
-            fontRenderer.drawString(text, x + 4, y + 4, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
+        if (!ownersGroup) {
+            drawBox(matrixStack, x + 154, y + 2, createFrontier);
+        }
 
-            if (!ownersGroup) {
-                drawBox(x + 154, y + 2, createFrontier);
-            }
+        drawBox(matrixStack, x + 214, y + 2, deleteFrontier);
+        drawBox(matrixStack, x + 274, y + 2, updateFrontier);
 
-            drawBox(x + 214, y + 2, deleteFrontier);
-            drawBox(x + 274, y + 2, updateFrontier);
-
-            if (!ownersGroup) {
-                drawBox(x + 334, y + 2, updateSettings);
-                drawBox(x + 394, y + 2, personalFrontier);
-            }
-        } else {
-            hovered = false;
+        if (!ownersGroup) {
+            drawBox(matrixStack, x + 334, y + 2, updateSettings);
+            drawBox(matrixStack, x + 394, y + 2, personalFrontier);
         }
     }
 
     @Override
-    public GuiScrollBox.ScrollElement.Action mousePressed(Minecraft mc, int mouseX, int mouseY) {
-        if (visible && hovered && responder != null) {
+    public GuiScrollBox.ScrollElement.Action mousePressed(double mouseX, double mouseY) {
+        if (visible && isHovered && responder != null) {
             if (!ownersGroup && mouseX >= x + 130 && mouseX <= x + 190) {
                 createFrontier = !createFrontier;
                 responder.actionChanged(group, FrontierSettings.Action.CreateFrontier, createFrontier);
@@ -96,16 +93,16 @@ public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
         return GuiScrollBox.ScrollElement.Action.None;
     }
 
-    private void drawBox(int x, int y, boolean checked) {
-        Gui.drawRect(x, y, x + 12, y + 12, GuiColors.SETTINGS_CHECKBOX_BORDER);
-        Gui.drawRect(x + 1, y + 1, x + 11, y + 11, GuiColors.SETTINGS_CHECKBOX_BG);
+    private void drawBox(MatrixStack matrixStack, int x, int y, boolean checked) {
+        fill(matrixStack, x, y, x + 12, y + 12, GuiColors.SETTINGS_CHECKBOX_BORDER);
+        fill(matrixStack, x + 1, y + 1, x + 11, y + 11, GuiColors.SETTINGS_CHECKBOX_BG);
         if (checked) {
-            Gui.drawRect(x + 2, y + 2, x + 10, y + 10, GuiColors.SETTINGS_CHECKBOX_CHECK);
+            fill(matrixStack, x + 2, y + 2, x + 10, y + 10, GuiColors.SETTINGS_CHECKBOX_CHECK);
         }
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public interface GroupActionResponder {
-        public void actionChanged(SettingsGroup group, FrontierSettings.Action action, boolean checked);
+        void actionChanged(SettingsGroup group, FrontierSettings.Action action, boolean checked);
     }
 }

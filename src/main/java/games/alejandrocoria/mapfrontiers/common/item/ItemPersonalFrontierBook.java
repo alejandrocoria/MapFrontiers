@@ -1,75 +1,79 @@
 package games.alejandrocoria.mapfrontiers.common.item;
 
+import java.util.List;
+
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.player.EntityPlayer;
+import mcp.MethodsReturnNonnullByDefault;
+import net.minecraft.client.util.ITooltipFlag;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTTagString;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.ActionResult;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumHand;
+import net.minecraft.util.ActionResultType;
+import net.minecraft.util.Hand;
+import net.minecraft.util.RegistryKey;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
-import net.minecraftforge.client.model.ModelLoader;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
+@MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 public class ItemPersonalFrontierBook extends Item {
     protected String name;
 
     public ItemPersonalFrontierBook() {
-        setUnlocalizedName(MapFrontiers.MODID + "." + "personal_frontier_book");
-        setRegistryName("personal_frontier_book");
-        setCreativeTab(CreativeTabs.TOOLS);
-    }
-
-    @SideOnly(Side.CLIENT)
-    public void initModel() {
-        ModelLoader.setCustomModelResourceLocation(this, 0, new ModelResourceLocation(getRegistryName(), "inventory"));
+        super(new Properties().stacksTo(1).tab(ItemGroup.TAB_TOOLS));
+        setRegistryName(new ResourceLocation(MapFrontiers.MODID, "personal_frontier_book"));
     }
 
     @Override
-    public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn) {
-        ItemStack itemStack = playerIn.getHeldItem(handIn);
+    public ActionResult<ItemStack> use(World worldIn, PlayerEntity playerIn, Hand handIn) {
+        ItemStack itemStack = playerIn.getItemInHand(handIn);
 
-        if (!worldIn.isRemote) {
-            return new ActionResult<ItemStack>(EnumActionResult.PASS, itemStack);
+        if (!worldIn.isClientSide()) {
+            return new ActionResult<>(ActionResultType.PASS, itemStack);
         }
 
-        NBTTagCompound nbt;
-        if (itemStack.hasTagCompound()) {
-            nbt = itemStack.getTagCompound();
-        } else {
-            nbt = new NBTTagCompound();
+        CompoundNBT nbt = itemStack.getTag();
+        if (nbt == null) {
+            nbt = new CompoundNBT();
         }
 
-        int dimension = playerIn.dimension;
-        if (nbt.hasKey("Dimension")) {
-            dimension = nbt.getInteger("Dimension");
-        } else {
-            nbt.setInteger("Dimension", dimension);
-
-            NBTTagCompound nbtDisplay = nbt.getCompoundTag("display");
-            if (!nbtDisplay.hasKey("Lore")) {
-                nbtDisplay.setTag("Lore", new NBTTagList());
-            }
-
-            NBTTagList nbtTagList = (NBTTagList) nbtDisplay.getTag("Lore");
-            nbtTagList.appendTag(new NBTTagString("Dimension " + String.valueOf(dimension)));
-            nbtDisplay.setTag("Lore", nbtTagList);
-            nbt.setTag("display", nbtDisplay);
-
-            itemStack.setTagCompound(nbt);
+        RegistryKey<World> dimension = playerIn.level.dimension();
+        if (!nbt.contains("Dimension")) {
+            nbt.putString("Dimension", dimension.location().toString());
+            itemStack.setTag(nbt);
         }
 
-        ((ClientProxy) MapFrontiers.proxy).openGUIFrontierBook(dimension, true);
-        return new ActionResult<ItemStack>(EnumActionResult.PASS, itemStack);
+        ClientProxy.openGUIFrontierBook(dimension, true);
+        return new ActionResult<>(ActionResultType.PASS, itemStack);
+    }
+
+    @Override
+    @OnlyIn(Dist.CLIENT)
+    public void appendHoverText(ItemStack itemStack, @Nullable World world, List<ITextComponent> list, ITooltipFlag flag) {
+        super.appendHoverText(itemStack, world, list, flag);
+
+        CompoundNBT nbt = itemStack.getTag();
+        if (nbt == null) {
+            return;
+        }
+
+        if (nbt.contains("Dimension")) {
+            RegistryKey<World> dimension = RegistryKey.create(Registry.DIMENSION_REGISTRY,
+                    new ResourceLocation(nbt.getString("Dimension")));
+            list.add(new StringTextComponent(dimension.location().toString()).withStyle(TextFormatting.GRAY));
+        }
     }
 }

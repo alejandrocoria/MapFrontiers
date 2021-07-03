@@ -9,3 +9,4 @@ run/
 .gradle/
 .settings/
 build.bat
+logs/

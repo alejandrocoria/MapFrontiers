@@ -1,24 +1,27 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiShareSettings;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
+import net.minecraft.network.PacketBuffer;
+import net.minecraft.util.RegistryKey;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.world.World;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.network.NetworkEvent;
 
 @ParametersAreNonnullByDefault
-public class PacketFrontierDeleted implements IMessage {
-    private int dimension;
+public class PacketFrontierDeleted {
+    private RegistryKey<World> dimension = World.OVERWORLD;
     private UUID frontierID;
     private boolean personal;
     private int playerID = -1;
@@ -27,52 +30,49 @@ public class PacketFrontierDeleted implements IMessage {
 
     }
 
-    public PacketFrontierDeleted(int dimension, UUID frontierID, boolean personal, int playerID) {
+    public PacketFrontierDeleted(RegistryKey<World> dimension, UUID frontierID, boolean personal, int playerID) {
         this.dimension = dimension;
         this.frontierID = frontierID;
         this.personal = personal;
         this.playerID = playerID;
     }
 
-    @Override
-    public void fromBytes(ByteBuf buf) {
-        dimension = buf.readInt();
-        frontierID = UUIDHelper.fromBytes(buf);
-        personal = buf.readBoolean();
-        playerID = buf.readInt();
+    public static PacketFrontierDeleted fromBytes(PacketBuffer buf) {
+        PacketFrontierDeleted packet = new PacketFrontierDeleted();
+        packet.dimension = RegistryKey.create(Registry.DIMENSION_REGISTRY, buf.readResourceLocation());
+        packet.frontierID = UUIDHelper.fromBytes(buf);
+        packet.personal = buf.readBoolean();
+        packet.playerID = buf.readInt();
+        return packet;
     }
 
-    @Override
-    public void toBytes(ByteBuf buf) {
-        buf.writeInt(dimension);
-        UUIDHelper.toBytes(buf, frontierID);
-        buf.writeBoolean(personal);
-        buf.writeInt(playerID);
+    public static void toBytes(PacketFrontierDeleted packet, PacketBuffer buf) {
+        buf.writeResourceLocation(packet.dimension.location());
+        UUIDHelper.toBytes(buf, packet.frontierID);
+        buf.writeBoolean(packet.personal);
+        buf.writeInt(packet.playerID);
     }
 
-    public static class Handler implements IMessageHandler<PacketFrontierDeleted, IMessage> {
-        @Override
-        public IMessage onMessage(PacketFrontierDeleted message, MessageContext ctx) {
-            if (ctx.side == Side.CLIENT) {
-                Minecraft.getMinecraft().addScheduledTask(() -> {
-                    int frontierIndex = ((ClientProxy) MapFrontiers.proxy).getFrontiersOverlayManager(message.personal)
-                            .deleteFrontier(message.dimension, message.frontierID);
+    public static void handle(PacketFrontierDeleted message, Supplier<NetworkEvent.Context> ctx) {
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> handleClient(message, ctx.get()));
+    }
 
-                    MapFrontiers.proxy.frontierChanged();
+    @OnlyIn(Dist.CLIENT)
+    private static void handleClient(PacketFrontierDeleted message, NetworkEvent.Context ctx) {
+        int frontierIndex = ClientProxy.getFrontiersOverlayManager(message.personal).deleteFrontier(message.dimension,
+                message.frontierID);
 
-                    if (frontierIndex != -1) {
-                        if (Minecraft.getMinecraft().currentScreen instanceof GuiFrontierBook) {
-                            ((GuiFrontierBook) Minecraft.getMinecraft().currentScreen).deleteFrontierMessage(frontierIndex,
-                                    message.dimension, message.personal, message.playerID);
-                        } else if (Minecraft.getMinecraft().currentScreen instanceof GuiShareSettings) {
-                            ((GuiShareSettings) Minecraft.getMinecraft().currentScreen).deleteFrontierMessage(frontierIndex,
-                                    message.dimension, message.frontierID, message.personal, message.playerID);
-                        }
-                    }
-                });
+        ClientProxy.frontierChanged();
+
+        if (frontierIndex != -1) {
+            if (Minecraft.getInstance().screen instanceof GuiFrontierBook) {
+                ((GuiFrontierBook) Minecraft.getInstance().screen).deleteFrontierMessage(frontierIndex, message.dimension,
+                        message.personal, message.playerID);
+            } else if (Minecraft.getInstance().screen instanceof GuiShareSettings) {
+                ((GuiShareSettings) Minecraft.getInstance().screen).deleteFrontierMessage(frontierIndex, message.dimension,
+                        message.frontierID, message.personal, message.playerID);
             }
-
-            return null;
         }
+        ctx.setPacketHandled(true);
     }
 }

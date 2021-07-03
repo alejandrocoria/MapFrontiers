@@ -3,19 +3,20 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiTextField;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
-@SideOnly(Side.CLIENT)
-public class TextColorBox extends GuiTextField {
+@OnlyIn(Dist.CLIENT)
+public class TextColorBox extends TextFieldWidget {
     private static final String numericRegex = "[^\\d]";
     private TextColorBoxResponder responder;
 
-    public TextColorBox(int componentId, int value, FontRenderer fontRenderer, int x, int y) {
-        super(componentId, fontRenderer, x, y, 26, 12);
-        this.setText(String.valueOf(value));
+    public TextColorBox(int value, FontRenderer font, int x, int y) {
+        super(font, x, y, 26, 12, StringTextComponent.EMPTY);
+        this.setValue(String.valueOf(value));
     }
 
     public void setResponder(TextColorBoxResponder responderIn) {
@@ -23,49 +24,49 @@ public class TextColorBox extends GuiTextField {
     }
 
     @Override
-    public void writeText(String textToWrite) {
-        super.writeText(textToWrite);
-        String fixed = getText().replaceAll(numericRegex, "");
-        this.setText(fixed);
+    public void insertText(String textToWrite) {
+        super.insertText(textToWrite);
+        String fixed = getValue().replaceAll(numericRegex, "");
+        this.setValue(fixed);
     }
 
-    public void setText(Object object) {
-        this.setText(object.toString());
+    public void setValue(Object object) {
+        this.setValue(object.toString());
 
         if (responder != null) {
-            responder.updatedValue(getId(), Integer.valueOf(getText()));
+            responder.updatedValue(this, Integer.parseInt(getValue()));
         }
     }
 
     @Override
-    public boolean textboxKeyTyped(char typedChar, int keyCode) {
-        boolean res = super.textboxKeyTyped(typedChar, keyCode);
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        boolean res = super.keyPressed(keyCode, scanCode, modifiers);
 
         Integer integer = clamped();
-        setText(integer);
+        setValue(integer);
 
-        setCursorPositionZero();
-        setCursorPositionEnd();
+        moveCursorToStart();
+        moveCursorToEnd();
 
         if (responder != null) {
-            responder.updatedValue(getId(), integer);
+            responder.updatedValue(this, integer);
         }
 
         return res;
     }
 
     public Integer clamped() {
-        String text = getText();
-        if (text == null || text.length() == 0) {
-            return Integer.valueOf(0);
+        String text = getValue();
+        if (text.length() == 0) {
+            return 0;
         }
 
-        Integer integer = Integer.valueOf(0);
+        int integer;
 
         try {
             integer = Integer.parseInt(text);
         } catch (Exception e) {
-            return Integer.valueOf(0);
+            return 0;
         }
 
         integer = Math.max(0, integer);
@@ -74,8 +75,8 @@ public class TextColorBox extends GuiTextField {
         return integer;
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public interface TextColorBoxResponder {
-        public void updatedValue(int id, int value);
+        void updatedValue(TextColorBox textColorBox, int value);
     }
 }

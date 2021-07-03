@@ -7,16 +7,16 @@ import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.IClientPlugin;
 import journeymap.client.api.event.ClientEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
 @journeymap.client.api.ClientPlugin
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class MapFrontiersPlugin implements IClientPlugin {
     @Override
     public void initialize(final IClientAPI jmAPI) {
-        ((ClientProxy) MapFrontiers.proxy).setjmAPI(jmAPI);
+        ClientProxy.setjmAPI(jmAPI);
     }
 
     @Override

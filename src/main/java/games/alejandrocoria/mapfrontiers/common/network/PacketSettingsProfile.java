@@ -1,23 +1,24 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
+import java.util.function.Supplier;
+
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierSettings;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiShareSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
+import net.minecraft.network.PacketBuffer;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.network.NetworkEvent;
 
 @ParametersAreNonnullByDefault
-public class PacketSettingsProfile implements IMessage {
-    private SettingsProfile profile;
+public class PacketSettingsProfile {
+    private final SettingsProfile profile;
 
     public PacketSettingsProfile() {
         profile = new SettingsProfile();
@@ -27,37 +28,34 @@ public class PacketSettingsProfile implements IMessage {
         this.profile = profile;
     }
 
-    @Override
-    public void fromBytes(ByteBuf buf) {
-        profile.fromBytes(buf);
+    public static PacketSettingsProfile fromBytes(PacketBuffer buf) {
+        PacketSettingsProfile packet = new PacketSettingsProfile();
+        packet.profile.fromBytes(buf);
+        return packet;
     }
 
-    @Override
-    public void toBytes(ByteBuf buf) {
-        profile.toBytes(buf);
+    public static void toBytes(PacketSettingsProfile packet, PacketBuffer buf) {
+        packet.profile.toBytes(buf);
     }
 
-    public static class Handler implements IMessageHandler<PacketSettingsProfile, IMessage> {
-        @Override
-        public IMessage onMessage(PacketSettingsProfile message, MessageContext ctx) {
-            if (ctx.side == Side.CLIENT) {
-                Minecraft.getMinecraft().addScheduledTask(() -> {
-                    SettingsProfile currentProfile = ((ClientProxy) MapFrontiers.proxy).getSettingsProfile();
-                    if (currentProfile == null || !currentProfile.equals(message.profile)) {
-                        ((ClientProxy) MapFrontiers.proxy).setSettingsProfile(message.profile);
+    public static void handle(PacketSettingsProfile message, Supplier<NetworkEvent.Context> ctx) {
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> handleClient(message, ctx.get()));
+    }
 
-                        if (Minecraft.getMinecraft().currentScreen instanceof GuiFrontierSettings) {
-                            ((GuiFrontierSettings) Minecraft.getMinecraft().currentScreen).updateSettingsProfile(message.profile);
-                        } else if (Minecraft.getMinecraft().currentScreen instanceof GuiFrontierBook) {
-                            ((GuiFrontierBook) Minecraft.getMinecraft().currentScreen).reloadPage(false);
-                        } else if (Minecraft.getMinecraft().currentScreen instanceof GuiShareSettings) {
-                            ((GuiShareSettings) Minecraft.getMinecraft().currentScreen).reloadPage(false);
-                        }
-                    }
-                });
+    @OnlyIn(Dist.CLIENT)
+    private static void handleClient(PacketSettingsProfile message, NetworkEvent.Context ctx) {
+        SettingsProfile currentProfile = ClientProxy.getSettingsProfile();
+        if (currentProfile == null || !currentProfile.equals(message.profile)) {
+            ClientProxy.setSettingsProfile(message.profile);
+
+            if (Minecraft.getInstance().screen instanceof GuiFrontierSettings) {
+                ((GuiFrontierSettings) Minecraft.getInstance().screen).updateSettingsProfile(message.profile);
+            } else if (Minecraft.getInstance().screen instanceof GuiFrontierBook) {
+                ((GuiFrontierBook) Minecraft.getInstance().screen).reloadPage(false);
+            } else if (Minecraft.getInstance().screen instanceof GuiShareSettings) {
+                ((GuiShareSettings) Minecraft.getInstance().screen).reloadPage(false);
             }
-
-            return null;
         }
+        ctx.setPacketHandled(true);
     }
 }

@@ -1,28 +1,28 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
+import java.util.function.Supplier;
+
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import org.apache.commons.lang3.StringUtils;
 
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.EntityPlayerSP;
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
+import net.minecraft.network.PacketBuffer;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.HoverEvent;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.network.NetworkEvent;
 
 @ParametersAreNonnullByDefault
-public class PacketPersonalFrontierShared implements IMessage {
+public class PacketPersonalFrontierShared {
     private int shareMessageID;
-    private SettingsUser playerSharing;
-    private SettingsUser owner;
+    private final SettingsUser playerSharing;
+    private final SettingsUser owner;
     private String name1;
     private String name2;
 
@@ -43,77 +43,73 @@ public class PacketPersonalFrontierShared implements IMessage {
         this.name2 = name2;
     }
 
-    @Override
-    public void fromBytes(ByteBuf buf) {
-        shareMessageID = buf.readInt();
-        playerSharing.fromBytes(buf);
-        owner.fromBytes(buf);
-        name1 = ByteBufUtils.readUTF8String(buf);
-        name2 = ByteBufUtils.readUTF8String(buf);
+    public static PacketPersonalFrontierShared fromBytes(PacketBuffer buf) {
+        PacketPersonalFrontierShared packet = new PacketPersonalFrontierShared();
+        packet.shareMessageID = buf.readInt();
+        packet.playerSharing.fromBytes(buf);
+        packet.owner.fromBytes(buf);
+        packet.name1 = buf.readUtf(17);
+        packet.name2 = buf.readUtf(17);
+        return packet;
     }
 
-    @Override
-    public void toBytes(ByteBuf buf) {
-        buf.writeInt(shareMessageID);
-        playerSharing.toBytes(buf);
-        owner.toBytes(buf);
-        ByteBufUtils.writeUTF8String(buf, name1);
-        ByteBufUtils.writeUTF8String(buf, name2);
+    public static void toBytes(PacketPersonalFrontierShared packet, PacketBuffer buf) {
+        buf.writeInt(packet.shareMessageID);
+        packet.playerSharing.toBytes(buf);
+        packet.owner.toBytes(buf);
+        buf.writeUtf(packet.name1);
+        buf.writeUtf(packet.name2);
     }
 
-    public static class Handler implements IMessageHandler<PacketPersonalFrontierShared, IMessage> {
-        @Override
-        public IMessage onMessage(PacketPersonalFrontierShared message, MessageContext ctx) {
-            if (ctx.side == Side.CLIENT) {
-                Minecraft.getMinecraft().addScheduledTask(() -> {
-                    String frontierName = "";
-                    if (message.name1.isEmpty() && message.name2.isEmpty()) {
-                        frontierName = "Unnamed Frontier";
-                    } else if (message.name1.isEmpty()) {
-                        frontierName = message.name2;
-                    } else if (message.name2.isEmpty()) {
-                        frontierName = message.name1;
-                    } else {
-                        frontierName = message.name1 + " " + message.name2;
-                    }
+    public static void handle(PacketPersonalFrontierShared message, Supplier<NetworkEvent.Context> ctx) {
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> handleClient(message, ctx.get()));
+    }
 
-                    TextComponentString button = new TextComponentString(frontierName);
-                    Style style = new Style();
-                    style.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                            new TextComponentString("Click to accept or use command /mfaccept " + message.shareMessageID)));
-                    style.setBold(true);
-                    style.setClickEvent(
-                            new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mapfrontiersaccept " + message.shareMessageID));
-                    button.setStyle(style);
-
-                    TextComponentString text = new TextComponentString(userToString(message.playerSharing) + " ");
-                    if (message.playerSharing.equals(message.owner)) {
-                        text.appendText("want to share a frontier with you: ");
-                    } else {
-                        text.appendText("want to share a frontier from " + userToString(message.owner) + " with you: ");
-                    }
-
-                    text.appendSibling(button);
-
-                    EntityPlayerSP player = Minecraft.getMinecraft().player;
-                    player.sendMessage(text);
-                });
-            }
-
-            return null;
+    @OnlyIn(Dist.CLIENT)
+    private static void handleClient(PacketPersonalFrontierShared message, NetworkEvent.Context ctx) {
+        String frontierName;
+        if (message.name1.isEmpty() && message.name2.isEmpty()) {
+            frontierName = "Unnamed Frontier";
+        } else if (message.name1.isEmpty()) {
+            frontierName = message.name2;
+        } else if (message.name2.isEmpty()) {
+            frontierName = message.name1;
+        } else {
+            frontierName = message.name1 + " " + message.name2;
         }
 
-        private static String userToString(SettingsUser user) {
-            String string;
-            if (!StringUtils.isBlank(user.username)) {
-                string = user.username;
-            } else if (user.uuid != null) {
-                string = user.uuid.toString();
-            } else {
-                string = "User not found";
-            }
+        StringTextComponent button = new StringTextComponent(frontierName);
+        button.withStyle(style -> style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                new StringTextComponent("Click to accept or use command /mfaccept " + message.shareMessageID))));
+        button.withStyle(style -> style.withBold(true));
+        button.withStyle(style -> style
+                .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mapfrontiersaccept " + message.shareMessageID)));
 
-            return string;
+        StringTextComponent text = new StringTextComponent(userToString(message.playerSharing) + " ");
+        if (message.playerSharing.equals(message.owner)) {
+            text.append("want to share a frontier with you: ");
+        } else {
+            text.append("want to share a frontier from " + userToString(message.owner) + " with you: ");
         }
+
+        text.append(button);
+
+        ClientPlayerEntity player = Minecraft.getInstance().player;
+        player.sendMessage(text, message.owner.uuid);
+
+        ctx.setPacketHandled(true);
+    }
+
+    private static String userToString(SettingsUser user) {
+        String string;
+        if (!StringUtils.isBlank(user.username)) {
+            string = user.username;
+        } else if (user.uuid != null) {
+            string = user.uuid.toString();
+        } else {
+            string = "User not found";
+        }
+
+        return string;
     }
 }

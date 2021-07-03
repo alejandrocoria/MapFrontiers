@@ -1,0 +1,37 @@
+modLoader="javafml"
+loaderVersion="[36,)"
+license="MIT License"
+
+[[mods]]
+modId="mapfrontiers"
+version="${version}"
+displayName="MapFrontiers"
+updateJSONURL="https://alejandrocoria.games/projects/MapFrontiers/update.json"
+displayURL="https://alejandrocoria.games/projects/MapFrontiers/"
+logoFile="logo.png"
+credits="By Alejandro Coria. Many thanks to the JourneyMap team."
+authors="Alejandro Coria (MemeSapiens)"
+description='''
+This mod is an addon for Journey Map that allows you to divide the map into regions and assign them names and colors.
+'''
+
+[[dependencies.mapfrontiers]]
+    modId="forge"
+    mandatory=true
+    versionRange="[36,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.mapfrontiers]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.16.5,1.17)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.mapfrontiers]]
+    modId="journeymap"
+    mandatory=true
+    versionRange="[1.16.5-5.7.1,)"
+    ordering="NONE"
+    side="BOTH"

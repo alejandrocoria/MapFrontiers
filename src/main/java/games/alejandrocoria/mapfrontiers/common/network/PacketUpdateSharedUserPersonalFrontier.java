@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -11,18 +12,14 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.network.PacketBuffer;
+import net.minecraftforge.fml.network.NetworkEvent;
 
 @ParametersAreNonnullByDefault
-public class PacketUpdateSharedUserPersonalFrontier implements IMessage {
+public class PacketUpdateSharedUserPersonalFrontier {
     private UUID frontierID;
-    private SettingsUserShared userShared;
+    private final SettingsUserShared userShared;
 
     public PacketUpdateSharedUserPersonalFrontier() {
         userShared = new SettingsUserShared();
@@ -33,53 +30,49 @@ public class PacketUpdateSharedUserPersonalFrontier implements IMessage {
         userShared = user;
     }
 
-    @Override
-    public void fromBytes(ByteBuf buf) {
-        frontierID = UUIDHelper.fromBytes(buf);
-        userShared.fromBytes(buf);
+    public static PacketUpdateSharedUserPersonalFrontier fromBytes(PacketBuffer buf) {
+        PacketUpdateSharedUserPersonalFrontier packet = new PacketUpdateSharedUserPersonalFrontier();
+        packet.frontierID = UUIDHelper.fromBytes(buf);
+        packet.userShared.fromBytes(buf);
+        return packet;
     }
 
-    @Override
-    public void toBytes(ByteBuf buf) {
-        UUIDHelper.toBytes(buf, frontierID);
-        userShared.toBytes(buf);
+    public static void toBytes(PacketUpdateSharedUserPersonalFrontier packet, PacketBuffer buf) {
+        UUIDHelper.toBytes(buf, packet.frontierID);
+        packet.userShared.toBytes(buf);
     }
 
-    public static class Handler implements IMessageHandler<PacketUpdateSharedUserPersonalFrontier, IMessage> {
-        @Override
-        public IMessage onMessage(PacketUpdateSharedUserPersonalFrontier message, MessageContext ctx) {
-            if (ctx.side == Side.SERVER) {
-                FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
-                    EntityPlayerMP player = ctx.getServerHandler().player;
-                    SettingsUser playerUser = new SettingsUser(player);
-
-                    FrontierData currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontierID);
-
-                    if (currentFrontier != null && currentFrontier.getPersonal()) {
-                        if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier,
-                                playerUser, MapFrontiers.proxy.isOPorHost(player), currentFrontier.getOwner())) {
-                            SettingsUserShared currentUserShared = currentFrontier.getUserShared(message.userShared.getUser());
-
-                            if (currentUserShared == null) {
-                                return;
-                            }
-
-                            currentUserShared.setActions(message.userShared.getActions());
-                            currentFrontier.addChange(FrontierData.Change.Shared);
-
-                            PacketHandler.sendToUsersWithAccess(
-                                    new PacketFrontierUpdated(currentFrontier, ctx.getServerHandler().player.getEntityId()),
-                                    currentFrontier);
-                        } else {
-                            PacketHandler.INSTANCE.sendTo(
-                                    new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)),
-                                    player);
-                        }
-                    }
-                });
+    public static void handle(PacketUpdateSharedUserPersonalFrontier message, Supplier<NetworkEvent.Context> ctx) {
+        NetworkEvent.Context context = ctx.get();
+        context.enqueueWork(() -> {
+            ServerPlayerEntity player = context.getSender();
+            if (player == null) {
+                return;
             }
 
-            return null;
-        }
+            SettingsUser playerUser = new SettingsUser(player);
+            FrontierData currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontierID);
+
+            if (currentFrontier != null && currentFrontier.getPersonal()) {
+                if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier, playerUser,
+                        MapFrontiers.isOPorHost(player), currentFrontier.getOwner())) {
+                    SettingsUserShared currentUserShared = currentFrontier.getUserShared(message.userShared.getUser());
+
+                    if (currentUserShared == null) {
+                        return;
+                    }
+
+                    currentUserShared.setActions(message.userShared.getActions());
+                    currentFrontier.addChange(FrontierData.Change.Shared);
+
+                    PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(currentFrontier, player.getId()),
+                            currentFrontier);
+                } else {
+                    PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)),
+                            player);
+                }
+            }
+        });
+        context.setPacketHandled(true);
     }
 }

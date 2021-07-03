@@ -7,7 +7,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 public class ReflectionHelper {
     @SuppressWarnings("unchecked")
-    public static <T> T getPrivateField(Object obj, String fieldName, Class<T> fieldType)
+    public static <T> T getPrivateField(Object obj, String fieldName)
             throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
         Field field = obj.getClass().getDeclaredField(fieldName);
         field.setAccessible(true);

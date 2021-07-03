@@ -1,86 +1,137 @@
 package games.alejandrocoria.mapfrontiers;
 
+import java.util.ArrayList;
+
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import games.alejandrocoria.mapfrontiers.common.CommonProxy;
+import games.alejandrocoria.mapfrontiers.client.ClientProxy;
+import games.alejandrocoria.mapfrontiers.common.ConfigData;
+import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
+import games.alejandrocoria.mapfrontiers.common.command.CommandAccept;
 import games.alejandrocoria.mapfrontiers.common.item.ItemFrontierBook;
 import games.alejandrocoria.mapfrontiers.common.item.ItemPersonalFrontierBook;
+import games.alejandrocoria.mapfrontiers.common.network.PacketFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
+import games.alejandrocoria.mapfrontiers.common.network.PacketSettingsProfile;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.Item;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.management.OpEntry;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.SidedProxy;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
-import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.registry.GameRegistry.ObjectHolder;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
+import net.minecraftforge.fml.event.server.FMLServerStoppingEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.server.ServerLifecycleHooks;
 
 @Mod.EventBusSubscriber
-@Mod(modid = MapFrontiers.MODID, version = MapFrontiers.VERSION, dependencies = "required-after:journeymap", updateJSON = "https://alejandrocoria.games/projects/MapFrontiers/update.json")
+@Mod(MapFrontiers.MODID)
 public class MapFrontiers {
     public static final String MODID = "mapfrontiers";
-    public static final String VERSION = "@VERSION@";
+    public static final String VERSION = "1.16.5-1.5.1beta1";
     public static Logger LOGGER;
 
-    @Mod.Instance(MapFrontiers.MODID)
-    public static MapFrontiers instance;
+    private static FrontiersManager frontiersManager;
 
-    @SidedProxy(clientSide = "games.alejandrocoria.mapfrontiers.client.ClientProxy", serverSide = "games.alejandrocoria.mapfrontiers.common.CommonProxy")
-    public static CommonProxy proxy;
+    public static final ItemFrontierBook frontierBook = new ItemFrontierBook();
+    public static final ItemPersonalFrontierBook personalFrontierBook = new ItemPersonalFrontierBook();
 
-    @ObjectHolder("mapfrontiers:frontier_book")
-    public static ItemFrontierBook frontierBook = new ItemFrontierBook();
+    public MapFrontiers() {
+        LOGGER = LogManager.getLogger("MapFrontiers");
+        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ConfigData.CLIENT_SPEC);
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(MapFrontiers::commonSetup);
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(ClientProxy::clientSetup);
+        FMLJavaModLoadingContext.get().getModEventBus().addGenericListener(Item.class, MapFrontiers::registerItems);
+    }
 
-    @ObjectHolder("mapfrontiers:personal_frontier_book")
-    public static ItemPersonalFrontierBook personalFrontierBook = new ItemPersonalFrontierBook();
-
-    @SideOnly(Side.CLIENT)
-    public static void initModels() {
-        frontierBook.initModel();
-        personalFrontierBook.initModel();
+    @SubscribeEvent
+    public static void commonSetup(FMLCommonSetupEvent event) {
+        PacketHandler.init();
+        LOGGER.info("commonSetup done");
     }
 
     @SubscribeEvent
     public static void registerItems(RegistryEvent.Register<Item> event) {
         event.getRegistry().register(frontierBook);
         event.getRegistry().register(personalFrontierBook);
+        LOGGER.info("registerItems done");
     }
 
-    @Mod.EventHandler
-    public void preInit(FMLPreInitializationEvent event) {
-        LOGGER = event.getModLog();
-        proxy.preInit(event);
+    @SubscribeEvent
+    public static void serverStarting(FMLServerStartingEvent event) {
+        frontiersManager = new FrontiersManager();
+        frontiersManager.loadOrCreateData();
 
-        LOGGER.info("MapFrontiers preInit done");
+        MinecraftForge.EVENT_BUS.register(frontiersManager);
+        LOGGER.info("serverStarting done");
     }
 
-    @Mod.EventHandler
-    public void init(FMLInitializationEvent event) {
-        PacketHandler.init();
-        proxy.init(event);
-        LOGGER.info("MapFrontiers init done");
+    @SubscribeEvent
+    public static void registerCommands(RegisterCommandsEvent event) {
+        CommandAccept.register(event.getDispatcher());
+        LOGGER.info("registerCommands done");
     }
 
-    @Mod.EventHandler
-    public void postInit(FMLPostInitializationEvent event) {
-        proxy.postInit(event);
-        LOGGER.info("MapFrontiers postInit done");
+    @SubscribeEvent
+    public static void serverStopping(FMLServerStoppingEvent event) {
+        MinecraftForge.EVENT_BUS.unregister(frontiersManager);
+        frontiersManager = null;
+        LOGGER.info("serverStopping done");
     }
 
-    @Mod.EventHandler
-    public void serverStarting(FMLServerStartingEvent event) {
-        proxy.serverStarting(event);
-        LOGGER.info("MapFrontiers serverStarting done");
+    @SubscribeEvent
+    public static void playerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+        if (frontiersManager == null) {
+            return;
+        }
+
+        frontiersManager.ensureOwners();
+
+        for (ArrayList<FrontierData> frontiers : frontiersManager.getAllGlobalFrontiers().values()) {
+            for (FrontierData frontier : frontiers) {
+                PacketHandler.sendTo(new PacketFrontier(frontier), (ServerPlayerEntity) event.getPlayer());
+            }
+        }
+
+        for (ArrayList<FrontierData> frontiers : frontiersManager.getAllPersonalFrontiers(new SettingsUser(event.getPlayer()))
+                .values()) {
+            for (FrontierData frontier : frontiers) {
+                PacketHandler.sendTo(new PacketFrontier(frontier), (ServerPlayerEntity) event.getPlayer());
+            }
+        }
+
+        PacketHandler.sendTo(new PacketSettingsProfile(frontiersManager.getSettings().getProfile(event.getPlayer())),
+                (ServerPlayerEntity) event.getPlayer());
     }
 
-    @Mod.EventHandler
-    public void serverStopping(FMLServerStoppingEvent event) {
-        proxy.serverStopping(event);
-        LOGGER.info("MapFrontiers serverStopping done");
+    public static FrontiersManager getFrontiersManager() {
+        return frontiersManager;
+    }
+
+    public static boolean isOPorHost(PlayerEntity player) {
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+
+        OpEntry opEntry = server.getPlayerList().getOps().get(player.getGameProfile());
+
+        if (opEntry != null) {
+            return true;
+        }
+
+        if (server.isSingleplayer()) {
+            return server.isSingleplayerOwner(player.getGameProfile()) || player.isCreative();
+        }
+
+        return false;
     }
 }

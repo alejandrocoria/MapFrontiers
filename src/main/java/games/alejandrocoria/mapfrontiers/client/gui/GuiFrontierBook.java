@@ -1,14 +1,19 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import journeymap.client.JourneymapClient;
+import net.minecraft.client.gui.widget.TextFieldWidget;
 import org.apache.commons.lang3.StringUtils;
-import org.lwjgl.input.Keyboard;
+import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
+
+import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.systems.RenderSystem;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
@@ -29,42 +34,43 @@ import journeymap.client.model.MapType;
 import journeymap.client.model.MapType.Name;
 import journeymap.client.properties.MiniMapProperties;
 import journeymap.client.render.draw.DrawStep;
-import journeymap.client.render.draw.DrawUtil;
 import journeymap.client.render.map.GridRenderer;
-import journeymap.common.Journeymap;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiLabel;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.RegistryKey;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.world.World;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
-@SideOnly(Side.CLIENT)
-public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColorBoxResponder, TextBox.TextBoxResponder {
+@OnlyIn(Dist.CLIENT)
+public class GuiFrontierBook extends Screen implements TextColorBox.TextColorBoxResponder, TextBox.TextBoxResponder {
     private enum DeleteBookmarkPosition {
-        Normal, Hidden, Open
-    };
+        Hidden, Normal, Open
+    }
 
     private static final int bookImageHeight = 182;
     private static final int bookImageWidth = 312;
     private static final int bookTextureSize = 512;
 
-    private FrontiersOverlayManager frontiersOverlayManager;
+    private final FrontiersOverlayManager frontiersOverlayManager;
     private int lastFrontierHash;
     private int currPage = 0;
-    private int currentDimension;
-    private int dimension;
-    private ResourceLocation bookPageTexture;
+    private final RegistryKey<World> currentDimension;
+    private final RegistryKey<World> dimension;
+    private final ResourceLocation bookPageTexture;
     private int frontiersPageStart;
-    private ItemStack heldBanner;
+    private final ItemStack heldBanner;
 
+    private GuiBookPages bookPages;
     private GuiButtonIcon buttonClose;
     private GuiButtonIcon buttonNextPage;
     private GuiButtonIcon buttonPreviousPage;
@@ -74,7 +80,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     private GuiBookmark buttonNew;
     private GuiBookmark buttonDelete;
     private DeleteBookmarkPosition deleteBookmarkPosition;
-    private GuiLabel labelDeleteConfirm;
+    private GuiBookButton buttonDeleteConfirm;
     private GuiBookTag buttonNameVisible;
     private GuiBookTag buttonAddVertex;
     private GuiBookTag buttonRemoveVertex;
@@ -92,17 +98,18 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     private TextBox textName2;
     private GuiSimpleLabel labelFrontiernumber;
 
-    private List<IndexEntryButton> indexEntryButtons;
-    private List<GuiSimpleLabel> labels;
-    private boolean personal;
+    private final List<IndexEntryButton> indexEntryButtons;
+    private final List<GuiSimpleLabel> labels;
+    private final boolean personal;
 
-    private static final MapState state = new MapState();
-    private static final GridRenderer gridRenderer = new GridRenderer(Context.UI.Minimap, 3);
-    private static final MiniMapProperties miniMapProperties = new MiniMapProperties(777);
+    private static MapState state;
+    private static GridRenderer gridRenderer;
+    private static MiniMapProperties miniMapProperties;
     private static int zoom = 1;
 
-    public GuiFrontierBook(FrontiersOverlayManager frontiersOverlayManager, boolean personal, int currentDimension, int dimension,
-            ItemStack heldBanner) {
+    public GuiFrontierBook(FrontiersOverlayManager frontiersOverlayManager, boolean personal, RegistryKey<World> currentDimension,
+            RegistryKey<World> dimension, @Nullable ItemStack heldBanner) {
+        super(StringTextComponent.EMPTY);
         this.frontiersOverlayManager = frontiersOverlayManager;
         this.currentDimension = currentDimension;
         this.dimension = dimension;
@@ -110,135 +117,149 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         this.heldBanner = heldBanner;
 
         bookPageTexture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/gui.png");
-        indexEntryButtons = new ArrayList<IndexEntryButton>();
-        labels = new ArrayList<GuiSimpleLabel>();
+        indexEntryButtons = new ArrayList<>();
+        labels = new ArrayList<>();
 
         this.personal = personal;
+
+        state = new MapState();
+        gridRenderer = new GridRenderer(Context.UI.Minimap);
+        gridRenderer.setGridSize(3);
+        miniMapProperties = new MiniMapProperties(777);
     }
 
     @Override
-    public void initGui() {
+    public void init() {
         Sounds.playSoundOpenBook();
 
-        buttonList.clear();
-        Keyboard.enableRepeatEvents(true);
+        minecraft.keyboardHandler.setSendRepeatsToGui(true);
 
         int offsetFromScreenLeft = (width - bookImageWidth) / 2;
         int offsetFromScreenTop = (height - bookImageHeight) / 2;
         int rightPageCornerX = width / 2;
         int rightPageCornerY = offsetFromScreenTop;
-        int id = 0;
 
-        buttonClose = new GuiButtonIcon(++id, offsetFromScreenLeft + bookImageWidth - 8, offsetFromScreenTop - 5, 13, 13, 471, 64,
-                23, bookPageTexture, bookTextureSize);
+        bookPages = new GuiBookPages(offsetFromScreenLeft, offsetFromScreenTop, 0, bookImageHeight, bookImageWidth,
+                bookImageHeight, bookTextureSize, bookTextureSize, bookPageTexture);
 
-        buttonNextPage = new GuiButtonIcon(++id, offsetFromScreenLeft + bookImageWidth - 27,
-                offsetFromScreenTop + bookImageHeight - 18, 21, 13, 468, 0, 23, bookPageTexture, bookTextureSize);
+        buttonClose = new GuiButtonIcon(offsetFromScreenLeft + bookImageWidth - 8, offsetFromScreenTop - 5, 13, 13, 471, 64, 23,
+                bookPageTexture, bookTextureSize, this::buttonPressed);
 
-        buttonPreviousPage = new GuiButtonIcon(++id, offsetFromScreenLeft + 6, offsetFromScreenTop + bookImageHeight - 18, 21, 13,
-                468, 13, 23, bookPageTexture, bookTextureSize);
+        buttonNextPage = new GuiButtonIcon(offsetFromScreenLeft + bookImageWidth - 27, offsetFromScreenTop + bookImageHeight - 18,
+                21, 13, 468, 0, 23, bookPageTexture, bookTextureSize, this::buttonPressed);
 
-        buttonBackToIndex = new GuiButtonIcon(++id, rightPageCornerX - 8, rightPageCornerY + bookImageHeight - 18, 16, 13, 470,
-                51, 23, bookPageTexture, bookTextureSize);
+        buttonPreviousPage = new GuiButtonIcon(offsetFromScreenLeft + 6, offsetFromScreenTop + bookImageHeight - 18, 21, 13, 468,
+                13, 23, bookPageTexture, bookTextureSize, this::buttonPressed);
 
-        buttonNextVertex = new GuiButtonIcon(++id, offsetFromScreenLeft + bookImageWidth / 2 - 25, offsetFromScreenTop + 148, 9,
-                11, 473, 78, 23, bookPageTexture, bookTextureSize);
+        buttonBackToIndex = new GuiButtonIcon(rightPageCornerX - 8, rightPageCornerY + bookImageHeight - 18, 16, 13, 470, 51, 23,
+                bookPageTexture, bookTextureSize, this::buttonPressed);
 
-        buttonPreviousVertex = new GuiButtonIcon(++id, offsetFromScreenLeft + 16, offsetFromScreenTop + 148, 9, 11, 473, 90, 23,
-                bookPageTexture, bookTextureSize);
+        buttonNextVertex = new GuiButtonIcon(offsetFromScreenLeft + bookImageWidth / 2 - 25, offsetFromScreenTop + 148, 9, 11,
+                473, 78, 23, bookPageTexture, bookTextureSize, this::buttonPressed);
 
-        buttonNew = new GuiBookmark(++id, rightPageCornerX + 6, rightPageCornerY - 18, 21, 18, I18n.format("mapfrontiers.new"),
-                bookPageTexture, bookTextureSize);
+        buttonPreviousVertex = new GuiButtonIcon(offsetFromScreenLeft + 16, offsetFromScreenTop + 148, 9, 11, 473, 90, 23,
+                bookPageTexture, bookTextureSize, this::buttonPressed);
 
-        buttonDelete = new GuiBookmark(++id, rightPageCornerX + 62, rightPageCornerY - 18, 44, 18,
-                I18n.format("mapfrontiers.delete"), bookPageTexture, bookTextureSize);
-        buttonDelete.addYPosition(rightPageCornerY + 4);
+        buttonNew = new GuiBookmark(rightPageCornerX + 6, rightPageCornerY - 18, 21, 18,
+                new TranslationTextComponent("mapfrontiers.new"), bookPageTexture, bookTextureSize, this::buttonPressed);
+
+        buttonDelete = new GuiBookmark(rightPageCornerX + 62, rightPageCornerY + 4, 44, 18,
+                new TranslationTextComponent("mapfrontiers.delete"), bookPageTexture, bookTextureSize, this::buttonPressed);
+        buttonDelete.addYPosition(rightPageCornerY - 18);
         buttonDelete.addYPosition(rightPageCornerY - 40);
-        deleteBookmarkPosition = DeleteBookmarkPosition.Normal;
+        deleteBookmarkPosition = DeleteBookmarkPosition.Hidden;
 
-        labelDeleteConfirm = new GuiLabel(fontRenderer, ++id, buttonDelete.x, buttonDelete.y + 30, buttonDelete.width, 12,
-                GuiColors.WHITE);
-        labelDeleteConfirm.setCentered();
-        labelDeleteConfirm.addLine(I18n.format("mapfrontiers.confirm_delete"));
-        buttonDelete.addlabel(labelDeleteConfirm);
+        buttonDeleteConfirm = new GuiBookButton(font, buttonDelete.x, buttonDelete.y + 26, buttonDelete.getWidth(),
+                new TranslationTextComponent("mapfrontiers.confirm_delete"), false, true, this::buttonPressed);
+        buttonDelete.addWidget(buttonDeleteConfirm);
 
         int leftTagsX = offsetFromScreenLeft + 3;
-        int leftTagsWidth = StringHelper.getMaxWidth(fontRenderer, I18n.format("mapfrontiers.show_name"),
-                I18n.format("mapfrontiers.hide_name"), I18n.format("mapfrontiers.finish"), I18n.format("mapfrontiers.reopen"),
-                I18n.format("mapfrontiers.add_vertex"), I18n.format("mapfrontiers.remove_vertex"));
+        int leftTagsWidth = StringHelper.getMaxWidth(font, I18n.get("mapfrontiers.show_name"),
+                I18n.get("mapfrontiers.hide_name"), I18n.get("mapfrontiers.finish"), I18n.get("mapfrontiers.reopen"),
+                I18n.get("mapfrontiers.add_vertex"), I18n.get("mapfrontiers.remove_vertex"));
         leftTagsWidth += 12;
 
-        int rightTagsWidth = StringHelper.getMaxWidth(fontRenderer, I18n.format("mapfrontiers.assign_banner") + " !",
-                I18n.format("mapfrontiers.remove_banner"));
+        int rightTagsWidth = StringHelper.getMaxWidth(font, I18n.get("mapfrontiers.assign_banner") + " !",
+                I18n.get("mapfrontiers.remove_banner"));
         rightTagsWidth += 12;
         rightTagsWidth = Math.max(rightTagsWidth, 89);
 
-        buttonNameVisible = new GuiBookTag(++id, leftTagsX, offsetFromScreenTop + 12, leftTagsWidth, true, "", bookPageTexture,
-                bookTextureSize);
+        buttonNameVisible = new GuiBookTag(leftTagsX, offsetFromScreenTop + 12, leftTagsWidth, true, StringTextComponent.EMPTY,
+                bookPageTexture, bookTextureSize, this::buttonPressed);
 
-        buttonAddVertex = new GuiBookTag(++id, leftTagsX, offsetFromScreenTop + 32, leftTagsWidth, true,
-                I18n.format("mapfrontiers.add_vertex"), bookPageTexture, bookTextureSize);
+        buttonAddVertex = new GuiBookTag(leftTagsX, offsetFromScreenTop + 32, leftTagsWidth, true,
+                new TranslationTextComponent("mapfrontiers.add_vertex"), bookPageTexture, bookTextureSize, this::buttonPressed);
 
-        buttonRemoveVertex = new GuiBookTag(++id, leftTagsX, offsetFromScreenTop + 52, leftTagsWidth, true,
-                I18n.format("mapfrontiers.remove_vertex"), bookPageTexture, bookTextureSize);
+        buttonRemoveVertex = new GuiBookTag(leftTagsX, offsetFromScreenTop + 52, leftTagsWidth, true,
+                new TranslationTextComponent("mapfrontiers.remove_vertex"), bookPageTexture, bookTextureSize, this::buttonPressed);
 
-        buttonFinish = new GuiBookTag(++id, leftTagsX, offsetFromScreenTop + 72, leftTagsWidth, true, "", bookPageTexture,
-                bookTextureSize);
+        buttonFinish = new GuiBookTag(leftTagsX, offsetFromScreenTop + 72, leftTagsWidth, true, StringTextComponent.EMPTY,
+                bookPageTexture, bookTextureSize, this::buttonPressed);
 
-        buttonBanner = new GuiBookTag(++id, offsetFromScreenLeft + bookImageWidth - 3, offsetFromScreenTop + 12, rightTagsWidth,
-                false, "", bookPageTexture, bookTextureSize);
+        buttonBanner = new GuiBookTag(offsetFromScreenLeft + bookImageWidth - 3, offsetFromScreenTop + 12, rightTagsWidth, false,
+                StringTextComponent.EMPTY, bookPageTexture, bookTextureSize, this::buttonPressed);
 
-        buttonSliceUp = new GuiButtonIcon(++id, offsetFromScreenLeft + bookImageWidth / 2 - 21,
-                offsetFromScreenTop + bookImageHeight / 2 - 45, 13, 9, 471, 102, 23, bookPageTexture, bookTextureSize);
+        buttonSliceUp = new GuiButtonIcon(offsetFromScreenLeft + bookImageWidth / 2 - 21,
+                offsetFromScreenTop + bookImageHeight / 2 - 45, 13, 9, 471, 102, 23, bookPageTexture,
+                bookTextureSize, this::buttonPressed);
 
-        buttonSliceDown = new GuiButtonIcon(++id, offsetFromScreenLeft + bookImageWidth / 2 - 21,
-                offsetFromScreenTop + bookImageHeight / 2 + 36, 13, 9, 471, 111, 23, bookPageTexture, bookTextureSize);
+        buttonSliceDown = new GuiButtonIcon(offsetFromScreenLeft + bookImageWidth / 2 - 21,
+                offsetFromScreenTop + bookImageHeight / 2 + 36, 13, 9, 471, 111, 23, bookPageTexture,
+                bookTextureSize, this::buttonPressed);
 
-        sliderSlice = new GuiSliderSlice(++id, offsetFromScreenLeft + bookImageWidth / 2 - 21,
-                offsetFromScreenTop + bookImageHeight / 2 - 35, bookPageTexture, bookTextureSize);
+        sliderSlice = new GuiSliderSlice(offsetFromScreenLeft + bookImageWidth / 2 - 21,
+                offsetFromScreenTop + bookImageHeight / 2 - 35, bookPageTexture, bookTextureSize, this::buttonPressed);
 
-        String shareSettingsText = I18n.format("mapfrontiers.share_settings");
-        buttonEditShareSettings = new GuiBookButton(++id, mc.fontRenderer, rightPageCornerX + 12, rightPageCornerY + 88,
-                fontRenderer.getStringWidth(shareSettingsText) + 4, shareSettingsText);
+        ITextComponent shareSettingsText = new TranslationTextComponent("mapfrontiers.share_settings");
+        buttonEditShareSettings = new GuiBookButton(font, rightPageCornerX + 12, rightPageCornerY + 88,
+                font.width(shareSettingsText.getString()) + 5, shareSettingsText, true, false, this::buttonPressed);
 
         int textColorX = rightPageCornerX + 44;
         int textColorY = rightPageCornerY + 18;
 
-        textRed = new TextColorBox(++id, 255, fontRenderer, textColorX, textColorY);
+        textRed = new TextColorBox(255, font, textColorX, textColorY);
         textRed.setResponder(this);
 
-        textGreen = new TextColorBox(++id, 255, fontRenderer, textColorX + 26, textColorY);
+        textGreen = new TextColorBox(255, font, textColorX + 26, textColorY);
         textGreen.setResponder(this);
 
-        textBlue = new TextColorBox(++id, 255, fontRenderer, textColorX + 52, textColorY);
+        textBlue = new TextColorBox(255, font, textColorX + 52, textColorY);
         textBlue.setResponder(this);
 
         int textNameX = offsetFromScreenLeft + bookImageWidth / 4 - 56;
         int textNameY = offsetFromScreenTop + 10;
         String defaultText = "Add name";
-        textName1 = new TextBox(++id, fontRenderer, textNameX, textNameY, 113, defaultText);
-        textName1.setMaxStringLength(17);
+        textName1 = new TextBox(font, textNameX, textNameY, 113, defaultText);
+        textName1.setMaxLength(17);
         textName1.setResponder(this);
-        textName2 = new TextBox(++id, fontRenderer, textNameX, textNameY + 14, 113, defaultText);
-        textName2.setMaxStringLength(17);
+        textName2 = new TextBox(font, textNameX, textNameY + 14, 113, defaultText);
+        textName2.setMaxLength(17);
         textName2.setResponder(this);
 
-        buttonList.add(buttonClose);
-        buttonList.add(buttonNextPage);
-        buttonList.add(buttonPreviousPage);
-        buttonList.add(buttonBackToIndex);
-        buttonList.add(buttonNextVertex);
-        buttonList.add(buttonPreviousVertex);
-        buttonList.add(buttonNew);
-        buttonList.add(buttonNameVisible);
-        buttonList.add(buttonAddVertex);
-        buttonList.add(buttonRemoveVertex);
-        buttonList.add(buttonFinish);
-        buttonList.add(buttonBanner);
-        buttonList.add(buttonSliceUp);
-        buttonList.add(buttonSliceDown);
-        buttonList.add(sliderSlice);
-        buttonList.add(buttonEditShareSettings);
+        addButton(buttonDelete);
+        addButton(buttonDeleteConfirm);
+        addButton(bookPages);
+        addButton(buttonClose);
+        addButton(buttonNextPage);
+        addButton(buttonPreviousPage);
+        addButton(buttonBackToIndex);
+        addButton(buttonNextVertex);
+        addButton(buttonPreviousVertex);
+        addButton(buttonNew);
+        addButton(buttonNameVisible);
+        addButton(buttonAddVertex);
+        addButton(buttonRemoveVertex);
+        addButton(buttonFinish);
+        addButton(buttonBanner);
+        addButton(buttonSliceUp);
+        addButton(buttonSliceDown);
+        addButton(sliderSlice);
+        addButton(buttonEditShareSettings);
+        addButton(textRed);
+        addButton(textGreen);
+        addButton(textBlue);
+        addButton(textName1);
+        addButton(textName2);
 
         updateIndexEntries();
 
@@ -251,44 +272,32 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     }
 
     @Override
-    public void updateScreen() {
+    public void tick() {
         if (isInFrontierPage()) {
-            textRed.updateCursorCounter();
-            textGreen.updateCursorCounter();
-            textBlue.updateCursorCounter();
+            textRed.tick();
+            textGreen.tick();
+            textBlue.tick();
         }
     }
 
     @Override
-    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+    public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         if (personal) {
-            GlStateManager.color(0.f, 0.5f, 1.f);
+            RenderSystem.color3f(0.f, 0.5f, 1.f);
         } else {
-            GlStateManager.color(0.5f, 0.5f, 0.5f);
+            RenderSystem.color3f(0.5f, 0.5f, 0.5f);
         }
-        mc.getTextureManager().bindTexture(bookPageTexture);
+
+        minecraft.getTextureManager().bind(bookPageTexture);
         int offsetFromScreenLeft = (width - bookImageWidth) / 2;
         int offsetFromScreenTop = (height - bookImageHeight) / 2;
 
-        drawModalRectWithCustomSizedTexture(offsetFromScreenLeft, offsetFromScreenTop, 0, 0, bookImageWidth, bookImageHeight,
-                bookTextureSize, bookTextureSize);
+        blit(matrixStack, offsetFromScreenLeft, offsetFromScreenTop, 0, 0, bookImageWidth, bookImageHeight, bookTextureSize,
+                bookTextureSize);
 
-        GlStateManager.color(1.f, 1.f, 1.f);
+        RenderSystem.color3f(1.f, 1.f, 1.f);
 
-        if (buttonDelete.visible) {
-            buttonDelete.drawButton(mc, mouseX, mouseY, partialTicks);
-        }
-
-        GlStateManager.color(1.f, 1.f, 1.f);
-        mc.getTextureManager().bindTexture(bookPageTexture);
-
-        if (currPage == 0) {
-            drawModalRectWithCustomSizedTexture(offsetFromScreenLeft + bookImageWidth / 2, offsetFromScreenTop,
-                    bookImageWidth / 2, bookImageHeight, bookImageWidth / 2, bookImageHeight, bookTextureSize, bookTextureSize);
-        } else {
-            drawModalRectWithCustomSizedTexture(offsetFromScreenLeft, offsetFromScreenTop, 0, bookImageHeight, bookImageWidth,
-                    bookImageHeight, bookTextureSize, bookTextureSize);
-        }
+        super.render(matrixStack, mouseX, mouseY, partialTicks);
 
         int rightPageCornerX = width / 2;
         int rightPageCornerY = (height - bookImageHeight) / 2;
@@ -296,165 +305,107 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         if (isInFrontierPage()) {
             FrontierOverlay frontier = getCurrentFrontier();
 
-            textRed.drawTextBox();
-            textGreen.drawTextBox();
-            textBlue.drawTextBox();
-
-            textName1.drawTextBox(mouseX, mouseY);
-            textName2.drawTextBox(mouseX, mouseY);
-
-            drawRect(rightPageCornerX + 123, rightPageCornerY + 14, rightPageCornerX + 143, rightPageCornerY + 33,
+            fill(matrixStack, rightPageCornerX + 123, rightPageCornerY + 14, rightPageCornerX + 143, rightPageCornerY + 33,
                     GuiColors.COLOR_INDICATOR_BORDER);
-            drawRect(rightPageCornerX + 125, rightPageCornerY + 16, rightPageCornerX + 141, rightPageCornerY + 31,
+            fill(matrixStack, rightPageCornerX + 125, rightPageCornerY + 16, rightPageCornerX + 141, rightPageCornerY + 31,
                     frontier.getColor() | 0xff000000);
 
             if (frontier.getVertexCount() > 0) {
-                drawMap();
+                drawMap(matrixStack, mouseX, mouseY);
             }
 
             if (frontier.hasBanner()) {
-                frontier.bindBannerTexture(mc);
-                int bannerSize = 3;
-                drawModalRectWithCustomSizedTexture(offsetFromScreenLeft + bookImageWidth + 6, offsetFromScreenTop + 27, 0, 3,
-                        22 * bannerSize, 40 * bannerSize, 64 * bannerSize, 64 * bannerSize);
+                frontier.renderBanner(minecraft, matrixStack, offsetFromScreenLeft + bookImageWidth + 6, offsetFromScreenTop + 27,
+                        3);
             }
         }
 
         for (GuiSimpleLabel label : labels) {
-            label.drawLabel(mc, mouseX, mouseY);
+            label.render(matrixStack, mouseX, mouseY, partialTicks);
         }
 
-        super.drawScreen(mouseX, mouseY, partialTicks);
-
-        if (buttonClose.visible && buttonClose.isMouseOver()) {
-            drawHoveringText(I18n.format("mapfrontiers.close"), mouseX, mouseY);
+        if (buttonClose.visible && buttonClose.isHovered()) {
+            renderTooltip(matrixStack, new TranslationTextComponent("mapfrontiers.close"), mouseX, mouseY);
         }
 
-        if (buttonNextPage.visible && buttonNextPage.isMouseOver()) {
-            drawHoveringText(I18n.format("mapfrontiers.next_page"), mouseX, mouseY);
+        if (buttonNextPage.visible && buttonNextPage.isHovered()) {
+            renderTooltip(matrixStack, new TranslationTextComponent("mapfrontiers.next_page"), mouseX, mouseY);
         }
 
-        if (buttonPreviousPage.visible && buttonPreviousPage.isMouseOver()) {
-            drawHoveringText(I18n.format("mapfrontiers.previous_page"), mouseX, mouseY);
+        if (buttonPreviousPage.visible && buttonPreviousPage.isHovered()) {
+            renderTooltip(matrixStack, new TranslationTextComponent("mapfrontiers.previous_page"), mouseX, mouseY);
         }
 
-        if (buttonBackToIndex.visible && buttonBackToIndex.isMouseOver()) {
-            drawHoveringText(I18n.format("mapfrontiers.back_to_index"), mouseX, mouseY);
+        if (buttonBackToIndex.visible && buttonBackToIndex.isHovered()) {
+            renderTooltip(matrixStack, new TranslationTextComponent("mapfrontiers.back_to_index"), mouseX, mouseY);
         }
 
-        if (buttonNextVertex.visible && buttonNextVertex.isMouseOver()) {
-            drawHoveringText(I18n.format("mapfrontiers.next_vertex"), mouseX, mouseY);
+        if (buttonNextVertex.visible && buttonNextVertex.isHovered()) {
+            renderTooltip(matrixStack, new TranslationTextComponent("mapfrontiers.next_vertex"), mouseX, mouseY);
         }
 
-        if (buttonPreviousVertex.visible && buttonPreviousVertex.isMouseOver()) {
-            drawHoveringText(I18n.format("mapfrontiers.previous_vertex"), mouseX, mouseY);
+        if (buttonPreviousVertex.visible && buttonPreviousVertex.isHovered()) {
+            renderTooltip(matrixStack, new TranslationTextComponent("mapfrontiers.previous_vertex"), mouseX, mouseY);
         }
 
-        if (buttonSliceUp.visible && buttonSliceUp.isMouseOver()) {
+        if (buttonSliceUp.visible && buttonSliceUp.isHovered()) {
             int slice = sliderSlice.getSlice();
-            drawHoveringText(I18n.format("mapfrontiers.vertical_chunk", slice), mouseX, mouseY);
+            renderTooltip(matrixStack, new TranslationTextComponent("mapfrontiers.vertical_chunk", slice), mouseX, mouseY);
         }
 
-        if (buttonSliceDown.visible && buttonSliceDown.isMouseOver()) {
+        if (buttonSliceDown.visible && buttonSliceDown.isHovered()) {
             int slice = sliderSlice.getSlice();
             if (slice == FrontierOverlay.SurfaceSlice) {
-                drawHoveringText(I18n.format("mapfrontiers.vertical_chunk_surface"), mouseX, mouseY);
+                renderTooltip(matrixStack, new TranslationTextComponent("mapfrontiers.vertical_chunk_surface"), mouseX, mouseY);
             } else {
-                drawHoveringText(I18n.format("mapfrontiers.vertical_chunk", slice), mouseX, mouseY);
+                renderTooltip(matrixStack, new TranslationTextComponent("mapfrontiers.vertical_chunk", slice), mouseX, mouseY);
             }
         }
 
-        if (sliderSlice.visible && sliderSlice.isMouseOver()) {
+        if (sliderSlice.visible && sliderSlice.isHovered()) {
             int slice = sliderSlice.getSlice();
             if (slice == FrontierOverlay.SurfaceSlice) {
-                drawHoveringText(I18n.format("mapfrontiers.vertical_chunk_surface"), mouseX, mouseY);
+                renderTooltip(matrixStack, new TranslationTextComponent("mapfrontiers.vertical_chunk_surface"), mouseX, mouseY);
             } else {
-                drawHoveringText(I18n.format("mapfrontiers.vertical_chunk", slice), mouseX, mouseY);
+                renderTooltip(matrixStack, new TranslationTextComponent("mapfrontiers.vertical_chunk", slice), mouseX, mouseY);
             }
         }
 
-        if (buttonNameVisible.visible && buttonNameVisible.isMouseOver()) {
-            String prefix = GuiColors.WARNING + "! " + TextFormatting.RESET;
+        if (buttonNameVisible.visible && buttonNameVisible.isHovered()) {
+            StringTextComponent prefix = new StringTextComponent(GuiColors.WARNING + "! " + TextFormatting.RESET);
             if (ConfigData.nameVisibility == ConfigData.NameVisibility.Show) {
-                drawHoveringText(prefix + I18n.format("mapfrontiers.show_name_warn"), mouseX, mouseY);
+                renderTooltip(matrixStack, prefix.append(new TranslationTextComponent("mapfrontiers.show_name_warn")), mouseX, mouseY);
             } else if (ConfigData.nameVisibility == ConfigData.NameVisibility.Hide) {
-                drawHoveringText(prefix + I18n.format("mapfrontiers.hide_name_warn"), mouseX, mouseY);
+                renderTooltip(matrixStack, prefix.append(new TranslationTextComponent("mapfrontiers.hide_name_warn")), mouseX, mouseY);
             }
         }
 
-        if (buttonBanner.visible && buttonBanner.isMouseOver()) {
+        if (buttonBanner.visible && buttonBanner.isHovered()) {
             FrontierOverlay frontier = getCurrentFrontier();
             if (!frontier.hasBanner() && heldBanner == null) {
-                String prefix = GuiColors.WARNING + "! " + TextFormatting.RESET;
-                drawHoveringText(prefix + I18n.format("mapfrontiers.assign_banner_warn"), mouseX, mouseY);
+                StringTextComponent prefix = new StringTextComponent(GuiColors.WARNING + "! " + TextFormatting.RESET);
+                renderTooltip(matrixStack, prefix.append(new TranslationTextComponent("mapfrontiers.assign_banner_warn")),
+                        mouseX, mouseY);
             }
         }
     }
 
     @Override
-    protected void mouseClicked(int x, int y, int btn) throws IOException {
-        if (deleteBookmarkPosition == DeleteBookmarkPosition.Open) {
-            if (labelDeleteConfirm.visible && x >= buttonDelete.x && y >= labelDeleteConfirm.y
-                    && x <= buttonDelete.x + buttonDelete.width && y <= labelDeleteConfirm.y + 12) {
-                if (isInFrontierPage()) {
-                    changeDeleteBookmarkPosition(DeleteBookmarkPosition.Normal);
-                    frontiersOverlayManager.clientDeleteFrontier(dimension, getCurrentFrontierIndex());
-                }
-            }
-        }
-
-        if (buttonDelete.mousePressed(mc, x, y)) {
-            actionPerformed(buttonDelete);
-        }
-
-        if (isInFrontierPage()) {
-            textRed.mouseClicked(x, y, btn);
-            textGreen.mouseClicked(x, y, btn);
-            textBlue.mouseClicked(x, y, btn);
-            textName1.mouseClicked(x, y, btn);
-            textName2.mouseClicked(x, y, btn);
-        }
-
-        super.mouseClicked(x, y, btn);
-    }
-
-    @Override
-    protected void mouseReleased(int mouseX, int mouseY, int state) {
-        if (selectedButton != null && selectedButton instanceof GuiSliderSlice) {
-            actionPerformed(selectedButton);
-        }
-
-        super.mouseReleased(mouseX, mouseY, state);
-    }
-
-    @Override
-    protected void mouseClickMove(int mouseX, int mouseY, int btn, long timeSinceLastClick) {
-        if (selectedButton != null && selectedButton instanceof GuiSliderSlice) {
-            ((GuiSliderSlice) selectedButton).mouseDragged(mouseX, mouseY);
-        }
-
-        super.mouseClickMove(mouseX, mouseY, btn, timeSinceLastClick);
-    }
-
-    @Override
-    protected void keyTyped(char typedChar, int keyCode) throws IOException {
-        super.keyTyped(typedChar, keyCode);
-
-        if (isInFrontierPage()) {
-            textRed.textboxKeyTyped(typedChar, keyCode);
-            textGreen.textboxKeyTyped(typedChar, keyCode);
-            textBlue.textboxKeyTyped(typedChar, keyCode);
-            textName1.textboxKeyTyped(typedChar, keyCode);
-            textName2.textboxKeyTyped(typedChar, keyCode);
+    public boolean keyPressed(int key, int value, int modifier) {
+        if (key == GLFW.GLFW_KEY_E && !(getFocused() instanceof TextFieldWidget)) {
+            onClose();
+            return true;
+        } else {
+            return super.keyPressed(key, value, modifier);
         }
     }
 
     @Override
-    public void updatedValue(int id, int value) {
+    public void updatedValue(TextColorBox textBox, int value) {
         if (isInFrontierPage()) {
             FrontierOverlay frontier = getCurrentFrontier();
 
-            if (textRed.getId() == id) {
+            if (textRed == textBox) {
                 int newColor = (frontier.getColor() & 0xff00ffff) | (value << 16);
                 if (newColor != frontier.getColor()) {
                     frontier.setColor(newColor);
@@ -462,7 +413,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                     updateButtonsVisibility();
                     sendChangesToServer();
                 }
-            } else if (textGreen.getId() == id) {
+            } else if (textGreen == textBox) {
                 int newColor = (frontier.getColor() & 0xffff00ff) | (value << 8);
                 if (newColor != frontier.getColor()) {
                     frontier.setColor(newColor);
@@ -470,7 +421,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                     updateButtonsVisibility();
                     sendChangesToServer();
                 }
-            } else if (textBlue.getId() == id) {
+            } else if (textBlue == textBox) {
                 int newColor = (frontier.getColor() & 0xffffff00) | value;
                 if (newColor != frontier.getColor()) {
                     frontier.setColor(newColor);
@@ -483,17 +434,17 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     }
 
     @Override
-    public void updatedValue(int id, String value) {
+    public void updatedValue(TextBox textBox, String value) {
         if (isInFrontierPage()) {
             FrontierOverlay frontier = getCurrentFrontier();
 
-            if (textName1.getId() == id) {
+            if (textName1 == textBox) {
                 if (!frontier.getName1().equals(value)) {
                     frontier.setName1(value);
                     updateIndexEntries();
                     updateButtonsVisibility();
                 }
-            } else if (textName2.getId() == id) {
+            } else if (textName2 == textBox) {
                 if (!frontier.getName2().equals(value)) {
                     frontier.setName2(value);
                     updateIndexEntries();
@@ -504,14 +455,13 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     }
 
     @Override
-    public void lostFocus(int id, String value) {
+    public void lostFocus(TextBox textBox, String value) {
         sendChangesToServer();
     }
 
-    @Override
-    protected void actionPerformed(GuiButton button) {
+    protected void buttonPressed(Button button) {
         if (button == buttonClose) {
-            mc.displayGuiScreen((GuiScreen) null);
+            minecraft.setScreen(null);
         } else if (button == buttonNextPage) {
             changePage(currPage + 1);
         } else if (button == buttonPreviousPage) {
@@ -536,6 +486,11 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             } else if (deleteBookmarkPosition == DeleteBookmarkPosition.Open) {
                 changeDeleteBookmarkPosition(DeleteBookmarkPosition.Normal);
             }
+        } else if (button == buttonDeleteConfirm) {
+            if (deleteBookmarkPosition == DeleteBookmarkPosition.Open) {
+                changeDeleteBookmarkPosition(DeleteBookmarkPosition.Normal);
+                frontiersOverlayManager.clientDeleteFrontier(dimension, getCurrentFrontierIndex());
+            }
         } else if (button == buttonNameVisible) {
             FrontierOverlay frontier = getCurrentFrontier();
             frontier.setNameVisible(!frontier.getNameVisible());
@@ -543,7 +498,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             sendChangesToServer();
         } else if (button == buttonAddVertex) {
             FrontierOverlay frontier = getCurrentFrontier();
-            frontier.addVertex(Minecraft.getMinecraft().player.getPosition());
+            frontier.addVertex(minecraft.player.blockPosition());
             resetLabels();
             updateButtonsVisibility();
             updateGridRenderer();
@@ -596,7 +551,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             sendChangesToServer();
         } else if (button == buttonEditShareSettings) {
             FrontierOverlay frontier = getCurrentFrontier();
-            mc.displayGuiScreen(new GuiShareSettings(this, frontiersOverlayManager, frontier));
+            minecraft.setScreen(new GuiShareSettings(this, frontiersOverlayManager, frontier));
         } else {
             for (IndexEntryButton indexButton : indexEntryButtons) {
                 if (button == indexButton) {
@@ -608,14 +563,10 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     }
 
     @Override
-    public void onGuiClosed() {
-        Keyboard.enableRepeatEvents(false);
+    public void onClose() {
+        minecraft.keyboardHandler.setSendRepeatsToGui(false);
         sendChangesToServer();
-    }
-
-    @Override
-    public boolean doesGuiPauseGame() {
-        return true;
+        super.onClose();
     }
 
     public void newFrontierMessage(FrontierOverlay frontierOverlay, int playerID) {
@@ -623,7 +574,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             return;
         }
 
-        if (playerID == -1 || Minecraft.getMinecraft().player.getEntityId() == playerID) {
+        if (playerID == -1 || minecraft.player.getId() == playerID) {
             int index = frontiersOverlayManager.getFrontierIndex(frontierOverlay);
             if (index >= 0) {
                 updateIndexEntries();
@@ -662,7 +613,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         }
     }
 
-    public void deleteFrontierMessage(int index, int dimension, boolean personal, int playerID) {
+    public void deleteFrontierMessage(int index, RegistryKey<World> dimension, boolean personal, int playerID) {
         if (dimension != this.dimension || personal != this.personal) {
             return;
         }
@@ -734,6 +685,8 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             frontiersOverlayManager.setFrontierIndexSelected(dimension, -1);
         }
 
+        bookPages.setDoublePage(currPage != 0);
+
         resetLabels();
         updateGridRenderer();
         resetTextColor();
@@ -742,6 +695,68 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         resetBannerButton();
         resetSliceSlider();
         updateButtonsVisibility();
+    }
+
+    private void updateIndexEntries() {
+        buttons.removeAll(indexEntryButtons);
+        children.removeAll(indexEntryButtons);
+        indexEntryButtons.clear();
+
+        frontiersPageStart = ((frontiersOverlayManager.getFrontierCount(dimension) - 1) / 6 + 1) / 2 + 1;
+
+        int offsetFromScreenLeft = (width - bookImageWidth) / 2;
+        int offsetFromScreenTop = (height - bookImageHeight) / 2;
+        int posX = offsetFromScreenLeft + bookImageWidth / 2 + 10;
+        int posY = offsetFromScreenTop + 35;
+        int page = frontiersPageStart;
+        int count = 0;
+        boolean rightPage = true;
+        for (FrontierOverlay frontier : frontiersOverlayManager.getAllFrontiers(dimension)) {
+            String name1 = frontier.getName1();
+            String name2 = frontier.getName2();
+
+            if (name1.isEmpty() && name2.isEmpty()) {
+                name1 = I18n.get("mapfrontiers.index_unnamed_1", TextFormatting.ITALIC);
+                name2 = I18n.get("mapfrontiers.index_unnamed_2", TextFormatting.ITALIC);
+            }
+
+            IndexEntryButton entryButton = new IndexEntryButton(posX, posY, bookImageWidth / 2 - 20, page, name1, name2,
+                    frontier.getColor(), rightPage, this::buttonPressed);
+            entryButton.visible = false;
+            indexEntryButtons.add(entryButton);
+            addButton(entryButton);
+
+            ++page;
+            posY += 21;
+            ++count;
+            if (count % 6 == 0) {
+                posY = offsetFromScreenTop + 35;
+                if (rightPage) {
+                    posX = offsetFromScreenLeft + 10;
+                    rightPage = false;
+                } else {
+                    posX = offsetFromScreenLeft + bookImageWidth / 2 + 10;
+                    rightPage = true;
+                }
+            }
+        }
+    }
+
+    private void beginStencil(MatrixStack matrixStack, double x, double y, double width, double height) {
+        GL11.glEnable(GL11.GL_STENCIL_TEST);
+        RenderSystem.colorMask(false, false, false, false);
+        RenderSystem.stencilFunc(GL11.GL_NEVER, 1, 0xff);
+        RenderSystem.stencilOp(GL11.GL_REPLACE, GL11.GL_KEEP, GL11.GL_KEEP);
+        RenderSystem.stencilMask(0xff);
+        RenderSystem.clearStencil(0);
+        fill(matrixStack, (int) x, (int) y, (int) (x + width), (int) (y + height), 0xffffff);
+        RenderSystem.colorMask(true, true, true, true);
+        RenderSystem.stencilMask(0x00);
+        RenderSystem.stencilFunc(GL11.GL_EQUAL, 1, 0xff);
+    }
+
+    private void endStencil() {
+        GL11.glDisable(GL11.GL_STENCIL_TEST);
     }
 
     private void updateGridRenderer() {
@@ -780,99 +795,46 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         }
 
         MapType mapType = new MapType(frontier.getMapSlice() == FrontierOverlay.SurfaceSlice ? Name.day : Name.underground,
-                Integer.valueOf(frontier.getMapSlice()), frontier.getDimension());
+                frontier.getMapSlice(), frontier.getDimension());
         state.setMapType(mapType);
-        state.refresh(mc, mc.player, miniMapProperties);
+        state.refresh(minecraft, minecraft.player, miniMapProperties);
+        state.setZoom(0);
         gridRenderer.clear();
         gridRenderer.setContext(state.getWorldDir(), mapType);
         gridRenderer.center(state.getWorldDir(), mapType, center.getX(), center.getZ(), state.getZoom());
 
-        boolean highQuality = Journeymap.getClient().getCoreProperties().tileHighDisplayQuality.get().booleanValue();
-        gridRenderer.updateTiles(mapType, state.getZoom(), highQuality, mc.displayWidth, mc.displayHeight, true, 0.0, 0.0);
+        int displayWidth = minecraft.getWindow().getWidth();
+        int displayHeight = minecraft.getWindow().getHeight();
+        boolean highQuality = JourneymapClient.getInstance().getCoreProperties().tileHighDisplayQuality.get();
+        gridRenderer.updateTiles(mapType, state.getZoom(), highQuality, displayWidth, displayHeight, true, 0.0, 0.0);
+        gridRenderer.updateUIState(true);
     }
 
-    private void updateIndexEntries() {
-        buttonList.removeAll(indexEntryButtons);
-        indexEntryButtons.clear();
-
-        frontiersPageStart = ((frontiersOverlayManager.getFrontierCount(dimension) - 1) / 6 + 1) / 2 + 1;
-
-        int offsetFromScreenLeft = (width - bookImageWidth) / 2;
-        int offsetFromScreenTop = (height - bookImageHeight) / 2;
-        int posX = offsetFromScreenLeft + bookImageWidth / 2 + 10;
-        int posY = offsetFromScreenTop + 35;
-        int id = 100;
-        int page = frontiersPageStart;
-        int count = 0;
-        boolean rightPage = true;
-        for (FrontierOverlay frontier : frontiersOverlayManager.getAllFrontiers(dimension)) {
-            String name1 = frontier.getName1();
-            String name2 = frontier.getName2();
-
-            if (name1.isEmpty() && name2.isEmpty()) {
-                name1 = I18n.format("mapfrontiers.index_unnamed_1", TextFormatting.ITALIC);
-                name2 = I18n.format("mapfrontiers.index_unnamed_2", TextFormatting.ITALIC);
-            }
-
-            IndexEntryButton button = new IndexEntryButton(id, posX, posY, bookImageWidth / 2 - 20, page, name1, name2,
-                    frontier.getColor(), rightPage);
-            button.visible = false;
-            indexEntryButtons.add(button);
-            buttonList.add(button);
-
-            ++id;
-            ++page;
-            posY += 21;
-            ++count;
-            if (count % 6 == 0) {
-                posY = offsetFromScreenTop + 35;
-                if (rightPage) {
-                    posX = offsetFromScreenLeft + 10;
-                    rightPage = false;
-                } else {
-                    posX = offsetFromScreenLeft + bookImageWidth / 2 + 10;
-                    rightPage = true;
-                }
-            }
-        }
-    }
-
-    private void beginStencil(double x, double y, double width, double height) {
-        GL11.glEnable(GL11.GL_STENCIL_TEST);
-        GlStateManager.colorMask(false, false, false, false);
-        GL11.glStencilFunc(GL11.GL_NEVER, 1, 0xff);
-        GL11.glStencilOp(GL11.GL_REPLACE, GL11.GL_KEEP, GL11.GL_KEEP);
-        GL11.glStencilMask(0xff);
-        GlStateManager.clear(GL11.GL_STENCIL_BUFFER_BIT);
-        DrawUtil.drawRectangle(x, y, width, height, 0xffffff, 1.0f);
-        GlStateManager.colorMask(true, true, true, true);
-        GL11.glStencilMask(0x00);
-        GL11.glStencilFunc(GL11.GL_EQUAL, 1, 0xff);
-    }
-
-    private void endStencil() {
-        GL11.glDisable(GL11.GL_STENCIL_TEST);
-    }
-
-    private void drawMap() {
+    private void drawMap(MatrixStack matrixStack, int mouseX, int mouseY) {
         double x = width / 2 - bookImageWidth / 4;
         double y = height / 2;
-        beginStencil(x - 50.0, y - 50.0, 100.0, 100.0);
+        int displayWidth = minecraft.getWindow().getWidth();
+        int displayHeight = minecraft.getWindow().getHeight();
 
-        GlStateManager.pushMatrix();
-        GlStateManager.translate(-bookImageWidth / 4, 0.0, 0.0);
-        GlStateManager.scale(1.0 / zoom, 1.0 / zoom, 1.0);
-        double zoomFactor = zoom / 2.0 - 0.5;
-        GlStateManager.translate((width - mc.displayWidth) / 2, (height - mc.displayHeight) / 2, 0.0);
-        GlStateManager.translate(width * zoomFactor, height * zoomFactor, 0.0);
-        gridRenderer.draw(1.f, 0.0, 0.0, miniMapProperties.showGrid.get().booleanValue());
-        List<DrawStep> drawSteps = new ArrayList<DrawStep>();
+        beginStencil(matrixStack, x - 50.0, y - 50.0, 100.0, 100.0);
+
+        GL11.glPushMatrix();
+        GL11.glTranslated(-bookImageWidth / 4, 0.0, 0.0);
+        GL11.glTranslated((width - displayWidth) / 2.0, (height - displayHeight) / 2.0, 0.0);
+
+        GL11.glTranslated(displayWidth / 2.0, displayHeight / 2.0, 0.0);
+        GL11.glScaled(1.0 / zoom, 1.0 / zoom, 1.0);
+        GL11.glTranslated(-displayWidth / 2.0, -displayHeight / 2.0, 0.0);
+
+        gridRenderer.draw(matrixStack, 1.f, 1.f, 0.0, 0.0, miniMapProperties.showGrid.get());
+        List<DrawStep> drawSteps = new ArrayList<>();
         ClientAPI.INSTANCE.getDrawSteps(drawSteps, gridRenderer.getUIState());
-        gridRenderer.draw(drawSteps, 0.0, 0.0, 1, 0);
-        GlStateManager.popMatrix();
+        gridRenderer.draw(matrixStack, drawSteps, 0.0, 0.0, 1, 0);
+
+        GL11.glPopMatrix();
 
         endStencil();
-        GlStateManager.color(1.f, 1.f, 1.f);
+        RenderSystem.color3f(1.f, 1.f, 1.f);
     }
 
     private void resetLabels() {
@@ -884,25 +846,23 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         int rightPageCornerY = (height - bookImageHeight) / 2;
 
         if (isInFrontierPage()) {
-            String frontierNumber = I18n.format("mapfrontiers.frontier_number", getCurrentFrontierIndex() + 1,
-                    frontiersOverlayManager.getFrontierCount(dimension));
-            labelFrontiernumber = new GuiSimpleLabel(mc.fontRenderer, offsetFromScreenLeft + bookImageWidth - 28,
+            ITextComponent frontierNumber = new TranslationTextComponent("mapfrontiers.frontier_number",
+                    getCurrentFrontierIndex() + 1, frontiersOverlayManager.getFrontierCount(dimension));
+            labelFrontiernumber = new GuiSimpleLabel(font, offsetFromScreenLeft + bookImageWidth - 28,
                     offsetFromScreenTop + bookImageHeight - 15, GuiSimpleLabel.Align.Right, frontierNumber);
             labels.add(labelFrontiernumber);
 
-            String color = I18n.format("mapfrontiers.color");
-            labels.add(new GuiSimpleLabel(mc.fontRenderer, rightPageCornerX + 13, rightPageCornerY + 20,
-                    GuiSimpleLabel.Align.Left, color));
+            ITextComponent color = new TranslationTextComponent("mapfrontiers.color");
+            labels.add(new GuiSimpleLabel(font, rightPageCornerX + 13, rightPageCornerY + 20, GuiSimpleLabel.Align.Left, color));
 
             FrontierOverlay frontier = getCurrentFrontier();
 
-            String area = I18n.format("mapfrontiers.area", frontier.area);
-            labels.add(new GuiSimpleLabel(mc.fontRenderer, rightPageCornerX + 13, rightPageCornerY + 40,
-                    GuiSimpleLabel.Align.Left, area));
+            ITextComponent area = new TranslationTextComponent("mapfrontiers.area", frontier.area);
+            labels.add(new GuiSimpleLabel(font, rightPageCornerX + 13, rightPageCornerY + 40, GuiSimpleLabel.Align.Left, area));
 
-            String perimeter = I18n.format("mapfrontiers.perimeter", frontier.perimeter);
-            labels.add(new GuiSimpleLabel(mc.fontRenderer, rightPageCornerX + 13, rightPageCornerY + 52,
-                    GuiSimpleLabel.Align.Left, perimeter));
+            ITextComponent perimeter = new TranslationTextComponent("mapfrontiers.perimeter", frontier.perimeter);
+            labels.add(
+                    new GuiSimpleLabel(font, rightPageCornerX + 13, rightPageCornerY + 52, GuiSimpleLabel.Align.Left, perimeter));
 
             String ownerString;
             if (!StringUtils.isBlank(frontier.getOwner().username)) {
@@ -911,11 +871,10 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                 ownerString = frontier.getOwner().uuid.toString();
                 ownerString = ownerString.substring(0, 14) + '\n' + ownerString.substring(14);
             } else {
-                ownerString = I18n.format("mapfrontiers.unknown", TextFormatting.ITALIC);
+                ownerString = I18n.get("mapfrontiers.unknown", TextFormatting.ITALIC);
             }
-            String owner = I18n.format("mapfrontiers.owner", ownerString);
-            labels.add(new GuiSimpleLabel(mc.fontRenderer, rightPageCornerX + 13, rightPageCornerY + 64,
-                    GuiSimpleLabel.Align.Left, owner));
+            ITextComponent owner = new TranslationTextComponent("mapfrontiers.owner", ownerString);
+            labels.add(new GuiSimpleLabel(font, rightPageCornerX + 13, rightPageCornerY + 64, GuiSimpleLabel.Align.Left, owner));
 
             if (personal) {
                 int sharedCount = 0;
@@ -923,19 +882,19 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                     sharedCount = frontier.getUsersShared().size();
                 }
 
-                String shared = I18n.format("mapfrontiers.shared", sharedCount);
-                labels.add(new GuiSimpleLabel(mc.fontRenderer, rightPageCornerX + 13, rightPageCornerY + 76,
-                        GuiSimpleLabel.Align.Left, shared));
+                ITextComponent shared = new TranslationTextComponent("mapfrontiers.shared", sharedCount);
+                labels.add(new GuiSimpleLabel(font, rightPageCornerX + 13, rightPageCornerY + 76, GuiSimpleLabel.Align.Left,
+                        shared));
             }
 
-            SettingsUser playerUser = new SettingsUser(Minecraft.getMinecraft().player);
+            SettingsUser playerUser = new SettingsUser(minecraft.player);
             boolean isOwner = frontier.getOwner().equals(playerUser);
             boolean canUpdate = false;
 
             if (personal) {
                 canUpdate = frontier.checkActionUserShared(playerUser, SettingsUserShared.Action.UpdateFrontier);
             } else {
-                SettingsProfile profile = ((ClientProxy) MapFrontiers.proxy).getSettingsProfile();
+                SettingsProfile profile = ClientProxy.getSettingsProfile();
                 if (profile.updateFrontier == SettingsProfile.State.Enabled
                         || (isOwner && profile.updateFrontier == SettingsProfile.State.Owner)) {
                     canUpdate = true;
@@ -944,33 +903,35 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
 
             if (dimension == currentDimension && canUpdate) {
                 if (frontier.getSelectedVertexIndex() >= 0) {
-                    String vertex = I18n.format("mapfrontiers.vertex_number", frontier.getSelectedVertexIndex() + 1,
-                            frontier.getVertexCount());
-                    vertex += String.format("\nX: %1$d  Z: %2$d", frontier.getSelectedVertex().getX(),
-                            frontier.getSelectedVertex().getZ());
-                    labels.add(new GuiSimpleLabel(mc.fontRenderer, offsetFromScreenLeft + bookImageWidth / 4,
-                            rightPageCornerY + 150, GuiSimpleLabel.Align.Center, vertex));
+                    TranslationTextComponent vertex = new TranslationTextComponent("mapfrontiers.vertex_number",
+                            frontier.getSelectedVertexIndex() + 1, frontier.getVertexCount());
+                    vertex.append(String.format("\nX: %1$d  Z: %2$d", frontier.getSelectedVertex().getX(),
+                            frontier.getSelectedVertex().getZ()));
+                    labels.add(new GuiSimpleLabel(font, offsetFromScreenLeft + bookImageWidth / 4, rightPageCornerY + 150,
+                            GuiSimpleLabel.Align.Center, vertex));
                 } else if (frontier.getVertexCount() > 0) {
-                    String vertex = I18n.format("mapfrontiers.no_vertex_selected", TextFormatting.ITALIC);
-                    labels.add(new GuiSimpleLabel(mc.fontRenderer, offsetFromScreenLeft + bookImageWidth / 4,
-                            rightPageCornerY + 150, GuiSimpleLabel.Align.Center, vertex));
+                    ITextComponent vertex = new TranslationTextComponent("mapfrontiers.no_vertex_selected",
+                            TextFormatting.ITALIC);
+                    labels.add(new GuiSimpleLabel(font, offsetFromScreenLeft + bookImageWidth / 4, rightPageCornerY + 150,
+                            GuiSimpleLabel.Align.Center, vertex));
                 }
             }
         } else {
             if (currPage > 0) {
-                String index = I18n.format("mapfrontiers.index_number", currPage * 2, TextFormatting.BOLD);
-                labels.add(new GuiSimpleLabel(mc.fontRenderer, offsetFromScreenLeft + bookImageWidth / 4, rightPageCornerY + 18,
+                ITextComponent index = new TranslationTextComponent("mapfrontiers.index_number", currPage * 2,
+                        TextFormatting.BOLD);
+                labels.add(new GuiSimpleLabel(font, offsetFromScreenLeft + bookImageWidth / 4, rightPageCornerY + 18,
                         GuiSimpleLabel.Align.Center, index));
             }
 
             if (currPage < frontiersPageStart - 1 || (frontiersOverlayManager.getFrontierCount(dimension) - 1) / 6 % 2 == 0) {
-                String index;
+                ITextComponent index;
                 if (currPage > 0) {
-                    index = I18n.format("mapfrontiers.index_number", currPage * 2 + 1, TextFormatting.BOLD);
+                    index = new TranslationTextComponent("mapfrontiers.index_number", currPage * 2 + 1, TextFormatting.BOLD);
                 } else {
-                    index = I18n.format("mapfrontiers.index", TextFormatting.BOLD);
+                    index = new TranslationTextComponent("mapfrontiers.index", TextFormatting.BOLD);
                 }
-                labels.add(new GuiSimpleLabel(mc.fontRenderer, rightPageCornerX + bookImageWidth / 4, rightPageCornerY + 18,
+                labels.add(new GuiSimpleLabel(font, rightPageCornerX + bookImageWidth / 4, rightPageCornerY + 18,
                         GuiSimpleLabel.Align.Center, index));
             }
         }
@@ -979,17 +940,17 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     private void resetTextColor() {
         if (isInFrontierPage()) {
             FrontierOverlay frontier = getCurrentFrontier();
-            textRed.setText((frontier.getColor() & 0xff0000) >> 16);
-            textGreen.setText((frontier.getColor() & 0x00ff00) >> 8);
-            textBlue.setText(frontier.getColor() & 0x0000ff);
+            textRed.setValue((frontier.getColor() & 0xff0000) >> 16);
+            textGreen.setValue((frontier.getColor() & 0x00ff00) >> 8);
+            textBlue.setValue(frontier.getColor() & 0x0000ff);
         }
     }
 
     private void resetTextName() {
         if (isInFrontierPage()) {
             FrontierOverlay frontier = getCurrentFrontier();
-            textName1.setText(frontier.getName1());
-            textName2.setText(frontier.getName2());
+            textName1.setValue(frontier.getName1());
+            textName2.setValue(frontier.getName2());
 
             String suffix = "";
             if (ConfigData.nameVisibility != ConfigData.NameVisibility.Manual) {
@@ -997,9 +958,9 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             }
 
             if (frontier.getNameVisible()) {
-                buttonNameVisible.setText(I18n.format("mapfrontiers.show_name") + suffix);
+                buttonNameVisible.setMessage(new TranslationTextComponent("mapfrontiers.show_name").append(suffix));
             } else {
-                buttonNameVisible.setText(I18n.format("mapfrontiers.hide_name") + suffix);
+                buttonNameVisible.setMessage(new TranslationTextComponent("mapfrontiers.hide_name").append(suffix));
             }
         }
     }
@@ -1008,9 +969,9 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         if (isInFrontierPage()) {
             FrontierOverlay frontier = getCurrentFrontier();
             if (frontier.getClosed()) {
-                buttonFinish.setText(I18n.format("mapfrontiers.reopen"));
+                buttonFinish.setMessage(new TranslationTextComponent("mapfrontiers.reopen"));
             } else {
-                buttonFinish.setText(I18n.format("mapfrontiers.finish"));
+                buttonFinish.setMessage(new TranslationTextComponent("mapfrontiers.finish"));
             }
         }
     }
@@ -1024,9 +985,9 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                     suffix += " " + GuiColors.WARNING + "!";
                 }
 
-                buttonBanner.setText(I18n.format("mapfrontiers.assign_banner") + suffix);
+                buttonBanner.setMessage(new TranslationTextComponent("mapfrontiers.assign_banner").append(suffix));
             } else {
-                buttonBanner.setText(I18n.format("mapfrontiers.remove_banner"));
+                buttonBanner.setMessage(new TranslationTextComponent("mapfrontiers.remove_banner"));
             }
         }
     }
@@ -1045,11 +1006,11 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
         buttonNextPage.visible = (currPage < getPageCount() - 1);
         buttonPreviousPage.visible = currPage > 0;
 
-        SettingsProfile profile = ((ClientProxy) MapFrontiers.proxy).getSettingsProfile();
+        SettingsProfile profile = ClientProxy.getSettingsProfile();
         FrontierOverlay frontier = null;
-        SettingsUser playerUser = new SettingsUser(Minecraft.getMinecraft().player);
+        SettingsUser playerUser = new SettingsUser(minecraft.player);
         boolean isOwner = false;
-        boolean canCreate = false;
+        boolean canCreate;
         boolean canDelete = false;
         boolean canUpdate = false;
 
@@ -1083,11 +1044,17 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             buttonNameVisible.visible = canUpdate;
             buttonEditShareSettings.visible = personal;
 
-            textRed.setEnabled(canUpdate);
-            textGreen.setEnabled(canUpdate);
-            textBlue.setEnabled(canUpdate);
-            textName1.setEnabled(canUpdate);
-            textName2.setEnabled(canUpdate);
+            textRed.active = canUpdate;
+            textGreen.active = canUpdate;
+            textBlue.active = canUpdate;
+            textName1.active = canUpdate;
+            textName2.active = canUpdate;
+
+            textRed.visible = true;
+            textGreen.visible = true;
+            textBlue.visible = true;
+            textName1.visible = true;
+            textName2.visible = true;
 
             if (canUpdate && frontier.getVertexCount() > 0) {
                 buttonSliceUp.visible = frontier.getMapSlice() < 16;
@@ -1109,6 +1076,11 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
             buttonSliceDown.visible = false;
             sliderSlice.visible = false;
             buttonEditShareSettings.visible = false;
+            textRed.visible = false;
+            textGreen.visible = false;
+            textBlue.visible = false;
+            textName1.visible = false;
+            textName2.visible = false;
             for (int i = 0; i < indexEntryButtons.size(); ++i) {
                 if (i >= currPage * 12 - 6 && i < currPage * 12 + 6) {
                     indexEntryButtons.get(i).visible = true;
@@ -1163,9 +1135,9 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
                 labels.remove(labelFrontiernumber);
             }
 
-            String frontierNumber = I18n.format("mapfrontiers.frontier_number", getCurrentFrontierIndex() + 1,
-                    frontiersOverlayManager.getFrontierCount(dimension));
-            labelFrontiernumber = new GuiSimpleLabel(mc.fontRenderer, offsetFromScreenLeft + bookImageWidth - 28,
+            ITextComponent frontierNumber = new TranslationTextComponent("mapfrontiers.frontier_number",
+                    getCurrentFrontierIndex() + 1, frontiersOverlayManager.getFrontierCount(dimension));
+            labelFrontiernumber = new GuiSimpleLabel(font, offsetFromScreenLeft + bookImageWidth - 28,
                     offsetFromScreenTop + bookImageHeight - 15, GuiSimpleLabel.Align.Right, frontierNumber);
             labels.add(labelFrontiernumber);
         }
@@ -1174,6 +1146,7 @@ public class GuiFrontierBook extends GuiScreen implements TextColorBox.TextColor
     private void changeDeleteBookmarkPosition(DeleteBookmarkPosition newPosition) {
         deleteBookmarkPosition = newPosition;
         buttonDelete.changePosition(deleteBookmarkPosition.ordinal());
+        buttonDeleteConfirm.active = deleteBookmarkPosition == DeleteBookmarkPosition.Open;
     }
 
     private int getPageCount() {

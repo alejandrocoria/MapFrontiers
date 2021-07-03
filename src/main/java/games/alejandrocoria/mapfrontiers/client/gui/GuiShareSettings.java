@@ -1,15 +1,15 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import net.minecraft.client.gui.widget.TextFieldWidget;
 import org.apache.commons.lang3.StringUtils;
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
+
+import com.mojang.blaze3d.matrix.MatrixStack;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
@@ -20,60 +20,66 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketRemoveSharedUserPe
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateSharedUserPersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.network.NetHandlerPlayClient;
-import net.minecraft.client.network.NetworkPlayerInfo;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.widget.Widget;
+import net.minecraft.client.network.play.ClientPlayNetHandler;
+import net.minecraft.client.network.play.NetworkPlayerInfo;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.util.RegistryKey;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.world.World;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import org.lwjgl.glfw.GLFW;
 
 @ParametersAreNonnullByDefault
-@SideOnly(Side.CLIENT)
-public class GuiShareSettings extends GuiScreen
+@OnlyIn(Dist.CLIENT)
+public class GuiShareSettings extends Screen
         implements GuiScrollBox.ScrollBoxResponder, GuiUserSharedElement.UserSharedResponder, TextBox.TextBoxResponder {
     private static final int guiTextureSize = 512;
 
-    private ResourceLocation guiTexture;
-    private GuiFrontierBook parent;
-    private FrontiersOverlayManager frontiersOverlayManager;
+    private final ResourceLocation guiTexture;
+    private final GuiFrontierBook parent;
+    private final FrontiersOverlayManager frontiersOverlayManager;
     private FrontierOverlay frontier;
     private GuiScrollBox users;
     private TextUserBox textNewUser;
     private GuiButtonIcon buttonNewUser;
-    private List<GuiSimpleLabel> labels;
+    private final List<GuiSimpleLabel> labels;
     private boolean canUpdate;
     private int ticksSinceLastUpdate = 0;
-    private int id = 0;
 
     public GuiShareSettings(GuiFrontierBook parent, FrontiersOverlayManager frontiersOverlayManager, FrontierOverlay frontier) {
+        super(StringTextComponent.EMPTY);
         this.parent = parent;
         this.frontiersOverlayManager = frontiersOverlayManager;
         this.frontier = frontier;
 
         guiTexture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/gui.png");
-        labels = new ArrayList<GuiSimpleLabel>();
+        labels = new ArrayList<>();
     }
 
     @Override
-    public void initGui() {
-        Keyboard.enableRepeatEvents(true);
+    public void init() {
+        minecraft.keyboardHandler.setSendRepeatsToGui(true);
 
-        users = new GuiScrollBox(++id, width / 2 - 215, 82, 430, height - 128, 16, this);
+        users = new GuiScrollBox(width / 2 - 215, 82, 430, height - 128, 16, this);
 
-        textNewUser = new TextUserBox(++id, mc, fontRenderer, width / 2 - 125, height - 61, 238,
-                I18n.format("mapfrontiers.new_user"));
-        textNewUser.setMaxStringLength(38);
+        textNewUser = new TextUserBox(minecraft, font, width / 2 - 125, height - 61, 238, I18n.get("mapfrontiers.new_user"));
+        textNewUser.setMaxLength(38);
         textNewUser.setResponder(this);
         textNewUser.setCentered(false);
         textNewUser.setFrame(true);
 
-        buttonNewUser = new GuiButtonIcon(++id, width / 2 + 114, height - 61, 13, 13, 494, 119, -23, guiTexture, guiTextureSize);
+        buttonNewUser = new GuiButtonIcon(width / 2 + 114, height - 61, 13, 13, 494, 119, -23, guiTexture, guiTextureSize,
+                (button) -> buttonNewUserPressed());
         buttonNewUser.visible = false;
 
-        buttonList.add(buttonNewUser);
+        addButton(buttonNewUser);
+        addButton(users);
+        addButton(textNewUser);
 
         updateCanUpdate();
         updateButtonsVisibility();
@@ -81,13 +87,13 @@ public class GuiShareSettings extends GuiScreen
     }
 
     @Override
-    public void updateScreen() {
+    public void tick() {
         ++ticksSinceLastUpdate;
 
         if (ticksSinceLastUpdate >= 100) {
             ticksSinceLastUpdate = 0;
 
-            NetHandlerPlayClient handler = mc.getConnection();
+            ClientPlayNetHandler handler = minecraft.getConnection();
             if (handler == null) {
                 return;
             }
@@ -108,15 +114,15 @@ public class GuiShareSettings extends GuiScreen
                     continue;
                 }
 
-                if (networkplayerinfo.getResponseTime() < 0) {
+                if (networkplayerinfo.getLatency() < 0) {
                     userElement.setPingBar(0);
-                } else if (networkplayerinfo.getResponseTime() < 150) {
+                } else if (networkplayerinfo.getLatency() < 150) {
                     userElement.setPingBar(5);
-                } else if (networkplayerinfo.getResponseTime() < 300) {
+                } else if (networkplayerinfo.getLatency() < 300) {
                     userElement.setPingBar(4);
-                } else if (networkplayerinfo.getResponseTime() < 600) {
+                } else if (networkplayerinfo.getLatency() < 600) {
                     userElement.setPingBar(3);
-                } else if (networkplayerinfo.getResponseTime() < 1000) {
+                } else if (networkplayerinfo.getLatency() < 1000) {
                     userElement.setPingBar(2);
                 } else {
                     userElement.setPingBar(1);
@@ -126,155 +132,114 @@ public class GuiShareSettings extends GuiScreen
     }
 
     @Override
-    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        parent.drawScreen(-1, -1, partialTicks);
+    public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+        parent.render(matrixStack, -1, -1, partialTicks);
 
-        drawDefaultBackground();
-
-        users.drawBox(mc, mouseX, mouseY);
-
-        if (canUpdate) {
-            textNewUser.drawTextBox(mouseX, mouseY);
-        }
+        renderBackground(matrixStack);
 
         for (GuiSimpleLabel label : labels) {
-            label.drawLabel(mc, mouseX, mouseY);
+            label.render(matrixStack, mouseX, mouseY, partialTicks);
         }
 
-        super.drawScreen(mouseX, mouseY, partialTicks);
+        super.render(matrixStack, mouseX, mouseY, partialTicks);
     }
 
     @Override
-    public void handleMouseInput() throws IOException {
-        super.handleMouseInput();
-        int i = -Mouse.getEventDWheel();
-
-        if (i != 0) {
-            i = Integer.signum(i);
-            users.scroll(i);
-        }
-    }
-
-    @Override
-    protected void mouseClicked(int x, int y, int btn) throws IOException {
-        if (btn == 0) {
-            users.mousePressed(mc, x, y);
-            textNewUser.mouseClicked(x, y, btn);
-        }
-
-        super.mouseClicked(x, y, btn);
-    }
-
-    @Override
-    protected void mouseReleased(int x, int y, int state) {
-        if (state == 0) {
-            users.mouseReleased(mc, x, y);
-        }
-
-        super.mouseReleased(x, y, state);
-    }
-
-    @Override
-    protected void mouseClickMove(int x, int y, int btn, long timeSinceLastClick) {
-        if (btn == 0) {
-            users.mouseClickMove(mc, x, y);
-        }
-
-        super.mouseClickMove(x, y, btn, timeSinceLastClick);
-    }
-
-    @Override
-    protected void keyTyped(char typedChar, int keyCode) throws IOException {
-        if (keyCode == Keyboard.KEY_ESCAPE) {
-            Minecraft.getMinecraft().displayGuiScreen(parent);
+    public boolean keyPressed(int key, int value, int modifier) {
+        if (key == GLFW.GLFW_KEY_E && !(getFocused() instanceof TextFieldWidget)) {
+            onClose();
+            return true;
         } else {
-            super.keyTyped(typedChar, keyCode);
-            textNewUser.textboxKeyTyped(typedChar, keyCode);
+            return super.keyPressed(key, value, modifier);
         }
     }
 
     @Override
-    protected void actionPerformed(GuiButton button) {
-        if (button == buttonNewUser) {
-            SettingsUser user = new SettingsUser();
-
-            String usernameOrUUID = textNewUser.getText();
-            if (StringUtils.isBlank(usernameOrUUID)) {
-                return;
-            } else if (usernameOrUUID.length() < 28) {
-                user.username = usernameOrUUID;
-                user.fillMissingInfo(false);
-            } else {
-                usernameOrUUID = usernameOrUUID.replaceAll("[^0-9a-fA-F]", "");
-                if (usernameOrUUID.length() != 32) {
-                    textNewUser.setError(I18n.format("mapfrontiers.new_user_error_uuid_size"));
-                    return;
-                }
-                usernameOrUUID = usernameOrUUID.toLowerCase();
-                String uuid = usernameOrUUID.substring(0, 8) + "-" + usernameOrUUID.substring(8, 12) + "-"
-                        + usernameOrUUID.substring(12, 16) + "-" + usernameOrUUID.substring(16, 20) + "-"
-                        + usernameOrUUID.substring(20, 32);
-
-                try {
-                    user.uuid = UUID.fromString(uuid);
-                    user.fillMissingInfo(true);
-                } catch (Exception e) {
-                    textNewUser.setError(I18n.format("mapfrontiers.new_user_error_uuid_format"));
-                    return;
-                }
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        for (Widget w : buttons) {
+            if (w instanceof GuiScrollBox) {
+                ((GuiScrollBox) w).mouseReleased();
             }
-
-            if (user.uuid == null) {
-                textNewUser.setError(I18n.format("mapfrontiers.new_user_shared_error_user_not_found"));
-                return;
-            }
-
-            NetHandlerPlayClient handler = mc.getConnection();
-            if (handler != null) {
-                if (handler.getPlayerInfo(user.uuid) == null) {
-                    textNewUser.setError(I18n.format("mapfrontiers.new_user_shared_error_user_not_found"));
-                    return;
-                }
-            }
-
-            if (user.username.equals(mc.player.getName())) {
-                textNewUser.setError(I18n.format("mapfrontiers.new_user_shared_error_self"));
-                return;
-            }
-
-            if (frontier.getOwner().equals(user)) {
-                textNewUser.setError(I18n.format("mapfrontiers.new_user_shared_error_owner"));
-                return;
-            }
-
-            if (frontier.hasUserShared(user)) {
-                textNewUser.setError(I18n.format("mapfrontiers.new_user_shared_error_user_repeated"));
-                return;
-            }
-
-            SettingsUserShared userShared = new SettingsUserShared(user, true);
-
-            frontier.addUserShared(userShared);
-            frontiersOverlayManager.clientShareFrontier(frontier.getId(), user);
-
-            GuiUserSharedElement element = new GuiUserSharedElement(fontRenderer, buttonList, id, userShared, canUpdate, true,
-                    this, guiTexture, guiTextureSize);
-            users.addElement(element);
-            users.scrollBottom();
-
-            textNewUser.setText("");
-            resetLabels();
         }
+
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    private void buttonNewUserPressed() {
+        SettingsUser user = new SettingsUser();
+
+        String usernameOrUUID = textNewUser.getValue();
+        if (StringUtils.isBlank(usernameOrUUID)) {
+            return;
+        } else if (usernameOrUUID.length() < 28) {
+            user.username = usernameOrUUID;
+            user.fillMissingInfo(false);
+        } else {
+            usernameOrUUID = usernameOrUUID.replaceAll("[^0-9a-fA-F]", "");
+            if (usernameOrUUID.length() != 32) {
+                textNewUser.setError(new TranslationTextComponent("mapfrontiers.new_user_error_uuid_size"));
+                return;
+            }
+            usernameOrUUID = usernameOrUUID.toLowerCase();
+            String uuid = usernameOrUUID.substring(0, 8) + "-" + usernameOrUUID.substring(8, 12) + "-"
+                    + usernameOrUUID.substring(12, 16) + "-" + usernameOrUUID.substring(16, 20) + "-"
+                    + usernameOrUUID.substring(20, 32);
+
+            try {
+                user.uuid = UUID.fromString(uuid);
+                user.fillMissingInfo(true);
+            } catch (Exception e) {
+                textNewUser.setError(new TranslationTextComponent("mapfrontiers.new_user_error_uuid_format"));
+                return;
+            }
+        }
+
+        if (user.uuid == null) {
+            textNewUser.setError(new TranslationTextComponent("mapfrontiers.new_user_shared_error_user_not_found"));
+            return;
+        }
+
+        ClientPlayNetHandler handler = minecraft.getConnection();
+        if (handler != null) {
+            if (handler.getPlayerInfo(user.uuid) == null) {
+                textNewUser.setError(new TranslationTextComponent("mapfrontiers.new_user_shared_error_user_not_found"));
+                return;
+            }
+        }
+
+        if (user.username.equals(minecraft.player.getGameProfile().getName())) {
+            textNewUser.setError(new TranslationTextComponent("mapfrontiers.new_user_shared_error_self"));
+            return;
+        }
+
+        if (frontier.getOwner().equals(user)) {
+            textNewUser.setError(new TranslationTextComponent("mapfrontiers.new_user_shared_error_owner"));
+            return;
+        }
+
+        if (frontier.hasUserShared(user)) {
+            textNewUser.setError(new TranslationTextComponent("mapfrontiers.new_user_shared_error_user_repeated"));
+            return;
+        }
+
+        SettingsUserShared userShared = new SettingsUserShared(user, true);
+
+        frontier.addUserShared(userShared);
+        frontiersOverlayManager.clientShareFrontier(frontier.getId(), user);
+
+        GuiUserSharedElement element = new GuiUserSharedElement(font, buttons, userShared, canUpdate, true, this, guiTexture,
+                guiTextureSize);
+        users.addElement(element);
+        users.scrollBottom();
+
+        textNewUser.setValue("");
+        resetLabels();
     }
 
     @Override
-    public void onGuiClosed() {
-        Keyboard.enableRepeatEvents(false);
-    }
-
-    @Override
-    public boolean doesGuiPauseGame() {
-        return true;
+    public void onClose() {
+        minecraft.keyboardHandler.setSendRepeatsToGui(false);
+        minecraft.setScreen(parent);
     }
 
     public void newFrontierMessage(FrontierOverlay frontierOverlay, int playerID) {
@@ -292,11 +257,11 @@ public class GuiShareSettings extends GuiScreen
         }
     }
 
-    public void deleteFrontierMessage(int index, int dimension, UUID frontierID, boolean personal, int playerID) {
+    public void deleteFrontierMessage(int index, RegistryKey<World> dimension, UUID frontierID, boolean personal, int playerID) {
         parent.deleteFrontierMessage(index, dimension, personal, playerID);
 
         if (frontierID.equals(frontier.getId())) {
-            mc.displayGuiScreen(parent);
+            minecraft.setScreen(parent);
         }
     }
 
@@ -305,34 +270,37 @@ public class GuiShareSettings extends GuiScreen
     }
 
     private void resetLabels() {
+        buttons.removeAll(labels);
+        children.removeAll(labels);
         labels.clear();
 
         if (!users.getElements().isEmpty()) {
             int x = width / 2 + 35;
-            labels.add(new GuiSimpleLabel(fontRenderer, x, 54, GuiSimpleLabel.Align.Center,
-                    I18n.format("mapfrontiers.update_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
-            labels.add(new GuiSimpleLabel(fontRenderer, x + 60, 54, GuiSimpleLabel.Align.Center,
-                    I18n.format("mapfrontiers.update_settings"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+            labels.add(new GuiSimpleLabel(font, x, 54, GuiSimpleLabel.Align.Center,
+                    new TranslationTextComponent("mapfrontiers.update_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+            labels.add(new GuiSimpleLabel(font, x + 60, 54, GuiSimpleLabel.Align.Center,
+                    new TranslationTextComponent("mapfrontiers.update_settings"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
         }
 
+        for (GuiSimpleLabel label : labels) {
+            addButton(label);
+        }
     }
 
     private void updateButtonsVisibility() {
         users.visible = true;
-
-        if (canUpdate) {
-            buttonNewUser.visible = true;
-        }
+        buttonNewUser.visible = canUpdate;
+        textNewUser.visible = canUpdate;
     }
 
     @Override
-    public void elementClicked(int id, ScrollElement element) {
+    public void elementClicked(GuiScrollBox scrollBox, ScrollElement element) {
 
     }
 
     @Override
-    public void elementDelete(int id, ScrollElement element) {
-        if (id == users.getId()) {
+    public void elementDelete(GuiScrollBox scrollBox, ScrollElement element) {
+        if (scrollBox == users) {
             SettingsUser user = ((GuiUserSharedElement) element).getUser();
             frontier.removeUserShared(user);
             PacketHandler.INSTANCE.sendToServer(new PacketRemoveSharedUserPersonalFrontier(frontier.getId(), user));
@@ -348,7 +316,7 @@ public class GuiShareSettings extends GuiScreen
             user.removeAction(action);
         }
 
-        if (user.getUser().equals(new SettingsUser(Minecraft.getMinecraft().player))) {
+        if (user.getUser().equals(new SettingsUser(minecraft.player))) {
             if (action == SettingsUserShared.Action.UpdateSettings) {
                 updateCanUpdate();
                 updateUsers();
@@ -362,23 +330,23 @@ public class GuiShareSettings extends GuiScreen
     }
 
     @Override
-    public void updatedValue(int id, String value) {
+    public void updatedValue(TextBox textBox, String value) {
 
     }
 
     @Override
-    public void lostFocus(int id, String value) {
+    public void lostFocus(TextBox textBox, String value) {
 
     }
 
     private void updateUsers() {
         users.removeAll();
 
-        SettingsUser player = new SettingsUser(mc.player);
+        SettingsUser player = new SettingsUser(minecraft.player);
         if (frontier.getUsersShared() != null) {
             for (SettingsUserShared user : frontier.getUsersShared()) {
-                users.addElement(new GuiUserSharedElement(fontRenderer, buttonList, id, user, canUpdate,
-                        !user.getUser().equals(player), this, guiTexture, guiTextureSize));
+                users.addElement(new GuiUserSharedElement(font, buttons, user, canUpdate, !user.getUser().equals(player), this,
+                        guiTexture, guiTextureSize));
             }
         }
 
@@ -386,6 +354,6 @@ public class GuiShareSettings extends GuiScreen
     }
 
     private void updateCanUpdate() {
-        canUpdate = frontier.checkActionUserShared(new SettingsUser(mc.player), SettingsUserShared.Action.UpdateSettings);
+        canUpdate = frontier.checkActionUserShared(new SettingsUser(minecraft.player), SettingsUserShared.Action.UpdateSettings);
     }
 }

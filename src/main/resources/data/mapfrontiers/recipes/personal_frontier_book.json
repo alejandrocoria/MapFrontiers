@@ -1,0 +1,29 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern":
+    [
+        " d ",
+        "cbc",
+        " d "
+    ],
+    "key":
+    {
+        "c":
+        {
+            "item": "minecraft:compass"
+        },
+        "b":
+        {
+            "item": "minecraft:writable_book"
+        },
+        "d":
+        {
+            "item": "minecraft:blue_dye"
+        }
+    },
+    "result":
+    {
+        "item": "mapfrontiers:personal_frontier_book",
+        "count": 1
+    }
+}

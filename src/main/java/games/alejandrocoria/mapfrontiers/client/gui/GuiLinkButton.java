@@ -7,30 +7,32 @@ import java.net.URISyntaxException;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
+
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiConfirmOpenLink;
-import net.minecraft.client.gui.GuiYesNoCallback;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.client.gui.screen.ConfirmOpenLinkScreen;
+import net.minecraft.client.gui.widget.Widget;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
-@SideOnly(Side.CLIENT)
-public class GuiLinkButton extends GuiButton {
-    private GuiYesNoCallback screen;
-    private GuiSimpleLabel label;
-    private String uri;
+@OnlyIn(Dist.CLIENT)
+public class GuiLinkButton extends Widget {
+    private final BooleanConsumer callbackFunction;
+    private final GuiSimpleLabel label;
+    private final String uri;
 
-    public GuiLinkButton(GuiYesNoCallback screen, int componentId, FontRenderer fontRenderer, int x, int y, String label,
-            String uri) {
-        super(componentId, x, y, fontRenderer.getStringWidth(label) + 8, 16, "");
-        this.screen = screen;
+    public GuiLinkButton(FontRenderer font, int x, int y, ITextComponent text, String uri,
+            BooleanConsumer callbackFunction) {
+        super(x, y, font.width(text.getString()) + 8, 16, text);
+        this.callbackFunction = callbackFunction;
         this.x -= width / 2;
-        this.label = new GuiSimpleLabel(fontRenderer, x, y + 5, GuiSimpleLabel.Align.Center, TextFormatting.UNDERLINE + label,
-                GuiColors.SETTINGS_BUTTON_TEXT);
+        this.label = new GuiSimpleLabel(font, x, y + 5, GuiSimpleLabel.Align.Center,
+                /* TextFormatting.UNDERLINE + */ text, GuiColors.SETTINGS_BUTTON_TEXT);
         this.uri = uri;
     }
 
@@ -43,29 +45,18 @@ public class GuiLinkButton extends GuiButton {
     }
 
     @Override
-    public void drawButton(Minecraft mc, int mouseX, int mouseY, float partialTicks) {
-        if (visible) {
-            hovered = (mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height);
-
-            if (hovered) {
-                label.setColor(GuiColors.SETTINGS_LINK_HIGHLIGHT);
-            } else {
-                label.setColor(GuiColors.SETTINGS_LINK);
-            }
-
-            label.drawLabel(mc, mouseX, mouseY);
+    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+        if (isHovered) {
+            label.setColor(GuiColors.SETTINGS_LINK_HIGHLIGHT);
         } else {
-            hovered = false;
+            label.setColor(GuiColors.SETTINGS_LINK);
         }
+
+        label.render(matrixStack, mouseX, mouseY, partialTicks);
     }
 
     @Override
-    public boolean mousePressed(Minecraft mc, int mouseX, int mouseY) {
-        if (enabled && visible && hovered) {
-            mc.displayGuiScreen(new GuiConfirmOpenLink(screen, uri, id, false));
-            return true;
-        }
-
-        return false;
+    public void onClick(double mouseX, double mouseY) {
+        Minecraft.getInstance().setScreen(new ConfirmOpenLinkScreen(callbackFunction, uri, false));
     }
 }

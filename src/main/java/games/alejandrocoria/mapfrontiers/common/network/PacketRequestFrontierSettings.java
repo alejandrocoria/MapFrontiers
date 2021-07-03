@@ -1,22 +1,20 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
+import java.util.function.Supplier;
+
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.network.PacketBuffer;
+import net.minecraftforge.fml.network.NetworkEvent;
 
 @ParametersAreNonnullByDefault
-public class PacketRequestFrontierSettings implements IMessage {
-    private int changeCounter;
+public class PacketRequestFrontierSettings {
+    private final int changeCounter;
 
     public PacketRequestFrontierSettings() {
         changeCounter = 0;
@@ -26,35 +24,32 @@ public class PacketRequestFrontierSettings implements IMessage {
         this.changeCounter = changeNonce;
     }
 
-    @Override
-    public void fromBytes(ByteBuf buf) {
-        changeCounter = buf.readInt();
+    public static PacketRequestFrontierSettings fromBytes(PacketBuffer buf) {
+        return new PacketRequestFrontierSettings(buf.readInt());
     }
 
-    @Override
-    public void toBytes(ByteBuf buf) {
-        buf.writeInt(changeCounter);
+    public static void toBytes(PacketRequestFrontierSettings packet, PacketBuffer buf) {
+        buf.writeInt(packet.changeCounter);
     }
 
-    public static class Handler implements IMessageHandler<PacketRequestFrontierSettings, IMessage> {
-        @Override
-        public IMessage onMessage(PacketRequestFrontierSettings message, MessageContext ctx) {
-            if (ctx.side == Side.SERVER) {
-                FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
-                    EntityPlayerMP player = ctx.getServerHandler().player;
-                    FrontierSettings settings = FrontiersManager.instance.getSettings();
-
-                    if (settings.checkAction(FrontierSettings.Action.UpdateSettings, new SettingsUser(player),
-                            MapFrontiers.proxy.isOPorHost(player), null) && settings.getChangeCounter() > message.changeCounter) {
-                        PacketHandler.INSTANCE.sendTo(new PacketFrontierSettings(settings), player);
-                    } else {
-                        PacketHandler.INSTANCE.sendTo(
-                                new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
-                    }
-                });
+    public static void handle(PacketRequestFrontierSettings message, Supplier<NetworkEvent.Context> ctx) {
+        NetworkEvent.Context context = ctx.get();
+        context.enqueueWork(() -> {
+            ServerPlayerEntity player = context.getSender();
+            if (player == null) {
+                return;
             }
 
-            return null;
-        }
+            FrontierSettings settings = FrontiersManager.instance.getSettings();
+
+            if (settings.checkAction(FrontierSettings.Action.UpdateSettings, new SettingsUser(player),
+                    MapFrontiers.isOPorHost(player), null) && settings.getChangeCounter() > message.changeCounter) {
+                PacketHandler.sendTo(new PacketFrontierSettings(settings), player);
+            } else {
+                PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)),
+                        player);
+            }
+        });
+        context.setPacketHandled(true);
     }
 }

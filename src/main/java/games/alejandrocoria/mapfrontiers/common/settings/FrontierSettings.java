@@ -7,10 +7,10 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
+import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.common.util.Constants;
 
 @ParametersAreNonnullByDefault
@@ -21,19 +21,19 @@ public class FrontierSettings {
         public final static Action[] valuesArray = values();
     }
 
-    private SettingsGroup OPs;
-    private SettingsGroup owners;
-    private SettingsGroup everyone;
+    private final SettingsGroup OPs;
+    private final SettingsGroup owners;
+    private final SettingsGroup everyone;
     private List<SettingsGroup> customGroups;
     private int changeCounter = 1;
 
-    private static final int dataVersion = 2;
+    private static final int dataVersion = 3;
 
     public FrontierSettings() {
         OPs = new SettingsGroup("OPs", true);
         owners = new SettingsGroup("Owner", true);
         everyone = new SettingsGroup("Everyone", true);
-        customGroups = new ArrayList<SettingsGroup>();
+        customGroups = new ArrayList<>();
     }
 
     public void resetToDefault() {
@@ -83,7 +83,7 @@ public class FrontierSettings {
             return true;
         }
 
-        if (owner != null && player.equals(owner) && owners.hasAction(action)) {
+        if (player.equals(owner) && owners.hasAction(action)) {
             return true;
         }
 
@@ -100,7 +100,7 @@ public class FrontierSettings {
         return false;
     }
 
-    public SettingsProfile getProfile(EntityPlayer player) {
+    public SettingsProfile getProfile(PlayerEntity player) {
         SettingsProfile profile = new SettingsProfile();
         SettingsUser user = new SettingsUser(player);
 
@@ -108,7 +108,7 @@ public class FrontierSettings {
             profile.setAction(action, SettingsProfile.State.Owner);
         }
 
-        if (MapFrontiers.proxy.isOPorHost(player)) {
+        if (MapFrontiers.isOPorHost(player)) {
             for (Action action : OPs.getActions()) {
                 profile.setAction(action, SettingsProfile.State.Enabled);
             }
@@ -133,70 +133,68 @@ public class FrontierSettings {
         return profile;
     }
 
-    public void readFromNBT(NBTTagCompound nbt) {
-        int version = nbt.getInteger("Version");
+    public void readFromNBT(CompoundNBT nbt) {
+        int version = nbt.getInt("Version");
         if (version == 0) {
-            MapFrontiers.LOGGER.warn("Data version in settings not found, expected " + String.valueOf(dataVersion));
+            MapFrontiers.LOGGER.warn("Data version in settings not found, expected " + dataVersion);
+        } else if (version < 3) {
+            MapFrontiers.LOGGER.warn("Data version in settings lower than expected. The mod uses " + dataVersion);
         } else if (version > dataVersion) {
             MapFrontiers.LOGGER
-                    .warn("Data version in settings higher than expected. The mod uses " + String.valueOf(dataVersion));
+                    .warn("Data version in settings higher than expected. The mod uses " + dataVersion);
         }
 
-        NBTTagCompound OPsTag = nbt.getCompoundTag("OPs");
+        CompoundNBT OPsTag = nbt.getCompound("OPs");
         OPs.readFromNBT(OPsTag);
 
-        NBTTagCompound ownersTag = nbt.getCompoundTag("Owners");
+        CompoundNBT ownersTag = nbt.getCompound("Owners");
         owners.readFromNBT(ownersTag);
 
-        NBTTagCompound everyoneTag = nbt.getCompoundTag("Everyone");
+        CompoundNBT everyoneTag = nbt.getCompound("Everyone");
         everyone.readFromNBT(everyoneTag);
 
         customGroups.clear();
-        NBTTagList customGroupsTagList = nbt.getTagList("customGroups", Constants.NBT.TAG_COMPOUND);
-        for (int i = 0; i < customGroupsTagList.tagCount(); ++i) {
+        ListNBT customGroupsTagList = nbt.getList("customGroups", Constants.NBT.TAG_COMPOUND);
+        for (int i = 0; i < customGroupsTagList.size(); ++i) {
             SettingsGroup group = new SettingsGroup();
-            NBTTagCompound groupTag = customGroupsTagList.getCompoundTagAt(i);
+            CompoundNBT groupTag = customGroupsTagList.getCompound(i);
             group.readFromNBT(groupTag);
             customGroups.add(group);
-        }
-
-        if (version < 2) {
-            everyone.addAction(Action.PersonalFrontier);
         }
 
         ensureUpdateSettingsAction();
     }
 
-    public void writeToNBT(NBTTagCompound nbt) {
-        NBTTagCompound OPsTag = new NBTTagCompound();
+    public void writeToNBT(CompoundNBT nbt) {
+        CompoundNBT OPsTag = new CompoundNBT();
         OPs.writeToNBT(OPsTag);
-        nbt.setTag("OPs", OPsTag);
+        nbt.put("OPs", OPsTag);
 
-        NBTTagCompound ownersTag = new NBTTagCompound();
+        CompoundNBT ownersTag = new CompoundNBT();
         owners.writeToNBT(ownersTag);
-        nbt.setTag("Owners", ownersTag);
+        nbt.put("Owners", ownersTag);
 
-        NBTTagCompound everyoneTag = new NBTTagCompound();
+        CompoundNBT everyoneTag = new CompoundNBT();
         everyone.writeToNBT(everyoneTag);
-        nbt.setTag("Everyone", everyoneTag);
+        nbt.put("Everyone", everyoneTag);
 
-        NBTTagList customGroupsTagList = new NBTTagList();
+        ListNBT customGroupsTagList = new ListNBT();
         for (SettingsGroup group : customGroups) {
-            NBTTagCompound groupTag = new NBTTagCompound();
+            CompoundNBT groupTag = new CompoundNBT();
             group.writeToNBT(groupTag);
-            customGroupsTagList.appendTag(groupTag);
+            customGroupsTagList.add(groupTag);
         }
-        nbt.setTag("customGroups", customGroupsTagList);
+        nbt.put("customGroups", customGroupsTagList);
 
-        nbt.setInteger("Version", dataVersion);
+        nbt.putInt("Version", dataVersion);
     }
 
-    public void fromBytes(ByteBuf buf) {
+    public void fromBytes(PacketBuffer buf) {
         OPs.fromBytes(buf);
         owners.fromBytes(buf);
         everyone.fromBytes(buf);
 
-        customGroups = new ArrayList<SettingsGroup>();
+        customGroups = new ArrayList<>();
         int groupsCount = buf.readInt();
         for (int i = 0; i < groupsCount; ++i) {
             SettingsGroup group = new SettingsGroup();
@@ -205,7 +203,7 @@ public class FrontierSettings {
         }
     }
 
-    public void toBytes(ByteBuf buf) {
+    public void toBytes(PacketBuffer buf) {
         OPs.toBytes(buf);
         owners.toBytes(buf);
         everyone.toBytes(buf);
@@ -217,7 +215,7 @@ public class FrontierSettings {
     }
 
     public static List<Action> getAvailableActions(String groupName) {
-        List<Action> actions = new ArrayList<Action>();
+        List<Action> actions = new ArrayList<>();
 
         if (!groupName.contentEquals("Owner")) {
             actions.add(Action.CreateFrontier);

@@ -7,31 +7,33 @@ import java.net.URISyntaxException;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.systems.RenderSystem;
+
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiConfirmOpenLink;
-import net.minecraft.client.gui.GuiYesNoCallback;
-import net.minecraft.client.gui.ScaledResolution;
-import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.gui.screen.ConfirmOpenLinkScreen;
+import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
-@SideOnly(Side.CLIENT)
-public class GuiPatreonButton extends GuiButton {
-    private GuiYesNoCallback screen;
+@OnlyIn(Dist.CLIENT)
+public class GuiPatreonButton extends Widget {
+    private final BooleanConsumer callbackFunction;
     private final int texX;
     private final int texY;
     private final ResourceLocation texture;
     private final int textureSize;
-    private String uri;
+    private final String uri;
 
-    public GuiPatreonButton(GuiYesNoCallback screen, int id, int x, int y, int width, int height, int texX, int texY,
-            ResourceLocation texture, int textureSize, String uri) {
-        super(id, x, y, width, height, "");
-        this.screen = screen;
+    public GuiPatreonButton(int x, int y, int width, int height, int texX, int texY, ResourceLocation texture, int textureSize,
+            String uri, BooleanConsumer callbackFunction) {
+        super(x, y, width, height, StringTextComponent.EMPTY);
+        this.callbackFunction = callbackFunction;
         this.texX = texX;
         this.texY = texY;
         this.texture = texture;
@@ -48,36 +50,31 @@ public class GuiPatreonButton extends GuiButton {
     }
 
     @Override
-    public void drawButton(Minecraft mc, int mouseX, int mouseY, float partialTicks) {
-        if (visible) {
-            ScaledResolution scaledresolution = new ScaledResolution(mc);
-            int factor = scaledresolution.getScaleFactor();
-
-            hovered = (mouseX >= x - width / 2 / factor && mouseY >= y + 1 / factor && mouseX < x + width / 2 / factor
-                    && mouseY < y + height / factor);
-
-            if (hovered) {
-                GlStateManager.color(.9f, .9f, .9f);
-            } else {
-                GlStateManager.color(1.f, 1.f, 1.f);
-            }
-
-            mc.getTextureManager().bindTexture(texture);
-
-            drawModalRectWithCustomSizedTexture(x - width / 2 / factor, y, texX / factor, texY / factor, width / factor,
-                    height / factor, textureSize / factor, textureSize / factor);
-        } else {
-            hovered = false;
-        }
+    protected boolean clicked(double mouseX, double mouseY) {
+        return this.active && this.visible && isHovered;
     }
 
     @Override
-    public boolean mousePressed(Minecraft mc, int mouseX, int mouseY) {
-        if (enabled && visible && hovered) {
-            mc.displayGuiScreen(new GuiConfirmOpenLink(screen, uri, id, false));
-            return true;
+    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+        Minecraft mc = Minecraft.getInstance();
+        int factor = (int) mc.getWindow().getGuiScale();
+
+        isHovered = (mouseX >= x - width / 2 / factor && mouseY >= y + 1 / factor && mouseX < x + width / 2 / factor
+                && mouseY < y + height / factor);
+
+        if (isHovered) {
+            RenderSystem.color3f(0.9f, 0.9f, 0.9f);
+        } else {
+            RenderSystem.color3f(1.f, 1.f, 1.f);
         }
 
-        return false;
+        mc.getTextureManager().bind(texture);
+        blit(matrixStack, x - width / 2 / factor, y, texX / factor, texY / factor, width / factor, height / factor,
+                textureSize / factor, textureSize / factor);
+    }
+
+    @Override
+    public void onClick(double mouseX, double mouseY) {
+        Minecraft.getInstance().setScreen(new ConfirmOpenLinkScreen(callbackFunction, uri, false));
     }
 }

@@ -2,33 +2,36 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import org.lwjgl.input.Keyboard;
+import org.lwjgl.glfw.GLFW;
+
+import com.mojang.blaze3d.matrix.MatrixStack;
 
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiTextField;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
-@SideOnly(Side.CLIENT)
-public class TextBox extends GuiTextField {
-    protected final FontRenderer fontRenderer;
+@OnlyIn(Dist.CLIENT)
+public class TextBox extends TextFieldWidget {
+    protected final FontRenderer font;
     private TextBoxResponder responder;
-    private String defaultText;
+    private final String defaultText;
     private boolean centered = true;
     private int color = GuiColors.SETTINGS_TEXT_BOX_TEXT;
     private int highlightedColor = GuiColors.SETTINGS_TEXT_BOX_TEXT_HIGHLIGHT;
     private boolean frame = false;
 
-    public TextBox(int componentId, FontRenderer fontRenderer, int x, int y, int width, String defaultText) {
-        super(componentId, fontRenderer, x, y, width, 12);
-        this.fontRenderer = fontRenderer;
+    public TextBox(FontRenderer font, int x, int y, int width, String defaultText) {
+        super(font, x, y, width, 12, StringTextComponent.EMPTY);
+        this.font = font;
         this.defaultText = defaultText;
     }
 
     public void setResponder(TextBoxResponder responderIn) {
         responder = responderIn;
+        this.setResponder((string) -> responder.updatedValue(this, string));
     }
 
     public void setCentered(boolean centered) {
@@ -49,23 +52,17 @@ public class TextBox extends GuiTextField {
         this.frame = frame;
     }
 
-    public void setText(Object object) {
-        this.setText(object.toString());
-
-        if (responder != null) {
-            responder.updatedValue(getId(), getText());
-        }
+    public void setValue(Object object) {
+        this.setValue(object.toString());
     }
 
     @Override
-    public boolean textboxKeyTyped(char typedChar, int keyCode) {
-        boolean res = super.textboxKeyTyped(typedChar, keyCode);
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        boolean res = super.keyPressed(keyCode, scanCode, modifiers);
 
         if (isFocused() && responder != null) {
-            if (keyCode == Keyboard.KEY_RETURN || keyCode == Keyboard.KEY_NUMPADENTER) {
-                setFocused(false);
-            } else {
-                responder.updatedValue(getId(), getText());
+            if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+                changeFocus(false);
             }
         }
 
@@ -73,57 +70,57 @@ public class TextBox extends GuiTextField {
     }
 
     @Override
-    public void drawTextBox() {
-        drawTextBox(-1, -1);
-    }
-
-    public void drawTextBox(int mouseX, int mouseY) {
+    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         if (isFocused()) {
-            super.drawTextBox();
+            super.renderButton(matrixStack, mouseX, mouseY, partialTicks);
         } else {
             boolean hovered = (mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height);
 
-            String text = getText();
+            String text = getValue();
             boolean empty = false;
             if (text.isEmpty()) {
                 text = defaultText;
                 empty = true;
             }
 
-            int widthOfString = fontRenderer.getStringWidth(text);
+            int widthOfString = font.width(text);
             int posX = x + 4;
             if (centered) {
                 posX = x - widthOfString / 2 + width / 2;
             }
 
             if (frame) {
-                Gui.drawRect(x - 1, y - 1, x + width + 1, y + height + 1, GuiColors.SETTINGS_TEXT_BOX_BORDER);
-                Gui.drawRect(x, y, x + width, y + height, GuiColors.SETTINGS_TEXT_BOX_BG);
+                fill(matrixStack, x - 1, y - 1, x + width + 1, y + height + 1, GuiColors.SETTINGS_TEXT_BOX_BORDER);
+                fill(matrixStack, x, y, x + width, y + height, GuiColors.SETTINGS_TEXT_BOX_BG);
             }
 
-            fontRenderer.drawString(text, posX, y + 2,
+            font.draw(matrixStack, text, posX, y + 2,
                     empty ? GuiColors.SETTINGS_TEXT_BOX_TEXT_DEFAULT : (hovered ? highlightedColor : color));
         }
     }
 
     @Override
     public void setFocused(boolean isFocusedIn) {
-        boolean lostFocus = false;
-        if (!isFocusedIn && isFocused()) {
-            lostFocus = true;
+        if (isFocused() && !isFocusedIn && responder != null) {
+            responder.lostFocus(this, getValue());
         }
 
         super.setFocused(isFocusedIn);
-
-        if (lostFocus && responder != null) {
-            responder.lostFocus(getId(), getText());
-        }
     }
 
-    @SideOnly(Side.CLIENT)
-    public interface TextBoxResponder {
-        public void updatedValue(int id, String value);
+    @Override
+    protected void onFocusedChanged(boolean focused) {
+        if (!focused && responder != null) {
+            responder.lostFocus(this, getValue());
+        }
 
-        public void lostFocus(int id, String value);
+        super.onFocusedChanged(focused);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public interface TextBoxResponder {
+        void updatedValue(TextBox textBox, String value);
+
+        void lostFocus(TextBox textBox, String value);
     }
 }

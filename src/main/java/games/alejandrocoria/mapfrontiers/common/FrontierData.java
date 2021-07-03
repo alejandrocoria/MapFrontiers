@@ -9,23 +9,25 @@ import java.util.UUID;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.item.EnumDyeColor;
-import net.minecraft.item.ItemBanner;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.item.BannerItem;
+import net.minecraft.item.DyeColor;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
 import net.minecraft.nbt.NBTUtil;
+import net.minecraft.network.PacketBuffer;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.RegistryKey;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants;
-import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
+import net.minecraftforge.fml.server.ServerLifecycleHooks;
 
 @ParametersAreNonnullByDefault
 public class FrontierData {
@@ -39,13 +41,13 @@ public class FrontierData {
     public static final int SurfaceSlice = 16;
 
     protected UUID id;
-    protected List<BlockPos> vertices = new ArrayList<BlockPos>();
+    protected List<BlockPos> vertices = new ArrayList<>();
     protected boolean closed = false;
     protected String name1 = "New";
     protected String name2 = "Frontier";
     protected boolean nameVisible = true;
-    protected int color = 0xffffff;
-    protected int dimension = 0;
+    protected int color = 0xffffffff;
+    protected RegistryKey<World> dimension;
     protected int mapSlice = NoSlice;
     protected SettingsUser owner = new SettingsUser();
     protected BannerData banner;
@@ -77,6 +79,8 @@ public class FrontierData {
         usersShared = other.usersShared;
 
         vertices = other.vertices;
+
+        changes = EnumSet.noneOf(Change.class);
     }
 
     public void updateFromData(FrontierData other) {
@@ -118,11 +122,12 @@ public class FrontierData {
 
     public void ensureOwner() {
         if (owner.isEmpty()) {
-            MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
+            MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
             if (server.isDedicatedServer()) {
-                owner = new SettingsUser(server.getServerOwner());
+                // @Incomplete: I can't find a way to get the server owner.
+                //owner = new SettingsUser(server.getServerOwner());
             } else {
-                List<EntityPlayerMP> playerList = server.getPlayerList().getPlayers();
+                List<ServerPlayerEntity> playerList = server.getPlayerList().getPlayers();
                 if (!playerList.isEmpty()) {
                     owner = new SettingsUser(playerList.get(0));
                 }
@@ -215,11 +220,11 @@ public class FrontierData {
         return color;
     }
 
-    public void setDimension(int dimension) {
+    public void setDimension(RegistryKey<World> dimension) {
         this.dimension = dimension;
     }
 
-    public int getDimension() {
+    public RegistryKey<World> getDimension() {
         return dimension;
     }
 
@@ -256,7 +261,7 @@ public class FrontierData {
 
     public void addUserShared(SettingsUserShared userShared) {
         if (usersShared == null) {
-            usersShared = new ArrayList<SettingsUserShared>();
+            usersShared = new ArrayList<>();
         }
 
         usersShared.add(userShared);
@@ -296,7 +301,7 @@ public class FrontierData {
             return;
         }
 
-        usersShared.removeIf(x -> x.isPending());
+        usersShared.removeIf(SettingsUserShared::isPending);
         changes.add(Change.Shared);
     }
 
@@ -357,107 +362,88 @@ public class FrontierData {
         return changes.contains(change);
     }
 
-    public void readFromNBT(NBTTagCompound nbt, int version) {
-        if (version >= 4) {
-            id = UUID.fromString(nbt.getString("id"));
-            dimension = nbt.getInteger("dimension");
-            personal = nbt.getBoolean("personal");
-        }
-
+    public void readFromNBT(CompoundNBT nbt, int version) {
+        id = UUID.fromString(nbt.getString("id"));
         closed = nbt.getBoolean("closed");
-        color = nbt.getInteger("color");
+        color = nbt.getInt("color");
+        dimension = RegistryKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation(nbt.getString("dimension")));
         name1 = nbt.getString("name1");
         name2 = nbt.getString("name2");
-        if (nbt.hasKey("nameVisible")) {
+        if (nbt.contains("nameVisible")) {
             nameVisible = nbt.getBoolean("nameVisible");
         }
-        mapSlice = nbt.getInteger("slice");
+        mapSlice = nbt.getInt("slice");
         mapSlice = Math.min(Math.max(mapSlice, -1), 16);
+        personal = nbt.getBoolean("personal");
 
         owner = new SettingsUser();
-        if (version == 1) {
-            if (nbt.hasKey("ownerUUID")) {
-                try {
-                    owner.uuid = UUID.fromString(nbt.getString("ownerUUID"));
-                } catch (Exception e) {
-                    MapFrontiers.LOGGER.error(e.getMessage(), e);
-                }
-            }
+        owner.readFromNBT(nbt.getCompound("owner"));
 
-            if (nbt.hasKey("ownerName")) {
-                owner.username = nbt.getString("ownerName");
-            }
-
-            owner.fillMissingInfo(true);
-        } else {
-            owner.readFromNBT(nbt.getCompoundTag("owner"));
-        }
-
-        if (nbt.hasKey("banner")) {
+        if (nbt.contains("banner")) {
             banner = new BannerData();
-            banner.readFromNBT(nbt.getCompoundTag("banner"));
+            banner.readFromNBT(nbt.getCompound("banner"));
         }
 
         if (personal) {
-            NBTTagList usersSharedTagList = nbt.getTagList("usersShared", Constants.NBT.TAG_COMPOUND);
-            if (!usersSharedTagList.hasNoTags()) {
-                usersShared = new ArrayList<SettingsUserShared>();
+            ListNBT usersSharedTagList = nbt.getList("usersShared", Constants.NBT.TAG_COMPOUND);
+            if (!usersSharedTagList.isEmpty()) {
+                usersShared = new ArrayList<>();
 
-                for (int i = 0; i < usersSharedTagList.tagCount(); ++i) {
+                for (int i = 0; i < usersSharedTagList.size(); ++i) {
                     SettingsUserShared userShared = new SettingsUserShared();
-                    userShared.readFromNBT(usersSharedTagList.getCompoundTagAt(i));
+                    userShared.readFromNBT(usersSharedTagList.getCompound(i));
                     usersShared.add(userShared);
                 }
             }
         }
 
-        NBTTagList verticesTagList = nbt.getTagList("vertices", Constants.NBT.TAG_COMPOUND);
-        for (int i = 0; i < verticesTagList.tagCount(); ++i) {
-            vertices.add(NBTUtil.getPosFromTag(verticesTagList.getCompoundTagAt(i)));
+        ListNBT verticesTagList = nbt.getList("vertices", Constants.NBT.TAG_COMPOUND);
+        for (int i = 0; i < verticesTagList.size(); ++i) {
+            vertices.add(NBTUtil.readBlockPos(verticesTagList.getCompound(i)));
         }
     }
 
-    public void writeToNBT(NBTTagCompound nbt) {
-        nbt.setString("id", id.toString());
-        nbt.setBoolean("closed", closed);
-        nbt.setInteger("color", color);
-        nbt.setInteger("dimension", dimension);
-        nbt.setString("name1", name1);
-        nbt.setString("name2", name2);
-        nbt.setBoolean("nameVisible", nameVisible);
-        nbt.setInteger("slice", mapSlice);
-        nbt.setBoolean("personal", personal);
+    public void writeToNBT(CompoundNBT nbt) {
+        nbt.putString("id", id.toString());
+        nbt.putBoolean("closed", closed);
+        nbt.putInt("color", color);
+        nbt.putString("dimension", dimension.location().toString());
+        nbt.putString("name1", name1);
+        nbt.putString("name2", name2);
+        nbt.putBoolean("nameVisible", nameVisible);
+        nbt.putInt("slice", mapSlice);
+        nbt.putBoolean("personal", personal);
 
-        NBTTagCompound nbtOwner = new NBTTagCompound();
+        CompoundNBT nbtOwner = new CompoundNBT();
         owner.writeToNBT(nbtOwner);
-        nbt.setTag("owner", nbtOwner);
+        nbt.put("owner", nbtOwner);
 
         if (banner != null) {
-            NBTTagCompound nbtBanner = new NBTTagCompound();
+            CompoundNBT nbtBanner = new CompoundNBT();
             banner.writeToNBT(nbtBanner);
-            nbt.setTag("banner", nbtBanner);
+            nbt.put("banner", nbtBanner);
         }
 
         if (personal && usersShared != null) {
-            NBTTagList usersSharedTagList = new NBTTagList();
+            ListNBT usersSharedTagList = new ListNBT();
             for (SettingsUserShared userShared : usersShared) {
-                NBTTagCompound nbtUserShared = new NBTTagCompound();
+                CompoundNBT nbtUserShared = new CompoundNBT();
                 userShared.writeToNBT(nbtUserShared);
-                usersSharedTagList.appendTag(nbtUserShared);
+                usersSharedTagList.add(nbtUserShared);
             }
 
-            nbt.setTag("usersShared", usersSharedTagList);
+            nbt.put("usersShared", usersSharedTagList);
         }
 
-        NBTTagList verticesTagList = new NBTTagList();
+        ListNBT verticesTagList = new ListNBT();
         for (BlockPos pos : vertices) {
-            verticesTagList.appendTag(NBTUtil.createPosTag(pos));
+            verticesTagList.add(NBTUtil.writeBlockPos(pos));
         }
 
-        nbt.setTag("vertices", verticesTagList);
+        nbt.put("vertices", verticesTagList);
     }
 
-    public void fromBytes(ByteBuf buf) {
+    public void fromBytes(PacketBuffer buf) {
         changes.clear();
         for (Change change : Change.valuesArray) {
             if (buf.readBoolean()) {
@@ -466,7 +452,7 @@ public class FrontierData {
         }
 
         id = UUIDHelper.fromBytes(buf);
-        dimension = buf.readInt();
+        dimension = RegistryKey.create(Registry.DIMENSION_REGISTRY, buf.readResourceLocation());
         personal = buf.readBoolean();
         owner = new SettingsUser();
         owner.fromBytes(buf);
@@ -480,8 +466,8 @@ public class FrontierData {
 
 
         if (changes.contains(Change.Name)) {
-            name1 = ByteBufUtils.readUTF8String(buf);
-            name2 = ByteBufUtils.readUTF8String(buf);
+            name1 = buf.readUtf(17);
+            name2 = buf.readUtf(17);
         }
 
         if (changes.contains(Change.Banner)) {
@@ -495,7 +481,7 @@ public class FrontierData {
 
         if (changes.contains(Change.Shared)) {
             if (buf.readBoolean()) {
-                usersShared = new ArrayList<SettingsUserShared>();
+                usersShared = new ArrayList<>();
                 int usersCount = buf.readInt();
                 for (int i = 0; i < usersCount; ++i) {
                     SettingsUserShared userShared = new SettingsUserShared();
@@ -508,20 +494,20 @@ public class FrontierData {
         }
 
         if (changes.contains(Change.Vertices)) {
-            vertices = new ArrayList<BlockPos>();
+            vertices = new ArrayList<>();
             int vertexCount = buf.readInt();
             for (int i = 0; i < vertexCount; ++i) {
-                BlockPos vertex = BlockPos.fromLong(buf.readLong());
+                BlockPos vertex = BlockPos.of(buf.readLong());
                 vertices.add(vertex);
             }
         }
     }
 
-    public void toBytes(ByteBuf buf) {
+    public void toBytes(PacketBuffer buf) {
         toBytes(buf, true);
     }
 
-    public void toBytes(ByteBuf buf, boolean onlyChanges) {
+    public void toBytes(PacketBuffer buf, boolean onlyChanges) {
         for (Change change : Change.valuesArray) {
             if (onlyChanges) {
                 buf.writeBoolean(changes.contains(change));
@@ -531,7 +517,7 @@ public class FrontierData {
         }
 
         UUIDHelper.toBytes(buf, id);
-        buf.writeInt(dimension);
+        buf.writeResourceLocation(dimension.location());
         buf.writeBoolean(personal);
         owner.toBytes(buf);
 
@@ -543,8 +529,8 @@ public class FrontierData {
         }
 
         if (!onlyChanges || changes.contains(Change.Name)) {
-            ByteBufUtils.writeUTF8String(buf, name1);
-            ByteBufUtils.writeUTF8String(buf, name2);
+            buf.writeUtf(name1, 17);
+            buf.writeUtf(name2, 17);
         }
 
         if (!onlyChanges || changes.contains(Change.Banner)) {
@@ -572,60 +558,62 @@ public class FrontierData {
         if (!onlyChanges || changes.contains(Change.Vertices)) {
             buf.writeInt(vertices.size());
             for (BlockPos pos : vertices) {
-                buf.writeLong(pos.toLong());
+                buf.writeLong(pos.asLong());
             }
         }
     }
 
-    public class BannerData {
-        public EnumDyeColor baseColor;
-        public NBTTagList patterns;
+    public static class BannerData {
+        public DyeColor baseColor;
+        public ListNBT patterns;
 
         public BannerData() {
-            baseColor = EnumDyeColor.WHITE;
+            baseColor = DyeColor.WHITE;
         }
 
         public BannerData(ItemStack itemBanner) {
-            NBTTagCompound blockEntityTag = itemBanner.getSubCompound("BlockEntityTag");
+            CompoundNBT blockEntityTag = itemBanner.getTagElement("BlockEntityTag");
 
-            if (blockEntityTag != null && blockEntityTag.hasKey("Patterns", Constants.NBT.TAG_LIST)) {
-                patterns = blockEntityTag.getTagList("Patterns", Constants.NBT.TAG_COMPOUND);
+            if (blockEntityTag != null && blockEntityTag.contains("Patterns", Constants.NBT.TAG_LIST)) {
+                patterns = blockEntityTag.getList("Patterns", Constants.NBT.TAG_COMPOUND);
             }
 
-            baseColor = ItemBanner.getBaseColor(itemBanner);
+            if (itemBanner.getItem() instanceof BannerItem) {
+                baseColor = ((BannerItem) itemBanner.getItem()).getColor();
+            }
         }
 
-        public void readFromNBT(NBTTagCompound nbt) {
-            baseColor = EnumDyeColor.byDyeDamage(nbt.getInteger("Base"));
-            patterns = nbt.getTagList("Patterns", Constants.NBT.TAG_COMPOUND);
+        public void readFromNBT(CompoundNBT nbt) {
+            baseColor = DyeColor.byId(nbt.getInt("Base"));
+            patterns = nbt.getList("Patterns", Constants.NBT.TAG_COMPOUND);
         }
 
-        public void writeToNBT(NBTTagCompound nbt) {
-            nbt.setInteger("Base", baseColor.getDyeDamage());
+        public void writeToNBT(CompoundNBT nbt) {
+            nbt.putInt("Base", baseColor.getId());
 
             if (patterns != null) {
-                nbt.setTag("Patterns", patterns);
+                nbt.put("Patterns", patterns);
             }
         }
 
-        public void fromBytes(ByteBuf buf) {
-            baseColor = EnumDyeColor.byDyeDamage(buf.readInt());
+        public void fromBytes(PacketBuffer buf) {
+            baseColor = DyeColor.byId(buf.readInt());
 
-            NBTTagCompound nbt = ByteBufUtils.readTag(buf);
+            CompoundNBT nbt = buf.readNbt();
             if (nbt != null) {
-                patterns = nbt.getTagList("Patterns", Constants.NBT.TAG_COMPOUND);
+                patterns = nbt.getList("Patterns", Constants.NBT.TAG_COMPOUND);
             }
         }
 
-        public void toBytes(ByteBuf buf) {
-            buf.writeInt(baseColor.getDyeDamage());
+        public void toBytes(PacketBuffer buf) {
+            buf.writeInt(baseColor.getId());
 
             if (patterns == null) {
-                ByteBufUtils.writeTag(buf, null);
+                buf.writeNbt(null);
             } else {
-                NBTTagCompound nbt = new NBTTagCompound();
-                nbt.setTag("Patterns", patterns);
-                ByteBufUtils.writeTag(buf, nbt);
+                CompoundNBT nbt = new CompoundNBT();
+                nbt.put("Patterns", patterns);
+                buf.writeNbt(nbt);
             }
         }
     }

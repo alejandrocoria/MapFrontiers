@@ -1,23 +1,24 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
+import java.util.function.Supplier;
+
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiShareSettings;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
+import net.minecraft.network.PacketBuffer;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.network.NetworkEvent;
 
 @ParametersAreNonnullByDefault
-public class PacketFrontierUpdated implements IMessage {
-    private FrontierData frontier;
+public class PacketFrontierUpdated {
+    private final FrontierData frontier;
     private int playerID = -1;
 
     public PacketFrontierUpdated() {
@@ -33,43 +34,40 @@ public class PacketFrontierUpdated implements IMessage {
         this.playerID = playerID;
     }
 
-    @Override
-    public void fromBytes(ByteBuf buf) {
-        frontier.fromBytes(buf);
-        playerID = buf.readInt();
+    public static PacketFrontierUpdated fromBytes(PacketBuffer buf) {
+        PacketFrontierUpdated packet = new PacketFrontierUpdated();
+        packet.frontier.fromBytes(buf);
+        packet.playerID = buf.readInt();
+        return packet;
     }
 
-    @Override
-    public void toBytes(ByteBuf buf) {
-        frontier.toBytes(buf);
-        buf.writeInt(playerID);
+    public static void toBytes(PacketFrontierUpdated packet, PacketBuffer buf) {
+        packet.frontier.toBytes(buf);
+        buf.writeInt(packet.playerID);
     }
 
-    public static class Handler implements IMessageHandler<PacketFrontierUpdated, IMessage> {
-        @Override
-        public IMessage onMessage(PacketFrontierUpdated message, MessageContext ctx) {
-            if (ctx.side == Side.CLIENT) {
-                Minecraft.getMinecraft().addScheduledTask(() -> {
-                    if (message.playerID != Minecraft.getMinecraft().player.getEntityId()) {
-                        FrontierOverlay frontierOverlay = ((ClientProxy) MapFrontiers.proxy)
-                                .getFrontiersOverlayManager(message.frontier.getPersonal()).updateFrontier(message.frontier);
+    public static void handle(PacketFrontierUpdated message, Supplier<NetworkEvent.Context> ctx) {
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> handleClient(message, ctx.get()));
+    }
 
-                        MapFrontiers.proxy.frontierChanged();
+    @OnlyIn(Dist.CLIENT)
+    private static void handleClient(PacketFrontierUpdated message, NetworkEvent.Context ctx) {
+        if (message.playerID != Minecraft.getInstance().player.getId()) {
+            FrontierOverlay frontierOverlay = ClientProxy.getFrontiersOverlayManager(message.frontier.getPersonal())
+                    .updateFrontier(message.frontier);
 
-                        if (frontierOverlay != null) {
-                            if (Minecraft.getMinecraft().currentScreen instanceof GuiFrontierBook) {
-                                ((GuiFrontierBook) Minecraft.getMinecraft().currentScreen).updateFrontierMessage(frontierOverlay,
-                                        message.playerID);
-                            } else if (Minecraft.getMinecraft().currentScreen instanceof GuiShareSettings) {
-                                ((GuiShareSettings) Minecraft.getMinecraft().currentScreen).updateFrontierMessage(frontierOverlay,
-                                        message.playerID);
-                            }
-                        }
-                    }
-                });
+            ClientProxy.frontierChanged();
+
+            if (frontierOverlay != null) {
+                if (Minecraft.getInstance().screen instanceof GuiFrontierBook) {
+                    ((GuiFrontierBook) Minecraft.getInstance().screen).updateFrontierMessage(frontierOverlay,
+                            message.playerID);
+                } else if (Minecraft.getInstance().screen instanceof GuiShareSettings) {
+                    ((GuiShareSettings) Minecraft.getInstance().screen).updateFrontierMessage(frontierOverlay,
+                            message.playerID);
+                }
             }
-
-            return null;
         }
+        ctx.setPacketHandled(true);
     }
 }

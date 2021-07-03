@@ -2,26 +2,29 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.systems.RenderSystem;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SoundHandler;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
-@SideOnly(Side.CLIENT)
-public class GuiButtonIcon extends GuiButton {
+@OnlyIn(Dist.CLIENT)
+public class GuiButtonIcon extends Button {
     private final int texX;
     private final int texY;
     private final int diffX;
     private final ResourceLocation texture;
     private final int textureSize;
 
-    public GuiButtonIcon(int id, int x, int y, int width, int height, int texX, int texY, int diffX, ResourceLocation texture,
-            int textureSize) {
-        super(id, x, y, width, height, "");
+    public GuiButtonIcon(int x, int y, int width, int height, int texX, int texY, int diffX, ResourceLocation texture,
+            int textureSize, Button.IPressable pressedAction) {
+        super(x, y, width, height, StringTextComponent.EMPTY, pressedAction);
         this.texX = texX;
         this.texY = texY;
         this.diffX = diffX;
@@ -30,26 +33,21 @@ public class GuiButtonIcon extends GuiButton {
     }
 
     @Override
-    public void playPressSound(SoundHandler soundHandlerIn) {
+    public void playDownSound(SoundHandler soundHandlerIn) {
 
     }
 
     @Override
-    public void drawButton(Minecraft mc, int mouseX, int mouseY, float partialTicks) {
-        if (visible) {
-            hovered = (mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height);
-            GlStateManager.color(1.f, 1.f, 1.f);
-            mc.getTextureManager().bindTexture(texture);
-            int textureX = texX;
-            int textureY = texY;
+    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+        RenderSystem.color3f(1.f, 1.f, 1.f);
+        Minecraft mc = Minecraft.getInstance();
+        mc.getTextureManager().bind(texture);
+        int textureX = texX;
 
-            if (hovered) {
-                textureX += diffX;
-            }
-
-            drawModalRectWithCustomSizedTexture(x, y, textureX, textureY, width, height, textureSize, textureSize);
-        } else {
-            hovered = false;
+        if (isHovered) {
+            textureX += diffX;
         }
+
+        blit(matrixStack, x, y, textureX, texY, width, height, textureSize, textureSize);
     }
 }

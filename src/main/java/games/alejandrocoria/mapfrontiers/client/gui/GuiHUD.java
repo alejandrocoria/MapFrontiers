@@ -3,7 +3,13 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
+import journeymap.client.JourneymapClient;
 import org.apache.commons.lang3.StringUtils;
+
+import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.platform.GlStateManager;
 
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
@@ -16,36 +22,39 @@ import journeymap.client.ui.UIManager;
 import journeymap.client.ui.minimap.Position;
 import journeymap.client.ui.minimap.Shape;
 import journeymap.client.ui.theme.ThemeLabelSource;
-import journeymap.common.Journeymap;
+import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.ScaledResolution;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.EnumDyeColor;
-import net.minecraft.item.ItemBanner;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
+import net.minecraft.client.gui.AbstractGui;
+import net.minecraft.client.gui.screen.ChatScreen;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.DyeColor;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
+import net.minecraft.tileentity.BannerPattern;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 
-@SideOnly(Side.CLIENT)
+@ParametersAreNonnullByDefault
+@OnlyIn(Dist.CLIENT)
 public class GuiHUD {
-    private static Minecraft mc = Minecraft.getMinecraft();
+    private static final Minecraft mc = Minecraft.getInstance();
 
-    private FrontiersOverlayManager frontiersOverlayManager;
-    private FrontiersOverlayManager personalFrontiersOverlayManager;
+    private final FrontiersOverlayManager frontiersOverlayManager;
+    private final FrontiersOverlayManager personalFrontiersOverlayManager;
     private FrontierOverlay frontier;
     private int frontierHash;
     private BlockPos lastPlayerPosition = new BlockPos(0, 0, 0);
-    private GuiSimpleLabel frontierName1;
-    private GuiSimpleLabel frontierName2;
-    private GuiSimpleLabel frontierOwner;
-    private List<ConfigData.HUDSlot> slots;
+    private final GuiSimpleLabel frontierName1;
+    private final GuiSimpleLabel frontierName2;
+    private final GuiSimpleLabel frontierOwner;
+    private final List<ConfigData.HUDSlot> slots;
     private int posX = 0;
     private int posY = 0;
     private int nameOffsetY = 0;
@@ -71,36 +80,23 @@ public class GuiHUD {
     private int minimapCompassFontScale;
 
     public static GuiHUD asPreview() {
-        GuiHUD guiHUD = new GuiHUD(null, null);
-        guiHUD.previewMode = true;
+        GuiHUD guiHUD = new GuiHUD();
 
-        NBTTagCompound pattern = new NBTTagCompound();
-        NBTTagList nbtBanner = new NBTTagList();
-
-        pattern.setInteger("Color", EnumDyeColor.GREEN.getDyeDamage());
-        pattern.setString("Pattern", "flo");
-        nbtBanner.appendTag(pattern.copy());
-        pattern.setInteger("Color", EnumDyeColor.SILVER.getDyeDamage());
-        pattern.setString("Pattern", "bri");
-        nbtBanner.appendTag(pattern.copy());
-        pattern.setInteger("Color", EnumDyeColor.LIGHT_BLUE.getDyeDamage());
-        pattern.setString("Pattern", "bo");
-        nbtBanner.appendTag(pattern.copy());
-        pattern.setInteger("Color", EnumDyeColor.LIGHT_BLUE.getDyeDamage());
-        pattern.setString("Pattern", "tts");
-        nbtBanner.appendTag(pattern.copy());
-        pattern.setInteger("Color", EnumDyeColor.BLACK.getDyeDamage());
-        pattern.setString("Pattern", "bt");
-        nbtBanner.appendTag(pattern.copy());
-        pattern.setInteger("Color", EnumDyeColor.GREEN.getDyeDamage());
-        pattern.setString("Pattern", "bs");
-        nbtBanner.appendTag(pattern);
+        ItemStack itemBanner = new ItemStack(Items.BLACK_BANNER);
+        CompoundNBT entityTag = itemBanner.getOrCreateTagElement("BlockEntityTag");
+        ListNBT patterns = (new BannerPattern.Builder()).addPattern(BannerPattern.FLOWER, DyeColor.GREEN)
+                .addPattern(BannerPattern.BRICKS, DyeColor.LIGHT_GRAY)
+                .addPattern(BannerPattern.BORDER, DyeColor.LIGHT_BLUE)
+                .addPattern(BannerPattern.TRIANGLE_TOP, DyeColor.LIGHT_BLUE)
+                .addPattern(BannerPattern.TRIANGLE_BOTTOM, DyeColor.BLACK)
+                .addPattern(BannerPattern.STRIPE_BOTTOM, DyeColor.GREEN).toListTag();
+        entityTag.put("Patterns", patterns);
 
         FrontierData frontierData = new FrontierData();
         frontierData.setOwner(new SettingsUser(mc.player));
         frontierData.setName1("Preview Frontier");
         frontierData.setName2("-----------------");
-        frontierData.setBanner(ItemBanner.makeBanner(EnumDyeColor.BLACK, nbtBanner));
+        frontierData.setBanner(itemBanner);
 
         guiHUD.frontier = new FrontierOverlay(frontierData, null);
 
@@ -110,10 +106,26 @@ public class GuiHUD {
     public GuiHUD(FrontiersOverlayManager frontiersOverlayManager, FrontiersOverlayManager personalFrontiersOverlayManager) {
         this.frontiersOverlayManager = frontiersOverlayManager;
         this.personalFrontiersOverlayManager = personalFrontiersOverlayManager;
-        slots = new ArrayList<ConfigData.HUDSlot>();
-        frontierName1 = new GuiSimpleLabel(mc.fontRenderer, 0, 0, GuiSimpleLabel.Align.Center, "", GuiColors.WHITE);
-        frontierName2 = new GuiSimpleLabel(mc.fontRenderer, 0, 0, GuiSimpleLabel.Align.Center, "", GuiColors.WHITE);
-        frontierOwner = new GuiSimpleLabel(mc.fontRenderer, 0, 0, GuiSimpleLabel.Align.Center, "", GuiColors.WHITE);
+        slots = new ArrayList<>();
+        frontierName1 = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, StringTextComponent.EMPTY,
+                GuiColors.WHITE);
+        frontierName2 = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, StringTextComponent.EMPTY,
+                GuiColors.WHITE);
+        frontierOwner = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, StringTextComponent.EMPTY,
+                GuiColors.WHITE);
+    }
+
+    public GuiHUD() {
+        this.frontiersOverlayManager = null;
+        this.personalFrontiersOverlayManager = null;
+        previewMode = true;
+        slots = new ArrayList<>();
+        frontierName1 = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, StringTextComponent.EMPTY,
+                GuiColors.WHITE);
+        frontierName2 = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, StringTextComponent.EMPTY,
+                GuiColors.WHITE);
+        frontierOwner = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, StringTextComponent.EMPTY,
+                GuiColors.WHITE);
     }
 
     public int getWidth() {
@@ -128,14 +140,14 @@ public class GuiHUD {
         return x >= posX && x < posX + hudWidth && y >= posY && y < posY + hudHeight;
     }
 
-    @SubscribeEvent()
+    @SubscribeEvent
     public void RenderGameOverlayEvent(RenderGameOverlayEvent.Pre event) {
         if (previewMode) {
             return;
         }
 
         if (event.getType() == RenderGameOverlayEvent.ElementType.HOTBAR) {
-            if (mc.currentScreen != null && !(mc.currentScreen instanceof net.minecraft.client.gui.GuiChat)) {
+            if (mc.screen != null && !(mc.screen instanceof ChatScreen)) {
                 return;
             }
 
@@ -143,32 +155,33 @@ public class GuiHUD {
                 return;
             }
 
-            if (!ConfigData.hud.enabled) {
+            if (!ConfigData.hudEnabled) {
                 return;
             }
 
-            draw();
+            draw(event.getMatrixStack(), event.getWindow(), event.getPartialTicks());
         }
     }
 
     @SubscribeEvent
     public void livingUpdateEvent(LivingUpdateEvent event) {
-        if (previewMode) {
+        if (previewMode || frontiersOverlayManager == null || personalFrontiersOverlayManager == null) {
             return;
         }
 
         if (event.getEntityLiving() == mc.player) {
-            EntityPlayer player = (EntityPlayer) event.getEntityLiving();
+            PlayerEntity player = (PlayerEntity) event.getEntityLiving();
 
-            BlockPos currentPlayerPosition = player.getPosition();
+            BlockPos currentPlayerPosition = player.blockPosition();
             if (currentPlayerPosition.getX() != lastPlayerPosition.getX()
                     || currentPlayerPosition.getZ() != lastPlayerPosition.getZ()) {
                 lastPlayerPosition = currentPlayerPosition;
 
-                FrontierOverlay newFrontier = personalFrontiersOverlayManager.getFrontierInPosition(player.dimension,
-                        lastPlayerPosition);
+                FrontierOverlay newFrontier = personalFrontiersOverlayManager
+                        .getFrontierInPosition(player.level.dimension(), lastPlayerPosition);
                 if (newFrontier == null) {
-                    newFrontier = frontiersOverlayManager.getFrontierInPosition(player.dimension, lastPlayerPosition);
+                    newFrontier = frontiersOverlayManager.getFrontierInPosition(player.level.dimension(),
+                            lastPlayerPosition);
                 }
                 if (newFrontier != null) {
                     if (frontierHash != newFrontier.getHash()) {
@@ -190,19 +203,23 @@ public class GuiHUD {
         }
     }
 
-    public void configUpdated() {
+    public void configUpdated(MainWindow mainWindow) {
         if (previewMode) {
-            updateData();
+            updateData(mainWindow);
         } else {
             needUpdate = true;
         }
     }
 
     public void frontierChanged() {
-        FrontierOverlay newFrontier = personalFrontiersOverlayManager.getFrontierInPosition(mc.player.dimension,
+        if (previewMode || frontiersOverlayManager == null || personalFrontiersOverlayManager == null) {
+            return;
+        }
+
+        FrontierOverlay newFrontier = personalFrontiersOverlayManager.getFrontierInPosition(mc.player.level.dimension(),
                 lastPlayerPosition);
         if (newFrontier == null) {
-            newFrontier = frontiersOverlayManager.getFrontierInPosition(mc.player.dimension, lastPlayerPosition);
+            newFrontier = frontiersOverlayManager.getFrontierInPosition(mc.player.level.dimension(), lastPlayerPosition);
         }
 
         if (newFrontier != null) {
@@ -218,16 +235,15 @@ public class GuiHUD {
         }
     }
 
-    public void draw() {
-        if (displayWidth != mc.displayWidth || displayHeight != mc.displayHeight) {
+    public void draw(MatrixStack matrixStack, MainWindow mainWindow, float partialTicks) {
+        if (displayWidth != mainWindow.getWidth() || displayHeight != mainWindow.getHeight()) {
             needUpdate = true;
         }
 
-        if (ConfigData.hud.anchor == ConfigData.HUDAnchor.Minimap
-                || ConfigData.hud.anchor == ConfigData.HUDAnchor.MinimapHorizontal
-                || ConfigData.hud.anchor == ConfigData.HUDAnchor.MinimapVertical) {
+        if (ConfigData.hudAnchor == ConfigData.HUDAnchor.Minimap || ConfigData.hudAnchor == ConfigData.HUDAnchor.MinimapHorizontal
+                || ConfigData.hudAnchor == ConfigData.HUDAnchor.MinimapVertical) {
             MiniMapProperties minimapProperties = UIManager.INSTANCE.getMiniMap().getCurrentMinimapProperties();
-            if (minimapEnabled != minimapProperties.enabled.get() || minimapSize != minimapProperties.sizePercent.get().intValue()
+            if (minimapEnabled != minimapProperties.enabled.get() || minimapSize != minimapProperties.sizePercent.get()
                     || minimapShape != minimapProperties.shape.get() || minimapPosition != minimapProperties.position.get()
                     || minimapInfo1 != minimapProperties.info1Label.get() || minimapInfo2 != minimapProperties.info1Label.get()
                     || minimapInfo3 != minimapProperties.info1Label.get() || minimapInfo4 != minimapProperties.info1Label.get()
@@ -239,21 +255,20 @@ public class GuiHUD {
 
         if (needUpdate) {
             needUpdate = false;
-            updateData();
+            updateData(mainWindow);
         }
 
         if (slots.isEmpty()) {
             return;
         }
 
-        ScaledResolution scaledresolution = new ScaledResolution(mc);
-        int factor = scaledresolution.getScaleFactor();
+        float factor = (float) mainWindow.getGuiScale();
 
-        int frameColor = GuiColors.HUD_FRAME_DEFAULT;
-        int textNameColor = GuiColors.HUD_TEXT_NAME_DEFAULT;
-        int textOwnerColor = GuiColors.HUD_TEXT_OWNER_DEFAULT;
+        int frameColor;
+        int textNameColor;
+        int textOwnerColor;
 
-        if (Journeymap.getClient().getActiveMiniMapProperties().shape.get() == Shape.Circle) {
+        if (JourneymapClient.getInstance().getActiveMiniMapProperties().shape.get() == Shape.Circle) {
             frameColor = GuiColors.colorSpecToInt(ThemeLoader.getCurrentTheme().minimap.circle.labelTop.background);
             textNameColor = GuiColors.colorSpecToInt(ThemeLoader.getCurrentTheme().minimap.circle.labelTop.highlight);
             textOwnerColor = GuiColors.colorSpecToInt(ThemeLoader.getCurrentTheme().minimap.circle.labelTop.foreground);
@@ -263,67 +278,64 @@ public class GuiHUD {
             textOwnerColor = GuiColors.colorSpecToInt(ThemeLoader.getCurrentTheme().minimap.square.labelTop.foreground);
         }
 
-        GlStateManager.pushMatrix();
-        GlStateManager.scale(1.0 / factor, 1.0 / factor, 1.0);
-        GlStateManager.translate(0.0, 0.0, -100.0);
+        matrixStack.pushPose();
+        matrixStack.scale(1.0f / factor, 1.0f / factor, 1.0f);
+        matrixStack.translate(0.0, 0.0, -100.0);
 
         for (ConfigData.HUDSlot slot : slots) {
             switch (slot) {
             case Name:
-                drawName(frameColor, textNameColor);
+                drawName(matrixStack, frameColor, textNameColor, partialTicks);
                 break;
             case Owner:
-                drawOwner(frameColor, textOwnerColor);
+                drawOwner(matrixStack, frameColor, textOwnerColor, partialTicks);
                 break;
             case Banner:
-                drawBanner(frameColor);
+                drawBanner(matrixStack, frameColor, partialTicks);
                 break;
             case None:
                 break;
             }
         }
 
-        GlStateManager.popMatrix();
-        GlStateManager.enableBlend();
+        matrixStack.popPose();
+        GlStateManager._enableBlend();
     }
 
-    private void drawName(int frameColor, int textColor) {
-        Gui.drawRect(posX, posY + nameOffsetY, posX + hudWidth, posY + nameOffsetY + 24 * textScale, frameColor);
+    private void drawName(MatrixStack matrixStack, int frameColor, int textColor, float partialTicks) {
+        AbstractGui.fill(matrixStack, posX, posY + nameOffsetY, posX + hudWidth, posY + nameOffsetY + 24 * textScale, frameColor);
 
         frontierName1.setColor(textColor);
         frontierName2.setColor(textColor);
 
-        frontierName1.drawLabel(mc, 0, 0);
-        frontierName2.drawLabel(mc, 0, 0);
+        frontierName1.render(matrixStack, 0, 0, partialTicks);
+        frontierName2.render(matrixStack, 0, 0, partialTicks);
     }
 
-    private void drawOwner(int frameColor, int textColor) {
-        Gui.drawRect(posX, posY + ownerOffsetY, posX + hudWidth, posY + ownerOffsetY + 12 * textScale, frameColor);
+    private void drawOwner(MatrixStack matrixStack, int frameColor, int textColor, float partialTicks) {
+        AbstractGui.fill(matrixStack, posX, posY + ownerOffsetY, posX + hudWidth, posY + ownerOffsetY + 12 * textScale,
+                frameColor);
 
         frontierOwner.setColor(textColor);
-        frontierOwner.drawLabel(mc, 0, 0);
+        frontierOwner.render(matrixStack, 0, 0, partialTicks);
     }
 
-    private void drawBanner(int frameColor) {
-        Gui.drawRect(posX + hudWidth / 2 - 11 * bannerScale - 2, posY + bannerOffsetY, posX + hudWidth / 2 + 11 * bannerScale + 2,
-                posY + bannerOffsetY + 4 + 40 * bannerScale, frameColor);
+    private void drawBanner(MatrixStack matrixStack, int frameColor, float partialTicks) {
+        AbstractGui.fill(matrixStack, posX + hudWidth / 2 - 11 * bannerScale - 2, posY + bannerOffsetY,
+                posX + hudWidth / 2 + 11 * bannerScale + 2, posY + bannerOffsetY + 4 + 40 * bannerScale, frameColor);
 
-        frontier.bindBannerTexture(mc);
-        GlStateManager.color(1.f, 1.f, 1.f);
-        Gui.drawModalRectWithCustomSizedTexture(posX + hudWidth / 2 - 11 * bannerScale, posY + bannerOffsetY + 2, 0, bannerScale,
-                22 * bannerScale, 40 * bannerScale, 64 * bannerScale, 64 * bannerScale);
+        frontier.renderBanner(mc, matrixStack, posX + hudWidth / 2 - 11 * bannerScale, posY + bannerOffsetY + 2, bannerScale);
     }
 
-    private void updateData() {
-        displayWidth = mc.displayWidth;
-        displayHeight = mc.displayHeight;
+    private void updateData(MainWindow mainWindow) {
+        displayWidth = mainWindow.getWidth();
+        displayHeight = mainWindow.getHeight();
 
-        if (ConfigData.hud.anchor == ConfigData.HUDAnchor.Minimap
-                || ConfigData.hud.anchor == ConfigData.HUDAnchor.MinimapHorizontal
-                || ConfigData.hud.anchor == ConfigData.HUDAnchor.MinimapVertical) {
+        if (ConfigData.hudAnchor == ConfigData.HUDAnchor.Minimap || ConfigData.hudAnchor == ConfigData.HUDAnchor.MinimapHorizontal
+                || ConfigData.hudAnchor == ConfigData.HUDAnchor.MinimapVertical) {
             MiniMapProperties minimapProperties = UIManager.INSTANCE.getMiniMap().getCurrentMinimapProperties();
             minimapEnabled = minimapProperties.enabled.get();
-            minimapSize = minimapProperties.sizePercent.get().intValue();
+            minimapSize = minimapProperties.sizePercent.get();
             minimapShape = minimapProperties.shape.get();
             minimapPosition = minimapProperties.position.get();
             minimapInfo1 = minimapProperties.info1Label.get();
@@ -340,9 +352,9 @@ public class GuiHUD {
             return;
         }
 
-        addSlot(ConfigData.hud.slot1);
-        addSlot(ConfigData.hud.slot2);
-        addSlot(ConfigData.hud.slot3);
+        addSlot(ConfigData.hudSlot1);
+        addSlot(ConfigData.hudSlot2);
+        addSlot(ConfigData.hudSlot3);
 
         if (slots.isEmpty()) {
             return;
@@ -350,15 +362,15 @@ public class GuiHUD {
 
         hudWidth = 0;
         hudHeight = 0;
-        bannerScale = ConfigData.hud.bannerSize;
+        bannerScale = ConfigData.hudBannerSize;
 
         textScale = UIManager.INSTANCE.getMiniMap().getCurrentMinimapProperties().fontScale.get().intValue();
 
         for (ConfigData.HUDSlot slot : slots) {
             switch (slot) {
             case Name:
-                int name1Width = mc.fontRenderer.getStringWidth(frontier.getName1()) + 3;
-                int name2Width = mc.fontRenderer.getStringWidth(frontier.getName2()) + 3;
+                int name1Width = mc.font.width(frontier.getName1()) + 3;
+                int name2Width = mc.font.width(frontier.getName2()) + 3;
                 int nameWidth = Math.max(name1Width, name2Width) * textScale;
                 hudWidth = Math.max(hudWidth, nameWidth);
                 hudHeight += 24 * textScale;
@@ -366,7 +378,7 @@ public class GuiHUD {
             case Owner:
                 if (!frontier.getOwner().isEmpty()) {
                     String owner = getOwnerString();
-                    int ownerWidth = (mc.fontRenderer.getStringWidth(owner) + 3) * textScale;
+                    int ownerWidth = (mc.font.width(owner) + 3) * textScale;
                     hudWidth = Math.max(hudWidth, ownerWidth);
                     hudHeight += 12 * textScale;
                 }
@@ -380,10 +392,10 @@ public class GuiHUD {
             }
         }
 
-        ConfigData.Point anchorPos = ConfigData.getHUDAnchor(ConfigData.hud.anchor);
-        ConfigData.Point originPos = ConfigData.getHUDOrigin(ConfigData.hud.anchor, hudWidth, hudHeight);
-        posX = anchorPos.x - originPos.x + ConfigData.hud.position.x;
-        posY = anchorPos.y - originPos.y + ConfigData.hud.position.y;
+        ConfigData.Point anchorPos = ConfigData.getHUDAnchor(ConfigData.hudAnchor);
+        ConfigData.Point originPos = ConfigData.getHUDOrigin(ConfigData.hudAnchor, hudWidth, hudHeight);
+        posX = anchorPos.x - originPos.x + ConfigData.hudXPosition;
+        posY = anchorPos.y - originPos.y + ConfigData.hudYPosition;
 
         int offsetY = 0;
         nameOffsetY = 0;
@@ -395,15 +407,15 @@ public class GuiHUD {
             case Name:
                 nameOffsetY = offsetY;
 
-                frontierName1.setX(posX + hudWidth / 2);
-                frontierName1.setY(posY + nameOffsetY + 2 * textScale);
+                frontierName1.x = posX + hudWidth / 2;
+                frontierName1.y = posY + nameOffsetY + 2 * textScale;
                 frontierName1.setScale(textScale);
-                frontierName1.setText(frontier.getName1());
+                frontierName1.setText(new StringTextComponent(frontier.getName1()));
 
-                frontierName2.setX(posX + hudWidth / 2);
-                frontierName2.setY(posY + nameOffsetY + 14 * textScale);
+                frontierName2.x = posX + hudWidth / 2;
+                frontierName2.y = posY + nameOffsetY + 14 * textScale;
                 frontierName2.setScale(textScale);
-                frontierName2.setText(frontier.getName2());
+                frontierName2.setText(new StringTextComponent(frontier.getName2()));
 
                 offsetY += 24 * textScale;
                 break;
@@ -412,10 +424,10 @@ public class GuiHUD {
                     String owner = getOwnerString();
                     ownerOffsetY = offsetY;
 
-                    frontierOwner.setX(posX + hudWidth / 2);
-                    frontierOwner.setY(posY + ownerOffsetY + 2);
+                    frontierOwner.x = posX + hudWidth / 2;
+                    frontierOwner.y = posY + ownerOffsetY + 2;
                     frontierOwner.setScale(textScale);
-                    frontierOwner.setText(owner);
+                    frontierOwner.setText(new StringTextComponent(owner));
 
                     offsetY += 12 * textScale;
                 }

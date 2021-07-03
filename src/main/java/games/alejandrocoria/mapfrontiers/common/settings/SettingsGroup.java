@@ -8,30 +8,29 @@ import java.util.Set;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTTagString;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
+import net.minecraft.nbt.StringNBT;
+import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.common.util.Constants;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
 
 @ParametersAreNonnullByDefault
 public class SettingsGroup {
     private String name;
     private List<SettingsUser> users;
-    private Set<FrontierSettings.Action> actions;
-    private boolean special;
+    private final Set<FrontierSettings.Action> actions;
+    private final boolean special;
 
     public SettingsGroup() {
         name = "";
-        users = new ArrayList<SettingsUser>();
+        users = new ArrayList<>();
         actions = EnumSet.noneOf(FrontierSettings.Action.class);
         special = false;
     }
 
     public SettingsGroup(String name, boolean special) {
         this.name = name;
-        users = new ArrayList<SettingsUser>();
+        users = new ArrayList<>();
         actions = EnumSet.noneOf(FrontierSettings.Action.class);
         this.special = special;
     }
@@ -80,23 +79,23 @@ public class SettingsGroup {
         return special;
     }
 
-    public void readFromNBT(NBTTagCompound nbt) {
+    public void readFromNBT(CompoundNBT nbt) {
         if (!special) {
             name = nbt.getString("name");
             users.clear();
-            NBTTagList usersTagList = nbt.getTagList("users", Constants.NBT.TAG_COMPOUND);
-            for (int i = 0; i < usersTagList.tagCount(); ++i) {
+            ListNBT usersTagList = nbt.getList("users", Constants.NBT.TAG_COMPOUND);
+            for (int i = 0; i < usersTagList.size(); ++i) {
                 SettingsUser user = new SettingsUser();
-                NBTTagCompound userTag = usersTagList.getCompoundTagAt(i);
+                CompoundNBT userTag = usersTagList.getCompound(i);
                 user.readFromNBT(userTag);
                 users.add(user);
             }
         }
 
         actions.clear();
-        NBTTagList actionsTagList = nbt.getTagList("actions", Constants.NBT.TAG_STRING);
-        for (int i = 0; i < actionsTagList.tagCount(); ++i) {
-            String actionTag = actionsTagList.getStringTagAt(i);
+        ListNBT actionsTagList = nbt.getList("actions", Constants.NBT.TAG_STRING);
+        for (int i = 0; i < actionsTagList.size(); ++i) {
+            String actionTag = actionsTagList.getString(i);
             List<FrontierSettings.Action> availableActions = FrontierSettings.getAvailableActions(name);
 
             try {
@@ -121,33 +120,33 @@ public class SettingsGroup {
         }
     }
 
-    public void writeToNBT(NBTTagCompound nbt) {
+    public void writeToNBT(CompoundNBT nbt) {
         if (!special) {
-            nbt.setString("name", name);
-            NBTTagList usersTagList = new NBTTagList();
+            nbt.putString("name", name);
+            ListNBT usersTagList = new ListNBT();
             for (SettingsUser user : users) {
-                NBTTagCompound userTag = new NBTTagCompound();
+                CompoundNBT userTag = new CompoundNBT();
                 user.writeToNBT(userTag);
-                usersTagList.appendTag(userTag);
+                usersTagList.add(userTag);
             }
 
-            nbt.setTag("users", usersTagList);
+            nbt.put("users", usersTagList);
         }
 
-        NBTTagList actionsTagList = new NBTTagList();
+        ListNBT actionsTagList = new ListNBT();
         for (FrontierSettings.Action action : actions) {
-            NBTTagString actionTag = new NBTTagString(action.name());
-            actionsTagList.appendTag(actionTag);
+            StringNBT actionTag = StringNBT.valueOf(action.name());
+            actionsTagList.add(actionTag);
         }
 
-        nbt.setTag("actions", actionsTagList);
+        nbt.put("actions", actionsTagList);
     }
 
-    public void fromBytes(ByteBuf buf) {
+    public void fromBytes(PacketBuffer buf) {
         if (!buf.readBoolean()) {
-            name = ByteBufUtils.readUTF8String(buf);
+            name = buf.readUtf(17);
 
-            users = new ArrayList<SettingsUser>();
+            users = new ArrayList<>();
             int usersCount = buf.readInt();
             for (int i = 0; i < usersCount; ++i) {
                 SettingsUser user = new SettingsUser();
@@ -164,11 +163,11 @@ public class SettingsGroup {
         }
     }
 
-    public void toBytes(ByteBuf buf) {
+    public void toBytes(PacketBuffer buf) {
         buf.writeBoolean(special);
 
         if (!special) {
-            ByteBufUtils.writeUTF8String(buf, name);
+            buf.writeUtf(name, 17);
 
             buf.writeInt(users.size());
             for (SettingsUser user : users) {

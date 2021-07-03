@@ -8,25 +8,25 @@ import com.mojang.authlib.GameProfile;
 
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.network.NetHandlerPlayClient;
-import net.minecraft.client.network.NetworkPlayerInfo;
+import net.minecraft.client.network.play.ClientPlayNetHandler;
+import net.minecraft.client.network.play.NetworkPlayerInfo;
 import net.minecraft.server.MinecraftServer;
-import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.server.ServerLifecycleHooks;
 
 @ParametersAreNonnullByDefault
 public class UUIDHelper {
     public static UUID getUUIDFromName(String username) {
         GameProfile profile = null;
 
-        MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
         if (server != null) {
-            profile = server.getServer().getPlayerProfileCache().getGameProfileForUsername(username);
+            profile = server.getProfileCache().get(username);
         } else {
-            NetHandlerPlayClient handler = Minecraft.getMinecraft().getConnection();
+            ClientPlayNetHandler handler = Minecraft.getInstance().getConnection();
             if (handler != null) {
                 NetworkPlayerInfo playerInfo = handler.getPlayerInfo(username);
                 if (playerInfo != null) {
-                    profile = playerInfo.getGameProfile();
+                    profile = playerInfo.getProfile();
                 }
             }
         }
@@ -40,15 +40,15 @@ public class UUIDHelper {
     public static String getNameFromUUID(UUID uuid) {
         GameProfile profile = null;
 
-        MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
         if (server != null) {
-            profile = server.getServer().getPlayerProfileCache().getProfileByUUID(uuid);
+            profile = server.getProfileCache().get(uuid);
         } else {
-            NetHandlerPlayClient handler = Minecraft.getMinecraft().getConnection();
+            ClientPlayNetHandler handler = Minecraft.getInstance().getConnection();
             if (handler != null) {
                 NetworkPlayerInfo playerInfo = handler.getPlayerInfo(uuid);
                 if (playerInfo != null) {
-                    profile = playerInfo.getGameProfile();
+                    profile = playerInfo.getProfile();
                 }
             }
         }

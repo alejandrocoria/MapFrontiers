@@ -5,38 +5,38 @@ import java.util.List;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.systems.RenderSystem;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SoundHandler;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiLabel;
-import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.gui.widget.Widget;
+import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
-@SideOnly(Side.CLIENT)
-public class GuiBookmark extends GuiButton {
+@OnlyIn(Dist.CLIENT)
+public class GuiBookmark extends Button {
     private final ResourceLocation texture;
     private final int textureSize;
     private final int activeHeight;
-    private List<Integer> yPositions;
+    private final List<Integer> yPositions = new ArrayList<>();
     private int targetPosition;
-    private List<GuiLabel> labels;
+    private final List<Widget> widgets = new ArrayList<>();
 
-    public GuiBookmark(int id, int x, int y, int height, int activeHeight, String text, ResourceLocation texture,
-            int textureSize) {
-        super(id, x, y, 51, height, text);
+    public GuiBookmark(int x, int y, int height, int activeHeight, ITextComponent text, ResourceLocation texture, int textureSize,
+            Button.IPressable pressedAction) {
+        super(x, y, 51, height, text, pressedAction);
         this.texture = texture;
         this.textureSize = textureSize;
         this.activeHeight = activeHeight;
 
-        yPositions = new ArrayList<Integer>();
-        yPositions.add(Integer.valueOf(y));
+        yPositions.add(y);
         targetPosition = y;
-
-        labels = new ArrayList<GuiLabel>();
     }
 
     public void changePosition(int indexPosition) {
@@ -50,25 +50,30 @@ public class GuiBookmark extends GuiButton {
     }
 
     public void addYPosition(int yPosition) {
-        yPositions.add(Integer.valueOf(yPosition));
+        yPositions.add(yPosition);
     }
 
-    public void addlabel(GuiLabel label) {
-        labels.add(label);
-    }
-
-    @Override
-    public boolean mousePressed(Minecraft mc, int mouseX, int mouseY) {
-        return enabled && visible && mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + activeHeight;
+    public void addWidget(Widget widget) {
+        widgets.add(widget);
     }
 
     @Override
-    public void playPressSound(SoundHandler soundHandlerIn) {
+    public boolean clicked(double mouseX, double mouseY) {
+        return isMouseOver(mouseX, mouseY);
+    }
+
+    @Override
+    public boolean isMouseOver(double mouseX, double mouseY) {
+        return active && visible && mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + activeHeight;
+    }
+
+    @Override
+    public void playDownSound(SoundHandler soundHandlerIn) {
 
     }
 
     @Override
-    public void drawButton(Minecraft mc, int mouseX, int mouseY, float partialTicks) {
+    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         if (y != targetPosition) {
             int factor = Math.abs(targetPosition - y) / 4 + 1;
             if (y > targetPosition) {
@@ -76,8 +81,8 @@ public class GuiBookmark extends GuiButton {
             }
 
             y += factor;
-            for (GuiLabel label : labels) {
-                label.y += factor;
+            for (Widget widget : widgets) {
+                widget.y += factor;
             }
 
             if (factor > 0) {
@@ -91,31 +96,25 @@ public class GuiBookmark extends GuiButton {
             }
         }
 
-        if (visible) {
-            hovered = (mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + activeHeight);
-            GlStateManager.color(1.f, 1.f, 1.f);
-            mc.getTextureManager().bindTexture(texture);
-            int textureX = 362;
-            int textureY = 1;
+        isHovered = isMouseOver(mouseX, mouseY);
+        RenderSystem.color3f(1.f, 1.f, 1.f);
+        Minecraft mc = Minecraft.getInstance();
+        mc.getTextureManager().bind(texture);
 
-            if (hovered) {
-                textureX += 52;
-            }
+        int textureX = 362;
+        int textureY = 1;
 
-            drawModalRectWithCustomSizedTexture(x, y, textureX, textureY, width, height, textureSize, textureSize);
-            drawCenteredLabel(mc.fontRenderer, displayString, x + width / 2, y + 9, GuiColors.BOOKMARK_TEXT);
-
-            for (GuiLabel label : labels) {
-                label.drawLabel(mc, mouseX, mouseY);
-            }
-        } else {
-            hovered = false;
+        if (isHovered) {
+            textureX += 52;
         }
+
+        blit(matrixStack, x, y, textureX, textureY, width, height, textureSize, textureSize);
+        drawCenteredLabel(matrixStack, mc.font, getMessage().getString(), x + width / 2, y + 9, GuiColors.BOOKMARK_TEXT);
     }
 
-    private void drawCenteredLabel(FontRenderer fontRenderer, String label, int x, int y, int color) {
-        int labelWidth = fontRenderer.getStringWidth(label);
+    private void drawCenteredLabel(MatrixStack matrixStack, FontRenderer font, String label, int x, int y, int color) {
+        int labelWidth = font.width(label);
         x -= labelWidth / 2;
-        fontRenderer.drawString(label, x, y, color);
+        font.draw(matrixStack, label, x, y, color);
     }
 }

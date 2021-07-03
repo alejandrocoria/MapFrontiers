@@ -4,16 +4,16 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.PositionedSoundRecord;
+import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 @ParametersAreNonnullByDefault
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class Sounds {
     private static final ResourceLocation openBookSoundRes = new ResourceLocation(MapFrontiers.MODID, "open_book");
     private static final SoundEvent openBookSoundEvent = new SoundEvent(openBookSoundRes);
@@ -28,11 +28,11 @@ public class Sounds {
     }
 
     public static void playSoundOpenBook() {
-        Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(openBookSoundEvent, 1.0F));
+        Minecraft.getInstance().getSoundManager().play(SimpleSound.forUI(openBookSoundEvent, 1.0F));
     }
 
     public static void playSoundTurnPage() {
-        Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(turnPageSoundEvent, 1.0F));
+        Minecraft.getInstance().getSoundManager().play(SimpleSound.forUI(turnPageSoundEvent, 1.0F));
     }
 
     private Sounds() {

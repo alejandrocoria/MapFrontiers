@@ -8,8 +8,8 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 
 @ParametersAreNonnullByDefault
 public class PendingShareFrontier {
-    public UUID frontierID;
-    public SettingsUser targetUser;
+    public final UUID frontierID;
+    public final SettingsUser targetUser;
     public int tickCount;
 
     public PendingShareFrontier(UUID frontierID, SettingsUser targetUser) {

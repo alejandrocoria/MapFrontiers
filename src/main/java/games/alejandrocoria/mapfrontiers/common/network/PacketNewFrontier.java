@@ -1,5 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
+import java.util.function.Supplier;
+
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -8,85 +10,83 @@ import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.network.PacketBuffer;
+import net.minecraft.util.RegistryKey;
 import net.minecraft.util.math.BlockPos;
-import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.world.World;
+import net.minecraftforge.fml.network.NetworkEvent;
 
 @ParametersAreNonnullByDefault
-public class PacketNewFrontier implements IMessage {
-    private int dimension = 0;
+public class PacketNewFrontier {
+    private RegistryKey<World> dimension = World.OVERWORLD;
     private boolean personal = false;
     private BlockPos vertex;
 
     public PacketNewFrontier() {
     }
 
-    public PacketNewFrontier(int dimension, boolean personal, @Nullable BlockPos vertex) {
+    public PacketNewFrontier(RegistryKey<World> dimension, boolean personal, @Nullable BlockPos vertex) {
         this.dimension = dimension;
         this.personal = personal;
         this.vertex = vertex;
     }
 
-    @Override
-    public void fromBytes(ByteBuf buf) {
-        dimension = buf.readInt();
-        personal = buf.readBoolean();
+    public static PacketNewFrontier fromBytes(PacketBuffer buf) {
+        PacketNewFrontier packet = new PacketNewFrontier();
+        packet.dimension = RegistryKey.create(Registry.DIMENSION_REGISTRY, buf.readResourceLocation());
+        packet.personal = buf.readBoolean();
 
         boolean hasVertex = buf.readBoolean();
         if (hasVertex) {
-            vertex = BlockPos.fromLong(buf.readLong());
+            packet.vertex = BlockPos.of(buf.readLong());
+        }
+
+        return packet;
+    }
+
+    public static void toBytes(PacketNewFrontier packet, PacketBuffer buf) {
+        buf.writeResourceLocation(packet.dimension.location());
+        buf.writeBoolean(packet.personal);
+
+        buf.writeBoolean(packet.vertex != null);
+        if (packet.vertex != null) {
+            buf.writeLong(packet.vertex.asLong());
         }
     }
 
-    @Override
-    public void toBytes(ByteBuf buf) {
-        buf.writeInt(dimension);
-        buf.writeBoolean(personal);
-
-        buf.writeBoolean(vertex != null);
-        if (vertex != null) {
-            buf.writeLong(vertex.toLong());
-        }
-    }
-
-    public static class Handler implements IMessageHandler<PacketNewFrontier, IMessage> {
-        @Override
-        public IMessage onMessage(PacketNewFrontier message, MessageContext ctx) {
-            if (ctx.side == Side.SERVER) {
-                FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
-                    EntityPlayerMP player = ctx.getServerHandler().player;
-                    FrontierData frontier = null;
-
-                    if (message.personal) {
-                        if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier,
-                                new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), null)) {
-                            frontier = FrontiersManager.instance.createNewPersonalFrontier(message.dimension, player,
-                                    message.vertex);
-                            PacketHandler.sendToUsersWithAccess(new PacketFrontier(frontier, player.getEntityId()), frontier);
-
-                            return;
-                        }
-                    } else {
-                        if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.CreateFrontier,
-                                new SettingsUser(player), MapFrontiers.proxy.isOPorHost(player), null)) {
-                            frontier = FrontiersManager.instance.createNewGlobalFrontier(message.dimension, player,
-                                    message.vertex);
-                            PacketHandler.INSTANCE.sendToAll(new PacketFrontier(frontier, player.getEntityId()));
-
-                            return;
-                        }
-                    }
-                    PacketHandler.INSTANCE.sendTo(
-                            new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
-                });
+    public static void handle(PacketNewFrontier message, Supplier<NetworkEvent.Context> ctx) {
+        NetworkEvent.Context context = ctx.get();
+        context.enqueueWork(() -> {
+            ServerPlayerEntity player = context.getSender();
+            if (player == null) {
+                return;
             }
 
-            return null;
-        }
+            FrontierData frontier;
+
+            if (message.personal) {
+                if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier,
+                        new SettingsUser(player), MapFrontiers.isOPorHost(player), null)) {
+                    frontier = MapFrontiers.getFrontiersManager().createNewPersonalFrontier(message.dimension, player,
+                            message.vertex);
+                    PacketHandler.sendToUsersWithAccess(new PacketFrontier(frontier, player.getId()), frontier);
+
+                    return;
+                }
+            } else {
+                if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.CreateFrontier,
+                        new SettingsUser(player), MapFrontiers.isOPorHost(player), null)) {
+                    frontier = MapFrontiers.getFrontiersManager().createNewGlobalFrontier(message.dimension, player,
+                            message.vertex);
+                    PacketHandler.sendToAll(new PacketFrontier(frontier, player.getId()));
+
+                    return;
+                }
+            }
+            PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
+        });
+        context.setPacketHandled(true);
     }
 }

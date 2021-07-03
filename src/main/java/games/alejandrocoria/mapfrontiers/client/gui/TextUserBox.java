@@ -3,44 +3,47 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import org.apache.commons.lang3.StringUtils;
-import org.lwjgl.input.Keyboard;
+import org.lwjgl.glfw.GLFW;
 
-import games.alejandrocoria.mapfrontiers.client.util.StringHelper;
+import com.mojang.blaze3d.matrix.MatrixStack;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.network.NetHandlerPlayClient;
-import net.minecraft.client.network.NetworkPlayerInfo;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.client.network.play.ClientPlayNetHandler;
+import net.minecraft.client.network.play.NetworkPlayerInfo;
+import net.minecraft.util.IReorderingProcessor;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class TextUserBox extends TextBox {
     private final Minecraft mc;
     private String partialText;
-    private List<String> suggestions;
-    private List<String> suggestionsToDraw;
-    private String error;
+    private final List<String> suggestions;
+    private final List<String> suggestionsToDraw;
+    private ITextComponent error;
     private int maxSuggestionWidth = 0;
     private int suggestionIndex = 0;
 
-    public TextUserBox(int componentId, Minecraft mc, FontRenderer fontRenderer, int x, int y, int width, String defaultText) {
-        super(componentId, fontRenderer, x, y, width, defaultText);
+    public TextUserBox(Minecraft mc, FontRenderer font, int x, int y, int width, String defaultText) {
+        super(font, x, y, width, defaultText);
         this.mc = mc;
-        suggestions = new ArrayList<String>();
-        suggestionsToDraw = new ArrayList<String>();
+        suggestions = new ArrayList<>();
+        suggestionsToDraw = new ArrayList<>();
 
-        setError("");
+        setError(null);
     }
 
-    public void setError(String error) {
+    public void setError(@Nullable ITextComponent error) {
         this.error = error;
 
-        if (this.error.isEmpty()) {
+        if (this.error == null) {
             setColor(GuiColors.SETTINGS_TEXT_HIGHLIGHT);
         } else {
             setColor(GuiColors.SETTINGS_TEXT_ERROR, GuiColors.SETTINGS_TEXT_ERROR_HIGHLIGHT);
@@ -50,15 +53,16 @@ public class TextUserBox extends TextBox {
     }
 
     @Override
-    public boolean textboxKeyTyped(char typedChar, int keyCode) {
-        if (keyCode == Keyboard.KEY_TAB) {
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        // @Note: Can't use Tab because it's used for accessibility.
+        if (keyCode == GLFW.GLFW_KEY_LEFT_ALT) {
             if (suggestions.isEmpty()) {
                 suggestionIndex = 0;
-                NetHandlerPlayClient handler = mc.getConnection();
-                if (!StringUtils.isBlank(getText()) && handler != null) {
-                    partialText = getText();
-                    for (NetworkPlayerInfo playerInfo : handler.getPlayerInfoMap()) {
-                        String name = playerInfo.getGameProfile().getName();
+                ClientPlayNetHandler handler = mc.getConnection();
+                if (!StringUtils.isBlank(getValue()) && handler != null) {
+                    partialText = getValue();
+                    for (NetworkPlayerInfo playerInfo : handler.getOnlinePlayers()) {
+                        String name = playerInfo.getProfile().getName();
                         if (name != null && name.regionMatches(true, 0, partialText, 0, partialText.length())) {
                             suggestions.add(name);
                         }
@@ -74,7 +78,7 @@ public class TextUserBox extends TextBox {
             suggestionsToDraw.clear();
 
             if (!suggestions.isEmpty()) {
-                setText(suggestions.get(suggestionIndex));
+                this.setValue(suggestions.get(suggestionIndex));
 
                 if (suggestions.size() == 1) {
                     suggestions.clear();
@@ -93,7 +97,7 @@ public class TextUserBox extends TextBox {
 
                     for (int i = firstIndex; i < firstIndex + size; ++i) {
                         suggestionsToDraw.add(suggestions.get(i));
-                        int textWidth = fontRenderer.getStringWidth(suggestions.get(i));
+                        int textWidth = font.width(suggestions.get(i));
                         if (textWidth > maxSuggestionWidth) {
                             maxSuggestionWidth = textWidth;
                         }
@@ -105,32 +109,33 @@ public class TextUserBox extends TextBox {
         } else {
             suggestions.clear();
             suggestionsToDraw.clear();
-            return super.textboxKeyTyped(typedChar, keyCode);
+            return super.keyPressed(keyCode, scanCode, modifiers);
         }
     }
 
     @Override
-    public void drawTextBox(int mouseX, int mouseY) {
-        super.drawTextBox(mouseX, mouseY);
+    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+        super.renderButton(matrixStack, mouseX, mouseY, partialTicks);
 
-        if (!error.isEmpty()) {
-            List<String> errorList = fontRenderer.listFormattedStringToWidth(error, width - 8);
-            int maxErrorWidth = StringHelper.getMaxWidth(fontRenderer, errorList);
+        if (error != null) {
+            List<IReorderingProcessor> errorList = font.split(error, width - 8);
+            int maxErrorWidth = width - 8;
 
-            Gui.drawRect(x - 1, y - errorList.size() * 12 - 5, x + maxErrorWidth + 9, y - 1,
+            fill(matrixStack, x - 1, y - errorList.size() * 12 - 5, x + maxErrorWidth + 9, y - 1,
                     GuiColors.SETTINGS_TEXT_BOX_EXTRA_BORDER);
-            Gui.drawRect(x, y - errorList.size() * 12 - 4, x + maxErrorWidth + 8, y - 1, GuiColors.SETTINGS_TEXT_BOX_EXTRA_BG);
+            fill(matrixStack, x, y - errorList.size() * 12 - 4, x + maxErrorWidth + 8, y - 1,
+                    GuiColors.SETTINGS_TEXT_BOX_EXTRA_BG);
 
             int posX = x + 4;
             int posY = y - errorList.size() * 12;
-            for (String e : errorList) {
-                fontRenderer.drawString(e, posX, posY, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
+            for (IReorderingProcessor e : errorList) {
+                font.draw(matrixStack, e, posX, posY, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                 posY += 12;
             }
         } else if (!suggestionsToDraw.isEmpty()) {
-            Gui.drawRect(x - 1, y - suggestionsToDraw.size() * 12 - 5, x + maxSuggestionWidth + 9, y - 1,
+            fill(matrixStack, x - 1, y - suggestionsToDraw.size() * 12 - 5, x + maxSuggestionWidth + 9, y - 1,
                     GuiColors.SETTINGS_TEXT_BOX_EXTRA_BORDER);
-            Gui.drawRect(x, y - suggestionsToDraw.size() * 12 - 4, x + maxSuggestionWidth + 8, y - 1,
+            fill(matrixStack, x, y - suggestionsToDraw.size() * 12 - 4, x + maxSuggestionWidth + 8, y - 1,
                     GuiColors.SETTINGS_TEXT_BOX_EXTRA_BG);
 
             int posX = x + 4;
@@ -138,12 +143,12 @@ public class TextUserBox extends TextBox {
             for (int i = suggestionsToDraw.size() - 1; i >= 0; --i) {
                 String t = suggestionsToDraw.get(i);
                 if (suggestionsToDraw.get(i) == suggestions.get(suggestionIndex)) {
-                    fontRenderer.drawString(t, posX, posY, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
+                    font.draw(matrixStack, t, posX, posY, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                 } else {
                     String suffix = t.substring(0, partialText.length());
                     String rest = t.substring(partialText.length());
-                    fontRenderer.drawString(suffix, posX, posY, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
-                    fontRenderer.drawString(rest, posX + fontRenderer.getStringWidth(suffix), posY,
+                    font.draw(matrixStack, suffix, posX, posY, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
+                    font.draw(matrixStack, rest, posX + font.width(suffix), posY,
                             GuiColors.SETTINGS_TEXT_MEDIUM);
                 }
 
@@ -154,13 +159,25 @@ public class TextUserBox extends TextBox {
 
     @Override
     public void setFocused(boolean isFocusedIn) {
+        super.setFocused(isFocusedIn);
+
         if (!isFocusedIn) {
             suggestions.clear();
             suggestionsToDraw.clear();
         }
 
-        setError("");
+        setError(null);
+    }
 
-        super.setFocused(isFocusedIn);
+    @Override
+    protected void onFocusedChanged(boolean focused) {
+        super.onFocusedChanged(focused);
+
+        if (!focused) {
+            suggestions.clear();
+            suggestionsToDraw.clear();
+        }
+
+        setError(null);
     }
 }

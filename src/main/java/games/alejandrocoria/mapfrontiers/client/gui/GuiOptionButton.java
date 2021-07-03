@@ -5,26 +5,27 @@ import java.util.List;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import net.minecraft.client.Minecraft;
+import com.mojang.blaze3d.matrix.MatrixStack;
+
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.client.gui.widget.button.Button;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
-@SideOnly(Side.CLIENT)
-public class GuiOptionButton extends GuiButton {
-    protected final FontRenderer fontRenderer;
-    private List<String> options;
+@OnlyIn(Dist.CLIENT)
+public class GuiOptionButton extends Button {
+    protected final FontRenderer font;
+    private final List<String> options;
     private int selected = 0;
     private int color = GuiColors.SETTINGS_TEXT;
     private int highlightedColor = GuiColors.SETTINGS_TEXT_HIGHLIGHT;
 
-    public GuiOptionButton(int componentId, FontRenderer fontRenderer, int x, int y, int width) {
-        super(componentId, x, y, width, 12, "");
-        this.fontRenderer = fontRenderer;
-        options = new ArrayList<String>();
+    public GuiOptionButton(FontRenderer font, int x, int y, int width, Button.IPressable pressedAction) {
+        super(x, y, width, 12, StringTextComponent.EMPTY, pressedAction);
+        this.font = font;
+        options = new ArrayList<>();
     }
 
     public void addOption(String text) {
@@ -60,34 +61,25 @@ public class GuiOptionButton extends GuiButton {
     }
 
     @Override
-    public void drawButton(Minecraft mc, int mouseX, int mouseY, float partialTicks) {
-        if (visible) {
-            hovered = (mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height);
-
-            int c = color;
-            if (hovered) {
-                c = highlightedColor;
-            }
-
-            Gui.drawRect(x - 1, y - 1, x + width + 1, y + height + 1, GuiColors.SETTINGS_OPTION_BORDER);
-            Gui.drawRect(x, y, x + width, y + height, GuiColors.SETTINGS_OPTION_BG);
-
-            fontRenderer.drawString(options.get(selected), x + 4, y + 2, c);
-        } else {
-            hovered = false;
+    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+        int c = color;
+        if (isHovered) {
+            c = highlightedColor;
         }
+
+        fill(matrixStack, x - 1, y - 1, x + width + 1, y + height + 1, GuiColors.SETTINGS_OPTION_BORDER);
+        fill(matrixStack, x, y, x + width, y + height, GuiColors.SETTINGS_OPTION_BG);
+
+        font.draw(matrixStack, options.get(selected), x + 4, y + 2, c);
     }
 
     @Override
-    public boolean mousePressed(Minecraft mc, int mouseX, int mouseY) {
-        if (enabled && visible && hovered) {
-            ++selected;
-            if (selected >= options.size()) {
-                selected = 0;
-            }
-            return true;
+    public void onClick(double mouseX, double mouseY) {
+        ++selected;
+        if (selected >= options.size()) {
+            selected = 0;
         }
 
-        return false;
+        onPress();
     }
 }

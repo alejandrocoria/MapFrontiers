@@ -6,10 +6,9 @@ import org.apache.commons.lang3.StringUtils;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.network.PacketBuffer;
 
 public class SettingsUser {
     public String username;
@@ -19,9 +18,9 @@ public class SettingsUser {
         username = "";
     }
 
-    public SettingsUser(EntityPlayer player) {
-        username = player.getName();
-        uuid = player.getUniqueID();
+    public SettingsUser(PlayerEntity player) {
+        username = player.getName().getString();
+        uuid = player.getUUID();
     }
 
     public SettingsUser(String username, UUID uuid) {
@@ -72,7 +71,7 @@ public class SettingsUser {
         }
     }
 
-    public void readFromNBT(NBTTagCompound nbt) {
+    public void readFromNBT(CompoundNBT nbt) {
         username = nbt.getString("username");
         try {
             uuid = UUID.fromString(nbt.getString("UUID"));
@@ -83,17 +82,17 @@ public class SettingsUser {
         fillMissingInfo(true);
     }
 
-    public void writeToNBT(NBTTagCompound nbt) {
+    public void writeToNBT(CompoundNBT nbt) {
         fillMissingInfo(true);
 
-        nbt.setString("username", username);
-        nbt.setString("UUID", uuid.toString());
+        nbt.putString("username", username);
+        nbt.putString("UUID", uuid.toString());
     }
 
-    public void fromBytes(ByteBuf buf) {
+    public void fromBytes(PacketBuffer buf) {
         boolean hasUsername = buf.readBoolean();
         if (hasUsername) {
-            username = ByteBufUtils.readUTF8String(buf);
+            username = buf.readUtf(17);
         } else {
             username = "";
         }
@@ -108,12 +107,12 @@ public class SettingsUser {
         fillMissingInfo(false);
     }
 
-    public void toBytes(ByteBuf buf) {
+    public void toBytes(PacketBuffer buf) {
         if (StringUtils.isBlank(username)) {
             buf.writeBoolean(false);
         } else {
             buf.writeBoolean(true);
-            ByteBufUtils.writeUTF8String(buf, username);
+            buf.writeUtf(username, 17);
         }
 
         if (uuid == null) {
@@ -137,7 +136,7 @@ public class SettingsUser {
             return true;
         }
 
-        if (other == null || !(other instanceof SettingsUser)) {
+        if (!(other instanceof SettingsUser)) {
             return false;
         }
 
@@ -146,7 +145,7 @@ public class SettingsUser {
         fillMissingInfo(false);
         user.fillMissingInfo(false);
 
-        if (uuid != null && user != null) {
+        if (uuid != null) {
             return uuid.equals(user.uuid);
         }
 

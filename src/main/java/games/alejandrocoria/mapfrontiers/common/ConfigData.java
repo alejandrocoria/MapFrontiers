@@ -1,13 +1,14 @@
 package games.alejandrocoria.mapfrontiers.common;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
+import org.apache.commons.lang3.tuple.Pair;
+
+import com.electronwill.nightconfig.core.Config;
+import com.electronwill.nightconfig.core.UnmodifiableConfig;
+import com.google.common.base.Splitter;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.util.ReflectionHelper;
@@ -18,20 +19,30 @@ import journeymap.client.ui.minimap.MiniMap;
 import journeymap.client.ui.minimap.Shape;
 import journeymap.client.ui.theme.Theme;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraftforge.common.config.Config;
-import net.minecraftforge.common.config.Config.Comment;
-import net.minecraftforge.common.config.Config.Ignore;
-import net.minecraftforge.common.config.Config.RangeDouble;
-import net.minecraftforge.common.config.Config.RangeInt;
-import net.minecraftforge.common.config.ConfigElement;
-import net.minecraftforge.fml.client.config.IConfigElement;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.common.ForgeConfigSpec.BooleanValue;
+import net.minecraftforge.common.ForgeConfigSpec.DoubleValue;
+import net.minecraftforge.common.ForgeConfigSpec.EnumValue;
+import net.minecraftforge.common.ForgeConfigSpec.IntValue;
+import net.minecraftforge.common.ForgeConfigSpec.ValueSpec;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraftforge.fml.config.ModConfig;
 
-@ParametersAreNonnullByDefault
-@Config(modid = MapFrontiers.MODID)
+@EventBusSubscriber(modid = MapFrontiers.MODID, bus = EventBusSubscriber.Bus.MOD)
 public class ConfigData {
+    public static final ClientConfig CLIENT;
+    public static final ForgeConfigSpec CLIENT_SPEC;
+    static {
+        final Pair<ClientConfig, ForgeConfigSpec> specPair = new ForgeConfigSpec.Builder().configure(ClientConfig::new);
+        CLIENT_SPEC = specPair.getRight();
+        CLIENT = specPair.getLeft();
+    }
+
     public enum NameVisibility {
         Manual, Show, Hide
     }
@@ -45,148 +56,217 @@ public class ConfigData {
         None, Name, Owner, Banner
     }
 
-    @Ignore
-    private static Map<String, IConfigElement> properties;
+    public static boolean addVertexToNewFrontier;
+    public static boolean alwaysShowUnfinishedFrontiers;
+    public static NameVisibility nameVisibility;
+    public static double polygonsOpacity;
+    public static int snapDistance;
+    public static boolean hudEnabled;
+    public static boolean hudAutoAdjustAnchor;
+    public static boolean hudSnapToBorder;
+    public static int hudBannerSize;
+    public static HUDSlot hudSlot1;
+    public static HUDSlot hudSlot2;
+    public static HUDSlot hudSlot3;
+    public static HUDAnchor hudAnchor;
+    public static int hudXPosition;
+    public static int hudYPosition;
 
-    @Comment({ "If true, when a new frontier is created, the first vertex will automatically be added where the player is." })
-    public static boolean addVertexToNewFrontier = true;
-
-    @Comment({ "With true, it always shows unfinished frontiers. With false, they will only be seen with the book in hand." })
-    public static boolean alwaysShowUnfinishedFrontiers = false;
-
-    @Comment({ "Force all frontier names to be shown on the map or hidden. In Manual you can decide for each frontier." })
-    public static NameVisibility nameVisibility = NameVisibility.Manual;
-
-    @Comment({ "Transparency of the frontier polygons. 0.0 is fully transparent and 1.0 is no transparency." })
-    @RangeDouble(min = 0.0, max = 1.0)
-    public static double polygonsOpacity = 0.4;
-
-    @Comment({ "Distance at which vertices are attached to nearby vertices." })
-    @RangeInt(min = 0, max = 16)
-    public static int snapDistance = 8;
-
-    public static HUDConfig hud = new HUDConfig();
-
-
-    public static class HUDConfig {
-        @Comment({ "Show the HUD on screen." })
-        public boolean enabled = true;
-
-        @Comment({ "Automatically switch to nearest anchor when HUD position is edited (on settings screen)." })
-        public boolean autoAdjustAnchor = true;
-
-        @Comment({ "Automatically snap to closest border when HUD position is edited (on settings screen)." })
-        public boolean snapToBorder = true;
-
-        @Comment({ "Size of the HUD banner." })
-        @RangeInt(min = 1, max = 8)
-        public int bannerSize = 3;
-
-        @Comment({ "HUD element on slot 1." })
-        public HUDSlot slot1 = HUDSlot.Name;
-
-        @Comment({ "HUD element on slot 2." })
-        public HUDSlot slot2 = HUDSlot.Owner;
-
-        @Comment({ "HUD element on slot 3." })
-        public HUDSlot slot3 = HUDSlot.Banner;
-
-        @Comment({
-                "Anchor point of the HUD. In the case of choosing the minimap as an anchor, its default position will be used as a reference in the coordinates." })
-        public HUDAnchor anchor = HUDAnchor.MinimapHorizontal;
-
-        @Comment({ "Position of the HUD relative to anchor." })
-        public Point position = new Point();
+    public static void bakeConfig() {
+        addVertexToNewFrontier = CLIENT.addVertexToNewFrontier.get();
+        alwaysShowUnfinishedFrontiers = CLIENT.alwaysShowUnfinishedFrontiers.get();
+        nameVisibility = CLIENT.nameVisibility.get();
+        polygonsOpacity = CLIENT.polygonsOpacity.get();
+        snapDistance = CLIENT.snapDistance.get();
+        hudEnabled = CLIENT.hudEnabled.get();
+        hudAutoAdjustAnchor = CLIENT.hudAutoAdjustAnchor.get();
+        hudSnapToBorder = CLIENT.hudSnapToBorder.get();
+        hudBannerSize = CLIENT.hudBannerSize.get();
+        hudSlot1 = CLIENT.hudSlot1.get();
+        hudSlot2 = CLIENT.hudSlot2.get();
+        hudSlot3 = CLIENT.hudSlot3.get();
+        hudAnchor = CLIENT.hudAnchor.get();
+        hudXPosition = CLIENT.hudXPosition.get();
+        hudYPosition = CLIENT.hudYPosition.get();
     }
 
+    @SubscribeEvent
+    public static void onModConfigEvent(final ModConfig.ModConfigEvent configEvent) {
+        if (configEvent.getConfig().getSpec() == ConfigData.CLIENT_SPEC) {
+            bakeConfig();
+        }
+    }
 
-    public static boolean isInRange(String fieldName, int value) {
-        ensureProperties();
+    public static class ClientConfig {
+        public final BooleanValue addVertexToNewFrontier;
+        public final BooleanValue alwaysShowUnfinishedFrontiers;
+        public final EnumValue<NameVisibility> nameVisibility;
+        public final DoubleValue polygonsOpacity;
+        public final IntValue snapDistance;
+        public final BooleanValue hudEnabled;
+        public final BooleanValue hudAutoAdjustAnchor;
+        public final BooleanValue hudSnapToBorder;
+        public final IntValue hudBannerSize;
+        public final EnumValue<HUDSlot> hudSlot1;
+        public final EnumValue<HUDSlot> hudSlot2;
+        public final EnumValue<HUDSlot> hudSlot3;
+        public final EnumValue<HUDAnchor> hudAnchor;
+        public final IntValue hudXPosition;
+        public final IntValue hudYPosition;
 
-        IConfigElement configElement = properties.get(fieldName);
-        if (configElement == null) {
-            return false;
+        public ClientConfig(ForgeConfigSpec.Builder builder) {
+            addVertexToNewFrontier = builder.comment(
+                    "If true, when a new frontier is created, the first vertex will automatically be added where the player is.")
+                    .translation(MapFrontiers.MODID + ".config." + "addVertexToNewFrontier")
+                    .define("addVertexToNewFrontier", true);
+            alwaysShowUnfinishedFrontiers = builder.comment(
+                    "With true, it always shows unfinished frontiers. With false, they will only be seen with the book in hand.")
+                    .translation(MapFrontiers.MODID + ".config." + "alwaysShowUnfinishedFrontiers")
+                    .define("alwaysShowUnfinishedFrontiers", true);
+            nameVisibility = builder.comment(
+                    "Force all frontier names to be shown on the map or hidden. In Manual you can decide for each frontier.")
+                    .translation(MapFrontiers.MODID + ".config." + "nameVisibility")
+                    .defineEnum("nameVisibility", NameVisibility.Manual);
+            polygonsOpacity = builder
+                    .comment("Transparency of the frontier polygons. 0.0 is fully transparent and 1.0 is no transparency.")
+                    .translation(MapFrontiers.MODID + ".config." + "polygonsOpacity")
+                    .defineInRange("polygonsOpacity", 0.4, 0.0, 1.0);
+            snapDistance = builder.comment("Distance at which vertices are attached to nearby vertices.")
+                    .translation(MapFrontiers.MODID + ".config." + "snapDistance").defineInRange("snapDistance", 8, 0, 16);
+
+            builder.push("hud");
+            hudEnabled = builder.comment("Show the HUD on screen.").translation(MapFrontiers.MODID + ".config.hud." + "enabled")
+                    .define("enabled", true);
+            hudAutoAdjustAnchor = builder
+                    .comment("Automatically switch to nearest anchor when HUD position is edited (on settings screen).")
+                    .translation(MapFrontiers.MODID + ".config.hud." + "autoAdjustAnchor").define("autoAdjustAnchor", true);
+            hudSnapToBorder = builder
+                    .comment("Automatically snap to closest border when HUD position is edited (on settings screen).")
+                    .translation(MapFrontiers.MODID + ".config.hud." + "snapToBorder").define("snapToBorder", true);
+            hudBannerSize = builder.comment("Size of the HUD banner.")
+                    .translation(MapFrontiers.MODID + ".config.hud." + "bannerSize").defineInRange("bannerSize", 3, 1, 8);
+            hudSlot1 = builder.comment("HUD element on slot 1.").translation(MapFrontiers.MODID + ".config.hud." + "slot1")
+                    .defineEnum("slot1", HUDSlot.Name);
+            hudSlot2 = builder.comment("HUD element on slot 2.").translation(MapFrontiers.MODID + ".config.hud." + "slot2")
+                    .defineEnum("slot2", HUDSlot.Owner);
+            hudSlot3 = builder.comment("HUD element on slot 3.").translation(MapFrontiers.MODID + ".config.hud." + "slot3")
+                    .defineEnum("slot3", HUDSlot.Banner);
+            hudAnchor = builder.comment(
+                    "Anchor point of the HUD. In the case of choosing the minimap as an anchor, its default position will be used as a reference in the coordinates.")
+                    .translation(MapFrontiers.MODID + ".config.hud." + "anchor")
+                    .defineEnum("anchor", HUDAnchor.MinimapHorizontal);
+            hudXPosition = builder.comment("Size of the HUD banner.")
+                    .translation(MapFrontiers.MODID + ".config.hud." + "xPosition")
+                    .defineInRange("xPosition", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            hudYPosition = builder.comment("Size of the HUD banner.")
+                    .translation(MapFrontiers.MODID + ".config.hud." + "yPosition")
+                    .defineInRange("yPosition", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            builder.pop();
+        }
+    }
+
+    public static void save() {
+        CLIENT.addVertexToNewFrontier.set(addVertexToNewFrontier);
+        CLIENT.alwaysShowUnfinishedFrontiers.set(alwaysShowUnfinishedFrontiers);
+        CLIENT.nameVisibility.set(nameVisibility);
+        CLIENT.polygonsOpacity.set(polygonsOpacity);
+        CLIENT.snapDistance.set(snapDistance);
+        CLIENT.hudEnabled.set(hudEnabled);
+        CLIENT.hudAutoAdjustAnchor.set(hudAutoAdjustAnchor);
+        CLIENT.hudSnapToBorder.set(hudSnapToBorder);
+        CLIENT.hudBannerSize.set(hudBannerSize);
+        CLIENT.hudSlot1.set(hudSlot1);
+        CLIENT.hudSlot2.set(hudSlot2);
+        CLIENT.hudSlot3.set(hudSlot3);
+        CLIENT.hudAnchor.set(hudAnchor);
+        CLIENT.hudXPosition.set(hudXPosition);
+        CLIENT.hudYPosition.set(hudYPosition);
+
+        CLIENT_SPEC.save();
+    }
+
+    public static List<ITextComponent> getTooltip(String name) {
+        List<ITextComponent> tooltip = new ArrayList<>();
+
+        ValueSpec valueSpec = getValueSpec(name);
+        if (valueSpec != null) {
+            for (String string : Splitter.on("\n").split(valueSpec.getComment())) {
+                tooltip.add(new StringTextComponent(string));
+            }
         }
 
-        int min = Integer.parseInt((String) configElement.getMinValue());
-        int max = Integer.parseInt((String) configElement.getMaxValue());
-
-        return value >= min && value <= max;
+        return tooltip;
     }
 
-    public static boolean isInRange(String fieldName, double value) {
-        ensureProperties();
-
-        IConfigElement configElement = properties.get(fieldName);
-        if (configElement == null) {
-            return false;
+    public static String getDefault(String name) {
+        ValueSpec valueSpec = getValueSpec(name);
+        if (valueSpec != null) {
+            return valueSpec.getDefault().toString();
         }
 
-        double min = Double.parseDouble((String) configElement.getMinValue());
-        double max = Double.parseDouble((String) configElement.getMaxValue());
-
-        return value >= min && value <= max;
+        return "";
     }
 
-    public static Object getDefault(String fieldName) {
-        ensureProperties();
+    public static boolean isInRange(String name, Object value) {
+        ValueSpec valueSpec = getValueSpec(name);
+        if (valueSpec != null) {
+            return valueSpec.test(value);
+        }
 
-        IConfigElement configElement = properties.get(fieldName);
-        if (configElement == null) {
+        return false;
+    }
+
+    private static ValueSpec getValueSpec(String name) {
+        return getValueSpec(Arrays.asList(name.split("\\.")), CLIENT_SPEC.getSpec());
+    }
+
+    private static ValueSpec getValueSpec(List<String> path, UnmodifiableConfig valueMap) {
+        if (path.isEmpty()) {
             return null;
         }
 
-        return configElement.getDefault();
-    }
-
-    public static List<String> getTooltip(String fieldName) {
-        ensureProperties();
-
-        IConfigElement configElement = properties.get(fieldName);
-        if (configElement == null) {
+        Object value = valueMap.valueMap().get(path.get(0));
+        if (value == null) {
             return null;
         }
 
-        String tooltip = TextFormatting.GREEN + configElement.getName() + "\n";
-        tooltip += TextFormatting.YELLOW + configElement.getComment() + "\n";
-
-        if (configElement.getDefault() != null) {
-            tooltip += TextFormatting.AQUA + "Default: " + (String) configElement.getDefault();
+        if (value instanceof Config) {
+            return getValueSpec(path.subList(1, path.size()), (Config) value);
+        } else {
+            return (ValueSpec) value;
         }
-
-        List<String> tooltipList = new ArrayList<String>();
-        Collections.addAll(tooltipList, tooltip.split("\n"));
-        return tooltipList;
     }
 
     public static Point getHUDAnchor(HUDAnchor anchor) {
-        Minecraft mc = Minecraft.getMinecraft();
+        Minecraft mc = Minecraft.getInstance();
         Point p = new Point();
+        int displayWidth = mc.getWindow().getWidth();
+        int displayHeight = mc.getWindow().getHeight();
 
         switch (anchor) {
         case ScreenTop:
-            p.x = mc.displayWidth / 2;
+            p.x = displayWidth / 2;
             break;
         case ScreenTopRight:
-            p.x = mc.displayWidth;
+            p.x = displayWidth;
             break;
         case ScreenRight:
-            p.x = mc.displayWidth;
-            p.y = mc.displayHeight / 2;
+            p.x = displayWidth;
+            p.y = displayHeight / 2;
             break;
         case ScreenBottomRight:
-            p.x = mc.displayWidth;
-            p.y = mc.displayHeight;
+            p.x = displayWidth;
+            p.y = displayHeight;
             break;
         case ScreenBottom:
-            p.x = mc.displayWidth / 2;
-            p.y = mc.displayHeight;
+            p.x = displayWidth / 2;
+            p.y = displayHeight;
             break;
         case ScreenBottomLeft:
-            p.y = mc.displayHeight;
+            p.y = displayHeight;
             break;
         case ScreenLeft:
-            p.y = mc.displayHeight / 2;
+            p.y = displayHeight / 2;
             break;
         case ScreenTopLeft:
             break;
@@ -195,18 +275,18 @@ public class ConfigData {
             break;
         case MinimapHorizontal:
             p = getMinimapCorner();
-            if (p.y < mc.displayHeight / 2) {
+            if (p.y < displayHeight / 2) {
                 p.y = 0;
-            } else if (p.y > mc.displayHeight / 2) {
-                p.y = mc.displayHeight;
+            } else if (p.y > displayHeight / 2) {
+                p.y = displayHeight;
             }
             break;
         case MinimapVertical:
             p = getMinimapCorner();
-            if (p.x < mc.displayWidth / 2) {
+            if (p.x < displayWidth / 2) {
                 p.x = 0;
-            } else if (p.x > mc.displayWidth / 2) {
-                p.x = mc.displayWidth;
+            } else if (p.x > displayWidth / 2) {
+                p.x = displayWidth;
             }
             break;
         }
@@ -254,43 +334,45 @@ public class ConfigData {
         return p;
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public static Point getMinimapCorner() {
-        Minecraft mc = Minecraft.getMinecraft();
+        Minecraft mc = Minecraft.getInstance();
 
         Point corner = new Point();
         MiniMap minimap = UIManager.INSTANCE.getMiniMap();
+        int displayWidth = mc.getWindow().getWidth();
+        int displayHeight = mc.getWindow().getHeight();
 
         switch (minimap.getCurrentMinimapProperties().position.get()) {
         case TopRight:
-            corner.x = mc.displayWidth;
+            corner.x = displayWidth;
             break;
         case BottomRight:
-            corner.x = mc.displayWidth;
-            corner.y = mc.displayHeight;
+            corner.x = displayWidth;
+            corner.y = displayHeight;
             break;
         case BottomLeft:
-            corner.y = mc.displayHeight;
+            corner.y = displayHeight;
             break;
         case TopLeft:
             break;
         case TopCenter:
-            corner.x = mc.displayWidth / 2;
+            corner.x = displayWidth / 2;
             break;
         case Center:
-            corner.x = mc.displayWidth / 2;
-            corner.y = mc.displayHeight / 2;
+            corner.x = displayWidth / 2;
+            corner.y = displayHeight / 2;
             break;
         }
 
         if (UIManager.INSTANCE.isMiniMapEnabled()) {
             try {
-                DisplayVars dv = ReflectionHelper.getPrivateField(minimap, "dv", DisplayVars.class);
+                DisplayVars dv = ReflectionHelper.getPrivateField(minimap, "dv");
 
-                int minimapWidth = ReflectionHelper.getPrivateField(dv, "minimapWidth", int.class);
-                int minimapHeight = ReflectionHelper.getPrivateField(dv, "minimapHeight", int.class);
-                int translateX = ReflectionHelper.getPrivateField(dv, "translateX", int.class);
-                int translateY = ReflectionHelper.getPrivateField(dv, "translateY", int.class);
+                int minimapWidth = ReflectionHelper.getPrivateField(dv, "minimapWidth");
+                int minimapHeight = ReflectionHelper.getPrivateField(dv, "minimapHeight");
+                int translateX = ReflectionHelper.getPrivateField(dv, "translateX");
+                int translateY = ReflectionHelper.getPrivateField(dv, "translateY");
 
                 Theme.Minimap.MinimapSpec minimapSpec;
                 if (minimap.getCurrentMinimapProperties().shape.get() == Shape.Circle) {
@@ -301,8 +383,8 @@ public class ConfigData {
 
                 minimapWidth += minimapSpec.margin * 2;
                 minimapHeight += minimapSpec.margin * 2;
-                translateX += mc.displayWidth / 2;
-                translateY += mc.displayHeight / 2;
+                translateX += displayWidth / 2;
+                translateY += displayHeight / 2;
 
                 switch (minimap.getCurrentMinimapProperties().position.get()) {
                 case TopRight:
@@ -366,29 +448,6 @@ public class ConfigData {
 
         return origin;
     }
-
-    private static void ensureProperties() {
-        if (properties != null) {
-            return;
-        }
-
-        properties = new HashMap<String, IConfigElement>();
-        addProperties(ConfigElement.from(ConfigData.class).getChildElements(), "");
-    }
-
-    private static void addProperties(@Nullable List<IConfigElement> elements, String prefix) {
-        if (elements == null) {
-            return;
-        }
-
-        for (IConfigElement configElement : elements) {
-            properties.put(prefix + configElement.getName(), configElement);
-            if (!configElement.isProperty()) {
-                addProperties(configElement.getChildElements(), prefix + configElement.getName() + ".");
-            }
-        }
-    }
-
 
     public static class Point {
         public int x = 0;
