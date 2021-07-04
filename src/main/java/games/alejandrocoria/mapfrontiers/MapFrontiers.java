@@ -2,6 +2,9 @@ package games.alejandrocoria.mapfrontiers;
 
 import java.util.ArrayList;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.DistExecutor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -39,7 +42,7 @@ import net.minecraftforge.fml.server.ServerLifecycleHooks;
 @Mod(MapFrontiers.MODID)
 public class MapFrontiers {
     public static final String MODID = "mapfrontiers";
-    public static final String VERSION = "1.16.5-1.5.1beta1";
+    public static final String VERSION = "1.16.5-1.5.1beta2";
     public static Logger LOGGER;
 
     private static FrontiersManager frontiersManager;
@@ -51,8 +54,8 @@ public class MapFrontiers {
         LOGGER = LogManager.getLogger("MapFrontiers");
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ConfigData.CLIENT_SPEC);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(MapFrontiers::commonSetup);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(ClientProxy::clientSetup);
         FMLJavaModLoadingContext.get().getModEventBus().addGenericListener(Item.class, MapFrontiers::registerItems);
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> MapFrontiers::addListenerClientSetup);
     }
 
     @SubscribeEvent
@@ -66,6 +69,11 @@ public class MapFrontiers {
         event.getRegistry().register(frontierBook);
         event.getRegistry().register(personalFrontierBook);
         LOGGER.info("registerItems done");
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static void addListenerClientSetup() {
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(ClientProxy::clientSetup);
     }
 
     @SubscribeEvent

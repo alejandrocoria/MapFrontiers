@@ -4,6 +4,7 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import net.minecraft.inventory.EquipmentSlotType;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
@@ -38,6 +39,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 
 @ParametersAreNonnullByDefault
 @Mod.EventBusSubscriber(value = Dist.CLIENT, modid = MapFrontiers.MODID)
+@OnlyIn(Dist.CLIENT)
 public class ClientProxy {
     private static IClientAPI jmAPI;
     private static FrontiersOverlayManager frontiersOverlayManager;
