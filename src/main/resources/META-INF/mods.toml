@@ -32,6 +32,6 @@ This mod is an addon for Journey Map that allows you to divide the map into regi
 [[dependencies.mapfrontiers]]
     modId="journeymap"
     mandatory=true
-    versionRange="[1.16.5-5.7.1,)"
+    versionRange="[1.16.5-5.7.3,)"
     ordering="NONE"
     side="BOTH"
