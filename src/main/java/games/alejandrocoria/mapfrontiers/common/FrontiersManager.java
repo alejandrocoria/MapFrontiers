@@ -80,14 +80,11 @@ public class FrontiersManager {
                             continue;
                         }
 
-                        boolean removed = false;
-
                         if (frontier.getUsersShared() != null) {
-                            removed = frontier.getUsersShared().removeIf(x -> x.getUser().equals(pending.targetUser));
-                        }
-
-                        if (removed) {
-                            PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier), frontier);
+                            boolean removed = frontier.getUsersShared().removeIf(x -> x.getUser().equals(pending.targetUser));
+                            if (removed) {
+                                PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier), frontier);
+                            }
                         }
                     }
                 }
