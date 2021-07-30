@@ -82,7 +82,7 @@ public class FrontierOverlay extends FrontierData {
     private int hash;
     private boolean dirty = true;
 
-    public FrontierOverlay(FrontierData data, IClientAPI jmAPI) {
+    public FrontierOverlay(FrontierData data, @Nullable IClientAPI jmAPI) {
         super(data);
         this.jmAPI = jmAPI;
         displayId = "frontier_" + id.toString();
@@ -595,7 +595,7 @@ public class FrontierOverlay extends FrontierData {
                         patternList.add(bannerpattern);
                         int j = nbttagcompound.getInt("Color");
                         colorList.add(DyeColor.byId(j));
-                        patternResourceLocation = patternResourceLocation + bannerpattern.getHashname() + j;
+                        patternResourceLocation += bannerpattern.getHashname() + j;
                     }
                 }
             }

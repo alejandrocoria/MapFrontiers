@@ -30,8 +30,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 public class ItemFrontierBook extends Item {
-    protected String name;
-
     public ItemFrontierBook() {
         super(new Properties().stacksTo(1).tab(ItemGroup.TAB_TOOLS));
         setRegistryName(new ResourceLocation(MapFrontiers.MODID, "frontier_book"));

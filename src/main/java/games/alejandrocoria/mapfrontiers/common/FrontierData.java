@@ -123,6 +123,7 @@ public class FrontierData {
     public void ensureOwner() {
         if (owner.isEmpty()) {
             MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+            //noinspection StatementWithEmptyBody
             if (server.isDedicatedServer()) {
                 // @Incomplete: I can't find a way to get the server owner.
                 //owner = new SettingsUser(server.getServerOwner());

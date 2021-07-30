@@ -52,10 +52,6 @@ public class TextBox extends TextFieldWidget {
         this.frame = frame;
     }
 
-    public void setValue(Object object) {
-        this.setValue(object.toString());
-    }
-
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         boolean res = super.keyPressed(keyCode, scanCode, modifiers);

@@ -8,6 +8,7 @@ import java.util.Set;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.util.StringHelper;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.ListNBT;
 import net.minecraft.nbt.StringNBT;
@@ -105,15 +106,7 @@ public class SettingsGroup {
                 }
                 actions.add(action);
             } catch (IllegalArgumentException e) {
-                String availableActionsString = availableActions.get(0).name();
-                for (int i2 = 1; i2 < availableActions.size() - 1; ++i2) {
-                    availableActionsString += ", ";
-                    availableActionsString += availableActions.get(i2).name();
-                }
-
-                availableActionsString += " or ";
-                availableActionsString += availableActions.get(availableActions.size() - 1).name();
-
+                String availableActionsString = StringHelper.enumValuesToString(availableActions);
                 MapFrontiers.LOGGER.warn(String.format("Unknown action in group %1$s. Found: \"%2$s\". Expected: %3$s", name,
                         actionTag, availableActionsString));
             }

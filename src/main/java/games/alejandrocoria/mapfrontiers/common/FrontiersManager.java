@@ -435,10 +435,12 @@ public class FrontiersManager {
             if (ServerLifecycleHooks.getCurrentServer().isDedicatedServer()) {
                 File mcDir = ServerLifecycleHooks.getCurrentServer().getServerDirectory();
                 ModDir = new File(mcDir, "mapfrontiers");
+                //noinspection ResultOfMethodCallIgnored
                 ModDir.mkdirs();
             } else {
                 File WorldDir = Minecraft.getInstance().getSingleplayerServer().getWorldPath(FolderName.ROOT).toFile();
                 ModDir = new File(WorldDir, "mapfrontiers");
+                //noinspection ResultOfMethodCallIgnored
                 ModDir.mkdirs();
             }
 

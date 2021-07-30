@@ -1,11 +1,13 @@
 package games.alejandrocoria.mapfrontiers.common.settings;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Set;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.util.StringHelper;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.ListNBT;
 import net.minecraft.nbt.StringNBT;
@@ -81,24 +83,15 @@ public class SettingsUserShared {
                 SettingsUserShared.Action action = SettingsUserShared.Action.valueOf(actionTag);
                 actions.add(action);
             } catch (IllegalArgumentException e) {
-                SettingsUserShared.Action[] availableActions = SettingsUserShared.Action.values();
-
-                String availableActionsString = availableActions[0].name();
-                for (int i2 = 1; i2 < availableActions.length - 1; ++i2) {
-                    availableActionsString += ", ";
-                    availableActionsString += availableActions[i2].name();
-                }
-
-                availableActionsString += " or ";
-                availableActionsString += availableActions[availableActions.length - 1].name();
-
                 String userName = user.username;
                 if (userName.isEmpty()) {
                     userName = user.uuid.toString();
                 }
 
+                String availableActions = StringHelper.enumValuesToString(Arrays.asList(SettingsUserShared.Action.values()));
+
                 MapFrontiers.LOGGER.warn(String.format("Unknown action in user shared %1$s. Found: \"%2$s\". Expected: %3$s",
-                        userName, actionTag, availableActionsString));
+                        userName, actionTag, availableActions));
             }
         }
     }

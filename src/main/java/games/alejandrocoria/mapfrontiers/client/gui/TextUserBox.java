@@ -142,6 +142,9 @@ public class TextUserBox extends TextBox {
             int posY = y - 12;
             for (int i = suggestionsToDraw.size() - 1; i >= 0; --i) {
                 String t = suggestionsToDraw.get(i);
+                // Strings are compared using == because they are the same objects
+                // that are added to suggestions and suggestionsToDraw
+                //noinspection StringEquality
                 if (suggestionsToDraw.get(i) == suggestions.get(suggestionIndex)) {
                     font.draw(matrixStack, t, posX, posY, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                 } else {
