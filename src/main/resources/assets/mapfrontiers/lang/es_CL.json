@@ -12,7 +12,7 @@
   "mapfrontiers.shared": "Compartida con %1$d jugadores",
   "mapfrontiers.share_settings": "Opciones sobre compartir",
   "mapfrontiers.vertex_number": "Vértice %1$d/%2$d",
-  "mapfrontiers.no_vertex_selected": "%1$sNingún vértice\nseleccionado",
+  "mapfrontiers.no_vertex_selected": "%1$sNingún vértice\n%1$sseleccionado",
   "mapfrontiers.new": "Nuevo",
   "mapfrontiers.delete": "Eliminar",
   "mapfrontiers.confirm_delete": "Confirmar",

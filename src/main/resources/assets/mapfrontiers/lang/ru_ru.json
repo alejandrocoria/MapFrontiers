@@ -79,8 +79,8 @@
   "mapfrontiers.chat.frontier_created": "%2$s%3$s%1$s создал территорию",
   "mapfrontiers.chat.frontier_created_unknown": "Кто-то создал новую территорию",
 
-  "item.mapfrontiers.frontier_book.name": "Карта Территорий",
-  "item.mapfrontiers.personal_frontier_book.name": "Карта Персональных Территорий",
+  "item.mapfrontiers.frontier_book": "Карта Территорий",
+  "item.mapfrontiers.personal_frontier_book": "Карта Персональных Территорий",
 
   "mapfrontiers.key.category": "Карта Территорий",
   "mapfrontiers.key.open_settings": "Открыть настройки"
