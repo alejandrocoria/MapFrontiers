@@ -2,13 +2,13 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SoundHandler;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.sounds.SoundManager;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -22,8 +22,8 @@ public class IndexEntryButton extends Button {
     private final boolean colorToTheRight;
 
     public IndexEntryButton(int x, int y, int width, int page, String label1, String label2, int color, boolean colorToTheRight,
-            Button.IPressable pressedAction) {
-        super(x, y, width, 21, StringTextComponent.EMPTY, pressedAction);
+            Button.OnPress pressedAction) {
+        super(x, y, width, 21, TextComponent.EMPTY, pressedAction);
         this.page = page;
         this.label1 = label1;
         this.label2 = label2;
@@ -36,12 +36,12 @@ public class IndexEntryButton extends Button {
     }
 
     @Override
-    public void playDownSound(SoundHandler soundHandlerIn) {
+    public void playDownSound(SoundManager soundHandlerIn) {
 
     }
 
     @Override
-    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         int textColor = GuiColors.INDEX_TEXT;
         if (isHovered) {
             textColor = GuiColors.INDEX_TEXT_HIGHLIGHT;
@@ -65,7 +65,7 @@ public class IndexEntryButton extends Button {
         fill(matrixStack, colorBoxX + 1, colorBoxY + 1, colorBoxX + 5, colorBoxY + 13, 0xff000000 | color);
     }
 
-    private void drawLabel(MatrixStack matrixStack, FontRenderer font, String label, int x, int y, int textColor) {
+    private void drawLabel(PoseStack matrixStack, Font font, String label, int x, int y, int textColor) {
         int labelWidth = font.width(label);
         x += width / 2 - labelWidth / 2;
         font.draw(matrixStack, label, x, y, textColor);

@@ -10,9 +10,9 @@ import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.fmllegacy.network.NetworkEvent;
 
 @ParametersAreNonnullByDefault
 public class PacketUpdateFrontier {
@@ -26,20 +26,20 @@ public class PacketUpdateFrontier {
         this.frontier = frontier;
     }
 
-    public static PacketUpdateFrontier fromBytes(PacketBuffer buf) {
+    public static PacketUpdateFrontier fromBytes(FriendlyByteBuf buf) {
         PacketUpdateFrontier packet = new PacketUpdateFrontier();
         packet.frontier.fromBytes(buf);
         return packet;
     }
 
-    public static void toBytes(PacketUpdateFrontier packet, PacketBuffer buf) {
+    public static void toBytes(PacketUpdateFrontier packet, FriendlyByteBuf buf) {
         packet.frontier.toBytes(buf);
     }
 
     public static void handle(PacketUpdateFrontier message, Supplier<NetworkEvent.Context> ctx) {
         NetworkEvent.Context context = ctx.get();
         context.enqueueWork(() -> {
-            ServerPlayerEntity player = context.getSender();
+            ServerPlayer player = context.getSender();
             if (player == null) {
                 return;
             }

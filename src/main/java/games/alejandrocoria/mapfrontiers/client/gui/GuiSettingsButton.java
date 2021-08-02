@@ -2,11 +2,11 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -15,15 +15,15 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class GuiSettingsButton extends Button {
     private final GuiSimpleLabel label;
 
-    public GuiSettingsButton(FontRenderer font, int x, int y, int width, ITextComponent text,
-            Button.IPressable pressedAction) {
+    public GuiSettingsButton(Font font, int x, int y, int width, Component text,
+            Button.OnPress pressedAction) {
         super(x, y, width, 16, text, pressedAction);
         this.label = new GuiSimpleLabel(font, x + width / 2, y + 5, GuiSimpleLabel.Align.Center, text,
                 GuiColors.SETTINGS_BUTTON_TEXT);
     }
 
     @Override
-    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         if (isHovered) {
             label.setColor(GuiColors.SETTINGS_BUTTON_TEXT_HIGHLIGHT);
         } else {

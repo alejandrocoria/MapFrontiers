@@ -2,11 +2,11 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -17,8 +17,8 @@ public class GuiBookButton extends Button {
     private final boolean renderBorder;
     private final boolean lightColors;
 
-    public GuiBookButton(FontRenderer font, int x, int y, int width, ITextComponent text, boolean renderBorder,
-            boolean lightColors, Button.IPressable pressedAction) {
+    public GuiBookButton(Font font, int x, int y, int width, Component text, boolean renderBorder,
+            boolean lightColors, Button.OnPress pressedAction) {
         super(x, y, width, 14, text, pressedAction);
         this.label = new GuiSimpleLabel(font, x + width / 2, y + 4, GuiSimpleLabel.Align.Center, text,
                 GuiColors.SETTINGS_BUTTON_TEXT);
@@ -27,7 +27,7 @@ public class GuiBookButton extends Button {
     }
 
     @Override
-    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         if (isHovered) {
             label.setColor(lightColors ? GuiColors.SETTINGS_BUTTON_TEXT_HIGHLIGHT : GuiColors.SETTINGS_BUTTON_TEXT_DARK);
         } else {

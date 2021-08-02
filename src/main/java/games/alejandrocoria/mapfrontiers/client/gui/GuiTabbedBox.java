@@ -5,28 +5,29 @@ import java.util.List;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 
-import net.minecraft.client.gui.AbstractGui;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
-public class GuiTabbedBox extends Widget {
-    private final FontRenderer font;
+public class GuiTabbedBox extends AbstractWidget {
+    private final Font font;
     private final TabbedBoxResponder responder;
     private final int width;
     private final int height;
     private final List<Tab> tabs;
     private int selected;
 
-    public GuiTabbedBox(FontRenderer font, int x, int y, int width, int height, TabbedBoxResponder responder) {
-        super(x, y, width, 16, StringTextComponent.EMPTY);
+    public GuiTabbedBox(Font font, int x, int y, int width, int height, TabbedBoxResponder responder) {
+        super(x, y, width, 16, TextComponent.EMPTY);
         this.font = font;
         this.responder = responder;
         tabs = new ArrayList<>();
@@ -37,7 +38,7 @@ public class GuiTabbedBox extends Widget {
         this.height = height;
     }
 
-    public void addTab(ITextComponent text) {
+    public void addTab(Component text) {
         tabs.add(new Tab(font, text));
         updateTabPositions();
 
@@ -51,7 +52,7 @@ public class GuiTabbedBox extends Widget {
     }
 
     @Override
-    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         for (int i = 0; i < tabs.size(); ++i) {
             tabs.get(i).render(matrixStack, mouseX, mouseY, partialTicks, i == selected);
         }
@@ -96,18 +97,24 @@ public class GuiTabbedBox extends Widget {
         }
     }
 
+    @Override
+    public void updateNarration(NarrationElementOutput p_169152_)
+    {
+
+    }
+
     @OnlyIn(Dist.CLIENT)
-    private static class Tab extends AbstractGui {
+    private static class Tab extends GuiComponent {
         private int x = 0;
         private int y = 0;
         private boolean isHovered = false;
         private final GuiSimpleLabel label;
 
-        public Tab(FontRenderer font, ITextComponent text) {
+        public Tab(Font font, Component text) {
             this.label = new GuiSimpleLabel(font, 0, 0, GuiSimpleLabel.Align.Center, text, GuiColors.SETTINGS_TAB_TEXT);
         }
 
-        public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
+        public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
             isHovered = mouseX >= x && mouseY >= y && mouseX < x + 71 && mouseY < y + 16;
 
             hLine(matrixStack, x, x + 70, y, GuiColors.SETTINGS_TAB_BORDER);

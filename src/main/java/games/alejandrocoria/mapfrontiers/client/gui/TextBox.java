@@ -4,18 +4,18 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import org.lwjgl.glfw.GLFW;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
-public class TextBox extends TextFieldWidget {
-    protected final FontRenderer font;
+public class TextBox extends EditBox {
+    protected final Font font;
     private TextBoxResponder responder;
     private final String defaultText;
     private boolean centered = true;
@@ -23,8 +23,8 @@ public class TextBox extends TextFieldWidget {
     private int highlightedColor = GuiColors.SETTINGS_TEXT_BOX_TEXT_HIGHLIGHT;
     private boolean frame = false;
 
-    public TextBox(FontRenderer font, int x, int y, int width, String defaultText) {
-        super(font, x, y, width, 12, StringTextComponent.EMPTY);
+    public TextBox(Font font, int x, int y, int width, String defaultText) {
+        super(font, x, y, width, 12, TextComponent.EMPTY);
         this.font = font;
         this.defaultText = defaultText;
     }
@@ -66,7 +66,7 @@ public class TextBox extends TextFieldWidget {
     }
 
     @Override
-    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         if (isFocused()) {
             super.renderButton(matrixStack, mouseX, mouseY, partialTicks);
         } else {

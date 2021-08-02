@@ -4,29 +4,29 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '4.1.+', changing: true
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
     }
 }
 
 apply plugin: 'net.minecraftforge.gradle'
 // Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
 apply plugin: 'eclipse'
+apply from: 'https://raw.githubusercontent.com/SizableShrimp/Forge-Class-Remapper/main/classremapper.gradle'
 
-version = '1.16.5-1.5.1'
+version = '1.17.1.1-1.5.1'
 group = 'games.alejandrocoria.mapfrontiers' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'MapFrontiers'
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(8) // Mojang ships Java 8 to end users, so your mod should target Java 8.
+java.toolchain.languageVersion = JavaLanguageVersion.of(16) // Mojang ships Java 8 to end users, so your mod should target Java 8.
 
-println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
 minecraft {
-    mappings channel: 'official', version: '1.16.5'
+    mappings channel: 'official', version: '1.17.1'
 
     // Default run configurations.
     // These can be tweaked, removed, or duplicated as needed.
     runs {
         client {
-            workingDirectory project.file('run')
+
 
             properties 'mixin.env.disableRefMap': 'true'
 
@@ -41,6 +41,7 @@ minecraft {
             // You can set various levels here.
             // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
             property 'forge.logging.console.level', 'debug'
+            workingDirectory project.file('run')
 
             mods {
                 mapfrontiers {
@@ -113,9 +114,9 @@ dependencies {
     // Specify the version of Minecraft to use, If this is any group other then 'net.minecraft' it is assumed
     // that the dep is a ForgeGradle 'patcher' dependency. And it's patches will be applied.
     // The userdev artifact is a special name and will get all sorts of transformations applied to it.
-    minecraft 'net.minecraftforge:forge:1.16.5-36.2.0'
+    minecraft 'net.minecraftforge:forge:1.17.1-37.0.20'
 
-    implementation fg.deobf("curse.maven:journeymap-32274:3397059")
+    implementation fg.deobf("curse.maven:journeymap-32274:3410052")
 }
 
 jar {
@@ -133,9 +134,9 @@ jar {
 }
 
 processResources {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     // This will ensure that this task is redone when the versions change.
     inputs.property 'version', project.version
-
     // Replace stuff in mods.toml, nothing else
     from(sourceSets.main.resources.srcDirs) {
         include 'META-INF/mods.toml'

@@ -4,24 +4,25 @@ import java.util.List;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import net.minecraft.client.gui.components.Widget;
 import org.apache.commons.lang3.StringUtils;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.ChatFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
-    private final FontRenderer font;
+    private final Font font;
     private final SettingsUserShared user;
     private final UserSharedResponder responder;
     private boolean updateFrontier;
@@ -31,8 +32,8 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
     private int pingBar = 0;
     List<Widget> buttonList;
 
-    public GuiUserSharedElement(FontRenderer font, List<Widget> buttonList, SettingsUserShared user, boolean enabled,
-            boolean removable, UserSharedResponder responder, ResourceLocation texture, int textureSize) {
+    public GuiUserSharedElement(Font font, List<Widget> buttonList, SettingsUserShared user, boolean enabled,
+                                boolean removable, UserSharedResponder responder, ResourceLocation texture, int textureSize) {
         super(430, 16);
         this.font = font;
         this.user = user;
@@ -87,7 +88,7 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
     }
 
     @Override
-    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
+    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
         if (isHovered) {
             fill(matrixStack, x, y, x + width, y + height, GuiColors.SETTINGS_ELEMENT_HOVERED);
         }
@@ -99,7 +100,7 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
         String text = user.getUser().username;
         if (StringUtils.isBlank(text)) {
             if (user.getUser().uuid == null) {
-                text = I18n.get("mapfrontiers.unnamed", TextFormatting.ITALIC);
+                text = I18n.get("mapfrontiers.unnamed", ChatFormatting.ITALIC);
             } else {
                 text = user.getUser().uuid.toString();
             }
@@ -111,7 +112,7 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
         drawBox(matrixStack, x + 304, y + 2, updateSettings);
 
         if (user.isPending()) {
-            font.draw(matrixStack, I18n.get("mapfrontiers.pending", TextFormatting.ITALIC), x + 350.f, y + 4.f,
+            font.draw(matrixStack, I18n.get("mapfrontiers.pending", ChatFormatting.ITALIC), x + 350.f, y + 4.f,
                     GuiColors.SETTINGS_TEXT_PENDING);
         }
 
@@ -132,7 +133,7 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
         }
     }
 
-    private void drawPingLine(MatrixStack matrixStack, int posX, int posY, int height) {
+    private void drawPingLine(PoseStack matrixStack, int posX, int posY, int height) {
         fill(matrixStack, posX, posY - height, posX + 1, posY, GuiColors.SETTINGS_PING_BAR);
     }
 
@@ -157,7 +158,7 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
         return GuiScrollBox.ScrollElement.Action.None;
     }
 
-    private void drawBox(MatrixStack matrixStack, int x, int y, boolean checked) {
+    private void drawBox(PoseStack matrixStack, int x, int y, boolean checked) {
         fill(matrixStack, x, y, x + 12, y + 12, GuiColors.SETTINGS_CHECKBOX_BORDER);
         fill(matrixStack, x + 1, y + 1, x + 11, y + 11, GuiColors.SETTINGS_CHECKBOX_BG);
         if (checked) {

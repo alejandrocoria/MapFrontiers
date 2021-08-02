@@ -2,15 +2,15 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SoundHandler;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.sounds.SoundManager;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -21,8 +21,8 @@ public class GuiBookTag extends Button {
     private final int textureSize;
     private final boolean toLeft;
 
-    public GuiBookTag(int x, int y, int width, boolean toLeft, ITextComponent text, ResourceLocation texture, int textureSize,
-            Button.IPressable pressedAction) {
+    public GuiBookTag(int x, int y, int width, boolean toLeft, Component text, ResourceLocation texture, int textureSize,
+            Button.OnPress pressedAction) {
         super(x, y, Math.max(Math.min(width, 127), 67), 15, text, pressedAction);
         this.texture = texture;
         this.textureSize = textureSize;
@@ -30,17 +30,17 @@ public class GuiBookTag extends Button {
     }
 
     @Override
-    public void playDownSound(SoundHandler soundHandlerIn) {
+    public void playDownSound(SoundManager soundHandlerIn) {
 
     }
 
     @Override
-    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         isHovered = isMouseOver(mouseX, mouseY);
 
-        RenderSystem.color3f(1.f, 1.f, 1.f);
+        RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1f);
         Minecraft mc = Minecraft.getInstance();
-        mc.getTextureManager().bind(texture);
+        mc.getTextureManager().bindForSetup(texture);
         int textureX = 330;
         int textureY = 52;
 
@@ -79,12 +79,12 @@ public class GuiBookTag extends Button {
         return false;
     }
 
-    private void drawLeftLabel(MatrixStack matrixStack, FontRenderer font) {
+    private void drawLeftLabel(PoseStack matrixStack, Font font) {
         int labelWidth = font.width(getMessage().getString());
         font.draw(matrixStack, getMessage().getString(), x - labelWidth - 4, y + 4, GuiColors.BOOKTAG_TEXT);
     }
 
-    private void drawRightLabel(MatrixStack matrixStack, FontRenderer font) {
+    private void drawRightLabel(PoseStack matrixStack, Font font) {
         font.draw(matrixStack, getMessage().getString(), x + 5, y + 4, GuiColors.BOOKTAG_TEXT);
     }
 }

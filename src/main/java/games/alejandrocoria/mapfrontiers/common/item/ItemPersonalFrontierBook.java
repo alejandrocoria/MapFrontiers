@@ -7,23 +7,23 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
-import mcp.MethodsReturnNonnullByDefault;
-import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroup;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.ActionResultType;
-import net.minecraft.util.Hand;
-import net.minecraft.util.RegistryKey;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.world.World;
+import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Registry;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.ChatFormatting;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -31,47 +31,47 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @ParametersAreNonnullByDefault
 public class ItemPersonalFrontierBook extends Item {
     public ItemPersonalFrontierBook() {
-        super(new Properties().stacksTo(1).tab(ItemGroup.TAB_TOOLS));
+        super(new Properties().stacksTo(1).tab(CreativeModeTab.TAB_TOOLS));
         setRegistryName(new ResourceLocation(MapFrontiers.MODID, "personal_frontier_book"));
     }
 
     @Override
-    public ActionResult<ItemStack> use(World worldIn, PlayerEntity playerIn, Hand handIn) {
+    public InteractionResultHolder<ItemStack> use(Level worldIn, Player playerIn, InteractionHand handIn) {
         ItemStack itemStack = playerIn.getItemInHand(handIn);
 
         if (!worldIn.isClientSide()) {
-            return new ActionResult<>(ActionResultType.PASS, itemStack);
+            return new InteractionResultHolder<>(InteractionResult.PASS, itemStack);
         }
 
-        CompoundNBT nbt = itemStack.getTag();
+        CompoundTag nbt = itemStack.getTag();
         if (nbt == null) {
-            nbt = new CompoundNBT();
+            nbt = new CompoundTag();
         }
 
-        RegistryKey<World> dimension = playerIn.level.dimension();
+        ResourceKey<Level> dimension = playerIn.level.dimension();
         if (!nbt.contains("Dimension")) {
             nbt.putString("Dimension", dimension.location().toString());
             itemStack.setTag(nbt);
         }
 
         ClientProxy.openGUIFrontierBook(dimension, true);
-        return new ActionResult<>(ActionResultType.PASS, itemStack);
+        return new InteractionResultHolder<>(InteractionResult.PASS, itemStack);
     }
 
     @Override
     @OnlyIn(Dist.CLIENT)
-    public void appendHoverText(ItemStack itemStack, @Nullable World world, List<ITextComponent> list, ITooltipFlag flag) {
+    public void appendHoverText(ItemStack itemStack, @Nullable Level world, List<Component> list, TooltipFlag flag) {
         super.appendHoverText(itemStack, world, list, flag);
 
-        CompoundNBT nbt = itemStack.getTag();
+        CompoundTag nbt = itemStack.getTag();
         if (nbt == null) {
             return;
         }
 
         if (nbt.contains("Dimension")) {
-            RegistryKey<World> dimension = RegistryKey.create(Registry.DIMENSION_REGISTRY,
+            ResourceKey<Level> dimension = ResourceKey.create(Registry.DIMENSION_REGISTRY,
                     new ResourceLocation(nbt.getString("Dimension")));
-            list.add(new StringTextComponent(dimension.location().toString()).withStyle(TextFormatting.GRAY));
+            list.add(new TextComponent(dimension.location().toString()).withStyle(ChatFormatting.GRAY));
         }
     }
 }

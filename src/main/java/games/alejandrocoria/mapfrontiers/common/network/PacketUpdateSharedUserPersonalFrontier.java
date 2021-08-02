@@ -12,9 +12,9 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.fmllegacy.network.NetworkEvent;
 
 @ParametersAreNonnullByDefault
 public class PacketUpdateSharedUserPersonalFrontier {
@@ -30,14 +30,14 @@ public class PacketUpdateSharedUserPersonalFrontier {
         userShared = user;
     }
 
-    public static PacketUpdateSharedUserPersonalFrontier fromBytes(PacketBuffer buf) {
+    public static PacketUpdateSharedUserPersonalFrontier fromBytes(FriendlyByteBuf buf) {
         PacketUpdateSharedUserPersonalFrontier packet = new PacketUpdateSharedUserPersonalFrontier();
         packet.frontierID = UUIDHelper.fromBytes(buf);
         packet.userShared.fromBytes(buf);
         return packet;
     }
 
-    public static void toBytes(PacketUpdateSharedUserPersonalFrontier packet, PacketBuffer buf) {
+    public static void toBytes(PacketUpdateSharedUserPersonalFrontier packet, FriendlyByteBuf buf) {
         UUIDHelper.toBytes(buf, packet.frontierID);
         packet.userShared.toBytes(buf);
     }
@@ -45,7 +45,7 @@ public class PacketUpdateSharedUserPersonalFrontier {
     public static void handle(PacketUpdateSharedUserPersonalFrontier message, Supplier<NetworkEvent.Context> ctx) {
         NetworkEvent.Context context = ctx.get();
         context.enqueueWork(() -> {
-            ServerPlayerEntity player = context.getSender();
+            ServerPlayer player = context.getSender();
             if (player == null) {
                 return;
             }

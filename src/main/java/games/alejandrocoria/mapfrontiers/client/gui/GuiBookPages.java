@@ -2,20 +2,21 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SoundHandler;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.sounds.SoundManager;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
-public class GuiBookPages extends Widget {
+public class GuiBookPages extends AbstractWidget {
     private final ResourceLocation texture;
     private boolean doublePage = false;
     private final float uOffset;
@@ -27,7 +28,7 @@ public class GuiBookPages extends Widget {
 
     public GuiBookPages(int x, int y, float uOffset, float vOffset, int bookWidth, int bookHeight, int textureWidth,
             int textureHeight, ResourceLocation texture) {
-        super(x, y, 0, 0, StringTextComponent.EMPTY);
+        super(x, y, 0, 0, TextComponent.EMPTY);
         this.texture = texture;
         this.uOffset = uOffset;
         this.vOffset = vOffset;
@@ -52,15 +53,15 @@ public class GuiBookPages extends Widget {
     }
 
     @Override
-    public void playDownSound(SoundHandler soundHandlerIn) {
+    public void playDownSound(SoundManager soundHandlerIn) {
 
     }
 
     @Override
-    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        RenderSystem.color3f(1.f, 1.f, 1.f);
+    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+        RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1f);
         Minecraft mc = Minecraft.getInstance();
-        mc.getTextureManager().bind(texture);
+        mc.getTextureManager().bindForSetup(texture);
 
         if (doublePage) {
             blit(matrixStack, x, y, uOffset, vOffset, bookWidth, bookHeight, textureWidth, textureHeight);
@@ -68,5 +69,11 @@ public class GuiBookPages extends Widget {
             blit(matrixStack, x + bookWidth / 2, y, uOffset + bookWidth / 2, vOffset, bookWidth / 2, bookHeight, textureWidth,
                     textureHeight);
         }
+    }
+
+    @Override
+    public void updateNarration(NarrationElementOutput p_169152_)
+    {
+
     }
 }

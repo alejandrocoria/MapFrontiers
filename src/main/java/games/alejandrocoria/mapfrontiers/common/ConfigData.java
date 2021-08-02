@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import net.minecraftforge.fml.event.config.ModConfigEvent;
 import org.apache.commons.lang3.tuple.Pair;
 
 import com.electronwill.nightconfig.core.Config;
@@ -19,8 +20,8 @@ import journeymap.client.ui.minimap.MiniMap;
 import journeymap.client.ui.minimap.Shape;
 import journeymap.client.ui.theme.Theme;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -91,8 +92,8 @@ public class ConfigData {
     }
 
     @SubscribeEvent
-    public static void onModConfigEvent(final ModConfig.ModConfigEvent configEvent) {
-        if (configEvent.getConfig().getSpec() == ConfigData.CLIENT_SPEC) {
+    public static void onModConfigEvent(ModConfigEvent configEvent) {
+        if (configEvent.getConfig().getType()== ModConfig.Type.CLIENT) {
             bakeConfig();
         }
     }
@@ -185,13 +186,13 @@ public class ConfigData {
         CLIENT_SPEC.save();
     }
 
-    public static List<ITextComponent> getTooltip(String name) {
-        List<ITextComponent> tooltip = new ArrayList<>();
+    public static List<Component> getTooltip(String name) {
+        List<Component> tooltip = new ArrayList<>();
 
         ValueSpec valueSpec = getValueSpec(name);
         if (valueSpec != null) {
             for (String string : Splitter.on("\n").split(valueSpec.getComment())) {
-                tooltip.add(new StringTextComponent(string));
+                tooltip.add(new TextComponent(string));
             }
         }
 

@@ -8,7 +8,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import journeymap.client.JourneymapClient;
 import org.apache.commons.lang3.StringUtils;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
@@ -22,19 +22,19 @@ import journeymap.client.ui.UIManager;
 import journeymap.client.ui.minimap.Position;
 import journeymap.client.ui.minimap.Shape;
 import journeymap.client.ui.theme.ThemeLabelSource;
-import net.minecraft.client.MainWindow;
+import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.AbstractGui;
-import net.minecraft.client.gui.screen.ChatScreen;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.DyeColor;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.ListNBT;
-import net.minecraft.tileentity.BannerPattern;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.world.level.block.entity.BannerPattern;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
@@ -83,8 +83,8 @@ public class GuiHUD {
         GuiHUD guiHUD = new GuiHUD();
 
         ItemStack itemBanner = new ItemStack(Items.BLACK_BANNER);
-        CompoundNBT entityTag = itemBanner.getOrCreateTagElement("BlockEntityTag");
-        ListNBT patterns = (new BannerPattern.Builder()).addPattern(BannerPattern.FLOWER, DyeColor.GREEN)
+        CompoundTag entityTag = itemBanner.getOrCreateTagElement("BlockEntityTag");
+        ListTag patterns = (new BannerPattern.Builder()).addPattern(BannerPattern.FLOWER, DyeColor.GREEN)
                 .addPattern(BannerPattern.BRICKS, DyeColor.LIGHT_GRAY)
                 .addPattern(BannerPattern.BORDER, DyeColor.LIGHT_BLUE)
                 .addPattern(BannerPattern.TRIANGLE_TOP, DyeColor.LIGHT_BLUE)
@@ -107,11 +107,11 @@ public class GuiHUD {
         this.frontiersOverlayManager = frontiersOverlayManager;
         this.personalFrontiersOverlayManager = personalFrontiersOverlayManager;
         slots = new ArrayList<>();
-        frontierName1 = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, StringTextComponent.EMPTY,
+        frontierName1 = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, TextComponent.EMPTY,
                 GuiColors.WHITE);
-        frontierName2 = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, StringTextComponent.EMPTY,
+        frontierName2 = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, TextComponent.EMPTY,
                 GuiColors.WHITE);
-        frontierOwner = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, StringTextComponent.EMPTY,
+        frontierOwner = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, TextComponent.EMPTY,
                 GuiColors.WHITE);
     }
 
@@ -120,11 +120,11 @@ public class GuiHUD {
         this.personalFrontiersOverlayManager = null;
         previewMode = true;
         slots = new ArrayList<>();
-        frontierName1 = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, StringTextComponent.EMPTY,
+        frontierName1 = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, TextComponent.EMPTY,
                 GuiColors.WHITE);
-        frontierName2 = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, StringTextComponent.EMPTY,
+        frontierName2 = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, TextComponent.EMPTY,
                 GuiColors.WHITE);
-        frontierOwner = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, StringTextComponent.EMPTY,
+        frontierOwner = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, TextComponent.EMPTY,
                 GuiColors.WHITE);
     }
 
@@ -146,7 +146,7 @@ public class GuiHUD {
             return;
         }
 
-        if (event.getType() == RenderGameOverlayEvent.ElementType.HOTBAR) {
+        if (event.getType() == RenderGameOverlayEvent.ElementType.ALL) { // TODO: HOTBAR?
             if (mc.screen != null && !(mc.screen instanceof ChatScreen)) {
                 return;
             }
@@ -170,7 +170,7 @@ public class GuiHUD {
         }
 
         if (event.getEntityLiving() == mc.player) {
-            PlayerEntity player = (PlayerEntity) event.getEntityLiving();
+            Player player = (Player) event.getEntityLiving();
 
             BlockPos currentPlayerPosition = player.blockPosition();
             if (currentPlayerPosition.getX() != lastPlayerPosition.getX()
@@ -203,7 +203,7 @@ public class GuiHUD {
         }
     }
 
-    public void configUpdated(MainWindow mainWindow) {
+    public void configUpdated(Window mainWindow) {
         if (previewMode) {
             updateData(mainWindow);
         } else {
@@ -235,7 +235,7 @@ public class GuiHUD {
         }
     }
 
-    public void draw(MatrixStack matrixStack, MainWindow mainWindow, float partialTicks) {
+    public void draw(PoseStack matrixStack, Window mainWindow, float partialTicks) {
         if (displayWidth != mainWindow.getWidth() || displayHeight != mainWindow.getHeight()) {
             needUpdate = true;
         }
@@ -302,8 +302,8 @@ public class GuiHUD {
         GlStateManager._enableBlend();
     }
 
-    private void drawName(MatrixStack matrixStack, int frameColor, int textColor, float partialTicks) {
-        AbstractGui.fill(matrixStack, posX, posY + nameOffsetY, posX + hudWidth, posY + nameOffsetY + 24 * textScale, frameColor);
+    private void drawName(PoseStack matrixStack, int frameColor, int textColor, float partialTicks) {
+        GuiComponent.fill(matrixStack, posX, posY + nameOffsetY, posX + hudWidth, posY + nameOffsetY + 24 * textScale, frameColor);
 
         frontierName1.setColor(textColor);
         frontierName2.setColor(textColor);
@@ -312,22 +312,22 @@ public class GuiHUD {
         frontierName2.render(matrixStack, 0, 0, partialTicks);
     }
 
-    private void drawOwner(MatrixStack matrixStack, int frameColor, int textColor, float partialTicks) {
-        AbstractGui.fill(matrixStack, posX, posY + ownerOffsetY, posX + hudWidth, posY + ownerOffsetY + 12 * textScale,
+    private void drawOwner(PoseStack matrixStack, int frameColor, int textColor, float partialTicks) {
+        GuiComponent.fill(matrixStack, posX, posY + ownerOffsetY, posX + hudWidth, posY + ownerOffsetY + 12 * textScale,
                 frameColor);
 
         frontierOwner.setColor(textColor);
         frontierOwner.render(matrixStack, 0, 0, partialTicks);
     }
 
-    private void drawBanner(MatrixStack matrixStack, int frameColor, float partialTicks) {
-        AbstractGui.fill(matrixStack, posX + hudWidth / 2 - 11 * bannerScale - 2, posY + bannerOffsetY,
+    private void drawBanner(PoseStack matrixStack, int frameColor, float partialTicks) {
+        GuiComponent.fill(matrixStack, posX + hudWidth / 2 - 11 * bannerScale - 2, posY + bannerOffsetY,
                 posX + hudWidth / 2 + 11 * bannerScale + 2, posY + bannerOffsetY + 4 + 40 * bannerScale, frameColor);
 
         frontier.renderBanner(mc, matrixStack, posX + hudWidth / 2 - 11 * bannerScale, posY + bannerOffsetY + 2, bannerScale);
     }
 
-    private void updateData(MainWindow mainWindow) {
+    private void updateData(Window mainWindow) {
         displayWidth = mainWindow.getWidth();
         displayHeight = mainWindow.getHeight();
 
@@ -410,12 +410,12 @@ public class GuiHUD {
                 frontierName1.x = posX + hudWidth / 2;
                 frontierName1.y = posY + nameOffsetY + 2 * textScale;
                 frontierName1.setScale(textScale);
-                frontierName1.setText(new StringTextComponent(frontier.getName1()));
+                frontierName1.setText(new TextComponent(frontier.getName1()));
 
                 frontierName2.x = posX + hudWidth / 2;
                 frontierName2.y = posY + nameOffsetY + 14 * textScale;
                 frontierName2.setScale(textScale);
-                frontierName2.setText(new StringTextComponent(frontier.getName2()));
+                frontierName2.setText(new TextComponent(frontier.getName2()));
 
                 offsetY += 24 * textScale;
                 break;
@@ -427,7 +427,7 @@ public class GuiHUD {
                     frontierOwner.x = posX + hudWidth / 2;
                     frontierOwner.y = posY + ownerOffsetY + 2;
                     frontierOwner.setScale(textScale);
-                    frontierOwner.setText(new StringTextComponent(owner));
+                    frontierOwner.setText(new TextComponent(owner));
 
                     offsetY += 12 * textScale;
                 }

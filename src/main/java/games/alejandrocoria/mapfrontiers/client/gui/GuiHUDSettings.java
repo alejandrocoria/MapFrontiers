@@ -5,27 +5,27 @@ import java.util.*;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraftforge.fmlclient.gui.GuiUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import journeymap.client.ui.UIManager;
 import journeymap.client.ui.minimap.MiniMap;
-import net.minecraft.client.MainWindow;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import com.mojang.blaze3d.platform.Window;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.client.gui.GuiUtils;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -43,14 +43,14 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
     private GuiOptionButton buttonSnapToBorder;
     private GuiSettingsButton buttonDone;
     private final List<GuiSimpleLabel> labels;
-    private final Map<GuiSimpleLabel, List<ITextComponent>> labelTooltips;
+    private final Map<GuiSimpleLabel, List<Component>> labelTooltips;
     private MiniMap minimap;
     private final GuiHUD guiHUD;
     private int anchorLineColor = GuiColors.SETTINGS_ANCHOR_LIGHT;
     private int anchorLineColorTick = 0;
 
     public GuiHUDSettings(GuiFrontierSettings parent) {
-        super(StringTextComponent.EMPTY);
+        super(TextComponent.EMPTY);
         labels = new ArrayList<>();
         labelTooltips = new HashMap<>();
         this.parent = parent;
@@ -138,19 +138,19 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
         buttonSnapToBorder.setSelected(ConfigData.hudSnapToBorder ? 0 : 1);
 
         buttonDone = new GuiSettingsButton(font, width / 2 - 50, height / 2 + 36, 100,
-                new TranslationTextComponent("mapfrontiers.done"), this::buttonPressed);
+                new TranslatableComponent("mapfrontiers.done"), this::buttonPressed);
 
-        addButton(guiHUDWidget);
-        addButton(buttonSlot1);
-        addButton(buttonSlot2);
-        addButton(buttonSlot3);
-        addButton(textBannerSize);
-        addButton(buttonAnchor);
-        addButton(textPositionX);
-        addButton(textPositionY);
-        addButton(buttonAutoAdjustAnchor);
-        addButton(buttonSnapToBorder);
-        addButton(buttonDone);
+        addRenderableWidget(guiHUDWidget);
+        addRenderableWidget(buttonSlot1);
+        addRenderableWidget(buttonSlot2);
+        addRenderableWidget(buttonSlot3);
+        addRenderableWidget(textBannerSize);
+        addRenderableWidget(buttonAnchor);
+        addRenderableWidget(textPositionX);
+        addRenderableWidget(textPositionY);
+        addRenderableWidget(buttonAutoAdjustAnchor);
+        addRenderableWidget(buttonSnapToBorder);
+        addRenderableWidget(buttonDone);
 
         resetLabels();
         updatePosition();
@@ -171,17 +171,17 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
     }
 
     @Override
-    public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         if (minimap != null) {
-            GlStateManager._matrixMode(GL11.GL_MODELVIEW);
-            GlStateManager._pushMatrix();
-            GlStateManager._matrixMode(GL11.GL_PROJECTION);
-            GlStateManager._pushMatrix();
+//            GlStateManager._matrixMode(GL11.GL_MODELVIEW); //TODO: FIX
+//            GlStateManager._pushMatrix();
+//            GlStateManager._matrixMode(GL11.GL_PROJECTION);
+//            GlStateManager._pushMatrix();
             minimap.drawMap(matrixStack, true);
-            GlStateManager._matrixMode(GL11.GL_MODELVIEW);
-            GlStateManager._popMatrix();
-            GlStateManager._matrixMode(GL11.GL_PROJECTION);
-            GlStateManager._popMatrix();
+//            GlStateManager._matrixMode(GL11.GL_MODELVIEW);
+//            GlStateManager._popMatrix();
+//            GlStateManager._matrixMode(GL11.GL_PROJECTION);
+//            GlStateManager._popMatrix();
         }
 
         drawAnchor(matrixStack, minecraft.getWindow());
@@ -196,7 +196,7 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
 
         for (GuiSimpleLabel label : labels) {
             if (label.isHovered()) {
-                List<ITextComponent> tooltip = labelTooltips.get(label);
+                List<Component> tooltip = labelTooltips.get(label);
                 if (tooltip == null) {
                     continue;
                 }
@@ -208,7 +208,7 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
 
     @Override
     public boolean keyPressed(int key, int value, int modifier) {
-        if (key == GLFW.GLFW_KEY_E && !(getFocused() instanceof TextFieldWidget)) {
+        if (key == GLFW.GLFW_KEY_E && !(getFocused() instanceof EditBox)) {
             onClose();
             return true;
         } else {
@@ -216,7 +216,7 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
         }
     }
 
-    private void drawAnchor(MatrixStack matrixStack, MainWindow mainWindow) {
+    private void drawAnchor(PoseStack matrixStack, Window mainWindow) {
         float factor = (float) mainWindow.getGuiScale();
         matrixStack.pushPose();
         matrixStack.scale(1.f / factor, 1.f / factor, 1.f);
@@ -352,32 +352,32 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
         labels.clear();
 
         addLabelWithTooltip(new GuiSimpleLabel(font, width / 2 - 170, height / 2 - 30, GuiSimpleLabel.Align.Left,
-                new StringTextComponent("slot1"), GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.slot1"));
+                new TextComponent("slot1"), GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.slot1"));
         addLabelWithTooltip(new GuiSimpleLabel(font, width / 2 - 170, height / 2 - 14, GuiSimpleLabel.Align.Left,
-                new StringTextComponent("slot2"), GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.slot2"));
+                new TextComponent("slot2"), GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.slot2"));
         addLabelWithTooltip(new GuiSimpleLabel(font, width / 2 - 170, height / 2 + 2, GuiSimpleLabel.Align.Left,
-                new StringTextComponent("slot3"), GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.slot3"));
+                new TextComponent("slot3"), GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.slot3"));
         addLabelWithTooltip(new GuiSimpleLabel(font, width / 2 - 170, height / 2 + 18, GuiSimpleLabel.Align.Left,
-                new StringTextComponent("bannerSize"), GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.bannerSize"));
+                new TextComponent("bannerSize"), GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.bannerSize"));
         addLabelWithTooltip(new GuiSimpleLabel(font, width / 2 - 30, height / 2 - 30, GuiSimpleLabel.Align.Left,
-                new StringTextComponent("anchor"), GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.anchor"));
+                new TextComponent("anchor"), GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.anchor"));
         addLabelWithTooltip(
                 new GuiSimpleLabel(font, width / 2 - 30, height / 2 - 14, GuiSimpleLabel.Align.Left,
-                        new StringTextComponent("position"), GuiColors.SETTINGS_TEXT),
-                Collections.singletonList(new StringTextComponent("HUD position relative to anchor.")));
+                        new TextComponent("position"), GuiColors.SETTINGS_TEXT),
+                Collections.singletonList(new TextComponent("HUD position relative to anchor.")));
         labels.add(new GuiSimpleLabel(font, width / 2 + 119, height / 2 - 14, GuiSimpleLabel.Align.Center,
-                new StringTextComponent("x"), GuiColors.SETTINGS_TEXT_DARK));
+                new TextComponent("x"), GuiColors.SETTINGS_TEXT_DARK));
         addLabelWithTooltip(
                 new GuiSimpleLabel(font, width / 2 - 30, height / 2 + 2, GuiSimpleLabel.Align.Left,
-                        new StringTextComponent("autoAdjustAnchor"), GuiColors.SETTINGS_TEXT),
+                        new TextComponent("autoAdjustAnchor"), GuiColors.SETTINGS_TEXT),
                 ConfigData.getTooltip("hud.autoAdjustAnchor"));
         addLabelWithTooltip(
                 new GuiSimpleLabel(font, width / 2 - 30, height / 2 + 18, GuiSimpleLabel.Align.Left,
-                        new StringTextComponent("snapToBorder"), GuiColors.SETTINGS_TEXT),
+                        new TextComponent("snapToBorder"), GuiColors.SETTINGS_TEXT),
                 ConfigData.getTooltip("hud.snapToBorder"));
     }
 
-    private void addLabelWithTooltip(GuiSimpleLabel label, @Nullable List<ITextComponent> tooltip) {
+    private void addLabelWithTooltip(GuiSimpleLabel label, @Nullable List<Component> tooltip) {
         labels.add(label);
         if (tooltip != null) {
             labelTooltips.put(label, tooltip);

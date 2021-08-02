@@ -5,23 +5,30 @@ import java.util.List;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
-public class GuiSimpleLabel extends Widget {
+public class GuiSimpleLabel extends AbstractWidget {
+    @Override
+    public void updateNarration(NarrationElementOutput p_169152_)
+    {
+
+    }
+
     public enum Align {
         Left, Center, Right
     }
 
-    private final FontRenderer font;
+    private final Font font;
     private int scale = 1;
     private int color;
     private final Align align;
@@ -30,11 +37,11 @@ public class GuiSimpleLabel extends Widget {
     private ConfigData.Point topLeft;
     private ConfigData.Point bottomRight;
 
-    public GuiSimpleLabel(FontRenderer font, int x, int y, Align align, ITextComponent text) {
+    public GuiSimpleLabel(Font font, int x, int y, Align align, Component text) {
         this(font, x, y, align, text, GuiColors.LABEL_TEXT_DEFAULT);
     }
 
-    public GuiSimpleLabel(FontRenderer font, int x, int y, Align align, ITextComponent text, int color) {
+    public GuiSimpleLabel(Font font, int x, int y, Align align, Component text, int color) {
         super(x, y, 0, 0, text);
         this.font = font;
         this.color = color;
@@ -43,7 +50,7 @@ public class GuiSimpleLabel extends Widget {
         setText(text);
     }
 
-    public void setText(ITextComponent text) {
+    public void setText(Component text) {
         texts = new ArrayList<>();
         widths = new ArrayList<>();
 
@@ -96,7 +103,7 @@ public class GuiSimpleLabel extends Widget {
     }
 
     @Override
-    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         matrixStack.scale(scale, scale, 1.0F);
 
         if (align == Align.Left) {

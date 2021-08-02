@@ -7,26 +7,27 @@ import java.net.URISyntaxException;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.screen.ConfirmOpenLinkScreen;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.screens.ConfirmLinkScreen;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
-public class GuiLinkButton extends Widget {
+public class GuiLinkButton extends AbstractWidget {
     private final BooleanConsumer callbackFunction;
     private final GuiSimpleLabel label;
     private final String uri;
 
-    public GuiLinkButton(FontRenderer font, int x, int y, ITextComponent text, String uri,
+    public GuiLinkButton(Font font, int x, int y, Component text, String uri,
             BooleanConsumer callbackFunction) {
         super(x, y, font.width(text.getString()) + 8, 16, text);
         this.callbackFunction = callbackFunction;
@@ -45,7 +46,7 @@ public class GuiLinkButton extends Widget {
     }
 
     @Override
-    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         if (isHovered) {
             label.setColor(GuiColors.SETTINGS_LINK_HIGHLIGHT);
         } else {
@@ -57,6 +58,12 @@ public class GuiLinkButton extends Widget {
 
     @Override
     public void onClick(double mouseX, double mouseY) {
-        Minecraft.getInstance().setScreen(new ConfirmOpenLinkScreen(callbackFunction, uri, false));
+        Minecraft.getInstance().setScreen(new ConfirmLinkScreen(callbackFunction, uri, false));
+    }
+
+    @Override
+    public void updateNarration(NarrationElementOutput p_169152_)
+    {
+
     }
 }

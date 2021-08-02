@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import journeymap.client.ui.theme.Theme;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.ChatFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -65,9 +65,9 @@ public final class GuiColors {
     public static final int SETTINGS_ANCHOR_DARK = 0xff222222;
     public static final int SETTINGS_PING_BAR = 0xffffffff;
 
-    public static final TextFormatting CHAT_PLAYER = TextFormatting.YELLOW;
-    public static final TextFormatting WARNING = TextFormatting.YELLOW;
-    public static final TextFormatting DEFAULT_CONFIG = TextFormatting.AQUA;
+    public static final ChatFormatting CHAT_PLAYER = ChatFormatting.YELLOW;
+    public static final ChatFormatting WARNING = ChatFormatting.YELLOW;
+    public static final ChatFormatting DEFAULT_CONFIG = ChatFormatting.AQUA;
 
     public static int colorSpecToInt(Theme.ColorSpec colorSpec) {
         int color = colorSpec.getColor();

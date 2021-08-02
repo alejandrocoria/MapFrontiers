@@ -4,30 +4,31 @@ import java.util.List;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import net.minecraft.client.gui.components.Widget;
 import org.apache.commons.lang3.StringUtils;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.ChatFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class GuiUserElement extends GuiScrollBox.ScrollElement {
-    private final FontRenderer font;
+    private final Font font;
     private final SettingsUser user;
     private final GuiButtonIcon buttonDelete;
     private int pingBar = 0;
     final List<Widget> buttonList;
 
-    public GuiUserElement(FontRenderer font, List<Widget> buttonList, SettingsUser user, ResourceLocation texture,
-            int textureSize) {
+    public GuiUserElement(Font font, List<Widget> buttonList, SettingsUser user, ResourceLocation texture,
+                          int textureSize) {
         super(258, 16);
         this.font = font;
         this.user = user;
@@ -69,7 +70,7 @@ public class GuiUserElement extends GuiScrollBox.ScrollElement {
     }
 
     @Override
-    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
+    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
         int color = GuiColors.SETTINGS_TEXT;
         if (selected) {
             color = GuiColors.SETTINGS_TEXT_HIGHLIGHT;
@@ -85,7 +86,7 @@ public class GuiUserElement extends GuiScrollBox.ScrollElement {
         String text = user.username;
         if (StringUtils.isBlank(text)) {
             if (user.uuid == null) {
-                text = I18n.get("mapfrontiers.unnamed", TextFormatting.ITALIC);
+                text = I18n.get("mapfrontiers.unnamed", ChatFormatting.ITALIC);
             } else {
                 text = user.uuid.toString();
             }
@@ -110,7 +111,7 @@ public class GuiUserElement extends GuiScrollBox.ScrollElement {
         }
     }
 
-    private void drawPingLine(MatrixStack matrixStack, int posX, int posY, int height) {
+    private void drawPingLine(PoseStack matrixStack, int posX, int posY, int height) {
         fill(matrixStack, posX, posY - height, posX + 1, posY, GuiColors.SETTINGS_PING_BAR);
     }
 

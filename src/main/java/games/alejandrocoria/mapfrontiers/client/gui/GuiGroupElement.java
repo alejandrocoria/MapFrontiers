@@ -4,27 +4,28 @@ import java.util.List;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.ChatFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class GuiGroupElement extends GuiScrollBox.ScrollElement {
-    private final FontRenderer font;
+    private final Font font;
     private final SettingsGroup group;
     private final GuiButtonIcon buttonDelete;
     final List<Widget> buttonList;
 
-    public GuiGroupElement(FontRenderer font, List<Widget> buttonList, SettingsGroup group, ResourceLocation texture,
-            int textureSize) {
+    public GuiGroupElement(Font font, List<Widget> buttonList, SettingsGroup group, ResourceLocation texture,
+                           int textureSize) {
         super(160, 16);
         this.font = font;
         this.group = group;
@@ -59,7 +60,7 @@ public class GuiGroupElement extends GuiScrollBox.ScrollElement {
     }
 
     @Override
-    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
+    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
         int color = GuiColors.SETTINGS_TEXT;
         if (selected) {
             color = GuiColors.SETTINGS_TEXT_HIGHLIGHT;
@@ -73,7 +74,7 @@ public class GuiGroupElement extends GuiScrollBox.ScrollElement {
 
         String text = group.getName();
         if (text.isEmpty()) {
-            text = I18n.get("mapfrontiers.unnamed", TextFormatting.ITALIC);
+            text = I18n.get("mapfrontiers.unnamed", ChatFormatting.ITALIC);
         }
 
         font.draw(matrixStack, text, x + 4, y + 4, color);

@@ -12,9 +12,9 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.fmllegacy.network.NetworkEvent;
 
 @ParametersAreNonnullByDefault
 public class PacketDeleteFrontier {
@@ -24,18 +24,18 @@ public class PacketDeleteFrontier {
         this.frontierID = frontierID;
     }
 
-    public static PacketDeleteFrontier fromBytes(PacketBuffer buf) {
+    public static PacketDeleteFrontier fromBytes(FriendlyByteBuf buf) {
         return new PacketDeleteFrontier(UUIDHelper.fromBytes(buf));
     }
 
-    public static void toBytes(PacketDeleteFrontier packet, PacketBuffer buf) {
+    public static void toBytes(PacketDeleteFrontier packet, FriendlyByteBuf buf) {
         UUIDHelper.toBytes(buf, packet.frontierID);
     }
 
     public static void handle(PacketDeleteFrontier message, Supplier<NetworkEvent.Context> ctx) {
         NetworkEvent.Context context = ctx.get();
         context.enqueueWork(() -> {
-            ServerPlayerEntity player = context.getSender();
+            ServerPlayer player = context.getSender();
             if (player == null) {
                 return;
             }

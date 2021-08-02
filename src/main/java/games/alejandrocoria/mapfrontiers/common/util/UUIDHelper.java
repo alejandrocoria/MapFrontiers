@@ -8,10 +8,10 @@ import com.mojang.authlib.GameProfile;
 
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.network.play.ClientPlayNetHandler;
-import net.minecraft.client.network.play.NetworkPlayerInfo;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.server.MinecraftServer;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import net.minecraftforge.fmllegacy.server.ServerLifecycleHooks;
 
 @ParametersAreNonnullByDefault
 public class UUIDHelper {
@@ -20,11 +20,11 @@ public class UUIDHelper {
 
         MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
         if (server != null) {
-            profile = server.getProfileCache().get(username);
+            profile = server.getProfileCache().get(username).orElse(null);
         } else {
-            ClientPlayNetHandler handler = Minecraft.getInstance().getConnection();
+            ClientPacketListener handler = Minecraft.getInstance().getConnection();
             if (handler != null) {
-                NetworkPlayerInfo playerInfo = handler.getPlayerInfo(username);
+                PlayerInfo playerInfo = handler.getPlayerInfo(username);
                 if (playerInfo != null) {
                     profile = playerInfo.getProfile();
                 }
@@ -42,11 +42,11 @@ public class UUIDHelper {
 
         MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
         if (server != null) {
-            profile = server.getProfileCache().get(uuid);
+            profile = server.getProfileCache().get(uuid).orElse(null);
         } else {
-            ClientPlayNetHandler handler = Minecraft.getInstance().getConnection();
+            ClientPacketListener handler = Minecraft.getInstance().getConnection();
             if (handler != null) {
-                NetworkPlayerInfo playerInfo = handler.getPlayerInfo(uuid);
+                PlayerInfo playerInfo = handler.getPlayerInfo(uuid);
                 if (playerInfo != null) {
                     profile = playerInfo.getProfile();
                 }

@@ -2,13 +2,13 @@ package games.alejandrocoria.mapfrontiers.client.util;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.Font;
 
 import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class StringHelper {
-    public static int getMaxWidth(FontRenderer font, String... strings) {
+    public static int getMaxWidth(Font font, String... strings) {
         int maxWidth = 0;
 
         for (String s : strings) {

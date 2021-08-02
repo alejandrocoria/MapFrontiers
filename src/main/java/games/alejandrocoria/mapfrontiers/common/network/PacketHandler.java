@@ -1,29 +1,30 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
-import java.util.Optional;
-
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
-import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.network.NetworkDirection;
-import net.minecraftforge.fml.network.NetworkRegistry;
-import net.minecraftforge.fml.network.PacketDistributor;
-import net.minecraftforge.fml.network.simple.SimpleChannel;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.fmllegacy.network.NetworkDirection;
+import net.minecraftforge.fmllegacy.network.NetworkRegistry;
+import net.minecraftforge.fmllegacy.network.PacketDistributor;
+import net.minecraftforge.fmllegacy.network.simple.SimpleChannel;
+import net.minecraftforge.fmllegacy.server.ServerLifecycleHooks;
+
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.Optional;
 
 @ParametersAreNonnullByDefault
-public class PacketHandler {
+public class PacketHandler
+{
     private static final String PROTOCOL_VERSION = "1";
     public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(MapFrontiers.MODID, "main"), () -> PROTOCOL_VERSION, PROTOCOL_VERSION::equals,
             PROTOCOL_VERSION::equals);
 
-    public static void init() {
+    public static void init()
+    {
         int id = 0;
         INSTANCE.registerMessage(id++, PacketFrontier.class, PacketFrontier::toBytes, PacketFrontier::fromBytes,
                 PacketFrontier::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
@@ -58,19 +59,25 @@ public class PacketHandler {
                 PacketUpdateSharedUserPersonalFrontier::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
     }
 
-    public static <MSG> void sendToUsersWithAccess(MSG message, FrontierData frontier) {
+    public static <MSG> void sendToUsersWithAccess(MSG message, FrontierData frontier)
+    {
         MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
 
-        ServerPlayerEntity player = server.getPlayerList().getPlayer(frontier.getOwner().uuid);
-        if (player != null) {
+        ServerPlayer player = server.getPlayerList().getPlayer(frontier.getOwner().uuid);
+        if (player != null)
+        {
             sendTo(message, player);
         }
 
-        if (frontier.getUsersShared() != null) {
-            for (SettingsUserShared userShared : frontier.getUsersShared()) {
-                if (!userShared.isPending()) {
+        if (frontier.getUsersShared() != null)
+        {
+            for (SettingsUserShared userShared : frontier.getUsersShared())
+            {
+                if (!userShared.isPending())
+                {
                     player = server.getPlayerList().getPlayer(userShared.getUser().uuid);
-                    if (player != null) {
+                    if (player != null)
+                    {
                         sendTo(message, player);
                     }
                 }
@@ -78,11 +85,13 @@ public class PacketHandler {
         }
     }
 
-    public static <MSG> void sendTo(MSG message, ServerPlayerEntity player) {
+    public static <MSG> void sendTo(MSG message, ServerPlayer player)
+    {
         INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), message);
     }
 
-    public static <MSG> void sendToAll(MSG message) {
+    public static <MSG> void sendToAll(MSG message)
+    {
         INSTANCE.send(PacketDistributor.ALL.noArg(), message);
     }
 }

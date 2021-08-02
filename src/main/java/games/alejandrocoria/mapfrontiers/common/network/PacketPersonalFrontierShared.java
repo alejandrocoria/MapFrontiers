@@ -4,19 +4,19 @@ import java.util.function.Supplier;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import net.minecraftforge.fmllegacy.network.NetworkEvent;
 import org.apache.commons.lang3.StringUtils;
 
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.event.ClickEvent;
-import net.minecraft.util.text.event.HoverEvent;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.HoverEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.network.NetworkEvent;
 
 @ParametersAreNonnullByDefault
 public class PacketPersonalFrontierShared {
@@ -43,7 +43,7 @@ public class PacketPersonalFrontierShared {
         this.name2 = name2;
     }
 
-    public static PacketPersonalFrontierShared fromBytes(PacketBuffer buf) {
+    public static PacketPersonalFrontierShared fromBytes(FriendlyByteBuf buf) {
         PacketPersonalFrontierShared packet = new PacketPersonalFrontierShared();
         packet.shareMessageID = buf.readInt();
         packet.playerSharing.fromBytes(buf);
@@ -53,7 +53,7 @@ public class PacketPersonalFrontierShared {
         return packet;
     }
 
-    public static void toBytes(PacketPersonalFrontierShared packet, PacketBuffer buf) {
+    public static void toBytes(PacketPersonalFrontierShared packet, FriendlyByteBuf buf) {
         buf.writeInt(packet.shareMessageID);
         packet.playerSharing.toBytes(buf);
         packet.owner.toBytes(buf);
@@ -78,14 +78,14 @@ public class PacketPersonalFrontierShared {
             frontierName = message.name1 + " " + message.name2;
         }
 
-        StringTextComponent button = new StringTextComponent(frontierName);
+        TextComponent button = new TextComponent(frontierName);
         button.withStyle(style -> style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                new StringTextComponent("Click to accept or use command /mfaccept " + message.shareMessageID))));
+                new TextComponent("Click to accept or use command /mfaccept " + message.shareMessageID))));
         button.withStyle(style -> style.withBold(true));
         button.withStyle(style -> style
                 .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mapfrontiersaccept " + message.shareMessageID)));
 
-        StringTextComponent text = new StringTextComponent(userToString(message.playerSharing) + " ");
+        TextComponent text = new TextComponent(userToString(message.playerSharing) + " ");
         if (message.playerSharing.equals(message.owner)) {
             text.append("want to share a frontier with you: ");
         } else {
@@ -94,7 +94,7 @@ public class PacketPersonalFrontierShared {
 
         text.append(button);
 
-        ClientPlayerEntity player = Minecraft.getInstance().player;
+        LocalPlayer player = Minecraft.getInstance().player;
         player.sendMessage(text, message.owner.uuid);
 
         ctx.setPacketHandled(true);

@@ -9,14 +9,14 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.glfw.GLFW;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.network.play.ClientPlayNetHandler;
-import net.minecraft.client.network.play.NetworkPlayerInfo;
-import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -27,11 +27,11 @@ public class TextUserBox extends TextBox {
     private String partialText;
     private final List<String> suggestions;
     private final List<String> suggestionsToDraw;
-    private ITextComponent error;
+    private Component error;
     private int maxSuggestionWidth = 0;
     private int suggestionIndex = 0;
 
-    public TextUserBox(Minecraft mc, FontRenderer font, int x, int y, int width, String defaultText) {
+    public TextUserBox(Minecraft mc, Font font, int x, int y, int width, String defaultText) {
         super(font, x, y, width, defaultText);
         this.mc = mc;
         suggestions = new ArrayList<>();
@@ -40,7 +40,7 @@ public class TextUserBox extends TextBox {
         setError(null);
     }
 
-    public void setError(@Nullable ITextComponent error) {
+    public void setError(@Nullable Component error) {
         this.error = error;
 
         if (this.error == null) {
@@ -58,10 +58,10 @@ public class TextUserBox extends TextBox {
         if (keyCode == GLFW.GLFW_KEY_LEFT_ALT) {
             if (suggestions.isEmpty()) {
                 suggestionIndex = 0;
-                ClientPlayNetHandler handler = mc.getConnection();
+                ClientPacketListener handler = mc.getConnection();
                 if (!StringUtils.isBlank(getValue()) && handler != null) {
                     partialText = getValue();
-                    for (NetworkPlayerInfo playerInfo : handler.getOnlinePlayers()) {
+                    for (PlayerInfo playerInfo : handler.getOnlinePlayers()) {
                         String name = playerInfo.getProfile().getName();
                         if (name != null && name.regionMatches(true, 0, partialText, 0, partialText.length())) {
                             suggestions.add(name);
@@ -114,11 +114,11 @@ public class TextUserBox extends TextBox {
     }
 
     @Override
-    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         super.renderButton(matrixStack, mouseX, mouseY, partialTicks);
 
         if (error != null) {
-            List<IReorderingProcessor> errorList = font.split(error, width - 8);
+            List<FormattedCharSequence> errorList = font.split(error, width - 8);
             int maxErrorWidth = width - 8;
 
             fill(matrixStack, x - 1, y - errorList.size() * 12 - 5, x + maxErrorWidth + 9, y - 1,
@@ -128,7 +128,7 @@ public class TextUserBox extends TextBox {
 
             int posX = x + 4;
             int posY = y - errorList.size() * 12;
-            for (IReorderingProcessor e : errorList) {
+            for (FormattedCharSequence e : errorList) {
                 font.draw(matrixStack, e, posX, posY, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                 posY += 12;
             }
