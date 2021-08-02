@@ -7,10 +7,10 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.ListNBT;
-import net.minecraft.network.PacketBuffer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.common.util.Constants;
 
 @ParametersAreNonnullByDefault
@@ -100,7 +100,7 @@ public class FrontierSettings {
         return false;
     }
 
-    public SettingsProfile getProfile(PlayerEntity player) {
+    public SettingsProfile getProfile(Player player) {
         SettingsProfile profile = new SettingsProfile();
         SettingsUser user = new SettingsUser(player);
 
@@ -133,7 +133,7 @@ public class FrontierSettings {
         return profile;
     }
 
-    public void readFromNBT(CompoundNBT nbt) {
+    public void readFromNBT(CompoundTag nbt) {
         int version = nbt.getInt("Version");
         if (version == 0) {
             MapFrontiers.LOGGER.warn("Data version in settings not found, expected " + dataVersion);
@@ -144,20 +144,20 @@ public class FrontierSettings {
                     .warn("Data version in settings higher than expected. The mod uses " + dataVersion);
         }
 
-        CompoundNBT OPsTag = nbt.getCompound("OPs");
+        CompoundTag OPsTag = nbt.getCompound("OPs");
         OPs.readFromNBT(OPsTag);
 
-        CompoundNBT ownersTag = nbt.getCompound("Owners");
+        CompoundTag ownersTag = nbt.getCompound("Owners");
         owners.readFromNBT(ownersTag);
 
-        CompoundNBT everyoneTag = nbt.getCompound("Everyone");
+        CompoundTag everyoneTag = nbt.getCompound("Everyone");
         everyone.readFromNBT(everyoneTag);
 
         customGroups.clear();
-        ListNBT customGroupsTagList = nbt.getList("customGroups", Constants.NBT.TAG_COMPOUND);
+        ListTag customGroupsTagList = nbt.getList("customGroups", Constants.NBT.TAG_COMPOUND);
         for (int i = 0; i < customGroupsTagList.size(); ++i) {
             SettingsGroup group = new SettingsGroup();
-            CompoundNBT groupTag = customGroupsTagList.getCompound(i);
+            CompoundTag groupTag = customGroupsTagList.getCompound(i);
             group.readFromNBT(groupTag);
             customGroups.add(group);
         }
@@ -165,22 +165,22 @@ public class FrontierSettings {
         ensureUpdateSettingsAction();
     }
 
-    public void writeToNBT(CompoundNBT nbt) {
-        CompoundNBT OPsTag = new CompoundNBT();
+    public void writeToNBT(CompoundTag nbt) {
+        CompoundTag OPsTag = new CompoundTag();
         OPs.writeToNBT(OPsTag);
         nbt.put("OPs", OPsTag);
 
-        CompoundNBT ownersTag = new CompoundNBT();
+        CompoundTag ownersTag = new CompoundTag();
         owners.writeToNBT(ownersTag);
         nbt.put("Owners", ownersTag);
 
-        CompoundNBT everyoneTag = new CompoundNBT();
+        CompoundTag everyoneTag = new CompoundTag();
         everyone.writeToNBT(everyoneTag);
         nbt.put("Everyone", everyoneTag);
 
-        ListNBT customGroupsTagList = new ListNBT();
+        ListTag customGroupsTagList = new ListTag();
         for (SettingsGroup group : customGroups) {
-            CompoundNBT groupTag = new CompoundNBT();
+            CompoundTag groupTag = new CompoundTag();
             group.writeToNBT(groupTag);
             customGroupsTagList.add(groupTag);
         }
@@ -189,7 +189,7 @@ public class FrontierSettings {
         nbt.putInt("Version", dataVersion);
     }
 
-    public void fromBytes(PacketBuffer buf) {
+    public void fromBytes(FriendlyByteBuf buf) {
         OPs.fromBytes(buf);
         owners.fromBytes(buf);
         everyone.fromBytes(buf);
@@ -203,7 +203,7 @@ public class FrontierSettings {
         }
     }
 
-    public void toBytes(PacketBuffer buf) {
+    public void toBytes(FriendlyByteBuf buf) {
         OPs.toBytes(buf);
         owners.toBytes(buf);
         everyone.toBytes(buf);

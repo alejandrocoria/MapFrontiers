@@ -3,8 +3,9 @@ package games.alejandrocoria.mapfrontiers.client;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import net.minecraft.inventory.EquipmentSlotType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fmlclient.registry.ClientRegistry;
 import org.lwjgl.glfw.GLFW;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
@@ -16,15 +17,15 @@ import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import journeymap.client.api.IClientAPI;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
-import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.client.util.InputMappings;
-import net.minecraft.item.BannerItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.util.RegistryKey;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.KeyMapping;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.world.item.BannerItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggedInEvent;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggedOutEvent;
@@ -33,7 +34,6 @@ import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 
@@ -47,7 +47,7 @@ public class ClientProxy {
     private static SettingsProfile settingsProfile;
     private static GuiFrontierSettings.Tab lastSettingsTab = GuiFrontierSettings.Tab.Credits;
 
-    private static KeyBinding openSettingsKey;
+    private static KeyMapping openSettingsKey;
     private static GuiHUD guiHUD;
 
     private static ItemStack bookItemInHand;
@@ -59,8 +59,8 @@ public class ClientProxy {
         MinecraftForge.EVENT_BUS.register(FrontierOverlay.class);
         MinecraftForge.EVENT_BUS.register(FrontiersOverlayManager.class);
 
-        openSettingsKey = new KeyBinding("mapfrontiers.key.open_settings", KeyConflictContext.IN_GAME,
-                InputMappings.Type.KEYSYM, GLFW.GLFW_KEY_F8, "mapfrontiers.key.category");
+        openSettingsKey = new KeyMapping("mapfrontiers.key.open_settings", KeyConflictContext.IN_GAME,
+                InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, "mapfrontiers.key.category");
         ClientRegistry.registerKeyBinding(openSettingsKey);
 
         MapFrontiers.LOGGER.info("clientSetup done");
@@ -81,7 +81,7 @@ public class ClientProxy {
         }
     }
 
-    public static BlockPos snapVertex(BlockPos vertex, int snapDistance, RegistryKey<World> dimension,
+    public static BlockPos snapVertex(BlockPos vertex, int snapDistance, ResourceKey<Level> dimension,
             @Nullable FrontierData owner) {
         float snapDistanceSq = snapDistance * snapDistance;
         BlockPos closest = new BlockPos(vertex.getX(), 70, vertex.getZ());
@@ -144,13 +144,13 @@ public class ClientProxy {
     @SubscribeEvent
     public static void onRenderTick(TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
-            ClientPlayerEntity player = Minecraft.getInstance().player;
+            LocalPlayer player = Minecraft.getInstance().player;
             if (player == null) {
                 return;
             }
 
-            ItemStack itemMainhand = player.getItemBySlot(EquipmentSlotType.MAINHAND);
-            ItemStack itemOffhand = player.getItemBySlot(EquipmentSlotType.OFFHAND);
+            ItemStack itemMainhand = player.getItemBySlot(EquipmentSlot.MAINHAND);
+            ItemStack itemOffhand = player.getItemBySlot(EquipmentSlot.OFFHAND);
 
             if (itemMainhand != bookItemInHand && itemOffhand != bookItemInHand) {
                 bookItemInHand = null;
@@ -158,7 +158,7 @@ public class ClientProxy {
                 if (!itemMainhand.isEmpty() && (itemMainhand.getItem() == MapFrontiers.frontierBook
                         || itemMainhand.getItem() == MapFrontiers.personalFrontierBook)) {
                     if (itemMainhand.hasTag()) {
-                        CompoundNBT nbt = itemMainhand.getTag();
+                        CompoundTag nbt = itemMainhand.getTag();
                         if (nbt != null && nbt.contains("Dimension")
                                 && nbt.getString("Dimension").equals(player.level.dimension().location().toString())) {
                             bookItemInHand = itemMainhand;
@@ -169,7 +169,7 @@ public class ClientProxy {
                 if (bookItemInHand == null && !itemOffhand.isEmpty() && (itemOffhand.getItem() == MapFrontiers.frontierBook
                         || itemMainhand.getItem() == MapFrontiers.personalFrontierBook)) {
                     if (itemOffhand.hasTag()) {
-                        CompoundNBT nbt = itemOffhand.getTag();
+                        CompoundTag nbt = itemOffhand.getTag();
                         if (nbt != null && nbt.contains("Dimension")
                                 && nbt.getString("Dimension").equals(player.level.dimension().location().toString())) {
                             bookItemInHand = itemOffhand;
@@ -213,13 +213,13 @@ public class ClientProxy {
         }
     }
 
-    public static void openGUIFrontierBook(RegistryKey<World> dimension, boolean personal) {
+    public static void openGUIFrontierBook(ResourceKey<Level> dimension, boolean personal) {
         if (frontiersOverlayManager == null || settingsProfile == null) {
             return;
         }
 
-        ItemStack mainhand = Minecraft.getInstance().player.getItemBySlot(EquipmentSlotType.MAINHAND);
-        ItemStack offhand = Minecraft.getInstance().player.getItemBySlot(EquipmentSlotType.OFFHAND);
+        ItemStack mainhand = Minecraft.getInstance().player.getItemBySlot(EquipmentSlot.MAINHAND);
+        ItemStack offhand = Minecraft.getInstance().player.getItemBySlot(EquipmentSlot.OFFHAND);
         ItemStack heldBanner = null;
 
         if (mainhand.getItem() instanceof BannerItem) {
@@ -228,7 +228,7 @@ public class ClientProxy {
             heldBanner = offhand;
         }
 
-        RegistryKey<World> currentDimension = Minecraft.getInstance().player.level.dimension();
+        ResourceKey<Level> currentDimension = Minecraft.getInstance().player.level.dimension();
 
         if (personal && settingsProfile.personalFrontier == SettingsProfile.State.Enabled) {
             Minecraft.getInstance().setScreen(

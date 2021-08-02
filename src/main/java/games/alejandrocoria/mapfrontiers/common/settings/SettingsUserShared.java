@@ -8,10 +8,10 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.util.StringHelper;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.ListNBT;
-import net.minecraft.nbt.StringNBT;
-import net.minecraft.network.PacketBuffer;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.common.util.Constants;
 
 @ParametersAreNonnullByDefault
@@ -70,12 +70,12 @@ public class SettingsUserShared {
         return pending;
     }
 
-    public void readFromNBT(CompoundNBT nbt) {
+    public void readFromNBT(CompoundTag nbt) {
         user.readFromNBT(nbt);
         pending = nbt.getBoolean("pending");
 
         actions.clear();
-        ListNBT actionsTagList = nbt.getList("actions", Constants.NBT.TAG_STRING);
+        ListTag actionsTagList = nbt.getList("actions", Constants.NBT.TAG_STRING);
         for (int i = 0; i < actionsTagList.size(); ++i) {
             String actionTag = actionsTagList.getString(i);
 
@@ -96,23 +96,23 @@ public class SettingsUserShared {
         }
     }
 
-    public void writeToNBT(CompoundNBT nbt) {
+    public void writeToNBT(CompoundTag nbt) {
         user.writeToNBT(nbt);
 
         if (pending) {
             nbt.putBoolean("pending", pending);
         }
 
-        ListNBT actionsTagList = new ListNBT();
+        ListTag actionsTagList = new ListTag();
         for (SettingsUserShared.Action action : actions) {
-            StringNBT actionTag = StringNBT.valueOf(action.name());
+            StringTag actionTag = StringTag.valueOf(action.name());
             actionsTagList.add(actionTag);
         }
 
         nbt.put("actions", actionsTagList);
     }
 
-    public void fromBytes(PacketBuffer buf) {
+    public void fromBytes(FriendlyByteBuf buf) {
         user.fromBytes(buf);
 
         pending = buf.readBoolean();
@@ -125,7 +125,7 @@ public class SettingsUserShared {
         }
     }
 
-    public void toBytes(PacketBuffer buf) {
+    public void toBytes(FriendlyByteBuf buf) {
         user.toBytes(buf);
 
         buf.writeBoolean(pending);

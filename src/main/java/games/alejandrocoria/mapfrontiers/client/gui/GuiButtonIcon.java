@@ -2,14 +2,14 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SoundHandler;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.sounds.SoundManager;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -23,8 +23,8 @@ public class GuiButtonIcon extends Button {
     private final int textureSize;
 
     public GuiButtonIcon(int x, int y, int width, int height, int texX, int texY, int diffX, ResourceLocation texture,
-            int textureSize, Button.IPressable pressedAction) {
-        super(x, y, width, height, StringTextComponent.EMPTY, pressedAction);
+            int textureSize, Button.OnPress pressedAction) {
+        super(x, y, width, height, TextComponent.EMPTY, pressedAction);
         this.texX = texX;
         this.texY = texY;
         this.diffX = diffX;
@@ -33,15 +33,15 @@ public class GuiButtonIcon extends Button {
     }
 
     @Override
-    public void playDownSound(SoundHandler soundHandlerIn) {
+    public void playDownSound(SoundManager soundHandlerIn) {
 
     }
 
     @Override
-    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        RenderSystem.color3f(1.f, 1.f, 1.f);
+    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+        RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1f);
         Minecraft mc = Minecraft.getInstance();
-        mc.getTextureManager().bind(texture);
+        mc.getTextureManager().bindForSetup(texture);
         int textureX = texX;
 
         if (isHovered) {

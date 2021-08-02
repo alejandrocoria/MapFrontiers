@@ -4,20 +4,21 @@ import java.util.function.Consumer;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import journeymap.client.ui.minimap.MiniMap;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SoundHandler;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.sounds.SoundManager;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
-public class GuiHUDWidget extends Widget {
+public class GuiHUDWidget extends AbstractWidget {
     private final GuiHUD guiHUD;
     private final MiniMap minimap;
     private ConfigData.Point positionHUD = new ConfigData.Point();
@@ -26,7 +27,7 @@ public class GuiHUDWidget extends Widget {
     private final Consumer<GuiHUDWidget> callbackHUDUpdated;
 
     public GuiHUDWidget(GuiHUD guiHUD, MiniMap minimap, Consumer<GuiHUDWidget> callbackHUDUpdated) {
-        super(0, 0, 0, 0, StringTextComponent.EMPTY);
+        super(0, 0, 0, 0, TextComponent.EMPTY);
         this.guiHUD = guiHUD;
         this.minimap = minimap;
         this.callbackHUDUpdated = callbackHUDUpdated;
@@ -167,13 +168,19 @@ public class GuiHUDWidget extends Widget {
     }
 
     @Override
-    public void playDownSound(SoundHandler soundHandlerIn) {
+    public void playDownSound(SoundManager soundHandlerIn) {
 
     }
 
     @Override
-    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         Minecraft mc = Minecraft.getInstance();
         guiHUD.draw(matrixStack, mc.getWindow(), partialTicks);
+    }
+
+    @Override
+    public void updateNarration(NarrationElementOutput p_169152_)
+    {
+
     }
 }

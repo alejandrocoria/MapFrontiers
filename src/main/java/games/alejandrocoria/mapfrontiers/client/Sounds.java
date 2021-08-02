@@ -4,9 +4,9 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SimpleSound;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.SoundEvent;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.event.RegistryEvent;
@@ -28,11 +28,11 @@ public class Sounds {
     }
 
     public static void playSoundOpenBook() {
-        Minecraft.getInstance().getSoundManager().play(SimpleSound.forUI(openBookSoundEvent, 1.0F));
+        Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(openBookSoundEvent, 1.0F));
     }
 
     public static void playSoundTurnPage() {
-        Minecraft.getInstance().getSoundManager().play(SimpleSound.forUI(turnPageSoundEvent, 1.0F));
+        Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(turnPageSoundEvent, 1.0F));
     }
 
     private Sounds() {

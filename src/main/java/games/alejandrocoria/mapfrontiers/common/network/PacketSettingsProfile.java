@@ -10,11 +10,11 @@ import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierSettings;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiShareSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.PacketBuffer;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraftforge.fmllegacy.network.NetworkEvent;
 
 @ParametersAreNonnullByDefault
 public class PacketSettingsProfile {
@@ -28,13 +28,13 @@ public class PacketSettingsProfile {
         this.profile = profile;
     }
 
-    public static PacketSettingsProfile fromBytes(PacketBuffer buf) {
+    public static PacketSettingsProfile fromBytes(FriendlyByteBuf buf) {
         PacketSettingsProfile packet = new PacketSettingsProfile();
         packet.profile.fromBytes(buf);
         return packet;
     }
 
-    public static void toBytes(PacketSettingsProfile packet, PacketBuffer buf) {
+    public static void toBytes(PacketSettingsProfile packet, FriendlyByteBuf buf) {
         packet.profile.toBytes(buf);
     }
 

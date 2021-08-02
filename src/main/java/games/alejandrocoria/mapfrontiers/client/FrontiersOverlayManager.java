@@ -24,10 +24,10 @@ import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.MarkerOverlay;
 import journeymap.client.api.model.MapImage;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.RegistryKey;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.event.TickEvent;
@@ -37,9 +37,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 @OnlyIn(Dist.CLIENT)
 public class FrontiersOverlayManager {
     private final IClientAPI jmAPI;
-    private final HashMap<RegistryKey<World>, ArrayList<FrontierOverlay>> dimensionsFrontiers;
-    private final HashMap<RegistryKey<World>, FrontierOverlay> frontiersSelected;
-    private final HashMap<RegistryKey<World>, MarkerOverlay> markersSelected;
+    private final HashMap<ResourceKey<Level>, ArrayList<FrontierOverlay>> dimensionsFrontiers;
+    private final HashMap<ResourceKey<Level>, FrontierOverlay> frontiersSelected;
+    private final HashMap<ResourceKey<Level>, MarkerOverlay> markersSelected;
     private final boolean personal;
 
     private static final MapImage markerDotSelected = new MapImage(
@@ -94,7 +94,7 @@ public class FrontiersOverlayManager {
         return frontierOverlay;
     }
 
-    public void clientCreateNewfrontier(RegistryKey<World> dimension) {
+    public void clientCreateNewfrontier(ResourceKey<Level> dimension) {
         BlockPos vertex = null;
 
         if (ConfigData.addVertexToNewFrontier) {
@@ -105,7 +105,7 @@ public class FrontiersOverlayManager {
         PacketHandler.INSTANCE.sendToServer(new PacketNewFrontier(dimension, personal, vertex));
     }
 
-    public void clientDeleteFrontier(RegistryKey<World> dimension, int index) {
+    public void clientDeleteFrontier(ResourceKey<Level> dimension, int index) {
         List<FrontierOverlay> frontiers = getAllFrontiers(dimension);
 
         FrontierOverlay frontier = frontiers.get(index);
@@ -115,7 +115,7 @@ public class FrontiersOverlayManager {
         }
     }
 
-    public void clientUpdatefrontier(RegistryKey<World> dimension, int index) {
+    public void clientUpdatefrontier(ResourceKey<Level> dimension, int index) {
         clientUpdatefrontier(getAllFrontiers(dimension).get(index));
     }
 
@@ -128,7 +128,7 @@ public class FrontiersOverlayManager {
         PacketHandler.INSTANCE.sendToServer(new PacketSharePersonalFrontier(frontierID, targetUser));
     }
 
-    public int deleteFrontier(RegistryKey<World> dimension, UUID id) {
+    public int deleteFrontier(ResourceKey<Level> dimension, UUID id) {
         List<FrontierOverlay> frontiers = getAllFrontiers(dimension);
 
         int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId().equals(id));
@@ -168,15 +168,15 @@ public class FrontiersOverlayManager {
         return frontiers.lastIndexOf(frontierOverlay);
     }
 
-    public Map<RegistryKey<World>, ArrayList<FrontierOverlay>> getAllFrontiers() {
+    public Map<ResourceKey<Level>, ArrayList<FrontierOverlay>> getAllFrontiers() {
         return dimensionsFrontiers;
     }
 
-    public List<FrontierOverlay> getAllFrontiers(RegistryKey<World> dimension) {
+    public List<FrontierOverlay> getAllFrontiers(ResourceKey<Level> dimension) {
         return dimensionsFrontiers.computeIfAbsent(dimension, k -> new ArrayList<>());
     }
 
-    public FrontierOverlay getFrontierInPosition(RegistryKey<World> dimension, BlockPos pos) {
+    public FrontierOverlay getFrontierInPosition(ResourceKey<Level> dimension, BlockPos pos) {
         ArrayList<FrontierOverlay> frontiers = dimensionsFrontiers.get(dimension);
         if (frontiers != null) {
             for (FrontierOverlay frontier : frontiers) {
@@ -208,16 +208,16 @@ public class FrontiersOverlayManager {
         }
     }
 
-    public FrontierOverlay getFrontier(RegistryKey<World> dimension, int index) {
+    public FrontierOverlay getFrontier(ResourceKey<Level> dimension, int index) {
         List<FrontierOverlay> frontiers = getAllFrontiers(dimension);
         return frontiers.get(index);
     }
 
-    public int getFrontierCount(RegistryKey<World> dimension) {
+    public int getFrontierCount(ResourceKey<Level> dimension) {
         return getAllFrontiers(dimension).size();
     }
 
-    public int getFrontierIndexSelected(RegistryKey<World> dimension) {
+    public int getFrontierIndexSelected(ResourceKey<Level> dimension) {
         FrontierOverlay selected = frontiersSelected.get(dimension);
         if (selected == null)
             return -1;
@@ -225,7 +225,7 @@ public class FrontiersOverlayManager {
         return getFrontierIndex(selected);
     }
 
-    public void setFrontierIndexSelected(RegistryKey<World> dimension, int index) {
+    public void setFrontierIndexSelected(ResourceKey<Level> dimension, int index) {
         if (index < 0) {
             updateSelectedMarker(dimension, null);
         } else {
@@ -235,7 +235,7 @@ public class FrontiersOverlayManager {
         }
     }
 
-    public void updateSelectedMarker(RegistryKey<World> dimension, @Nullable FrontierOverlay frontier) {
+    public void updateSelectedMarker(ResourceKey<Level> dimension, @Nullable FrontierOverlay frontier) {
         MarkerOverlay marker = markersSelected.get(dimension);
         if (marker != null) {
             jmAPI.remove(marker);

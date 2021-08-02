@@ -8,9 +8,10 @@ import java.util.UUID;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import com.mojang.blaze3d.vertex.VertexFormat;
 import org.lwjgl.opengl.GL11;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
@@ -28,25 +29,27 @@ import journeymap.client.api.model.MapPolygon;
 import journeymap.client.api.model.ShapeProperties;
 import journeymap.client.api.model.TextProperties;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.Atlases;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.Sheets;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.Tesselator;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.item.DyeColor;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.tileentity.BannerPattern;
-import net.minecraft.util.RegistryKey;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.vector.Matrix4f;
-import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.world.World;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BannerPattern;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.BlockPos;
+import com.mojang.math.Matrix4f;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+
+import games.alejandrocoria.mapfrontiers.common.FrontierData.Change;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -311,7 +314,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     @Override
-    public void setDimension(RegistryKey<World> dimension) {
+    public void setDimension(ResourceKey<Level> dimension) {
         super.setDimension(dimension);
         dirty = true;
     }
@@ -352,19 +355,19 @@ public class FrontierOverlay extends FrontierData {
         dirty = true;
     }
 
-    public void renderBanner(Minecraft mc, MatrixStack matrixStack, int x, int y, int scale) {
+    public void renderBanner(Minecraft mc, PoseStack matrixStack, int x, int y, int scale) {
         if (bannerDisplay == null) {
             return;
         }
 
         for (int i = 0; i < bannerDisplay.patternList.size(); ++i) {
             BannerPattern pattern = bannerDisplay.patternList.get(i);
-            TextureAtlasSprite sprite = mc.getTextureAtlas(Atlases.BANNER_SHEET).apply(pattern.location(true));
-            mc.getTextureManager().bind(Atlases.BANNER_SHEET);
+            TextureAtlasSprite sprite = mc.getTextureAtlas(Sheets.BANNER_SHEET).apply(pattern.location(true));
+            mc.getTextureManager().bindForSetup(Sheets.BANNER_SHEET);
 
             RenderSystem.enableBlend();
 
-            Tessellator tessellator = Tessellator.getInstance();
+            Tesselator tessellator = Tesselator.getInstance();
             BufferBuilder buf = tessellator.getBuilder();
             float[] colors = bannerDisplay.colorList.get(i).getTextureDiffuseColors();
             int width = 22 * scale;
@@ -374,7 +377,7 @@ public class FrontierOverlay extends FrontierData {
             float u2 = sprite.getU0() + 22.f / 512.f;
             float v1 = sprite.getV0() + 1.f / 512.f;
             float v2 = sprite.getV0() + 41.f / 512.f;
-            buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
+            buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
             Matrix4f matrix = matrixStack.last().pose();
             buf.vertex(matrix, x, y + height, zLevel).color(colors[0], colors[1], colors[2], 1.f).uv(u1, v2).endVertex();
             buf.vertex(matrix, x + width, y + height, zLevel).color(colors[0], colors[1], colors[2], 1.f).uv(u2, v2).endVertex();
@@ -542,7 +545,7 @@ public class FrontierOverlay extends FrontierData {
 
     private void addMarkerDots(String markerId, BlockPos from, BlockPos to, boolean extra) {
         BlockPos toFrom = to.subtract(from);
-        Vector3d vector = new Vector3d(toFrom.getX(), toFrom.getY(), toFrom.getZ());
+        Vec3 vector = new Vec3(toFrom.getX(), toFrom.getY(), toFrom.getZ());
         double lenght = vector.length();
         int count = (int) (lenght / 8.0);
         double distance = lenght / count;
@@ -588,7 +591,7 @@ public class FrontierOverlay extends FrontierData {
 
             if (bannerData.patterns != null) {
                 for (int i = 0; i < bannerData.patterns.size(); ++i) {
-                    CompoundNBT nbttagcompound = bannerData.patterns.getCompound(i);
+                    CompoundTag nbttagcompound = bannerData.patterns.getCompound(i);
                     BannerPattern bannerpattern = BannerPattern.byHash(nbttagcompound.getString("Pattern"));
 
                     if (bannerpattern != null) {

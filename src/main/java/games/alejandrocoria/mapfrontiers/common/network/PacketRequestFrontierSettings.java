@@ -8,9 +8,9 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.fmllegacy.network.NetworkEvent;
 
 @ParametersAreNonnullByDefault
 public class PacketRequestFrontierSettings {
@@ -24,18 +24,18 @@ public class PacketRequestFrontierSettings {
         this.changeCounter = changeNonce;
     }
 
-    public static PacketRequestFrontierSettings fromBytes(PacketBuffer buf) {
+    public static PacketRequestFrontierSettings fromBytes(FriendlyByteBuf buf) {
         return new PacketRequestFrontierSettings(buf.readInt());
     }
 
-    public static void toBytes(PacketRequestFrontierSettings packet, PacketBuffer buf) {
+    public static void toBytes(PacketRequestFrontierSettings packet, FriendlyByteBuf buf) {
         buf.writeInt(packet.changeCounter);
     }
 
     public static void handle(PacketRequestFrontierSettings message, Supplier<NetworkEvent.Context> ctx) {
         NetworkEvent.Context context = ctx.get();
         context.enqueueWork(() -> {
-            ServerPlayerEntity player = context.getSender();
+            ServerPlayer player = context.getSender();
             if (player == null) {
                 return;
             }

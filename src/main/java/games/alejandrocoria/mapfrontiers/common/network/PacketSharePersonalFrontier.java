@@ -12,10 +12,10 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.fmllegacy.network.NetworkEvent;
+import net.minecraftforge.fmllegacy.server.ServerLifecycleHooks;
 
 @ParametersAreNonnullByDefault
 public class PacketSharePersonalFrontier {
@@ -31,14 +31,14 @@ public class PacketSharePersonalFrontier {
         targetUser = user;
     }
 
-    public static PacketSharePersonalFrontier fromBytes(PacketBuffer buf) {
+    public static PacketSharePersonalFrontier fromBytes(FriendlyByteBuf buf) {
         PacketSharePersonalFrontier packet = new PacketSharePersonalFrontier();
         packet.frontierID = UUIDHelper.fromBytes(buf);
         packet.targetUser.fromBytes(buf);
         return packet;
     }
 
-    public static void toBytes(PacketSharePersonalFrontier packet, PacketBuffer buf) {
+    public static void toBytes(PacketSharePersonalFrontier packet, FriendlyByteBuf buf) {
         UUIDHelper.toBytes(buf, packet.frontierID);
         packet.targetUser.toBytes(buf);
     }
@@ -46,7 +46,7 @@ public class PacketSharePersonalFrontier {
     public static void handle(PacketSharePersonalFrontier message, Supplier<NetworkEvent.Context> ctx) {
         NetworkEvent.Context context = ctx.get();
         context.enqueueWork(() -> {
-            ServerPlayerEntity player = context.getSender();
+            ServerPlayer player = context.getSender();
             if (player == null) {
                 return;
             }
@@ -58,7 +58,7 @@ public class PacketSharePersonalFrontier {
                 return;
             }
 
-            ServerPlayerEntity targetPlayer = ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayer(message.targetUser.uuid);
+            ServerPlayer targetPlayer = ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayer(message.targetUser.uuid);
             if (targetPlayer == null) {
                 return;
             }

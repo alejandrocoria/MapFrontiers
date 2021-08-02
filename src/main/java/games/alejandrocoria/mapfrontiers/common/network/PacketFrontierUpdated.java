@@ -10,11 +10,11 @@ import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiShareSettings;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.PacketBuffer;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraftforge.fmllegacy.network.NetworkEvent;
 
 @ParametersAreNonnullByDefault
 public class PacketFrontierUpdated {
@@ -34,14 +34,14 @@ public class PacketFrontierUpdated {
         this.playerID = playerID;
     }
 
-    public static PacketFrontierUpdated fromBytes(PacketBuffer buf) {
+    public static PacketFrontierUpdated fromBytes(FriendlyByteBuf buf) {
         PacketFrontierUpdated packet = new PacketFrontierUpdated();
         packet.frontier.fromBytes(buf);
         packet.playerID = buf.readInt();
         return packet;
     }
 
-    public static void toBytes(PacketFrontierUpdated packet, PacketBuffer buf) {
+    public static void toBytes(PacketFrontierUpdated packet, FriendlyByteBuf buf) {
         packet.frontier.toBytes(buf);
         buf.writeInt(packet.playerID);
     }

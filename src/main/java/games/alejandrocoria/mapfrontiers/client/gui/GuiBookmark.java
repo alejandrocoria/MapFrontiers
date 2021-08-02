@@ -5,16 +5,16 @@ import java.util.List;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SoundHandler;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.sounds.SoundManager;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -26,10 +26,10 @@ public class GuiBookmark extends Button {
     private final int activeHeight;
     private final List<Integer> yPositions = new ArrayList<>();
     private int targetPosition;
-    private final List<Widget> widgets = new ArrayList<>();
+    private final List<AbstractWidget> widgets = new ArrayList<>();
 
-    public GuiBookmark(int x, int y, int height, int activeHeight, ITextComponent text, ResourceLocation texture, int textureSize,
-            Button.IPressable pressedAction) {
+    public GuiBookmark(int x, int y, int height, int activeHeight, Component text, ResourceLocation texture, int textureSize,
+            Button.OnPress pressedAction) {
         super(x, y, 51, height, text, pressedAction);
         this.texture = texture;
         this.textureSize = textureSize;
@@ -53,7 +53,7 @@ public class GuiBookmark extends Button {
         yPositions.add(yPosition);
     }
 
-    public void addWidget(Widget widget) {
+    public void addWidget(AbstractWidget widget) {
         widgets.add(widget);
     }
 
@@ -68,12 +68,12 @@ public class GuiBookmark extends Button {
     }
 
     @Override
-    public void playDownSound(SoundHandler soundHandlerIn) {
+    public void playDownSound(SoundManager soundHandlerIn) {
 
     }
 
     @Override
-    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         if (y != targetPosition) {
             int factor = Math.abs(targetPosition - y) / 4 + 1;
             if (y > targetPosition) {
@@ -81,7 +81,7 @@ public class GuiBookmark extends Button {
             }
 
             y += factor;
-            for (Widget widget : widgets) {
+            for (AbstractWidget widget : widgets) {
                 widget.y += factor;
             }
 
@@ -97,9 +97,9 @@ public class GuiBookmark extends Button {
         }
 
         isHovered = isMouseOver(mouseX, mouseY);
-        RenderSystem.color3f(1.f, 1.f, 1.f);
+        RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1f);
         Minecraft mc = Minecraft.getInstance();
-        mc.getTextureManager().bind(texture);
+        mc.getTextureManager().bindForSetup(texture);
 
         int textureX = 362;
         int textureY = 1;
@@ -112,7 +112,7 @@ public class GuiBookmark extends Button {
         drawCenteredLabel(matrixStack, mc.font, getMessage().getString(), x + width / 2, y + 9, GuiColors.BOOKMARK_TEXT);
     }
 
-    private void drawCenteredLabel(MatrixStack matrixStack, FontRenderer font, String label, int x, int y, int color) {
+    private void drawCenteredLabel(PoseStack matrixStack, Font font, String label, int x, int y, int color) {
         int labelWidth = font.width(label);
         x -= labelWidth / 2;
         font.draw(matrixStack, label, x, y, color);

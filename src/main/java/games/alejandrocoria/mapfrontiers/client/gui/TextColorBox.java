@@ -2,20 +2,20 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
-public class TextColorBox extends TextFieldWidget {
+public class TextColorBox extends EditBox {
     private static final String numericRegex = "[^\\d]";
     private TextColorBoxResponder responder;
 
-    public TextColorBox(int value, FontRenderer font, int x, int y) {
-        super(font, x, y, 26, 12, StringTextComponent.EMPTY);
+    public TextColorBox(int value, Font font, int x, int y) {
+        super(font, x, y, 26, 12, TextComponent.EMPTY);
         this.setValue(String.valueOf(value));
     }
 

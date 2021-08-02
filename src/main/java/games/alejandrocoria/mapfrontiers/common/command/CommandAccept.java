@@ -13,14 +13,14 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierUpdated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
-import net.minecraft.command.CommandSource;
-import net.minecraft.command.Commands;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.world.World;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.world.level.Level;
 
 public class CommandAccept {
-    public static void register(CommandDispatcher<CommandSource> dispatcher) {
-        LiteralCommandNode<CommandSource> literalcommandnode = dispatcher
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+        LiteralCommandNode<CommandSourceStack> literalcommandnode = dispatcher
                 .register(Commands.literal("mapfrontiersaccept").requires(
                         (commandSource) -> commandSource.hasPermission(0) && checkPermission(commandSource))
                         .then(Commands.argument("invitation id", IntegerArgumentType.integer(0)).executes(
@@ -35,31 +35,31 @@ public class CommandAccept {
         );
     }
 
-    public static int acceptInvitation(CommandSource source, int messageID) throws CommandSyntaxException {
-        World world = source.getLevel();
+    public static int acceptInvitation(CommandSourceStack source, int messageID) throws CommandSyntaxException {
+        Level world = source.getLevel();
         if (!world.isClientSide()) {
             PendingShareFrontier pending = FrontiersManager.instance.getPendingShareFrontier(messageID);
 
             if (pending == null) {
-                source.sendFailure(new StringTextComponent("Invitation expired"));
+                source.sendFailure(new TextComponent("Invitation expired"));
             } else {
                 if (pending.targetUser.equals(new SettingsUser(source.getPlayerOrException()))) {
                     FrontierData frontier = FrontiersManager.instance.getFrontierFromID(pending.frontierID);
                     if (frontier == null) {
                         FrontiersManager.instance.removePendingShareFrontier(messageID);
-                        source.sendFailure(new StringTextComponent("The frontier no longer exists"));
+                        source.sendFailure(new TextComponent("The frontier no longer exists"));
                         return messageID;
                     }
 
                     SettingsUserShared userShared = frontier.getUserShared(pending.targetUser);
                     if (userShared == null) {
-                        source.sendFailure(new StringTextComponent(""));
+                        source.sendFailure(new TextComponent(""));
                         return messageID;
                     }
 
                     if (FrontiersManager.instance.hasPersonalFrontier(pending.targetUser, frontier.getId())) {
                         FrontiersManager.instance.removePendingShareFrontier(messageID);
-                        source.sendFailure(new StringTextComponent("You already have the frontier"));
+                        source.sendFailure(new TextComponent("You already have the frontier"));
                         return messageID;
                     } else {
                         FrontiersManager.instance.addPersonalFrontier(pending.targetUser, frontier);
@@ -77,11 +77,11 @@ public class CommandAccept {
 
                     // @Note: improve message and localize
                     source.sendSuccess(
-                            new StringTextComponent("Accepting frontier " + frontier.getName1() + " " + frontier.getName2()),
+                            new TextComponent("Accepting frontier " + frontier.getName1() + " " + frontier.getName2()),
                             false);
                     return messageID;
                 } else {
-                    source.sendFailure(new StringTextComponent("The invitation is for another player"));
+                    source.sendFailure(new TextComponent("The invitation is for another player"));
                     return messageID;
                 }
             }
@@ -90,7 +90,7 @@ public class CommandAccept {
         return messageID;
     }
 
-    public static boolean checkPermission(CommandSource source) {
+    public static boolean checkPermission(CommandSourceStack source) {
         try {
             return FrontiersManager.instance.canSendCommandAcceptFrontier(source.getPlayerOrException());
         } catch (CommandSyntaxException e) {

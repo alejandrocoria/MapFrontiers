@@ -12,10 +12,10 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.fmllegacy.network.NetworkEvent;
+import net.minecraftforge.fmllegacy.server.ServerLifecycleHooks;
 
 @ParametersAreNonnullByDefault
 public class PacketRemoveSharedUserPersonalFrontier {
@@ -31,14 +31,14 @@ public class PacketRemoveSharedUserPersonalFrontier {
         targetUser = user;
     }
 
-    public static PacketRemoveSharedUserPersonalFrontier fromBytes(PacketBuffer buf) {
+    public static PacketRemoveSharedUserPersonalFrontier fromBytes(FriendlyByteBuf buf) {
         PacketRemoveSharedUserPersonalFrontier packet = new PacketRemoveSharedUserPersonalFrontier();
         packet.frontierID = UUIDHelper.fromBytes(buf);
         packet.targetUser.fromBytes(buf);
         return packet;
     }
 
-    public static void toBytes(PacketRemoveSharedUserPersonalFrontier packet, PacketBuffer buf) {
+    public static void toBytes(PacketRemoveSharedUserPersonalFrontier packet, FriendlyByteBuf buf) {
         UUIDHelper.toBytes(buf, packet.frontierID);
         packet.targetUser.toBytes(buf);
     }
@@ -46,7 +46,7 @@ public class PacketRemoveSharedUserPersonalFrontier {
     public static void handle(PacketRemoveSharedUserPersonalFrontier message, Supplier<NetworkEvent.Context> ctx) {
         NetworkEvent.Context context = ctx.get();
         context.enqueueWork(() -> {
-            ServerPlayerEntity player = context.getSender();
+            ServerPlayer player = context.getSender();
             if (player == null) {
                 return;
             }
@@ -78,7 +78,7 @@ public class PacketRemoveSharedUserPersonalFrontier {
                             FrontiersManager.instance.deletePersonalFrontier(message.targetUser, currentFrontier.getDimension(),
                                     message.frontierID);
 
-                            ServerPlayerEntity targetPlayer = ServerLifecycleHooks.getCurrentServer().getPlayerList()
+                            ServerPlayer targetPlayer = ServerLifecycleHooks.getCurrentServer().getPlayerList()
                                     .getPlayer(message.targetUser.uuid);
                             if (targetPlayer != null) {
                                 PacketHandler.sendTo(

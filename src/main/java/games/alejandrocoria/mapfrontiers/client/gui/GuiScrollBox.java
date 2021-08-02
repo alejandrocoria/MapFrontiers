@@ -6,17 +6,18 @@ import java.util.ListIterator;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 
-import net.minecraft.client.gui.AbstractGui;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
-public class GuiScrollBox extends Widget {
+public class GuiScrollBox extends AbstractWidget {
     private final int elementHeight;
     private int scrollStart = 0;
     private final int scrollHeight;
@@ -30,7 +31,7 @@ public class GuiScrollBox extends Widget {
     private final ScrollBoxResponder responder;
 
     public GuiScrollBox(int x, int y, int width, int height, int elementHeight, ScrollBoxResponder responder) {
-        super(x, y, width, height, StringTextComponent.EMPTY);
+        super(x, y, width, height, TextComponent.EMPTY);
         elements = new ArrayList<>();
         selected = -1;
         this.x = x;
@@ -123,7 +124,7 @@ public class GuiScrollBox extends Widget {
     }
 
     @Override
-    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         for (int i = 0; i < elements.size(); ++i) {
             elements.get(i).render(matrixStack, mouseX, mouseY, partialTicks, selected == i);
         }
@@ -257,6 +258,12 @@ public class GuiScrollBox extends Widget {
         }
     }
 
+    @Override
+    public void updateNarration(NarrationElementOutput p_169152_)
+    {
+
+    }
+
     @OnlyIn(Dist.CLIENT)
     public interface ScrollBoxResponder {
         void elementClicked(GuiScrollBox scrollBox, ScrollElement element);
@@ -265,7 +272,7 @@ public class GuiScrollBox extends Widget {
     }
 
     @OnlyIn(Dist.CLIENT)
-    public static class ScrollElement extends AbstractGui {
+    public static class ScrollElement extends GuiComponent {
         enum Action {
             None, Clicked, Deleted
         }
@@ -293,7 +300,7 @@ public class GuiScrollBox extends Widget {
             this.y = y;
         }
 
-        public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
+        public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
             if (visible) {
                 isHovered = mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height;
                 renderButton(matrixStack, mouseX, mouseY, partialTicks, selected);
@@ -302,7 +309,7 @@ public class GuiScrollBox extends Widget {
             }
         }
 
-        public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
+        public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
         }
 
         public Action mousePressed(double mouseX, double mouseY) {

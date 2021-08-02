@@ -5,25 +5,25 @@ import java.util.List;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class GuiOptionButton extends Button {
-    protected final FontRenderer font;
+    protected final Font font;
     private final List<String> options;
     private int selected = 0;
     private int color = GuiColors.SETTINGS_TEXT;
     private int highlightedColor = GuiColors.SETTINGS_TEXT_HIGHLIGHT;
 
-    public GuiOptionButton(FontRenderer font, int x, int y, int width, Button.IPressable pressedAction) {
-        super(x, y, width, 12, StringTextComponent.EMPTY, pressedAction);
+    public GuiOptionButton(Font font, int x, int y, int width, Button.OnPress pressedAction) {
+        super(x, y, width, 12, TextComponent.EMPTY, pressedAction);
         this.font = font;
         options = new ArrayList<>();
     }
@@ -61,7 +61,7 @@ public class GuiOptionButton extends Button {
     }
 
     @Override
-    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         int c = color;
         if (isHovered) {
             c = highlightedColor;

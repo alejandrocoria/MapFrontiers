@@ -7,22 +7,23 @@ import java.net.URISyntaxException;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.ConfirmOpenLinkScreen;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.screens.ConfirmLinkScreen;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
-public class GuiPatreonButton extends Widget {
+public class GuiPatreonButton extends AbstractWidget {
     private final BooleanConsumer callbackFunction;
     private final int texX;
     private final int texY;
@@ -32,7 +33,7 @@ public class GuiPatreonButton extends Widget {
 
     public GuiPatreonButton(int x, int y, int width, int height, int texX, int texY, ResourceLocation texture, int textureSize,
             String uri, BooleanConsumer callbackFunction) {
-        super(x, y, width, height, StringTextComponent.EMPTY);
+        super(x, y, width, height, TextComponent.EMPTY);
         this.callbackFunction = callbackFunction;
         this.texX = texX;
         this.texY = texY;
@@ -55,7 +56,7 @@ public class GuiPatreonButton extends Widget {
     }
 
     @Override
-    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         Minecraft mc = Minecraft.getInstance();
         int factor = (int) mc.getWindow().getGuiScale();
 
@@ -63,18 +64,24 @@ public class GuiPatreonButton extends Widget {
                 && mouseY < y + height / factor);
 
         if (isHovered) {
-            RenderSystem.color3f(0.9f, 0.9f, 0.9f);
+            RenderSystem.setShaderColor(0.9f, 0.9f, 0.9f, 1f);
         } else {
-            RenderSystem.color3f(1.f, 1.f, 1.f);
+            RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1f);
         }
 
-        mc.getTextureManager().bind(texture);
+        mc.getTextureManager().bindForSetup(texture);
         blit(matrixStack, x - width / 2 / factor, y, texX / factor, texY / factor, width / factor, height / factor,
                 textureSize / factor, textureSize / factor);
     }
 
     @Override
     public void onClick(double mouseX, double mouseY) {
-        Minecraft.getInstance().setScreen(new ConfirmOpenLinkScreen(callbackFunction, uri, false));
+        Minecraft.getInstance().setScreen(new ConfirmLinkScreen(callbackFunction, uri, false));
+    }
+
+    @Override
+    public void updateNarration(NarrationElementOutput p_169152_)
+    {
+
     }
 }

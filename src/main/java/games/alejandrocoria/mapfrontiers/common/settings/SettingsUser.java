@@ -6,9 +6,9 @@ import org.apache.commons.lang3.StringUtils;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.network.PacketBuffer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
 
 public class SettingsUser {
     public String username;
@@ -18,7 +18,7 @@ public class SettingsUser {
         username = "";
     }
 
-    public SettingsUser(PlayerEntity player) {
+    public SettingsUser(Player player) {
         username = player.getName().getString();
         uuid = player.getUUID();
     }
@@ -71,7 +71,7 @@ public class SettingsUser {
         }
     }
 
-    public void readFromNBT(CompoundNBT nbt) {
+    public void readFromNBT(CompoundTag nbt) {
         username = nbt.getString("username");
         try {
             uuid = UUID.fromString(nbt.getString("UUID"));
@@ -82,14 +82,14 @@ public class SettingsUser {
         fillMissingInfo(true);
     }
 
-    public void writeToNBT(CompoundNBT nbt) {
+    public void writeToNBT(CompoundTag nbt) {
         fillMissingInfo(true);
 
         nbt.putString("username", username);
         nbt.putString("UUID", uuid.toString());
     }
 
-    public void fromBytes(PacketBuffer buf) {
+    public void fromBytes(FriendlyByteBuf buf) {
         boolean hasUsername = buf.readBoolean();
         if (hasUsername) {
             username = buf.readUtf(17);
@@ -107,7 +107,7 @@ public class SettingsUser {
         fillMissingInfo(false);
     }
 
-    public void toBytes(PacketBuffer buf) {
+    public void toBytes(FriendlyByteBuf buf) {
         if (StringUtils.isBlank(username)) {
             buf.writeBoolean(false);
         } else {
