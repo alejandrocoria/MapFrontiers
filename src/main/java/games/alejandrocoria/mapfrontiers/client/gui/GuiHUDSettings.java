@@ -173,15 +173,7 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
     @Override
     public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         if (minimap != null) {
-//            GlStateManager._matrixMode(GL11.GL_MODELVIEW); //TODO: FIX
-//            GlStateManager._pushMatrix();
-//            GlStateManager._matrixMode(GL11.GL_PROJECTION);
-//            GlStateManager._pushMatrix();
             minimap.drawMap(matrixStack, true);
-//            GlStateManager._matrixMode(GL11.GL_MODELVIEW);
-//            GlStateManager._popMatrix();
-//            GlStateManager._matrixMode(GL11.GL_PROJECTION);
-//            GlStateManager._popMatrix();
         }
 
         drawAnchor(matrixStack, minecraft.getWindow());

@@ -9,6 +9,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -97,9 +98,11 @@ public class GuiBookmark extends Button {
         }
 
         isHovered = isMouseOver(mouseX, mouseY);
-        RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1f);
         Minecraft mc = Minecraft.getInstance();
-        mc.getTextureManager().bindForSetup(texture);
+
+        RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1f);
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderTexture(0, texture);
 
         int textureX = 362;
         int textureY = 1;

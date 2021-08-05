@@ -6,6 +6,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.Button;
@@ -38,9 +39,10 @@ public class GuiBookTag extends Button {
     public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         isHovered = isMouseOver(mouseX, mouseY);
 
-        RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1f);
         Minecraft mc = Minecraft.getInstance();
-        mc.getTextureManager().bindForSetup(texture);
+        RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1f);
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderTexture(0, texture);
         int textureX = 330;
         int textureY = 52;
 

@@ -7,6 +7,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.resources.ResourceLocation;
@@ -60,8 +61,8 @@ public class GuiBookPages extends AbstractWidget {
     @Override
     public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1f);
-        Minecraft mc = Minecraft.getInstance();
-        mc.getTextureManager().bindForSetup(texture);
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderTexture(0, texture);
 
         if (doublePage) {
             blit(matrixStack, x, y, uOffset, vOffset, bookWidth, bookHeight, textureWidth, textureHeight);

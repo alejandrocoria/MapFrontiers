@@ -11,13 +11,12 @@ buildscript {
 apply plugin: 'net.minecraftforge.gradle'
 // Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
 apply plugin: 'eclipse'
-apply from: 'https://raw.githubusercontent.com/SizableShrimp/Forge-Class-Remapper/main/classremapper.gradle'
 
-version = '1.17.1.1-1.5.1'
+version = '1.17.1-1.5.1'
 group = 'games.alejandrocoria.mapfrontiers' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'MapFrontiers'
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(16) // Mojang ships Java 8 to end users, so your mod should target Java 8.
+java.toolchain.languageVersion = JavaLanguageVersion.of(16)
 
 minecraft {
     mappings channel: 'official', version: '1.17.1'

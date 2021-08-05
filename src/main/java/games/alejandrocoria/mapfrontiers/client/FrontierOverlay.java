@@ -9,6 +9,7 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import com.mojang.blaze3d.vertex.VertexFormat;
+import net.minecraft.client.renderer.GameRenderer;
 import org.lwjgl.opengl.GL11;
 
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -363,7 +364,9 @@ public class FrontierOverlay extends FrontierData {
         for (int i = 0; i < bannerDisplay.patternList.size(); ++i) {
             BannerPattern pattern = bannerDisplay.patternList.get(i);
             TextureAtlasSprite sprite = mc.getTextureAtlas(Sheets.BANNER_SHEET).apply(pattern.location(true));
-            mc.getTextureManager().bindForSetup(Sheets.BANNER_SHEET);
+            RenderSystem.setShader(GameRenderer::getPositionColorTexShader);
+            RenderSystem.setShaderTexture(0, Sheets.BANNER_SHEET);
+            RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
 
             RenderSystem.enableBlend();
 

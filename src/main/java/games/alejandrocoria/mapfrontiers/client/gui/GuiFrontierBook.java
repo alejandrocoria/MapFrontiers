@@ -8,6 +8,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import journeymap.client.JourneymapClient;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.renderer.GameRenderer;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
@@ -288,7 +289,8 @@ public class GuiFrontierBook extends Screen implements TextColorBox.TextColorBox
             RenderSystem.setShaderColor(0.5f, 0.5f, 0.5f, 1.f);
         }
 
-        minecraft.getTextureManager().bindForSetup(bookPageTexture);
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderTexture(0, bookPageTexture);
         int offsetFromScreenLeft = (width - bookImageWidth) / 2;
         int offsetFromScreenTop = (height - bookImageHeight) / 2;
 
@@ -816,22 +818,30 @@ public class GuiFrontierBook extends Screen implements TextColorBox.TextColorBox
         int displayWidth = minecraft.getWindow().getWidth();
         int displayHeight = minecraft.getWindow().getHeight();
 
-        beginStencil(matrixStack, x - 50.0, y - 50.0, 100.0, 100.0);
+        beginStencil(matrixStack, x - 500.0, y - 500.0, 1000.0, 1000.0);
 
-        GL11.glPushMatrix();
-        GL11.glTranslated(-bookImageWidth / 4, 0.0, 0.0);
-        GL11.glTranslated((width - displayWidth) / 2.0, (height - displayHeight) / 2.0, 0.0);
+//        GL11.glPushMatrix();
+//        GL11.glTranslated(-bookImageWidth / 4, 0.0, 0.0);
+//        GL11.glTranslated((width - displayWidth) / 2.0, (height - displayHeight) / 2.0, 0.0);
+//
+//        GL11.glTranslated(displayWidth / 2.0, displayHeight / 2.0, 0.0);
+//        GL11.glScaled(1.0 / zoom, 1.0 / zoom, 1.0);
+//        GL11.glTranslated(-displayWidth / 2.0, -displayHeight / 2.0, 0.0);
 
-        GL11.glTranslated(displayWidth / 2.0, displayHeight / 2.0, 0.0);
-        GL11.glScaled(1.0 / zoom, 1.0 / zoom, 1.0);
-        GL11.glTranslated(-displayWidth / 2.0, -displayHeight / 2.0, 0.0);
+        matrixStack.pushPose();
+        matrixStack.translate(-bookImageWidth / 4, 0.0, 0.0);
+        matrixStack.translate((width - displayWidth) / 2.0, (height - displayHeight) / 2.0, 0.0);
+        matrixStack.translate(displayWidth / 2.0, displayHeight / 2.0, 0.0);
+        matrixStack.scale(1.f / zoom, 1.f / zoom, 1.f);
+        matrixStack.translate(-displayWidth / 2.0, -displayHeight / 2.0, 0.0);
 
         gridRenderer.draw(matrixStack, 1.f, 1.f, 0.0, 0.0, miniMapProperties.showGrid.get());
         List<DrawStep> drawSteps = new ArrayList<>();
         ClientAPI.INSTANCE.getDrawSteps(drawSteps, gridRenderer.getUIState());
         gridRenderer.draw(matrixStack, drawSteps, 0.0, 0.0, 1, 0);
 
-        GL11.glPopMatrix();
+        matrixStack.popPose();
+        //GL11.glPopMatrix();
 
         endStencil();
         RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);

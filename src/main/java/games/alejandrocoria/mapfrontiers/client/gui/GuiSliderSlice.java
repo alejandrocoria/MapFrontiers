@@ -6,6 +6,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.resources.ResourceLocation;
@@ -57,8 +58,8 @@ public class GuiSliderSlice extends Button {
     @Override
     public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1f);
-        Minecraft mc = Minecraft.getInstance();
-        mc.getTextureManager().bindForSetup(texture);
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderTexture(0, texture);
 
         blit(matrixStack, x, y, 312, 1, width, height, textureSize, textureSize);
         blit(matrixStack, x, y + height - slice * 4 - 5, 312, 71, width, 5, textureSize, textureSize);

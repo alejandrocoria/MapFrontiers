@@ -146,7 +146,7 @@ public class GuiHUD {
             return;
         }
 
-        if (event.getType() == RenderGameOverlayEvent.ElementType.ALL) { // TODO: HOTBAR?
+        if (event.getType() == RenderGameOverlayEvent.ElementType.ALL) {
             if (mc.screen != null && !(mc.screen instanceof ChatScreen)) {
                 return;
             }

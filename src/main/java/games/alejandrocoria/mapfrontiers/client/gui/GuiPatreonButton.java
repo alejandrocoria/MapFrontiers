@@ -16,6 +16,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -69,7 +70,8 @@ public class GuiPatreonButton extends AbstractWidget {
             RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1f);
         }
 
-        mc.getTextureManager().bindForSetup(texture);
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderTexture(0, texture);
         blit(matrixStack, x - width / 2 / factor, y, texX / factor, texY / factor, width / factor, height / factor,
                 textureSize / factor, textureSize / factor);
     }
