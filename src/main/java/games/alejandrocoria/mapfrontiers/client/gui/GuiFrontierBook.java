@@ -6,14 +6,14 @@ import java.util.List;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import journeymap.client.JourneymapClient;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraftforge.client.MinecraftForgeClient;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.GL11;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
@@ -50,6 +50,7 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.lwjgl.opengl.GL32;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -107,6 +108,9 @@ public class GuiFrontierBook extends Screen implements TextColorBox.TextColorBox
     private static GridRenderer gridRenderer;
     private static MiniMapProperties miniMapProperties;
     private static int zoom = 1;
+
+    private int stencilBit = 0;
+    private int stencilMask = 0;
 
     public GuiFrontierBook(FrontiersOverlayManager frontiersOverlayManager, boolean personal, ResourceKey<Level> currentDimension,
             ResourceKey<Level> dimension, @Nullable ItemStack heldBanner) {
@@ -744,21 +748,27 @@ public class GuiFrontierBook extends Screen implements TextColorBox.TextColorBox
         }
     }
 
-    private void beginStencil(PoseStack matrixStack, double x, double y, double width, double height) {
-        GL11.glEnable(GL11.GL_STENCIL_TEST);
+    private void beginStencil(PoseStack matrixStack, int x, int y, int width, int height) {
+        stencilBit = MinecraftForgeClient.reserveStencilBit();
+        stencilMask = 1 << stencilBit;
+
+        GL32.glEnable(GL32.GL_STENCIL_TEST);
         RenderSystem.colorMask(false, false, false, false);
-        RenderSystem.stencilFunc(GL11.GL_NEVER, 1, 0xff);
-        RenderSystem.stencilOp(GL11.GL_REPLACE, GL11.GL_KEEP, GL11.GL_KEEP);
-        RenderSystem.stencilMask(0xff);
+        RenderSystem.stencilFunc(GL32.GL_NEVER, stencilMask, stencilMask);
+        RenderSystem.stencilOp(GL32.GL_REPLACE, GL32.GL_KEEP, GL32.GL_KEEP);
+        RenderSystem.stencilMask(stencilMask);
         RenderSystem.clearStencil(0);
-        fill(matrixStack, (int) x, (int) y, (int) (x + width), (int) (y + height), 0xffffff);
+
+        fill(matrixStack, x, y, x + width, y + height, 0xffffffff);
+
         RenderSystem.colorMask(true, true, true, true);
         RenderSystem.stencilMask(0x00);
-        RenderSystem.stencilFunc(GL11.GL_EQUAL, 1, 0xff);
+        RenderSystem.stencilFunc(GL32.GL_EQUAL, stencilMask, stencilMask);
     }
 
     private void endStencil() {
-        GL11.glDisable(GL11.GL_STENCIL_TEST);
+        GL32.glDisable(GL32.GL_STENCIL_TEST);
+        MinecraftForgeClient.releaseStencilBit(stencilBit);
     }
 
     private void updateGridRenderer() {
@@ -813,20 +823,12 @@ public class GuiFrontierBook extends Screen implements TextColorBox.TextColorBox
     }
 
     private void drawMap(PoseStack matrixStack, int mouseX, int mouseY) {
-        double x = width / 2 - bookImageWidth / 4;
-        double y = height / 2;
+        int x = width / 2 - bookImageWidth / 4;
+        int y = height / 2;
         int displayWidth = minecraft.getWindow().getWidth();
         int displayHeight = minecraft.getWindow().getHeight();
 
-        beginStencil(matrixStack, x - 500.0, y - 500.0, 1000.0, 1000.0);
-
-//        GL11.glPushMatrix();
-//        GL11.glTranslated(-bookImageWidth / 4, 0.0, 0.0);
-//        GL11.glTranslated((width - displayWidth) / 2.0, (height - displayHeight) / 2.0, 0.0);
-//
-//        GL11.glTranslated(displayWidth / 2.0, displayHeight / 2.0, 0.0);
-//        GL11.glScaled(1.0 / zoom, 1.0 / zoom, 1.0);
-//        GL11.glTranslated(-displayWidth / 2.0, -displayHeight / 2.0, 0.0);
+        beginStencil(matrixStack, x - 50, y - 50, 100, 100);
 
         matrixStack.pushPose();
         matrixStack.translate(-bookImageWidth / 4, 0.0, 0.0);
@@ -835,13 +837,15 @@ public class GuiFrontierBook extends Screen implements TextColorBox.TextColorBox
         matrixStack.scale(1.f / zoom, 1.f / zoom, 1.f);
         matrixStack.translate(-displayWidth / 2.0, -displayHeight / 2.0, 0.0);
 
+        RenderSystem.blendFunc(GL32.GL_SRC_ALPHA, GL32.GL_ZERO);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+
         gridRenderer.draw(matrixStack, 1.f, 1.f, 0.0, 0.0, miniMapProperties.showGrid.get());
         List<DrawStep> drawSteps = new ArrayList<>();
         ClientAPI.INSTANCE.getDrawSteps(drawSteps, gridRenderer.getUIState());
         gridRenderer.draw(matrixStack, drawSteps, 0.0, 0.0, 1, 0);
 
         matrixStack.popPose();
-        //GL11.glPopMatrix();
 
         endStencil();
         RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
