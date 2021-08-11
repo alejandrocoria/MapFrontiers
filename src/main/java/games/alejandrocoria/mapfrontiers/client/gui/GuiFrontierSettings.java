@@ -320,6 +320,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
             buttonEditHUD.visible = ConfigData.hudEnabled;
             ClientProxy.configUpdated();
         } else if (button == buttonEditHUD) {
+            ClientProxy.setLastSettingsTab(tabSelected);
             minecraft.setScreen(new GuiHUDSettings(this));
         } else if (button == buttonNewGroup) {
             if (settings != null) {
