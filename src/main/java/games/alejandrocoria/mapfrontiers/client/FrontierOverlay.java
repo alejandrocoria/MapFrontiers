@@ -410,10 +410,11 @@ public class FrontierOverlay extends FrontierData {
 
         if (vertices.size() < 3) {
             super.setClosed(false);
-            updateOverlay();
         } else {
             dirty = true;
         }
+
+        updateOverlay();
     }
 
     public void selectNextVertex() {

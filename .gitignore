@@ -10,3 +10,4 @@ run/
 .settings/
 build.bat
 logs/
+.idea/
