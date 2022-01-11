@@ -4,7 +4,7 @@ import java.util.function.Supplier;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import net.minecraftforge.fmllegacy.network.NetworkEvent;
+import net.minecraftforge.network.NetworkEvent;
 import org.apache.commons.lang3.StringUtils;
 
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;

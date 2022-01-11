@@ -12,6 +12,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.BannerItem;
 import net.minecraft.world.item.DyeColor;
@@ -26,8 +27,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.util.Constants;
-import net.minecraftforge.fmllegacy.server.ServerLifecycleHooks;
+import net.minecraftforge.server.ServerLifecycleHooks;
 
 @ParametersAreNonnullByDefault
 public class FrontierData {
@@ -386,7 +386,7 @@ public class FrontierData {
         }
 
         if (personal) {
-            ListTag usersSharedTagList = nbt.getList("usersShared", Constants.NBT.TAG_COMPOUND);
+            ListTag usersSharedTagList = nbt.getList("usersShared", Tag.TAG_COMPOUND);
             if (!usersSharedTagList.isEmpty()) {
                 usersShared = new ArrayList<>();
 
@@ -398,7 +398,7 @@ public class FrontierData {
             }
         }
 
-        ListTag verticesTagList = nbt.getList("vertices", Constants.NBT.TAG_COMPOUND);
+        ListTag verticesTagList = nbt.getList("vertices", Tag.TAG_COMPOUND);
         for (int i = 0; i < verticesTagList.size(); ++i) {
             vertices.add(NbtUtils.readBlockPos(verticesTagList.getCompound(i)));
         }
@@ -575,8 +575,8 @@ public class FrontierData {
         public BannerData(ItemStack itemBanner) {
             CompoundTag blockEntityTag = itemBanner.getTagElement("BlockEntityTag");
 
-            if (blockEntityTag != null && blockEntityTag.contains("Patterns", Constants.NBT.TAG_LIST)) {
-                patterns = blockEntityTag.getList("Patterns", Constants.NBT.TAG_COMPOUND);
+            if (blockEntityTag != null && blockEntityTag.contains("Patterns", Tag.TAG_LIST)) {
+                patterns = blockEntityTag.getList("Patterns", Tag.TAG_COMPOUND);
             }
 
             if (itemBanner.getItem() instanceof BannerItem) {
@@ -586,7 +586,7 @@ public class FrontierData {
 
         public void readFromNBT(CompoundTag nbt) {
             baseColor = DyeColor.byId(nbt.getInt("Base"));
-            patterns = nbt.getList("Patterns", Constants.NBT.TAG_COMPOUND);
+            patterns = nbt.getList("Patterns", Tag.TAG_COMPOUND);
         }
 
         public void writeToNBT(CompoundTag nbt) {
@@ -602,7 +602,7 @@ public class FrontierData {
 
             CompoundTag nbt = buf.readNbt();
             if (nbt != null) {
-                patterns = nbt.getList("Patterns", Constants.NBT.TAG_COMPOUND);
+                patterns = nbt.getList("Patterns", Tag.TAG_COMPOUND);
             }
         }
 

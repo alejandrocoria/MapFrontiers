@@ -12,8 +12,8 @@ import games.alejandrocoria.mapfrontiers.client.util.StringHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.common.util.Constants;
 
 @ParametersAreNonnullByDefault
 public class SettingsGroup {
@@ -84,7 +84,7 @@ public class SettingsGroup {
         if (!special) {
             name = nbt.getString("name");
             users.clear();
-            ListTag usersTagList = nbt.getList("users", Constants.NBT.TAG_COMPOUND);
+            ListTag usersTagList = nbt.getList("users", Tag.TAG_COMPOUND);
             for (int i = 0; i < usersTagList.size(); ++i) {
                 SettingsUser user = new SettingsUser();
                 CompoundTag userTag = usersTagList.getCompound(i);
@@ -94,7 +94,7 @@ public class SettingsGroup {
         }
 
         actions.clear();
-        ListTag actionsTagList = nbt.getList("actions", Constants.NBT.TAG_STRING);
+        ListTag actionsTagList = nbt.getList("actions", Tag.TAG_STRING);
         for (int i = 0; i < actionsTagList.size(); ++i) {
             String actionTag = actionsTagList.getString(i);
             List<FrontierSettings.Action> availableActions = FrontierSettings.getAvailableActions(name);

@@ -5,7 +5,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fmlclient.registry.ClientRegistry;
+import net.minecraftforge.client.ClientRegistry;
 import org.lwjgl.glfw.GLFW;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;

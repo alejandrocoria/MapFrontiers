@@ -5,9 +5,9 @@ import java.util.ArrayList;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fmllegacy.server.ServerLifecycleHooks;
-import net.minecraftforge.fmlserverevents.FMLServerStartingEvent;
-import net.minecraftforge.fmlserverevents.FMLServerStoppingEvent;
+import net.minecraftforge.server.ServerLifecycleHooks;
+import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -42,7 +42,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 @Mod(MapFrontiers.MODID)
 public class MapFrontiers {
     public static final String MODID = "mapfrontiers";
-    public static final String VERSION = "1.17.1-1.5.1";
+    public static final String VERSION = "1.18.1-1.5.1beta1";
     public static Logger LOGGER;
 
     private static FrontiersManager frontiersManager;
@@ -77,7 +77,7 @@ public class MapFrontiers {
     }
 
     @SubscribeEvent
-    public static void serverStarting(FMLServerStartingEvent event) {
+    public static void serverStarting(ServerStartingEvent event) {
         frontiersManager = new FrontiersManager();
         frontiersManager.loadOrCreateData();
 
@@ -92,7 +92,7 @@ public class MapFrontiers {
     }
 
     @SubscribeEvent
-    public static void serverStopping(FMLServerStoppingEvent event) {
+    public static void serverStopping(ServerStoppingEvent event) {
         MinecraftForge.EVENT_BUS.unregister(frontiersManager);
         frontiersManager = null;
         LOGGER.info("serverStopping done");

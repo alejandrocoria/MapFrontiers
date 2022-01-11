@@ -330,36 +330,36 @@ public class GuiFrontierBook extends Screen implements TextColorBox.TextColorBox
             label.render(matrixStack, mouseX, mouseY, partialTicks);
         }
 
-        if (buttonClose.visible && buttonClose.isHovered()) {
+        if (buttonClose.visible && buttonClose.isHoveredOrFocused()) {
             renderTooltip(matrixStack, new TranslatableComponent("mapfrontiers.close"), mouseX, mouseY);
         }
 
-        if (buttonNextPage.visible && buttonNextPage.isHovered()) {
+        if (buttonNextPage.visible && buttonNextPage.isHoveredOrFocused()) {
             renderTooltip(matrixStack, new TranslatableComponent("mapfrontiers.next_page"), mouseX, mouseY);
         }
 
-        if (buttonPreviousPage.visible && buttonPreviousPage.isHovered()) {
+        if (buttonPreviousPage.visible && buttonPreviousPage.isHoveredOrFocused()) {
             renderTooltip(matrixStack, new TranslatableComponent("mapfrontiers.previous_page"), mouseX, mouseY);
         }
 
-        if (buttonBackToIndex.visible && buttonBackToIndex.isHovered()) {
+        if (buttonBackToIndex.visible && buttonBackToIndex.isHoveredOrFocused()) {
             renderTooltip(matrixStack, new TranslatableComponent("mapfrontiers.back_to_index"), mouseX, mouseY);
         }
 
-        if (buttonNextVertex.visible && buttonNextVertex.isHovered()) {
+        if (buttonNextVertex.visible && buttonNextVertex.isHoveredOrFocused()) {
             renderTooltip(matrixStack, new TranslatableComponent("mapfrontiers.next_vertex"), mouseX, mouseY);
         }
 
-        if (buttonPreviousVertex.visible && buttonPreviousVertex.isHovered()) {
+        if (buttonPreviousVertex.visible && buttonPreviousVertex.isHoveredOrFocused()) {
             renderTooltip(matrixStack, new TranslatableComponent("mapfrontiers.previous_vertex"), mouseX, mouseY);
         }
 
-        if (buttonSliceUp.visible && buttonSliceUp.isHovered()) {
+        if (buttonSliceUp.visible && buttonSliceUp.isHoveredOrFocused()) {
             int slice = sliderSlice.getSlice();
             renderTooltip(matrixStack, new TranslatableComponent("mapfrontiers.vertical_chunk", slice), mouseX, mouseY);
         }
 
-        if (buttonSliceDown.visible && buttonSliceDown.isHovered()) {
+        if (buttonSliceDown.visible && buttonSliceDown.isHoveredOrFocused()) {
             int slice = sliderSlice.getSlice();
             if (slice == FrontierOverlay.SurfaceSlice) {
                 renderTooltip(matrixStack, new TranslatableComponent("mapfrontiers.vertical_chunk_surface"), mouseX, mouseY);
@@ -368,7 +368,7 @@ public class GuiFrontierBook extends Screen implements TextColorBox.TextColorBox
             }
         }
 
-        if (sliderSlice.visible && sliderSlice.isHovered()) {
+        if (sliderSlice.visible && sliderSlice.isHoveredOrFocused()) {
             int slice = sliderSlice.getSlice();
             if (slice == FrontierOverlay.SurfaceSlice) {
                 renderTooltip(matrixStack, new TranslatableComponent("mapfrontiers.vertical_chunk_surface"), mouseX, mouseY);
@@ -377,7 +377,7 @@ public class GuiFrontierBook extends Screen implements TextColorBox.TextColorBox
             }
         }
 
-        if (buttonNameVisible.visible && buttonNameVisible.isHovered()) {
+        if (buttonNameVisible.visible && buttonNameVisible.isHoveredOrFocused()) {
             TextComponent prefix = new TextComponent(GuiColors.WARNING + "! " + ChatFormatting.RESET);
             if (ConfigData.nameVisibility == ConfigData.NameVisibility.Show) {
                 renderTooltip(matrixStack, prefix.append(new TranslatableComponent("mapfrontiers.show_name_warn")), mouseX, mouseY);
@@ -386,7 +386,7 @@ public class GuiFrontierBook extends Screen implements TextColorBox.TextColorBox
             }
         }
 
-        if (buttonBanner.visible && buttonBanner.isHovered()) {
+        if (buttonBanner.visible && buttonBanner.isHoveredOrFocused()) {
             FrontierOverlay frontier = getCurrentFrontier();
             if (!frontier.hasBanner() && heldBanner == null) {
                 TextComponent prefix = new TextComponent(GuiColors.WARNING + "! " + ChatFormatting.RESET);

@@ -1,17 +1,13 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Widget;
-import net.minecraftforge.fmlclient.gui.GuiUtils;
+import net.minecraftforge.client.gui.GuiUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -273,13 +269,13 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         super.render(matrixStack, mouseX, mouseY, partialTicks);
 
         for (GuiSimpleLabel label : labels) {
-            if (label.isHovered()) {
+            if (label.isHoveredOrFocused()) {
                 List<Component> tooltip = labelTooltips.get(label);
                 if (tooltip == null) {
                     continue;
                 }
 
-                GuiUtils.drawHoveringText(matrixStack, tooltip, mouseX, mouseY, width, height, 300, font);
+                renderTooltip(matrixStack, tooltip, Optional.empty(), mouseX, mouseY);
             }
         }
     }

@@ -6,13 +6,10 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraftforge.fmlclient.gui.GuiUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.GL11;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.platform.GlStateManager;
 
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
@@ -187,13 +184,13 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
         super.render(matrixStack, mouseX, mouseY, partialTicks);
 
         for (GuiSimpleLabel label : labels) {
-            if (label.isHovered()) {
+            if (label.isHoveredOrFocused()) {
                 List<Component> tooltip = labelTooltips.get(label);
                 if (tooltip == null) {
                     continue;
                 }
 
-                GuiUtils.drawHoveringText(matrixStack, tooltip, mouseX, mouseY, width, height, 300, font);
+                renderTooltip(matrixStack, tooltip, Optional.empty(), mouseX, mouseY);
             }
         }
     }
