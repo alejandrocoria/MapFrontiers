@@ -37,7 +37,7 @@ public class FrontierData {
         public final static Change[] valuesArray = values();
     }
 
-    public static final int NoSlice = -1;
+    public static final int NoSlice = -5;
     public static final int SurfaceSlice = 16;
 
     protected UUID id;
@@ -345,7 +345,7 @@ public class FrontierData {
         return userShared.hasAction(action);
     }
 
-    // @Note: To record changes if done outside of this class.
+    // @Note: To record changes if done outside this class.
     // It would be better to change that.
     public void addChange(Change change) {
         changes.add(change);
@@ -373,8 +373,13 @@ public class FrontierData {
         if (nbt.contains("nameVisible")) {
             nameVisible = nbt.getBoolean("nameVisible");
         }
+
         mapSlice = nbt.getInt("slice");
-        mapSlice = Math.min(Math.max(mapSlice, -1), 16);
+        if (version < 6 && mapSlice == -1) {
+            mapSlice = NoSlice;
+        }
+        mapSlice = Math.min(Math.max(mapSlice, NoSlice), SurfaceSlice);
+
         personal = nbt.getBoolean("personal");
 
         owner = new SettingsUser();

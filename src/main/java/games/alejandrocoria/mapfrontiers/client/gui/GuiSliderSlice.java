@@ -22,7 +22,7 @@ public class GuiSliderSlice extends Button {
     private int slice = 0;
 
     public GuiSliderSlice(int x, int y, ResourceLocation texture, int textureSize, Button.OnPress pressedAction) {
-        super(x, y, 13, 69, TextComponent.EMPTY, pressedAction);
+        super(x, y, 13, 85, TextComponent.EMPTY, pressedAction);
         this.texture = texture;
         this.textureSize = textureSize;
     }
@@ -62,12 +62,12 @@ public class GuiSliderSlice extends Button {
         RenderSystem.setShaderTexture(0, texture);
 
         blit(matrixStack, x, y, 312, 1, width, height, textureSize, textureSize);
-        blit(matrixStack, x, y + height - slice * 4 - 5, 312, 71, width, 5, textureSize, textureSize);
+        blit(matrixStack, x, y + height - (slice + 4) * 4 - 5, 312, 87, width, 5, textureSize, textureSize);
     }
 
     private void changeSlice(double mouseX, double mouseY) {
-        slice = (y + height - (int) mouseY) / 4;
-        slice = Math.min(Math.max(slice, 0), 16);
+        slice = (y + height - (int) mouseY) / 4 - 4;
+        slice = Math.min(Math.max(slice, -4), 16);
         onPress();
     }
 }

@@ -50,7 +50,7 @@ public class FrontiersManager {
     private File ModDir;
     private boolean frontierOwnersChecked = false;
 
-    public static final int dataVersion = 5;
+    public static final int dataVersion = 6;
     private static int pendingShareFrontierID = 0;
     private static final int pendingShareFrontierTickDuration = 1200;
 

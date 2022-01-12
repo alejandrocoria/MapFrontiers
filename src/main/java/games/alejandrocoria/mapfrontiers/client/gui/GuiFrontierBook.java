@@ -205,15 +205,15 @@ public class GuiFrontierBook extends Screen implements TextColorBox.TextColorBox
                 TextComponent.EMPTY, bookPageTexture, bookTextureSize, this::buttonPressed);
 
         buttonSliceUp = new GuiButtonIcon(offsetFromScreenLeft + bookImageWidth / 2 - 21,
-                offsetFromScreenTop + bookImageHeight / 2 - 45, 13, 9, 471, 102, 23, bookPageTexture,
+                offsetFromScreenTop + bookImageHeight / 2 - 53, 13, 9, 471, 102, 23, bookPageTexture,
                 bookTextureSize, this::buttonPressed);
 
         buttonSliceDown = new GuiButtonIcon(offsetFromScreenLeft + bookImageWidth / 2 - 21,
-                offsetFromScreenTop + bookImageHeight / 2 + 36, 13, 9, 471, 111, 23, bookPageTexture,
+                offsetFromScreenTop + bookImageHeight / 2 + 44, 13, 9, 471, 111, 23, bookPageTexture,
                 bookTextureSize, this::buttonPressed);
 
         sliderSlice = new GuiSliderSlice(offsetFromScreenLeft + bookImageWidth / 2 - 21,
-                offsetFromScreenTop + bookImageHeight / 2 - 35, bookPageTexture, bookTextureSize, this::buttonPressed);
+                offsetFromScreenTop + bookImageHeight / 2 - 43, bookPageTexture, bookTextureSize, this::buttonPressed);
 
         Component shareSettingsText = new TranslatableComponent("mapfrontiers.share_settings");
         buttonEditShareSettings = new GuiBookButton(font, rightPageCornerX + 12, rightPageCornerY + 88,
@@ -1072,7 +1072,7 @@ public class GuiFrontierBook extends Screen implements TextColorBox.TextColorBox
 
             if (canUpdate && frontier.getVertexCount() > 0) {
                 buttonSliceUp.visible = frontier.getMapSlice() < 16;
-                buttonSliceDown.visible = frontier.getMapSlice() > 0;
+                buttonSliceDown.visible = frontier.getMapSlice() > -4;
                 sliderSlice.visible = true;
             } else {
                 buttonSliceUp.visible = false;
