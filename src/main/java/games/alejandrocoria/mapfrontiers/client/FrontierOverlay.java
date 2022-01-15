@@ -484,7 +484,7 @@ public class FrontierOverlay extends FrontierData {
                 ShapeProperties shapePropsTransparent = new ShapeProperties().setStrokeWidth(0).setFillOpacity(0.f);
                 BlockPos center = new BlockPos((topLeft.getX() + bottomRight.getX()) / 2, 70,
                         (topLeft.getZ() + bottomRight.getZ()) / 2);
-                MapPolygon polygon = new MapPolygon(Arrays.asList(center, center, center));
+                MapPolygon polygon = new MapPolygon(Arrays.asList(center, center.offset(1, 0, 0), center.offset(0, 0, 1)));
                 PolygonOverlay polygonOverlay = new PolygonOverlay(MapFrontiers.MODID, displayId + "_name", dimension,
                         shapePropsTransparent, polygon);
                 TextProperties textProps = new TextProperties().setColor(color).setScale(2.f).setBackgroundOpacity(0.f);
