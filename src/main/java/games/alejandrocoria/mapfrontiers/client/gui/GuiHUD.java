@@ -72,10 +72,10 @@ public class GuiHUD {
     private int minimapSize;
     private Shape minimapShape;
     private Position minimapPosition;
-    private ThemeLabelSource minimapInfo1;
-    private ThemeLabelSource minimapInfo2;
-    private ThemeLabelSource minimapInfo3;
-    private ThemeLabelSource minimapInfo4;
+    private String minimapInfo1;
+    private String minimapInfo2;
+    private String minimapInfo3;
+    private String minimapInfo4;
     private int minimapFontScale;
     private int minimapCompassFontScale;
 
@@ -245,8 +245,8 @@ public class GuiHUD {
             MiniMapProperties minimapProperties = UIManager.INSTANCE.getMiniMap().getCurrentMinimapProperties();
             if (minimapEnabled != minimapProperties.enabled.get() || minimapSize != minimapProperties.sizePercent.get()
                     || minimapShape != minimapProperties.shape.get() || minimapPosition != minimapProperties.position.get()
-                    || minimapInfo1 != minimapProperties.info1Label.get() || minimapInfo2 != minimapProperties.info1Label.get()
-                    || minimapInfo3 != minimapProperties.info1Label.get() || minimapInfo4 != minimapProperties.info1Label.get()
+                    || minimapInfo1 != minimapProperties.info1Label.get() || minimapInfo2 != minimapProperties.info2Label.get()
+                    || minimapInfo3 != minimapProperties.info3Label.get() || minimapInfo4 != minimapProperties.info4Label.get()
                     || minimapFontScale != minimapProperties.fontScale.get().intValue()
                     || minimapCompassFontScale != minimapProperties.compassFontScale.get().intValue()) {
                 needUpdate = true;
@@ -339,9 +339,9 @@ public class GuiHUD {
             minimapShape = minimapProperties.shape.get();
             minimapPosition = minimapProperties.position.get();
             minimapInfo1 = minimapProperties.info1Label.get();
-            minimapInfo2 = minimapProperties.info1Label.get();
-            minimapInfo3 = minimapProperties.info1Label.get();
-            minimapInfo4 = minimapProperties.info1Label.get();
+            minimapInfo2 = minimapProperties.info2Label.get();
+            minimapInfo3 = minimapProperties.info3Label.get();
+            minimapInfo4 = minimapProperties.info4Label.get();
             minimapFontScale = minimapProperties.fontScale.get().intValue();
             minimapCompassFontScale = minimapProperties.compassFontScale.get().intValue();
         }
