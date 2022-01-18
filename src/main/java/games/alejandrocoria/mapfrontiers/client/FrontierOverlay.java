@@ -1,7 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -10,7 +9,6 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.GameRenderer;
-import org.lwjgl.opengl.GL11;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -18,7 +16,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiColors;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
-import games.alejandrocoria.mapfrontiers.client.util.Earcut;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
@@ -50,7 +47,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
-import games.alejandrocoria.mapfrontiers.common.FrontierData.Change;
+import static java.lang.Math.abs;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -457,44 +454,28 @@ public class FrontierOverlay extends FrontierData {
             ShapeProperties shapeProps = new ShapeProperties().setStrokeWidth(0).setFillColor(color)
                     .setFillOpacity((float) ConfigData.polygonsOpacity);
 
-            double[] vertexArray = new double[vertices.size() * 2];
-            int p = 0;
-            for (BlockPos pos : vertices) {
-                vertexArray[p++] = pos.getX();
-                vertexArray[p++] = pos.getZ();
-            }
-            List<Integer> triangles = Earcut.earcut(vertexArray, null, 2);
-
-            for (int i = 0; i < triangles.size(); i += 3) {
-                BlockPos p1 = vertices.get(triangles.get(i + 2));
-                BlockPos p2 = vertices.get(triangles.get(i + 1));
-                BlockPos p3 = vertices.get(triangles.get(i));
-                MapPolygon polygon = new MapPolygon(Arrays.asList(p1, p2, p3));
-                PolygonOverlay polygonOverlay = new PolygonOverlay(MapFrontiers.MODID, displayId + "_" + i,
-                        dimension, shapeProps, polygon);
-                polygonOverlays.add(polygonOverlay);
-
-                area += Math.abs(p1.getX() * (p2.getZ() - p3.getZ()) + p2.getX() * (p3.getZ() - p1.getZ())
-                        + p3.getX() * (p1.getZ() - p2.getZ())) / 2.f;
-            }
+            MapPolygon polygon = new MapPolygon(vertices);
+            PolygonOverlay polygonOverlay = new PolygonOverlay(MapFrontiers.MODID, displayId, dimension, shapeProps, polygon);
 
             ConfigData.NameVisibility nameVisibility = ConfigData.nameVisibility;
             if (nameVisibility == ConfigData.NameVisibility.Show
                     || (nameVisibility == ConfigData.NameVisibility.Manual && nameVisible)) {
-                ShapeProperties shapePropsTransparent = new ShapeProperties().setStrokeWidth(0).setFillOpacity(0.f);
-                BlockPos center = new BlockPos((topLeft.getX() + bottomRight.getX()) / 2, 70,
-                        (topLeft.getZ() + bottomRight.getZ()) / 2);
-                MapPolygon polygon = new MapPolygon(Arrays.asList(center, center.offset(1, 0, 0), center.offset(0, 0, 1)));
-                PolygonOverlay polygonOverlay = new PolygonOverlay(MapFrontiers.MODID, displayId + "_name", dimension,
-                        shapePropsTransparent, polygon);
                 TextProperties textProps = new TextProperties().setColor(color).setScale(2.f).setBackgroundOpacity(0.f);
                 textProps = setMinSizeTextPropierties(textProps);
                 if (!name1.isEmpty() && !name2.isEmpty()) {
                     textProps.setOffsetY(9);
                 }
                 polygonOverlay.setTextProperties(textProps).setOverlayGroupName("frontier").setLabel(name1 + "\n" + name2);
-                polygonOverlays.add(polygonOverlay);
             }
+
+            polygonOverlays.add(polygonOverlay);
+
+            BlockPos last = vertices.get(vertices.size() - 1);
+            for (BlockPos vertex : vertices) {
+                area += abs(vertex.getZ() + last.getZ()) / 2.f * (vertex.getX() - last.getX());
+                last = vertex;
+            }
+            area = abs(area);
         } else {
             for (int i = 0; i < vertices.size(); ++i) {
                 String markerId = displayId + "_" + i;
