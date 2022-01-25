@@ -467,8 +467,17 @@ public class FrontierData {
 
 
         if (changes.contains(Change.Name)) {
-            name1 = buf.readUtf(17);
-            name2 = buf.readUtf(17);
+            int maxCharacters = 17;
+            int maxBytes = maxCharacters * 4;
+            name1 = buf.readUtf(maxCharacters);
+            name2 = buf.readUtf(maxCharacters);
+
+            if (name1.length() > maxCharacters) {
+                name1 = name1.substring(0, maxCharacters);
+            }
+            if (name2.length() > maxCharacters) {
+                name2 = name2.substring(0, maxCharacters);
+            }
         }
 
         if (changes.contains(Change.Banner)) {
@@ -530,8 +539,10 @@ public class FrontierData {
         }
 
         if (!onlyChanges || changes.contains(Change.Name)) {
-            buf.writeUtf(name1, 17);
-            buf.writeUtf(name2, 17);
+            int maxCharacters = 17;
+            int maxBytes = maxCharacters * 4;
+            buf.writeUtf(name1, maxBytes);
+            buf.writeUtf(name2, maxBytes);
         }
 
         if (!onlyChanges || changes.contains(Change.Banner)) {
