@@ -231,13 +231,13 @@ public class GuiFrontierBook extends Screen implements TextColorBox.TextColorBox
         textBlue = new TextColorBox(255, font, textColorX + 52, textColorY);
         textBlue.setResponder(this);
 
-        int textNameX = offsetFromScreenLeft + bookImageWidth / 4 - 56;
+        int textNameX = offsetFromScreenLeft + bookImageWidth / 4 - 63;
         int textNameY = offsetFromScreenTop + 10;
         String defaultText = "Add name";
-        textName1 = new TextBox(font, textNameX, textNameY, 113, defaultText);
+        textName1 = new TextBox(font, textNameX, textNameY, 127, defaultText);
         textName1.setMaxLength(17);
         textName1.setResponder(this);
-        textName2 = new TextBox(font, textNameX, textNameY + 14, 113, defaultText);
+        textName2 = new TextBox(font, textNameX, textNameY + 14, 127, defaultText);
         textName2.setMaxLength(17);
         textName2.setResponder(this);
 
