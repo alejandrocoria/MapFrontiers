@@ -81,11 +81,10 @@ public class ClientProxy {
         }
     }
 
-    public static BlockPos snapVertex(BlockPos vertex, int snapDistance, ResourceKey<Level> dimension,
+    public static BlockPos snapVertex(BlockPos vertex, float snapDistance, ResourceKey<Level> dimension,
             @Nullable FrontierData owner) {
-        float snapDistanceSq = snapDistance * snapDistance;
         BlockPos closest = new BlockPos(vertex.getX(), 70, vertex.getZ());
-        double closestDistance = Double.MAX_VALUE;
+        double closestDistance = snapDistance * snapDistance;
 
         for (FrontierData frontier : personalFrontiersOverlayManager.getAllFrontiers(dimension)) {
             if (frontier == owner) {
@@ -96,7 +95,7 @@ public class ClientProxy {
                 BlockPos v = frontier.getVertex(i);
                 BlockPos v2 = new BlockPos(v.getX(), 70, v.getZ());
                 double distance = v2.distSqr(closest);
-                if (distance < snapDistanceSq && distance < closestDistance && !containsVertex(owner, v2)) {
+                if (distance <= closestDistance) {
                     closestDistance = distance;
                     closest = v2;
                 }
@@ -112,7 +111,7 @@ public class ClientProxy {
                 BlockPos v = frontier.getVertex(i);
                 BlockPos v2 = new BlockPos(v.getX(), 70, v.getZ());
                 double distance = v2.distSqr(closest);
-                if (distance < snapDistanceSq && distance < closestDistance && !containsVertex(owner, v2)) {
+                if (distance <= closestDistance) {
                     closestDistance = distance;
                     closest = v2;
                 }
@@ -120,21 +119,6 @@ public class ClientProxy {
         }
 
         return closest;
-    }
-
-    private static boolean containsVertex(@Nullable FrontierData frontier, BlockPos vertex) {
-        if (frontier == null) {
-            return false;
-        }
-
-        for (int i = 0; i < frontier.getVertexCount(); ++i) {
-            BlockPos v = frontier.getVertex(i);
-            if (vertex.getX() == v.getX() && vertex.getZ() == v.getZ()) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     public static void setjmAPI(IClientAPI newJmAPI) {

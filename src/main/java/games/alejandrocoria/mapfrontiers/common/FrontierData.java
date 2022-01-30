@@ -176,6 +176,15 @@ public class FrontierData {
         changes.add(Change.Vertices);
     }
 
+    public void moveVertex(BlockPos pos, int index) {
+        if (index < 0 || index >= vertices.size()) {
+            return;
+        }
+
+        vertices.set(index, pos);
+        changes.add(Change.Vertices);
+    }
+
     public void setClosed(boolean closed) {
         this.closed = closed;
         changes.add(Change.Other);

@@ -74,6 +74,8 @@ public class FrontierOverlay extends FrontierData {
     public float area = 0.f;
     private int vertexSelected;
 
+    private boolean highlighted = false;
+
     private final IClientAPI jmAPI;
     private final List<PolygonOverlay> polygonOverlays = new ArrayList<>();
     private final List<MarkerOverlay> markerOverlays = new ArrayList<>();
@@ -253,6 +255,27 @@ public class FrontierOverlay extends FrontierData {
         return false;
     }
 
+    public void selectClosestVertex(BlockPos pos, double limit) {
+        if (vertices.isEmpty()) {
+            return;
+        }
+
+        double distance = limit * limit;
+        int closest = -1;
+
+        for (int i = 0; i < vertices.size(); ++i) {
+            BlockPos vertex = vertices.get(i);
+            double dist = vertex.distSqr(new BlockPos(pos.getX(), vertex.getY(), pos.getZ()));
+            if (dist <= distance) {
+                distance = dist;
+                closest = i;
+            }
+        }
+
+        vertexSelected = closest;
+        ClientProxy.getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);
+    }
+
     @Override
     public void setId(UUID id) {
         super.setId(id);
@@ -279,6 +302,20 @@ public class FrontierOverlay extends FrontierData {
     public void removeVertex(int index) {
         super.removeVertex(index);
         updateOverlay();
+    }
+
+    public void moveSelectedVertex(BlockPos pos, float snapDistance) {
+        if (vertexSelected < 0 || vertexSelected >= vertices.size()) {
+            return;
+        }
+
+        if (snapDistance != 0) {
+            pos = ClientProxy.snapVertex(pos, snapDistance, dimension, this);
+        }
+
+        super.moveVertex(pos, vertexSelected);
+        updateOverlay();
+        ClientProxy.getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);
     }
 
     @Override
@@ -442,6 +479,11 @@ public class FrontierOverlay extends FrontierData {
         return null;
     }
 
+    public void setHighlighted(boolean highlighted) {
+        this.highlighted = highlighted;
+        updateOverlay();
+    }
+
     private void recalculateOverlays() {
         polygonOverlays.clear();
         markerOverlays.clear();
@@ -451,8 +493,8 @@ public class FrontierOverlay extends FrontierData {
         area = 0;
 
         if (closed && vertices.size() > 2) {
-            ShapeProperties shapeProps = new ShapeProperties().setStrokeWidth(0).setFillColor(color)
-                    .setFillOpacity((float) ConfigData.polygonsOpacity);
+            ShapeProperties shapeProps = new ShapeProperties().setStrokeWidth(highlighted ? 3 : 0).setStrokeColor(GuiColors.WHITE)
+                    .setFillColor(color).setFillOpacity((float) ConfigData.polygonsOpacity);
 
             MapPolygon polygon = new MapPolygon(vertices);
             PolygonOverlay polygonOverlay = new PolygonOverlay(MapFrontiers.MODID, displayId, dimension, shapeProps, polygon);

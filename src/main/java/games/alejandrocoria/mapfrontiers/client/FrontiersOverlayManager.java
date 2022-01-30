@@ -11,6 +11,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiColors;
+import games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketDeleteFrontier;
@@ -63,7 +64,7 @@ public class FrontiersOverlayManager {
     @SubscribeEvent
     public static void onRenderTick(TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
-            if (ClientProxy.hasBookItemInHand()) {
+            if (ClientProxy.hasBookItemInHand() || MapFrontiersPlugin.isEditing()) {
                 float opacity = markerDotSelected.getOpacity();
                 if (opacity < targetDotSelectedOpacity) {
                     opacity += event.renderTickTime * 0.5f;
