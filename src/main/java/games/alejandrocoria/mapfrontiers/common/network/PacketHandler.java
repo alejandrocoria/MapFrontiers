@@ -16,8 +16,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Optional;
 
 @ParametersAreNonnullByDefault
-public class PacketHandler
-{
+public class PacketHandler {
     private static final String PROTOCOL_VERSION = "1";
     public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(MapFrontiers.MODID, "main"), () -> PROTOCOL_VERSION, PROTOCOL_VERSION::equals,

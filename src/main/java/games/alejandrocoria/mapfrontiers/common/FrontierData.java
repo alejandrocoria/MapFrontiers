@@ -159,7 +159,7 @@ public class FrontierData {
     }
 
     public void addVertex(BlockPos pos, int index) {
-        vertices.add(index, new BlockPos(pos.getX(), 70, pos.getZ()));
+        vertices.add(index, pos.atY(70));
         changes.add(Change.Vertices);
     }
 
@@ -186,6 +186,10 @@ public class FrontierData {
     }
 
     public void setClosed(boolean closed) {
+        if (vertices.size() < 3) {
+            return;
+        }
+
         this.closed = closed;
         changes.add(Change.Other);
     }

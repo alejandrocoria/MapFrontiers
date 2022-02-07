@@ -83,7 +83,7 @@ public class ClientProxy {
 
     public static BlockPos snapVertex(BlockPos vertex, float snapDistance, ResourceKey<Level> dimension,
             @Nullable FrontierData owner) {
-        BlockPos closest = new BlockPos(vertex.getX(), 70, vertex.getZ());
+        BlockPos closest = vertex.atY(70);
         double closestDistance = snapDistance * snapDistance;
 
         for (FrontierData frontier : personalFrontiersOverlayManager.getAllFrontiers(dimension)) {
@@ -92,12 +92,11 @@ public class ClientProxy {
             }
 
             for (int i = 0; i < frontier.getVertexCount(); ++i) {
-                BlockPos v = frontier.getVertex(i);
-                BlockPos v2 = new BlockPos(v.getX(), 70, v.getZ());
-                double distance = v2.distSqr(closest);
+                BlockPos v = frontier.getVertex(i).atY(70);
+                double distance = v.distSqr(closest, false);
                 if (distance <= closestDistance) {
                     closestDistance = distance;
-                    closest = v2;
+                    closest = v;
                 }
             }
         }
@@ -108,12 +107,11 @@ public class ClientProxy {
             }
 
             for (int i = 0; i < frontier.getVertexCount(); ++i) {
-                BlockPos v = frontier.getVertex(i);
-                BlockPos v2 = new BlockPos(v.getX(), 70, v.getZ());
-                double distance = v2.distSqr(closest);
+                BlockPos v = frontier.getVertex(i).atY(70);
+                double distance = v.distSqr(closest, false);
                 if (distance <= closestDistance) {
                     closestDistance = distance;
-                    closest = v2;
+                    closest = v;
                 }
             }
         }

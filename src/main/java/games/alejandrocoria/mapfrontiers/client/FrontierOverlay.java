@@ -1,5 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client;
 
+import java.awt.geom.Area;
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -8,6 +10,8 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.math.Vector3f;
+import journeymap.client.api.util.PolygonHelper;
 import net.minecraft.client.renderer.GameRenderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -40,6 +44,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
 import com.mojang.math.Matrix4f;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
@@ -77,7 +82,8 @@ public class FrontierOverlay extends FrontierData {
     private boolean highlighted = false;
 
     private final IClientAPI jmAPI;
-    private final List<PolygonOverlay> polygonOverlays = new ArrayList<>();
+    private PolygonOverlay polygonOverlay;
+    private Area polygonArea;
     private final List<MarkerOverlay> markerOverlays = new ArrayList<>();
     private String displayId;
     private BannerDisplayData bannerDisplay;
@@ -168,8 +174,8 @@ public class FrontierOverlay extends FrontierData {
         recalculateOverlays();
 
         try {
-            for (PolygonOverlay polygon : polygonOverlays) {
-                jmAPI.show(polygon);
+            if (polygonOverlay != null) {
+                jmAPI.show(polygonOverlay);
             }
 
             for (MarkerOverlay marker : markerOverlays) {
@@ -181,8 +187,8 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void removeOverlay() {
-        for (PolygonOverlay polygon : polygonOverlays) {
-            jmAPI.remove(polygon);
+        if (polygonOverlay != null) {
+            jmAPI.remove(polygonOverlay);
         }
 
         for (MarkerOverlay marker : markerOverlays) {
@@ -190,65 +196,18 @@ public class FrontierOverlay extends FrontierData {
         }
     }
 
-    public boolean pointIsInside(BlockPos point) {
+    public boolean pointIsInside(BlockPos pos, double maxDistanceToOpen) {
         if (closed && vertices.size() > 2) {
-            for (PolygonOverlay polygon : polygonOverlays) {
-                MapPolygon map = polygon.getOuterArea();
-                List<BlockPos> points = map.getPoints();
-
-                if (points.get(0) == points.get(1)) {
-                    continue;
-                }
-
-                /////////////////////////////////////////////////////////////////
-                // Copyright (c) Justas (https://stackoverflow.com/users/407108)
-                // Licensed under cc by-sa 4.0
-                // https://creativecommons.org/licenses/by-sa/4.0/
-                //
-                // Adapted from https://stackoverflow.com/a/34689268
-                // by Alejandro Coria - 29/04/2020
-                /////////////////////////////////////////////////////////////////
-
-                int pos = 0;
-                int neg = 0;
-
-                boolean inside = true;
-
-                for (int i = 0; i < points.size(); ++i) {
-                    if (points.get(i).equals(point)) {
-                        break;
-                    }
-
-                    int x1 = points.get(i).getX();
-                    int z1 = points.get(i).getZ();
-
-                    int i2 = (i + 1) % points.size();
-
-                    int x2 = points.get(i2).getX();
-                    int z2 = points.get(i2).getZ();
-
-                    int x = point.getX();
-                    int z = point.getZ();
-
-                    int d = (x - x1) * (z2 - z1) - (z - z1) * (x2 - x1);
-
-                    if (d > 0) {
-                        pos++;
-                    } else if (d < 0) {
-                        neg++;
-                    }
-
-                    if (pos > 0 && neg > 0) {
-                        inside = false;
-                        break;
-                    }
-                }
-
-                if (inside) {
+            return polygonArea.contains(pos.getX() + 0.5, pos.getZ() + 0.5);
+        } else if (maxDistanceToOpen > 0.0) {
+            for (int i = 0; i < vertices.size(); ++i) {
+                Vec3 point = Vec3.atLowerCornerOf(pos);
+                Vec3 edge1 = Vec3.atLowerCornerOf(vertices.get(i).atY(pos.getY()));
+                Vec3 edge2 = Vec3.atLowerCornerOf(vertices.get((i + 1) % vertices.size()).atY(pos.getY()));
+                double distance = closestPointToEdge(point, edge1, edge2).distanceToSqr(point);
+                if (distance <= maxDistanceToOpen * maxDistanceToOpen) {
                     return true;
                 }
-
-                /////////////////////////////////////////////////////////////////
             }
         }
 
@@ -256,24 +215,97 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void selectClosestVertex(BlockPos pos, double limit) {
-        if (vertices.isEmpty()) {
-            return;
-        }
-
         double distance = limit * limit;
         int closest = -1;
 
-        for (int i = 0; i < vertices.size(); ++i) {
-            BlockPos vertex = vertices.get(i);
-            double dist = vertex.distSqr(new BlockPos(pos.getX(), vertex.getY(), pos.getZ()));
-            if (dist <= distance) {
-                distance = dist;
-                closest = i;
+        if (!vertices.isEmpty()) {
+            for (int i = 0; i < vertices.size(); ++i) {
+                BlockPos vertex = vertices.get(i);
+                double dist = vertex.distSqr(pos.atY(vertex.getY()), false);
+                if (dist <= distance) {
+                    distance = dist;
+                    closest = i;
+                }
             }
         }
 
         vertexSelected = closest;
         ClientProxy.getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);
+    }
+
+    public void selectClosestEdge(BlockPos pos) {
+        double distance = Double.MAX_VALUE;
+        int closest = -1;
+        double angleSimilarity = -1.0;
+
+        if (vertices.size() == 1) {
+            closest = 0;
+        } else if (vertices.size() > 1) {
+            for (int i = 0; i < vertices.size(); ++i) {
+                Vec3 point = Vec3.atLowerCornerOf(pos);
+                Vec3 edge1 = Vec3.atLowerCornerOf(vertices.get(i).atY(pos.getY()));
+                Vec3 edge2 = Vec3.atLowerCornerOf(vertices.get((i + 1) % vertices.size()).atY(pos.getY()));
+                double dist;
+                double dot;
+
+                if (edge1.equals(edge2)) {
+                    dot = -1;
+                    dist = point.distanceToSqr(edge1);
+                } else {
+                    Vec3 closestPoint = closestPointToEdge(point, edge1, edge2);
+
+                    if (!closestPoint.equals(edge1) && !closestPoint.equals(edge2)) {
+                        dot = -1;
+                    } else {
+                        Vec3 edge = edge2.subtract(edge1);
+                        Vec2 edgeDirection = new Vec2((float)edge.x, (float)edge.z).normalized();
+                        Vec3 toPos;
+
+                        if (closestPoint.equals(edge1)) {
+                            toPos = point.subtract(edge1);
+                        } else {
+                            edgeDirection = edgeDirection.negated();
+                            toPos = point.subtract(edge2);
+                        }
+
+                        Vec2 toPosDirection = new Vec2((float)toPos.x, (float)toPos.z).normalized();
+                        dot = toPosDirection.dot(edgeDirection);
+                    }
+
+                    dist = point.distanceToSqr(closestPoint);
+                }
+
+                if (dist < distance) {
+                    distance = dist;
+                    closest = i;
+                    angleSimilarity = dot;
+                } else if (dist == distance && dot > angleSimilarity) {
+                    closest = i;
+                    angleSimilarity = dot;
+                }
+            }
+        }
+
+        vertexSelected = closest;
+        ClientProxy.getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);
+    }
+
+    private static Vec3 closestPointToEdge(Vec3 point, Vec3 edge1, Vec3 edge2) {
+        Vec3 edge = edge2.subtract(edge1);
+
+        if ((edge.x == 0) && (edge.z == 0)) {
+            return edge1;
+        } else {
+            double u = ((point.x - edge1.x) * edge.x + (point.z - edge1.z) * edge.z) / (edge.x * edge.x + edge.z * edge.z);
+
+            if (u < 0.0) {
+                return edge1;
+            } else if (u > 1.0) {
+                return edge2;
+            } else {
+                return new Vec3(edge1.x + u * edge.x, point.y, edge1.z + u * edge.z);
+            }
+        }
     }
 
     @Override
@@ -467,6 +499,18 @@ public class FrontierOverlay extends FrontierData {
         ClientProxy.getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);
     }
 
+    public void selectVertex(int index) {
+        if (index < -1) {
+            vertexSelected = -1;
+        } else if (index >= vertices.size()) {
+            vertexSelected = vertices.size();
+        } else {
+            vertexSelected = index;
+        }
+
+        ClientProxy.getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);
+    }
+
     public int getSelectedVertexIndex() {
         return vertexSelected;
     }
@@ -485,7 +529,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private void recalculateOverlays() {
-        polygonOverlays.clear();
+        polygonOverlay = null;
         markerOverlays.clear();
 
         updateBounds();
@@ -497,7 +541,8 @@ public class FrontierOverlay extends FrontierData {
                     .setFillColor(color).setFillOpacity((float) ConfigData.polygonsOpacity);
 
             MapPolygon polygon = new MapPolygon(vertices);
-            PolygonOverlay polygonOverlay = new PolygonOverlay(MapFrontiers.MODID, displayId, dimension, shapeProps, polygon);
+            polygonOverlay = new PolygonOverlay(MapFrontiers.MODID, displayId, dimension, shapeProps, polygon);
+            polygonArea = PolygonHelper.toArea(polygonOverlay.getOuterArea());
 
             ConfigData.NameVisibility nameVisibility = ConfigData.nameVisibility;
             if (nameVisibility == ConfigData.NameVisibility.Show
@@ -509,8 +554,6 @@ public class FrontierOverlay extends FrontierData {
                 }
                 polygonOverlay.setTextProperties(textProps).setOverlayGroupName("frontier").setLabel(name1 + "\n" + name2);
             }
-
-            polygonOverlays.add(polygonOverlay);
 
             BlockPos last = vertices.get(vertices.size() - 1);
             for (BlockPos vertex : vertices) {
@@ -564,27 +607,75 @@ public class FrontierOverlay extends FrontierData {
         if (vertices.size() > 1) {
             BlockPos last = vertices.get(vertices.size() - 1);
             for (BlockPos vertex : vertices) {
-                perimeter += Math.sqrt(vertex.distSqr(last));
+                perimeter += Math.sqrt(vertex.distSqr(last, false));
                 last = vertex;
             }
         }
     }
 
+    //
+    // Functions adapted from https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
+    //
     private void addMarkerDots(String markerId, BlockPos from, BlockPos to, boolean extra) {
-        BlockPos toFrom = to.subtract(from);
-        Vec3 vector = new Vec3(toFrom.getX(), toFrom.getY(), toFrom.getZ());
-        double lenght = vector.length();
-        int count = (int) (lenght / 8.0);
-        double distance = lenght / count;
-        vector = vector.normalize().scale(distance);
+        if (abs(to.getZ() - from.getZ()) < abs(to.getX() - from.getX())) {
+            if (from.getX() > to.getX()) {
+                addLineMarkerDots(markerId, to.getX(), to.getZ(), from.getX(), from.getZ(), extra);
+            } else{
+                addLineMarkerDots(markerId, from.getX(), from.getZ(), to.getX(), to.getZ(), extra);
+            }
+        } else {
+            if (from.getZ() > to.getZ()) {
+                addLineMarkerDots(markerId, to.getX(), to.getZ(), from.getX(), from.getZ(), extra);
+            } else{
+                addLineMarkerDots(markerId, from.getX(), from.getZ(), to.getX(), to.getZ(), extra);
+            }
+        }
+    }
 
-        for (int i = 1; i < count; ++i) {
-            BlockPos pos = from.offset(new BlockPos(vector.scale(i)));
-            MarkerOverlay dot = new MarkerOverlay(MapFrontiers.MODID, markerId + "_" + (i - 1), pos,
+    private void addLineMarkerDots(String markerId, int x0, int z0, int x1, int z1, boolean extra) {
+        int dx = abs(x1 - x0);
+        int sx = x0 < x1 ? 1 : -1;
+        int dz = -abs(z1 - z0);
+        int sz = z0 < z1 ? 1 : -1;
+        int err = dx + dz;
+        int i = 0;
+        while (true) {
+            if (x0 == x1 && z0 == z1) {
+                break;
+            }
+            int e2 = 2 * err;
+            if (e2 >= dz) {
+                if (x0 == x1) {
+                    break;
+                }
+                err += dz;
+                x0 += sx;
+            }
+            if (e2 <= dx) {
+                if (z0 == z1) {
+                    break;
+                }
+                err += dx;
+                z0 += sz;
+            }
+
+            BlockPos pos = new BlockPos(x0, 70, z0);
+            MarkerOverlay dot = new MarkerOverlay(MapFrontiers.MODID, markerId + "_" + i, pos,
                     extra ? markerDotExtra : markerDot);
             dot.setDimension(dimension);
             dot.setDisplayOrder(99);
+            int minZoom = 0;
+            if (i % 2 == 0) {
+                minZoom = 3;
+            } else if (i % 4 == 1) {
+                minZoom = 2;
+            } else if (i % 8 == 3) {
+                minZoom = 1;
+            }
+            dot.setMinZoom(minZoom);
             markerOverlays.add(dot);
+
+            ++i;
         }
     }
 

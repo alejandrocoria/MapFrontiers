@@ -116,6 +116,10 @@ public class FrontiersOverlayManager {
         }
     }
 
+    public void clientDeleteFrontier(FrontierOverlay frontier) {
+        PacketHandler.INSTANCE.sendToServer(new PacketDeleteFrontier(frontier.getId()));
+    }
+
     public void clientUpdatefrontier(ResourceKey<Level> dimension, int index) {
         clientUpdatefrontier(getAllFrontiers(dimension).get(index));
     }
@@ -178,14 +182,15 @@ public class FrontiersOverlayManager {
     }
 
     public FrontierOverlay getFrontierInPosition(ResourceKey<Level> dimension, BlockPos pos) {
+        return getFrontierInPosition(dimension, pos, 0.0);
+    }
+
+    public FrontierOverlay getFrontierInPosition(ResourceKey<Level> dimension, BlockPos pos, double maxDistanceToOpen) {
         ArrayList<FrontierOverlay> frontiers = dimensionsFrontiers.get(dimension);
         if (frontiers != null) {
             for (FrontierOverlay frontier : frontiers) {
-                if (pos.getX() >= frontier.topLeft.getX() && pos.getX() <= frontier.bottomRight.getX()
-                        && pos.getZ() >= frontier.topLeft.getZ() && pos.getZ() <= frontier.bottomRight.getZ()) {
-                    if (frontier.pointIsInside(pos)) {
-                        return frontier;
-                    }
+                if (frontier.pointIsInside(pos, maxDistanceToOpen)) {
+                    return frontier;
                 }
             }
         }
