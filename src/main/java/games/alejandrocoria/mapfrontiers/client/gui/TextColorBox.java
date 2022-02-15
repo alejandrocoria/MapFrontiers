@@ -15,7 +15,7 @@ public class TextColorBox extends EditBox {
     private TextColorBoxResponder responder;
 
     public TextColorBox(int value, Font font, int x, int y) {
-        super(font, x, y, 26, 12, TextComponent.EMPTY);
+        super(font, x, y, 29, 12, TextComponent.EMPTY);
         this.setValue(String.valueOf(value));
     }
 

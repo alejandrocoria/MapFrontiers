@@ -8,6 +8,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiShareSettings;
+import games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
@@ -71,6 +72,8 @@ public class PacketFrontierDeleted {
             } else if (Minecraft.getInstance().screen instanceof GuiShareSettings) {
                 ((GuiShareSettings) Minecraft.getInstance().screen).deleteFrontierMessage(frontierIndex, message.dimension,
                         message.frontierID, message.personal, message.playerID);
+            } else {
+                MapFrontiersPlugin.deleteFrontierMessage(message.frontierID);
             }
         }
         ctx.setPacketHandled(true);

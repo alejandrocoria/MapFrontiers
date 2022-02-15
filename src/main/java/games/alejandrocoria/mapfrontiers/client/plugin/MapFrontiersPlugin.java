@@ -23,6 +23,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.EnumSet;
+import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 @journeymap.client.api.ClientPlugin
@@ -68,14 +69,14 @@ public class MapFrontiersPlugin implements IClientPlugin {
             case DISPLAY_UPDATE:
                 if (fullscreenMap != null) {
                     DisplayUpdateEvent displayEvent = (DisplayUpdateEvent)event;
-                    if (jmAPI.getUIState(Context.UI.Fullscreen).active) {
-                        if (displayEvent.uiState.ui == Context.UI.Fullscreen) {
+                    if (displayEvent.uiState.ui == Context.UI.Fullscreen) {
+                        if (displayEvent.uiState.active) {
                             fullscreenMap.updatebuttons();
+                        } else {
+                            fullscreenMap.stopEditing();
+                            fullscreenMap.close();
+                            fullscreenMap = null;
                         }
-                    } else {
-                        fullscreenMap.stopEditing();
-                        fullscreenMap.close();
-                        fullscreenMap = null;
                     }
                 }
                 break;
@@ -103,6 +104,18 @@ public class MapFrontiersPlugin implements IClientPlugin {
     public static void newFrontierMessage(FrontierOverlay frontierOverlay, int playerID) {
         if (fullscreenMap != null) {
             fullscreenMap.newFrontierMessage(frontierOverlay, playerID);
+        }
+    }
+
+    public static void updateFrontierMessage(FrontierOverlay frontierOverlay) {
+        if (fullscreenMap != null) {
+            fullscreenMap.updateFrontierMessage(frontierOverlay);
+        }
+    }
+
+    public static void deleteFrontierMessage(UUID frontierID) {
+        if (fullscreenMap != null) {
+            fullscreenMap.deleteFrontierMessage(frontierID);
         }
     }
 

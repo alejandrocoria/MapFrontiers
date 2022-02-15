@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.Context;
 import journeymap.client.api.display.IThemeButton;
@@ -14,8 +15,11 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.ForgeHooksClient;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+
+import java.util.UUID;
 
 import static java.lang.Math.max;
 import static java.lang.Math.pow;
@@ -47,7 +51,7 @@ public class GuiFullscreenMap {
 
     public void addButtons(ThemeButtonDisplay buttonDisplay) {
         buttonNew = buttonDisplay.addThemeButton("new frontier", "new_frontier", b -> buttonNewPressed());
-        buttonInfo = buttonDisplay.addThemeButton("frontier info", "info_frontier", b -> {});
+        buttonInfo = buttonDisplay.addThemeButton("frontier info", "info_frontier", b -> buttonInfoPressed());
         buttonEdit = buttonDisplay.addThemeToggleButton("done editing", "edit frontier", "edit_frontier", editing, b -> buttonEditToggled());
         buttonClosed = buttonDisplay.addThemeToggleButton("open", "close", "close_frontier", false, b -> buttonClosedToggled());
         buttonDelete = buttonDisplay.addThemeButton("delete frontier", "delete_frontier", b -> buttonDelete());
@@ -96,10 +100,15 @@ public class GuiFullscreenMap {
             frontierHighlighted.setHighlighted(false);
         }
 
-        // @Incomplete
-        ClientProxy.getFrontiersOverlayManager(false).clientCreateNewfrontier(jmAPI.getUIState(Context.UI.Fullscreen).dimension);
+        GuiNewFrontier guiNewFrontier = new GuiNewFrontier(jmAPI);
+        ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), guiNewFrontier);
 
         updatebuttons();
+    }
+
+    private void buttonInfoPressed() {
+        GuiFrontierInfo guiFrontierInfo = new GuiFrontierInfo(jmAPI, frontierHighlighted);
+        ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), guiFrontierInfo);
     }
 
     private void buttonEditToggled() {
@@ -159,6 +168,27 @@ public class GuiFullscreenMap {
             frontierHighlighted = frontierOverlay;
             frontierHighlighted.setHighlighted(true);
 
+            updatebuttons();
+
+            if (ConfigData.afterCreatingFrontier == ConfigData.AfterCreatingFrontier.Edit) {
+                buttonEditToggled();
+            }
+        }
+    }
+
+    public void updateFrontierMessage(FrontierOverlay frontierOverlay) {
+        if (frontierHighlighted != null && frontierHighlighted.getId().equals(frontierOverlay.getId())) {
+            frontierHighlighted = frontierOverlay;
+            frontierHighlighted.setHighlighted(true);
+            editing = false;
+            updatebuttons();
+        }
+    }
+
+    public void deleteFrontierMessage(UUID frontierID) {
+        if (frontierHighlighted != null && frontierHighlighted.getId().equals(frontierID)) {
+            frontierHighlighted = null;
+            editing = false;
             updatebuttons();
         }
     }

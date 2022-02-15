@@ -90,7 +90,7 @@ public class TextBox extends EditBox {
                 fill(matrixStack, x, y, x + width, y + height, GuiColors.SETTINGS_TEXT_BOX_BG);
             }
 
-            font.draw(matrixStack, text, posX, y + 2,
+            font.draw(matrixStack, text, posX, y + height / 2 - 4,
                     empty ? GuiColors.SETTINGS_TEXT_BOX_TEXT_DEFAULT : (hovered ? highlightedColor : color));
         }
     }

@@ -221,6 +221,20 @@ public class ClientProxy {
         }
     }
 
+    public static ItemStack getHeldBanner() {
+        ItemStack mainhand = Minecraft.getInstance().player.getItemBySlot(EquipmentSlot.MAINHAND);
+        ItemStack offhand = Minecraft.getInstance().player.getItemBySlot(EquipmentSlot.OFFHAND);
+        ItemStack heldBanner = null;
+
+        if (mainhand.getItem() instanceof BannerItem) {
+            heldBanner = mainhand;
+        } else if (offhand.getItem() instanceof BannerItem) {
+            heldBanner = offhand;
+        }
+
+        return heldBanner;
+    }
+
     public static boolean hasBookItemInHand() {
         return bookItemInHand != null;
     }

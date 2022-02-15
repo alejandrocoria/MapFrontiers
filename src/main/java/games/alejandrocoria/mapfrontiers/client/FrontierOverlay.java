@@ -1,7 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client;
 
 import java.awt.geom.Area;
-import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -10,7 +9,6 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.math.Vector3f;
 import journeymap.client.api.util.PolygonHelper;
 import net.minecraft.client.renderer.GameRenderer;
 
@@ -61,16 +59,12 @@ public class FrontierOverlay extends FrontierData {
             0, 12, 12, GuiColors.WHITE, 1.f);
     private static final MapImage markerDot = new MapImage(new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"), 12, 0,
             8, 8, GuiColors.WHITE, 1.f);
-    private static final MapImage markerDotExtra = new MapImage(new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"),
-            12, 0, 8, 8, GuiColors.WHITE, 0.4f);
 
     static {
         markerVertex.setAnchorX(markerVertex.getDisplayWidth() / 2.0).setAnchorY(markerVertex.getDisplayHeight() / 2.0);
         markerVertex.setRotation(0);
         markerDot.setAnchorX(markerDot.getDisplayWidth() / 2.0).setAnchorY(markerDot.getDisplayHeight() / 2.0);
         markerDot.setRotation(0);
-        markerDotExtra.setAnchorX(markerDotExtra.getDisplayWidth() / 2.0).setAnchorY(markerDotExtra.getDisplayHeight() / 2.0);
-        markerDotExtra.setRotation(0);
     }
 
     public BlockPos topLeft;
@@ -154,11 +148,9 @@ public class FrontierOverlay extends FrontierData {
                     || Minecraft.getInstance().screen instanceof GuiFrontierBook) {
                 markerVertex.setOpacity(1.f);
                 markerDot.setOpacity(1.f);
-                markerDotExtra.setOpacity(0.4f);
             } else {
                 markerVertex.setOpacity(0.f);
                 markerDot.setOpacity(0.f);
-                markerDotExtra.setOpacity(0.f);
             }
         }
     }
@@ -568,7 +560,7 @@ public class FrontierOverlay extends FrontierData {
                 marker.setDimension(dimension);
                 marker.setDisplayOrder(100);
                 markerOverlays.add(marker);
-                addMarkerDots(markerId, vertices.get(i), vertices.get((i + 1) % vertices.size()), i == vertices.size() - 1);
+                addMarkerDots(markerId, vertices.get(i), vertices.get((i + 1) % vertices.size()));
             }
         }
 
@@ -616,23 +608,23 @@ public class FrontierOverlay extends FrontierData {
     //
     // Functions adapted from https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
     //
-    private void addMarkerDots(String markerId, BlockPos from, BlockPos to, boolean extra) {
+    private void addMarkerDots(String markerId, BlockPos from, BlockPos to) {
         if (abs(to.getZ() - from.getZ()) < abs(to.getX() - from.getX())) {
             if (from.getX() > to.getX()) {
-                addLineMarkerDots(markerId, to.getX(), to.getZ(), from.getX(), from.getZ(), extra);
+                addLineMarkerDots(markerId, to.getX(), to.getZ(), from.getX(), from.getZ());
             } else{
-                addLineMarkerDots(markerId, from.getX(), from.getZ(), to.getX(), to.getZ(), extra);
+                addLineMarkerDots(markerId, from.getX(), from.getZ(), to.getX(), to.getZ());
             }
         } else {
             if (from.getZ() > to.getZ()) {
-                addLineMarkerDots(markerId, to.getX(), to.getZ(), from.getX(), from.getZ(), extra);
+                addLineMarkerDots(markerId, to.getX(), to.getZ(), from.getX(), from.getZ());
             } else{
-                addLineMarkerDots(markerId, from.getX(), from.getZ(), to.getX(), to.getZ(), extra);
+                addLineMarkerDots(markerId, from.getX(), from.getZ(), to.getX(), to.getZ());
             }
         }
     }
 
-    private void addLineMarkerDots(String markerId, int x0, int z0, int x1, int z1, boolean extra) {
+    private void addLineMarkerDots(String markerId, int x0, int z0, int x1, int z1) {
         int dx = abs(x1 - x0);
         int sx = x0 < x1 ? 1 : -1;
         int dz = -abs(z1 - z0);
@@ -660,8 +652,7 @@ public class FrontierOverlay extends FrontierData {
             }
 
             BlockPos pos = new BlockPos(x0, 70, z0);
-            MarkerOverlay dot = new MarkerOverlay(MapFrontiers.MODID, markerId + "_" + i, pos,
-                    extra ? markerDotExtra : markerDot);
+            MarkerOverlay dot = new MarkerOverlay(MapFrontiers.MODID, markerId + "_" + i, pos, markerDot);
             dot.setDimension(dimension);
             dot.setDisplayOrder(99);
             int minZoom = 0;

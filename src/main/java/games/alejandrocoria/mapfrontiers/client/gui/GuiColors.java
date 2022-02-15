@@ -13,13 +13,14 @@ public final class GuiColors {
     public static final int WHITE = 0xffffffff;
     public static final int BLACK = 0xff000000;
 
-    public static final int COLOR_INDICATOR_BORDER = 0xff000000;
+    public static final int COLOR_INDICATOR_BORDER = 0xffffffff;
     public static final int BOOKMARK_TEXT = 0xffffffff;
     public static final int BOOKTAG_TEXT = 0xffeeeeee;
     public static final int LABEL_TEXT_DEFAULT = 0xff000000;
     public static final int INDEX_TEXT = 0xff777777;
     public static final int INDEX_TEXT_HIGHLIGHT = 0xff000000;
     public static final int INDEX_SEPARATOR = 0x1a999999;
+    public static final int LABEL_TEXT = 0xff00ffff;
 
     public static final int HUD_FRAME_DEFAULT = 0xff000000;
     public static final int HUD_TEXT_NAME_DEFAULT = 0xffffffff;
@@ -44,10 +45,10 @@ public final class GuiColors {
     public static final int SETTINGS_TAB_BORDER = 0xff777777;
     public static final int SETTINGS_TAB_TEXT = 0xff777777;
     public static final int SETTINGS_TAB_TEXT_HIGHLIGHT = 0xffffffff;
-    public static final int SETTINGS_TEXT_BOX_BORDER = 0xff444444;
+    public static final int SETTINGS_TEXT_BOX_BORDER = 0xffa0a0a0;
     public static final int SETTINGS_TEXT_BOX_BG = 0xff000000;
-    public static final int SETTINGS_TEXT_BOX_TEXT = 0xff000000;
-    public static final int SETTINGS_TEXT_BOX_TEXT_HIGHLIGHT = 0xff222222;
+    public static final int SETTINGS_TEXT_BOX_TEXT = 0xffdddddd;
+    public static final int SETTINGS_TEXT_BOX_TEXT_HIGHLIGHT = 0xffffffff;
     public static final int SETTINGS_TEXT_BOX_TEXT_DEFAULT = 0xffbbbbbb;
     public static final int SETTINGS_TEXT_BOX_EXTRA_BORDER = 0xffa0a0a0;
     public static final int SETTINGS_TEXT_BOX_EXTRA_BG = 0xff000000;

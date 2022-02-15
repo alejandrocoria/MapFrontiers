@@ -13,11 +13,18 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class GuiSettingsButton extends Button {
-    private final GuiSimpleLabel label;
+    private final Font font;
+    private GuiSimpleLabel label;
 
-    public GuiSettingsButton(Font font, int x, int y, int width, Component text,
-            Button.OnPress pressedAction) {
+    public GuiSettingsButton(Font font, int x, int y, int width, Component text, Button.OnPress pressedAction) {
         super(x, y, width, 16, text, pressedAction);
+        this.font = font;
+        this.label = new GuiSimpleLabel(font, x + width / 2, y + 5, GuiSimpleLabel.Align.Center, text,
+                GuiColors.SETTINGS_BUTTON_TEXT);
+    }
+
+    @Override
+    public void setMessage(Component text) {
         this.label = new GuiSimpleLabel(font, x + width / 2, y + 5, GuiSimpleLabel.Align.Center, text,
                 GuiColors.SETTINGS_BUTTON_TEXT);
     }

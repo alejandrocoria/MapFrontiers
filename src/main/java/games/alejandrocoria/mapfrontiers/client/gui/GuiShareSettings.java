@@ -134,7 +134,7 @@ public class GuiShareSettings extends Screen
 
     @Override
     public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        parent.render(matrixStack, -1, -1, partialTicks);
+        //parent.render(matrixStack, -1, -1, partialTicks);
 
         renderBackground(matrixStack);
 
@@ -240,7 +240,8 @@ public class GuiShareSettings extends Screen
     @Override
     public void onClose() {
         minecraft.keyboardHandler.setSendRepeatsToGui(false);
-        minecraft.setScreen(parent);
+        super.onClose();
+        //minecraft.setScreen(parent);
     }
 
     public void newFrontierMessage(FrontierOverlay frontierOverlay, int playerID) {
@@ -267,7 +268,7 @@ public class GuiShareSettings extends Screen
     }
 
     public void reloadPage(boolean syncFrontierWithServer) {
-        parent.reloadPage(syncFrontierWithServer);
+        //parent.reloadPage(syncFrontierWithServer);
     }
 
     private void resetLabels() {
@@ -323,7 +324,7 @@ public class GuiShareSettings extends Screen
                 updateUsers();
                 updateButtonsVisibility();
             } else {
-                parent.reloadPage(false);
+                //parent.reloadPage(false);
             }
         }
 

@@ -8,6 +8,7 @@ import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiShareSettings;
+import games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
@@ -65,6 +66,8 @@ public class PacketFrontierUpdated {
                 } else if (Minecraft.getInstance().screen instanceof GuiShareSettings) {
                     ((GuiShareSettings) Minecraft.getInstance().screen).updateFrontierMessage(frontierOverlay,
                             message.playerID);
+                } else {
+                    MapFrontiersPlugin.updateFrontierMessage(frontierOverlay);
                 }
             }
         }
