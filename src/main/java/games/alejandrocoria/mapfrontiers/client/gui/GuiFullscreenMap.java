@@ -31,6 +31,7 @@ public class GuiFullscreenMap {
 
     private FrontierOverlay frontierHighlighted;
 
+    private IThemeButton buttonFrontiers;
     private IThemeButton buttonNew;
     private IThemeButton buttonInfo;
     private IThemeButton buttonEdit;
@@ -50,6 +51,7 @@ public class GuiFullscreenMap {
     }
 
     public void addButtons(ThemeButtonDisplay buttonDisplay) {
+        buttonFrontiers = buttonDisplay.addThemeButton("frontiers...", "frontiers", b -> buttonFrontiersPressed());
         buttonNew = buttonDisplay.addThemeButton("new frontier", "new_frontier", b -> buttonNewPressed());
         buttonInfo = buttonDisplay.addThemeButton("frontier info", "info_frontier", b -> buttonInfoPressed());
         buttonEdit = buttonDisplay.addThemeToggleButton("done editing", "edit frontier", "edit_frontier", editing, b -> buttonEditToggled());
@@ -82,6 +84,7 @@ public class GuiFullscreenMap {
             return;
         }
 
+        buttonFrontiers.setEnabled(!editing);
         buttonNew.setEnabled(!editing);
         buttonInfo.setEnabled(frontierHighlighted != null && !editing);
         buttonEdit.setEnabled(frontierHighlighted != null);
@@ -93,6 +96,11 @@ public class GuiFullscreenMap {
         } else {
             buttonClosed.setToggled(false);
         }
+    }
+
+    private void buttonFrontiersPressed() {
+        GuiFrontierList guiFrontierList = new GuiFrontierList(jmAPI);
+        ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), guiFrontierList);
     }
 
     private void buttonNewPressed() {
@@ -172,6 +180,8 @@ public class GuiFullscreenMap {
 
             if (ConfigData.afterCreatingFrontier == ConfigData.AfterCreatingFrontier.Edit) {
                 buttonEditToggled();
+            } else if (ConfigData.afterCreatingFrontier == ConfigData.AfterCreatingFrontier.Info) {
+                buttonInfoPressed();
             }
         }
     }

@@ -68,6 +68,16 @@ public class GuiScrollBox extends AbstractWidget {
         return null;
     }
 
+    public void removeElement(ScrollElement element) {
+        ListIterator<ScrollElement> it = elements.listIterator();
+        while (it.hasNext()) {
+            if (it.next() == element) {
+                removeElement(element, it);
+                return;
+            }
+        }
+    }
+
     private void removeElement(ScrollElement element, ListIterator<ScrollElement> it) {
         element.delete();
         it.remove();
