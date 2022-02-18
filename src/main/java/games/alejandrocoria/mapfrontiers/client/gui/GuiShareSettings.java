@@ -6,8 +6,12 @@ import java.util.UUID;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import games.alejandrocoria.mapfrontiers.client.event.NewFrontierEvent;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Widget;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.apache.commons.lang3.StringUtils;
 
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -60,6 +64,8 @@ public class GuiShareSettings extends Screen
 
         guiTexture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/gui.png");
         labels = new ArrayList<>();
+
+        MinecraftForge.EVENT_BUS.register(this);
     }
 
     @Override
@@ -239,13 +245,10 @@ public class GuiShareSettings extends Screen
 
     @Override
     public void onClose() {
+        MinecraftForge.EVENT_BUS.unregister(this);
         minecraft.keyboardHandler.setSendRepeatsToGui(false);
         super.onClose();
         //minecraft.setScreen(parent);
-    }
-
-    public void newFrontierMessage(FrontierOverlay frontierOverlay, int playerID) {
-        parent.newFrontierMessage(frontierOverlay, playerID);
     }
 
     public void updateFrontierMessage(FrontierOverlay frontierOverlay, int playerID) {

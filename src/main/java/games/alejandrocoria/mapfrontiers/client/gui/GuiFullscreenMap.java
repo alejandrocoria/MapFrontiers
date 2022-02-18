@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.client.event.NewFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.Context;
@@ -16,6 +17,9 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.ForgeHooksClient;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -42,12 +46,14 @@ public class GuiFullscreenMap {
 
     public GuiFullscreenMap(IClientAPI jmAPI) {
         this.jmAPI = jmAPI;
+        MinecraftForge.EVENT_BUS.register(this);
     }
 
     public void close() {
         if (frontierHighlighted != null) {
             frontierHighlighted.setHighlighted(false);
         }
+        MinecraftForge.EVENT_BUS.unregister(this);
     }
 
     public void addButtons(ThemeButtonDisplay buttonDisplay) {
@@ -66,6 +72,31 @@ public class GuiFullscreenMap {
             popupMenu.addMenuItem("add vertex", p -> buttonAddVertex(p));
             if (frontierHighlighted.getSelectedVertexIndex() != -1) {
                 popupMenu.addMenuItem("remove vertex", p -> buttonRemoveVertex());
+            }
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onNewFrontierEvent(NewFrontierEvent event) {
+        if (event.frontierOverlay.getDimension() != jmAPI.getUIState(Context.UI.Fullscreen).dimension) {
+            return;
+        }
+
+        if (event.playerID == -1 || Minecraft.getInstance().player.getId() == event.playerID) {
+            stopEditing();
+            if (frontierHighlighted != null) {
+                frontierHighlighted.setHighlighted(false);
+            }
+
+            frontierHighlighted = event.frontierOverlay;
+            frontierHighlighted.setHighlighted(true);
+
+            updatebuttons();
+
+            if (ConfigData.afterCreatingFrontier == ConfigData.AfterCreatingFrontier.Edit) {
+                buttonEditToggled();
+            } else if (ConfigData.afterCreatingFrontier == ConfigData.AfterCreatingFrontier.Info) {
+                buttonInfoPressed();
             }
         }
     }
@@ -160,30 +191,6 @@ public class GuiFullscreenMap {
         frontierHighlighted.removeSelectedVertex();
 
         updatebuttons();
-    }
-
-    public void newFrontierMessage(FrontierOverlay frontierOverlay, int playerID) {
-        if (frontierOverlay.getDimension() != jmAPI.getUIState(Context.UI.Fullscreen).dimension) {
-            return;
-        }
-
-        if (playerID == -1 || Minecraft.getInstance().player.getId() == playerID) {
-            stopEditing();
-            if (frontierHighlighted != null) {
-                frontierHighlighted.setHighlighted(false);
-            }
-
-            frontierHighlighted = frontierOverlay;
-            frontierHighlighted.setHighlighted(true);
-
-            updatebuttons();
-
-            if (ConfigData.afterCreatingFrontier == ConfigData.AfterCreatingFrontier.Edit) {
-                buttonEditToggled();
-            } else if (ConfigData.afterCreatingFrontier == ConfigData.AfterCreatingFrontier.Info) {
-                buttonInfoPressed();
-            }
-        }
     }
 
     public void updateFrontierMessage(FrontierOverlay frontierOverlay) {

@@ -4,9 +4,11 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.client.event.NewFrontierEvent;
 import journeymap.client.api.IClientAPI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Widget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
@@ -14,6 +16,9 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.ForgeHooksClient;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.*;
@@ -25,6 +30,7 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
 
     private GuiScrollBox frontiers;
     private GuiSettingsButton buttonCreate;
+    private GuiSettingsButton buttonEdit;
     private GuiSettingsButton buttonDelete;
     private GuiSettingsButton buttonDone;
 
@@ -37,25 +43,31 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
 
         labels = new ArrayList<>();
         labelTooltips = new HashMap<>();
+
+        MinecraftForge.EVENT_BUS.register(this);
     }
 
     @Override
     public void init() {
-        frontiers = new GuiScrollBox(width / 2 - 300, 50, 600, height - 120, 21, this);
+        frontiers = new GuiScrollBox(width / 2 - 300, 50, 450, height - 120, 24, this);
 
-        buttonCreate = new GuiSettingsButton(font, width / 2 - 230, height - 30, 140,
+        buttonCreate = new GuiSettingsButton(font, width / 2 - 295, height - 30, 140,
                 new TranslatableComponent("mapfrontiers.create"), this::buttonPressed);
-        buttonDelete = new GuiSettingsButton(font, width / 2 - 70, height - 30, 140,
+        buttonEdit = new GuiSettingsButton(font, width / 2 - 145, height - 30, 140,
+                new TranslatableComponent("mapfrontiers.edit"), this::buttonPressed);
+        buttonDelete = new GuiSettingsButton(font, width / 2 + 5, height - 30, 140,
                 new TranslatableComponent("mapfrontiers.delete"), this::buttonPressed);
-        buttonDone = new GuiSettingsButton(font, width / 2 + 90, height - 30, 140,
+        buttonDone = new GuiSettingsButton(font, width / 2 + 155, height - 30, 140,
                 new TranslatableComponent("gui.done"), this::buttonPressed);
 
         addRenderableWidget(frontiers);
         addRenderableWidget(buttonCreate);
+        addRenderableWidget(buttonEdit);
         addRenderableWidget(buttonDelete);
         addRenderableWidget(buttonDone);
 
         updateFrontiers();
+        updateButtons();
     }
 
     @Override
@@ -80,11 +92,33 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
         }
     }
 
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        for (Widget w : renderables) {
+            if (w instanceof GuiScrollBox) {
+                ((GuiScrollBox) w).mouseReleased();
+            }
+        }
+
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onNewFrontierEvent(NewFrontierEvent event) {
+        updateFrontiers();
+        updateButtons();
+    }
+
     protected void buttonPressed(Button button) {
         if (button == buttonCreate) {
             ForgeHooksClient.popGuiLayer(minecraft);
             GuiNewFrontier guiNewFrontier = new GuiNewFrontier(jmAPI);
             ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), guiNewFrontier);
+        } else if (button == buttonEdit) {
+            ForgeHooksClient.popGuiLayer(minecraft);
+            FrontierOverlay frontier = ((GuiFrontierListElement) frontiers.getSelectedElement()).getFrontier();
+            GuiFrontierInfo guiFrontierInfo = new GuiFrontierInfo(jmAPI, frontier);
+            ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), guiFrontierInfo);
         } else if (button == buttonDelete) {
             FrontierOverlay frontier = ((GuiFrontierListElement) frontiers.getSelectedElement()).getFrontier();
             FrontiersOverlayManager frontierManager = ClientProxy.getFrontiersOverlayManager(frontier.getPersonal());
@@ -100,11 +134,19 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
         if (scrollBox == frontiers) {
 
         }
+
+        updateButtons();
     }
 
     @Override
     public void elementDelete(GuiScrollBox scrollBox, GuiScrollBox.ScrollElement element) {
+        updateButtons();
+    }
 
+    @Override
+    public void onClose() {
+        MinecraftForge.EVENT_BUS.unregister(this);
+        super.onClose();
     }
 
     private void updateFrontiers() {
@@ -121,5 +163,10 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
                 frontiers.addElement(new GuiFrontierListElement(font, renderables, frontier));
             }
         }
+    }
+
+    private void updateButtons() {
+        buttonEdit.visible = frontiers.getSelectedElement() != null;
+        buttonDelete.visible = frontiers.getSelectedElement() != null;
     }
 }

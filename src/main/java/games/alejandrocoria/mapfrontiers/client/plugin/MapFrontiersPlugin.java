@@ -101,12 +101,6 @@ public class MapFrontiersPlugin implements IClientPlugin {
         }
     }
 
-    public static void newFrontierMessage(FrontierOverlay frontierOverlay, int playerID) {
-        if (fullscreenMap != null) {
-            fullscreenMap.newFrontierMessage(frontierOverlay, playerID);
-        }
-    }
-
     public static void updateFrontierMessage(FrontierOverlay frontierOverlay) {
         if (fullscreenMap != null) {
             fullscreenMap.updateFrontierMessage(frontierOverlay);
