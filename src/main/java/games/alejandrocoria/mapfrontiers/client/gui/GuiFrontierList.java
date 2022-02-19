@@ -4,7 +4,9 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.client.event.DeletedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.client.event.NewFrontierEvent;
+import games.alejandrocoria.mapfrontiers.client.event.UpdatedFrontierEvent;
 import journeymap.client.api.IClientAPI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
@@ -105,6 +107,18 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onNewFrontierEvent(NewFrontierEvent event) {
+        updateFrontiers();
+        updateButtons();
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onUpdatedFrontierEvent(UpdatedFrontierEvent event) {
+        updateFrontiers();
+        updateButtons();
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onDeletedFrontierEvent(DeletedFrontierEvent event) {
         updateFrontiers();
         updateButtons();
     }

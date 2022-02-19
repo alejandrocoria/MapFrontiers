@@ -5,7 +5,11 @@ import java.util.List;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import games.alejandrocoria.mapfrontiers.client.event.DeletedFrontierEvent;
+import games.alejandrocoria.mapfrontiers.client.event.NewFrontierEvent;
+import games.alejandrocoria.mapfrontiers.client.event.UpdatedFrontierEvent;
 import journeymap.client.JourneymapClient;
+import net.minecraftforge.eventbus.api.EventPriority;
 import org.apache.commons.lang3.StringUtils;
 
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -211,7 +215,22 @@ public class GuiHUD {
         }
     }
 
-    public void frontierChanged() {
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onNewFrontierEvent(NewFrontierEvent event) {
+        frontierChanged();
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onUpdatedFrontierEvent(UpdatedFrontierEvent event) {
+        frontierChanged();
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onDeletedFrontierEvent(DeletedFrontierEvent event) {
+        frontierChanged();
+    }
+
+    private void frontierChanged() {
         if (previewMode || frontiersOverlayManager == null || personalFrontiersOverlayManager == null) {
             return;
         }

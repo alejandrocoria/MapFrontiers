@@ -6,6 +6,8 @@ import java.util.function.Supplier;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
+import games.alejandrocoria.mapfrontiers.client.event.DeletedFrontierEvent;
+import games.alejandrocoria.mapfrontiers.client.event.NewFrontierEvent;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiShareSettings;
 import games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin;
@@ -17,6 +19,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -63,17 +66,12 @@ public class PacketFrontierDeleted {
         int frontierIndex = ClientProxy.getFrontiersOverlayManager(message.personal).deleteFrontier(message.dimension,
                 message.frontierID);
 
-        ClientProxy.frontierChanged();
-
         if (frontierIndex != -1) {
             if (Minecraft.getInstance().screen instanceof GuiFrontierBook) {
                 ((GuiFrontierBook) Minecraft.getInstance().screen).deleteFrontierMessage(frontierIndex, message.dimension,
                         message.personal, message.playerID);
-            } else if (Minecraft.getInstance().screen instanceof GuiShareSettings) {
-                ((GuiShareSettings) Minecraft.getInstance().screen).deleteFrontierMessage(frontierIndex, message.dimension,
-                        message.frontierID, message.personal, message.playerID);
             } else {
-                MapFrontiersPlugin.deleteFrontierMessage(message.frontierID);
+                MinecraftForge.EVENT_BUS.post(new DeletedFrontierEvent(message.frontierID));
             }
         }
         ctx.setPacketHandled(true);

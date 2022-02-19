@@ -3,7 +3,9 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.client.event.DeletedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.client.event.NewFrontierEvent;
+import games.alejandrocoria.mapfrontiers.client.event.UpdatedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.Context;
@@ -101,6 +103,25 @@ public class GuiFullscreenMap {
         }
     }
 
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onUpdatedFrontierEvent(UpdatedFrontierEvent event) {
+        if (frontierHighlighted != null && frontierHighlighted.getId().equals(event.frontierOverlay.getId())) {
+            frontierHighlighted = event.frontierOverlay;
+            frontierHighlighted.setHighlighted(true);
+            editing = false;
+            updatebuttons();
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onDeletedFrontierEvent(DeletedFrontierEvent event) {
+        if (frontierHighlighted != null && frontierHighlighted.getId().equals(event.frontierID)) {
+            frontierHighlighted = null;
+            editing = false;
+            updatebuttons();
+        }
+    }
+
     public void stopEditing() {
         if (editing) {
             editing = false;
@@ -191,23 +212,6 @@ public class GuiFullscreenMap {
         frontierHighlighted.removeSelectedVertex();
 
         updatebuttons();
-    }
-
-    public void updateFrontierMessage(FrontierOverlay frontierOverlay) {
-        if (frontierHighlighted != null && frontierHighlighted.getId().equals(frontierOverlay.getId())) {
-            frontierHighlighted = frontierOverlay;
-            frontierHighlighted.setHighlighted(true);
-            editing = false;
-            updatebuttons();
-        }
-    }
-
-    public void deleteFrontierMessage(UUID frontierID) {
-        if (frontierHighlighted != null && frontierHighlighted.getId().equals(frontierID)) {
-            frontierHighlighted = null;
-            editing = false;
-            updatebuttons();
-        }
     }
 
     public boolean isEditing() {

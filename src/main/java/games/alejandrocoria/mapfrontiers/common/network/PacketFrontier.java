@@ -58,8 +58,6 @@ public class PacketFrontier {
         FrontierOverlay frontierOverlay = ClientProxy.getFrontiersOverlayManager(message.frontier.getPersonal())
                 .addFrontier(message.frontier);
 
-        ClientProxy.frontierChanged();
-
         if (frontierOverlay != null) {
             if (Minecraft.getInstance().screen instanceof GuiFrontierBook) {
                 ((GuiFrontierBook) Minecraft.getInstance().screen).newFrontierMessage(frontierOverlay, message.playerID);

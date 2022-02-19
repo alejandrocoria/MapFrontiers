@@ -101,18 +101,6 @@ public class MapFrontiersPlugin implements IClientPlugin {
         }
     }
 
-    public static void updateFrontierMessage(FrontierOverlay frontierOverlay) {
-        if (fullscreenMap != null) {
-            fullscreenMap.updateFrontierMessage(frontierOverlay);
-        }
-    }
-
-    public static void deleteFrontierMessage(UUID frontierID) {
-        if (fullscreenMap != null) {
-            fullscreenMap.deleteFrontierMessage(frontierID);
-        }
-    }
-
     public static boolean isEditing() {
         return fullscreenMap != null && fullscreenMap.isEditing();
     }

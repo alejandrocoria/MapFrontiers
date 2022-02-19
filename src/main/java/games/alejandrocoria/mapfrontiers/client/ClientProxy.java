@@ -275,10 +275,4 @@ public class ClientProxy {
             guiHUD.configUpdated(Minecraft.getInstance().getWindow());
         }
     }
-
-    public static void frontierChanged() {
-        if (guiHUD != null) {
-            guiHUD.frontierChanged();
-        }
-    }
 }

@@ -6,7 +6,9 @@ import java.util.UUID;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import games.alejandrocoria.mapfrontiers.client.event.DeletedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.client.event.NewFrontierEvent;
+import games.alejandrocoria.mapfrontiers.client.event.UpdatedFrontierEvent;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Widget;
 import net.minecraftforge.common.MinecraftForge;
@@ -251,21 +253,19 @@ public class GuiShareSettings extends Screen
         //minecraft.setScreen(parent);
     }
 
-    public void updateFrontierMessage(FrontierOverlay frontierOverlay, int playerID) {
-        parent.updateFrontierMessage(frontierOverlay, playerID);
-
-        if (frontierOverlay.getId().equals(frontier.getId())) {
-            frontier = frontierOverlay;
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onUpdatedFrontierEvent(UpdatedFrontierEvent event) {
+        if (event.frontierOverlay.getId().equals(frontier.getId())) {
+            frontier = event.frontierOverlay;
             updateCanUpdate();
             updateUsers();
             updateButtonsVisibility();
         }
     }
 
-    public void deleteFrontierMessage(int index, ResourceKey<Level> dimension, UUID frontierID, boolean personal, int playerID) {
-        parent.deleteFrontierMessage(index, dimension, personal, playerID);
-
-        if (frontierID.equals(frontier.getId())) {
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onDeletedFrontierEvent(DeletedFrontierEvent event) {
+        if (event.frontierID.equals(frontier.getId())) {
             minecraft.setScreen(parent);
         }
     }
