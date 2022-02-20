@@ -53,10 +53,24 @@ public class TextBox extends EditBox {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        boolean res = super.keyPressed(keyCode, scanCode, modifiers);
+    public boolean charTyped(char c, int key) {
+        boolean res = false;
+        if (isHoveredOrFocused()) {
+            res = super.charTyped(c, key);
+            if (res && responder != null) {
+                responder.updatedValue(this, getValue());
+            }
+        }
 
-        if (isFocused() && responder != null) {
+        return res;
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        boolean res = false;
+        if (isHoveredOrFocused()) {
+            res = super.keyPressed(keyCode, scanCode, modifiers);
+
             if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
                 changeFocus(false);
             }

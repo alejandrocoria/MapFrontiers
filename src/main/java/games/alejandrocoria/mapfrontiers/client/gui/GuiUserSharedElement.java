@@ -97,16 +97,7 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
             buttonDelete.visible = isHovered;
         }
 
-        String text = user.getUser().username;
-        if (StringUtils.isBlank(text)) {
-            if (user.getUser().uuid == null) {
-                text = I18n.get("mapfrontiers.unnamed", ChatFormatting.ITALIC);
-            } else {
-                text = user.getUser().uuid.toString();
-            }
-        }
-
-        font.draw(matrixStack, text, x + 4.f, y + 4.f, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
+        font.draw(matrixStack, user.getUser().toString(), x + 4.f, y + 4.f, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
 
         drawBox(matrixStack, x + 244, y + 2, updateFrontier);
         drawBox(matrixStack, x + 304, y + 2, updateSettings);

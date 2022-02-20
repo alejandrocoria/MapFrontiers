@@ -21,9 +21,11 @@ public class GuiFrontierListElement extends GuiScrollBox.ScrollElement {
     String name1;
     String name2;
     String type;
+    String owner;
     String dimension;
     String vertices;
     int verticesOffset;
+    int ownerOffset;
     final List<Widget> buttonList;
 
     public GuiFrontierListElement(Font font, List<Widget> buttonList, FrontierOverlay frontier) {
@@ -39,12 +41,15 @@ public class GuiFrontierListElement extends GuiScrollBox.ScrollElement {
         }
 
         type = I18n.get("mapfrontiers.type", I18n.get(frontier.getPersonal() ? "mapfrontiers.personal" : "mapfrontiers.global"));
+        owner = I18n.get("mapfrontiers.owner", frontier.getOwner());
         dimension = I18n.get("mapfrontiers.dimension", frontier.getDimension().location().toString());
         vertices = I18n.get("mapfrontiers.vertices", frontier.getVertexCount());
 
         verticesOffset = StringHelper.getMaxWidth(font,
                 I18n.get("mapfrontiers.type", I18n.get("mapfrontiers.personal")),
                 I18n.get("mapfrontiers.type", I18n.get("mapfrontiers.global")));
+
+        ownerOffset = font.width(I18n.get("mapfrontiers.vertices", 999));
 
         this.buttonList = buttonList;
     }
@@ -83,6 +88,7 @@ public class GuiFrontierListElement extends GuiScrollBox.ScrollElement {
         font.draw(matrixStack, type, x + 170, y + 4, color);
         font.draw(matrixStack, dimension, x + 170, y + 14, color);
         font.draw(matrixStack, vertices, x + 180 + verticesOffset, y + 4, color);
+        font.draw(matrixStack, owner, x + 190 + verticesOffset + ownerOffset, y + 4, color);
 
         fill(matrixStack, x + 1, y + 1, x + 23, y + 23, GuiColors.COLOR_INDICATOR_BORDER);
         fill(matrixStack, x + 2, y + 2, x + 22, y + 22, frontier.getColor() | 0xff000000);

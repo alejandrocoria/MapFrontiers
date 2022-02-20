@@ -7,6 +7,7 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.lwjgl.glfw.GLFW;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -39,17 +40,39 @@ public class TextColorBox extends EditBox {
     }
 
     @Override
+    public boolean charTyped(char c, int key) {
+        boolean res = false;
+        if (isHoveredOrFocused()) {
+            res = super.charTyped(c, key);
+            if (res) {
+                Integer integer = clamped();
+                setValue(integer);
+
+                moveCursorToStart();
+                moveCursorToEnd();
+
+                if (responder != null) {
+                    responder.updatedValue(this, integer);
+                }
+            }
+        }
+
+        return res;
+    }
+
+    @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        boolean res = super.keyPressed(keyCode, scanCode, modifiers);
+        boolean res = false;
+        if (isHoveredOrFocused()) {
+            res = super.keyPressed(keyCode, scanCode, modifiers);
 
-        Integer integer = clamped();
-        setValue(integer);
+            if (responder != null && (keyCode == GLFW.GLFW_KEY_BACKSPACE || keyCode == GLFW.GLFW_KEY_DELETE)) {
+                responder.updatedValue(this, clamped());
+            }
 
-        moveCursorToStart();
-        moveCursorToEnd();
-
-        if (responder != null) {
-            responder.updatedValue(this, integer);
+            if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+                changeFocus(false);
+            }
         }
 
         return res;

@@ -83,16 +83,7 @@ public class GuiUserElement extends GuiScrollBox.ScrollElement {
             buttonDelete.visible = false;
         }
 
-        String text = user.username;
-        if (StringUtils.isBlank(text)) {
-            if (user.uuid == null) {
-                text = I18n.get("mapfrontiers.unnamed", ChatFormatting.ITALIC);
-            } else {
-                text = user.uuid.toString();
-            }
-        }
-
-        font.draw(matrixStack, text, x + 4.f, y + 4.f, color);
+        font.draw(matrixStack, user.toString(), x + 4.f, y + 4.f, color);
 
         if (pingBar > 0) {
             drawPingLine(matrixStack, x - 11, y + 11, 2);

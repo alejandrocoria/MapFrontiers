@@ -110,17 +110,20 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
                 new TranslatableComponent(frontier.getPersonal() ? "mapfrontiers.personal" : "mapfrontiers.global"));
         labels.add(new GuiSimpleLabel(font, rightSide, top, GuiSimpleLabel.Align.Left, type, GuiColors.WHITE));
 
+        Component owner = new TranslatableComponent("mapfrontiers.owner", frontier.getOwner());
+        labels.add(new GuiSimpleLabel(font, rightSide, top + 16, GuiSimpleLabel.Align.Left, owner, GuiColors.WHITE));
+
         Component dimension = new TranslatableComponent("mapfrontiers.dimension", frontier.getDimension().location().toString());
-        labels.add(new GuiSimpleLabel(font, rightSide, top + 16, GuiSimpleLabel.Align.Left, dimension, GuiColors.WHITE));
+        labels.add(new GuiSimpleLabel(font, rightSide, top + 32, GuiSimpleLabel.Align.Left, dimension, GuiColors.WHITE));
 
         Component vertices = new TranslatableComponent("mapfrontiers.vertices", frontier.getVertexCount());
-        labels.add(new GuiSimpleLabel(font, rightSide, top + 32, GuiSimpleLabel.Align.Left, vertices, GuiColors.WHITE));
+        labels.add(new GuiSimpleLabel(font, rightSide, top + 48, GuiSimpleLabel.Align.Left, vertices, GuiColors.WHITE));
 
         Component area = new TranslatableComponent("mapfrontiers.area", frontier.area);
-        labels.add(new GuiSimpleLabel(font, rightSide, top + 48, GuiSimpleLabel.Align.Left, area, GuiColors.WHITE));
+        labels.add(new GuiSimpleLabel(font, rightSide, top + 64, GuiSimpleLabel.Align.Left, area, GuiColors.WHITE));
 
         Component perimeter = new TranslatableComponent("mapfrontiers.perimeter", frontier.perimeter);
-        labels.add(new GuiSimpleLabel(font, rightSide, top + 64, GuiSimpleLabel.Align.Left, perimeter, GuiColors.WHITE));
+        labels.add(new GuiSimpleLabel(font, rightSide, top + 80, GuiSimpleLabel.Align.Left, perimeter, GuiColors.WHITE));
 
         buttonSelect = new GuiSettingsButton(font, leftSide, top + 142, 144,
                 new TranslatableComponent("mapfrontiers.select_in_map"), this::buttonPressed);
@@ -187,6 +190,19 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
                 renderTooltip(matrixStack, tooltip, Optional.empty(), mouseX, mouseY);
             }
         }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        if (mouseButton == 0) {
+            textName1.mouseClicked(mouseX, mouseY, mouseButton);
+            textName2.mouseClicked(mouseX, mouseY, mouseButton);
+            textRed.mouseClicked(mouseX, mouseY, mouseButton);
+            textGreen.mouseClicked(mouseX, mouseY, mouseButton);
+            textBlue.mouseClicked(mouseX, mouseY, mouseButton);
+        }
+
+        return super.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     protected void buttonPressed(Button button) {
