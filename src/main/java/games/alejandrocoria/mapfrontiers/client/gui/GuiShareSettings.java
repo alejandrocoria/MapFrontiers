@@ -76,11 +76,9 @@ public class GuiShareSettings extends Screen
 
         users = new GuiScrollBox(width / 2 - 215, 82, 430, height - 128, 16, this);
 
-        textNewUser = new TextUserBox(minecraft, font, width / 2 - 125, height - 61, 238, I18n.get("mapfrontiers.new_user"));
+        textNewUser = new TextUserBox(minecraft, font, width / 2 - 125, height - 61, 238);
         textNewUser.setMaxLength(38);
         textNewUser.setResponder(this);
-        textNewUser.setCentered(false);
-        textNewUser.setFrame(true);
 
         buttonNewUser = new GuiButtonIcon(width / 2 + 114, height - 61, 13, 13, 494, 119, -23, guiTexture, guiTextureSize,
                 (button) -> buttonNewUserPressed());

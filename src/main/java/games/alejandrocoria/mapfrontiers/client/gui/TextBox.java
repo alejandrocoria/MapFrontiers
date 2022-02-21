@@ -15,18 +15,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class TextBox extends EditBox {
-    protected final Font font;
-    private TextBoxResponder responder;
-    private final String defaultText;
-    private boolean centered = true;
-    private int color = GuiColors.SETTINGS_TEXT_BOX_TEXT;
-    private int highlightedColor = GuiColors.SETTINGS_TEXT_BOX_TEXT_HIGHLIGHT;
-    private boolean frame = false;
 
-    public TextBox(Font font, int x, int y, int width, String defaultText) {
+    private TextBoxResponder responder;
+
+    public TextBox(Font font, int x, int y, int width) {
         super(font, x, y, width, 12, TextComponent.EMPTY);
-        this.font = font;
-        this.defaultText = defaultText;
     }
 
     public void setResponder(TextBoxResponder responderIn) {
@@ -34,28 +27,10 @@ public class TextBox extends EditBox {
         this.setResponder((string) -> responder.updatedValue(this, string));
     }
 
-    public void setCentered(boolean centered) {
-        this.centered = centered;
-    }
-
-    public void setColor(int color) {
-        this.color = color;
-        highlightedColor = color;
-    }
-
-    public void setColor(int color, int highlightedColor) {
-        this.color = color;
-        this.highlightedColor = highlightedColor;
-    }
-
-    public void setFrame(boolean frame) {
-        this.frame = frame;
-    }
-
     @Override
     public boolean charTyped(char c, int key) {
         boolean res = false;
-        if (isHoveredOrFocused()) {
+        if (active && isHoveredOrFocused()) {
             res = super.charTyped(c, key);
             if (res && responder != null) {
                 responder.updatedValue(this, getValue());
@@ -68,7 +43,7 @@ public class TextBox extends EditBox {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         boolean res = false;
-        if (isHoveredOrFocused()) {
+        if (active && isHoveredOrFocused()) {
             res = super.keyPressed(keyCode, scanCode, modifiers);
 
             if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
@@ -77,36 +52,6 @@ public class TextBox extends EditBox {
         }
 
         return res;
-    }
-
-    @Override
-    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        if (isFocused()) {
-            super.renderButton(matrixStack, mouseX, mouseY, partialTicks);
-        } else {
-            boolean hovered = (mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height);
-
-            String text = getValue();
-            boolean empty = false;
-            if (text.isEmpty()) {
-                text = defaultText;
-                empty = true;
-            }
-
-            int widthOfString = font.width(text);
-            int posX = x + 4;
-            if (centered) {
-                posX = x - widthOfString / 2 + width / 2;
-            }
-
-            if (frame) {
-                fill(matrixStack, x - 1, y - 1, x + width + 1, y + height + 1, GuiColors.SETTINGS_TEXT_BOX_BORDER);
-                fill(matrixStack, x, y, x + width, y + height, GuiColors.SETTINGS_TEXT_BOX_BG);
-            }
-
-            font.draw(matrixStack, text, posX, y + height / 2 - 4,
-                    empty ? GuiColors.SETTINGS_TEXT_BOX_TEXT_DEFAULT : (hovered ? highlightedColor : color));
-        }
     }
 
     @Override

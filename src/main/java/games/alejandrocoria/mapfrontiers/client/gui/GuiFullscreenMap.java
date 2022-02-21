@@ -7,6 +7,9 @@ import games.alejandrocoria.mapfrontiers.client.event.DeletedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.client.event.NewFrontierEvent;
 import games.alejandrocoria.mapfrontiers.client.event.UpdatedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.Context;
 import journeymap.client.api.display.IThemeButton;
@@ -136,12 +139,16 @@ public class GuiFullscreenMap {
             return;
         }
 
+        SettingsProfile profile = ClientProxy.getSettingsProfile();
+        SettingsUser playerUser = new SettingsUser(Minecraft.getInstance().player);
+        SettingsProfile.AvailableActions actions = profile.getAvailableActions(frontierHighlighted, playerUser);
+
         buttonFrontiers.setEnabled(!editing);
-        buttonNew.setEnabled(!editing);
+        buttonNew.setEnabled(actions.canCreate && !editing);
         buttonInfo.setEnabled(frontierHighlighted != null && !editing);
-        buttonEdit.setEnabled(frontierHighlighted != null);
-        buttonClosed.setEnabled(frontierHighlighted != null);
-        buttonDelete.setEnabled(frontierHighlighted != null && !editing);
+        buttonEdit.setEnabled(actions.canUpdate);
+        buttonClosed.setEnabled(actions.canUpdate);
+        buttonDelete.setEnabled(actions.canDelete && !editing);
 
         if (frontierHighlighted != null) {
             buttonClosed.setToggled(frontierHighlighted.getClosed());

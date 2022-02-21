@@ -130,21 +130,15 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         buttonNameVisibility.addOption(ConfigData.NameVisibility.Hide.name());
         buttonNameVisibility.setSelected(ConfigData.nameVisibility.ordinal());
 
-        textPolygonsOpacity = new TextBox(font, width / 2 + 50, 118, 100, "");
+        textPolygonsOpacity = new TextBox(font, width / 2 + 50, 118, 100);
         textPolygonsOpacity.setValue(String.valueOf(ConfigData.polygonsOpacity));
         textPolygonsOpacity.setMaxLength(10);
         textPolygonsOpacity.setResponder(this);
-        textPolygonsOpacity.setCentered(false);
-        textPolygonsOpacity.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
-        textPolygonsOpacity.setFrame(true);
 
-        textSnapDistance = new TextBox(font, width / 2 + 50, 134, 100, "");
+        textSnapDistance = new TextBox(font, width / 2 + 50, 134, 100);
         textSnapDistance.setValue(String.valueOf(ConfigData.snapDistance));
         textSnapDistance.setMaxLength(2);
         textSnapDistance.setResponder(this);
-        textSnapDistance.setCentered(false);
-        textSnapDistance.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
-        textSnapDistance.setFrame(true);
 
         buttonHUDEnabled = new GuiOptionButton(font, width / 2 + 50, 188, 100, this::buttonPressed);
         buttonHUDEnabled.addOption("true");
@@ -158,31 +152,24 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         users = new GuiScrollBox(250, 82, 258, height - 150, 16, this);
         groupsActions = new GuiScrollBox(width / 2 - 215, 82, 430, height - 128, 16, this);
 
-        textNewGroupName = new TextBox(font, 50, height - 61, 140, I18n.get("mapfrontiers.new_group_name"));
+        textNewGroupName = new TextBox(font, 50, height - 61, 140);
         textNewGroupName.setMaxLength(22);
         textNewGroupName.setResponder(this);
-        textNewGroupName.setCentered(false);
-        textNewGroupName.setColor(GuiColors.SETTINGS_TEXT_HIGHLIGHT);
-        textNewGroupName.setFrame(true);
 
         buttonNewGroup = new GuiButtonIcon(192, height - 61, 13, 13, 494, 119, -23, guiTexture, guiTextureSize,
                 this::buttonPressed);
 
-        textNewUser = new TextUserBox(minecraft, font, 250, height - 61, 238, I18n.get("mapfrontiers.new_user"));
+        textNewUser = new TextUserBox(minecraft, font, 250, height - 61, 238);
         textNewUser.setMaxLength(38);
         textNewUser.setResponder(this);
-        textNewUser.setCentered(false);
-        textNewUser.setFrame(true);
 
         buttonNewUser = new GuiButtonIcon(490, height - 61, 13, 13, 494, 119, -23, guiTexture, guiTextureSize,
                 this::buttonPressed);
 
-        textGroupName = new TextBox(font, 250, 50, 140, I18n.get("mapfrontiers.edit_group_name"));
+        textGroupName = new TextBox(font, 250, 50, 140);
         textGroupName.setMaxLength(22);
         textGroupName.setResponder(this);
         textGroupName.active = false;
-        textGroupName.setCentered(false);
-        textGroupName.setColor(GuiColors.SETTINGS_TEXT_HIGHLIGHT);
 
         addRenderableWidget(tabbedBox);
         addRenderableWidget(buttonWeb);
@@ -601,36 +588,30 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
     public void lostFocus(TextBox textBox, String value) {
         if (textPolygonsOpacity == textBox && tabSelected == Tab.General) {
             if (StringUtils.isBlank(value)) {
-                textPolygonsOpacity.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                 textPolygonsOpacity.setValue(ConfigData.getDefault("polygonsOpacity"));
                 ConfigData.polygonsOpacity = Double.parseDouble(textPolygonsOpacity.getValue());
                 ClientProxy.configUpdated();
             } else {
                 try {
-                    textPolygonsOpacity.setColor(GuiColors.SETTINGS_TEXT_ERROR, GuiColors.SETTINGS_TEXT_ERROR_HIGHLIGHT);
                     Double opacity = Double.valueOf(value);
                     if (ConfigData.isInRange("polygonsOpacity", opacity)) {
                         ConfigData.polygonsOpacity = opacity;
                         ClientProxy.configUpdated();
-                        textPolygonsOpacity.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                     }
                 } catch (Exception ignored) {
                 }
             }
         } else if (textSnapDistance == textBox && tabSelected == Tab.General) {
             if (StringUtils.isBlank(value)) {
-                textSnapDistance.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                 textSnapDistance.setValue(ConfigData.getDefault("snapDistance"));
                 ConfigData.snapDistance = Integer.parseInt(textSnapDistance.getValue());
                 ClientProxy.configUpdated();
             } else {
                 try {
-                    textSnapDistance.setColor(GuiColors.SETTINGS_TEXT_ERROR, GuiColors.SETTINGS_TEXT_ERROR_HIGHLIGHT);
                     Integer distance = Integer.valueOf(value);
                     if (ConfigData.isInRange("snapDistance", distance)) {
                         ConfigData.snapDistance = distance;
                         ClientProxy.configUpdated();
-                        textSnapDistance.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                     }
                 } catch (Exception ignored) {
                 }

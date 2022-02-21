@@ -4,6 +4,8 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import journeymap.client.api.IClientAPI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
@@ -59,21 +61,16 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
         labels.add(new GuiSimpleLabel(font, leftSide, top, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.name"), GuiColors.LABEL_TEXT));
 
-        String defaultText = "Add name";
-        textName1 = new TextBox(font, leftSide, top + 12, 144, defaultText);
+        textName1 = new TextBox(font, leftSide, top + 12, 144);
         textName1.setMaxLength(17);
         textName1.setHeight(20);
         textName1.setResponder(this);
         textName1.setValue(frontier.getName1());
-        textName1.setFrame(true);
-        textName1.setCentered(false);
-        textName2 = new TextBox(font, leftSide, top + 40, 144, defaultText);
+        textName2 = new TextBox(font, leftSide, top + 40, 144);
         textName2.setMaxLength(17);
         textName2.setHeight(20);
         textName2.setResponder(this);
         textName2.setValue(frontier.getName2());
-        textName2.setFrame(true);
-        textName2.setCentered(false);
 
         labels.add(new GuiSimpleLabel(font, leftSide, top + 70, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.color"), GuiColors.LABEL_TEXT));
@@ -150,6 +147,7 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
         addRenderableWidget(buttonBanner);
 
         updateBannerButton();
+        updateButtons();
     }
 
     @Override
@@ -171,9 +169,9 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
 
         super.render(matrixStack, mouseX, mouseY, partialTicks);
 
-        fill(matrixStack, width / 2 + 10, height / 2 + 19, width / 2 + 32, height / 2 + 41,
+        fill(matrixStack, width / 2 - 31, height / 2 + 47, width / 2 - 9, height / 2 + 69,
                 GuiColors.COLOR_INDICATOR_BORDER);
-        fill(matrixStack, width / 2 + 11, height / 2 + 20, width / 2 + 31, height / 2 + 40,
+        fill(matrixStack, width / 2 - 30, height / 2 + 48, width / 2 - 10, height / 2 + 68,
                 frontier.getColor() | 0xff000000);
 
         if (frontier.hasBanner()) {
@@ -283,6 +281,20 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
         } else {
             buttonBanner.setMessage(new TranslatableComponent("mapfrontiers.remove_banner"));
         }
+    }
+
+    private void updateButtons() {
+        SettingsProfile profile = ClientProxy.getSettingsProfile();
+        SettingsUser playerUser = new SettingsUser(Minecraft.getInstance().player);
+        SettingsProfile.AvailableActions actions = profile.getAvailableActions(frontier, playerUser);
+
+        textName1.setEditable(actions.canUpdate);
+        textName2.setEditable(actions.canUpdate);
+        textRed.setEditable(actions.canUpdate);
+        textGreen.setEditable(actions.canUpdate);
+        textBlue.setEditable(actions.canUpdate);
+        buttonDelete.visible = actions.canDelete;
+        buttonBanner.visible = actions.canUpdate;
     }
 
     private void sendChangesToServer() {

@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.common.settings;
 
+import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import io.netty.buffer.ByteBuf;
 
 public class SettingsProfile {
@@ -69,5 +70,38 @@ public class SettingsProfile {
         return createFrontier == profile.createFrontier && deleteFrontier == profile.deleteFrontier
                 && updateFrontier == profile.updateFrontier && updateSettings == profile.updateSettings
                 && personalFrontier == profile.personalFrontier;
+    }
+
+    public AvailableActions getAvailableActions(FrontierData frontier, SettingsUser playerUser) {
+        AvailableActions actions = new AvailableActions();
+
+        if (personalFrontier == SettingsProfile.State.Enabled) {
+            actions.canCreate = true;
+        } else if (createFrontier == SettingsProfile.State.Enabled) {
+            actions.canCreate = true;
+        }
+
+        if (frontier != null) {
+            if (frontier.getPersonal()) {
+                if (personalFrontier == SettingsProfile.State.Enabled) {
+                    actions.canDelete = true;
+                    actions.canUpdate = frontier.checkActionUserShared(playerUser, SettingsUserShared.Action.UpdateFrontier);
+                }
+            } else {
+                boolean isOwner = frontier.getOwner().equals(playerUser);
+                actions.canDelete = deleteFrontier == SettingsProfile.State.Enabled
+                        || (isOwner && deleteFrontier == SettingsProfile.State.Owner);
+                actions.canUpdate = updateFrontier == SettingsProfile.State.Enabled
+                        || (isOwner && updateFrontier == SettingsProfile.State.Owner);
+            }
+        }
+
+        return actions;
+    }
+
+    public class AvailableActions {
+        public boolean canCreate = false;
+        public boolean canDelete = false;
+        public boolean canUpdate = false;
     }
 }

@@ -7,6 +7,9 @@ import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.event.DeletedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.client.event.NewFrontierEvent;
 import games.alejandrocoria.mapfrontiers.client.event.UpdatedFrontierEvent;
+import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import journeymap.client.api.IClientAPI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
@@ -180,7 +183,14 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
     }
 
     private void updateButtons() {
+        SettingsProfile profile = ClientProxy.getSettingsProfile();
+        SettingsUser playerUser = new SettingsUser(Minecraft.getInstance().player);
+        FrontierData frontier = frontiers.getSelectedElement() == null ? null : ((GuiFrontierListElement) frontiers.getSelectedElement()).getFrontier();
+        SettingsProfile.AvailableActions actions = profile.getAvailableActions(frontier, playerUser);
+
+
+        buttonCreate.visible = actions.canCreate;
         buttonEdit.visible = frontiers.getSelectedElement() != null;
-        buttonDelete.visible = frontiers.getSelectedElement() != null;
+        buttonDelete.visible = actions.canDelete;
     }
 }
