@@ -30,7 +30,7 @@
   "mapfrontiers.reopen": "Reopen",
   "mapfrontiers.assign_banner": "Assign banner",
   "mapfrontiers.remove_banner": "Remove banner",
-  "mapfrontiers.assign_banner_warn": "You need to have a banner in the other hand to assign it",
+  "mapfrontiers.assign_banner_warn": "You need to have a banner in hand to assign it",
   "mapfrontiers.select_in_map": "Select in map",
   "mapfrontiers.close": "Close",
   "mapfrontiers.previous_page": "Previous page",
@@ -51,6 +51,7 @@
   "mapfrontiers.do_nothing": "Do nothing",
   "mapfrontiers.create": "Create",
   "mapfrontiers.edit": "Edit",
+  "mapfrontiers.info": "Info",
 
   "mapfrontiers.credits": "Credits",
   "mapfrontiers.general": "General",

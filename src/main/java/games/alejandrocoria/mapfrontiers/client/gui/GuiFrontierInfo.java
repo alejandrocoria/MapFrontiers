@@ -7,6 +7,7 @@ import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import journeymap.client.api.IClientAPI;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -40,16 +41,11 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
     private GuiSettingsButton buttonDone;
     private GuiSettingsButton buttonBanner;
 
-    private final List<GuiSimpleLabel> labels;
-    private final Map<GuiSimpleLabel, List<Component>> labelTooltips;
-
     public GuiFrontierInfo(IClientAPI jmAPI, FrontierOverlay frontier) {
         super(TextComponent.EMPTY);
         this.jmAPI = jmAPI;
         frontiersOverlayManager = ClientProxy.getFrontiersOverlayManager(frontier.getPersonal());
         this.frontier = frontier;
-        labels = new ArrayList<>();
-        labelTooltips = new HashMap<>();
     }
 
     @Override
@@ -58,7 +54,7 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
         int rightSide = width / 2 + 10;
         int top = height / 2 - 62;
 
-        labels.add(new GuiSimpleLabel(font, leftSide, top, GuiSimpleLabel.Align.Left,
+        addRenderableOnly(new GuiSimpleLabel(font, leftSide, top, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.name"), GuiColors.LABEL_TEXT));
 
         textName1 = new TextBox(font, leftSide, top + 12, 144);
@@ -72,10 +68,10 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
         textName2.setResponder(this);
         textName2.setValue(frontier.getName2());
 
-        labels.add(new GuiSimpleLabel(font, leftSide, top + 70, GuiSimpleLabel.Align.Left,
+        addRenderableOnly(new GuiSimpleLabel(font, leftSide, top + 70, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.color"), GuiColors.LABEL_TEXT));
 
-        labels.add(new GuiSimpleLabel(font, leftSide - 11, top + 88, GuiSimpleLabel.Align.Left,
+        addRenderableOnly(new GuiSimpleLabel(font, leftSide - 11, top + 88, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("R"), GuiColors.LABEL_TEXT));
 
         textRed = new TextColorBox(255, font, leftSide, top + 82);
@@ -83,7 +79,7 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
         textRed.setHeight(20);
         textRed.setWidth(34);
 
-        labels.add(new GuiSimpleLabel(font, leftSide + 44, top + 88, GuiSimpleLabel.Align.Left,
+        addRenderableOnly(new GuiSimpleLabel(font, leftSide + 44, top + 88, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("G"), GuiColors.LABEL_TEXT));
 
         textGreen = new TextColorBox(255, font, leftSide + 55, top + 82);
@@ -91,7 +87,7 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
         textGreen.setHeight(20);
         textGreen.setWidth(34);
 
-        labels.add(new GuiSimpleLabel(font, leftSide + 99, top + 88, GuiSimpleLabel.Align.Left,
+        addRenderableOnly(new GuiSimpleLabel(font, leftSide + 99, top + 88, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("B"), GuiColors.LABEL_TEXT));
 
         textBlue = new TextColorBox(255, font, leftSide + 110, top + 82);
@@ -105,22 +101,22 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
 
         Component type = new TranslatableComponent("mapfrontiers.type",
                 new TranslatableComponent(frontier.getPersonal() ? "mapfrontiers.personal" : "mapfrontiers.global"));
-        labels.add(new GuiSimpleLabel(font, rightSide, top, GuiSimpleLabel.Align.Left, type, GuiColors.WHITE));
+        addRenderableOnly(new GuiSimpleLabel(font, rightSide, top, GuiSimpleLabel.Align.Left, type, GuiColors.WHITE));
 
         Component owner = new TranslatableComponent("mapfrontiers.owner", frontier.getOwner());
-        labels.add(new GuiSimpleLabel(font, rightSide, top + 16, GuiSimpleLabel.Align.Left, owner, GuiColors.WHITE));
+        addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 16, GuiSimpleLabel.Align.Left, owner, GuiColors.WHITE));
 
         Component dimension = new TranslatableComponent("mapfrontiers.dimension", frontier.getDimension().location().toString());
-        labels.add(new GuiSimpleLabel(font, rightSide, top + 32, GuiSimpleLabel.Align.Left, dimension, GuiColors.WHITE));
+        addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 32, GuiSimpleLabel.Align.Left, dimension, GuiColors.WHITE));
 
         Component vertices = new TranslatableComponent("mapfrontiers.vertices", frontier.getVertexCount());
-        labels.add(new GuiSimpleLabel(font, rightSide, top + 48, GuiSimpleLabel.Align.Left, vertices, GuiColors.WHITE));
+        addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 48, GuiSimpleLabel.Align.Left, vertices, GuiColors.WHITE));
 
         Component area = new TranslatableComponent("mapfrontiers.area", frontier.area);
-        labels.add(new GuiSimpleLabel(font, rightSide, top + 64, GuiSimpleLabel.Align.Left, area, GuiColors.WHITE));
+        addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 64, GuiSimpleLabel.Align.Left, area, GuiColors.WHITE));
 
         Component perimeter = new TranslatableComponent("mapfrontiers.perimeter", frontier.perimeter);
-        labels.add(new GuiSimpleLabel(font, rightSide, top + 80, GuiSimpleLabel.Align.Left, perimeter, GuiColors.WHITE));
+        addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 80, GuiSimpleLabel.Align.Left, perimeter, GuiColors.WHITE));
 
         buttonSelect = new GuiSettingsButton(font, leftSide, top + 142, 144,
                 new TranslatableComponent("mapfrontiers.select_in_map"), this::buttonPressed);
@@ -163,10 +159,6 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
     public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         renderBackground(matrixStack, 0);
 
-        for (GuiSimpleLabel label : labels) {
-            label.render(matrixStack, mouseX, mouseY, partialTicks);
-        }
-
         super.render(matrixStack, mouseX, mouseY, partialTicks);
 
         fill(matrixStack, width / 2 - 31, height / 2 + 47, width / 2 - 9, height / 2 + 69,
@@ -178,14 +170,10 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
             frontier.renderBanner(minecraft, matrixStack, width / 2 - 276, height / 2 - 40, 4);
         }
 
-        for (GuiSimpleLabel label : labels) {
-            if (label.isHoveredOrFocused()) {
-                List<Component> tooltip = labelTooltips.get(label);
-                if (tooltip == null) {
-                    continue;
-                }
-
-                renderTooltip(matrixStack, tooltip, Optional.empty(), mouseX, mouseY);
+        if (buttonBanner.visible && buttonBanner.isHoveredOrFocused()) {
+            if (!frontier.hasBanner() && ClientProxy.getHeldBanner() == null) {
+                TextComponent prefix = new TextComponent(GuiColors.WARNING + "! " + ChatFormatting.RESET);
+                renderTooltip(matrixStack, prefix.append(new TranslatableComponent("mapfrontiers.assign_banner_warn")), mouseX, mouseY);
             }
         }
     }
@@ -274,7 +262,7 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
         if (!frontier.hasBanner()) {
             TranslatableComponent message = new TranslatableComponent("mapfrontiers.assign_banner");
             if (ClientProxy.getHeldBanner() == null) {
-                message.append(new TextComponent(" !"));
+                message.append(new TextComponent(GuiColors.WARNING + " !"));
             }
 
             buttonBanner.setMessage(message);

@@ -30,7 +30,7 @@
   "mapfrontiers.reopen": "Reabrir",
   "mapfrontiers.assign_banner": "Asignar estandarte",
   "mapfrontiers.remove_banner": "Remover estandarte",
-  "mapfrontiers.assign_banner_warn": "Necesitás tener un estandarte en la otra mano para asignarlo",
+  "mapfrontiers.assign_banner_warn": "Necesitás tener un estandarte en mano para asignarlo",
   "mapfrontiers.select_in_map": "Seleccionar en el mapa",
   "mapfrontiers.close": "Cerrar",
   "mapfrontiers.previous_page": "Página anterior",
@@ -51,6 +51,7 @@
   "mapfrontiers.do_nothing": "No hacer nada",
   "mapfrontiers.create": "Crear",
   "mapfrontiers.edit": "Editar",
+  "mapfrontiers.info": "Info",
 
   "mapfrontiers.credits": "Créditos",
   "mapfrontiers.general": "General",

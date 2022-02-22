@@ -18,12 +18,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class GuiSimpleLabel extends AbstractWidget {
-    @Override
-    public void updateNarration(NarrationElementOutput p_169152_)
-    {
-
-    }
-
     public enum Align {
         Left, Center, Right
     }
@@ -125,5 +119,9 @@ public class GuiSimpleLabel extends AbstractWidget {
                 && mouseY < bottomRight.y * scale + y);
 
         matrixStack.scale(1.0F / scale, 1.0F / scale, 1.0F);
+    }
+
+    @Override
+    public void updateNarration(NarrationElementOutput p_169152_) {
     }
 }

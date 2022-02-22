@@ -68,7 +68,9 @@ public class GuiOptionButton extends Button {
     @Override
     public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         int c = color;
-        if (isHovered) {
+        if (!active) {
+            c = GuiColors.SETTINGS_TEXT_DARK;
+        } else if (isHovered) {
             c = highlightedColor;
         }
 

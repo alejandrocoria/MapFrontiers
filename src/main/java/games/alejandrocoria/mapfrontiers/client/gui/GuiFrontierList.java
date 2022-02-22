@@ -35,19 +35,13 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
 
     private GuiScrollBox frontiers;
     private GuiSettingsButton buttonCreate;
-    private GuiSettingsButton buttonEdit;
+    private GuiSettingsButton buttonInfo;
     private GuiSettingsButton buttonDelete;
     private GuiSettingsButton buttonDone;
-
-    private final List<GuiSimpleLabel> labels;
-    private final Map<GuiSimpleLabel, List<Component>> labelTooltips;
 
     public GuiFrontierList(IClientAPI jmAPI) {
         super(TextComponent.EMPTY);
         this.jmAPI = jmAPI;
-
-        labels = new ArrayList<>();
-        labelTooltips = new HashMap<>();
 
         MinecraftForge.EVENT_BUS.register(this);
     }
@@ -58,8 +52,8 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
 
         buttonCreate = new GuiSettingsButton(font, width / 2 - 295, height - 30, 140,
                 new TranslatableComponent("mapfrontiers.create"), this::buttonPressed);
-        buttonEdit = new GuiSettingsButton(font, width / 2 - 145, height - 30, 140,
-                new TranslatableComponent("mapfrontiers.edit"), this::buttonPressed);
+        buttonInfo = new GuiSettingsButton(font, width / 2 - 145, height - 30, 140,
+                new TranslatableComponent("mapfrontiers.info"), this::buttonPressed);
         buttonDelete = new GuiSettingsButton(font, width / 2 + 5, height - 30, 140,
                 new TranslatableComponent("mapfrontiers.delete"), this::buttonPressed);
         buttonDone = new GuiSettingsButton(font, width / 2 + 155, height - 30, 140,
@@ -67,7 +61,7 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
 
         addRenderableWidget(frontiers);
         addRenderableWidget(buttonCreate);
-        addRenderableWidget(buttonEdit);
+        addRenderableWidget(buttonInfo);
         addRenderableWidget(buttonDelete);
         addRenderableWidget(buttonDone);
 
@@ -79,22 +73,7 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
     public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         renderBackground(matrixStack, 0);
 
-        for (GuiSimpleLabel label : labels) {
-            label.render(matrixStack, mouseX, mouseY, partialTicks);
-        }
-
         super.render(matrixStack, mouseX, mouseY, partialTicks);
-
-        for (GuiSimpleLabel label : labels) {
-            if (label.isHoveredOrFocused()) {
-                List<Component> tooltip = labelTooltips.get(label);
-                if (tooltip == null) {
-                    continue;
-                }
-
-                renderTooltip(matrixStack, tooltip, Optional.empty(), mouseX, mouseY);
-            }
-        }
     }
 
     @Override
@@ -131,7 +110,7 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
             ForgeHooksClient.popGuiLayer(minecraft);
             GuiNewFrontier guiNewFrontier = new GuiNewFrontier(jmAPI);
             ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), guiNewFrontier);
-        } else if (button == buttonEdit) {
+        } else if (button == buttonInfo) {
             ForgeHooksClient.popGuiLayer(minecraft);
             FrontierOverlay frontier = ((GuiFrontierListElement) frontiers.getSelectedElement()).getFrontier();
             GuiFrontierInfo guiFrontierInfo = new GuiFrontierInfo(jmAPI, frontier);
@@ -190,7 +169,7 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
 
 
         buttonCreate.visible = actions.canCreate;
-        buttonEdit.visible = frontiers.getSelectedElement() != null;
+        buttonInfo.visible = frontiers.getSelectedElement() != null;
         buttonDelete.visible = actions.canDelete;
     }
 }
