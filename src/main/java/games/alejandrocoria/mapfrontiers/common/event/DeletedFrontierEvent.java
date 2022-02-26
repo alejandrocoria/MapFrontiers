@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.client.event;
+package games.alejandrocoria.mapfrontiers.common.event;
 
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;

@@ -4,10 +4,11 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
-import games.alejandrocoria.mapfrontiers.client.event.DeletedFrontierEvent;
-import games.alejandrocoria.mapfrontiers.client.event.NewFrontierEvent;
-import games.alejandrocoria.mapfrontiers.client.event.UpdatedFrontierEvent;
+import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
+import games.alejandrocoria.mapfrontiers.common.event.NewFrontierEvent;
+import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import journeymap.client.api.IClientAPI;
@@ -15,7 +16,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Widget;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -56,7 +56,7 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
                 new TranslatableComponent("mapfrontiers.info"), this::buttonPressed);
         buttonDelete = new GuiSettingsButton(font, width / 2 + 5, height - 30, 140,
                 new TranslatableComponent("mapfrontiers.delete"), this::buttonPressed);
-        buttonDone = new GuiSettingsButton(font, width / 2 + 155, height - 30, 140,
+        buttonDone = new GuiSettingsButton(font, width / 2 + 155, height - 28, 140,
                 new TranslatableComponent("gui.done"), this::buttonPressed);
 
         addRenderableWidget(frontiers);
@@ -88,6 +88,11 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onUpdatedSettingsProfileEvent(UpdatedSettingsProfileEvent event) {
+        updateButtons();
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onNewFrontierEvent(NewFrontierEvent event) {
         updateFrontiers();
         updateButtons();
@@ -108,13 +113,11 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
     protected void buttonPressed(Button button) {
         if (button == buttonCreate) {
             ForgeHooksClient.popGuiLayer(minecraft);
-            GuiNewFrontier guiNewFrontier = new GuiNewFrontier(jmAPI);
-            ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), guiNewFrontier);
+            ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiNewFrontier(jmAPI));
         } else if (button == buttonInfo) {
             ForgeHooksClient.popGuiLayer(minecraft);
             FrontierOverlay frontier = ((GuiFrontierListElement) frontiers.getSelectedElement()).getFrontier();
-            GuiFrontierInfo guiFrontierInfo = new GuiFrontierInfo(jmAPI, frontier);
-            ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), guiFrontierInfo);
+            ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiFrontierInfo(jmAPI, frontier));
         } else if (button == buttonDelete) {
             FrontierOverlay frontier = ((GuiFrontierListElement) frontiers.getSelectedElement()).getFrontier();
             FrontiersOverlayManager frontierManager = ClientProxy.getFrontiersOverlayManager(frontier.getPersonal());
@@ -140,9 +143,8 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
     }
 
     @Override
-    public void onClose() {
+    public void removed() {
         MinecraftForge.EVENT_BUS.unregister(this);
-        super.onClose();
     }
 
     private void updateFrontiers() {

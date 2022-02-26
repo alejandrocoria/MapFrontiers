@@ -6,11 +6,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.event.NewFrontierEvent;
-import games.alejandrocoria.mapfrontiers.client.event.UpdatedFrontierEvent;
-import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
-import games.alejandrocoria.mapfrontiers.client.gui.GuiShareSettings;
-import games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin;
+import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
@@ -56,19 +52,13 @@ public class PacketFrontierUpdated {
 
     @OnlyIn(Dist.CLIENT)
     private static void handleClient(PacketFrontierUpdated message, NetworkEvent.Context ctx) {
-        if (message.playerID != Minecraft.getInstance().player.getId()) {
-            FrontierOverlay frontierOverlay = ClientProxy.getFrontiersOverlayManager(message.frontier.getPersonal())
-                    .updateFrontier(message.frontier);
+        FrontierOverlay frontierOverlay = ClientProxy.getFrontiersOverlayManager(message.frontier.getPersonal())
+                .updateFrontier(message.frontier);
 
-            if (frontierOverlay != null) {
-                if (Minecraft.getInstance().screen instanceof GuiFrontierBook) {
-                    ((GuiFrontierBook) Minecraft.getInstance().screen).updateFrontierMessage(frontierOverlay,
-                            message.playerID);
-                } else {
-                    MinecraftForge.EVENT_BUS.post(new UpdatedFrontierEvent(frontierOverlay, message.playerID));
-                }
-            }
+        if (frontierOverlay != null) {
+            MinecraftForge.EVENT_BUS.post(new UpdatedFrontierEvent(frontierOverlay, message.playerID));
         }
+
         ctx.setPacketHandled(true);
     }
 }

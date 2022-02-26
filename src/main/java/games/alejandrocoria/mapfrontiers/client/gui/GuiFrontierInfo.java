@@ -4,6 +4,9 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
+import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
+import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import journeymap.client.api.IClientAPI;
@@ -18,9 +21,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.ForgeHooksClient;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.*;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -46,10 +51,14 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
         this.jmAPI = jmAPI;
         frontiersOverlayManager = ClientProxy.getFrontiersOverlayManager(frontier.getPersonal());
         this.frontier = frontier;
+
+        MinecraftForge.EVENT_BUS.register(this);
     }
 
     @Override
     public void init() {
+        minecraft.keyboardHandler.setSendRepeatsToGui(true);
+
         int leftSide = width / 2 - 154;
         int rightSide = width / 2 + 10;
         int top = height / 2 - 62;
@@ -196,8 +205,7 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
             // @Incomplete
             ForgeHooksClient.popGuiLayer(minecraft);
         } else if (button == buttonShareSettings) {
-            GuiShareSettings guiShareSettings = new GuiShareSettings(null, frontiersOverlayManager, frontier);
-            ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), guiShareSettings);
+            ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiShareSettings(frontiersOverlayManager, frontier));
         } else if (button == buttonDelete) {
             frontiersOverlayManager.clientDeleteFrontier(frontier);
             ForgeHooksClient.popGuiLayer(minecraft);
@@ -214,6 +222,33 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
             }
             updateBannerButton();
             sendChangesToServer();
+        }
+    }
+
+    @Override
+    public void removed() {
+        minecraft.keyboardHandler.setSendRepeatsToGui(false);
+        MinecraftForge.EVENT_BUS.unregister(this);
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onUpdatedSettingsProfileEvent(UpdatedSettingsProfileEvent event) {
+        updateButtons();
+        updateBannerButton();
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onUpdatedFrontierEvent(UpdatedFrontierEvent event) {
+        if (frontier.getId().equals(event.frontierOverlay.getId())) {
+            ForgeHooksClient.popGuiLayer(minecraft);
+            ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiFrontierInfo(jmAPI, frontier));
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onDeletedFrontierEvent(DeletedFrontierEvent event) {
+        if (frontier.getId().equals(event.frontierID)) {
+            ForgeHooksClient.popGuiLayer(minecraft);
         }
     }
 

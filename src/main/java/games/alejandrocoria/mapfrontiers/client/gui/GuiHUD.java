@@ -5,10 +5,11 @@ import java.util.List;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import games.alejandrocoria.mapfrontiers.client.event.DeletedFrontierEvent;
-import games.alejandrocoria.mapfrontiers.client.event.NewFrontierEvent;
-import games.alejandrocoria.mapfrontiers.client.event.UpdatedFrontierEvent;
+import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
+import games.alejandrocoria.mapfrontiers.common.event.NewFrontierEvent;
+import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
 import journeymap.client.JourneymapClient;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.EventPriority;
 import org.apache.commons.lang3.StringUtils;
 
@@ -25,7 +26,6 @@ import journeymap.client.properties.MiniMapProperties;
 import journeymap.client.ui.UIManager;
 import journeymap.client.ui.minimap.Position;
 import journeymap.client.ui.minimap.Shape;
-import journeymap.client.ui.theme.ThemeLabelSource;
 import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiComponent;
@@ -102,8 +102,6 @@ public class GuiHUD {
         frontierData.setName2("-----------------");
         frontierData.setBanner(itemBanner);
 
-        guiHUD.frontier = new FrontierOverlay(frontierData, null);
-
         return guiHUD;
     }
 
@@ -117,6 +115,8 @@ public class GuiHUD {
                 GuiColors.WHITE);
         frontierOwner = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, TextComponent.EMPTY,
                 GuiColors.WHITE);
+
+        MinecraftForge.EVENT_BUS.register(this);
     }
 
     public GuiHUD() {
@@ -130,6 +130,8 @@ public class GuiHUD {
                 GuiColors.WHITE);
         frontierOwner = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, TextComponent.EMPTY,
                 GuiColors.WHITE);
+
+        MinecraftForge.EVENT_BUS.register(this);
     }
 
     public int getWidth() {

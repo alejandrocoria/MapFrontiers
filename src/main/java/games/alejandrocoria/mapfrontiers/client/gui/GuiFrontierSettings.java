@@ -5,9 +5,14 @@ import java.util.*;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Widget;
-import net.minecraftforge.client.gui.GuiUtils;
+import net.minecraftforge.client.ForgeHooksClient;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.apache.commons.lang3.StringUtils;
 
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -29,7 +34,6 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
-import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
@@ -69,18 +73,21 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
     private TextUserBox textNewUser;
     private GuiButtonIcon buttonNewUser;
     private TextBox textGroupName;
+    private GuiSettingsButton buttonDone;
+
     private final List<GuiSimpleLabel> labels;
     private final Map<GuiSimpleLabel, List<Component>> labelTooltips;
-    private final boolean canEditGroups;
-    private Tab tabSelected = Tab.Credits;
+    private boolean canEditGroups;
+    private Tab tabSelected;
     private int ticksSinceLastUpdate = 0;
 
-    public GuiFrontierSettings(SettingsProfile profile) {
+    public GuiFrontierSettings() {
         super(TextComponent.EMPTY);
         guiTexture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/gui.png");
         labels = new ArrayList<>();
         labelTooltips = new HashMap<>();
-        canEditGroups = profile.updateSettings == SettingsProfile.State.Enabled;
+
+        MinecraftForge.EVENT_BUS.register(this);
     }
 
     @Override
@@ -89,7 +96,11 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
 
         minecraft.keyboardHandler.setSendRepeatsToGui(true);
 
-        tabSelected = ClientProxy.getLastSettingsTab();
+        canEditGroups = ClientProxy.getSettingsProfile().updateSettings == SettingsProfile.State.Enabled;
+
+        if (tabSelected == null) {
+            tabSelected = ClientProxy.getLastSettingsTab();
+        }
 
         tabbedBox = new GuiTabbedBox(font, 40, 24, width - 80, height - 64, this);
         tabbedBox.addTab(new TranslatableComponent("mapfrontiers.credits"));
@@ -169,7 +180,11 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         textGroupName = new TextBox(font, 250, 50, 140);
         textGroupName.setMaxLength(22);
         textGroupName.setResponder(this);
-        textGroupName.active = false;
+        textGroupName.setEditable(false);
+        textGroupName.setBordered(false);
+
+        buttonDone = new GuiSettingsButton(font, width / 2 - 70, height - 28, 140,
+                new TranslatableComponent("gui.done"), this::buttonPressed);
 
         addRenderableWidget(tabbedBox);
         addRenderableWidget(buttonWeb);
@@ -190,6 +205,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         addRenderableWidget(textNewUser);
         addRenderableWidget(buttonNewUser);
         addRenderableWidget(textGroupName);
+        addRenderableWidget(buttonDone);
 
         resetLabels();
         updateButtonsVisibility();
@@ -249,10 +265,6 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
     public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         renderBackground(matrixStack);
 
-        for (GuiSimpleLabel label : labels) {
-            label.render(matrixStack, mouseX, mouseY, partialTicks);
-        }
-
         super.render(matrixStack, mouseX, mouseY, partialTicks);
 
         for (GuiSimpleLabel label : labels) {
@@ -270,7 +282,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
     @Override
     public boolean keyPressed(int key, int value, int modifier) {
         if (key == GLFW.GLFW_KEY_E && !(getFocused() instanceof EditBox)) {
-            onClose();
+            ForgeHooksClient.popGuiLayer(minecraft);
             return true;
         } else {
             return super.keyPressed(key, value, modifier);
@@ -304,7 +316,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
             ClientProxy.configUpdated();
         } else if (button == buttonEditHUD) {
             ClientProxy.setLastSettingsTab(tabSelected);
-            minecraft.setScreen(new GuiHUDSettings(this));
+            Minecraft.getInstance().setScreen(new GuiHUDSettings());
         } else if (button == buttonNewGroup) {
             if (settings != null) {
                 SettingsGroup group = settings.createCustomGroup(textNewGroupName.getValue());
@@ -361,14 +373,25 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
             textNewUser.setValue("");
 
             sendChangesToServer();
+        } else if (button == buttonDone) {
+            ForgeHooksClient.popGuiLayer(minecraft);
         }
     }
 
     @Override
-    public void onClose() {
+    public void removed() {
         minecraft.keyboardHandler.setSendRepeatsToGui(false);
         ClientProxy.setLastSettingsTab(tabSelected);
-        super.onClose();
+        MinecraftForge.EVENT_BUS.unregister(this);
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onUpdatedSettingsProfileEvent(UpdatedSettingsProfileEvent event) {
+        if ((event.profile.updateSettings == SettingsProfile.State.Enabled) == canEditGroups) {
+            return;
+        }
+
+        Minecraft.getInstance().setScreen(new GuiFrontierSettings());
     }
 
     public void linkClicked(boolean open, AbstractWidget widget) {
@@ -384,7 +407,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
             }
         }
 
-        minecraft.setScreen(this);
+        Minecraft.getInstance().setScreen(new GuiFrontierSettings());
     }
 
     public void setFrontierSettings(FrontierSettings settings) {
@@ -405,15 +428,11 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         updateButtonsVisibility();
     }
 
-    public void updateSettingsProfile(SettingsProfile profile) {
-        if ((profile.updateSettings == SettingsProfile.State.Enabled) == canEditGroups) {
-            return;
+    private void resetLabels() {
+        for (GuiSimpleLabel label : labels) {
+            removeWidget(label);
         }
 
-        minecraft.setScreen(new GuiFrontierSettings(profile));
-    }
-
-    private void resetLabels() {
         labels.clear();
         labelTooltips.clear();
 
@@ -489,6 +508,10 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
             labels.add(new GuiSimpleLabel(font, x + 240, 54, GuiSimpleLabel.Align.Center,
                     new TranslatableComponent("mapfrontiers.personal_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
         }
+
+        for (GuiSimpleLabel label : labels) {
+            addRenderableOnly(label);
+        }
     }
 
     private void addLabelWithTooltip(GuiSimpleLabel label, @Nullable List<Component> tooltip) {
@@ -522,7 +545,9 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
     public void groupClicked(GuiGroupElement element) {
         groups.selectElement(element);
         textGroupName.setValue(element.getGroup().getName());
-        textGroupName.active = !element.getGroup().isSpecial();
+        textGroupName.setEditable(!element.getGroup().isSpecial());
+        textGroupName.setBordered(!element.getGroup().isSpecial());
+        textGroupName.setFocus(false);
 
         resetLabels();
         updateUsers();
@@ -531,11 +556,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
     @Override
     public void elementClicked(GuiScrollBox scrollBox, ScrollElement element) {
         if (scrollBox == groups) {
-            GuiGroupElement group = (GuiGroupElement) element;
-            textGroupName.setValue(group.getGroup().getName());
-            textGroupName.active = !group.getGroup().isSpecial();
-            resetLabels();
-            updateUsers();
+            groupClicked((GuiGroupElement) element);
             updateButtonsVisibility();
         }
     }

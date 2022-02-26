@@ -11,6 +11,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -19,6 +20,7 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.ForgeHooksClient;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -39,8 +41,8 @@ public class GuiLinkButton extends AbstractWidget {
 
     public void openLink() {
         try {
-            Desktop.getDesktop().browse(new URI(uri));
-        } catch (IOException | URISyntaxException e) {
+            Util.getPlatform().openUri(new URI(uri));
+        } catch (UnsupportedOperationException | URISyntaxException e) {
             MapFrontiers.LOGGER.error(e.getMessage(), e);
         }
     }
@@ -58,7 +60,7 @@ public class GuiLinkButton extends AbstractWidget {
 
     @Override
     public void onClick(double mouseX, double mouseY) {
-        Minecraft.getInstance().setScreen(new ConfirmLinkScreen(callbackFunction, uri, false));
+        ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new ConfirmLinkScreen(callbackFunction, uri, false));
     }
 
     @Override

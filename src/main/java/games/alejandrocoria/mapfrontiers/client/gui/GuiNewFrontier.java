@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
+import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import journeymap.client.api.IClientAPI;
@@ -17,6 +18,9 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.ForgeHooksClient;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
@@ -37,6 +41,8 @@ public class GuiNewFrontier extends Screen {
     public GuiNewFrontier(IClientAPI jmAPI) {
         super(TextComponent.EMPTY);
         this.jmAPI = jmAPI;
+
+        MinecraftForge.EVENT_BUS.register(this);
     }
 
     @Override
@@ -113,5 +119,16 @@ public class GuiNewFrontier extends Screen {
         } else if (button == buttonCancel) {
             ForgeHooksClient.popGuiLayer(minecraft);
         }
+    }
+
+    @Override
+    public void removed() {
+        MinecraftForge.EVENT_BUS.unregister(this);
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onUpdatedSettingsProfileEvent(UpdatedSettingsProfileEvent event) {
+        ForgeHooksClient.popGuiLayer(minecraft);
+        ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiNewFrontier(jmAPI));
     }
 }

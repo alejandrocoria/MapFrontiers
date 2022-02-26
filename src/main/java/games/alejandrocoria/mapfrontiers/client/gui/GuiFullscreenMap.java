@@ -3,13 +3,13 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
-import games.alejandrocoria.mapfrontiers.client.event.DeletedFrontierEvent;
-import games.alejandrocoria.mapfrontiers.client.event.NewFrontierEvent;
-import games.alejandrocoria.mapfrontiers.client.event.UpdatedFrontierEvent;
+import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
+import games.alejandrocoria.mapfrontiers.common.event.NewFrontierEvent;
+import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
+import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.Context;
 import journeymap.client.api.display.IThemeButton;
@@ -27,8 +27,6 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-
-import java.util.UUID;
 
 import static java.lang.Math.max;
 import static java.lang.Math.pow;
@@ -79,6 +77,11 @@ public class GuiFullscreenMap {
                 popupMenu.addMenuItem("remove vertex", p -> buttonRemoveVertex());
             }
         }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onUpdatedSettingsProfileEvent(UpdatedSettingsProfileEvent event) {
+        updatebuttons();
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
@@ -158,8 +161,7 @@ public class GuiFullscreenMap {
     }
 
     private void buttonFrontiersPressed() {
-        GuiFrontierList guiFrontierList = new GuiFrontierList(jmAPI);
-        ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), guiFrontierList);
+        ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiFrontierList(jmAPI));
     }
 
     private void buttonNewPressed() {
@@ -167,15 +169,13 @@ public class GuiFullscreenMap {
             frontierHighlighted.setHighlighted(false);
         }
 
-        GuiNewFrontier guiNewFrontier = new GuiNewFrontier(jmAPI);
-        ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), guiNewFrontier);
+        ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiNewFrontier(jmAPI));
 
         updatebuttons();
     }
 
     private void buttonInfoPressed() {
-        GuiFrontierInfo guiFrontierInfo = new GuiFrontierInfo(jmAPI, frontierHighlighted);
-        ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), guiFrontierInfo);
+        ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiFrontierInfo(jmAPI, frontierHighlighted));
     }
 
     private void buttonEditToggled() {

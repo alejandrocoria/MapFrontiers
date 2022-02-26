@@ -6,11 +6,13 @@ import java.util.UUID;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import games.alejandrocoria.mapfrontiers.client.event.DeletedFrontierEvent;
-import games.alejandrocoria.mapfrontiers.client.event.NewFrontierEvent;
-import games.alejandrocoria.mapfrontiers.client.event.UpdatedFrontierEvent;
-import net.minecraft.client.gui.components.EditBox;
+import games.alejandrocoria.mapfrontiers.client.ClientProxy;
+import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
+import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Widget;
+import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -28,18 +30,13 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateSharedUserPe
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
-import net.minecraft.client.resources.language.I18n;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.lwjgl.glfw.GLFW;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -48,19 +45,19 @@ public class GuiShareSettings extends Screen
     private static final int guiTextureSize = 512;
 
     private final ResourceLocation guiTexture;
-    private final GuiFrontierBook parent;
     private final FrontiersOverlayManager frontiersOverlayManager;
     private FrontierOverlay frontier;
     private GuiScrollBox users;
     private TextUserBox textNewUser;
     private GuiButtonIcon buttonNewUser;
+    private GuiSettingsButton buttonDone;
+
     private final List<GuiSimpleLabel> labels;
     private boolean canUpdate;
     private int ticksSinceLastUpdate = 0;
 
-    public GuiShareSettings(GuiFrontierBook parent, FrontiersOverlayManager frontiersOverlayManager, FrontierOverlay frontier) {
+    public GuiShareSettings( FrontiersOverlayManager frontiersOverlayManager, FrontierOverlay frontier) {
         super(TextComponent.EMPTY);
-        this.parent = parent;
         this.frontiersOverlayManager = frontiersOverlayManager;
         this.frontier = frontier;
 
@@ -84,9 +81,13 @@ public class GuiShareSettings extends Screen
                 (button) -> buttonNewUserPressed());
         buttonNewUser.visible = false;
 
+        buttonDone = new GuiSettingsButton(font, width / 2 - 70, height - 28, 140,
+                new TranslatableComponent("gui.done"), this::buttonPressed);
+
         addRenderableWidget(buttonNewUser);
         addRenderableWidget(users);
         addRenderableWidget(textNewUser);
+        addRenderableWidget(buttonDone);
 
         updateCanUpdate();
         updateButtonsVisibility();
@@ -140,25 +141,9 @@ public class GuiShareSettings extends Screen
 
     @Override
     public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        //parent.render(matrixStack, -1, -1, partialTicks);
-
         renderBackground(matrixStack);
 
-        for (GuiSimpleLabel label : labels) {
-            label.render(matrixStack, mouseX, mouseY, partialTicks);
-        }
-
         super.render(matrixStack, mouseX, mouseY, partialTicks);
-    }
-
-    @Override
-    public boolean keyPressed(int key, int value, int modifier) {
-        if (key == GLFW.GLFW_KEY_E && !(getFocused() instanceof EditBox)) {
-            onClose();
-            return true;
-        } else {
-            return super.keyPressed(key, value, modifier);
-        }
     }
 
     @Override
@@ -172,10 +157,17 @@ public class GuiShareSettings extends Screen
         return super.mouseReleased(mouseX, mouseY, button);
     }
 
+    protected void buttonPressed(Button button) {
+        if (button == buttonDone) {
+            ForgeHooksClient.popGuiLayer(minecraft);
+        }
+    }
+
     private void buttonNewUserPressed() {
         SettingsUser user = new SettingsUser();
 
         String usernameOrUUID = textNewUser.getValue();
+        textNewUser.setFocus(false);
         if (StringUtils.isBlank(usernameOrUUID)) {
             return;
         } else if (usernameOrUUID.length() < 28) {
@@ -244,11 +236,9 @@ public class GuiShareSettings extends Screen
     }
 
     @Override
-    public void onClose() {
+    public void removed() {
         MinecraftForge.EVENT_BUS.unregister(this);
         minecraft.keyboardHandler.setSendRepeatsToGui(false);
-        super.onClose();
-        //minecraft.setScreen(parent);
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
@@ -264,17 +254,15 @@ public class GuiShareSettings extends Screen
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onDeletedFrontierEvent(DeletedFrontierEvent event) {
         if (event.frontierID.equals(frontier.getId())) {
-            minecraft.setScreen(parent);
+            ForgeHooksClient.popGuiLayer(minecraft);
         }
     }
 
-    public void reloadPage(boolean syncFrontierWithServer) {
-        //parent.reloadPage(syncFrontierWithServer);
-    }
-
     private void resetLabels() {
-        renderables.removeAll(labels);
-        children().removeAll(labels);
+        for (GuiSimpleLabel label : labels) {
+            removeWidget(label);
+        }
+
         labels.clear();
 
         if (!users.getElements().isEmpty()) {
@@ -286,7 +274,7 @@ public class GuiShareSettings extends Screen
         }
 
         for (GuiSimpleLabel label : labels) {
-            addRenderableWidget(label);
+            addRenderableOnly(label);
         }
     }
 
@@ -324,8 +312,6 @@ public class GuiShareSettings extends Screen
                 updateCanUpdate();
                 updateUsers();
                 updateButtonsVisibility();
-            } else {
-                //parent.reloadPage(false);
             }
         }
 

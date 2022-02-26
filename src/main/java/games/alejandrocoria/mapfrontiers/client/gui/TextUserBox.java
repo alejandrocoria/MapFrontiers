@@ -6,6 +6,7 @@ import java.util.List;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import net.minecraft.client.gui.components.EditBox;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.glfw.GLFW;
 
@@ -114,6 +115,12 @@ public class TextUserBox extends TextBox {
 
     @Override
     public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+        if (error == null) {
+            setTextColor(EditBox.DEFAULT_TEXT_COLOR);
+        } else {
+            setTextColor(GuiColors.SETTINGS_TEXT_ERROR);
+        }
+
         super.renderButton(matrixStack, mouseX, mouseY, partialTicks);
 
         if (error != null) {

@@ -3,9 +3,11 @@ package games.alejandrocoria.mapfrontiers.client;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.ClientRegistry;
+import net.minecraftforge.eventbus.api.EventPriority;
 import org.lwjgl.glfw.GLFW;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
@@ -55,7 +57,6 @@ public class ClientProxy {
     @SubscribeEvent
     public static void clientSetup(FMLClientSetupEvent event) {
         Minecraft.getInstance().getMainRenderTarget().enableStencil();
-        MinecraftForge.EVENT_BUS.register(Sounds.class);
         MinecraftForge.EVENT_BUS.register(FrontierOverlay.class);
         MinecraftForge.EVENT_BUS.register(FrontiersOverlayManager.class);
 
@@ -68,7 +69,7 @@ public class ClientProxy {
 
     @SubscribeEvent
     public static void onEvent(KeyInputEvent event) {
-        if (openSettingsKey.isDown()) {
+        if (openSettingsKey.matches(event.getKey(), event.getScanCode()) && openSettingsKey.isDown()) {
             if (frontiersOverlayManager == null) {
                 return;
             }
@@ -77,7 +78,7 @@ public class ClientProxy {
                 return;
             }
 
-            Minecraft.getInstance().setScreen(new GuiFrontierSettings(settingsProfile));
+            Minecraft.getInstance().setScreen(new GuiFrontierSettings());
         }
     }
 
@@ -196,29 +197,7 @@ public class ClientProxy {
     }
 
     public static void openGUIFrontierBook(ResourceKey<Level> dimension, boolean personal) {
-        if (frontiersOverlayManager == null || settingsProfile == null) {
-            return;
-        }
-
-        ItemStack mainhand = Minecraft.getInstance().player.getItemBySlot(EquipmentSlot.MAINHAND);
-        ItemStack offhand = Minecraft.getInstance().player.getItemBySlot(EquipmentSlot.OFFHAND);
-        ItemStack heldBanner = null;
-
-        if (mainhand.getItem() instanceof BannerItem) {
-            heldBanner = mainhand;
-        } else if (offhand.getItem() instanceof BannerItem) {
-            heldBanner = offhand;
-        }
-
-        ResourceKey<Level> currentDimension = Minecraft.getInstance().player.level.dimension();
-
-        if (personal && settingsProfile.personalFrontier == SettingsProfile.State.Enabled) {
-            Minecraft.getInstance().setScreen(
-                    new GuiFrontierBook(personalFrontiersOverlayManager, personal, currentDimension, dimension, heldBanner));
-        } else {
-            Minecraft.getInstance().setScreen(
-                    new GuiFrontierBook(frontiersOverlayManager, personal, currentDimension, dimension, heldBanner));
-        }
+        Minecraft.getInstance().setScreen(new GuiFrontierBook());
     }
 
     public static ItemStack getHeldBanner() {
@@ -247,8 +226,9 @@ public class ClientProxy {
         }
     }
 
-    public static void setSettingsProfile(SettingsProfile newSettingsProfile) {
-        settingsProfile = newSettingsProfile;
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onUpdatedSettingsProfileEvent(UpdatedSettingsProfileEvent event) {
+        settingsProfile = event.profile;
     }
 
     public static SettingsProfile getSettingsProfile() {
