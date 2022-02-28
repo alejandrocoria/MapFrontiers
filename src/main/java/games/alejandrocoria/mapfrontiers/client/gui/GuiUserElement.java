@@ -27,13 +27,11 @@ public class GuiUserElement extends GuiScrollBox.ScrollElement {
     private int pingBar = 0;
     final List<Widget> buttonList;
 
-    public GuiUserElement(Font font, List<Widget> buttonList, SettingsUser user, ResourceLocation texture,
-                          int textureSize) {
+    public GuiUserElement(Font font, List<Widget> buttonList, SettingsUser user) {
         super(258, 16);
         this.font = font;
         this.user = user;
-        buttonDelete = new GuiButtonIcon(0, 0, 13, 13, 494, 132, -23, texture, textureSize, (button) -> {
-        });
+        buttonDelete = new GuiButtonIcon(0, 0, GuiButtonIcon.Type.Remove, (button) -> {});
         this.buttonList = buttonList;
         this.buttonList.add(buttonDelete);
     }

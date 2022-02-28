@@ -41,6 +41,7 @@
   "mapfrontiers.vertical_chunk": "Chunk vertical: %1$d",
   "mapfrontiers.vertical_chunk_surface": "Chunk vertical: Superficie",
   
+  "mapfrontiers.book_message": "Ya no necesitas el libro. Puedes administrar las fronteras abriendo el mapa de JourneyMap",
   "mapfrontiers.frontier_type": "Tipo de frontera",
   "mapfrontiers.global": "Global",
   "mapfrontiers.personal": "Personal",

@@ -1,50 +1,40 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import javax.annotation.ParametersAreNonnullByDefault;
-
-import games.alejandrocoria.mapfrontiers.client.ClientProxy;
+import com.mojang.blaze3d.vertex.PoseStack;
+import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
+import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.client.gui.GuiScrollBox.ScrollElement;
 import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
-import net.minecraft.client.Minecraft;
+import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
+import games.alejandrocoria.mapfrontiers.common.network.PacketRemoveSharedUserPersonalFrontier;
+import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateSharedUserPersonalFrontier;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.apache.commons.lang3.StringUtils;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-
-import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
-import games.alejandrocoria.mapfrontiers.client.gui.GuiScrollBox.ScrollElement;
-import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
-import games.alejandrocoria.mapfrontiers.common.network.PacketRemoveSharedUserPersonalFrontier;
-import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateSharedUserPersonalFrontier;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.multiplayer.ClientPacketListener;
-import net.minecraft.client.multiplayer.PlayerInfo;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class GuiShareSettings extends Screen
         implements GuiScrollBox.ScrollBoxResponder, GuiUserSharedElement.UserSharedResponder, TextBox.TextBoxResponder {
-    private static final int guiTextureSize = 512;
-
-    private final ResourceLocation guiTexture;
     private final FrontiersOverlayManager frontiersOverlayManager;
     private FrontierOverlay frontier;
     private GuiScrollBox users;
@@ -61,7 +51,6 @@ public class GuiShareSettings extends Screen
         this.frontiersOverlayManager = frontiersOverlayManager;
         this.frontier = frontier;
 
-        guiTexture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/gui.png");
         labels = new ArrayList<>();
 
         MinecraftForge.EVENT_BUS.register(this);
@@ -77,8 +66,7 @@ public class GuiShareSettings extends Screen
         textNewUser.setMaxLength(38);
         textNewUser.setResponder(this);
 
-        buttonNewUser = new GuiButtonIcon(width / 2 + 114, height - 61, 13, 13, 494, 119, -23, guiTexture, guiTextureSize,
-                (button) -> buttonNewUserPressed());
+        buttonNewUser = new GuiButtonIcon(width / 2 + 114, height - 61, GuiButtonIcon.Type.Add, (button) -> buttonNewUserPressed());
         buttonNewUser.visible = false;
 
         buttonDone = new GuiSettingsButton(font, width / 2 - 70, height - 28, 140,
@@ -226,8 +214,7 @@ public class GuiShareSettings extends Screen
         frontier.addUserShared(userShared);
         frontiersOverlayManager.clientShareFrontier(frontier.getId(), user);
 
-        GuiUserSharedElement element = new GuiUserSharedElement(font, renderables, userShared, canUpdate, true, this, guiTexture,
-                guiTextureSize);
+        GuiUserSharedElement element = new GuiUserSharedElement(font, renderables, userShared, canUpdate, true, this);
         users.addElement(element);
         users.scrollBottom();
 
@@ -334,8 +321,7 @@ public class GuiShareSettings extends Screen
         SettingsUser player = new SettingsUser(minecraft.player);
         if (frontier.getUsersShared() != null) {
             for (SettingsUserShared user : frontier.getUsersShared()) {
-                users.addElement(new GuiUserSharedElement(font, renderables, user, canUpdate, !user.getUser().equals(player), this,
-                        guiTexture, guiTextureSize));
+                users.addElement(new GuiUserSharedElement(font, renderables, user, canUpdate, !user.getUser().equals(player), this));
             }
         }
 

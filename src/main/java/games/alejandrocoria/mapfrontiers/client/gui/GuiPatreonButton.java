@@ -1,7 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import java.awt.Desktop;
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -27,21 +25,16 @@ import net.minecraftforge.client.ForgeHooksClient;
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class GuiPatreonButton extends AbstractWidget {
+    private static final ResourceLocation texture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/patreon.png");
+    private static final int textureSizeX = 212;
+    private static final int textureSizeY = 50;
+
     private final BooleanConsumer callbackFunction;
-    private final int texX;
-    private final int texY;
-    private final ResourceLocation texture;
-    private final int textureSize;
     private final String uri;
 
-    public GuiPatreonButton(int x, int y, int width, int height, int texX, int texY, ResourceLocation texture, int textureSize,
-            String uri, BooleanConsumer callbackFunction) {
-        super(x, y, width, height, TextComponent.EMPTY);
+    public GuiPatreonButton(int x, int y, String uri, BooleanConsumer callbackFunction) {
+        super(x, y, textureSizeX, textureSizeY, TextComponent.EMPTY);
         this.callbackFunction = callbackFunction;
-        this.texX = texX;
-        this.texY = texY;
-        this.texture = texture;
-        this.textureSize = textureSize;
         this.uri = uri;
     }
 
@@ -74,8 +67,8 @@ public class GuiPatreonButton extends AbstractWidget {
 
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderTexture(0, texture);
-        blit(matrixStack, x - width / 2 / factor, y, texX / factor, texY / factor, width / factor, height / factor,
-                textureSize / factor, textureSize / factor);
+        blit(matrixStack, x - width / 2 / factor, y, 0, 0, width / factor, height / factor,
+                textureSizeX / factor, textureSizeY / factor);
     }
 
     @Override
@@ -84,8 +77,7 @@ public class GuiPatreonButton extends AbstractWidget {
     }
 
     @Override
-    public void updateNarration(NarrationElementOutput p_169152_)
-    {
+    public void updateNarration(NarrationElementOutput p_169152_) {
 
     }
 }

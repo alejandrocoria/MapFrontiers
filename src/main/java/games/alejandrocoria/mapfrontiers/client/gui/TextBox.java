@@ -15,16 +15,32 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class TextBox extends EditBox {
-
     private TextBoxResponder responder;
+    private String defaultText;
 
     public TextBox(Font font, int x, int y, int width) {
+        this(font, x, y, width, "");
+    }
+
+    public TextBox(Font font, int x, int y, int width, String defaultText) {
         super(font, x, y, width, 12, TextComponent.EMPTY);
+        this.defaultText = defaultText;
+        if (!defaultText.isBlank()) {
+            setResponder((value) -> updateDefaultText());
+        }
+        updateDefaultText();
     }
 
     public void setResponder(TextBoxResponder responderIn) {
         responder = responderIn;
-        this.setResponder((string) -> responder.updatedValue(this, string));
+        if (defaultText.isBlank()) {
+            this.setResponder((value) -> responder.updatedValue(this, value));
+        } else {
+            this.setResponder((value) -> {
+                updateDefaultText();
+                responder.updatedValue(this, value);
+            });
+        }
     }
 
     @Override
@@ -38,6 +54,11 @@ public class TextBox extends EditBox {
         }
 
         return res;
+    }
+
+    @Override
+    public void setValue(String value) {
+        super.setValue(value);
     }
 
     @Override
@@ -77,5 +98,13 @@ public class TextBox extends EditBox {
         void updatedValue(TextBox textBox, String value);
 
         void lostFocus(TextBox textBox, String value);
+    }
+
+    private void updateDefaultText() {
+        if (getValue().isEmpty()) {
+            setSuggestion(defaultText);
+        } else {
+            setSuggestion("");
+        }
     }
 }

@@ -9,6 +9,7 @@ import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEven
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -50,9 +51,6 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         Credits, General, Groups, Actions
     }
 
-    private static final int guiTextureSize = 512;
-
-    private final ResourceLocation guiTexture;
     private FrontierSettings settings;
     private GuiTabbedBox tabbedBox;
     private GuiLinkButton buttonWeb;
@@ -83,7 +81,6 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
 
     public GuiFrontierSettings() {
         super(TextComponent.EMPTY);
-        guiTexture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/gui.png");
         labels = new ArrayList<>();
         labelTooltips = new HashMap<>();
 
@@ -122,8 +119,8 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
                 new TextComponent("curseforge.com/minecraft/mc-mods/mapfrontiers"),
                 "https://www.curseforge.com/minecraft/mc-mods/mapfrontiers", (open) -> linkClicked(open, buttonProject));
 
-        buttonPatreon = new GuiPatreonButton(width / 2, height / 2 + 36, 212, 50, 0, 462, guiTexture, guiTextureSize,
-                "https://www.patreon.com/alejandrocoria", (open) -> linkClicked(open, buttonPatreon));
+        buttonPatreon = new GuiPatreonButton(width / 2, height / 2 + 36, "https://www.patreon.com/alejandrocoria",
+                (open) -> linkClicked(open, buttonPatreon));
 
         buttonAddVertexToNewFrontier = new GuiOptionButton(font, width / 2 + 50, 70, 100, this::buttonPressed);
         buttonAddVertexToNewFrontier.addOption("true");
@@ -163,19 +160,19 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         users = new GuiScrollBox(250, 82, 258, height - 150, 16, this);
         groupsActions = new GuiScrollBox(width / 2 - 215, 82, 430, height - 128, 16, this);
 
-        textNewGroupName = new TextBox(font, 50, height - 61, 140);
+        textNewGroupName = new TextBox(font, 50, height - 61, 140,
+                I18n.get("mapfrontiers.new_group_name"));
         textNewGroupName.setMaxLength(22);
         textNewGroupName.setResponder(this);
 
-        buttonNewGroup = new GuiButtonIcon(192, height - 61, 13, 13, 494, 119, -23, guiTexture, guiTextureSize,
-                this::buttonPressed);
+        buttonNewGroup = new GuiButtonIcon(192, height - 61, GuiButtonIcon.Type.Add, this::buttonPressed);
 
-        textNewUser = new TextUserBox(minecraft, font, 250, height - 61, 238);
+        textNewUser = new TextUserBox(minecraft, font, 250, height - 61, 238,
+                I18n.get("mapfrontiers.new_user"));
         textNewUser.setMaxLength(38);
         textNewUser.setResponder(this);
 
-        buttonNewUser = new GuiButtonIcon(490, height - 61, 13, 13, 494, 119, -23, guiTexture, guiTextureSize,
-                this::buttonPressed);
+        buttonNewUser = new GuiButtonIcon(490, height - 61, GuiButtonIcon.Type.Add, this::buttonPressed);
 
         textGroupName = new TextBox(font, 250, 50, 140);
         textGroupName.setMaxLength(22);
@@ -320,13 +317,12 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         } else if (button == buttonNewGroup) {
             if (settings != null) {
                 SettingsGroup group = settings.createCustomGroup(textNewGroupName.getValue());
-                GuiGroupElement element = new GuiGroupElement(font, renderables, group, guiTexture, guiTextureSize);
-                groups.addElement(element);
-                groupClicked(element);
-                groups.scrollBottom();
-                groupsActions.scrollBottom();
-
                 textNewGroupName.setValue("");
+                GuiGroupElement element = new GuiGroupElement(font, renderables, group);
+                groups.addElement(element);
+                groups.scrollBottom();
+                groupClicked(element);
+                groupsActions.scrollBottom();
 
                 sendChangesToServer();
             }
@@ -366,7 +362,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
             }
 
             group.addUser(user);
-            GuiUserElement element = new GuiUserElement(font, renderables, user, guiTexture, guiTextureSize);
+            GuiUserElement element = new GuiUserElement(font, renderables, user);
             users.addElement(element);
             users.scrollBottom();
 
@@ -414,12 +410,12 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         this.settings = settings;
 
         groups.removeAll();
-        groups.addElement(new GuiGroupElement(font, renderables, settings.getOPsGroup(), guiTexture, guiTextureSize));
-        groups.addElement(new GuiGroupElement(font, renderables, settings.getOwnersGroup(), guiTexture, guiTextureSize));
-        groups.addElement(new GuiGroupElement(font, renderables, settings.getEveryoneGroup(), guiTexture, guiTextureSize));
+        groups.addElement(new GuiGroupElement(font, renderables, settings.getOPsGroup()));
+        groups.addElement(new GuiGroupElement(font, renderables, settings.getOwnersGroup()));
+        groups.addElement(new GuiGroupElement(font, renderables, settings.getEveryoneGroup()));
 
         for (SettingsGroup group : settings.getCustomGroups()) {
-            groups.addElement(new GuiGroupElement(font, renderables, group, guiTexture, guiTextureSize));
+            groups.addElement(new GuiGroupElement(font, renderables, group));
         }
 
         updateGroupsActions();
@@ -539,7 +535,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         buttonNewGroup.visible = tabSelected == Tab.Groups;
         textNewUser.visible = canAddNewUser();
         buttonNewUser.visible = canAddNewUser();
-        textGroupName.visible = tabSelected == Tab.Groups && groups.getSelectedElement() != null;
+        textGroupName.visible = tabSelected == Tab.Groups;
     }
 
     public void groupClicked(GuiGroupElement element) {
@@ -658,7 +654,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         GuiGroupElement element = (GuiGroupElement) groups.getSelectedElement();
         if (element != null && !element.getGroup().isSpecial()) {
             for (SettingsUser user : element.getGroup().getUsers()) {
-                users.addElement(new GuiUserElement(font, renderables, user, guiTexture, guiTextureSize));
+                users.addElement(new GuiUserElement(font, renderables, user));
             }
         }
 

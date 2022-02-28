@@ -24,14 +24,12 @@ public class GuiGroupElement extends GuiScrollBox.ScrollElement {
     private final GuiButtonIcon buttonDelete;
     final List<Widget> buttonList;
 
-    public GuiGroupElement(Font font, List<Widget> buttonList, SettingsGroup group, ResourceLocation texture,
-                           int textureSize) {
+    public GuiGroupElement(Font font, List<Widget> buttonList, SettingsGroup group) {
         super(160, 16);
         this.font = font;
         this.group = group;
 
-        buttonDelete = new GuiButtonIcon(0, 0, 13, 13, 494, 132, -23, texture, textureSize, (button) -> {
-        });
+        buttonDelete = new GuiButtonIcon(0, 0, GuiButtonIcon.Type.Remove, (button) -> {});
         buttonDelete.visible = false;
 
         this.buttonList = buttonList;

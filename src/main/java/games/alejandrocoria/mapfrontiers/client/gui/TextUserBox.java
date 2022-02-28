@@ -34,7 +34,11 @@ public class TextUserBox extends TextBox {
     private int suggestionIndex = 0;
 
     public TextUserBox(Minecraft mc, Font font, int x, int y, int width) {
-        super(font, x, y, width);
+        this(mc, font,x, y, width, "");
+    }
+
+    public TextUserBox(Minecraft mc, Font font, int x, int y, int width, String defaultText) {
+        super(font, x, y, width, defaultText);
         this.mc = mc;
         this.font = font;
         suggestions = new ArrayList<>();

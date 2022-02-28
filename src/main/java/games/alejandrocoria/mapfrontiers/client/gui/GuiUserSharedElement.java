@@ -1,23 +1,17 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import java.util.List;
-
-import javax.annotation.ParametersAreNonnullByDefault;
-
-import net.minecraft.client.gui.components.Widget;
-import org.apache.commons.lang3.StringUtils;
-
 import com.mojang.blaze3d.vertex.PoseStack;
-
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.resources.language.I18n;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.List;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -33,7 +27,7 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
     List<Widget> buttonList;
 
     public GuiUserSharedElement(Font font, List<Widget> buttonList, SettingsUserShared user, boolean enabled,
-                                boolean removable, UserSharedResponder responder, ResourceLocation texture, int textureSize) {
+                                boolean removable, UserSharedResponder responder) {
         super(430, 16);
         this.font = font;
         this.user = user;
@@ -43,8 +37,7 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
         this.enabled = enabled;
 
         if (removable && enabled) {
-            buttonDelete = new GuiButtonIcon(0, 0, 13, 13, 494, 132, -23, texture, textureSize, (button) -> {
-            });
+            buttonDelete = new GuiButtonIcon(0, 0, GuiButtonIcon.Type.Remove, (button) -> {});
             this.buttonList = buttonList;
             this.buttonList.add(buttonDelete);
         }

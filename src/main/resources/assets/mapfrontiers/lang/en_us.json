@@ -41,6 +41,7 @@
   "mapfrontiers.vertical_chunk": "Vertical chunk: %1$d",
   "mapfrontiers.vertical_chunk_surface": "Vertical chunk: Surface",
   
+  "mapfrontiers.book_message": "You no longer need the book. You can manage the frontiers by opening JourneyMap",
   "mapfrontiers.frontier_type": "Frontier type",
   "mapfrontiers.global": "Global",
   "mapfrontiers.personal": "Personal",

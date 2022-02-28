@@ -31,10 +31,6 @@ public class GuiSimpleLabel extends AbstractWidget {
     private ConfigData.Point topLeft;
     private ConfigData.Point bottomRight;
 
-    public GuiSimpleLabel(Font font, int x, int y, Align align, Component text) {
-        this(font, x, y, align, text, GuiColors.LABEL_TEXT_DEFAULT);
-    }
-
     public GuiSimpleLabel(Font font, int x, int y, Align align, Component text, int color) {
         super(x, y, 0, 0, text);
         this.font = font;
