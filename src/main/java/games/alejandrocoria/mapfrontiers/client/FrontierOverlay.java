@@ -129,7 +129,6 @@ public class FrontierOverlay extends FrontierData {
             hash = prime * hash + (closed ? 1231 : 1237);
             hash = prime * hash + color;
             hash = prime * hash + ((dimension == null) ? 0 : dimension.hashCode());
-            hash = prime * hash + mapSlice;
             hash = prime * hash + ((name1 == null) ? 0 : name1.hashCode());
             hash = prime * hash + ((name2 == null) ? 0 : name2.hashCode());
             hash = prime * hash + (nameVisible ? 1231 : 1237);
@@ -379,12 +378,6 @@ public class FrontierOverlay extends FrontierData {
     }
 
     @Override
-    public void setMapSlice(int mapSlice) {
-        super.setMapSlice(mapSlice);
-        dirty = true;
-    }
-
-    @Override
     public void setBanner(@Nullable ItemStack itemBanner) {
         super.setBanner(itemBanner);
         updateOverlay();
@@ -480,26 +473,6 @@ public class FrontierOverlay extends FrontierData {
         if (vertexSelected >= vertices.size()) {
             vertexSelected = -1;
         }
-        ClientProxy.getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);
-    }
-
-    public void selectPreviousVertex() {
-        --vertexSelected;
-        if (vertexSelected < -1) {
-            vertexSelected = vertices.size() - 1;
-        }
-        ClientProxy.getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);
-    }
-
-    public void selectVertex(int index) {
-        if (index < -1) {
-            vertexSelected = -1;
-        } else if (index >= vertices.size()) {
-            vertexSelected = vertices.size();
-        } else {
-            vertexSelected = index;
-        }
-
         ClientProxy.getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);
     }
 

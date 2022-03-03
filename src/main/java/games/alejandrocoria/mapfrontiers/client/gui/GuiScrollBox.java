@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.function.Predicate;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -66,6 +67,22 @@ public class GuiScrollBox extends AbstractWidget {
         }
 
         return null;
+    }
+
+    public void selectElementIf(Predicate<ScrollElement> pred) {
+        ScrollElement element = elements.stream()
+                .filter(pred)
+                .findFirst()
+                .orElse(null);
+
+        if (element == null) {
+            selected = -1;
+        } else {
+            selectElement(element);
+            if (responder != null) {
+                responder.elementClicked(this, element);
+            }
+        }
     }
 
     public void removeElement(ScrollElement element) {

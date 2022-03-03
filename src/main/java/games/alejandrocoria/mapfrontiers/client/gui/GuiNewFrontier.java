@@ -5,12 +5,10 @@ import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.Context;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
@@ -21,16 +19,13 @@ import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import org.lwjgl.glfw.GLFW;
 
-import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.*;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class GuiNewFrontier extends Screen {
-    private IClientAPI jmAPI;
+    private final IClientAPI jmAPI;
 
     private GuiOptionButton buttonFrontierType;
     private GuiOptionButton buttonAddVertexInPosition;
@@ -47,6 +42,9 @@ public class GuiNewFrontier extends Screen {
 
     @Override
     public void init() {
+        Component title = new TranslatableComponent("mapfrontiers.title_new_frontier");
+        addRenderableOnly(new GuiSimpleLabel(font, width / 2, 8, GuiSimpleLabel.Align.Center, title, GuiColors.WHITE));
+
         addRenderableOnly(new GuiSimpleLabel(font, width / 2 - 150, height / 2 - 64, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.frontier_type"), GuiColors.SETTINGS_TEXT));
         buttonFrontierType = new GuiOptionButton(font, width / 2 + 20, height / 2 - 66, 130, this::buttonPressed);
@@ -104,9 +102,7 @@ public class GuiNewFrontier extends Screen {
     }
 
     protected void buttonPressed(Button button) {
-        if (button == buttonFrontierType) {
-
-        } else if (button == buttonAddVertexInPosition) {
+        if (button == buttonAddVertexInPosition) {
             ConfigData.addVertexToNewFrontier = buttonAddVertexInPosition.getSelected() == 0;
             ClientProxy.configUpdated();
         } else if (button == buttonAfterCreate) {

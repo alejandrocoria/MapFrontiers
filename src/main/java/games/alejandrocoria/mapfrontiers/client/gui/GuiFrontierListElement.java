@@ -86,7 +86,7 @@ public class GuiFrontierListElement extends GuiScrollBox.ScrollElement {
         font.draw(matrixStack, name1, x + 26, y + 4, color);
         font.draw(matrixStack, name2, x + 26, y + 14, color);
         font.draw(matrixStack, type, x + 170, y + 4, color);
-        font.draw(matrixStack, dimension, x + 170, y + 14, color);
+        font.draw(matrixStack, dimension, x + 170, y + 14, GuiColors.SETTINGS_BUTTON_TEXT);
         font.draw(matrixStack, vertices, x + 180 + verticesOffset, y + 4, color);
         font.draw(matrixStack, owner, x + 190 + verticesOffset + ownerOffset, y + 4, color);
 

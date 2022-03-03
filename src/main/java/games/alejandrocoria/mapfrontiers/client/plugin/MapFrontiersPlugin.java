@@ -4,7 +4,6 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
-import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFullscreenMap;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.IClientPlugin;
@@ -23,7 +22,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.EnumSet;
-import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 @journeymap.client.api.ClientPlugin
@@ -35,7 +33,7 @@ public class MapFrontiersPlugin implements IClientPlugin {
 
     @Override
     public void initialize(final IClientAPI jmAPI) {
-        this.jmAPI = jmAPI;
+        MapFrontiersPlugin.jmAPI = jmAPI;
         ClientProxy.setjmAPI(jmAPI);
         jmAPI.subscribe(MapFrontiers.MODID, EnumSet.of(
                 ClientEvent.Type.MAP_CLICKED,

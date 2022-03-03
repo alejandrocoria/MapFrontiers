@@ -35,7 +35,6 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
@@ -90,8 +89,10 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
     @Override
     public void init() {
         PacketHandler.INSTANCE.sendToServer(new PacketRequestFrontierSettings());
-
         minecraft.keyboardHandler.setSendRepeatsToGui(true);
+
+        Component title = new TranslatableComponent("mapfrontiers.title_settings");
+        addRenderableOnly(new GuiSimpleLabel(font, width / 2, 8, GuiSimpleLabel.Align.Center, title, GuiColors.WHITE));
 
         canEditGroups = ClientProxy.getSettingsProfile().updateSettings == SettingsProfile.State.Enabled;
 

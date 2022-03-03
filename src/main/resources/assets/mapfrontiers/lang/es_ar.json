@@ -12,6 +12,8 @@
   "mapfrontiers.area": "Área: %1$.2fm²",
   "mapfrontiers.perimeter": "Perímetro: %1$.2fm",
   "mapfrontiers.owner": "Dueño: %1$s",
+  "mapfrontiers.created": "Creada: %1$s",
+  "mapfrontiers.modified": "Modificada: %1$s",
   "mapfrontiers.unknown": "%1$s<Desconocido>",
   "mapfrontiers.shared": "Compartida con %1$d jugadores",
   "mapfrontiers.share_settings": "Opciones sobre compartir",
@@ -53,7 +55,14 @@
   "mapfrontiers.create": "Crear",
   "mapfrontiers.edit": "Editar",
   "mapfrontiers.info": "Info",
-
+  
+  "mapfrontiers.title_info": "Información de Frontera",
+  "mapfrontiers.title_frontiers": "Fronteras",
+  "mapfrontiers.title_new_frontier": "Nueva Frontera",
+  "mapfrontiers.title_share_settings": "Opciones sobre compartir",
+  "mapfrontiers.title_settings": "Opciones de MapFrontier",
+  
+  
   "mapfrontiers.credits": "Créditos",
   "mapfrontiers.general": "General",
   "mapfrontiers.groups": "Grupos",

@@ -16,6 +16,7 @@ import net.minecraft.client.gui.components.Widget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -59,6 +60,9 @@ public class GuiShareSettings extends Screen
     @Override
     public void init() {
         minecraft.keyboardHandler.setSendRepeatsToGui(true);
+
+        Component title = new TranslatableComponent("mapfrontiers.title_share_settings");
+        addRenderableOnly(new GuiSimpleLabel(font, width / 2, 8, GuiSimpleLabel.Align.Center, title, GuiColors.WHITE));
 
         users = new GuiScrollBox(width / 2 - 215, 82, 430, height - 128, 16, this);
 

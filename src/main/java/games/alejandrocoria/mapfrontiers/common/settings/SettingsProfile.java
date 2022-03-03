@@ -16,21 +16,11 @@ public class SettingsProfile {
 
     public void setAction(FrontierSettings.Action action, State state) {
         switch (action) {
-        case CreateFrontier:
-            createFrontier = state;
-            break;
-        case DeleteFrontier:
-            deleteFrontier = state;
-            break;
-        case UpdateFrontier:
-            updateFrontier = state;
-            break;
-        case UpdateSettings:
-            updateSettings = state;
-            break;
-        case PersonalFrontier:
-            personalFrontier = state;
-            break;
+            case CreateFrontier -> createFrontier = state;
+            case DeleteFrontier -> deleteFrontier = state;
+            case UpdateFrontier -> updateFrontier = state;
+            case UpdateSettings -> updateSettings = state;
+            case PersonalFrontier -> personalFrontier = state;
         }
     }
 
@@ -99,7 +89,7 @@ public class SettingsProfile {
         return actions;
     }
 
-    public class AvailableActions {
+    public static class AvailableActions {
         public boolean canCreate = false;
         public boolean canDelete = false;
         public boolean canUpdate = false;

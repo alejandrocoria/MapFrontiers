@@ -1,10 +1,6 @@
 package games.alejandrocoria.mapfrontiers.common;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -37,9 +33,6 @@ public class FrontierData {
         public final static Change[] valuesArray = values();
     }
 
-    public static final int NoSlice = -5;
-    public static final int SurfaceSlice = 16;
-
     protected UUID id;
     protected List<BlockPos> vertices = new ArrayList<>();
     protected boolean closed = false;
@@ -48,11 +41,12 @@ public class FrontierData {
     protected boolean nameVisible = true;
     protected int color = 0xffffffff;
     protected ResourceKey<Level> dimension;
-    protected int mapSlice = NoSlice;
     protected SettingsUser owner = new SettingsUser();
     protected BannerData banner;
     protected boolean personal = false;
     protected List<SettingsUserShared> usersShared;
+    protected Date created;
+    protected Date modified;
 
     protected Set<Change> changes = EnumSet.noneOf(Change.class);
 
@@ -69,7 +63,6 @@ public class FrontierData {
         closed = other.closed;
         nameVisible = other.nameVisible;
         color = other.color;
-        mapSlice = other.mapSlice;
 
         name1 = other.name1;
         name2 = other.name2;
@@ -79,6 +72,9 @@ public class FrontierData {
         usersShared = other.usersShared;
 
         vertices = other.vertices;
+
+        created = other.created;
+        modified = other.modified;
 
         changes = EnumSet.noneOf(Change.class);
     }
@@ -93,7 +89,6 @@ public class FrontierData {
             closed = other.closed;
             nameVisible = other.nameVisible;
             color = other.color;
-            mapSlice = other.mapSlice;
         }
 
         if (other.changes.contains(Change.Name)) {
@@ -112,6 +107,8 @@ public class FrontierData {
         if (other.changes.contains(Change.Vertices)) {
             vertices = other.vertices;
         }
+
+        modified = other.modified;
 
         changes = EnumSet.noneOf(Change.class);
     }
@@ -242,15 +239,6 @@ public class FrontierData {
         return dimension;
     }
 
-    public void setMapSlice(int mapSlice) {
-        this.mapSlice = mapSlice;
-        changes.add(Change.Other);
-    }
-
-    public int getMapSlice() {
-        return mapSlice;
-    }
-
     public void setBanner(@Nullable ItemStack itemBanner) {
         changes.add(Change.Banner);
 
@@ -358,6 +346,23 @@ public class FrontierData {
         return userShared.hasAction(action);
     }
 
+    public void setCreated(Date created) {
+        this.created = created;
+        modified = created;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setModified(Date modified) {
+        this.modified = modified;
+    }
+
+    public Date getModified() {
+        return modified;
+    }
+
     // @Note: To record changes if done outside this class.
     // It would be better to change that.
     public void addChange(Change change) {
@@ -387,12 +392,6 @@ public class FrontierData {
             nameVisible = nbt.getBoolean("nameVisible");
         }
 
-        mapSlice = nbt.getInt("slice");
-        if (version < 6 && mapSlice == -1) {
-            mapSlice = NoSlice;
-        }
-        mapSlice = Math.min(Math.max(mapSlice, NoSlice), SurfaceSlice);
-
         personal = nbt.getBoolean("personal");
 
         owner = new SettingsUser();
@@ -420,6 +419,14 @@ public class FrontierData {
         for (int i = 0; i < verticesTagList.size(); ++i) {
             vertices.add(NbtUtils.readBlockPos(verticesTagList.getCompound(i)));
         }
+
+        if (nbt.contains("created")) {
+            created = new Date(nbt.getLong("created"));
+        }
+
+        if (nbt.contains("modified")) {
+            modified = new Date(nbt.getLong("modified"));
+        }
     }
 
     public void writeToNBT(CompoundTag nbt) {
@@ -430,7 +437,6 @@ public class FrontierData {
         nbt.putString("name1", name1);
         nbt.putString("name2", name2);
         nbt.putBoolean("nameVisible", nameVisible);
-        nbt.putInt("slice", mapSlice);
         nbt.putBoolean("personal", personal);
 
         CompoundTag nbtOwner = new CompoundTag();
@@ -460,6 +466,14 @@ public class FrontierData {
         }
 
         nbt.put("vertices", verticesTagList);
+
+        if (created != null) {
+            nbt.putLong("created", created.getTime());
+        }
+
+        if (modified != null) {
+            nbt.putLong("modified", modified.getTime());
+        }
     }
 
     public void fromBytes(FriendlyByteBuf buf) {
@@ -480,7 +494,6 @@ public class FrontierData {
             closed = buf.readBoolean();
             color = buf.readInt();
             nameVisible = buf.readBoolean();
-            mapSlice = buf.readInt();
         }
 
 
@@ -529,6 +542,18 @@ public class FrontierData {
                 vertices.add(vertex);
             }
         }
+
+        if (buf.readBoolean()) {
+            created = new Date(buf.readLong());
+        } else {
+            created = null;
+        }
+
+        if (buf.readBoolean()) {
+            modified = new Date(buf.readLong());
+        } else {
+            modified = null;
+        }
     }
 
     public void toBytes(FriendlyByteBuf buf) {
@@ -553,7 +578,6 @@ public class FrontierData {
             buf.writeBoolean(closed);
             buf.writeInt(color);
             buf.writeBoolean(nameVisible);
-            buf.writeInt(mapSlice);
         }
 
         if (!onlyChanges || changes.contains(Change.Name)) {
@@ -590,6 +614,20 @@ public class FrontierData {
             for (BlockPos pos : vertices) {
                 buf.writeLong(pos.asLong());
             }
+        }
+
+        if (created == null) {
+            buf.writeBoolean(false);
+        } else {
+            buf.writeBoolean(true);
+            buf.writeLong(created.getTime());
+        }
+
+        if (modified == null) {
+            buf.writeBoolean(false);
+        } else {
+            buf.writeBoolean(true);
+            buf.writeLong(modified.getTime());
         }
     }
 

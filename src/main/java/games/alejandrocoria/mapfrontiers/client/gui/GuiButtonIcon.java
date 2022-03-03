@@ -31,12 +31,8 @@ public class GuiButtonIcon extends Button {
         super(x, y, 13, 13, TextComponent.EMPTY, pressedAction);
 
         switch (type) {
-            case Add:
-                texY = 0;
-                break;
-            case Remove:
-                texY = 13;
-                break;
+            case Add -> texY = 0;
+            case Remove -> texY = 13;
         }
     }
 

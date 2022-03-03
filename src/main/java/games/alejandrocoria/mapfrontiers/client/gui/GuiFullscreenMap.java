@@ -34,7 +34,7 @@ import static java.lang.Math.pow;
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class GuiFullscreenMap {
-    private IClientAPI jmAPI;
+    private final IClientAPI jmAPI;
 
     private FrontierOverlay frontierHighlighted;
 
@@ -161,7 +161,7 @@ public class GuiFullscreenMap {
     }
 
     private void buttonFrontiersPressed() {
-        ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiFrontierList(jmAPI));
+        ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiFrontierList(jmAPI, this));
     }
 
     private void buttonNewPressed() {
@@ -223,6 +223,26 @@ public class GuiFullscreenMap {
 
     public boolean isEditing() {
         return editing;
+    }
+
+    public FrontierOverlay getSelected() {
+        return frontierHighlighted;
+    }
+
+    public void selectFrontier(FrontierOverlay frontier) {
+        if (frontier.getDimension().equals(jmAPI.getUIState(Context.UI.Fullscreen).dimension)) {
+            if (frontierHighlighted != frontier) {
+                if (frontierHighlighted != null) {
+                    frontierHighlighted.setHighlighted(false);
+                }
+
+                frontierHighlighted = frontier;
+                frontierHighlighted.setHighlighted(true);
+            }
+        } else if (frontierHighlighted != null) {
+            frontierHighlighted.setHighlighted(false);
+            frontierHighlighted = null;
+        }
     }
 
     public void mapClicked(ResourceKey<Level> dimension, BlockPos position) {

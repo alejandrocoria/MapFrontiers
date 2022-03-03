@@ -16,6 +16,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Widget;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -31,7 +32,8 @@ import java.util.*;
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxResponder {
-    private IClientAPI jmAPI;
+    private final IClientAPI jmAPI;
+    private final GuiFullscreenMap fullscreenMap;
 
     private GuiScrollBox frontiers;
     private GuiSettingsButton buttonCreate;
@@ -39,22 +41,26 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
     private GuiSettingsButton buttonDelete;
     private GuiSettingsButton buttonDone;
 
-    public GuiFrontierList(IClientAPI jmAPI) {
+    public GuiFrontierList(IClientAPI jmAPI, GuiFullscreenMap fullscreenMap) {
         super(TextComponent.EMPTY);
         this.jmAPI = jmAPI;
+        this.fullscreenMap = fullscreenMap;
 
         MinecraftForge.EVENT_BUS.register(this);
     }
 
     @Override
     public void init() {
+        Component title = new TranslatableComponent("mapfrontiers.title_frontiers");
+        addRenderableOnly(new GuiSimpleLabel(font, width / 2, 8, GuiSimpleLabel.Align.Center, title, GuiColors.WHITE));
+
         frontiers = new GuiScrollBox(width / 2 - 300, 50, 450, height - 120, 24, this);
 
-        buttonCreate = new GuiSettingsButton(font, width / 2 - 295, height - 30, 140,
+        buttonCreate = new GuiSettingsButton(font, width / 2 - 295, height - 28, 140,
                 new TranslatableComponent("mapfrontiers.create"), this::buttonPressed);
-        buttonInfo = new GuiSettingsButton(font, width / 2 - 145, height - 30, 140,
+        buttonInfo = new GuiSettingsButton(font, width / 2 - 145, height - 28, 140,
                 new TranslatableComponent("mapfrontiers.info"), this::buttonPressed);
-        buttonDelete = new GuiSettingsButton(font, width / 2 + 5, height - 30, 140,
+        buttonDelete = new GuiSettingsButton(font, width / 2 + 5, height - 28, 140,
                 new TranslatableComponent("mapfrontiers.delete"), this::buttonPressed);
         buttonDone = new GuiSettingsButton(font, width / 2 + 155, height - 28, 140,
                 new TranslatableComponent("gui.done"), this::buttonPressed);
@@ -67,6 +73,10 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
 
         updateFrontiers();
         updateButtons();
+
+        if (fullscreenMap.getSelected() != null) {
+            frontiers.selectElementIf((element) -> ((GuiFrontierListElement) element).getFrontier().getId().equals(fullscreenMap.getSelected().getId()));
+        }
     }
 
     @Override
@@ -117,7 +127,8 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
         } else if (button == buttonInfo) {
             ForgeHooksClient.popGuiLayer(minecraft);
             FrontierOverlay frontier = ((GuiFrontierListElement) frontiers.getSelectedElement()).getFrontier();
-            ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiFrontierInfo(jmAPI, frontier));
+            ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiFrontierInfo(jmAPI, frontier,
+                    () -> ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiFrontierList(jmAPI, fullscreenMap))));
         } else if (button == buttonDelete) {
             FrontierOverlay frontier = ((GuiFrontierListElement) frontiers.getSelectedElement()).getFrontier();
             FrontiersOverlayManager frontierManager = ClientProxy.getFrontiersOverlayManager(frontier.getPersonal());
@@ -131,7 +142,8 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
     @Override
     public void elementClicked(GuiScrollBox scrollBox, GuiScrollBox.ScrollElement element) {
         if (scrollBox == frontiers) {
-
+            FrontierOverlay frontier = ((GuiFrontierListElement) element).getFrontier();
+            fullscreenMap.selectFrontier(frontier);
         }
 
         updateButtons();

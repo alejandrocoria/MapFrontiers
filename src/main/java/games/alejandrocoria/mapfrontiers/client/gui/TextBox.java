@@ -4,8 +4,6 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import org.lwjgl.glfw.GLFW;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.TextComponent;
@@ -15,8 +13,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class TextBox extends EditBox {
+    private final String defaultText;
     private TextBoxResponder responder;
-    private String defaultText;
 
     public TextBox(Font font, int x, int y, int width) {
         this(font, x, y, width, "");

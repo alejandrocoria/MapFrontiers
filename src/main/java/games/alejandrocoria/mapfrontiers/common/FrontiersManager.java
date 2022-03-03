@@ -4,12 +4,7 @@ import java.awt.Color;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -153,6 +148,7 @@ public class FrontiersManager {
         frontier.setDimension(dimension);
         frontier.setPersonal(personal);
         frontier.setColor(color.getRGB());
+        frontier.setCreated(new Date());
 
         if (vertex != null) {
             frontier.addVertex(vertex);
@@ -221,6 +217,8 @@ public class FrontiersManager {
             return false;
         }
 
+        updatedFrontier.setModified(new Date());
+
         FrontierData frontier = frontiers.get(index);
         frontier.updateFromData(updatedFrontier);
 
@@ -245,6 +243,8 @@ public class FrontiersManager {
         if (index < 0) {
             return false;
         }
+
+        updatedFrontier.setModified(new Date());
 
         FrontierData frontier = frontiers.get(index);
         frontier.updateFromData(updatedFrontier);

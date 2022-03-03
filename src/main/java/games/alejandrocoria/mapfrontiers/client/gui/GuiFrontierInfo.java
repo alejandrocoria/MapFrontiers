@@ -25,15 +25,21 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBoxResponder, TextBox.TextBoxResponder {
-    private IClientAPI jmAPI;
+    static final DateFormat dateFormat = new SimpleDateFormat();
 
-    private FrontiersOverlayManager frontiersOverlayManager;
-    private FrontierOverlay frontier;
+    private final IClientAPI jmAPI;
+    private final Runnable afterClose;
+
+    private final FrontiersOverlayManager frontiersOverlayManager;
+    private final FrontierOverlay frontier;
     private TextBox textName1;
     private TextBox textName2;
     private TextColorBox textRed;
@@ -46,9 +52,15 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
     private GuiSettingsButton buttonDone;
     private GuiSettingsButton buttonBanner;
 
+    private GuiSimpleLabel modifiedLabel;
+
     public GuiFrontierInfo(IClientAPI jmAPI, FrontierOverlay frontier) {
+        this(jmAPI, frontier, null);
+    }
+    public GuiFrontierInfo(IClientAPI jmAPI, FrontierOverlay frontier, @Nullable  Runnable afterClose) {
         super(TextComponent.EMPTY);
         this.jmAPI = jmAPI;
+        this.afterClose = afterClose;
         frontiersOverlayManager = ClientProxy.getFrontiersOverlayManager(frontier.getPersonal());
         this.frontier = frontier;
 
@@ -58,6 +70,9 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
     @Override
     public void init() {
         minecraft.keyboardHandler.setSendRepeatsToGui(true);
+
+        Component title = new TranslatableComponent("mapfrontiers.title_info");
+        addRenderableOnly(new GuiSimpleLabel(font, width / 2, 8, GuiSimpleLabel.Align.Center, title, GuiColors.WHITE));
 
         int leftSide = width / 2 - 154;
         int rightSide = width / 2 + 10;
@@ -126,6 +141,17 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
 
         Component perimeter = new TranslatableComponent("mapfrontiers.perimeter", frontier.perimeter);
         addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 80, GuiSimpleLabel.Align.Left, perimeter, GuiColors.WHITE));
+
+        if (frontier.getCreated() != null) {
+            Component created = new TranslatableComponent("mapfrontiers.created", dateFormat.format(frontier.getCreated()));
+            addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 96, GuiSimpleLabel.Align.Left, created, GuiColors.WHITE));
+        }
+
+        if (frontier.getModified() != null) {
+            Component modified = new TranslatableComponent("mapfrontiers.modified", dateFormat.format(frontier.getModified()));
+            modifiedLabel = new GuiSimpleLabel(font, rightSide, top + 112, GuiSimpleLabel.Align.Left, modified, GuiColors.WHITE);
+            addRenderableOnly(modifiedLabel);
+        }
 
         buttonSelect = new GuiSettingsButton(font, leftSide, top + 142, 144,
                 new TranslatableComponent("mapfrontiers.select_in_map"), this::buttonPressed);
@@ -208,9 +234,9 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
             ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiShareSettings(frontiersOverlayManager, frontier));
         } else if (button == buttonDelete) {
             frontiersOverlayManager.clientDeleteFrontier(frontier);
-            ForgeHooksClient.popGuiLayer(minecraft);
+            onClose();
         } else if (button == buttonDone) {
-            ForgeHooksClient.popGuiLayer(minecraft);
+            onClose();
         } else if (button == buttonBanner) {
             if (!frontier.hasBanner()) {
                 ItemStack heldBanner = ClientProxy.getHeldBanner();
@@ -231,6 +257,15 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
         MinecraftForge.EVENT_BUS.unregister(this);
     }
 
+    @Override
+    public void onClose() {
+        ForgeHooksClient.popGuiLayer(minecraft);
+
+        if (afterClose != null) {
+            afterClose.run();
+        }
+    }
+
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onUpdatedSettingsProfileEvent(UpdatedSettingsProfileEvent event) {
         updateButtons();
@@ -240,15 +275,22 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onUpdatedFrontierEvent(UpdatedFrontierEvent event) {
         if (frontier.getId().equals(event.frontierOverlay.getId())) {
-            ForgeHooksClient.popGuiLayer(minecraft);
-            ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiFrontierInfo(jmAPI, frontier));
+            if (event.playerID != Minecraft.getInstance().player.getId()) {
+                ForgeHooksClient.popGuiLayer(minecraft);
+                ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiFrontierInfo(jmAPI, frontier));
+            } else {
+                if (frontier.getModified() != null) {
+                    Component modified = new TranslatableComponent("mapfrontiers.modified", dateFormat.format(frontier.getModified()));
+                    modifiedLabel.setText(modified);
+                }
+            }
         }
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onDeletedFrontierEvent(DeletedFrontierEvent event) {
         if (frontier.getId().equals(event.frontierID)) {
-            ForgeHooksClient.popGuiLayer(minecraft);
+            onClose();
         }
     }
 
