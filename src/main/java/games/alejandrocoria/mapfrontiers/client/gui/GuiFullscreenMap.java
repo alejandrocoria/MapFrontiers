@@ -16,6 +16,7 @@ import journeymap.client.api.display.IThemeButton;
 import journeymap.client.api.display.ModPopupMenu;
 import journeymap.client.api.display.ThemeButtonDisplay;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
@@ -26,6 +27,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import static java.lang.Math.max;
@@ -60,12 +62,14 @@ public class GuiFullscreenMap {
     }
 
     public void addButtons(ThemeButtonDisplay buttonDisplay) {
-        buttonFrontiers = buttonDisplay.addThemeButton("frontiers...", "frontiers", b -> buttonFrontiersPressed());
-        buttonNew = buttonDisplay.addThemeButton("new frontier", "new_frontier", b -> buttonNewPressed());
-        buttonInfo = buttonDisplay.addThemeButton("frontier info", "info_frontier", b -> buttonInfoPressed());
-        buttonEdit = buttonDisplay.addThemeToggleButton("done editing", "edit frontier", "edit_frontier", editing, b -> buttonEditToggled());
-        buttonClosed = buttonDisplay.addThemeToggleButton("open", "close", "close_frontier", false, b -> buttonClosedToggled());
-        buttonDelete = buttonDisplay.addThemeButton("delete frontier", "delete_frontier", b -> buttonDelete());
+        buttonFrontiers = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_frontiers"), "frontiers", b -> buttonFrontiersPressed());
+        buttonNew = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_new_frontier"), "new_frontier", b -> buttonNewPressed());
+        buttonInfo = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_frontier_info"), "info_frontier", b -> buttonInfoPressed());
+        buttonEdit = buttonDisplay.addThemeToggleButton(I18n.get("mapfrontiers.button_done_editing"), I18n.get("mapfrontiers.button_edit_frontier"),
+                "edit_frontier", editing, b -> buttonEditToggled());
+        buttonClosed = buttonDisplay.addThemeToggleButton(I18n.get("mapfrontiers.button_open_frontier"), I18n.get("mapfrontiers.button_close_frontier"),
+                "close_frontier", false, b -> buttonClosedToggled());
+        buttonDelete = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_delete_frontier"), "delete_frontier", b -> buttonDelete());
 
         updatebuttons();
     }
@@ -229,8 +233,8 @@ public class GuiFullscreenMap {
         return frontierHighlighted;
     }
 
-    public void selectFrontier(FrontierOverlay frontier) {
-        if (frontier.getDimension().equals(jmAPI.getUIState(Context.UI.Fullscreen).dimension)) {
+    public void selectFrontier(@Nullable FrontierOverlay frontier) {
+        if (frontier != null && frontier.getDimension().equals(jmAPI.getUIState(Context.UI.Fullscreen).dimension)) {
             if (frontierHighlighted != frontier) {
                 if (frontierHighlighted != null) {
                     frontierHighlighted.setHighlighted(false);
@@ -243,6 +247,8 @@ public class GuiFullscreenMap {
             frontierHighlighted.setHighlighted(false);
             frontierHighlighted = null;
         }
+
+        updatebuttons();
     }
 
     public void mapClicked(ResourceKey<Level> dimension, BlockPos position) {
@@ -265,21 +271,7 @@ public class GuiFullscreenMap {
             newFrontierHighlighted = globalManager.getFrontierInPosition(dimension, position, maxDistanceToClosest);
         }
 
-        if (newFrontierHighlighted != null) {
-            if (frontierHighlighted != newFrontierHighlighted) {
-                if (frontierHighlighted != null) {
-                    frontierHighlighted.setHighlighted(false);
-                }
-
-                frontierHighlighted = newFrontierHighlighted;
-                frontierHighlighted.setHighlighted(true);
-            }
-        } else if (frontierHighlighted != null) {
-            frontierHighlighted.setHighlighted(false);
-            frontierHighlighted = null;
-        }
-
-        updatebuttons();
+        selectFrontier(newFrontierHighlighted);
     }
 
     public boolean mapDragged(ResourceKey<Level> dimension, BlockPos position) {

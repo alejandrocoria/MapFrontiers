@@ -77,9 +77,8 @@ public class GuiFrontierListElement extends GuiScrollBox.ScrollElement {
         int color = GuiColors.SETTINGS_TEXT;
         if (selected) {
             color = GuiColors.SETTINGS_TEXT_HIGHLIGHT;
-        }
-
-        if (isHovered) {
+            fill(matrixStack, x, y, x + width, y + height, GuiColors.SETTINGS_ELEMENT_SELECTED);
+        } else if (isHovered) {
             fill(matrixStack, x, y, x + width, y + height, GuiColors.SETTINGS_ELEMENT_HOVERED);
         }
 

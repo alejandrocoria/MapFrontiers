@@ -62,6 +62,7 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
                 new TranslatableComponent("mapfrontiers.info"), this::buttonPressed);
         buttonDelete = new GuiSettingsButton(font, width / 2 + 5, height - 28, 140,
                 new TranslatableComponent("mapfrontiers.delete"), this::buttonPressed);
+        buttonDelete.setTextColors(GuiColors.SETTINGS_BUTTON_TEXT_DELETE, GuiColors.SETTINGS_BUTTON_TEXT_DELETE_HIGHLIGHT);
         buttonDone = new GuiSettingsButton(font, width / 2 + 155, height - 28, 140,
                 new TranslatableComponent("gui.done"), this::buttonPressed);
 

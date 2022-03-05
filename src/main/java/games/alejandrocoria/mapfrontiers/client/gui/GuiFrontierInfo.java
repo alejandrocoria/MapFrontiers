@@ -160,6 +160,7 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
         buttonShareSettings.visible = frontier.getPersonal();
         buttonDelete = new GuiSettingsButton(font, leftSide, top + 164, 144,
                 new TranslatableComponent("mapfrontiers.delete"), this::buttonPressed);
+        buttonDelete.setTextColors(GuiColors.SETTINGS_BUTTON_TEXT_DELETE, GuiColors.SETTINGS_BUTTON_TEXT_DELETE_HIGHLIGHT);
         buttonDone = new GuiSettingsButton(font, rightSide, top + 164, 144,
                 new TranslatableComponent("gui.done"), this::buttonPressed);
 
