@@ -44,7 +44,7 @@ public class GuiFullscreenMap {
     private IThemeButton buttonNew;
     private IThemeButton buttonInfo;
     private IThemeButton buttonEdit;
-    private IThemeButton buttonClosed;
+    private IThemeButton buttonVisible;
     private IThemeButton buttonDelete;
 
     private boolean editing = false;
@@ -67,8 +67,8 @@ public class GuiFullscreenMap {
         buttonInfo = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_frontier_info"), "info_frontier", b -> buttonInfoPressed());
         buttonEdit = buttonDisplay.addThemeToggleButton(I18n.get("mapfrontiers.button_done_editing"), I18n.get("mapfrontiers.button_edit_frontier"),
                 "edit_frontier", editing, b -> buttonEditToggled());
-        buttonClosed = buttonDisplay.addThemeToggleButton(I18n.get("mapfrontiers.button_open_frontier"), I18n.get("mapfrontiers.button_close_frontier"),
-                "close_frontier", false, b -> buttonClosedToggled());
+        buttonVisible = buttonDisplay.addThemeToggleButton(I18n.get("mapfrontiers.button_hide_frontier"), I18n.get("mapfrontiers.button_show_frontier"),
+                "visible_frontier", false, b -> buttonVisibleToggled());
         buttonDelete = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_delete_frontier"), "delete_frontier", b -> buttonDelete());
 
         updatebuttons();
@@ -76,9 +76,9 @@ public class GuiFullscreenMap {
 
     public void addPopupMenu(ModPopupMenu popupMenu) {
         if (editing) {
-            popupMenu.addMenuItem("add vertex", p -> buttonAddVertex(p));
+            popupMenu.addMenuItem(I18n.get("mapfrontiers.add_vertex"), p -> buttonAddVertex(p));
             if (frontierHighlighted.getSelectedVertexIndex() != -1) {
-                popupMenu.addMenuItem("remove vertex", p -> buttonRemoveVertex());
+                popupMenu.addMenuItem(I18n.get("mapfrontiers.remove_vertex"), p -> buttonRemoveVertex());
             }
         }
     }
@@ -153,14 +153,14 @@ public class GuiFullscreenMap {
         buttonFrontiers.setEnabled(!editing);
         buttonNew.setEnabled(actions.canCreate && !editing);
         buttonInfo.setEnabled(frontierHighlighted != null && !editing);
-        buttonEdit.setEnabled(actions.canUpdate);
-        buttonClosed.setEnabled(actions.canUpdate);
+        buttonEdit.setEnabled(actions.canUpdate && frontierHighlighted.getVisible());
+        buttonVisible.setEnabled(actions.canUpdate && !editing);
         buttonDelete.setEnabled(actions.canDelete && !editing);
 
         if (frontierHighlighted != null) {
-            buttonClosed.setToggled(frontierHighlighted.getClosed());
+            buttonVisible.setToggled(frontierHighlighted.getVisible());
         } else {
-            buttonClosed.setToggled(false);
+            buttonVisible.setToggled(false);
         }
     }
 
@@ -194,8 +194,8 @@ public class GuiFullscreenMap {
         updatebuttons();
     }
 
-    private void buttonClosedToggled() {
-        frontierHighlighted.setClosed(!buttonClosed.getToggled());
+    private void buttonVisibleToggled() {
+        frontierHighlighted.setVisible(!buttonVisible.getToggled());
 
         updatebuttons();
     }

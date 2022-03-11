@@ -30,15 +30,19 @@
   "mapfrontiers.create": "Create",
   "mapfrontiers.edit": "Edit",
   "mapfrontiers.info": "Info",
+  "mapfrontiers.show": "Show",
+  "mapfrontiers.hide": "Hide",
   
   "mapfrontiers.button_frontiers": "Frontiers...",
   "mapfrontiers.button_new_frontier": "New Frontier...",
   "mapfrontiers.button_frontier_info": "Frontier Info...",
   "mapfrontiers.button_edit_frontier": "Edit Frontier",
   "mapfrontiers.button_done_editing": "Done Editing",
-  "mapfrontiers.button_open_frontier": "Open",
-  "mapfrontiers.button_close_frontier": "Close",
+  "mapfrontiers.button_show_frontier": "Show Frontier",
+  "mapfrontiers.button_hide_frontier": "Hide Frontier",
   "mapfrontiers.button_delete_frontier": "Delete Frontier",
+  "mapfrontiers.add_vertex": "Add vertex",
+  "mapfrontiers.remove_vertex": "Remove vertex",
   
   "mapfrontiers.title_info": "Frontier Info",
   "mapfrontiers.title_frontiers": "Frontiers",
@@ -80,8 +84,8 @@
   "mapfrontiers.group_everyone_desc": "This group represents all players without exception.",
   "mapfrontiers.unnamed": "%1$sUnnamed",
 
-  "item.mapfrontiers.frontier_book": "Frontier Book",
-  "item.mapfrontiers.personal_frontier_book": "Personal Frontier Book",
+  "item.mapfrontiers.frontier_book": "Frontier Book (Deprecated)",
+  "item.mapfrontiers.personal_frontier_book": "Personal Frontier Book (Deprecated)",
 
   "mapfrontiers.key.category": "MapFrontiers",
   "mapfrontiers.key.open_settings": "Open settings"

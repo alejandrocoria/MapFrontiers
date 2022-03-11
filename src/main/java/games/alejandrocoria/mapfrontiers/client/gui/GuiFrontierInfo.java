@@ -10,6 +10,7 @@ import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEven
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import journeymap.client.api.IClientAPI;
+import journeymap.client.api.display.Context;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
@@ -277,8 +278,8 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
     public void onUpdatedFrontierEvent(UpdatedFrontierEvent event) {
         if (frontier.getId().equals(event.frontierOverlay.getId())) {
             if (event.playerID != Minecraft.getInstance().player.getId()) {
-                ForgeHooksClient.popGuiLayer(minecraft);
-                ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiFrontierInfo(jmAPI, frontier));
+                clearWidgets();
+                init();
             } else {
                 if (frontier.getModified() != null) {
                     Component modified = new TranslatableComponent("mapfrontiers.modified", dateFormat.format(frontier.getModified()));
@@ -361,6 +362,7 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
         textBlue.setEditable(actions.canUpdate);
         buttonDelete.visible = actions.canDelete;
         buttonBanner.visible = actions.canUpdate;
+        buttonSelect.visible = frontier.getDimension().equals(jmAPI.getUIState(Context.UI.Fullscreen).dimension);
     }
 
     private void sendChangesToServer() {

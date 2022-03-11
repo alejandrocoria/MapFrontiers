@@ -45,7 +45,7 @@ public class FrontiersManager {
     private File ModDir;
     private boolean frontierOwnersChecked = false;
 
-    public static final int dataVersion = 6;
+    public static final int dataVersion = 7;
     private static int pendingShareFrontierID = 0;
     private static final int pendingShareFrontierTickDuration = 1200;
 
@@ -308,7 +308,7 @@ public class FrontiersManager {
             MapFrontiers.LOGGER.warn("Data version in frontiers not found, expected " + dataVersion);
         } else if (version < 5) {
             MapFrontiers.LOGGER
-                    .warn("Data version in frontiers lower than expected. The mod uses " + dataVersion);
+                    .warn("Data version in frontiers lower than expected. The mod support from 5 to " + dataVersion);
         } else if (version > dataVersion) {
             MapFrontiers.LOGGER
                     .warn("Data version in frontiers higher than expected. The mod uses " + dataVersion);

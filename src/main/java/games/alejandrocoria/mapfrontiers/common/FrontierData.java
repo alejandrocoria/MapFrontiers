@@ -35,7 +35,7 @@ public class FrontierData {
 
     protected UUID id;
     protected List<BlockPos> vertices = new ArrayList<>();
-    protected boolean closed = false;
+    protected boolean visible = true;
     protected String name1 = "New";
     protected String name2 = "Frontier";
     protected boolean nameVisible = true;
@@ -60,7 +60,7 @@ public class FrontierData {
         owner = other.owner;
         personal = other.personal;
 
-        closed = other.closed;
+        visible = other.visible;
         nameVisible = other.nameVisible;
         color = other.color;
 
@@ -86,7 +86,7 @@ public class FrontierData {
         personal = other.personal;
 
         if (other.changes.contains(Change.Other)) {
-            closed = other.closed;
+            visible = other.visible;
             nameVisible = other.nameVisible;
             color = other.color;
         }
@@ -182,17 +182,17 @@ public class FrontierData {
         changes.add(Change.Vertices);
     }
 
-    public void setClosed(boolean closed) {
+    public void setVisible(boolean visible) {
         if (vertices.size() < 3) {
             return;
         }
 
-        this.closed = closed;
+        this.visible = visible;
         changes.add(Change.Other);
     }
 
-    public boolean getClosed() {
-        return closed;
+    public boolean getVisible() {
+        return visible;
     }
 
     public void setName1(String name) {
@@ -383,7 +383,9 @@ public class FrontierData {
 
     public void readFromNBT(CompoundTag nbt, int version) {
         id = UUID.fromString(nbt.getString("id"));
-        closed = nbt.getBoolean("closed");
+        if (nbt.contains("visible")) {
+            visible = nbt.getBoolean("visible");
+        }
         color = nbt.getInt("color");
         dimension = ResourceKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation(nbt.getString("dimension")));
         name1 = nbt.getString("name1");
@@ -431,7 +433,7 @@ public class FrontierData {
 
     public void writeToNBT(CompoundTag nbt) {
         nbt.putString("id", id.toString());
-        nbt.putBoolean("closed", closed);
+        nbt.putBoolean("visible", visible);
         nbt.putInt("color", color);
         nbt.putString("dimension", dimension.location().toString());
         nbt.putString("name1", name1);
@@ -491,7 +493,7 @@ public class FrontierData {
         owner.fromBytes(buf);
 
         if (changes.contains(Change.Other)) {
-            closed = buf.readBoolean();
+            visible = buf.readBoolean();
             color = buf.readInt();
             nameVisible = buf.readBoolean();
         }
@@ -575,7 +577,7 @@ public class FrontierData {
         owner.toBytes(buf);
 
         if (!onlyChanges || changes.contains(Change.Other)) {
-            buf.writeBoolean(closed);
+            buf.writeBoolean(visible);
             buf.writeInt(color);
             buf.writeBoolean(nameVisible);
         }

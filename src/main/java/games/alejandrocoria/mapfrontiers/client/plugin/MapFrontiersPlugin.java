@@ -52,15 +52,19 @@ public class MapFrontiersPlugin implements IClientPlugin {
             case MAP_CLICKED:
                 if (fullscreenMap != null) {
                     FullscreenMapEvent.ClickEvent clickEvent = (FullscreenMapEvent.ClickEvent)event;
-                    fullscreenMap.mapClicked(clickEvent.dimension, clickEvent.getLocation());
+                    if (clickEvent.getStage() == FullscreenMapEvent.Stage.POST) {
+                        fullscreenMap.mapClicked(clickEvent.dimension, clickEvent.getLocation());
+                    }
                 }
                 break;
             case MAP_DRAGGED:
                 if (fullscreenMap != null) {
                     FullscreenMapEvent.MouseDraggedEvent mouseDraggedEvent = (FullscreenMapEvent.MouseDraggedEvent) event;
-                    boolean moved = fullscreenMap.mapDragged(mouseDraggedEvent.dimension, mouseDraggedEvent.getLocation());
-                    if (moved) {
-                        mouseDraggedEvent.cancel();
+                    if (mouseDraggedEvent.getStage() == FullscreenMapEvent.Stage.PRE) {
+                        boolean moved = fullscreenMap.mapDragged(mouseDraggedEvent.dimension, mouseDraggedEvent.getLocation());
+                        if (moved) {
+                            mouseDraggedEvent.cancel();
+                        }
                     }
                 }
                 break;

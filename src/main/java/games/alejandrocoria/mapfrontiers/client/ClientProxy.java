@@ -196,7 +196,7 @@ public class ClientProxy {
         }
     }
 
-    public static void openGUIFrontierBook(ResourceKey<Level> dimension, boolean personal) {
+    public static void openGUIFrontierBook() {
         Minecraft.getInstance().setScreen(new GuiFrontierBook());
     }
 

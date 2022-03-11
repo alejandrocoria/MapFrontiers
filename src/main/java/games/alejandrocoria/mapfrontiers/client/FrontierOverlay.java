@@ -126,7 +126,7 @@ public class FrontierOverlay extends FrontierData {
             int prime = 31;
             hash = 1;
             hash = prime * hash + id.hashCode();
-            hash = prime * hash + (closed ? 1231 : 1237);
+            hash = prime * hash + (visible ? 1231 : 1237);
             hash = prime * hash + color;
             hash = prime * hash + ((dimension == null) ? 0 : dimension.hashCode());
             hash = prime * hash + ((name1 == null) ? 0 : name1.hashCode());
@@ -164,16 +164,18 @@ public class FrontierOverlay extends FrontierData {
         removeOverlay();
         recalculateOverlays();
 
-        try {
-            if (polygonOverlay != null) {
-                jmAPI.show(polygonOverlay);
-            }
+        if (visible) {
+            try {
+                if (polygonOverlay != null) {
+                    jmAPI.show(polygonOverlay);
+                }
 
-            for (MarkerOverlay marker : markerOverlays) {
-                jmAPI.show(marker);
+                for (MarkerOverlay marker : markerOverlays) {
+                    jmAPI.show(marker);
+                }
+            } catch (Throwable t) {
+                MapFrontiers.LOGGER.error(t.getMessage(), t);
             }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(t.getMessage(), t);
         }
     }
 
@@ -188,16 +190,18 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public boolean pointIsInside(BlockPos pos, double maxDistanceToOpen) {
-        if (closed && vertices.size() > 2) {
-            return polygonArea.contains(pos.getX() + 0.5, pos.getZ() + 0.5);
-        } else if (maxDistanceToOpen > 0.0) {
-            for (int i = 0; i < vertices.size(); ++i) {
-                Vec3 point = Vec3.atLowerCornerOf(pos);
-                Vec3 edge1 = Vec3.atLowerCornerOf(vertices.get(i).atY(pos.getY()));
-                Vec3 edge2 = Vec3.atLowerCornerOf(vertices.get((i + 1) % vertices.size()).atY(pos.getY()));
-                double distance = closestPointToEdge(point, edge1, edge2).distanceToSqr(point);
-                if (distance <= maxDistanceToOpen * maxDistanceToOpen) {
-                    return true;
+        if (visible) {
+            if (vertices.size() > 2) {
+                return polygonArea != null && polygonArea.contains(pos.getX() + 0.5, pos.getZ() + 0.5);
+            } else if (maxDistanceToOpen > 0.0) {
+                for (int i = 0; i < vertices.size(); ++i) {
+                    Vec3 point = Vec3.atLowerCornerOf(pos);
+                    Vec3 edge1 = Vec3.atLowerCornerOf(vertices.get(i).atY(pos.getY()));
+                    Vec3 edge2 = Vec3.atLowerCornerOf(vertices.get((i + 1) % vertices.size()).atY(pos.getY()));
+                    double distance = closestPointToEdge(point, edge1, edge2).distanceToSqr(point);
+                    if (distance <= maxDistanceToOpen * maxDistanceToOpen) {
+                        return true;
+                    }
                 }
             }
         }
@@ -342,8 +346,13 @@ public class FrontierOverlay extends FrontierData {
     }
 
     @Override
-    public void setClosed(boolean closed) {
-        super.setClosed(closed);
+    public void setVisible(boolean visible) {
+        super.setVisible(visible);
+
+        if (!visible) {
+            vertexSelected = -1;
+        }
+
         updateOverlay();
     }
 
@@ -459,12 +468,6 @@ public class FrontierOverlay extends FrontierData {
 
         ClientProxy.getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);
 
-        if (vertices.size() < 3) {
-            super.setClosed(false);
-        } else {
-            dirty = true;
-        }
-
         updateOverlay();
     }
 
@@ -493,6 +496,10 @@ public class FrontierOverlay extends FrontierData {
         updateOverlay();
     }
 
+    public boolean getHighlighted() {
+        return highlighted;
+    }
+
     private void recalculateOverlays() {
         polygonOverlay = null;
         markerOverlays.clear();
@@ -501,7 +508,7 @@ public class FrontierOverlay extends FrontierData {
 
         area = 0;
 
-        if (closed && vertices.size() > 2) {
+        if (vertices.size() > 2) {
             ShapeProperties shapeProps = new ShapeProperties().setStrokeWidth(highlighted ? 3 : 0).setStrokeColor(GuiColors.WHITE)
                     .setFillColor(color).setFillOpacity((float) ConfigData.polygonsOpacity);
 
@@ -533,7 +540,9 @@ public class FrontierOverlay extends FrontierData {
                 marker.setDimension(dimension);
                 marker.setDisplayOrder(100);
                 markerOverlays.add(marker);
-                addMarkerDots(markerId, vertices.get(i), vertices.get((i + 1) % vertices.size()));
+                if (i == 0 && vertices.size() == 2) {
+                    addMarkerDots(markerId, vertices.get(0), vertices.get(1));
+                }
             }
         }
 

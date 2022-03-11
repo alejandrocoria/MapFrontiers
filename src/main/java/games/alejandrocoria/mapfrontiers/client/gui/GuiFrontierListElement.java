@@ -82,8 +82,16 @@ public class GuiFrontierListElement extends GuiScrollBox.ScrollElement {
             fill(matrixStack, x, y, x + width, y + height, GuiColors.SETTINGS_ELEMENT_HOVERED);
         }
 
-        font.draw(matrixStack, name1, x + 26, y + 4, color);
-        font.draw(matrixStack, name2, x + 26, y + 14, color);
+        int hiddenColor = GuiColors.SETTINGS_TEXT_DARK;
+
+        if (frontier.getVisible()) {
+            font.draw(matrixStack, name1, x + 26, y + 4, color);
+            font.draw(matrixStack, name2, x + 26, y + 14, color);
+        } else {
+            font.draw(matrixStack, ChatFormatting.STRIKETHROUGH + name1, x + 26, y + 4, hiddenColor);
+            font.draw(matrixStack, ChatFormatting.STRIKETHROUGH + name2, x + 26, y + 14, hiddenColor);
+        }
+
         font.draw(matrixStack, type, x + 170, y + 4, color);
         font.draw(matrixStack, dimension, x + 170, y + 14, GuiColors.SETTINGS_BUTTON_TEXT);
         font.draw(matrixStack, vertices, x + 180 + verticesOffset, y + 4, color);

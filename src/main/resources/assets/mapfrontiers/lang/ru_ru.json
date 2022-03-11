@@ -32,15 +32,19 @@
   "mapfrontiers.create": "Create",
   "mapfrontiers.edit": "Edit",
   "mapfrontiers.info": "Info",
+  "mapfrontiers.show": "Show",
+  "mapfrontiers.hide": "Hide",
   
   "mapfrontiers.button_frontiers": "Frontiers...",
   "mapfrontiers.button_new_frontier": "New Frontier...",
   "mapfrontiers.button_frontier_info": "Frontier Info...",
   "mapfrontiers.button_edit_frontier": "Edit Frontier",
   "mapfrontiers.button_done_editing": "Done Editing",
-  "mapfrontiers.button_open_frontier": "Open",
-  "mapfrontiers.button_close_frontier": "Close",
+  "mapfrontiers.button_show_frontier": "Show Frontier",
+  "mapfrontiers.button_hide_frontier": "Hide Frontier",
   "mapfrontiers.button_delete_frontier": "Delete Frontier",
+  "mapfrontiers.add_vertex": "Добавить точку",
+  "mapfrontiers.remove_vertex": "Убрать точку",
   
   "mapfrontiers.title_info": "Frontier Info",
   "mapfrontiers.title_frontiers": "Frontiers",
@@ -82,8 +86,8 @@
   "mapfrontiers.group_everyone_desc": "Эта группа представляет всех игроков без исключения.",
   "mapfrontiers.unnamed": "%1$sБез имени",
 
-  "item.mapfrontiers.frontier_book": "Карта Территорий",
-  "item.mapfrontiers.personal_frontier_book": "Карта Персональных Территорий",
+  "item.mapfrontiers.frontier_book": "Карта Территорий (Устаревшая)",
+  "item.mapfrontiers.personal_frontier_book": "Карта Персональных Территорий (Устаревшая)",
 
   "mapfrontiers.key.category": "Карта Территорий",
   "mapfrontiers.key.open_settings": "Открыть настройки"

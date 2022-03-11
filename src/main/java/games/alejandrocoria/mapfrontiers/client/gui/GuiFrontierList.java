@@ -39,6 +39,7 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
     private GuiSettingsButton buttonCreate;
     private GuiSettingsButton buttonInfo;
     private GuiSettingsButton buttonDelete;
+    private GuiSettingsButton buttonVisible;
     private GuiSettingsButton buttonDone;
 
     public GuiFrontierList(IClientAPI jmAPI, GuiFullscreenMap fullscreenMap) {
@@ -54,22 +55,25 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
         Component title = new TranslatableComponent("mapfrontiers.title_frontiers");
         addRenderableOnly(new GuiSimpleLabel(font, width / 2, 8, GuiSimpleLabel.Align.Center, title, GuiColors.WHITE));
 
-        frontiers = new GuiScrollBox(width / 2 - 300, 50, 450, height - 120, 24, this);
+        frontiers = new GuiScrollBox(width / 2 - 300, 50, 450, height - 100, 24, this);
 
-        buttonCreate = new GuiSettingsButton(font, width / 2 - 295, height - 28, 140,
+        buttonCreate = new GuiSettingsButton(font, width / 2 - 295, height - 28, 110,
                 new TranslatableComponent("mapfrontiers.create"), this::buttonPressed);
-        buttonInfo = new GuiSettingsButton(font, width / 2 - 145, height - 28, 140,
+        buttonInfo = new GuiSettingsButton(font, width / 2 - 175, height - 28, 110,
                 new TranslatableComponent("mapfrontiers.info"), this::buttonPressed);
-        buttonDelete = new GuiSettingsButton(font, width / 2 + 5, height - 28, 140,
+        buttonDelete = new GuiSettingsButton(font, width / 2 - 55, height - 28, 110,
                 new TranslatableComponent("mapfrontiers.delete"), this::buttonPressed);
         buttonDelete.setTextColors(GuiColors.SETTINGS_BUTTON_TEXT_DELETE, GuiColors.SETTINGS_BUTTON_TEXT_DELETE_HIGHLIGHT);
-        buttonDone = new GuiSettingsButton(font, width / 2 + 155, height - 28, 140,
+        buttonVisible = new GuiSettingsButton(font, width / 2 + 65, height - 28, 110,
+                new TranslatableComponent("mapfrontiers.hide"), this::buttonPressed);
+        buttonDone = new GuiSettingsButton(font, width / 2 + 185, height - 28, 110,
                 new TranslatableComponent("gui.done"), this::buttonPressed);
 
         addRenderableWidget(frontiers);
         addRenderableWidget(buttonCreate);
         addRenderableWidget(buttonInfo);
         addRenderableWidget(buttonDelete);
+        addRenderableWidget(buttonVisible);
         addRenderableWidget(buttonDone);
 
         updateFrontiers();
@@ -135,6 +139,11 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
             FrontiersOverlayManager frontierManager = ClientProxy.getFrontiersOverlayManager(frontier.getPersonal());
             frontierManager.clientDeleteFrontier(frontier);
             frontiers.removeElement(frontiers.getSelectedElement());
+            updateButtons();
+        } else if (button == buttonVisible) {
+            FrontierOverlay frontier = ((GuiFrontierListElement) frontiers.getSelectedElement()).getFrontier();
+            frontier.setVisible(!frontier.getVisible());
+            updateButtons();
         } else if (button == buttonDone) {
             ForgeHooksClient.popGuiLayer(minecraft);
         }
@@ -186,5 +195,12 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
         buttonCreate.visible = actions.canCreate;
         buttonInfo.visible = frontiers.getSelectedElement() != null;
         buttonDelete.visible = actions.canDelete;
+        buttonVisible.visible = actions.canUpdate;
+
+        if (frontier != null && frontier.getVisible()) {
+            buttonVisible.setMessage(new TranslatableComponent("mapfrontiers.hide"));
+        } else {
+            buttonVisible.setMessage(new TranslatableComponent("mapfrontiers.show"));
+        }
     }
 }
