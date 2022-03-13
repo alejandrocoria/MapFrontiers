@@ -216,7 +216,7 @@ public class FrontierOverlay extends FrontierData {
         if (!vertices.isEmpty()) {
             for (int i = 0; i < vertices.size(); ++i) {
                 BlockPos vertex = vertices.get(i);
-                double dist = vertex.distSqr(pos.atY(vertex.getY()), false);
+                double dist = vertex.distSqr(pos.atY(vertex.getY()));
                 if (dist <= distance) {
                     distance = dist;
                     closest = i;
@@ -581,7 +581,7 @@ public class FrontierOverlay extends FrontierData {
         if (vertices.size() > 1) {
             BlockPos last = vertices.get(vertices.size() - 1);
             for (BlockPos vertex : vertices) {
-                perimeter += Math.sqrt(vertex.distSqr(last, false));
+                perimeter += Math.sqrt(vertex.distSqr(last));
                 last = vertex;
             }
         }

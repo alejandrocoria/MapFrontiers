@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[39,)"
+loaderVersion="[40,)"
 license="MIT License"
 
 [[mods]]
@@ -18,20 +18,20 @@ This mod is an addon for Journey Map that allows you to divide the map into regi
 [[dependencies.mapfrontiers]]
     modId="forge"
     mandatory=true
-    versionRange="[39,)"
+    versionRange="[40,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.mapfrontiers]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.18.1,)"
+    versionRange="[1.18.2,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.mapfrontiers]]
     modId="journeymap"
     mandatory=true
-    versionRange="[1.18.1-5.8,)"
+    versionRange="[1.18.2-5.8,)"
     ordering="NONE"
     side="BOTH"

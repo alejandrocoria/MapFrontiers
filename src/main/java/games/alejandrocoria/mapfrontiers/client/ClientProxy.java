@@ -94,7 +94,7 @@ public class ClientProxy {
 
             for (int i = 0; i < frontier.getVertexCount(); ++i) {
                 BlockPos v = frontier.getVertex(i).atY(70);
-                double distance = v.distSqr(closest, false);
+                double distance = v.distSqr(closest);
                 if (distance <= closestDistance) {
                     closestDistance = distance;
                     closest = v;
@@ -109,7 +109,7 @@ public class ClientProxy {
 
             for (int i = 0; i < frontier.getVertexCount(); ++i) {
                 BlockPos v = frontier.getVertex(i).atY(70);
-                double distance = v.distSqr(closest, false);
+                double distance = v.distSqr(closest);
                 if (distance <= closestDistance) {
                     closestDistance = distance;
                     closest = v;
