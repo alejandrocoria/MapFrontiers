@@ -9,6 +9,7 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import com.mojang.blaze3d.vertex.VertexFormat;
+import games.alejandrocoria.mapfrontiers.common.util.BlockPosHelper;
 import journeymap.client.api.util.PolygonHelper;
 import net.minecraft.client.renderer.GameRenderer;
 
@@ -196,8 +197,8 @@ public class FrontierOverlay extends FrontierData {
             } else if (maxDistanceToOpen > 0.0) {
                 for (int i = 0; i < vertices.size(); ++i) {
                     Vec3 point = Vec3.atLowerCornerOf(pos);
-                    Vec3 edge1 = Vec3.atLowerCornerOf(vertices.get(i).atY(pos.getY()));
-                    Vec3 edge2 = Vec3.atLowerCornerOf(vertices.get((i + 1) % vertices.size()).atY(pos.getY()));
+                    Vec3 edge1 = Vec3.atLowerCornerOf(BlockPosHelper.atY(vertices.get(i),pos.getY()));
+                    Vec3 edge2 = Vec3.atLowerCornerOf(BlockPosHelper.atY(vertices.get((i + 1) % vertices.size()),pos.getY()));
                     double distance = closestPointToEdge(point, edge1, edge2).distanceToSqr(point);
                     if (distance <= maxDistanceToOpen * maxDistanceToOpen) {
                         return true;
@@ -216,7 +217,7 @@ public class FrontierOverlay extends FrontierData {
         if (!vertices.isEmpty()) {
             for (int i = 0; i < vertices.size(); ++i) {
                 BlockPos vertex = vertices.get(i);
-                double dist = vertex.distSqr(pos.atY(vertex.getY()));
+                double dist = vertex.distSqr(BlockPosHelper.atY(pos,vertex.getY()));
                 if (dist <= distance) {
                     distance = dist;
                     closest = i;
@@ -238,8 +239,8 @@ public class FrontierOverlay extends FrontierData {
         } else if (vertices.size() > 1) {
             for (int i = 0; i < vertices.size(); ++i) {
                 Vec3 point = Vec3.atLowerCornerOf(pos);
-                Vec3 edge1 = Vec3.atLowerCornerOf(vertices.get(i).atY(pos.getY()));
-                Vec3 edge2 = Vec3.atLowerCornerOf(vertices.get((i + 1) % vertices.size()).atY(pos.getY()));
+                Vec3 edge1 = Vec3.atLowerCornerOf(BlockPosHelper.atY(vertices.get(i),pos.getY()));
+                Vec3 edge2 = Vec3.atLowerCornerOf(BlockPosHelper.atY(vertices.get((i + 1) % vertices.size()),pos.getY()));
                 double dist;
                 double dot;
 

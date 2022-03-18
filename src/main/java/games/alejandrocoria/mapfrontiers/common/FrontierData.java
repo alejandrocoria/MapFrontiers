@@ -7,6 +7,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.util.BlockPosHelper;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerPlayer;
@@ -156,7 +157,7 @@ public class FrontierData {
     }
 
     public void addVertex(BlockPos pos, int index) {
-        vertices.add(index, pos.atY(70));
+        vertices.add(index, BlockPosHelper.atY(pos,70));
         changes.add(Change.Vertices);
     }
 
@@ -183,10 +184,6 @@ public class FrontierData {
     }
 
     public void setVisible(boolean visible) {
-        if (vertices.size() < 3) {
-            return;
-        }
-
         this.visible = visible;
         changes.add(Change.Other);
     }

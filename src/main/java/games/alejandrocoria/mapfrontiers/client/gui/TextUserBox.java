@@ -120,7 +120,7 @@ public class TextUserBox extends TextBox {
     @Override
     public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         if (error == null) {
-            setTextColor(EditBox.DEFAULT_TEXT_COLOR);
+            setTextColor(GuiColors.SETTINGS_TEXT_BOX_TEXT);
         } else {
             setTextColor(GuiColors.SETTINGS_TEXT_ERROR);
         }

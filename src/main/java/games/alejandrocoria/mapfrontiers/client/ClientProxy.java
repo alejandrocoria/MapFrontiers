@@ -4,6 +4,7 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
+import games.alejandrocoria.mapfrontiers.common.util.BlockPosHelper;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.ClientRegistry;
@@ -84,7 +85,7 @@ public class ClientProxy {
 
     public static BlockPos snapVertex(BlockPos vertex, float snapDistance, ResourceKey<Level> dimension,
             @Nullable FrontierData owner) {
-        BlockPos closest = vertex.atY(70);
+        BlockPos closest = BlockPosHelper.atY(vertex,70);
         double closestDistance = snapDistance * snapDistance;
 
         for (FrontierData frontier : personalFrontiersOverlayManager.getAllFrontiers(dimension)) {
@@ -93,7 +94,7 @@ public class ClientProxy {
             }
 
             for (int i = 0; i < frontier.getVertexCount(); ++i) {
-                BlockPos v = frontier.getVertex(i).atY(70);
+                BlockPos v = BlockPosHelper.atY(frontier.getVertex(i),70);
                 double distance = v.distSqr(closest);
                 if (distance <= closestDistance) {
                     closestDistance = distance;
@@ -108,7 +109,7 @@ public class ClientProxy {
             }
 
             for (int i = 0; i < frontier.getVertexCount(); ++i) {
-                BlockPos v = frontier.getVertex(i).atY(70);
+                BlockPos v = BlockPosHelper.atY(frontier.getVertex(i),70);
                 double distance = v.distSqr(closest);
                 if (distance <= closestDistance) {
                     closestDistance = distance;

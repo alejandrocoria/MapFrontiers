@@ -278,8 +278,7 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
     public void onUpdatedFrontierEvent(UpdatedFrontierEvent event) {
         if (frontier.getId().equals(event.frontierOverlay.getId())) {
             if (event.playerID != Minecraft.getInstance().player.getId()) {
-                clearWidgets();
-                init();
+                init(minecraft, width, height);
             } else {
                 if (frontier.getModified() != null) {
                     Component modified = new TranslatableComponent("mapfrontiers.modified", dateFormat.format(frontier.getModified()));
