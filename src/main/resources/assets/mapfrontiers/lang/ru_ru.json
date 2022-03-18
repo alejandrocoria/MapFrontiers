@@ -5,6 +5,8 @@
   "mapfrontiers.dimension": "Dimension: %1$s",
   "mapfrontiers.vertices": "Vertices: %1$d",
   "mapfrontiers.name": "Name",
+  "mapfrontiers.unnamed_1": "%1$sБез имени",
+  "mapfrontiers.unnamed_2": "%1$sТерритория",
   "mapfrontiers.color": "Цвет",
   "mapfrontiers.area": "Площадь: %1$.2fм²",
   "mapfrontiers.perimeter": "Периметр: %1$.2fм",

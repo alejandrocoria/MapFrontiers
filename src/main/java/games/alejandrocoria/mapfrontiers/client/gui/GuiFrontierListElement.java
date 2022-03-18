@@ -36,8 +36,8 @@ public class GuiFrontierListElement extends GuiScrollBox.ScrollElement {
         name1 = frontier.getName1();
         name2 = frontier.getName2();
         if (name1.isEmpty() && name2.isEmpty()) {
-            name1 = I18n.get("mapfrontiers.index_unnamed_1", ChatFormatting.ITALIC);
-            name2 = I18n.get("mapfrontiers.index_unnamed_2", ChatFormatting.ITALIC);
+            name1 = I18n.get("mapfrontiers.unnamed_1", ChatFormatting.ITALIC);
+            name2 = I18n.get("mapfrontiers.unnamed_2", ChatFormatting.ITALIC);
         }
 
         type = I18n.get("mapfrontiers.type", I18n.get(frontier.getPersonal() ? "mapfrontiers.personal" : "mapfrontiers.global"));

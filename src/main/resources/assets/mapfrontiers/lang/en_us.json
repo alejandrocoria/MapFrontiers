@@ -3,6 +3,8 @@
   "mapfrontiers.dimension": "Dimension: %1$s",
   "mapfrontiers.vertices": "Vertices: %1$d",
   "mapfrontiers.name": "Name",
+  "mapfrontiers.unnamed_1": "%1$sUnnamed",
+  "mapfrontiers.unnamed_2": "%1$sfrontier",
   "mapfrontiers.color": "Color",
   "mapfrontiers.area": "Area: %1$.2fm²",
   "mapfrontiers.perimeter": "Perimeter: %1$.2fm",
