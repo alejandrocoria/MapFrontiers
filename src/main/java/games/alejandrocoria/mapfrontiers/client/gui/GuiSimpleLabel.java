@@ -11,6 +11,7 @@ import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -29,10 +30,6 @@ public class GuiSimpleLabel extends Widget {
     private List<Integer> widths;
     private ConfigData.Point topLeft;
     private ConfigData.Point bottomRight;
-
-    public GuiSimpleLabel(FontRenderer font, int x, int y, Align align, ITextComponent text) {
-        this(font, x, y, align, text, GuiColors.LABEL_TEXT_DEFAULT);
-    }
 
     public GuiSimpleLabel(FontRenderer font, int x, int y, Align align, ITextComponent text, int color) {
         super(x, y, 0, 0, text);

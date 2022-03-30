@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2021 Alejandro Coria
+Copyright (c) 2022 Alejandro Coria
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,11 +26,11 @@ SOFTWARE.
 
 MapFrontiers includes and/or makes use of the following software under their respective licenses:
 
-    JourneyMap 1.16.5-5.7.3 (http://journeymap.info/)
-    Copyright (c) 2011-2021  Techbrew Interactive, LLC <techbrew.net>.  All Rights Reserved.
+    JourneyMap 1.18.2-5.8.0 (http://journeymap.info/)
+    Copyright (c) 2011-2022  Techbrew Interactive, LLC <techbrew.net>.  All Rights Reserved.
 
-    JourneyMap API v1.16.5-1.7 (https://bitbucket.org/TeamJM/journeymap-api)
-    Copyright (c) 2011-2021  Techbrew Interactive, LLC <techbrew.net>.  All Rights Reserved.
+    JourneyMap API v1.18.2-1.8 (https://bitbucket.org/TeamJM/journeymap-api)
+    Copyright (c) 2011-2022  Techbrew Interactive, LLC <techbrew.net>.  All Rights Reserved.
     End-User License Agreement: https://bitbucket.org/TeamJM/journeymap-api/src/master/docs/license.md
 
     Minecraft (http://minecraft.net)

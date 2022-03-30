@@ -9,6 +9,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.widget.button.Button;
+import net.minecraft.util.text.TextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -17,7 +18,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class GuiOptionButton extends Button {
     protected final FontRenderer font;
-    private final List<String> options;
+    private final List<TextComponent> options;
     private int selected = 0;
     private int color = GuiColors.SETTINGS_TEXT;
     private int highlightedColor = GuiColors.SETTINGS_TEXT_HIGHLIGHT;
@@ -28,8 +29,12 @@ public class GuiOptionButton extends Button {
         options = new ArrayList<>();
     }
 
-    public void addOption(String text) {
+    public void addOption(TextComponent text) {
         options.add(text);
+    }
+
+    public void addOption(String text) {
+        options.add(new StringTextComponent(text));
     }
 
     public void setSelected(int selected) {
@@ -63,7 +68,9 @@ public class GuiOptionButton extends Button {
     @Override
     public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         int c = color;
-        if (isHovered) {
+        if (!active) {
+            c = GuiColors.SETTINGS_TEXT_DARK;
+        } else if (isHovered) {
             c = highlightedColor;
         }
 

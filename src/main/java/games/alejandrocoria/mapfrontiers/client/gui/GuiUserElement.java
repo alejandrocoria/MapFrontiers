@@ -4,16 +4,12 @@ import java.util.List;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import org.apache.commons.lang3.StringUtils;
+import net.minecraft.client.gui.widget.Widget;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -26,13 +22,11 @@ public class GuiUserElement extends GuiScrollBox.ScrollElement {
     private int pingBar = 0;
     final List<Widget> buttonList;
 
-    public GuiUserElement(FontRenderer font, List<Widget> buttonList, SettingsUser user, ResourceLocation texture,
-            int textureSize) {
+    public GuiUserElement(FontRenderer font, List<Widget> buttonList, SettingsUser user) {
         super(258, 16);
         this.font = font;
         this.user = user;
-        buttonDelete = new GuiButtonIcon(0, 0, 13, 13, 494, 132, -23, texture, textureSize, (button) -> {
-        });
+        buttonDelete = new GuiButtonIcon(0, 0, GuiButtonIcon.Type.Remove, (button) -> {});
         this.buttonList = buttonList;
         this.buttonList.add(buttonDelete);
     }
@@ -82,16 +76,7 @@ public class GuiUserElement extends GuiScrollBox.ScrollElement {
             buttonDelete.visible = false;
         }
 
-        String text = user.username;
-        if (StringUtils.isBlank(text)) {
-            if (user.uuid == null) {
-                text = I18n.get("mapfrontiers.unnamed", TextFormatting.ITALIC);
-            } else {
-                text = user.uuid.toString();
-            }
-        }
-
-        font.draw(matrixStack, text, x + 4.f, y + 4.f, color);
+        font.draw(matrixStack, user.toString(), x + 4.f, y + 4.f, color);
 
         if (pingBar > 0) {
             drawPingLine(matrixStack, x - 11, y + 11, 2);

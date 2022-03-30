@@ -10,7 +10,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import net.minecraft.client.gui.AbstractGui;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -37,7 +37,7 @@ public class GuiTabbedBox extends Widget {
         this.height = height;
     }
 
-    public void addTab(ITextComponent text) {
+    public void addTab(TextComponent text) {
         tabs.add(new Tab(font, text));
         updateTabPositions();
 
@@ -103,7 +103,7 @@ public class GuiTabbedBox extends Widget {
         private boolean isHovered = false;
         private final GuiSimpleLabel label;
 
-        public Tab(FontRenderer font, ITextComponent text) {
+        public Tab(FontRenderer font, TextComponent text) {
             this.label = new GuiSimpleLabel(font, 0, 0, GuiSimpleLabel.Align.Center, text, GuiColors.SETTINGS_TAB_TEXT);
         }
 

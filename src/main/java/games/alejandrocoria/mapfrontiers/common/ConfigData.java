@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import net.minecraft.util.text.ITextComponent;
 import org.apache.commons.lang3.tuple.Pair;
 
 import com.electronwill.nightconfig.core.Config;
@@ -19,7 +20,7 @@ import journeymap.client.ui.minimap.MiniMap;
 import journeymap.client.ui.minimap.Shape;
 import journeymap.client.ui.theme.Theme;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -43,6 +44,10 @@ public class ConfigData {
         CLIENT = specPair.getLeft();
     }
 
+    public enum AfterCreatingFrontier {
+        Info, Edit, None
+    }
+
     public enum NameVisibility {
         Manual, Show, Hide
     }
@@ -57,6 +62,7 @@ public class ConfigData {
     }
 
     public static boolean addVertexToNewFrontier;
+    public static AfterCreatingFrontier afterCreatingFrontier;
     public static boolean alwaysShowUnfinishedFrontiers;
     public static NameVisibility nameVisibility;
     public static double polygonsOpacity;
@@ -74,6 +80,7 @@ public class ConfigData {
 
     public static void bakeConfig() {
         addVertexToNewFrontier = CLIENT.addVertexToNewFrontier.get();
+        afterCreatingFrontier = CLIENT.afterCreatingFrontier.get();
         alwaysShowUnfinishedFrontiers = CLIENT.alwaysShowUnfinishedFrontiers.get();
         nameVisibility = CLIENT.nameVisibility.get();
         polygonsOpacity = CLIENT.polygonsOpacity.get();
@@ -91,14 +98,15 @@ public class ConfigData {
     }
 
     @SubscribeEvent
-    public static void onModConfigEvent(final ModConfig.ModConfigEvent configEvent) {
-        if (configEvent.getConfig().getSpec() == ConfigData.CLIENT_SPEC) {
+    public static void onModConfigEvent(ModConfig.ModConfigEvent configEvent) {
+        if (configEvent.getConfig().getType()== ModConfig.Type.CLIENT) {
             bakeConfig();
         }
     }
 
     public static class ClientConfig {
         public final BooleanValue addVertexToNewFrontier;
+        public final EnumValue<AfterCreatingFrontier> afterCreatingFrontier;
         public final BooleanValue alwaysShowUnfinishedFrontiers;
         public final EnumValue<NameVisibility> nameVisibility;
         public final DoubleValue polygonsOpacity;
@@ -119,6 +127,10 @@ public class ConfigData {
                     "If true, when a new frontier is created, the first vertex will automatically be added where the player is.")
                     .translation(MapFrontiers.MODID + ".config." + "addVertexToNewFrontier")
                     .define("addVertexToNewFrontier", true);
+            afterCreatingFrontier = builder.comment(
+                    "What to do after creating a new frontier.")
+                    .translation(MapFrontiers.MODID + ".config." + "afterCreatingFrontier")
+                    .defineEnum("afterCreatingFrontier", AfterCreatingFrontier.Info);
             alwaysShowUnfinishedFrontiers = builder.comment(
                     "With true, it always shows unfinished frontiers. With false, they will only be seen with the book in hand.")
                     .translation(MapFrontiers.MODID + ".config." + "alwaysShowUnfinishedFrontiers")
@@ -167,6 +179,7 @@ public class ConfigData {
 
     public static void save() {
         CLIENT.addVertexToNewFrontier.set(addVertexToNewFrontier);
+        CLIENT.afterCreatingFrontier.set(afterCreatingFrontier);
         CLIENT.alwaysShowUnfinishedFrontiers.set(alwaysShowUnfinishedFrontiers);
         CLIENT.nameVisibility.set(nameVisibility);
         CLIENT.polygonsOpacity.set(polygonsOpacity);

@@ -5,13 +5,14 @@ import java.util.*;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraftforge.client.ForgeHooksClient;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.GL11;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.platform.GlStateManager;
 
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
@@ -20,17 +21,15 @@ import journeymap.client.ui.minimap.MiniMap;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.client.gui.GuiUtils;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
-    private final GuiFrontierSettings parent;
     private GuiHUDWidget guiHUDWidget;
     private GuiOptionButton buttonSlot1;
     private GuiOptionButton buttonSlot2;
@@ -49,11 +48,10 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
     private int anchorLineColor = GuiColors.SETTINGS_ANCHOR_LIGHT;
     private int anchorLineColorTick = 0;
 
-    public GuiHUDSettings(GuiFrontierSettings parent) {
+    public GuiHUDSettings() {
         super(StringTextComponent.EMPTY);
         labels = new ArrayList<>();
         labelTooltips = new HashMap<>();
-        this.parent = parent;
         guiHUD = GuiHUD.asPreview();
     }
 
@@ -89,13 +87,10 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
         buttonSlot3.addOption(ConfigData.HUDSlot.Banner.name());
         buttonSlot3.setSelected(ConfigData.hudSlot3.ordinal());
 
-        textBannerSize = new TextBox(font, width / 2 - 108, height / 2 + 16, 50, "");
+        textBannerSize = new TextBox(font, width / 2 - 108, height / 2 + 16, 50);
         textBannerSize.setValue(String.valueOf(ConfigData.hudBannerSize));
         textBannerSize.setMaxLength(1);
         textBannerSize.setResponder(this);
-        textBannerSize.setCentered(false);
-        textBannerSize.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
-        textBannerSize.setFrame(true);
 
         buttonAnchor = new GuiOptionButton(font, width / 2 + 70, height / 2 - 32, 100, this::buttonPressed);
         buttonAnchor.addOption(ConfigData.HUDAnchor.ScreenTop.name());
@@ -111,21 +106,15 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
         buttonAnchor.addOption(ConfigData.HUDAnchor.MinimapVertical.name());
         buttonAnchor.setSelected(ConfigData.hudAnchor.ordinal());
 
-        textPositionX = new TextBox(font, width / 2 + 70, height / 2 - 16, 44, "");
+        textPositionX = new TextBox(font, width / 2 + 70, height / 2 - 16, 44);
         textPositionX.setValue(String.valueOf(ConfigData.hudXPosition));
         textPositionX.setMaxLength(5);
         textPositionX.setResponder(this);
-        textPositionX.setCentered(false);
-        textPositionX.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
-        textPositionX.setFrame(true);
 
-        textPositionY = new TextBox(font, width / 2 + 125, height / 2 - 16, 45, "");
+        textPositionY = new TextBox(font, width / 2 + 125, height / 2 - 16, 45);
         textPositionY.setValue(String.valueOf(ConfigData.hudYPosition));
         textPositionY.setMaxLength(5);
         textPositionY.setResponder(this);
-        textPositionY.setCentered(false);
-        textPositionY.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
-        textPositionY.setFrame(true);
 
         buttonAutoAdjustAnchor = new GuiOptionButton(font, width / 2 + 70, height / 2, 100, this::buttonPressed);
         buttonAutoAdjustAnchor.addOption("true");
@@ -173,24 +162,12 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
     @Override
     public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         if (minimap != null) {
-            GlStateManager._matrixMode(GL11.GL_MODELVIEW);
-            GlStateManager._pushMatrix();
-            GlStateManager._matrixMode(GL11.GL_PROJECTION);
-            GlStateManager._pushMatrix();
             minimap.drawMap(matrixStack, true);
-            GlStateManager._matrixMode(GL11.GL_MODELVIEW);
-            GlStateManager._popMatrix();
-            GlStateManager._matrixMode(GL11.GL_PROJECTION);
-            GlStateManager._popMatrix();
         }
 
         drawAnchor(matrixStack, minecraft.getWindow());
 
         fill(matrixStack, width / 2 - 178, height / 2 - 40, width / 2 + 178, height / 2 + 60, GuiColors.SETTINGS_BG);
-
-        for (GuiSimpleLabel label : labels) {
-            label.render(matrixStack, mouseX, mouseY, partialTicks);
-        }
 
         super.render(matrixStack, mouseX, mouseY, partialTicks);
 
@@ -201,7 +178,7 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
                     continue;
                 }
 
-                GuiUtils.drawHoveringText(matrixStack, tooltip, mouseX, mouseY, width, height, 300, font);
+                renderComponentTooltip(matrixStack, tooltip, mouseX, mouseY);
             }
         }
     }
@@ -209,7 +186,7 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
     @Override
     public boolean keyPressed(int key, int value, int modifier) {
         if (key == GLFW.GLFW_KEY_E && !(getFocused() instanceof TextFieldWidget)) {
-            onClose();
+            ForgeHooksClient.popGuiLayer(minecraft);
             return true;
         } else {
             return super.keyPressed(key, value, modifier);
@@ -288,7 +265,7 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
             ConfigData.hudSnapToBorder = buttonSnapToBorder.getSelected() == 0;
             guiHUD.configUpdated(minecraft.getWindow());
         } else if (button == buttonDone) {
-            minecraft.setScreen(parent);
+            onClose();
         }
     }
 
@@ -342,14 +319,23 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
     }
 
     @Override
-    public void onClose() {
+    public void removed() {
         minecraft.keyboardHandler.setSendRepeatsToGui(false);
         ClientProxy.configUpdated();
-        minecraft.setScreen(parent);
+    }
+
+    @Override
+    public void onClose() {
+        Minecraft.getInstance().setScreen(new GuiFrontierSettings());
     }
 
     private void resetLabels() {
+        for (GuiSimpleLabel label : labels) {
+            buttons.remove(label);
+        }
+
         labels.clear();
+        labelTooltips.clear();
 
         addLabelWithTooltip(new GuiSimpleLabel(font, width / 2 - 170, height / 2 - 30, GuiSimpleLabel.Align.Left,
                 new StringTextComponent("slot1"), GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.slot1"));
@@ -375,6 +361,10 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
                 new GuiSimpleLabel(font, width / 2 - 30, height / 2 + 18, GuiSimpleLabel.Align.Left,
                         new StringTextComponent("snapToBorder"), GuiColors.SETTINGS_TEXT),
                 ConfigData.getTooltip("hud.snapToBorder"));
+
+        for (GuiSimpleLabel label : labels) {
+            buttons.add(label);
+        }
     }
 
     private void addLabelWithTooltip(GuiSimpleLabel label, @Nullable List<ITextComponent> tooltip) {
@@ -392,17 +382,14 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
     public void lostFocus(TextBox textBox, String value) {
         if (textBannerSize == textBox) {
             if (StringUtils.isBlank(value)) {
-                textBannerSize.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                 textBannerSize.setValue(ConfigData.getDefault("hud.bannerSize"));
                 ConfigData.hudBannerSize = Integer.parseInt(textBannerSize.getValue());
                 guiHUD.configUpdated(minecraft.getWindow());
                 updatePosition();
             } else {
                 try {
-                    textBannerSize.setColor(GuiColors.SETTINGS_TEXT_ERROR, GuiColors.SETTINGS_TEXT_ERROR_HIGHLIGHT);
                     Integer size = Integer.valueOf(value);
                     if (ConfigData.isInRange("hud.bannerSize", size)) {
-                        textBannerSize.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                         ConfigData.hudBannerSize = size;
                         guiHUD.configUpdated(minecraft.getWindow());
                         updatePosition();
@@ -412,33 +399,27 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
             }
         } else if (textPositionX == textBox) {
             if (StringUtils.isBlank(value)) {
-                textPositionX.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                 textPositionX.setValue(ConfigData.getDefault("hud.position.x"));
                 ConfigData.hudXPosition = Integer.parseInt(textPositionX.getValue());
                 guiHUD.configUpdated(minecraft.getWindow());
                 updatePosition();
             } else {
                 try {
-                    textPositionX.setColor(GuiColors.SETTINGS_TEXT_ERROR, GuiColors.SETTINGS_TEXT_ERROR_HIGHLIGHT);
                     ConfigData.hudXPosition = Integer.parseInt(value);
                     guiHUD.configUpdated(minecraft.getWindow());
-                    textPositionX.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                 } catch (Exception ignored) {
                 }
             }
         } else if (textPositionY == textBox) {
             if (StringUtils.isBlank(value)) {
-                textPositionY.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                 textPositionY.setValue(ConfigData.getDefault("hud.position.y"));
                 ConfigData.hudYPosition = Integer.parseInt(textPositionY.getValue());
                 guiHUD.configUpdated(minecraft.getWindow());
                 updatePosition();
             } else {
                 try {
-                    textPositionY.setColor(GuiColors.SETTINGS_TEXT_ERROR, GuiColors.SETTINGS_TEXT_ERROR_HIGHLIGHT);
                     ConfigData.hudYPosition = Integer.parseInt(value);
                     guiHUD.configUpdated(minecraft.getWindow());
-                    textPositionY.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                 } catch (Exception ignored) {
                 }
             }
@@ -458,7 +439,5 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
         buttonAnchor.setSelected(ConfigData.hudAnchor.ordinal());
         textPositionX.setValue(String.valueOf(ConfigData.hudXPosition));
         textPositionY.setValue(String.valueOf(ConfigData.hudYPosition));
-        textPositionX.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
-        textPositionY.setColor(GuiColors.SETTINGS_TEXT, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
     }
 }

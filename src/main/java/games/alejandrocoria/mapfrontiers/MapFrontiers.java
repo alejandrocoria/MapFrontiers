@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
+import net.minecraftforge.fml.event.server.FMLServerStoppingEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -33,22 +36,19 @@ import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
-import net.minecraftforge.fml.event.server.FMLServerStoppingEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
 
 @Mod.EventBusSubscriber
 @Mod(MapFrontiers.MODID)
 public class MapFrontiers {
     public static final String MODID = "mapfrontiers";
-    public static final String VERSION = "1.16.5-1.5.1";
+    public static final String VERSION = "1.16.5-2.0.0beta2";
     public static Logger LOGGER;
 
     private static FrontiersManager frontiersManager;
 
-    public static final ItemFrontierBook frontierBook = new ItemFrontierBook();
-    public static final ItemPersonalFrontierBook personalFrontierBook = new ItemPersonalFrontierBook();
+    public static ItemFrontierBook frontierBook;
+    public static ItemPersonalFrontierBook personalFrontierBook;
 
     public MapFrontiers() {
         LOGGER = LogManager.getLogger("MapFrontiers");
@@ -66,6 +66,8 @@ public class MapFrontiers {
 
     @SubscribeEvent
     public static void registerItems(RegistryEvent.Register<Item> event) {
+        frontierBook = new ItemFrontierBook();
+        personalFrontierBook = new ItemPersonalFrontierBook();
         event.getRegistry().register(frontierBook);
         event.getRegistry().register(personalFrontierBook);
         LOGGER.info("registerItems done");

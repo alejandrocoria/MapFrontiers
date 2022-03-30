@@ -1,7 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import java.awt.Desktop;
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -12,39 +10,37 @@ import com.mojang.blaze3d.systems.RenderSystem;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.ConfirmOpenLinkScreen;
 import net.minecraft.client.gui.widget.Widget;
+
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.ForgeHooksClient;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class GuiPatreonButton extends Widget {
+    private static final ResourceLocation texture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/patreon.png");
+    private static final int textureSizeX = 212;
+    private static final int textureSizeY = 50;
+
     private final BooleanConsumer callbackFunction;
-    private final int texX;
-    private final int texY;
-    private final ResourceLocation texture;
-    private final int textureSize;
     private final String uri;
 
-    public GuiPatreonButton(int x, int y, int width, int height, int texX, int texY, ResourceLocation texture, int textureSize,
-            String uri, BooleanConsumer callbackFunction) {
-        super(x, y, width, height, StringTextComponent.EMPTY);
+    public GuiPatreonButton(int x, int y, String uri, BooleanConsumer callbackFunction) {
+        super(x, y, textureSizeX, textureSizeY, StringTextComponent.EMPTY);
         this.callbackFunction = callbackFunction;
-        this.texX = texX;
-        this.texY = texY;
-        this.texture = texture;
-        this.textureSize = textureSize;
         this.uri = uri;
     }
 
     public void openLink() {
         try {
-            Desktop.getDesktop().browse(new URI(uri));
-        } catch (IOException | URISyntaxException e) {
+            Util.getPlatform().openUri(new URI(uri));
+        } catch (UnsupportedOperationException | URISyntaxException e) {
             MapFrontiers.LOGGER.error(e.getMessage(), e);
         }
     }
@@ -63,18 +59,18 @@ public class GuiPatreonButton extends Widget {
                 && mouseY < y + height / factor);
 
         if (isHovered) {
-            RenderSystem.color3f(0.9f, 0.9f, 0.9f);
+            RenderSystem.color4f(0.9f, 0.9f, 0.9f, 1f);
         } else {
-            RenderSystem.color3f(1.f, 1.f, 1.f);
+            RenderSystem.color4f(1.f, 1.f, 1.f, 1f);
         }
 
-        mc.getTextureManager().bind(texture);
-        blit(matrixStack, x - width / 2 / factor, y, texX / factor, texY / factor, width / factor, height / factor,
-                textureSize / factor, textureSize / factor);
+        Minecraft.getInstance().getTextureManager().bind(texture);
+        blit(matrixStack, x - width / 2 / factor, y, 0, 0, width / factor, height / factor,
+                textureSizeX / factor, textureSizeY / factor);
     }
 
     @Override
     public void onClick(double mouseX, double mouseY) {
-        Minecraft.getInstance().setScreen(new ConfirmOpenLinkScreen(callbackFunction, uri, false));
+        ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new ConfirmOpenLinkScreen(callbackFunction, uri, false));
     }
 }

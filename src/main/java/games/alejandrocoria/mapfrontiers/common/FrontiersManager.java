@@ -4,12 +4,7 @@ import java.awt.Color;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -21,6 +16,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import net.minecraft.client.Minecraft;
+import net.minecraftforge.common.util.Constants;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.CompressedStreamTools;
@@ -31,7 +27,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import net.minecraft.world.storage.FolderName;
-import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
@@ -50,7 +45,7 @@ public class FrontiersManager {
     private File ModDir;
     private boolean frontierOwnersChecked = false;
 
-    public static final int dataVersion = 5;
+    public static final int dataVersion = 7;
     private static int pendingShareFrontierID = 0;
     private static final int pendingShareFrontierTickDuration = 1200;
 
@@ -153,6 +148,7 @@ public class FrontiersManager {
         frontier.setDimension(dimension);
         frontier.setPersonal(personal);
         frontier.setColor(color.getRGB());
+        frontier.setCreated(new Date());
 
         if (vertex != null) {
             frontier.addVertex(vertex);
@@ -221,6 +217,8 @@ public class FrontiersManager {
             return false;
         }
 
+        updatedFrontier.setModified(new Date());
+
         FrontierData frontier = frontiers.get(index);
         frontier.updateFromData(updatedFrontier);
 
@@ -245,6 +243,8 @@ public class FrontiersManager {
         if (index < 0) {
             return false;
         }
+
+        updatedFrontier.setModified(new Date());
 
         FrontierData frontier = frontiers.get(index);
         frontier.updateFromData(updatedFrontier);
@@ -308,7 +308,7 @@ public class FrontiersManager {
             MapFrontiers.LOGGER.warn("Data version in frontiers not found, expected " + dataVersion);
         } else if (version < 5) {
             MapFrontiers.LOGGER
-                    .warn("Data version in frontiers lower than expected. The mod uses " + dataVersion);
+                    .warn("Data version in frontiers lower than expected. The mod support from 5 to " + dataVersion);
         } else if (version > dataVersion) {
             MapFrontiers.LOGGER
                     .warn("Data version in frontiers higher than expected. The mod uses " + dataVersion);

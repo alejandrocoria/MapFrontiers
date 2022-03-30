@@ -42,48 +42,46 @@ public class CommandAccept {
 
             if (pending == null) {
                 source.sendFailure(new StringTextComponent("Invitation expired"));
-            } else {
-                if (pending.targetUser.equals(new SettingsUser(source.getPlayerOrException()))) {
-                    FrontierData frontier = FrontiersManager.instance.getFrontierFromID(pending.frontierID);
-                    if (frontier == null) {
-                        FrontiersManager.instance.removePendingShareFrontier(messageID);
-                        source.sendFailure(new StringTextComponent("The frontier no longer exists"));
-                        return messageID;
-                    }
-
-                    SettingsUserShared userShared = frontier.getUserShared(pending.targetUser);
-                    if (userShared == null) {
-                        source.sendFailure(new StringTextComponent(""));
-                        return messageID;
-                    }
-
-                    if (FrontiersManager.instance.hasPersonalFrontier(pending.targetUser, frontier.getId())) {
-                        FrontiersManager.instance.removePendingShareFrontier(messageID);
-                        source.sendFailure(new StringTextComponent("You already have the frontier"));
-                        return messageID;
-                    } else {
-                        FrontiersManager.instance.addPersonalFrontier(pending.targetUser, frontier);
-                    }
-
-                    userShared.setPending(false);
-                    frontier.addChange(FrontierData.Change.Shared);
-
+            } else if (pending.targetUser.equals(new SettingsUser(source.getPlayerOrException()))) {
+                FrontierData frontier = FrontiersManager.instance.getFrontierFromID(pending.frontierID);
+                if (frontier == null) {
                     FrontiersManager.instance.removePendingShareFrontier(messageID);
-
-                    PacketHandler.sendTo(new PacketFrontier(frontier), source.getPlayerOrException());
-                    PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier), frontier);
-
-                    frontier.removeChange(FrontierData.Change.Shared);
-
-                    // @Note: improve message and localize
-                    source.sendSuccess(
-                            new StringTextComponent("Accepting frontier " + frontier.getName1() + " " + frontier.getName2()),
-                            false);
-                    return messageID;
-                } else {
-                    source.sendFailure(new StringTextComponent("The invitation is for another player"));
+                    source.sendFailure(new StringTextComponent("The frontier no longer exists"));
                     return messageID;
                 }
+
+                SettingsUserShared userShared = frontier.getUserShared(pending.targetUser);
+                if (userShared == null) {
+                    source.sendFailure(new StringTextComponent(""));
+                    return messageID;
+                }
+
+                if (FrontiersManager.instance.hasPersonalFrontier(pending.targetUser, frontier.getId())) {
+                    FrontiersManager.instance.removePendingShareFrontier(messageID);
+                    source.sendFailure(new StringTextComponent("You already have the frontier"));
+                    return messageID;
+                } else {
+                    FrontiersManager.instance.addPersonalFrontier(pending.targetUser, frontier);
+                }
+
+                userShared.setPending(false);
+                frontier.addChange(FrontierData.Change.Shared);
+
+                FrontiersManager.instance.removePendingShareFrontier(messageID);
+
+                PacketHandler.sendTo(new PacketFrontier(frontier), source.getPlayerOrException());
+                PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier), frontier);
+
+                frontier.removeChange(FrontierData.Change.Shared);
+
+                // @Note: improve message and localize
+                source.sendSuccess(
+                        new StringTextComponent("Accepting frontier " + frontier.getName1() + " " + frontier.getName2()),
+                        false);
+                return messageID;
+            } else {
+                source.sendFailure(new StringTextComponent("The invitation is for another player"));
+                return messageID;
             }
         }
 

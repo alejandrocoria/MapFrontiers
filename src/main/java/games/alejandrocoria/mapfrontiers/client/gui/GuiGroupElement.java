@@ -10,7 +10,6 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -23,14 +22,12 @@ public class GuiGroupElement extends GuiScrollBox.ScrollElement {
     private final GuiButtonIcon buttonDelete;
     final List<Widget> buttonList;
 
-    public GuiGroupElement(FontRenderer font, List<Widget> buttonList, SettingsGroup group, ResourceLocation texture,
-            int textureSize) {
+    public GuiGroupElement(FontRenderer font, List<Widget> buttonList, SettingsGroup group) {
         super(160, 16);
         this.font = font;
         this.group = group;
 
-        buttonDelete = new GuiButtonIcon(0, 0, 13, 13, 494, 132, -23, texture, textureSize, (button) -> {
-        });
+        buttonDelete = new GuiButtonIcon(0, 0, GuiButtonIcon.Type.Remove, (button) -> {});
         buttonDelete.visible = false;
 
         this.buttonList = buttonList;

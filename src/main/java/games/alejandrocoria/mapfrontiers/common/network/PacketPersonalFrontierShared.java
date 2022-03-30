@@ -4,6 +4,7 @@ import java.util.function.Supplier;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import net.minecraftforge.fml.network.NetworkEvent;
 import org.apache.commons.lang3.StringUtils;
 
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -16,7 +17,6 @@ import net.minecraft.util.text.event.HoverEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.network.NetworkEvent;
 
 @ParametersAreNonnullByDefault
 public class PacketPersonalFrontierShared {

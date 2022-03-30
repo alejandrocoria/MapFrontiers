@@ -1,7 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import java.awt.Desktop;
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -11,13 +9,15 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.screen.ConfirmOpenLinkScreen;
 import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.ForgeHooksClient;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -26,7 +26,7 @@ public class GuiLinkButton extends Widget {
     private final GuiSimpleLabel label;
     private final String uri;
 
-    public GuiLinkButton(FontRenderer font, int x, int y, ITextComponent text, String uri,
+    public GuiLinkButton(FontRenderer font, int x, int y, TextComponent text, String uri,
             BooleanConsumer callbackFunction) {
         super(x, y, font.width(text.getString()) + 8, 16, text);
         this.callbackFunction = callbackFunction;
@@ -38,8 +38,8 @@ public class GuiLinkButton extends Widget {
 
     public void openLink() {
         try {
-            Desktop.getDesktop().browse(new URI(uri));
-        } catch (IOException | URISyntaxException e) {
+            Util.getPlatform().openUri(new URI(uri));
+        } catch (UnsupportedOperationException | URISyntaxException e) {
             MapFrontiers.LOGGER.error(e.getMessage(), e);
         }
     }
@@ -57,6 +57,6 @@ public class GuiLinkButton extends Widget {
 
     @Override
     public void onClick(double mouseX, double mouseY) {
-        Minecraft.getInstance().setScreen(new ConfirmOpenLinkScreen(callbackFunction, uri, false));
+        ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new ConfirmOpenLinkScreen(callbackFunction, uri, false));
     }
 }

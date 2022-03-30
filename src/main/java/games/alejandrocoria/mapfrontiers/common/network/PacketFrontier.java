@@ -1,20 +1,18 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
-import java.util.function.Supplier;
-
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
-import games.alejandrocoria.mapfrontiers.client.gui.GuiShareSettings;
+import games.alejandrocoria.mapfrontiers.common.event.NewFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.network.NetworkEvent;
+
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.function.Supplier;
 
 @ParametersAreNonnullByDefault
 public class PacketFrontier {
@@ -55,15 +53,10 @@ public class PacketFrontier {
         FrontierOverlay frontierOverlay = ClientProxy.getFrontiersOverlayManager(message.frontier.getPersonal())
                 .addFrontier(message.frontier);
 
-        ClientProxy.frontierChanged();
-
         if (frontierOverlay != null) {
-            if (Minecraft.getInstance().screen instanceof GuiFrontierBook) {
-                ((GuiFrontierBook) Minecraft.getInstance().screen).newFrontierMessage(frontierOverlay, message.playerID);
-            } else if (Minecraft.getInstance().screen instanceof GuiShareSettings) {
-                ((GuiShareSettings) Minecraft.getInstance().screen).newFrontierMessage(frontierOverlay, message.playerID);
-            }
+            MinecraftForge.EVENT_BUS.post(new NewFrontierEvent(frontierOverlay, message.playerID));
         }
+
         ctx.setPacketHandled(true);
     }
 }

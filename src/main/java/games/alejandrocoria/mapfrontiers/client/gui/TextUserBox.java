@@ -6,6 +6,7 @@ import java.util.List;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import net.minecraft.client.gui.widget.TextFieldWidget;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.glfw.GLFW;
 
@@ -16,7 +17,7 @@ import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.network.play.ClientPlayNetHandler;
 import net.minecraft.client.network.play.NetworkPlayerInfo;
 import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -24,29 +25,32 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class TextUserBox extends TextBox {
     private final Minecraft mc;
+    private final FontRenderer font;
     private String partialText;
     private final List<String> suggestions;
     private final List<String> suggestionsToDraw;
-    private ITextComponent error;
+    private TextComponent error;
     private int maxSuggestionWidth = 0;
     private int suggestionIndex = 0;
+
+    public TextUserBox(Minecraft mc, FontRenderer font, int x, int y, int width) {
+        this(mc, font,x, y, width, "");
+    }
 
     public TextUserBox(Minecraft mc, FontRenderer font, int x, int y, int width, String defaultText) {
         super(font, x, y, width, defaultText);
         this.mc = mc;
+        this.font = font;
         suggestions = new ArrayList<>();
         suggestionsToDraw = new ArrayList<>();
 
         setError(null);
     }
 
-    public void setError(@Nullable ITextComponent error) {
+    public void setError(@Nullable TextComponent error) {
         this.error = error;
 
-        if (this.error == null) {
-            setColor(GuiColors.SETTINGS_TEXT_HIGHLIGHT);
-        } else {
-            setColor(GuiColors.SETTINGS_TEXT_ERROR, GuiColors.SETTINGS_TEXT_ERROR_HIGHLIGHT);
+        if (this.error != null) {
             suggestions.clear();
             suggestionsToDraw.clear();
         }
@@ -115,6 +119,12 @@ public class TextUserBox extends TextBox {
 
     @Override
     public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+        if (error == null) {
+            setTextColor(GuiColors.SETTINGS_TEXT_BOX_TEXT);
+        } else {
+            setTextColor(GuiColors.SETTINGS_TEXT_ERROR);
+        }
+
         super.renderButton(matrixStack, mouseX, mouseY, partialTicks);
 
         if (error != null) {
