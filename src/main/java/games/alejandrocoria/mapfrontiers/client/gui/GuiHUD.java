@@ -102,6 +102,8 @@ public class GuiHUD {
         frontierData.setName2("-----------------");
         frontierData.setBanner(itemBanner);
 
+        guiHUD.frontier = new FrontierOverlay(frontierData, null);
+
         return guiHUD;
     }
 
