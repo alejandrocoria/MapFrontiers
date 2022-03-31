@@ -7,11 +7,11 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.common.util.Constants;
 
 @ParametersAreNonnullByDefault
 public class FrontierSettings {
@@ -154,7 +154,7 @@ public class FrontierSettings {
         everyone.readFromNBT(everyoneTag);
 
         customGroups.clear();
-        ListTag customGroupsTagList = nbt.getList("customGroups", Constants.NBT.TAG_COMPOUND);
+        ListTag customGroupsTagList = nbt.getList("customGroups", Tag.TAG_COMPOUND);
         for (int i = 0; i < customGroupsTagList.size(); ++i) {
             SettingsGroup group = new SettingsGroup();
             CompoundTag groupTag = customGroupsTagList.getCompound(i);

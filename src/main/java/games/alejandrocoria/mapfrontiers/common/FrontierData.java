@@ -1,17 +1,15 @@
 package games.alejandrocoria.mapfrontiers.common;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.util.BlockPosHelper;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.BannerItem;
 import net.minecraft.world.item.DyeColor;
@@ -26,7 +24,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fmllegacy.server.ServerLifecycleHooks;
 
 @ParametersAreNonnullByDefault
@@ -37,22 +34,20 @@ public class FrontierData {
         public final static Change[] valuesArray = values();
     }
 
-    public static final int NoSlice = -1;
-    public static final int SurfaceSlice = 16;
-
     protected UUID id;
     protected List<BlockPos> vertices = new ArrayList<>();
-    protected boolean closed = false;
+    protected boolean visible = true;
     protected String name1 = "New";
     protected String name2 = "Frontier";
     protected boolean nameVisible = true;
     protected int color = 0xffffffff;
     protected ResourceKey<Level> dimension;
-    protected int mapSlice = NoSlice;
     protected SettingsUser owner = new SettingsUser();
     protected BannerData banner;
     protected boolean personal = false;
     protected List<SettingsUserShared> usersShared;
+    protected Date created;
+    protected Date modified;
 
     protected Set<Change> changes = EnumSet.noneOf(Change.class);
 
@@ -66,10 +61,9 @@ public class FrontierData {
         owner = other.owner;
         personal = other.personal;
 
-        closed = other.closed;
+        visible = other.visible;
         nameVisible = other.nameVisible;
         color = other.color;
-        mapSlice = other.mapSlice;
 
         name1 = other.name1;
         name2 = other.name2;
@@ -79,6 +73,9 @@ public class FrontierData {
         usersShared = other.usersShared;
 
         vertices = other.vertices;
+
+        created = other.created;
+        modified = other.modified;
 
         changes = EnumSet.noneOf(Change.class);
     }
@@ -90,10 +87,9 @@ public class FrontierData {
         personal = other.personal;
 
         if (other.changes.contains(Change.Other)) {
-            closed = other.closed;
+            visible = other.visible;
             nameVisible = other.nameVisible;
             color = other.color;
-            mapSlice = other.mapSlice;
         }
 
         if (other.changes.contains(Change.Name)) {
@@ -112,6 +108,8 @@ public class FrontierData {
         if (other.changes.contains(Change.Vertices)) {
             vertices = other.vertices;
         }
+
+        modified = other.modified;
 
         changes = EnumSet.noneOf(Change.class);
     }
@@ -159,7 +157,7 @@ public class FrontierData {
     }
 
     public void addVertex(BlockPos pos, int index) {
-        vertices.add(index, new BlockPos(pos.getX(), 70, pos.getZ()));
+        vertices.add(index, BlockPosHelper.atY(pos,70));
         changes.add(Change.Vertices);
     }
 
@@ -176,13 +174,22 @@ public class FrontierData {
         changes.add(Change.Vertices);
     }
 
-    public void setClosed(boolean closed) {
-        this.closed = closed;
+    public void moveVertex(BlockPos pos, int index) {
+        if (index < 0 || index >= vertices.size()) {
+            return;
+        }
+
+        vertices.set(index, pos);
+        changes.add(Change.Vertices);
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
         changes.add(Change.Other);
     }
 
-    public boolean getClosed() {
-        return closed;
+    public boolean getVisible() {
+        return visible;
     }
 
     public void setName1(String name) {
@@ -227,15 +234,6 @@ public class FrontierData {
 
     public ResourceKey<Level> getDimension() {
         return dimension;
-    }
-
-    public void setMapSlice(int mapSlice) {
-        this.mapSlice = mapSlice;
-        changes.add(Change.Other);
-    }
-
-    public int getMapSlice() {
-        return mapSlice;
     }
 
     public void setBanner(@Nullable ItemStack itemBanner) {
@@ -345,7 +343,24 @@ public class FrontierData {
         return userShared.hasAction(action);
     }
 
-    // @Note: To record changes if done outside of this class.
+    public void setCreated(Date created) {
+        this.created = created;
+        modified = created;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setModified(Date modified) {
+        this.modified = modified;
+    }
+
+    public Date getModified() {
+        return modified;
+    }
+
+    // @Note: To record changes if done outside this class.
     // It would be better to change that.
     public void addChange(Change change) {
         changes.add(change);
@@ -365,7 +380,9 @@ public class FrontierData {
 
     public void readFromNBT(CompoundTag nbt, int version) {
         id = UUID.fromString(nbt.getString("id"));
-        closed = nbt.getBoolean("closed");
+        if (nbt.contains("visible")) {
+            visible = nbt.getBoolean("visible");
+        }
         color = nbt.getInt("color");
         dimension = ResourceKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation(nbt.getString("dimension")));
         name1 = nbt.getString("name1");
@@ -373,8 +390,7 @@ public class FrontierData {
         if (nbt.contains("nameVisible")) {
             nameVisible = nbt.getBoolean("nameVisible");
         }
-        mapSlice = nbt.getInt("slice");
-        mapSlice = Math.min(Math.max(mapSlice, -1), 16);
+
         personal = nbt.getBoolean("personal");
 
         owner = new SettingsUser();
@@ -386,7 +402,7 @@ public class FrontierData {
         }
 
         if (personal) {
-            ListTag usersSharedTagList = nbt.getList("usersShared", Constants.NBT.TAG_COMPOUND);
+            ListTag usersSharedTagList = nbt.getList("usersShared", Tag.TAG_COMPOUND);
             if (!usersSharedTagList.isEmpty()) {
                 usersShared = new ArrayList<>();
 
@@ -398,21 +414,28 @@ public class FrontierData {
             }
         }
 
-        ListTag verticesTagList = nbt.getList("vertices", Constants.NBT.TAG_COMPOUND);
+        ListTag verticesTagList = nbt.getList("vertices", Tag.TAG_COMPOUND);
         for (int i = 0; i < verticesTagList.size(); ++i) {
             vertices.add(NbtUtils.readBlockPos(verticesTagList.getCompound(i)));
+        }
+
+        if (nbt.contains("created")) {
+            created = new Date(nbt.getLong("created"));
+        }
+
+        if (nbt.contains("modified")) {
+            modified = new Date(nbt.getLong("modified"));
         }
     }
 
     public void writeToNBT(CompoundTag nbt) {
         nbt.putString("id", id.toString());
-        nbt.putBoolean("closed", closed);
+        nbt.putBoolean("visible", visible);
         nbt.putInt("color", color);
         nbt.putString("dimension", dimension.location().toString());
         nbt.putString("name1", name1);
         nbt.putString("name2", name2);
         nbt.putBoolean("nameVisible", nameVisible);
-        nbt.putInt("slice", mapSlice);
         nbt.putBoolean("personal", personal);
 
         CompoundTag nbtOwner = new CompoundTag();
@@ -442,6 +465,14 @@ public class FrontierData {
         }
 
         nbt.put("vertices", verticesTagList);
+
+        if (created != null) {
+            nbt.putLong("created", created.getTime());
+        }
+
+        if (modified != null) {
+            nbt.putLong("modified", modified.getTime());
+        }
     }
 
     public void fromBytes(FriendlyByteBuf buf) {
@@ -459,10 +490,9 @@ public class FrontierData {
         owner.fromBytes(buf);
 
         if (changes.contains(Change.Other)) {
-            closed = buf.readBoolean();
+            visible = buf.readBoolean();
             color = buf.readInt();
             nameVisible = buf.readBoolean();
-            mapSlice = buf.readInt();
         }
 
 
@@ -511,6 +541,18 @@ public class FrontierData {
                 vertices.add(vertex);
             }
         }
+
+        if (buf.readBoolean()) {
+            created = new Date(buf.readLong());
+        } else {
+            created = null;
+        }
+
+        if (buf.readBoolean()) {
+            modified = new Date(buf.readLong());
+        } else {
+            modified = null;
+        }
     }
 
     public void toBytes(FriendlyByteBuf buf) {
@@ -532,10 +574,9 @@ public class FrontierData {
         owner.toBytes(buf);
 
         if (!onlyChanges || changes.contains(Change.Other)) {
-            buf.writeBoolean(closed);
+            buf.writeBoolean(visible);
             buf.writeInt(color);
             buf.writeBoolean(nameVisible);
-            buf.writeInt(mapSlice);
         }
 
         if (!onlyChanges || changes.contains(Change.Name)) {
@@ -573,6 +614,20 @@ public class FrontierData {
                 buf.writeLong(pos.asLong());
             }
         }
+
+        if (created == null) {
+            buf.writeBoolean(false);
+        } else {
+            buf.writeBoolean(true);
+            buf.writeLong(created.getTime());
+        }
+
+        if (modified == null) {
+            buf.writeBoolean(false);
+        } else {
+            buf.writeBoolean(true);
+            buf.writeLong(modified.getTime());
+        }
     }
 
     public static class BannerData {
@@ -586,8 +641,8 @@ public class FrontierData {
         public BannerData(ItemStack itemBanner) {
             CompoundTag blockEntityTag = itemBanner.getTagElement("BlockEntityTag");
 
-            if (blockEntityTag != null && blockEntityTag.contains("Patterns", Constants.NBT.TAG_LIST)) {
-                patterns = blockEntityTag.getList("Patterns", Constants.NBT.TAG_COMPOUND);
+            if (blockEntityTag != null && blockEntityTag.contains("Patterns", Tag.TAG_LIST)) {
+                patterns = blockEntityTag.getList("Patterns", Tag.TAG_COMPOUND);
             }
 
             if (itemBanner.getItem() instanceof BannerItem) {
@@ -597,7 +652,7 @@ public class FrontierData {
 
         public void readFromNBT(CompoundTag nbt) {
             baseColor = DyeColor.byId(nbt.getInt("Base"));
-            patterns = nbt.getList("Patterns", Constants.NBT.TAG_COMPOUND);
+            patterns = nbt.getList("Patterns", Tag.TAG_COMPOUND);
         }
 
         public void writeToNBT(CompoundTag nbt) {
@@ -613,7 +668,7 @@ public class FrontierData {
 
             CompoundTag nbt = buf.readNbt();
             if (nbt != null) {
-                patterns = nbt.getList("Patterns", Constants.NBT.TAG_COMPOUND);
+                patterns = nbt.getList("Patterns", Tag.TAG_COMPOUND);
             }
         }
 

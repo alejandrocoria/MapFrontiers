@@ -4,12 +4,7 @@ import java.awt.Color;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -21,6 +16,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import net.minecraft.client.Minecraft;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
@@ -31,7 +27,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
-import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fmllegacy.server.ServerLifecycleHooks;
@@ -50,7 +45,7 @@ public class FrontiersManager {
     private File ModDir;
     private boolean frontierOwnersChecked = false;
 
-    public static final int dataVersion = 5;
+    public static final int dataVersion = 7;
     private static int pendingShareFrontierID = 0;
     private static final int pendingShareFrontierTickDuration = 1200;
 
@@ -153,6 +148,7 @@ public class FrontiersManager {
         frontier.setDimension(dimension);
         frontier.setPersonal(personal);
         frontier.setColor(color.getRGB());
+        frontier.setCreated(new Date());
 
         if (vertex != null) {
             frontier.addVertex(vertex);
@@ -221,6 +217,8 @@ public class FrontiersManager {
             return false;
         }
 
+        updatedFrontier.setModified(new Date());
+
         FrontierData frontier = frontiers.get(index);
         frontier.updateFromData(updatedFrontier);
 
@@ -245,6 +243,8 @@ public class FrontiersManager {
         if (index < 0) {
             return false;
         }
+
+        updatedFrontier.setModified(new Date());
 
         FrontierData frontier = frontiers.get(index);
         frontier.updateFromData(updatedFrontier);
@@ -308,13 +308,13 @@ public class FrontiersManager {
             MapFrontiers.LOGGER.warn("Data version in frontiers not found, expected " + dataVersion);
         } else if (version < 5) {
             MapFrontiers.LOGGER
-                    .warn("Data version in frontiers lower than expected. The mod uses " + dataVersion);
+                    .warn("Data version in frontiers lower than expected. The mod support from 5 to " + dataVersion);
         } else if (version > dataVersion) {
             MapFrontiers.LOGGER
                     .warn("Data version in frontiers higher than expected. The mod uses " + dataVersion);
         }
 
-        ListTag allFrontiersTagList = nbt.getList("frontiers", Constants.NBT.TAG_COMPOUND);
+        ListTag allFrontiersTagList = nbt.getList("frontiers", Tag.TAG_COMPOUND);
         for (int i = 0; i < allFrontiersTagList.size(); ++i) {
             FrontierData frontier = new FrontierData();
             CompoundTag frontierTag = allFrontiersTagList.getCompound(i);
@@ -322,10 +322,10 @@ public class FrontiersManager {
             allFrontiers.put(frontier.getId(), frontier);
         }
 
-        ListTag dimensionsTagList = nbt.getList("global", Constants.NBT.TAG_COMPOUND);
+        ListTag dimensionsTagList = nbt.getList("global", Tag.TAG_COMPOUND);
         readFrontiersFromTagList(dimensionsTagList, dimensionsGlobalFrontiers, false, version);
 
-        ListTag personalTagList = nbt.getList("personal", Constants.NBT.TAG_COMPOUND);
+        ListTag personalTagList = nbt.getList("personal", Tag.TAG_COMPOUND);
         for (int i = 0; i < personalTagList.size(); ++i) {
             CompoundTag personalTag = personalTagList.getCompound(i);
 
@@ -337,7 +337,7 @@ public class FrontiersManager {
             owner.readFromNBT(ownerTag);
 
             HashMap<ResourceKey<Level>, ArrayList<FrontierData>> dimensionsPersonalFrontiers = new HashMap<>();
-            dimensionsTagList = personalTag.getList("frontiers", Constants.NBT.TAG_COMPOUND);
+            dimensionsTagList = personalTag.getList("frontiers", Tag.TAG_COMPOUND);
             readFrontiersFromTagList(dimensionsTagList, dimensionsPersonalFrontiers, true, version);
 
             usersDimensionsPersonalFrontiers.put(owner, dimensionsPersonalFrontiers);
@@ -350,7 +350,7 @@ public class FrontiersManager {
             CompoundTag dimensionTag = dimensionsTagList.getCompound(i);
             ResourceKey<Level> dimension = ResourceKey.create(Registry.DIMENSION_REGISTRY,
                     new ResourceLocation(dimensionTag.getString("dimension")));
-            ListTag frontiersTagList = dimensionTag.getList("frontiers", Constants.NBT.TAG_COMPOUND);
+            ListTag frontiersTagList = dimensionTag.getList("frontiers", Tag.TAG_COMPOUND);
             ArrayList<FrontierData> frontiers = new ArrayList<>();
             for (int i2 = 0; i2 < frontiersTagList.size(); ++i2) {
                 CompoundTag frontierTag = frontiersTagList.getCompound(i2);

@@ -5,16 +5,11 @@ import java.util.List;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import net.minecraft.client.gui.components.Widget;
-import org.apache.commons.lang3.StringUtils;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.resources.language.I18n;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.ChatFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -27,13 +22,11 @@ public class GuiUserElement extends GuiScrollBox.ScrollElement {
     private int pingBar = 0;
     final List<Widget> buttonList;
 
-    public GuiUserElement(Font font, List<Widget> buttonList, SettingsUser user, ResourceLocation texture,
-                          int textureSize) {
+    public GuiUserElement(Font font, List<Widget> buttonList, SettingsUser user) {
         super(258, 16);
         this.font = font;
         this.user = user;
-        buttonDelete = new GuiButtonIcon(0, 0, 13, 13, 494, 132, -23, texture, textureSize, (button) -> {
-        });
+        buttonDelete = new GuiButtonIcon(0, 0, GuiButtonIcon.Type.Remove, (button) -> {});
         this.buttonList = buttonList;
         this.buttonList.add(buttonDelete);
     }
@@ -83,16 +76,7 @@ public class GuiUserElement extends GuiScrollBox.ScrollElement {
             buttonDelete.visible = false;
         }
 
-        String text = user.username;
-        if (StringUtils.isBlank(text)) {
-            if (user.uuid == null) {
-                text = I18n.get("mapfrontiers.unnamed", ChatFormatting.ITALIC);
-            } else {
-                text = user.uuid.toString();
-            }
-        }
-
-        font.draw(matrixStack, text, x + 4.f, y + 4.f, color);
+        font.draw(matrixStack, user.toString(), x + 4.f, y + 4.f, color);
 
         if (pingBar > 0) {
             drawPingLine(matrixStack, x - 11, y + 11, 2);

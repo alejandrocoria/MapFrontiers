@@ -12,7 +12,7 @@ apply plugin: 'net.minecraftforge.gradle'
 // Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
 apply plugin: 'eclipse'
 
-version = '1.17.1-1.5.2'
+version = '1.17.1-2.0.0beta3'
 group = 'games.alejandrocoria.mapfrontiers' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'MapFrontiers'
 
@@ -115,7 +115,7 @@ dependencies {
     // The userdev artifact is a special name and will get all sorts of transformations applied to it.
     minecraft 'net.minecraftforge:forge:1.17.1-37.1.1'
 
-    implementation fg.deobf("curse.maven:journeymap-32274:3509575")
+    implementation fg.deobf("curse.maven:journeymap-32274:3696401")
 }
 
 jar {

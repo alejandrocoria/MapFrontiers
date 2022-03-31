@@ -3,9 +3,12 @@ package games.alejandrocoria.mapfrontiers.client;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
+import games.alejandrocoria.mapfrontiers.common.util.BlockPosHelper;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fmlclient.registry.ClientRegistry;
+import net.minecraftforge.eventbus.api.EventPriority;
 import org.lwjgl.glfw.GLFW;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
@@ -55,7 +58,6 @@ public class ClientProxy {
     @SubscribeEvent
     public static void clientSetup(FMLClientSetupEvent event) {
         Minecraft.getInstance().getMainRenderTarget().enableStencil();
-        MinecraftForge.EVENT_BUS.register(Sounds.class);
         MinecraftForge.EVENT_BUS.register(FrontierOverlay.class);
         MinecraftForge.EVENT_BUS.register(FrontiersOverlayManager.class);
 
@@ -68,7 +70,7 @@ public class ClientProxy {
 
     @SubscribeEvent
     public static void onEvent(KeyInputEvent event) {
-        if (openSettingsKey.isDown()) {
+        if (openSettingsKey.matches(event.getKey(), event.getScanCode()) && openSettingsKey.isDown()) {
             if (frontiersOverlayManager == null) {
                 return;
             }
@@ -77,15 +79,14 @@ public class ClientProxy {
                 return;
             }
 
-            Minecraft.getInstance().setScreen(new GuiFrontierSettings(settingsProfile));
+            Minecraft.getInstance().setScreen(new GuiFrontierSettings());
         }
     }
 
-    public static BlockPos snapVertex(BlockPos vertex, int snapDistance, ResourceKey<Level> dimension,
+    public static BlockPos snapVertex(BlockPos vertex, float snapDistance, ResourceKey<Level> dimension,
             @Nullable FrontierData owner) {
-        float snapDistanceSq = snapDistance * snapDistance;
-        BlockPos closest = new BlockPos(vertex.getX(), 70, vertex.getZ());
-        double closestDistance = Double.MAX_VALUE;
+        BlockPos closest = BlockPosHelper.atY(vertex,70);
+        double closestDistance = snapDistance * snapDistance;
 
         for (FrontierData frontier : personalFrontiersOverlayManager.getAllFrontiers(dimension)) {
             if (frontier == owner) {
@@ -93,12 +94,11 @@ public class ClientProxy {
             }
 
             for (int i = 0; i < frontier.getVertexCount(); ++i) {
-                BlockPos v = frontier.getVertex(i);
-                BlockPos v2 = new BlockPos(v.getX(), 70, v.getZ());
-                double distance = v2.distSqr(closest);
-                if (distance < snapDistanceSq && distance < closestDistance && !containsVertex(owner, v2)) {
+                BlockPos v = BlockPosHelper.atY(frontier.getVertex(i),70);
+                double distance = v.distSqr(closest);
+                if (distance <= closestDistance) {
                     closestDistance = distance;
-                    closest = v2;
+                    closest = v;
                 }
             }
         }
@@ -109,32 +109,16 @@ public class ClientProxy {
             }
 
             for (int i = 0; i < frontier.getVertexCount(); ++i) {
-                BlockPos v = frontier.getVertex(i);
-                BlockPos v2 = new BlockPos(v.getX(), 70, v.getZ());
-                double distance = v2.distSqr(closest);
-                if (distance < snapDistanceSq && distance < closestDistance && !containsVertex(owner, v2)) {
+                BlockPos v = BlockPosHelper.atY(frontier.getVertex(i),70);
+                double distance = v.distSqr(closest);
+                if (distance <= closestDistance) {
                     closestDistance = distance;
-                    closest = v2;
+                    closest = v;
                 }
             }
         }
 
         return closest;
-    }
-
-    private static boolean containsVertex(@Nullable FrontierData frontier, BlockPos vertex) {
-        if (frontier == null) {
-            return false;
-        }
-
-        for (int i = 0; i < frontier.getVertexCount(); ++i) {
-            BlockPos v = frontier.getVertex(i);
-            if (vertex.getX() == v.getX() && vertex.getZ() == v.getZ()) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     public static void setjmAPI(IClientAPI newJmAPI) {
@@ -213,11 +197,11 @@ public class ClientProxy {
         }
     }
 
-    public static void openGUIFrontierBook(ResourceKey<Level> dimension, boolean personal) {
-        if (frontiersOverlayManager == null || settingsProfile == null) {
-            return;
-        }
+    public static void openGUIFrontierBook() {
+        Minecraft.getInstance().setScreen(new GuiFrontierBook());
+    }
 
+    public static ItemStack getHeldBanner() {
         ItemStack mainhand = Minecraft.getInstance().player.getItemBySlot(EquipmentSlot.MAINHAND);
         ItemStack offhand = Minecraft.getInstance().player.getItemBySlot(EquipmentSlot.OFFHAND);
         ItemStack heldBanner = null;
@@ -228,15 +212,7 @@ public class ClientProxy {
             heldBanner = offhand;
         }
 
-        ResourceKey<Level> currentDimension = Minecraft.getInstance().player.level.dimension();
-
-        if (personal && settingsProfile.personalFrontier == SettingsProfile.State.Enabled) {
-            Minecraft.getInstance().setScreen(
-                    new GuiFrontierBook(personalFrontiersOverlayManager, personal, currentDimension, dimension, heldBanner));
-        } else {
-            Minecraft.getInstance().setScreen(
-                    new GuiFrontierBook(frontiersOverlayManager, personal, currentDimension, dimension, heldBanner));
-        }
+        return heldBanner;
     }
 
     public static boolean hasBookItemInHand() {
@@ -251,8 +227,9 @@ public class ClientProxy {
         }
     }
 
-    public static void setSettingsProfile(SettingsProfile newSettingsProfile) {
-        settingsProfile = newSettingsProfile;
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onUpdatedSettingsProfileEvent(UpdatedSettingsProfileEvent event) {
+        settingsProfile = event.profile;
     }
 
     public static SettingsProfile getSettingsProfile() {
@@ -277,12 +254,6 @@ public class ClientProxy {
 
         if (guiHUD != null) {
             guiHUD.configUpdated(Minecraft.getInstance().getWindow());
-        }
-    }
-
-    public static void frontierChanged() {
-        if (guiHUD != null) {
-            guiHUD.frontierChanged();
         }
     }
 }

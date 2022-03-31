@@ -5,7 +5,12 @@ import java.util.List;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
+import games.alejandrocoria.mapfrontiers.common.event.NewFrontierEvent;
+import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
 import journeymap.client.JourneymapClient;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.EventPriority;
 import org.apache.commons.lang3.StringUtils;
 
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -21,7 +26,6 @@ import journeymap.client.properties.MiniMapProperties;
 import journeymap.client.ui.UIManager;
 import journeymap.client.ui.minimap.Position;
 import journeymap.client.ui.minimap.Shape;
-import journeymap.client.ui.theme.ThemeLabelSource;
 import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiComponent;
@@ -72,10 +76,10 @@ public class GuiHUD {
     private int minimapSize;
     private Shape minimapShape;
     private Position minimapPosition;
-    private ThemeLabelSource minimapInfo1;
-    private ThemeLabelSource minimapInfo2;
-    private ThemeLabelSource minimapInfo3;
-    private ThemeLabelSource minimapInfo4;
+    private String minimapInfo1;
+    private String minimapInfo2;
+    private String minimapInfo3;
+    private String minimapInfo4;
     private int minimapFontScale;
     private int minimapCompassFontScale;
 
@@ -113,6 +117,8 @@ public class GuiHUD {
                 GuiColors.WHITE);
         frontierOwner = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, TextComponent.EMPTY,
                 GuiColors.WHITE);
+
+        MinecraftForge.EVENT_BUS.register(this);
     }
 
     public GuiHUD() {
@@ -126,6 +132,8 @@ public class GuiHUD {
                 GuiColors.WHITE);
         frontierOwner = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, TextComponent.EMPTY,
                 GuiColors.WHITE);
+
+        MinecraftForge.EVENT_BUS.register(this);
     }
 
     public int getWidth() {
@@ -211,7 +219,22 @@ public class GuiHUD {
         }
     }
 
-    public void frontierChanged() {
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onNewFrontierEvent(NewFrontierEvent event) {
+        frontierChanged();
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onUpdatedFrontierEvent(UpdatedFrontierEvent event) {
+        frontierChanged();
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onDeletedFrontierEvent(DeletedFrontierEvent event) {
+        frontierChanged();
+    }
+
+    private void frontierChanged() {
         if (previewMode || frontiersOverlayManager == null || personalFrontiersOverlayManager == null) {
             return;
         }
@@ -245,8 +268,8 @@ public class GuiHUD {
             MiniMapProperties minimapProperties = UIManager.INSTANCE.getMiniMap().getCurrentMinimapProperties();
             if (minimapEnabled != minimapProperties.enabled.get() || minimapSize != minimapProperties.sizePercent.get()
                     || minimapShape != minimapProperties.shape.get() || minimapPosition != minimapProperties.position.get()
-                    || minimapInfo1 != minimapProperties.info1Label.get() || minimapInfo2 != minimapProperties.info1Label.get()
-                    || minimapInfo3 != minimapProperties.info1Label.get() || minimapInfo4 != minimapProperties.info1Label.get()
+                    || minimapInfo1.equals(minimapProperties.info1Label.get()) || minimapInfo2.equals(minimapProperties.info2Label.get())
+                    || minimapInfo3.equals(minimapProperties.info3Label.get()) || minimapInfo4.equals(minimapProperties.info4Label.get())
                     || minimapFontScale != minimapProperties.fontScale.get().intValue()
                     || minimapCompassFontScale != minimapProperties.compassFontScale.get().intValue()) {
                 needUpdate = true;
@@ -339,9 +362,9 @@ public class GuiHUD {
             minimapShape = minimapProperties.shape.get();
             minimapPosition = minimapProperties.position.get();
             minimapInfo1 = minimapProperties.info1Label.get();
-            minimapInfo2 = minimapProperties.info1Label.get();
-            minimapInfo3 = minimapProperties.info1Label.get();
-            minimapInfo4 = minimapProperties.info1Label.get();
+            minimapInfo2 = minimapProperties.info2Label.get();
+            minimapInfo3 = minimapProperties.info3Label.get();
+            minimapInfo4 = minimapProperties.info4Label.get();
             minimapFontScale = minimapProperties.fontScale.get().intValue();
             minimapCompassFontScale = minimapProperties.compassFontScale.get().intValue();
         }

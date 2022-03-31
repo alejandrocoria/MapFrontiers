@@ -5,14 +5,12 @@ import java.util.function.Supplier;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
-import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
-import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierSettings;
-import games.alejandrocoria.mapfrontiers.client.gui.GuiShareSettings;
+import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fmllegacy.network.NetworkEvent;
 
@@ -46,16 +44,9 @@ public class PacketSettingsProfile {
     private static void handleClient(PacketSettingsProfile message, NetworkEvent.Context ctx) {
         SettingsProfile currentProfile = ClientProxy.getSettingsProfile();
         if (currentProfile == null || !currentProfile.equals(message.profile)) {
-            ClientProxy.setSettingsProfile(message.profile);
-
-            if (Minecraft.getInstance().screen instanceof GuiFrontierSettings) {
-                ((GuiFrontierSettings) Minecraft.getInstance().screen).updateSettingsProfile(message.profile);
-            } else if (Minecraft.getInstance().screen instanceof GuiFrontierBook) {
-                ((GuiFrontierBook) Minecraft.getInstance().screen).reloadPage(false);
-            } else if (Minecraft.getInstance().screen instanceof GuiShareSettings) {
-                ((GuiShareSettings) Minecraft.getInstance().screen).reloadPage(false);
-            }
+            MinecraftForge.EVENT_BUS.post(new UpdatedSettingsProfileEvent(message.profile));
         }
+
         ctx.setPacketHandled(true);
     }
 }

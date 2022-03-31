@@ -11,6 +11,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiColors;
+import games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketDeleteFrontier;
@@ -38,7 +39,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 public class FrontiersOverlayManager {
     private final IClientAPI jmAPI;
     private final HashMap<ResourceKey<Level>, ArrayList<FrontierOverlay>> dimensionsFrontiers;
-    private final HashMap<ResourceKey<Level>, FrontierOverlay> frontiersSelected;
     private final HashMap<ResourceKey<Level>, MarkerOverlay> markersSelected;
     private final boolean personal;
 
@@ -55,7 +55,6 @@ public class FrontiersOverlayManager {
     public FrontiersOverlayManager(IClientAPI jmAPI, boolean personal) {
         this.jmAPI = jmAPI;
         dimensionsFrontiers = new HashMap<>();
-        frontiersSelected = new HashMap<>();
         markersSelected = new HashMap<>();
         this.personal = personal;
     }
@@ -63,7 +62,7 @@ public class FrontiersOverlayManager {
     @SubscribeEvent
     public static void onRenderTick(TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
-            if (ClientProxy.hasBookItemInHand()) {
+            if (ClientProxy.hasBookItemInHand() || MapFrontiersPlugin.isEditing()) {
                 float opacity = markerDotSelected.getOpacity();
                 if (opacity < targetDotSelectedOpacity) {
                     opacity += event.renderTickTime * 0.5f;
@@ -105,18 +104,8 @@ public class FrontiersOverlayManager {
         PacketHandler.INSTANCE.sendToServer(new PacketNewFrontier(dimension, personal, vertex));
     }
 
-    public void clientDeleteFrontier(ResourceKey<Level> dimension, int index) {
-        List<FrontierOverlay> frontiers = getAllFrontiers(dimension);
-
-        FrontierOverlay frontier = frontiers.get(index);
-
-        if (frontier != null) {
-            PacketHandler.INSTANCE.sendToServer(new PacketDeleteFrontier(frontier.getId()));
-        }
-    }
-
-    public void clientUpdatefrontier(ResourceKey<Level> dimension, int index) {
-        clientUpdatefrontier(getAllFrontiers(dimension).get(index));
+    public void clientDeleteFrontier(FrontierOverlay frontier) {
+        PacketHandler.INSTANCE.sendToServer(new PacketDeleteFrontier(frontier.getId()));
     }
 
     public void clientUpdatefrontier(FrontierOverlay frontier) {
@@ -128,20 +117,20 @@ public class FrontiersOverlayManager {
         PacketHandler.INSTANCE.sendToServer(new PacketSharePersonalFrontier(frontierID, targetUser));
     }
 
-    public int deleteFrontier(ResourceKey<Level> dimension, UUID id) {
+    public boolean deleteFrontier(ResourceKey<Level> dimension, UUID id) {
         List<FrontierOverlay> frontiers = getAllFrontiers(dimension);
 
         int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId().equals(id));
 
         if (index < 0) {
-            return -1;
+            return false;
         }
 
         FrontierOverlay frontier = frontiers.get(index);
         frontier.removeOverlay();
         frontiers.remove(index);
 
-        return index;
+        return true;
     }
 
     public FrontierOverlay updateFrontier(FrontierData data) {
@@ -159,15 +148,6 @@ public class FrontiersOverlayManager {
         }
     }
 
-    public int getFrontierIndex(FrontierOverlay frontierOverlay) {
-        List<FrontierOverlay> frontiers = getAllFrontiers(frontierOverlay.getDimension());
-        if (frontiers == null) {
-            return -1;
-        }
-
-        return frontiers.lastIndexOf(frontierOverlay);
-    }
-
     public Map<ResourceKey<Level>, ArrayList<FrontierOverlay>> getAllFrontiers() {
         return dimensionsFrontiers;
     }
@@ -177,14 +157,15 @@ public class FrontiersOverlayManager {
     }
 
     public FrontierOverlay getFrontierInPosition(ResourceKey<Level> dimension, BlockPos pos) {
+        return getFrontierInPosition(dimension, pos, 0.0);
+    }
+
+    public FrontierOverlay getFrontierInPosition(ResourceKey<Level> dimension, BlockPos pos, double maxDistanceToOpen) {
         ArrayList<FrontierOverlay> frontiers = dimensionsFrontiers.get(dimension);
         if (frontiers != null) {
             for (FrontierOverlay frontier : frontiers) {
-                if (pos.getX() >= frontier.topLeft.getX() && pos.getX() <= frontier.bottomRight.getX()
-                        && pos.getZ() >= frontier.topLeft.getZ() && pos.getZ() <= frontier.bottomRight.getZ()) {
-                    if (frontier.pointIsInside(pos)) {
-                        return frontier;
-                    }
+                if (frontier.pointIsInside(pos, maxDistanceToOpen)) {
+                    return frontier;
                 }
             }
         }
@@ -208,33 +189,6 @@ public class FrontiersOverlayManager {
         }
     }
 
-    public FrontierOverlay getFrontier(ResourceKey<Level> dimension, int index) {
-        List<FrontierOverlay> frontiers = getAllFrontiers(dimension);
-        return frontiers.get(index);
-    }
-
-    public int getFrontierCount(ResourceKey<Level> dimension) {
-        return getAllFrontiers(dimension).size();
-    }
-
-    public int getFrontierIndexSelected(ResourceKey<Level> dimension) {
-        FrontierOverlay selected = frontiersSelected.get(dimension);
-        if (selected == null)
-            return -1;
-
-        return getFrontierIndex(selected);
-    }
-
-    public void setFrontierIndexSelected(ResourceKey<Level> dimension, int index) {
-        if (index < 0) {
-            updateSelectedMarker(dimension, null);
-        } else {
-            List<FrontierOverlay> frontiers = getAllFrontiers(dimension);
-            FrontierOverlay frontier = frontiers.get(index);
-            updateSelectedMarker(dimension, frontier);
-        }
-    }
-
     public void updateSelectedMarker(ResourceKey<Level> dimension, @Nullable FrontierOverlay frontier) {
         MarkerOverlay marker = markersSelected.get(dimension);
         if (marker != null) {
@@ -242,7 +196,6 @@ public class FrontiersOverlayManager {
         }
 
         if (frontier != null) {
-            frontiersSelected.put(dimension, frontier);
             BlockPos pos = frontier.getSelectedVertex();
             if (pos != null) {
                 marker = new MarkerOverlay(MapFrontiers.MODID, "selected_vertex_" + dimension.location(), pos,
@@ -257,8 +210,6 @@ public class FrontiersOverlayManager {
                     MapFrontiers.LOGGER.error(t.getMessage(), t);
                 }
             }
-        } else {
-            frontiersSelected.remove(dimension);
         }
     }
 }

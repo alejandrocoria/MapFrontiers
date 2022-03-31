@@ -8,10 +8,8 @@ import com.mojang.blaze3d.vertex.PoseStack;
 
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Widget;
 import net.minecraft.client.resources.language.I18n;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.ChatFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -24,14 +22,12 @@ public class GuiGroupElement extends GuiScrollBox.ScrollElement {
     private final GuiButtonIcon buttonDelete;
     final List<Widget> buttonList;
 
-    public GuiGroupElement(Font font, List<Widget> buttonList, SettingsGroup group, ResourceLocation texture,
-                           int textureSize) {
+    public GuiGroupElement(Font font, List<Widget> buttonList, SettingsGroup group) {
         super(160, 16);
         this.font = font;
         this.group = group;
 
-        buttonDelete = new GuiButtonIcon(0, 0, 13, 13, 494, 132, -23, texture, textureSize, (button) -> {
-        });
+        buttonDelete = new GuiButtonIcon(0, 0, GuiButtonIcon.Type.Remove, (button) -> {});
         buttonDelete.visible = false;
 
         this.buttonList = buttonList;

@@ -2,6 +2,8 @@ package games.alejandrocoria.mapfrontiers.common.settings;
 
 import java.util.UUID;
 
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.resources.language.I18n;
 import org.apache.commons.lang3.StringUtils;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
@@ -150,5 +152,18 @@ public class SettingsUser {
         }
 
         return username.equals(user.username);
+    }
+
+    @Override
+    public String toString() {
+        if (StringUtils.isBlank(username)) {
+            if (uuid == null) {
+                return I18n.get("mapfrontiers.unnamed", ChatFormatting.ITALIC);
+            } else {
+                return uuid.toString();
+            }
+        }
+
+        return username;
     }
 }

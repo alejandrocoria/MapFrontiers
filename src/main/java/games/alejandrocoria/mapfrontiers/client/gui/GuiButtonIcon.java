@@ -5,7 +5,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 
-import net.minecraft.client.Minecraft;
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.client.gui.components.Button;
@@ -17,20 +17,27 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class GuiButtonIcon extends Button {
-    private final int texX;
-    private final int texY;
-    private final int diffX;
-    private final ResourceLocation texture;
-    private final int textureSize;
+    private static final ResourceLocation texture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/buttons.png");
+    private static final int textureSizeX = 26;
+    private static final int textureSizeY = 26;
 
-    public GuiButtonIcon(int x, int y, int width, int height, int texX, int texY, int diffX, ResourceLocation texture,
-            int textureSize, Button.OnPress pressedAction) {
-        super(x, y, width, height, TextComponent.EMPTY, pressedAction);
-        this.texX = texX;
-        this.texY = texY;
-        this.diffX = diffX;
-        this.texture = texture;
-        this.textureSize = textureSize;
+    public enum Type {
+        Add, Remove
+    }
+
+    private int texY;
+
+    public GuiButtonIcon(int x, int y, Type type, Button.OnPress pressedAction) {
+        super(x, y, 13, 13, TextComponent.EMPTY, pressedAction);
+
+        switch (type) {
+            case Add:
+                texY = 0;
+                break;
+            case Remove:
+                texY = 13;
+                break;
+        }
     }
 
     @Override
@@ -43,12 +50,12 @@ public class GuiButtonIcon extends Button {
         RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1f);
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderTexture(0, texture);
-        int textureX = texX;
 
+        int texX = 0;
         if (isHovered) {
-            textureX += diffX;
+            texX = 13;
         }
 
-        blit(matrixStack, x, y, textureX, texY, width, height, textureSize, textureSize);
+        blit(matrixStack, x, y, texX, texY, width, height, textureSizeX, textureSizeY);
     }
 }
