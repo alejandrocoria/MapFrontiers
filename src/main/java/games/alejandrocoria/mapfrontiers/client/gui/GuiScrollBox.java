@@ -16,6 +16,8 @@ import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
+import static java.lang.Math.max;
+
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class GuiScrollBox extends AbstractWidget {
@@ -32,14 +34,13 @@ public class GuiScrollBox extends AbstractWidget {
     private final ScrollBoxResponder responder;
 
     public GuiScrollBox(int x, int y, int width, int height, int elementHeight, ScrollBoxResponder responder) {
-        super(x, y, width, height, TextComponent.EMPTY);
+        super(x, y, width, max(height, elementHeight), TextComponent.EMPTY);
         elements = new ArrayList<>();
         selected = -1;
         this.x = x;
         this.y = y;
-        this.width = width;
         this.elementHeight = elementHeight;
-        scrollHeight = height / elementHeight;
+        scrollHeight = this.height / elementHeight;
         this.height = scrollHeight * elementHeight;
         this.responder = responder;
     }
@@ -69,6 +70,13 @@ public class GuiScrollBox extends AbstractWidget {
         return null;
     }
 
+    public ScrollElement getElementIf(Predicate<ScrollElement> pred) {
+        return elements.stream()
+                .filter(pred)
+                .findFirst()
+                .orElse(null);
+    }
+
     public void selectElementIf(Predicate<ScrollElement> pred) {
         ScrollElement element = elements.stream()
                 .filter(pred)
@@ -79,9 +87,6 @@ public class GuiScrollBox extends AbstractWidget {
             selected = -1;
         } else {
             selectElement(element);
-            if (responder != null) {
-                responder.elementClicked(this, element);
-            }
         }
     }
 
@@ -180,9 +185,9 @@ public class GuiScrollBox extends AbstractWidget {
         if (visible) {
             if (scrollBarHeight > 0 && mouseX >= x + width + 5 && mouseY >= y && mouseX < x + width + 15 && mouseY < y + height) {
                 if (mouseY < y + scrollBarPos) {
-                    mouseScrolled(mouseX, mouseY, -1);
-                } else if (mouseY > y + scrollBarPos + scrollBarHeight) {
                     mouseScrolled(mouseX, mouseY, 1);
+                } else if (mouseY > y + scrollBarPos + scrollBarHeight) {
+                    mouseScrolled(mouseX, mouseY, -1);
                 } else {
                     scrollBarGrabbed = true;
                     scrollBarGrabbedYPos = (int) mouseY - y - scrollBarPos;

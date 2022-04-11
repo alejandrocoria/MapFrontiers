@@ -61,6 +61,14 @@ public class ConfigData {
         None, Name, Owner, Banner
     }
 
+    public enum FilterFrontierType {
+        All, Global, Personal
+    }
+
+    public enum FilterFrontierOwner {
+        All, You, Others
+    }
+
     public static boolean addVertexToNewFrontier;
     public static AfterCreatingFrontier afterCreatingFrontier;
     public static boolean alwaysShowUnfinishedFrontiers;
@@ -77,6 +85,9 @@ public class ConfigData {
     public static HUDAnchor hudAnchor;
     public static int hudXPosition;
     public static int hudYPosition;
+    public static FilterFrontierType filterFrontierType;
+    public static FilterFrontierOwner filterFrontierOwner;
+    public static String filterFrontierDimension;
 
     public static void bakeConfig() {
         addVertexToNewFrontier = CLIENT.addVertexToNewFrontier.get();
@@ -95,6 +106,9 @@ public class ConfigData {
         hudAnchor = CLIENT.hudAnchor.get();
         hudXPosition = CLIENT.hudXPosition.get();
         hudYPosition = CLIENT.hudYPosition.get();
+        filterFrontierType = CLIENT.filterFrontierType.get();
+        filterFrontierOwner = CLIENT.filterFrontierOwner.get();
+        filterFrontierDimension = CLIENT.filterFrontierDimension.get();
     }
 
     @SubscribeEvent
@@ -121,6 +135,9 @@ public class ConfigData {
         public final EnumValue<HUDAnchor> hudAnchor;
         public final IntValue hudXPosition;
         public final IntValue hudYPosition;
+        public final EnumValue<FilterFrontierType> filterFrontierType;
+        public final EnumValue<FilterFrontierOwner> filterFrontierOwner;
+        public final ForgeConfigSpec.ConfigValue<String> filterFrontierDimension;
 
         public ClientConfig(ForgeConfigSpec.Builder builder) {
             addVertexToNewFrontier = builder.comment(
@@ -173,6 +190,18 @@ public class ConfigData {
             hudYPosition = builder.comment("Size of the HUD banner.")
                     .translation(MapFrontiers.MODID + ".config.hud." + "yPosition")
                     .defineInRange("yPosition", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            filterFrontierType = builder.comment(
+                    "Filter the list of frontier by type.")
+                    .translation(MapFrontiers.MODID + ".config.filter." + "frontierType")
+                    .defineEnum("filterFrontierType", FilterFrontierType.All);
+            filterFrontierOwner = builder.comment(
+                    "Filter the list of frontier by owner.")
+                    .translation(MapFrontiers.MODID + ".config.filter." + "frontierOwner")
+                    .defineEnum("filterFrontierOwner", FilterFrontierOwner.All);
+            filterFrontierDimension = builder.comment(
+                    "Filter the list of frontier by dimension. Possible values are \"all\", \"current\" or the name of a dimension (eg: \"minecraft:the_nether\")")
+                    .translation(MapFrontiers.MODID + ".config.filter." + "frontierDimension")
+                    .define("filterFrontierOwner", "all");
             builder.pop();
         }
     }
@@ -194,6 +223,9 @@ public class ConfigData {
         CLIENT.hudAnchor.set(hudAnchor);
         CLIENT.hudXPosition.set(hudXPosition);
         CLIENT.hudYPosition.set(hudYPosition);
+        CLIENT.filterFrontierType.set(filterFrontierType);
+        CLIENT.filterFrontierOwner.set(filterFrontierOwner);
+        CLIENT.filterFrontierDimension.set(filterFrontierDimension);
 
         CLIENT_SPEC.save();
     }
