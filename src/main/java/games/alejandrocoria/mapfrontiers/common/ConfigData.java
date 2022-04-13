@@ -52,6 +52,14 @@ public class ConfigData {
         Manual, Show, Hide
     }
 
+    public enum FilterFrontierType {
+        All, Global, Personal
+    }
+
+    public enum FilterFrontierOwner {
+        All, You, Others
+    }
+
     public enum HUDAnchor {
         ScreenTop, ScreenTopRight, ScreenRight, ScreenBottomRight, ScreenBottom, ScreenBottomLeft, ScreenLeft, ScreenTopLeft,
         Minimap, MinimapHorizontal, MinimapVertical
@@ -61,20 +69,15 @@ public class ConfigData {
         None, Name, Owner, Banner
     }
 
-    public enum FilterFrontierType {
-        All, Global, Personal
-    }
-
-    public enum FilterFrontierOwner {
-        All, You, Others
-    }
-
     public static boolean addVertexToNewFrontier;
     public static AfterCreatingFrontier afterCreatingFrontier;
     public static boolean alwaysShowUnfinishedFrontiers;
     public static NameVisibility nameVisibility;
     public static double polygonsOpacity;
     public static int snapDistance;
+    public static FilterFrontierType filterFrontierType;
+    public static FilterFrontierOwner filterFrontierOwner;
+    public static String filterFrontierDimension;
     public static boolean hudEnabled;
     public static boolean hudAutoAdjustAnchor;
     public static boolean hudSnapToBorder;
@@ -85,9 +88,6 @@ public class ConfigData {
     public static HUDAnchor hudAnchor;
     public static int hudXPosition;
     public static int hudYPosition;
-    public static FilterFrontierType filterFrontierType;
-    public static FilterFrontierOwner filterFrontierOwner;
-    public static String filterFrontierDimension;
 
     public static void bakeConfig() {
         addVertexToNewFrontier = CLIENT.addVertexToNewFrontier.get();
@@ -96,6 +96,9 @@ public class ConfigData {
         nameVisibility = CLIENT.nameVisibility.get();
         polygonsOpacity = CLIENT.polygonsOpacity.get();
         snapDistance = CLIENT.snapDistance.get();
+        filterFrontierType = CLIENT.filterFrontierType.get();
+        filterFrontierOwner = CLIENT.filterFrontierOwner.get();
+        filterFrontierDimension = CLIENT.filterFrontierDimension.get();
         hudEnabled = CLIENT.hudEnabled.get();
         hudAutoAdjustAnchor = CLIENT.hudAutoAdjustAnchor.get();
         hudSnapToBorder = CLIENT.hudSnapToBorder.get();
@@ -106,9 +109,6 @@ public class ConfigData {
         hudAnchor = CLIENT.hudAnchor.get();
         hudXPosition = CLIENT.hudXPosition.get();
         hudYPosition = CLIENT.hudYPosition.get();
-        filterFrontierType = CLIENT.filterFrontierType.get();
-        filterFrontierOwner = CLIENT.filterFrontierOwner.get();
-        filterFrontierDimension = CLIENT.filterFrontierDimension.get();
     }
 
     @SubscribeEvent
@@ -125,6 +125,9 @@ public class ConfigData {
         public final EnumValue<NameVisibility> nameVisibility;
         public final DoubleValue polygonsOpacity;
         public final IntValue snapDistance;
+        public final EnumValue<FilterFrontierType> filterFrontierType;
+        public final EnumValue<FilterFrontierOwner> filterFrontierOwner;
+        public final ForgeConfigSpec.ConfigValue<String> filterFrontierDimension;
         public final BooleanValue hudEnabled;
         public final BooleanValue hudAutoAdjustAnchor;
         public final BooleanValue hudSnapToBorder;
@@ -135,9 +138,6 @@ public class ConfigData {
         public final EnumValue<HUDAnchor> hudAnchor;
         public final IntValue hudXPosition;
         public final IntValue hudYPosition;
-        public final EnumValue<FilterFrontierType> filterFrontierType;
-        public final EnumValue<FilterFrontierOwner> filterFrontierOwner;
-        public final ForgeConfigSpec.ConfigValue<String> filterFrontierDimension;
 
         public ClientConfig(ForgeConfigSpec.Builder builder) {
             addVertexToNewFrontier = builder.comment(
@@ -162,6 +162,18 @@ public class ConfigData {
                     .defineInRange("polygonsOpacity", 0.4, 0.0, 1.0);
             snapDistance = builder.comment("Distance at which vertices are attached to nearby vertices.")
                     .translation(MapFrontiers.MODID + ".config." + "snapDistance").defineInRange("snapDistance", 8, 0, 16);
+            filterFrontierType = builder.comment(
+                            "Filter the list of frontier by type.")
+                    .translation(MapFrontiers.MODID + ".config.filter." + "frontierType")
+                    .defineEnum("filterFrontierType", FilterFrontierType.All);
+            filterFrontierOwner = builder.comment(
+                            "Filter the list of frontier by owner.")
+                    .translation(MapFrontiers.MODID + ".config.filter." + "frontierOwner")
+                    .defineEnum("filterFrontierOwner", FilterFrontierOwner.All);
+            filterFrontierDimension = builder.comment(
+                            "Filter the list of frontier by dimension.\nAllowed values are \"all\", \"current\" or the name of a dimension (eg: \"minecraft:the_nether\")")
+                    .translation(MapFrontiers.MODID + ".config.filter." + "frontierDimension")
+                    .define("filterFrontierDimension", "all");
 
             builder.push("hud");
             hudEnabled = builder.comment("Show the HUD on screen.").translation(MapFrontiers.MODID + ".config.hud." + "enabled")
@@ -190,18 +202,6 @@ public class ConfigData {
             hudYPosition = builder.comment("Size of the HUD banner.")
                     .translation(MapFrontiers.MODID + ".config.hud." + "yPosition")
                     .defineInRange("yPosition", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
-            filterFrontierType = builder.comment(
-                    "Filter the list of frontier by type.")
-                    .translation(MapFrontiers.MODID + ".config.filter." + "frontierType")
-                    .defineEnum("filterFrontierType", FilterFrontierType.All);
-            filterFrontierOwner = builder.comment(
-                    "Filter the list of frontier by owner.")
-                    .translation(MapFrontiers.MODID + ".config.filter." + "frontierOwner")
-                    .defineEnum("filterFrontierOwner", FilterFrontierOwner.All);
-            filterFrontierDimension = builder.comment(
-                    "Filter the list of frontier by dimension. Possible values are \"all\", \"current\" or the name of a dimension (eg: \"minecraft:the_nether\")")
-                    .translation(MapFrontiers.MODID + ".config.filter." + "frontierDimension")
-                    .define("filterFrontierOwner", "all");
             builder.pop();
         }
     }
@@ -213,6 +213,9 @@ public class ConfigData {
         CLIENT.nameVisibility.set(nameVisibility);
         CLIENT.polygonsOpacity.set(polygonsOpacity);
         CLIENT.snapDistance.set(snapDistance);
+        CLIENT.filterFrontierType.set(filterFrontierType);
+        CLIENT.filterFrontierOwner.set(filterFrontierOwner);
+        CLIENT.filterFrontierDimension.set(filterFrontierDimension);
         CLIENT.hudEnabled.set(hudEnabled);
         CLIENT.hudAutoAdjustAnchor.set(hudAutoAdjustAnchor);
         CLIENT.hudSnapToBorder.set(hudSnapToBorder);
@@ -223,9 +226,6 @@ public class ConfigData {
         CLIENT.hudAnchor.set(hudAnchor);
         CLIENT.hudXPosition.set(hudXPosition);
         CLIENT.hudYPosition.set(hudYPosition);
-        CLIENT.filterFrontierType.set(filterFrontierType);
-        CLIENT.filterFrontierOwner.set(filterFrontierOwner);
-        CLIENT.filterFrontierDimension.set(filterFrontierDimension);
 
         CLIENT_SPEC.save();
     }
