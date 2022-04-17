@@ -1,9 +1,8 @@
 package games.alejandrocoria.mapfrontiers.client.util;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import net.minecraft.client.gui.Font;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 
 @ParametersAreNonnullByDefault

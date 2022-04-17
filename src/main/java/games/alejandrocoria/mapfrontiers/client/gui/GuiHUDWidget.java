@@ -1,20 +1,18 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import java.util.function.Consumer;
-
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import com.mojang.blaze3d.vertex.PoseStack;
-
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import journeymap.client.ui.minimap.MiniMap;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.sounds.SoundManager;
-import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)

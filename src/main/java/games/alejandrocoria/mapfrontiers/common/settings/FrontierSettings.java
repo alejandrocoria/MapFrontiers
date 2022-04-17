@@ -1,17 +1,16 @@
 package games.alejandrocoria.mapfrontiers.common.settings;
 
-import java.util.ArrayList;
-import java.util.List;
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.entity.player.Player;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-
-import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import net.minecraft.nbt.Tag;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.network.FriendlyByteBuf;
+import java.util.ArrayList;
+import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class FrontierSettings {

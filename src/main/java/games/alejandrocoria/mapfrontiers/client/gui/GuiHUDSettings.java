@@ -1,30 +1,27 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import java.util.*;
-
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.components.EditBox;
-import net.minecraftforge.client.ForgeHooksClient;
-import org.apache.commons.lang3.StringUtils;
-import org.lwjgl.glfw.GLFW;
-
+import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.vertex.PoseStack;
-
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import journeymap.client.ui.UIManager;
 import journeymap.client.ui.minimap.MiniMap;
-import com.mojang.blaze3d.platform.Window;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.ForgeHooksClient;
+import org.apache.commons.lang3.StringUtils;
+import org.lwjgl.glfw.GLFW;
+
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.*;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)

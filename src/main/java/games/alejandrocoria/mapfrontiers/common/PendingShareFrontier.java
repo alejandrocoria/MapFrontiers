@@ -1,10 +1,9 @@
 package games.alejandrocoria.mapfrontiers.common;
 
-import java.util.UUID;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class PendingShareFrontier {

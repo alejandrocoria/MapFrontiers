@@ -1,15 +1,14 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-import org.apache.commons.lang3.StringUtils;
-import org.lwjgl.glfw.GLFW;
-
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.apache.commons.lang3.StringUtils;
+import org.lwjgl.glfw.GLFW;
+
+import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)

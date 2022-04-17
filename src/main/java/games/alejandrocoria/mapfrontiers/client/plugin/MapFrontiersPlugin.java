@@ -1,7 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client.plugin;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFullscreenMap;
@@ -21,6 +19,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.EnumSet;
 
 @ParametersAreNonnullByDefault
