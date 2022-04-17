@@ -14,6 +14,7 @@ import journeymap.client.api.display.Context;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Widget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
@@ -46,6 +47,7 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
     private TextColorBox textRed;
     private TextColorBox textGreen;
     private TextColorBox textBlue;
+    private GuiColorPicker colorPicker;
 
     private GuiSettingsButton buttonSelect;
     private GuiSettingsButton buttonShareSettings;
@@ -77,7 +79,7 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
 
         int leftSide = width / 2 - 154;
         int rightSide = width / 2 + 10;
-        int top = height / 2 - 62;
+        int top = height / 2 - 112;
 
         addRenderableOnly(new GuiSimpleLabel(font, leftSide, top, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.name"), GuiColors.LABEL_TEXT));
@@ -124,6 +126,8 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
         textGreen.setValue((frontier.getColor() & 0x00ff00) >> 8);
         textBlue.setValue(frontier.getColor() & 0x0000ff);
 
+        colorPicker = new GuiColorPicker(leftSide + 2, top + 108, frontier.getColor(), (picker) -> colorPickerUpdated());
+
         Component type = new TranslatableComponent("mapfrontiers.type",
                 new TranslatableComponent(frontier.getPersonal() ? "mapfrontiers.personal" : "mapfrontiers.global"));
         addRenderableOnly(new GuiSimpleLabel(font, rightSide, top, GuiSimpleLabel.Align.Left, type, GuiColors.WHITE));
@@ -154,15 +158,15 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
             addRenderableOnly(modifiedLabel);
         }
 
-        buttonSelect = new GuiSettingsButton(font, leftSide, top + 142, 144,
+        buttonSelect = new GuiSettingsButton(font, leftSide, top + 242, 144,
                 new TranslatableComponent("mapfrontiers.select_in_map"), this::buttonPressed);
-        buttonShareSettings = new GuiSettingsButton(font, rightSide, top + 142, 144,
+        buttonShareSettings = new GuiSettingsButton(font, rightSide, top + 242, 144,
                 new TranslatableComponent("mapfrontiers.share_settings"), this::buttonPressed);
         buttonShareSettings.visible = frontier.getPersonal();
-        buttonDelete = new GuiSettingsButton(font, leftSide, top + 164, 144,
+        buttonDelete = new GuiSettingsButton(font, leftSide, top + 264, 144,
                 new TranslatableComponent("mapfrontiers.delete"), this::buttonPressed);
         buttonDelete.setTextColors(GuiColors.SETTINGS_BUTTON_TEXT_DELETE, GuiColors.SETTINGS_BUTTON_TEXT_DELETE_HIGHLIGHT);
-        buttonDone = new GuiSettingsButton(font, rightSide, top + 164, 144,
+        buttonDone = new GuiSettingsButton(font, rightSide, top + 264, 144,
                 new TranslatableComponent("gui.done"), this::buttonPressed);
 
         buttonBanner = new GuiSettingsButton(font, leftSide - 152, top, 144,
@@ -173,6 +177,7 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
         addRenderableWidget(textRed);
         addRenderableWidget(textGreen);
         addRenderableWidget(textBlue);
+        addRenderableWidget(colorPicker);
         addRenderableWidget(buttonSelect);
         addRenderableWidget(buttonShareSettings);
         addRenderableWidget(buttonDelete);
@@ -198,13 +203,13 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
 
         super.render(matrixStack, mouseX, mouseY, partialTicks);
 
-        fill(matrixStack, width / 2 - 31, height / 2 + 47, width / 2 - 9, height / 2 + 69,
+        /*fill(matrixStack, width / 2 - 31, height / 2 + 47, width / 2 - 9, height / 2 + 69,
                 GuiColors.COLOR_INDICATOR_BORDER);
         fill(matrixStack, width / 2 - 30, height / 2 + 48, width / 2 - 10, height / 2 + 68,
-                frontier.getColor() | 0xff000000);
+                frontier.getColor() | 0xff000000);*/
 
         if (frontier.hasBanner()) {
-            frontier.renderBanner(minecraft, matrixStack, width / 2 - 276, height / 2 - 40, 4);
+            frontier.renderBanner(minecraft, matrixStack, width / 2 - 276, height / 2 - 90, 4);
         }
 
         if (buttonBanner.visible && buttonBanner.isHoveredOrFocused()) {
@@ -226,6 +231,17 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
         }
 
         return super.mouseClicked(mouseX, mouseY, mouseButton);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        for (Widget w : renderables) {
+            if (w instanceof GuiColorPicker) {
+                ((GuiColorPicker) w).mouseReleased(mouseX, mouseY, button);
+            }
+        }
+
+        return super.mouseReleased(mouseX, mouseY, button);
     }
 
     protected void buttonPressed(Button button) {
@@ -301,18 +317,21 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
             int newColor = (frontier.getColor() & 0xff00ffff) | (value << 16);
             if (newColor != frontier.getColor()) {
                 frontier.setColor(newColor);
+                colorPicker.setColor(newColor);
                 sendChangesToServer();
             }
         } else if (textGreen == textBox) {
             int newColor = (frontier.getColor() & 0xffff00ff) | (value << 8);
             if (newColor != frontier.getColor()) {
                 frontier.setColor(newColor);
+                colorPicker.setColor(newColor);
                 sendChangesToServer();
             }
         } else if (textBlue == textBox) {
             int newColor = (frontier.getColor() & 0xffffff00) | value;
             if (newColor != frontier.getColor()) {
                 frontier.setColor(newColor);
+                colorPicker.setColor(newColor);
                 sendChangesToServer();
             }
         }
@@ -333,6 +352,14 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
 
     @Override
     public void lostFocus(TextBox textBox, String value) {
+        sendChangesToServer();
+    }
+
+    private void colorPickerUpdated() {
+        frontier.setColor(colorPicker.getColor());
+        textRed.setValue((frontier.getColor() & 0xff0000) >> 16);
+        textGreen.setValue((frontier.getColor() & 0x00ff00) >> 8);
+        textBlue.setValue(frontier.getColor() & 0x0000ff);
         sendChangesToServer();
     }
 
