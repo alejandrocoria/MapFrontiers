@@ -30,8 +30,10 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.awt.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Random;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -50,6 +52,7 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
     private TextColorBox textRed;
     private TextColorBox textGreen;
     private TextColorBox textBlue;
+    private GuiSettingsButton buttonRandomColor;
     private GuiColorPicker colorPicker;
 
     private GuiSettingsButton buttonSelect;
@@ -143,6 +146,9 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
         textGreen.setValue((frontier.getColor() & 0x00ff00) >> 8);
         textBlue.setValue(frontier.getColor() & 0x0000ff);
 
+        buttonRandomColor = new GuiSettingsButton(font, rightSide, top + 174, 144,
+                new TranslatableComponent("mapfrontiers.random_color"), this::buttonPressed);
+
         colorPicker = new GuiColorPicker(leftSide + 2, top + 140, frontier.getColor(), (picker) -> colorPickerUpdated());
 
         Component type = new TranslatableComponent("mapfrontiers.type",
@@ -196,6 +202,7 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
         addRenderableWidget(textRed);
         addRenderableWidget(textGreen);
         addRenderableWidget(textBlue);
+        addRenderableWidget(buttonRandomColor);
         addRenderableWidget(colorPicker);
         addRenderableWidget(buttonSelect);
         addRenderableWidget(buttonShareSettings);
@@ -264,6 +271,18 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
             sendChangesToServer();
         } else if (button == buttonShowOwner) {
             frontier.setOwnerVisible(buttonShowOwner.getSelected() == 0);
+            sendChangesToServer();
+        } else if (button == buttonRandomColor) {
+            final Random rand = new Random();
+            final float hue = rand.nextFloat();
+            final float saturation = (rand.nextInt(4000) + 6000) / 10000f;
+            final float luminance = (rand.nextInt(3000) + 7000) / 10000f;
+            int newColor = Color.getHSBColor(hue, saturation, luminance).getRGB();
+            frontier.setColor(newColor);
+            colorPicker.setColor(newColor);
+            textRed.setValue((newColor & 0xff0000) >> 16);
+            textGreen.setValue((newColor & 0x00ff00) >> 8);
+            textBlue.setValue(newColor & 0x0000ff);
             sendChangesToServer();
         } else if (button == buttonSelect) {
             // @Incomplete
@@ -408,6 +427,8 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
         textRed.setEditable(actions.canUpdate);
         textGreen.setEditable(actions.canUpdate);
         textBlue.setEditable(actions.canUpdate);
+        buttonRandomColor.visible = actions.canUpdate;
+        colorPicker.visible = actions.canUpdate;
         buttonDelete.visible = actions.canDelete;
         buttonBanner.visible = actions.canUpdate;
         buttonSelect.visible = frontier.getDimension().equals(jmAPI.getUIState(Context.UI.Fullscreen).dimension);

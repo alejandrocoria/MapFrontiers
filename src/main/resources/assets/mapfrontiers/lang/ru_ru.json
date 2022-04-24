@@ -10,6 +10,7 @@
   "mapfrontiers.show_name": "Show name",
   "mapfrontiers.show_owner": "Show owner",
   "mapfrontiers.color": "Цвет",
+  "mapfrontiers.random_color": "Random color",
   "mapfrontiers.area": "Площадь: %1$.2fм²",
   "mapfrontiers.perimeter": "Периметр: %1$.2fм",
   "mapfrontiers.owner": "Владелец: %1$s",

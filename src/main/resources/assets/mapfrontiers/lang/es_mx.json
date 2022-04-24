@@ -8,6 +8,7 @@
   "mapfrontiers.show_name": "Mostrar nombre",
   "mapfrontiers.show_owner": "Mostrar dueño",
   "mapfrontiers.color": "Color",
+  "mapfrontiers.random_color": "Color aleatorio",
   "mapfrontiers.area": "Área: %1$.2fm²",
   "mapfrontiers.perimeter": "Perímetro: %1$.2fm",
   "mapfrontiers.owner": "Dueño: %1$s",
