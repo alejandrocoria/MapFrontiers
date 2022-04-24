@@ -5,6 +5,8 @@
   "mapfrontiers.name": "Name",
   "mapfrontiers.unnamed_1": "%1$sUnnamed",
   "mapfrontiers.unnamed_2": "%1$sfrontier",
+  "mapfrontiers.show_name": "Show name",
+  "mapfrontiers.show_owner": "Show owner",
   "mapfrontiers.color": "Color",
   "mapfrontiers.area": "Area: %1$.2fm²",
   "mapfrontiers.perimeter": "Perimeter: %1$.2fm",

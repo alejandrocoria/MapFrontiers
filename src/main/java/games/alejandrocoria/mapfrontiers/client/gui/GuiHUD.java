@@ -17,12 +17,14 @@ import journeymap.client.properties.MiniMapProperties;
 import journeymap.client.ui.UIManager;
 import journeymap.client.ui.minimap.Position;
 import journeymap.client.ui.minimap.Shape;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
@@ -447,7 +449,7 @@ public class GuiHUD {
                     frontierOwner.x = posX + hudWidth / 2;
                     frontierOwner.y = posY + ownerOffsetY + 2;
                     frontierOwner.setScale(textScale);
-                    frontierOwner.setText(new TextComponent(owner));
+                    frontierOwner.setText(new TextComponent(ChatFormatting.ITALIC + owner));
 
                     offsetY += 12 * textScale;
                 }

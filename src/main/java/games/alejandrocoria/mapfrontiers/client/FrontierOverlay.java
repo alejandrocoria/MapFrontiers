@@ -18,6 +18,7 @@ import journeymap.client.api.model.MapPolygon;
 import journeymap.client.api.model.ShapeProperties;
 import journeymap.client.api.model.TextProperties;
 import journeymap.client.api.util.PolygonHelper;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.Sheets;
@@ -126,6 +127,7 @@ public class FrontierOverlay extends FrontierData {
             hash = prime * hash + ((name1 == null) ? 0 : name1.hashCode());
             hash = prime * hash + ((name2 == null) ? 0 : name2.hashCode());
             hash = prime * hash + (nameVisible ? 1231 : 1237);
+            hash = prime * hash + (ownerVisible ? 1231 : 1237);
             hash = prime * hash + ((vertices == null) ? 0 : vertices.hashCode());
             hash = prime * hash + ((banner == null) ? 0 : banner.hashCode());
             hash = prime * hash + ((usersShared == null) ? 0 : usersShared.hashCode());
@@ -511,14 +513,33 @@ public class FrontierOverlay extends FrontierData {
             polygonArea = PolygonHelper.toArea(polygonOverlay.getOuterArea());
 
             ConfigData.NameVisibility nameVisibility = ConfigData.nameVisibility;
-            if (nameVisibility == ConfigData.NameVisibility.Show
-                    || (nameVisibility == ConfigData.NameVisibility.Manual && nameVisible)) {
+            if (nameVisibility == ConfigData.NameVisibility.Show || (nameVisibility == ConfigData.NameVisibility.Manual)) {
                 TextProperties textProps = new TextProperties().setColor(color).setScale(2.f).setBackgroundOpacity(0.f);
                 textProps = setMinSizeTextPropierties(textProps);
-                if (!name1.isEmpty() && !name2.isEmpty()) {
-                    textProps.setOffsetY(9);
+
+                int lines = 0;
+                String label = "";
+
+                if (nameVisible) {
+                    if (!name1.isEmpty()) {
+                        ++lines;
+                        label += name1 + "\n";
+                    }
+                    if (!name2.isEmpty()) {
+                        ++lines;
+                        label += name2 + "\n";
+                    }
                 }
-                polygonOverlay.setTextProperties(textProps).setOverlayGroupName("frontier").setLabel(name1 + "\n" + name2);
+
+                if (ownerVisible && !owner.username.isEmpty()) {
+                    ++lines;
+                    label += ChatFormatting.ITALIC + owner.username + "\n";
+                }
+
+                if (lines > 0) {
+                    textProps.setOffsetY((lines - 1) * 7 - 4);
+                    polygonOverlay.setTextProperties(textProps).setOverlayGroupName("frontier").setLabel(label);
+                }
             }
 
             BlockPos last = vertices.get(vertices.size() - 1);
@@ -650,10 +671,11 @@ public class FrontierOverlay extends FrontierData {
         int width = bottomRight.getX() - topLeft.getX();
         int name1Width = Minecraft.getInstance().font.width(name1) * 2;
         int name2Width = Minecraft.getInstance().font.width(name2) * 2;
-        int nameWidth = Math.max(name1Width, name2Width) + 6;
+        int onwerWidth = Minecraft.getInstance().font.width(owner.username) * 2;
+        int labelWidth = Math.max(onwerWidth, Math.max(name1Width, name2Width)) + 6;
 
         int zoom = 0;
-        while (nameWidth > width && zoom < 5) {
+        while (labelWidth > width && zoom < 5) {
             ++zoom;
             width *= 2;
         }

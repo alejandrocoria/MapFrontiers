@@ -39,6 +39,7 @@ public class FrontierData {
     protected String name1 = "New";
     protected String name2 = "Frontier";
     protected boolean nameVisible = true;
+    protected boolean ownerVisible = false;
     protected int color = 0xffffffff;
     protected ResourceKey<Level> dimension;
     protected SettingsUser owner = new SettingsUser();
@@ -62,6 +63,7 @@ public class FrontierData {
 
         visible = other.visible;
         nameVisible = other.nameVisible;
+        ownerVisible = other.ownerVisible;
         color = other.color;
 
         name1 = other.name1;
@@ -88,6 +90,7 @@ public class FrontierData {
         if (other.changes.contains(Change.Other)) {
             visible = other.visible;
             nameVisible = other.nameVisible;
+            ownerVisible = other.ownerVisible;
             color = other.color;
         }
 
@@ -216,6 +219,15 @@ public class FrontierData {
 
     public boolean getNameVisible() {
         return nameVisible;
+    }
+
+    public void setOwnerVisible(boolean ownerVisible) {
+        this.ownerVisible = ownerVisible;
+        changes.add(Change.Other);
+    }
+
+    public boolean getOwnerVisible() {
+        return ownerVisible;
     }
 
     public void setColor(int color) {
@@ -389,6 +401,9 @@ public class FrontierData {
         if (nbt.contains("nameVisible")) {
             nameVisible = nbt.getBoolean("nameVisible");
         }
+        if (nbt.contains("ownerVisible")) {
+            ownerVisible = nbt.getBoolean("ownerVisible");
+        }
 
         personal = nbt.getBoolean("personal");
 
@@ -435,6 +450,7 @@ public class FrontierData {
         nbt.putString("name1", name1);
         nbt.putString("name2", name2);
         nbt.putBoolean("nameVisible", nameVisible);
+        nbt.putBoolean("ownerVisible", ownerVisible);
         nbt.putBoolean("personal", personal);
 
         CompoundTag nbtOwner = new CompoundTag();
@@ -492,6 +508,7 @@ public class FrontierData {
             visible = buf.readBoolean();
             color = buf.readInt();
             nameVisible = buf.readBoolean();
+            ownerVisible = buf.readBoolean();
         }
 
 
@@ -576,6 +593,7 @@ public class FrontierData {
             buf.writeBoolean(visible);
             buf.writeInt(color);
             buf.writeBoolean(nameVisible);
+            buf.writeBoolean(ownerVisible);
         }
 
         if (!onlyChanges || changes.contains(Change.Name)) {

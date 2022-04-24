@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
@@ -44,6 +45,8 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
     private final FrontierOverlay frontier;
     private TextBox textName1;
     private TextBox textName2;
+    private GuiOptionButton buttonShowName;
+    private GuiOptionButton buttonShowOwner;
     private TextColorBox textRed;
     private TextColorBox textGreen;
     private TextColorBox textBlue;
@@ -79,7 +82,7 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
 
         int leftSide = width / 2 - 154;
         int rightSide = width / 2 + 10;
-        int top = height / 2 - 112;
+        int top = height / 2 - 128;
 
         addRenderableOnly(new GuiSimpleLabel(font, leftSide, top, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.name"), GuiColors.LABEL_TEXT));
@@ -96,28 +99,42 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
         textName2.setValue(frontier.getName2());
 
         addRenderableOnly(new GuiSimpleLabel(font, leftSide, top + 70, GuiSimpleLabel.Align.Left,
+                new TranslatableComponent("mapfrontiers.show_name"), GuiColors.SETTINGS_TEXT));
+        buttonShowName = new GuiOptionButton(font, leftSide + 116, top + 68, 28, this::buttonPressed);
+        buttonShowName.addOption(new TranslatableComponent("options.on"));
+        buttonShowName.addOption(new TranslatableComponent("options.off"));
+        buttonShowName.setSelected(frontier.getNameVisible() ? 0 : 1);
+
+        addRenderableOnly(new GuiSimpleLabel(font, leftSide, top + 86, GuiSimpleLabel.Align.Left,
+                new TranslatableComponent("mapfrontiers.show_owner"), GuiColors.SETTINGS_TEXT));
+        buttonShowOwner = new GuiOptionButton(font, leftSide + 116, top + 84, 28, this::buttonPressed);
+        buttonShowOwner.addOption(new TranslatableComponent("options.on"));
+        buttonShowOwner.addOption(new TranslatableComponent("options.off"));
+        buttonShowOwner.setSelected(frontier.getOwnerVisible() ? 0 : 1);
+
+        addRenderableOnly(new GuiSimpleLabel(font, leftSide, top + 102, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.color"), GuiColors.LABEL_TEXT));
 
-        addRenderableOnly(new GuiSimpleLabel(font, leftSide - 11, top + 88, GuiSimpleLabel.Align.Left,
+        addRenderableOnly(new GuiSimpleLabel(font, leftSide - 11, top + 120, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("R"), GuiColors.LABEL_TEXT));
 
-        textRed = new TextColorBox(255, font, leftSide, top + 82);
+        textRed = new TextColorBox(255, font, leftSide, top + 114);
         textRed.setResponder(this);
         textRed.setHeight(20);
         textRed.setWidth(34);
 
-        addRenderableOnly(new GuiSimpleLabel(font, leftSide + 44, top + 88, GuiSimpleLabel.Align.Left,
+        addRenderableOnly(new GuiSimpleLabel(font, leftSide + 44, top + 120, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("G"), GuiColors.LABEL_TEXT));
 
-        textGreen = new TextColorBox(255, font, leftSide + 55, top + 82);
+        textGreen = new TextColorBox(255, font, leftSide + 55, top + 114);
         textGreen.setResponder(this);
         textGreen.setHeight(20);
         textGreen.setWidth(34);
 
-        addRenderableOnly(new GuiSimpleLabel(font, leftSide + 99, top + 88, GuiSimpleLabel.Align.Left,
+        addRenderableOnly(new GuiSimpleLabel(font, leftSide + 99, top + 120, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("B"), GuiColors.LABEL_TEXT));
 
-        textBlue = new TextColorBox(255, font, leftSide + 110, top + 82);
+        textBlue = new TextColorBox(255, font, leftSide + 110, top + 114);
         textBlue.setResponder(this);
         textBlue.setHeight(20);
         textBlue.setWidth(34);
@@ -126,7 +143,7 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
         textGreen.setValue((frontier.getColor() & 0x00ff00) >> 8);
         textBlue.setValue(frontier.getColor() & 0x0000ff);
 
-        colorPicker = new GuiColorPicker(leftSide + 2, top + 108, frontier.getColor(), (picker) -> colorPickerUpdated());
+        colorPicker = new GuiColorPicker(leftSide + 2, top + 140, frontier.getColor(), (picker) -> colorPickerUpdated());
 
         Component type = new TranslatableComponent("mapfrontiers.type",
                 new TranslatableComponent(frontier.getPersonal() ? "mapfrontiers.personal" : "mapfrontiers.global"));
@@ -158,15 +175,15 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
             addRenderableOnly(modifiedLabel);
         }
 
-        buttonSelect = new GuiSettingsButton(font, leftSide, top + 242, 144,
+        buttonSelect = new GuiSettingsButton(font, leftSide, top + 274, 144,
                 new TranslatableComponent("mapfrontiers.select_in_map"), this::buttonPressed);
-        buttonShareSettings = new GuiSettingsButton(font, rightSide, top + 242, 144,
+        buttonShareSettings = new GuiSettingsButton(font, rightSide, top + 274, 144,
                 new TranslatableComponent("mapfrontiers.share_settings"), this::buttonPressed);
         buttonShareSettings.visible = frontier.getPersonal();
-        buttonDelete = new GuiSettingsButton(font, leftSide, top + 264, 144,
+        buttonDelete = new GuiSettingsButton(font, leftSide, top + 296, 144,
                 new TranslatableComponent("mapfrontiers.delete"), this::buttonPressed);
         buttonDelete.setTextColors(GuiColors.SETTINGS_BUTTON_TEXT_DELETE, GuiColors.SETTINGS_BUTTON_TEXT_DELETE_HIGHLIGHT);
-        buttonDone = new GuiSettingsButton(font, rightSide, top + 264, 144,
+        buttonDone = new GuiSettingsButton(font, rightSide, top + 296, 144,
                 new TranslatableComponent("gui.done"), this::buttonPressed);
 
         buttonBanner = new GuiSettingsButton(font, leftSide - 152, top, 144,
@@ -174,6 +191,8 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
 
         addRenderableWidget(textName1);
         addRenderableWidget(textName2);
+        addRenderableWidget(buttonShowName);
+        addRenderableWidget(buttonShowOwner);
         addRenderableWidget(textRed);
         addRenderableWidget(textGreen);
         addRenderableWidget(textBlue);
@@ -203,13 +222,8 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
 
         super.render(matrixStack, mouseX, mouseY, partialTicks);
 
-        /*fill(matrixStack, width / 2 - 31, height / 2 + 47, width / 2 - 9, height / 2 + 69,
-                GuiColors.COLOR_INDICATOR_BORDER);
-        fill(matrixStack, width / 2 - 30, height / 2 + 48, width / 2 - 10, height / 2 + 68,
-                frontier.getColor() | 0xff000000);*/
-
         if (frontier.hasBanner()) {
-            frontier.renderBanner(minecraft, matrixStack, width / 2 - 276, height / 2 - 90, 4);
+            frontier.renderBanner(minecraft, matrixStack, width / 2 - 276, height / 2 - 106, 4);
         }
 
         if (buttonBanner.visible && buttonBanner.isHoveredOrFocused()) {
@@ -245,7 +259,13 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
     }
 
     protected void buttonPressed(Button button) {
-        if (button == buttonSelect) {
+        if (button == buttonShowName) {
+            frontier.setNameVisible(buttonShowName.getSelected() == 0);
+            sendChangesToServer();
+        } else if (button == buttonShowOwner) {
+            frontier.setOwnerVisible(buttonShowOwner.getSelected() == 0);
+            sendChangesToServer();
+        } else if (button == buttonSelect) {
             // @Incomplete
             ForgeHooksClient.popGuiLayer(minecraft);
         } else if (button == buttonShareSettings) {
@@ -383,6 +403,8 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
 
         textName1.setEditable(actions.canUpdate);
         textName2.setEditable(actions.canUpdate);
+        buttonShowName.active = actions.canUpdate;
+        buttonShowOwner.active = actions.canUpdate;
         textRed.setEditable(actions.canUpdate);
         textGreen.setEditable(actions.canUpdate);
         textBlue.setEditable(actions.canUpdate);

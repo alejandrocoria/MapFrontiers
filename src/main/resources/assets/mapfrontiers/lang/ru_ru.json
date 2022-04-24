@@ -7,6 +7,8 @@
   "mapfrontiers.name": "Name",
   "mapfrontiers.unnamed_1": "%1$sБез имени",
   "mapfrontiers.unnamed_2": "%1$sТерритория",
+  "mapfrontiers.show_name": "Show name",
+  "mapfrontiers.show_owner": "Show owner",
   "mapfrontiers.color": "Цвет",
   "mapfrontiers.area": "Площадь: %1$.2fм²",
   "mapfrontiers.perimeter": "Периметр: %1$.2fм",
