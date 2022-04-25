@@ -65,8 +65,8 @@ public class ConfigData {
 
     public static boolean addVertexToNewFrontier;
     public static AfterCreatingFrontier afterCreatingFrontier;
-    public static boolean alwaysShowUnfinishedFrontiers;
     public static NameVisibility nameVisibility;
+    public static boolean hideNamesThatDontFit;
     public static double polygonsOpacity;
     public static int snapDistance;
     public static FilterFrontierType filterFrontierType;
@@ -86,8 +86,8 @@ public class ConfigData {
     public static void bakeConfig() {
         addVertexToNewFrontier = CLIENT.addVertexToNewFrontier.get();
         afterCreatingFrontier = CLIENT.afterCreatingFrontier.get();
-        alwaysShowUnfinishedFrontiers = CLIENT.alwaysShowUnfinishedFrontiers.get();
         nameVisibility = CLIENT.nameVisibility.get();
+        hideNamesThatDontFit = CLIENT.hideNamesThatDontFit.get();
         polygonsOpacity = CLIENT.polygonsOpacity.get();
         snapDistance = CLIENT.snapDistance.get();
         filterFrontierType = CLIENT.filterFrontierType.get();
@@ -115,8 +115,8 @@ public class ConfigData {
     public static class ClientConfig {
         public final BooleanValue addVertexToNewFrontier;
         public final EnumValue<AfterCreatingFrontier> afterCreatingFrontier;
-        public final BooleanValue alwaysShowUnfinishedFrontiers;
         public final EnumValue<NameVisibility> nameVisibility;
+        public final BooleanValue hideNamesThatDontFit;
         public final DoubleValue polygonsOpacity;
         public final IntValue snapDistance;
         public final EnumValue<FilterFrontierType> filterFrontierType;
@@ -142,14 +142,14 @@ public class ConfigData {
                     "What to do after creating a new frontier.")
                     .translation(MapFrontiers.MODID + ".config." + "afterCreatingFrontier")
                     .defineEnum("afterCreatingFrontier", AfterCreatingFrontier.Info);
-            alwaysShowUnfinishedFrontiers = builder.comment(
-                    "With true, it always shows unfinished frontiers. With false, they will only be seen with the book in hand.")
-                    .translation(MapFrontiers.MODID + ".config." + "alwaysShowUnfinishedFrontiers")
-                    .define("alwaysShowUnfinishedFrontiers", true);
             nameVisibility = builder.comment(
                     "Force all frontier names to be shown on the map or hidden. In Manual you can decide for each frontier.")
                     .translation(MapFrontiers.MODID + ".config." + "nameVisibility")
                     .defineEnum("nameVisibility", NameVisibility.Manual);
+            hideNamesThatDontFit = builder.comment(
+                    "Hides the name if it is wider than the frontier at the zoom level it is being viewed.")
+                    .translation(MapFrontiers.MODID + ".config." + "hideNamesThatDontFit")
+                    .define("hideNamesThatDontFit", true);
             polygonsOpacity = builder
                     .comment("Transparency of the frontier polygons. 0.0 is fully transparent and 1.0 is no transparency.")
                     .translation(MapFrontiers.MODID + ".config." + "polygonsOpacity")
@@ -157,15 +157,15 @@ public class ConfigData {
             snapDistance = builder.comment("Distance at which vertices are attached to nearby vertices.")
                     .translation(MapFrontiers.MODID + ".config." + "snapDistance").defineInRange("snapDistance", 8, 0, 16);
             filterFrontierType = builder.comment(
-                            "Filter the list of frontier by type.")
+                    "Filter the list of frontier by type.")
                     .translation(MapFrontiers.MODID + ".config.filter." + "frontierType")
                     .defineEnum("filterFrontierType", FilterFrontierType.All);
             filterFrontierOwner = builder.comment(
-                            "Filter the list of frontier by owner.")
+                    "Filter the list of frontier by owner.")
                     .translation(MapFrontiers.MODID + ".config.filter." + "frontierOwner")
                     .defineEnum("filterFrontierOwner", FilterFrontierOwner.All);
             filterFrontierDimension = builder.comment(
-                            "Filter the list of frontier by dimension.\nAllowed values are \"all\", \"current\" or the name of a dimension (eg: \"minecraft:the_nether\")")
+                    "Filter the list of frontier by dimension.\nAllowed values are \"all\", \"current\" or the name of a dimension (eg: \"minecraft:the_nether\")")
                     .translation(MapFrontiers.MODID + ".config.filter." + "frontierDimension")
                     .define("filterFrontierDimension", "all");
 
@@ -203,8 +203,8 @@ public class ConfigData {
     public static void save() {
         CLIENT.addVertexToNewFrontier.set(addVertexToNewFrontier);
         CLIENT.afterCreatingFrontier.set(afterCreatingFrontier);
-        CLIENT.alwaysShowUnfinishedFrontiers.set(alwaysShowUnfinishedFrontiers);
         CLIENT.nameVisibility.set(nameVisibility);
+        CLIENT.hideNamesThatDontFit.set(hideNamesThatDontFit);
         CLIENT.polygonsOpacity.set(polygonsOpacity);
         CLIENT.snapDistance.set(snapDistance);
         CLIENT.filterFrontierType.set(filterFrontierType);

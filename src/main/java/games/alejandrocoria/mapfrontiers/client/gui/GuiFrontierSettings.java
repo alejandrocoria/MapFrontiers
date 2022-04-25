@@ -53,8 +53,8 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
     private GuiLinkButton buttonProject;
     private GuiPatreonButton buttonPatreon;
     private GuiOptionButton buttonAddVertexToNewFrontier;
-    private GuiOptionButton buttonAlwaysShowUnfinishedFrontiers;
     private GuiOptionButton buttonNameVisibility;
+    private GuiOptionButton buttonHideNamesThatDontFit;
     private TextBox textPolygonsOpacity;
     private TextBox textSnapDistance;
     private GuiOptionButton buttonHUDEnabled;
@@ -125,16 +125,16 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         buttonAddVertexToNewFrontier.addOption("false");
         buttonAddVertexToNewFrontier.setSelected(ConfigData.addVertexToNewFrontier ? 0 : 1);
 
-        buttonAlwaysShowUnfinishedFrontiers = new GuiOptionButton(font, width / 2 + 50, 86, 100, this::buttonPressed);
-        buttonAlwaysShowUnfinishedFrontiers.addOption("true");
-        buttonAlwaysShowUnfinishedFrontiers.addOption("false");
-        buttonAlwaysShowUnfinishedFrontiers.setSelected(ConfigData.alwaysShowUnfinishedFrontiers ? 0 : 1);
-
-        buttonNameVisibility = new GuiOptionButton(font, width / 2 + 50, 102, 100, this::buttonPressed);
+        buttonNameVisibility = new GuiOptionButton(font, width / 2 + 50, 86, 100, this::buttonPressed);
         buttonNameVisibility.addOption(ConfigData.NameVisibility.Manual.name());
         buttonNameVisibility.addOption(ConfigData.NameVisibility.Show.name());
         buttonNameVisibility.addOption(ConfigData.NameVisibility.Hide.name());
         buttonNameVisibility.setSelected(ConfigData.nameVisibility.ordinal());
+
+        buttonHideNamesThatDontFit = new GuiOptionButton(font, width / 2 + 50, 102, 100, this::buttonPressed);
+        buttonHideNamesThatDontFit.addOption("true");
+        buttonHideNamesThatDontFit.addOption("false");
+        buttonHideNamesThatDontFit.setSelected(ConfigData.hideNamesThatDontFit ? 0 : 1);
 
         textPolygonsOpacity = new TextBox(font, width / 2 + 50, 118, 100);
         textPolygonsOpacity.setValue(String.valueOf(ConfigData.polygonsOpacity));
@@ -186,8 +186,8 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         addRenderableWidget(buttonProject);
         addRenderableWidget(buttonPatreon);
         addRenderableWidget(buttonAddVertexToNewFrontier);
-        addRenderableWidget(buttonAlwaysShowUnfinishedFrontiers);
         addRenderableWidget(buttonNameVisibility);
+        addRenderableWidget(buttonHideNamesThatDontFit);
         addRenderableWidget(textPolygonsOpacity);
         addRenderableWidget(textSnapDistance);
         addRenderableWidget(buttonHUDEnabled);
@@ -299,11 +299,11 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         if (button == buttonAddVertexToNewFrontier) {
             ConfigData.addVertexToNewFrontier = buttonAddVertexToNewFrontier.getSelected() == 0;
             ClientProxy.configUpdated();
-        } else if (button == buttonAlwaysShowUnfinishedFrontiers) {
-            ConfigData.alwaysShowUnfinishedFrontiers = buttonAlwaysShowUnfinishedFrontiers.getSelected() == 0;
-            ClientProxy.configUpdated();
         } else if (button == buttonNameVisibility) {
             ConfigData.nameVisibility = ConfigData.NameVisibility.values()[buttonNameVisibility.getSelected()];
+            ClientProxy.configUpdated();
+        } else if (button == buttonHideNamesThatDontFit) {
+            ConfigData.hideNamesThatDontFit = buttonHideNamesThatDontFit.getSelected() == 0;
             ClientProxy.configUpdated();
         } else if (button == buttonHUDEnabled) {
             ConfigData.hudEnabled = buttonHUDEnabled.getSelected() == 0;
@@ -452,12 +452,12 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
                     ConfigData.getTooltip("addVertexToNewFrontier"));
             addLabelWithTooltip(
                     new GuiSimpleLabel(font, width / 2 - 120, 88, GuiSimpleLabel.Align.Left,
-                            new TranslatableComponent("alwaysShowUnfinishedFrontiers"), GuiColors.SETTINGS_TEXT),
-                    ConfigData.getTooltip("alwaysShowUnfinishedFrontiers"));
-            addLabelWithTooltip(
-                    new GuiSimpleLabel(font, width / 2 - 120, 104, GuiSimpleLabel.Align.Left,
                             new TranslatableComponent("nameVisibility"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("nameVisibility"));
+            addLabelWithTooltip(
+                    new GuiSimpleLabel(font, width / 2 - 120, 104, GuiSimpleLabel.Align.Left,
+                            new TranslatableComponent("hideNamesThatDontFit"), GuiColors.SETTINGS_TEXT),
+                    ConfigData.getTooltip("hideNamesThatDontFit"));
             addLabelWithTooltip(
                     new GuiSimpleLabel(font, width / 2 - 120, 120, GuiSimpleLabel.Align.Left,
                             new TranslatableComponent("polygonsOpacity"), GuiColors.SETTINGS_TEXT),
@@ -520,8 +520,8 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         buttonProject.visible = tabSelected == Tab.Credits;
         buttonPatreon.visible = tabSelected == Tab.Credits;
         buttonAddVertexToNewFrontier.visible = tabSelected == Tab.General;
-        buttonAlwaysShowUnfinishedFrontiers.visible = tabSelected == Tab.General;
         buttonNameVisibility.visible = tabSelected == Tab.General;
+        buttonHideNamesThatDontFit.visible = tabSelected == Tab.General;
         textPolygonsOpacity.visible = tabSelected == Tab.General;
         textSnapDistance.visible = tabSelected == Tab.General;
         buttonHUDEnabled.visible = tabSelected == Tab.General;

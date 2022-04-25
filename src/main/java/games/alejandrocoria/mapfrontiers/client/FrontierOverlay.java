@@ -136,20 +136,6 @@ public class FrontierOverlay extends FrontierData {
         return hash;
     }
 
-    @SubscribeEvent
-    public static void onRenderTick(TickEvent.RenderTickEvent event) {
-        if (event.phase == TickEvent.Phase.START) {
-            if (ConfigData.alwaysShowUnfinishedFrontiers || ClientProxy.hasBookItemInHand()
-                    || Minecraft.getInstance().screen instanceof GuiFrontierBook) {
-                markerVertex.setOpacity(1.f);
-                markerDot.setOpacity(1.f);
-            } else {
-                markerVertex.setOpacity(0.f);
-                markerDot.setOpacity(0.f);
-            }
-        }
-    }
-
     public void updateOverlay() {
         dirty = true;
 
@@ -515,12 +501,14 @@ public class FrontierOverlay extends FrontierData {
             ConfigData.NameVisibility nameVisibility = ConfigData.nameVisibility;
             if (nameVisibility == ConfigData.NameVisibility.Show || (nameVisibility == ConfigData.NameVisibility.Manual)) {
                 TextProperties textProps = new TextProperties().setColor(color).setScale(2.f).setBackgroundOpacity(0.f);
-                textProps = setMinSizeTextPropierties(textProps);
+                if (ConfigData.hideNamesThatDontFit) {
+                    textProps = setMinSizeTextPropierties(textProps);
+                }
 
                 int lines = 0;
                 String label = "";
 
-                if (nameVisible) {
+                if (nameVisibility == ConfigData.NameVisibility.Show || nameVisible) {
                     if (!name1.isEmpty()) {
                         ++lines;
                         label += name1 + "\n";
@@ -531,7 +519,7 @@ public class FrontierOverlay extends FrontierData {
                     }
                 }
 
-                if (ownerVisible && !owner.username.isEmpty()) {
+                if (nameVisibility == ConfigData.NameVisibility.Show || (ownerVisible && !owner.username.isEmpty())) {
                     ++lines;
                     label += ChatFormatting.ITALIC + owner.username + "\n";
                 }
