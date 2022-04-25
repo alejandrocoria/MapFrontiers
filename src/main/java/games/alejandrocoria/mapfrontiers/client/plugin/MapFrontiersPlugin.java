@@ -51,7 +51,13 @@ public class MapFrontiersPlugin implements IClientPlugin {
             case MAP_CLICKED:
                 if (fullscreenMap != null) {
                     FullscreenMapEvent.ClickEvent clickEvent = (FullscreenMapEvent.ClickEvent)event;
-                    if (clickEvent.getStage() == FullscreenMapEvent.Stage.POST) {
+                    FullscreenMapEvent.Stage relevantStage;
+                    if (fullscreenMap.isEditing() && clickEvent.getButton() == 1) {
+                        relevantStage = FullscreenMapEvent.Stage.PRE;
+                    } else {
+                        relevantStage = FullscreenMapEvent.Stage.POST;
+                    }
+                    if (clickEvent.getStage() == relevantStage) {
                         fullscreenMap.mapClicked(clickEvent.dimension, clickEvent.getLocation());
                     }
                 }
