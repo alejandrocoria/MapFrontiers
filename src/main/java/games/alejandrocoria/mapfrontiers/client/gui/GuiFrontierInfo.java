@@ -428,7 +428,7 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
         textGreen.setEditable(actions.canUpdate);
         textBlue.setEditable(actions.canUpdate);
         buttonRandomColor.visible = actions.canUpdate;
-        colorPicker.visible = actions.canUpdate;
+        colorPicker.active = actions.canUpdate;
         buttonDelete.visible = actions.canDelete;
         buttonBanner.visible = actions.canUpdate;
         buttonSelect.visible = frontier.getDimension().equals(jmAPI.getUIState(Context.UI.Fullscreen).dimension);
