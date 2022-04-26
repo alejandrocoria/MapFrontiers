@@ -183,15 +183,15 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
             addRenderableOnly(modifiedLabel);
         }
 
-        buttonSelect = new GuiSettingsButton(font, leftSide, top + 274, 144,
+        buttonSelect = new GuiSettingsButton(font, leftSide - 154, top + 274, 144,
                 new TranslatableComponent("mapfrontiers.select_in_map"), this::buttonPressed);
-        buttonShareSettings = new GuiSettingsButton(font, rightSide, top + 274, 144,
+        buttonShareSettings = new GuiSettingsButton(font, leftSide, top + 274, 144,
                 new TranslatableComponent("mapfrontiers.share_settings"), this::buttonPressed);
         buttonShareSettings.visible = frontier.getPersonal();
-        buttonDelete = new GuiSettingsButton(font, leftSide, top + 296, 144,
+        buttonDelete = new GuiSettingsButton(font, rightSide, top + 274, 144,
                 new TranslatableComponent("mapfrontiers.delete"), this::buttonPressed);
         buttonDelete.setTextColors(GuiColors.SETTINGS_BUTTON_TEXT_DELETE, GuiColors.SETTINGS_BUTTON_TEXT_DELETE_HIGHLIGHT);
-        buttonDone = new GuiSettingsButton(font, rightSide, top + 296, 144,
+        buttonDone = new GuiSettingsButton(font, rightSide + 154, top + 274, 144,
                 new TranslatableComponent("gui.done"), this::buttonPressed);
 
         buttonBanner = new GuiSettingsButton(font, leftSide - 152, top, 144,

@@ -41,7 +41,7 @@ public final class GuiColors {
     public static final int SETTINGS_CHECKBOX_BORDER = 0xff444444;
     public static final int SETTINGS_CHECKBOX_BG = 0xff000000;
     public static final int SETTINGS_CHECKBOX_CHECK = 0xff666666;
-    public static final int SETTINGS_OPTION_BORDER = 0xff444444;
+    public static final int SETTINGS_OPTION_BORDER = 0xffa0a0a0;
     public static final int SETTINGS_OPTION_BG = 0xff000000;
     public static final int SETTINGS_SCROLLBAR = 0xff777777;
     public static final int SETTINGS_SCROLLBAR_HOVERED = 0xffaaaaaa;
