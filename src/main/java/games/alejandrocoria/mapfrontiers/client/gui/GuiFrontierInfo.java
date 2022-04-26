@@ -10,6 +10,7 @@ import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.Context;
 import journeymap.client.ui.UIManager;
@@ -275,11 +276,7 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
             frontier.setOwnerVisible(buttonShowOwner.getSelected() == 0);
             sendChangesToServer();
         } else if (button == buttonRandomColor) {
-            final Random rand = new Random();
-            final float hue = rand.nextFloat();
-            final float saturation = (rand.nextInt(4000) + 6000) / 10000f;
-            final float luminance = (rand.nextInt(3000) + 7000) / 10000f;
-            int newColor = Color.getHSBColor(hue, saturation, luminance).getRGB();
+            int newColor = ColorHelper.getRandomColor();
             frontier.setColor(newColor);
             colorPicker.setColor(newColor);
             textRed.setValue((newColor & 0xff0000) >> 16);

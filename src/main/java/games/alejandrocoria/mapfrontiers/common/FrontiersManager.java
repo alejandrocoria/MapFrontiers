@@ -5,6 +5,7 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierUpdated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -137,17 +138,12 @@ public class FrontiersManager {
 
     private FrontierData createNewFrontier(List<FrontierData> frontiers, ResourceKey<Level> dimension, boolean personal,
             ServerPlayer player, @Nullable BlockPos vertex) {
-        final float hue = rand.nextFloat();
-        final float saturation = (rand.nextInt(4000) + 6000) / 10000f;
-        final float luminance = (rand.nextInt(3000) + 7000) / 10000f;
-        Color color = Color.getHSBColor(hue, saturation, luminance);
-
         FrontierData frontier = new FrontierData();
         frontier.setId(UUID.randomUUID());
         frontier.setOwner(new SettingsUser(player));
         frontier.setDimension(dimension);
         frontier.setPersonal(personal);
-        frontier.setColor(color.getRGB());
+        frontier.setColor(ColorHelper.getRandomColor());
         frontier.setCreated(new Date());
 
         if (vertex != null) {
