@@ -482,6 +482,14 @@ public class FrontierOverlay extends FrontierData {
         return highlighted;
     }
 
+    public BlockPos getCenter() {
+        if (vertices.isEmpty()) {
+            return new BlockPos(0, 70, 0);
+        }
+
+        return new BlockPos((topLeft.getX() + bottomRight.getX()) / 2, 70, (topLeft.getZ() + bottomRight.getZ()) / 2);
+    }
+
     private void recalculateOverlays() {
         polygonOverlay = null;
         markerOverlays.clear();

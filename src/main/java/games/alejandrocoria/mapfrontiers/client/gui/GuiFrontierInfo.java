@@ -12,11 +12,13 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.Context;
+import journeymap.client.ui.UIManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Widget;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
@@ -285,8 +287,9 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
             textBlue.setValue(newColor & 0x0000ff);
             sendChangesToServer();
         } else if (button == buttonSelect) {
-            // @Incomplete
+            BlockPos center = frontier.getCenter();
             ForgeHooksClient.popGuiLayer(minecraft);
+            UIManager.INSTANCE.openFullscreenMap().centerOn(center.getX(), center.getZ());
         } else if (button == buttonShareSettings) {
             ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiShareSettings(frontiersOverlayManager, frontier));
         } else if (button == buttonDelete) {
