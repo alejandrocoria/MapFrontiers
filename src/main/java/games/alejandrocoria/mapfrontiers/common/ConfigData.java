@@ -63,7 +63,9 @@ public class ConfigData {
         None, Name, Owner, Banner
     }
 
-    public static boolean addVertexToNewFrontier;
+    public static int newFrontierShape;
+    public static int newFrontierShapeWidth;
+    public static int newFrontierShapeRadius;
     public static AfterCreatingFrontier afterCreatingFrontier;
     public static NameVisibility nameVisibility;
     public static boolean hideNamesThatDontFit;
@@ -84,7 +86,9 @@ public class ConfigData {
     public static int hudYPosition;
 
     public static void bakeConfig() {
-        addVertexToNewFrontier = CLIENT.addVertexToNewFrontier.get();
+        newFrontierShape = CLIENT.newFrontierShape.get();
+        newFrontierShapeWidth = CLIENT.newFrontierShapeWidth.get();
+        newFrontierShapeRadius = CLIENT.newFrontierShapeRadius.get();
         afterCreatingFrontier = CLIENT.afterCreatingFrontier.get();
         nameVisibility = CLIENT.nameVisibility.get();
         hideNamesThatDontFit = CLIENT.hideNamesThatDontFit.get();
@@ -113,7 +117,9 @@ public class ConfigData {
     }
 
     public static class ClientConfig {
-        public final BooleanValue addVertexToNewFrontier;
+        public final IntValue newFrontierShape;
+        public final IntValue newFrontierShapeWidth;
+        public final IntValue newFrontierShapeRadius;
         public final EnumValue<AfterCreatingFrontier> afterCreatingFrontier;
         public final EnumValue<NameVisibility> nameVisibility;
         public final BooleanValue hideNamesThatDontFit;
@@ -134,10 +140,15 @@ public class ConfigData {
         public final IntValue hudYPosition;
 
         public ClientConfig(ForgeConfigSpec.Builder builder) {
-            addVertexToNewFrontier = builder.comment(
-                    "If true, when a new frontier is created, the first vertex will automatically be added where the player is.")
-                    .translation(MapFrontiers.MODID + ".config." + "addVertexToNewFrontier")
-                    .define("addVertexToNewFrontier", true);
+            newFrontierShape = builder.comment("")
+                    .translation(MapFrontiers.MODID + ".config." + "newFrontierShape")
+                    .defineInRange("newFrontierShape", 0, 0, 11);
+            newFrontierShapeWidth = builder.comment("")
+                    .translation(MapFrontiers.MODID + ".config." + "newFrontierShapeWidth")
+                    .defineInRange("newFrontierShapeWidth", 10, 0, 999);
+            newFrontierShapeRadius = builder.comment("")
+                    .translation(MapFrontiers.MODID + ".config." + "newFrontierShapeRadius")
+                    .defineInRange("newFrontierShapeRadius", 20, 0, 999);
             afterCreatingFrontier = builder.comment(
                     "What to do after creating a new frontier.")
                     .translation(MapFrontiers.MODID + ".config." + "afterCreatingFrontier")
@@ -201,7 +212,9 @@ public class ConfigData {
     }
 
     public static void save() {
-        CLIENT.addVertexToNewFrontier.set(addVertexToNewFrontier);
+        CLIENT.newFrontierShape.set(newFrontierShape);
+        CLIENT.newFrontierShapeWidth.set(newFrontierShapeWidth);
+        CLIENT.newFrontierShapeRadius.set(newFrontierShapeRadius);
         CLIENT.afterCreatingFrontier.set(afterCreatingFrontier);
         CLIENT.nameVisibility.set(nameVisibility);
         CLIENT.hideNamesThatDontFit.set(hideNamesThatDontFit);

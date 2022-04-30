@@ -11,16 +11,23 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
-public class TextColorBox extends EditBox {
+public class TextIntBox extends EditBox {
     private static final String numericRegex = "[^\\d]";
-    private TextColorBoxResponder responder;
 
-    public TextColorBox(int value, Font font, int x, int y) {
-        super(font, x, y, 29, 12, TextComponent.EMPTY);
-        this.setValue(String.valueOf(value));
+    private int defaultValue;
+    private int min;
+    private int max;
+    private TextIntBoxResponder responder;
+
+    public TextIntBox(int defaultValue, int min, int max, Font font, int x, int y, int width) {
+        super(font, x, y, width, 12, TextComponent.EMPTY);
+        this.defaultValue = defaultValue;
+        this.min = min;
+        this.max = max;
+        this.setValue(defaultValue);
     }
 
-    public void setResponder(TextColorBoxResponder responderIn) {
+    public void setResponder(TextIntBoxResponder responderIn) {
         responder = responderIn;
     }
 
@@ -81,7 +88,7 @@ public class TextColorBox extends EditBox {
     public Integer clamped() {
         String text = getValue();
         if (text.length() == 0) {
-            return 0;
+            return defaultValue;
         }
 
         int integer;
@@ -89,17 +96,17 @@ public class TextColorBox extends EditBox {
         try {
             integer = Integer.parseInt(text);
         } catch (Exception e) {
-            return 0;
+            return defaultValue;
         }
 
-        integer = Math.max(0, integer);
-        integer = Math.min(255, integer);
+        integer = Math.max(min, integer);
+        integer = Math.min(max, integer);
 
         return integer;
     }
 
     @OnlyIn(Dist.CLIENT)
-    public interface TextColorBoxResponder {
-        void updatedValue(TextColorBox textColorBox, int value);
+    public interface TextIntBoxResponder {
+        void updatedValue(TextIntBox textIntBox, int value);
     }
 }

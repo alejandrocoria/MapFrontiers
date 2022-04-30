@@ -69,7 +69,7 @@ public class GuiRadioListElement extends GuiScrollBox.ScrollElement {
     }
 
     private void drawRadio(PoseStack matrixStack, int x, int y, boolean checked) {
-        RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1f);
+        RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderTexture(0, texture);
 

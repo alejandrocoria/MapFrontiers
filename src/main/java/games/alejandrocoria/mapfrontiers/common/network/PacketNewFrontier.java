@@ -15,21 +15,23 @@ import net.minecraftforge.network.NetworkEvent;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Supplier;
 
 @ParametersAreNonnullByDefault
 public class PacketNewFrontier {
     private ResourceKey<Level> dimension = Level.OVERWORLD;
     private boolean personal = false;
-    private BlockPos vertex;
+    private List<BlockPos> vertices;
 
     public PacketNewFrontier() {
     }
 
-    public PacketNewFrontier(ResourceKey<Level> dimension, boolean personal, @Nullable BlockPos vertex) {
+    public PacketNewFrontier(ResourceKey<Level> dimension, boolean personal, @Nullable List<BlockPos> vertices) {
         this.dimension = dimension;
         this.personal = personal;
-        this.vertex = vertex;
+        this.vertices = vertices;
     }
 
     public static PacketNewFrontier fromBytes(FriendlyByteBuf buf) {
@@ -39,7 +41,12 @@ public class PacketNewFrontier {
 
         boolean hasVertex = buf.readBoolean();
         if (hasVertex) {
-            packet.vertex = BlockPos.of(buf.readLong());
+            packet.vertices = new ArrayList<>();
+            int vertexCount = buf.readInt();
+            for (int i = 0; i < vertexCount; ++i) {
+                BlockPos vertex = BlockPos.of(buf.readLong());
+                packet.vertices.add(vertex);
+            }
         }
 
         return packet;
@@ -49,9 +56,12 @@ public class PacketNewFrontier {
         buf.writeResourceLocation(packet.dimension.location());
         buf.writeBoolean(packet.personal);
 
-        buf.writeBoolean(packet.vertex != null);
-        if (packet.vertex != null) {
-            buf.writeLong(packet.vertex.asLong());
+        buf.writeBoolean(packet.vertices != null);
+        if (packet.vertices != null) {
+            buf.writeInt(packet.vertices.size());
+            for (BlockPos pos : packet.vertices) {
+                buf.writeLong(pos.asLong());
+            }
         }
     }
 
@@ -68,8 +78,7 @@ public class PacketNewFrontier {
             if (message.personal) {
                 if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier,
                         new SettingsUser(player), MapFrontiers.isOPorHost(player), null)) {
-                    frontier = MapFrontiers.getFrontiersManager().createNewPersonalFrontier(message.dimension, player,
-                            message.vertex);
+                    frontier = MapFrontiers.getFrontiersManager().createNewPersonalFrontier(message.dimension, player, message.vertices);
                     PacketHandler.sendToUsersWithAccess(new PacketFrontier(frontier, player.getId()), frontier);
 
                     return;
@@ -77,8 +86,7 @@ public class PacketNewFrontier {
             } else {
                 if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.CreateFrontier,
                         new SettingsUser(player), MapFrontiers.isOPorHost(player), null)) {
-                    frontier = MapFrontiers.getFrontiersManager().createNewGlobalFrontier(message.dimension, player,
-                            message.vertex);
+                    frontier = MapFrontiers.getFrontiersManager().createNewGlobalFrontier(message.dimension, player, message.vertices);
                     PacketHandler.sendToAll(new PacketFrontier(frontier, player.getId()));
 
                     return;

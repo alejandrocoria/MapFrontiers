@@ -120,7 +120,7 @@ public class GuiColorPicker extends AbstractWidget {
 
     @Override
     public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1f);
+        RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderTexture(0, texture);
 
@@ -128,30 +128,30 @@ public class GuiColorPicker extends AbstractWidget {
 
         blit(matrixStack, x, y, texX, 0, 128, 128, textureSizeX, textureSizeY);
         if (active) {
-            RenderSystem.setShaderColor(((colorFullBrightness & 0xff0000) >> 16) / 255.f, ((colorFullBrightness & 0x00ff00) >> 8) / 255.f, (colorFullBrightness & 0x0000ff) / 255.f, 1f);
+            RenderSystem.setShaderColor(((colorFullBrightness & 0xff0000) >> 16) / 255.f, ((colorFullBrightness & 0x00ff00) >> 8) / 255.f, (colorFullBrightness & 0x0000ff) / 255.f, 1.f);
         }
         blit(matrixStack, x + 132, y, texX + 129, 0, 8, 128, textureSizeX, textureSizeY);
         if (!active) {
-            RenderSystem.setShaderColor(((colorFullBrightness & 0xff0000) >> 16) / 255.f, ((colorFullBrightness & 0x00ff00) >> 8) / 255.f, (colorFullBrightness & 0x0000ff) / 255.f, 1f);
+            RenderSystem.setShaderColor(((colorFullBrightness & 0xff0000) >> 16) / 255.f, ((colorFullBrightness & 0x00ff00) >> 8) / 255.f, (colorFullBrightness & 0x0000ff) / 255.f, 1.f);
         }
         fill(matrixStack, x + (int) hsX + 64, y + (int) hsY + 64, x + (int) hsX + 65, y + (int) hsY + 65, colorFullBrightness);
         fill(matrixStack, x + 131, y + (int) v, x + 139, y + (int) v + 1, color);
-        RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1f);
+        RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
         blit(matrixStack, x + (int) hsX + 64 - 2, y + (int) hsY + 64 - 2, texX, 129, 5, 5, textureSizeX, textureSizeY);
         blit(matrixStack, x + 131, y + (int) v - 2, texX + 6, 129, 10, 5, textureSizeX, textureSizeY);
 
         fill(matrixStack, x + 165, y + 57, x + 304, y + 127, 0xff000000);
-        int row = 0;
         int col = 0;
+        int row = 0;
         for (int c : (active ? palette : paletteInactive)) {
             if (active && c == color) {
-                fill(matrixStack, x + 165 + row * 23, y + 57 + col * 23, x + 189 + row * 23, y + 81 + col * 23, 0xffffffff);
+                fill(matrixStack, x + 165 + col * 23, y + 57 + row * 23, x + 189 + col * 23, y + 81 + row * 23, 0xffffffff);
             }
-            fill(matrixStack, x + 166 + row * 23, y + 58 + col * 23, x + 188 + row * 23, y + 80 + col * 23, c);
-            ++row;
-            if (row == 6) {
-                row = 0;
-                ++col;
+            fill(matrixStack, x + 166 + col * 23, y + 58 + row * 23, x + 188 + col * 23, y + 80 + row * 23, c);
+            ++col;
+            if (col == 6) {
+                col = 0;
+                ++row;
             }
         }
     }

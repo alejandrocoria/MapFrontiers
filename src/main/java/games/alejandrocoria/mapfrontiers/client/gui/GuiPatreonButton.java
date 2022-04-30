@@ -58,9 +58,9 @@ public class GuiPatreonButton extends AbstractWidget {
                 && mouseY < y + height / factor);
 
         if (isHovered) {
-            RenderSystem.setShaderColor(0.9f, 0.9f, 0.9f, 1f);
+            RenderSystem.setShaderColor(0.9f, 0.9f, 0.9f, 1.f);
         } else {
-            RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1f);
+            RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
         }
 
         RenderSystem.setShader(GameRenderer::getPositionTexShader);

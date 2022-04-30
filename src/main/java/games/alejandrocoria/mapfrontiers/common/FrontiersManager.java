@@ -25,11 +25,9 @@ import net.minecraftforge.server.ServerLifecycleHooks;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.awt.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.List;
 import java.util.*;
 
 @ParametersAreNonnullByDefault
@@ -122,22 +120,19 @@ public class FrontiersManager {
         return allFrontiers.get(id);
     }
 
-    public FrontierData createNewGlobalFrontier(ResourceKey<Level> dimension, ServerPlayer player,
-            @Nullable BlockPos vertex) {
+    public FrontierData createNewGlobalFrontier(ResourceKey<Level> dimension, ServerPlayer player, @Nullable List<BlockPos> vertices) {
         List<FrontierData> frontiers = getAllGlobalFrontiers(dimension);
 
-        return createNewFrontier(frontiers, dimension, false, player, vertex);
+        return createNewFrontier(frontiers, dimension, false, player, vertices);
     }
 
-    public FrontierData createNewPersonalFrontier(ResourceKey<Level> dimension, ServerPlayer player,
-            @Nullable BlockPos vertex) {
+    public FrontierData createNewPersonalFrontier(ResourceKey<Level> dimension, ServerPlayer player, @Nullable List<BlockPos> vertices) {
         List<FrontierData> frontiers = getAllPersonalFrontiers(new SettingsUser(player), dimension);
 
-        return createNewFrontier(frontiers, dimension, true, player, vertex);
+        return createNewFrontier(frontiers, dimension, true, player, vertices);
     }
 
-    private FrontierData createNewFrontier(List<FrontierData> frontiers, ResourceKey<Level> dimension, boolean personal,
-            ServerPlayer player, @Nullable BlockPos vertex) {
+    private FrontierData createNewFrontier(List<FrontierData> frontiers, ResourceKey<Level> dimension, boolean personal, ServerPlayer player, @Nullable List<BlockPos> vertices) {
         FrontierData frontier = new FrontierData();
         frontier.setId(UUID.randomUUID());
         frontier.setOwner(new SettingsUser(player));
@@ -146,8 +141,10 @@ public class FrontiersManager {
         frontier.setColor(ColorHelper.getRandomColor());
         frontier.setCreated(new Date());
 
-        if (vertex != null) {
-            frontier.addVertex(vertex);
+        if (vertices != null) {
+            for (BlockPos vertex : vertices) {
+                frontier.addVertex(vertex);
+            }
         }
 
         frontiers.add(frontier);

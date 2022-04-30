@@ -113,13 +113,13 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
         textPositionY.setResponder(this);
 
         buttonAutoAdjustAnchor = new GuiOptionButton(font, width / 2 + 70, height / 2, 100, this::buttonPressed);
-        buttonAutoAdjustAnchor.addOption("true");
-        buttonAutoAdjustAnchor.addOption("false");
+        buttonAutoAdjustAnchor.addOption(new TranslatableComponent("options.on"));
+        buttonAutoAdjustAnchor.addOption(new TranslatableComponent("options.off"));
         buttonAutoAdjustAnchor.setSelected(ConfigData.hudAutoAdjustAnchor ? 0 : 1);
 
         buttonSnapToBorder = new GuiOptionButton(font, width / 2 + 70, height / 2 + 16, 100, this::buttonPressed);
-        buttonSnapToBorder.addOption("true");
-        buttonSnapToBorder.addOption("false");
+        buttonSnapToBorder.addOption(new TranslatableComponent("options.on"));
+        buttonSnapToBorder.addOption(new TranslatableComponent("options.off"));
         buttonSnapToBorder.setSelected(ConfigData.hudSnapToBorder ? 0 : 1);
 
         buttonDone = new GuiSettingsButton(font, width / 2 - 50, height / 2 + 36, 100,

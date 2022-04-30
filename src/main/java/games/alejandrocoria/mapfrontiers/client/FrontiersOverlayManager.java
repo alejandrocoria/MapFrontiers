@@ -3,7 +3,6 @@ package games.alejandrocoria.mapfrontiers.client;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiColors;
 import games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin;
-import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.*;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -11,7 +10,6 @@ import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.MarkerOverlay;
 import journeymap.client.api.model.MapImage;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -84,15 +82,8 @@ public class FrontiersOverlayManager {
         return frontierOverlay;
     }
 
-    public void clientCreateNewfrontier(ResourceKey<Level> dimension) {
-        BlockPos vertex = null;
-
-        if (ConfigData.addVertexToNewFrontier) {
-            vertex = ClientProxy.snapVertex(Minecraft.getInstance().player.blockPosition(), ConfigData.snapDistance, dimension,
-                    null);
-        }
-
-        PacketHandler.INSTANCE.sendToServer(new PacketNewFrontier(dimension, personal, vertex));
+    public void clientCreateNewfrontier(ResourceKey<Level> dimension, @Nullable List<BlockPos> vertices) {
+        PacketHandler.INSTANCE.sendToServer(new PacketNewFrontier(dimension, personal, vertices));
     }
 
     public void clientDeleteFrontier(FrontierOverlay frontier) {

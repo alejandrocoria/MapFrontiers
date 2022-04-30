@@ -4,7 +4,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
-import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
@@ -33,14 +32,12 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.awt.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Random;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
-public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBoxResponder, TextBox.TextBoxResponder {
+public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResponder, TextBox.TextBoxResponder {
     static final DateFormat dateFormat = new SimpleDateFormat();
 
     private final IClientAPI jmAPI;
@@ -52,9 +49,9 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
     private TextBox textName2;
     private GuiOptionButton buttonShowName;
     private GuiOptionButton buttonShowOwner;
-    private TextColorBox textRed;
-    private TextColorBox textGreen;
-    private TextColorBox textBlue;
+    private TextIntBox textRed;
+    private TextIntBox textGreen;
+    private TextIntBox textBlue;
     private GuiSettingsButton buttonRandomColor;
     private GuiColorPicker colorPicker;
 
@@ -122,25 +119,25 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
                 new TranslatableComponent("mapfrontiers.color"), GuiColors.LABEL_TEXT));
 
         addRenderableOnly(new GuiSimpleLabel(font, leftSide - 11, top + 120, GuiSimpleLabel.Align.Left,
-                new TranslatableComponent("R"), GuiColors.LABEL_TEXT));
+                new TextComponent("R"), GuiColors.LABEL_TEXT));
 
-        textRed = new TextColorBox(255, font, leftSide, top + 114);
+        textRed = new TextIntBox(255, 0, 255, font, leftSide, top + 114, 29);
         textRed.setResponder(this);
         textRed.setHeight(20);
         textRed.setWidth(34);
 
         addRenderableOnly(new GuiSimpleLabel(font, leftSide + 44, top + 120, GuiSimpleLabel.Align.Left,
-                new TranslatableComponent("G"), GuiColors.LABEL_TEXT));
+                new TextComponent("G"), GuiColors.LABEL_TEXT));
 
-        textGreen = new TextColorBox(255, font, leftSide + 55, top + 114);
+        textGreen = new TextIntBox(255, 0, 255, font, leftSide + 55, top + 114, 29);
         textGreen.setResponder(this);
         textGreen.setHeight(20);
         textGreen.setWidth(34);
 
         addRenderableOnly(new GuiSimpleLabel(font, leftSide + 99, top + 120, GuiSimpleLabel.Align.Left,
-                new TranslatableComponent("B"), GuiColors.LABEL_TEXT));
+                new TextComponent("B"), GuiColors.LABEL_TEXT));
 
-        textBlue = new TextColorBox(255, font, leftSide + 110, top + 114);
+        textBlue = new TextIntBox(255, 0, 255, font, leftSide + 110, top + 114, 29);
         textBlue.setResponder(this);
         textBlue.setHeight(20);
         textBlue.setWidth(34);
@@ -351,7 +348,7 @@ public class GuiFrontierInfo extends Screen implements TextColorBox.TextColorBox
     }
 
     @Override
-    public void updatedValue(TextColorBox textBox, int value) {
+    public void updatedValue(TextIntBox textBox, int value) {
         if (textRed == textBox) {
             int newColor = (frontier.getColor() & 0xff00ffff) | (value << 16);
             if (newColor != frontier.getColor()) {
