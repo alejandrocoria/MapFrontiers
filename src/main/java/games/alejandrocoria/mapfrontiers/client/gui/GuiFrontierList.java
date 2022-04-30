@@ -32,6 +32,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -267,6 +268,9 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
     }
 
     private void updateFrontiers() {
+        FrontierData selectedFrontier = frontiers.getSelectedElement() == null ? null : ((GuiFrontierListElement) frontiers.getSelectedElement()).getFrontier();
+        UUID frontierID = selectedFrontier == null ? null : selectedFrontier.getId();
+
         frontiers.removeAll();
 
         if (ConfigData.filterFrontierType == ConfigData.FilterFrontierType.All || ConfigData.filterFrontierType == ConfigData.FilterFrontierType.Personal) {
@@ -287,6 +291,10 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
                     }
                 }
             }
+        }
+
+        if (frontierID != null) {
+            frontiers.selectElementIf((element) -> ((GuiFrontierListElement) element).getFrontier().getId().equals(frontierID));
         }
     }
 
@@ -322,7 +330,6 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
         SettingsUser playerUser = new SettingsUser(Minecraft.getInstance().player);
         FrontierData frontier = frontiers.getSelectedElement() == null ? null : ((GuiFrontierListElement) frontiers.getSelectedElement()).getFrontier();
         SettingsProfile.AvailableActions actions = profile.getAvailableActions(frontier, playerUser);
-
 
         buttonCreate.visible = actions.canCreate;
         buttonInfo.visible = frontiers.getSelectedElement() != null;
