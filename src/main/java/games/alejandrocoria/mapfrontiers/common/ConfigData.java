@@ -14,6 +14,7 @@ import journeymap.client.ui.theme.Theme;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -140,19 +141,10 @@ public class ConfigData {
         public final IntValue hudYPosition;
 
         public ClientConfig(ForgeConfigSpec.Builder builder) {
-            newFrontierShape = builder.comment("")
-                    .translation(MapFrontiers.MODID + ".config." + "newFrontierShape")
-                    .defineInRange("newFrontierShape", 0, 0, 11);
-            newFrontierShapeWidth = builder.comment("")
-                    .translation(MapFrontiers.MODID + ".config." + "newFrontierShapeWidth")
-                    .defineInRange("newFrontierShapeWidth", 10, 0, 999);
-            newFrontierShapeRadius = builder.comment("")
-                    .translation(MapFrontiers.MODID + ".config." + "newFrontierShapeRadius")
-                    .defineInRange("newFrontierShapeRadius", 20, 0, 999);
-            afterCreatingFrontier = builder.comment(
-                    "What to do after creating a new frontier.")
-                    .translation(MapFrontiers.MODID + ".config." + "afterCreatingFrontier")
-                    .defineEnum("afterCreatingFrontier", AfterCreatingFrontier.Info);
+            newFrontierShape = builder.defineInRange("newFrontierShape", 0, 0, 11);
+            newFrontierShapeWidth = builder.defineInRange("newFrontierShapeWidth", 10, 0, 999);
+            newFrontierShapeRadius = builder.defineInRange("newFrontierShapeRadius", 20, 0, 999);
+            afterCreatingFrontier = builder.defineEnum("afterCreatingFrontier", AfterCreatingFrontier.Info);
             nameVisibility = builder.comment(
                     "Force all frontier names to be shown on the map or hidden. In Manual you can decide for each frontier.")
                     .translation(MapFrontiers.MODID + ".config." + "nameVisibility")
@@ -162,23 +154,14 @@ public class ConfigData {
                     .translation(MapFrontiers.MODID + ".config." + "hideNamesThatDontFit")
                     .define("hideNamesThatDontFit", true);
             polygonsOpacity = builder
-                    .comment("Transparency of the frontier polygons. 0.0 is fully transparent and 1.0 is no transparency.")
+                    .comment("Transparency of the frontier polygons. 0.0 is fully transparent and 1.0 is opaque.")
                     .translation(MapFrontiers.MODID + ".config." + "polygonsOpacity")
                     .defineInRange("polygonsOpacity", 0.4, 0.0, 1.0);
             snapDistance = builder.comment("Distance at which vertices are attached to nearby vertices.")
                     .translation(MapFrontiers.MODID + ".config." + "snapDistance").defineInRange("snapDistance", 8, 0, 16);
-            filterFrontierType = builder.comment(
-                    "Filter the list of frontier by type.")
-                    .translation(MapFrontiers.MODID + ".config.filter." + "frontierType")
-                    .defineEnum("filterFrontierType", FilterFrontierType.All);
-            filterFrontierOwner = builder.comment(
-                    "Filter the list of frontier by owner.")
-                    .translation(MapFrontiers.MODID + ".config.filter." + "frontierOwner")
-                    .defineEnum("filterFrontierOwner", FilterFrontierOwner.All);
-            filterFrontierDimension = builder.comment(
-                    "Filter the list of frontier by dimension.\nAllowed values are \"all\", \"current\" or the name of a dimension (eg: \"minecraft:the_nether\")")
-                    .translation(MapFrontiers.MODID + ".config.filter." + "frontierDimension")
-                    .define("filterFrontierDimension", "all");
+            filterFrontierType = builder.defineEnum("filterFrontierType", FilterFrontierType.All);
+            filterFrontierOwner = builder.defineEnum("filterFrontierOwner", FilterFrontierOwner.All);
+            filterFrontierDimension = builder.define("filterFrontierDimension", "all");
 
             builder.push("hud");
             hudEnabled = builder.comment("Show the HUD on screen.").translation(MapFrontiers.MODID + ".config.hud." + "enabled")
@@ -201,12 +184,8 @@ public class ConfigData {
                     "Anchor point of the HUD. In the case of choosing the minimap as an anchor, its default position will be used as a reference in the coordinates.")
                     .translation(MapFrontiers.MODID + ".config.hud." + "anchor")
                     .defineEnum("anchor", HUDAnchor.MinimapHorizontal);
-            hudXPosition = builder.comment("Size of the HUD banner.")
-                    .translation(MapFrontiers.MODID + ".config.hud." + "xPosition")
-                    .defineInRange("xPosition", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
-            hudYPosition = builder.comment("Size of the HUD banner.")
-                    .translation(MapFrontiers.MODID + ".config.hud." + "yPosition")
-                    .defineInRange("yPosition", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            hudXPosition = builder.defineInRange("xPosition", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            hudYPosition = builder.defineInRange("yPosition", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
             builder.pop();
         }
     }
@@ -237,12 +216,22 @@ public class ConfigData {
         CLIENT_SPEC.save();
     }
 
+    public static Component getTranslatedName(String name) {
+        ValueSpec valueSpec = getValueSpec(name);
+        if (valueSpec != null) {
+            return new TranslatableComponent(valueSpec.getTranslationKey());
+        }
+
+        return TextComponent.EMPTY;
+    }
+
     public static List<Component> getTooltip(String name) {
         List<Component> tooltip = new ArrayList<>();
 
         ValueSpec valueSpec = getValueSpec(name);
         if (valueSpec != null) {
-            for (String string : Splitter.on("\n").split(valueSpec.getComment())) {
+            String lines = new TranslatableComponent(valueSpec.getTranslationKey() + ".tooltip").getString();
+            for (String string : Splitter.on("\n").split(lines)) {
                 tooltip.add(new TextComponent(string));
             }
         }

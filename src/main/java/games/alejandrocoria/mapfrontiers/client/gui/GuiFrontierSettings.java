@@ -258,11 +258,11 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         for (GuiSimpleLabel label : labels) {
             if (label.isHoveredOrFocused()) {
                 List<Component> tooltip = labelTooltips.get(label);
-                if (tooltip == null) {
-                    continue;
+                if (tooltip != null) {
+                    renderTooltip(matrixStack, tooltip, Optional.empty(), mouseX, mouseY);
                 }
 
-                renderTooltip(matrixStack, tooltip, Optional.empty(), mouseX, mouseY);
+                break;
             }
         }
     }
@@ -438,25 +438,25 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
                     new TranslatableComponent("mapfrontiers.frontiers"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             addLabelWithTooltip(
                     new GuiSimpleLabel(font, width / 2 - 120, 72, GuiSimpleLabel.Align.Left,
-                            new TranslatableComponent("nameVisibility"), GuiColors.SETTINGS_TEXT),
+                            ConfigData.getTranslatedName("nameVisibility"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("nameVisibility"));
             addLabelWithTooltip(
                     new GuiSimpleLabel(font, width / 2 - 120, 88, GuiSimpleLabel.Align.Left,
-                            new TranslatableComponent("hideNamesThatDontFit"), GuiColors.SETTINGS_TEXT),
+                            ConfigData.getTranslatedName("hideNamesThatDontFit"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("hideNamesThatDontFit"));
             addLabelWithTooltip(
                     new GuiSimpleLabel(font, width / 2 - 120, 104, GuiSimpleLabel.Align.Left,
-                            new TranslatableComponent("polygonsOpacity"), GuiColors.SETTINGS_TEXT),
+                            ConfigData.getTranslatedName("polygonsOpacity"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("polygonsOpacity"));
             addLabelWithTooltip(
                     new GuiSimpleLabel(font, width / 2 - 120, 120, GuiSimpleLabel.Align.Left,
-                            new TranslatableComponent("snapDistance"), GuiColors.SETTINGS_TEXT),
+                            ConfigData.getTranslatedName("snapDistance"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("snapDistance"));
             labels.add(new GuiSimpleLabel(font, width / 2, 154, GuiSimpleLabel.Align.Center,
                     new TranslatableComponent("mapfrontiers.hud"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             addLabelWithTooltip(
                     new GuiSimpleLabel(font, width / 2 - 120, 174, GuiSimpleLabel.Align.Left,
-                            new TranslatableComponent("enabled"), GuiColors.SETTINGS_TEXT),
+                            ConfigData.getTranslatedName("hud.enabled"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("hud.enabled"));
         } else if (tabSelected == Tab.Groups) {
             if (settings != null) {
@@ -494,11 +494,9 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         }
     }
 
-    private void addLabelWithTooltip(GuiSimpleLabel label, @Nullable List<Component> tooltip) {
+    private void addLabelWithTooltip(GuiSimpleLabel label, List<Component> tooltip) {
         labels.add(label);
-        if (tooltip != null) {
-            labelTooltips.put(label, tooltip);
-        }
+        labelTooltips.put(label, tooltip);
     }
 
     private void updateButtonsVisibility() {
