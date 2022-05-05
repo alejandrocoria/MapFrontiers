@@ -40,7 +40,7 @@ public class ConfigData {
     }
 
     public enum AfterCreatingFrontier {
-        Info, Edit, None
+        Info, Edit, Nothing
     }
 
     public enum NameVisibility {
@@ -223,6 +223,10 @@ public class ConfigData {
         }
 
         return TextComponent.EMPTY;
+    }
+
+    public static <E extends Enum<E>> Component getTranslatedEnum(E value) {
+        return new TranslatableComponent("mapfrontiers.config." + value.name());
     }
 
     public static List<Component> getTooltip(String name) {

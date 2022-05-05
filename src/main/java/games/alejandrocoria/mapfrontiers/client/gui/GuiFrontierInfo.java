@@ -152,7 +152,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         colorPicker = new GuiColorPicker(leftSide + 2, top + 140, frontier.getColor(), (picker) -> colorPickerUpdated());
 
         Component type = new TranslatableComponent("mapfrontiers.type",
-                new TranslatableComponent(frontier.getPersonal() ? "mapfrontiers.personal" : "mapfrontiers.global"));
+                new TranslatableComponent(frontier.getPersonal() ? "mapfrontiers.config.Personal" : "mapfrontiers.config.Global"));
         addRenderableOnly(new GuiSimpleLabel(font, rightSide, top, GuiSimpleLabel.Align.Left, type, GuiColors.WHITE));
 
         Component owner = new TranslatableComponent("mapfrontiers.owner", frontier.getOwner());

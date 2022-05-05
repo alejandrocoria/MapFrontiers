@@ -120,9 +120,9 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
                 (open) -> linkClicked(open, buttonPatreon));
 
         buttonNameVisibility = new GuiOptionButton(font, width / 2 + 50, 70, 100, this::buttonPressed);
-        buttonNameVisibility.addOption(ConfigData.NameVisibility.Manual.name());
-        buttonNameVisibility.addOption(ConfigData.NameVisibility.Show.name());
-        buttonNameVisibility.addOption(ConfigData.NameVisibility.Hide.name());
+        buttonNameVisibility.addOption(ConfigData.getTranslatedEnum(ConfigData.NameVisibility.Manual));
+        buttonNameVisibility.addOption(ConfigData.getTranslatedEnum(ConfigData.NameVisibility.Show));
+        buttonNameVisibility.addOption(ConfigData.getTranslatedEnum(ConfigData.NameVisibility.Hide));
         buttonNameVisibility.setSelected(ConfigData.nameVisibility.ordinal());
 
         buttonHideNamesThatDontFit = new GuiOptionButton(font, width / 2 + 50, 86, 100, this::buttonPressed);

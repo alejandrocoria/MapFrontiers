@@ -56,8 +56,8 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
         addRenderableOnly(new GuiSimpleLabel(font, width / 2 - 130, height / 2 - 96, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.frontier_type"), GuiColors.SETTINGS_TEXT));
         buttonFrontierType = new GuiOptionButton(font, width / 2, height / 2 - 98, 130, this::buttonPressed);
-        buttonFrontierType.addOption(new TranslatableComponent("mapfrontiers.global"));
-        buttonFrontierType.addOption(new TranslatableComponent("mapfrontiers.personal"));
+        buttonFrontierType.addOption(ConfigData.getTranslatedEnum(ConfigData.FilterFrontierType.Global));
+        buttonFrontierType.addOption(ConfigData.getTranslatedEnum(ConfigData.FilterFrontierType.Personal));
         buttonFrontierType.setSelected(0);
 
         SettingsProfile profile = ClientProxy.getSettingsProfile();
@@ -73,9 +73,9 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
         addRenderableOnly(new GuiSimpleLabel(font, width / 2 - 130, height / 2 - 80, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.after_creating"), GuiColors.SETTINGS_TEXT));
         buttonAfterCreate = new GuiOptionButton(font, width / 2, height / 2 - 82, 130, this::buttonPressed);
-        buttonAfterCreate.addOption(new TranslatableComponent("mapfrontiers.go_info"));
-        buttonAfterCreate.addOption(new TranslatableComponent("mapfrontiers.go_edit"));
-        buttonAfterCreate.addOption(new TranslatableComponent("mapfrontiers.do_nothing"));
+        buttonAfterCreate.addOption(ConfigData.getTranslatedEnum(ConfigData.AfterCreatingFrontier.Info));
+        buttonAfterCreate.addOption(ConfigData.getTranslatedEnum(ConfigData.AfterCreatingFrontier.Edit));
+        buttonAfterCreate.addOption(ConfigData.getTranslatedEnum(ConfigData.AfterCreatingFrontier.Nothing));
         buttonAfterCreate.setSelected(ConfigData.afterCreatingFrontier.ordinal());
 
         shapeButtons = new GuiShapeButtons(font, width / 2 - 162, height / 2 - 52, ConfigData.newFrontierShape, (s) -> shapeButtonsUpdated());
