@@ -97,12 +97,11 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         }
 
         tabbedBox = new GuiTabbedBox(font, 40, 24, width - 80, height - 64, this);
-        tabbedBox.addTab(new TranslatableComponent("mapfrontiers.credits"));
-        tabbedBox.addTab(new TranslatableComponent("mapfrontiers.general"));
-        if (canEditGroups) {
-            tabbedBox.addTab(new TranslatableComponent("mapfrontiers.groups"));
-            tabbedBox.addTab(new TranslatableComponent("mapfrontiers.actions"));
-        } else {
+        tabbedBox.addTab(new TranslatableComponent("mapfrontiers.credits"), true);
+        tabbedBox.addTab(new TranslatableComponent("mapfrontiers.general"), true);
+        tabbedBox.addTab(new TranslatableComponent("mapfrontiers.groups"), canEditGroups);
+        tabbedBox.addTab(new TranslatableComponent("mapfrontiers.actions"), canEditGroups);
+        if (!canEditGroups) {
             if (tabSelected == Tab.Groups || tabSelected == Tab.Actions) {
                 tabSelected = Tab.Credits;
             }
