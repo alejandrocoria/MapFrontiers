@@ -1,11 +1,11 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import journeymap.client.ui.theme.Theme;
 import net.minecraft.ChatFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+
+import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -33,6 +33,7 @@ public final class GuiColors {
     public static final int SETTINGS_TAB_BORDER = 0xff777777;
     public static final int SETTINGS_TAB_TEXT = 0xff777777;
     public static final int SETTINGS_TAB_TEXT_HIGHLIGHT = 0xffffffff;
+    public static final int SETTINGS_TAB_TEXT_DISABLED = 0xff444444;
     public static final int SETTINGS_TEXT_BOX_TEXT = 0xffe0e0e0;
     public static final int SETTINGS_TEXT_BOX_EXTRA_BORDER = 0xffa0a0a0;
     public static final int SETTINGS_TEXT_BOX_EXTRA_BG = 0xff000000;
@@ -41,7 +42,7 @@ public final class GuiColors {
     public static final int SETTINGS_CHECKBOX_BORDER = 0xff444444;
     public static final int SETTINGS_CHECKBOX_BG = 0xff000000;
     public static final int SETTINGS_CHECKBOX_CHECK = 0xff666666;
-    public static final int SETTINGS_OPTION_BORDER = 0xff444444;
+    public static final int SETTINGS_OPTION_BORDER = 0xffa0a0a0;
     public static final int SETTINGS_OPTION_BG = 0xff000000;
     public static final int SETTINGS_SCROLLBAR = 0xff777777;
     public static final int SETTINGS_SCROLLBAR_HOVERED = 0xffaaaaaa;

@@ -1,22 +1,20 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
-import java.util.function.Supplier;
-
-import javax.annotation.ParametersAreNonnullByDefault;
-
-import net.minecraftforge.network.NetworkEvent;
-import org.apache.commons.lang3.StringUtils;
-
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.network.NetworkEvent;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.function.Supplier;
 
 @ParametersAreNonnullByDefault
 public class PacketPersonalFrontierShared {

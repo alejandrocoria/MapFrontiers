@@ -1,27 +1,14 @@
 package games.alejandrocoria.mapfrontiers.client;
 
-import java.awt.geom.Area;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-
-import com.mojang.blaze3d.vertex.VertexFormat;
-import games.alejandrocoria.mapfrontiers.common.util.BlockPosHelper;
-import journeymap.client.api.util.PolygonHelper;
-import net.minecraft.client.renderer.GameRenderer;
-
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-
+import com.mojang.blaze3d.vertex.*;
+import com.mojang.math.Matrix4f;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiColors;
-import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.util.BlockPosHelper;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.MarkerOverlay;
 import journeymap.client.api.display.PolygonOverlay;
@@ -29,27 +16,31 @@ import journeymap.client.api.model.MapImage;
 import journeymap.client.api.model.MapPolygon;
 import journeymap.client.api.model.ShapeProperties;
 import journeymap.client.api.model.TextProperties;
+import journeymap.client.api.util.PolygonHelper;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.Sheets;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.Tesselator;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.level.block.entity.BannerPattern;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.core.BlockPos;
-import com.mojang.math.Matrix4f;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BannerPattern;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.awt.geom.Area;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 import static java.lang.Math.abs;
 
@@ -133,26 +124,13 @@ public class FrontierOverlay extends FrontierData {
             hash = prime * hash + ((name1 == null) ? 0 : name1.hashCode());
             hash = prime * hash + ((name2 == null) ? 0 : name2.hashCode());
             hash = prime * hash + (nameVisible ? 1231 : 1237);
+            hash = prime * hash + (ownerVisible ? 1231 : 1237);
             hash = prime * hash + ((vertices == null) ? 0 : vertices.hashCode());
             hash = prime * hash + ((banner == null) ? 0 : banner.hashCode());
             hash = prime * hash + ((usersShared == null) ? 0 : usersShared.hashCode());
         }
 
         return hash;
-    }
-
-    @SubscribeEvent
-    public static void onRenderTick(TickEvent.RenderTickEvent event) {
-        if (event.phase == TickEvent.Phase.START) {
-            if (ConfigData.alwaysShowUnfinishedFrontiers || ClientProxy.hasBookItemInHand()
-                    || Minecraft.getInstance().screen instanceof GuiFrontierBook) {
-                markerVertex.setOpacity(1.f);
-                markerDot.setOpacity(1.f);
-            } else {
-                markerVertex.setOpacity(0.f);
-                markerDot.setOpacity(0.f);
-            }
-        }
     }
 
     public void updateOverlay() {
@@ -501,6 +479,14 @@ public class FrontierOverlay extends FrontierData {
         return highlighted;
     }
 
+    public BlockPos getCenter() {
+        if (vertices.isEmpty()) {
+            return new BlockPos(0, 70, 0);
+        }
+
+        return new BlockPos((topLeft.getX() + bottomRight.getX()) / 2, 70, (topLeft.getZ() + bottomRight.getZ()) / 2);
+    }
+
     private void recalculateOverlays() {
         polygonOverlay = null;
         markerOverlays.clear();
@@ -518,14 +504,35 @@ public class FrontierOverlay extends FrontierData {
             polygonArea = PolygonHelper.toArea(polygonOverlay.getOuterArea());
 
             ConfigData.NameVisibility nameVisibility = ConfigData.nameVisibility;
-            if (nameVisibility == ConfigData.NameVisibility.Show
-                    || (nameVisibility == ConfigData.NameVisibility.Manual && nameVisible)) {
+            if (nameVisibility == ConfigData.NameVisibility.Show || (nameVisibility == ConfigData.NameVisibility.Manual)) {
                 TextProperties textProps = new TextProperties().setColor(color).setScale(2.f).setBackgroundOpacity(0.f);
-                textProps = setMinSizeTextPropierties(textProps);
-                if (!name1.isEmpty() && !name2.isEmpty()) {
-                    textProps.setOffsetY(9);
+                if (ConfigData.hideNamesThatDontFit) {
+                    textProps = setMinSizeTextPropierties(textProps);
                 }
-                polygonOverlay.setTextProperties(textProps).setOverlayGroupName("frontier").setLabel(name1 + "\n" + name2);
+
+                int lines = 0;
+                String label = "";
+
+                if (nameVisibility == ConfigData.NameVisibility.Show || nameVisible) {
+                    if (!name1.isEmpty()) {
+                        ++lines;
+                        label += name1 + "\n";
+                    }
+                    if (!name2.isEmpty()) {
+                        ++lines;
+                        label += name2 + "\n";
+                    }
+                }
+
+                if (nameVisibility == ConfigData.NameVisibility.Show || (ownerVisible && !owner.username.isEmpty())) {
+                    ++lines;
+                    label += ChatFormatting.ITALIC + owner.username + "\n";
+                }
+
+                if (lines > 0) {
+                    textProps.setOffsetY((lines - 1) * 7 - 4);
+                    polygonOverlay.setTextProperties(textProps).setOverlayGroupName("frontier").setLabel(label);
+                }
             }
 
             BlockPos last = vertices.get(vertices.size() - 1);
@@ -657,10 +664,11 @@ public class FrontierOverlay extends FrontierData {
         int width = bottomRight.getX() - topLeft.getX();
         int name1Width = Minecraft.getInstance().font.width(name1) * 2;
         int name2Width = Minecraft.getInstance().font.width(name2) * 2;
-        int nameWidth = Math.max(name1Width, name2Width) + 6;
+        int onwerWidth = Minecraft.getInstance().font.width(owner.username) * 2;
+        int labelWidth = Math.max(onwerWidth, Math.max(name1Width, name2Width)) + 6;
 
         int zoom = 0;
-        while (nameWidth > width && zoom < 5) {
+        while (labelWidth > width && zoom < 5) {
             ++zoom;
             width *= 2;
         }

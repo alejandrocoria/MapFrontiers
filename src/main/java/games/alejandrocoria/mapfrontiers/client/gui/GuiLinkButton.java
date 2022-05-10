@@ -1,24 +1,22 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import com.mojang.blaze3d.vertex.PoseStack;
-
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
-import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.ForgeHooksClient;
+
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)

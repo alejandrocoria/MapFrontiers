@@ -1,49 +1,47 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.annotation.ParametersAreNonnullByDefault;
-
-import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
-import games.alejandrocoria.mapfrontiers.common.event.NewFrontierEvent;
-import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
-import journeymap.client.JourneymapClient;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.EventPriority;
-import org.apache.commons.lang3.StringUtils;
-
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.platform.GlStateManager;
-
+import com.mojang.blaze3d.platform.Window;
+import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
+import games.alejandrocoria.mapfrontiers.common.event.NewFrontierEvent;
+import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import journeymap.client.JourneymapClient;
 import journeymap.client.io.ThemeLoader;
 import journeymap.client.properties.MiniMapProperties;
 import journeymap.client.ui.UIManager;
 import journeymap.client.ui.minimap.Position;
 import journeymap.client.ui.minimap.Shape;
-import com.mojang.blaze3d.platform.Window;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
 import net.minecraft.world.level.block.entity.BannerPattern;
-import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
+import java.util.List;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -450,7 +448,7 @@ public class GuiHUD {
                     frontierOwner.x = posX + hudWidth / 2;
                     frontierOwner.y = posY + ownerOffsetY + 2;
                     frontierOwner.setScale(textScale);
-                    frontierOwner.setText(new TextComponent(owner));
+                    frontierOwner.setText(new TextComponent(ChatFormatting.ITALIC + owner));
 
                     offsetY += 12 * textScale;
                 }

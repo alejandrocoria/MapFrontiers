@@ -1,17 +1,15 @@
 package games.alejandrocoria.mapfrontiers.common.util;
 
-import java.util.UUID;
-
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import com.mojang.authlib.GameProfile;
-
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.server.ServerLifecycleHooks;
+
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class UUIDHelper {

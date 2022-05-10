@@ -1,16 +1,15 @@
 package games.alejandrocoria.mapfrontiers.common.settings;
 
-import java.util.UUID;
-
-import net.minecraft.ChatFormatting;
-import net.minecraft.client.resources.language.I18n;
-import org.apache.commons.lang3.StringUtils;
-
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.entity.player.Player;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.UUID;
 
 public class SettingsUser {
     public String username;

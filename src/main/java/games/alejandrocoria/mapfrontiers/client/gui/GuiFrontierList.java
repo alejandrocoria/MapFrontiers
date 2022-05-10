@@ -5,10 +5,10 @@ import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
+import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.event.NewFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -30,7 +30,9 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -68,26 +70,26 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
                 new TranslatableComponent("mapfrontiers.filter_type"), GuiColors.SETTINGS_TEXT));
 
         filterType = new GuiScrollBox(width / 2 + 170, 86, 200, 48, 16, this);
-        filterType.addElement(new GuiRadioListElement(font, new TranslatableComponent("mapfrontiers.all"), ConfigData.FilterFrontierType.All.ordinal()));
-        filterType.addElement(new GuiRadioListElement(font, new TranslatableComponent("mapfrontiers.global"), ConfigData.FilterFrontierType.Global.ordinal()));
-        filterType.addElement(new GuiRadioListElement(font, new TranslatableComponent("mapfrontiers.personal"), ConfigData.FilterFrontierType.Personal.ordinal()));
+        filterType.addElement(new GuiRadioListElement(font, ConfigData.getTranslatedEnum(ConfigData.FilterFrontierType.All), ConfigData.FilterFrontierType.All.ordinal()));
+        filterType.addElement(new GuiRadioListElement(font, ConfigData.getTranslatedEnum(ConfigData.FilterFrontierType.Global), ConfigData.FilterFrontierType.Global.ordinal()));
+        filterType.addElement(new GuiRadioListElement(font, ConfigData.getTranslatedEnum(ConfigData.FilterFrontierType.Personal), ConfigData.FilterFrontierType.Personal.ordinal()));
         filterType.selectElementIf((element) -> ((GuiRadioListElement) element).getId() == ConfigData.filterFrontierType.ordinal());
 
         addRenderableOnly(new GuiSimpleLabel(font, width / 2 + 170, 144, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.filter_owner"), GuiColors.SETTINGS_TEXT));
 
         filterOwner = new GuiScrollBox(width / 2 + 170, 156, 200, 48, 16, this);
-        filterOwner.addElement(new GuiRadioListElement(font, new TranslatableComponent("mapfrontiers.all"), ConfigData.FilterFrontierOwner.All.ordinal()));
-        filterOwner.addElement(new GuiRadioListElement(font, new TranslatableComponent("mapfrontiers.you"), ConfigData.FilterFrontierOwner.You.ordinal()));
-        filterOwner.addElement(new GuiRadioListElement(font, new TranslatableComponent("mapfrontiers.others"), ConfigData.FilterFrontierOwner.Others.ordinal()));
+        filterOwner.addElement(new GuiRadioListElement(font, ConfigData.getTranslatedEnum(ConfigData.FilterFrontierOwner.All), ConfigData.FilterFrontierOwner.All.ordinal()));
+        filterOwner.addElement(new GuiRadioListElement(font, ConfigData.getTranslatedEnum(ConfigData.FilterFrontierOwner.You), ConfigData.FilterFrontierOwner.You.ordinal()));
+        filterOwner.addElement(new GuiRadioListElement(font, ConfigData.getTranslatedEnum(ConfigData.FilterFrontierOwner.Others), ConfigData.FilterFrontierOwner.Others.ordinal()));
         filterOwner.selectElementIf((element) -> ((GuiRadioListElement) element).getId() == ConfigData.filterFrontierOwner.ordinal());
 
         addRenderableOnly(new GuiSimpleLabel(font, width / 2 + 170, 214, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.filter_dimension"), GuiColors.SETTINGS_TEXT));
 
         filterDimension = new GuiScrollBox(width / 2 + 170, 226, 200, height - 296, 16, this);
-        filterDimension.addElement(new GuiRadioListElement(font, new TranslatableComponent("mapfrontiers.all"), "all".hashCode()));
-        filterDimension.addElement(new GuiRadioListElement(font, new TranslatableComponent("mapfrontiers.current"), "current".hashCode()));
+        filterDimension.addElement(new GuiRadioListElement(font, new TranslatableComponent("mapfrontiers.config.All"), "all".hashCode()));
+        filterDimension.addElement(new GuiRadioListElement(font, new TranslatableComponent("mapfrontiers.config.Current"), "current".hashCode()));
         filterDimension.addElement(new GuiRadioListElement(font, new TextComponent("minecraft:overworld"), "minecraft:overworld".hashCode()));
         filterDimension.addElement(new GuiRadioListElement(font, new TextComponent("minecraft:the_nether"), "minecraft:the_nether".hashCode()));
         filterDimension.addElement(new GuiRadioListElement(font, new TextComponent("minecraft:the_end"), "minecraft:the_end".hashCode()));
@@ -266,6 +268,9 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
     }
 
     private void updateFrontiers() {
+        FrontierData selectedFrontier = frontiers.getSelectedElement() == null ? null : ((GuiFrontierListElement) frontiers.getSelectedElement()).getFrontier();
+        UUID frontierID = selectedFrontier == null ? null : selectedFrontier.getId();
+
         frontiers.removeAll();
 
         if (ConfigData.filterFrontierType == ConfigData.FilterFrontierType.All || ConfigData.filterFrontierType == ConfigData.FilterFrontierType.Personal) {
@@ -286,6 +291,10 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
                     }
                 }
             }
+        }
+
+        if (frontierID != null) {
+            frontiers.selectElementIf((element) -> ((GuiFrontierListElement) element).getFrontier().getId().equals(frontierID));
         }
     }
 
@@ -321,7 +330,6 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
         SettingsUser playerUser = new SettingsUser(Minecraft.getInstance().player);
         FrontierData frontier = frontiers.getSelectedElement() == null ? null : ((GuiFrontierListElement) frontiers.getSelectedElement()).getFrontier();
         SettingsProfile.AvailableActions actions = profile.getAvailableActions(frontier, playerUser);
-
 
         buttonCreate.visible = actions.canCreate;
         buttonInfo.visible = frontiers.getSelectedElement() != null;

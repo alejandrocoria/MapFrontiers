@@ -1,20 +1,18 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import com.mojang.blaze3d.vertex.PoseStack;
-
-import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
+import java.util.List;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -38,8 +36,8 @@ public class GuiTabbedBox extends AbstractWidget {
         this.height = height;
     }
 
-    public void addTab(Component text) {
-        tabs.add(new Tab(font, text));
+    public void addTab(Component text, boolean enabled) {
+        tabs.add(new Tab(font, text, enabled));
         updateTabPositions();
 
         if (selected == -1) {
@@ -108,23 +106,33 @@ public class GuiTabbedBox extends AbstractWidget {
         private int x = 0;
         private int y = 0;
         private boolean isHovered = false;
+        private boolean active;
         private final GuiSimpleLabel label;
 
-        public Tab(Font font, Component text) {
+        public Tab(Font font, Component text, boolean active) {
+            this.active = active;
             this.label = new GuiSimpleLabel(font, 0, 0, GuiSimpleLabel.Align.Center, text, GuiColors.SETTINGS_TAB_TEXT);
         }
 
         public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
-            isHovered = mouseX >= x && mouseY >= y && mouseX < x + 71 && mouseY < y + 16;
+            if (active) {
+                isHovered = mouseX >= x && mouseY >= y && mouseX < x + 71 && mouseY < y + 16;
+            } else {
+                isHovered = false;
+            }
 
             hLine(matrixStack, x, x + 70, y, GuiColors.SETTINGS_TAB_BORDER);
             vLine(matrixStack, x, y, y + 16, GuiColors.SETTINGS_TAB_BORDER);
             vLine(matrixStack, x + 70, y, y + 16, GuiColors.SETTINGS_TAB_BORDER);
 
-            if (selected || isHovered) {
-                label.setColor(GuiColors.SETTINGS_TAB_TEXT_HIGHLIGHT);
+            if (active) {
+                if (selected || isHovered) {
+                    label.setColor(GuiColors.SETTINGS_TAB_TEXT_HIGHLIGHT);
+                } else {
+                    label.setColor(GuiColors.SETTINGS_TAB_TEXT);
+                }
             } else {
-                label.setColor(GuiColors.SETTINGS_TAB_TEXT);
+                label.setColor(GuiColors.SETTINGS_TAB_TEXT_DISABLED);
             }
 
             label.x = x + 35;

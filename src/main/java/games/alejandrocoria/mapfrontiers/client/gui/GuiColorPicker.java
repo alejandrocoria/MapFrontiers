@@ -3,9 +3,6 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.common.ConfigData;
-import journeymap.client.ui.minimap.MiniMap;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.GameRenderer;
@@ -23,12 +20,17 @@ import java.util.function.Consumer;
 @OnlyIn(Dist.CLIENT)
 public class GuiColorPicker extends AbstractWidget {
     private static final ResourceLocation texture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/color_picker.png");
-    private static final int textureSizeX = 137;
+    private static final int textureSizeX = 274;
     private static final int textureSizeY = 134;
     private static final int[] palette = {
             0xffff0000, 0xffff8000, 0xffffff00, 0xff80ff00, 0xff00ff00, 0xff00ff80,
             0xff00ffff, 0xff0080ff, 0xff0000ff, 0xff8000ff, 0xffff00ff, 0xffff0080,
             0xff572f07, 0xff000000, 0xff404040, 0xff808080, 0xffbfbfbf, 0xffffffff};
+
+    private static final int[] paletteInactive = {
+            0xff343434, 0xff595959, 0xff7e7e7e, 0xff6b6b6b, 0xff585858, 0xff5f5f5f,
+            0xff666666, 0xff424242, 0xff1c1c1c, 0xff2f2f2f, 0xff424242, 0xff3b3b3b,
+            0xff292929, 0xff0e0e0e, 0xff2e2e2e, 0xff4d4d4d, 0xff6d6d6d, 0xff8d8d8d};
 
     private double hsX;
     private double hsY;
@@ -118,31 +120,38 @@ public class GuiColorPicker extends AbstractWidget {
 
     @Override
     public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1f);
+        RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderTexture(0, texture);
 
-        blit(matrixStack, x, y, 0, 0, 128, 128, textureSizeX, textureSizeY);
-        RenderSystem.setShaderColor(((colorFullBrightness & 0xff0000) >> 16) / 255.f, ((colorFullBrightness & 0x00ff00) >> 8) / 255.f, (colorFullBrightness & 0x0000ff) / 255.f, 1f);
-        blit(matrixStack, x + 132, y, 129, 0, 8, 128, textureSizeX, textureSizeY);
+        int texX = active ? 0 : 137;
+
+        blit(matrixStack, x, y, texX, 0, 128, 128, textureSizeX, textureSizeY);
+        if (active) {
+            RenderSystem.setShaderColor(((colorFullBrightness & 0xff0000) >> 16) / 255.f, ((colorFullBrightness & 0x00ff00) >> 8) / 255.f, (colorFullBrightness & 0x0000ff) / 255.f, 1.f);
+        }
+        blit(matrixStack, x + 132, y, texX + 129, 0, 8, 128, textureSizeX, textureSizeY);
+        if (!active) {
+            RenderSystem.setShaderColor(((colorFullBrightness & 0xff0000) >> 16) / 255.f, ((colorFullBrightness & 0x00ff00) >> 8) / 255.f, (colorFullBrightness & 0x0000ff) / 255.f, 1.f);
+        }
         fill(matrixStack, x + (int) hsX + 64, y + (int) hsY + 64, x + (int) hsX + 65, y + (int) hsY + 65, colorFullBrightness);
         fill(matrixStack, x + 131, y + (int) v, x + 139, y + (int) v + 1, color);
-        RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1f);
-        blit(matrixStack, x + (int) hsX + 64 - 2, y + (int) hsY + 64 - 2, 0, 129, 5, 5, textureSizeX, textureSizeY);
-        blit(matrixStack, x + 131, y + (int) v - 2, 6, 129, 10, 5, textureSizeX, textureSizeY);
+        RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
+        blit(matrixStack, x + (int) hsX + 64 - 2, y + (int) hsY + 64 - 2, texX, 129, 5, 5, textureSizeX, textureSizeY);
+        blit(matrixStack, x + 131, y + (int) v - 2, texX + 6, 129, 10, 5, textureSizeX, textureSizeY);
 
         fill(matrixStack, x + 165, y + 57, x + 304, y + 127, 0xff000000);
-        int row = 0;
         int col = 0;
-        for (int c : palette) {
-            if (c == color) {
-                fill(matrixStack, x + 165 + row * 23, y + 57 + col * 23, x + 189 + row * 23, y + 81 + col * 23, 0xffffffff);
+        int row = 0;
+        for (int c : (active ? palette : paletteInactive)) {
+            if (active && c == color) {
+                fill(matrixStack, x + 165 + col * 23, y + 57 + row * 23, x + 189 + col * 23, y + 81 + row * 23, 0xffffffff);
             }
-            fill(matrixStack, x + 166 + row * 23, y + 58 + col * 23, x + 188 + row * 23, y + 80 + col * 23, c);
-            ++row;
-            if (row == 6) {
-                row = 0;
-                ++col;
+            fill(matrixStack, x + 166 + col * 23, y + 58 + row * 23, x + 188 + col * 23, y + 80 + row * 23, c);
+            ++col;
+            if (col == 6) {
+                col = 0;
+                ++row;
             }
         }
     }

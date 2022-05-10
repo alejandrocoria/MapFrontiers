@@ -1,25 +1,21 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-
-import net.minecraft.client.gui.components.EditBox;
-import org.apache.commons.lang3.StringUtils;
-import org.lwjgl.glfw.GLFW;
-
 import com.mojang.blaze3d.vertex.PoseStack;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
-import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.apache.commons.lang3.StringUtils;
+import org.lwjgl.glfw.GLFW;
+
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
+import java.util.List;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -171,22 +167,10 @@ public class TextUserBox extends TextBox {
     }
 
     @Override
-    public void setFocused(boolean isFocusedIn) {
-        super.setFocused(isFocusedIn);
+    public void setFocus(boolean isFocusedIn) {
+        super.setFocus(isFocusedIn);
 
         if (!isFocusedIn) {
-            suggestions.clear();
-            suggestionsToDraw.clear();
-        }
-
-        setError(null);
-    }
-
-    @Override
-    protected void onFocusedChanged(boolean focused) {
-        super.onFocusedChanged(focused);
-
-        if (!focused) {
             suggestions.clear();
             suggestionsToDraw.clear();
         }

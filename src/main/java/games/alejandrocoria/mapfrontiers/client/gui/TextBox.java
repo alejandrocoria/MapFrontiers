@@ -1,15 +1,14 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-import org.apache.commons.lang3.StringUtils;
-import org.lwjgl.glfw.GLFW;
-
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.apache.commons.lang3.StringUtils;
+import org.lwjgl.glfw.GLFW;
+
+import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -75,21 +74,12 @@ public class TextBox extends EditBox {
     }
 
     @Override
-    public void setFocused(boolean isFocusedIn) {
+    public void setFocus(boolean isFocusedIn) {
         if (isFocused() && !isFocusedIn && responder != null) {
             responder.lostFocus(this, getValue());
         }
 
-        super.setFocused(isFocusedIn);
-    }
-
-    @Override
-    protected void onFocusedChanged(boolean focused) {
-        if (!focused && responder != null) {
-            responder.lostFocus(this, getValue());
-        }
-
-        super.onFocusedChanged(focused);
+        super.setFocus(isFocusedIn);
     }
 
     @OnlyIn(Dist.CLIENT)

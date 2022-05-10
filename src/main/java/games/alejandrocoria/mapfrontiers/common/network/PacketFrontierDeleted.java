@@ -1,22 +1,21 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
-import java.util.UUID;
-import java.util.function.Supplier;
-
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
+import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.core.Registry;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
+
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.UUID;
+import java.util.function.Supplier;
 
 @ParametersAreNonnullByDefault
 public class PacketFrontierDeleted {

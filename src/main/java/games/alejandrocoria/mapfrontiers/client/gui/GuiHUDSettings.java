@@ -1,30 +1,26 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import java.util.*;
-
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.components.EditBox;
-import net.minecraftforge.client.ForgeHooksClient;
-import org.apache.commons.lang3.StringUtils;
-import org.lwjgl.glfw.GLFW;
-
+import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.vertex.PoseStack;
-
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import journeymap.client.ui.UIManager;
 import journeymap.client.ui.minimap.MiniMap;
-import com.mojang.blaze3d.platform.Window;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.ForgeHooksClient;
+import org.apache.commons.lang3.StringUtils;
+import org.lwjgl.glfw.GLFW;
+
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.*;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -65,64 +61,64 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
         guiHUD.configUpdated(minecraft.getWindow());
         guiHUDWidget = new GuiHUDWidget(guiHUD, minimap, (widget) -> HUDUpdated());
 
-        buttonSlot1 = new GuiOptionButton(font, width / 2 - 108, height / 2 - 32, 50, this::buttonPressed);
-        buttonSlot1.addOption(ConfigData.HUDSlot.None.name());
-        buttonSlot1.addOption(ConfigData.HUDSlot.Name.name());
-        buttonSlot1.addOption(ConfigData.HUDSlot.Owner.name());
-        buttonSlot1.addOption(ConfigData.HUDSlot.Banner.name());
+        buttonSlot1 = new GuiOptionButton(font, width / 2 - 104, height / 2 - 32, 64, this::buttonPressed);
+        buttonSlot1.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDSlot.None));
+        buttonSlot1.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDSlot.Name));
+        buttonSlot1.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDSlot.Owner));
+        buttonSlot1.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDSlot.Banner));
         buttonSlot1.setSelected(ConfigData.hudSlot1.ordinal());
 
-        buttonSlot2 = new GuiOptionButton(font, width / 2 - 108, height / 2 - 16, 50, this::buttonPressed);
-        buttonSlot2.addOption(ConfigData.HUDSlot.None.name());
-        buttonSlot2.addOption(ConfigData.HUDSlot.Name.name());
-        buttonSlot2.addOption(ConfigData.HUDSlot.Owner.name());
-        buttonSlot2.addOption(ConfigData.HUDSlot.Banner.name());
+        buttonSlot2 = new GuiOptionButton(font, width / 2 - 104, height / 2 - 16, 64, this::buttonPressed);
+        buttonSlot2.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDSlot.None));
+        buttonSlot2.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDSlot.Name));
+        buttonSlot2.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDSlot.Owner));
+        buttonSlot2.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDSlot.Banner));
         buttonSlot2.setSelected(ConfigData.hudSlot2.ordinal());
 
-        buttonSlot3 = new GuiOptionButton(font, width / 2 - 108, height / 2, 50, this::buttonPressed);
-        buttonSlot3.addOption(ConfigData.HUDSlot.None.name());
-        buttonSlot3.addOption(ConfigData.HUDSlot.Name.name());
-        buttonSlot3.addOption(ConfigData.HUDSlot.Owner.name());
-        buttonSlot3.addOption(ConfigData.HUDSlot.Banner.name());
+        buttonSlot3 = new GuiOptionButton(font, width / 2 - 104, height / 2, 64, this::buttonPressed);
+        buttonSlot3.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDSlot.None));
+        buttonSlot3.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDSlot.Name));
+        buttonSlot3.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDSlot.Owner));
+        buttonSlot3.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDSlot.Banner));
         buttonSlot3.setSelected(ConfigData.hudSlot3.ordinal());
 
-        textBannerSize = new TextBox(font, width / 2 - 108, height / 2 + 16, 50);
+        textBannerSize = new TextBox(font, width / 2 - 104, height / 2 + 16, 64);
         textBannerSize.setValue(String.valueOf(ConfigData.hudBannerSize));
         textBannerSize.setMaxLength(1);
         textBannerSize.setResponder(this);
 
-        buttonAnchor = new GuiOptionButton(font, width / 2 + 70, height / 2 - 32, 100, this::buttonPressed);
-        buttonAnchor.addOption(ConfigData.HUDAnchor.ScreenTop.name());
-        buttonAnchor.addOption(ConfigData.HUDAnchor.ScreenTopRight.name());
-        buttonAnchor.addOption(ConfigData.HUDAnchor.ScreenRight.name());
-        buttonAnchor.addOption(ConfigData.HUDAnchor.ScreenBottomRight.name());
-        buttonAnchor.addOption(ConfigData.HUDAnchor.ScreenBottom.name());
-        buttonAnchor.addOption(ConfigData.HUDAnchor.ScreenBottomLeft.name());
-        buttonAnchor.addOption(ConfigData.HUDAnchor.ScreenLeft.name());
-        buttonAnchor.addOption(ConfigData.HUDAnchor.ScreenTopLeft.name());
-        buttonAnchor.addOption(ConfigData.HUDAnchor.Minimap.name());
-        buttonAnchor.addOption(ConfigData.HUDAnchor.MinimapHorizontal.name());
-        buttonAnchor.addOption(ConfigData.HUDAnchor.MinimapVertical.name());
+        buttonAnchor = new GuiOptionButton(font, width / 2 + 96, height / 2 - 32, 134, this::buttonPressed);
+        buttonAnchor.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDAnchor.ScreenTop));
+        buttonAnchor.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDAnchor.ScreenTopRight));
+        buttonAnchor.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDAnchor.ScreenRight));
+        buttonAnchor.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDAnchor.ScreenBottomRight));
+        buttonAnchor.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDAnchor.ScreenBottom));
+        buttonAnchor.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDAnchor.ScreenBottomLeft));
+        buttonAnchor.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDAnchor.ScreenLeft));
+        buttonAnchor.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDAnchor.ScreenTopLeft));
+        buttonAnchor.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDAnchor.Minimap));
+        buttonAnchor.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDAnchor.MinimapHorizontal));
+        buttonAnchor.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDAnchor.MinimapVertical));
         buttonAnchor.setSelected(ConfigData.hudAnchor.ordinal());
 
-        textPositionX = new TextBox(font, width / 2 + 70, height / 2 - 16, 44);
+        textPositionX = new TextBox(font, width / 2 + 96, height / 2 - 16, 61);
         textPositionX.setValue(String.valueOf(ConfigData.hudXPosition));
         textPositionX.setMaxLength(5);
         textPositionX.setResponder(this);
 
-        textPositionY = new TextBox(font, width / 2 + 125, height / 2 - 16, 45);
+        textPositionY = new TextBox(font, width / 2 + 168, height / 2 - 16, 62);
         textPositionY.setValue(String.valueOf(ConfigData.hudYPosition));
         textPositionY.setMaxLength(5);
         textPositionY.setResponder(this);
 
-        buttonAutoAdjustAnchor = new GuiOptionButton(font, width / 2 + 70, height / 2, 100, this::buttonPressed);
-        buttonAutoAdjustAnchor.addOption("true");
-        buttonAutoAdjustAnchor.addOption("false");
+        buttonAutoAdjustAnchor = new GuiOptionButton(font, width / 2 + 96, height / 2, 134, this::buttonPressed);
+        buttonAutoAdjustAnchor.addOption(new TranslatableComponent("options.on"));
+        buttonAutoAdjustAnchor.addOption(new TranslatableComponent("options.off"));
         buttonAutoAdjustAnchor.setSelected(ConfigData.hudAutoAdjustAnchor ? 0 : 1);
 
-        buttonSnapToBorder = new GuiOptionButton(font, width / 2 + 70, height / 2 + 16, 100, this::buttonPressed);
-        buttonSnapToBorder.addOption("true");
-        buttonSnapToBorder.addOption("false");
+        buttonSnapToBorder = new GuiOptionButton(font, width / 2 + 96, height / 2 + 16, 134, this::buttonPressed);
+        buttonSnapToBorder.addOption(new TranslatableComponent("options.on"));
+        buttonSnapToBorder.addOption(new TranslatableComponent("options.off"));
         buttonSnapToBorder.setSelected(ConfigData.hudSnapToBorder ? 0 : 1);
 
         buttonDone = new GuiSettingsButton(font, width / 2 - 50, height / 2 + 36, 100,
@@ -166,18 +162,18 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
 
         drawAnchor(matrixStack, minecraft.getWindow());
 
-        fill(matrixStack, width / 2 - 178, height / 2 - 40, width / 2 + 178, height / 2 + 60, GuiColors.SETTINGS_BG);
+        fill(matrixStack, width / 2 - 238, height / 2 - 40, width / 2 + 238, height / 2 + 60, GuiColors.SETTINGS_BG);
 
         super.render(matrixStack, mouseX, mouseY, partialTicks);
 
         for (GuiSimpleLabel label : labels) {
             if (label.isHoveredOrFocused()) {
                 List<Component> tooltip = labelTooltips.get(label);
-                if (tooltip == null) {
-                    continue;
+                if (tooltip != null) {
+                    renderTooltip(matrixStack, tooltip, Optional.empty(), mouseX, mouseY);
                 }
 
-                renderTooltip(matrixStack, tooltip, Optional.empty(), mouseX, mouseY);
+                break;
             }
         }
     }
@@ -336,29 +332,29 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
         labels.clear();
         labelTooltips.clear();
 
-        addLabelWithTooltip(new GuiSimpleLabel(font, width / 2 - 170, height / 2 - 30, GuiSimpleLabel.Align.Left,
-                new TextComponent("slot1"), GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.slot1"));
-        addLabelWithTooltip(new GuiSimpleLabel(font, width / 2 - 170, height / 2 - 14, GuiSimpleLabel.Align.Left,
-                new TextComponent("slot2"), GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.slot2"));
-        addLabelWithTooltip(new GuiSimpleLabel(font, width / 2 - 170, height / 2 + 2, GuiSimpleLabel.Align.Left,
-                new TextComponent("slot3"), GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.slot3"));
-        addLabelWithTooltip(new GuiSimpleLabel(font, width / 2 - 170, height / 2 + 18, GuiSimpleLabel.Align.Left,
-                new TextComponent("bannerSize"), GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.bannerSize"));
+        addLabelWithTooltip(new GuiSimpleLabel(font, width / 2 - 230, height / 2 - 30, GuiSimpleLabel.Align.Left,
+                ConfigData.getTranslatedName("hud.slot1"), GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.slot1"));
+        addLabelWithTooltip(new GuiSimpleLabel(font, width / 2 - 230, height / 2 - 14, GuiSimpleLabel.Align.Left,
+                ConfigData.getTranslatedName("hud.slot2"), GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.slot2"));
+        addLabelWithTooltip(new GuiSimpleLabel(font, width / 2 - 230, height / 2 + 2, GuiSimpleLabel.Align.Left,
+                ConfigData.getTranslatedName("hud.slot3"), GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.slot3"));
+        addLabelWithTooltip(new GuiSimpleLabel(font, width / 2 - 230, height / 2 + 18, GuiSimpleLabel.Align.Left,
+                ConfigData.getTranslatedName("hud.bannerSize"), GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.bannerSize"));
         addLabelWithTooltip(new GuiSimpleLabel(font, width / 2 - 30, height / 2 - 30, GuiSimpleLabel.Align.Left,
-                new TextComponent("anchor"), GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.anchor"));
+                ConfigData.getTranslatedName("hud.anchor"), GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.anchor"));
         addLabelWithTooltip(
                 new GuiSimpleLabel(font, width / 2 - 30, height / 2 - 14, GuiSimpleLabel.Align.Left,
-                        new TextComponent("position"), GuiColors.SETTINGS_TEXT),
+                        new TranslatableComponent("mapfrontiers.config.hud.position"), GuiColors.SETTINGS_TEXT),
                 Collections.singletonList(new TextComponent("HUD position relative to anchor.")));
-        labels.add(new GuiSimpleLabel(font, width / 2 + 119, height / 2 - 14, GuiSimpleLabel.Align.Center,
+        labels.add(new GuiSimpleLabel(font, width / 2 + 162, height / 2 - 14, GuiSimpleLabel.Align.Center,
                 new TextComponent("x"), GuiColors.SETTINGS_TEXT_DARK));
         addLabelWithTooltip(
                 new GuiSimpleLabel(font, width / 2 - 30, height / 2 + 2, GuiSimpleLabel.Align.Left,
-                        new TextComponent("autoAdjustAnchor"), GuiColors.SETTINGS_TEXT),
+                        ConfigData.getTranslatedName("hud.autoAdjustAnchor"), GuiColors.SETTINGS_TEXT),
                 ConfigData.getTooltip("hud.autoAdjustAnchor"));
         addLabelWithTooltip(
                 new GuiSimpleLabel(font, width / 2 - 30, height / 2 + 18, GuiSimpleLabel.Align.Left,
-                        new TextComponent("snapToBorder"), GuiColors.SETTINGS_TEXT),
+                        ConfigData.getTranslatedName("hud.snapToBorder"), GuiColors.SETTINGS_TEXT),
                 ConfigData.getTooltip("hud.snapToBorder"));
 
         for (GuiSimpleLabel label : labels) {
@@ -366,11 +362,9 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
         }
     }
 
-    private void addLabelWithTooltip(GuiSimpleLabel label, @Nullable List<Component> tooltip) {
+    private void addLabelWithTooltip(GuiSimpleLabel label, List<Component> tooltip) {
         labels.add(label);
-        if (tooltip != null) {
-            labelTooltips.put(label, tooltip);
-        }
+        labelTooltips.put(label, tooltip);
     }
 
     @Override
