@@ -1,24 +1,22 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import com.mojang.blaze3d.matrix.MatrixStack;
-
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.text.TextComponent;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
+import java.util.List;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class GuiOptionButton extends Button {
     protected final FontRenderer font;
-    private final List<TextComponent> options;
+    private final List<ITextComponent> options;
     private int selected = 0;
     private int color = GuiColors.SETTINGS_TEXT;
     private int highlightedColor = GuiColors.SETTINGS_TEXT_HIGHLIGHT;
@@ -29,7 +27,7 @@ public class GuiOptionButton extends Button {
         options = new ArrayList<>();
     }
 
-    public void addOption(TextComponent text) {
+    public void addOption(ITextComponent text) {
         options.add(text);
     }
 

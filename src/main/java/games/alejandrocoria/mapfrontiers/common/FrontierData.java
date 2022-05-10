@@ -1,15 +1,9 @@
 package games.alejandrocoria.mapfrontiers.common;
 
-import java.util.*;
-
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.BlockPosHelper;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
-import net.minecraftforge.common.util.Constants;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.BannerItem;
 import net.minecraft.item.DyeColor;
@@ -24,7 +18,12 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
+import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
+
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.*;
 
 @ParametersAreNonnullByDefault
 public class FrontierData {
@@ -40,6 +39,7 @@ public class FrontierData {
     protected String name1 = "New";
     protected String name2 = "Frontier";
     protected boolean nameVisible = true;
+    protected boolean ownerVisible = false;
     protected int color = 0xffffffff;
     protected RegistryKey<World> dimension;
     protected SettingsUser owner = new SettingsUser();
@@ -63,6 +63,7 @@ public class FrontierData {
 
         visible = other.visible;
         nameVisible = other.nameVisible;
+        ownerVisible = other.ownerVisible;
         color = other.color;
 
         name1 = other.name1;
@@ -89,6 +90,7 @@ public class FrontierData {
         if (other.changes.contains(Change.Other)) {
             visible = other.visible;
             nameVisible = other.nameVisible;
+            ownerVisible = other.ownerVisible;
             color = other.color;
         }
 
@@ -217,6 +219,15 @@ public class FrontierData {
 
     public boolean getNameVisible() {
         return nameVisible;
+    }
+
+    public void setOwnerVisible(boolean ownerVisible) {
+        this.ownerVisible = ownerVisible;
+        changes.add(Change.Other);
+    }
+
+    public boolean getOwnerVisible() {
+        return ownerVisible;
     }
 
     public void setColor(int color) {
@@ -390,6 +401,9 @@ public class FrontierData {
         if (nbt.contains("nameVisible")) {
             nameVisible = nbt.getBoolean("nameVisible");
         }
+        if (nbt.contains("ownerVisible")) {
+            ownerVisible = nbt.getBoolean("ownerVisible");
+        }
 
         personal = nbt.getBoolean("personal");
 
@@ -436,6 +450,7 @@ public class FrontierData {
         nbt.putString("name1", name1);
         nbt.putString("name2", name2);
         nbt.putBoolean("nameVisible", nameVisible);
+        nbt.putBoolean("ownerVisible", ownerVisible);
         nbt.putBoolean("personal", personal);
 
         CompoundNBT nbtOwner = new CompoundNBT();
@@ -493,6 +508,7 @@ public class FrontierData {
             visible = buf.readBoolean();
             color = buf.readInt();
             nameVisible = buf.readBoolean();
+            ownerVisible = buf.readBoolean();
         }
 
 
@@ -577,6 +593,7 @@ public class FrontierData {
             buf.writeBoolean(visible);
             buf.writeInt(color);
             buf.writeBoolean(nameVisible);
+            buf.writeBoolean(ownerVisible);
         }
 
         if (!onlyChanges || changes.contains(Change.Name)) {

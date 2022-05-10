@@ -1,22 +1,13 @@
 package games.alejandrocoria.mapfrontiers.common;
 
-import java.awt.Color;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.util.*;
-
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierUpdated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import net.minecraft.client.Minecraft;
-import net.minecraftforge.common.util.Constants;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.CompressedStreamTools;
@@ -27,9 +18,17 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import net.minecraft.world.storage.FolderName;
+import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
+
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.util.*;
 
 @ParametersAreNonnullByDefault
 public class FrontiersManager {
@@ -121,37 +120,31 @@ public class FrontiersManager {
         return allFrontiers.get(id);
     }
 
-    public FrontierData createNewGlobalFrontier(RegistryKey<World> dimension, ServerPlayerEntity player,
-            @Nullable BlockPos vertex) {
+    public FrontierData createNewGlobalFrontier(RegistryKey<World> dimension, ServerPlayerEntity player, @Nullable List<BlockPos> vertices) {
         List<FrontierData> frontiers = getAllGlobalFrontiers(dimension);
 
-        return createNewFrontier(frontiers, dimension, false, player, vertex);
+        return createNewFrontier(frontiers, dimension, false, player, vertices);
     }
 
-    public FrontierData createNewPersonalFrontier(RegistryKey<World> dimension, ServerPlayerEntity player,
-            @Nullable BlockPos vertex) {
+    public FrontierData createNewPersonalFrontier(RegistryKey<World> dimension, ServerPlayerEntity player, @Nullable List<BlockPos> vertices) {
         List<FrontierData> frontiers = getAllPersonalFrontiers(new SettingsUser(player), dimension);
 
-        return createNewFrontier(frontiers, dimension, true, player, vertex);
+        return createNewFrontier(frontiers, dimension, true, player, vertices);
     }
 
-    private FrontierData createNewFrontier(List<FrontierData> frontiers, RegistryKey<World> dimension, boolean personal,
-            ServerPlayerEntity player, @Nullable BlockPos vertex) {
-        final float hue = rand.nextFloat();
-        final float saturation = (rand.nextInt(4000) + 6000) / 10000f;
-        final float luminance = (rand.nextInt(3000) + 7000) / 10000f;
-        Color color = Color.getHSBColor(hue, saturation, luminance);
-
+    private FrontierData createNewFrontier(List<FrontierData> frontiers, RegistryKey<World> dimension, boolean personal, ServerPlayerEntity player, @Nullable List<BlockPos> vertices) {
         FrontierData frontier = new FrontierData();
         frontier.setId(UUID.randomUUID());
         frontier.setOwner(new SettingsUser(player));
         frontier.setDimension(dimension);
         frontier.setPersonal(personal);
-        frontier.setColor(color.getRGB());
+        frontier.setColor(ColorHelper.getRandomColor());
         frontier.setCreated(new Date());
 
-        if (vertex != null) {
-            frontier.addVertex(vertex);
+        if (vertices != null) {
+            for (BlockPos vertex : vertices) {
+                frontier.addVertex(vertex);
+            }
         }
 
         frontiers.add(frontier);

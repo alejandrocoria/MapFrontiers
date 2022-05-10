@@ -1,10 +1,5 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
-import java.util.UUID;
-import java.util.function.Supplier;
-
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
@@ -15,6 +10,10 @@ import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.fml.network.NetworkEvent;
+
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.UUID;
+import java.util.function.Supplier;
 
 @ParametersAreNonnullByDefault
 public class PacketDeleteFrontier {

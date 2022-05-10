@@ -1,20 +1,17 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import net.minecraft.client.Minecraft;
-
 import net.minecraft.client.audio.SoundHandler;
 import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+
+import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -49,7 +46,7 @@ public class GuiButtonIcon extends Button {
 
     @Override
     public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        RenderSystem.color4f(1.f, 1.f, 1.f, 1f);
+        RenderSystem.color4f(1.f, 1.f, 1.f, 1.f);
         Minecraft.getInstance().getTextureManager().bind(texture);
 
         int texX = 0;

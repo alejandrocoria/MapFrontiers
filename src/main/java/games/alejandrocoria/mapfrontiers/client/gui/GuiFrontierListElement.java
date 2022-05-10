@@ -3,10 +3,10 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.StringHelper;
-import net.minecraft.util.text.TextFormatting;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -40,14 +40,14 @@ public class GuiFrontierListElement extends GuiScrollBox.ScrollElement {
             name2 = I18n.get("mapfrontiers.unnamed_2", TextFormatting.ITALIC);
         }
 
-        type = I18n.get("mapfrontiers.type", I18n.get(frontier.getPersonal() ? "mapfrontiers.personal" : "mapfrontiers.global"));
+        type = I18n.get("mapfrontiers.type", I18n.get(frontier.getPersonal() ? "mapfrontiers.config.Personal" : "mapfrontiers.config.Global"));
         owner = I18n.get("mapfrontiers.owner", frontier.getOwner());
         dimension = I18n.get("mapfrontiers.dimension", frontier.getDimension().location().toString());
         vertices = I18n.get("mapfrontiers.vertices", frontier.getVertexCount());
 
         verticesOffset = StringHelper.getMaxWidth(font,
-                I18n.get("mapfrontiers.type", I18n.get("mapfrontiers.personal")),
-                I18n.get("mapfrontiers.type", I18n.get("mapfrontiers.global")));
+                I18n.get("mapfrontiers.type", I18n.get("mapfrontiers.config.Personal")),
+                I18n.get("mapfrontiers.type", I18n.get("mapfrontiers.config.Global")));
 
         ownerOffset = font.width(I18n.get("mapfrontiers.vertices", 999));
 

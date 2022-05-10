@@ -1,24 +1,16 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.systems.RenderSystem;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.util.StringHelper;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.text.TextFormatting;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.widget.Widget;
-
-import net.minecraft.client.resources.I18n;
-import net.minecraft.util.text.TextComponent;
-import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.List;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -30,7 +22,7 @@ public class GuiRadioListElement extends GuiScrollBox.ScrollElement {
     private GuiSimpleLabel label;
     int id;
 
-    public GuiRadioListElement(FontRenderer font, TextComponent text, int id) {
+    public GuiRadioListElement(FontRenderer font, ITextComponent text, int id) {
         super(200, 16);
         this.label = new GuiSimpleLabel(font, x + 20, y + 4, GuiSimpleLabel.Align.Left, text, GuiColors.SETTINGS_BUTTON_TEXT);
         this.id = id;
@@ -77,7 +69,7 @@ public class GuiRadioListElement extends GuiScrollBox.ScrollElement {
     }
 
     private void drawRadio(MatrixStack matrixStack, int x, int y, boolean checked) {
-        RenderSystem.color4f(1.f, 1.f, 1.f, 1f);
+        RenderSystem.color4f(1.f, 1.f, 1.f, 1.f);
         Minecraft.getInstance().getTextureManager().bind(texture);
 
         blit(matrixStack, x, y, checked ? 12 : 0, 0, 12, 12, textureSizeX, textureSizeY);

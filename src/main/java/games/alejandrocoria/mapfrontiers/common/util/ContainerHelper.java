@@ -1,10 +1,9 @@
 package games.alejandrocoria.mapfrontiers.common.util;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 import java.util.function.IntPredicate;
 import java.util.stream.IntStream;
-
-import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class ContainerHelper {

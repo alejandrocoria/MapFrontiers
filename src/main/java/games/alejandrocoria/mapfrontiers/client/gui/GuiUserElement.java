@@ -1,17 +1,14 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import java.util.List;
-
-import javax.annotation.ParametersAreNonnullByDefault;
-
-import net.minecraft.client.gui.widget.Widget;
-
 import com.mojang.blaze3d.matrix.MatrixStack;
-
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.widget.Widget;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.List;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)

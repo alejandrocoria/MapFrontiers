@@ -1,19 +1,18 @@
 package games.alejandrocoria.mapfrontiers.common.settings;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.util.StringHelper;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.ListNBT;
 import net.minecraft.nbt.StringNBT;
-import net.minecraftforge.common.util.Constants;
 import net.minecraft.network.PacketBuffer;
+import net.minecraftforge.common.util.Constants;
+
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
 
 @ParametersAreNonnullByDefault
 public class SettingsGroup {

@@ -1,25 +1,22 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
-import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.ConfirmOpenLinkScreen;
 import net.minecraft.client.gui.widget.Widget;
-
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.Util;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.ForgeHooksClient;
+
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -59,9 +56,9 @@ public class GuiPatreonButton extends Widget {
                 && mouseY < y + height / factor);
 
         if (isHovered) {
-            RenderSystem.color4f(0.9f, 0.9f, 0.9f, 1f);
+            RenderSystem.color4f(0.9f, 0.9f, 0.9f, 1.f);
         } else {
-            RenderSystem.color4f(1.f, 1.f, 1.f, 1f);
+            RenderSystem.color4f(1.f, 1.f, 1.f, 1.f);
         }
 
         Minecraft.getInstance().getTextureManager().bind(texture);

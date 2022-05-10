@@ -1,8 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common.util;
 
-import java.lang.reflect.Field;
-
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.lang.reflect.Field;
 
 @ParametersAreNonnullByDefault
 public class ReflectionHelper {

@@ -1,11 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
-import java.util.function.Consumer;
-
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import com.mojang.blaze3d.matrix.MatrixStack;
-
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import journeymap.client.ui.minimap.MiniMap;
 import net.minecraft.client.Minecraft;
@@ -14,6 +9,9 @@ import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)

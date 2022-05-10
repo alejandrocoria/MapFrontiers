@@ -1,30 +1,15 @@
 package games.alejandrocoria.mapfrontiers.client;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiColors;
 import games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin;
-import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.network.PacketDeleteFrontier;
-import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
-import games.alejandrocoria.mapfrontiers.common.network.PacketNewFrontier;
-import games.alejandrocoria.mapfrontiers.common.network.PacketSharePersonalFrontier;
-import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateFrontier;
+import games.alejandrocoria.mapfrontiers.common.network.*;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.MarkerOverlay;
 import journeymap.client.api.model.MapImage;
-import net.minecraft.client.Minecraft;
 import net.minecraft.util.RegistryKey;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
@@ -33,6 +18,10 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.*;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -93,15 +82,8 @@ public class FrontiersOverlayManager {
         return frontierOverlay;
     }
 
-    public void clientCreateNewfrontier(RegistryKey<World> dimension) {
-        BlockPos vertex = null;
-
-        if (ConfigData.addVertexToNewFrontier) {
-            vertex = ClientProxy.snapVertex(Minecraft.getInstance().player.blockPosition(), ConfigData.snapDistance, dimension,
-                    null);
-        }
-
-        PacketHandler.INSTANCE.sendToServer(new PacketNewFrontier(dimension, personal, vertex));
+    public void clientCreateNewfrontier(RegistryKey<World> dimension, @Nullable List<BlockPos> vertices) {
+        PacketHandler.INSTANCE.sendToServer(new PacketNewFrontier(dimension, personal, vertices));
     }
 
     public void clientDeleteFrontier(FrontierOverlay frontier) {

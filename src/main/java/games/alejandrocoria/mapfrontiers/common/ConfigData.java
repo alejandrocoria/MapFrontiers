@@ -1,16 +1,8 @@
 package games.alejandrocoria.mapfrontiers.common;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import net.minecraft.util.text.ITextComponent;
-import org.apache.commons.lang3.tuple.Pair;
-
 import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.UnmodifiableConfig;
 import com.google.common.base.Splitter;
-
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.util.ReflectionHelper;
 import journeymap.client.io.ThemeLoader;
@@ -20,19 +12,21 @@ import journeymap.client.ui.minimap.MiniMap;
 import journeymap.client.ui.minimap.Shape;
 import journeymap.client.ui.theme.Theme;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.text.TextComponent;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.BooleanValue;
-import net.minecraftforge.common.ForgeConfigSpec.DoubleValue;
-import net.minecraftforge.common.ForgeConfigSpec.EnumValue;
-import net.minecraftforge.common.ForgeConfigSpec.IntValue;
-import net.minecraftforge.common.ForgeConfigSpec.ValueSpec;
+import net.minecraftforge.common.ForgeConfigSpec.*;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.config.ModConfig;
+import org.apache.commons.lang3.tuple.Pair;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 @EventBusSubscriber(modid = MapFrontiers.MODID, bus = EventBusSubscriber.Bus.MOD)
 public class ConfigData {
@@ -45,7 +39,7 @@ public class ConfigData {
     }
 
     public enum AfterCreatingFrontier {
-        Info, Edit, None
+        Info, Edit, Nothing
     }
 
     public enum NameVisibility {
@@ -69,10 +63,12 @@ public class ConfigData {
         None, Name, Owner, Banner
     }
 
-    public static boolean addVertexToNewFrontier;
+    public static int newFrontierShape;
+    public static int newFrontierShapeWidth;
+    public static int newFrontierShapeRadius;
     public static AfterCreatingFrontier afterCreatingFrontier;
-    public static boolean alwaysShowUnfinishedFrontiers;
     public static NameVisibility nameVisibility;
+    public static boolean hideNamesThatDontFit;
     public static double polygonsOpacity;
     public static int snapDistance;
     public static FilterFrontierType filterFrontierType;
@@ -90,10 +86,12 @@ public class ConfigData {
     public static int hudYPosition;
 
     public static void bakeConfig() {
-        addVertexToNewFrontier = CLIENT.addVertexToNewFrontier.get();
+        newFrontierShape = CLIENT.newFrontierShape.get();
+        newFrontierShapeWidth = CLIENT.newFrontierShapeWidth.get();
+        newFrontierShapeRadius = CLIENT.newFrontierShapeRadius.get();
         afterCreatingFrontier = CLIENT.afterCreatingFrontier.get();
-        alwaysShowUnfinishedFrontiers = CLIENT.alwaysShowUnfinishedFrontiers.get();
         nameVisibility = CLIENT.nameVisibility.get();
+        hideNamesThatDontFit = CLIENT.hideNamesThatDontFit.get();
         polygonsOpacity = CLIENT.polygonsOpacity.get();
         snapDistance = CLIENT.snapDistance.get();
         filterFrontierType = CLIENT.filterFrontierType.get();
@@ -119,10 +117,12 @@ public class ConfigData {
     }
 
     public static class ClientConfig {
-        public final BooleanValue addVertexToNewFrontier;
+        public final IntValue newFrontierShape;
+        public final IntValue newFrontierShapeWidth;
+        public final IntValue newFrontierShapeRadius;
         public final EnumValue<AfterCreatingFrontier> afterCreatingFrontier;
-        public final BooleanValue alwaysShowUnfinishedFrontiers;
         public final EnumValue<NameVisibility> nameVisibility;
+        public final BooleanValue hideNamesThatDontFit;
         public final DoubleValue polygonsOpacity;
         public final IntValue snapDistance;
         public final EnumValue<FilterFrontierType> filterFrontierType;
@@ -140,40 +140,27 @@ public class ConfigData {
         public final IntValue hudYPosition;
 
         public ClientConfig(ForgeConfigSpec.Builder builder) {
-            addVertexToNewFrontier = builder.comment(
-                    "If true, when a new frontier is created, the first vertex will automatically be added where the player is.")
-                    .translation(MapFrontiers.MODID + ".config." + "addVertexToNewFrontier")
-                    .define("addVertexToNewFrontier", true);
-            afterCreatingFrontier = builder.comment(
-                    "What to do after creating a new frontier.")
-                    .translation(MapFrontiers.MODID + ".config." + "afterCreatingFrontier")
-                    .defineEnum("afterCreatingFrontier", AfterCreatingFrontier.Info);
-            alwaysShowUnfinishedFrontiers = builder.comment(
-                    "With true, it always shows unfinished frontiers. With false, they will only be seen with the book in hand.")
-                    .translation(MapFrontiers.MODID + ".config." + "alwaysShowUnfinishedFrontiers")
-                    .define("alwaysShowUnfinishedFrontiers", true);
+            newFrontierShape = builder.defineInRange("newFrontierShape", 0, 0, 11);
+            newFrontierShapeWidth = builder.defineInRange("newFrontierShapeWidth", 10, 0, 999);
+            newFrontierShapeRadius = builder.defineInRange("newFrontierShapeRadius", 20, 0, 999);
+            afterCreatingFrontier = builder.defineEnum("afterCreatingFrontier", AfterCreatingFrontier.Info);
             nameVisibility = builder.comment(
                     "Force all frontier names to be shown on the map or hidden. In Manual you can decide for each frontier.")
                     .translation(MapFrontiers.MODID + ".config." + "nameVisibility")
                     .defineEnum("nameVisibility", NameVisibility.Manual);
+            hideNamesThatDontFit = builder.comment(
+                    "Hides the name if it is wider than the frontier at the zoom level it is being viewed.")
+                    .translation(MapFrontiers.MODID + ".config." + "hideNamesThatDontFit")
+                    .define("hideNamesThatDontFit", true);
             polygonsOpacity = builder
-                    .comment("Transparency of the frontier polygons. 0.0 is fully transparent and 1.0 is no transparency.")
+                    .comment("Transparency of the frontier polygons. 0.0 is fully transparent and 1.0 is opaque.")
                     .translation(MapFrontiers.MODID + ".config." + "polygonsOpacity")
                     .defineInRange("polygonsOpacity", 0.4, 0.0, 1.0);
             snapDistance = builder.comment("Distance at which vertices are attached to nearby vertices.")
                     .translation(MapFrontiers.MODID + ".config." + "snapDistance").defineInRange("snapDistance", 8, 0, 16);
-            filterFrontierType = builder.comment(
-                            "Filter the list of frontier by type.")
-                    .translation(MapFrontiers.MODID + ".config.filter." + "frontierType")
-                    .defineEnum("filterFrontierType", FilterFrontierType.All);
-            filterFrontierOwner = builder.comment(
-                            "Filter the list of frontier by owner.")
-                    .translation(MapFrontiers.MODID + ".config.filter." + "frontierOwner")
-                    .defineEnum("filterFrontierOwner", FilterFrontierOwner.All);
-            filterFrontierDimension = builder.comment(
-                            "Filter the list of frontier by dimension.\nAllowed values are \"all\", \"current\" or the name of a dimension (eg: \"minecraft:the_nether\")")
-                    .translation(MapFrontiers.MODID + ".config.filter." + "frontierDimension")
-                    .define("filterFrontierDimension", "all");
+            filterFrontierType = builder.defineEnum("filterFrontierType", FilterFrontierType.All);
+            filterFrontierOwner = builder.defineEnum("filterFrontierOwner", FilterFrontierOwner.All);
+            filterFrontierDimension = builder.define("filterFrontierDimension", "all");
 
             builder.push("hud");
             hudEnabled = builder.comment("Show the HUD on screen.").translation(MapFrontiers.MODID + ".config.hud." + "enabled")
@@ -196,21 +183,19 @@ public class ConfigData {
                     "Anchor point of the HUD. In the case of choosing the minimap as an anchor, its default position will be used as a reference in the coordinates.")
                     .translation(MapFrontiers.MODID + ".config.hud." + "anchor")
                     .defineEnum("anchor", HUDAnchor.MinimapHorizontal);
-            hudXPosition = builder.comment("Size of the HUD banner.")
-                    .translation(MapFrontiers.MODID + ".config.hud." + "xPosition")
-                    .defineInRange("xPosition", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
-            hudYPosition = builder.comment("Size of the HUD banner.")
-                    .translation(MapFrontiers.MODID + ".config.hud." + "yPosition")
-                    .defineInRange("yPosition", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            hudXPosition = builder.defineInRange("xPosition", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            hudYPosition = builder.defineInRange("yPosition", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
             builder.pop();
         }
     }
 
     public static void save() {
-        CLIENT.addVertexToNewFrontier.set(addVertexToNewFrontier);
+        CLIENT.newFrontierShape.set(newFrontierShape);
+        CLIENT.newFrontierShapeWidth.set(newFrontierShapeWidth);
+        CLIENT.newFrontierShapeRadius.set(newFrontierShapeRadius);
         CLIENT.afterCreatingFrontier.set(afterCreatingFrontier);
-        CLIENT.alwaysShowUnfinishedFrontiers.set(alwaysShowUnfinishedFrontiers);
         CLIENT.nameVisibility.set(nameVisibility);
+        CLIENT.hideNamesThatDontFit.set(hideNamesThatDontFit);
         CLIENT.polygonsOpacity.set(polygonsOpacity);
         CLIENT.snapDistance.set(snapDistance);
         CLIENT.filterFrontierType.set(filterFrontierType);
@@ -230,12 +215,26 @@ public class ConfigData {
         CLIENT_SPEC.save();
     }
 
+    public static ITextComponent getTranslatedName(String name) {
+        ValueSpec valueSpec = getValueSpec(name);
+        if (valueSpec != null) {
+            return new TranslationTextComponent(valueSpec.getTranslationKey());
+        }
+
+        return StringTextComponent.EMPTY;
+    }
+
+    public static <E extends Enum<E>> ITextComponent getTranslatedEnum(E value) {
+        return new TranslationTextComponent("mapfrontiers.config." + value.name());
+    }
+
     public static List<ITextComponent> getTooltip(String name) {
         List<ITextComponent> tooltip = new ArrayList<>();
 
         ValueSpec valueSpec = getValueSpec(name);
         if (valueSpec != null) {
-            for (String string : Splitter.on("\n").split(valueSpec.getComment())) {
+            String lines = new TranslationTextComponent(valueSpec.getTranslationKey() + ".tooltip").getString();
+            for (String string : Splitter.on("\n").split(lines)) {
                 tooltip.add(new StringTextComponent(string));
             }
         }
