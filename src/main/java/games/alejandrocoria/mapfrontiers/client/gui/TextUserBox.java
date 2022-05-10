@@ -167,22 +167,10 @@ public class TextUserBox extends TextBox {
     }
 
     @Override
-    public void setFocused(boolean isFocusedIn) {
-        super.setFocused(isFocusedIn);
+    public void setFocus(boolean isFocusedIn) {
+        super.setFocus(isFocusedIn);
 
         if (!isFocusedIn) {
-            suggestions.clear();
-            suggestionsToDraw.clear();
-        }
-
-        setError(null);
-    }
-
-    @Override
-    protected void onFocusedChanged(boolean focused) {
-        super.onFocusedChanged(focused);
-
-        if (!focused) {
             suggestions.clear();
             suggestionsToDraw.clear();
         }

@@ -74,21 +74,12 @@ public class TextBox extends EditBox {
     }
 
     @Override
-    public void setFocused(boolean isFocusedIn) {
+    public void setFocus(boolean isFocusedIn) {
         if (isFocused() && !isFocusedIn && responder != null) {
             responder.lostFocus(this, getValue());
         }
 
-        super.setFocused(isFocusedIn);
-    }
-
-    @Override
-    protected void onFocusedChanged(boolean focused) {
-        if (!focused && responder != null) {
-            responder.lostFocus(this, getValue());
-        }
-
-        super.onFocusedChanged(focused);
+        super.setFocus(isFocusedIn);
     }
 
     @OnlyIn(Dist.CLIENT)

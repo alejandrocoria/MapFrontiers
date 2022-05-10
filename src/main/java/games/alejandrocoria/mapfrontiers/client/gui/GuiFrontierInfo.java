@@ -307,6 +307,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
 
     @Override
     public void removed() {
+        sendChangesToServer();
         minecraft.keyboardHandler.setSendRepeatsToGui(false);
         MinecraftForge.EVENT_BUS.unregister(this);
     }
