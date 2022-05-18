@@ -23,7 +23,6 @@
   "mapfrontiers.select_in_map": "Select in map",
   "mapfrontiers.close": "Close",
   
-  "mapfrontiers.book_message": "You no longer need the book. You can manage the frontiers by opening JourneyMap",
   "mapfrontiers.reset_filters": "Reset Filters",
   "mapfrontiers.filter_type": "Type:",
   "mapfrontiers.filter_owner": "Owner:",
@@ -145,9 +144,6 @@
   "mapfrontiers.config.Name": "Name",
   "mapfrontiers.config.Owner": "Owner",
   "mapfrontiers.config.Banner": "Banner",
-
-  "item.mapfrontiers.frontier_book": "Frontier Book (Deprecated)",
-  "item.mapfrontiers.personal_frontier_book": "Personal Frontier Book (Deprecated)",
 
   "mapfrontiers.key.category": "MapFrontiers",
   "mapfrontiers.key.open_settings": "Open settings"

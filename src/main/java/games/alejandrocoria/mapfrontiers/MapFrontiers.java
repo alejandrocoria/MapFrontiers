@@ -5,8 +5,6 @@ import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.command.CommandAccept;
-import games.alejandrocoria.mapfrontiers.common.item.ItemFrontierBook;
-import games.alejandrocoria.mapfrontiers.common.item.ItemPersonalFrontierBook;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSettingsProfile;
@@ -16,6 +14,7 @@ import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.management.OpEntry;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
@@ -41,19 +40,15 @@ import java.util.ArrayList;
 @Mod(MapFrontiers.MODID)
 public class MapFrontiers {
     public static final String MODID = "mapfrontiers";
-    public static final String VERSION = "1.18.2-2.1.3";
+    public static final String VERSION = "1.18.2-2.1.4";
     public static Logger LOGGER;
 
     private static FrontiersManager frontiersManager;
-
-    public static ItemFrontierBook frontierBook;
-    public static ItemPersonalFrontierBook personalFrontierBook;
 
     public MapFrontiers() {
         LOGGER = LogManager.getLogger("MapFrontiers");
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ConfigData.CLIENT_SPEC);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(MapFrontiers::commonSetup);
-        FMLJavaModLoadingContext.get().getModEventBus().addGenericListener(Item.class, MapFrontiers::registerItems);
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> MapFrontiers::addListenerClientSetup);
     }
 
@@ -64,12 +59,14 @@ public class MapFrontiers {
     }
 
     @SubscribeEvent
-    public static void registerItems(RegistryEvent.Register<Item> event) {
-        frontierBook = new ItemFrontierBook();
-        personalFrontierBook = new ItemPersonalFrontierBook();
-        event.getRegistry().register(frontierBook);
-        event.getRegistry().register(personalFrontierBook);
-        LOGGER.info("registerItems done");
+    public static void onMissingMappingEventItems(RegistryEvent.MissingMappings<Item> event) {
+        for (RegistryEvent.MissingMappings.Mapping<Item> mapping : event.getAllMappings()) {
+            if (mapping.key.equals(new ResourceLocation(MapFrontiers.MODID, "frontier_book"))) {
+                mapping.ignore();
+            } else if (mapping.key.equals(new ResourceLocation(MapFrontiers.MODID, "personal_frontier_book"))) {
+                mapping.ignore();
+            }
+        }
     }
 
     @OnlyIn(Dist.CLIENT)

@@ -51,7 +51,7 @@ public class FrontiersOverlayManager {
     @SubscribeEvent
     public static void onRenderTick(TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
-            if (ClientProxy.hasBookItemInHand() || MapFrontiersPlugin.isEditing()) {
+            if (MapFrontiersPlugin.isEditing()) {
                 float opacity = markerDotSelected.getOpacity();
                 if (opacity < targetDotSelectedOpacity) {
                     opacity += event.renderTickTime * 0.5f;
