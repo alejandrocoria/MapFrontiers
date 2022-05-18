@@ -25,7 +25,6 @@
   "mapfrontiers.select_in_map": "Select in map",
   "mapfrontiers.close": "Закрыть",
   
-  "mapfrontiers.book_message": "You no longer need the book. You can manage the frontiers by opening JourneyMap",
   "mapfrontiers.reset_filters": "Reset Filters",
   "mapfrontiers.filter_type": "Type:",
   "mapfrontiers.filter_owner": "Owner:",
@@ -147,9 +146,6 @@
   "mapfrontiers.config.Name": "Name",
   "mapfrontiers.config.Owner": "Owner",
   "mapfrontiers.config.Banner": "Banner",
-  
-  "item.mapfrontiers.frontier_book": "Карта Территорий (Устаревшая)",
-  "item.mapfrontiers.personal_frontier_book": "Карта Персональных Территорий (Устаревшая)",
 
   "mapfrontiers.key.category": "Карта Территорий",
   "mapfrontiers.key.open_settings": "Открыть настройки"

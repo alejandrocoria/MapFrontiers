@@ -23,7 +23,6 @@
   "mapfrontiers.select_in_map": "Seleccionar en el mapa",
   "mapfrontiers.close": "Cerrar",
   
-  "mapfrontiers.book_message": "Ya no necesitás el libro. Podés administrar las fronteras abriendo el mapa de JourneyMap",
   "mapfrontiers.reset_filters": "Reiniciar Filtros",
   "mapfrontiers.filter_type": "Tipo:",
   "mapfrontiers.filter_owner": "Dueño:",
@@ -145,9 +144,6 @@
   "mapfrontiers.config.Name": "Nombre",
   "mapfrontiers.config.Owner": "Dueño",
   "mapfrontiers.config.Banner": "Estandarte",
-
-  "item.mapfrontiers.frontier_book": "Libro de Fronteras (Obsoleto)",
-  "item.mapfrontiers.personal_frontier_book": "Libro de Fronteras Personales (Obsoleto)",
 
   "mapfrontiers.key.category": "MapFrontiers",
   "mapfrontiers.key.open_settings": "Abrir opciones"

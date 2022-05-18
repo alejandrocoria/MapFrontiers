@@ -1,6 +1,0 @@
-{
-    "parent": "item/generated",
-	"textures": {
-		"layer0": "mapfrontiers:items/personal_frontier_book"
-	}
-}
