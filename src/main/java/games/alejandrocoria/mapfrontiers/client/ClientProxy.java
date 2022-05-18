@@ -2,7 +2,6 @@ package games.alejandrocoria.mapfrontiers.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierBook;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierSettings;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiHUD;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
@@ -13,9 +12,7 @@ import games.alejandrocoria.mapfrontiers.common.util.BlockPosHelper;
 import journeymap.client.api.IClientAPI;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.BannerItem;
@@ -29,7 +26,6 @@ import net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggedOutEvent;
 import net.minecraftforge.client.event.InputEvent.KeyInputEvent;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -51,8 +47,6 @@ public class ClientProxy {
 
     private static KeyMapping openSettingsKey;
     private static GuiHUD guiHUD;
-
-    private static ItemStack bookItemInHand;
 
     @SubscribeEvent
     public static void clientSetup(FMLClientSetupEvent event) {
@@ -125,48 +119,8 @@ public class ClientProxy {
     }
 
     @SubscribeEvent
-    public static void onRenderTick(TickEvent.RenderTickEvent event) {
-        if (event.phase == TickEvent.Phase.START) {
-            LocalPlayer player = Minecraft.getInstance().player;
-            if (player == null) {
-                return;
-            }
-
-            ItemStack itemMainhand = player.getItemBySlot(EquipmentSlot.MAINHAND);
-            ItemStack itemOffhand = player.getItemBySlot(EquipmentSlot.OFFHAND);
-
-            if (itemMainhand != bookItemInHand && itemOffhand != bookItemInHand) {
-                bookItemInHand = null;
-
-                if (!itemMainhand.isEmpty() && (itemMainhand.getItem() == MapFrontiers.frontierBook
-                        || itemMainhand.getItem() == MapFrontiers.personalFrontierBook)) {
-                    if (itemMainhand.hasTag()) {
-                        CompoundTag nbt = itemMainhand.getTag();
-                        if (nbt != null && nbt.contains("Dimension")
-                                && nbt.getString("Dimension").equals(player.level.dimension().location().toString())) {
-                            bookItemInHand = itemMainhand;
-                        }
-                    }
-                }
-
-                if (bookItemInHand == null && !itemOffhand.isEmpty() && (itemOffhand.getItem() == MapFrontiers.frontierBook
-                        || itemMainhand.getItem() == MapFrontiers.personalFrontierBook)) {
-                    if (itemOffhand.hasTag()) {
-                        CompoundTag nbt = itemOffhand.getTag();
-                        if (nbt != null && nbt.contains("Dimension")
-                                && nbt.getString("Dimension").equals(player.level.dimension().location().toString())) {
-                            bookItemInHand = itemOffhand;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    @SubscribeEvent
     public static void clientConnectedToServer(LoggedInEvent event) {
         if (jmAPI != null) {
-            bookItemInHand = null;
             if (frontiersOverlayManager != null) {
                 frontiersOverlayManager.removeAllOverlays();
                 personalFrontiersOverlayManager.removeAllOverlays();
@@ -181,8 +135,6 @@ public class ClientProxy {
 
     @SubscribeEvent
     public static void clientDisconnectionFromServer(LoggedOutEvent event) {
-        bookItemInHand = null;
-
         if (frontiersOverlayManager != null) {
             frontiersOverlayManager.removeAllOverlays();
             frontiersOverlayManager = null;
@@ -194,10 +146,6 @@ public class ClientProxy {
             MinecraftForge.EVENT_BUS.unregister(guiHUD);
             guiHUD = null;
         }
-    }
-
-    public static void openGUIFrontierBook() {
-        Minecraft.getInstance().setScreen(new GuiFrontierBook());
     }
 
     public static ItemStack getHeldBanner() {
@@ -212,10 +160,6 @@ public class ClientProxy {
         }
 
         return heldBanner;
-    }
-
-    public static boolean hasBookItemInHand() {
-        return bookItemInHand != null;
     }
 
     public static FrontiersOverlayManager getFrontiersOverlayManager(boolean personal) {
