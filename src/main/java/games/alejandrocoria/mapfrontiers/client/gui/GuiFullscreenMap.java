@@ -17,7 +17,6 @@ import journeymap.client.api.display.IThemeButton;
 import journeymap.client.api.display.ModPopupMenu;
 import journeymap.client.api.display.ThemeButtonDisplay;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.components.Widget;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;

@@ -150,7 +150,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         buttonRandomColor = new GuiSettingsButton(font, rightSide, top + 174, 144,
                 new TranslatableComponent("mapfrontiers.random_color"), this::buttonPressed);
 
-        colorPicker = new GuiColorPicker(leftSide + 2, top + 140, frontier.getColor(), (picker) -> colorPickerUpdated());
+        colorPicker = new GuiColorPicker(leftSide + 2, top + 140, frontier.getColor(), (picker, dragging) -> colorPickerUpdated(dragging));
 
         Component type = new TranslatableComponent("mapfrontiers.type",
                 new TranslatableComponent(frontier.getPersonal() ? "mapfrontiers.config.Personal" : "mapfrontiers.config.Global"));
@@ -402,12 +402,15 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         sendChangesToServer();
     }
 
-    private void colorPickerUpdated() {
+    private void colorPickerUpdated(boolean dragging) {
         frontier.setColor(colorPicker.getColor());
         textRed.setValue((frontier.getColor() & 0xff0000) >> 16);
         textGreen.setValue((frontier.getColor() & 0x00ff00) >> 8);
         textBlue.setValue(frontier.getColor() & 0x0000ff);
-        sendChangesToServer();
+
+        if (!dragging) {
+            sendChangesToServer();
+        }
     }
 
     private void updateBannerButton() {
