@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
@@ -61,6 +62,29 @@ public class GuiOptionButton extends Button {
 
     public int getColor() {
         return color;
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        if (visible && isHovered) {
+            if (delta > 0) {
+                ++selected;
+                if (selected >= options.size()) {
+                    selected = 0;
+                }
+            } else {
+                --selected;
+                if (selected < 0) {
+                    selected = options.size() - 1;
+                }
+            }
+
+            playDownSound(Minecraft.getInstance().getSoundManager());
+            onPress();
+            return true;
+        }
+
+        return false;
     }
 
     @Override

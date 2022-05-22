@@ -45,8 +45,6 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
     private GuiSettingsButton buttonCreateFrontier;
     private GuiSettingsButton buttonCancel;
 
-    FrontierData.Mode lastMode;
-
     public GuiNewFrontier(IClientAPI jmAPI) {
         super(TextComponent.EMPTY);
         this.jmAPI = jmAPI;
@@ -96,7 +94,7 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
 
         labelSize = new GuiSimpleLabel(font, width / 2 - 80, height / 2 + 90, GuiSimpleLabel.Align.Left, new TextComponent(""), GuiColors.WHITE);
         addRenderableOnly(labelSize);
-        textSize = new TextIntBox(1, 0, 999, font, width / 2 + 16, height / 2 + 88, 64);
+        textSize = new TextIntBox(1, 1, 999, font, width / 2 + 16, height / 2 + 88, 64);
         textSize.setResponder(this);
 
         buttonCreateFrontier = new GuiSettingsButton(font, width / 2 - 110, height / 2 + 146, 100,
@@ -112,12 +110,6 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
         addRenderableWidget(textSize);
         addRenderableWidget(buttonCreateFrontier);
         addRenderableWidget(buttonCancel);
-
-        if (ConfigData.newFrontierMode == FrontierData.Mode.Vertex) {
-            lastMode = FrontierData.Mode.Chunk;
-        } else {
-            lastMode = FrontierData.Mode.Vertex;
-        }
 
         shapeButtonsUpdated();
     }
@@ -146,11 +138,9 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
     protected void buttonPressed(Button button) {
         if (button == buttonFrontierMode) {
             ConfigData.newFrontierMode = FrontierData.Mode.values()[buttonFrontierMode.getSelected()];
-            ClientProxy.configUpdated();
             shapeButtonsUpdated();
         } else if (button == buttonAfterCreate) {
             ConfigData.afterCreatingFrontier = ConfigData.AfterCreatingFrontier.values()[buttonAfterCreate.getSelected()];
-            ClientProxy.configUpdated();
         } else if (button == buttonCreateFrontier) {
             boolean personal = buttonFrontierType.getSelected() == 1;
             ClientProxy.getFrontiersOverlayManager(personal).clientCreateNewfrontier(jmAPI.getUIState(Context.UI.Fullscreen).dimension, calculateVertices(), calculateChunks());
@@ -192,6 +182,7 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
     @Override
     public void removed() {
         MinecraftForge.EVENT_BUS.unregister(this);
+        ClientProxy.configUpdated();
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
@@ -201,12 +192,6 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
     }
 
     private void shapeButtonsUpdated() {
-        if (ConfigData.newFrontierMode == lastMode) {
-            lastMode = ConfigData.newFrontierMode;
-        }
-
-        lastMode = ConfigData.newFrontierMode;
-
         if (ConfigData.newFrontierMode == FrontierData.Mode.Vertex) {
             vertexShapeButtons.visible = true;
             chunkShapeButtons.visible = false;

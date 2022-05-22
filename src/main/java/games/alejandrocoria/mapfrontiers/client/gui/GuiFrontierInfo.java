@@ -122,7 +122,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         addRenderableOnly(new GuiSimpleLabel(font, leftSide - 11, top + 120, GuiSimpleLabel.Align.Left,
                 new TextComponent("R"), GuiColors.LABEL_TEXT));
 
-        textRed = new TextIntBox(255, 0, 255, font, leftSide, top + 114, 29);
+        textRed = new TextIntBox(0, 0, 255, font, leftSide, top + 114, 29);
         textRed.setResponder(this);
         textRed.setHeight(20);
         textRed.setWidth(34);
@@ -130,7 +130,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         addRenderableOnly(new GuiSimpleLabel(font, leftSide + 44, top + 120, GuiSimpleLabel.Align.Left,
                 new TextComponent("G"), GuiColors.LABEL_TEXT));
 
-        textGreen = new TextIntBox(255, 0, 255, font, leftSide + 55, top + 114, 29);
+        textGreen = new TextIntBox(0, 0, 255, font, leftSide + 55, top + 114, 29);
         textGreen.setResponder(this);
         textGreen.setHeight(20);
         textGreen.setWidth(34);
@@ -138,7 +138,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         addRenderableOnly(new GuiSimpleLabel(font, leftSide + 99, top + 120, GuiSimpleLabel.Align.Left,
                 new TextComponent("B"), GuiColors.LABEL_TEXT));
 
-        textBlue = new TextIntBox(255, 0, 255, font, leftSide + 110, top + 114, 29);
+        textBlue = new TextIntBox(0, 0, 255, font, leftSide + 110, top + 114, 29);
         textBlue.setResponder(this);
         textBlue.setHeight(20);
         textBlue.setWidth(34);

@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.TextComponent;
@@ -42,7 +43,11 @@ public class TextIntBox extends EditBox {
         this.setValue(object.toString());
 
         if (responder != null) {
-            responder.updatedValue(this, Integer.parseInt(getValue()));
+            try {
+                int current = Integer.parseInt(getValue());
+                responder.updatedValue(this, current);
+            } catch (Exception ignored) {
+            }
         }
     }
 
@@ -52,14 +57,22 @@ public class TextIntBox extends EditBox {
         if (isHoveredOrFocused()) {
             res = super.charTyped(c, key);
             if (res) {
-                Integer integer = clamped();
-                setValue(integer);
-
-                moveCursorToStart();
-                moveCursorToEnd();
+                int current;
+                try {
+                    current = Integer.parseInt(getValue());
+                    if (current > max) {
+                        setValue(max);
+                        current = max;
+                    }
+                } catch (Exception e) {
+                    return true;
+                } finally {
+                    moveCursorToStart();
+                    moveCursorToEnd();
+                }
 
                 if (responder != null) {
-                    responder.updatedValue(this, integer);
+                    responder.updatedValue(this, current);
                 }
             }
         }
@@ -85,7 +98,31 @@ public class TextIntBox extends EditBox {
         return res;
     }
 
-    public Integer clamped() {
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        if (visible && isHovered) {
+            int current;
+            try {
+                current = Integer.parseInt(getValue());
+            } catch (Exception e) {
+                current = defaultValue;
+            }
+
+            if (delta > 0 && current < max) {
+                playDownSound(Minecraft.getInstance().getSoundManager());
+                setValue(++current);
+            } else if (delta < 0 && current > min) {
+                playDownSound(Minecraft.getInstance().getSoundManager());
+                setValue(--current);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public int clamped() {
         String text = getValue();
         if (text.length() == 0) {
             return defaultValue;
@@ -103,6 +140,15 @@ public class TextIntBox extends EditBox {
         integer = Math.min(max, integer);
 
         return integer;
+    }
+
+    @Override
+    public void setFocus(boolean isFocusedIn) {
+        if (!isFocusedIn) {
+            setValue(clamped());
+        }
+
+        super.setFocus(isFocusedIn);
     }
 
     @OnlyIn(Dist.CLIENT)
