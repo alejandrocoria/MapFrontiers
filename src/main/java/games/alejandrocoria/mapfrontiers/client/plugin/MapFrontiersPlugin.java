@@ -37,6 +37,7 @@ public class MapFrontiersPlugin implements IClientPlugin {
         jmAPI.subscribe(MapFrontiers.MODID, EnumSet.of(
                 ClientEvent.Type.MAP_CLICKED,
                 ClientEvent.Type.MAP_DRAGGED,
+                ClientEvent.Type.MAP_MOUSE_MOVED,
                 ClientEvent.Type.DISPLAY_UPDATE));
     }
 
@@ -52,13 +53,16 @@ public class MapFrontiersPlugin implements IClientPlugin {
                 if (fullscreenMap != null) {
                     FullscreenMapEvent.ClickEvent clickEvent = (FullscreenMapEvent.ClickEvent)event;
                     FullscreenMapEvent.Stage relevantStage;
-                    if (fullscreenMap.isEditing() && clickEvent.getButton() == 1) {
+                    if ((fullscreenMap.isEditingVertices() || fullscreenMap.isEditingChunks()) && clickEvent.getButton() == 1) {
                         relevantStage = FullscreenMapEvent.Stage.PRE;
                     } else {
                         relevantStage = FullscreenMapEvent.Stage.POST;
                     }
                     if (clickEvent.getStage() == relevantStage) {
-                        fullscreenMap.mapClicked(clickEvent.dimension, clickEvent.getLocation());
+                        boolean cancel = fullscreenMap.mapClicked(clickEvent.dimension, clickEvent.getLocation(), clickEvent.getButton());
+                        if (cancel) {
+                            clickEvent.cancel();
+                        }
                     }
                 }
                 break;
@@ -66,11 +70,17 @@ public class MapFrontiersPlugin implements IClientPlugin {
                 if (fullscreenMap != null) {
                     FullscreenMapEvent.MouseDraggedEvent mouseDraggedEvent = (FullscreenMapEvent.MouseDraggedEvent) event;
                     if (mouseDraggedEvent.getStage() == FullscreenMapEvent.Stage.PRE) {
-                        boolean moved = fullscreenMap.mapDragged(mouseDraggedEvent.dimension, mouseDraggedEvent.getLocation());
-                        if (moved) {
+                        boolean cancel = fullscreenMap.mapDragged(mouseDraggedEvent.dimension, mouseDraggedEvent.getLocation());
+                        if (cancel) {
                             mouseDraggedEvent.cancel();
                         }
                     }
+                }
+                break;
+            case MAP_MOUSE_MOVED:
+                if (fullscreenMap != null) {
+                    FullscreenMapEvent.MouseMoveEvent mouseMoveEvent = (FullscreenMapEvent.MouseMoveEvent) event;
+                    fullscreenMap.mouseMoved(mouseMoveEvent.dimension, mouseMoveEvent.getLocation());
                 }
                 break;
             case DISPLAY_UPDATE:
@@ -109,6 +119,6 @@ public class MapFrontiersPlugin implements IClientPlugin {
     }
 
     public static boolean isEditing() {
-        return fullscreenMap != null && fullscreenMap.isEditing();
+        return fullscreenMap != null && (fullscreenMap.isEditingVertices() || fullscreenMap.isEditingChunks());
     }
 }

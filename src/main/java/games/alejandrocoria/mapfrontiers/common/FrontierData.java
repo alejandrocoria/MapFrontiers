@@ -1,5 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common;
 
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.util.StringHelper;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.BlockPosHelper;
@@ -18,6 +20,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.BannerItem;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
@@ -33,8 +36,14 @@ public class FrontierData {
         public final static Change[] valuesArray = values();
     }
 
+    public enum Mode {
+        Vertex, Chunk
+    }
+
     protected UUID id;
     protected List<BlockPos> vertices = new ArrayList<>();
+    protected Set<ChunkPos> chunks = new HashSet<>();
+    protected Mode mode = Mode.Vertex;
     protected boolean visible = true;
     protected String name1 = "New";
     protected String name2 = "Frontier";
@@ -74,6 +83,8 @@ public class FrontierData {
         usersShared = other.usersShared;
 
         vertices = other.vertices;
+        chunks = other.chunks;
+        mode = other.mode;
 
         created = other.created;
         modified = other.modified;
@@ -109,6 +120,8 @@ public class FrontierData {
 
         if (other.changes.contains(Change.Vertices)) {
             vertices = other.vertices;
+            chunks = other.chunks;
+            mode = other.mode;
         }
 
         modified = other.modified;
@@ -183,6 +196,48 @@ public class FrontierData {
 
         vertices.set(index, pos);
         changes.add(Change.Vertices);
+    }
+
+    public boolean toggleChunk(ChunkPos chunk) {
+        boolean added = false;
+        if (!chunks.remove(chunk)) {
+            chunks.add(chunk);
+            added = true;
+        }
+
+        changes.add(Change.Vertices);
+        return added;
+    }
+
+    public boolean addChunk(ChunkPos chunk) {
+        if (chunks.add(chunk)) {
+            changes.add(Change.Vertices);
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean removeChunk(ChunkPos chunk) {
+        if (chunks.remove(chunk)) {
+            changes.remove(Change.Vertices);
+            return true;
+        }
+
+        return false;
+    }
+
+    public int getChunkCount() {
+        return chunks.size();
+    }
+
+    public void setMode(Mode mode) {
+        this.mode = mode;
+        changes.add(Change.Vertices);
+    }
+
+    public Mode getMode() {
+        return mode;
     }
 
     public void setVisible(boolean visible) {
@@ -433,6 +488,31 @@ public class FrontierData {
             vertices.add(NbtUtils.readBlockPos(verticesTagList.getCompound(i)));
         }
 
+        ListTag chunksTagList = nbt.getList("chunks", Tag.TAG_COMPOUND);
+        for (int i = 0; i < chunksTagList.size(); ++i) {
+            chunks.add(new ChunkPos(chunksTagList.getCompound(i).getInt("X"), chunksTagList.getCompound(i).getInt("Z")));
+        }
+
+        String modeTag = nbt.getString("mode");
+        if (modeTag.isEmpty()) {
+            mode = Mode.Vertex;
+        } else {
+            try {
+                mode = Mode.valueOf(modeTag);
+            } catch (IllegalArgumentException e) {
+                if (chunks.size() > 0) {
+                    mode = Mode.Chunk;
+                } else {
+                    mode = Mode.Vertex;
+                }
+
+                String availableModes = StringHelper.enumValuesToString(Arrays.asList(Mode.values()));
+
+                MapFrontiers.LOGGER.warn(String.format("Unknown mode in frontier %1$s. Found: \"%2$s\". Expected: %3$s",
+                        id, modeTag, availableModes));
+            }
+        }
+
         if (nbt.contains("created")) {
             created = new Date(nbt.getLong("created"));
         }
@@ -480,6 +560,18 @@ public class FrontierData {
         }
 
         nbt.put("vertices", verticesTagList);
+
+        ListTag chunksTagList = new ListTag();
+        for (ChunkPos pos : chunks) {
+            CompoundTag compoundtag = new CompoundTag();
+            compoundtag.putInt("X", pos.x);
+            compoundtag.putInt("Z", pos.z);
+            chunksTagList.add(compoundtag);
+        }
+
+        nbt.put("chunks", chunksTagList);
+
+        nbt.putString("mode", mode.name());
 
         if (created != null) {
             nbt.putLong("created", created.getTime());
@@ -556,6 +648,15 @@ public class FrontierData {
                 BlockPos vertex = BlockPos.of(buf.readLong());
                 vertices.add(vertex);
             }
+
+            chunks = new HashSet<>();
+            int chunkCount = buf.readInt();
+            for (int i = 0; i < chunkCount; ++i) {
+                ChunkPos chunk = new ChunkPos(buf.readLong());
+                chunks.add(chunk);
+            }
+
+            mode = Mode.values()[buf.readInt()];
         }
 
         if (buf.readBoolean()) {
@@ -630,6 +731,13 @@ public class FrontierData {
             for (BlockPos pos : vertices) {
                 buf.writeLong(pos.asLong());
             }
+
+            buf.writeInt(chunks.size());
+            for (ChunkPos pos : chunks) {
+                buf.writeLong(pos.toLong());
+            }
+
+            buf.writeInt(mode.ordinal());
         }
 
         if (created == null) {

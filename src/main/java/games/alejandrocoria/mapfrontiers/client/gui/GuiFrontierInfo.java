@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
@@ -161,23 +162,32 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         Component dimension = new TranslatableComponent("mapfrontiers.dimension", frontier.getDimension().location().toString());
         addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 32, GuiSimpleLabel.Align.Left, dimension, GuiColors.WHITE));
 
-        Component vertices = new TranslatableComponent("mapfrontiers.vertices", frontier.getVertexCount());
-        addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 48, GuiSimpleLabel.Align.Left, vertices, GuiColors.WHITE));
+        Component mode = new TranslatableComponent("mapfrontiers.mode",
+                new TranslatableComponent(frontier.getMode() == FrontierData.Mode.Vertex ? "mapfrontiers.config.Vertex" : "mapfrontiers.config.Chunk"));
+        addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 48, GuiSimpleLabel.Align.Left, mode, GuiColors.WHITE));
+
+        if (frontier.getMode() == FrontierData.Mode.Vertex) {
+            Component vertices = new TranslatableComponent("mapfrontiers.vertices", frontier.getVertexCount());
+            addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 64, GuiSimpleLabel.Align.Left, vertices, GuiColors.WHITE));
+        } else {
+            Component chunks = new TranslatableComponent("mapfrontiers.chunks", frontier.getChunkCount());
+            addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 64, GuiSimpleLabel.Align.Left, chunks, GuiColors.WHITE));
+        }
 
         Component area = new TranslatableComponent("mapfrontiers.area", frontier.area);
-        addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 64, GuiSimpleLabel.Align.Left, area, GuiColors.WHITE));
+        addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 80, GuiSimpleLabel.Align.Left, area, GuiColors.WHITE));
 
         Component perimeter = new TranslatableComponent("mapfrontiers.perimeter", frontier.perimeter);
-        addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 80, GuiSimpleLabel.Align.Left, perimeter, GuiColors.WHITE));
+        addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 96, GuiSimpleLabel.Align.Left, perimeter, GuiColors.WHITE));
 
         if (frontier.getCreated() != null) {
             Component created = new TranslatableComponent("mapfrontiers.created", dateFormat.format(frontier.getCreated()));
-            addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 96, GuiSimpleLabel.Align.Left, created, GuiColors.WHITE));
+            addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 112, GuiSimpleLabel.Align.Left, created, GuiColors.WHITE));
         }
 
         if (frontier.getModified() != null) {
             Component modified = new TranslatableComponent("mapfrontiers.modified", dateFormat.format(frontier.getModified()));
-            modifiedLabel = new GuiSimpleLabel(font, rightSide, top + 112, GuiSimpleLabel.Align.Left, modified, GuiColors.WHITE);
+            modifiedLabel = new GuiSimpleLabel(font, rightSide, top + 128, GuiSimpleLabel.Align.Left, modified, GuiColors.WHITE);
             addRenderableOnly(modifiedLabel);
         }
 
