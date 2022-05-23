@@ -13,7 +13,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class TextIntBox extends EditBox {
-    private static final String numericRegex = "[^\\d]";
+    private static final String numericRegex = "[^-\\d]";
 
     private int defaultValue;
     private int min;
@@ -72,7 +72,7 @@ public class TextIntBox extends EditBox {
                 }
 
                 if (responder != null) {
-                    responder.updatedValue(this, current);
+                    responder.updatedValue(this, Math.max(current, min));
                 }
             }
         }
