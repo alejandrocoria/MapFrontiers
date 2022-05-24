@@ -13,8 +13,6 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class TextIntBox extends EditBox {
-    private static final String numericRegex = "[^-\\d]";
-
     private int defaultValue;
     private int min;
     private int max;
@@ -34,9 +32,20 @@ public class TextIntBox extends EditBox {
 
     @Override
     public void insertText(String textToWrite) {
+        if (min < 0 && textToWrite.equals("-") && getCursorPosition() == 0) {
+            super.insertText(textToWrite);
+            return;
+        }
+
+        String currentString = getValue();
         super.insertText(textToWrite);
-        String fixed = getValue().replaceAll(numericRegex, "");
-        this.setValue(fixed);
+
+        try {
+            int current = Integer.parseInt(getValue());
+            this.setValue(current);
+        } catch (Exception e) {
+            this.setValue(currentString);
+        }
     }
 
     public void setValue(Object object) {
