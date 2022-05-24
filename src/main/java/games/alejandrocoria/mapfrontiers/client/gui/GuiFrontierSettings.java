@@ -41,7 +41,8 @@ import java.util.*;
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBoxResponder,
-        GuiGroupActionElement.GroupActionResponder, GuiTabbedBox.TabbedBoxResponder, TextBox.TextBoxResponder, TextIntBox.TextIntBoxResponder {
+        GuiGroupActionElement.GroupActionResponder, GuiTabbedBox.TabbedBoxResponder, TextBox.TextBoxResponder,
+        TextIntBox.TextIntBoxResponder, TextDoubleBox.TextDoubleBoxResponder {
     public enum Tab {
         Credits, General, Groups, Actions
     }
@@ -53,7 +54,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
     private GuiPatreonButton buttonPatreon;
     private GuiOptionButton buttonNameVisibility;
     private GuiOptionButton buttonHideNamesThatDontFit;
-    private TextBox textPolygonsOpacity;
+    private TextDoubleBox textPolygonsOpacity;
     private TextIntBox textSnapDistance;
     private GuiOptionButton buttonHUDEnabled;
     private GuiSettingsButton buttonEditHUD;
@@ -128,7 +129,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         buttonHideNamesThatDontFit.addOption(new TranslatableComponent("options.off"));
         buttonHideNamesThatDontFit.setSelected(ConfigData.hideNamesThatDontFit ? 0 : 1);
 
-        textPolygonsOpacity = new TextBox(font, width / 2 + 50, 102, 100);
+        textPolygonsOpacity = new TextDoubleBox(0.4, 0.0, 1.0, font, width / 2 + 50, 102, 100);
         textPolygonsOpacity.setValue(String.valueOf(ConfigData.polygonsOpacity));
         textPolygonsOpacity.setMaxLength(10);
         textPolygonsOpacity.setResponder(this);
@@ -586,21 +587,15 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
     }
 
     @Override
+    public void updatedValue(TextDoubleBox textDoubleBox, double value) {
+        if (textPolygonsOpacity == textDoubleBox) {
+            ConfigData.polygonsOpacity = value;
+        }
+    }
+
+    @Override
     public void lostFocus(TextBox textBox, String value) {
-        if (textPolygonsOpacity == textBox && tabSelected == Tab.General) {
-            if (StringUtils.isBlank(value)) {
-                textPolygonsOpacity.setValue(ConfigData.getDefault("polygonsOpacity"));
-                ConfigData.polygonsOpacity = Double.parseDouble(textPolygonsOpacity.getValue());
-            } else {
-                try {
-                    Double opacity = Double.valueOf(value);
-                    if (ConfigData.isInRange("polygonsOpacity", opacity)) {
-                        ConfigData.polygonsOpacity = opacity;
-                    }
-                } catch (Exception ignored) {
-                }
-            }
-        } else if (textGroupName == textBox && tabSelected == Tab.Groups) {
+        if (textGroupName == textBox && tabSelected == Tab.Groups) {
             GuiGroupElement groupElement = (GuiGroupElement) groups.getSelectedElement();
             if (groupElement != null) {
                 groupElement.getGroup().setName(value);

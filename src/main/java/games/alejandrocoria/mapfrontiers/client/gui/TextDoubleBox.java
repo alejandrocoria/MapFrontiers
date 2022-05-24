@@ -12,13 +12,13 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
-public class TextIntBox extends EditBox {
-    private int defaultValue;
-    private int min;
-    private int max;
-    private TextIntBoxResponder responder;
+public class TextDoubleBox extends EditBox {
+    private double defaultValue;
+    private double min;
+    private double max;
+    private TextDoubleBoxResponder responder;
 
-    public TextIntBox(int defaultValue, int min, int max, Font font, int x, int y, int width) {
+    public TextDoubleBox(double defaultValue, double min, double max, Font font, int x, int y, int width) {
         super(font, x, y, width, 12, TextComponent.EMPTY);
         this.defaultValue = defaultValue;
         this.min = min;
@@ -26,7 +26,7 @@ public class TextIntBox extends EditBox {
         this.setValue(defaultValue);
     }
 
-    public void setResponder(TextIntBoxResponder responderIn) {
+    public void setResponder(TextDoubleBoxResponder responderIn) {
         responder = responderIn;
     }
 
@@ -37,11 +37,21 @@ public class TextIntBox extends EditBox {
             return;
         }
 
+        if (textToWrite.equals("0")) {
+            super.insertText(textToWrite);
+            return;
+        }
+
+        if (textToWrite.equals(".")) {
+            super.insertText(textToWrite);
+            return;
+        }
+
         String currentString = getValue();
         super.insertText(textToWrite);
 
         try {
-            int current = Integer.parseInt(getValue());
+            double current = Double.parseDouble(getValue());
             this.setValue(current);
         } catch (Exception e) {
             this.setValue(currentString);
@@ -53,7 +63,7 @@ public class TextIntBox extends EditBox {
 
         if (responder != null) {
             try {
-                int current = Integer.parseInt(getValue());
+                double current = Double.parseDouble(getValue());
                 responder.updatedValue(this, current);
             } catch (Exception ignored) {
             }
@@ -66,9 +76,9 @@ public class TextIntBox extends EditBox {
         if (isHoveredOrFocused()) {
             res = super.charTyped(c, key);
             if (res) {
-                int current;
+                double current;
                 try {
-                    current = Integer.parseInt(getValue());
+                    current = Double.parseDouble(getValue());
                     if (current > max) {
                         setValue(max);
                         current = max;
@@ -110,19 +120,19 @@ public class TextIntBox extends EditBox {
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         if (visible && isHovered) {
-            int current;
+            double current;
             try {
-                current = Integer.parseInt(getValue());
+                current = Double.parseDouble(getValue());
             } catch (Exception e) {
                 current = defaultValue;
             }
 
-            if (delta > 0 && current < max) {
+            if (delta > 0) {
                 playDownSound(Minecraft.getInstance().getSoundManager());
-                setValue(++current);
-            } else if (delta < 0 && current > min) {
+                setValue(Math.min(current + 0.1, max));
+            } else if (delta < 0) {
                 playDownSound(Minecraft.getInstance().getSoundManager());
-                setValue(--current);
+                setValue(Math.max(current - 0.1, min));
             }
 
             return true;
@@ -131,16 +141,16 @@ public class TextIntBox extends EditBox {
         return false;
     }
 
-    public int clamped() {
+    public double clamped() {
         String text = getValue();
         if (text.length() == 0) {
             return defaultValue;
         }
 
-        int current;
+        double current;
 
         try {
-            current = Integer.parseInt(text);
+            current = Double.parseDouble(text);
         } catch (Exception e) {
             return defaultValue;
         }
@@ -161,7 +171,7 @@ public class TextIntBox extends EditBox {
     }
 
     @OnlyIn(Dist.CLIENT)
-    public interface TextIntBoxResponder {
-        void updatedValue(TextIntBox textIntBox, int value);
+    public interface TextDoubleBoxResponder {
+        void updatedValue(TextDoubleBox textDoubleBox, double value);
     }
 }
