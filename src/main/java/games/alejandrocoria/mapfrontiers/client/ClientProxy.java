@@ -5,7 +5,6 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierSettings;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiHUD;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.util.BlockPosHelper;
@@ -77,38 +76,31 @@ public class ClientProxy {
         }
     }
 
-    public static BlockPos snapVertex(BlockPos vertex, float snapDistance, ResourceKey<Level> dimension,
-            @Nullable FrontierData owner) {
+    public static BlockPos snapVertex(BlockPos vertex, float snapDistance, ResourceKey<Level> dimension, @Nullable FrontierOverlay owner) {
         BlockPos closest = BlockPosHelper.atY(vertex,70);
         double closestDistance = snapDistance * snapDistance;
 
-        for (FrontierData frontier : personalFrontiersOverlayManager.getAllFrontiers(dimension)) {
+        for (FrontierOverlay frontier : personalFrontiersOverlayManager.getAllFrontiers(dimension)) {
             if (frontier == owner) {
                 continue;
             }
 
-            for (int i = 0; i < frontier.getVertexCount(); ++i) {
-                BlockPos v = BlockPosHelper.atY(frontier.getVertex(i),70);
-                double distance = v.distSqr(closest);
-                if (distance <= closestDistance) {
-                    closestDistance = distance;
-                    closest = v;
-                }
+            BlockPos v = frontier.getClosestVertex(closest, closestDistance);
+            if (v != null) {
+                closest = v;
+                closestDistance = v.distSqr(vertex);
             }
         }
 
-        for (FrontierData frontier : frontiersOverlayManager.getAllFrontiers(dimension)) {
+        for (FrontierOverlay frontier : frontiersOverlayManager.getAllFrontiers(dimension)) {
             if (frontier == owner) {
                 continue;
             }
 
-            for (int i = 0; i < frontier.getVertexCount(); ++i) {
-                BlockPos v = BlockPosHelper.atY(frontier.getVertex(i),70);
-                double distance = v.distSqr(closest);
-                if (distance <= closestDistance) {
-                    closestDistance = distance;
-                    closest = v;
-                }
+            BlockPos v = frontier.getClosestVertex(closest, closestDistance);
+            if (v != null) {
+                closest = v;
+                closestDistance = v.distSqr(vertex);
             }
         }
 

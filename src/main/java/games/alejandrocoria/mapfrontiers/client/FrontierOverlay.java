@@ -451,6 +451,35 @@ public class FrontierOverlay extends FrontierData {
         dirtyhash = true;
     }
 
+    public BlockPos getClosestVertex(BlockPos vertex, double belowDistance) {
+        BlockPos closest = null;
+        double closestDistance = belowDistance;
+
+        for (PolygonOverlay overlay : polygonOverlays) {
+            for (BlockPos v : overlay.getOuterArea().getPoints()) {
+                double distance = v.distSqr(vertex);
+                if (distance <= closestDistance) {
+                    closestDistance = distance;
+                    closest = v;
+                }
+            }
+
+            if (overlay.getHoles() != null) {
+                for (MapPolygon hole : overlay.getHoles()) {
+                    for (BlockPos v : hole.getPoints()) {
+                        double distance = v.distSqr(vertex);
+                        if (distance <= closestDistance) {
+                            closestDistance = distance;
+                            closest = v;
+                        }
+                    }
+                }
+            }
+        }
+
+        return closest;
+    }
+
     public void renderBanner(Minecraft mc, PoseStack matrixStack, int x, int y, int scale) {
         if (bannerDisplay == null) {
             return;
@@ -705,13 +734,13 @@ public class FrontierOverlay extends FrontierData {
         }
 
         for (List<ChunkPos> outer : outerPolygons) {
-            MapPolygon polygon = new MapPolygon(Lists.transform(outer, ChunkPos::getWorldPosition));
+            MapPolygon polygon = new MapPolygon(Lists.transform(outer, (c) -> BlockPosHelper.toBlockPos(c, 70)));
             PolygonOverlay polygonOverlay;
 
             if (holesPolygons.containsKey(outer.get(0))) {
                 List<MapPolygon> polygonHoles = new ArrayList<>();
                 for (List<ChunkPos> hole : holesPolygons.get(outer.get(0))) {
-                    polygonHoles.add(new MapPolygon(Lists.transform(hole, ChunkPos::getWorldPosition)));
+                    polygonHoles.add(new MapPolygon(Lists.transform(hole, (c) -> BlockPosHelper.toBlockPos(c, 70))));
                 }
                 polygonOverlay = new PolygonOverlay(MapFrontiers.MODID, displayId + outer.get(0), dimension, shapeProps, polygon, polygonHoles);
             } else {
