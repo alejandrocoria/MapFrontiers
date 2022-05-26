@@ -80,7 +80,9 @@ public class FrontierOverlay extends FrontierData {
     private BannerDisplayData bannerDisplay;
 
     private int hash;
-    private boolean dirty = true;
+    private boolean dirtyhash = true;
+
+    private boolean needUpdateOverlay = true;
 
     public FrontierOverlay(FrontierData data, @Nullable IClientAPI jmAPI) {
         super(data);
@@ -111,13 +113,13 @@ public class FrontierOverlay extends FrontierData {
             } else {
                 bannerDisplay = new BannerDisplayData(banner);
             }
-            dirty = true;
+            dirtyhash = true;
         }
     }
 
     public int getHash() {
-        if (dirty) {
-            dirty = false;
+        if (dirtyhash) {
+            dirtyhash = false;
 
             int prime = 31;
             hash = 1;
@@ -139,8 +141,15 @@ public class FrontierOverlay extends FrontierData {
         return hash;
     }
 
+    public void updateOverlayIfNeeded() {
+        if (needUpdateOverlay) {
+            needUpdateOverlay = false;
+            updateOverlay();
+        }
+    }
+
     public void updateOverlay() {
-        dirty = true;
+        dirtyhash = true;
 
         if (jmAPI == null) {
             return;
@@ -306,7 +315,7 @@ public class FrontierOverlay extends FrontierData {
     public void setId(UUID id) {
         super.setId(id);
         displayId = "frontier_" + id;
-        updateOverlay();
+        needUpdateOverlay = true;
     }
 
     @Override
@@ -321,26 +330,26 @@ public class FrontierOverlay extends FrontierData {
         }
 
         super.addVertex(pos, index);
-        updateOverlay();
+        needUpdateOverlay = true;
     }
 
     @Override
     public void removeVertex(int index) {
         super.removeVertex(index);
-        updateOverlay();
+        needUpdateOverlay = true;
     }
 
     @Override
     public boolean toggleChunk(ChunkPos chunk) {
         boolean added = super.toggleChunk(chunk);
-        updateOverlay();
+        needUpdateOverlay = true;
         return added;
     }
 
     @Override
     public boolean addChunk(ChunkPos chunk) {
         if (super.addChunk(chunk)) {
-            updateOverlay();
+            needUpdateOverlay = true;
             return true;
         }
 
@@ -350,7 +359,7 @@ public class FrontierOverlay extends FrontierData {
     @Override
     public boolean removeChunk(ChunkPos chunk) {
         if (super.removeChunk(chunk)) {
-            updateOverlay();
+            needUpdateOverlay = true;
             return true;
         }
 
@@ -367,7 +376,7 @@ public class FrontierOverlay extends FrontierData {
         }
 
         super.moveVertex(pos, vertexSelected);
-        updateOverlay();
+        needUpdateOverlay = true;
         ClientProxy.getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);
     }
 
@@ -379,43 +388,43 @@ public class FrontierOverlay extends FrontierData {
             vertexSelected = -1;
         }
 
-        updateOverlay();
+        needUpdateOverlay = true;
     }
 
     @Override
     public void setName1(String name) {
         super.setName1(name);
-        updateOverlay();
+        needUpdateOverlay = true;
     }
 
     @Override
     public void setName2(String name) {
         super.setName2(name);
-        updateOverlay();
+        needUpdateOverlay = true;
     }
 
     @Override
     public void setNameVisible(boolean nameVisible) {
         super.setNameVisible(nameVisible);
-        updateOverlay();
+        needUpdateOverlay = true;
     }
 
     @Override
     public void setColor(int color) {
         super.setColor(color);
-        updateOverlay();
+        needUpdateOverlay = true;
     }
 
     @Override
     public void setDimension(ResourceKey<Level> dimension) {
         super.setDimension(dimension);
-        dirty = true;
+        dirtyhash = true;
     }
 
     @Override
     public void setBanner(@Nullable ItemStack itemBanner) {
         super.setBanner(itemBanner);
-        updateOverlay();
+        needUpdateOverlay = true;
 
         if (itemBanner == null) {
             bannerDisplay = null;
@@ -427,19 +436,19 @@ public class FrontierOverlay extends FrontierData {
     @Override
     public void addUserShared(SettingsUserShared userShared) {
         super.addUserShared(userShared);
-        dirty = true;
+        dirtyhash = true;
     }
 
     @Override
     public void removeUserShared(int index) {
         super.removeUserShared(index);
-        dirty = true;
+        dirtyhash = true;
     }
 
     @Override
     public void setUsersShared(List<SettingsUserShared> usersShared) {
         super.setUsersShared(usersShared);
-        dirty = true;
+        dirtyhash = true;
     }
 
     public void renderBanner(Minecraft mc, PoseStack matrixStack, int x, int y, int scale) {
@@ -494,7 +503,7 @@ public class FrontierOverlay extends FrontierData {
 
         ClientProxy.getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);
 
-        updateOverlay();
+        needUpdateOverlay = true;
     }
 
     public void selectNextVertex() {
@@ -519,7 +528,7 @@ public class FrontierOverlay extends FrontierData {
 
     public void setHighlighted(boolean highlighted) {
         this.highlighted = highlighted;
-        updateOverlay();
+        needUpdateOverlay = true;
     }
 
     public boolean getHighlighted() {

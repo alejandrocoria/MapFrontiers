@@ -26,6 +26,7 @@ import net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggedOutEvent;
 import net.minecraftforge.client.event.InputEvent.KeyInputEvent;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -119,6 +120,16 @@ public class ClientProxy {
     }
 
     @SubscribeEvent
+    public static void onRenderTick(TickEvent.RenderTickEvent event) {
+        if (event.phase == TickEvent.Phase.START) {
+            if (frontiersOverlayManager != null) {
+                frontiersOverlayManager.updateAllOverlays(false);
+                personalFrontiersOverlayManager.updateAllOverlays(false);
+            }
+        }
+    }
+
+    @SubscribeEvent
     public static void clientConnectedToServer(LoggedInEvent event) {
         if (jmAPI != null) {
             if (frontiersOverlayManager != null) {
@@ -191,8 +202,8 @@ public class ClientProxy {
         ConfigData.save();
 
         if (frontiersOverlayManager != null) {
-            frontiersOverlayManager.updateAllOverlays();
-            personalFrontiersOverlayManager.updateAllOverlays();
+            frontiersOverlayManager.updateAllOverlays(true);
+            personalFrontiersOverlayManager.updateAllOverlays(true);
         }
 
         if (guiHUD != null) {

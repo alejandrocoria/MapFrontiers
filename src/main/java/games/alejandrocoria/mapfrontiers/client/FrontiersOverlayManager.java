@@ -156,10 +156,14 @@ public class FrontiersOverlayManager {
         return null;
     }
 
-    public void updateAllOverlays() {
+    public void updateAllOverlays(boolean forceUpdate) {
         for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
             for (FrontierOverlay frontier : frontiers) {
-                frontier.updateOverlay();
+                if (forceUpdate) {
+                    frontier.updateOverlay();
+                } else {
+                    frontier.updateOverlayIfNeeded();
+                }
             }
         }
     }
