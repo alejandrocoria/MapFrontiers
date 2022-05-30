@@ -594,37 +594,7 @@ public class FrontierOverlay extends FrontierData {
             PolygonOverlay polygonOverlay = new PolygonOverlay(MapFrontiers.MODID, displayId, dimension, shapeProps, polygon);
             polygonArea = PolygonHelper.toArea(polygonOverlay.getOuterArea());
 
-            ConfigData.NameVisibility nameVisibility = ConfigData.nameVisibility;
-            if (nameVisibility == ConfigData.NameVisibility.Show || (nameVisibility == ConfigData.NameVisibility.Manual)) {
-                TextProperties textProps = new TextProperties().setColor(color).setScale(2.f).setBackgroundOpacity(0.f);
-                if (ConfigData.hideNamesThatDontFit) {
-                    textProps = setMinSizeTextPropierties(textProps);
-                }
-
-                int lines = 0;
-                String label = "";
-
-                if (nameVisibility == ConfigData.NameVisibility.Show || nameVisible) {
-                    if (!name1.isEmpty()) {
-                        ++lines;
-                        label += name1 + "\n";
-                    }
-                    if (!name2.isEmpty()) {
-                        ++lines;
-                        label += name2 + "\n";
-                    }
-                }
-
-                if (nameVisibility == ConfigData.NameVisibility.Show || (ownerVisible && !owner.username.isEmpty())) {
-                    ++lines;
-                    label += ChatFormatting.ITALIC + owner.username + "\n";
-                }
-
-                if (lines > 0) {
-                    textProps.setOffsetY((lines - 1) * 7 - 4);
-                    polygonOverlay.setTextProperties(textProps).setOverlayGroupName("frontier").setLabel(label);
-                }
-            }
+            addNameAndOwner(polygonOverlay);
 
             polygonOverlays.add(polygonOverlay);
 
@@ -747,6 +717,8 @@ public class FrontierOverlay extends FrontierData {
                 polygonOverlay = new PolygonOverlay(MapFrontiers.MODID, displayId + outer.get(0), dimension, shapeProps, polygon);
             }
 
+            addNameAndOwner(polygonOverlay);
+
             polygonOverlays.add(polygonOverlay);
         }
 
@@ -776,6 +748,70 @@ public class FrontierOverlay extends FrontierData {
                 prev = chunks.get(i);
             }
         }
+    }
+
+    private void addNameAndOwner(PolygonOverlay polygonOverlay) {
+        ConfigData.NameVisibility nameVisibility = ConfigData.nameVisibility;
+        if (nameVisibility == ConfigData.NameVisibility.Show || (nameVisibility == ConfigData.NameVisibility.Manual)) {
+            TextProperties textProps = new TextProperties().setColor(color).setScale(2.f).setBackgroundOpacity(0.f);
+            if (ConfigData.hideNamesThatDontFit) {
+                if (mode == Mode.Vertex) {
+                    textProps = setMinSizeTextPropierties(textProps, bottomRight.getX() - topLeft.getX());
+                } else {
+                    int minX = Integer.MAX_VALUE;
+                    int maxX = Integer.MIN_VALUE;
+
+                    for (BlockPos vertex : polygonOverlay.getOuterArea().getPoints()) {
+                        if (vertex.getX() < minX)
+                            minX = vertex.getX();
+                        if (vertex.getX() > maxX)
+                            maxX = vertex.getX();
+                    }
+                    textProps = setMinSizeTextPropierties(textProps, maxX - minX);
+                }
+            }
+
+            int lines = 0;
+            String label = "";
+
+            if (nameVisibility == ConfigData.NameVisibility.Show || nameVisible) {
+                if (!name1.isEmpty()) {
+                    ++lines;
+                    label += name1 + "\n";
+                }
+                if (!name2.isEmpty()) {
+                    ++lines;
+                    label += name2 + "\n";
+                }
+            }
+
+            if (nameVisibility == ConfigData.NameVisibility.Show || (ownerVisible && !owner.username.isEmpty())) {
+                ++lines;
+                label += ChatFormatting.ITALIC + owner.username + "\n";
+            }
+
+            if (lines > 0) {
+                if (lines > 1) {
+                    textProps.setOffsetY(10);
+                }
+                polygonOverlay.setTextProperties(textProps).setOverlayGroupName("frontier").setLabel(label);
+            }
+        }
+    }
+
+    private TextProperties setMinSizeTextPropierties(TextProperties textProperties, int polygonWidth) {
+        int name1Width = Minecraft.getInstance().font.width(name1) * 2;
+        int name2Width = Minecraft.getInstance().font.width(name2) * 2;
+        int onwerWidth = Minecraft.getInstance().font.width(owner.username) * 2;
+        int labelWidth = Math.max(onwerWidth, Math.max(name1Width, name2Width)) + 6;
+
+        int zoom = 0;
+        while (labelWidth > polygonWidth && zoom < 5) {
+            ++zoom;
+            polygonWidth *= 2;
+        }
+
+        return textProperties.setMinZoom(zoom);
     }
 
     private void updateBounds() {
@@ -893,22 +929,6 @@ public class FrontierOverlay extends FrontierData {
 
             ++i;
         }
-    }
-
-    private TextProperties setMinSizeTextPropierties(TextProperties textProperties) {
-        int width = bottomRight.getX() - topLeft.getX();
-        int name1Width = Minecraft.getInstance().font.width(name1) * 2;
-        int name2Width = Minecraft.getInstance().font.width(name2) * 2;
-        int onwerWidth = Minecraft.getInstance().font.width(owner.username) * 2;
-        int labelWidth = Math.max(onwerWidth, Math.max(name1Width, name2Width)) + 6;
-
-        int zoom = 0;
-        while (labelWidth > width && zoom < 5) {
-            ++zoom;
-            width *= 2;
-        }
-
-        return textProperties.setMinZoom(zoom);
     }
 
     @OnlyIn(Dist.CLIENT)
