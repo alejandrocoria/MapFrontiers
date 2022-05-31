@@ -42,10 +42,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.awt.geom.Area;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static java.lang.Math.abs;
 
@@ -645,11 +642,17 @@ public class FrontierOverlay extends FrontierData {
             ChunkPos starting = Collections.min(edges.keySet(), (e1, e2) -> e1.x == e2.x ? e1.z - e2.z : e1.x - e2.x);
             List<ChunkPos> polygon = new ArrayList<>();
             ChunkPos edge = starting;
+            int direction = 1;
 
             do {
                 polygon.add(edge);
-                ChunkPos edge2 = edges.get(edge).iterator().next();
+                Iterator<ChunkPos> it = edges.get(edge).iterator();
+                ChunkPos edge2 = it.next();
+                while (it.hasNext() && Integer.signum(direction) == Integer.signum(edge2.x - edge.x + edge.z - edge2.z)) {
+                    edge2 = it.next();
+                }
                 edges.remove(edge, edge2);
+                direction = edge2.x - edge.x + edge2.z - edge.z;
                 edge = edge2;
             } while (!edge.equals(starting));
 
