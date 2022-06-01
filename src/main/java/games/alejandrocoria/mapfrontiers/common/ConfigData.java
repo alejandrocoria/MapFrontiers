@@ -119,8 +119,8 @@ public class ConfigData {
     }
 
     @SubscribeEvent
-    public static void onModConfigEvent(ModConfigEvent configEvent) {
-        if (configEvent.getConfig().getType()== ModConfig.Type.CLIENT) {
+    public static void onModConfigEvent(ModConfigEvent.Loading configEvent) {
+        if (configEvent.getConfig().getModId().equals(MapFrontiers.MODID) && configEvent.getConfig().getType() == ModConfig.Type.CLIENT) {
             bakeConfig();
         }
     }
