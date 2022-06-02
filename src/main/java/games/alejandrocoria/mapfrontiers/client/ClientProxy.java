@@ -4,7 +4,6 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierSettings;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiHUD;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.util.BlockPosHelper;
@@ -25,6 +24,7 @@ import net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggedOutEvent;
 import net.minecraftforge.client.event.InputEvent.KeyInputEvent;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
@@ -76,38 +76,31 @@ public class ClientProxy {
         }
     }
 
-    public static BlockPos snapVertex(BlockPos vertex, float snapDistance, RegistryKey<World> dimension,
-            @Nullable FrontierData owner) {
+    public static BlockPos snapVertex(BlockPos vertex, float snapDistance, RegistryKey<World> dimension, @Nullable FrontierOverlay owner) {
         BlockPos closest = BlockPosHelper.atY(vertex,70);
         double closestDistance = snapDistance * snapDistance;
 
-        for (FrontierData frontier : personalFrontiersOverlayManager.getAllFrontiers(dimension)) {
+        for (FrontierOverlay frontier : personalFrontiersOverlayManager.getAllFrontiers(dimension)) {
             if (frontier == owner) {
                 continue;
             }
 
-            for (int i = 0; i < frontier.getVertexCount(); ++i) {
-                BlockPos v = BlockPosHelper.atY(frontier.getVertex(i),70);
-                double distance = v.distSqr(closest);
-                if (distance <= closestDistance) {
-                    closestDistance = distance;
-                    closest = v;
-                }
+            BlockPos v = frontier.getClosestVertex(closest, closestDistance);
+            if (v != null) {
+                closest = v;
+                closestDistance = v.distSqr(vertex);
             }
         }
 
-        for (FrontierData frontier : frontiersOverlayManager.getAllFrontiers(dimension)) {
+        for (FrontierOverlay frontier : frontiersOverlayManager.getAllFrontiers(dimension)) {
             if (frontier == owner) {
                 continue;
             }
 
-            for (int i = 0; i < frontier.getVertexCount(); ++i) {
-                BlockPos v = BlockPosHelper.atY(frontier.getVertex(i),70);
-                double distance = v.distSqr(closest);
-                if (distance <= closestDistance) {
-                    closestDistance = distance;
-                    closest = v;
-                }
+            BlockPos v = frontier.getClosestVertex(closest, closestDistance);
+            if (v != null) {
+                closest = v;
+                closestDistance = v.distSqr(vertex);
             }
         }
 
@@ -116,6 +109,16 @@ public class ClientProxy {
 
     public static void setjmAPI(IClientAPI newJmAPI) {
         jmAPI = newJmAPI;
+    }
+
+    @SubscribeEvent
+    public static void onRenderTick(TickEvent.RenderTickEvent event) {
+        if (event.phase == TickEvent.Phase.START) {
+            if (frontiersOverlayManager != null) {
+                frontiersOverlayManager.updateAllOverlays(false);
+                personalFrontiersOverlayManager.updateAllOverlays(false);
+            }
+        }
     }
 
     @SubscribeEvent
@@ -191,8 +194,8 @@ public class ClientProxy {
         ConfigData.save();
 
         if (frontiersOverlayManager != null) {
-            frontiersOverlayManager.updateAllOverlays();
-            personalFrontiersOverlayManager.updateAllOverlays();
+            frontiersOverlayManager.updateAllOverlays(true);
+            personalFrontiersOverlayManager.updateAllOverlays(true);
         }
 
         if (guiHUD != null) {

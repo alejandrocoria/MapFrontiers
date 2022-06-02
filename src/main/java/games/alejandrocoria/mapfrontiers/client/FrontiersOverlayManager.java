@@ -13,6 +13,7 @@ import journeymap.client.api.model.MapImage;
 import net.minecraft.util.RegistryKey;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -82,8 +83,8 @@ public class FrontiersOverlayManager {
         return frontierOverlay;
     }
 
-    public void clientCreateNewfrontier(RegistryKey<World> dimension, @Nullable List<BlockPos> vertices) {
-        PacketHandler.INSTANCE.sendToServer(new PacketNewFrontier(dimension, personal, vertices));
+    public void clientCreateNewfrontier(RegistryKey<World> dimension, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
+        PacketHandler.INSTANCE.sendToServer(new PacketNewFrontier(dimension, personal, vertices, chunks));
     }
 
     public void clientDeleteFrontier(FrontierOverlay frontier) {
@@ -155,10 +156,14 @@ public class FrontiersOverlayManager {
         return null;
     }
 
-    public void updateAllOverlays() {
+    public void updateAllOverlays(boolean forceUpdate) {
         for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
             for (FrontierOverlay frontier : frontiers) {
-                frontier.updateOverlay();
+                if (forceUpdate) {
+                    frontier.updateOverlay();
+                } else {
+                    frontier.updateOverlayIfNeeded();
+                }
             }
         }
     }

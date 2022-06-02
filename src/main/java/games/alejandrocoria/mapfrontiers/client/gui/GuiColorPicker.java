@@ -13,7 +13,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.awt.*;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -38,9 +38,9 @@ public class GuiColorPicker extends Widget {
     private int colorFullBrightness;
     private boolean hsGrabbed = false;
     private boolean vGrabbed = false;
-    private final Consumer<GuiColorPicker> callbackColorUpdated;
+    private final BiConsumer<GuiColorPicker, Boolean> callbackColorUpdated;
 
-    public GuiColorPicker(int x, int y, int color, Consumer<GuiColorPicker> callbackColorUpdated) {
+    public GuiColorPicker(int x, int y, int color, BiConsumer<GuiColorPicker, Boolean> callbackColorUpdated) {
         super(x, y, 304, 127, StringTextComponent.EMPTY);
         this.callbackColorUpdated = callbackColorUpdated;
         setColor(color);
@@ -80,14 +80,14 @@ public class GuiColorPicker extends Widget {
         hsGrabbed = false;
         vGrabbed = false;
 
-        updateMouse(mouseX, mouseY);
+        updateMouse(mouseX, mouseY, false);
 
         if (!hsGrabbed && !vGrabbed) {
             double paletteX = (mouseX - (x + 165)) / 23.0;
             double paletteY = (mouseY - (y + 57)) / 23.0;
             if (paletteX >= 0.0 && paletteX < 6.0 && paletteY >= 0.0 && paletteY < 3.0) {
                 setColor(palette[(int) paletteX + (int) paletteY * 6]);
-                callbackColorUpdated.accept(this);
+                callbackColorUpdated.accept(this, false);
             }
         }
     }
@@ -98,7 +98,7 @@ public class GuiColorPicker extends Widget {
             return;
         }
 
-        updateMouse(mouseX, mouseY);
+        updateMouse(mouseX, mouseY, false);
         hsGrabbed = false;
         vGrabbed = false;
     }
@@ -109,7 +109,7 @@ public class GuiColorPicker extends Widget {
             return;
         }
 
-        updateMouse(mouseX, mouseY);
+        updateMouse(mouseX, mouseY, true);
     }
 
     @Override
@@ -154,7 +154,7 @@ public class GuiColorPicker extends Widget {
         }
     }
 
-    private boolean updateMouse(double mouseX, double mouseY) {
+    private boolean updateMouse(double mouseX, double mouseY, boolean dragging) {
         if (!vGrabbed) {
             double localX = mouseX - (x + 64);
             double localY = mouseY - (y + 64);
@@ -171,7 +171,7 @@ public class GuiColorPicker extends Widget {
                 }
                 hsX = localX;
                 hsY = localY;
-                updateColor();
+                updateColor(dragging);
                 return true;
             }
         }
@@ -186,7 +186,7 @@ public class GuiColorPicker extends Widget {
 
             if (vGrabbed) {
                 v = Math.max(0.0, Math.min(localY, 127.99));
-                updateColor();
+                updateColor(dragging);
                 return true;
             }
         }
@@ -194,18 +194,14 @@ public class GuiColorPicker extends Widget {
         return false;
     }
 
-    private void updateColor() {
+    private void updateColor(boolean dragging) {
         double dist = Math.sqrt(hsX * hsX + hsY * hsY);
-
         double hue = Math.atan2(hsY, hsX) / (Math.PI * 2.0);
         double sat = dist / 64.0;
         double lum = 1.0 - v / 128.0;
-        int newColor = Color.HSBtoRGB((float) hue, (float) sat, (float) lum);
 
-        if (newColor != color) {
-            color = newColor;
-            colorFullBrightness = Color.HSBtoRGB((float) hue, (float) sat, 1.f);
-            callbackColorUpdated.accept(this);
-        }
+        color = Color.HSBtoRGB((float) hue, (float) sat, (float) lum);
+        colorFullBrightness = Color.HSBtoRGB((float) hue, (float) sat, 1.f);
+        callbackColorUpdated.accept(this, dragging);
     }
 }

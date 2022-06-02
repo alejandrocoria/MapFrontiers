@@ -1,10 +1,11 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -16,7 +17,7 @@ import java.util.List;
 @OnlyIn(Dist.CLIENT)
 public class GuiOptionButton extends Button {
     protected final FontRenderer font;
-    private final List<ITextComponent> options;
+    private final List<TextComponent> options;
     private int selected = 0;
     private int color = GuiColors.SETTINGS_TEXT;
     private int highlightedColor = GuiColors.SETTINGS_TEXT_HIGHLIGHT;
@@ -27,7 +28,7 @@ public class GuiOptionButton extends Button {
         options = new ArrayList<>();
     }
 
-    public void addOption(ITextComponent text) {
+    public void addOption(TextComponent text) {
         options.add(text);
     }
 
@@ -61,6 +62,29 @@ public class GuiOptionButton extends Button {
 
     public int getColor() {
         return color;
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        if (visible && isHovered) {
+            if (delta > 0) {
+                ++selected;
+                if (selected >= options.size()) {
+                    selected = 0;
+                }
+            } else {
+                --selected;
+                if (selected < 0) {
+                    selected = options.size() - 1;
+                }
+            }
+
+            playDownSound(Minecraft.getInstance().getSoundManager());
+            onPress();
+            return true;
+        }
+
+        return false;
     }
 
     @Override

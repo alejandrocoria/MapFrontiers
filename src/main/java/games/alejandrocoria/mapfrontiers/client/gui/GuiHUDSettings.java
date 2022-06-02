@@ -16,7 +16,6 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.ForgeHooksClient;
-import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -24,15 +23,15 @@ import java.util.*;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
-public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
+public class GuiHUDSettings extends Screen implements TextIntBox.TextIntBoxResponder {
     private GuiHUDWidget guiHUDWidget;
     private GuiOptionButton buttonSlot1;
     private GuiOptionButton buttonSlot2;
     private GuiOptionButton buttonSlot3;
-    private TextBox textBannerSize;
+    private TextIntBox textBannerSize;
     private GuiOptionButton buttonAnchor;
-    private TextBox textPositionX;
-    private TextBox textPositionY;
+    private TextIntBox textPositionX;
+    private TextIntBox textPositionY;
     private GuiOptionButton buttonAutoAdjustAnchor;
     private GuiOptionButton buttonSnapToBorder;
     private GuiSettingsButton buttonDone;
@@ -82,7 +81,7 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
         buttonSlot3.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDSlot.Banner));
         buttonSlot3.setSelected(ConfigData.hudSlot3.ordinal());
 
-        textBannerSize = new TextBox(font, width / 2 - 104, height / 2 + 16, 64);
+        textBannerSize = new TextIntBox(3, 1, 8, font, width / 2 - 104, height / 2 + 16, 64);
         textBannerSize.setValue(String.valueOf(ConfigData.hudBannerSize));
         textBannerSize.setMaxLength(1);
         textBannerSize.setResponder(this);
@@ -101,12 +100,12 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
         buttonAnchor.addOption(ConfigData.getTranslatedEnum(ConfigData.HUDAnchor.MinimapVertical));
         buttonAnchor.setSelected(ConfigData.hudAnchor.ordinal());
 
-        textPositionX = new TextBox(font, width / 2 + 96, height / 2 - 16, 61);
+        textPositionX = new TextIntBox(0, Integer.MIN_VALUE, Integer.MAX_VALUE, font, width / 2 + 96, height / 2 - 16, 61);
         textPositionX.setValue(String.valueOf(ConfigData.hudXPosition));
         textPositionX.setMaxLength(5);
         textPositionX.setResponder(this);
 
-        textPositionY = new TextBox(font, width / 2 + 168, height / 2 - 16, 62);
+        textPositionY = new TextIntBox(0, Integer.MIN_VALUE, Integer.MAX_VALUE, font, width / 2 + 168, height / 2 - 16, 62);
         textPositionY.setValue(String.valueOf(ConfigData.hudYPosition));
         textPositionY.setMaxLength(5);
         textPositionY.setResponder(this);
@@ -368,54 +367,17 @@ public class GuiHUDSettings extends Screen implements TextBox.TextBoxResponder {
     }
 
     @Override
-    public void updatedValue(TextBox textBox, String value) {
-    }
-
-    @Override
-    public void lostFocus(TextBox textBox, String value) {
-        if (textBannerSize == textBox) {
-            if (StringUtils.isBlank(value)) {
-                textBannerSize.setValue(ConfigData.getDefault("hud.bannerSize"));
-                ConfigData.hudBannerSize = Integer.parseInt(textBannerSize.getValue());
-                guiHUD.configUpdated(minecraft.getWindow());
-                updatePosition();
-            } else {
-                try {
-                    Integer size = Integer.valueOf(value);
-                    if (ConfigData.isInRange("hud.bannerSize", size)) {
-                        ConfigData.hudBannerSize = size;
-                        guiHUD.configUpdated(minecraft.getWindow());
-                        updatePosition();
-                    }
-                } catch (Exception ignored) {
-                }
-            }
-        } else if (textPositionX == textBox) {
-            if (StringUtils.isBlank(value)) {
-                textPositionX.setValue(ConfigData.getDefault("hud.position.x"));
-                ConfigData.hudXPosition = Integer.parseInt(textPositionX.getValue());
-                guiHUD.configUpdated(minecraft.getWindow());
-                updatePosition();
-            } else {
-                try {
-                    ConfigData.hudXPosition = Integer.parseInt(value);
-                    guiHUD.configUpdated(minecraft.getWindow());
-                } catch (Exception ignored) {
-                }
-            }
-        } else if (textPositionY == textBox) {
-            if (StringUtils.isBlank(value)) {
-                textPositionY.setValue(ConfigData.getDefault("hud.position.y"));
-                ConfigData.hudYPosition = Integer.parseInt(textPositionY.getValue());
-                guiHUD.configUpdated(minecraft.getWindow());
-                updatePosition();
-            } else {
-                try {
-                    ConfigData.hudYPosition = Integer.parseInt(value);
-                    guiHUD.configUpdated(minecraft.getWindow());
-                } catch (Exception ignored) {
-                }
-            }
+    public void updatedValue(TextIntBox textIntBox, int value) {
+        if (textBannerSize == textIntBox) {
+            ConfigData.hudBannerSize = value;
+            guiHUD.configUpdated(minecraft.getWindow());
+            updatePosition();
+        } else if (textPositionX == textIntBox) {
+            ConfigData.hudXPosition = value;
+            guiHUD.configUpdated(minecraft.getWindow());
+        } else if (textPositionY == textIntBox) {
+            ConfigData.hudYPosition = value;
+            guiHUD.configUpdated(minecraft.getWindow());
         }
     }
 

@@ -15,6 +15,7 @@ import net.minecraft.nbt.ListNBT;
 import net.minecraft.util.RegistryKey;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import net.minecraft.world.storage.FolderName;
@@ -44,7 +45,7 @@ public class FrontiersManager {
     private File ModDir;
     private boolean frontierOwnersChecked = false;
 
-    public static final int dataVersion = 7;
+    public static final int dataVersion = 8;
     private static int pendingShareFrontierID = 0;
     private static final int pendingShareFrontierTickDuration = 1200;
 
@@ -120,19 +121,19 @@ public class FrontiersManager {
         return allFrontiers.get(id);
     }
 
-    public FrontierData createNewGlobalFrontier(RegistryKey<World> dimension, ServerPlayerEntity player, @Nullable List<BlockPos> vertices) {
+    public FrontierData createNewGlobalFrontier(RegistryKey<World> dimension, ServerPlayerEntity player, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
         List<FrontierData> frontiers = getAllGlobalFrontiers(dimension);
 
-        return createNewFrontier(frontiers, dimension, false, player, vertices);
+        return createNewFrontier(frontiers, dimension, false, player, vertices, chunks);
     }
 
-    public FrontierData createNewPersonalFrontier(RegistryKey<World> dimension, ServerPlayerEntity player, @Nullable List<BlockPos> vertices) {
+    public FrontierData createNewPersonalFrontier(RegistryKey<World> dimension, ServerPlayerEntity player, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
         List<FrontierData> frontiers = getAllPersonalFrontiers(new SettingsUser(player), dimension);
 
-        return createNewFrontier(frontiers, dimension, true, player, vertices);
+        return createNewFrontier(frontiers, dimension, true, player, vertices, chunks);
     }
 
-    private FrontierData createNewFrontier(List<FrontierData> frontiers, RegistryKey<World> dimension, boolean personal, ServerPlayerEntity player, @Nullable List<BlockPos> vertices) {
+    private FrontierData createNewFrontier(List<FrontierData> frontiers, RegistryKey<World> dimension, boolean personal, ServerPlayerEntity player, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
         FrontierData frontier = new FrontierData();
         frontier.setId(UUID.randomUUID());
         frontier.setOwner(new SettingsUser(player));
@@ -142,8 +143,16 @@ public class FrontiersManager {
         frontier.setCreated(new Date());
 
         if (vertices != null) {
+            frontier.setMode(FrontierData.Mode.Vertex);
             for (BlockPos vertex : vertices) {
                 frontier.addVertex(vertex);
+            }
+        }
+
+        if (chunks != null) {
+            frontier.setMode(FrontierData.Mode.Chunk);
+            for (ChunkPos chunk : chunks) {
+                frontier.toggleChunk(chunk);
             }
         }
 

@@ -6,7 +6,7 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -22,7 +22,7 @@ public class GuiRadioListElement extends GuiScrollBox.ScrollElement {
     private GuiSimpleLabel label;
     int id;
 
-    public GuiRadioListElement(FontRenderer font, ITextComponent text, int id) {
+    public GuiRadioListElement(FontRenderer font, TextComponent text, int id) {
         super(200, 16);
         this.label = new GuiSimpleLabel(font, x + 20, y + 4, GuiSimpleLabel.Align.Left, text, GuiColors.SETTINGS_BUTTON_TEXT);
         this.id = id;

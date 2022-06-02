@@ -21,7 +21,7 @@ import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
-public class GuiShapeButtons extends Widget {
+public class GuiVertexShapeButtons extends Widget {
     private static final int[] vertexCount = {
             0, 1, 3, 3, 3, 3, 4, 4, 6, 6, 8, 16
     };
@@ -35,15 +35,15 @@ public class GuiShapeButtons extends Widget {
     }
 
     private static final ResourceLocation texture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/shape_buttons.png");
-    private static final int textureSizeX = 588;
+    private static final int textureSizeX = 980;
     private static final int textureSizeY = 98;
 
     private int selected;
     private GuiSimpleLabel labelShapes;
     private GuiSimpleLabel labelVertices;
-    private final Consumer<GuiShapeButtons> callbackShapeUpdated;
+    private final Consumer<GuiVertexShapeButtons> callbackShapeUpdated;
 
-    public GuiShapeButtons(FontRenderer font, int x, int y, int selected, Consumer<GuiShapeButtons> callbackShapeUpdated) {
+    public GuiVertexShapeButtons(FontRenderer font, int x, int y, int selected, Consumer<GuiVertexShapeButtons> callbackShapeUpdated) {
         super(x, y, 324, 120, StringTextComponent.EMPTY);
         this.selected = selected;
         labelShapes = new GuiSimpleLabel(font, x + 162, y, GuiSimpleLabel.Align.Center, new TranslationTextComponent("mapfrontiers.initial_shape"), GuiColors.WHITE);

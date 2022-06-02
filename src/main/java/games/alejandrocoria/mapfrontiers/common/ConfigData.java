@@ -14,6 +14,7 @@ import journeymap.client.ui.theme.Theme;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -66,6 +67,10 @@ public class ConfigData {
     public static int newFrontierShape;
     public static int newFrontierShapeWidth;
     public static int newFrontierShapeRadius;
+    public static int newFrontierChunkShape;
+    public static int newFrontierChunkShapeWidth;
+    public static int newFrontierChunkShapeLength;
+    public static FrontierData.Mode newFrontierMode;
     public static AfterCreatingFrontier afterCreatingFrontier;
     public static NameVisibility nameVisibility;
     public static boolean hideNamesThatDontFit;
@@ -89,6 +94,10 @@ public class ConfigData {
         newFrontierShape = CLIENT.newFrontierShape.get();
         newFrontierShapeWidth = CLIENT.newFrontierShapeWidth.get();
         newFrontierShapeRadius = CLIENT.newFrontierShapeRadius.get();
+        newFrontierChunkShape = CLIENT.newFrontierChunkShape.get();
+        newFrontierChunkShapeWidth = CLIENT.newFrontierChunkShapeWidth.get();
+        newFrontierChunkShapeLength = CLIENT.newFrontierChunkShapeLength.get();
+        newFrontierMode = CLIENT.newFrontierMode.get();
         afterCreatingFrontier = CLIENT.afterCreatingFrontier.get();
         nameVisibility = CLIENT.nameVisibility.get();
         hideNamesThatDontFit = CLIENT.hideNamesThatDontFit.get();
@@ -110,8 +119,8 @@ public class ConfigData {
     }
 
     @SubscribeEvent
-    public static void onModConfigEvent(ModConfig.ModConfigEvent configEvent) {
-        if (configEvent.getConfig().getType()== ModConfig.Type.CLIENT) {
+    public static void onModConfigEvent(ModConfig.Loading configEvent) {
+        if (configEvent.getConfig().getModId().equals(MapFrontiers.MODID) && configEvent.getConfig().getType() == ModConfig.Type.CLIENT) {
             bakeConfig();
         }
     }
@@ -120,6 +129,10 @@ public class ConfigData {
         public final IntValue newFrontierShape;
         public final IntValue newFrontierShapeWidth;
         public final IntValue newFrontierShapeRadius;
+        public final IntValue newFrontierChunkShape;
+        public final IntValue newFrontierChunkShapeWidth;
+        public final IntValue newFrontierChunkShapeLength;
+        public final EnumValue<FrontierData.Mode> newFrontierMode;
         public final EnumValue<AfterCreatingFrontier> afterCreatingFrontier;
         public final EnumValue<NameVisibility> nameVisibility;
         public final BooleanValue hideNamesThatDontFit;
@@ -143,6 +156,10 @@ public class ConfigData {
             newFrontierShape = builder.defineInRange("newFrontierShape", 0, 0, 11);
             newFrontierShapeWidth = builder.defineInRange("newFrontierShapeWidth", 10, 0, 999);
             newFrontierShapeRadius = builder.defineInRange("newFrontierShapeRadius", 20, 0, 999);
+            newFrontierChunkShape = builder.defineInRange("newFrontierChunkShape", 0, 0, 7);
+            newFrontierChunkShapeWidth = builder.defineInRange("newFrontierChunkShapeWidth", 5, 0, 32);
+            newFrontierChunkShapeLength = builder.defineInRange("newFrontierChunkShapeLength", 5, 0, 32);
+            newFrontierMode = builder.defineEnum("newFrontierMode", FrontierData.Mode.Vertex);
             afterCreatingFrontier = builder.defineEnum("afterCreatingFrontier", AfterCreatingFrontier.Info);
             nameVisibility = builder.comment(
                     "Force all frontier names to be shown on the map or hidden. In Manual you can decide for each frontier.")
@@ -193,6 +210,10 @@ public class ConfigData {
         CLIENT.newFrontierShape.set(newFrontierShape);
         CLIENT.newFrontierShapeWidth.set(newFrontierShapeWidth);
         CLIENT.newFrontierShapeRadius.set(newFrontierShapeRadius);
+        CLIENT.newFrontierChunkShape.set(newFrontierChunkShape);
+        CLIENT.newFrontierChunkShapeWidth.set(newFrontierChunkShapeWidth);
+        CLIENT.newFrontierChunkShapeLength.set(newFrontierChunkShapeLength);
+        CLIENT.newFrontierMode.set(newFrontierMode);
         CLIENT.afterCreatingFrontier.set(afterCreatingFrontier);
         CLIENT.nameVisibility.set(nameVisibility);
         CLIENT.hideNamesThatDontFit.set(hideNamesThatDontFit);
@@ -224,7 +245,7 @@ public class ConfigData {
         return StringTextComponent.EMPTY;
     }
 
-    public static <E extends Enum<E>> ITextComponent getTranslatedEnum(E value) {
+    public static <E extends Enum<E>> TextComponent getTranslatedEnum(E value) {
         return new TranslationTextComponent("mapfrontiers.config." + value.name());
     }
 

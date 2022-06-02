@@ -4,7 +4,6 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -18,7 +17,7 @@ public class GuiSettingsButton extends Button {
     private int textColor = GuiColors.SETTINGS_BUTTON_TEXT;
     private int textColorHighlight = GuiColors.SETTINGS_BUTTON_TEXT_HIGHLIGHT;
 
-    public GuiSettingsButton(FontRenderer font, int x, int y, int width, TextComponent text, Button.IPressable pressedAction) {
+    public GuiSettingsButton(FontRenderer font, int x, int y, int width, ITextComponent text, Button.IPressable pressedAction) {
         super(x, y, width, 16, text, pressedAction);
         this.font = font;
         this.label = new GuiSimpleLabel(font, x + width / 2, y + 5, GuiSimpleLabel.Align.Center, text, textColor);

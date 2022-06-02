@@ -9,6 +9,7 @@ import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.RegistryKey;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.network.NetworkEvent;
@@ -24,14 +25,16 @@ public class PacketNewFrontier {
     private RegistryKey<World> dimension = World.OVERWORLD;
     private boolean personal = false;
     private List<BlockPos> vertices;
+    private List<ChunkPos> chunks;
 
     public PacketNewFrontier() {
     }
 
-    public PacketNewFrontier(RegistryKey<World> dimension, boolean personal, @Nullable List<BlockPos> vertices) {
+    public PacketNewFrontier(RegistryKey<World> dimension, boolean personal, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
         this.dimension = dimension;
         this.personal = personal;
         this.vertices = vertices;
+        this.chunks = chunks;
     }
 
     public static PacketNewFrontier fromBytes(PacketBuffer buf) {
@@ -49,6 +52,16 @@ public class PacketNewFrontier {
             }
         }
 
+        boolean hasChunks = buf.readBoolean();
+        if (hasChunks) {
+            packet.chunks = new ArrayList<>();
+            int chunksCount = buf.readInt();
+            for (int i = 0; i < chunksCount; ++i) {
+                ChunkPos chunk = new ChunkPos(buf.readLong());
+                packet.chunks.add(chunk);
+            }
+        }
+
         return packet;
     }
 
@@ -61,6 +74,14 @@ public class PacketNewFrontier {
             buf.writeInt(packet.vertices.size());
             for (BlockPos pos : packet.vertices) {
                 buf.writeLong(pos.asLong());
+            }
+        }
+
+        buf.writeBoolean(packet.chunks != null);
+        if (packet.chunks != null) {
+            buf.writeInt(packet.chunks.size());
+            for (ChunkPos pos : packet.chunks) {
+                buf.writeLong(pos.toLong());
             }
         }
     }
@@ -78,7 +99,7 @@ public class PacketNewFrontier {
             if (message.personal) {
                 if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier,
                         new SettingsUser(player), MapFrontiers.isOPorHost(player), null)) {
-                    frontier = MapFrontiers.getFrontiersManager().createNewPersonalFrontier(message.dimension, player, message.vertices);
+                    frontier = MapFrontiers.getFrontiersManager().createNewPersonalFrontier(message.dimension, player, message.vertices, message.chunks);
                     PacketHandler.sendToUsersWithAccess(new PacketFrontier(frontier, player.getId()), frontier);
 
                     return;
@@ -86,7 +107,7 @@ public class PacketNewFrontier {
             } else {
                 if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.CreateFrontier,
                         new SettingsUser(player), MapFrontiers.isOPorHost(player), null)) {
-                    frontier = MapFrontiers.getFrontiersManager().createNewGlobalFrontier(message.dimension, player, message.vertices);
+                    frontier = MapFrontiers.getFrontiersManager().createNewGlobalFrontier(message.dimension, player, message.vertices, message.chunks);
                     PacketHandler.sendToAll(new PacketFrontier(frontier, player.getId()));
 
                     return;

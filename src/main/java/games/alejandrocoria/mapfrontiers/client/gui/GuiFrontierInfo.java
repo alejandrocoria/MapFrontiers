@@ -4,6 +4,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
@@ -121,7 +122,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         buttons.add(new GuiSimpleLabel(font, leftSide - 11, top + 120, GuiSimpleLabel.Align.Left,
                 new StringTextComponent("R"), GuiColors.LABEL_TEXT));
 
-        textRed = new TextIntBox(255, 0, 255, font, leftSide, top + 114, 29);
+        textRed = new TextIntBox(0, 0, 255, font, leftSide, top + 114, 29);
         textRed.setResponder(this);
         textRed.setHeight(20);
         textRed.setWidth(34);
@@ -129,7 +130,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         buttons.add(new GuiSimpleLabel(font, leftSide + 44, top + 120, GuiSimpleLabel.Align.Left,
                 new StringTextComponent("G"), GuiColors.LABEL_TEXT));
 
-        textGreen = new TextIntBox(255, 0, 255, font, leftSide + 55, top + 114, 29);
+        textGreen = new TextIntBox(0, 0, 255, font, leftSide + 55, top + 114, 29);
         textGreen.setResponder(this);
         textGreen.setHeight(20);
         textGreen.setWidth(34);
@@ -137,7 +138,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         buttons.add(new GuiSimpleLabel(font, leftSide + 99, top + 120, GuiSimpleLabel.Align.Left,
                 new StringTextComponent("B"), GuiColors.LABEL_TEXT));
 
-        textBlue = new TextIntBox(255, 0, 255, font, leftSide + 110, top + 114, 29);
+        textBlue = new TextIntBox(0, 0, 255, font, leftSide + 110, top + 114, 29);
         textBlue.setResponder(this);
         textBlue.setHeight(20);
         textBlue.setWidth(34);
@@ -149,7 +150,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         buttonRandomColor = new GuiSettingsButton(font, rightSide, top + 174, 144,
                 new TranslationTextComponent("mapfrontiers.random_color"), this::buttonPressed);
 
-        colorPicker = new GuiColorPicker(leftSide + 2, top + 140, frontier.getColor(), (picker) -> colorPickerUpdated());
+        colorPicker = new GuiColorPicker(leftSide + 2, top + 140, frontier.getColor(), (picker, dragging) -> colorPickerUpdated(dragging));
 
         TextComponent type = new TranslationTextComponent("mapfrontiers.type",
                 new TranslationTextComponent(frontier.getPersonal() ? "mapfrontiers.config.Personal" : "mapfrontiers.config.Global"));
@@ -161,23 +162,32 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         TextComponent dimension = new TranslationTextComponent("mapfrontiers.dimension", frontier.getDimension().location().toString());
         buttons.add(new GuiSimpleLabel(font, rightSide, top + 32, GuiSimpleLabel.Align.Left, dimension, GuiColors.WHITE));
 
-        TextComponent vertices = new TranslationTextComponent("mapfrontiers.vertices", frontier.getVertexCount());
-        buttons.add(new GuiSimpleLabel(font, rightSide, top + 48, GuiSimpleLabel.Align.Left, vertices, GuiColors.WHITE));
+        TextComponent mode = new TranslationTextComponent("mapfrontiers.mode",
+                new TranslationTextComponent(frontier.getMode() == FrontierData.Mode.Vertex ? "mapfrontiers.config.Vertex" : "mapfrontiers.config.Chunk"));
+        buttons.add(new GuiSimpleLabel(font, rightSide, top + 48, GuiSimpleLabel.Align.Left, mode, GuiColors.WHITE));
+
+        if (frontier.getMode() == FrontierData.Mode.Vertex) {
+            TextComponent vertices = new TranslationTextComponent("mapfrontiers.vertices", frontier.getVertexCount());
+            buttons.add(new GuiSimpleLabel(font, rightSide, top + 64, GuiSimpleLabel.Align.Left, vertices, GuiColors.WHITE));
+        } else {
+            TextComponent chunks = new TranslationTextComponent("mapfrontiers.chunks", frontier.getChunkCount());
+            buttons.add(new GuiSimpleLabel(font, rightSide, top + 64, GuiSimpleLabel.Align.Left, chunks, GuiColors.WHITE));
+        }
 
         TextComponent area = new TranslationTextComponent("mapfrontiers.area", frontier.area);
-        buttons.add(new GuiSimpleLabel(font, rightSide, top + 64, GuiSimpleLabel.Align.Left, area, GuiColors.WHITE));
+        buttons.add(new GuiSimpleLabel(font, rightSide, top + 80, GuiSimpleLabel.Align.Left, area, GuiColors.WHITE));
 
         TextComponent perimeter = new TranslationTextComponent("mapfrontiers.perimeter", frontier.perimeter);
-        buttons.add(new GuiSimpleLabel(font, rightSide, top + 80, GuiSimpleLabel.Align.Left, perimeter, GuiColors.WHITE));
+        buttons.add(new GuiSimpleLabel(font, rightSide, top + 96, GuiSimpleLabel.Align.Left, perimeter, GuiColors.WHITE));
 
         if (frontier.getCreated() != null) {
             TextComponent created = new TranslationTextComponent("mapfrontiers.created", dateFormat.format(frontier.getCreated()));
-            buttons.add(new GuiSimpleLabel(font, rightSide, top + 96, GuiSimpleLabel.Align.Left, created, GuiColors.WHITE));
+            buttons.add(new GuiSimpleLabel(font, rightSide, top + 112, GuiSimpleLabel.Align.Left, created, GuiColors.WHITE));
         }
 
         if (frontier.getModified() != null) {
             TextComponent modified = new TranslationTextComponent("mapfrontiers.modified", dateFormat.format(frontier.getModified()));
-            modifiedLabel = new GuiSimpleLabel(font, rightSide, top + 112, GuiSimpleLabel.Align.Left, modified, GuiColors.WHITE);
+            modifiedLabel = new GuiSimpleLabel(font, rightSide, top + 128, GuiSimpleLabel.Align.Left, modified, GuiColors.WHITE);
             buttons.add(modifiedLabel);
         }
 
@@ -392,12 +402,15 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         sendChangesToServer();
     }
 
-    private void colorPickerUpdated() {
+    private void colorPickerUpdated(boolean dragging) {
         frontier.setColor(colorPicker.getColor());
         textRed.setValue((frontier.getColor() & 0xff0000) >> 16);
         textGreen.setValue((frontier.getColor() & 0x00ff00) >> 8);
         textBlue.setValue(frontier.getColor() & 0x0000ff);
-        sendChangesToServer();
+
+        if (!dragging) {
+            sendChangesToServer();
+        }
     }
 
     private void updateBannerButton() {
