@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.StringHelper;
+import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.Widget;
@@ -24,8 +25,9 @@ public class GuiFrontierListElement extends GuiScrollBox.ScrollElement {
     String owner;
     String dimension;
     String vertices;
-    int verticesOffset;
-    int ownerOffset;
+    String chunks;
+    int offset1;
+    int offset2;
     final List<Widget> buttonList;
 
     public GuiFrontierListElement(Font font, List<Widget> buttonList, FrontierOverlay frontier) {
@@ -43,13 +45,20 @@ public class GuiFrontierListElement extends GuiScrollBox.ScrollElement {
         type = I18n.get("mapfrontiers.type", I18n.get(frontier.getPersonal() ? "mapfrontiers.config.Personal" : "mapfrontiers.config.Global"));
         owner = I18n.get("mapfrontiers.owner", frontier.getOwner());
         dimension = I18n.get("mapfrontiers.dimension", frontier.getDimension().location().toString());
-        vertices = I18n.get("mapfrontiers.vertices", frontier.getVertexCount());
 
-        verticesOffset = StringHelper.getMaxWidth(font,
+        if (frontier.getMode() == FrontierData.Mode.Vertex) {
+            vertices = I18n.get("mapfrontiers.vertices", frontier.getVertexCount());
+        } else {
+            chunks = I18n.get("mapfrontiers.chunks", frontier.getChunkCount());
+        }
+
+        offset1 = StringHelper.getMaxWidth(font,
                 I18n.get("mapfrontiers.type", I18n.get("mapfrontiers.config.Personal")),
                 I18n.get("mapfrontiers.type", I18n.get("mapfrontiers.config.Global")));
 
-        ownerOffset = font.width(I18n.get("mapfrontiers.vertices", 999));
+        offset2 = StringHelper.getMaxWidth(font,
+                I18n.get("mapfrontiers.vertices", 9999),
+                I18n.get("mapfrontiers.chunks", 9999));
 
         this.buttonList = buttonList;
     }
@@ -94,8 +103,14 @@ public class GuiFrontierListElement extends GuiScrollBox.ScrollElement {
 
         font.draw(matrixStack, type, x + 170, y + 4, color);
         font.draw(matrixStack, dimension, x + 170, y + 14, GuiColors.SETTINGS_BUTTON_TEXT);
-        font.draw(matrixStack, vertices, x + 180 + verticesOffset, y + 4, color);
-        font.draw(matrixStack, owner, x + 190 + verticesOffset + ownerOffset, y + 4, color);
+
+        if (frontier.getMode() == FrontierData.Mode.Vertex) {
+            font.draw(matrixStack, vertices, x + 180 + offset1, y + 4, color);
+        } else {
+            font.draw(matrixStack, chunks, x + 180 + offset1, y + 4, color);
+        }
+
+        font.draw(matrixStack, owner, x + 190 + offset1 + offset2, y + 4, color);
 
         fill(matrixStack, x + 1, y + 1, x + 23, y + 23, GuiColors.COLOR_INDICATOR_BORDER);
         fill(matrixStack, x + 2, y + 2, x + 22, y + 22, frontier.getColor() | 0xff000000);

@@ -4,6 +4,7 @@ import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
+import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.event.NewFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
@@ -19,13 +20,16 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.ForgeHooksClient;
+import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -36,6 +40,10 @@ import static java.lang.Math.pow;
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class GuiFullscreenMap {
+    private enum ChunkDrawing {
+        Nothing, Adding, Removing
+    }
+
     private final IClientAPI jmAPI;
 
     private FrontierOverlay frontierHighlighted;
@@ -48,6 +56,8 @@ public class GuiFullscreenMap {
     private IThemeButton buttonDelete;
 
     private boolean editing = false;
+    private ChunkDrawing drawingChunk = ChunkDrawing.Nothing;
+    private ChunkPos lastEditedChunk;
 
     public GuiFullscreenMap(IClientAPI jmAPI) {
         this.jmAPI = jmAPI;
@@ -75,7 +85,7 @@ public class GuiFullscreenMap {
     }
 
     public void addPopupMenu(ModPopupMenu popupMenu) {
-        if (editing) {
+        if (editing && frontierHighlighted.getMode() == FrontierData.Mode.Vertex) {
             popupMenu.addMenuItem(I18n.get("mapfrontiers.add_vertex"), p -> buttonAddVertex(p));
             if (frontierHighlighted.getSelectedVertexIndex() != -1) {
                 popupMenu.addMenuItem(I18n.get("mapfrontiers.remove_vertex"), p -> buttonRemoveVertex());
@@ -187,6 +197,7 @@ public class GuiFullscreenMap {
         boolean toggled = buttonEdit.getToggled();
         if (toggled) {
             editing = true;
+            drawingChunk = ChunkDrawing.Nothing;
         } else {
             stopEditing();
         }
@@ -225,8 +236,12 @@ public class GuiFullscreenMap {
         updatebuttons();
     }
 
-    public boolean isEditing() {
-        return editing;
+    public boolean isEditingVertices() {
+        return editing && frontierHighlighted.getMode() == FrontierData.Mode.Vertex;
+    }
+
+    public boolean isEditingChunks() {
+        return editing && frontierHighlighted.getMode() == FrontierData.Mode.Chunk;
     }
 
     public FrontierOverlay getSelected() {
@@ -251,19 +266,29 @@ public class GuiFullscreenMap {
         updatebuttons();
     }
 
-    public void mapClicked(ResourceKey<Level> dimension, BlockPos position) {
+    public boolean mapClicked(ResourceKey<Level> dimension, BlockPos position, int button) {
         double maxDistanceToClosest = pow(2.0, max(4.0 - jmAPI.getUIState(Context.UI.Fullscreen).zoom, 1.0));
 
         if (editing && frontierHighlighted != null) {
-            frontierHighlighted.selectClosestVertex(position, maxDistanceToClosest);
-            return;
+            if (frontierHighlighted.getMode() == FrontierData.Mode.Vertex) {
+                frontierHighlighted.selectClosestVertex(position, maxDistanceToClosest);
+            } else if (button == 1) {
+                lastEditedChunk = new ChunkPos(position);
+                if (frontierHighlighted.toggleChunk(lastEditedChunk)) {
+                    drawingChunk = ChunkDrawing.Adding;
+                } else {
+                    drawingChunk = ChunkDrawing.Removing;
+                }
+                return true;
+            }
+            return false;
         }
 
         FrontiersOverlayManager globalManager = ClientProxy.getFrontiersOverlayManager(false);
         FrontiersOverlayManager personalManager = ClientProxy.getFrontiersOverlayManager(true);
 
         if (globalManager == null || personalManager == null) {
-            return;
+            return false;
         }
 
         FrontierOverlay newFrontierHighlighted = personalManager.getFrontierInPosition(dimension, position, maxDistanceToClosest);
@@ -272,6 +297,8 @@ public class GuiFullscreenMap {
         }
 
         selectFrontier(newFrontierHighlighted);
+
+        return false;
     }
 
     public boolean mapDragged(ResourceKey<Level> dimension, BlockPos position) {
@@ -283,6 +310,10 @@ public class GuiFullscreenMap {
             return false;
         }
 
+        if (frontierHighlighted.getMode() == FrontierData.Mode.Chunk) {
+            return false;
+        }
+
         if (frontierHighlighted.getSelectedVertexIndex() == -1) {
             return false;
         }
@@ -290,5 +321,49 @@ public class GuiFullscreenMap {
         float snapDistance = (float) pow(2.0, max(4.0 - jmAPI.getUIState(Context.UI.Fullscreen).zoom, 1.0));
         frontierHighlighted.moveSelectedVertex(position, snapDistance);
         return true;
+    }
+
+    public void mouseMoved(ResourceKey<Level> dimension, BlockPos position) {
+        if (!editing || drawingChunk == ChunkDrawing.Nothing) {
+            return;
+        }
+
+        if (frontierHighlighted == null || !frontierHighlighted.getDimension().equals(dimension)) {
+            return;
+        }
+
+        if (frontierHighlighted.getMode() != FrontierData.Mode.Chunk) {
+            return;
+        }
+
+        ChunkPos chunk = new ChunkPos(position);
+        if (chunk.equals(lastEditedChunk)) {
+            return;
+        }
+
+        lastEditedChunk = chunk;
+
+        if (drawingChunk == ChunkDrawing.Adding) {
+            frontierHighlighted.addChunk(chunk);
+        } else {
+            frontierHighlighted.removeChunk(chunk);
+        }
+    }
+
+    @SubscribeEvent
+    public void mouseEvent(InputEvent.MouseInputEvent event) {
+        if (event.getAction() != GLFW.GLFW_RELEASE || event.getButton() != 1) {
+            return;
+        }
+
+        if (!editing || drawingChunk == ChunkDrawing.Nothing) {
+            return;
+        }
+
+        if (frontierHighlighted.getMode() != FrontierData.Mode.Chunk) {
+            return;
+        }
+
+        drawingChunk = ChunkDrawing.Nothing;
     }
 }

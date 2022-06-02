@@ -41,7 +41,8 @@ import java.util.*;
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBoxResponder,
-        GuiGroupActionElement.GroupActionResponder, GuiTabbedBox.TabbedBoxResponder, TextBox.TextBoxResponder {
+        GuiGroupActionElement.GroupActionResponder, GuiTabbedBox.TabbedBoxResponder, TextBox.TextBoxResponder,
+        TextIntBox.TextIntBoxResponder, TextDoubleBox.TextDoubleBoxResponder {
     public enum Tab {
         Credits, General, Groups, Actions
     }
@@ -53,8 +54,8 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
     private GuiPatreonButton buttonPatreon;
     private GuiOptionButton buttonNameVisibility;
     private GuiOptionButton buttonHideNamesThatDontFit;
-    private TextBox textPolygonsOpacity;
-    private TextBox textSnapDistance;
+    private TextDoubleBox textPolygonsOpacity;
+    private TextIntBox textSnapDistance;
     private GuiOptionButton buttonHUDEnabled;
     private GuiSettingsButton buttonEditHUD;
     private GuiScrollBox groups;
@@ -128,12 +129,12 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         buttonHideNamesThatDontFit.addOption(new TranslatableComponent("options.off"));
         buttonHideNamesThatDontFit.setSelected(ConfigData.hideNamesThatDontFit ? 0 : 1);
 
-        textPolygonsOpacity = new TextBox(font, width / 2 + 50, 102, 100);
+        textPolygonsOpacity = new TextDoubleBox(0.4, 0.0, 1.0, font, width / 2 + 50, 102, 100);
         textPolygonsOpacity.setValue(String.valueOf(ConfigData.polygonsOpacity));
         textPolygonsOpacity.setMaxLength(10);
         textPolygonsOpacity.setResponder(this);
 
-        textSnapDistance = new TextBox(font, width / 2 + 50, 118, 100);
+        textSnapDistance = new TextIntBox(8, 0, 16, font, width / 2 + 50, 118, 100);
         textSnapDistance.setValue(String.valueOf(ConfigData.snapDistance));
         textSnapDistance.setMaxLength(2);
         textSnapDistance.setResponder(this);
@@ -289,14 +290,11 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
     protected void buttonPressed(Button button) {
         if (button == buttonNameVisibility) {
             ConfigData.nameVisibility = ConfigData.NameVisibility.values()[buttonNameVisibility.getSelected()];
-            ClientProxy.configUpdated();
         } else if (button == buttonHideNamesThatDontFit) {
             ConfigData.hideNamesThatDontFit = buttonHideNamesThatDontFit.getSelected() == 0;
-            ClientProxy.configUpdated();
         } else if (button == buttonHUDEnabled) {
             ConfigData.hudEnabled = buttonHUDEnabled.getSelected() == 0;
             buttonEditHUD.visible = ConfigData.hudEnabled;
-            ClientProxy.configUpdated();
         } else if (button == buttonEditHUD) {
             ClientProxy.setLastSettingsTab(tabSelected);
             Minecraft.getInstance().setScreen(new GuiHUDSettings());
@@ -363,6 +361,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
     @Override
     public void removed() {
         minecraft.keyboardHandler.setSendRepeatsToGui(false);
+        ClientProxy.configUpdated();
         ClientProxy.setLastSettingsTab(tabSelected);
         MinecraftForge.EVENT_BUS.unregister(this);
     }
@@ -581,38 +580,22 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
     }
 
     @Override
+    public void updatedValue(TextIntBox textIntBox, int value) {
+        if (textSnapDistance == textIntBox) {
+            ConfigData.snapDistance = value;
+        }
+    }
+
+    @Override
+    public void updatedValue(TextDoubleBox textDoubleBox, double value) {
+        if (textPolygonsOpacity == textDoubleBox) {
+            ConfigData.polygonsOpacity = value;
+        }
+    }
+
+    @Override
     public void lostFocus(TextBox textBox, String value) {
-        if (textPolygonsOpacity == textBox && tabSelected == Tab.General) {
-            if (StringUtils.isBlank(value)) {
-                textPolygonsOpacity.setValue(ConfigData.getDefault("polygonsOpacity"));
-                ConfigData.polygonsOpacity = Double.parseDouble(textPolygonsOpacity.getValue());
-                ClientProxy.configUpdated();
-            } else {
-                try {
-                    Double opacity = Double.valueOf(value);
-                    if (ConfigData.isInRange("polygonsOpacity", opacity)) {
-                        ConfigData.polygonsOpacity = opacity;
-                        ClientProxy.configUpdated();
-                    }
-                } catch (Exception ignored) {
-                }
-            }
-        } else if (textSnapDistance == textBox && tabSelected == Tab.General) {
-            if (StringUtils.isBlank(value)) {
-                textSnapDistance.setValue(ConfigData.getDefault("snapDistance"));
-                ConfigData.snapDistance = Integer.parseInt(textSnapDistance.getValue());
-                ClientProxy.configUpdated();
-            } else {
-                try {
-                    Integer distance = Integer.valueOf(value);
-                    if (ConfigData.isInRange("snapDistance", distance)) {
-                        ConfigData.snapDistance = distance;
-                        ClientProxy.configUpdated();
-                    }
-                } catch (Exception ignored) {
-                }
-            }
-        } else if (textGroupName == textBox && tabSelected == Tab.Groups) {
+        if (textGroupName == textBox && tabSelected == Tab.Groups) {
             GuiGroupElement groupElement = (GuiGroupElement) groups.getSelectedElement();
             if (groupElement != null) {
                 groupElement.getGroup().setName(value);

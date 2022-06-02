@@ -11,47 +11,42 @@ import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.phys.Vec2;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
-public class GuiShapeButtons extends AbstractWidget {
-    private static final int[] vertexCount = {
-            0, 1, 3, 3, 3, 3, 4, 4, 6, 6, 8, 16
-    };
-
-    private static final double[] vertexAngle = {
-            0.0, 0.0, -90.0, 0.0, 90.0, 180.0, 45.0, 0.0, 30.0, 0.0, 22.5, 0.0
-    };
-
+public class GuiChunkShapeButtons extends AbstractWidget {
     public enum ShapeMeasure {
-        None, Width, Radius
+        None, Width, Length
     }
 
     private static final ResourceLocation texture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/shape_buttons.png");
-    private static final int textureSizeX = 588;
+    private static final int textureSizeX = 980;
     private static final int textureSizeY = 98;
 
     private int selected;
+    private int size;
     private GuiSimpleLabel labelShapes;
-    private GuiSimpleLabel labelVertices;
-    private final Consumer<GuiShapeButtons> callbackShapeUpdated;
+    private GuiSimpleLabel labelChunks;
+    private final Consumer<GuiChunkShapeButtons> callbackShapeUpdated;
 
-    public GuiShapeButtons(Font font, int x, int y, int selected, Consumer<GuiShapeButtons> callbackShapeUpdated) {
-        super(x, y, 324, 120, TextComponent.EMPTY);
+    public GuiChunkShapeButtons(Font font, int x, int y, int selected, Consumer<GuiChunkShapeButtons> callbackShapeUpdated) {
+        super(x, y, 214, 120, TextComponent.EMPTY);
         this.selected = selected;
-        labelShapes = new GuiSimpleLabel(font, x + 162, y, GuiSimpleLabel.Align.Center, new TranslatableComponent("mapfrontiers.initial_shape"), GuiColors.WHITE);
-        labelVertices = new GuiSimpleLabel(font, x + 162, y + 126, GuiSimpleLabel.Align.Center, new TextComponent(""), GuiColors.WHITE);
+        labelShapes = new GuiSimpleLabel(font, x + 107, y, GuiSimpleLabel.Align.Center, new TranslatableComponent("mapfrontiers.initial_shape"), GuiColors.WHITE);
+        labelChunks = new GuiSimpleLabel(font, x + 107, y + 126, GuiSimpleLabel.Align.Center, new TextComponent(""), GuiColors.WHITE);
         this.callbackShapeUpdated = callbackShapeUpdated;
 
-        updateVertexLabel();
+        updateChunksLabel();
+    }
+
+    public void setSize(int size) {
+        this.size = Math.min(Math.max(size, 1), 32);
+        updateChunksLabel();
     }
 
     public int getSelected() {
@@ -59,35 +54,13 @@ public class GuiShapeButtons extends AbstractWidget {
     }
 
     public ShapeMeasure getShapeMeasure() {
-        if (selected < 2) {
+        if (selected < 2 || selected == 7) {
             return ShapeMeasure.None;
-        } else if (selected < 7) {
+        } else if (selected < 5) {
             return ShapeMeasure.Width;
         } else {
-            return ShapeMeasure.Radius;
+            return ShapeMeasure.Length;
         }
-    }
-
-    public List<Vec2> getVertices() {
-        if (vertexCount[selected] == 0) {
-            return null;
-        }
-
-        List<Vec2> vertices = new ArrayList<>();
-
-        if (vertexCount[selected] == 1) {
-            vertices.add(Vec2.ZERO);
-            return vertices;
-        }
-
-        double angle = vertexAngle[selected] / 180.0 * Math.PI;
-
-        for (int i = 0; i < vertexCount[selected]; ++i) {
-            double vertexAngle = Math.PI * 2 / vertexCount[selected] * i + angle;
-            vertices.add(new Vec2((float) Math.cos(vertexAngle), (float) Math.sin(vertexAngle)));
-        }
-
-        return vertices;
     }
 
     @Override
@@ -108,9 +81,9 @@ public class GuiShapeButtons extends AbstractWidget {
     public void onClick(double mouseX, double mouseY) {
         double col = (mouseX - x + 3) / 55.0;
         double row = (mouseY - y - 13) / 55.0;
-        if (col >= 0.0 && col < 6.0 && row >= 0.0 && row < 2.0) {
-            selected = (int) col + (int) row * 6;
-            updateVertexLabel();
+        if (col >= 0.0 && col < 4.0 && row >= 0.0 && row < 2.0) {
+            selected = (int) col + (int) row * 4;
+            updateChunksLabel();
             callbackShapeUpdated.accept(this);
         }
     }
@@ -128,24 +101,24 @@ public class GuiShapeButtons extends AbstractWidget {
 
         int col = 0;
         int row = 0;
-        for (int i = 0; i < 12; ++i) {
+        for (int i = 0; i < 8; ++i) {
             int texX = i * 49;
             int texY = 0;
             if (i == selected) {
                 texY = 49;
             }
 
-            blit(matrixStack, x + col * 55, y + row * 55 + 16, texX, texY, 49, 49, textureSizeX, textureSizeY);
+            blit(matrixStack, x + col * 55, y + row * 55 + 16, texX + 588, texY, 49, 49, textureSizeX, textureSizeY);
 
             ++col;
-            if (col == 6) {
+            if (col == 4) {
                 col = 0;
                 ++row;
             }
         }
 
         labelShapes.render(matrixStack, mouseX, mouseY, partialTicks);
-        labelVertices.render(matrixStack, mouseX, mouseY, partialTicks);
+        labelChunks.render(matrixStack, mouseX, mouseY, partialTicks);
     }
 
     @Override
@@ -153,7 +126,33 @@ public class GuiShapeButtons extends AbstractWidget {
 
     }
 
-    private void updateVertexLabel() {
-        labelVertices.setText(new TranslatableComponent("mapfrontiers.vertices", vertexCount[selected]));
+    private void updateChunksLabel() {
+        int chunks = 0;
+        switch (selected) {
+            case 1:
+                chunks = 1;
+                break;
+            case 2:
+                chunks = size * size;
+                break;
+            case 3:
+                chunks = Math.max(1, (size - 1) * 4);
+                break;
+            case 4:
+                chunks = (size * size + 1) / 2;
+                if (size % 2 == 0) {
+                    chunks += size;
+                }
+                break;
+            case 5:
+            case 6:
+                chunks = size;
+                break;
+            case 7:
+                chunks = 1024;
+                break;
+        }
+
+        labelChunks.setText(new TranslatableComponent("mapfrontiers.chunks", chunks));
     }
 }
