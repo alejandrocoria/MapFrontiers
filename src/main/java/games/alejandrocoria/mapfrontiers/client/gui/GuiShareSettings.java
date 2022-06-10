@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiScrollBox.ScrollElement;
@@ -13,14 +14,15 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -33,7 +35,7 @@ import java.util.List;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class GuiShareSettings extends Screen
         implements GuiScrollBox.ScrollBoxResponder, GuiUserSharedElement.UserSharedResponder, TextBox.TextBoxResponder {
     private final FrontiersOverlayManager frontiersOverlayManager;
@@ -54,7 +56,20 @@ public class GuiShareSettings extends Screen
 
         labels = new ArrayList<>();
 
-        MinecraftForge.EVENT_BUS.register(this);
+        ClientProxy.subscribeDeletedFrontierEvent(this, frontierID -> {
+            if (frontierID.equals(this.frontier.getId())) {
+                ForgeHooksClient.popGuiLayer(minecraft);
+            }
+        });
+
+        ClientProxy.subscribeUpdatedFrontierEvent(this, (frontierOverlay, playerID) -> {
+            if (frontierOverlay.getId().equals(this.frontier.getId())) {
+                this.frontier = frontierOverlay;
+                updateCanUpdate();
+                updateUsers();
+                updateButtonsVisibility();
+            }
+        });
     }
 
     @Override
@@ -140,7 +155,7 @@ public class GuiShareSettings extends Screen
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        for (Widget w : renderables) {
+        for (GuiEventListener w : children()) {
             if (w instanceof GuiScrollBox) {
                 ((GuiScrollBox) w).mouseReleased();
             }
@@ -218,7 +233,7 @@ public class GuiShareSettings extends Screen
         frontier.addUserShared(userShared);
         frontiersOverlayManager.clientShareFrontier(frontier.getId(), user);
 
-        GuiUserSharedElement element = new GuiUserSharedElement(font, renderables, userShared, canUpdate, true, this);
+        GuiUserSharedElement element = new GuiUserSharedElement(font, (List<GuiEventListener>) children(), userShared, canUpdate, true, this);
         users.addElement(element);
         users.scrollBottom();
 
@@ -228,25 +243,8 @@ public class GuiShareSettings extends Screen
 
     @Override
     public void removed() {
-        MinecraftForge.EVENT_BUS.unregister(this);
+        ClientProxy.unsuscribeAllEvents(this);
         minecraft.keyboardHandler.setSendRepeatsToGui(false);
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onUpdatedFrontierEvent(UpdatedFrontierEvent event) {
-        if (event.frontierOverlay.getId().equals(frontier.getId())) {
-            frontier = event.frontierOverlay;
-            updateCanUpdate();
-            updateUsers();
-            updateButtonsVisibility();
-        }
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onDeletedFrontierEvent(DeletedFrontierEvent event) {
-        if (event.frontierID.equals(frontier.getId())) {
-            ForgeHooksClient.popGuiLayer(minecraft);
-        }
     }
 
     private void resetLabels() {
@@ -285,7 +283,7 @@ public class GuiShareSettings extends Screen
         if (scrollBox == users) {
             SettingsUser user = ((GuiUserSharedElement) element).getUser();
             frontier.removeUserShared(user);
-            PacketHandler.INSTANCE.sendToServer(new PacketRemoveSharedUserPersonalFrontier(frontier.getId(), user));
+            PacketHandler.sendToServer(PacketRemoveSharedUserPersonalFrontier.class, new PacketRemoveSharedUserPersonalFrontier(frontier.getId(), user));
             resetLabels();
         }
     }
@@ -306,7 +304,7 @@ public class GuiShareSettings extends Screen
             }
         }
 
-        PacketHandler.INSTANCE.sendToServer(new PacketUpdateSharedUserPersonalFrontier(frontier.getId(), user));
+        PacketHandler.sendToServer(PacketUpdateSharedUserPersonalFrontier.class, new PacketUpdateSharedUserPersonalFrontier(frontier.getId(), user));
     }
 
     @Override
@@ -325,7 +323,7 @@ public class GuiShareSettings extends Screen
         SettingsUser player = new SettingsUser(minecraft.player);
         if (frontier.getUsersShared() != null) {
             for (SettingsUserShared user : frontier.getUsersShared()) {
-                users.addElement(new GuiUserSharedElement(font, renderables, user, canUpdate, !user.getUser().equals(player), this));
+                users.addElement(new GuiUserSharedElement(font, (List<GuiEventListener>) children(), user, canUpdate, !user.getUser().equals(player), this));
             }
         }
 

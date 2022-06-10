@@ -4,22 +4,23 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.Widget;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class GuiUserElement extends GuiScrollBox.ScrollElement {
     private final Font font;
     private final SettingsUser user;
     private final GuiButtonIcon buttonDelete;
     private int pingBar = 0;
-    final List<Widget> buttonList;
+    final List<GuiEventListener> buttonList;
 
-    public GuiUserElement(Font font, List<Widget> buttonList, SettingsUser user) {
+    public GuiUserElement(Font font, List<GuiEventListener> buttonList, SettingsUser user) {
         super(258, 16);
         this.font = font;
         this.user = user;

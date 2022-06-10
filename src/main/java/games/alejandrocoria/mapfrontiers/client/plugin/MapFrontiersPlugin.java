@@ -11,21 +11,16 @@ import journeymap.client.api.display.ThemeButtonDisplay;
 import journeymap.client.api.event.ClientEvent;
 import journeymap.client.api.event.DisplayUpdateEvent;
 import journeymap.client.api.event.FullscreenMapEvent;
-import journeymap.client.api.event.forge.FullscreenDisplayEvent;
-import journeymap.client.api.event.forge.PopupMenuEvent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import journeymap.client.api.event.fabric.FabricEvents;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.EnumSet;
 
 @ParametersAreNonnullByDefault
 @journeymap.client.api.ClientPlugin
-@Mod.EventBusSubscriber(value = Dist.CLIENT, modid = MapFrontiers.MODID)
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class MapFrontiersPlugin implements IClientPlugin {
     private static IClientAPI jmAPI;
     private static GuiFullscreenMap fullscreenMap;
@@ -39,6 +34,22 @@ public class MapFrontiersPlugin implements IClientPlugin {
                 ClientEvent.Type.MAP_DRAGGED,
                 ClientEvent.Type.MAP_MOUSE_MOVED,
                 ClientEvent.Type.DISPLAY_UPDATE));
+
+        FabricEvents.ADDON_BUTTON_DISPLAY_EVENT.register(event -> {
+            if (fullscreenMap == null) {
+                fullscreenMap = new GuiFullscreenMap(jmAPI);
+            }
+
+            ThemeButtonDisplay buttonDisplay = event.getThemeButtonDisplay();
+            fullscreenMap.addButtons(buttonDisplay);
+        });
+
+        FabricEvents.FULLSCREEN_POPUP_MENU_EVENT.register(event -> {
+            if (fullscreenMap != null) {
+                ModPopupMenu popupMenu = event.getPopupMenu();
+                fullscreenMap.addPopupMenu(popupMenu);
+            }
+        });
     }
 
     @Override
@@ -97,24 +108,6 @@ public class MapFrontiersPlugin implements IClientPlugin {
                     }
                 }
                 break;
-        }
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onFullscreenAddonButton(FullscreenDisplayEvent.AddonButtonDisplayEvent event) {
-        if (fullscreenMap == null) {
-            fullscreenMap = new GuiFullscreenMap(jmAPI);
-        }
-
-        ThemeButtonDisplay buttonDisplay = event.getThemeButtonDisplay();
-        fullscreenMap.addButtons(buttonDisplay);
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onFullscreenpopupMenu(PopupMenuEvent.FullscreenPopupMenuEvent event) {
-        if (fullscreenMap != null) {
-            ModPopupMenu popupMenu = event.getPopupMenu();
-            fullscreenMap.addPopupMenu(popupMenu);
         }
     }
 

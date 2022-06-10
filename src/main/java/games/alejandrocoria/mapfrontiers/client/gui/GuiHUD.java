@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.vertex.PoseStack;
+import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
@@ -17,10 +18,12 @@ import journeymap.client.properties.MiniMapProperties;
 import journeymap.client.ui.UIManager;
 import journeymap.client.ui.minimap.Position;
 import journeymap.client.ui.minimap.Shape;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -30,8 +33,8 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.BannerPattern;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
@@ -39,12 +42,13 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.List;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class GuiHUD {
     private static final Minecraft mc = Minecraft.getInstance();
 
@@ -82,7 +86,8 @@ public class GuiHUD {
     private int minimapCompassFontScale;
 
     public static GuiHUD asPreview() {
-        GuiHUD guiHUD = new GuiHUD();
+        GuiHUD guiHUD = new GuiHUD(null, null);
+        guiHUD.previewMode = true;
 
         ItemStack itemBanner = new ItemStack(Items.BLACK_BANNER);
         CompoundTag entityTag = itemBanner.getOrCreateTagElement("BlockEntityTag");
@@ -105,7 +110,7 @@ public class GuiHUD {
         return guiHUD;
     }
 
-    public GuiHUD(FrontiersOverlayManager frontiersOverlayManager, FrontiersOverlayManager personalFrontiersOverlayManager) {
+    public GuiHUD(@Nullable FrontiersOverlayManager frontiersOverlayManager, @Nullable FrontiersOverlayManager personalFrontiersOverlayManager) {
         this.frontiersOverlayManager = frontiersOverlayManager;
         this.personalFrontiersOverlayManager = personalFrontiersOverlayManager;
         slots = new ArrayList<>();
@@ -116,22 +121,9 @@ public class GuiHUD {
         frontierOwner = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, TextComponent.EMPTY,
                 GuiColors.WHITE);
 
-        MinecraftForge.EVENT_BUS.register(this);
-    }
-
-    public GuiHUD() {
-        this.frontiersOverlayManager = null;
-        this.personalFrontiersOverlayManager = null;
-        previewMode = true;
-        slots = new ArrayList<>();
-        frontierName1 = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, TextComponent.EMPTY,
-                GuiColors.WHITE);
-        frontierName2 = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, TextComponent.EMPTY,
-                GuiColors.WHITE);
-        frontierOwner = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, TextComponent.EMPTY,
-                GuiColors.WHITE);
-
-        MinecraftForge.EVENT_BUS.register(this);
+        ClientProxy.subscribeDeletedFrontierEvent(this, frontierID -> frontierChanged());
+        ClientProxy.subscribeNewFrontierEvent(this, (frontierOverlay, playerID) -> frontierChanged());
+        ClientProxy.subscribeUpdatedFrontierEvent(this, (frontierOverlay, playerID) -> frontierChanged());
     }
 
     public int getWidth() {
@@ -146,90 +138,48 @@ public class GuiHUD {
         return x >= posX && x < posX + hudWidth && y >= posY && y < posY + hudHeight;
     }
 
-    @SubscribeEvent
-    public void RenderGameOverlayEvent(RenderGameOverlayEvent.Pre event) {
-        if (previewMode) {
+    public void tick() {
+        if (previewMode || frontiersOverlayManager == null || personalFrontiersOverlayManager == null || mc.player == null) {
             return;
         }
 
-        if (event.getType() == RenderGameOverlayEvent.ElementType.ALL) {
-            if (mc.screen != null && !(mc.screen instanceof ChatScreen)) {
-                return;
+        BlockPos currentPlayerPosition = mc.player.blockPosition();
+
+        if (currentPlayerPosition.getX() != lastPlayerPosition.getX()
+                || currentPlayerPosition.getZ() != lastPlayerPosition.getZ()) {
+            lastPlayerPosition = currentPlayerPosition;
+
+            FrontierOverlay newFrontier = personalFrontiersOverlayManager
+                    .getFrontierInPosition(mc.player.level.dimension(), lastPlayerPosition);
+            if (newFrontier == null) {
+                newFrontier = frontiersOverlayManager.getFrontierInPosition(mc.player.level.dimension(),
+                        lastPlayerPosition);
             }
-
-            if (frontier == null) {
-                return;
-            }
-
-            if (!ConfigData.hudEnabled) {
-                return;
-            }
-
-            draw(event.getMatrixStack(), event.getWindow(), event.getPartialTicks());
-        }
-    }
-
-    @SubscribeEvent
-    public void livingUpdateEvent(LivingUpdateEvent event) {
-        if (previewMode || frontiersOverlayManager == null || personalFrontiersOverlayManager == null) {
-            return;
-        }
-
-        if (event.getEntityLiving() == mc.player) {
-            Player player = (Player) event.getEntityLiving();
-
-            BlockPos currentPlayerPosition = player.blockPosition();
-            if (currentPlayerPosition.getX() != lastPlayerPosition.getX()
-                    || currentPlayerPosition.getZ() != lastPlayerPosition.getZ()) {
-                lastPlayerPosition = currentPlayerPosition;
-
-                FrontierOverlay newFrontier = personalFrontiersOverlayManager
-                        .getFrontierInPosition(player.level.dimension(), lastPlayerPosition);
-                if (newFrontier == null) {
-                    newFrontier = frontiersOverlayManager.getFrontierInPosition(player.level.dimension(),
-                            lastPlayerPosition);
-                }
-                if (newFrontier != null) {
-                    if (frontierHash != newFrontier.getHash()) {
-                        frontier = newFrontier;
-                        frontierHash = newFrontier.getHash();
-                        needUpdate = true;
-                    }
-                } else if (frontier != null) {
-                    frontier = null;
-                    frontierHash = 0;
+            if (newFrontier != null) {
+                if (frontierHash != newFrontier.getHash()) {
+                    frontier = newFrontier;
+                    frontierHash = newFrontier.getHash();
                     needUpdate = true;
                 }
-            }
-
-            if (frontier != null && frontierHash != frontier.getHash()) {
-                frontierHash = frontier.getHash();
+            } else if (frontier != null) {
+                frontier = null;
+                frontierHash = 0;
                 needUpdate = true;
             }
         }
-    }
 
-    public void configUpdated(Window mainWindow) {
-        if (previewMode) {
-            updateData(mainWindow);
-        } else {
+        if (frontier != null && frontierHash != frontier.getHash()) {
+            frontierHash = frontier.getHash();
             needUpdate = true;
         }
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onNewFrontierEvent(NewFrontierEvent event) {
-        frontierChanged();
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onUpdatedFrontierEvent(UpdatedFrontierEvent event) {
-        frontierChanged();
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onDeletedFrontierEvent(DeletedFrontierEvent event) {
-        frontierChanged();
+    public void configUpdated() {
+        if (previewMode) {
+            updateData();
+        } else {
+            needUpdate = true;
+        }
     }
 
     private void frontierChanged() {
@@ -256,8 +206,28 @@ public class GuiHUD {
         }
     }
 
-    public void draw(PoseStack matrixStack, Window mainWindow, float partialTicks) {
-        if (displayWidth != mainWindow.getWidth() || displayHeight != mainWindow.getHeight()) {
+    public void drawInGameHUD(PoseStack matrixStack, float partialTicks) {
+        if (previewMode) {
+            return;
+        }
+
+        if (mc.screen != null && !(mc.screen instanceof ChatScreen)) {
+            return;
+        }
+
+        if (frontier == null) {
+            return;
+        }
+
+        if (!ConfigData.hudEnabled) {
+            return;
+        }
+
+        draw(matrixStack, partialTicks);
+    }
+
+    public void draw(PoseStack matrixStack, float partialTicks) {
+        if (displayWidth != mc.getWindow().getWidth() || displayHeight != mc.getWindow().getHeight()) {
             needUpdate = true;
         }
 
@@ -276,14 +246,14 @@ public class GuiHUD {
 
         if (needUpdate) {
             needUpdate = false;
-            updateData(mainWindow);
+            updateData();
         }
 
         if (slots.isEmpty()) {
             return;
         }
 
-        float factor = (float) mainWindow.getGuiScale();
+        float factor = (float) mc.getWindow().getGuiScale();
 
         int frameColor;
         int textNameColor;
@@ -348,9 +318,9 @@ public class GuiHUD {
         frontier.renderBanner(mc, matrixStack, posX + hudWidth / 2 - 11 * bannerScale, posY + bannerOffsetY + 2, bannerScale);
     }
 
-    private void updateData(Window mainWindow) {
-        displayWidth = mainWindow.getWidth();
-        displayHeight = mainWindow.getHeight();
+    private void updateData() {
+        displayWidth = mc.getWindow().getWidth();
+        displayHeight = mc.getWindow().getHeight();
 
         if (ConfigData.hudAnchor == ConfigData.HUDAnchor.Minimap || ConfigData.hudAnchor == ConfigData.HUDAnchor.MinimapHorizontal
                 || ConfigData.hudAnchor == ConfigData.HUDAnchor.MinimapVertical) {

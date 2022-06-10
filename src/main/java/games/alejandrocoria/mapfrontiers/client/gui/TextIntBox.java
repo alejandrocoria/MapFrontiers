@@ -4,14 +4,14 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.TextComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class TextIntBox extends EditBox {
     private int defaultValue;
     private int min;
@@ -28,6 +28,10 @@ public class TextIntBox extends EditBox {
 
     public void setResponder(TextIntBoxResponder responderIn) {
         responder = responderIn;
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
     }
 
     @Override
@@ -160,7 +164,7 @@ public class TextIntBox extends EditBox {
         super.setFocus(isFocusedIn);
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public interface TextIntBoxResponder {
         void updatedValue(TextIntBox textIntBox, int value);
     }

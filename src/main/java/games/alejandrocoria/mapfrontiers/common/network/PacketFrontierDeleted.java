@@ -1,21 +1,17 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
-import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 @ParametersAreNonnullByDefault
 public class PacketFrontierDeleted {
@@ -51,18 +47,14 @@ public class PacketFrontierDeleted {
         buf.writeInt(packet.playerID);
     }
 
-    public static void handle(PacketFrontierDeleted message, Supplier<NetworkEvent.Context> ctx) {
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> handleClient(message, ctx.get()));
-    }
+    @Environment(EnvType.CLIENT)
+    public static void handle(PacketFrontierDeleted message, Minecraft client) {
+        client.execute(() -> {
+            boolean deleted = ClientProxy.getFrontiersOverlayManager(message.personal).deleteFrontier(message.dimension,message.frontierID);
 
-    @OnlyIn(Dist.CLIENT)
-    private static void handleClient(PacketFrontierDeleted message, NetworkEvent.Context ctx) {
-        boolean deleted = ClientProxy.getFrontiersOverlayManager(message.personal).deleteFrontier(message.dimension,message.frontierID);
-
-        if (deleted) {
-            MinecraftForge.EVENT_BUS.post(new DeletedFrontierEvent(message.frontierID));
-        }
-
-        ctx.setPacketHandled(true);
+            if (deleted) {
+                ClientProxy.postDeletedFrontierEvent(message.frontierID);
+            }
+        });
     }
 }

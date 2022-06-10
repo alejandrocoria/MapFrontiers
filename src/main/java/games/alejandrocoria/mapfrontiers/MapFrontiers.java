@@ -1,7 +1,5 @@
 package games.alejandrocoria.mapfrontiers;
 
-import games.alejandrocoria.mapfrontiers.client.ClientProxy;
-import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.command.CommandAccept;
@@ -9,36 +7,19 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import net.minecraft.resources.ResourceLocation;
+import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.ServerOpListEntry;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.server.ServerStartingEvent;
-import net.minecraftforge.event.server.ServerStoppingEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.server.ServerLifecycleHooks;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 
-@Mod.EventBusSubscriber
-@Mod(MapFrontiers.MODID)
-public class MapFrontiers {
+public class MapFrontiers implements ModInitializer {
     public static final String MODID = "mapfrontiers";
     public static final String VERSION = "1.18.2-2.2.0";
     public static Logger LOGGER;
@@ -47,89 +28,63 @@ public class MapFrontiers {
 
     public MapFrontiers() {
         LOGGER = LogManager.getLogger("MapFrontiers");
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ConfigData.CLIENT_SPEC);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(MapFrontiers::commonSetup);
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> MapFrontiers::addListenerClientSetup);
     }
 
-    @SubscribeEvent
-    public static void commonSetup(FMLCommonSetupEvent event) {
-        PacketHandler.init();
-        LOGGER.info("commonSetup done");
-    }
+    @Override
+    public void onInitialize() {
+        PacketHandler.registerServerReceivers();
 
-    @SubscribeEvent
-    public static void onMissingMappingEventItems(RegistryEvent.MissingMappings<Item> event) {
-        for (RegistryEvent.MissingMappings.Mapping<Item> mapping : event.getAllMappings()) {
-            if (mapping.key.equals(new ResourceLocation(MapFrontiers.MODID, "frontier_book"))) {
-                mapping.ignore();
-            } else if (mapping.key.equals(new ResourceLocation(MapFrontiers.MODID, "personal_frontier_book"))) {
-                mapping.ignore();
+        CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> {
+            CommandAccept.register(dispatcher);
+        });
+
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> {
+            frontiersManager = new FrontiersManager();
+            frontiersManager.loadOrCreateData(server);
+            LOGGER.info("SERVER_STARTED done");
+        });
+
+        ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
+            frontiersManager = null;
+            LOGGER.info("SERVER_STOPPING done");
+        });
+
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            if (frontiersManager == null) {
+                return;
             }
-        }
-    }
 
-    @OnlyIn(Dist.CLIENT)
-    public static void addListenerClientSetup() {
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(ClientProxy::clientSetup);
-    }
+            frontiersManager.ensureOwners(server);
 
-    @SubscribeEvent
-    public static void serverStarting(ServerStartingEvent event) {
-        frontiersManager = new FrontiersManager();
-        frontiersManager.loadOrCreateData();
-
-        MinecraftForge.EVENT_BUS.register(frontiersManager);
-        LOGGER.info("serverStarting done");
-    }
-
-    @SubscribeEvent
-    public static void registerCommands(RegisterCommandsEvent event) {
-        CommandAccept.register(event.getDispatcher());
-        LOGGER.info("registerCommands done");
-    }
-
-    @SubscribeEvent
-    public static void serverStopping(ServerStoppingEvent event) {
-        MinecraftForge.EVENT_BUS.unregister(frontiersManager);
-        frontiersManager = null;
-        LOGGER.info("serverStopping done");
-    }
-
-    @SubscribeEvent
-    public static void playerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
-        if (frontiersManager == null) {
-            return;
-        }
-
-        frontiersManager.ensureOwners();
-
-        for (ArrayList<FrontierData> frontiers : frontiersManager.getAllGlobalFrontiers().values()) {
-            for (FrontierData frontier : frontiers) {
-                PacketHandler.sendTo(new PacketFrontier(frontier), (ServerPlayer) event.getPlayer());
+            for (ArrayList<FrontierData> frontiers : frontiersManager.getAllGlobalFrontiers().values()) {
+                for (FrontierData frontier : frontiers) {
+                    PacketHandler.sendTo(PacketFrontier.class, new PacketFrontier(frontier), handler.player);
+                }
             }
-        }
 
-        for (ArrayList<FrontierData> frontiers : frontiersManager.getAllPersonalFrontiers(new SettingsUser(event.getPlayer()))
-                .values()) {
-            for (FrontierData frontier : frontiers) {
-                PacketHandler.sendTo(new PacketFrontier(frontier), (ServerPlayer) event.getPlayer());
+            for (ArrayList<FrontierData> frontiers : frontiersManager.getAllPersonalFrontiers(new SettingsUser(handler.player)).values()) {
+                for (FrontierData frontier : frontiers) {
+                    PacketHandler.sendTo(PacketFrontier.class, new PacketFrontier(frontier), handler.player);
+                }
             }
-        }
 
-        PacketHandler.sendTo(new PacketSettingsProfile(frontiersManager.getSettings().getProfile(event.getPlayer())),
-                (ServerPlayer) event.getPlayer());
+            PacketHandler.sendTo(PacketSettingsProfile.class, new PacketSettingsProfile(frontiersManager.getSettings().getProfile(handler.player)), handler.player);
+        });
+
+        LOGGER.info("onInitialize done");
     }
 
     public static FrontiersManager getFrontiersManager() {
         return frontiersManager;
     }
 
-    public static boolean isOPorHost(Player player) {
-        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+    public static boolean isOPorHost(ServerPlayer player) {
+        MinecraftServer server = player.getServer();
+        if (server == null) {
+            return false;
+        }
 
         ServerOpListEntry opEntry = server.getPlayerList().getOps().get(player.getGameProfile());
-
         if (opEntry != null) {
             return true;
         }

@@ -8,13 +8,11 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.server.ServerLifecycleHooks;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 @ParametersAreNonnullByDefault
 public class PacketSharePersonalFrontier {
@@ -42,14 +40,8 @@ public class PacketSharePersonalFrontier {
         packet.targetUser.toBytes(buf);
     }
 
-    public static void handle(PacketSharePersonalFrontier message, Supplier<NetworkEvent.Context> ctx) {
-        NetworkEvent.Context context = ctx.get();
-        context.enqueueWork(() -> {
-            ServerPlayer player = context.getSender();
-            if (player == null) {
-                return;
-            }
-
+    public static void handle(PacketSharePersonalFrontier message, MinecraftServer server, ServerPlayer player) {
+        server.execute(() -> {
             SettingsUser playerUser = new SettingsUser(player);
 
             message.targetUser.fillMissingInfo(false);
@@ -57,7 +49,7 @@ public class PacketSharePersonalFrontier {
                 return;
             }
 
-            ServerPlayer targetPlayer = ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayer(message.targetUser.uuid);
+            ServerPlayer targetPlayer = server.getPlayerList().getPlayer(message.targetUser.uuid);
             if (targetPlayer == null) {
                 return;
             }
@@ -77,18 +69,15 @@ public class PacketSharePersonalFrontier {
 
                         currentFrontier.addUserShared(new SettingsUserShared(message.targetUser, true));
 
-                        PacketHandler.sendTo(new PacketPersonalFrontierShared(shareMessageID, playerUser,
-                                currentFrontier.getOwner(), currentFrontier.getName1(), currentFrontier.getName2()),
-                                targetPlayer);
+                        PacketHandler.sendTo(PacketPersonalFrontierShared.class, new PacketPersonalFrontierShared(shareMessageID, playerUser,
+                                currentFrontier.getOwner(), currentFrontier.getName1(), currentFrontier.getName2()), targetPlayer);
 
                         currentFrontier.removeChange(FrontierData.Change.Shared);
                     }
                 } else {
-                    PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)),
-                            player);
+                    PacketHandler.sendTo(PacketSettingsProfile.class, new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
                 }
             }
         });
-        context.setPacketHandled(true);
     }
 }

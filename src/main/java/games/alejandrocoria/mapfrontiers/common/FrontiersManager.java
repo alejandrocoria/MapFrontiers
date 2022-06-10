@@ -7,6 +7,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
@@ -16,13 +17,11 @@ import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.server.ServerLifecycleHooks;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -56,11 +55,8 @@ public class FrontiersManager {
         usersDimensionsPersonalFrontiers = new HashMap<>();
         pendingShareFrontiers = new HashMap<>();
         frontierSettings = new FrontierSettings();
-    }
 
-    @SubscribeEvent
-    public void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase == TickEvent.Phase.START) {
+        ServerTickEvents.START_SERVER_TICK.register(server -> {
             ++pendingShareFrontiersTick;
 
             if (pendingShareFrontiersTick >= 100) {
@@ -78,7 +74,7 @@ public class FrontiersManager {
                         if (frontier.getUsersShared() != null) {
                             boolean removed = frontier.getUsersShared().removeIf(x -> x.getUser().equals(pending.targetUser));
                             if (removed) {
-                                PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier), frontier);
+                                PacketHandler.sendToUsersWithAccess(PacketFrontierUpdated.class, new PacketFrontierUpdated(frontier), frontier, server);
                             }
                         }
                     }
@@ -86,7 +82,7 @@ public class FrontiersManager {
 
                 pendingShareFrontiers.entrySet().removeIf(x -> x.getValue().tickCount >= pendingShareFrontierTickDuration);
             }
-        }
+        });
     }
 
     public void setSettings(FrontierSettings frontierSettings) {
@@ -292,13 +288,13 @@ public class FrontiersManager {
                 MapFrontiers.isOPorHost(player), null);
     }
 
-    public void ensureOwners() {
+    public void ensureOwners(MinecraftServer server) {
         if (frontierOwnersChecked) {
             return;
         }
 
         for (FrontierData frontier : allFrontiers.values()) {
-            frontier.ensureOwner();
+            frontier.ensureOwner(server);
         }
 
         frontierOwnersChecked = true;
@@ -432,10 +428,10 @@ public class FrontiersManager {
         }
     }
 
-    public void loadOrCreateData() {
+    public void loadOrCreateData(MinecraftServer server) {
         try {
-            if (ServerLifecycleHooks.getCurrentServer().isDedicatedServer()) {
-                File mcDir = ServerLifecycleHooks.getCurrentServer().getServerDirectory();
+            if (server.isDedicatedServer()) {
+                File mcDir = server.getServerDirectory();
                 ModDir = new File(mcDir, "mapfrontiers");
                 //noinspection ResultOfMethodCallIgnored
                 ModDir.mkdirs();

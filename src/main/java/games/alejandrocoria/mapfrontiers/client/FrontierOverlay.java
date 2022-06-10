@@ -36,8 +36,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BannerPattern;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -47,7 +47,7 @@ import java.util.*;
 import static java.lang.Math.abs;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class FrontierOverlay extends FrontierData {
     private static final MapImage markerVertex = new MapImage(new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"), 0,
             0, 12, 12, GuiColors.WHITE, 1.f);
@@ -934,7 +934,7 @@ public class FrontierOverlay extends FrontierData {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public static class BannerDisplayData {
         public final List<BannerPattern> patternList;
         public final List<DyeColor> colorList;

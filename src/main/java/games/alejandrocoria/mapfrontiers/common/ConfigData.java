@@ -11,12 +11,12 @@ import journeymap.client.ui.minimap.DisplayVars;
 import journeymap.client.ui.minimap.MiniMap;
 import journeymap.client.ui.minimap.Shape;
 import journeymap.client.ui.theme.Theme;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.*;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -399,7 +399,7 @@ public class ConfigData {
         return p;
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public static Point getMinimapCorner() {
         Minecraft mc = Minecraft.getInstance();
 

@@ -1,17 +1,13 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
-import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.function.Supplier;
 
 @ParametersAreNonnullByDefault
 public class PacketSettingsProfile {
@@ -35,17 +31,13 @@ public class PacketSettingsProfile {
         packet.profile.toBytes(buf);
     }
 
-    public static void handle(PacketSettingsProfile message, Supplier<NetworkEvent.Context> ctx) {
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> handleClient(message, ctx.get()));
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    private static void handleClient(PacketSettingsProfile message, NetworkEvent.Context ctx) {
-        SettingsProfile currentProfile = ClientProxy.getSettingsProfile();
-        if (currentProfile == null || !currentProfile.equals(message.profile)) {
-            MinecraftForge.EVENT_BUS.post(new UpdatedSettingsProfileEvent(message.profile));
-        }
-
-        ctx.setPacketHandled(true);
+    @Environment(EnvType.CLIENT)
+    public static void handle(PacketSettingsProfile message, Minecraft client) {
+        client.execute(() -> {
+            SettingsProfile currentProfile = ClientProxy.getSettingsProfile();
+            if (currentProfile == null || !currentProfile.equals(message.profile)) {
+                ClientProxy.postUpdatedSettingsProfileEvent(message.profile);
+            }
+        });
     }
 }

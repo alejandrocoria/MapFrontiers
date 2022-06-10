@@ -8,12 +8,11 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 @ParametersAreNonnullByDefault
 public class PacketDeleteFrontier {
@@ -31,14 +30,8 @@ public class PacketDeleteFrontier {
         UUIDHelper.toBytes(buf, packet.frontierID);
     }
 
-    public static void handle(PacketDeleteFrontier message, Supplier<NetworkEvent.Context> ctx) {
-        NetworkEvent.Context context = ctx.get();
-        context.enqueueWork(() -> {
-            ServerPlayer player = context.getSender();
-            if (player == null) {
-                return;
-            }
-
+    public static void handle(PacketDeleteFrontier message, MinecraftServer server, ServerPlayer player) {
+        server.execute(() -> {
             SettingsUser playerUser = new SettingsUser(player);
             FrontierData frontier = FrontiersManager.instance.getFrontierFromID(message.frontierID);
 
@@ -56,18 +49,18 @@ public class PacketDeleteFrontier {
                                                 frontier.getDimension(), frontier.getId());
                                     }
                                 }
-                                PacketHandler.sendToUsersWithAccess(new PacketFrontierDeleted(frontier.getDimension(),
-                                        frontier.getId(), frontier.getPersonal(), player.getId()), frontier);
+                                PacketHandler.sendToUsersWithAccess(PacketFrontierDeleted.class, new PacketFrontierDeleted(frontier.getDimension(),
+                                        frontier.getId(), frontier.getPersonal(), player.getId()), frontier, server);
                             }
                         } else {
                             frontier.removeUserShared(playerUser);
                             FrontiersManager.instance.deletePersonalFrontier(playerUser, frontier.getDimension(),
                                     frontier.getId());
 
-                            PacketHandler.sendTo(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(),
+                            PacketHandler.sendTo(PacketFrontierDeleted.class, new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(),
                                     frontier.getPersonal(), player.getId()), player);
-                            PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier, player.getId()),
-                                    frontier);
+                            PacketHandler.sendToUsersWithAccess(PacketFrontierUpdated.class, new PacketFrontierUpdated(frontier, player.getId()),
+                                    frontier, server);
 
                             frontier.removeChange(FrontierData.Change.Shared);
                         }
@@ -77,21 +70,18 @@ public class PacketDeleteFrontier {
                 } else {
                     if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.DeleteFrontier, playerUser,
                             MapFrontiers.isOPorHost(player), frontier.getOwner())) {
-                        boolean deleted = FrontiersManager.instance.deleteGlobalFrontier(frontier.getDimension(),
-                                frontier.getId());
+                        boolean deleted = FrontiersManager.instance.deleteGlobalFrontier(frontier.getDimension(), frontier.getId());
                         if (deleted) {
-                            PacketHandler.sendToAll(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(),
-                                    frontier.getPersonal(), player.getId()));
+                            PacketHandler.sendToAll(PacketFrontierDeleted.class, new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(),
+                                    frontier.getPersonal(), player.getId()), server);
                         }
 
                         return;
                     }
                 }
 
-                PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)),
-                        player);
+                PacketHandler.sendTo(PacketSettingsProfile.class, new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
             }
         });
-        context.setPacketHandled(true);
     }
 }

@@ -4,14 +4,14 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.TextComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class TextDoubleBox extends EditBox {
     private double defaultValue;
     private double min;
@@ -170,7 +170,7 @@ public class TextDoubleBox extends EditBox {
         super.setFocus(isFocusedIn);
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public interface TextDoubleBoxResponder {
         void updatedValue(TextDoubleBox textDoubleBox, double value);
     }

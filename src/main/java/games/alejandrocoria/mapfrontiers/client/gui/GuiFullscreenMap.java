@@ -22,8 +22,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -38,7 +38,7 @@ import static java.lang.Math.max;
 import static java.lang.Math.pow;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class GuiFullscreenMap {
     private enum ChunkDrawing {
         Nothing, Adding, Removing
@@ -61,14 +61,58 @@ public class GuiFullscreenMap {
 
     public GuiFullscreenMap(IClientAPI jmAPI) {
         this.jmAPI = jmAPI;
-        MinecraftForge.EVENT_BUS.register(this);
+
+        ClientProxy.subscribeDeletedFrontierEvent(this, frontierID -> {
+            if (frontierHighlighted != null && frontierHighlighted.getId().equals(frontierID)) {
+                frontierHighlighted = null;
+                editing = false;
+                updatebuttons();
+            }
+        });
+
+        ClientProxy.subscribeNewFrontierEvent(this, (frontierOverlay, playerID) -> {
+            if (frontierOverlay.getDimension() != jmAPI.getUIState(Context.UI.Fullscreen).dimension) {
+                return;
+            }
+
+            if (playerID == -1 || Minecraft.getInstance().player.getId() == playerID) {
+                stopEditing();
+                if (frontierHighlighted != null) {
+                    frontierHighlighted.setHighlighted(false);
+                }
+
+                frontierHighlighted = frontierOverlay;
+                frontierHighlighted.setHighlighted(true);
+
+                updatebuttons();
+
+                if (ConfigData.afterCreatingFrontier == ConfigData.AfterCreatingFrontier.Edit) {
+                    buttonEditToggled();
+                } else if (ConfigData.afterCreatingFrontier == ConfigData.AfterCreatingFrontier.Info) {
+                    buttonInfoPressed();
+                }
+            }
+        });
+
+        ClientProxy.subscribeUpdatedFrontierEvent(this, (frontierOverlay, playerID) -> {
+            if (frontierHighlighted != null && frontierHighlighted.getId().equals(frontierOverlay.getId())) {
+                frontierHighlighted = frontierOverlay;
+                frontierHighlighted.setHighlighted(true);
+                editing = false;
+                updatebuttons();
+            }
+        });
+
+        ClientProxy.subscribeUpdatedSettingsProfileEvent(this, profile -> {
+            updatebuttons();
+        });
     }
 
     public void close() {
         if (frontierHighlighted != null) {
             frontierHighlighted.setHighlighted(false);
         }
-        MinecraftForge.EVENT_BUS.unregister(this);
+        ClientProxy.unsuscribeAllEvents(this);
     }
 
     public void addButtons(ThemeButtonDisplay buttonDisplay) {
@@ -90,55 +134,6 @@ public class GuiFullscreenMap {
             if (frontierHighlighted.getSelectedVertexIndex() != -1) {
                 popupMenu.addMenuItem(I18n.get("mapfrontiers.remove_vertex"), p -> buttonRemoveVertex());
             }
-        }
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onUpdatedSettingsProfileEvent(UpdatedSettingsProfileEvent event) {
-        updatebuttons();
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onNewFrontierEvent(NewFrontierEvent event) {
-        if (event.frontierOverlay.getDimension() != jmAPI.getUIState(Context.UI.Fullscreen).dimension) {
-            return;
-        }
-
-        if (event.playerID == -1 || Minecraft.getInstance().player.getId() == event.playerID) {
-            stopEditing();
-            if (frontierHighlighted != null) {
-                frontierHighlighted.setHighlighted(false);
-            }
-
-            frontierHighlighted = event.frontierOverlay;
-            frontierHighlighted.setHighlighted(true);
-
-            updatebuttons();
-
-            if (ConfigData.afterCreatingFrontier == ConfigData.AfterCreatingFrontier.Edit) {
-                buttonEditToggled();
-            } else if (ConfigData.afterCreatingFrontier == ConfigData.AfterCreatingFrontier.Info) {
-                buttonInfoPressed();
-            }
-        }
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onUpdatedFrontierEvent(UpdatedFrontierEvent event) {
-        if (frontierHighlighted != null && frontierHighlighted.getId().equals(event.frontierOverlay.getId())) {
-            frontierHighlighted = event.frontierOverlay;
-            frontierHighlighted.setHighlighted(true);
-            editing = false;
-            updatebuttons();
-        }
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onDeletedFrontierEvent(DeletedFrontierEvent event) {
-        if (frontierHighlighted != null && frontierHighlighted.getId().equals(event.frontierID)) {
-            frontierHighlighted = null;
-            editing = false;
-            updatebuttons();
         }
     }
 

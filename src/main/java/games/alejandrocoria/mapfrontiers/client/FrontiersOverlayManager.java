@@ -10,22 +10,21 @@ import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.MarkerOverlay;
 import journeymap.client.api.model.MapImage;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.*;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class FrontiersOverlayManager {
     private final IClientAPI jmAPI;
     private final HashMap<ResourceKey<Level>, ArrayList<FrontierOverlay>> dimensionsFrontiers;
@@ -40,28 +39,18 @@ public class FrontiersOverlayManager {
         markerDotSelected.setAnchorX(markerDotSelected.getDisplayWidth() / 2.0)
                 .setAnchorY(markerDotSelected.getDisplayHeight() / 2.0);
         markerDotSelected.setRotation(0);
-    }
 
-    public FrontiersOverlayManager(IClientAPI jmAPI, boolean personal) {
-        this.jmAPI = jmAPI;
-        dimensionsFrontiers = new HashMap<>();
-        markersSelected = new HashMap<>();
-        this.personal = personal;
-    }
-
-    @SubscribeEvent
-    public static void onRenderTick(TickEvent.RenderTickEvent event) {
-        if (event.phase == TickEvent.Phase.START) {
+        ClientTickEvents.START_CLIENT_TICK.register(client -> {
             if (MapFrontiersPlugin.isEditing()) {
                 float opacity = markerDotSelected.getOpacity();
                 if (opacity < targetDotSelectedOpacity) {
-                    opacity += event.renderTickTime * 0.5f;
+                    opacity += client.getDeltaFrameTime() * 0.5f;
                     if (opacity >= targetDotSelectedOpacity) {
                         opacity = targetDotSelectedOpacity;
                         targetDotSelectedOpacity = 0.f;
                     }
                 } else {
-                    opacity -= event.renderTickTime * 0.07f;
+                    opacity -= client.getDeltaFrameTime() * 0.07f;
                     if (opacity <= targetDotSelectedOpacity) {
                         opacity = targetDotSelectedOpacity;
                         targetDotSelectedOpacity = 1.f;
@@ -72,7 +61,14 @@ public class FrontiersOverlayManager {
                 markerDotSelected.setOpacity(0.f);
                 targetDotSelectedOpacity = 1.f;
             }
-        }
+        });
+    }
+
+    public FrontiersOverlayManager(IClientAPI jmAPI, boolean personal) {
+        this.jmAPI = jmAPI;
+        dimensionsFrontiers = new HashMap<>();
+        markersSelected = new HashMap<>();
+        this.personal = personal;
     }
 
     public FrontierOverlay addFrontier(FrontierData data) {
@@ -84,20 +80,20 @@ public class FrontiersOverlayManager {
     }
 
     public void clientCreateNewfrontier(ResourceKey<Level> dimension, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
-        PacketHandler.INSTANCE.sendToServer(new PacketNewFrontier(dimension, personal, vertices, chunks));
+        PacketHandler.sendToServer(PacketNewFrontier.class, new PacketNewFrontier(dimension, personal, vertices, chunks));
     }
 
     public void clientDeleteFrontier(FrontierOverlay frontier) {
-        PacketHandler.INSTANCE.sendToServer(new PacketDeleteFrontier(frontier.getId()));
+        PacketHandler.sendToServer(PacketDeleteFrontier.class, new PacketDeleteFrontier(frontier.getId()));
     }
 
     public void clientUpdatefrontier(FrontierOverlay frontier) {
-        PacketHandler.INSTANCE.sendToServer(new PacketUpdateFrontier(frontier));
+        PacketHandler.sendToServer(PacketUpdateFrontier.class, new PacketUpdateFrontier(frontier));
         frontier.removeChanges();
     }
 
     public void clientShareFrontier(UUID frontierID, SettingsUser targetUser) {
-        PacketHandler.INSTANCE.sendToServer(new PacketSharePersonalFrontier(frontierID, targetUser));
+        PacketHandler.sendToServer(PacketSharePersonalFrontier.class, new PacketSharePersonalFrontier(frontierID, targetUser));
     }
 
     public boolean deleteFrontier(ResourceKey<Level> dimension, UUID id) {

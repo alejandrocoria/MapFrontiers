@@ -3,16 +3,10 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.function.Supplier;
 
 @ParametersAreNonnullByDefault
 public class PacketFrontierUpdated {
@@ -44,19 +38,14 @@ public class PacketFrontierUpdated {
         buf.writeInt(packet.playerID);
     }
 
-    public static void handle(PacketFrontierUpdated message, Supplier<NetworkEvent.Context> ctx) {
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> handleClient(message, ctx.get()));
-    }
+    public static void handle(PacketFrontierUpdated message, Minecraft client) {
+        client.execute(() -> {
+            FrontierOverlay frontierOverlay = ClientProxy.getFrontiersOverlayManager(message.frontier.getPersonal())
+                    .updateFrontier(message.frontier);
 
-    @OnlyIn(Dist.CLIENT)
-    private static void handleClient(PacketFrontierUpdated message, NetworkEvent.Context ctx) {
-        FrontierOverlay frontierOverlay = ClientProxy.getFrontiersOverlayManager(message.frontier.getPersonal())
-                .updateFrontier(message.frontier);
-
-        if (frontierOverlay != null) {
-            MinecraftForge.EVENT_BUS.post(new UpdatedFrontierEvent(frontierOverlay, message.playerID));
-        }
-
-        ctx.setPacketHandled(true);
+            if (frontierOverlay != null) {
+                ClientProxy.postUpdatedFrontierEvent(frontierOverlay, message.playerID);
+            }
+        });
     }
 }

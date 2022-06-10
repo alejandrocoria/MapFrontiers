@@ -9,15 +9,15 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.awt.*;
 import java.util.function.BiConsumer;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class GuiColorPicker extends AbstractWidget {
     private static final ResourceLocation texture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/color_picker.png");
     private static final int textureSizeX = 274;

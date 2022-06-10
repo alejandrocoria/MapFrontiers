@@ -13,8 +13,8 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 import net.minecraftforge.client.ForgeHooksClient;
 import org.lwjgl.glfw.GLFW;
 
@@ -22,7 +22,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.*;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class GuiHUDSettings extends Screen implements TextIntBox.TextIntBoxResponder {
     private GuiHUDWidget guiHUDWidget;
     private GuiOptionButton buttonSlot1;
@@ -57,7 +57,7 @@ public class GuiHUDSettings extends Screen implements TextIntBox.TextIntBoxRespo
             minimap = UIManager.INSTANCE.getMiniMap();
         }
 
-        guiHUD.configUpdated(minecraft.getWindow());
+        guiHUD.configUpdated();
         guiHUDWidget = new GuiHUDWidget(guiHUD, minimap, (widget) -> HUDUpdated());
 
         buttonSlot1 = new GuiOptionButton(font, width / 2 - 104, height / 2 - 32, 64, this::buttonPressed);
@@ -250,14 +250,14 @@ public class GuiHUDSettings extends Screen implements TextIntBox.TextIntBoxRespo
             updateSlots();
         } else if (button == buttonAnchor) {
             ConfigData.hudAnchor = ConfigData.HUDAnchor.values()[buttonAnchor.getSelected()];
-            guiHUD.configUpdated(minecraft.getWindow());
+            guiHUD.configUpdated();
             updatePosition();
         } else if (button == buttonAutoAdjustAnchor) {
             ConfigData.hudAutoAdjustAnchor = buttonAutoAdjustAnchor.getSelected() == 0;
-            guiHUD.configUpdated(minecraft.getWindow());
+            guiHUD.configUpdated();
         } else if (button == buttonSnapToBorder) {
             ConfigData.hudSnapToBorder = buttonSnapToBorder.getSelected() == 0;
-            guiHUD.configUpdated(minecraft.getWindow());
+            guiHUD.configUpdated();
         } else if (button == buttonDone) {
             onClose();
         }
@@ -282,7 +282,7 @@ public class GuiHUDSettings extends Screen implements TextIntBox.TextIntBoxRespo
         }
 
         if (updated) {
-            guiHUD.configUpdated(minecraft.getWindow());
+            guiHUD.configUpdated();
             updatePosition();
         }
     }
@@ -370,14 +370,14 @@ public class GuiHUDSettings extends Screen implements TextIntBox.TextIntBoxRespo
     public void updatedValue(TextIntBox textIntBox, int value) {
         if (textBannerSize == textIntBox) {
             ConfigData.hudBannerSize = value;
-            guiHUD.configUpdated(minecraft.getWindow());
+            guiHUD.configUpdated();
             updatePosition();
         } else if (textPositionX == textIntBox) {
             ConfigData.hudXPosition = value;
-            guiHUD.configUpdated(minecraft.getWindow());
+            guiHUD.configUpdated();
         } else if (textPositionY == textIntBox) {
             ConfigData.hudYPosition = value;
-            guiHUD.configUpdated(minecraft.getWindow());
+            guiHUD.configUpdated();
         }
     }
 

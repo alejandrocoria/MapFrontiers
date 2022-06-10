@@ -2,13 +2,13 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 
 import journeymap.client.ui.theme.Theme;
 import net.minecraft.ChatFormatting;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public final class GuiColors {
     public static final int WHITE = 0xffffffff;
 

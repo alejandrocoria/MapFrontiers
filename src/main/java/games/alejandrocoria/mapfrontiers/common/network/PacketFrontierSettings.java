@@ -5,19 +5,14 @@ import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.server.ServerLifecycleHooks;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.function.Supplier;
 
 @ParametersAreNonnullByDefault
 public class PacketFrontierSettings {
@@ -43,39 +38,27 @@ public class PacketFrontierSettings {
         buf.writeInt(packet.settings.getChangeCounter());
     }
 
-    public static void handle(PacketFrontierSettings message, Supplier<NetworkEvent.Context> ctx) {
-        if (ctx.get().getNetworkManager().getDirection() == PacketFlow.CLIENTBOUND) {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> handleClient(message, ctx.get()));
-        } else {
-            NetworkEvent.Context context = ctx.get();
-            context.enqueueWork(() -> {
-                ServerPlayer player = context.getSender();
-                if (player == null) {
-                    return;
-                }
+    public static void handle(PacketFrontierSettings message, MinecraftServer server, ServerPlayer player) {
+        server.execute(() -> {
+            if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.UpdateSettings,
+                    new SettingsUser(player), MapFrontiers.isOPorHost(player), null)) {
+                FrontiersManager.instance.setSettings(message.settings);
 
-                if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.UpdateSettings,
-                        new SettingsUser(player), MapFrontiers.isOPorHost(player), null)) {
-                    FrontiersManager.instance.setSettings(message.settings);
-
-                    MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-                    for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-                        PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(p)), p);
-                    }
-                } else {
-                    PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)),
-                            player);
+                for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+                    PacketHandler.sendTo(PacketSettingsProfile.class, new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(p)), p);
                 }
-            });
-            context.setPacketHandled(true);
-        }
+            } else {
+                PacketHandler.sendTo(PacketSettingsProfile.class, new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
+            }
+        });
     }
 
-    @OnlyIn(Dist.CLIENT)
-    private static void handleClient(PacketFrontierSettings message, NetworkEvent.Context ctx) {
-        if (Minecraft.getInstance().screen instanceof GuiFrontierSettings) {
-            ((GuiFrontierSettings) Minecraft.getInstance().screen).setFrontierSettings(message.settings);
-        }
-        ctx.setPacketHandled(true);
+    @Environment(EnvType.CLIENT)
+    public static void handle(PacketFrontierSettings message, Minecraft client) {
+        client.execute(() -> {
+            if (Minecraft.getInstance().screen instanceof GuiFrontierSettings) {
+                ((GuiFrontierSettings) Minecraft.getInstance().screen).setFrontierSettings(message.settings);
+            }
+        });
     }
 }

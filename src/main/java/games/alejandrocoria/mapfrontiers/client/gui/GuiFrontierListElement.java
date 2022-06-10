@@ -7,15 +7,16 @@ import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.resources.language.I18n;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class GuiFrontierListElement extends GuiScrollBox.ScrollElement {
     private final Font font;
     private final FrontierOverlay frontier;
@@ -28,9 +29,9 @@ public class GuiFrontierListElement extends GuiScrollBox.ScrollElement {
     String chunks;
     int offset1;
     int offset2;
-    final List<Widget> buttonList;
+    final List<GuiEventListener> buttonList;
 
-    public GuiFrontierListElement(Font font, List<Widget> buttonList, FrontierOverlay frontier) {
+    public GuiFrontierListElement(Font font, List<GuiEventListener> buttonList, FrontierOverlay frontier) {
         super(450, 24);
         this.font = font;
         this.frontier = frontier;

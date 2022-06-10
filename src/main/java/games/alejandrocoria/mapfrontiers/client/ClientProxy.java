@@ -5,10 +5,17 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierSettings;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiHUD;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
-import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
+import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.util.BlockPosHelper;
 import journeymap.client.api.IClientAPI;
+import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.networking.v1.ClientLoginConnectionEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -17,28 +24,19 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.BannerItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.ClientRegistry;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggedInEvent;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggedOutEvent;
-import net.minecraftforge.client.event.InputEvent.KeyInputEvent;
-import net.minecraftforge.client.settings.KeyConflictContext;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
-@Mod.EventBusSubscriber(value = Dist.CLIENT, modid = MapFrontiers.MODID)
-@OnlyIn(Dist.CLIENT)
-public class ClientProxy {
+@Environment(EnvType.CLIENT)
+public class ClientProxy implements ClientModInitializer {
     private static IClientAPI jmAPI;
     private static FrontiersOverlayManager frontiersOverlayManager;
     private static FrontiersOverlayManager personalFrontiersOverlayManager;
@@ -48,32 +46,77 @@ public class ClientProxy {
     private static KeyMapping openSettingsKey;
     private static GuiHUD guiHUD;
 
-    @SubscribeEvent
-    public static void clientSetup(FMLClientSetupEvent event) {
-        Minecraft.getInstance().getMainRenderTarget().enableStencil();
-        MinecraftForge.EVENT_BUS.register(FrontierOverlay.class);
-        MinecraftForge.EVENT_BUS.register(FrontiersOverlayManager.class);
+    private static final Map<Object, Consumer<UUID>> deletedFrontierEventMap = new HashMap<>();
+    private static final Map<Object, BiConsumer<FrontierOverlay, Integer>> newFrontierEventMap = new HashMap<>();
+    private static final Map<Object, BiConsumer<FrontierOverlay, Integer>> updatedFrontierEventMap = new HashMap<>();
+    private static final Map<Object, Consumer<SettingsProfile>> updatedSettingsProfileEventMap = new HashMap<>();
 
-        openSettingsKey = new KeyMapping("mapfrontiers.key.open_settings", KeyConflictContext.IN_GAME,
-                InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, "mapfrontiers.key.category");
-        ClientRegistry.registerKeyBinding(openSettingsKey);
+    @Override
+    public void onInitializeClient() {
+        PacketHandler.registerClientReceivers();
 
-        MapFrontiers.LOGGER.info("clientSetup done");
-    }
+        openSettingsKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+                "mapfrontiers.key.open_settings", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, "mapfrontiers.key.category"
+        ));
 
-    @SubscribeEvent
-    public static void onEvent(KeyInputEvent event) {
-        if (openSettingsKey.matches(event.getKey(), event.getScanCode()) && openSettingsKey.isDown()) {
-            if (frontiersOverlayManager == null) {
-                return;
+        ClientTickEvents.START_CLIENT_TICK.register(client -> {
+            if (frontiersOverlayManager != null) {
+                frontiersOverlayManager.updateAllOverlays(false);
+                personalFrontiersOverlayManager.updateAllOverlays(false);
             }
 
-            if (settingsProfile == null) {
-                return;
+            if (guiHUD != null) {
+                guiHUD.tick();
+            }
+        });
+
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            while (openSettingsKey.consumeClick()) {
+                if (frontiersOverlayManager == null) {
+                    return;
+                }
+
+                if (settingsProfile == null) {
+                    return;
+                }
+
+                Minecraft.getInstance().setScreen(new GuiFrontierSettings());
+            }
+        });
+
+        HudRenderCallback.EVENT.register((matrixStack, delta) -> {
+            if (guiHUD != null) {
+                guiHUD.drawInGameHUD(matrixStack, delta);
+            }
+        });
+
+        ClientLoginConnectionEvents.INIT.register((handler, client) -> {
+            if (jmAPI != null) {
+                if (frontiersOverlayManager != null) {
+                    frontiersOverlayManager.removeAllOverlays();
+                    personalFrontiersOverlayManager.removeAllOverlays();
+                }
+                frontiersOverlayManager = new FrontiersOverlayManager(jmAPI, false);
+                personalFrontiersOverlayManager = new FrontiersOverlayManager(jmAPI, true);
+
+                guiHUD = new GuiHUD(frontiersOverlayManager, personalFrontiersOverlayManager);
+            }
+        });
+
+        ClientLoginConnectionEvents.DISCONNECT.register((handler, client) -> {
+            if (frontiersOverlayManager != null) {
+                frontiersOverlayManager.removeAllOverlays();
+                frontiersOverlayManager = null;
+                personalFrontiersOverlayManager.removeAllOverlays();
+                personalFrontiersOverlayManager = null;
             }
 
-            Minecraft.getInstance().setScreen(new GuiFrontierSettings());
-        }
+            if (guiHUD != null) {
+                guiHUD = null;
+            }
+        });
+
+        MapFrontiers.LOGGER.info("onInitializeClient done");
     }
 
     public static BlockPos snapVertex(BlockPos vertex, float snapDistance, ResourceKey<Level> dimension, @Nullable FrontierOverlay owner) {
@@ -111,46 +154,6 @@ public class ClientProxy {
         jmAPI = newJmAPI;
     }
 
-    @SubscribeEvent
-    public static void onRenderTick(TickEvent.RenderTickEvent event) {
-        if (event.phase == TickEvent.Phase.START) {
-            if (frontiersOverlayManager != null) {
-                frontiersOverlayManager.updateAllOverlays(false);
-                personalFrontiersOverlayManager.updateAllOverlays(false);
-            }
-        }
-    }
-
-    @SubscribeEvent
-    public static void clientConnectedToServer(LoggedInEvent event) {
-        if (jmAPI != null) {
-            if (frontiersOverlayManager != null) {
-                frontiersOverlayManager.removeAllOverlays();
-                personalFrontiersOverlayManager.removeAllOverlays();
-            }
-            frontiersOverlayManager = new FrontiersOverlayManager(jmAPI, false);
-            personalFrontiersOverlayManager = new FrontiersOverlayManager(jmAPI, true);
-
-            guiHUD = new GuiHUD(frontiersOverlayManager, personalFrontiersOverlayManager);
-            MinecraftForge.EVENT_BUS.register(guiHUD);
-        }
-    }
-
-    @SubscribeEvent
-    public static void clientDisconnectionFromServer(LoggedOutEvent event) {
-        if (frontiersOverlayManager != null) {
-            frontiersOverlayManager.removeAllOverlays();
-            frontiersOverlayManager = null;
-            personalFrontiersOverlayManager.removeAllOverlays();
-            personalFrontiersOverlayManager = null;
-        }
-
-        if (guiHUD != null) {
-            MinecraftForge.EVENT_BUS.unregister(guiHUD);
-            guiHUD = null;
-        }
-    }
-
     public static ItemStack getHeldBanner() {
         ItemStack mainhand = Minecraft.getInstance().player.getItemBySlot(EquipmentSlot.MAINHAND);
         ItemStack offhand = Minecraft.getInstance().player.getItemBySlot(EquipmentSlot.OFFHAND);
@@ -171,11 +174,6 @@ public class ClientProxy {
         } else {
             return frontiersOverlayManager;
         }
-    }
-
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public static void onUpdatedSettingsProfileEvent(UpdatedSettingsProfileEvent event) {
-        settingsProfile = event.profile;
     }
 
     public static SettingsProfile getSettingsProfile() {
@@ -199,7 +197,56 @@ public class ClientProxy {
         }
 
         if (guiHUD != null) {
-            guiHUD.configUpdated(Minecraft.getInstance().getWindow());
+            guiHUD.configUpdated();
+        }
+    }
+
+    public static void subscribeDeletedFrontierEvent(Object object, Consumer<UUID> callback) {
+        deletedFrontierEventMap.put(object, callback);
+    }
+
+    public static void subscribeNewFrontierEvent(Object object, BiConsumer<FrontierOverlay, Integer> callback) {
+        newFrontierEventMap.put(object, callback);
+    }
+
+    public static void subscribeUpdatedFrontierEvent(Object object, BiConsumer<FrontierOverlay, Integer> callback) {
+        updatedFrontierEventMap.put(object, callback);
+    }
+
+    public static void subscribeUpdatedSettingsProfileEvent(Object object, Consumer<SettingsProfile> callback) {
+        updatedSettingsProfileEventMap.put(object, callback);
+    }
+
+    public static void unsuscribeAllEvents(Object object) {
+        deletedFrontierEventMap.remove(object);
+        newFrontierEventMap.remove(object);
+        updatedFrontierEventMap.remove(object);
+        updatedSettingsProfileEventMap.remove(object);
+    }
+
+    public static void postDeletedFrontierEvent(UUID frontierID) {
+        for (Consumer<UUID> callback : deletedFrontierEventMap.values()) {
+            callback.accept(frontierID);
+        }
+    }
+
+    public static void postNewFrontierEvent(FrontierOverlay frontierOverlay, int playerID) {
+        for (BiConsumer<FrontierOverlay, Integer> callback : newFrontierEventMap.values()) {
+            callback.accept(frontierOverlay, playerID);
+        }
+    }
+
+    public static void postUpdatedFrontierEvent(FrontierOverlay frontierOverlay, int playerID) {
+        for (BiConsumer<FrontierOverlay, Integer> callback : updatedFrontierEventMap.values()) {
+            callback.accept(frontierOverlay, playerID);
+        }
+    }
+
+    public static void postUpdatedSettingsProfileEvent(SettingsProfile profile) {
+        settingsProfile = profile;
+
+        for (Consumer<SettingsProfile> callback : updatedSettingsProfileEventMap.values()) {
+            callback.accept(profile);
         }
     }
 }

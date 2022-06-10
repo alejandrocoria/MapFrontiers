@@ -18,12 +18,13 @@ import journeymap.client.waypoint.WaypointStore;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -35,7 +36,7 @@ import java.util.List;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxResponder {
     private final IClientAPI jmAPI;
     private final GuiFullscreenMap fullscreenMap;
@@ -56,7 +57,24 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
         this.jmAPI = jmAPI;
         this.fullscreenMap = fullscreenMap;
 
-        MinecraftForge.EVENT_BUS.register(this);
+        ClientProxy.subscribeDeletedFrontierEvent(this, frontierID -> {
+            updateFrontiers();
+            updateButtons();
+        });
+
+        ClientProxy.subscribeNewFrontierEvent(this, (frontierOverlay, playerID) -> {
+            updateFrontiers();
+            updateButtons();
+        });
+
+        ClientProxy.subscribeUpdatedFrontierEvent(this, (frontierOverlay, playerID) -> {
+            updateFrontiers();
+            updateButtons();
+        });
+
+        ClientProxy.subscribeUpdatedSettingsProfileEvent(this, profile -> {
+            updateButtons();
+        });
     }
 
     @Override
@@ -144,36 +162,13 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        for (Widget w : renderables) {
+        for (GuiEventListener w : children()) {
             if (w instanceof GuiScrollBox) {
                 ((GuiScrollBox) w).mouseReleased();
             }
         }
 
         return super.mouseReleased(mouseX, mouseY, button);
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onUpdatedSettingsProfileEvent(UpdatedSettingsProfileEvent event) {
-        updateButtons();
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onNewFrontierEvent(NewFrontierEvent event) {
-        updateFrontiers();
-        updateButtons();
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onUpdatedFrontierEvent(UpdatedFrontierEvent event) {
-        updateFrontiers();
-        updateButtons();
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onDeletedFrontierEvent(DeletedFrontierEvent event) {
-        updateFrontiers();
-        updateButtons();
     }
 
     protected void buttonPressed(Button button) {
@@ -244,7 +239,7 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
 
     @Override
     public void removed() {
-        MinecraftForge.EVENT_BUS.unregister(this);
+        ClientProxy.unsuscribeAllEvents(this);
     }
 
     private void addDimensionsToFilter() {
@@ -277,7 +272,7 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
             for (ArrayList<FrontierOverlay> dimension : ClientProxy.getFrontiersOverlayManager(true).getAllFrontiers().values()) {
                 for (FrontierOverlay frontier : dimension) {
                     if (checkFilterOwner(frontier) && checkFilterDimension(frontier)) {
-                        frontiers.addElement(new GuiFrontierListElement(font, renderables, frontier));
+                        frontiers.addElement(new GuiFrontierListElement(font, (List<GuiEventListener>) children(), frontier));
                     }
                 }
             }
@@ -287,7 +282,7 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
             for (ArrayList<FrontierOverlay> dimension : ClientProxy.getFrontiersOverlayManager(false).getAllFrontiers().values()) {
                 for (FrontierOverlay frontier : dimension) {
                     if (checkFilterOwner(frontier) && checkFilterDimension(frontier)) {
-                        frontiers.addElement(new GuiFrontierListElement(font, renderables, frontier));
+                        frontiers.addElement(new GuiFrontierListElement(font, (List<GuiEventListener>) children(), frontier));
                     }
                 }
             }

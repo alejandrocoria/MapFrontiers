@@ -9,16 +9,15 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.network.NetworkEvent;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 
 @ParametersAreNonnullByDefault
 public class PacketNewFrontier {
@@ -86,21 +85,15 @@ public class PacketNewFrontier {
         }
     }
 
-    public static void handle(PacketNewFrontier message, Supplier<NetworkEvent.Context> ctx) {
-        NetworkEvent.Context context = ctx.get();
-        context.enqueueWork(() -> {
-            ServerPlayer player = context.getSender();
-            if (player == null) {
-                return;
-            }
-
+    public static void handle(PacketNewFrontier message, MinecraftServer server, ServerPlayer player) {
+        server.execute(() -> {
             FrontierData frontier;
 
             if (message.personal) {
                 if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier,
                         new SettingsUser(player), MapFrontiers.isOPorHost(player), null)) {
                     frontier = MapFrontiers.getFrontiersManager().createNewPersonalFrontier(message.dimension, player, message.vertices, message.chunks);
-                    PacketHandler.sendToUsersWithAccess(new PacketFrontier(frontier, player.getId()), frontier);
+                    PacketHandler.sendToUsersWithAccess(PacketFrontier.class, new PacketFrontier(frontier, player.getId()), frontier, server);
 
                     return;
                 }
@@ -108,13 +101,12 @@ public class PacketNewFrontier {
                 if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.CreateFrontier,
                         new SettingsUser(player), MapFrontiers.isOPorHost(player), null)) {
                     frontier = MapFrontiers.getFrontiersManager().createNewGlobalFrontier(message.dimension, player, message.vertices, message.chunks);
-                    PacketHandler.sendToAll(new PacketFrontier(frontier, player.getId()));
+                    PacketHandler.sendToAll(PacketFrontier.class, new PacketFrontier(frontier, player.getId()), server);
 
                     return;
                 }
             }
-            PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
+            PacketHandler.sendTo(PacketSettingsProfile.class, new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
         });
-        context.setPacketHandled(true);
     }
 }

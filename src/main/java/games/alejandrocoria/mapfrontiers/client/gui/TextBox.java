@@ -3,15 +3,15 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.TextComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class TextBox extends EditBox {
     private final String defaultText;
     private TextBoxResponder responder;
@@ -39,6 +39,10 @@ public class TextBox extends EditBox {
                 responder.updatedValue(this, value);
             });
         }
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
     }
 
     @Override
@@ -82,7 +86,7 @@ public class TextBox extends EditBox {
         super.setFocus(isFocusedIn);
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public interface TextBoxResponder {
         void updatedValue(TextBox textBox, String value);
 

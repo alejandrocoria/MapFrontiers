@@ -5,8 +5,8 @@ import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.TextComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
@@ -17,7 +17,7 @@ import java.util.function.Predicate;
 import static java.lang.Math.max;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class GuiScrollBox extends AbstractWidget {
     private final int elementHeight;
     private int scrollStart = 0;
@@ -294,14 +294,14 @@ public class GuiScrollBox extends AbstractWidget {
 
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public interface ScrollBoxResponder {
         void elementClicked(GuiScrollBox scrollBox, ScrollElement element);
 
         void elementDelete(GuiScrollBox scrollBox, ScrollElement element);
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public static class ScrollElement extends GuiComponent {
         enum Action {
             None, Clicked, Deleted

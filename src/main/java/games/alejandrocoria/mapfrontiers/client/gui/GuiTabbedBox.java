@@ -7,15 +7,15 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.List;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class GuiTabbedBox extends AbstractWidget {
     private final Font font;
     private final TabbedBoxResponder responder;
@@ -101,7 +101,7 @@ public class GuiTabbedBox extends AbstractWidget {
 
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     private static class Tab extends GuiComponent {
         private int x = 0;
         private int y = 0;
@@ -145,7 +145,7 @@ public class GuiTabbedBox extends AbstractWidget {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public interface TabbedBoxResponder {
         void tabChanged(int tab);
     }

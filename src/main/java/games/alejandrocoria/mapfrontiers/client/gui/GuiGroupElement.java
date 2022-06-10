@@ -5,22 +5,23 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.resources.language.I18n;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class GuiGroupElement extends GuiScrollBox.ScrollElement {
     private final Font font;
     private final SettingsGroup group;
     private final GuiButtonIcon buttonDelete;
-    final List<Widget> buttonList;
+    final List<GuiEventListener> buttonList;
 
-    public GuiGroupElement(Font font, List<Widget> buttonList, SettingsGroup group) {
+    public GuiGroupElement(Font font, List<GuiEventListener> buttonList, SettingsGroup group) {
         super(160, 16);
         this.font = font;
         this.group = group;

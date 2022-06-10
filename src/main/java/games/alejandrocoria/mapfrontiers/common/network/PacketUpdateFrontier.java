@@ -7,11 +7,10 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.function.Supplier;
 
 @ParametersAreNonnullByDefault
 public class PacketUpdateFrontier {
@@ -35,14 +34,8 @@ public class PacketUpdateFrontier {
         packet.frontier.toBytes(buf);
     }
 
-    public static void handle(PacketUpdateFrontier message, Supplier<NetworkEvent.Context> ctx) {
-        NetworkEvent.Context context = ctx.get();
-        context.enqueueWork(() -> {
-            ServerPlayer player = context.getSender();
-            if (player == null) {
-                return;
-            }
-
+    public static void handle(PacketUpdateFrontier message, MinecraftServer server, ServerPlayer player) {
+        server.execute(() -> {
             SettingsUser playerUser = new SettingsUser(player);
             FrontierData currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontier.getId());
 
@@ -67,8 +60,8 @@ public class PacketUpdateFrontier {
                                         FrontiersManager.instance.updatePersonalFrontier(userShared.getUser(), message.frontier);
                                     }
                                 }
-                                PacketHandler.sendToUsersWithAccess(
-                                        new PacketFrontierUpdated(message.frontier, player.getId()), message.frontier);
+                                PacketHandler.sendToUsersWithAccess(PacketFrontierUpdated.class, new PacketFrontierUpdated(message.frontier, player.getId()),
+                                        message.frontier, server);
                             }
                         }
 
@@ -79,17 +72,15 @@ public class PacketUpdateFrontier {
                             MapFrontiers.isOPorHost(player), message.frontier.getOwner())) {
                         boolean updated = FrontiersManager.instance.updateGlobalFrontier(message.frontier);
                         if (updated) {
-                            PacketHandler.sendToAll(new PacketFrontierUpdated(message.frontier, player.getId()));
+                            PacketHandler.sendToAll(PacketFrontierUpdated.class, new PacketFrontierUpdated(message.frontier, player.getId()), server);
                         }
 
                         return;
                     }
                 }
 
-                PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)),
-                        player);
+                PacketHandler.sendTo(PacketSettingsProfile.class, new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
             }
         });
-        context.setPacketHandled(true);
     }
 }

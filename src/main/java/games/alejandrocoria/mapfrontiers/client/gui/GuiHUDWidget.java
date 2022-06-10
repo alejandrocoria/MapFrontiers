@@ -8,14 +8,14 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.TextComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class GuiHUDWidget extends AbstractWidget {
     private final GuiHUD guiHUD;
     private final MiniMap minimap;
@@ -160,7 +160,7 @@ public class GuiHUDWidget extends AbstractWidget {
             ConfigData.hudXPosition = positionHUD.x - anchorPoint.x + originPoint.x - snapOffset.x;
             ConfigData.hudYPosition = positionHUD.y - anchorPoint.y + originPoint.y - snapOffset.y;
 
-            guiHUD.configUpdated(mc.getWindow());
+            guiHUD.configUpdated();
             callbackHUDUpdated.accept(this);
         }
     }
@@ -173,7 +173,7 @@ public class GuiHUDWidget extends AbstractWidget {
     @Override
     public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         Minecraft mc = Minecraft.getInstance();
-        guiHUD.draw(matrixStack, mc.getWindow(), partialTicks);
+        guiHUD.draw(matrixStack, partialTicks);
     }
 
     @Override

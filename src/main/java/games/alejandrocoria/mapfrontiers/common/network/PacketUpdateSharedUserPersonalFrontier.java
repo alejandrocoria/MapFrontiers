@@ -8,12 +8,11 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 @ParametersAreNonnullByDefault
 public class PacketUpdateSharedUserPersonalFrontier {
@@ -41,14 +40,8 @@ public class PacketUpdateSharedUserPersonalFrontier {
         packet.userShared.toBytes(buf);
     }
 
-    public static void handle(PacketUpdateSharedUserPersonalFrontier message, Supplier<NetworkEvent.Context> ctx) {
-        NetworkEvent.Context context = ctx.get();
-        context.enqueueWork(() -> {
-            ServerPlayer player = context.getSender();
-            if (player == null) {
-                return;
-            }
-
+    public static void handle(PacketUpdateSharedUserPersonalFrontier message, MinecraftServer server, ServerPlayer player) {
+        server.execute(() -> {
             SettingsUser playerUser = new SettingsUser(player);
             FrontierData currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontierID);
 
@@ -64,14 +57,11 @@ public class PacketUpdateSharedUserPersonalFrontier {
                     currentUserShared.setActions(message.userShared.getActions());
                     currentFrontier.addChange(FrontierData.Change.Shared);
 
-                    PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(currentFrontier, player.getId()),
-                            currentFrontier);
+                    PacketHandler.sendToUsersWithAccess(PacketFrontierUpdated.class, new PacketFrontierUpdated(currentFrontier, player.getId()), currentFrontier, server);
                 } else {
-                    PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)),
-                            player);
+                    PacketHandler.sendTo(PacketSettingsProfile.class, new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
                 }
             }
         });
-        context.setPacketHandled(true);
     }
 }

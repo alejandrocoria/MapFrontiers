@@ -6,13 +6,13 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.resources.language.I18n;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
     private final Font font;
     private final SettingsGroup group;
@@ -100,7 +100,7 @@ public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public interface GroupActionResponder {
         void actionChanged(SettingsGroup group, FrontierSettings.Action action, boolean checked);
     }

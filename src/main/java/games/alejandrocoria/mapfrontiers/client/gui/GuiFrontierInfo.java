@@ -18,14 +18,15 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -37,7 +38,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResponder, TextBox.TextBoxResponder {
     static final DateFormat dateFormat = new SimpleDateFormat();
 
@@ -67,6 +68,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
     public GuiFrontierInfo(IClientAPI jmAPI, FrontierOverlay frontier) {
         this(jmAPI, frontier, null);
     }
+
     public GuiFrontierInfo(IClientAPI jmAPI, FrontierOverlay frontier, @Nullable  Runnable afterClose) {
         super(TextComponent.EMPTY);
         this.jmAPI = jmAPI;
@@ -74,7 +76,29 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         frontiersOverlayManager = ClientProxy.getFrontiersOverlayManager(frontier.getPersonal());
         this.frontier = frontier;
 
-        MinecraftForge.EVENT_BUS.register(this);
+        ClientProxy.subscribeDeletedFrontierEvent(this, frontierID -> {
+            if (frontier.getId().equals(frontierID)) {
+                onClose();
+            }
+        });
+
+        ClientProxy.subscribeUpdatedFrontierEvent(this, (frontierOverlay, playerID) -> {
+            if (frontier.getId().equals(frontierOverlay.getId())) {
+                if (playerID != Minecraft.getInstance().player.getId()) {
+                    init(minecraft, width, height);
+                } else {
+                    if (frontier.getModified() != null) {
+                        Component modified = new TranslatableComponent("mapfrontiers.modified", dateFormat.format(frontier.getModified()));
+                        modifiedLabel.setText(modified);
+                    }
+                }
+            }
+        });
+
+        ClientProxy.subscribeUpdatedSettingsProfileEvent(this, profile -> {
+            updateButtons();
+            updateBannerButton();
+        });
     }
 
     @Override
@@ -266,9 +290,9 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        for (Widget w : renderables) {
+        for (GuiEventListener w : children()) {
             if (w instanceof GuiColorPicker) {
-                ((GuiColorPicker) w).mouseReleased(mouseX, mouseY, button);
+                w.mouseReleased(mouseX, mouseY, button);
             }
         }
 
@@ -319,7 +343,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
     public void removed() {
         sendChangesToServer();
         minecraft.keyboardHandler.setSendRepeatsToGui(false);
-        MinecraftForge.EVENT_BUS.unregister(this);
+        ClientProxy.unsuscribeAllEvents(this);
     }
 
     @Override
@@ -328,33 +352,6 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
 
         if (afterClose != null) {
             afterClose.run();
-        }
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onUpdatedSettingsProfileEvent(UpdatedSettingsProfileEvent event) {
-        updateButtons();
-        updateBannerButton();
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onUpdatedFrontierEvent(UpdatedFrontierEvent event) {
-        if (frontier.getId().equals(event.frontierOverlay.getId())) {
-            if (event.playerID != Minecraft.getInstance().player.getId()) {
-                init(minecraft, width, height);
-            } else {
-                if (frontier.getModified() != null) {
-                    Component modified = new TranslatableComponent("mapfrontiers.modified", dateFormat.format(frontier.getModified()));
-                    modifiedLabel.setText(modified);
-                }
-            }
-        }
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onDeletedFrontierEvent(DeletedFrontierEvent event) {
-        if (frontier.getId().equals(event.frontierID)) {
-            onClose();
         }
     }
 

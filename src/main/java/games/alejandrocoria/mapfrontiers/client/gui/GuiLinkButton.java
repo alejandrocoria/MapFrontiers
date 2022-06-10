@@ -10,8 +10,8 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 import net.minecraftforge.client.ForgeHooksClient;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -19,7 +19,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class GuiLinkButton extends AbstractWidget {
     private final BooleanConsumer callbackFunction;
     private final GuiSimpleLabel label;

@@ -68,8 +68,8 @@ public class CommandAccept {
 
                 FrontiersManager.instance.removePendingShareFrontier(messageID);
 
-                PacketHandler.sendTo(new PacketFrontier(frontier), source.getPlayerOrException());
-                PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier), frontier);
+                PacketHandler.sendTo(PacketFrontier.class, new PacketFrontier(frontier), source.getPlayerOrException());
+                PacketHandler.sendToUsersWithAccess(PacketFrontierUpdated.class, new PacketFrontierUpdated(frontier), frontier, source.getServer());
 
                 frontier.removeChange(FrontierData.Change.Shared);
 

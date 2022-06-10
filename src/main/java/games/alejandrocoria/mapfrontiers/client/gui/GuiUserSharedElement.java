@@ -6,15 +6,16 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.resources.language.I18n;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
     private final Font font;
     private final SettingsUserShared user;
@@ -24,9 +25,9 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
     private GuiButtonIcon buttonDelete;
     private final boolean enabled;
     private int pingBar = 0;
-    List<Widget> buttonList;
+    List<GuiEventListener> buttonList;
 
-    public GuiUserSharedElement(Font font, List<Widget> buttonList, SettingsUserShared user, boolean enabled,
+    public GuiUserSharedElement(Font font, List<GuiEventListener> buttonList, SettingsUserShared user, boolean enabled,
                                 boolean removable, UserSharedResponder responder) {
         super(430, 16);
         this.font = font;
@@ -150,7 +151,7 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public interface UserSharedResponder {
         void actionChanged(SettingsUserShared user, SettingsUserShared.Action action, boolean checked);
     }

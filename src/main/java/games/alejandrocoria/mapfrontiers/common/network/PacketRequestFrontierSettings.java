@@ -5,11 +5,10 @@ import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.function.Supplier;
 
 @ParametersAreNonnullByDefault
 public class PacketRequestFrontierSettings {
@@ -31,24 +30,16 @@ public class PacketRequestFrontierSettings {
         buf.writeInt(packet.changeCounter);
     }
 
-    public static void handle(PacketRequestFrontierSettings message, Supplier<NetworkEvent.Context> ctx) {
-        NetworkEvent.Context context = ctx.get();
-        context.enqueueWork(() -> {
-            ServerPlayer player = context.getSender();
-            if (player == null) {
-                return;
-            }
-
+    public static void handle(PacketRequestFrontierSettings message, MinecraftServer server, ServerPlayer player) {
+        server.execute(() -> {
             FrontierSettings settings = FrontiersManager.instance.getSettings();
 
             if (settings.checkAction(FrontierSettings.Action.UpdateSettings, new SettingsUser(player),
                     MapFrontiers.isOPorHost(player), null) && settings.getChangeCounter() > message.changeCounter) {
-                PacketHandler.sendTo(new PacketFrontierSettings(settings), player);
+                PacketHandler.sendTo(PacketFrontierSettings.class, new PacketFrontierSettings(settings), player);
             } else {
-                PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)),
-                        player);
+                PacketHandler.sendTo(PacketSettingsProfile.class, new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
             }
         });
-        context.setPacketHandled(true);
     }
 }

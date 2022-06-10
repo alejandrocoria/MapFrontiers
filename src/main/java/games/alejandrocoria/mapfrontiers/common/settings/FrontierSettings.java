@@ -5,7 +5,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -99,7 +99,7 @@ public class FrontierSettings {
         return false;
     }
 
-    public SettingsProfile getProfile(Player player) {
+    public SettingsProfile getProfile(ServerPlayer player) {
         SettingsProfile profile = new SettingsProfile();
         SettingsUser user = new SettingsUser(player);
 

@@ -17,8 +17,8 @@ import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.phys.Vec2;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Set;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxResponder {
     private final IClientAPI jmAPI;
 
@@ -49,7 +49,10 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
         super(TextComponent.EMPTY);
         this.jmAPI = jmAPI;
 
-        MinecraftForge.EVENT_BUS.register(this);
+        ClientProxy.subscribeUpdatedSettingsProfileEvent(this, profile -> {
+            ForgeHooksClient.popGuiLayer(minecraft);
+            ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiNewFrontier(jmAPI));
+        });
     }
 
     @Override
@@ -181,14 +184,8 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
 
     @Override
     public void removed() {
-        MinecraftForge.EVENT_BUS.unregister(this);
+        ClientProxy.unsuscribeAllEvents(this);
         ClientProxy.configUpdated();
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onUpdatedSettingsProfileEvent(UpdatedSettingsProfileEvent event) {
-        ForgeHooksClient.popGuiLayer(minecraft);
-        ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiNewFrontier(jmAPI));
     }
 
     private void shapeButtonsUpdated() {

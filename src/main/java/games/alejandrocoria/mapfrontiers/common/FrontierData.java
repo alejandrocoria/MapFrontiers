@@ -22,7 +22,6 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.server.ServerLifecycleHooks;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -133,9 +132,8 @@ public class FrontierData {
         this.owner = owner;
     }
 
-    public void ensureOwner() {
+    public void ensureOwner(MinecraftServer server) {
         if (owner.isEmpty()) {
-            MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
             //noinspection StatementWithEmptyBody
             if (server.isDedicatedServer()) {
                 // @Incomplete: I can't find a way to get the server owner.

@@ -19,6 +19,7 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
@@ -26,8 +27,8 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -39,7 +40,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.*;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBoxResponder,
         GuiGroupActionElement.GroupActionResponder, GuiTabbedBox.TabbedBoxResponder, TextBox.TextBoxResponder,
         TextIntBox.TextIntBoxResponder, TextDoubleBox.TextDoubleBoxResponder {
@@ -79,12 +80,18 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         labels = new ArrayList<>();
         labelTooltips = new HashMap<>();
 
-        MinecraftForge.EVENT_BUS.register(this);
+        ClientProxy.subscribeUpdatedSettingsProfileEvent(this, profile -> {
+            if ((profile.updateSettings == SettingsProfile.State.Enabled) == canEditGroups) {
+                return;
+            }
+
+            Minecraft.getInstance().setScreen(new GuiFrontierSettings());
+        });
     }
 
     @Override
     public void init() {
-        PacketHandler.INSTANCE.sendToServer(new PacketRequestFrontierSettings());
+        PacketHandler.sendToServer(PacketRequestFrontierSettings.class, new PacketRequestFrontierSettings());
         minecraft.keyboardHandler.setSendRepeatsToGui(true);
 
         Component title = new TranslatableComponent("mapfrontiers.title_settings");
@@ -208,7 +215,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
 
         if (ticksSinceLastUpdate >= 100) {
             ticksSinceLastUpdate = 0;
-            PacketHandler.INSTANCE.sendToServer(new PacketRequestFrontierSettings(settings.getChangeCounter()));
+            PacketHandler.sendToServer(PacketRequestFrontierSettings.class, new PacketRequestFrontierSettings(settings.getChangeCounter()));
 
             ClientPacketListener handler = minecraft.getConnection();
             if (handler == null) {
@@ -278,7 +285,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        for (Widget w : renderables) {
+        for (GuiEventListener w : children()) {
             if (w instanceof GuiScrollBox) {
                 ((GuiScrollBox) w).mouseReleased();
             }
@@ -302,7 +309,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
             if (settings != null) {
                 SettingsGroup group = settings.createCustomGroup(textNewGroupName.getValue());
                 textNewGroupName.setValue("");
-                GuiGroupElement element = new GuiGroupElement(font, renderables, group);
+                GuiGroupElement element = new GuiGroupElement(font, (List<GuiEventListener>) children(), group);
                 groups.addElement(element);
                 groups.scrollBottom();
                 groupClicked(element);
@@ -346,7 +353,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
             }
 
             group.addUser(user);
-            GuiUserElement element = new GuiUserElement(font, renderables, user);
+            GuiUserElement element = new GuiUserElement(font, (List<GuiEventListener>) children(), user);
             users.addElement(element);
             users.scrollBottom();
 
@@ -363,16 +370,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         minecraft.keyboardHandler.setSendRepeatsToGui(false);
         ClientProxy.configUpdated();
         ClientProxy.setLastSettingsTab(tabSelected);
-        MinecraftForge.EVENT_BUS.unregister(this);
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onUpdatedSettingsProfileEvent(UpdatedSettingsProfileEvent event) {
-        if ((event.profile.updateSettings == SettingsProfile.State.Enabled) == canEditGroups) {
-            return;
-        }
-
-        Minecraft.getInstance().setScreen(new GuiFrontierSettings());
+        ClientProxy.unsuscribeAllEvents(this);
     }
 
     public void linkClicked(boolean open, AbstractWidget widget) {
@@ -395,12 +393,12 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         this.settings = settings;
 
         groups.removeAll();
-        groups.addElement(new GuiGroupElement(font, renderables, settings.getOPsGroup()));
-        groups.addElement(new GuiGroupElement(font, renderables, settings.getOwnersGroup()));
-        groups.addElement(new GuiGroupElement(font, renderables, settings.getEveryoneGroup()));
+        groups.addElement(new GuiGroupElement(font, (List<GuiEventListener>) children(), settings.getOPsGroup()));
+        groups.addElement(new GuiGroupElement(font, (List<GuiEventListener>) children(), settings.getOwnersGroup()));
+        groups.addElement(new GuiGroupElement(font, (List<GuiEventListener>) children(), settings.getEveryoneGroup()));
 
         for (SettingsGroup group : settings.getCustomGroups()) {
-            groups.addElement(new GuiGroupElement(font, renderables, group));
+            groups.addElement(new GuiGroupElement(font, (List<GuiEventListener>) children(), group));
         }
 
         updateGroupsActions();
@@ -607,7 +605,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
     private void sendChangesToServer() {
         if (settings != null) {
             settings.advanceChangeCounter();
-            PacketHandler.INSTANCE.sendToServer(new PacketFrontierSettings(settings));
+            PacketHandler.sendToServer(PacketFrontierSettings.class, new PacketFrontierSettings(settings));
         }
     }
 
@@ -616,7 +614,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         GuiGroupElement element = (GuiGroupElement) groups.getSelectedElement();
         if (element != null && !element.getGroup().isSpecial()) {
             for (SettingsUser user : element.getGroup().getUsers()) {
-                users.addElement(new GuiUserElement(font, renderables, user));
+                users.addElement(new GuiUserElement(font, (List<GuiEventListener>) children(), user));
             }
         }
 

@@ -8,13 +8,11 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.server.ServerLifecycleHooks;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 @ParametersAreNonnullByDefault
 public class PacketRemoveSharedUserPersonalFrontier {
@@ -42,14 +40,8 @@ public class PacketRemoveSharedUserPersonalFrontier {
         packet.targetUser.toBytes(buf);
     }
 
-    public static void handle(PacketRemoveSharedUserPersonalFrontier message, Supplier<NetworkEvent.Context> ctx) {
-        NetworkEvent.Context context = ctx.get();
-        context.enqueueWork(() -> {
-            ServerPlayer player = context.getSender();
-            if (player == null) {
-                return;
-            }
-
+    public static void handle(PacketRemoveSharedUserPersonalFrontier message, MinecraftServer server, ServerPlayer player) {
+        server.execute(() -> {
             SettingsUser playerUser = new SettingsUser(player);
 
             message.targetUser.fillMissingInfo(false);
@@ -74,29 +66,23 @@ public class PacketRemoveSharedUserPersonalFrontier {
                         if (userShared.isPending()) {
                             FrontiersManager.instance.removePendingShareFrontier(message.targetUser);
                         } else {
-                            FrontiersManager.instance.deletePersonalFrontier(message.targetUser, currentFrontier.getDimension(),
-                                    message.frontierID);
+                            FrontiersManager.instance.deletePersonalFrontier(message.targetUser, currentFrontier.getDimension(), message.frontierID);
 
-                            ServerPlayer targetPlayer = ServerLifecycleHooks.getCurrentServer().getPlayerList()
-                                    .getPlayer(message.targetUser.uuid);
+                            ServerPlayer targetPlayer = server.getPlayerList().getPlayer(message.targetUser.uuid);
                             if (targetPlayer != null) {
-                                PacketHandler.sendTo(
-                                        new PacketFrontierDeleted(currentFrontier.getDimension(), message.frontierID, true, -1),
-                                        targetPlayer);
+                                PacketHandler.sendTo(PacketFrontierDeleted.class, new PacketFrontierDeleted(currentFrontier.getDimension(), message.frontierID,
+                                        true, -1), targetPlayer);
                             }
                         }
 
-                        PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(currentFrontier, player.getId()),
-                                currentFrontier);
+                        PacketHandler.sendToUsersWithAccess(PacketFrontierUpdated.class, new PacketFrontierUpdated(currentFrontier, player.getId()), currentFrontier, server);
 
                         currentFrontier.removeChange(FrontierData.Change.Shared);
                     }
                 } else {
-                    PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)),
-                            player);
+                    PacketHandler.sendTo(PacketSettingsProfile.class, new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
                 }
             }
         });
-        context.setPacketHandled(true);
     }
 }

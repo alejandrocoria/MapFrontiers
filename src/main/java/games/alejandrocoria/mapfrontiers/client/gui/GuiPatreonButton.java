@@ -12,8 +12,8 @@ import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 import net.minecraftforge.client.ForgeHooksClient;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -21,7 +21,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class GuiPatreonButton extends AbstractWidget {
     private static final ResourceLocation texture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/patreon.png");
     private static final int textureSizeX = 212;
