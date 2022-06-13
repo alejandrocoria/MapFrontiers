@@ -3,16 +3,14 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.Util;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.network.chat.Component;
-import net.fabricmc.api.Environment;
-import net.fabricmc.api.EnvType;
-import net.minecraftforge.client.ForgeHooksClient;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.net.URI;
@@ -56,7 +54,7 @@ public class GuiLinkButton extends AbstractWidget {
 
     @Override
     public void onClick(double mouseX, double mouseY) {
-        ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new ConfirmLinkScreen(callbackFunction, uri, false));
+        ScreenLayerManager.pushLayer(new ConfirmLinkScreen(callbackFunction, uri, false));
     }
 
     @Override

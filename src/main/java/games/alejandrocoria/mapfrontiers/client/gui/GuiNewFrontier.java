@@ -4,11 +4,12 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.Context;
-import net.minecraft.client.Minecraft;
+import journeymap.client.ui.ScreenLayerManager;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
@@ -17,12 +18,6 @@ import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.phys.Vec2;
-import net.fabricmc.api.Environment;
-import net.fabricmc.api.EnvType;
-import net.minecraftforge.client.ForgeHooksClient;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
@@ -50,8 +45,8 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
         this.jmAPI = jmAPI;
 
         ClientProxy.subscribeUpdatedSettingsProfileEvent(this, profile -> {
-            ForgeHooksClient.popGuiLayer(minecraft);
-            ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiNewFrontier(jmAPI));
+            ScreenLayerManager.popLayer();
+            ScreenLayerManager.pushLayer(new GuiNewFrontier(jmAPI));
         });
     }
 
@@ -147,9 +142,9 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
         } else if (button == buttonCreateFrontier) {
             boolean personal = buttonFrontierType.getSelected() == 1;
             ClientProxy.getFrontiersOverlayManager(personal).clientCreateNewfrontier(jmAPI.getUIState(Context.UI.Fullscreen).dimension, calculateVertices(), calculateChunks());
-            ForgeHooksClient.popGuiLayer(minecraft);
+            ScreenLayerManager.popLayer();
         } else if (button == buttonCancel) {
-            ForgeHooksClient.popGuiLayer(minecraft);
+            ScreenLayerManager.popLayer();
         }
     }
 

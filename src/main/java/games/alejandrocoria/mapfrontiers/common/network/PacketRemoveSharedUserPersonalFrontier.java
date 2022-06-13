@@ -44,7 +44,7 @@ public class PacketRemoveSharedUserPersonalFrontier {
         server.execute(() -> {
             SettingsUser playerUser = new SettingsUser(player);
 
-            message.targetUser.fillMissingInfo(false);
+            message.targetUser.fillMissingInfo(false, server);
             if (message.targetUser.uuid == null) {
                 return;
             }

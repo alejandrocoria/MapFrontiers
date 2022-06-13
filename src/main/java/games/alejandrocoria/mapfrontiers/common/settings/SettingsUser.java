@@ -6,9 +6,11 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.player.Player;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.annotation.Nullable;
 import java.util.UUID;
 
 public class SettingsUser {
@@ -24,46 +26,19 @@ public class SettingsUser {
         uuid = player.getUUID();
     }
 
-    public SettingsUser(String username, UUID uuid) {
-        if (username == null) {
-            this.username = "";
-        } else {
-            this.username = username;
-        }
-
-        this.uuid = uuid;
-
-        fillMissingInfo(false);
-    }
-
-    public SettingsUser(String username) {
-        if (username == null) {
-            this.username = "";
-        } else {
-            this.username = username;
-        }
-
-        fillMissingInfo(false);
-    }
-
-    public SettingsUser(UUID uuid) {
-        this.uuid = uuid;
-        fillMissingInfo(true);
-    }
-
     public boolean isEmpty() {
         return uuid == null && StringUtils.isBlank(username);
     }
 
-    public void fillMissingInfo(boolean forceNameUpdate) {
+    public void fillMissingInfo(boolean forceNameUpdate, @Nullable MinecraftServer server) {
         if (isEmpty()) {
             return;
         }
 
         if (uuid == null) {
-            uuid = UUIDHelper.getUUIDFromName(username);
+            uuid = UUIDHelper.getUUIDFromName(username, server);
         } else if (StringUtils.isBlank(username) || forceNameUpdate) {
-            String newUsername = UUIDHelper.getNameFromUUID(uuid);
+            String newUsername = UUIDHelper.getNameFromUUID(uuid, server);
             if (newUsername != null) {
                 username = newUsername;
             } else if (username == null) {
@@ -79,13 +54,9 @@ public class SettingsUser {
         } catch (Exception e) {
             MapFrontiers.LOGGER.error(e.getMessage(), e);
         }
-
-        fillMissingInfo(true);
     }
 
     public void writeToNBT(CompoundTag nbt) {
-        fillMissingInfo(true);
-
         nbt.putString("username", username);
         nbt.putString("UUID", uuid.toString());
     }
@@ -104,8 +75,6 @@ public class SettingsUser {
         } else {
             uuid = null;
         }
-
-        fillMissingInfo(false);
     }
 
     public void toBytes(FriendlyByteBuf buf) {
@@ -126,8 +95,6 @@ public class SettingsUser {
 
     @Override
     public int hashCode() {
-        fillMissingInfo(false);
-
         return uuid.hashCode();
     }
 
@@ -142,9 +109,6 @@ public class SettingsUser {
         }
 
         SettingsUser user = (SettingsUser) other;
-
-        fillMissingInfo(false);
-        user.fillMissingInfo(false);
 
         if (uuid != null) {
             return uuid.equals(user.uuid);

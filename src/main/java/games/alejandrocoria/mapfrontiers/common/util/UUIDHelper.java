@@ -6,17 +6,16 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.server.MinecraftServer;
-import net.minecraftforge.server.ServerLifecycleHooks;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class UUIDHelper {
-    public static UUID getUUIDFromName(String username) {
+    public static UUID getUUIDFromName(String username, @Nullable MinecraftServer server) {
         GameProfile profile = null;
 
-        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
         if (server != null) {
             profile = server.getProfileCache().get(username).orElse(null);
         } else {
@@ -35,10 +34,9 @@ public class UUIDHelper {
         return null;
     }
 
-    public static String getNameFromUUID(UUID uuid) {
+    public static String getNameFromUUID(UUID uuid, @Nullable MinecraftServer server) {
         GameProfile profile = null;
 
-        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
         if (server != null) {
             profile = server.getProfileCache().get(uuid).orElse(null);
         } else {

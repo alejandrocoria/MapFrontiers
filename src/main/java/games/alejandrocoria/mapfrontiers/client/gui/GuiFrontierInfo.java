@@ -5,19 +5,18 @@ import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
-import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
-import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.Context;
+import journeymap.client.ui.ScreenLayerManager;
 import journeymap.client.ui.UIManager;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Widget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
@@ -25,12 +24,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.item.ItemStack;
-import net.fabricmc.api.Environment;
-import net.fabricmc.api.EnvType;
-import net.minecraftforge.client.ForgeHooksClient;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -316,10 +309,10 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
             sendChangesToServer();
         } else if (button == buttonSelect) {
             BlockPos center = frontier.getCenter();
-            ForgeHooksClient.popGuiLayer(minecraft);
+            ScreenLayerManager.popLayer();
             UIManager.INSTANCE.openFullscreenMap().centerOn(center.getX(), center.getZ());
         } else if (button == buttonShareSettings) {
-            ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiShareSettings(frontiersOverlayManager, frontier));
+            ScreenLayerManager.pushLayer(new GuiShareSettings(frontiersOverlayManager, frontier));
         } else if (button == buttonDelete) {
             frontiersOverlayManager.clientDeleteFrontier(frontier);
             onClose();
@@ -348,7 +341,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
 
     @Override
     public void onClose() {
-        ForgeHooksClient.popGuiLayer(minecraft);
+        ScreenLayerManager.popLayer();
 
         if (afterClose != null) {
             afterClose.run();

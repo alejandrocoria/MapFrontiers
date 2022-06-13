@@ -145,7 +145,7 @@ public class FrontierData {
                 }
             }
         } else {
-            owner.fillMissingInfo(false);
+            owner.fillMissingInfo(false, server);
         }
     }
 

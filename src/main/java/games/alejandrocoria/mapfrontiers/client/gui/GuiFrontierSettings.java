@@ -5,7 +5,6 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiScrollBox.ScrollElement;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
-import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketRequestFrontierSettings;
@@ -14,11 +13,13 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings.Action
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import journeymap.client.ui.ScreenLayerManager;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.components.Widget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientPacketListener;
@@ -27,12 +28,6 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
-import net.fabricmc.api.Environment;
-import net.fabricmc.api.EnvType;
-import net.minecraftforge.client.ForgeHooksClient;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.glfw.GLFW;
 
@@ -276,7 +271,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
     @Override
     public boolean keyPressed(int key, int value, int modifier) {
         if (key == GLFW.GLFW_KEY_E && !(getFocused() instanceof EditBox)) {
-            ForgeHooksClient.popGuiLayer(minecraft);
+            ScreenLayerManager.popLayer();
             return true;
         } else {
             return super.keyPressed(key, value, modifier);
@@ -326,7 +321,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
                 return;
             } else if (usernameOrUUID.length() < 28) {
                 user.username = usernameOrUUID;
-                user.fillMissingInfo(false);
+                user.fillMissingInfo(false, null);
             } else {
                 usernameOrUUID = usernameOrUUID.replaceAll("[^0-9a-fA-F]", "");
                 if (usernameOrUUID.length() != 32) {
@@ -340,7 +335,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
 
                 try {
                     user.uuid = UUID.fromString(uuid);
-                    user.fillMissingInfo(true);
+                    user.fillMissingInfo(true, null);
                 } catch (Exception e) {
                     textNewUser.setError(new TranslatableComponent("mapfrontiers.new_user_error_uuid_format"));
                     return;
@@ -361,7 +356,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
 
             sendChangesToServer();
         } else if (button == buttonDone) {
-            ForgeHooksClient.popGuiLayer(minecraft);
+            ScreenLayerManager.popLayer();
         }
     }
 

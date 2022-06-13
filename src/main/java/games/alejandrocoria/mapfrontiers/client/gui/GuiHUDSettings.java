@@ -4,8 +4,11 @@ import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
+import journeymap.client.ui.ScreenLayerManager;
 import journeymap.client.ui.UIManager;
 import journeymap.client.ui.minimap.MiniMap;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -13,9 +16,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
-import net.fabricmc.api.Environment;
-import net.fabricmc.api.EnvType;
-import net.minecraftforge.client.ForgeHooksClient;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -180,7 +180,7 @@ public class GuiHUDSettings extends Screen implements TextIntBox.TextIntBoxRespo
     @Override
     public boolean keyPressed(int key, int value, int modifier) {
         if (key == GLFW.GLFW_KEY_E && !(getFocused() instanceof EditBox)) {
-            ForgeHooksClient.popGuiLayer(minecraft);
+            ScreenLayerManager.popLayer();
             return true;
         } else {
             return super.keyPressed(key, value, modifier);

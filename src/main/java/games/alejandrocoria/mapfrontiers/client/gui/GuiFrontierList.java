@@ -6,29 +6,21 @@ import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
-import games.alejandrocoria.mapfrontiers.common.event.NewFrontierEvent;
-import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
-import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.data.WorldData;
+import journeymap.client.ui.ScreenLayerManager;
 import journeymap.client.waypoint.WaypointStore;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Widget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
-import net.fabricmc.api.Environment;
-import net.fabricmc.api.EnvType;
-import net.minecraftforge.client.ForgeHooksClient;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
@@ -182,13 +174,13 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
             updateFrontiers();
             updateButtons();
         } else if (button == buttonCreate) {
-            ForgeHooksClient.popGuiLayer(minecraft);
-            ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiNewFrontier(jmAPI));
+            ScreenLayerManager.popLayer();
+            ScreenLayerManager.pushLayer(new GuiNewFrontier(jmAPI));
         } else if (button == buttonInfo) {
-            ForgeHooksClient.popGuiLayer(minecraft);
+            ScreenLayerManager.popLayer();
             FrontierOverlay frontier = ((GuiFrontierListElement) frontiers.getSelectedElement()).getFrontier();
-            ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiFrontierInfo(jmAPI, frontier,
-                    () -> ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiFrontierList(jmAPI, fullscreenMap))));
+            ScreenLayerManager.pushLayer(new GuiFrontierInfo(jmAPI, frontier,
+                    () -> ScreenLayerManager.pushLayer(new GuiFrontierList(jmAPI, fullscreenMap))));
         } else if (button == buttonDelete) {
             FrontierOverlay frontier = ((GuiFrontierListElement) frontiers.getSelectedElement()).getFrontier();
             FrontiersOverlayManager frontierManager = ClientProxy.getFrontiersOverlayManager(frontier.getPersonal());
@@ -200,7 +192,7 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
             frontier.setVisible(!frontier.getVisible());
             updateButtons();
         } else if (button == buttonDone) {
-            ForgeHooksClient.popGuiLayer(minecraft);
+            ScreenLayerManager.popLayer();
         }
     }
 

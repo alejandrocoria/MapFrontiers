@@ -5,15 +5,15 @@ import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiScrollBox.ScrollElement;
-import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
-import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketRemoveSharedUserPersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateSharedUserPersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import journeymap.client.ui.ScreenLayerManager;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Widget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientPacketListener;
@@ -21,12 +21,6 @@ import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
-import net.fabricmc.api.Environment;
-import net.fabricmc.api.EnvType;
-import net.minecraftforge.client.ForgeHooksClient;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -58,7 +52,7 @@ public class GuiShareSettings extends Screen
 
         ClientProxy.subscribeDeletedFrontierEvent(this, frontierID -> {
             if (frontierID.equals(this.frontier.getId())) {
-                ForgeHooksClient.popGuiLayer(minecraft);
+                ScreenLayerManager.popLayer();
             }
         });
 
@@ -166,7 +160,7 @@ public class GuiShareSettings extends Screen
 
     protected void buttonPressed(Button button) {
         if (button == buttonDone) {
-            ForgeHooksClient.popGuiLayer(minecraft);
+            ScreenLayerManager.popLayer();
         }
     }
 
@@ -179,7 +173,7 @@ public class GuiShareSettings extends Screen
             return;
         } else if (usernameOrUUID.length() < 28) {
             user.username = usernameOrUUID;
-            user.fillMissingInfo(false);
+            user.fillMissingInfo(false, null);
         } else {
             usernameOrUUID = usernameOrUUID.replaceAll("[^0-9a-fA-F]", "");
             if (usernameOrUUID.length() != 32) {
@@ -193,7 +187,7 @@ public class GuiShareSettings extends Screen
 
             try {
                 user.uuid = UUID.fromString(uuid);
-                user.fillMissingInfo(true);
+                user.fillMissingInfo(true, null);
             } catch (Exception e) {
                 textNewUser.setError(new TranslatableComponent("mapfrontiers.new_user_error_uuid_format"));
                 return;

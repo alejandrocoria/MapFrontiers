@@ -5,10 +5,6 @@ import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
-import games.alejandrocoria.mapfrontiers.common.event.NewFrontierEvent;
-import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
-import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import journeymap.client.api.IClientAPI;
@@ -16,20 +12,16 @@ import journeymap.client.api.display.Context;
 import journeymap.client.api.display.IThemeButton;
 import journeymap.client.api.display.ModPopupMenu;
 import journeymap.client.api.display.ThemeButtonDisplay;
+import journeymap.client.ui.ScreenLayerManager;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.fabricmc.api.Environment;
-import net.fabricmc.api.EnvType;
-import net.minecraftforge.client.ForgeHooksClient;
-import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -106,6 +98,18 @@ public class GuiFullscreenMap {
         ClientProxy.subscribeUpdatedSettingsProfileEvent(this, profile -> {
             updatebuttons();
         });
+
+        ScreenMouseEvents.afterMouseRelease(Minecraft.getInstance().screen).register((screen, mouseX, mouseY, button) -> {
+            if (button != 1) {
+                return;
+            }
+
+            if (!editing || drawingChunk == ChunkDrawing.Nothing || frontierHighlighted.getMode() != FrontierData.Mode.Chunk) {
+                return;
+            }
+
+            drawingChunk = ChunkDrawing.Nothing;
+        });
     }
 
     public void close() {
@@ -170,7 +174,7 @@ public class GuiFullscreenMap {
     }
 
     private void buttonFrontiersPressed() {
-        ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiFrontierList(jmAPI, this));
+        ScreenLayerManager.pushLayer(new GuiFrontierList(jmAPI, this));
     }
 
     private void buttonNewPressed() {
@@ -178,13 +182,13 @@ public class GuiFullscreenMap {
             frontierHighlighted.setHighlighted(false);
         }
 
-        ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiNewFrontier(jmAPI));
+        ScreenLayerManager.pushLayer(new GuiNewFrontier(jmAPI));
 
         updatebuttons();
     }
 
     private void buttonInfoPressed() {
-        ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiFrontierInfo(jmAPI, frontierHighlighted));
+        ScreenLayerManager.pushLayer(new GuiFrontierInfo(jmAPI, frontierHighlighted));
     }
 
     private void buttonEditToggled() {
@@ -343,22 +347,5 @@ public class GuiFullscreenMap {
         } else {
             frontierHighlighted.removeChunk(chunk);
         }
-    }
-
-    @SubscribeEvent
-    public void mouseEvent(InputEvent.MouseInputEvent event) {
-        if (event.getAction() != GLFW.GLFW_RELEASE || event.getButton() != 1) {
-            return;
-        }
-
-        if (!editing || drawingChunk == ChunkDrawing.Nothing) {
-            return;
-        }
-
-        if (frontierHighlighted.getMode() != FrontierData.Mode.Chunk) {
-            return;
-        }
-
-        drawingChunk = ChunkDrawing.Nothing;
     }
 }
