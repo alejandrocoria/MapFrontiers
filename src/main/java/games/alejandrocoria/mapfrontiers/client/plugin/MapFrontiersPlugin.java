@@ -19,7 +19,6 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.EnumSet;
 
 @ParametersAreNonnullByDefault
-@journeymap.client.api.ClientPlugin
 @Environment(EnvType.CLIENT)
 public class MapFrontiersPlugin implements IClientPlugin {
     private static IClientAPI jmAPI;

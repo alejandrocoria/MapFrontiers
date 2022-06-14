@@ -75,7 +75,7 @@ public class PacketHandler {
 
     @Environment(EnvType.CLIENT)
     private static <MSG> void registerClientReceiver(String id, Class<MSG> messageType, BiConsumer<MSG, FriendlyByteBuf> encoder, Function<FriendlyByteBuf, MSG> decoder, BiConsumer<MSG, Minecraft> messageConsumer) {
-        ResourceLocation channelName = new ResourceLocation(MapFrontiers.MODID, id);
+        ResourceLocation channelName = new ResourceLocation(MapFrontiers.MODID, id.toLowerCase());
         messageHandlers.put(messageType, new MessageHandler<>(channelName, encoder));
         ClientPlayNetworking.registerGlobalReceiver(channelName, (client, handler, buf, responseSender) -> {
             MSG message = decoder.apply(buf);
@@ -84,7 +84,7 @@ public class PacketHandler {
     }
 
     private static <MSG> void registerServerReceiver(String id, Class<MSG> messageType, BiConsumer<MSG, FriendlyByteBuf> encoder, Function<FriendlyByteBuf, MSG> decoder, ServerMessageConsumer<MSG, MinecraftServer, ServerPlayer> messageConsumer) {
-        ResourceLocation channelName = new ResourceLocation(MapFrontiers.MODID, id);
+        ResourceLocation channelName = new ResourceLocation(MapFrontiers.MODID, id.toLowerCase());
         messageHandlers.put(messageType, new MessageHandler<>(channelName, encoder));
         ServerPlayNetworking.registerGlobalReceiver(channelName, (server, player, handler, buf, responseSender) -> {
             MSG message = decoder.apply(buf);

@@ -23,6 +23,10 @@ repositories {
 	maven {
 		url "https://www.cursemaven.com"
 	}
+
+	maven {
+		url "https://maven.shedaniel.me"
+	}
 }
 
 dependencies {
@@ -36,6 +40,10 @@ dependencies {
 
 	modApi group: 'info.journeymap', name: 'journeymap-api', version: project.journeymap_api_fabric_version, changing: true
 	modImplementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_fabric_file_id}"
+
+	modApi("me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}") {
+		exclude(group: "net.fabricmc.fabric-api")
+	}
 }
 
 processResources {

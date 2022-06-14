@@ -9,6 +9,8 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.util.BlockPosHelper;
 import journeymap.client.api.IClientAPI;
+import me.shedaniel.autoconfig.AutoConfig;
+import me.shedaniel.autoconfig.serializer.Toml4jConfigSerializer;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -51,8 +53,12 @@ public class ClientProxy implements ClientModInitializer {
     private static final Map<Object, BiConsumer<FrontierOverlay, Integer>> updatedFrontierEventMap = new HashMap<>();
     private static final Map<Object, Consumer<SettingsProfile>> updatedSettingsProfileEventMap = new HashMap<>();
 
+    public static ConfigData config;
+
     @Override
     public void onInitializeClient() {
+        AutoConfig.register(ConfigData.class, Toml4jConfigSerializer::new);
+        config = AutoConfig.getConfigHolder(ConfigData.class).getConfig();
         PacketHandler.registerClientReceivers();
 
         openSettingsKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
@@ -189,7 +195,7 @@ public class ClientProxy implements ClientModInitializer {
     }
 
     public static void configUpdated() {
-        ConfigData.save();
+        AutoConfig.getConfigHolder(ConfigData.class).save();
 
         if (frontiersOverlayManager != null) {
             frontiersOverlayManager.updateAllOverlays(true);

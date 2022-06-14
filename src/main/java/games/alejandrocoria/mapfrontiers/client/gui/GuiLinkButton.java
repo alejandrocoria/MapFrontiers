@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
+import journeymap.client.ui.ScreenLayerManager;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.Util;

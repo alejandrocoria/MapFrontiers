@@ -23,6 +23,9 @@
     ],
     "client": [
       "games.alejandrocoria.mapfrontiers.client.ClientProxy"
+    ],
+    "journeymap": [
+      "games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin"
     ]
   },
   "mixins": [
