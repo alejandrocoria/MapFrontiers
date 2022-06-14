@@ -300,10 +300,10 @@ public class GuiHUD {
     }
 
     private void drawBanner(PoseStack matrixStack, int frameColor, float partialTicks) {
-        GuiComponent.fill(matrixStack, posX + hudWidth / 2 - 11 * bannerScale - 2, posY + bannerOffsetY,
-                posX + hudWidth / 2 + 11 * bannerScale + 2, posY + bannerOffsetY + 4 + 40 * bannerScale, frameColor);
+        GuiComponent.fill(matrixStack, posX + hudWidth / 2 - 10 * bannerScale - 2, posY + bannerOffsetY,
+                posX + hudWidth / 2 + 10 * bannerScale + 2, posY + bannerOffsetY + 4 + 40 * bannerScale, frameColor);
 
-        frontier.renderBanner(mc, matrixStack, posX + hudWidth / 2 - 11 * bannerScale, posY + bannerOffsetY + 2, bannerScale);
+        frontier.renderBanner(mc, matrixStack, posX + hudWidth / 2 - 10 * bannerScale, posY + bannerOffsetY + 2, bannerScale);
     }
 
     private void updateData() {

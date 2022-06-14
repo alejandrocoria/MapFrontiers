@@ -3,9 +3,9 @@ package games.alejandrocoria.mapfrontiers.client;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
-import com.mojang.math.Matrix4f;
+import com.mojang.blaze3d.platform.Lighting;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.datafixers.util.Pair;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiColors;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
@@ -24,9 +24,12 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.Sheets;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.model.geom.ModelLayers;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.blockentity.BannerRenderer;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
@@ -53,6 +56,8 @@ public class FrontierOverlay extends FrontierData {
             0, 12, 12, GuiColors.WHITE, 1.f);
     private static final MapImage markerDot = new MapImage(new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"), 12, 0,
             8, 8, GuiColors.WHITE, 1.f);
+
+    private static ModelPart flag = null;
 
     static {
         markerVertex.setAnchorX(markerVertex.getDisplayWidth() / 2.0).setAnchorY(markerVertex.getDisplayHeight() / 2.0);
@@ -85,6 +90,11 @@ public class FrontierOverlay extends FrontierData {
         super(data);
         this.jmAPI = jmAPI;
         displayId = "frontier_" + id.toString();
+
+        if (flag == null) {
+            flag = Minecraft.getInstance().getEntityModels().bakeLayer(ModelLayers.BANNER).getChild("flag");
+        }
+
         updateOverlay();
 
         if (banner != null) {
@@ -482,35 +492,15 @@ public class FrontierOverlay extends FrontierData {
             return;
         }
 
-        for (int i = 0; i < bannerDisplay.patternList.size(); ++i) {
-            BannerPattern pattern = bannerDisplay.patternList.get(i);
-            TextureAtlasSprite sprite = mc.getTextureAtlas(Sheets.BANNER_SHEET).apply(pattern.location(true));
-            RenderSystem.setShader(GameRenderer::getPositionColorTexShader);
-            RenderSystem.setShaderTexture(0, Sheets.BANNER_SHEET);
-            RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
-
-            RenderSystem.enableBlend();
-
-            Tesselator tessellator = Tesselator.getInstance();
-            BufferBuilder buf = tessellator.getBuilder();
-            float[] colors = bannerDisplay.colorList.get(i).getTextureDiffuseColors();
-            int width = 22 * scale;
-            int height = 40 * scale;
-            float zLevel = 0.f;
-            float u1 = sprite.getU0();
-            float u2 = sprite.getU0() + 22.f / 512.f;
-            float v1 = sprite.getV0() + 1.f / 512.f;
-            float v2 = sprite.getV0() + 41.f / 512.f;
-            buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
-            Matrix4f matrix = matrixStack.last().pose();
-            buf.vertex(matrix, x, y + height, zLevel).color(colors[0], colors[1], colors[2], 1.f).uv(u1, v2).endVertex();
-            buf.vertex(matrix, x + width, y + height, zLevel).color(colors[0], colors[1], colors[2], 1.f).uv(u2, v2).endVertex();
-            buf.vertex(matrix, x + width, y, zLevel).color(colors[0], colors[1], colors[2], 1.f).uv(u2, v1).endVertex();
-            buf.vertex(matrix, x, y, zLevel).color(colors[0], colors[1], colors[2], 1.f).uv(u1, v1).endVertex();
-            tessellator.end();
-
-            RenderSystem.disableBlend();
-        }
+        Lighting.setupForFlatItems();
+        MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
+        matrixStack.pushPose();
+        matrixStack.translate(x + scale * 10, y, 0.0);
+        matrixStack.scale(scale, scale, 1);
+        matrixStack.scale(16, 16, -1);
+        BannerRenderer.renderPatterns(matrixStack, bufferSource, OverlayTexture.pack(240, 240), OverlayTexture.NO_OVERLAY, flag, ModelBakery.BANNER_BASE, true, bannerDisplay.patternList);
+        matrixStack.popPose();
+        bufferSource.endBatch();
     }
 
     public void removeSelectedVertex() {
@@ -936,15 +926,12 @@ public class FrontierOverlay extends FrontierData {
 
     @Environment(EnvType.CLIENT)
     public static class BannerDisplayData {
-        public final List<BannerPattern> patternList;
-        public final List<DyeColor> colorList;
+        public final List<Pair<BannerPattern, DyeColor>> patternList;
         public String patternResourceLocation;
 
         public BannerDisplayData(FrontierData.BannerData bannerData) {
             patternList = new ArrayList<>();
-            colorList = new ArrayList<>();
-            patternList.add(BannerPattern.BASE);
-            colorList.add(bannerData.baseColor);
+            patternList.add(Pair.of(BannerPattern.BASE, bannerData.baseColor));
             patternResourceLocation = "b" + bannerData.baseColor.getId();
 
             if (bannerData.patterns != null) {
@@ -953,10 +940,9 @@ public class FrontierOverlay extends FrontierData {
                     BannerPattern bannerpattern = BannerPattern.byHash(nbttagcompound.getString("Pattern"));
 
                     if (bannerpattern != null) {
-                        patternList.add(bannerpattern);
-                        int j = nbttagcompound.getInt("Color");
-                        colorList.add(DyeColor.byId(j));
-                        patternResourceLocation += bannerpattern.getHashname() + j;
+                        int c = nbttagcompound.getInt("Color");
+                        patternList.add(Pair.of(bannerpattern, DyeColor.byId(c)));
+                        patternResourceLocation += bannerpattern.getHashname() + c;
                     }
                 }
             }
