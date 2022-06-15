@@ -94,6 +94,8 @@ public class MapFrontiersPlugin implements IClientPlugin {
                 }
                 break;
             case DISPLAY_UPDATE:
+                DisplayUpdateEvent de = (DisplayUpdateEvent)event;
+                MapFrontiers.LOGGER.info("DISPLAY_UPDATE: de.uiState.ui:" + de.uiState.ui + "    de.uiState.active: " + de.uiState.active);
                 if (fullscreenMap != null) {
                     DisplayUpdateEvent displayEvent = (DisplayUpdateEvent)event;
                     if (displayEvent.uiState.ui == Context.UI.Fullscreen) {
