@@ -68,13 +68,6 @@ public class GuiScrollBox extends AbstractWidget {
         return null;
     }
 
-    public ScrollElement getElementIf(Predicate<ScrollElement> pred) {
-        return elements.stream()
-                .filter(pred)
-                .findFirst()
-                .orElse(null);
-    }
-
     public void selectElementIf(Predicate<ScrollElement> pred) {
         ScrollElement element = elements.stream()
                 .filter(pred)

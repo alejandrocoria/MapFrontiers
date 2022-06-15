@@ -86,10 +86,6 @@ public class GuiSimpleLabel extends AbstractWidget {
         this.color = color;
     }
 
-    public String getText(int line) {
-        return texts.get(line);
-    }
-
     @Override
     public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         matrixStack.scale(scale, scale, 1.0F);

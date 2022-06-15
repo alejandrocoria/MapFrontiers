@@ -80,6 +80,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
                 return;
             }
 
+            ClientProxy.setLastSettingsTab(tabSelected);
             Minecraft.getInstance().setScreen(new GuiFrontierSettings());
         });
     }
@@ -381,6 +382,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
             }
         }
 
+        ClientProxy.setLastSettingsTab(tabSelected);
         Minecraft.getInstance().setScreen(new GuiFrontierSettings());
     }
 
@@ -633,9 +635,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
     private boolean canAddNewUser() {
         if (tabSelected == Tab.Groups && groups.getSelectedElement() != null) {
             SettingsGroup group = ((GuiGroupElement) groups.getSelectedElement()).getGroup();
-            if (!group.isSpecial()) {
-                return true;
-            }
+            return !group.isSpecial();
         }
 
         return false;

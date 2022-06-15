@@ -165,10 +165,6 @@ public class FrontierData {
         return vertices.size();
     }
 
-    public BlockPos getVertex(int index) {
-        return vertices.get(index);
-    }
-
     public void addVertex(BlockPos pos, int index) {
         vertices.add(index, BlockPosHelper.atY(pos,70));
         changes.add(Change.Vertices);
@@ -328,20 +324,6 @@ public class FrontierData {
         }
 
         usersShared.add(userShared);
-        changes.add(Change.Shared);
-    }
-
-    public void removeUserShared(int index) {
-        if (usersShared == null) {
-            return;
-        }
-
-        usersShared.remove(index);
-
-        if (usersShared.isEmpty()) {
-            usersShared = null;
-        }
-
         changes.add(Change.Shared);
     }
 

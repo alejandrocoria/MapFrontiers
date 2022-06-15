@@ -9,11 +9,13 @@
     "Alejandro Coria (MemeSapiens)"
   ],
   "contact": {
+    "email": "contact@alejandrocoria.games",
     "homepage": "https://alejandrocoria.games/projects/MapFrontiers/",
+    "issues": "https://github.com/alejandrocoria/MapFrontiers/issues",
     "sources": "https://github.com/alejandrocoria/MapFrontiers"
   },
 
-  "license": "MIT License",
+  "license": "MIT",
   "icon": "logo.png",
 
   "environment": "*",
@@ -28,17 +30,12 @@
       "games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin"
     ]
   },
-  "mixins": [
-    "mapfrontiers.mixins.json"
-  ],
 
   "depends": {
     "fabricloader": ">=0.14.6",
     "fabric": "*",
     "minecraft": "~1.18.2",
-    "java": ">=17"
-  },
-  "suggests": {
-    "another-mod": "*"
+    "java": ">=17",
+    "cloth-config": ">=6.2"
   }
 }

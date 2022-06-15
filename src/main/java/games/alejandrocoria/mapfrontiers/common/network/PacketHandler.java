@@ -18,15 +18,14 @@ import net.minecraft.server.level.ServerPlayer;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 @ParametersAreNonnullByDefault
 public class PacketHandler {
     private static class MessageHandler<MSG> {
-        public ResourceLocation channelName;
-        public BiConsumer<MSG, FriendlyByteBuf> encoder;
+        public final ResourceLocation channelName;
+        public final BiConsumer<MSG, FriendlyByteBuf> encoder;
 
         public MessageHandler(ResourceLocation channelName, BiConsumer<MSG, FriendlyByteBuf> encoder) {
             this.channelName = channelName;
@@ -142,14 +141,5 @@ public class PacketHandler {
     @FunctionalInterface
     private interface ServerMessageConsumer<MSG, S, P> {
         void accept(MSG message, S server, P player);
-
-        default ServerMessageConsumer<MSG, S, P> andThen(ServerMessageConsumer<? super MSG, ? super S, ? super P> after) {
-            Objects.requireNonNull(after);
-
-            return (m, s, p) -> {
-                accept(m, s, p);
-                after.accept(m, s, p);
-            };
-        }
     }
 }

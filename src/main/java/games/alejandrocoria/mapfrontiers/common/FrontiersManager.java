@@ -40,7 +40,6 @@ public class FrontiersManager {
     private final HashMap<Integer, PendingShareFrontier> pendingShareFrontiers;
     private int pendingShareFrontiersTick = 0;
     private FrontierSettings frontierSettings;
-    private final Random rand = new Random();
     private File ModDir;
     private boolean frontierOwnersChecked = false;
 
@@ -321,7 +320,7 @@ public class FrontiersManager {
         }
 
         ListTag dimensionsTagList = nbt.getList("global", Tag.TAG_COMPOUND);
-        readFrontiersFromTagList(dimensionsTagList, dimensionsGlobalFrontiers, false, version);
+        readFrontiersFromTagList(dimensionsTagList, dimensionsGlobalFrontiers, version);
 
         ListTag personalTagList = nbt.getList("personal", Tag.TAG_COMPOUND);
         for (int i = 0; i < personalTagList.size(); ++i) {
@@ -336,18 +335,16 @@ public class FrontiersManager {
 
             HashMap<ResourceKey<Level>, ArrayList<FrontierData>> dimensionsPersonalFrontiers = new HashMap<>();
             dimensionsTagList = personalTag.getList("frontiers", Tag.TAG_COMPOUND);
-            readFrontiersFromTagList(dimensionsTagList, dimensionsPersonalFrontiers, true, version);
+            readFrontiersFromTagList(dimensionsTagList, dimensionsPersonalFrontiers, version);
 
             usersDimensionsPersonalFrontiers.put(owner, dimensionsPersonalFrontiers);
         }
     }
 
-    private void readFrontiersFromTagList(ListTag dimensionsTagList,
-            Map<ResourceKey<Level>, ArrayList<FrontierData>> dimensionsFrontiers, boolean personal, int version) {
+    private void readFrontiersFromTagList(ListTag dimensionsTagList, Map<ResourceKey<Level>, ArrayList<FrontierData>> dimensionsFrontiers, int version) {
         for (int i = 0; i < dimensionsTagList.size(); ++i) {
             CompoundTag dimensionTag = dimensionsTagList.getCompound(i);
-            ResourceKey<Level> dimension = ResourceKey.create(Registry.DIMENSION_REGISTRY,
-                    new ResourceLocation(dimensionTag.getString("dimension")));
+            ResourceKey<Level> dimension = ResourceKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation(dimensionTag.getString("dimension")));
             ListTag frontiersTagList = dimensionTag.getList("frontiers", Tag.TAG_COMPOUND);
             ArrayList<FrontierData> frontiers = new ArrayList<>();
             for (int i2 = 0; i2 < frontiersTagList.size(); ++i2) {

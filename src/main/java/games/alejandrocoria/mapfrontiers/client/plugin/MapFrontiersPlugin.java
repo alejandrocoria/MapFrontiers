@@ -21,12 +21,10 @@ import java.util.EnumSet;
 @ParametersAreNonnullByDefault
 @Environment(EnvType.CLIENT)
 public class MapFrontiersPlugin implements IClientPlugin {
-    private static IClientAPI jmAPI;
     private static GuiFullscreenMap fullscreenMap;
 
     @Override
     public void initialize(final IClientAPI jmAPI) {
-        MapFrontiersPlugin.jmAPI = jmAPI;
         ClientProxy.setjmAPI(jmAPI);
         jmAPI.subscribe(MapFrontiers.MODID, EnumSet.of(
                 ClientEvent.Type.MAP_CLICKED,

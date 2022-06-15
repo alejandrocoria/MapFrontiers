@@ -32,10 +32,6 @@ public class GuiOptionButton extends Button {
         options.add(text);
     }
 
-    public void addOption(String text) {
-        options.add(new TextComponent(text));
-    }
-
     public void setSelected(int selected) {
         if (selected < 0) {
             selected = 0;
@@ -48,11 +44,6 @@ public class GuiOptionButton extends Button {
 
     public int getSelected() {
         return selected;
-    }
-
-    public void setColor(int color) {
-        this.color = color;
-        highlightedColor = color;
     }
 
     public void setColor(int color, int highlightedColor) {

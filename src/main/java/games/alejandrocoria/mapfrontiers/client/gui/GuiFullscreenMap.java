@@ -134,7 +134,7 @@ public class GuiFullscreenMap {
 
     public void addPopupMenu(ModPopupMenu popupMenu) {
         if (editing && frontierHighlighted.getMode() == FrontierData.Mode.Vertex) {
-            popupMenu.addMenuItem(I18n.get("mapfrontiers.add_vertex"), p -> buttonAddVertex(p));
+            popupMenu.addMenuItem(I18n.get("mapfrontiers.add_vertex"), this::buttonAddVertex);
             if (frontierHighlighted.getSelectedVertexIndex() != -1) {
                 popupMenu.addMenuItem(I18n.get("mapfrontiers.remove_vertex"), p -> buttonRemoveVertex());
             }

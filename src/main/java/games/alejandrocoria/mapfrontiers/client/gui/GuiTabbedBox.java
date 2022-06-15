@@ -106,7 +106,7 @@ public class GuiTabbedBox extends AbstractWidget {
         private int x = 0;
         private int y = 0;
         private boolean isHovered = false;
-        private boolean active;
+        private final boolean active;
         private final GuiSimpleLabel label;
 
         public Tab(Font font, Component text, boolean active) {

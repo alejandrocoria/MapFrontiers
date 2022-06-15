@@ -162,7 +162,7 @@ public class GuiColorPicker extends AbstractWidget {
 
     }
 
-    private boolean updateMouse(double mouseX, double mouseY, boolean dragging) {
+    private void updateMouse(double mouseX, double mouseY, boolean dragging) {
         if (!vGrabbed) {
             double localX = mouseX - (x + 64);
             double localY = mouseY - (y + 64);
@@ -180,7 +180,7 @@ public class GuiColorPicker extends AbstractWidget {
                 hsX = localX;
                 hsY = localY;
                 updateColor(dragging);
-                return true;
+                return;
             }
         }
 
@@ -195,11 +195,9 @@ public class GuiColorPicker extends AbstractWidget {
             if (vGrabbed) {
                 v = Math.max(0.0, Math.min(localY, 127.99));
                 updateColor(dragging);
-                return true;
             }
         }
 
-        return false;
     }
 
     private void updateColor(boolean dragging) {

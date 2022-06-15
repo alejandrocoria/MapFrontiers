@@ -30,8 +30,8 @@ public class GuiChunkShapeButtons extends AbstractWidget {
 
     private int selected;
     private int size;
-    private GuiSimpleLabel labelShapes;
-    private GuiSimpleLabel labelChunks;
+    private final GuiSimpleLabel labelShapes;
+    private final GuiSimpleLabel labelChunks;
     private final Consumer<GuiChunkShapeButtons> callbackShapeUpdated;
 
     public GuiChunkShapeButtons(Font font, int x, int y, int selected, Consumer<GuiChunkShapeButtons> callbackShapeUpdated) {

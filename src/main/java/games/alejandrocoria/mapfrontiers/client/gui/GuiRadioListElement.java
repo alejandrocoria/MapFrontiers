@@ -19,17 +19,13 @@ public class GuiRadioListElement extends GuiScrollBox.ScrollElement {
     private static final int textureSizeX = 24;
     private static final int textureSizeY = 12;
 
-    private GuiSimpleLabel label;
-    int id;
+    private final GuiSimpleLabel label;
+    final int id;
 
     public GuiRadioListElement(Font font, Component text, int id) {
         super(200, 16);
         this.label = new GuiSimpleLabel(font, x + 20, y + 4, GuiSimpleLabel.Align.Left, text, GuiColors.SETTINGS_BUTTON_TEXT);
         this.id = id;
-    }
-
-    @Override
-    public void delete() {
     }
 
     public int getId() {

@@ -447,12 +447,6 @@ public class FrontierOverlay extends FrontierData {
     }
 
     @Override
-    public void removeUserShared(int index) {
-        super.removeUserShared(index);
-        dirtyhash = true;
-    }
-
-    @Override
     public void setUsersShared(List<SettingsUserShared> usersShared) {
         super.setUsersShared(usersShared);
         dirtyhash = true;
@@ -545,10 +539,6 @@ public class FrontierOverlay extends FrontierData {
     public void setHighlighted(boolean highlighted) {
         this.highlighted = highlighted;
         needUpdateOverlay = true;
-    }
-
-    public boolean getHighlighted() {
-        return highlighted;
     }
 
     public BlockPos getCenter() {
@@ -927,12 +917,10 @@ public class FrontierOverlay extends FrontierData {
     @Environment(EnvType.CLIENT)
     public static class BannerDisplayData {
         public final List<Pair<BannerPattern, DyeColor>> patternList;
-        public String patternResourceLocation;
 
         public BannerDisplayData(FrontierData.BannerData bannerData) {
             patternList = new ArrayList<>();
             patternList.add(Pair.of(BannerPattern.BASE, bannerData.baseColor));
-            patternResourceLocation = "b" + bannerData.baseColor.getId();
 
             if (bannerData.patterns != null) {
                 for (int i = 0; i < bannerData.patterns.size(); ++i) {
@@ -940,9 +928,7 @@ public class FrontierOverlay extends FrontierData {
                     BannerPattern bannerpattern = BannerPattern.byHash(nbttagcompound.getString("Pattern"));
 
                     if (bannerpattern != null) {
-                        int c = nbttagcompound.getInt("Color");
-                        patternList.add(Pair.of(bannerpattern, DyeColor.byId(c)));
-                        patternResourceLocation += bannerpattern.getHashname() + c;
+                        patternList.add(Pair.of(bannerpattern, DyeColor.byId(nbttagcompound.getInt("Color"))));
                     }
                 }
             }

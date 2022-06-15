@@ -172,7 +172,6 @@ public class GuiHUDWidget extends AbstractWidget {
 
     @Override
     public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        Minecraft mc = Minecraft.getInstance();
         guiHUD.draw(matrixStack, partialTicks);
     }
 

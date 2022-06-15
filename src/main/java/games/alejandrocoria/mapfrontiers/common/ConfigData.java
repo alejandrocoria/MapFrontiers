@@ -117,61 +117,6 @@ public class ConfigData implements me.shedaniel.autoconfig.ConfigData {
         polygonsOpacity = Math.min(Math.max(polygonsOpacity, 0.0), 1.0);
     }
 
-    /*
-    public ClientConfig(ForgeConfigSpec.Builder builder) {
-        newFrontierShape = builder.defineInRange("newFrontierShape", 0, 0, 11);
-        newFrontierShapeWidth = builder.defineInRange("newFrontierShapeWidth", 10, 0, 999);
-        newFrontierShapeRadius = builder.defineInRange("newFrontierShapeRadius", 20, 0, 999);
-        newFrontierChunkShape = builder.defineInRange("newFrontierChunkShape", 0, 0, 7);
-        newFrontierChunkShapeWidth = builder.defineInRange("newFrontierChunkShapeWidth", 5, 0, 32);
-        newFrontierChunkShapeLength = builder.defineInRange("newFrontierChunkShapeLength", 5, 0, 32);
-        newFrontierMode = builder.defineEnum("newFrontierMode", FrontierData.Mode.Vertex);
-        afterCreatingFrontier = builder.defineEnum("afterCreatingFrontier", AfterCreatingFrontier.Info);
-        nameVisibility = builder.comment(
-                "Force all frontier names to be shown on the map or hidden. In Manual you can decide for each frontier.")
-                .translation(MapFrontiers.MODID + ".config." + "nameVisibility")
-                .defineEnum("nameVisibility", NameVisibility.Manual);
-        hideNamesThatDontFit = builder.comment(
-                "Hides the name if it is wider than the frontier at the zoom level it is being viewed.")
-                .translation(MapFrontiers.MODID + ".config." + "hideNamesThatDontFit")
-                .define("hideNamesThatDontFit", true);
-        polygonsOpacity = builder
-                .comment("Transparency of the frontier polygons. 0.0 is fully transparent and 1.0 is opaque.")
-                .translation(MapFrontiers.MODID + ".config." + "polygonsOpacity")
-                .defineInRange("polygonsOpacity", 0.4, 0.0, 1.0);
-        snapDistance = builder.comment("Distance at which vertices are attached to nearby vertices.")
-                .translation(MapFrontiers.MODID + ".config." + "snapDistance").defineInRange("snapDistance", 8, 0, 16);
-        filterFrontierType = builder.defineEnum("filterFrontierType", FilterFrontierType.All);
-        filterFrontierOwner = builder.defineEnum("filterFrontierOwner", FilterFrontierOwner.All);
-        filterFrontierDimension = builder.define("filterFrontierDimension", "all");
-
-        builder.push("hud");
-        hudEnabled = builder.comment("Show the HUD on screen.").translation(MapFrontiers.MODID + ".config.hud." + "enabled")
-                .define("enabled", true);
-        hudAutoAdjustAnchor = builder
-                .comment("Automatically switch to nearest anchor when HUD position is edited (on settings screen).")
-                .translation(MapFrontiers.MODID + ".config.hud." + "autoAdjustAnchor").define("autoAdjustAnchor", true);
-        hudSnapToBorder = builder
-                .comment("Automatically snap to closest border when HUD position is edited (on settings screen).")
-                .translation(MapFrontiers.MODID + ".config.hud." + "snapToBorder").define("snapToBorder", true);
-        hudBannerSize = builder.comment("Size of the HUD banner.")
-                .translation(MapFrontiers.MODID + ".config.hud." + "bannerSize").defineInRange("bannerSize", 3, 1, 8);
-        hudSlot1 = builder.comment("HUD element on slot 1.").translation(MapFrontiers.MODID + ".config.hud." + "slot1")
-                .defineEnum("slot1", HUDSlot.Name);
-        hudSlot2 = builder.comment("HUD element on slot 2.").translation(MapFrontiers.MODID + ".config.hud." + "slot2")
-                .defineEnum("slot2", HUDSlot.Owner);
-        hudSlot3 = builder.comment("HUD element on slot 3.").translation(MapFrontiers.MODID + ".config.hud." + "slot3")
-                .defineEnum("slot3", HUDSlot.Banner);
-        hudAnchor = builder.comment(
-                "Anchor point of the HUD. In the case of choosing the minimap as an anchor, its default position will be used as a reference in the coordinates.")
-                .translation(MapFrontiers.MODID + ".config.hud." + "anchor")
-                .defineEnum("anchor", HUDAnchor.MinimapHorizontal);
-        hudXPosition = builder.defineInRange("xPosition", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
-        hudYPosition = builder.defineInRange("yPosition", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
-        builder.pop();
-    }
-*/
-
     public static Component getTranslatedName(String name) {
         return new TranslatableComponent(MapFrontiers.MODID + ".config." + name);
     }
@@ -192,7 +137,15 @@ public class ConfigData implements me.shedaniel.autoconfig.ConfigData {
     }
 
     public static boolean isInRange(String name, Object value) {
-        // @Incomplete
+        try {
+            ConfigEntry.BoundedDiscrete annotation = ConfigData.class.getDeclaredField(name).getAnnotation(ConfigEntry.BoundedDiscrete.class);
+            if (annotation != null && value instanceof Integer) {
+                int val = (Integer) value;
+                return val >= annotation.min() && val <= annotation.max();
+            }
+        } catch (Exception ignored) {
+            return true;
+        }
 
         return true;
     }
@@ -327,10 +280,10 @@ public class ConfigData implements me.shedaniel.autoconfig.ConfigData {
 
         if (UIManager.INSTANCE.isMiniMapEnabled()) {
             try {
-                DisplayVars dv = ReflectionHelper.getPrivateField(minimap, "dv");
+                DisplayVars dv = minimap.getDisplayVars();
 
-                int minimapWidth = ReflectionHelper.getPrivateField(dv, "minimapWidth");
-                int minimapHeight = ReflectionHelper.getPrivateField(dv, "minimapHeight");
+                int minimapWidth = dv.minimapWidth;
+                int minimapHeight = dv.minimapHeight;
                 int translateX = ReflectionHelper.getPrivateField(dv, "translateX");
                 int translateY = ReflectionHelper.getPrivateField(dv, "translateY");
 

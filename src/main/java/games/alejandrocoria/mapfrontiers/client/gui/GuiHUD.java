@@ -270,7 +270,7 @@ public class GuiHUD {
                 drawOwner(matrixStack, frameColor, textOwnerColor, partialTicks);
                 break;
             case Banner:
-                drawBanner(matrixStack, frameColor, partialTicks);
+                drawBanner(matrixStack, frameColor);
                 break;
             case None:
                 break;
@@ -299,7 +299,7 @@ public class GuiHUD {
         frontierOwner.render(matrixStack, 0, 0, partialTicks);
     }
 
-    private void drawBanner(PoseStack matrixStack, int frameColor, float partialTicks) {
+    private void drawBanner(PoseStack matrixStack, int frameColor) {
         GuiComponent.fill(matrixStack, posX + hudWidth / 2 - 10 * bannerScale - 2, posY + bannerOffsetY,
                 posX + hudWidth / 2 + 10 * bannerScale + 2, posY + bannerOffsetY + 4 + 40 * bannerScale, frameColor);
 
@@ -363,7 +363,7 @@ public class GuiHUD {
                 }
                 break;
             case Banner:
-                hudWidth = Math.max(hudWidth, 22 * bannerScale + 4);
+                hudWidth = Math.max(hudWidth, 20 * bannerScale + 4);
                 hudHeight += 40 * bannerScale + 4;
                 break;
             case None:

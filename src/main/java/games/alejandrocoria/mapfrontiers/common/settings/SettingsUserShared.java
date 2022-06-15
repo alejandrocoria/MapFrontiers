@@ -99,7 +99,7 @@ public class SettingsUserShared {
         user.writeToNBT(nbt);
 
         if (pending) {
-            nbt.putBoolean("pending", pending);
+            nbt.putBoolean("pending", true);
         }
 
         ListTag actionsTagList = new ListTag();

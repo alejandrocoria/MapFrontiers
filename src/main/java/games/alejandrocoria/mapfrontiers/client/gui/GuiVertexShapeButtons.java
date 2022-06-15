@@ -40,8 +40,8 @@ public class GuiVertexShapeButtons extends AbstractWidget {
     private static final int textureSizeY = 98;
 
     private int selected;
-    private GuiSimpleLabel labelShapes;
-    private GuiSimpleLabel labelVertices;
+    private final GuiSimpleLabel labelShapes;
+    private final GuiSimpleLabel labelVertices;
     private final Consumer<GuiVertexShapeButtons> callbackShapeUpdated;
 
     public GuiVertexShapeButtons(Font font, int x, int y, int selected, Consumer<GuiVertexShapeButtons> callbackShapeUpdated) {

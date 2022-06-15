@@ -9,7 +9,6 @@ public class ColorHelper {
     private static final Random rand = new Random();
 
     public static int getRandomColor() {
-
         final float hue = rand.nextFloat();
         final float saturation = 1.f - (float) Math.pow(rand.nextFloat(), 6.0);
         final float luminance = 1.f - (float) Math.pow(rand.nextFloat(), 6.0);

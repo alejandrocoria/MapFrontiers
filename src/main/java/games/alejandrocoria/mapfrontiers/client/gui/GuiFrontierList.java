@@ -264,7 +264,7 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
             for (ArrayList<FrontierOverlay> dimension : ClientProxy.getFrontiersOverlayManager(true).getAllFrontiers().values()) {
                 for (FrontierOverlay frontier : dimension) {
                     if (checkFilterOwner(frontier) && checkFilterDimension(frontier)) {
-                        frontiers.addElement(new GuiFrontierListElement(font, (List<GuiEventListener>) children(), frontier));
+                        frontiers.addElement(new GuiFrontierListElement(font, frontier));
                     }
                 }
             }
@@ -274,7 +274,7 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
             for (ArrayList<FrontierOverlay> dimension : ClientProxy.getFrontiersOverlayManager(false).getAllFrontiers().values()) {
                 for (FrontierOverlay frontier : dimension) {
                     if (checkFilterOwner(frontier) && checkFilterDimension(frontier)) {
-                        frontiers.addElement(new GuiFrontierListElement(font, (List<GuiEventListener>) children(), frontier));
+                        frontiers.addElement(new GuiFrontierListElement(font, frontier));
                     }
                 }
             }

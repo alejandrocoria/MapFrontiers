@@ -13,9 +13,9 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 @Environment(EnvType.CLIENT)
 public class TextDoubleBox extends EditBox {
-    private double defaultValue;
-    private double min;
-    private double max;
+    private final double defaultValue;
+    private final double min;
+    private final double max;
     private TextDoubleBoxResponder responder;
 
     public TextDoubleBox(double defaultValue, double min, double max, Font font, int x, int y, int width) {

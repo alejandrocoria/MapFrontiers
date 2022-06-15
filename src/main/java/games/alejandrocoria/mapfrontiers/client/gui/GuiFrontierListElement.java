@@ -8,38 +8,36 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.resources.language.I18n;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.List;
 
 @ParametersAreNonnullByDefault
 @Environment(EnvType.CLIENT)
 public class GuiFrontierListElement extends GuiScrollBox.ScrollElement {
     private final Font font;
     private final FrontierOverlay frontier;
-    String name1;
-    String name2;
-    String type;
-    String owner;
-    String dimension;
-    String vertices;
-    String chunks;
-    int offset1;
-    int offset2;
-    final List<GuiEventListener> buttonList;
+    final String name1;
+    final String name2;
+    final String type;
+    final String owner;
+    final String dimension;
+    final String vertices;
+    final String chunks;
+    final int offset1;
+    final int offset2;
 
-    public GuiFrontierListElement(Font font, List<GuiEventListener> buttonList, FrontierOverlay frontier) {
+    public GuiFrontierListElement(Font font, FrontierOverlay frontier) {
         super(450, 24);
         this.font = font;
         this.frontier = frontier;
 
-        name1 = frontier.getName1();
-        name2 = frontier.getName2();
-        if (name1.isEmpty() && name2.isEmpty()) {
+        if (frontier.getName1().isEmpty() && frontier.getName2().isEmpty()) {
             name1 = I18n.get("mapfrontiers.unnamed_1", ChatFormatting.ITALIC);
             name2 = I18n.get("mapfrontiers.unnamed_2", ChatFormatting.ITALIC);
+        } else {
+            name1 = frontier.getName1();
+            name2 = frontier.getName2();
         }
 
         type = I18n.get("mapfrontiers.type", I18n.get(frontier.getPersonal() ? "mapfrontiers.config.Personal" : "mapfrontiers.config.Global"));
@@ -48,7 +46,9 @@ public class GuiFrontierListElement extends GuiScrollBox.ScrollElement {
 
         if (frontier.getMode() == FrontierData.Mode.Vertex) {
             vertices = I18n.get("mapfrontiers.vertices", frontier.getVertexCount());
+            chunks = null;
         } else {
+            vertices = null;
             chunks = I18n.get("mapfrontiers.chunks", frontier.getChunkCount());
         }
 
@@ -59,12 +59,6 @@ public class GuiFrontierListElement extends GuiScrollBox.ScrollElement {
         offset2 = StringHelper.getMaxWidth(font,
                 I18n.get("mapfrontiers.vertices", 9999),
                 I18n.get("mapfrontiers.chunks", 9999));
-
-        this.buttonList = buttonList;
-    }
-
-    @Override
-    public void delete() {
     }
 
     public FrontierOverlay getFrontier() {

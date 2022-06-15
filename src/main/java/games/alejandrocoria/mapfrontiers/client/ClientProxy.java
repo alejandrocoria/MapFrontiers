@@ -53,12 +53,9 @@ public class ClientProxy implements ClientModInitializer {
     private static final Map<Object, BiConsumer<FrontierOverlay, Integer>> updatedFrontierEventMap = new HashMap<>();
     private static final Map<Object, Consumer<SettingsProfile>> updatedSettingsProfileEventMap = new HashMap<>();
 
-    public static ConfigData config;
-
     @Override
     public void onInitializeClient() {
         AutoConfig.register(ConfigData.class, Toml4jConfigSerializer::new);
-        config = AutoConfig.getConfigHolder(ConfigData.class).getConfig();
         PacketHandler.registerClientReceivers();
 
         openSettingsKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
