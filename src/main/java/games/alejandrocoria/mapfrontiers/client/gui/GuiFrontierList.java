@@ -19,9 +19,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Widget;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.ForgeHooksClient;
@@ -52,7 +51,7 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
     private GuiSettingsButton buttonDone;
 
     public GuiFrontierList(IClientAPI jmAPI, GuiFullscreenMap fullscreenMap) {
-        super(TextComponent.EMPTY);
+        super(CommonComponents.EMPTY);
         this.jmAPI = jmAPI;
         this.fullscreenMap = fullscreenMap;
 
@@ -61,13 +60,13 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
 
     @Override
     public void init() {
-        Component title = new TranslatableComponent("mapfrontiers.title_frontiers");
+        Component title = Component.translatable("mapfrontiers.title_frontiers");
         addRenderableOnly(new GuiSimpleLabel(font, width / 2, 8, GuiSimpleLabel.Align.Center, title, GuiColors.WHITE));
 
         frontiers = new GuiScrollBox(width / 2 - 300, 50, 450, height - 100, 24, this);
 
         addRenderableOnly(new GuiSimpleLabel(font, width / 2 + 170, 74, GuiSimpleLabel.Align.Left,
-                new TranslatableComponent("mapfrontiers.filter_type"), GuiColors.SETTINGS_TEXT));
+                Component.translatable("mapfrontiers.filter_type"), GuiColors.SETTINGS_TEXT));
 
         filterType = new GuiScrollBox(width / 2 + 170, 86, 200, 48, 16, this);
         filterType.addElement(new GuiRadioListElement(font, ConfigData.getTranslatedEnum(ConfigData.FilterFrontierType.All), ConfigData.FilterFrontierType.All.ordinal()));
@@ -76,7 +75,7 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
         filterType.selectElementIf((element) -> ((GuiRadioListElement) element).getId() == ConfigData.filterFrontierType.ordinal());
 
         addRenderableOnly(new GuiSimpleLabel(font, width / 2 + 170, 144, GuiSimpleLabel.Align.Left,
-                new TranslatableComponent("mapfrontiers.filter_owner"), GuiColors.SETTINGS_TEXT));
+                Component.translatable("mapfrontiers.filter_owner"), GuiColors.SETTINGS_TEXT));
 
         filterOwner = new GuiScrollBox(width / 2 + 170, 156, 200, 48, 16, this);
         filterOwner.addElement(new GuiRadioListElement(font, ConfigData.getTranslatedEnum(ConfigData.FilterFrontierOwner.All), ConfigData.FilterFrontierOwner.All.ordinal()));
@@ -85,14 +84,14 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
         filterOwner.selectElementIf((element) -> ((GuiRadioListElement) element).getId() == ConfigData.filterFrontierOwner.ordinal());
 
         addRenderableOnly(new GuiSimpleLabel(font, width / 2 + 170, 214, GuiSimpleLabel.Align.Left,
-                new TranslatableComponent("mapfrontiers.filter_dimension"), GuiColors.SETTINGS_TEXT));
+                Component.translatable("mapfrontiers.filter_dimension"), GuiColors.SETTINGS_TEXT));
 
         filterDimension = new GuiScrollBox(width / 2 + 170, 226, 200, height - 296, 16, this);
-        filterDimension.addElement(new GuiRadioListElement(font, new TranslatableComponent("mapfrontiers.config.All"), "all".hashCode()));
-        filterDimension.addElement(new GuiRadioListElement(font, new TranslatableComponent("mapfrontiers.config.Current"), "current".hashCode()));
-        filterDimension.addElement(new GuiRadioListElement(font, new TextComponent("minecraft:overworld"), "minecraft:overworld".hashCode()));
-        filterDimension.addElement(new GuiRadioListElement(font, new TextComponent("minecraft:the_nether"), "minecraft:the_nether".hashCode()));
-        filterDimension.addElement(new GuiRadioListElement(font, new TextComponent("minecraft:the_end"), "minecraft:the_end".hashCode()));
+        filterDimension.addElement(new GuiRadioListElement(font, Component.translatable("mapfrontiers.config.All"), "all".hashCode()));
+        filterDimension.addElement(new GuiRadioListElement(font, Component.translatable("mapfrontiers.config.Current"), "current".hashCode()));
+        filterDimension.addElement(new GuiRadioListElement(font, Component.literal("minecraft:overworld"), "minecraft:overworld".hashCode()));
+        filterDimension.addElement(new GuiRadioListElement(font, Component.literal("minecraft:the_nether"), "minecraft:the_nether".hashCode()));
+        filterDimension.addElement(new GuiRadioListElement(font, Component.literal("minecraft:the_end"), "minecraft:the_end".hashCode()));
         addDimensionsToFilter();
         filterDimension.selectElementIf((element) -> ((GuiRadioListElement) element).getId() == ConfigData.filterFrontierDimension.hashCode());
         if (filterDimension.getSelectedElement() == null) {
@@ -101,19 +100,19 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
         }
 
         buttonResetFilters = new GuiSettingsButton(font, width / 2 + 170, 50, 110,
-                new TranslatableComponent("mapfrontiers.reset_filters"), this::buttonPressed);
+                Component.translatable("mapfrontiers.reset_filters"), this::buttonPressed);
 
         buttonCreate = new GuiSettingsButton(font, width / 2 - 295, height - 28, 110,
-                new TranslatableComponent("mapfrontiers.create"), this::buttonPressed);
+                Component.translatable("mapfrontiers.create"), this::buttonPressed);
         buttonInfo = new GuiSettingsButton(font, width / 2 - 175, height - 28, 110,
-                new TranslatableComponent("mapfrontiers.info"), this::buttonPressed);
+                Component.translatable("mapfrontiers.info"), this::buttonPressed);
         buttonDelete = new GuiSettingsButton(font, width / 2 - 55, height - 28, 110,
-                new TranslatableComponent("mapfrontiers.delete"), this::buttonPressed);
+                Component.translatable("mapfrontiers.delete"), this::buttonPressed);
         buttonDelete.setTextColors(GuiColors.SETTINGS_BUTTON_TEXT_DELETE, GuiColors.SETTINGS_BUTTON_TEXT_DELETE_HIGHLIGHT);
         buttonVisible = new GuiSettingsButton(font, width / 2 + 65, height - 28, 110,
-                new TranslatableComponent("mapfrontiers.hide"), this::buttonPressed);
+                Component.translatable("mapfrontiers.hide"), this::buttonPressed);
         buttonDone = new GuiSettingsButton(font, width / 2 + 185, height - 28, 110,
-                new TranslatableComponent("gui.done"), this::buttonPressed);
+                Component.translatable("gui.done"), this::buttonPressed);
 
         addRenderableWidget(frontiers);
         addRenderableWidget(filterType);
@@ -251,7 +250,7 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
         List<WorldData.DimensionProvider> dimensionProviders = WorldData.getDimensionProviders(WaypointStore.INSTANCE.getLoadedDimensions());
         for (WorldData.DimensionProvider dimension : dimensionProviders) {
             if (!dimension.getDimensionId().equals("minecraft:overworld") && !dimension.getDimensionId().equals("minecraft:the_nether") && !dimension.getDimensionId().equals("minecraft:the_end")) {
-                filterDimension.addElement(new GuiRadioListElement(font, new TextComponent(dimension.getDimensionId()), dimension.getDimensionId().hashCode()));
+                filterDimension.addElement(new GuiRadioListElement(font, Component.literal(dimension.getDimensionId()), dimension.getDimensionId().hashCode()));
             }
         }
     }
@@ -337,9 +336,9 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
         buttonVisible.visible = actions.canUpdate;
 
         if (frontier != null && frontier.getVisible()) {
-            buttonVisible.setMessage(new TranslatableComponent("mapfrontiers.hide"));
+            buttonVisible.setMessage(Component.translatable("mapfrontiers.hide"));
         } else {
-            buttonVisible.setMessage(new TranslatableComponent("mapfrontiers.show"));
+            buttonVisible.setMessage(Component.translatable("mapfrontiers.show"));
         }
     }
 }

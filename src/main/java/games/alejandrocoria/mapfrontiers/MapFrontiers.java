@@ -9,17 +9,14 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.ServerOpListEntry;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
@@ -56,17 +53,6 @@ public class MapFrontiers {
     public static void commonSetup(FMLCommonSetupEvent event) {
         PacketHandler.init();
         LOGGER.info("commonSetup done");
-    }
-
-    @SubscribeEvent
-    public static void onMissingMappingEventItems(RegistryEvent.MissingMappings<Item> event) {
-        for (RegistryEvent.MissingMappings.Mapping<Item> mapping : event.getAllMappings()) {
-            if (mapping.key.equals(new ResourceLocation(MapFrontiers.MODID, "frontier_book"))) {
-                mapping.ignore();
-            } else if (mapping.key.equals(new ResourceLocation(MapFrontiers.MODID, "personal_frontier_book"))) {
-                mapping.ignore();
-            }
-        }
     }
 
     @OnlyIn(Dist.CLIENT)

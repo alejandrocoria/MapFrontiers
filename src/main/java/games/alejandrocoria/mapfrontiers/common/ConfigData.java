@@ -12,9 +12,8 @@ import journeymap.client.ui.minimap.MiniMap;
 import journeymap.client.ui.minimap.Shape;
 import journeymap.client.ui.theme.Theme;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -239,14 +238,14 @@ public class ConfigData {
     public static Component getTranslatedName(String name) {
         ValueSpec valueSpec = getValueSpec(name);
         if (valueSpec != null) {
-            return new TranslatableComponent(valueSpec.getTranslationKey());
+            return Component.translatable(valueSpec.getTranslationKey());
         }
 
-        return TextComponent.EMPTY;
+        return CommonComponents.EMPTY;
     }
 
     public static <E extends Enum<E>> Component getTranslatedEnum(E value) {
-        return new TranslatableComponent("mapfrontiers.config." + value.name());
+        return Component.translatable("mapfrontiers.config." + value.name());
     }
 
     public static List<Component> getTooltip(String name) {
@@ -254,9 +253,9 @@ public class ConfigData {
 
         ValueSpec valueSpec = getValueSpec(name);
         if (valueSpec != null) {
-            String lines = new TranslatableComponent(valueSpec.getTranslationKey() + ".tooltip").getString();
+            String lines = Component.translatable(valueSpec.getTranslationKey() + ".tooltip").getString();
             for (String string : Splitter.on("\n").split(lines)) {
-                tooltip.add(new TextComponent(string));
+                tooltip.add(Component.literal(string));
             }
         }
 

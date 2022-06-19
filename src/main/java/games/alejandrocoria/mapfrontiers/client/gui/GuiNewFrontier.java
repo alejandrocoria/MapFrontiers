@@ -12,9 +12,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.phys.Vec2;
 import net.minecraftforge.api.distmarker.Dist;
@@ -46,7 +45,7 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
     private GuiSettingsButton buttonCancel;
 
     public GuiNewFrontier(IClientAPI jmAPI) {
-        super(TextComponent.EMPTY);
+        super(CommonComponents.EMPTY);
         this.jmAPI = jmAPI;
 
         MinecraftForge.EVENT_BUS.register(this);
@@ -54,11 +53,11 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
 
     @Override
     public void init() {
-        Component title = new TranslatableComponent("mapfrontiers.title_new_frontier");
+        Component title = Component.translatable("mapfrontiers.title_new_frontier");
         addRenderableOnly(new GuiSimpleLabel(font, width / 2, 8, GuiSimpleLabel.Align.Center, title, GuiColors.WHITE));
 
         addRenderableOnly(new GuiSimpleLabel(font, width / 2 - 130, height / 2 - 112, GuiSimpleLabel.Align.Left,
-                new TranslatableComponent("mapfrontiers.frontier_type"), GuiColors.SETTINGS_TEXT));
+                Component.translatable("mapfrontiers.frontier_type"), GuiColors.SETTINGS_TEXT));
         buttonFrontierType = new GuiOptionButton(font, width / 2, height / 2 - 114, 130, this::buttonPressed);
         buttonFrontierType.addOption(ConfigData.getTranslatedEnum(ConfigData.FilterFrontierType.Global));
         buttonFrontierType.addOption(ConfigData.getTranslatedEnum(ConfigData.FilterFrontierType.Personal));
@@ -75,14 +74,14 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
         }
 
         addRenderableOnly(new GuiSimpleLabel(font, width / 2 - 130, height / 2 - 96, GuiSimpleLabel.Align.Left,
-                new TranslatableComponent("mapfrontiers.frontier_mode"), GuiColors.SETTINGS_TEXT));
+                Component.translatable("mapfrontiers.frontier_mode"), GuiColors.SETTINGS_TEXT));
         buttonFrontierMode = new GuiOptionButton(font, width / 2, height / 2 - 98, 130, this::buttonPressed);
         buttonFrontierMode.addOption(ConfigData.getTranslatedEnum(FrontierData.Mode.Vertex));
         buttonFrontierMode.addOption(ConfigData.getTranslatedEnum(FrontierData.Mode.Chunk));
         buttonFrontierMode.setSelected(ConfigData.newFrontierMode.ordinal());
 
         addRenderableOnly(new GuiSimpleLabel(font, width / 2 - 130, height / 2 - 80, GuiSimpleLabel.Align.Left,
-                new TranslatableComponent("mapfrontiers.after_creating"), GuiColors.SETTINGS_TEXT));
+                Component.translatable("mapfrontiers.after_creating"), GuiColors.SETTINGS_TEXT));
         buttonAfterCreate = new GuiOptionButton(font, width / 2, height / 2 - 82, 130, this::buttonPressed);
         buttonAfterCreate.addOption(ConfigData.getTranslatedEnum(ConfigData.AfterCreatingFrontier.Info));
         buttonAfterCreate.addOption(ConfigData.getTranslatedEnum(ConfigData.AfterCreatingFrontier.Edit));
@@ -92,15 +91,15 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
         vertexShapeButtons = new GuiVertexShapeButtons(font, width / 2 - 162, height / 2 - 52, ConfigData.newFrontierShape, (s) -> shapeButtonsUpdated());
         chunkShapeButtons = new GuiChunkShapeButtons(font, width / 2 - 107, height / 2 - 52, ConfigData.newFrontierChunkShape, (s) -> shapeButtonsUpdated());
 
-        labelSize = new GuiSimpleLabel(font, width / 2 - 80, height / 2 + 90, GuiSimpleLabel.Align.Left, new TextComponent(""), GuiColors.WHITE);
+        labelSize = new GuiSimpleLabel(font, width / 2 - 80, height / 2 + 90, GuiSimpleLabel.Align.Left, Component.literal(""), GuiColors.WHITE);
         addRenderableOnly(labelSize);
         textSize = new TextIntBox(1, 1, 999, font, width / 2 + 16, height / 2 + 88, 64);
         textSize.setResponder(this);
 
         buttonCreateFrontier = new GuiSettingsButton(font, width / 2 - 110, height / 2 + 146, 100,
-                new TranslatableComponent("mapfrontiers.create"), this::buttonPressed);
+                Component.translatable("mapfrontiers.create"), this::buttonPressed);
         buttonCancel = new GuiSettingsButton(font, width / 2 + 10, height / 2 + 146, 100,
-                new TranslatableComponent("gui.cancel"), this::buttonPressed);
+                Component.translatable("gui.cancel"), this::buttonPressed);
 
         addRenderableWidget(buttonFrontierType);
         addRenderableWidget(buttonFrontierMode);
@@ -209,10 +208,10 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
             textSize.visible = true;
 
             if (vertexShapeButtons.getShapeMeasure() == GuiVertexShapeButtons.ShapeMeasure.Width) {
-                labelSize.setText(new TranslatableComponent("mapfrontiers.shape_width"));
+                labelSize.setText(Component.translatable("mapfrontiers.shape_width"));
                 textSize.setValue(String.valueOf(ConfigData.newFrontierShapeWidth));
             } else if (vertexShapeButtons.getShapeMeasure() == GuiVertexShapeButtons.ShapeMeasure.Radius) {
-                labelSize.setText(new TranslatableComponent("mapfrontiers.shape_radius"));
+                labelSize.setText(Component.translatable("mapfrontiers.shape_radius"));
                 textSize.setValue(String.valueOf(ConfigData.newFrontierShapeRadius));
             }
         } else {
@@ -232,11 +231,11 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
             textSize.visible = true;
 
             if (chunkShapeButtons.getShapeMeasure() == GuiChunkShapeButtons.ShapeMeasure.Width) {
-                labelSize.setText(new TranslatableComponent("mapfrontiers.shape_width"));
+                labelSize.setText(Component.translatable("mapfrontiers.shape_width"));
                 textSize.setValue(String.valueOf(ConfigData.newFrontierChunkShapeWidth));
                 chunkShapeButtons.setSize(ConfigData.newFrontierChunkShapeWidth);
             } else if (chunkShapeButtons.getShapeMeasure() == GuiChunkShapeButtons.ShapeMeasure.Length) {
-                labelSize.setText(new TranslatableComponent("mapfrontiers.shape_length"));
+                labelSize.setText(Component.translatable("mapfrontiers.shape_length"));
                 textSize.setValue(String.valueOf(ConfigData.newFrontierChunkShapeLength));
                 chunkShapeButtons.setSize(ConfigData.newFrontierChunkShapeLength);
             }

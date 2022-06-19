@@ -25,13 +25,11 @@ public class GuiLinkButton extends AbstractWidget {
     private final GuiSimpleLabel label;
     private final String uri;
 
-    public GuiLinkButton(Font font, int x, int y, Component text, String uri,
-            BooleanConsumer callbackFunction) {
+    public GuiLinkButton(Font font, int x, int y, Component text, String uri, BooleanConsumer callbackFunction) {
         super(x, y, font.width(text.getString()) + 8, 16, text);
         this.callbackFunction = callbackFunction;
         this.x -= width / 2;
-        this.label = new GuiSimpleLabel(font, x, y + 5, GuiSimpleLabel.Align.Center,
-                /* TextFormatting.UNDERLINE + */ text, GuiColors.SETTINGS_BUTTON_TEXT);
+        this.label = new GuiSimpleLabel(font, x, y + 5, GuiSimpleLabel.Align.Center, text, GuiColors.SETTINGS_BUTTON_TEXT);
         this.uri = uri;
     }
 

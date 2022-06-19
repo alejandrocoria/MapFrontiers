@@ -2,7 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.StringUtils;
@@ -21,7 +21,7 @@ public class TextBox extends EditBox {
     }
 
     public TextBox(Font font, int x, int y, int width, String defaultText) {
-        super(font, x, y, width, 12, TextComponent.EMPTY);
+        super(font, x, y, width, 12, CommonComponents.EMPTY);
         this.defaultText = defaultText;
         if (!StringUtils.isBlank(defaultText)) {
             setResponder((value) -> updateDefaultText());

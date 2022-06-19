@@ -8,8 +8,8 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.sounds.SoundManager;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -35,10 +35,10 @@ public class GuiChunkShapeButtons extends AbstractWidget {
     private final Consumer<GuiChunkShapeButtons> callbackShapeUpdated;
 
     public GuiChunkShapeButtons(Font font, int x, int y, int selected, Consumer<GuiChunkShapeButtons> callbackShapeUpdated) {
-        super(x, y, 214, 120, TextComponent.EMPTY);
+        super(x, y, 214, 120, CommonComponents.EMPTY);
         this.selected = selected;
-        labelShapes = new GuiSimpleLabel(font, x + 107, y, GuiSimpleLabel.Align.Center, new TranslatableComponent("mapfrontiers.initial_shape"), GuiColors.WHITE);
-        labelChunks = new GuiSimpleLabel(font, x + 107, y + 126, GuiSimpleLabel.Align.Center, new TextComponent(""), GuiColors.WHITE);
+        labelShapes = new GuiSimpleLabel(font, x + 107, y, GuiSimpleLabel.Align.Center, Component.translatable("mapfrontiers.initial_shape"), GuiColors.WHITE);
+        labelChunks = new GuiSimpleLabel(font, x + 107, y + 126, GuiSimpleLabel.Align.Center, Component.literal(""), GuiColors.WHITE);
         this.callbackShapeUpdated = callbackShapeUpdated;
 
         updateChunksLabel();
@@ -153,6 +153,6 @@ public class GuiChunkShapeButtons extends AbstractWidget {
                 break;
         }
 
-        labelChunks.setText(new TranslatableComponent("mapfrontiers.chunks", chunks));
+        labelChunks.setText(Component.translatable("mapfrontiers.chunks", chunks));
     }
 }

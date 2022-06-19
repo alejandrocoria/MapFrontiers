@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
@@ -19,7 +19,7 @@ public class TextIntBox extends EditBox {
     private TextIntBoxResponder responder;
 
     public TextIntBox(int defaultValue, int min, int max, Font font, int x, int y, int width) {
-        super(font, x, y, width, 12, TextComponent.EMPTY);
+        super(font, x, y, width, 12, CommonComponents.EMPTY);
         this.defaultValue = defaultValue;
         this.min = min;
         this.max = max;

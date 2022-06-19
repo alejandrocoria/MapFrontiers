@@ -6,7 +6,7 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.sounds.SoundManager;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -27,7 +27,7 @@ public class GuiButtonIcon extends Button {
     private int texY;
 
     public GuiButtonIcon(int x, int y, Type type, Button.OnPress pressedAction) {
-        super(x, y, 13, 13, TextComponent.EMPTY, pressedAction);
+        super(x, y, 13, 13, CommonComponents.EMPTY, pressedAction);
 
         switch (type) {
             case Add:

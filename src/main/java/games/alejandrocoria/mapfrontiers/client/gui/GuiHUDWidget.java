@@ -7,7 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.sounds.SoundManager;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -25,7 +25,7 @@ public class GuiHUDWidget extends AbstractWidget {
     private final Consumer<GuiHUDWidget> callbackHUDUpdated;
 
     public GuiHUDWidget(GuiHUD guiHUD, MiniMap minimap, Consumer<GuiHUDWidget> callbackHUDUpdated) {
-        super(0, 0, 0, 0, TextComponent.EMPTY);
+        super(0, 0, 0, 0, CommonComponents.EMPTY);
         this.guiHUD = guiHUD;
         this.minimap = minimap;
         this.callbackHUDUpdated = callbackHUDUpdated;

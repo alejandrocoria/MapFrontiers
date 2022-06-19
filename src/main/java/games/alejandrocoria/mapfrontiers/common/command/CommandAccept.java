@@ -14,7 +14,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
 
 public class CommandAccept {
@@ -40,24 +40,24 @@ public class CommandAccept {
             PendingShareFrontier pending = FrontiersManager.instance.getPendingShareFrontier(messageID);
 
             if (pending == null) {
-                source.sendFailure(new TextComponent("Invitation expired"));
+                source.sendFailure(Component.literal("Invitation expired"));
             } else if (pending.targetUser.equals(new SettingsUser(source.getPlayerOrException()))) {
                 FrontierData frontier = FrontiersManager.instance.getFrontierFromID(pending.frontierID);
                 if (frontier == null) {
                     FrontiersManager.instance.removePendingShareFrontier(messageID);
-                    source.sendFailure(new TextComponent("The frontier no longer exists"));
+                    source.sendFailure(Component.literal("The frontier no longer exists"));
                     return messageID;
                 }
 
                 SettingsUserShared userShared = frontier.getUserShared(pending.targetUser);
                 if (userShared == null) {
-                    source.sendFailure(new TextComponent(""));
+                    source.sendFailure(Component.literal(""));
                     return messageID;
                 }
 
                 if (FrontiersManager.instance.hasPersonalFrontier(pending.targetUser, frontier.getId())) {
                     FrontiersManager.instance.removePendingShareFrontier(messageID);
-                    source.sendFailure(new TextComponent("You already have the frontier"));
+                    source.sendFailure(Component.literal("You already have the frontier"));
                     return messageID;
                 } else {
                     FrontiersManager.instance.addPersonalFrontier(pending.targetUser, frontier);
@@ -75,11 +75,11 @@ public class CommandAccept {
 
                 // @Note: improve message and localize
                 source.sendSuccess(
-                        new TextComponent("Accepting frontier " + frontier.getName1() + " " + frontier.getName2()),
+                        Component.literal("Accepting frontier " + frontier.getName1() + " " + frontier.getName2()),
                         false);
                 return messageID;
             } else {
-                source.sendFailure(new TextComponent("The invitation is for another player"));
+                source.sendFailure(Component.literal("The invitation is for another player"));
                 return messageID;
             }
         }

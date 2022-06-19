@@ -7,7 +7,7 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.sounds.SoundManager;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -42,7 +42,7 @@ public class GuiColorPicker extends AbstractWidget {
     private final BiConsumer<GuiColorPicker, Boolean> callbackColorUpdated;
 
     public GuiColorPicker(int x, int y, int color, BiConsumer<GuiColorPicker, Boolean> callbackColorUpdated) {
-        super(x, y, 304, 127, TextComponent.EMPTY);
+        super(x, y, 304, 127, CommonComponents.EMPTY);
         this.callbackColorUpdated = callbackColorUpdated;
         setColor(color);
     }

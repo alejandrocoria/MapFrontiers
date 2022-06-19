@@ -4,8 +4,8 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -23,7 +23,7 @@ public class GuiOptionButton extends Button {
     private int highlightedColor = GuiColors.SETTINGS_TEXT_HIGHLIGHT;
 
     public GuiOptionButton(Font font, int x, int y, int width, Button.OnPress pressedAction) {
-        super(x, y, width, 12, TextComponent.EMPTY, pressedAction);
+        super(x, y, width, 12, CommonComponents.EMPTY, pressedAction);
         this.font = font;
         options = new ArrayList<>();
     }
@@ -33,7 +33,7 @@ public class GuiOptionButton extends Button {
     }
 
     public void addOption(String text) {
-        options.add(new TextComponent(text));
+        options.add(Component.literal(text));
     }
 
     public void setSelected(int selected) {

@@ -26,6 +26,8 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -34,6 +36,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BannerPattern;
+import net.minecraft.world.level.block.entity.BannerPatterns;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -186,13 +189,15 @@ public class FrontierOverlay extends FrontierData {
                 if (vertices.size() > 2) {
                     return polygonArea != null && polygonArea.contains(pos.getX() + 0.5, pos.getZ() + 0.5);
                 } else if (maxDistanceToOpen > 0.0) {
-                    for (int i = 0; i < vertices.size(); ++i) {
-                        Vec3 point = Vec3.atLowerCornerOf(pos);
-                        Vec3 edge1 = Vec3.atLowerCornerOf(BlockPosHelper.atY(vertices.get(i), pos.getY()));
-                        Vec3 edge2 = Vec3.atLowerCornerOf(BlockPosHelper.atY(vertices.get((i + 1) % vertices.size()), pos.getY()));
-                        double distance = closestPointToEdge(point, edge1, edge2).distanceToSqr(point);
-                        if (distance <= maxDistanceToOpen * maxDistanceToOpen) {
-                            return true;
+                    synchronized (vertices) {
+                        for (int i = 0; i < vertices.size(); ++i) {
+                            Vec3 point = Vec3.atLowerCornerOf(pos);
+                            Vec3 edge1 = Vec3.atLowerCornerOf(BlockPosHelper.atY(vertices.get(i), pos.getY()));
+                            Vec3 edge2 = Vec3.atLowerCornerOf(BlockPosHelper.atY(vertices.get((i + 1) % vertices.size()), pos.getY()));
+                            double distance = closestPointToEdge(point, edge1, edge2).distanceToSqr(point);
+                            if (distance <= maxDistanceToOpen * maxDistanceToOpen) {
+                                return true;
+                            }
                         }
                     }
                 }
@@ -214,12 +219,14 @@ public class FrontierOverlay extends FrontierData {
         int closest = -1;
 
         if (!vertices.isEmpty()) {
-            for (int i = 0; i < vertices.size(); ++i) {
-                BlockPos vertex = vertices.get(i);
-                double dist = vertex.distSqr(BlockPosHelper.atY(pos,vertex.getY()));
-                if (dist <= distance) {
-                    distance = dist;
-                    closest = i;
+            synchronized (vertices) {
+                for (int i = 0; i < vertices.size(); ++i) {
+                    BlockPos vertex = vertices.get(i);
+                    double dist = vertex.distSqr(BlockPosHelper.atY(pos, vertex.getY()));
+                    if (dist <= distance) {
+                        distance = dist;
+                        closest = i;
+                    }
                 }
             }
         }
@@ -241,47 +248,49 @@ public class FrontierOverlay extends FrontierData {
         if (vertices.size() == 1) {
             closest = 0;
         } else if (vertices.size() > 1) {
-            for (int i = 0; i < vertices.size(); ++i) {
-                Vec3 point = Vec3.atLowerCornerOf(pos);
-                Vec3 edge1 = Vec3.atLowerCornerOf(BlockPosHelper.atY(vertices.get(i),pos.getY()));
-                Vec3 edge2 = Vec3.atLowerCornerOf(BlockPosHelper.atY(vertices.get((i + 1) % vertices.size()),pos.getY()));
-                double dist;
-                double dot;
+            synchronized (vertices) {
+                for (int i = 0; i < vertices.size(); ++i) {
+                    Vec3 point = Vec3.atLowerCornerOf(pos);
+                    Vec3 edge1 = Vec3.atLowerCornerOf(BlockPosHelper.atY(vertices.get(i), pos.getY()));
+                    Vec3 edge2 = Vec3.atLowerCornerOf(BlockPosHelper.atY(vertices.get((i + 1) % vertices.size()), pos.getY()));
+                    double dist;
+                    double dot;
 
-                if (edge1.equals(edge2)) {
-                    dot = -1;
-                    dist = point.distanceToSqr(edge1);
-                } else {
-                    Vec3 closestPoint = closestPointToEdge(point, edge1, edge2);
-
-                    if (!closestPoint.equals(edge1) && !closestPoint.equals(edge2)) {
+                    if (edge1.equals(edge2)) {
                         dot = -1;
+                        dist = point.distanceToSqr(edge1);
                     } else {
-                        Vec3 edge = edge2.subtract(edge1);
-                        Vec2 edgeDirection = new Vec2((float)edge.x, (float)edge.z).normalized();
-                        Vec3 toPos;
+                        Vec3 closestPoint = closestPointToEdge(point, edge1, edge2);
 
-                        if (closestPoint.equals(edge1)) {
-                            toPos = point.subtract(edge1);
+                        if (!closestPoint.equals(edge1) && !closestPoint.equals(edge2)) {
+                            dot = -1;
                         } else {
-                            edgeDirection = edgeDirection.negated();
-                            toPos = point.subtract(edge2);
+                            Vec3 edge = edge2.subtract(edge1);
+                            Vec2 edgeDirection = new Vec2((float) edge.x, (float) edge.z).normalized();
+                            Vec3 toPos;
+
+                            if (closestPoint.equals(edge1)) {
+                                toPos = point.subtract(edge1);
+                            } else {
+                                edgeDirection = edgeDirection.negated();
+                                toPos = point.subtract(edge2);
+                            }
+
+                            Vec2 toPosDirection = new Vec2((float) toPos.x, (float) toPos.z).normalized();
+                            dot = toPosDirection.dot(edgeDirection);
                         }
 
-                        Vec2 toPosDirection = new Vec2((float)toPos.x, (float)toPos.z).normalized();
-                        dot = toPosDirection.dot(edgeDirection);
+                        dist = point.distanceToSqr(closestPoint);
                     }
 
-                    dist = point.distanceToSqr(closestPoint);
-                }
-
-                if (dist < distance) {
-                    distance = dist;
-                    closest = i;
-                    angleSimilarity = dot;
-                } else if (dist == distance && dot > angleSimilarity) {
-                    closest = i;
-                    angleSimilarity = dot;
+                    if (dist < distance) {
+                        distance = dist;
+                        closest = i;
+                        angleSimilarity = dot;
+                    } else if (dist == distance && dot > angleSimilarity) {
+                        closest = i;
+                        angleSimilarity = dot;
+                    }
                 }
             }
         }
@@ -484,7 +493,7 @@ public class FrontierOverlay extends FrontierData {
 
         for (int i = 0; i < bannerDisplay.patternList.size(); ++i) {
             BannerPattern pattern = bannerDisplay.patternList.get(i);
-            TextureAtlasSprite sprite = mc.getTextureAtlas(Sheets.BANNER_SHEET).apply(pattern.location(true));
+            TextureAtlasSprite sprite = mc.getTextureAtlas(Sheets.BANNER_SHEET).apply(BannerPattern.location(Registry.BANNER_PATTERN.getResourceKey(pattern).get(), true));
             RenderSystem.setShader(GameRenderer::getPositionColorTexShader);
             RenderSystem.setShaderTexture(0, Sheets.BANNER_SHEET);
             RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
@@ -586,39 +595,41 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private void recalculateVertices(ShapeProperties shapeProps) {
-        if (vertices.size() > 2) {
-            MapPolygon polygon = new MapPolygon(vertices);
-            PolygonOverlay polygonOverlay = new PolygonOverlay(MapFrontiers.MODID, displayId, dimension, shapeProps, polygon);
-            polygonArea = PolygonHelper.toArea(polygonOverlay.getOuterArea());
+        synchronized (vertices) {
+            if (vertices.size() > 2) {
+                MapPolygon polygon = new MapPolygon(vertices);
+                PolygonOverlay polygonOverlay = new PolygonOverlay(MapFrontiers.MODID, displayId, dimension, shapeProps, polygon);
+                polygonArea = PolygonHelper.toArea(polygonOverlay.getOuterArea());
 
-            addNameAndOwner(polygonOverlay);
+                addNameAndOwner(polygonOverlay);
 
-            polygonOverlays.add(polygonOverlay);
+                polygonOverlays.add(polygonOverlay);
 
-            BlockPos last = vertices.get(vertices.size() - 1);
-            for (BlockPos vertex : vertices) {
-                area += abs(vertex.getZ() + last.getZ()) / 2.f * (vertex.getX() - last.getX());
-                last = vertex;
-            }
-            area = abs(area);
-        } else {
-            for (int i = 0; i < vertices.size(); ++i) {
-                String markerId = displayId + "_" + i;
-                MarkerOverlay marker = new MarkerOverlay(MapFrontiers.MODID, markerId, vertices.get(i), markerVertex);
-                marker.setDimension(dimension);
-                marker.setDisplayOrder(100);
-                markerOverlays.add(marker);
-                if (i == 0 && vertices.size() == 2) {
-                    addMarkerDots(markerId, vertices.get(0), vertices.get(1));
+                BlockPos last = vertices.get(vertices.size() - 1);
+                for (BlockPos vertex : vertices) {
+                    area += abs(vertex.getZ() + last.getZ()) / 2.f * (vertex.getX() - last.getX());
+                    last = vertex;
+                }
+                area = abs(area);
+            } else {
+                for (int i = 0; i < vertices.size(); ++i) {
+                    String markerId = displayId + "_" + i;
+                    MarkerOverlay marker = new MarkerOverlay(MapFrontiers.MODID, markerId, vertices.get(i), markerVertex);
+                    marker.setDimension(dimension);
+                    marker.setDisplayOrder(100);
+                    markerOverlays.add(marker);
+                    if (i == 0 && vertices.size() == 2) {
+                        addMarkerDots(markerId, vertices.get(0), vertices.get(1));
+                    }
                 }
             }
-        }
 
-        if (vertices.size() > 1) {
-            BlockPos last = vertices.get(vertices.size() - 1);
-            for (BlockPos vertex : vertices) {
-                perimeter += Math.sqrt(vertex.distSqr(last));
-                last = vertex;
+            if (vertices.size() > 1) {
+                BlockPos last = vertices.get(vertices.size() - 1);
+                for (BlockPos vertex : vertices) {
+                    perimeter += Math.sqrt(vertex.distSqr(last));
+                    last = vertex;
+                }
             }
         }
     }
@@ -628,11 +639,13 @@ public class FrontierOverlay extends FrontierData {
     //
     private void recalculateChunks(ShapeProperties shapeProps) {
         Multimap<ChunkPos, ChunkPos> edges = HashMultimap.create();
-        for (ChunkPos chunk : chunks) {
-            addNewEdge(edges, new ChunkPos(chunk.x, chunk.z), new ChunkPos(chunk.x + 1, chunk.z));
-            addNewEdge(edges, new ChunkPos(chunk.x + 1, chunk.z), new ChunkPos(chunk.x + 1, chunk.z + 1));
-            addNewEdge(edges, new ChunkPos(chunk.x + 1, chunk.z + 1), new ChunkPos(chunk.x, chunk.z + 1));
-            addNewEdge(edges, new ChunkPos(chunk.x, chunk.z + 1), new ChunkPos(chunk.x, chunk.z));
+        synchronized (chunks) {
+            for (ChunkPos chunk : chunks) {
+                addNewEdge(edges, new ChunkPos(chunk.x, chunk.z), new ChunkPos(chunk.x + 1, chunk.z));
+                addNewEdge(edges, new ChunkPos(chunk.x + 1, chunk.z), new ChunkPos(chunk.x + 1, chunk.z + 1));
+                addNewEdge(edges, new ChunkPos(chunk.x + 1, chunk.z + 1), new ChunkPos(chunk.x, chunk.z + 1));
+                addNewEdge(edges, new ChunkPos(chunk.x, chunk.z + 1), new ChunkPos(chunk.x, chunk.z));
+            }
         }
 
         List<List<ChunkPos>> outerPolygons = new ArrayList<>();
@@ -828,15 +841,17 @@ public class FrontierOverlay extends FrontierData {
                 int maxX = Integer.MIN_VALUE;
                 int maxZ = Integer.MIN_VALUE;
 
-                for (BlockPos vertex : vertices) {
-                    if (vertex.getX() < minX)
-                        minX = vertex.getX();
-                    if (vertex.getZ() < minZ)
-                        minZ = vertex.getZ();
-                    if (vertex.getX() > maxX)
-                        maxX = vertex.getX();
-                    if (vertex.getZ() > maxZ)
-                        maxZ = vertex.getZ();
+                synchronized (vertices) {
+                    for (BlockPos vertex : vertices) {
+                        if (vertex.getX() < minX)
+                            minX = vertex.getX();
+                        if (vertex.getZ() < minZ)
+                            minZ = vertex.getZ();
+                        if (vertex.getX() > maxX)
+                            maxX = vertex.getX();
+                        if (vertex.getZ() > maxZ)
+                            maxZ = vertex.getZ();
+                    }
                 }
 
                 topLeft = new BlockPos(minX, 70, minZ);
@@ -852,15 +867,17 @@ public class FrontierOverlay extends FrontierData {
                 int maxX = Integer.MIN_VALUE;
                 int maxZ = Integer.MIN_VALUE;
 
-                for (ChunkPos chunk : chunks) {
-                    if (chunk.x < minX)
-                        minX = chunk.x;
-                    if (chunk.z < minZ)
-                        minZ = chunk.z;
-                    if (chunk.x > maxX)
-                        maxX = chunk.x;
-                    if (chunk.z > maxZ)
-                        maxZ = chunk.z;
+                synchronized (chunks) {
+                    for (ChunkPos chunk : chunks) {
+                        if (chunk.x < minX)
+                            minX = chunk.x;
+                        if (chunk.z < minZ)
+                            minZ = chunk.z;
+                        if (chunk.x > maxX)
+                            maxX = chunk.x;
+                        if (chunk.z > maxZ)
+                            maxZ = chunk.z;
+                    }
                 }
 
                 topLeft = new BlockPos(minX * 16, 70, minZ * 16);
@@ -943,20 +960,20 @@ public class FrontierOverlay extends FrontierData {
         public BannerDisplayData(FrontierData.BannerData bannerData) {
             patternList = new ArrayList<>();
             colorList = new ArrayList<>();
-            patternList.add(BannerPattern.BASE);
+            patternList.add(Registry.BANNER_PATTERN.get(BannerPatterns.BASE));
             colorList.add(bannerData.baseColor);
             patternResourceLocation = "b" + bannerData.baseColor.getId();
 
             if (bannerData.patterns != null) {
                 for (int i = 0; i < bannerData.patterns.size(); ++i) {
                     CompoundTag nbttagcompound = bannerData.patterns.getCompound(i);
-                    BannerPattern bannerpattern = BannerPattern.byHash(nbttagcompound.getString("Pattern"));
+                    Holder<BannerPattern> bannerpattern = BannerPattern.byHash(nbttagcompound.getString("Pattern"));
 
                     if (bannerpattern != null) {
-                        patternList.add(bannerpattern);
+                        patternList.add(bannerpattern.get());
                         int j = nbttagcompound.getInt("Color");
                         colorList.add(DyeColor.byId(j));
-                        patternResourceLocation += bannerpattern.getHashname() + j;
+                        patternResourceLocation += bannerpattern.get().getHashname() + j;
                     }
                 }
             }

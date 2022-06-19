@@ -5,8 +5,8 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -25,7 +25,7 @@ public class GuiTabbedBox extends AbstractWidget {
     private int selected;
 
     public GuiTabbedBox(Font font, int x, int y, int width, int height, TabbedBoxResponder responder) {
-        super(x, y, width, 16, TextComponent.EMPTY);
+        super(x, y, width, 16, CommonComponents.EMPTY);
         this.font = font;
         this.responder = responder;
         tabs = new ArrayList<>();
