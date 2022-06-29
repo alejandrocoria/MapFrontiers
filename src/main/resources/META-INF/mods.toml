@@ -1,6 +1,6 @@
 modLoader="javafml"
 loaderVersion="[41,)"
-license="MIT License"
+license="MIT"
 
 [[mods]]
 modId="mapfrontiers"
