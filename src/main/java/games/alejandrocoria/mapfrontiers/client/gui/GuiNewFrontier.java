@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
+import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
@@ -34,6 +35,10 @@ import java.util.Set;
 public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxResponder {
     private final IClientAPI jmAPI;
 
+    private float scaleFactor;
+    private int actualWidth;
+    private int actualHeight;
+
     private GuiOptionButton buttonFrontierType;
     private GuiOptionButton buttonFrontierMode;
     private GuiOptionButton buttonAfterCreate;
@@ -53,12 +58,16 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
 
     @Override
     public void init() {
-        Component title = Component.translatable("mapfrontiers.title_new_frontier");
-        addRenderableOnly(new GuiSimpleLabel(font, width / 2, 8, GuiSimpleLabel.Align.Center, title, GuiColors.WHITE));
+        scaleFactor = ScreenHelper.getScaleFactorThatFit(this, 338, 338);
+        actualWidth = (int) (width * scaleFactor);
+        actualHeight = (int) (height * scaleFactor);
 
-        addRenderableOnly(new GuiSimpleLabel(font, width / 2 - 130, height / 2 - 112, GuiSimpleLabel.Align.Left,
+        Component title = Component.translatable("mapfrontiers.title_new_frontier");
+        addRenderableOnly(new GuiSimpleLabel(font, actualWidth / 2, 8, GuiSimpleLabel.Align.Center, title, GuiColors.WHITE));
+
+        addRenderableOnly(new GuiSimpleLabel(font, actualWidth / 2 - 130, actualHeight / 2 - 112, GuiSimpleLabel.Align.Left,
                 Component.translatable("mapfrontiers.frontier_type"), GuiColors.SETTINGS_TEXT));
-        buttonFrontierType = new GuiOptionButton(font, width / 2, height / 2 - 114, 130, this::buttonPressed);
+        buttonFrontierType = new GuiOptionButton(font, actualWidth / 2, actualHeight / 2 - 114, 130, this::buttonPressed);
         buttonFrontierType.addOption(ConfigData.getTranslatedEnum(ConfigData.FilterFrontierType.Global));
         buttonFrontierType.addOption(ConfigData.getTranslatedEnum(ConfigData.FilterFrontierType.Personal));
         buttonFrontierType.setSelected(0);
@@ -73,32 +82,32 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
             buttonFrontierType.active = false;
         }
 
-        addRenderableOnly(new GuiSimpleLabel(font, width / 2 - 130, height / 2 - 96, GuiSimpleLabel.Align.Left,
+        addRenderableOnly(new GuiSimpleLabel(font, actualWidth / 2 - 130, actualHeight / 2 - 96, GuiSimpleLabel.Align.Left,
                 Component.translatable("mapfrontiers.frontier_mode"), GuiColors.SETTINGS_TEXT));
-        buttonFrontierMode = new GuiOptionButton(font, width / 2, height / 2 - 98, 130, this::buttonPressed);
+        buttonFrontierMode = new GuiOptionButton(font, actualWidth / 2, actualHeight / 2 - 98, 130, this::buttonPressed);
         buttonFrontierMode.addOption(ConfigData.getTranslatedEnum(FrontierData.Mode.Vertex));
         buttonFrontierMode.addOption(ConfigData.getTranslatedEnum(FrontierData.Mode.Chunk));
         buttonFrontierMode.setSelected(ConfigData.newFrontierMode.ordinal());
 
-        addRenderableOnly(new GuiSimpleLabel(font, width / 2 - 130, height / 2 - 80, GuiSimpleLabel.Align.Left,
+        addRenderableOnly(new GuiSimpleLabel(font, actualWidth / 2 - 130, actualHeight / 2 - 80, GuiSimpleLabel.Align.Left,
                 Component.translatable("mapfrontiers.after_creating"), GuiColors.SETTINGS_TEXT));
-        buttonAfterCreate = new GuiOptionButton(font, width / 2, height / 2 - 82, 130, this::buttonPressed);
+        buttonAfterCreate = new GuiOptionButton(font, actualWidth / 2, actualHeight / 2 - 82, 130, this::buttonPressed);
         buttonAfterCreate.addOption(ConfigData.getTranslatedEnum(ConfigData.AfterCreatingFrontier.Info));
         buttonAfterCreate.addOption(ConfigData.getTranslatedEnum(ConfigData.AfterCreatingFrontier.Edit));
         buttonAfterCreate.addOption(ConfigData.getTranslatedEnum(ConfigData.AfterCreatingFrontier.Nothing));
         buttonAfterCreate.setSelected(ConfigData.afterCreatingFrontier.ordinal());
 
-        vertexShapeButtons = new GuiVertexShapeButtons(font, width / 2 - 162, height / 2 - 52, ConfigData.newFrontierShape, (s) -> shapeButtonsUpdated());
-        chunkShapeButtons = new GuiChunkShapeButtons(font, width / 2 - 107, height / 2 - 52, ConfigData.newFrontierChunkShape, (s) -> shapeButtonsUpdated());
+        vertexShapeButtons = new GuiVertexShapeButtons(font, actualWidth / 2 - 162, actualHeight / 2 - 52, ConfigData.newFrontierShape, (s) -> shapeButtonsUpdated());
+        chunkShapeButtons = new GuiChunkShapeButtons(font, actualWidth / 2 - 107, actualHeight / 2 - 52, ConfigData.newFrontierChunkShape, (s) -> shapeButtonsUpdated());
 
-        labelSize = new GuiSimpleLabel(font, width / 2 - 80, height / 2 + 90, GuiSimpleLabel.Align.Left, Component.literal(""), GuiColors.WHITE);
+        labelSize = new GuiSimpleLabel(font, actualWidth / 2 - 80, actualHeight / 2 + 90, GuiSimpleLabel.Align.Left, Component.literal(""), GuiColors.WHITE);
         addRenderableOnly(labelSize);
-        textSize = new TextIntBox(1, 1, 999, font, width / 2 + 16, height / 2 + 88, 64);
+        textSize = new TextIntBox(1, 1, 999, font, actualWidth / 2 + 16, actualHeight / 2 + 88, 64);
         textSize.setResponder(this);
 
-        buttonCreateFrontier = new GuiSettingsButton(font, width / 2 - 110, height / 2 + 146, 100,
+        buttonCreateFrontier = new GuiSettingsButton(font, actualWidth / 2 - 110, actualHeight / 2 + 146, 100,
                 Component.translatable("mapfrontiers.create"), this::buttonPressed);
-        buttonCancel = new GuiSettingsButton(font, width / 2 + 10, height / 2 + 146, 100,
+        buttonCancel = new GuiSettingsButton(font, actualWidth / 2 + 10, actualHeight / 2 + 146, 100,
                 Component.translatable("gui.cancel"), this::buttonPressed);
 
         addRenderableWidget(buttonFrontierType);
@@ -122,16 +131,46 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
     public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         renderBackground(matrixStack, 0);
 
+        mouseX *= scaleFactor;
+        mouseY *= scaleFactor;
+
+        if (scaleFactor != 1.f) {
+            matrixStack.pushPose();
+            matrixStack.scale(1.0f / scaleFactor, 1.0f / scaleFactor, 1.0f);
+        }
+
         super.render(matrixStack, mouseX, mouseY, partialTicks);
+
+        if (scaleFactor != 1.f) {
+            matrixStack.popPose();
+        }
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        mouseX *= scaleFactor;
+        mouseY *= scaleFactor;
+
         if (mouseButton == 0) {
             textSize.mouseClicked(mouseX, mouseY, mouseButton);
         }
 
         return super.mouseClicked(mouseX, mouseY, mouseButton);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        return super.mouseReleased(mouseX * scaleFactor, mouseY * scaleFactor, button);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        return super.mouseScrolled(mouseX * scaleFactor, mouseY * scaleFactor, delta);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        return super.mouseDragged(mouseX * scaleFactor, mouseY * scaleFactor, button, dragX * scaleFactor, dragY * scaleFactor);
     }
 
     protected void buttonPressed(Button button) {
