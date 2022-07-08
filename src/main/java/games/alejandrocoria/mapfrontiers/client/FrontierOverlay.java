@@ -128,6 +128,7 @@ public class FrontierOverlay extends FrontierData {
             hash = prime * hash + ((name2 == null) ? 0 : name2.hashCode());
             hash = prime * hash + (nameVisible ? 1231 : 1237);
             hash = prime * hash + (ownerVisible ? 1231 : 1237);
+            hash = prime * hash + (announceInChat ? 1231 : 1237);
             hash = prime * hash + ((vertices == null) ? 0 : vertices.hashCode());
             hash = prime * hash + ((chunks == null) ? 0 : chunks.hashCode());
             hash = prime * hash + mode.ordinal();
@@ -181,11 +182,11 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public boolean pointIsInside(BlockPos pos, double maxDistanceToOpen) {
-        if (visible) {
-            if (mode == Mode.Vertex) {
-                if (vertices.size() > 2) {
-                    return polygonArea != null && polygonArea.contains(pos.getX() + 0.5, pos.getZ() + 0.5);
-                } else if (maxDistanceToOpen > 0.0) {
+        if (mode == Mode.Vertex) {
+            if (vertices.size() > 2) {
+                return polygonArea != null && polygonArea.contains(pos.getX() + 0.5, pos.getZ() + 0.5);
+            } else if (maxDistanceToOpen > 0.0) {
+                synchronized (vertices) {
                     for (int i = 0; i < vertices.size(); ++i) {
                         Vec3 point = Vec3.atLowerCornerOf(pos);
                         Vec3 edge1 = Vec3.atLowerCornerOf(BlockPosHelper.atY(vertices.get(i), pos.getY()));
@@ -196,9 +197,9 @@ public class FrontierOverlay extends FrontierData {
                         }
                     }
                 }
-            } else {
-                return chunks.contains(new ChunkPos(pos));
             }
+        } else if (pos.getX() >= topLeft.getX() && pos.getX() <= bottomRight.getX() && pos.getZ() >= topLeft.getZ() && pos.getZ() <= bottomRight.getZ()) {
+            return chunks.contains(new ChunkPos(pos));
         }
 
         return false;
@@ -403,6 +404,12 @@ public class FrontierOverlay extends FrontierData {
     @Override
     public void setNameVisible(boolean nameVisible) {
         super.setNameVisible(nameVisible);
+        needUpdateOverlay = true;
+    }
+
+    @Override
+    public void setOwnerVisible(boolean ownerVisible) {
+        super.setOwnerVisible(ownerVisible);
         needUpdateOverlay = true;
     }
 

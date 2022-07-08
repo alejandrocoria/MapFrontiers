@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.gui.GuiColors;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierSettings;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiHUD;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
@@ -9,11 +10,17 @@ import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEven
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.util.BlockPosHelper;
 import journeymap.client.api.IClientAPI;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BannerItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -26,14 +33,19 @@ import net.minecraftforge.client.event.InputEvent.KeyInputEvent;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import org.codehaus.plexus.util.StringUtils;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 @ParametersAreNonnullByDefault
 @Mod.EventBusSubscriber(value = Dist.CLIENT, modid = MapFrontiers.MODID)
@@ -47,6 +59,9 @@ public class ClientProxy {
 
     private static KeyMapping openSettingsKey;
     private static GuiHUD guiHUD;
+
+    private static BlockPos lastPlayerPosition = new BlockPos(0, 0, 0);
+    private static Set<FrontierOverlay> insideFrontiers = new HashSet<>();
 
     @SubscribeEvent
     public static void clientSetup(FMLClientSetupEvent event) {
@@ -74,6 +89,57 @@ public class ClientProxy {
 
             Minecraft.getInstance().setScreen(new GuiFrontierSettings());
         }
+    }
+
+    @SubscribeEvent
+    public static void livingUpdateEvent(LivingEvent.LivingUpdateEvent event) {
+        if (event.getEntityLiving() == Minecraft.getInstance().player) {
+            Player player = (Player) event.getEntityLiving();
+
+            BlockPos currentPlayerPosition = player.blockPosition();
+            if (currentPlayerPosition.getX() != lastPlayerPosition.getX() || currentPlayerPosition.getZ() != lastPlayerPosition.getZ()) {
+                lastPlayerPosition = currentPlayerPosition;
+
+                Set<FrontierOverlay> frontiers = personalFrontiersOverlayManager.getFrontiersForAnnounce(player.level.dimension(), lastPlayerPosition);
+                frontiers.addAll(frontiersOverlayManager.getFrontiersForAnnounce(player.level.dimension(), lastPlayerPosition));
+
+                for (Iterator<FrontierOverlay> i = insideFrontiers.iterator(); i.hasNext();) {
+                    FrontierOverlay inside = i.next();
+                    if (frontiers.stream().noneMatch(f -> f.getId().equals(inside.getId()))) {
+                        player.displayClientMessage(createChatTextWithName("mapfrontiers.chat.leaving", inside), false);
+                        i.remove();
+                    }
+                }
+
+                for (FrontierOverlay frontier : frontiers) {
+                    if (insideFrontiers.add(frontier)) {
+                        player.displayClientMessage(createChatTextWithName("mapfrontiers.chat.entering", frontier), false);
+                    }
+                }
+            }
+        }
+    }
+
+    private static MutableComponent createChatTextWithName(String key, FrontierOverlay frontier) {
+        if (StringUtils.isBlank(frontier.getName1()) && StringUtils.isBlank(frontier.getName2())) {
+            MutableComponent text = new TranslatableComponent("mapfrontiers.unnamed", ChatFormatting.ITALIC);
+            text.withStyle(style -> style.withItalic(true).withColor(GuiColors.SETTINGS_TEXT_MEDIUM));
+            return new TranslatableComponent(key, text);
+        }
+
+        String name = frontier.getName1().trim();
+        String name2 = frontier.getName2().trim();
+        if (!StringUtils.isBlank(name2)) {
+            if (!name.isEmpty()) {
+                name += " ";
+            }
+            name += name2;
+        }
+
+        MutableComponent text = new TextComponent(name);
+        text.withStyle(style -> style.withColor(frontier.getColor()));
+
+        return new TranslatableComponent(key, text);
     }
 
     public static BlockPos snapVertex(BlockPos vertex, float snapDistance, ResourceKey<Level> dimension, @Nullable FrontierOverlay owner) {
