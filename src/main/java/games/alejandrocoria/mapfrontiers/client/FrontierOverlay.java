@@ -201,7 +201,7 @@ public class FrontierOverlay extends FrontierData {
                     }
                 }
             }
-        } else {
+        } else if (pos.getX() >= topLeft.getX() && pos.getX() <= bottomRight.getX() && pos.getZ() >= topLeft.getZ() && pos.getZ() <= bottomRight.getZ()) {
             return chunks.contains(new ChunkPos(pos));
         }
 

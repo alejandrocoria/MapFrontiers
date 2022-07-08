@@ -13,9 +13,8 @@ public class ScreenHelper {
             return 1.f;
         }
 
-
-        int baseWidth = (int) (screen.width * windowScale);
-        int baseHeight = (int) (screen.height * windowScale);
+        int baseWidth = screen.width * windowScale;
+        int baseHeight = screen.height * windowScale;
 
         int maxScale = windowScale;
         while (maxScale > 1 && (minWidth > baseWidth / maxScale || minHeight > baseHeight / maxScale)) {
