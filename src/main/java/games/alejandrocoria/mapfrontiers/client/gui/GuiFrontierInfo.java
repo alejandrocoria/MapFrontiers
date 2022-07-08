@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
@@ -44,6 +45,10 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
     private final IClientAPI jmAPI;
     private final Runnable afterClose;
 
+    private float scaleFactor;
+    private int actualWidth;
+    private int actualHeight;
+
     private final FrontiersOverlayManager frontiersOverlayManager;
     private final FrontierOverlay frontier;
     private TextBox textName1;
@@ -81,12 +86,16 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
     public void init() {
         minecraft.keyboardHandler.setSendRepeatsToGui(true);
 
-        Component title = new TranslatableComponent("mapfrontiers.title_info");
-        addRenderableOnly(new GuiSimpleLabel(font, width / 2, 8, GuiSimpleLabel.Align.Center, title, GuiColors.WHITE));
+        scaleFactor = ScreenHelper.getScaleFactorThatFit(this, 627, 336);
+        actualWidth = (int) (width * scaleFactor);
+        actualHeight = (int) (height * scaleFactor);
 
-        int leftSide = width / 2 - 154;
-        int rightSide = width / 2 + 10;
-        int top = height / 2 - 128;
+        Component title = new TranslatableComponent("mapfrontiers.title_info");
+        addRenderableOnly(new GuiSimpleLabel(font, actualWidth / 2, 8, GuiSimpleLabel.Align.Center, title, GuiColors.WHITE));
+
+        int leftSide = actualWidth / 2 - 154;
+        int rightSide = actualWidth / 2 + 10;
+        int top = actualHeight / 2 - 128;
 
         addRenderableOnly(new GuiSimpleLabel(font, leftSide, top, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.name"), GuiColors.LABEL_TEXT));
@@ -237,10 +246,18 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
     public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         renderBackground(matrixStack, 0);
 
+        mouseX *= scaleFactor;
+        mouseY *= scaleFactor;
+
+        if (scaleFactor != 1.f) {
+            matrixStack.pushPose();
+            matrixStack.scale(1.0f / scaleFactor, 1.0f / scaleFactor, 1.0f);
+        }
+
         super.render(matrixStack, mouseX, mouseY, partialTicks);
 
         if (frontier.hasBanner()) {
-            frontier.renderBanner(minecraft, matrixStack, width / 2 - 276, height / 2 - 106, 4);
+            frontier.renderBanner(minecraft, matrixStack, actualWidth / 2 - 276, actualHeight / 2 - 106, 4);
         }
 
         if (buttonBanner.visible && buttonBanner.isHoveredOrFocused()) {
@@ -249,10 +266,17 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
                 renderTooltip(matrixStack, prefix.append(new TranslatableComponent("mapfrontiers.assign_banner_warn")), mouseX, mouseY);
             }
         }
+
+        if (scaleFactor != 1.f) {
+            matrixStack.popPose();
+        }
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        mouseX *= scaleFactor;
+        mouseY *= scaleFactor;
+
         if (mouseButton == 0) {
             textName1.mouseClicked(mouseX, mouseY, mouseButton);
             textName2.mouseClicked(mouseX, mouseY, mouseButton);
@@ -266,6 +290,9 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        mouseX *= scaleFactor;
+        mouseY *= scaleFactor;
+
         for (Widget w : renderables) {
             if (w instanceof GuiColorPicker) {
                 ((GuiColorPicker) w).mouseReleased(mouseX, mouseY, button);
@@ -273,6 +300,16 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         }
 
         return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        return super.mouseScrolled(mouseX * scaleFactor, mouseY * scaleFactor, delta);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        return super.mouseDragged(mouseX * scaleFactor, mouseY * scaleFactor, button, dragX * scaleFactor, dragY * scaleFactor);
     }
 
     protected void buttonPressed(Button button) {
@@ -341,7 +378,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
     public void onUpdatedFrontierEvent(UpdatedFrontierEvent event) {
         if (frontier.getId().equals(event.frontierOverlay.getId())) {
             if (event.playerID != Minecraft.getInstance().player.getId()) {
-                init(minecraft, width, height);
+                init(minecraft, actualWidth, actualHeight);
             } else {
                 if (frontier.getModified() != null) {
                     Component modified = new TranslatableComponent("mapfrontiers.modified", dateFormat.format(frontier.getModified()));
