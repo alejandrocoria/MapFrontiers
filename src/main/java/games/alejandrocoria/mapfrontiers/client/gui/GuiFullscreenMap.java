@@ -351,7 +351,7 @@ public class GuiFullscreenMap {
     }
 
     @SubscribeEvent
-    public void mouseEvent(InputEvent.MouseInputEvent event) {
+    public void mouseEvent(InputEvent.MouseButton event) {
         if (event.getAction() != GLFW.GLFW_RELEASE || event.getButton() != 1) {
             return;
         }

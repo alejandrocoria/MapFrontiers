@@ -24,10 +24,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.ClientRegistry;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggedInEvent;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggedOutEvent;
-import net.minecraftforge.client.event.InputEvent.KeyInputEvent;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingIn;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingOut;
+import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
@@ -69,13 +69,17 @@ public class ClientProxy {
 
         openSettingsKey = new KeyMapping("mapfrontiers.key.open_settings", KeyConflictContext.IN_GAME,
                 InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, "mapfrontiers.key.category");
-        ClientRegistry.registerKeyBinding(openSettingsKey);
 
         MapFrontiers.LOGGER.info("clientSetup done");
     }
 
     @SubscribeEvent
-    public static void onEvent(KeyInputEvent event) {
+    public static void registerKeyMappingsEvent(RegisterKeyMappingsEvent event) {
+        event.register(openSettingsKey);
+    }
+
+    @SubscribeEvent
+    public static void onKeyEvent(InputEvent.Key event) {
         if (openSettingsKey.matches(event.getKey(), event.getScanCode()) && openSettingsKey.isDown()) {
             if (frontiersOverlayManager == null) {
                 return;
@@ -186,7 +190,7 @@ public class ClientProxy {
     }
 
     @SubscribeEvent
-    public static void clientConnectedToServer(LoggedInEvent event) {
+    public static void clientConnectedToServer(LoggingIn event) {
         if (jmAPI != null) {
             if (frontiersOverlayManager != null) {
                 frontiersOverlayManager.removeAllOverlays();
@@ -201,7 +205,7 @@ public class ClientProxy {
     }
 
     @SubscribeEvent
-    public static void clientDisconnectionFromServer(LoggedOutEvent event) {
+    public static void clientDisconnectionFromServer(LoggingOut event) {
         if (frontiersOverlayManager != null) {
             frontiersOverlayManager.removeAllOverlays();
             frontiersOverlayManager = null;

@@ -34,7 +34,8 @@ import net.minecraft.world.level.block.entity.BannerPattern;
 import net.minecraft.world.level.block.entity.BannerPatterns;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.client.event.RenderGuiOverlayEvent;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -149,12 +150,12 @@ public class GuiHUD {
     }
 
     @SubscribeEvent
-    public void RenderGameOverlayEvent(RenderGameOverlayEvent.Pre event) {
+    public void RenderGameOverlayEvent(RenderGuiOverlayEvent.Pre event) {
         if (previewMode) {
             return;
         }
 
-        if (event.getType() == RenderGameOverlayEvent.ElementType.ALL) {
+        if (event.getOverlay().id().equals(VanillaGuiOverlay.POTION_ICONS.id())) {
             if (mc.screen != null && !(mc.screen instanceof ChatScreen)) {
                 return;
             }
