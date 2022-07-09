@@ -620,7 +620,6 @@ public class FrontierData {
             announceInChat = buf.readBoolean();
         }
 
-
         if (changes.contains(Change.Name)) {
             int maxCharacters = 17;
             int maxBytes = maxCharacters * 4;

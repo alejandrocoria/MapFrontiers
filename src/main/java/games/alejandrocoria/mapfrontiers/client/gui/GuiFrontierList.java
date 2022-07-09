@@ -170,6 +170,9 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        mouseX *= scaleFactor;
+        mouseY *= scaleFactor;
+
         for (Widget w : renderables) {
             if (w instanceof GuiScrollBox) {
                 ((GuiScrollBox) w).mouseReleased();

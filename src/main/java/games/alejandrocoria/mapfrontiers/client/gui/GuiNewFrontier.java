@@ -169,11 +169,6 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
         return super.mouseScrolled(mouseX * scaleFactor, mouseY * scaleFactor, delta);
     }
 
-    @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        return super.mouseDragged(mouseX * scaleFactor, mouseY * scaleFactor, button, dragX * scaleFactor, dragY * scaleFactor);
-    }
-
     protected void buttonPressed(Button button) {
         if (button == buttonFrontierMode) {
             ConfigData.newFrontierMode = FrontierData.Mode.values()[buttonFrontierMode.getSelected()];
