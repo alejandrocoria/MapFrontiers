@@ -64,7 +64,6 @@ public class ClientProxy {
 
     @SubscribeEvent
     public static void clientSetup(FMLClientSetupEvent event) {
-        Minecraft.getInstance().getMainRenderTarget().enableStencil();
         MinecraftForge.EVENT_BUS.register(FrontierOverlay.class);
         MinecraftForge.EVENT_BUS.register(FrontiersOverlayManager.class);
 
@@ -188,17 +187,10 @@ public class ClientProxy {
 
     @SubscribeEvent
     public static void clientConnectedToServer(LoggedInEvent event) {
-        if (jmAPI != null) {
-            if (frontiersOverlayManager != null) {
-                frontiersOverlayManager.removeAllOverlays();
-                personalFrontiersOverlayManager.removeAllOverlays();
-            }
-            frontiersOverlayManager = new FrontiersOverlayManager(jmAPI, false);
-            personalFrontiersOverlayManager = new FrontiersOverlayManager(jmAPI, true);
+        initializeManagers();
 
-            guiHUD = new GuiHUD(frontiersOverlayManager, personalFrontiersOverlayManager);
-            MinecraftForge.EVENT_BUS.register(guiHUD);
-        }
+        guiHUD = new GuiHUD(frontiersOverlayManager, personalFrontiersOverlayManager);
+        MinecraftForge.EVENT_BUS.register(guiHUD);
     }
 
     @SubscribeEvent
@@ -213,6 +205,20 @@ public class ClientProxy {
         if (guiHUD != null) {
             MinecraftForge.EVENT_BUS.unregister(guiHUD);
             guiHUD = null;
+        }
+    }
+
+    private static void initializeManagers() {
+        if (jmAPI == null) {
+            return;
+        }
+
+        if (frontiersOverlayManager == null) {
+            frontiersOverlayManager = new FrontiersOverlayManager(jmAPI, false);
+        }
+
+        if (personalFrontiersOverlayManager == null) {
+            personalFrontiersOverlayManager = new FrontiersOverlayManager(jmAPI, false);
         }
     }
 
@@ -231,6 +237,8 @@ public class ClientProxy {
     }
 
     public static FrontiersOverlayManager getFrontiersOverlayManager(boolean personal) {
+        initializeManagers();
+
         if (personal) {
             return personalFrontiersOverlayManager;
         } else {
