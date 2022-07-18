@@ -93,9 +93,9 @@ public class ClientProxy {
     }
 
     @SubscribeEvent
-    public static void livingUpdateEvent(LivingEvent.LivingUpdateEvent event) {
-        if (event.getEntityLiving() == Minecraft.getInstance().player) {
-            Player player = (Player) event.getEntityLiving();
+    public static void livingUpdateEvent(LivingEvent.LivingTickEvent event) {
+        if (event.getEntity() == Minecraft.getInstance().player) {
+            Player player = (Player) event.getEntity();
 
             BlockPos currentPlayerPosition = player.blockPosition();
             if (currentPlayerPosition.getX() != lastPlayerPosition.getX() || currentPlayerPosition.getZ() != lastPlayerPosition.getZ()) {

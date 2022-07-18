@@ -37,7 +37,7 @@ import java.util.ArrayList;
 @Mod(MapFrontiers.MODID)
 public class MapFrontiers {
     public static final String MODID = "mapfrontiers";
-    public static final String VERSION = "1.19-2.3.0";
+    public static final String VERSION = "1.19-2.3.2";
     public static Logger LOGGER;
 
     private static FrontiersManager frontiersManager;
@@ -90,21 +90,21 @@ public class MapFrontiers {
 
         frontiersManager.ensureOwners();
 
+        ServerPlayer player = (ServerPlayer) event.getEntity();
+
         for (ArrayList<FrontierData> frontiers : frontiersManager.getAllGlobalFrontiers().values()) {
             for (FrontierData frontier : frontiers) {
-                PacketHandler.sendTo(new PacketFrontier(frontier), (ServerPlayer) event.getPlayer());
+                PacketHandler.sendTo(new PacketFrontier(frontier), player);
             }
         }
 
-        for (ArrayList<FrontierData> frontiers : frontiersManager.getAllPersonalFrontiers(new SettingsUser(event.getPlayer()))
-                .values()) {
+        for (ArrayList<FrontierData> frontiers : frontiersManager.getAllPersonalFrontiers(new SettingsUser(event.getEntity())).values()) {
             for (FrontierData frontier : frontiers) {
-                PacketHandler.sendTo(new PacketFrontier(frontier), (ServerPlayer) event.getPlayer());
+                PacketHandler.sendTo(new PacketFrontier(frontier), player);
             }
         }
 
-        PacketHandler.sendTo(new PacketSettingsProfile(frontiersManager.getSettings().getProfile(event.getPlayer())),
-                (ServerPlayer) event.getPlayer());
+        PacketHandler.sendTo(new PacketSettingsProfile(frontiersManager.getSettings().getProfile(event.getEntity())), player);
     }
 
     public static FrontiersManager getFrontiersManager() {

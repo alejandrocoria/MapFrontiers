@@ -37,7 +37,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.apache.commons.lang3.StringUtils;
@@ -173,13 +173,13 @@ public class GuiHUD {
     }
 
     @SubscribeEvent
-    public void livingUpdateEvent(LivingUpdateEvent event) {
+    public void livingUpdateEvent(LivingEvent.LivingTickEvent event) {
         if (previewMode || frontiersOverlayManager == null || personalFrontiersOverlayManager == null) {
             return;
         }
 
-        if (event.getEntityLiving() == mc.player) {
-            Player player = (Player) event.getEntityLiving();
+        if (event.getEntity() == mc.player) {
+            Player player = (Player) event.getEntity();
 
             BlockPos currentPlayerPosition = player.blockPosition();
             if (currentPlayerPosition.getX() != lastPlayerPosition.getX()
