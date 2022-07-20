@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
@@ -31,6 +32,10 @@ import java.util.UUID;
 public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxResponder {
     private final IClientAPI jmAPI;
     private final GuiFullscreenMap fullscreenMap;
+
+    private float scaleFactor;
+    private int actualWidth;
+    private int actualHeight;
 
     private GuiScrollBox frontiers;
     private GuiScrollBox filterType;
@@ -73,32 +78,36 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
 
     @Override
     public void init() {
+        scaleFactor = ScreenHelper.getScaleFactorThatFit(this, 772, 332);
+        actualWidth = (int) (width * scaleFactor);
+        actualHeight = (int) (height * scaleFactor);
+
         labels.clear();
 
-        frontiers = new GuiScrollBox(width / 2 - 300, 50, 450, height - 100, 24, this);
+        frontiers = new GuiScrollBox(actualWidth / 2 - 300, 50, 450, actualHeight - 100, 24, this);
 
-        labels.add(new GuiSimpleLabel(font, width / 2 + 170, 74, GuiSimpleLabel.Align.Left,
+        labels.add(new GuiSimpleLabel(font, actualWidth / 2 + 170, 74, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.filter_type"), GuiColors.SETTINGS_TEXT));
 
-        filterType = new GuiScrollBox(width / 2 + 170, 86, 200, 48, 16, this);
+        filterType = new GuiScrollBox(actualWidth / 2 + 170, 86, 200, 48, 16, this);
         filterType.addElement(new GuiRadioListElement(font, ConfigData.getTranslatedEnum(ConfigData.FilterFrontierType.All), ConfigData.FilterFrontierType.All.ordinal()));
         filterType.addElement(new GuiRadioListElement(font, ConfigData.getTranslatedEnum(ConfigData.FilterFrontierType.Global), ConfigData.FilterFrontierType.Global.ordinal()));
         filterType.addElement(new GuiRadioListElement(font, ConfigData.getTranslatedEnum(ConfigData.FilterFrontierType.Personal), ConfigData.FilterFrontierType.Personal.ordinal()));
         filterType.selectElementIf((element) -> ((GuiRadioListElement) element).getId() == ConfigData.filterFrontierType.ordinal());
 
-        labels.add(new GuiSimpleLabel(font, width / 2 + 170, 144, GuiSimpleLabel.Align.Left,
+        labels.add(new GuiSimpleLabel(font, actualWidth / 2 + 170, 144, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.filter_owner"), GuiColors.SETTINGS_TEXT));
 
-        filterOwner = new GuiScrollBox(width / 2 + 170, 156, 200, 48, 16, this);
+        filterOwner = new GuiScrollBox(actualWidth / 2 + 170, 156, 200, 48, 16, this);
         filterOwner.addElement(new GuiRadioListElement(font, ConfigData.getTranslatedEnum(ConfigData.FilterFrontierOwner.All), ConfigData.FilterFrontierOwner.All.ordinal()));
         filterOwner.addElement(new GuiRadioListElement(font, ConfigData.getTranslatedEnum(ConfigData.FilterFrontierOwner.You), ConfigData.FilterFrontierOwner.You.ordinal()));
         filterOwner.addElement(new GuiRadioListElement(font, ConfigData.getTranslatedEnum(ConfigData.FilterFrontierOwner.Others), ConfigData.FilterFrontierOwner.Others.ordinal()));
         filterOwner.selectElementIf((element) -> ((GuiRadioListElement) element).getId() == ConfigData.filterFrontierOwner.ordinal());
 
-        labels.add(new GuiSimpleLabel(font, width / 2 + 170, 214, GuiSimpleLabel.Align.Left,
+        labels.add(new GuiSimpleLabel(font, actualWidth / 2 + 170, 214, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.filter_dimension"), GuiColors.SETTINGS_TEXT));
 
-        filterDimension = new GuiScrollBox(width / 2 + 170, 226, 200, height - 296, 16, this);
+        filterDimension = new GuiScrollBox(actualWidth / 2 + 170, 226, 200, actualHeight - 296, 16, this);
         filterDimension.addElement(new GuiRadioListElement(font, new TranslatableComponent("mapfrontiers.config.All"), "all".hashCode()));
         filterDimension.addElement(new GuiRadioListElement(font, new TranslatableComponent("mapfrontiers.config.Current"), "current".hashCode()));
         filterDimension.addElement(new GuiRadioListElement(font, new TextComponent("minecraft:overworld"), "minecraft:overworld".hashCode()));
@@ -111,19 +120,19 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
             filterDimension.selectElementIf((element) -> ((GuiRadioListElement) element).getId() == ConfigData.filterFrontierDimension.hashCode());
         }
 
-        buttonResetFilters = new GuiSettingsButton(font, width / 2 + 170, 50, 110,
+        buttonResetFilters = new GuiSettingsButton(font, actualWidth / 2 + 170, 50, 110,
                 new TranslatableComponent("mapfrontiers.reset_filters"), this::buttonPressed);
 
-        buttonCreate = new GuiSettingsButton(font, width / 2 - 295, height - 28, 110,
+        buttonCreate = new GuiSettingsButton(font, actualWidth / 2 - 295, actualHeight - 28, 110,
                 new TranslatableComponent("mapfrontiers.create"), this::buttonPressed);
-        buttonInfo = new GuiSettingsButton(font, width / 2 - 175, height - 28, 110,
+        buttonInfo = new GuiSettingsButton(font, actualWidth / 2 - 175, actualHeight - 28, 110,
                 new TranslatableComponent("mapfrontiers.info"), this::buttonPressed);
-        buttonDelete = new GuiSettingsButton(font, width / 2 - 55, height - 28, 110,
+        buttonDelete = new GuiSettingsButton(font, actualWidth / 2 - 55, actualHeight - 28, 110,
                 new TranslatableComponent("mapfrontiers.delete"), this::buttonPressed);
         buttonDelete.setTextColors(GuiColors.SETTINGS_BUTTON_TEXT_DELETE, GuiColors.SETTINGS_BUTTON_TEXT_DELETE_HIGHLIGHT);
-        buttonVisible = new GuiSettingsButton(font, width / 2 + 65, height - 28, 110,
+        buttonVisible = new GuiSettingsButton(font, actualWidth / 2 + 65, actualHeight - 28, 110,
                 new TranslatableComponent("mapfrontiers.hide"), this::buttonPressed);
-        buttonDone = new GuiSettingsButton(font, width / 2 + 185, height - 28, 110,
+        buttonDone = new GuiSettingsButton(font, actualWidth / 2 + 185, actualHeight - 28, 110,
                 new TranslatableComponent("gui.done"), this::buttonPressed);
 
         addRenderableWidget(frontiers);
@@ -149,7 +158,16 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
     @Override
     public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         renderBackground(matrixStack, 0);
-        drawCenteredString(matrixStack, font, title, this.width / 2, 8, GuiColors.WHITE);
+
+        mouseX *= scaleFactor;
+        mouseY *= scaleFactor;
+
+        if (scaleFactor != 1.f) {
+            matrixStack.pushPose();
+            matrixStack.scale(1.0f / scaleFactor, 1.0f / scaleFactor, 1.0f);
+        }
+
+        drawCenteredString(matrixStack, font, title, this.actualWidth / 2, 8, GuiColors.WHITE);
         super.render(matrixStack, mouseX, mouseY, partialTicks);
 
         for (GuiSimpleLabel label : labels) {
@@ -157,10 +175,22 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
                 label.render(matrixStack, mouseX, mouseY, partialTicks);
             }
         }
+
+        if (scaleFactor != 1.f) {
+            matrixStack.popPose();
+        }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        return super.mouseClicked(mouseX * scaleFactor, mouseY * scaleFactor, mouseButton);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        mouseX *= scaleFactor;
+        mouseY *= scaleFactor;
+
         for (GuiEventListener w : children()) {
             if (w instanceof GuiScrollBox) {
                 ((GuiScrollBox) w).mouseReleased();
@@ -168,6 +198,16 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
         }
 
         return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        return super.mouseScrolled(mouseX * scaleFactor, mouseY * scaleFactor, delta);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        return super.mouseDragged(mouseX * scaleFactor, mouseY * scaleFactor, button, dragX * scaleFactor, dragY * scaleFactor);
     }
 
     protected void buttonPressed(Button button) {

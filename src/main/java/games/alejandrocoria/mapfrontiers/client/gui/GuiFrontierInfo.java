@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -39,6 +40,10 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
 
     private final IClientAPI jmAPI;
     private final Runnable afterClose;
+
+    private float scaleFactor;
+    private int actualWidth;
+    private int actualHeight;
 
     private final FrontiersOverlayManager frontiersOverlayManager;
     private final FrontierOverlay frontier;
@@ -102,9 +107,13 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
     public void init() {
         minecraft.keyboardHandler.setSendRepeatsToGui(true);
 
-        int leftSide = width / 2 - 154;
-        int rightSide = width / 2 + 10;
-        int top = height / 2 - 128;
+        scaleFactor = ScreenHelper.getScaleFactorThatFit(this, 627, 336);
+        actualWidth = (int) (width * scaleFactor);
+        actualHeight = (int) (height * scaleFactor);
+
+        int leftSide = actualWidth / 2 - 154;
+        int rightSide = actualWidth / 2 + 10;
+        int top = actualHeight / 2 - 128;
 
         labels.clear();
 
@@ -256,11 +265,20 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
     @Override
     public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         renderBackground(matrixStack, 0);
-        drawCenteredString(matrixStack, font, title, this.width / 2, 8, GuiColors.WHITE);
+
+        mouseX *= scaleFactor;
+        mouseY *= scaleFactor;
+
+        if (scaleFactor != 1.f) {
+            matrixStack.pushPose();
+            matrixStack.scale(1.0f / scaleFactor, 1.0f / scaleFactor, 1.0f);
+        }
+
+        drawCenteredString(matrixStack, font, title, this.actualWidth / 2, 8, GuiColors.WHITE);
         super.render(matrixStack, mouseX, mouseY, partialTicks);
 
         if (frontier.hasBanner()) {
-            frontier.renderBanner(minecraft, matrixStack, width / 2 - 276, height / 2 - 106, 4);
+            frontier.renderBanner(minecraft, matrixStack, actualWidth / 2 - 276, actualHeight / 2 - 106, 4);
         }
 
         for (GuiSimpleLabel label : labels) {
@@ -275,10 +293,17 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
                 renderTooltip(matrixStack, prefix.append(new TranslatableComponent("mapfrontiers.assign_banner_warn")), mouseX, mouseY);
             }
         }
+
+        if (scaleFactor != 1.f) {
+            matrixStack.popPose();
+        }
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        mouseX *= scaleFactor;
+        mouseY *= scaleFactor;
+
         if (mouseButton == 0) {
             textName1.mouseClicked(mouseX, mouseY, mouseButton);
             textName2.mouseClicked(mouseX, mouseY, mouseButton);
@@ -292,6 +317,9 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        mouseX *= scaleFactor;
+        mouseY *= scaleFactor;
+
         for (GuiEventListener w : children()) {
             if (w instanceof GuiColorPicker) {
                 w.mouseReleased(mouseX, mouseY, button);
@@ -299,6 +327,16 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         }
 
         return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        return super.mouseScrolled(mouseX * scaleFactor, mouseY * scaleFactor, delta);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        return super.mouseDragged(mouseX * scaleFactor, mouseY * scaleFactor, button, dragX * scaleFactor, dragY * scaleFactor);
     }
 
     protected void buttonPressed(Button button) {
