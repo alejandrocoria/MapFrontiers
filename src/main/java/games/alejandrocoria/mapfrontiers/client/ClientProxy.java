@@ -128,16 +128,8 @@ public class ClientProxy implements ClientModInitializer {
         });
 
         ClientLoginConnectionEvents.INIT.register((handler, client) -> {
-            if (jmAPI != null) {
-                if (frontiersOverlayManager != null) {
-                    frontiersOverlayManager.removeAllOverlays();
-                    personalFrontiersOverlayManager.removeAllOverlays();
-                }
-                frontiersOverlayManager = new FrontiersOverlayManager(jmAPI, false);
-                personalFrontiersOverlayManager = new FrontiersOverlayManager(jmAPI, true);
-
-                guiHUD = new GuiHUD(frontiersOverlayManager, personalFrontiersOverlayManager);
-            }
+            initializeManagers();
+            guiHUD = new GuiHUD(frontiersOverlayManager, personalFrontiersOverlayManager);
         });
 
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
@@ -215,6 +207,20 @@ public class ClientProxy implements ClientModInitializer {
         jmAPI = newJmAPI;
     }
 
+    private static void initializeManagers() {
+        if (jmAPI == null) {
+            return;
+        }
+
+        if (frontiersOverlayManager == null) {
+            frontiersOverlayManager = new FrontiersOverlayManager(jmAPI, false);
+        }
+
+        if (personalFrontiersOverlayManager == null) {
+            personalFrontiersOverlayManager = new FrontiersOverlayManager(jmAPI, false);
+        }
+    }
+
     public static ItemStack getHeldBanner() {
         ItemStack mainhand = Minecraft.getInstance().player.getItemBySlot(EquipmentSlot.MAINHAND);
         ItemStack offhand = Minecraft.getInstance().player.getItemBySlot(EquipmentSlot.OFFHAND);
@@ -230,6 +236,8 @@ public class ClientProxy implements ClientModInitializer {
     }
 
     public static FrontiersOverlayManager getFrontiersOverlayManager(boolean personal) {
+        initializeManagers();
+
         if (personal) {
             return personalFrontiersOverlayManager;
         } else {
