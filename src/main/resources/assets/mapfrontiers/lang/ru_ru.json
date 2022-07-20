@@ -11,6 +11,7 @@
   "mapfrontiers.unnamed_2": "%1$sТерритория",
   "mapfrontiers.show_name": "Show name",
   "mapfrontiers.show_owner": "Show owner",
+  "mapfrontiers.announce_in_chat": "Announce in chat",
   "mapfrontiers.color": "Цвет",
   "mapfrontiers.random_color": "Random color",
   "mapfrontiers.area": "Площадь: %1$.2fм²",
@@ -155,5 +156,7 @@
 
   "mapfrontiers.key.category": "Карта Территорий",
   "mapfrontiers.key.open_settings": "Открыть настройки",
-  "mapfrontiers.key.open_settings.hint": "You can use [%1$s] to open this screen during gameplay"
+
+  "mapfrontiers.chat.entering": "Entering %1$s",
+  "mapfrontiers.chat.leaving": "Leaving %1$s"
 }

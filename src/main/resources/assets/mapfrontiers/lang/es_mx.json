@@ -9,6 +9,7 @@
   "mapfrontiers.unnamed_2": "%1$ssin nombre",
   "mapfrontiers.show_name": "Mostrar nombre",
   "mapfrontiers.show_owner": "Mostrar dueño",
+  "mapfrontiers.announce_in_chat": "Anunciar en el chat",
   "mapfrontiers.color": "Color",
   "mapfrontiers.random_color": "Color aleatorio",
   "mapfrontiers.area": "Área: %1$.2fm²",
@@ -153,5 +154,7 @@
 
   "mapfrontiers.key.category": "MapFrontiers",
   "mapfrontiers.key.open_settings": "Abrir opciones",
-  "mapfrontiers.key.open_settings.hint": "Puedes usar [%1$s] para abrir esta pantalla durante el juego"
+
+  "mapfrontiers.chat.entering": "Entrando a %1$s",
+  "mapfrontiers.chat.leaving": "Saliendo de %1$s"
 }

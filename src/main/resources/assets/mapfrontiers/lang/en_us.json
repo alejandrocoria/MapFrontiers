@@ -9,6 +9,7 @@
   "mapfrontiers.unnamed_2": "%1$sfrontier",
   "mapfrontiers.show_name": "Show name",
   "mapfrontiers.show_owner": "Show owner",
+  "mapfrontiers.announce_in_chat": "Announce in chat",
   "mapfrontiers.color": "Color",
   "mapfrontiers.random_color": "Random color",
   "mapfrontiers.area": "Area: %1$.2fm²",
@@ -153,5 +154,7 @@
 
   "mapfrontiers.key.category": "MapFrontiers",
   "mapfrontiers.key.open_settings": "Open settings",
-  "mapfrontiers.key.open_settings.hint": "You can use [%1$s] to open this screen during gameplay"
+
+  "mapfrontiers.chat.entering": "Entering %1$s",
+  "mapfrontiers.chat.leaving": "Leaving %1$s"
 }

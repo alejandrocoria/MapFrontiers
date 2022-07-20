@@ -143,13 +143,27 @@ public class FrontiersOverlayManager {
         ArrayList<FrontierOverlay> frontiers = dimensionsFrontiers.get(dimension);
         if (frontiers != null) {
             for (FrontierOverlay frontier : frontiers) {
-                if (frontier.pointIsInside(pos, maxDistanceToOpen)) {
+                if (frontier.getVisible() && frontier.pointIsInside(pos, maxDistanceToOpen)) {
                     return frontier;
                 }
             }
         }
 
         return null;
+    }
+
+    public Set<FrontierOverlay> getFrontiersForAnnounce(ResourceKey<Level> dimension, BlockPos pos) {
+        Set<FrontierOverlay> inPosition = new HashSet<>();
+        ArrayList<FrontierOverlay> frontiers = dimensionsFrontiers.get(dimension);
+        if (frontiers != null) {
+            for (FrontierOverlay frontier : frontiers) {
+                if (frontier.getAnnounceInChat() && frontier.pointIsInside(pos, 0.0)) {
+                    inPosition.add(frontier);
+                }
+            }
+        }
+
+        return inPosition;
     }
 
     public void updateAllOverlays(boolean forceUpdate) {

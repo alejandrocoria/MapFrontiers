@@ -48,6 +48,7 @@ public class FrontierData {
     protected String name2 = "Frontier";
     protected boolean nameVisible = true;
     protected boolean ownerVisible = false;
+    protected boolean announceInChat = false;
     protected int color = 0xffffffff;
     protected ResourceKey<Level> dimension;
     protected SettingsUser owner = new SettingsUser();
@@ -72,6 +73,7 @@ public class FrontierData {
         visible = other.visible;
         nameVisible = other.nameVisible;
         ownerVisible = other.ownerVisible;
+        announceInChat = other.announceInChat;
         color = other.color;
 
         name1 = other.name1;
@@ -101,6 +103,7 @@ public class FrontierData {
             visible = other.visible;
             nameVisible = other.nameVisible;
             ownerVisible = other.ownerVisible;
+            announceInChat = other.announceInChat;
             color = other.color;
         }
 
@@ -279,6 +282,15 @@ public class FrontierData {
         return ownerVisible;
     }
 
+    public void setAnnounceInChat(boolean announceInChat) {
+        this.announceInChat = announceInChat;
+        changes.add(Change.Other);
+    }
+
+    public boolean getAnnounceInChat() {
+        return announceInChat;
+    }
+
     public void setColor(int color) {
         this.color = color;
         changes.add(Change.Other);
@@ -439,6 +451,9 @@ public class FrontierData {
         if (nbt.contains("ownerVisible")) {
             ownerVisible = nbt.getBoolean("ownerVisible");
         }
+        if (nbt.contains("announceInChat")) {
+            announceInChat = nbt.getBoolean("announceInChat");
+        }
 
         personal = nbt.getBoolean("personal");
 
@@ -511,6 +526,7 @@ public class FrontierData {
         nbt.putString("name2", name2);
         nbt.putBoolean("nameVisible", nameVisible);
         nbt.putBoolean("ownerVisible", ownerVisible);
+        nbt.putBoolean("announceInChat", announceInChat);
         nbt.putBoolean("personal", personal);
 
         CompoundTag nbtOwner = new CompoundTag();
@@ -581,8 +597,8 @@ public class FrontierData {
             color = buf.readInt();
             nameVisible = buf.readBoolean();
             ownerVisible = buf.readBoolean();
+            announceInChat = buf.readBoolean();
         }
-
 
         if (changes.contains(Change.Name)) {
             int maxCharacters = 17;
@@ -675,6 +691,7 @@ public class FrontierData {
             buf.writeInt(color);
             buf.writeBoolean(nameVisible);
             buf.writeBoolean(ownerVisible);
+            buf.writeBoolean(announceInChat);
         }
 
         if (!onlyChanges || changes.contains(Change.Name)) {
