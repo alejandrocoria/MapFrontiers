@@ -99,7 +99,7 @@ public class GuiFullscreenMap {
             updatebuttons();
         });
 
-        ScreenMouseEvents.afterMouseRelease(Minecraft.getInstance().screen).register((screen, mouseX, mouseY, button) -> {
+        ScreenMouseEvents.beforeMouseRelease(Minecraft.getInstance().screen).register((screen, mouseX, mouseY, button) -> {
             if (button != 1) {
                 return;
             }

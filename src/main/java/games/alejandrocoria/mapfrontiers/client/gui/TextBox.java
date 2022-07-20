@@ -4,7 +4,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.glfw.GLFW;
 
@@ -21,7 +21,7 @@ public class TextBox extends EditBox {
     }
 
     public TextBox(Font font, int x, int y, int width, String defaultText) {
-        super(font, x, y, width, 12, TextComponent.EMPTY);
+        super(font, x, y, width, 12, Component.empty());
         this.defaultText = defaultText;
         if (!StringUtils.isBlank(defaultText)) {
             setResponder((value) -> updateDefaultText());

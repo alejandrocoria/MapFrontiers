@@ -15,8 +15,6 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -118,19 +116,19 @@ public class ConfigData implements me.shedaniel.autoconfig.ConfigData {
     }
 
     public static Component getTranslatedName(String name) {
-        return new TranslatableComponent(MapFrontiers.MODID + ".config." + name);
+        return Component.translatable(MapFrontiers.MODID + ".config." + name);
     }
 
     public static <E extends Enum<E>> Component getTranslatedEnum(E value) {
-        return new TranslatableComponent("mapfrontiers.config." + value.name());
+        return Component.translatable("mapfrontiers.config." + value.name());
     }
 
     public static List<Component> getTooltip(String name) {
         List<Component> tooltip = new ArrayList<>();
 
-        String lines = new TranslatableComponent(MapFrontiers.MODID + ".config." + name + ".tooltip").getString();
+        String lines = Component.translatable(MapFrontiers.MODID + ".config." + name + ".tooltip").getString();
         for (String string : Splitter.on("\n").split(lines)) {
-            tooltip.add(new TextComponent(string));
+            tooltip.add(Component.literal(string));
         }
 
         return tooltip;

@@ -22,8 +22,7 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nullable;
@@ -72,7 +71,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
     }
 
     public GuiFrontierInfo(IClientAPI jmAPI, FrontierOverlay frontier, @Nullable  Runnable afterClose) {
-        super(new TranslatableComponent("mapfrontiers.title_info"));
+        super(Component.translatable("mapfrontiers.title_info"));
         this.jmAPI = jmAPI;
         this.afterClose = afterClose;
         frontiersOverlayManager = ClientProxy.getFrontiersOverlayManager(frontier.getPersonal());
@@ -91,7 +90,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
                     init(minecraft, width, height);
                 } else {
                     if (frontier.getModified() != null) {
-                        Component modified = new TranslatableComponent("mapfrontiers.modified", dateFormat.format(frontier.getModified()));
+                        Component modified = Component.translatable("mapfrontiers.modified", dateFormat.format(frontier.getModified()));
                         modifiedLabel.setText(modified);
                     }
                 }
@@ -119,7 +118,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         labels.clear();
 
         labels.add(new GuiSimpleLabel(font, leftSide, top, GuiSimpleLabel.Align.Left,
-                new TranslatableComponent("mapfrontiers.name"), GuiColors.LABEL_TEXT));
+                Component.translatable("mapfrontiers.name"), GuiColors.LABEL_TEXT));
 
         textName1 = new TextBox(font, leftSide, top + 12, 144);
         textName1.setMaxLength(17);
@@ -133,31 +132,31 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         textName2.setValue(frontier.getName2());
 
         labels.add(new GuiSimpleLabel(font, leftSide, top + 70, GuiSimpleLabel.Align.Left,
-                new TranslatableComponent("mapfrontiers.show_name"), GuiColors.SETTINGS_TEXT));
+                Component.translatable("mapfrontiers.show_name"), GuiColors.SETTINGS_TEXT));
         buttonShowName = new GuiOptionButton(font, leftSide + 116, top + 68, 28, this::buttonPressed);
-        buttonShowName.addOption(new TranslatableComponent("options.on"));
-        buttonShowName.addOption(new TranslatableComponent("options.off"));
+        buttonShowName.addOption(Component.translatable("options.on"));
+        buttonShowName.addOption(Component.translatable("options.off"));
         buttonShowName.setSelected(frontier.getNameVisible() ? 0 : 1);
 
         labels.add(new GuiSimpleLabel(font, leftSide, top + 86, GuiSimpleLabel.Align.Left,
-                new TranslatableComponent("mapfrontiers.show_owner"), GuiColors.SETTINGS_TEXT));
+                Component.translatable("mapfrontiers.show_owner"), GuiColors.SETTINGS_TEXT));
         buttonShowOwner = new GuiOptionButton(font, leftSide + 116, top + 84, 28, this::buttonPressed);
-        buttonShowOwner.addOption(new TranslatableComponent("options.on"));
-        buttonShowOwner.addOption(new TranslatableComponent("options.off"));
+        buttonShowOwner.addOption(Component.translatable("options.on"));
+        buttonShowOwner.addOption(Component.translatable("options.off"));
         buttonShowOwner.setSelected(frontier.getOwnerVisible() ? 0 : 1);
 
         addRenderableOnly(new GuiSimpleLabel(font, leftSide, top + 102, GuiSimpleLabel.Align.Left,
-                new TranslatableComponent("mapfrontiers.announce_in_chat"), GuiColors.SETTINGS_TEXT));
+                Component.translatable("mapfrontiers.announce_in_chat"), GuiColors.SETTINGS_TEXT));
         buttonAnnounceInChat = new GuiOptionButton(font, leftSide + 116, top + 100, 28, this::buttonPressed);
-        buttonAnnounceInChat.addOption(new TranslatableComponent("options.on"));
-        buttonAnnounceInChat.addOption(new TranslatableComponent("options.off"));
+        buttonAnnounceInChat.addOption(Component.translatable("options.on"));
+        buttonAnnounceInChat.addOption(Component.translatable("options.off"));
         buttonAnnounceInChat.setSelected(frontier.getAnnounceInChat() ? 0 : 1);
 
         labels.add(new GuiSimpleLabel(font, leftSide, top + 118, GuiSimpleLabel.Align.Left,
-                new TranslatableComponent("mapfrontiers.color"), GuiColors.LABEL_TEXT));
+                Component.translatable("mapfrontiers.color"), GuiColors.LABEL_TEXT));
 
         labels.add(new GuiSimpleLabel(font, leftSide - 11, top + 136, GuiSimpleLabel.Align.Left,
-                new TextComponent("R"), GuiColors.LABEL_TEXT));
+                Component.literal("R"), GuiColors.LABEL_TEXT));
 
         textRed = new TextIntBox(0, 0, 255, font, leftSide, top + 130, 29);
         textRed.setResponder(this);
@@ -165,7 +164,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         textRed.setWidth(34);
 
         labels.add(new GuiSimpleLabel(font, leftSide + 44, top + 136, GuiSimpleLabel.Align.Left,
-                new TextComponent("G"), GuiColors.LABEL_TEXT));
+                Component.literal("G"), GuiColors.LABEL_TEXT));
 
         textGreen = new TextIntBox(0, 0, 255, font, leftSide + 55, top + 130, 29);
         textGreen.setResponder(this);
@@ -173,7 +172,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         textGreen.setWidth(34);
 
         labels.add(new GuiSimpleLabel(font, leftSide + 99, top + 136, GuiSimpleLabel.Align.Left,
-                new TextComponent("B"), GuiColors.LABEL_TEXT));
+                Component.literal("B"), GuiColors.LABEL_TEXT));
 
         textBlue = new TextIntBox(0, 0, 255, font, leftSide + 110, top + 130, 29);
         textBlue.setResponder(this);
@@ -185,62 +184,62 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         textBlue.setValue(frontier.getColor() & 0x0000ff);
 
         buttonRandomColor = new GuiSettingsButton(font, rightSide, top + 190, 144,
-                new TranslatableComponent("mapfrontiers.random_color"), this::buttonPressed);
+                Component.translatable("mapfrontiers.random_color"), this::buttonPressed);
 
         colorPicker = new GuiColorPicker(leftSide + 2, top + 156, frontier.getColor(), (picker, dragging) -> colorPickerUpdated(dragging));
 
-        Component type = new TranslatableComponent("mapfrontiers.type",
-                new TranslatableComponent(frontier.getPersonal() ? "mapfrontiers.config.Personal" : "mapfrontiers.config.Global"));
+        Component type = Component.translatable("mapfrontiers.type",
+                Component.translatable(frontier.getPersonal() ? "mapfrontiers.config.Personal" : "mapfrontiers.config.Global"));
         labels.add(new GuiSimpleLabel(font, rightSide, top, GuiSimpleLabel.Align.Left, type, GuiColors.WHITE));
 
-        Component owner = new TranslatableComponent("mapfrontiers.owner", frontier.getOwner());
+        Component owner = Component.translatable("mapfrontiers.owner", frontier.getOwner());
         labels.add(new GuiSimpleLabel(font, rightSide, top + 16, GuiSimpleLabel.Align.Left, owner, GuiColors.WHITE));
 
-        Component dimension = new TranslatableComponent("mapfrontiers.dimension", frontier.getDimension().location().toString());
+        Component dimension = Component.translatable("mapfrontiers.dimension", frontier.getDimension().location().toString());
         labels.add(new GuiSimpleLabel(font, rightSide, top + 32, GuiSimpleLabel.Align.Left, dimension, GuiColors.WHITE));
 
-        Component mode = new TranslatableComponent("mapfrontiers.mode",
-                new TranslatableComponent(frontier.getMode() == FrontierData.Mode.Vertex ? "mapfrontiers.config.Vertex" : "mapfrontiers.config.Chunk"));
+        Component mode = Component.translatable("mapfrontiers.mode",
+                Component.translatable(frontier.getMode() == FrontierData.Mode.Vertex ? "mapfrontiers.config.Vertex" : "mapfrontiers.config.Chunk"));
         labels.add(new GuiSimpleLabel(font, rightSide, top + 48, GuiSimpleLabel.Align.Left, mode, GuiColors.WHITE));
 
         if (frontier.getMode() == FrontierData.Mode.Vertex) {
-            Component vertices = new TranslatableComponent("mapfrontiers.vertices", frontier.getVertexCount());
+            Component vertices = Component.translatable("mapfrontiers.vertices", frontier.getVertexCount());
             labels.add(new GuiSimpleLabel(font, rightSide, top + 64, GuiSimpleLabel.Align.Left, vertices, GuiColors.WHITE));
         } else {
-            Component chunks = new TranslatableComponent("mapfrontiers.chunks", frontier.getChunkCount());
+            Component chunks = Component.translatable("mapfrontiers.chunks", frontier.getChunkCount());
             labels.add(new GuiSimpleLabel(font, rightSide, top + 64, GuiSimpleLabel.Align.Left, chunks, GuiColors.WHITE));
         }
 
-        Component area = new TranslatableComponent("mapfrontiers.area", frontier.area);
+        Component area = Component.translatable("mapfrontiers.area", frontier.area);
         labels.add(new GuiSimpleLabel(font, rightSide, top + 80, GuiSimpleLabel.Align.Left, area, GuiColors.WHITE));
 
-        Component perimeter = new TranslatableComponent("mapfrontiers.perimeter", frontier.perimeter);
+        Component perimeter = Component.translatable("mapfrontiers.perimeter", frontier.perimeter);
         labels.add(new GuiSimpleLabel(font, rightSide, top + 96, GuiSimpleLabel.Align.Left, perimeter, GuiColors.WHITE));
 
         if (frontier.getCreated() != null) {
-            Component created = new TranslatableComponent("mapfrontiers.created", dateFormat.format(frontier.getCreated()));
+            Component created = Component.translatable("mapfrontiers.created", dateFormat.format(frontier.getCreated()));
             labels.add(new GuiSimpleLabel(font, rightSide, top + 112, GuiSimpleLabel.Align.Left, created, GuiColors.WHITE));
         }
 
         if (frontier.getModified() != null) {
-            Component modified = new TranslatableComponent("mapfrontiers.modified", dateFormat.format(frontier.getModified()));
+            Component modified = Component.translatable("mapfrontiers.modified", dateFormat.format(frontier.getModified()));
             modifiedLabel = new GuiSimpleLabel(font, rightSide, top + 128, GuiSimpleLabel.Align.Left, modified, GuiColors.WHITE);
             labels.add(modifiedLabel);
         }
 
         buttonSelect = new GuiSettingsButton(font, leftSide - 154, top + 290, 144,
-                new TranslatableComponent("mapfrontiers.select_in_map"), this::buttonPressed);
+                Component.translatable("mapfrontiers.select_in_map"), this::buttonPressed);
         buttonShareSettings = new GuiSettingsButton(font, leftSide, top + 290, 144,
-                new TranslatableComponent("mapfrontiers.share_settings"), this::buttonPressed);
+                Component.translatable("mapfrontiers.share_settings"), this::buttonPressed);
         buttonShareSettings.visible = frontier.getPersonal();
         buttonDelete = new GuiSettingsButton(font, rightSide, top + 290, 144,
-                new TranslatableComponent("mapfrontiers.delete"), this::buttonPressed);
+                Component.translatable("mapfrontiers.delete"), this::buttonPressed);
         buttonDelete.setTextColors(GuiColors.SETTINGS_BUTTON_TEXT_DELETE, GuiColors.SETTINGS_BUTTON_TEXT_DELETE_HIGHLIGHT);
         buttonDone = new GuiSettingsButton(font, rightSide + 154, top + 290, 144,
-                new TranslatableComponent("gui.done"), this::buttonPressed);
+                Component.translatable("gui.done"), this::buttonPressed);
 
         buttonBanner = new GuiSettingsButton(font, leftSide - 152, top, 144,
-                new TranslatableComponent("mapfrontiers.assign_banner"), this::buttonPressed);
+                Component.translatable("mapfrontiers.assign_banner"), this::buttonPressed);
 
         addRenderableWidget(textName1);
         addRenderableWidget(textName2);
@@ -298,8 +297,8 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
 
         if (buttonBanner.visible && buttonBanner.isHoveredOrFocused()) {
             if (!frontier.hasBanner() && ClientProxy.getHeldBanner() == null) {
-                TextComponent prefix = new TextComponent(GuiColors.WARNING + "! " + ChatFormatting.RESET);
-                renderTooltip(matrixStack, prefix.append(new TranslatableComponent("mapfrontiers.assign_banner_warn")), mouseX, mouseY);
+                MutableComponent prefix = Component.literal(GuiColors.WARNING + "! " + ChatFormatting.RESET);
+                renderTooltip(matrixStack, prefix.append(Component.translatable("mapfrontiers.assign_banner_warn")), mouseX, mouseY);
             }
         }
 
@@ -464,14 +463,14 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
 
     private void updateBannerButton() {
         if (!frontier.hasBanner()) {
-            TranslatableComponent message = new TranslatableComponent("mapfrontiers.assign_banner");
+            MutableComponent message = Component.translatable("mapfrontiers.assign_banner");
             if (ClientProxy.getHeldBanner() == null) {
-                message.append(new TextComponent(GuiColors.WARNING + " !"));
+                message.append(Component.literal(GuiColors.WARNING + " !"));
             }
 
             buttonBanner.setMessage(message);
         } else {
-            buttonBanner.setMessage(new TranslatableComponent("mapfrontiers.remove_banner"));
+            buttonBanner.setMessage(Component.translatable("mapfrontiers.remove_banner"));
         }
     }
 

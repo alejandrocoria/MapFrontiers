@@ -13,8 +13,6 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
@@ -46,7 +44,7 @@ public class GuiHUDSettings extends Screen implements TextIntBox.TextIntBoxRespo
     private int anchorLineColorTick = 0;
 
     public GuiHUDSettings(@Nullable Screen previousScreen, boolean showKeyHint) {
-        super(TextComponent.EMPTY);
+        super(Component.empty());
         this.previousScreen = previousScreen;
         this.showKeyHint = showKeyHint;
         labels = new ArrayList<>();
@@ -116,17 +114,17 @@ public class GuiHUDSettings extends Screen implements TextIntBox.TextIntBoxRespo
         textPositionY.setResponder(this);
 
         buttonAutoAdjustAnchor = new GuiOptionButton(font, width / 2 + 96, height / 2, 134, this::buttonPressed);
-        buttonAutoAdjustAnchor.addOption(new TranslatableComponent("options.on"));
-        buttonAutoAdjustAnchor.addOption(new TranslatableComponent("options.off"));
+        buttonAutoAdjustAnchor.addOption(Component.translatable("options.on"));
+        buttonAutoAdjustAnchor.addOption(Component.translatable("options.off"));
         buttonAutoAdjustAnchor.setSelected(ConfigData.hudAutoAdjustAnchor ? 0 : 1);
 
         buttonSnapToBorder = new GuiOptionButton(font, width / 2 + 96, height / 2 + 16, 134, this::buttonPressed);
-        buttonSnapToBorder.addOption(new TranslatableComponent("options.on"));
-        buttonSnapToBorder.addOption(new TranslatableComponent("options.off"));
+        buttonSnapToBorder.addOption(Component.translatable("options.on"));
+        buttonSnapToBorder.addOption(Component.translatable("options.off"));
         buttonSnapToBorder.setSelected(ConfigData.hudSnapToBorder ? 0 : 1);
 
         buttonDone = new GuiSettingsButton(font, width / 2 - 50, height / 2 + 36, 100,
-                new TranslatableComponent("mapfrontiers.done"), this::buttonPressed);
+                Component.translatable("mapfrontiers.done"), this::buttonPressed);
 
         addRenderableWidget(guiHUDWidget);
         addRenderableWidget(buttonSlot1);
@@ -350,10 +348,10 @@ public class GuiHUDSettings extends Screen implements TextIntBox.TextIntBoxRespo
                 ConfigData.getTranslatedName("hud.anchor"), GuiColors.SETTINGS_TEXT), ConfigData.getTooltip("hud.anchor"));
         addLabelWithTooltip(
                 new GuiSimpleLabel(font, width / 2 - 30, height / 2 - 14, GuiSimpleLabel.Align.Left,
-                        new TranslatableComponent("mapfrontiers.config.hud.position"), GuiColors.SETTINGS_TEXT),
-                Collections.singletonList(new TextComponent("HUD position relative to anchor.")));
+                        Component.translatable("mapfrontiers.config.hud.position"), GuiColors.SETTINGS_TEXT),
+                Collections.singletonList(Component.literal("HUD position relative to anchor.")));
         labels.add(new GuiSimpleLabel(font, width / 2 + 162, height / 2 - 14, GuiSimpleLabel.Align.Center,
-                new TextComponent("x"), GuiColors.SETTINGS_TEXT_DARK));
+                Component.literal("x"), GuiColors.SETTINGS_TEXT_DARK));
         addLabelWithTooltip(
                 new GuiSimpleLabel(font, width / 2 - 30, height / 2 + 2, GuiSimpleLabel.Align.Left,
                         ConfigData.getTranslatedName("hud.autoAdjustAnchor"), GuiColors.SETTINGS_TEXT),

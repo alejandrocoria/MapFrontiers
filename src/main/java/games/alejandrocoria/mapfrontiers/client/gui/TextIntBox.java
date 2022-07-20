@@ -5,7 +5,7 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -19,7 +19,7 @@ public class TextIntBox extends EditBox {
     private TextIntBoxResponder responder;
 
     public TextIntBox(int defaultValue, int min, int max, Font font, int x, int y, int width) {
-        super(font, x, y, width, 12, TextComponent.EMPTY);
+        super(font, x, y, width, 12, Component.empty());
         this.defaultValue = defaultValue;
         this.min = min;
         this.max = max;

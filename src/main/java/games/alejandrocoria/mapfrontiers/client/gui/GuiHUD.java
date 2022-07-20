@@ -23,11 +23,12 @@ import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.BannerPattern;
+import net.minecraft.world.level.block.entity.BannerPatterns;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nullable;
@@ -79,12 +80,12 @@ public class GuiHUD {
 
         ItemStack itemBanner = new ItemStack(Items.BLACK_BANNER);
         CompoundTag entityTag = itemBanner.getOrCreateTagElement("BlockEntityTag");
-        ListTag patterns = (new BannerPattern.Builder()).addPattern(BannerPattern.FLOWER, DyeColor.GREEN)
-                .addPattern(BannerPattern.BRICKS, DyeColor.LIGHT_GRAY)
-                .addPattern(BannerPattern.BORDER, DyeColor.LIGHT_BLUE)
-                .addPattern(BannerPattern.TRIANGLE_TOP, DyeColor.LIGHT_BLUE)
-                .addPattern(BannerPattern.TRIANGLE_BOTTOM, DyeColor.BLACK)
-                .addPattern(BannerPattern.STRIPE_BOTTOM, DyeColor.GREEN).toListTag();
+        ListTag patterns = (new BannerPattern.Builder()).addPattern(BannerPatterns.FLOWER, DyeColor.GREEN)
+                .addPattern(BannerPatterns.BRICKS, DyeColor.LIGHT_GRAY)
+                .addPattern(BannerPatterns.BORDER, DyeColor.LIGHT_BLUE)
+                .addPattern(BannerPatterns.TRIANGLE_TOP, DyeColor.LIGHT_BLUE)
+                .addPattern(BannerPatterns.TRIANGLE_BOTTOM, DyeColor.BLACK)
+                .addPattern(BannerPatterns.STRIPE_BOTTOM, DyeColor.GREEN).toListTag();
         entityTag.put("Patterns", patterns);
 
         FrontierData frontierData = new FrontierData();
@@ -102,11 +103,11 @@ public class GuiHUD {
         this.frontiersOverlayManager = frontiersOverlayManager;
         this.personalFrontiersOverlayManager = personalFrontiersOverlayManager;
         slots = new ArrayList<>();
-        frontierName1 = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, TextComponent.EMPTY,
+        frontierName1 = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, Component.empty(),
                 GuiColors.WHITE);
-        frontierName2 = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, TextComponent.EMPTY,
+        frontierName2 = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, Component.empty(),
                 GuiColors.WHITE);
-        frontierOwner = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, TextComponent.EMPTY,
+        frontierOwner = new GuiSimpleLabel(mc.font, 0, 0, GuiSimpleLabel.Align.Center, Component.empty(),
                 GuiColors.WHITE);
 
         ClientProxy.subscribeDeletedFrontierEvent(this, frontierID -> frontierChanged());
@@ -389,12 +390,12 @@ public class GuiHUD {
                 frontierName1.x = posX + hudWidth / 2;
                 frontierName1.y = posY + nameOffsetY + 2 * textScale;
                 frontierName1.setScale(textScale);
-                frontierName1.setText(new TextComponent(frontier.getName1()));
+                frontierName1.setText(Component.literal(frontier.getName1()));
 
                 frontierName2.x = posX + hudWidth / 2;
                 frontierName2.y = posY + nameOffsetY + 14 * textScale;
                 frontierName2.setScale(textScale);
-                frontierName2.setText(new TextComponent(frontier.getName2()));
+                frontierName2.setText(Component.literal(frontier.getName2()));
 
                 offsetY += 24 * textScale;
                 break;
@@ -406,7 +407,7 @@ public class GuiHUD {
                     frontierOwner.x = posX + hudWidth / 2;
                     frontierOwner.y = posY + ownerOffsetY + 2;
                     frontierOwner.setScale(textScale);
-                    frontierOwner.setText(new TextComponent(ChatFormatting.ITALIC + owner));
+                    frontierOwner.setText(Component.literal(ChatFormatting.ITALIC + owner));
 
                     offsetY += 12 * textScale;
                 }

@@ -13,7 +13,7 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -31,7 +31,7 @@ public class GuiPatreonButton extends AbstractWidget {
     private final String uri;
 
     public GuiPatreonButton(int x, int y, String uri, BooleanConsumer callbackFunction) {
-        super(x, y, textureSizeX, textureSizeY, TextComponent.EMPTY);
+        super(x, y, textureSizeX, textureSizeY, Component.empty());
         this.callbackFunction = callbackFunction;
         this.uri = uri;
     }

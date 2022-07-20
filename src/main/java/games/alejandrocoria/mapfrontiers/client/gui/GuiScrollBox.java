@@ -6,7 +6,7 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
@@ -32,7 +32,7 @@ public class GuiScrollBox extends AbstractWidget {
     private final ScrollBoxResponder responder;
 
     public GuiScrollBox(int x, int y, int width, int height, int elementHeight, ScrollBoxResponder responder) {
-        super(x, y, width, max(height, elementHeight), TextComponent.EMPTY);
+        super(x, y, width, max(height, elementHeight), Component.empty());
         elements = new ArrayList<>();
         selected = -1;
         this.x = x;

@@ -8,7 +8,6 @@ import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
@@ -25,7 +24,7 @@ public class GuiTabbedBox extends AbstractWidget {
     private int selected;
 
     public GuiTabbedBox(Font font, int x, int y, int width, int height, TabbedBoxResponder responder) {
-        super(x, y, width, 16, TextComponent.EMPTY);
+        super(x, y, width, 16, Component.empty());
         this.font = font;
         this.responder = responder;
         tabs = new ArrayList<>();

@@ -18,7 +18,7 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -42,7 +42,7 @@ public class GuiShareSettings extends Screen
     private int ticksSinceLastUpdate = 0;
 
     public GuiShareSettings( FrontiersOverlayManager frontiersOverlayManager, FrontierOverlay frontier) {
-        super(new TranslatableComponent("mapfrontiers.title_share_settings"));
+        super(Component.translatable("mapfrontiers.title_share_settings"));
         this.frontiersOverlayManager = frontiersOverlayManager;
         this.frontier = frontier;
 
@@ -78,7 +78,7 @@ public class GuiShareSettings extends Screen
         buttonNewUser.visible = false;
 
         buttonDone = new GuiSettingsButton(font, width / 2 - 70, height - 28, 140,
-                new TranslatableComponent("gui.done"), this::buttonPressed);
+                Component.translatable("gui.done"), this::buttonPressed);
 
         addRenderableWidget(buttonNewUser);
         addRenderableWidget(users);
@@ -178,7 +178,7 @@ public class GuiShareSettings extends Screen
         } else {
             usernameOrUUID = usernameOrUUID.replaceAll("[^0-9a-fA-F]", "");
             if (usernameOrUUID.length() != 32) {
-                textNewUser.setError(new TranslatableComponent("mapfrontiers.new_user_error_uuid_size"));
+                textNewUser.setError(Component.translatable("mapfrontiers.new_user_error_uuid_size"));
                 return;
             }
             usernameOrUUID = usernameOrUUID.toLowerCase();
@@ -190,36 +190,36 @@ public class GuiShareSettings extends Screen
                 user.uuid = UUID.fromString(uuid);
                 user.fillMissingInfo(true, null);
             } catch (Exception e) {
-                textNewUser.setError(new TranslatableComponent("mapfrontiers.new_user_error_uuid_format"));
+                textNewUser.setError(Component.translatable("mapfrontiers.new_user_error_uuid_format"));
                 return;
             }
         }
 
         if (user.uuid == null) {
-            textNewUser.setError(new TranslatableComponent("mapfrontiers.new_user_shared_error_user_not_found"));
+            textNewUser.setError(Component.translatable("mapfrontiers.new_user_shared_error_user_not_found"));
             return;
         }
 
         ClientPacketListener handler = minecraft.getConnection();
         if (handler != null) {
             if (handler.getPlayerInfo(user.uuid) == null) {
-                textNewUser.setError(new TranslatableComponent("mapfrontiers.new_user_shared_error_user_not_found"));
+                textNewUser.setError(Component.translatable("mapfrontiers.new_user_shared_error_user_not_found"));
                 return;
             }
         }
 
         if (user.username.equals(minecraft.player.getGameProfile().getName())) {
-            textNewUser.setError(new TranslatableComponent("mapfrontiers.new_user_shared_error_self"));
+            textNewUser.setError(Component.translatable("mapfrontiers.new_user_shared_error_self"));
             return;
         }
 
         if (frontier.getOwner().equals(user)) {
-            textNewUser.setError(new TranslatableComponent("mapfrontiers.new_user_shared_error_owner"));
+            textNewUser.setError(Component.translatable("mapfrontiers.new_user_shared_error_owner"));
             return;
         }
 
         if (frontier.hasUserShared(user)) {
-            textNewUser.setError(new TranslatableComponent("mapfrontiers.new_user_shared_error_user_repeated"));
+            textNewUser.setError(Component.translatable("mapfrontiers.new_user_shared_error_user_repeated"));
             return;
         }
 
@@ -248,9 +248,9 @@ public class GuiShareSettings extends Screen
         if (!users.getElements().isEmpty()) {
             int x = width / 2 + 35;
             labels.add(new GuiSimpleLabel(font, x, 54, GuiSimpleLabel.Align.Center,
-                    new TranslatableComponent("mapfrontiers.update_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+                    Component.translatable("mapfrontiers.update_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             labels.add(new GuiSimpleLabel(font, x + 60, 54, GuiSimpleLabel.Align.Center,
-                    new TranslatableComponent("mapfrontiers.update_settings"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+                    Component.translatable("mapfrontiers.update_settings"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
         }
     }
 

@@ -8,7 +8,7 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.sounds.SoundManager;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -27,7 +27,7 @@ public class GuiButtonIcon extends Button {
     private int texY;
 
     public GuiButtonIcon(int x, int y, Type type, Button.OnPress pressedAction) {
-        super(x, y, 13, 13, TextComponent.EMPTY, pressedAction);
+        super(x, y, 13, 13, Component.empty(), pressedAction);
 
         switch (type) {
             case Add:

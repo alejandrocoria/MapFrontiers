@@ -26,8 +26,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
@@ -152,9 +150,9 @@ public class ClientProxy implements ClientModInitializer {
 
     private static MutableComponent createChatTextWithName(String key, FrontierOverlay frontier) {
         if (StringUtils.isBlank(frontier.getName1()) && StringUtils.isBlank(frontier.getName2())) {
-            MutableComponent text = new TranslatableComponent("mapfrontiers.unnamed", ChatFormatting.ITALIC);
+            MutableComponent text = Component.translatable("mapfrontiers.unnamed", ChatFormatting.ITALIC);
             text.withStyle(style -> style.withItalic(true).withColor(GuiColors.SETTINGS_TEXT_MEDIUM));
-            return new TranslatableComponent(key, text);
+            return Component.translatable(key, text);
         }
 
         String name = frontier.getName1().trim();
@@ -166,10 +164,10 @@ public class ClientProxy implements ClientModInitializer {
             name += name2;
         }
 
-        MutableComponent text = new TextComponent(name);
+        MutableComponent text = Component.literal(name);
         text.withStyle(style -> style.withColor(frontier.getColor()));
 
-        return new TranslatableComponent(key, text);
+        return Component.translatable(key, text);
     }
 
     public static BlockPos snapVertex(BlockPos vertex, float snapDistance, ResourceKey<Level> dimension, @Nullable FrontierOverlay owner) {

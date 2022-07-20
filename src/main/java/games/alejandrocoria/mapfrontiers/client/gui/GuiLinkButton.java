@@ -29,8 +29,7 @@ public class GuiLinkButton extends AbstractWidget {
         super(x, y, font.width(text.getString()) + 8, 16, text);
         this.callbackFunction = callbackFunction;
         this.x -= width / 2;
-        this.label = new GuiSimpleLabel(font, x, y + 5, GuiSimpleLabel.Align.Center,
-                /* TextFormatting.UNDERLINE + */ text, GuiColors.SETTINGS_BUTTON_TEXT);
+        this.label = new GuiSimpleLabel(font, x, y + 5, GuiSimpleLabel.Align.Center, text, GuiColors.SETTINGS_BUTTON_TEXT);
         this.uri = uri;
     }
 

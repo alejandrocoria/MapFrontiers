@@ -25,8 +25,6 @@ import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.glfw.GLFW;
 
@@ -78,7 +76,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
     private int ticksSinceLastUpdate = 0;
 
     public GuiFrontierSettings(@Nullable Screen previousScreen, boolean showKeyHint) {
-        super(new TranslatableComponent("mapfrontiers.title_settings"));
+        super(Component.translatable("mapfrontiers.title_settings"));
         this.previousScreen = previousScreen;
         this.showKeyHint = showKeyHint;
         labels = new ArrayList<>();
@@ -98,7 +96,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
     }
 
     private GuiFrontierSettings() {
-        super(TextComponent.EMPTY);
+        super(Component.empty());
         previousScreen = null;
         showKeyHint = false;
         labels = null;
@@ -126,10 +124,10 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         }
 
         tabbedBox = new GuiTabbedBox(font, 40, 24, actualWidth - 80, actualHeight - 64, this);
-        tabbedBox.addTab(new TranslatableComponent("mapfrontiers.credits"), true);
-        tabbedBox.addTab(new TranslatableComponent("mapfrontiers.general"), true);
-        tabbedBox.addTab(new TranslatableComponent("mapfrontiers.groups"), canEditGroups);
-        tabbedBox.addTab(new TranslatableComponent("mapfrontiers.actions"), canEditGroups);
+        tabbedBox.addTab(Component.translatable("mapfrontiers.credits"), true);
+        tabbedBox.addTab(Component.translatable("mapfrontiers.general"), true);
+        tabbedBox.addTab(Component.translatable("mapfrontiers.groups"), canEditGroups);
+        tabbedBox.addTab(Component.translatable("mapfrontiers.actions"), canEditGroups);
         if (!canEditGroups) {
             if (tabSelected == Tab.Groups || tabSelected == Tab.Actions) {
                 tabSelected = Tab.Credits;
@@ -137,11 +135,11 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         }
         tabbedBox.setTabSelected(tabSelected.ordinal());
 
-        buttonWeb = new GuiLinkButton(font, actualWidth / 2, actualHeight / 2 - 98, new TextComponent("alejandrocoria.games"),
+        buttonWeb = new GuiLinkButton(font, actualWidth / 2, actualHeight / 2 - 98, Component.literal("alejandrocoria.games"),
                 "https://alejandrocoria.games", (open) -> linkClicked(open, buttonWeb));
 
         buttonProject = new GuiLinkButton(font, actualWidth / 2, actualHeight / 2 - 20,
-                new TextComponent("curseforge.com/minecraft/mc-mods/mapfrontiers"),
+                Component.literal("curseforge.com/minecraft/mc-mods/mapfrontiers"),
                 "https://www.curseforge.com/minecraft/mc-mods/mapfrontiers", (open) -> linkClicked(open, buttonProject));
 
         buttonPatreon = new GuiPatreonButton(actualWidth / 2, actualHeight / 2 + 36, "https://www.patreon.com/alejandrocoria",
@@ -154,8 +152,8 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         buttonNameVisibility.setSelected(ConfigData.nameVisibility.ordinal());
 
         buttonHideNamesThatDontFit = new GuiOptionButton(font, actualWidth / 2 + 50, 86, 100, this::buttonPressed);
-        buttonHideNamesThatDontFit.addOption(new TranslatableComponent("options.on"));
-        buttonHideNamesThatDontFit.addOption(new TranslatableComponent("options.off"));
+        buttonHideNamesThatDontFit.addOption(Component.translatable("options.on"));
+        buttonHideNamesThatDontFit.addOption(Component.translatable("options.off"));
         buttonHideNamesThatDontFit.setSelected(ConfigData.hideNamesThatDontFit ? 0 : 1);
 
         textPolygonsOpacity = new TextDoubleBox(0.4, 0.0, 1.0, font, actualWidth / 2 + 50, 102, 100);
@@ -169,12 +167,12 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         textSnapDistance.setResponder(this);
 
         buttonHUDEnabled = new GuiOptionButton(font, actualWidth / 2 + 50, 172, 100, this::buttonPressed);
-        buttonHUDEnabled.addOption(new TranslatableComponent("options.on"));
-        buttonHUDEnabled.addOption(new TranslatableComponent("options.off"));
+        buttonHUDEnabled.addOption(Component.translatable("options.on"));
+        buttonHUDEnabled.addOption(Component.translatable("options.off"));
         buttonHUDEnabled.setSelected(ConfigData.hudEnabled ? 0 : 1);
 
         buttonEditHUD = new GuiSettingsButton(font, actualWidth / 2 - 50, 192, 100,
-                new TranslatableComponent("mapfrontiers.edit_hud"), this::buttonPressed);
+                Component.translatable("mapfrontiers.edit_hud"), this::buttonPressed);
 
         groups = new GuiScrollBox(50, 50, 160, actualHeight - 120, 16, this);
         users = new GuiScrollBox(250, 82, 258, actualHeight - 150, 16, this);
@@ -201,7 +199,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         textGroupName.setBordered(false);
 
         buttonDone = new GuiSettingsButton(font, actualWidth / 2 - 70, actualHeight - 28, 140,
-                new TranslatableComponent("gui.done"), this::buttonPressed);
+                Component.translatable("gui.done"), this::buttonPressed);
 
         addRenderableWidget(tabbedBox);
         addRenderableWidget(buttonWeb);
@@ -389,7 +387,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
             } else {
                 usernameOrUUID = usernameOrUUID.replaceAll("[^0-9a-fA-F]", "");
                 if (usernameOrUUID.length() != 32) {
-                    textNewUser.setError(new TranslatableComponent("mapfrontiers.new_user_error_uuid_size"));
+                    textNewUser.setError(Component.translatable("mapfrontiers.new_user_error_uuid_size"));
                     return;
                 }
                 usernameOrUUID = usernameOrUUID.toLowerCase();
@@ -401,13 +399,13 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
                     user.uuid = UUID.fromString(uuid);
                     user.fillMissingInfo(true, null);
                 } catch (Exception e) {
-                    textNewUser.setError(new TranslatableComponent("mapfrontiers.new_user_error_uuid_format"));
+                    textNewUser.setError(Component.translatable("mapfrontiers.new_user_error_uuid_format"));
                     return;
                 }
             }
 
             if (group.hasUser(user)) {
-                textNewUser.setError(new TranslatableComponent("mapfrontiers.new_user_error_user_repeated"));
+                textNewUser.setError(Component.translatable("mapfrontiers.new_user_error_user_repeated"));
                 return;
             }
 
@@ -493,18 +491,18 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
 
         if (tabSelected == Tab.Credits) {
             labels.add(new GuiSimpleLabel(font, actualWidth / 2, actualHeight / 2 - 106, GuiSimpleLabel.Align.Center,
-                    new TranslatableComponent("mapfrontiers.credits_created_by"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+                    Component.translatable("mapfrontiers.credits_created_by"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             labels.add(new GuiSimpleLabel(font, actualWidth / 2, actualHeight / 2 - 58, GuiSimpleLabel.Align.Center,
-                    new TranslatableComponent("mapfrontiers.credits_many_thanks"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+                    Component.translatable("mapfrontiers.credits_many_thanks"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             labels.add(new GuiSimpleLabel(font, actualWidth / 2, actualHeight / 2 - 28, GuiSimpleLabel.Align.Center,
-                    new TranslatableComponent("mapfrontiers.credits_project"), GuiColors.SETTINGS_TEXT_MEDIUM));
+                    Component.translatable("mapfrontiers.credits_project"), GuiColors.SETTINGS_TEXT_MEDIUM));
             labels.add(new GuiSimpleLabel(font, actualWidth / 2, actualHeight / 2 + 22, GuiSimpleLabel.Align.Center,
-                    new TranslatableComponent("mapfrontiers.credits_patreon"), GuiColors.SETTINGS_TEXT_MEDIUM));
+                    Component.translatable("mapfrontiers.credits_patreon"), GuiColors.SETTINGS_TEXT_MEDIUM));
             labels.add(new GuiSimpleLabel(font, 50, actualHeight - 54, GuiSimpleLabel.Align.Left,
-                    new TranslatableComponent("mapfrontiers.credits_translation"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+                    Component.translatable("mapfrontiers.credits_translation"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
         } else if (tabSelected == Tab.General) {
             labels.add(new GuiSimpleLabel(font, actualWidth / 2, 54, GuiSimpleLabel.Align.Center,
-                    new TranslatableComponent("mapfrontiers.frontiers"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+                    Component.translatable("mapfrontiers.frontiers"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             addLabelWithTooltip(
                     new GuiSimpleLabel(font, actualWidth / 2 - 120, 72, GuiSimpleLabel.Align.Left,
                             ConfigData.getTranslatedName("nameVisibility"), GuiColors.SETTINGS_TEXT),
@@ -522,7 +520,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
                             ConfigData.getTranslatedName("snapDistance"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("snapDistance"));
             labels.add(new GuiSimpleLabel(font, actualWidth / 2, 154, GuiSimpleLabel.Align.Center,
-                    new TranslatableComponent("mapfrontiers.hud"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+                    Component.translatable("mapfrontiers.hud"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             addLabelWithTooltip(
                     new GuiSimpleLabel(font, actualWidth / 2 - 120, 174, GuiSimpleLabel.Align.Left,
                             ConfigData.getTranslatedName("hud.enabled"), GuiColors.SETTINGS_TEXT),
@@ -534,38 +532,38 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
                     SettingsGroup group = element.getGroup();
                     if (group == settings.getOPsGroup()) {
                         labels.add(new GuiSimpleLabel(font, 250, 82, GuiSimpleLabel.Align.Left,
-                                new TranslatableComponent("mapfrontiers.group_ops_desc"), GuiColors.SETTINGS_TEXT));
+                                Component.translatable("mapfrontiers.group_ops_desc"), GuiColors.SETTINGS_TEXT));
                     } else if (group == settings.getOwnersGroup()) {
                         labels.add(new GuiSimpleLabel(font, 250, 82, GuiSimpleLabel.Align.Left,
-                                new TranslatableComponent("mapfrontiers.group_owners_desc"), GuiColors.SETTINGS_TEXT));
+                                Component.translatable("mapfrontiers.group_owners_desc"), GuiColors.SETTINGS_TEXT));
                     } else if (group == settings.getEveryoneGroup()) {
                         labels.add(new GuiSimpleLabel(font, 250, 82, GuiSimpleLabel.Align.Left,
-                                new TranslatableComponent("mapfrontiers.group_everyone_desc"), GuiColors.SETTINGS_TEXT));
+                                Component.translatable("mapfrontiers.group_everyone_desc"), GuiColors.SETTINGS_TEXT));
                     }
                 }
             }
         } else if (tabSelected == Tab.Actions) {
             int x = actualWidth / 2 - 55;
             labels.add(new GuiSimpleLabel(font, x, 54, GuiSimpleLabel.Align.Center,
-                    new TranslatableComponent("mapfrontiers.create_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+                    Component.translatable("mapfrontiers.create_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             labels.add(new GuiSimpleLabel(font, x + 60, 54, GuiSimpleLabel.Align.Center,
-                    new TranslatableComponent("mapfrontiers.delete_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+                    Component.translatable("mapfrontiers.delete_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             labels.add(new GuiSimpleLabel(font, x + 120, 54, GuiSimpleLabel.Align.Center,
-                    new TranslatableComponent("mapfrontiers.update_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+                    Component.translatable("mapfrontiers.update_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             labels.add(new GuiSimpleLabel(font, x + 180, 54, GuiSimpleLabel.Align.Center,
-                    new TranslatableComponent("mapfrontiers.update_settings"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+                    Component.translatable("mapfrontiers.update_settings"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             labels.add(new GuiSimpleLabel(font, x + 240, 54, GuiSimpleLabel.Align.Center,
-                    new TranslatableComponent("mapfrontiers.personal_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+                    Component.translatable("mapfrontiers.personal_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
         }
 
         if (tabSelected == Tab.Credits || tabSelected == Tab.General) {
             labels.add(new GuiSimpleLabel(font, actualWidth - 48, actualHeight - 54, GuiSimpleLabel.Align.Right,
-                    new TextComponent(MapFrontiers.VERSION), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+                    Component.literal(MapFrontiers.VERSION), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             if (showKeyHint) {
                 Component key = ClientProxy.getOpenSettingsKey();
                 if (key != null) {
                     labels.add(new GuiSimpleLabel(font, actualWidth / 2, actualHeight - 54, GuiSimpleLabel.Align.Center,
-                            new TranslatableComponent("mapfrontiers.key.open_settings.hint", key), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+                            Component.translatable("mapfrontiers.key.open_settings.hint", key), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
                 }
             }
         }

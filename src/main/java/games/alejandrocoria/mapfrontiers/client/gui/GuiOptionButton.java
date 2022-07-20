@@ -7,7 +7,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
@@ -23,7 +22,7 @@ public class GuiOptionButton extends Button {
     private int highlightedColor = GuiColors.SETTINGS_TEXT_HIGHLIGHT;
 
     public GuiOptionButton(Font font, int x, int y, int width, Button.OnPress pressedAction) {
-        super(x, y, width, 12, TextComponent.EMPTY, pressedAction);
+        super(x, y, width, 12, Component.empty(), pressedAction);
         this.font = font;
         options = new ArrayList<>();
     }
