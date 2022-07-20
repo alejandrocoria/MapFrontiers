@@ -28,6 +28,9 @@
     ],
     "journeymap": [
       "games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin"
+    ],
+    "modmenu": [
+      "games.alejandrocoria.mapfrontiers.client.modmenu.ModMenuApiImpl"
     ]
   },
 

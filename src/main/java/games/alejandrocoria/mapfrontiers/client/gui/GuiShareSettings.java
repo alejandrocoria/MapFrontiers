@@ -18,8 +18,6 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import org.apache.commons.lang3.StringUtils;
 
@@ -44,7 +42,7 @@ public class GuiShareSettings extends Screen
     private int ticksSinceLastUpdate = 0;
 
     public GuiShareSettings( FrontiersOverlayManager frontiersOverlayManager, FrontierOverlay frontier) {
-        super(TextComponent.EMPTY);
+        super(new TranslatableComponent("mapfrontiers.title_share_settings"));
         this.frontiersOverlayManager = frontiersOverlayManager;
         this.frontier = frontier;
 
@@ -69,9 +67,6 @@ public class GuiShareSettings extends Screen
     @Override
     public void init() {
         minecraft.keyboardHandler.setSendRepeatsToGui(true);
-
-        Component title = new TranslatableComponent("mapfrontiers.title_share_settings");
-        addRenderableOnly(new GuiSimpleLabel(font, width / 2, 8, GuiSimpleLabel.Align.Center, title, GuiColors.WHITE));
 
         users = new GuiScrollBox(width / 2 - 215, 82, 430, height - 128, 16, this);
 
@@ -143,8 +138,14 @@ public class GuiShareSettings extends Screen
     @Override
     public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         renderBackground(matrixStack);
-
+        drawCenteredString(matrixStack, font, title, this.width / 2, 8, GuiColors.WHITE);
         super.render(matrixStack, mouseX, mouseY, partialTicks);
+
+        for (GuiSimpleLabel label : labels) {
+            if (label.visible) {
+                label.render(matrixStack, mouseX, mouseY, partialTicks);
+            }
+        }
     }
 
     @Override
@@ -227,7 +228,7 @@ public class GuiShareSettings extends Screen
         frontier.addUserShared(userShared);
         frontiersOverlayManager.clientShareFrontier(frontier.getId(), user);
 
-        GuiUserSharedElement element = new GuiUserSharedElement(font, (List<GuiEventListener>) children(), userShared, canUpdate, true, this);
+        GuiUserSharedElement element = new GuiUserSharedElement(font, this, userShared, canUpdate, true, this);
         users.addElement(element);
         users.scrollBottom();
 
@@ -242,10 +243,6 @@ public class GuiShareSettings extends Screen
     }
 
     private void resetLabels() {
-        for (GuiSimpleLabel label : labels) {
-            removeWidget(label);
-        }
-
         labels.clear();
 
         if (!users.getElements().isEmpty()) {
@@ -254,10 +251,6 @@ public class GuiShareSettings extends Screen
                     new TranslatableComponent("mapfrontiers.update_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             labels.add(new GuiSimpleLabel(font, x + 60, 54, GuiSimpleLabel.Align.Center,
                     new TranslatableComponent("mapfrontiers.update_settings"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
-        }
-
-        for (GuiSimpleLabel label : labels) {
-            addRenderableOnly(label);
         }
     }
 
@@ -317,7 +310,7 @@ public class GuiShareSettings extends Screen
         SettingsUser player = new SettingsUser(minecraft.player);
         if (frontier.getUsersShared() != null) {
             for (SettingsUserShared user : frontier.getUsersShared()) {
-                users.addElement(new GuiUserSharedElement(font, (List<GuiEventListener>) children(), user, canUpdate, !user.getUser().equals(player), this));
+                users.addElement(new GuiUserSharedElement(font, this, user, canUpdate, !user.getUser().equals(player), this));
             }
         }
 

@@ -4,37 +4,40 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.List;
 
 @ParametersAreNonnullByDefault
 @Environment(EnvType.CLIENT)
 public class GuiGroupElement extends GuiScrollBox.ScrollElement {
     private final Font font;
     private final SettingsGroup group;
-    private final GuiButtonIcon buttonDelete;
-    final List<GuiEventListener> buttonList;
+    private GuiButtonIcon buttonDelete;
+    private final Screen screen;
 
-    public GuiGroupElement(Font font, List<GuiEventListener> buttonList, SettingsGroup group) {
+    public GuiGroupElement(Font font, Screen screen, SettingsGroup group) {
         super(160, 16);
         this.font = font;
         this.group = group;
+        this.screen = screen;
 
-        buttonDelete = new GuiButtonIcon(0, 0, GuiButtonIcon.Type.Remove, (button) -> {});
-        buttonDelete.visible = false;
-
-        this.buttonList = buttonList;
-        this.buttonList.add(buttonDelete);
+        if (!group.isSpecial()) {
+            buttonDelete = new GuiButtonIcon(0, 0, GuiButtonIcon.Type.Remove, (button) -> {});
+            buttonDelete.visible = false;
+            Screens.getButtons(screen).add(buttonDelete);
+        }
     }
 
     @Override
     public void delete() {
-        buttonList.remove(buttonDelete);
+        if (buttonDelete != null) {
+            Screens.getButtons(screen).remove(buttonDelete);
+        }
     }
 
     public SettingsGroup getGroup() {
@@ -44,13 +47,17 @@ public class GuiGroupElement extends GuiScrollBox.ScrollElement {
     @Override
     public void setX(int x) {
         super.setX(x);
-        buttonDelete.x = this.x + 145;
+        if (buttonDelete != null) {
+            buttonDelete.x = this.x + 145;
+        }
     }
 
     @Override
     public void setY(int y) {
         super.setY(y);
-        buttonDelete.y = this.y + 1;
+        if (buttonDelete != null) {
+            buttonDelete.y = this.y + 1;
+        }
     }
 
     @Override
@@ -64,7 +71,9 @@ public class GuiGroupElement extends GuiScrollBox.ScrollElement {
             fill(matrixStack, x, y, x + width, y + height, GuiColors.SETTINGS_ELEMENT_HOVERED);
         }
 
-        buttonDelete.visible = isHovered && !group.isSpecial();
+        if (buttonDelete != null) {
+            buttonDelete.visible = isHovered;
+        }
 
         String text = group.getName();
         if (text.isEmpty()) {
@@ -77,7 +86,7 @@ public class GuiGroupElement extends GuiScrollBox.ScrollElement {
     @Override
     public GuiScrollBox.ScrollElement.Action mousePressed(double mouseX, double mouseY) {
         if (visible && isHovered) {
-            if (buttonDelete.isMouseOver(mouseX, mouseY)) {
+            if (buttonDelete != null && buttonDelete.isMouseOver(mouseX, mouseY)) {
                 return GuiScrollBox.ScrollElement.Action.Deleted;
             } else {
                 return GuiScrollBox.ScrollElement.Action.Clicked;

@@ -4,7 +4,6 @@ import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
-import journeymap.client.ui.ScreenLayerManager;
 import journeymap.client.ui.UIManager;
 import journeymap.client.ui.minimap.MiniMap;
 import net.fabricmc.api.EnvType;
@@ -18,12 +17,16 @@ import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import org.lwjgl.glfw.GLFW;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.*;
 
 @ParametersAreNonnullByDefault
 @Environment(EnvType.CLIENT)
 public class GuiHUDSettings extends Screen implements TextIntBox.TextIntBoxResponder {
+    private final Screen previousScreen;
+    private final boolean showKeyHint;
+
     private GuiHUDWidget guiHUDWidget;
     private GuiOptionButton buttonSlot1;
     private GuiOptionButton buttonSlot2;
@@ -42,8 +45,10 @@ public class GuiHUDSettings extends Screen implements TextIntBox.TextIntBoxRespo
     private int anchorLineColor = GuiColors.SETTINGS_ANCHOR_LIGHT;
     private int anchorLineColorTick = 0;
 
-    public GuiHUDSettings() {
+    public GuiHUDSettings(@Nullable Screen previousScreen, boolean showKeyHint) {
         super(TextComponent.EMPTY);
+        this.previousScreen = previousScreen;
+        this.showKeyHint = showKeyHint;
         labels = new ArrayList<>();
         labelTooltips = new HashMap<>();
         guiHUD = GuiHUD.asPreview();
@@ -166,7 +171,13 @@ public class GuiHUDSettings extends Screen implements TextIntBox.TextIntBoxRespo
         super.render(matrixStack, mouseX, mouseY, partialTicks);
 
         for (GuiSimpleLabel label : labels) {
-            if (label.isHoveredOrFocused()) {
+            if (label.visible) {
+                label.render(matrixStack, mouseX, mouseY, partialTicks);
+            }
+        }
+
+        for (GuiSimpleLabel label : labels) {
+            if (label.visible && label.isHoveredOrFocused()) {
                 List<Component> tooltip = labelTooltips.get(label);
                 if (tooltip != null) {
                     renderTooltip(matrixStack, tooltip, Optional.empty(), mouseX, mouseY);
@@ -180,7 +191,7 @@ public class GuiHUDSettings extends Screen implements TextIntBox.TextIntBoxRespo
     @Override
     public boolean keyPressed(int key, int value, int modifier) {
         if (key == GLFW.GLFW_KEY_E && !(getFocused() instanceof EditBox)) {
-            ScreenLayerManager.popLayer();
+            onClose();
             return true;
         } else {
             return super.keyPressed(key, value, modifier);
@@ -320,14 +331,10 @@ public class GuiHUDSettings extends Screen implements TextIntBox.TextIntBoxRespo
 
     @Override
     public void onClose() {
-        Minecraft.getInstance().setScreen(new GuiFrontierSettings());
+        Minecraft.getInstance().setScreen(new GuiFrontierSettings(previousScreen, showKeyHint));
     }
 
     private void resetLabels() {
-        for (GuiSimpleLabel label : labels) {
-            removeWidget(label);
-        }
-
         labels.clear();
         labelTooltips.clear();
 
@@ -355,10 +362,6 @@ public class GuiHUDSettings extends Screen implements TextIntBox.TextIntBoxRespo
                 new GuiSimpleLabel(font, width / 2 - 30, height / 2 + 18, GuiSimpleLabel.Align.Left,
                         ConfigData.getTranslatedName("hud.snapToBorder"), GuiColors.SETTINGS_TEXT),
                 ConfigData.getTooltip("hud.snapToBorder"));
-
-        for (GuiSimpleLabel label : labels) {
-            addRenderableOnly(label);
-        }
     }
 
     private void addLabelWithTooltip(GuiSimpleLabel label, List<Component> tooltip) {

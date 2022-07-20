@@ -11,20 +11,27 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.players.ServerOpListEntry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Optional;
 
 public class MapFrontiers implements ModInitializer {
     public static final String MODID = "mapfrontiers";
-    public static final String VERSION = "1.18.2-2.2.0";
+    public static String VERSION = "";
     public static Logger LOGGER;
 
     private static FrontiersManager frontiersManager;
+
+    static {
+        Optional<ModContainer> modContainer = FabricLoader.getInstance().getModContainer(MODID);
+        modContainer.ifPresent(mod -> VERSION = mod.getMetadata().getVersion().getFriendlyString());
+    }
 
     public MapFrontiers() {
         LOGGER = LogManager.getLogger("MapFrontiers");
@@ -84,15 +91,6 @@ public class MapFrontiers implements ModInitializer {
             return false;
         }
 
-        ServerOpListEntry opEntry = server.getPlayerList().getOps().get(player.getGameProfile());
-        if (opEntry != null) {
-            return true;
-        }
-
-        if (server.isSingleplayer()) {
-            return server.isSingleplayerOwner(player.getGameProfile()) || player.isCreative();
-        }
-
-        return false;
+        return server.getPlayerList().isOp(player.getGameProfile());
     }
 }

@@ -18,7 +18,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 
@@ -44,10 +43,13 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
     private GuiSettingsButton buttonVisible;
     private GuiSettingsButton buttonDone;
 
+    private final List<GuiSimpleLabel> labels;
+
     public GuiFrontierList(IClientAPI jmAPI, GuiFullscreenMap fullscreenMap) {
-        super(TextComponent.EMPTY);
+        super(new TranslatableComponent("mapfrontiers.title_frontiers"));
         this.jmAPI = jmAPI;
         this.fullscreenMap = fullscreenMap;
+        labels = new ArrayList<>();
 
         ClientProxy.subscribeDeletedFrontierEvent(this, frontierID -> {
             updateFrontiers();
@@ -71,12 +73,11 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
 
     @Override
     public void init() {
-        Component title = new TranslatableComponent("mapfrontiers.title_frontiers");
-        addRenderableOnly(new GuiSimpleLabel(font, width / 2, 8, GuiSimpleLabel.Align.Center, title, GuiColors.WHITE));
+        labels.clear();
 
         frontiers = new GuiScrollBox(width / 2 - 300, 50, 450, height - 100, 24, this);
 
-        addRenderableOnly(new GuiSimpleLabel(font, width / 2 + 170, 74, GuiSimpleLabel.Align.Left,
+        labels.add(new GuiSimpleLabel(font, width / 2 + 170, 74, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.filter_type"), GuiColors.SETTINGS_TEXT));
 
         filterType = new GuiScrollBox(width / 2 + 170, 86, 200, 48, 16, this);
@@ -85,7 +86,7 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
         filterType.addElement(new GuiRadioListElement(font, ConfigData.getTranslatedEnum(ConfigData.FilterFrontierType.Personal), ConfigData.FilterFrontierType.Personal.ordinal()));
         filterType.selectElementIf((element) -> ((GuiRadioListElement) element).getId() == ConfigData.filterFrontierType.ordinal());
 
-        addRenderableOnly(new GuiSimpleLabel(font, width / 2 + 170, 144, GuiSimpleLabel.Align.Left,
+        labels.add(new GuiSimpleLabel(font, width / 2 + 170, 144, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.filter_owner"), GuiColors.SETTINGS_TEXT));
 
         filterOwner = new GuiScrollBox(width / 2 + 170, 156, 200, 48, 16, this);
@@ -94,7 +95,7 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
         filterOwner.addElement(new GuiRadioListElement(font, ConfigData.getTranslatedEnum(ConfigData.FilterFrontierOwner.Others), ConfigData.FilterFrontierOwner.Others.ordinal()));
         filterOwner.selectElementIf((element) -> ((GuiRadioListElement) element).getId() == ConfigData.filterFrontierOwner.ordinal());
 
-        addRenderableOnly(new GuiSimpleLabel(font, width / 2 + 170, 214, GuiSimpleLabel.Align.Left,
+        labels.add(new GuiSimpleLabel(font, width / 2 + 170, 214, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.filter_dimension"), GuiColors.SETTINGS_TEXT));
 
         filterDimension = new GuiScrollBox(width / 2 + 170, 226, 200, height - 296, 16, this);
@@ -148,8 +149,14 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
     @Override
     public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         renderBackground(matrixStack, 0);
-
+        drawCenteredString(matrixStack, font, title, this.width / 2, 8, GuiColors.WHITE);
         super.render(matrixStack, mouseX, mouseY, partialTicks);
+
+        for (GuiSimpleLabel label : labels) {
+            if (label.visible) {
+                label.render(matrixStack, mouseX, mouseY, partialTicks);
+            }
+        }
     }
 
     @Override

@@ -4,11 +4,11 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.List;
 
 @ParametersAreNonnullByDefault
 @Environment(EnvType.CLIENT)
@@ -17,20 +17,21 @@ public class GuiUserElement extends GuiScrollBox.ScrollElement {
     private final SettingsUser user;
     private final GuiButtonIcon buttonDelete;
     private int pingBar = 0;
-    final List<GuiEventListener> buttonList;
+    private final Screen screen;
 
-    public GuiUserElement(Font font, List<GuiEventListener> buttonList, SettingsUser user) {
+    public GuiUserElement(Font font, Screen screen, SettingsUser user) {
         super(258, 16);
         this.font = font;
         this.user = user;
+        this.screen = screen;
+
         buttonDelete = new GuiButtonIcon(0, 0, GuiButtonIcon.Type.Remove, (button) -> {});
-        this.buttonList = buttonList;
-        this.buttonList.add(buttonDelete);
+        Screens.getButtons(screen).add(buttonDelete);
     }
 
     @Override
     public void delete() {
-        buttonList.remove(buttonDelete);
+        Screens.getButtons(screen).remove(buttonDelete);
     }
 
     public SettingsUser getUser() {

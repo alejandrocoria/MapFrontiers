@@ -26,7 +26,7 @@
   "mapfrontiers.assign_banner_warn": "Вы должны иметь баннер в другой руке!",
   "mapfrontiers.select_in_map": "Select in map",
   "mapfrontiers.close": "Закрыть",
-  
+
   "mapfrontiers.reset_filters": "Reset Filters",
   "mapfrontiers.filter_type": "Type:",
   "mapfrontiers.filter_owner": "Owner:",
@@ -43,7 +43,7 @@
   "mapfrontiers.info": "Info",
   "mapfrontiers.show": "Show",
   "mapfrontiers.hide": "Hide",
-  
+
   "mapfrontiers.button_frontiers": "Frontiers...",
   "mapfrontiers.button_new_frontier": "New Frontier...",
   "mapfrontiers.button_frontier_info": "Frontier Info...",
@@ -54,13 +54,13 @@
   "mapfrontiers.button_delete_frontier": "Delete Frontier",
   "mapfrontiers.add_vertex": "Добавить точку",
   "mapfrontiers.remove_vertex": "Убрать точку",
-  
+
   "mapfrontiers.title_info": "Frontier Info",
   "mapfrontiers.title_frontiers": "Frontiers",
   "mapfrontiers.title_new_frontier": "New Frontier",
   "mapfrontiers.title_share_settings": "Share Settings",
   "mapfrontiers.title_settings": "MapFrontier Settings",
-  
+
   "mapfrontiers.credits": "Информация",
   "mapfrontiers.general": "Основные",
   "mapfrontiers.groups": "Группы",
@@ -94,7 +94,7 @@
   "mapfrontiers.group_owners_desc": "Эта группа представляет владельцев территорий.\nНа единственные действия, которые можно настроить, это удаление и обновление границ.",
   "mapfrontiers.group_everyone_desc": "Эта группа представляет всех игроков без исключения.",
   "mapfrontiers.unnamed": "%1$sБез имени",
-  
+
   "mapfrontiers.config.nameVisibility": "Name visibility",
   "mapfrontiers.config.hideNamesThatDontFit": "Hide names that don't fit",
   "mapfrontiers.config.polygonsOpacity": "Polygons opacity",
@@ -108,7 +108,7 @@
   "mapfrontiers.config.hud.slot3": "Slot 3",
   "mapfrontiers.config.hud.anchor": "Anchor",
   "mapfrontiers.config.hud.position": "Position",
-  
+
   "mapfrontiers.config.nameVisibility.tooltip": "Force all frontier names to be shown on the map or hidden.\nIn Manual you can decide for each frontier.",
   "mapfrontiers.config.hideNamesThatDontFit.tooltip": "Hides the name if it is wider than the frontier at the zoom level it is being viewed.",
   "mapfrontiers.config.polygonsOpacity.tooltip": "Transparency of the frontier polygons.\n0.0 is fully transparent and 1.0 is opaque.",
@@ -122,7 +122,7 @@
   "mapfrontiers.config.hud.slot3.tooltip": "HUD element on slot 3.",
   "mapfrontiers.config.hud.anchor.tooltip": "Anchor point of the HUD. In the case of choosing the minimap as an anchor,\nits default position will be used as a reference in the coordinates.",
   "mapfrontiers.config.hud.position.tooltip": "HUD position relative to anchor.",
-  
+
   "mapfrontiers.config.Vertex": "Vertex",
   "mapfrontiers.config.Chunk": "Chunk",
   "mapfrontiers.config.Info": "Go to Info screen",
@@ -154,5 +154,6 @@
   "mapfrontiers.config.Banner": "Banner",
 
   "mapfrontiers.key.category": "Карта Территорий",
-  "mapfrontiers.key.open_settings": "Открыть настройки"
+  "mapfrontiers.key.open_settings": "Открыть настройки",
+  "mapfrontiers.key.open_settings.hint": "You can use [%1$s] to open this screen during gameplay"
 }

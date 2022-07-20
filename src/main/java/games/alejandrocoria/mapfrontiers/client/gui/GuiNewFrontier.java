@@ -13,7 +13,6 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.level.ChunkPos;
@@ -40,9 +39,12 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
     private GuiSettingsButton buttonCreateFrontier;
     private GuiSettingsButton buttonCancel;
 
+    private final List<GuiSimpleLabel> labels;
+
     public GuiNewFrontier(IClientAPI jmAPI) {
-        super(TextComponent.EMPTY);
+        super(new TranslatableComponent("mapfrontiers.title_new_frontier"));
         this.jmAPI = jmAPI;
+        labels = new ArrayList<>();
 
         ClientProxy.subscribeUpdatedSettingsProfileEvent(this, profile -> {
             ScreenLayerManager.popLayer();
@@ -52,10 +54,9 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
 
     @Override
     public void init() {
-        Component title = new TranslatableComponent("mapfrontiers.title_new_frontier");
-        addRenderableOnly(new GuiSimpleLabel(font, width / 2, 8, GuiSimpleLabel.Align.Center, title, GuiColors.WHITE));
+        labels.clear();
 
-        addRenderableOnly(new GuiSimpleLabel(font, width / 2 - 130, height / 2 - 112, GuiSimpleLabel.Align.Left,
+        labels.add(new GuiSimpleLabel(font, width / 2 - 130, height / 2 - 112, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.frontier_type"), GuiColors.SETTINGS_TEXT));
         buttonFrontierType = new GuiOptionButton(font, width / 2, height / 2 - 114, 130, this::buttonPressed);
         buttonFrontierType.addOption(ConfigData.getTranslatedEnum(ConfigData.FilterFrontierType.Global));
@@ -72,14 +73,14 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
             buttonFrontierType.active = false;
         }
 
-        addRenderableOnly(new GuiSimpleLabel(font, width / 2 - 130, height / 2 - 96, GuiSimpleLabel.Align.Left,
+        labels.add(new GuiSimpleLabel(font, width / 2 - 130, height / 2 - 96, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.frontier_mode"), GuiColors.SETTINGS_TEXT));
         buttonFrontierMode = new GuiOptionButton(font, width / 2, height / 2 - 98, 130, this::buttonPressed);
         buttonFrontierMode.addOption(ConfigData.getTranslatedEnum(FrontierData.Mode.Vertex));
         buttonFrontierMode.addOption(ConfigData.getTranslatedEnum(FrontierData.Mode.Chunk));
         buttonFrontierMode.setSelected(ConfigData.newFrontierMode.ordinal());
 
-        addRenderableOnly(new GuiSimpleLabel(font, width / 2 - 130, height / 2 - 80, GuiSimpleLabel.Align.Left,
+        labels.add(new GuiSimpleLabel(font, width / 2 - 130, height / 2 - 80, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.after_creating"), GuiColors.SETTINGS_TEXT));
         buttonAfterCreate = new GuiOptionButton(font, width / 2, height / 2 - 82, 130, this::buttonPressed);
         buttonAfterCreate.addOption(ConfigData.getTranslatedEnum(ConfigData.AfterCreatingFrontier.Info));
@@ -91,7 +92,7 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
         chunkShapeButtons = new GuiChunkShapeButtons(font, width / 2 - 107, height / 2 - 52, ConfigData.newFrontierChunkShape, (s) -> shapeButtonsUpdated());
 
         labelSize = new GuiSimpleLabel(font, width / 2 - 80, height / 2 + 90, GuiSimpleLabel.Align.Left, new TextComponent(""), GuiColors.WHITE);
-        addRenderableOnly(labelSize);
+        labels.add(labelSize);
         textSize = new TextIntBox(1, 1, 999, font, width / 2 + 16, height / 2 + 88, 64);
         textSize.setResponder(this);
 
@@ -120,8 +121,14 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
     @Override
     public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         renderBackground(matrixStack, 0);
-
+        drawCenteredString(matrixStack, font, title, this.width / 2, 8, GuiColors.WHITE);
         super.render(matrixStack, mouseX, mouseY, partialTicks);
+
+        for (GuiSimpleLabel label : labels) {
+            if (label.visible) {
+                label.render(matrixStack, mouseX, mouseY, partialTicks);
+            }
+        }
     }
 
     @Override

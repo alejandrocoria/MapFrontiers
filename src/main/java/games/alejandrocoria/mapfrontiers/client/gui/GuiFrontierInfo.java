@@ -29,6 +29,8 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 @ParametersAreNonnullByDefault
 @Environment(EnvType.CLIENT)
@@ -56,6 +58,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
     private GuiSettingsButton buttonDone;
     private GuiSettingsButton buttonBanner;
 
+    private final List<GuiSimpleLabel> labels;
     private GuiSimpleLabel modifiedLabel;
 
     public GuiFrontierInfo(IClientAPI jmAPI, FrontierOverlay frontier) {
@@ -63,11 +66,12 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
     }
 
     public GuiFrontierInfo(IClientAPI jmAPI, FrontierOverlay frontier, @Nullable  Runnable afterClose) {
-        super(TextComponent.EMPTY);
+        super(new TranslatableComponent("mapfrontiers.title_info"));
         this.jmAPI = jmAPI;
         this.afterClose = afterClose;
         frontiersOverlayManager = ClientProxy.getFrontiersOverlayManager(frontier.getPersonal());
         this.frontier = frontier;
+        labels = new ArrayList<>();
 
         ClientProxy.subscribeDeletedFrontierEvent(this, frontierID -> {
             if (frontier.getId().equals(frontierID)) {
@@ -98,14 +102,13 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
     public void init() {
         minecraft.keyboardHandler.setSendRepeatsToGui(true);
 
-        Component title = new TranslatableComponent("mapfrontiers.title_info");
-        addRenderableOnly(new GuiSimpleLabel(font, width / 2, 8, GuiSimpleLabel.Align.Center, title, GuiColors.WHITE));
-
         int leftSide = width / 2 - 154;
         int rightSide = width / 2 + 10;
         int top = height / 2 - 128;
 
-        addRenderableOnly(new GuiSimpleLabel(font, leftSide, top, GuiSimpleLabel.Align.Left,
+        labels.clear();
+
+        labels.add(new GuiSimpleLabel(font, leftSide, top, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.name"), GuiColors.LABEL_TEXT));
 
         textName1 = new TextBox(font, leftSide, top + 12, 144);
@@ -119,24 +122,24 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         textName2.setResponder(this);
         textName2.setValue(frontier.getName2());
 
-        addRenderableOnly(new GuiSimpleLabel(font, leftSide, top + 70, GuiSimpleLabel.Align.Left,
+        labels.add(new GuiSimpleLabel(font, leftSide, top + 70, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.show_name"), GuiColors.SETTINGS_TEXT));
         buttonShowName = new GuiOptionButton(font, leftSide + 116, top + 68, 28, this::buttonPressed);
         buttonShowName.addOption(new TranslatableComponent("options.on"));
         buttonShowName.addOption(new TranslatableComponent("options.off"));
         buttonShowName.setSelected(frontier.getNameVisible() ? 0 : 1);
 
-        addRenderableOnly(new GuiSimpleLabel(font, leftSide, top + 86, GuiSimpleLabel.Align.Left,
+        labels.add(new GuiSimpleLabel(font, leftSide, top + 86, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.show_owner"), GuiColors.SETTINGS_TEXT));
         buttonShowOwner = new GuiOptionButton(font, leftSide + 116, top + 84, 28, this::buttonPressed);
         buttonShowOwner.addOption(new TranslatableComponent("options.on"));
         buttonShowOwner.addOption(new TranslatableComponent("options.off"));
         buttonShowOwner.setSelected(frontier.getOwnerVisible() ? 0 : 1);
 
-        addRenderableOnly(new GuiSimpleLabel(font, leftSide, top + 102, GuiSimpleLabel.Align.Left,
+        labels.add(new GuiSimpleLabel(font, leftSide, top + 102, GuiSimpleLabel.Align.Left,
                 new TranslatableComponent("mapfrontiers.color"), GuiColors.LABEL_TEXT));
 
-        addRenderableOnly(new GuiSimpleLabel(font, leftSide - 11, top + 120, GuiSimpleLabel.Align.Left,
+        labels.add(new GuiSimpleLabel(font, leftSide - 11, top + 120, GuiSimpleLabel.Align.Left,
                 new TextComponent("R"), GuiColors.LABEL_TEXT));
 
         textRed = new TextIntBox(0, 0, 255, font, leftSide, top + 114, 29);
@@ -144,7 +147,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         textRed.setHeight(20);
         textRed.setWidth(34);
 
-        addRenderableOnly(new GuiSimpleLabel(font, leftSide + 44, top + 120, GuiSimpleLabel.Align.Left,
+        labels.add(new GuiSimpleLabel(font, leftSide + 44, top + 120, GuiSimpleLabel.Align.Left,
                 new TextComponent("G"), GuiColors.LABEL_TEXT));
 
         textGreen = new TextIntBox(0, 0, 255, font, leftSide + 55, top + 114, 29);
@@ -152,7 +155,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         textGreen.setHeight(20);
         textGreen.setWidth(34);
 
-        addRenderableOnly(new GuiSimpleLabel(font, leftSide + 99, top + 120, GuiSimpleLabel.Align.Left,
+        labels.add(new GuiSimpleLabel(font, leftSide + 99, top + 120, GuiSimpleLabel.Align.Left,
                 new TextComponent("B"), GuiColors.LABEL_TEXT));
 
         textBlue = new TextIntBox(0, 0, 255, font, leftSide + 110, top + 114, 29);
@@ -171,41 +174,41 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
 
         Component type = new TranslatableComponent("mapfrontiers.type",
                 new TranslatableComponent(frontier.getPersonal() ? "mapfrontiers.config.Personal" : "mapfrontiers.config.Global"));
-        addRenderableOnly(new GuiSimpleLabel(font, rightSide, top, GuiSimpleLabel.Align.Left, type, GuiColors.WHITE));
+        labels.add(new GuiSimpleLabel(font, rightSide, top, GuiSimpleLabel.Align.Left, type, GuiColors.WHITE));
 
         Component owner = new TranslatableComponent("mapfrontiers.owner", frontier.getOwner());
-        addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 16, GuiSimpleLabel.Align.Left, owner, GuiColors.WHITE));
+        labels.add(new GuiSimpleLabel(font, rightSide, top + 16, GuiSimpleLabel.Align.Left, owner, GuiColors.WHITE));
 
         Component dimension = new TranslatableComponent("mapfrontiers.dimension", frontier.getDimension().location().toString());
-        addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 32, GuiSimpleLabel.Align.Left, dimension, GuiColors.WHITE));
+        labels.add(new GuiSimpleLabel(font, rightSide, top + 32, GuiSimpleLabel.Align.Left, dimension, GuiColors.WHITE));
 
         Component mode = new TranslatableComponent("mapfrontiers.mode",
                 new TranslatableComponent(frontier.getMode() == FrontierData.Mode.Vertex ? "mapfrontiers.config.Vertex" : "mapfrontiers.config.Chunk"));
-        addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 48, GuiSimpleLabel.Align.Left, mode, GuiColors.WHITE));
+        labels.add(new GuiSimpleLabel(font, rightSide, top + 48, GuiSimpleLabel.Align.Left, mode, GuiColors.WHITE));
 
         if (frontier.getMode() == FrontierData.Mode.Vertex) {
             Component vertices = new TranslatableComponent("mapfrontiers.vertices", frontier.getVertexCount());
-            addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 64, GuiSimpleLabel.Align.Left, vertices, GuiColors.WHITE));
+            labels.add(new GuiSimpleLabel(font, rightSide, top + 64, GuiSimpleLabel.Align.Left, vertices, GuiColors.WHITE));
         } else {
             Component chunks = new TranslatableComponent("mapfrontiers.chunks", frontier.getChunkCount());
-            addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 64, GuiSimpleLabel.Align.Left, chunks, GuiColors.WHITE));
+            labels.add(new GuiSimpleLabel(font, rightSide, top + 64, GuiSimpleLabel.Align.Left, chunks, GuiColors.WHITE));
         }
 
         Component area = new TranslatableComponent("mapfrontiers.area", frontier.area);
-        addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 80, GuiSimpleLabel.Align.Left, area, GuiColors.WHITE));
+        labels.add(new GuiSimpleLabel(font, rightSide, top + 80, GuiSimpleLabel.Align.Left, area, GuiColors.WHITE));
 
         Component perimeter = new TranslatableComponent("mapfrontiers.perimeter", frontier.perimeter);
-        addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 96, GuiSimpleLabel.Align.Left, perimeter, GuiColors.WHITE));
+        labels.add(new GuiSimpleLabel(font, rightSide, top + 96, GuiSimpleLabel.Align.Left, perimeter, GuiColors.WHITE));
 
         if (frontier.getCreated() != null) {
             Component created = new TranslatableComponent("mapfrontiers.created", dateFormat.format(frontier.getCreated()));
-            addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 112, GuiSimpleLabel.Align.Left, created, GuiColors.WHITE));
+            labels.add(new GuiSimpleLabel(font, rightSide, top + 112, GuiSimpleLabel.Align.Left, created, GuiColors.WHITE));
         }
 
         if (frontier.getModified() != null) {
             Component modified = new TranslatableComponent("mapfrontiers.modified", dateFormat.format(frontier.getModified()));
             modifiedLabel = new GuiSimpleLabel(font, rightSide, top + 128, GuiSimpleLabel.Align.Left, modified, GuiColors.WHITE);
-            addRenderableOnly(modifiedLabel);
+            labels.add(modifiedLabel);
         }
 
         buttonSelect = new GuiSettingsButton(font, leftSide - 154, top + 274, 144,
@@ -253,11 +256,17 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
     @Override
     public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         renderBackground(matrixStack, 0);
-
+        drawCenteredString(matrixStack, font, title, this.width / 2, 8, GuiColors.WHITE);
         super.render(matrixStack, mouseX, mouseY, partialTicks);
 
         if (frontier.hasBanner()) {
             frontier.renderBanner(minecraft, matrixStack, width / 2 - 276, height / 2 - 106, 4);
+        }
+
+        for (GuiSimpleLabel label : labels) {
+            if (label.visible) {
+                label.render(matrixStack, mouseX, mouseY, partialTicks);
+            }
         }
 
         if (buttonBanner.visible && buttonBanner.isHoveredOrFocused()) {

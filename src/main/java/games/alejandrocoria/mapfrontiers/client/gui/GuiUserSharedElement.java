@@ -5,13 +5,13 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.List;
 
 @ParametersAreNonnullByDefault
 @Environment(EnvType.CLIENT)
@@ -24,10 +24,9 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
     private GuiButtonIcon buttonDelete;
     private final boolean enabled;
     private int pingBar = 0;
-    List<GuiEventListener> buttonList;
+    private final Screen screen;
 
-    public GuiUserSharedElement(Font font, List<GuiEventListener> buttonList, SettingsUserShared user, boolean enabled,
-                                boolean removable, UserSharedResponder responder) {
+    public GuiUserSharedElement(Font font, Screen screen, SettingsUserShared user, boolean enabled, boolean removable, UserSharedResponder responder) {
         super(430, 16);
         this.font = font;
         this.user = user;
@@ -35,18 +34,18 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
         updateFrontier = user.hasAction(SettingsUserShared.Action.UpdateFrontier);
         updateSettings = user.hasAction(SettingsUserShared.Action.UpdateSettings);
         this.enabled = enabled;
+        this.screen = screen;
 
         if (removable && enabled) {
             buttonDelete = new GuiButtonIcon(0, 0, GuiButtonIcon.Type.Remove, (button) -> {});
-            this.buttonList = buttonList;
-            this.buttonList.add(buttonDelete);
+            Screens.getButtons(screen).add(buttonDelete);
         }
     }
 
     @Override
     public void delete() {
-        if (buttonList != null) {
-            buttonList.remove(buttonDelete);
+        if (buttonDelete != null) {
+            Screens.getButtons(screen).remove(buttonDelete);
         }
     }
 

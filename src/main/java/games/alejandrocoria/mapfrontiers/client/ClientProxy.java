@@ -17,10 +17,12 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientLoginConnectionEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.BannerItem;
@@ -83,7 +85,7 @@ public class ClientProxy implements ClientModInitializer {
                     return;
                 }
 
-                Minecraft.getInstance().setScreen(new GuiFrontierSettings());
+                Minecraft.getInstance().setScreen(new GuiFrontierSettings(null, false));
             }
         });
 
@@ -106,7 +108,7 @@ public class ClientProxy implements ClientModInitializer {
             }
         });
 
-        ClientLoginConnectionEvents.DISCONNECT.register((handler, client) -> {
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             if (frontiersOverlayManager != null) {
                 frontiersOverlayManager.removeAllOverlays();
                 frontiersOverlayManager = null;
@@ -117,6 +119,8 @@ public class ClientProxy implements ClientModInitializer {
             if (guiHUD != null) {
                 guiHUD = null;
             }
+
+            settingsProfile = null;
         });
 
         MapFrontiers.LOGGER.info("onInitializeClient done");
@@ -189,6 +193,14 @@ public class ClientProxy implements ClientModInitializer {
 
     public static GuiFrontierSettings.Tab getLastSettingsTab() {
         return lastSettingsTab;
+    }
+
+    public static Component getOpenSettingsKey() {
+        if (openSettingsKey.isUnbound()) {
+            return null;
+        } else {
+            return openSettingsKey.getTranslatedKeyMessage();
+        }
     }
 
     public static void configUpdated() {

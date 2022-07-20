@@ -68,6 +68,14 @@ public class GuiScrollBox extends AbstractWidget {
         return null;
     }
 
+    public void selectIndex(int index) {
+        selected = Math.min(Math.max(index, -1), elements.size() - 1);
+    }
+
+    public int getSelectedIndex() {
+        return selected;
+    }
+
     public void selectElementIf(Predicate<ScrollElement> pred) {
         ScrollElement element = elements.stream()
                 .filter(pred)
@@ -282,8 +290,7 @@ public class GuiScrollBox extends AbstractWidget {
     }
 
     @Override
-    public void updateNarration(NarrationElementOutput p_169152_)
-    {
+    public void updateNarration(NarrationElementOutput p_169152_) {
 
     }
 
