@@ -1,5 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common;
 
+import com.electronwill.nightconfig.core.Config;
+import com.electronwill.nightconfig.core.UnmodifiableConfig;
 import com.google.common.base.Splitter;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.util.ReflectionHelper;
@@ -9,18 +11,28 @@ import journeymap.client.ui.minimap.DisplayVars;
 import journeymap.client.ui.minimap.MiniMap;
 import journeymap.client.ui.minimap.Shape;
 import journeymap.client.ui.theme.Theme;
-import me.shedaniel.autoconfig.annotation.Config;
-import me.shedaniel.autoconfig.annotation.ConfigEntry;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.common.ForgeConfigSpec.*;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-@Config(name = MapFrontiers.MODID)
-public class ConfigData implements me.shedaniel.autoconfig.ConfigData {
+public class ConfigData {
+    public static final ClientConfig CLIENT;
+    public static final ForgeConfigSpec CLIENT_SPEC;
+    static {
+        final Pair<ClientConfig, ForgeConfigSpec> specPair = new ForgeConfigSpec.Builder().configure(ClientConfig::new);
+        CLIENT_SPEC = specPair.getRight();
+        CLIENT = specPair.getLeft();
+    }
+
     public enum AfterCreatingFrontier {
         Info, Edit, Nothing
     }
@@ -46,24 +58,17 @@ public class ConfigData implements me.shedaniel.autoconfig.ConfigData {
         None, Name, Owner, Banner
     }
 
-    @ConfigEntry.BoundedDiscrete(min = 0, max = 11)
     public static int newFrontierShape;
-    @ConfigEntry.BoundedDiscrete(min = 0, max = 999)
     public static int newFrontierShapeWidth;
-    @ConfigEntry.BoundedDiscrete(min = 0, max = 999)
     public static int newFrontierShapeRadius;
-    @ConfigEntry.BoundedDiscrete(min = 0, max = 7)
     public static int newFrontierChunkShape;
-    @ConfigEntry.BoundedDiscrete(min = 0, max = 32)
     public static int newFrontierChunkShapeWidth;
-    @ConfigEntry.BoundedDiscrete(min = 0, max = 32)
     public static int newFrontierChunkShapeLength;
     public static FrontierData.Mode newFrontierMode;
     public static AfterCreatingFrontier afterCreatingFrontier;
     public static NameVisibility nameVisibility;
     public static boolean hideNamesThatDontFit;
     public static double polygonsOpacity;
-    @ConfigEntry.BoundedDiscrete(min = 0, max = 16)
     public static int snapDistance;
     public static FilterFrontierType filterFrontierType;
     public static FilterFrontierOwner filterFrontierOwner;
@@ -71,52 +76,160 @@ public class ConfigData implements me.shedaniel.autoconfig.ConfigData {
     public static boolean hudEnabled;
     public static boolean hudAutoAdjustAnchor;
     public static boolean hudSnapToBorder;
-    @ConfigEntry.BoundedDiscrete(min = 1, max = 8)
     public static int hudBannerSize;
     public static HUDSlot hudSlot1;
     public static HUDSlot hudSlot2;
     public static HUDSlot hudSlot3;
     public static HUDAnchor hudAnchor;
-    @ConfigEntry.BoundedDiscrete(min = Integer.MIN_VALUE, max = Integer.MAX_VALUE)
     public static int hudXPosition;
-    @ConfigEntry.BoundedDiscrete(min = Integer.MIN_VALUE, max = Integer.MAX_VALUE)
     public static int hudYPosition;
 
-    public ConfigData() {
-        newFrontierShape = 0;
-        newFrontierShapeWidth = 10;
-        newFrontierShapeRadius = 20;
-        newFrontierChunkShape = 0;
-        newFrontierChunkShapeWidth = 5;
-        newFrontierChunkShapeLength = 5;
-        newFrontierMode = FrontierData.Mode.Vertex;
-        afterCreatingFrontier = AfterCreatingFrontier.Info;
-        nameVisibility = NameVisibility.Manual;
-        hideNamesThatDontFit = true;
-        polygonsOpacity = 0.4;
-        snapDistance = 8;
-        filterFrontierType = FilterFrontierType.All;
-        filterFrontierOwner = FilterFrontierOwner.All;
-        filterFrontierDimension = "all";
-        hudEnabled = true;
-        hudAutoAdjustAnchor = true;
-        hudSnapToBorder = true;
-        hudBannerSize = 3;
-        hudSlot1 = HUDSlot.Name;
-        hudSlot2 = HUDSlot.Owner;
-        hudSlot3 = HUDSlot.Banner;
-        hudAnchor = HUDAnchor.MinimapHorizontal;
-        hudXPosition = 0;
-        hudYPosition = 0;
+    public static void bakeConfig() {
+        newFrontierShape = CLIENT.newFrontierShape.get();
+        newFrontierShapeWidth = CLIENT.newFrontierShapeWidth.get();
+        newFrontierShapeRadius = CLIENT.newFrontierShapeRadius.get();
+        newFrontierChunkShape = CLIENT.newFrontierChunkShape.get();
+        newFrontierChunkShapeWidth = CLIENT.newFrontierChunkShapeWidth.get();
+        newFrontierChunkShapeLength = CLIENT.newFrontierChunkShapeLength.get();
+        newFrontierMode = CLIENT.newFrontierMode.get();
+        afterCreatingFrontier = CLIENT.afterCreatingFrontier.get();
+        nameVisibility = CLIENT.nameVisibility.get();
+        hideNamesThatDontFit = CLIENT.hideNamesThatDontFit.get();
+        polygonsOpacity = CLIENT.polygonsOpacity.get();
+        snapDistance = CLIENT.snapDistance.get();
+        filterFrontierType = CLIENT.filterFrontierType.get();
+        filterFrontierOwner = CLIENT.filterFrontierOwner.get();
+        filterFrontierDimension = CLIENT.filterFrontierDimension.get();
+        hudEnabled = CLIENT.hudEnabled.get();
+        hudAutoAdjustAnchor = CLIENT.hudAutoAdjustAnchor.get();
+        hudSnapToBorder = CLIENT.hudSnapToBorder.get();
+        hudBannerSize = CLIENT.hudBannerSize.get();
+        hudSlot1 = CLIENT.hudSlot1.get();
+        hudSlot2 = CLIENT.hudSlot2.get();
+        hudSlot3 = CLIENT.hudSlot3.get();
+        hudAnchor = CLIENT.hudAnchor.get();
+        hudXPosition = CLIENT.hudXPosition.get();
+        hudYPosition = CLIENT.hudYPosition.get();
     }
 
-    @Override
-    public void validatePostLoad() {
-        polygonsOpacity = Math.min(Math.max(polygonsOpacity, 0.0), 1.0);
+    public static class ClientConfig {
+        public final IntValue newFrontierShape;
+        public final IntValue newFrontierShapeWidth;
+        public final IntValue newFrontierShapeRadius;
+        public final IntValue newFrontierChunkShape;
+        public final IntValue newFrontierChunkShapeWidth;
+        public final IntValue newFrontierChunkShapeLength;
+        public final EnumValue<FrontierData.Mode> newFrontierMode;
+        public final EnumValue<AfterCreatingFrontier> afterCreatingFrontier;
+        public final EnumValue<NameVisibility> nameVisibility;
+        public final BooleanValue hideNamesThatDontFit;
+        public final DoubleValue polygonsOpacity;
+        public final IntValue snapDistance;
+        public final EnumValue<FilterFrontierType> filterFrontierType;
+        public final EnumValue<FilterFrontierOwner> filterFrontierOwner;
+        public final ForgeConfigSpec.ConfigValue<String> filterFrontierDimension;
+        public final BooleanValue hudEnabled;
+        public final BooleanValue hudAutoAdjustAnchor;
+        public final BooleanValue hudSnapToBorder;
+        public final IntValue hudBannerSize;
+        public final EnumValue<HUDSlot> hudSlot1;
+        public final EnumValue<HUDSlot> hudSlot2;
+        public final EnumValue<HUDSlot> hudSlot3;
+        public final EnumValue<HUDAnchor> hudAnchor;
+        public final IntValue hudXPosition;
+        public final IntValue hudYPosition;
+
+        public ClientConfig(ForgeConfigSpec.Builder builder) {
+            newFrontierShape = builder.defineInRange("newFrontierShape", 0, 0, 11);
+            newFrontierShapeWidth = builder.defineInRange("newFrontierShapeWidth", 10, 0, 999);
+            newFrontierShapeRadius = builder.defineInRange("newFrontierShapeRadius", 20, 0, 999);
+            newFrontierChunkShape = builder.defineInRange("newFrontierChunkShape", 0, 0, 7);
+            newFrontierChunkShapeWidth = builder.defineInRange("newFrontierChunkShapeWidth", 5, 0, 32);
+            newFrontierChunkShapeLength = builder.defineInRange("newFrontierChunkShapeLength", 5, 0, 32);
+            newFrontierMode = builder.defineEnum("newFrontierMode", FrontierData.Mode.Vertex);
+            afterCreatingFrontier = builder.defineEnum("afterCreatingFrontier", AfterCreatingFrontier.Info);
+            nameVisibility = builder.comment(
+                            "Force all frontier names to be shown on the map or hidden. In Manual you can decide for each frontier.")
+                    .translation(MapFrontiers.MODID + ".config." + "nameVisibility")
+                    .defineEnum("nameVisibility", NameVisibility.Manual);
+            hideNamesThatDontFit = builder.comment(
+                            "Hides the name if it is wider than the frontier at the zoom level it is being viewed.")
+                    .translation(MapFrontiers.MODID + ".config." + "hideNamesThatDontFit")
+                    .define("hideNamesThatDontFit", true);
+            polygonsOpacity = builder
+                    .comment("Transparency of the frontier polygons. 0.0 is fully transparent and 1.0 is opaque.")
+                    .translation(MapFrontiers.MODID + ".config." + "polygonsOpacity")
+                    .defineInRange("polygonsOpacity", 0.4, 0.0, 1.0);
+            snapDistance = builder.comment("Distance at which vertices are attached to nearby vertices.")
+                    .translation(MapFrontiers.MODID + ".config." + "snapDistance").defineInRange("snapDistance", 8, 0, 16);
+            filterFrontierType = builder.defineEnum("filterFrontierType", FilterFrontierType.All);
+            filterFrontierOwner = builder.defineEnum("filterFrontierOwner", FilterFrontierOwner.All);
+            filterFrontierDimension = builder.define("filterFrontierDimension", "all");
+
+            builder.push("hud");
+            hudEnabled = builder.comment("Show the HUD on screen.").translation(MapFrontiers.MODID + ".config.hud." + "enabled")
+                    .define("enabled", true);
+            hudAutoAdjustAnchor = builder
+                    .comment("Automatically switch to nearest anchor when HUD position is edited (on settings screen).")
+                    .translation(MapFrontiers.MODID + ".config.hud." + "autoAdjustAnchor").define("autoAdjustAnchor", true);
+            hudSnapToBorder = builder
+                    .comment("Automatically snap to closest border when HUD position is edited (on settings screen).")
+                    .translation(MapFrontiers.MODID + ".config.hud." + "snapToBorder").define("snapToBorder", true);
+            hudBannerSize = builder.comment("Size of the HUD banner.")
+                    .translation(MapFrontiers.MODID + ".config.hud." + "bannerSize").defineInRange("bannerSize", 3, 1, 8);
+            hudSlot1 = builder.comment("HUD element on slot 1.").translation(MapFrontiers.MODID + ".config.hud." + "slot1")
+                    .defineEnum("slot1", HUDSlot.Name);
+            hudSlot2 = builder.comment("HUD element on slot 2.").translation(MapFrontiers.MODID + ".config.hud." + "slot2")
+                    .defineEnum("slot2", HUDSlot.Owner);
+            hudSlot3 = builder.comment("HUD element on slot 3.").translation(MapFrontiers.MODID + ".config.hud." + "slot3")
+                    .defineEnum("slot3", HUDSlot.Banner);
+            hudAnchor = builder.comment(
+                            "Anchor point of the HUD. In the case of choosing the minimap as an anchor, its default position will be used as a reference in the coordinates.")
+                    .translation(MapFrontiers.MODID + ".config.hud." + "anchor")
+                    .defineEnum("anchor", HUDAnchor.MinimapHorizontal);
+            hudXPosition = builder.defineInRange("xPosition", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            hudYPosition = builder.defineInRange("yPosition", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            builder.pop();
+        }
+    }
+
+    public static void save() {
+        CLIENT.newFrontierShape.set(newFrontierShape);
+        CLIENT.newFrontierShapeWidth.set(newFrontierShapeWidth);
+        CLIENT.newFrontierShapeRadius.set(newFrontierShapeRadius);
+        CLIENT.newFrontierChunkShape.set(newFrontierChunkShape);
+        CLIENT.newFrontierChunkShapeWidth.set(newFrontierChunkShapeWidth);
+        CLIENT.newFrontierChunkShapeLength.set(newFrontierChunkShapeLength);
+        CLIENT.newFrontierMode.set(newFrontierMode);
+        CLIENT.afterCreatingFrontier.set(afterCreatingFrontier);
+        CLIENT.nameVisibility.set(nameVisibility);
+        CLIENT.hideNamesThatDontFit.set(hideNamesThatDontFit);
+        CLIENT.polygonsOpacity.set(polygonsOpacity);
+        CLIENT.snapDistance.set(snapDistance);
+        CLIENT.filterFrontierType.set(filterFrontierType);
+        CLIENT.filterFrontierOwner.set(filterFrontierOwner);
+        CLIENT.filterFrontierDimension.set(filterFrontierDimension);
+        CLIENT.hudEnabled.set(hudEnabled);
+        CLIENT.hudAutoAdjustAnchor.set(hudAutoAdjustAnchor);
+        CLIENT.hudSnapToBorder.set(hudSnapToBorder);
+        CLIENT.hudBannerSize.set(hudBannerSize);
+        CLIENT.hudSlot1.set(hudSlot1);
+        CLIENT.hudSlot2.set(hudSlot2);
+        CLIENT.hudSlot3.set(hudSlot3);
+        CLIENT.hudAnchor.set(hudAnchor);
+        CLIENT.hudXPosition.set(hudXPosition);
+        CLIENT.hudYPosition.set(hudYPosition);
+
+        CLIENT_SPEC.save();
     }
 
     public static Component getTranslatedName(String name) {
-        return Component.translatable(MapFrontiers.MODID + ".config." + name);
+        ValueSpec valueSpec = getValueSpec(name);
+        if (valueSpec != null) {
+            return Component.translatable(valueSpec.getTranslationKey());
+        }
+
+        return CommonComponents.EMPTY;
     }
 
     public static <E extends Enum<E>> Component getTranslatedEnum(E value) {
@@ -126,26 +239,54 @@ public class ConfigData implements me.shedaniel.autoconfig.ConfigData {
     public static List<Component> getTooltip(String name) {
         List<Component> tooltip = new ArrayList<>();
 
-        String lines = Component.translatable(MapFrontiers.MODID + ".config." + name + ".tooltip").getString();
-        for (String string : Splitter.on("\n").split(lines)) {
-            tooltip.add(Component.literal(string));
+        ValueSpec valueSpec = getValueSpec(name);
+        if (valueSpec != null) {
+            String lines = Component.translatable(valueSpec.getTranslationKey() + ".tooltip").getString();
+            for (String string : Splitter.on("\n").split(lines)) {
+                tooltip.add(Component.literal(string));
+            }
         }
 
         return tooltip;
     }
 
-    public static boolean isInRange(String name, Object value) {
-        try {
-            ConfigEntry.BoundedDiscrete annotation = ConfigData.class.getDeclaredField(name).getAnnotation(ConfigEntry.BoundedDiscrete.class);
-            if (annotation != null && value instanceof Integer) {
-                int val = (Integer) value;
-                return val >= annotation.min() && val <= annotation.max();
-            }
-        } catch (Exception ignored) {
-            return true;
+    public static String getDefault(String name) {
+        ValueSpec valueSpec = getValueSpec(name);
+        if (valueSpec != null) {
+            return valueSpec.getDefault().toString();
         }
 
-        return true;
+        return "";
+    }
+
+    public static boolean isInRange(String name, Object value) {
+        ValueSpec valueSpec = getValueSpec(name);
+        if (valueSpec != null) {
+            return valueSpec.test(value);
+        }
+
+        return false;
+    }
+
+    private static ValueSpec getValueSpec(String name) {
+        return getValueSpec(Arrays.asList(name.split("\\.")), CLIENT_SPEC.getSpec());
+    }
+
+    private static ValueSpec getValueSpec(List<String> path, UnmodifiableConfig valueMap) {
+        if (path.isEmpty()) {
+            return null;
+        }
+
+        Object value = valueMap.valueMap().get(path.get(0));
+        if (value == null) {
+            return null;
+        }
+
+        if (value instanceof Config) {
+            return getValueSpec(path.subList(1, path.size()), (Config) value);
+        } else {
+            return (ValueSpec) value;
+        }
     }
 
     public static Point getHUDAnchor(HUDAnchor anchor) {
@@ -155,51 +296,51 @@ public class ConfigData implements me.shedaniel.autoconfig.ConfigData {
         int displayHeight = mc.getWindow().getHeight();
 
         switch (anchor) {
-        case ScreenTop:
-            p.x = displayWidth / 2;
-            break;
-        case ScreenTopRight:
-            p.x = displayWidth;
-            break;
-        case ScreenRight:
-            p.x = displayWidth;
-            p.y = displayHeight / 2;
-            break;
-        case ScreenBottomRight:
-            p.x = displayWidth;
-            p.y = displayHeight;
-            break;
-        case ScreenBottom:
-            p.x = displayWidth / 2;
-            p.y = displayHeight;
-            break;
-        case ScreenBottomLeft:
-            p.y = displayHeight;
-            break;
-        case ScreenLeft:
-            p.y = displayHeight / 2;
-            break;
-        case ScreenTopLeft:
-            break;
-        case Minimap:
-            p = getMinimapCorner();
-            break;
-        case MinimapHorizontal:
-            p = getMinimapCorner();
-            if (p.y < displayHeight / 2) {
-                p.y = 0;
-            } else if (p.y > displayHeight / 2) {
-                p.y = displayHeight;
-            }
-            break;
-        case MinimapVertical:
-            p = getMinimapCorner();
-            if (p.x < displayWidth / 2) {
-                p.x = 0;
-            } else if (p.x > displayWidth / 2) {
+            case ScreenTop:
+                p.x = displayWidth / 2;
+                break;
+            case ScreenTopRight:
                 p.x = displayWidth;
-            }
-            break;
+                break;
+            case ScreenRight:
+                p.x = displayWidth;
+                p.y = displayHeight / 2;
+                break;
+            case ScreenBottomRight:
+                p.x = displayWidth;
+                p.y = displayHeight;
+                break;
+            case ScreenBottom:
+                p.x = displayWidth / 2;
+                p.y = displayHeight;
+                break;
+            case ScreenBottomLeft:
+                p.y = displayHeight;
+                break;
+            case ScreenLeft:
+                p.y = displayHeight / 2;
+                break;
+            case ScreenTopLeft:
+                break;
+            case Minimap:
+                p = getMinimapCorner();
+                break;
+            case MinimapHorizontal:
+                p = getMinimapCorner();
+                if (p.y < displayHeight / 2) {
+                    p.y = 0;
+                } else if (p.y > displayHeight / 2) {
+                    p.y = displayHeight;
+                }
+                break;
+            case MinimapVertical:
+                p = getMinimapCorner();
+                if (p.x < displayWidth / 2) {
+                    p.x = 0;
+                } else if (p.x > displayWidth / 2) {
+                    p.x = displayWidth;
+                }
+                break;
         }
 
         return p;
@@ -209,37 +350,37 @@ public class ConfigData implements me.shedaniel.autoconfig.ConfigData {
         Point p = new Point();
 
         switch (anchor) {
-        case ScreenTop:
-            p.x = hudWidth / 2;
-            break;
-        case ScreenTopRight:
-            p.x = hudWidth;
-            break;
-        case ScreenRight:
-            p.x = hudWidth;
-            p.y = hudHeight / 2;
-            break;
-        case ScreenBottomRight:
-            p.x = hudWidth;
-            p.y = hudHeight;
-            break;
-        case ScreenBottom:
-            p.x = hudWidth / 2;
-            p.y = hudHeight;
-            break;
-        case ScreenBottomLeft:
-            p.y = hudHeight;
-            break;
-        case ScreenLeft:
-            p.y = hudHeight / 2;
-            break;
-        case ScreenTopLeft:
-            break;
-        case Minimap:
-        case MinimapHorizontal:
-        case MinimapVertical:
-            p = getHUDOriginFromMinimap(hudWidth, hudHeight);
-            break;
+            case ScreenTop:
+                p.x = hudWidth / 2;
+                break;
+            case ScreenTopRight:
+                p.x = hudWidth;
+                break;
+            case ScreenRight:
+                p.x = hudWidth;
+                p.y = hudHeight / 2;
+                break;
+            case ScreenBottomRight:
+                p.x = hudWidth;
+                p.y = hudHeight;
+                break;
+            case ScreenBottom:
+                p.x = hudWidth / 2;
+                p.y = hudHeight;
+                break;
+            case ScreenBottomLeft:
+                p.y = hudHeight;
+                break;
+            case ScreenLeft:
+                p.y = hudHeight / 2;
+                break;
+            case ScreenTopLeft:
+                break;
+            case Minimap:
+            case MinimapHorizontal:
+            case MinimapVertical:
+                p = getHUDOriginFromMinimap(hudWidth, hudHeight);
+                break;
         }
 
         return p;
@@ -255,33 +396,33 @@ public class ConfigData implements me.shedaniel.autoconfig.ConfigData {
         int displayHeight = mc.getWindow().getHeight();
 
         switch (minimap.getCurrentMinimapProperties().position.get()) {
-        case TopRight:
-            corner.x = displayWidth;
-            break;
-        case BottomRight:
-            corner.x = displayWidth;
-            corner.y = displayHeight;
-            break;
-        case BottomLeft:
-            corner.y = displayHeight;
-            break;
-        case TopLeft:
-            break;
-        case TopCenter:
-            corner.x = displayWidth / 2;
-            break;
-        case Center:
-            corner.x = displayWidth / 2;
-            corner.y = displayHeight / 2;
-            break;
+            case TopRight:
+                corner.x = displayWidth;
+                break;
+            case BottomRight:
+                corner.x = displayWidth;
+                corner.y = displayHeight;
+                break;
+            case BottomLeft:
+                corner.y = displayHeight;
+                break;
+            case TopLeft:
+                break;
+            case TopCenter:
+                corner.x = displayWidth / 2;
+                break;
+            case Center:
+                corner.x = displayWidth / 2;
+                corner.y = displayHeight / 2;
+                break;
         }
 
         if (UIManager.INSTANCE.isMiniMapEnabled()) {
             try {
-                DisplayVars dv = minimap.getDisplayVars();
+                DisplayVars dv = ReflectionHelper.getPrivateField(minimap, "dv");
 
-                int minimapWidth = dv.minimapWidth;
-                int minimapHeight = dv.minimapHeight;
+                int minimapWidth = ReflectionHelper.getPrivateField(dv, "minimapWidth");
+                int minimapHeight = ReflectionHelper.getPrivateField(dv, "minimapHeight");
                 int translateX = ReflectionHelper.getPrivateField(dv, "translateX");
                 int translateY = ReflectionHelper.getPrivateField(dv, "translateY");
 
@@ -298,30 +439,30 @@ public class ConfigData implements me.shedaniel.autoconfig.ConfigData {
                 translateY += displayHeight / 2;
 
                 switch (minimap.getCurrentMinimapProperties().position.get()) {
-                case TopRight:
-                    corner.x = translateX - minimapWidth / 2;
-                    corner.y = translateY + minimapHeight / 2;
-                    break;
-                case BottomRight:
-                    corner.x = translateX - minimapWidth / 2;
-                    corner.y = translateY - minimapHeight / 2;
-                    break;
-                case BottomLeft:
-                    corner.x = translateX + minimapWidth / 2;
-                    corner.y = translateY - minimapHeight / 2;
-                    break;
-                case TopLeft:
-                    corner.x = translateX + minimapWidth / 2;
-                    corner.y = translateY + minimapHeight / 2;
-                    break;
-                case TopCenter:
-                    corner.x = translateX;
-                    corner.y = translateY + minimapHeight / 2;
-                    break;
-                case Center:
-                    corner.x = translateX;
-                    corner.y = translateY;
-                    break;
+                    case TopRight:
+                        corner.x = translateX - minimapWidth / 2;
+                        corner.y = translateY + minimapHeight / 2;
+                        break;
+                    case BottomRight:
+                        corner.x = translateX - minimapWidth / 2;
+                        corner.y = translateY - minimapHeight / 2;
+                        break;
+                    case BottomLeft:
+                        corner.x = translateX + minimapWidth / 2;
+                        corner.y = translateY - minimapHeight / 2;
+                        break;
+                    case TopLeft:
+                        corner.x = translateX + minimapWidth / 2;
+                        corner.y = translateY + minimapHeight / 2;
+                        break;
+                    case TopCenter:
+                        corner.x = translateX;
+                        corner.y = translateY + minimapHeight / 2;
+                        break;
+                    case Center:
+                        corner.x = translateX;
+                        corner.y = translateY;
+                        break;
                 }
             } catch (Exception e) {
                 MapFrontiers.LOGGER.warn(e.getMessage(), e);
@@ -336,25 +477,25 @@ public class ConfigData implements me.shedaniel.autoconfig.ConfigData {
         MiniMap minimap = UIManager.INSTANCE.getMiniMap();
 
         switch (minimap.getCurrentMinimapProperties().position.get()) {
-        case TopRight:
-            origin.x = hudWidth;
-            break;
-        case BottomRight:
-            origin.x = hudWidth;
-            origin.y = hudHeight;
-            break;
-        case BottomLeft:
-            origin.y = hudHeight;
-            break;
-        case TopLeft:
-            break;
-        case TopCenter:
-            origin.x = hudWidth / 2;
-            break;
-        case Center:
-            origin.x = hudWidth / 2;
-            origin.y = hudHeight / 2;
-            break;
+            case TopRight:
+                origin.x = hudWidth;
+                break;
+            case BottomRight:
+                origin.x = hudWidth;
+                origin.y = hudHeight;
+                break;
+            case BottomLeft:
+                origin.y = hudHeight;
+                break;
+            case TopLeft:
+                break;
+            case TopCenter:
+                origin.x = hudWidth / 2;
+                break;
+            case Center:
+                origin.x = hudWidth / 2;
+                origin.y = hudHeight / 2;
+                break;
         }
 
         return origin;
