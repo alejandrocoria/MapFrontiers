@@ -506,7 +506,7 @@ public class FrontierOverlay extends FrontierData {
             int height = 40 * scale;
             float zLevel = 0.f;
             float u1 = sprite.getU0();
-            float u2 = sprite.getU0() + 22.f / 512.f;
+            float u2 = sprite.getU0() + 22.f / 1024.f;
             float v1 = sprite.getV0() + 1.f / 512.f;
             float v2 = sprite.getV0() + 41.f / 512.f;
             buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
