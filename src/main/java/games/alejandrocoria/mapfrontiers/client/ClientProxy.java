@@ -10,8 +10,6 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.util.BlockPosHelper;
 import journeymap.client.api.IClientAPI;
-import me.shedaniel.autoconfig.AutoConfig;
-import me.shedaniel.autoconfig.serializer.Toml4jConfigSerializer;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -34,6 +32,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BannerItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.api.ModLoadingContext;
+import net.minecraftforge.fml.config.ModConfig;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.glfw.GLFW;
 
@@ -65,7 +65,8 @@ public class ClientProxy implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        AutoConfig.register(ConfigData.class, Toml4jConfigSerializer::new);
+        ModLoadingContext.registerConfig(MapFrontiers.MODID, ModConfig.Type.CLIENT, ConfigData.CLIENT_SPEC);
+        ConfigData.bakeConfig();
         PacketHandler.registerClientReceivers();
 
         openSettingsKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
@@ -266,7 +267,7 @@ public class ClientProxy implements ClientModInitializer {
     }
 
     public static void configUpdated() {
-        AutoConfig.getConfigHolder(ConfigData.class).save();
+        ConfigData.save();
 
         if (frontiersOverlayManager != null) {
             frontiersOverlayManager.updateAllOverlays(true);
