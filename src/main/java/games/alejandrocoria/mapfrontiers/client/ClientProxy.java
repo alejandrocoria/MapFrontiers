@@ -215,7 +215,7 @@ public class ClientProxy {
         }
 
         if (personalFrontiersOverlayManager == null) {
-            personalFrontiersOverlayManager = new FrontiersOverlayManager(jmAPI, false);
+            personalFrontiersOverlayManager = new FrontiersOverlayManager(jmAPI, true);
         }
     }
 
