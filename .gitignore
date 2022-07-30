@@ -1,10 +1,6 @@
 bin/
 build/
-!run
-run/*
-!run/config
-run/config/*
-!run/config/fabric_loader_dependencies.json
+run/
 .classpath
 .project
 *.svg
@@ -15,3 +11,4 @@ run/config/*
 build.bat
 logs/
 .idea/
+run-server/
