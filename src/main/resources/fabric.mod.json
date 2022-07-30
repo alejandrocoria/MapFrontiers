@@ -37,9 +37,9 @@
   "depends": {
     "fabricloader": ">=0.14.8",
     "fabric": "*",
-    "minecraft": "~1.19",
+    "minecraft": "~1.19.1",
     "java": ">=17",
     "journeymap": "*",
-    "forgeconfigapiport": ">=4.0.0"
+    "forgeconfigapiport": ">=4.1.2"
   }
 }
