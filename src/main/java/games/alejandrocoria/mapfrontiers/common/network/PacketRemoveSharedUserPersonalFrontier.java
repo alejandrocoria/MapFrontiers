@@ -97,6 +97,7 @@ public class PacketRemoveSharedUserPersonalFrontier {
                 }
             }
         });
+
         context.setPacketHandled(true);
     }
 }

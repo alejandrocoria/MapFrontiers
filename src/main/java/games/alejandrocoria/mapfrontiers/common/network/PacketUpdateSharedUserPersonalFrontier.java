@@ -72,6 +72,7 @@ public class PacketUpdateSharedUserPersonalFrontier {
                 }
             }
         });
+
         context.setPacketHandled(true);
     }
 }

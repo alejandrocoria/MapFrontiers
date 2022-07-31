@@ -65,35 +65,37 @@ public class PacketPersonalFrontierShared {
 
     @OnlyIn(Dist.CLIENT)
     private static void handleClient(PacketPersonalFrontierShared message, NetworkEvent.Context ctx) {
-        String frontierName;
-        if (message.name1.isEmpty() && message.name2.isEmpty()) {
-            frontierName = "Unnamed Frontier";
-        } else if (message.name1.isEmpty()) {
-            frontierName = message.name2;
-        } else if (message.name2.isEmpty()) {
-            frontierName = message.name1;
-        } else {
-            frontierName = message.name1 + " " + message.name2;
-        }
+        ctx.enqueueWork(() -> {
+            String frontierName;
+            if (message.name1.isEmpty() && message.name2.isEmpty()) {
+                frontierName = "Unnamed Frontier";
+            } else if (message.name1.isEmpty()) {
+                frontierName = message.name2;
+            } else if (message.name2.isEmpty()) {
+                frontierName = message.name1;
+            } else {
+                frontierName = message.name1 + " " + message.name2;
+            }
 
-        TextComponent button = new TextComponent(frontierName);
-        button.withStyle(style -> style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                new TextComponent("Click to accept or use command /mfaccept " + message.shareMessageID))));
-        button.withStyle(style -> style.withBold(true));
-        button.withStyle(style -> style
-                .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mapfrontiersaccept " + message.shareMessageID)));
+            TextComponent button = new TextComponent(frontierName);
+            button.withStyle(style -> style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                    new TextComponent("Click to accept or use command /mfaccept " + message.shareMessageID))));
+            button.withStyle(style -> style.withBold(true));
+            button.withStyle(style -> style
+                    .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mapfrontiersaccept " + message.shareMessageID)));
 
-        TextComponent text = new TextComponent(userToString(message.playerSharing) + " ");
-        if (message.playerSharing.equals(message.owner)) {
-            text.append("want to share a frontier with you: ");
-        } else {
-            text.append("want to share a frontier from " + userToString(message.owner) + " with you: ");
-        }
+            TextComponent text = new TextComponent(userToString(message.playerSharing) + " ");
+            if (message.playerSharing.equals(message.owner)) {
+                text.append("want to share a frontier with you: ");
+            } else {
+                text.append("want to share a frontier from " + userToString(message.owner) + " with you: ");
+            }
 
-        text.append(button);
+            text.append(button);
 
-        LocalPlayer player = Minecraft.getInstance().player;
-        player.sendMessage(text, message.owner.uuid);
+            LocalPlayer player = Minecraft.getInstance().player;
+            player.sendMessage(text, message.owner.uuid);
+        });
 
         ctx.setPacketHandled(true);
     }

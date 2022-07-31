@@ -115,6 +115,7 @@ public class PacketNewFrontier {
             }
             PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
         });
+
         context.setPacketHandled(true);
     }
 }
