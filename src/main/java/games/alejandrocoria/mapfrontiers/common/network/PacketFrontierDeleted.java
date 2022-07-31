@@ -57,11 +57,13 @@ public class PacketFrontierDeleted {
 
     @OnlyIn(Dist.CLIENT)
     private static void handleClient(PacketFrontierDeleted message, NetworkEvent.Context ctx) {
-        boolean deleted = ClientProxy.getFrontiersOverlayManager(message.personal).deleteFrontier(message.dimension,message.frontierID);
+        ctx.enqueueWork(() -> {
+            boolean deleted = ClientProxy.getFrontiersOverlayManager(message.personal).deleteFrontier(message.dimension, message.frontierID);
 
-        if (deleted) {
-            MinecraftForge.EVENT_BUS.post(new DeletedFrontierEvent(message.frontierID));
-        }
+            if (deleted) {
+                MinecraftForge.EVENT_BUS.post(new DeletedFrontierEvent(message.frontierID));
+            }
+        });
 
         ctx.setPacketHandled(true);
     }

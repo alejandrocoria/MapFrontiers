@@ -41,10 +41,12 @@ public class PacketSettingsProfile {
 
     @OnlyIn(Dist.CLIENT)
     private static void handleClient(PacketSettingsProfile message, NetworkEvent.Context ctx) {
-        SettingsProfile currentProfile = ClientProxy.getSettingsProfile();
-        if (currentProfile == null || !currentProfile.equals(message.profile)) {
-            MinecraftForge.EVENT_BUS.post(new UpdatedSettingsProfileEvent(message.profile));
-        }
+        ctx.enqueueWork(() -> {
+            SettingsProfile currentProfile = ClientProxy.getSettingsProfile();
+            if (currentProfile == null || !currentProfile.equals(message.profile)) {
+                MinecraftForge.EVENT_BUS.post(new UpdatedSettingsProfileEvent(message.profile));
+            }
+        });
 
         ctx.setPacketHandled(true);
     }

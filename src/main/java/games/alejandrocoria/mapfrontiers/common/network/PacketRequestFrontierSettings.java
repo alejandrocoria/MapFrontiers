@@ -49,6 +49,7 @@ public class PacketRequestFrontierSettings {
                         player);
             }
         });
+
         context.setPacketHandled(true);
     }
 }
