@@ -67,15 +67,19 @@ public class PacketFrontierSettings {
                             player);
                 }
             });
+
             context.setPacketHandled(true);
         }
     }
 
     @OnlyIn(Dist.CLIENT)
     private static void handleClient(PacketFrontierSettings message, NetworkEvent.Context ctx) {
-        if (Minecraft.getInstance().screen instanceof GuiFrontierSettings) {
-            ((GuiFrontierSettings) Minecraft.getInstance().screen).setFrontierSettings(message.settings);
-        }
+        ctx.enqueueWork(() -> {
+            if (Minecraft.getInstance().screen instanceof GuiFrontierSettings) {
+                ((GuiFrontierSettings) Minecraft.getInstance().screen).setFrontierSettings(message.settings);
+            }
+        });
+
         ctx.setPacketHandled(true);
     }
 }

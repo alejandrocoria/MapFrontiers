@@ -89,6 +89,7 @@ public class PacketSharePersonalFrontier {
                 }
             }
         });
+
         context.setPacketHandled(true);
     }
 }

@@ -92,6 +92,7 @@ public class PacketDeleteFrontier {
                         player);
             }
         });
+
         context.setPacketHandled(true);
     }
 }

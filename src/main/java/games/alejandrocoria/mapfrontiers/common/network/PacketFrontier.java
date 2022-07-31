@@ -50,12 +50,13 @@ public class PacketFrontier {
 
     @OnlyIn(Dist.CLIENT)
     private static void handleClient(PacketFrontier message, NetworkEvent.Context ctx) {
-        FrontierOverlay frontierOverlay = ClientProxy.getFrontiersOverlayManager(message.frontier.getPersonal())
-                .addFrontier(message.frontier);
+        ctx.enqueueWork(() -> {
+            FrontierOverlay frontierOverlay = ClientProxy.getFrontiersOverlayManager(message.frontier.getPersonal()).addFrontier(message.frontier);
 
-        if (frontierOverlay != null) {
-            MinecraftForge.EVENT_BUS.post(new NewFrontierEvent(frontierOverlay, message.playerID));
-        }
+            if (frontierOverlay != null) {
+                MinecraftForge.EVENT_BUS.post(new NewFrontierEvent(frontierOverlay, message.playerID));
+            }
+        });
 
         ctx.setPacketHandled(true);
     }

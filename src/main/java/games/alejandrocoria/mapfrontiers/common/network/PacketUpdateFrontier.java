@@ -90,6 +90,7 @@ public class PacketUpdateFrontier {
                         player);
             }
         });
+
         context.setPacketHandled(true);
     }
 }
