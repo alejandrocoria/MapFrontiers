@@ -15,3 +15,8 @@ run/config/*
 build.bat
 logs/
 .idea/
+!run-server
+run-server/*
+!run-server/config
+run-server/config/*
+!run-server/config/fabric_loader_dependencies.json
