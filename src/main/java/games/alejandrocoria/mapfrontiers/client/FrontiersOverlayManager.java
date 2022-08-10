@@ -199,8 +199,7 @@ public class FrontiersOverlayManager {
         if (frontier != null) {
             BlockPos pos = frontier.getSelectedVertex();
             if (pos != null) {
-                marker = new MarkerOverlay(MapFrontiers.MODID, "selected_vertex_" + dimension.location(), pos,
-                        markerDotSelected);
+                marker = new MarkerOverlay(MapFrontiers.MODID, "selected_vertex_" + dimension.location(), pos, markerDotSelected);
                 marker.setDimension(dimension);
                 marker.setDisplayOrder(101);
 

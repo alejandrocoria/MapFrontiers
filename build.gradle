@@ -2,14 +2,14 @@ plugins {
     id 'net.minecraftforge.gradle' version '5.1.+'
 }
 
-version = '1.19-2.3.4'
+version = '1.19.1-2.3.4-beta1'
 group = 'games.alejandrocoria.mapfrontiers' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'MapFrontiers'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
 minecraft {
-    mappings channel: 'official', version: '1.19'
+    mappings channel: 'official', version: '1.19.1'
 
     // Default run configurations.
     // These can be tweaked, removed, or duplicated as needed.
@@ -101,9 +101,9 @@ dependencies {
     // Specify the version of Minecraft to use, If this is any group other then 'net.minecraft' it is assumed
     // that the dep is a ForgeGradle 'patcher' dependency. And it's patches will be applied.
     // The userdev artifact is a special name and will get all sorts of transformations applied to it.
-    minecraft 'net.minecraftforge:forge:1.19-41.1.0'
+    minecraft 'net.minecraftforge:forge:1.19.1-42.0.8'
 
-    implementation fg.deobf("curse.maven:journeymap-32274:3902437")
+    implementation fg.deobf("curse.maven:journeymap-32274:3927230")
 }
 
 jar {
