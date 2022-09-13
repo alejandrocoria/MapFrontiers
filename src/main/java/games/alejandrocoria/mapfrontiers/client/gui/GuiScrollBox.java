@@ -120,6 +120,10 @@ public class GuiScrollBox extends AbstractWidget {
     }
 
     public void removeAll() {
+        for (ScrollElement element : elements) {
+            element.delete();
+        }
+
         elements.clear();
         selected = -1;
         scrollBarGrabbed = false;

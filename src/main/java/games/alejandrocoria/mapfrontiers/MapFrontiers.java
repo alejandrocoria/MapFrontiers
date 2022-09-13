@@ -5,7 +5,7 @@ import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.command.CommandAccept;
-import games.alejandrocoria.mapfrontiers.common.network.PacketFrontier;
+import games.alejandrocoria.mapfrontiers.common.network.PacketFrontiers;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -92,23 +92,18 @@ public class MapFrontiers {
 
         ServerPlayer player = (ServerPlayer) event.getEntity();
 
+        PacketHandler.sendTo(new PacketSettingsProfile(frontiersManager.getSettings().getProfile(event.getEntity())), player);
+
+        PacketFrontiers packetFrontiers = new PacketFrontiers();
         for (ArrayList<FrontierData> frontiers : frontiersManager.getAllGlobalFrontiers().values()) {
-            for (FrontierData frontier : frontiers) {
-                PacketHandler.sendTo(new PacketFrontier(frontier), player);
-            }
+            packetFrontiers.addGlobalFrontiers(frontiers);
         }
 
         for (ArrayList<FrontierData> frontiers : frontiersManager.getAllPersonalFrontiers(new SettingsUser(event.getEntity())).values()) {
-            for (FrontierData frontier : frontiers) {
-                PacketHandler.sendTo(new PacketFrontier(frontier), player);
-            }
+            packetFrontiers.addPersonalFrontiers(frontiers);
         }
 
-        PacketHandler.sendTo(new PacketSettingsProfile(frontiersManager.getSettings().getProfile(event.getEntity())), player);
-    }
-
-    public static FrontiersManager getFrontiersManager() {
-        return frontiersManager;
+        PacketHandler.sendTo(packetFrontiers, player);
     }
 
     public static boolean isOPorHost(Player player) {

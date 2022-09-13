@@ -88,7 +88,10 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
 
     @Override
     public void init() {
-        PacketHandler.INSTANCE.sendToServer(new PacketRequestFrontierSettings());
+        if (ClientProxy.isModOnServer()) {
+            PacketHandler.INSTANCE.sendToServer(new PacketRequestFrontierSettings());
+        }
+
         minecraft.keyboardHandler.setSendRepeatsToGui(true);
 
         scaleFactor = ScreenHelper.getScaleFactorThatFit(this, 696, 326);
@@ -98,7 +101,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         Component title = Component.translatable("mapfrontiers.title_settings");
         addRenderableOnly(new GuiSimpleLabel(font, actualWidth / 2, 8, GuiSimpleLabel.Align.Center, title, GuiColors.WHITE));
 
-        canEditGroups = ClientProxy.getSettingsProfile().updateSettings == SettingsProfile.State.Enabled;
+        canEditGroups = ClientProxy.isModOnServer() && ClientProxy.getSettingsProfile().updateSettings == SettingsProfile.State.Enabled;
 
         if (tabSelected == null) {
             tabSelected = ClientProxy.getLastSettingsTab();
@@ -512,16 +515,16 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
             }
         } else if (tabSelected == Tab.Actions) {
             int x = actualWidth / 2 - 55;
-            labels.add(new GuiSimpleLabel(font, x, 54, GuiSimpleLabel.Align.Center,
-                    Component.translatable("mapfrontiers.create_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
-            labels.add(new GuiSimpleLabel(font, x + 60, 54, GuiSimpleLabel.Align.Center,
-                    Component.translatable("mapfrontiers.delete_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
-            labels.add(new GuiSimpleLabel(font, x + 120, 54, GuiSimpleLabel.Align.Center,
-                    Component.translatable("mapfrontiers.update_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
-            labels.add(new GuiSimpleLabel(font, x + 180, 54, GuiSimpleLabel.Align.Center,
+            labels.add(new GuiSimpleLabel(font, x, 47, GuiSimpleLabel.Align.Center,
+                    Component.translatable("mapfrontiers.create_global_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+            labels.add(new GuiSimpleLabel(font, x + 60, 47, GuiSimpleLabel.Align.Center,
+                    Component.translatable("mapfrontiers.delete_global_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+            labels.add(new GuiSimpleLabel(font, x + 120, 47, GuiSimpleLabel.Align.Center,
+                    Component.translatable("mapfrontiers.update_global_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+            labels.add(new GuiSimpleLabel(font, x + 180, 53, GuiSimpleLabel.Align.Center,
                     Component.translatable("mapfrontiers.update_settings"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
-            labels.add(new GuiSimpleLabel(font, x + 240, 54, GuiSimpleLabel.Align.Center,
-                    Component.translatable("mapfrontiers.personal_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
+            labels.add(new GuiSimpleLabel(font, x + 240, 47, GuiSimpleLabel.Align.Center,
+                    Component.translatable("mapfrontiers.share_personal_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
         }
 
         for (GuiSimpleLabel label : labels) {

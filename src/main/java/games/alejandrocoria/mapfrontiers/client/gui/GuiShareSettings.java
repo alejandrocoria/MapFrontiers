@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiScrollBox.ScrollElement;
@@ -28,6 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -58,6 +60,10 @@ public class GuiShareSettings extends Screen
 
     @Override
     public void init() {
+        if (!ClientProxy.isModOnServer()) {
+            ForgeHooksClient.popGuiLayer(minecraft);
+        }
+
         minecraft.keyboardHandler.setSendRepeatsToGui(true);
 
         Component title = Component.translatable("mapfrontiers.title_share_settings");
@@ -303,6 +309,9 @@ public class GuiShareSettings extends Screen
                 updateUsers();
                 updateButtonsVisibility();
             }
+
+            frontier.setModified(new Date());
+            MinecraftForge.EVENT_BUS.post(new UpdatedFrontierEvent(frontier, -1));
         }
 
         PacketHandler.INSTANCE.sendToServer(new PacketUpdateSharedUserPersonalFrontier(frontier.getId(), user));

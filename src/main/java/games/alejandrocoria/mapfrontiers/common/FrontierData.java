@@ -386,6 +386,15 @@ public class FrontierData {
         changes.add(Change.Shared);
     }
 
+    public void removeAllUserShared() {
+        if (usersShared == null) {
+            return;
+        }
+
+        usersShared = null;
+        changes.add(Change.Shared);
+    }
+
     public void setUsersShared(List<SettingsUserShared> usersShared) {
         this.usersShared = usersShared;
         changes.add(Change.Shared);
