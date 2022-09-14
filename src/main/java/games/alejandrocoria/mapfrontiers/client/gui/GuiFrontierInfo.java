@@ -11,7 +11,6 @@ import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.display.Context;
