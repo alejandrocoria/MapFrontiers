@@ -44,38 +44,35 @@ public class PacketDeleteFrontier {
 
             if (frontier != null) {
                 if (frontier.getPersonal()) {
-                    if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier, playerUser,
-                            MapFrontiers.isOPorHost(player), frontier.getOwner())) {
-                        if (frontier.getOwner().equals(playerUser)) {
-                            boolean deleted = FrontiersManager.instance.deletePersonalFrontier(frontier.getOwner(),
-                                    frontier.getDimension(), frontier.getId());
-                            if (deleted) {
-                                if (frontier.getUsersShared() != null) {
-                                    for (SettingsUserShared userShared : frontier.getUsersShared()) {
-                                        FrontiersManager.instance.deletePersonalFrontier(userShared.getUser(),
-                                                frontier.getDimension(), frontier.getId());
-                                    }
+                    if (frontier.getOwner().equals(playerUser)) {
+                        boolean deleted = FrontiersManager.instance.deletePersonalFrontier(frontier.getOwner(),
+                                frontier.getDimension(), frontier.getId());
+                        if (deleted) {
+                            if (frontier.getUsersShared() != null) {
+                                for (SettingsUserShared userShared : frontier.getUsersShared()) {
+                                    FrontiersManager.instance.deletePersonalFrontier(userShared.getUser(),
+                                            frontier.getDimension(), frontier.getId());
                                 }
-                                PacketHandler.sendToUsersWithAccess(new PacketFrontierDeleted(frontier.getDimension(),
-                                        frontier.getId(), frontier.getPersonal(), player.getId()), frontier);
                             }
-                        } else {
-                            frontier.removeUserShared(playerUser);
-                            FrontiersManager.instance.deletePersonalFrontier(playerUser, frontier.getDimension(),
-                                    frontier.getId());
-
-                            PacketHandler.sendTo(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(),
-                                    frontier.getPersonal(), player.getId()), player);
-                            PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier, player.getId()),
-                                    frontier);
-
-                            frontier.removeChange(FrontierData.Change.Shared);
+                            PacketHandler.sendToUsersWithAccess(new PacketFrontierDeleted(frontier.getDimension(),
+                                    frontier.getId(), frontier.getPersonal(), player.getId()), frontier);
                         }
+                    } else {
+                        frontier.removeUserShared(playerUser);
+                        FrontiersManager.instance.deletePersonalFrontier(playerUser, frontier.getDimension(),
+                                frontier.getId());
 
-                        return;
+                        PacketHandler.sendTo(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(),
+                                frontier.getPersonal(), player.getId()), player);
+                        PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier, player.getId()),
+                                frontier);
+
+                        frontier.removeChange(FrontierData.Change.Shared);
                     }
+
+                    return;
                 } else {
-                    if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.DeleteFrontier, playerUser,
+                    if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.DeleteGlobalFrontier, playerUser,
                             MapFrontiers.isOPorHost(player), frontier.getOwner())) {
                         boolean deleted = FrontiersManager.instance.deleteGlobalFrontier(frontier.getDimension(),
                                 frontier.getId());

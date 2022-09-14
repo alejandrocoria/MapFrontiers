@@ -56,26 +56,21 @@ public class PacketUpdateFrontier {
                 message.frontier.removeChange(FrontierData.Change.Shared);
 
                 if (message.frontier.getPersonal()) {
-                    if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier, playerUser,
-                            MapFrontiers.isOPorHost(player), message.frontier.getOwner())) {
-                        if (currentFrontier.checkActionUserShared(playerUser, SettingsUserShared.Action.UpdateFrontier)) {
-                            boolean updated = FrontiersManager.instance.updatePersonalFrontier(message.frontier.getOwner(),
-                                    message.frontier);
-                            if (updated) {
-                                if (message.frontier.getUsersShared() != null) {
-                                    for (SettingsUserShared userShared : message.frontier.getUsersShared()) {
-                                        FrontiersManager.instance.updatePersonalFrontier(userShared.getUser(), message.frontier);
-                                    }
+                    if (currentFrontier.checkActionUserShared(playerUser, SettingsUserShared.Action.UpdateFrontier)) {
+                        boolean updated = FrontiersManager.instance.updatePersonalFrontier(message.frontier.getOwner(), message.frontier);
+                        if (updated) {
+                            if (message.frontier.getUsersShared() != null) {
+                                for (SettingsUserShared userShared : message.frontier.getUsersShared()) {
+                                    FrontiersManager.instance.updatePersonalFrontier(userShared.getUser(), message.frontier);
                                 }
-                                PacketHandler.sendToUsersWithAccess(
-                                        new PacketFrontierUpdated(message.frontier, player.getId()), message.frontier);
                             }
+                            PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(message.frontier, player.getId()), message.frontier);
                         }
-
-                        return;
                     }
+
+                    return;
                 } else {
-                    if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.UpdateFrontier, playerUser,
+                    if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.UpdateGlobalFrontier, playerUser,
                             MapFrontiers.isOPorHost(player), message.frontier.getOwner())) {
                         boolean updated = FrontiersManager.instance.updateGlobalFrontier(message.frontier);
                         if (updated) {
@@ -86,8 +81,7 @@ public class PacketUpdateFrontier {
                     }
                 }
 
-                PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)),
-                        player);
+                PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
             }
         });
 

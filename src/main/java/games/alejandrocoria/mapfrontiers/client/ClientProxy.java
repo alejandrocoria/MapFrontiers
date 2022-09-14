@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.GuiColors;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierSettings;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiHUD;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
+import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedSettingsProfileEvent;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.util.BlockPosHelper;
@@ -44,6 +45,7 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 @ParametersAreNonnullByDefault
@@ -78,10 +80,6 @@ public class ClientProxy {
     public static void onEvent(KeyInputEvent event) {
         if (openSettingsKey.matches(event.getKey(), event.getScanCode()) && openSettingsKey.isDown()) {
             if (frontiersOverlayManager == null) {
-                return;
-            }
-
-            if (settingsProfile == null) {
                 return;
             }
 
@@ -202,6 +200,8 @@ public class ClientProxy {
             personalFrontiersOverlayManager = null;
         }
 
+        settingsProfile = null;
+
         if (guiHUD != null) {
             MinecraftForge.EVENT_BUS.unregister(guiHUD);
             guiHUD = null;
@@ -220,6 +220,12 @@ public class ClientProxy {
         if (personalFrontiersOverlayManager == null) {
             personalFrontiersOverlayManager = new FrontiersOverlayManager(jmAPI, true);
         }
+    }
+
+    public static void setFrontiersFromServer(List<FrontierData> globalFrontiers, List<FrontierData> personalFrontiers) {
+        initializeManagers();
+        frontiersOverlayManager.setFrontiersFromServer(globalFrontiers);
+        personalFrontiersOverlayManager.setFrontiersFromServer(personalFrontiers);
     }
 
     public static ItemStack getHeldBanner() {
@@ -274,5 +280,9 @@ public class ClientProxy {
         if (guiHUD != null) {
             guiHUD.configUpdated(Minecraft.getInstance().getWindow());
         }
+    }
+
+    public static boolean isModOnServer() {
+        return settingsProfile != null;
     }
 }

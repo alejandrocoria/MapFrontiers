@@ -60,7 +60,7 @@ public class PacketRemoveSharedUserPersonalFrontier {
             FrontierData currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontierID);
 
             if (currentFrontier != null && currentFrontier.getPersonal()) {
-                if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier, playerUser,
+                if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.SharePersonalFrontier, playerUser,
                         MapFrontiers.isOPorHost(player), currentFrontier.getOwner())) {
                     SettingsUserShared userShared = currentFrontier.getUserShared(message.targetUser);
 
