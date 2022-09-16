@@ -53,7 +53,7 @@ public class PacketUpdateSharedUserPersonalFrontier {
             FrontierData currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontierID);
 
             if (currentFrontier != null && currentFrontier.getPersonal()) {
-                if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier, playerUser,
+                if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.SharePersonalFrontier, playerUser,
                         MapFrontiers.isOPorHost(player), currentFrontier.getOwner())) {
                     SettingsUserShared currentUserShared = currentFrontier.getUserShared(message.userShared.getUser());
 
@@ -64,11 +64,9 @@ public class PacketUpdateSharedUserPersonalFrontier {
                     currentUserShared.setActions(message.userShared.getActions());
                     currentFrontier.addChange(FrontierData.Change.Shared);
 
-                    PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(currentFrontier, player.getId()),
-                            currentFrontier);
+                    PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(currentFrontier, player.getId()), currentFrontier);
                 } else {
-                    PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)),
-                            player);
+                    PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
                 }
             }
         });

@@ -35,11 +35,11 @@ public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
         this.group = group;
         this.responder = responder;
         this.ownersGroup = ownersGroup;
-        createFrontier = group.hasAction(FrontierSettings.Action.CreateFrontier);
-        deleteFrontier = group.hasAction(FrontierSettings.Action.DeleteFrontier);
-        updateFrontier = group.hasAction(FrontierSettings.Action.UpdateFrontier);
+        createFrontier = group.hasAction(FrontierSettings.Action.CreateGlobalFrontier);
+        deleteFrontier = group.hasAction(FrontierSettings.Action.DeleteGlobalFrontier);
+        updateFrontier = group.hasAction(FrontierSettings.Action.UpdateGlobalFrontier);
         updateSettings = group.hasAction(FrontierSettings.Action.UpdateSettings);
-        personalFrontier = group.hasAction(FrontierSettings.Action.PersonalFrontier);
+        personalFrontier = group.hasAction(FrontierSettings.Action.SharePersonalFrontier);
     }
 
     @Override
@@ -73,19 +73,19 @@ public class GuiGroupActionElement extends GuiScrollBox.ScrollElement {
         if (visible && isHovered && responder != null) {
             if (!ownersGroup && mouseX >= x + 130 && mouseX <= x + 190) {
                 createFrontier = !createFrontier;
-                responder.actionChanged(group, FrontierSettings.Action.CreateFrontier, createFrontier);
+                responder.actionChanged(group, FrontierSettings.Action.CreateGlobalFrontier, createFrontier);
             } else if (mouseX >= x + 190 && mouseX <= x + 250) {
                 deleteFrontier = !deleteFrontier;
-                responder.actionChanged(group, FrontierSettings.Action.DeleteFrontier, deleteFrontier);
+                responder.actionChanged(group, FrontierSettings.Action.DeleteGlobalFrontier, deleteFrontier);
             } else if (mouseX >= x + 250 && mouseX <= x + 310) {
                 updateFrontier = !updateFrontier;
-                responder.actionChanged(group, FrontierSettings.Action.UpdateFrontier, updateFrontier);
+                responder.actionChanged(group, FrontierSettings.Action.UpdateGlobalFrontier, updateFrontier);
             } else if (!ownersGroup && mouseX >= x + 310 && mouseX <= x + 370) {
                 updateSettings = !updateSettings;
                 responder.actionChanged(group, FrontierSettings.Action.UpdateSettings, updateSettings);
             } else if (!ownersGroup && mouseX >= x + 370 && mouseX <= x + 430) {
                 personalFrontier = !personalFrontier;
-                responder.actionChanged(group, FrontierSettings.Action.PersonalFrontier, personalFrontier);
+                responder.actionChanged(group, FrontierSettings.Action.SharePersonalFrontier, personalFrontier);
             }
         }
 

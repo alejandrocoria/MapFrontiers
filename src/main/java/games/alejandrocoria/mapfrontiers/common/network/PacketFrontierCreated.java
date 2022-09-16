@@ -15,41 +15,41 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.function.Supplier;
 
 @ParametersAreNonnullByDefault
-public class PacketFrontier {
+public class PacketFrontierCreated {
     private final FrontierData frontier;
     private int playerID = -1;
 
-    public PacketFrontier() {
+    public PacketFrontierCreated() {
         frontier = new FrontierData();
     }
 
-    public PacketFrontier(FrontierData frontier) {
+    public PacketFrontierCreated(FrontierData frontier) {
         this.frontier = frontier;
     }
 
-    public PacketFrontier(FrontierData frontier, int playerID) {
+    public PacketFrontierCreated(FrontierData frontier, int playerID) {
         this.frontier = frontier;
         this.playerID = playerID;
     }
 
-    public static PacketFrontier fromBytes(PacketBuffer buf) {
-        PacketFrontier packet = new PacketFrontier();
+    public static PacketFrontierCreated fromBytes(PacketBuffer buf) {
+        PacketFrontierCreated packet = new PacketFrontierCreated();
         packet.frontier.fromBytes(buf);
         packet.playerID = buf.readInt();
         return packet;
     }
 
-    public static void toBytes(PacketFrontier packet, PacketBuffer buf) {
+    public static void toBytes(PacketFrontierCreated packet, PacketBuffer buf) {
         packet.frontier.toBytes(buf, false);
         buf.writeInt(packet.playerID);
     }
 
-    public static void handle(PacketFrontier message, Supplier<NetworkEvent.Context> ctx) {
+    public static void handle(PacketFrontierCreated message, Supplier<NetworkEvent.Context> ctx) {
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> handleClient(message, ctx.get()));
     }
 
     @OnlyIn(Dist.CLIENT)
-    private static void handleClient(PacketFrontier message, NetworkEvent.Context ctx) {
+    private static void handleClient(PacketFrontierCreated message, NetworkEvent.Context ctx) {
         ctx.enqueueWork(() -> {
             FrontierOverlay frontierOverlay = ClientProxy.getFrontiersOverlayManager(message.frontier.getPersonal()).addFrontier(message.frontier);
 

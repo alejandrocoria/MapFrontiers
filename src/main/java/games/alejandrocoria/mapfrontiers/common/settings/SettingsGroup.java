@@ -79,7 +79,7 @@ public class SettingsGroup {
         return special;
     }
 
-    public void readFromNBT(CompoundNBT nbt) {
+    public void readFromNBT(CompoundNBT nbt, int version) {
         if (!special) {
             name = nbt.getString("name");
             users.clear();
@@ -99,13 +99,26 @@ public class SettingsGroup {
             List<FrontierSettings.Action> availableActions = FrontierSettings.getAvailableActions(name);
 
             try {
-                FrontierSettings.Action action = FrontierSettings.Action.valueOf(actionTag);
+                FrontierSettings.Action action;
+                if (version > 3) {
+                    action = FrontierSettings.Action.valueOf(actionTag);
+                } else {
+                    action = FrontierSettings.ActionV3.valueOf(actionTag).toAction();
+                }
+
                 if (!availableActions.contains(action)) {
                     throw new IllegalArgumentException();
                 }
                 actions.add(action);
             } catch (IllegalArgumentException e) {
-                String availableActionsString = StringHelper.enumValuesToString(availableActions);
+                String availableActionsString;
+
+                if (version > 3) {
+                    availableActionsString = StringHelper.enumValuesToString(availableActions);
+                } else {
+                    availableActionsString = StringHelper.enumValuesToString(FrontierSettings.getAvailableActionsV3(name));
+                }
+
                 MapFrontiers.LOGGER.warn(String.format("Unknown action in group %1$s. Found: \"%2$s\". Expected: %3$s", name,
                         actionTag, availableActionsString));
             }

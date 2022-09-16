@@ -5,21 +5,18 @@ import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.command.CommandAccept;
-import games.alejandrocoria.mapfrontiers.common.network.PacketFrontier;
+import games.alejandrocoria.mapfrontiers.common.network.PacketFrontiers;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.item.Item;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.management.OpEntry;
-import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
@@ -58,17 +55,6 @@ public class MapFrontiers {
         LOGGER.info("commonSetup done");
     }
 
-    @SubscribeEvent
-    public static void onMissingMappingEventItems(RegistryEvent.MissingMappings<Item> event) {
-        for (RegistryEvent.MissingMappings.Mapping<Item> mapping : event.getAllMappings()) {
-            if (mapping.key.equals(new ResourceLocation(MapFrontiers.MODID, "frontier_book"))) {
-                mapping.ignore();
-            } else if (mapping.key.equals(new ResourceLocation(MapFrontiers.MODID, "personal_frontier_book"))) {
-                mapping.ignore();
-            }
-        }
-    }
-
     @OnlyIn(Dist.CLIENT)
     public static void addListenerClientSetup() {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(ClientProxy::clientSetup);
@@ -104,25 +90,20 @@ public class MapFrontiers {
 
         frontiersManager.ensureOwners();
 
+        ServerPlayerEntity player = (ServerPlayerEntity) event.getEntity();
+
+        PacketHandler.sendTo(new PacketSettingsProfile(frontiersManager.getSettings().getProfile(event.getPlayer())), player);
+
+        PacketFrontiers packetFrontiers = new PacketFrontiers();
         for (ArrayList<FrontierData> frontiers : frontiersManager.getAllGlobalFrontiers().values()) {
-            for (FrontierData frontier : frontiers) {
-                PacketHandler.sendTo(new PacketFrontier(frontier), (ServerPlayerEntity) event.getPlayer());
-            }
+            packetFrontiers.addGlobalFrontiers(frontiers);
         }
 
-        for (ArrayList<FrontierData> frontiers : frontiersManager.getAllPersonalFrontiers(new SettingsUser(event.getPlayer()))
-                .values()) {
-            for (FrontierData frontier : frontiers) {
-                PacketHandler.sendTo(new PacketFrontier(frontier), (ServerPlayerEntity) event.getPlayer());
-            }
+        for (ArrayList<FrontierData> frontiers : frontiersManager.getAllPersonalFrontiers(new SettingsUser(event.getPlayer())).values()) {
+            packetFrontiers.addPersonalFrontiers(frontiers);
         }
 
-        PacketHandler.sendTo(new PacketSettingsProfile(frontiersManager.getSettings().getProfile(event.getPlayer())),
-                (ServerPlayerEntity) event.getPlayer());
-    }
-
-    public static FrontiersManager getFrontiersManager() {
-        return frontiersManager;
+        PacketHandler.sendTo(packetFrontiers, player);
     }
 
     public static boolean isOPorHost(PlayerEntity player) {

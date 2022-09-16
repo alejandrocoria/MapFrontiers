@@ -119,6 +119,10 @@ public class GuiScrollBox extends Widget {
     }
 
     public void removeAll() {
+        for (ScrollElement element : elements) {
+            element.delete();
+        }
+
         elements.clear();
         selected = -1;
         scrollBarGrabbed = false;

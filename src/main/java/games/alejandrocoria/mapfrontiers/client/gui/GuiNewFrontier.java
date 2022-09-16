@@ -73,12 +73,7 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
         buttonFrontierType.addOption(ConfigData.getTranslatedEnum(ConfigData.FilterFrontierType.Personal));
         buttonFrontierType.setSelected(0);
 
-        SettingsProfile profile = ClientProxy.getSettingsProfile();
-
-        if (profile.personalFrontier != SettingsProfile.State.Enabled) {
-            buttonFrontierType.setSelected(0);
-            buttonFrontierType.active = false;
-        } else if (profile.createFrontier != SettingsProfile.State.Enabled) {
+        if (!ClientProxy.isModOnServer() || ClientProxy.getSettingsProfile().createFrontier != SettingsProfile.State.Enabled) {
             buttonFrontierType.setSelected(1);
             buttonFrontierType.active = false;
         }

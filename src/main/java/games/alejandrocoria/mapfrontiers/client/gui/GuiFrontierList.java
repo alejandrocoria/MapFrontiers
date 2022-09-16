@@ -368,9 +368,8 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
         SettingsProfile profile = ClientProxy.getSettingsProfile();
         SettingsUser playerUser = new SettingsUser(Minecraft.getInstance().player);
         FrontierData frontier = frontiers.getSelectedElement() == null ? null : ((GuiFrontierListElement) frontiers.getSelectedElement()).getFrontier();
-        SettingsProfile.AvailableActions actions = profile.getAvailableActions(frontier, playerUser);
+        SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontier, playerUser);
 
-        buttonCreate.visible = actions.canCreate;
         buttonInfo.visible = frontiers.getSelectedElement() != null;
         buttonDelete.visible = actions.canDelete;
         buttonVisible.visible = actions.canUpdate;

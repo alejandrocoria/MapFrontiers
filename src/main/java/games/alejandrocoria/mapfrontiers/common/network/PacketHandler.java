@@ -19,14 +19,18 @@ import java.util.Optional;
 public class PacketHandler {
     private static final String PROTOCOL_VERSION = "1";
     public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
-            new ResourceLocation(MapFrontiers.MODID, "main"), () -> PROTOCOL_VERSION, PROTOCOL_VERSION::equals, (s) -> true);
+            new ResourceLocation(MapFrontiers.MODID, "main"), () -> PROTOCOL_VERSION, (s) -> true, (s) -> true);
 
     public static void init() {
         int id = 0;
-        INSTANCE.registerMessage(id++, PacketFrontier.class, PacketFrontier::toBytes, PacketFrontier::fromBytes,
-                PacketFrontier::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-        INSTANCE.registerMessage(id++, PacketNewFrontier.class, PacketNewFrontier::toBytes, PacketNewFrontier::fromBytes,
-                PacketNewFrontier::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        INSTANCE.registerMessage(id++, PacketFrontiers.class, PacketFrontiers::toBytes, PacketFrontiers::fromBytes,
+                PacketFrontiers::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        INSTANCE.registerMessage(id++, PacketFrontierCreated.class, PacketFrontierCreated::toBytes, PacketFrontierCreated::fromBytes,
+                PacketFrontierCreated::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        INSTANCE.registerMessage(id++, PacketPersonalFrontier.class, PacketPersonalFrontier::toBytes, PacketPersonalFrontier::fromBytes,
+                PacketPersonalFrontier::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        INSTANCE.registerMessage(id++, PacketCreateFrontier.class, PacketCreateFrontier::toBytes, PacketCreateFrontier::fromBytes,
+                PacketCreateFrontier::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
         INSTANCE.registerMessage(id++, PacketDeleteFrontier.class, PacketDeleteFrontier::toBytes, PacketDeleteFrontier::fromBytes,
                 PacketDeleteFrontier::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
         INSTANCE.registerMessage(id++, PacketFrontierDeleted.class, PacketFrontierDeleted::toBytes,
