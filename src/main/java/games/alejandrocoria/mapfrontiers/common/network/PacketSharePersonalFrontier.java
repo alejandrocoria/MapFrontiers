@@ -61,7 +61,7 @@ public class PacketSharePersonalFrontier {
                     return;
                 }
 
-                if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier, playerUser,
+                if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.SharePersonalFrontier, playerUser,
                         MapFrontiers.isOPorHost(player), currentFrontier.getOwner())) {
                     if (currentFrontier.checkActionUserShared(playerUser, SettingsUserShared.Action.UpdateSettings)) {
                         int shareMessageID = FrontiersManager.instance.addShareMessage(message.targetUser,

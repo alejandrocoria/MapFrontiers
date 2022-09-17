@@ -15,9 +15,28 @@ import java.util.List;
 @ParametersAreNonnullByDefault
 public class FrontierSettings {
     public enum Action {
-        CreateFrontier, DeleteFrontier, UpdateFrontier, UpdateSettings, PersonalFrontier;
+        CreateGlobalFrontier, DeleteGlobalFrontier, UpdateGlobalFrontier, UpdateSettings, SharePersonalFrontier;
 
         public final static Action[] valuesArray = values();
+    }
+
+    public enum ActionV3 {
+        CreateFrontier(Action.CreateGlobalFrontier),
+        DeleteFrontier(Action.DeleteGlobalFrontier),
+        UpdateFrontier(Action.UpdateGlobalFrontier),
+        UpdateSettings(Action.UpdateSettings),
+        PersonalFrontier(Action.SharePersonalFrontier);
+
+        public final static ActionV3[] valuesArray = values();
+
+        private final Action action;
+        ActionV3(Action action) {
+            this.action = action;
+        }
+
+        public Action toAction() {
+            return action;
+        }
     }
 
     private final SettingsGroup OPs;
@@ -26,7 +45,7 @@ public class FrontierSettings {
     private List<SettingsGroup> customGroups;
     private int changeCounter = 1;
 
-    private static final int dataVersion = 3;
+    private static final int dataVersion = 4;
 
     public FrontierSettings() {
         OPs = new SettingsGroup("OPs", true);
@@ -36,15 +55,15 @@ public class FrontierSettings {
     }
 
     public void resetToDefault() {
-        OPs.addAction(Action.CreateFrontier);
-        OPs.addAction(Action.DeleteFrontier);
-        OPs.addAction(Action.UpdateFrontier);
+        OPs.addAction(Action.CreateGlobalFrontier);
+        OPs.addAction(Action.DeleteGlobalFrontier);
+        OPs.addAction(Action.UpdateGlobalFrontier);
         OPs.addAction(Action.UpdateSettings);
 
-        owners.addAction(Action.DeleteFrontier);
-        owners.addAction(Action.UpdateFrontier);
+        owners.addAction(Action.DeleteGlobalFrontier);
+        owners.addAction(Action.UpdateGlobalFrontier);
 
-        everyone.addAction(Action.PersonalFrontier);
+        everyone.addAction(Action.SharePersonalFrontier);
     }
 
     public SettingsGroup getOPsGroup() {
@@ -139,25 +158,24 @@ public class FrontierSettings {
         } else if (version < 3) {
             MapFrontiers.LOGGER.warn("Data version in settings lower than expected. The mod uses " + dataVersion);
         } else if (version > dataVersion) {
-            MapFrontiers.LOGGER
-                    .warn("Data version in settings higher than expected. The mod uses " + dataVersion);
+            MapFrontiers.LOGGER.warn("Data version in settings higher than expected. The mod uses " + dataVersion);
         }
 
         CompoundTag OPsTag = nbt.getCompound("OPs");
-        OPs.readFromNBT(OPsTag);
+        OPs.readFromNBT(OPsTag, version);
 
         CompoundTag ownersTag = nbt.getCompound("Owners");
-        owners.readFromNBT(ownersTag);
+        owners.readFromNBT(ownersTag, version);
 
         CompoundTag everyoneTag = nbt.getCompound("Everyone");
-        everyone.readFromNBT(everyoneTag);
+        everyone.readFromNBT(everyoneTag, version);
 
         customGroups.clear();
         ListTag customGroupsTagList = nbt.getList("customGroups", Tag.TAG_COMPOUND);
         for (int i = 0; i < customGroupsTagList.size(); ++i) {
             SettingsGroup group = new SettingsGroup();
             CompoundTag groupTag = customGroupsTagList.getCompound(i);
-            group.readFromNBT(groupTag);
+            group.readFromNBT(groupTag, version);
             customGroups.add(group);
         }
 
@@ -217,13 +235,28 @@ public class FrontierSettings {
         List<Action> actions = new ArrayList<>();
 
         if (!groupName.contentEquals("Owner")) {
-            actions.add(Action.CreateFrontier);
+            actions.add(Action.CreateGlobalFrontier);
             actions.add(Action.UpdateSettings);
-            actions.add(Action.PersonalFrontier);
+            actions.add(Action.SharePersonalFrontier);
         }
 
-        actions.add(Action.DeleteFrontier);
-        actions.add(Action.UpdateFrontier);
+        actions.add(Action.DeleteGlobalFrontier);
+        actions.add(Action.UpdateGlobalFrontier);
+
+        return actions;
+    }
+
+    public static List<ActionV3> getAvailableActionsV3(String groupName) {
+        List<ActionV3> actions = new ArrayList<>();
+
+        if (!groupName.contentEquals("Owner")) {
+            actions.add(ActionV3.CreateFrontier);
+            actions.add(ActionV3.UpdateSettings);
+            actions.add(ActionV3.PersonalFrontier);
+        }
+
+        actions.add(ActionV3.DeleteFrontier);
+        actions.add(ActionV3.UpdateFrontier);
 
         return actions;
     }

@@ -157,12 +157,12 @@ public class GuiFullscreenMap {
 
         SettingsProfile profile = ClientProxy.getSettingsProfile();
         SettingsUser playerUser = new SettingsUser(Minecraft.getInstance().player);
-        SettingsProfile.AvailableActions actions = profile.getAvailableActions(frontierHighlighted, playerUser);
+        SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerUser);
 
         buttonFrontiers.setEnabled(!editing);
-        buttonNew.setEnabled(actions.canCreate && !editing);
+        buttonNew.setEnabled(!editing);
         buttonInfo.setEnabled(frontierHighlighted != null && !editing);
-        buttonEdit.setEnabled(actions.canUpdate && frontierHighlighted.getVisible());
+        buttonEdit.setEnabled(actions.canUpdate && frontierHighlighted != null && frontierHighlighted.getVisible());
         buttonVisible.setEnabled(actions.canUpdate && !editing);
         buttonDelete.setEnabled(actions.canDelete && !editing);
 

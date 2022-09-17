@@ -5,18 +5,17 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierUpdated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Registry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
@@ -43,7 +42,7 @@ public class FrontiersManager {
     private File ModDir;
     private boolean frontierOwnersChecked = false;
 
-    public static final int dataVersion = 8;
+    public static final int dataVersion = 9;
     private static int pendingShareFrontierID = 0;
     private static final int pendingShareFrontierTickDuration = 1200;
 
@@ -156,6 +155,18 @@ public class FrontiersManager {
         saveData();
 
         return frontier;
+    }
+
+    public void addPersonalFrontier(FrontierData frontier) {
+        if (!frontier.getPersonal()) {
+            return;
+        }
+
+        List<FrontierData> frontiers = getAllPersonalFrontiers(frontier.getOwner(), frontier.getDimension());
+        frontiers.add(frontier);
+        allFrontiers.put(frontier.getId(), frontier);
+
+        saveData();
     }
 
     public void addPersonalFrontier(SettingsUser user, FrontierData frontier) {
@@ -283,7 +294,7 @@ public class FrontiersManager {
     }
 
     public boolean canSendCommandAcceptFrontier(ServerPlayer player) {
-        return frontierSettings.checkAction(FrontierSettings.Action.PersonalFrontier, new SettingsUser(player),
+        return frontierSettings.checkAction(FrontierSettings.Action.SharePersonalFrontier, new SettingsUser(player),
                 MapFrontiers.isOPorHost(player), null);
     }
 
@@ -304,11 +315,9 @@ public class FrontiersManager {
         if (version == 0) {
             MapFrontiers.LOGGER.warn("Data version in frontiers not found, expected " + dataVersion);
         } else if (version < 5) {
-            MapFrontiers.LOGGER
-                    .warn("Data version in frontiers lower than expected. The mod support from 5 to " + dataVersion);
+            MapFrontiers.LOGGER.warn("Data version in frontiers lower than expected. The mod support from 5 to " + dataVersion);
         } else if (version > dataVersion) {
-            MapFrontiers.LOGGER
-                    .warn("Data version in frontiers higher than expected. The mod uses " + dataVersion);
+            MapFrontiers.LOGGER.warn("Data version in frontiers higher than expected. The mod uses " + dataVersion);
         }
 
         ListTag allFrontiersTagList = nbt.getList("frontiers", Tag.TAG_COMPOUND);
@@ -316,50 +325,20 @@ public class FrontiersManager {
             FrontierData frontier = new FrontierData();
             CompoundTag frontierTag = allFrontiersTagList.getCompound(i);
             frontier.readFromNBT(frontierTag, version);
+            frontier.removePendingUsersShared();
             allFrontiers.put(frontier.getId(), frontier);
-        }
 
-        ListTag dimensionsTagList = nbt.getList("global", Tag.TAG_COMPOUND);
-        readFrontiersFromTagList(dimensionsTagList, dimensionsGlobalFrontiers, version);
+            if (frontier.getPersonal()) {
+                getAllPersonalFrontiers(frontier.getOwner(), frontier.getDimension()).add(frontier);
 
-        ListTag personalTagList = nbt.getList("personal", Tag.TAG_COMPOUND);
-        for (int i = 0; i < personalTagList.size(); ++i) {
-            CompoundTag personalTag = personalTagList.getCompound(i);
-
-            SettingsUser owner = new SettingsUser();
-            CompoundTag ownerTag = personalTag.getCompound("owner");
-            if (ownerTag.isEmpty()) {
-                continue;
-            }
-            owner.readFromNBT(ownerTag);
-
-            HashMap<ResourceKey<Level>, ArrayList<FrontierData>> dimensionsPersonalFrontiers = new HashMap<>();
-            dimensionsTagList = personalTag.getList("frontiers", Tag.TAG_COMPOUND);
-            readFrontiersFromTagList(dimensionsTagList, dimensionsPersonalFrontiers, version);
-
-            usersDimensionsPersonalFrontiers.put(owner, dimensionsPersonalFrontiers);
-        }
-    }
-
-    private void readFrontiersFromTagList(ListTag dimensionsTagList, Map<ResourceKey<Level>, ArrayList<FrontierData>> dimensionsFrontiers, int version) {
-        for (int i = 0; i < dimensionsTagList.size(); ++i) {
-            CompoundTag dimensionTag = dimensionsTagList.getCompound(i);
-            ResourceKey<Level> dimension = ResourceKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation(dimensionTag.getString("dimension")));
-            ListTag frontiersTagList = dimensionTag.getList("frontiers", Tag.TAG_COMPOUND);
-            ArrayList<FrontierData> frontiers = new ArrayList<>();
-            for (int i2 = 0; i2 < frontiersTagList.size(); ++i2) {
-                CompoundTag frontierTag = frontiersTagList.getCompound(i2);
-                FrontierData frontier = allFrontiers.get(UUID.fromString(frontierTag.getString("id")));
-                if (frontier != null) {
-                    frontier.removePendingUsersShared();
-                    frontiers.add(frontier);
-                } else {
-                    String message = "Nonexistent frontier with UUID %1$s referenced in frontiers.dat";
-                    message = String.format(message, frontierTag.getString("id"));
-                    MapFrontiers.LOGGER.warn(message);
+                if (frontier.getUsersShared() != null) {
+                    for (SettingsUserShared sharedUser : frontier.getUsersShared()) {
+                        getAllPersonalFrontiers(sharedUser.getUser(), frontier.getDimension()).add(frontier);
+                    }
                 }
+            } else {
+                getAllGlobalFrontiers(frontier.getDimension()).add(frontier);
             }
-            dimensionsFrontiers.put(dimension, frontiers);
         }
     }
 
@@ -372,57 +351,7 @@ public class FrontiersManager {
         }
         nbt.put("frontiers", allFrontiersTagList);
 
-        ListTag dimensionsTagList = new ListTag();
-        writeFrontiersToTagList(dimensionsTagList, dimensionsGlobalFrontiers);
-        nbt.put("global", dimensionsTagList);
-
-        ListTag personalTagList = new ListTag();
-        for (Map.Entry<SettingsUser, HashMap<ResourceKey<Level>, ArrayList<FrontierData>>> personal : usersDimensionsPersonalFrontiers
-                .entrySet()) {
-            if (personal.getValue().isEmpty()) {
-                continue;
-            }
-
-            CompoundTag userFrontiers = new CompoundTag();
-
-            dimensionsTagList = new ListTag();
-            writeFrontiersToTagList(dimensionsTagList, personal.getValue());
-            userFrontiers.put("frontiers", dimensionsTagList);
-
-            if (dimensionsTagList.isEmpty()) {
-                continue;
-            }
-
-            CompoundTag nbtOwner = new CompoundTag();
-            personal.getKey().writeToNBT(nbtOwner);
-            userFrontiers.put("owner", nbtOwner);
-
-            personalTagList.add(userFrontiers);
-        }
-        nbt.put("personal", personalTagList);
-
         nbt.putInt("Version", dataVersion);
-    }
-
-    private void writeFrontiersToTagList(ListTag dimensionsTagList,
-            Map<ResourceKey<Level>, ArrayList<FrontierData>> dimensionsFrontiers) {
-        for (Map.Entry<ResourceKey<Level>, ArrayList<FrontierData>> frontiers : dimensionsFrontiers.entrySet()) {
-            ListTag frontiersTagList = new ListTag();
-            for (FrontierData frontier : frontiers.getValue()) {
-                CompoundTag frontierTag = new CompoundTag();
-                frontierTag.putString("id", frontier.getId().toString());
-                frontiersTagList.add(frontierTag);
-            }
-
-            if (frontiersTagList.isEmpty()) {
-                continue;
-            }
-
-            CompoundTag dimensionTag = new CompoundTag();
-            dimensionTag.putString("dimension", frontiers.getKey().location().toString());
-            dimensionTag.put("frontiers", frontiersTagList);
-            dimensionsTagList.add(dimensionTag);
-        }
     }
 
     public void loadOrCreateData(MinecraftServer server) {
@@ -483,9 +412,9 @@ public class FrontiersManager {
         return new CompoundTag();
     }
 
-    private void saveFile(String fileName, CompoundTag nbt) {
+    private void saveFile(String filename, CompoundTag nbt) {
         try {
-            File f = new File(ModDir, fileName);
+            File f = new File(ModDir, filename);
             try (FileOutputStream outputStream = new FileOutputStream(f)) {
                 NbtIo.writeCompressed(nbt, outputStream);
             } catch (Exception e) {

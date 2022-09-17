@@ -139,6 +139,7 @@ public class SettingsUserShared {
         int prime = 31;
         int hash = 1;
         hash = prime * hash + user.hashCode();
+        hash = prime * hash + actions.hashCode();
         hash = prime * hash + (pending ? 1231 : 1237);
 
         return hash;

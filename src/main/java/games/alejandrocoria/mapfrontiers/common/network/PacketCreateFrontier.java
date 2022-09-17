@@ -20,24 +20,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 @ParametersAreNonnullByDefault
-public class PacketNewFrontier {
+public class PacketCreateFrontier {
     private ResourceKey<Level> dimension = Level.OVERWORLD;
     private boolean personal = false;
     private List<BlockPos> vertices;
     private List<ChunkPos> chunks;
 
-    public PacketNewFrontier() {
+    public PacketCreateFrontier() {
     }
 
-    public PacketNewFrontier(ResourceKey<Level> dimension, boolean personal, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
+    public PacketCreateFrontier(ResourceKey<Level> dimension, boolean personal, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
         this.dimension = dimension;
         this.personal = personal;
         this.vertices = vertices;
         this.chunks = chunks;
     }
 
-    public static PacketNewFrontier fromBytes(FriendlyByteBuf buf) {
-        PacketNewFrontier packet = new PacketNewFrontier();
+    public static PacketCreateFrontier fromBytes(FriendlyByteBuf buf) {
+        PacketCreateFrontier packet = new PacketCreateFrontier();
         packet.dimension = ResourceKey.create(Registry.DIMENSION_REGISTRY, buf.readResourceLocation());
         packet.personal = buf.readBoolean();
 
@@ -64,7 +64,7 @@ public class PacketNewFrontier {
         return packet;
     }
 
-    public static void toBytes(PacketNewFrontier packet, FriendlyByteBuf buf) {
+    public static void toBytes(PacketCreateFrontier packet, FriendlyByteBuf buf) {
         buf.writeResourceLocation(packet.dimension.location());
         buf.writeBoolean(packet.personal);
 
@@ -85,23 +85,20 @@ public class PacketNewFrontier {
         }
     }
 
-    public static void handle(PacketNewFrontier message, MinecraftServer server, ServerPlayer player) {
+    public static void handle(PacketCreateFrontier message, MinecraftServer server, ServerPlayer player) {
         server.execute(() -> {
             FrontierData frontier;
 
             if (message.personal) {
-                if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.PersonalFrontier,
-                        new SettingsUser(player), MapFrontiers.isOPorHost(player), null)) {
-                    frontier = MapFrontiers.getFrontiersManager().createNewPersonalFrontier(message.dimension, player, message.vertices, message.chunks);
-                    PacketHandler.sendToUsersWithAccess(PacketFrontier.class, new PacketFrontier(frontier, player.getId()), frontier, server);
+                frontier = FrontiersManager.instance.createNewPersonalFrontier(message.dimension, player, message.vertices, message.chunks);
+                PacketHandler.sendToUsersWithAccess(PacketFrontierCreated.class, new PacketFrontierCreated(frontier, player.getId()), frontier, server);
 
-                    return;
-                }
+                return;
             } else {
-                if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.CreateFrontier,
+                if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.CreateGlobalFrontier,
                         new SettingsUser(player), MapFrontiers.isOPorHost(player), null)) {
-                    frontier = MapFrontiers.getFrontiersManager().createNewGlobalFrontier(message.dimension, player, message.vertices, message.chunks);
-                    PacketHandler.sendToAll(PacketFrontier.class, new PacketFrontier(frontier, player.getId()), server);
+                    frontier = FrontiersManager.instance.createNewGlobalFrontier(message.dimension, player, message.vertices, message.chunks);
+                    PacketHandler.sendToAll(PacketFrontierCreated.class, new PacketFrontierCreated(frontier, player.getId()), server);
 
                     return;
                 }

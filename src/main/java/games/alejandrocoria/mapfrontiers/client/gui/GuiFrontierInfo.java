@@ -86,7 +86,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
 
         ClientProxy.subscribeUpdatedFrontierEvent(this, (frontierOverlay, playerID) -> {
             if (frontier.getId().equals(frontierOverlay.getId())) {
-                if (playerID != Minecraft.getInstance().player.getId()) {
+                if (playerID != minecraft.player.getId()) {
                     init(minecraft, width, height);
                 } else {
                     if (frontier.getModified() != null) {
@@ -231,7 +231,6 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
                 Component.translatable("mapfrontiers.select_in_map"), this::buttonPressed);
         buttonShareSettings = new GuiSettingsButton(font, leftSide, top + 290, 144,
                 Component.translatable("mapfrontiers.share_settings"), this::buttonPressed);
-        buttonShareSettings.visible = frontier.getPersonal();
         buttonDelete = new GuiSettingsButton(font, rightSide, top + 290, 144,
                 Component.translatable("mapfrontiers.delete"), this::buttonPressed);
         buttonDelete.setTextColors(GuiColors.SETTINGS_BUTTON_TEXT_DELETE, GuiColors.SETTINGS_BUTTON_TEXT_DELETE_HIGHLIGHT);
@@ -477,7 +476,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
     private void updateButtons() {
         SettingsProfile profile = ClientProxy.getSettingsProfile();
         SettingsUser playerUser = new SettingsUser(Minecraft.getInstance().player);
-        SettingsProfile.AvailableActions actions = profile.getAvailableActions(frontier, playerUser);
+        SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontier, playerUser);
 
         textName1.setEditable(actions.canUpdate);
         textName2.setEditable(actions.canUpdate);
@@ -492,6 +491,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         buttonDelete.visible = actions.canDelete;
         buttonBanner.visible = actions.canUpdate;
         buttonSelect.visible = frontier.getDimension().equals(jmAPI.getUIState(Context.UI.Fullscreen).dimension);
+        buttonShareSettings.visible = actions.canShare;
     }
 
     private void sendChangesToServer() {

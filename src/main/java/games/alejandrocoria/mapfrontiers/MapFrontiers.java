@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.command.CommandAccept;
-import games.alejandrocoria.mapfrontiers.common.network.PacketFrontier;
+import games.alejandrocoria.mapfrontiers.common.network.PacketFrontiers;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -63,26 +63,21 @@ public class MapFrontiers implements ModInitializer {
 
             frontiersManager.ensureOwners(server);
 
+            PacketHandler.sendTo(PacketSettingsProfile.class, new PacketSettingsProfile(frontiersManager.getSettings().getProfile(handler.player)), handler.player);
+
+            PacketFrontiers packetFrontiers = new PacketFrontiers();
             for (ArrayList<FrontierData> frontiers : frontiersManager.getAllGlobalFrontiers().values()) {
-                for (FrontierData frontier : frontiers) {
-                    PacketHandler.sendTo(PacketFrontier.class, new PacketFrontier(frontier), handler.player);
-                }
+                packetFrontiers.addGlobalFrontiers(frontiers);
             }
 
             for (ArrayList<FrontierData> frontiers : frontiersManager.getAllPersonalFrontiers(new SettingsUser(handler.player)).values()) {
-                for (FrontierData frontier : frontiers) {
-                    PacketHandler.sendTo(PacketFrontier.class, new PacketFrontier(frontier), handler.player);
-                }
+                packetFrontiers.addPersonalFrontiers(frontiers);
             }
 
-            PacketHandler.sendTo(PacketSettingsProfile.class, new PacketSettingsProfile(frontiersManager.getSettings().getProfile(handler.player)), handler.player);
+            PacketHandler.sendTo(PacketFrontiers.class, packetFrontiers, handler.player);
         });
 
         LOGGER.info("onInitialize done");
-    }
-
-    public static FrontiersManager getFrontiersManager() {
-        return frontiersManager;
     }
 
     public static boolean isOPorHost(ServerPlayer player) {
