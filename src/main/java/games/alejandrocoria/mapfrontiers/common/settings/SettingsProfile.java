@@ -1,7 +1,10 @@
 package games.alejandrocoria.mapfrontiers.common.settings;
 
+import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import io.netty.buffer.ByteBuf;
+
+import javax.annotation.Nullable;
 
 public class SettingsProfile {
     public enum State {
@@ -16,19 +19,19 @@ public class SettingsProfile {
 
     public void setAction(FrontierSettings.Action action, State state) {
         switch (action) {
-            case CreateFrontier:
+            case CreateGlobalFrontier:
                 createFrontier = state;
                 break;
-            case DeleteFrontier:
+            case DeleteGlobalFrontier:
                 deleteFrontier = state;
                 break;
-            case UpdateFrontier:
+            case UpdateGlobalFrontier:
                 updateFrontier = state;
                 break;
             case UpdateSettings:
                 updateSettings = state;
                 break;
-            case PersonalFrontier:
+            case SharePersonalFrontier:
                 personalFrontier = state;
                 break;
         }
@@ -72,27 +75,27 @@ public class SettingsProfile {
                 && personalFrontier == profile.personalFrontier;
     }
 
-    public AvailableActions getAvailableActions(FrontierData frontier, SettingsUser playerUser) {
+    public static AvailableActions getAvailableActions(@Nullable SettingsProfile profile, @Nullable FrontierData frontier, SettingsUser playerUser) {
         AvailableActions actions = new AvailableActions();
 
-        if (personalFrontier == SettingsProfile.State.Enabled) {
-            actions.canCreate = true;
-        } else if (createFrontier == SettingsProfile.State.Enabled) {
-            actions.canCreate = true;
+        if (profile == null) {
+            actions.canDelete = true;
+            actions.canUpdate = true;
+
+            return actions;
         }
 
         if (frontier != null) {
             if (frontier.getPersonal()) {
-                if (personalFrontier == SettingsProfile.State.Enabled) {
-                    actions.canDelete = true;
-                    actions.canUpdate = frontier.checkActionUserShared(playerUser, SettingsUserShared.Action.UpdateFrontier);
-                }
+                actions.canDelete = true;
+                actions.canUpdate = frontier.checkActionUserShared(playerUser, SettingsUserShared.Action.UpdateFrontier);
+                actions.canShare = ClientProxy.isModOnServer() && profile.personalFrontier == SettingsProfile.State.Enabled;
             } else {
                 boolean isOwner = frontier.getOwner().equals(playerUser);
-                actions.canDelete = deleteFrontier == SettingsProfile.State.Enabled
-                        || (isOwner && deleteFrontier == SettingsProfile.State.Owner);
-                actions.canUpdate = updateFrontier == SettingsProfile.State.Enabled
-                        || (isOwner && updateFrontier == SettingsProfile.State.Owner);
+                actions.canDelete = profile.deleteFrontier == SettingsProfile.State.Enabled
+                        || (isOwner && profile.deleteFrontier == SettingsProfile.State.Owner);
+                actions.canUpdate = profile.updateFrontier == SettingsProfile.State.Enabled
+                        || (isOwner && profile.updateFrontier == SettingsProfile.State.Owner);
             }
         }
 
@@ -100,8 +103,8 @@ public class SettingsProfile {
     }
 
     public static class AvailableActions {
-        public boolean canCreate = false;
         public boolean canDelete = false;
         public boolean canUpdate = false;
+        public boolean canShare = false;
     }
 }

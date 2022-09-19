@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -66,6 +67,10 @@ public class GuiShareSettings extends Screen
 
     @Override
     public void init() {
+        if (!ClientProxy.isModOnServer()) {
+            ScreenLayerManager.popLayer();
+        }
+
         minecraft.keyboardHandler.setSendRepeatsToGui(true);
 
         users = new GuiScrollBox(width / 2 - 215, 82, 430, height - 128, 16, this);
@@ -289,6 +294,9 @@ public class GuiShareSettings extends Screen
                 updateUsers();
                 updateButtonsVisibility();
             }
+
+            frontier.setModified(new Date());
+            ClientProxy.postUpdatedFrontierEvent(frontier, -1);
         }
 
         PacketHandler.sendToServer(PacketUpdateSharedUserPersonalFrontier.class, new PacketUpdateSharedUserPersonalFrontier(frontier.getId(), user));

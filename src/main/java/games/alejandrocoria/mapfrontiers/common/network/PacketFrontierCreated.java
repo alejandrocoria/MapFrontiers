@@ -11,40 +11,39 @@ import net.minecraft.network.FriendlyByteBuf;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-public class PacketFrontier {
+public class PacketFrontierCreated {
     private final FrontierData frontier;
     private int playerID = -1;
 
-    public PacketFrontier() {
+    public PacketFrontierCreated() {
         frontier = new FrontierData();
     }
 
-    public PacketFrontier(FrontierData frontier) {
+    public PacketFrontierCreated(FrontierData frontier) {
         this.frontier = frontier;
     }
 
-    public PacketFrontier(FrontierData frontier, int playerID) {
+    public PacketFrontierCreated(FrontierData frontier, int playerID) {
         this.frontier = frontier;
         this.playerID = playerID;
     }
 
-    public static PacketFrontier fromBytes(FriendlyByteBuf buf) {
-        PacketFrontier packet = new PacketFrontier();
+    public static PacketFrontierCreated fromBytes(FriendlyByteBuf buf) {
+        PacketFrontierCreated packet = new PacketFrontierCreated();
         packet.frontier.fromBytes(buf);
         packet.playerID = buf.readInt();
         return packet;
     }
 
-    public static void toBytes(PacketFrontier packet, FriendlyByteBuf buf) {
+    public static void toBytes(PacketFrontierCreated packet, FriendlyByteBuf buf) {
         packet.frontier.toBytes(buf, false);
         buf.writeInt(packet.playerID);
     }
 
     @Environment(EnvType.CLIENT)
-    public static void handle(PacketFrontier message, Minecraft client) {
+    public static void handle(PacketFrontierCreated message, Minecraft client) {
         client.execute(() -> {
-            FrontierOverlay frontierOverlay = ClientProxy.getFrontiersOverlayManager(message.frontier.getPersonal())
-                    .addFrontier(message.frontier);
+            FrontierOverlay frontierOverlay = ClientProxy.getFrontiersOverlayManager(message.frontier.getPersonal()).addFrontier(message.frontier);
 
             if (frontierOverlay != null) {
                 ClientProxy.postNewFrontierEvent(frontierOverlay, message.playerID);

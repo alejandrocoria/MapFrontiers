@@ -7,7 +7,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.PendingShareFrontier;
-import games.alejandrocoria.mapfrontiers.common.network.PacketFrontier;
+import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierCreated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierUpdated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -68,7 +68,7 @@ public class CommandAccept {
 
                 FrontiersManager.instance.removePendingShareFrontier(messageID);
 
-                PacketHandler.sendTo(PacketFrontier.class, new PacketFrontier(frontier), source.getPlayerOrException());
+                PacketHandler.sendTo(PacketFrontierCreated.class, new PacketFrontierCreated(frontier), source.getPlayerOrException());
                 PacketHandler.sendToUsersWithAccess(PacketFrontierUpdated.class, new PacketFrontierUpdated(frontier), frontier, source.getServer());
 
                 frontier.removeChange(FrontierData.Change.Shared);

@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.GuiColors;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFrontierSettings;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiHUD;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
+import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.util.BlockPosHelper;
@@ -89,15 +90,15 @@ public class ClientProxy implements ClientModInitializer {
                 return;
             }
 
-            if (settingsProfile == null) {
-                return;
-            }
-
             while (openSettingsKey.consumeClick()) {
                 Minecraft.getInstance().setScreen(new GuiFrontierSettings(null, false));
             }
 
             Player player = client.player;
+
+            if (player == null) {
+                return;
+            }
 
             BlockPos currentPlayerPosition = player.blockPosition();
             if (currentPlayerPosition.getX() != lastPlayerPosition.getX() || currentPlayerPosition.getZ() != lastPlayerPosition.getZ()) {
@@ -222,6 +223,12 @@ public class ClientProxy implements ClientModInitializer {
         }
     }
 
+    public static void setFrontiersFromServer(List<FrontierData> globalFrontiers, List<FrontierData> personalFrontiers) {
+        initializeManagers();
+        frontiersOverlayManager.setFrontiersFromServer(globalFrontiers);
+        personalFrontiersOverlayManager.setFrontiersFromServer(personalFrontiers);
+    }
+
     public static ItemStack getHeldBanner() {
         ItemStack mainhand = Minecraft.getInstance().player.getItemBySlot(EquipmentSlot.MAINHAND);
         ItemStack offhand = Minecraft.getInstance().player.getItemBySlot(EquipmentSlot.OFFHAND);
@@ -277,6 +284,10 @@ public class ClientProxy implements ClientModInitializer {
         if (guiHUD != null) {
             guiHUD.configUpdated();
         }
+    }
+
+    public static boolean isModOnServer() {
+        return settingsProfile != null;
     }
 
     public static void subscribeDeletedFrontierEvent(Object object, Consumer<UUID> callback) {

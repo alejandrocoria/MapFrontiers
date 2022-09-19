@@ -37,7 +37,8 @@ public class PacketHandler {
 
     @Environment(EnvType.CLIENT)
     public static void registerClientReceivers() {
-        registerClientReceiver("PacketFrontier", PacketFrontier::fromBytes, PacketFrontier::handle);
+        registerClientReceiver("PacketFrontiers", PacketFrontiers::fromBytes, PacketFrontiers::handle);
+        registerClientReceiver("PacketFrontierCreated", PacketFrontierCreated::fromBytes, PacketFrontierCreated::handle);
         registerClientReceiver("PacketFrontierDeleted", PacketFrontierDeleted::fromBytes, PacketFrontierDeleted::handle);
         registerClientReceiver("PacketFrontierUpdated", PacketFrontierUpdated::fromBytes, PacketFrontierUpdated::handle);
         registerClientReceiver("PacketFrontierSettings", PacketFrontierSettings::fromBytes, PacketFrontierSettings::handle);
@@ -48,7 +49,8 @@ public class PacketHandler {
     public static void registerServerReceivers() {
         registerMessageEncoders();
 
-        registerServerReceiver("PacketNewFrontier", PacketNewFrontier::fromBytes, PacketNewFrontier::handle);
+        registerServerReceiver("PacketPersonalFrontier", PacketPersonalFrontier::fromBytes, PacketPersonalFrontier::handle);
+        registerServerReceiver("PacketCreateFrontier", PacketCreateFrontier::fromBytes, PacketCreateFrontier::handle);
         registerServerReceiver("PacketDeleteFrontier", PacketDeleteFrontier::fromBytes, PacketDeleteFrontier::handle);
         registerServerReceiver("PacketUpdateFrontier", PacketUpdateFrontier::fromBytes, PacketUpdateFrontier::handle);
         registerServerReceiver("PacketRequestFrontierSettings", PacketRequestFrontierSettings::fromBytes, PacketRequestFrontierSettings::handle);
@@ -59,13 +61,15 @@ public class PacketHandler {
     }
 
     private static void registerMessageEncoders() {
-        registerMessageEncoder("PacketFrontier", PacketFrontier.class, PacketFrontier::toBytes);
+        registerMessageEncoder("PacketFrontiers", PacketFrontiers.class, PacketFrontiers::toBytes);
+        registerMessageEncoder("PacketFrontierCreated", PacketFrontierCreated.class, PacketFrontierCreated::toBytes);
         registerMessageEncoder("PacketFrontierDeleted", PacketFrontierDeleted.class, PacketFrontierDeleted::toBytes);
         registerMessageEncoder("PacketFrontierUpdated", PacketFrontierUpdated.class, PacketFrontierUpdated::toBytes);
         registerMessageEncoder("PacketFrontierSettings", PacketFrontierSettings.class, PacketFrontierSettings::toBytes);
         registerMessageEncoder("PacketSettingsProfile", PacketSettingsProfile.class, PacketSettingsProfile::toBytes);
         registerMessageEncoder("PacketPersonalFrontierShared", PacketPersonalFrontierShared.class, PacketPersonalFrontierShared::toBytes);
-        registerMessageEncoder("PacketNewFrontier", PacketNewFrontier.class, PacketNewFrontier::toBytes);
+        registerMessageEncoder("PacketPersonalFrontier", PacketPersonalFrontier.class, PacketPersonalFrontier::toBytes);
+        registerMessageEncoder("PacketCreateFrontier", PacketCreateFrontier.class, PacketCreateFrontier::toBytes);
         registerMessageEncoder("PacketDeleteFrontier", PacketDeleteFrontier.class, PacketDeleteFrontier::toBytes);
         registerMessageEncoder("PacketUpdateFrontier", PacketUpdateFrontier.class, PacketUpdateFrontier::toBytes);
         registerMessageEncoder("PacketRequestFrontierSettings", PacketRequestFrontierSettings.class, PacketRequestFrontierSettings::toBytes);
