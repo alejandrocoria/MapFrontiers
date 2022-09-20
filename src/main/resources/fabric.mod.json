@@ -40,6 +40,6 @@
     "minecraft": "~1.19.1",
     "java": ">=17",
     "journeymap": "*",
-    "forgeconfigapiport": ">=4.1.2"
+    "forgeconfigapiport": ">=4.1.4"
   }
 }
