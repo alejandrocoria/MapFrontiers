@@ -524,7 +524,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
                     new TranslationTextComponent("mapfrontiers.update_global_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             labels.add(new GuiSimpleLabel(font, x + 180, 53, GuiSimpleLabel.Align.Center,
                     new TranslationTextComponent("mapfrontiers.update_settings"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
-            labels.add(new GuiSimpleLabel(font, x + 240, 54, GuiSimpleLabel.Align.Center,
+            labels.add(new GuiSimpleLabel(font, x + 240, 47, GuiSimpleLabel.Align.Center,
                     new TranslationTextComponent("mapfrontiers.share_personal_frontier"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
         }
 
