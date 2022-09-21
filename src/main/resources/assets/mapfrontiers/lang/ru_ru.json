@@ -157,6 +157,7 @@
 
   "mapfrontiers.key.category": "Карта Территорий",
   "mapfrontiers.key.open_settings": "Открыть настройки",
+  "mapfrontiers.key.open_settings.hint": "You can use [%1$s] to open this screen during gameplay",
 
   "mapfrontiers.chat.entering": "Entering %1$s",
   "mapfrontiers.chat.leaving": "Leaving %1$s"
