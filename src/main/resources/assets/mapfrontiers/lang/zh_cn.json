@@ -155,6 +155,7 @@
 
   "mapfrontiers.key.category": "领域地图",
   "mapfrontiers.key.open_settings": "开启设置",
+  "mapfrontiers.key.open_settings.hint": "Puedes usar [%1$s] para abrir esta pantalla durante el juego",
 
   "mapfrontiers.chat.entering": "您已进入%1$s",
   "mapfrontiers.chat.leaving": "您已离开%1$s"
