@@ -4,6 +4,9 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiColors;
 import games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
+import games.alejandrocoria.mapfrontiers.common.event.NewFrontierEvent;
+import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.network.*;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
@@ -24,6 +27,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
@@ -161,7 +165,9 @@ public class FrontiersOverlayManager {
                 }
             }
 
-            addFrontier(frontier);
+            FrontierOverlay frontierOverlay = addFrontier(frontier);
+
+            MinecraftForge.EVENT_BUS.post(new NewFrontierEvent(frontierOverlay, Minecraft.getInstance().player.getId()));
         }
     }
 
@@ -170,6 +176,7 @@ public class FrontiersOverlayManager {
             PacketHandler.INSTANCE.sendToServer(new PacketDeleteFrontier(frontier.getId()));
         } else if (personal && frontier.getOwner().equals(new SettingsUser(Minecraft.getInstance().player))) {
             deleteFrontier(frontier.getDimension(), frontier.getId());
+            MinecraftForge.EVENT_BUS.post(new DeletedFrontierEvent(frontier.getId()));
         }
     }
 
@@ -178,7 +185,8 @@ public class FrontiersOverlayManager {
             PacketHandler.INSTANCE.sendToServer(new PacketUpdateFrontier(frontier));
             frontier.removeChanges();
         } else if (personal && frontier.getOwner().equals(new SettingsUser(Minecraft.getInstance().player))) {
-            updateFrontier(frontier);
+            FrontierOverlay frontierOverlay = updateFrontier(frontier);
+            MinecraftForge.EVENT_BUS.post(new UpdatedFrontierEvent(frontierOverlay, Minecraft.getInstance().player.getId()));
         }
     }
 

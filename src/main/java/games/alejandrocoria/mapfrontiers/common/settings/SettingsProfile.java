@@ -81,8 +81,10 @@ public class SettingsProfile {
         AvailableActions actions = new AvailableActions();
 
         if (profile == null) {
-            actions.canDelete = true;
-            actions.canUpdate = true;
+            if (frontier != null) {
+                actions.canDelete = true;
+                actions.canUpdate = true;
+            }
 
             return actions;
         }
