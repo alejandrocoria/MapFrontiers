@@ -97,6 +97,11 @@ public class FrontierData {
     }
 
     public void updateFromData(FrontierData other) {
+        if (other == this) {
+            changes = EnumSet.noneOf(Change.class);
+            return;
+        }
+
         id = other.id;
         dimension = other.dimension;
         owner = other.owner;
