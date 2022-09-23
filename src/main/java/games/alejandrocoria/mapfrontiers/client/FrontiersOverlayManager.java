@@ -157,7 +157,9 @@ public class FrontiersOverlayManager {
                 }
             }
 
-            addFrontier(frontier);
+            FrontierOverlay frontierOverlay = addFrontier(frontier);
+
+            ClientProxy.postNewFrontierEvent(frontierOverlay, Minecraft.getInstance().player.getId());
         }
     }
 
@@ -166,6 +168,7 @@ public class FrontiersOverlayManager {
             PacketHandler.sendToServer(PacketDeleteFrontier.class, new PacketDeleteFrontier(frontier.getId()));
         } else if (personal && frontier.getOwner().equals(new SettingsUser(Minecraft.getInstance().player))) {
             deleteFrontier(frontier.getDimension(), frontier.getId());
+            ClientProxy.postDeletedFrontierEvent(frontier.getId());
         }
     }
 
@@ -174,7 +177,8 @@ public class FrontiersOverlayManager {
             PacketHandler.sendToServer(PacketUpdateFrontier.class, new PacketUpdateFrontier(frontier));
             frontier.removeChanges();
         } else if (personal && frontier.getOwner().equals(new SettingsUser(Minecraft.getInstance().player))) {
-            updateFrontier(frontier);
+            FrontierOverlay frontierOverlay = updateFrontier(frontier);
+            ClientProxy.postUpdatedFrontierEvent(frontierOverlay, Minecraft.getInstance().player.getId());
         }
     }
 

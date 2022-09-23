@@ -183,8 +183,8 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
             ConfigData.afterCreatingFrontier = ConfigData.AfterCreatingFrontier.values()[buttonAfterCreate.getSelected()];
         } else if (button == buttonCreateFrontier) {
             boolean personal = buttonFrontierType.getSelected() == 1;
-            ClientProxy.getFrontiersOverlayManager(personal).clientCreateNewfrontier(jmAPI.getUIState(Context.UI.Fullscreen).dimension, calculateVertices(), calculateChunks());
             ScreenLayerManager.popLayer();
+            ClientProxy.getFrontiersOverlayManager(personal).clientCreateNewfrontier(jmAPI.getUIState(Context.UI.Fullscreen).dimension, calculateVertices(), calculateChunks());
         } else if (button == buttonCancel) {
             ScreenLayerManager.popLayer();
         }

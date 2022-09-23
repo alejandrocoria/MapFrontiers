@@ -162,7 +162,7 @@ public class GuiFullscreenMap {
         buttonFrontiers.setEnabled(!editing);
         buttonNew.setEnabled(!editing);
         buttonInfo.setEnabled(frontierHighlighted != null && !editing);
-        buttonEdit.setEnabled(actions.canUpdate && frontierHighlighted != null && frontierHighlighted.getVisible());
+        buttonEdit.setEnabled(actions.canUpdate && frontierHighlighted.getVisible());
         buttonVisible.setEnabled(actions.canUpdate && !editing);
         buttonDelete.setEnabled(actions.canDelete && !editing);
 
@@ -180,6 +180,7 @@ public class GuiFullscreenMap {
     private void buttonNewPressed() {
         if (frontierHighlighted != null) {
             frontierHighlighted.setHighlighted(false);
+            frontierHighlighted = null;
         }
 
         ScreenLayerManager.pushLayer(new GuiNewFrontier(jmAPI));
@@ -206,6 +207,10 @@ public class GuiFullscreenMap {
 
     private void buttonVisibleToggled() {
         frontierHighlighted.setVisible(!buttonVisible.getToggled());
+
+        boolean personalFrontier = frontierHighlighted.getPersonal();
+        FrontiersOverlayManager frontierManager = ClientProxy.getFrontiersOverlayManager(personalFrontier);
+        frontierManager.clientUpdatefrontier(frontierHighlighted);
 
         updatebuttons();
     }
