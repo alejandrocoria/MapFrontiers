@@ -41,8 +41,8 @@ public class FrontierData {
     }
 
     protected UUID id;
-    protected List<BlockPos> vertices = new ArrayList<>();
-    protected Set<ChunkPos> chunks = new HashSet<>();
+    protected final List<BlockPos> vertices = new ArrayList<>();
+    protected final Set<ChunkPos> chunks = new HashSet<>();
     protected Mode mode = Mode.Vertex;
     protected boolean visible = true;
     protected String name1 = "New";
@@ -84,8 +84,10 @@ public class FrontierData {
 
         usersShared = other.usersShared;
 
-        vertices = other.vertices;
-        chunks = other.chunks;
+        vertices.clear();
+        vertices.addAll(other.vertices);
+        chunks.clear();
+        chunks.addAll(other.chunks);
         mode = other.mode;
 
         created = other.created;
@@ -127,8 +129,10 @@ public class FrontierData {
         }
 
         if (other.changes.contains(Change.Vertices)) {
-            vertices = other.vertices;
-            chunks = other.chunks;
+            vertices.clear();
+            vertices.addAll(other.vertices);
+            chunks.clear();
+            chunks.addAll(other.chunks);
             mode = other.mode;
         }
 
@@ -180,12 +184,16 @@ public class FrontierData {
     }
 
     public void addVertex(BlockPos pos, int index) {
-        vertices.add(index, BlockPosHelper.atY(pos,70));
+        synchronized (vertices) {
+            vertices.add(index, BlockPosHelper.atY(pos, 70));
+        }
         changes.add(Change.Vertices);
     }
 
     public void addVertex(BlockPos pos) {
-        addVertex(pos, vertices.size());
+        synchronized (vertices) {
+            addVertex(pos, vertices.size());
+        }
     }
 
     public void removeVertex(int index) {
@@ -193,7 +201,9 @@ public class FrontierData {
             return;
         }
 
-        vertices.remove(index);
+        synchronized (vertices) {
+            vertices.remove(index);
+        }
         changes.add(Change.Vertices);
     }
 
@@ -202,15 +212,19 @@ public class FrontierData {
             return;
         }
 
-        vertices.set(index, pos);
+        synchronized (vertices) {
+            vertices.set(index, pos);
+        }
         changes.add(Change.Vertices);
     }
 
     public boolean toggleChunk(ChunkPos chunk) {
         boolean added = false;
-        if (!chunks.remove(chunk)) {
-            chunks.add(chunk);
-            added = true;
+        synchronized (chunks) {
+            if (!chunks.remove(chunk)) {
+                chunks.add(chunk);
+                added = true;
+            }
         }
 
         changes.add(Change.Vertices);
@@ -218,18 +232,22 @@ public class FrontierData {
     }
 
     public boolean addChunk(ChunkPos chunk) {
-        if (chunks.add(chunk)) {
-            changes.add(Change.Vertices);
-            return true;
+        synchronized (chunks) {
+            if (chunks.add(chunk)) {
+                changes.add(Change.Vertices);
+                return true;
+            }
         }
 
         return false;
     }
 
     public boolean removeChunk(ChunkPos chunk) {
-        if (chunks.remove(chunk)) {
-            changes.remove(Change.Vertices);
-            return true;
+        synchronized (chunks) {
+            if (chunks.remove(chunk)) {
+                changes.remove(Change.Vertices);
+                return true;
+            }
         }
 
         return false;
@@ -672,14 +690,14 @@ public class FrontierData {
         }
 
         if (changes.contains(Change.Vertices)) {
-            vertices = new ArrayList<>();
+            vertices.clear();
             int vertexCount = buf.readInt();
             for (int i = 0; i < vertexCount; ++i) {
                 BlockPos vertex = BlockPos.of(buf.readLong());
                 vertices.add(vertex);
             }
 
-            chunks = new HashSet<>();
+            chunks.clear();
             int chunkCount = buf.readInt();
             for (int i = 0; i < chunkCount; ++i) {
                 ChunkPos chunk = new ChunkPos(buf.readLong());
