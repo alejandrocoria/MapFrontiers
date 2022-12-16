@@ -35,8 +35,6 @@ public class GuiScrollBox extends AbstractWidget {
         super(x, y, width, max(height, elementHeight), CommonComponents.EMPTY);
         elements = new ArrayList<>();
         selected = -1;
-        this.x = x;
-        this.y = y;
         this.elementHeight = elementHeight;
         scrollHeight = this.height / elementHeight;
         this.height = scrollHeight * elementHeight;
@@ -48,8 +46,8 @@ public class GuiScrollBox extends AbstractWidget {
     }
 
     public void addElement(ScrollElement element) {
-        element.setX(x);
-        element.setY(y + elements.size() * elementHeight);
+        element.setX(getX());
+        element.setY(getY() + elements.size() * elementHeight);
         elements.add(element);
         scrollBarGrabbed = false;
         updateScrollWindow();
@@ -107,7 +105,7 @@ public class GuiScrollBox extends AbstractWidget {
         }
 
         for (int i = 0; i < elements.size(); ++i) {
-            elements.get(i).setY(y + i * elementHeight);
+            elements.get(i).setY(getY() + i * elementHeight);
         }
 
         scrollBarGrabbed = false;
@@ -164,7 +162,7 @@ public class GuiScrollBox extends AbstractWidget {
         }
 
         if (scrollBarHeight > 0) {
-            if (mouseX >= x + width + 5 && mouseY >= y && mouseX < x + width + 15 && mouseY < y + height) {
+            if (mouseX >= getX() + width + 5 && mouseY >= getY() && mouseX < getX() + width + 15 && mouseY < getY() + height) {
                 scrollBarHovered = true;
             } else {
                 scrollBarHovered = false;
@@ -177,22 +175,22 @@ public class GuiScrollBox extends AbstractWidget {
                 barColor = GuiColors.SETTINGS_SCROLLBAR_HOVERED;
             }
 
-            fill(matrixStack, x + width + 5, y, x + width + 15, y + height, GuiColors.SETTINGS_SCROLLBAR_BG);
-            fill(matrixStack, x + width + 5, y + scrollBarPos, x + width + 15, y + scrollBarPos + scrollBarHeight, barColor);
+            fill(matrixStack, getX() + width + 5, getY(), getX() + width + 15, getY() + height, GuiColors.SETTINGS_SCROLLBAR_BG);
+            fill(matrixStack, getX() + width + 5, getY() + scrollBarPos, getX() + width + 15, getY() + scrollBarPos + scrollBarHeight, barColor);
         }
     }
 
     @Override
     public boolean clicked(double mouseX, double mouseY) {
         if (visible) {
-            if (scrollBarHeight > 0 && mouseX >= x + width + 5 && mouseY >= y && mouseX < x + width + 15 && mouseY < y + height) {
-                if (mouseY < y + scrollBarPos) {
+            if (scrollBarHeight > 0 && mouseX >= getX() + width + 5 && mouseY >= getY() && mouseX < getX() + width + 15 && mouseY < getY() + height) {
+                if (mouseY < getY() + scrollBarPos) {
                     mouseScrolled(mouseX, mouseY, 1);
-                } else if (mouseY > y + scrollBarPos + scrollBarHeight) {
+                } else if (mouseY > getY() + scrollBarPos + scrollBarHeight) {
                     mouseScrolled(mouseX, mouseY, -1);
                 } else {
                     scrollBarGrabbed = true;
-                    scrollBarGrabbedYPos = (int) mouseY - y - scrollBarPos;
+                    scrollBarGrabbedYPos = (int) mouseY - getY() - scrollBarPos;
                 }
 
                 return true;
@@ -231,7 +229,7 @@ public class GuiScrollBox extends AbstractWidget {
     @Override
     public void onDrag(double mouseX, double mouseY, double dragX, double dragY) {
         if (scrollBarHeight > 0 && scrollBarGrabbed) {
-            int delta = (int) mouseY - y - scrollBarPos - scrollBarGrabbedYPos;
+            int delta = (int) mouseY - getY() - scrollBarPos - scrollBarGrabbedYPos;
 
             if (delta == 0) {
                 return;
@@ -272,7 +270,7 @@ public class GuiScrollBox extends AbstractWidget {
                 elements.get(i).visible = false;
             } else {
                 elements.get(i).visible = true;
-                elements.get(i).setY(y + (i - scrollStart) * elementHeight);
+                elements.get(i).setY(getY() + (i - scrollStart) * elementHeight);
             }
         }
     }
@@ -293,7 +291,7 @@ public class GuiScrollBox extends AbstractWidget {
     }
 
     @Override
-    public void updateNarration(NarrationElementOutput p_169152_)
+    public void updateWidgetNarration(NarrationElementOutput narrationElementOutput)
     {
 
     }

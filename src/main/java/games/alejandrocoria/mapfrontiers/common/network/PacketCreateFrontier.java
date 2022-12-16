@@ -7,6 +7,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
@@ -39,7 +40,7 @@ public class PacketCreateFrontier {
 
     public static PacketCreateFrontier fromBytes(FriendlyByteBuf buf) {
         PacketCreateFrontier packet = new PacketCreateFrontier();
-        packet.dimension = ResourceKey.create(Registry.DIMENSION_REGISTRY, buf.readResourceLocation());
+        packet.dimension = ResourceKey.create(Registries.DIMENSION, buf.readResourceLocation());
         packet.personal = buf.readBoolean();
 
         boolean hasVertex = buf.readBoolean();

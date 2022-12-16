@@ -5,7 +5,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -24,9 +24,9 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
     private GuiButtonIcon buttonDelete;
     private final boolean enabled;
     private int pingBar = 0;
-    List<Widget> buttonList;
+    List<Renderable> buttonList;
 
-    public GuiUserSharedElement(Font font, List<Widget> buttonList, SettingsUserShared user, boolean enabled,
+    public GuiUserSharedElement(Font font, List<Renderable> buttonList, SettingsUserShared user, boolean enabled,
                                 boolean removable, UserSharedResponder responder) {
         super(430, 16);
         this.font = font;
@@ -68,7 +68,7 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
     public void setX(int x) {
         super.setX(x);
         if (buttonDelete != null) {
-            buttonDelete.x = this.x + 413;
+            buttonDelete.setX(this.x + 413);
         }
     }
 
@@ -76,7 +76,7 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
     public void setY(int y) {
         super.setY(y);
         if (buttonDelete != null) {
-            buttonDelete.y = this.y + 1;
+            buttonDelete.setY(this.y + 1);
         }
     }
 

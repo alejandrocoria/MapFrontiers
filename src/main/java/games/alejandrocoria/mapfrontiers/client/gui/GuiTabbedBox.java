@@ -30,8 +30,6 @@ public class GuiTabbedBox extends AbstractWidget {
         this.responder = responder;
         tabs = new ArrayList<>();
         selected = -1;
-        this.x = x;
-        this.y = y;
         this.width = width;
         this.height = height;
     }
@@ -56,16 +54,16 @@ public class GuiTabbedBox extends AbstractWidget {
         }
 
         if (selected == -1) {
-            hLine(matrixStack, x, x + width, y + 16, GuiColors.SETTINGS_TAB_BORDER);
+            hLine(matrixStack, getX(), getX() + width, getY() + 16, GuiColors.SETTINGS_TAB_BORDER);
         } else {
             int selectedX = tabs.get(selected).x;
-            hLine(matrixStack, x, selectedX, y + 16, GuiColors.SETTINGS_TAB_BORDER);
-            hLine(matrixStack, selectedX + 70, x + width, y + 16, GuiColors.SETTINGS_TAB_BORDER);
+            hLine(matrixStack, getX(), selectedX, getY() + 16, GuiColors.SETTINGS_TAB_BORDER);
+            hLine(matrixStack, selectedX + 70, getX() + width, getY() + 16, GuiColors.SETTINGS_TAB_BORDER);
         }
 
-        hLine(matrixStack, x, x + width, y + height, GuiColors.SETTINGS_TAB_BORDER);
-        vLine(matrixStack, x, y + 16, y + height, GuiColors.SETTINGS_TAB_BORDER);
-        vLine(matrixStack, x + width, y + 16, y + height, GuiColors.SETTINGS_TAB_BORDER);
+        hLine(matrixStack, getX(), getX() + width, getY() + height, GuiColors.SETTINGS_TAB_BORDER);
+        vLine(matrixStack, getX(), getY() + 16, getY() + height, GuiColors.SETTINGS_TAB_BORDER);
+        vLine(matrixStack, getX() + width, getY() + 16, getY() + height, GuiColors.SETTINGS_TAB_BORDER);
     }
 
     @Override
@@ -86,17 +84,17 @@ public class GuiTabbedBox extends AbstractWidget {
     }
 
     private void updateTabPositions() {
-        int tabX = x + width / 2 - tabs.size() * 35;
+        int tabX = getX() + width / 2 - tabs.size() * 35;
 
         for (Tab tab : tabs) {
             tab.x = tabX;
-            tab.y = y;
+            tab.y = getY();
             tabX += 70;
         }
     }
 
     @Override
-    public void updateNarration(NarrationElementOutput p_169152_)
+    public void updateWidgetNarration(NarrationElementOutput narrationElementOutput)
     {
 
     }
@@ -135,8 +133,8 @@ public class GuiTabbedBox extends AbstractWidget {
                 label.setColor(GuiColors.SETTINGS_TAB_TEXT_DISABLED);
             }
 
-            label.x = x + 35;
-            label.y = y + 5;
+            label.setX(x + 35);
+            label.setY(y + 5);
             label.render(matrixStack, mouseX, mouseY, partialTicks);
         }
 

@@ -19,7 +19,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
@@ -91,8 +91,6 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         if (ClientProxy.isModOnServer()) {
             PacketHandler.INSTANCE.sendToServer(new PacketRequestFrontierSettings());
         }
-
-        minecraft.keyboardHandler.setSendRepeatsToGui(true);
 
         scaleFactor = ScreenHelper.getScaleFactorThatFit(this, 696, 326);
         actualWidth = (int) (width * scaleFactor);
@@ -309,7 +307,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         mouseX *= scaleFactor;
         mouseY *= scaleFactor;
 
-        for (Widget w : renderables) {
+        for (GuiEventListener w : children()) {
             if (w instanceof GuiScrollBox) {
                 ((GuiScrollBox) w).mouseReleased();
             }
@@ -401,7 +399,6 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
 
     @Override
     public void removed() {
-        minecraft.keyboardHandler.setSendRepeatsToGui(false);
         ClientProxy.configUpdated();
         ClientProxy.setLastSettingsTab(tabSelected);
         MinecraftForge.EVENT_BUS.unregister(this);

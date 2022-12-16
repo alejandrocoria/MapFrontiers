@@ -68,7 +68,7 @@ public class GuiColorPicker extends AbstractWidget {
             return false;
         }
 
-        return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
+        return mouseX >= getX() && mouseX < getX() + width && mouseY >= getY() && mouseY < getY() + height;
     }
 
     @Override
@@ -84,8 +84,8 @@ public class GuiColorPicker extends AbstractWidget {
         updateMouse(mouseX, mouseY, false);
 
         if (!hsGrabbed && !vGrabbed) {
-            double paletteX = (mouseX - (x + 165)) / 23.0;
-            double paletteY = (mouseY - (y + 57)) / 23.0;
+            double paletteX = (mouseX - (getX() + 165)) / 23.0;
+            double paletteY = (mouseY - (getY() + 57)) / 23.0;
             if (paletteX >= 0.0 && paletteX < 6.0 && paletteY >= 0.0 && paletteY < 3.0) {
                 setColor(palette[(int) paletteX + (int) paletteY * 6]);
                 callbackColorUpdated.accept(this, false);
@@ -126,28 +126,28 @@ public class GuiColorPicker extends AbstractWidget {
 
         int texX = active ? 0 : 137;
 
-        blit(matrixStack, x, y, texX, 0, 128, 128, textureSizeX, textureSizeY);
+        blit(matrixStack, getX(), getY(), texX, 0, 128, 128, textureSizeX, textureSizeY);
         if (active) {
             RenderSystem.setShaderColor(((colorFullBrightness & 0xff0000) >> 16) / 255.f, ((colorFullBrightness & 0x00ff00) >> 8) / 255.f, (colorFullBrightness & 0x0000ff) / 255.f, 1.f);
         }
-        blit(matrixStack, x + 132, y, texX + 129, 0, 8, 128, textureSizeX, textureSizeY);
+        blit(matrixStack, getX() + 132, getY(), texX + 129, 0, 8, 128, textureSizeX, textureSizeY);
         if (!active) {
             RenderSystem.setShaderColor(((colorFullBrightness & 0xff0000) >> 16) / 255.f, ((colorFullBrightness & 0x00ff00) >> 8) / 255.f, (colorFullBrightness & 0x0000ff) / 255.f, 1.f);
         }
-        fill(matrixStack, x + (int) hsX + 64, y + (int) hsY + 64, x + (int) hsX + 65, y + (int) hsY + 65, colorFullBrightness);
-        fill(matrixStack, x + 131, y + (int) v, x + 139, y + (int) v + 1, color);
+        fill(matrixStack, getX() + (int) hsX + 64, getY() + (int) hsY + 64, getX() + (int) hsX + 65, getY() + (int) hsY + 65, colorFullBrightness);
+        fill(matrixStack, getX() + 131, getY() + (int) v, getX() + 139, getY() + (int) v + 1, color);
         RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
-        blit(matrixStack, x + (int) hsX + 64 - 2, y + (int) hsY + 64 - 2, texX, 129, 5, 5, textureSizeX, textureSizeY);
-        blit(matrixStack, x + 131, y + (int) v - 2, texX + 6, 129, 10, 5, textureSizeX, textureSizeY);
+        blit(matrixStack, getX() + (int) hsX + 64 - 2, getY() + (int) hsY + 64 - 2, texX, 129, 5, 5, textureSizeX, textureSizeY);
+        blit(matrixStack, getX() + 131, getY() + (int) v - 2, texX + 6, 129, 10, 5, textureSizeX, textureSizeY);
 
-        fill(matrixStack, x + 165, y + 57, x + 304, y + 127, 0xff000000);
+        fill(matrixStack, getX() + 165, getY() + 57, getX() + 304, getY() + 127, 0xff000000);
         int col = 0;
         int row = 0;
         for (int c : (active ? palette : paletteInactive)) {
             if (active && c == color) {
-                fill(matrixStack, x + 165 + col * 23, y + 57 + row * 23, x + 189 + col * 23, y + 81 + row * 23, 0xffffffff);
+                fill(matrixStack, getX() + 165 + col * 23, getY() + 57 + row * 23, getX() + 189 + col * 23, getY() + 81 + row * 23, 0xffffffff);
             }
-            fill(matrixStack, x + 166 + col * 23, y + 58 + row * 23, x + 188 + col * 23, y + 80 + row * 23, c);
+            fill(matrixStack, getX() + 166 + col * 23, getY() + 58 + row * 23, getX() + 188 + col * 23, getY() + 80 + row * 23, c);
             ++col;
             if (col == 6) {
                 col = 0;
@@ -157,15 +157,15 @@ public class GuiColorPicker extends AbstractWidget {
     }
 
     @Override
-    public void updateNarration(NarrationElementOutput p_169152_)
+    public void updateWidgetNarration(NarrationElementOutput narrationElementOutput)
     {
 
     }
 
     private boolean updateMouse(double mouseX, double mouseY, boolean dragging) {
         if (!vGrabbed) {
-            double localX = mouseX - (x + 64);
-            double localY = mouseY - (y + 64);
+            double localX = mouseX - (getX() + 64);
+            double localY = mouseY - (getY() + 64);
             double dist = Math.sqrt(localX * localX + localY * localY);
 
             if (dist < 66.0) {
@@ -185,8 +185,8 @@ public class GuiColorPicker extends AbstractWidget {
         }
 
         if (!hsGrabbed) {
-            double localX = mouseX - (x + 132);
-            double localY = mouseY - y;
+            double localX = mouseX - (getX() + 132);
+            double localY = mouseY - getY();
 
             if (localX >= 0 && localX < 8 && localY >= 0 && localY < 128.0) {
                 vGrabbed = true;

@@ -13,7 +13,7 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateSharedUserPe
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
@@ -63,8 +63,6 @@ public class GuiShareSettings extends Screen
         if (!ClientProxy.isModOnServer()) {
             ForgeHooksClient.popGuiLayer(minecraft);
         }
-
-        minecraft.keyboardHandler.setSendRepeatsToGui(true);
 
         Component title = Component.translatable("mapfrontiers.title_share_settings");
         addRenderableOnly(new GuiSimpleLabel(font, width / 2, 8, GuiSimpleLabel.Align.Center, title, GuiColors.WHITE));
@@ -145,7 +143,7 @@ public class GuiShareSettings extends Screen
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        for (Widget w : renderables) {
+        for (GuiEventListener w : children()) {
             if (w instanceof GuiScrollBox) {
                 ((GuiScrollBox) w).mouseReleased();
             }
@@ -234,7 +232,6 @@ public class GuiShareSettings extends Screen
     @Override
     public void removed() {
         MinecraftForge.EVENT_BUS.unregister(this);
-        minecraft.keyboardHandler.setSendRepeatsToGui(false);
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)

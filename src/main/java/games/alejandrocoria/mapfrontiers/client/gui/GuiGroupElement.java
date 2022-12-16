@@ -4,7 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -18,9 +18,9 @@ public class GuiGroupElement extends GuiScrollBox.ScrollElement {
     private final Font font;
     private final SettingsGroup group;
     private final GuiButtonIcon buttonDelete;
-    final List<Widget> buttonList;
+    final List<Renderable> buttonList;
 
-    public GuiGroupElement(Font font, List<Widget> buttonList, SettingsGroup group) {
+    public GuiGroupElement(Font font, List<Renderable> buttonList, SettingsGroup group) {
         super(160, 16);
         this.font = font;
         this.group = group;
@@ -44,13 +44,13 @@ public class GuiGroupElement extends GuiScrollBox.ScrollElement {
     @Override
     public void setX(int x) {
         super.setX(x);
-        buttonDelete.x = this.x + 145;
+        buttonDelete.setX(this.x + 145);
     }
 
     @Override
     public void setY(int y) {
         super.setY(y);
-        buttonDelete.y = this.y + 1;
+        buttonDelete.setY(this.y + 1);
     }
 
     @Override

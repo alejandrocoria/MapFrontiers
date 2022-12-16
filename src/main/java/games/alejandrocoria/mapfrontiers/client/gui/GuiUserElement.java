@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -17,9 +17,9 @@ public class GuiUserElement extends GuiScrollBox.ScrollElement {
     private final SettingsUser user;
     private final GuiButtonIcon buttonDelete;
     private int pingBar = 0;
-    final List<Widget> buttonList;
+    final List<Renderable> buttonList;
 
-    public GuiUserElement(Font font, List<Widget> buttonList, SettingsUser user) {
+    public GuiUserElement(Font font, List<Renderable> buttonList, SettingsUser user) {
         super(258, 16);
         this.font = font;
         this.user = user;
@@ -50,13 +50,13 @@ public class GuiUserElement extends GuiScrollBox.ScrollElement {
     @Override
     public void setX(int x) {
         super.setX(x);
-        buttonDelete.x = this.x + 243;
+        buttonDelete.setX(this.x + 243);
     }
 
     @Override
     public void setY(int y) {
         super.setY(y);
-        buttonDelete.y = this.y + 1;
+        buttonDelete.setY(this.y + 1);
     }
 
     @Override

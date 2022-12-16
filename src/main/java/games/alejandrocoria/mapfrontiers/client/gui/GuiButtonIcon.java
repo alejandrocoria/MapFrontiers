@@ -27,7 +27,7 @@ public class GuiButtonIcon extends Button {
     private int texY;
 
     public GuiButtonIcon(int x, int y, Type type, Button.OnPress pressedAction) {
-        super(x, y, 13, 13, CommonComponents.EMPTY, pressedAction);
+        super(x, y, 13, 13, CommonComponents.EMPTY, pressedAction, Button.DEFAULT_NARRATION);
 
         switch (type) {
             case Add:
@@ -55,6 +55,6 @@ public class GuiButtonIcon extends Button {
             texX = 13;
         }
 
-        blit(matrixStack, x, y, texX, texY, width, height, textureSizeX, textureSizeY);
+        blit(matrixStack, getX(), getY(), texX, texY, width, height, textureSizeX, textureSizeY);
     }
 }

@@ -23,7 +23,7 @@ public class GuiOptionButton extends Button {
     private int highlightedColor = GuiColors.SETTINGS_TEXT_HIGHLIGHT;
 
     public GuiOptionButton(Font font, int x, int y, int width, Button.OnPress pressedAction) {
-        super(x, y, width, 12, CommonComponents.EMPTY, pressedAction);
+        super(x, y, width, 12, CommonComponents.EMPTY, pressedAction, Button.DEFAULT_NARRATION);
         this.font = font;
         options = new ArrayList<>();
     }
@@ -96,10 +96,10 @@ public class GuiOptionButton extends Button {
             c = highlightedColor;
         }
 
-        fill(matrixStack, x - 1, y - 1, x + width + 1, y + height + 1, GuiColors.SETTINGS_OPTION_BORDER);
-        fill(matrixStack, x, y, x + width, y + height, GuiColors.SETTINGS_OPTION_BG);
+        fill(matrixStack, getX() - 1, getY() - 1, getX() + width + 1, getY() + height + 1, GuiColors.SETTINGS_OPTION_BORDER);
+        fill(matrixStack, getX(), getY(), getX() + width, getY() + height, GuiColors.SETTINGS_OPTION_BG);
 
-        font.draw(matrixStack, options.get(selected), x + 4, y + 2, c);
+        font.draw(matrixStack, options.get(selected), getX() + 4, getY() + 2, c);
     }
 
     @Override

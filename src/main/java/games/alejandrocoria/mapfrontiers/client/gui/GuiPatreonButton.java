@@ -54,8 +54,8 @@ public class GuiPatreonButton extends AbstractWidget {
         Minecraft mc = Minecraft.getInstance();
         int factor = (int) mc.getWindow().getGuiScale();
 
-        isHovered = (mouseX >= x - width / 2 / factor && mouseY >= y + 1 / factor && mouseX < x + width / 2 / factor
-                && mouseY < y + height / factor);
+        isHovered = (mouseX >= getX() - width / 2 / factor && mouseY >= getY() + 1 / factor && mouseX < getX() + width / 2 / factor
+                && mouseY < getY() + height / factor);
 
         if (isHovered) {
             RenderSystem.setShaderColor(0.9f, 0.9f, 0.9f, 1.f);
@@ -65,7 +65,7 @@ public class GuiPatreonButton extends AbstractWidget {
 
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderTexture(0, texture);
-        blit(matrixStack, x - width / 2 / factor, y, 0, 0, width / factor, height / factor,
+        blit(matrixStack, getX() - width / 2 / factor, getY(), 0, 0, width / factor, height / factor,
                 textureSizeX / factor, textureSizeY / factor);
     }
 
@@ -75,7 +75,7 @@ public class GuiPatreonButton extends AbstractWidget {
     }
 
     @Override
-    public void updateNarration(NarrationElementOutput p_169152_) {
+    public void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
 
     }
 }

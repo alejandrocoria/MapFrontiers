@@ -8,6 +8,7 @@ import games.alejandrocoria.mapfrontiers.common.util.BlockPosHelper;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
@@ -494,7 +495,7 @@ public class FrontierData {
             visible = nbt.getBoolean("visible");
         }
         color = nbt.getInt("color");
-        dimension = ResourceKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation(nbt.getString("dimension")));
+        dimension = ResourceKey.create(Registries.DIMENSION, new ResourceLocation(nbt.getString("dimension")));
         name1 = nbt.getString("name1");
         name2 = nbt.getString("name2");
         if (nbt.contains("nameVisible")) {
@@ -639,7 +640,7 @@ public class FrontierData {
         }
 
         id = UUIDHelper.fromBytes(buf);
-        dimension = ResourceKey.create(Registry.DIMENSION_REGISTRY, buf.readResourceLocation());
+        dimension = ResourceKey.create(Registries.DIMENSION, buf.readResourceLocation());
         personal = buf.readBoolean();
         owner = new SettingsUser();
         owner.fromBytes(buf);

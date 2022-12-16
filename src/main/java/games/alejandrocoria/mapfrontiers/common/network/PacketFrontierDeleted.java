@@ -4,6 +4,7 @@ import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
@@ -37,7 +38,7 @@ public class PacketFrontierDeleted {
 
     public static PacketFrontierDeleted fromBytes(FriendlyByteBuf buf) {
         PacketFrontierDeleted packet = new PacketFrontierDeleted();
-        packet.dimension = ResourceKey.create(Registry.DIMENSION_REGISTRY, buf.readResourceLocation());
+        packet.dimension = ResourceKey.create(Registries.DIMENSION, buf.readResourceLocation());
         packet.frontierID = UUIDHelper.fromBytes(buf);
         packet.personal = buf.readBoolean();
         packet.playerID = buf.readInt();

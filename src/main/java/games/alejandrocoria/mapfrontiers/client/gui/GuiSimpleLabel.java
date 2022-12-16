@@ -96,26 +96,26 @@ public class GuiSimpleLabel extends AbstractWidget {
 
         if (align == Align.Left) {
             for (int i = 0; i < texts.size(); ++i) {
-                font.draw(matrixStack, texts.get(i), x / scale, (y + i * 12) / scale, color);
+                font.draw(matrixStack, texts.get(i), getX() / scale, (getY() + i * 12) / scale, color);
             }
         } else if (align == Align.Center) {
             for (int i = 0; i < texts.size(); ++i) {
-                font.draw(matrixStack, texts.get(i), x / scale - (widths.get(i) - 1) / 2, (y + i * 12) / scale,
+                font.draw(matrixStack, texts.get(i), getX() / scale - (widths.get(i) - 1) / 2, (getY() + i * 12) / scale,
                         color);
             }
         } else {
             for (int i = 0; i < texts.size(); ++i) {
-                font.draw(matrixStack, texts.get(i), x / scale - widths.get(i), (y + i * 12) / scale, color);
+                font.draw(matrixStack, texts.get(i), getX() / scale - widths.get(i), (getY() + i * 12) / scale, color);
             }
         }
 
-        isHovered = (mouseX >= topLeft.x * scale + x && mouseY >= topLeft.y * scale + y && mouseX < bottomRight.x * scale + x
-                && mouseY < bottomRight.y * scale + y);
+        isHovered = (mouseX >= topLeft.x * scale + getX() && mouseY >= topLeft.y * scale + getY() && mouseX < bottomRight.x * scale + getX()
+                && mouseY < bottomRight.y * scale + getY());
 
         matrixStack.scale(1.0F / scale, 1.0F / scale, 1.0F);
     }
 
     @Override
-    public void updateNarration(NarrationElementOutput p_169152_) {
+    public void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
     }
 }

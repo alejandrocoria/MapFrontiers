@@ -18,7 +18,7 @@ import journeymap.client.ui.UIManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.CommonComponents;
@@ -85,8 +85,6 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
 
     @Override
     public void init() {
-        minecraft.keyboardHandler.setSendRepeatsToGui(true);
-
         scaleFactor = ScreenHelper.getScaleFactorThatFit(this, 627, 336);
         actualWidth = (int) (width * scaleFactor);
         actualHeight = (int) (height * scaleFactor);
@@ -301,9 +299,9 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         mouseX *= scaleFactor;
         mouseY *= scaleFactor;
 
-        for (Widget w : renderables) {
-            if (w instanceof GuiColorPicker) {
-                ((GuiColorPicker) w).mouseReleased(mouseX, mouseY, button);
+        for (GuiEventListener w : children()) {
+            if (w instanceof GuiScrollBox) {
+                ((GuiScrollBox) w).mouseReleased();
             }
         }
 
@@ -366,7 +364,6 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
     @Override
     public void removed() {
         sendChangesToServer();
-        minecraft.keyboardHandler.setSendRepeatsToGui(false);
         MinecraftForge.EVENT_BUS.unregister(this);
     }
 

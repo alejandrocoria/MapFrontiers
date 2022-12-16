@@ -18,7 +18,7 @@ import journeymap.client.data.WorldData;
 import journeymap.client.waypoint.WaypointStore;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
@@ -172,7 +172,7 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
         mouseX *= scaleFactor;
         mouseY *= scaleFactor;
 
-        for (Widget w : renderables) {
+        for (GuiEventListener w : children()) {
             if (w instanceof GuiScrollBox) {
                 ((GuiScrollBox) w).mouseReleased();
             }

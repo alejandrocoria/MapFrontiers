@@ -6,7 +6,7 @@ import games.alejandrocoria.mapfrontiers.client.util.StringHelper;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -28,9 +28,9 @@ public class GuiFrontierListElement extends GuiScrollBox.ScrollElement {
     String chunks;
     int offset1;
     int offset2;
-    final List<Widget> buttonList;
+    final List<Renderable> buttonList;
 
-    public GuiFrontierListElement(Font font, List<Widget> buttonList, FrontierOverlay frontier) {
+    public GuiFrontierListElement(Font font, List<Renderable> buttonList, FrontierOverlay frontier) {
         super(450, 24);
         this.font = font;
         this.frontier = frontier;

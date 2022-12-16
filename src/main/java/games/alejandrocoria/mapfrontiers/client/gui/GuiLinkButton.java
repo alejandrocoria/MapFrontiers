@@ -28,7 +28,7 @@ public class GuiLinkButton extends AbstractWidget {
     public GuiLinkButton(Font font, int x, int y, Component text, String uri, BooleanConsumer callbackFunction) {
         super(x, y, font.width(text.getString()) + 8, 16, text);
         this.callbackFunction = callbackFunction;
-        this.x -= width / 2;
+        this.setX(x - width / 2);
         this.label = new GuiSimpleLabel(font, x, y + 5, GuiSimpleLabel.Align.Center, text, GuiColors.SETTINGS_BUTTON_TEXT);
         this.uri = uri;
     }
@@ -58,7 +58,7 @@ public class GuiLinkButton extends AbstractWidget {
     }
 
     @Override
-    public void updateNarration(NarrationElementOutput p_169152_)
+    public void updateWidgetNarration(NarrationElementOutput narrationElementOutput)
     {
 
     }
