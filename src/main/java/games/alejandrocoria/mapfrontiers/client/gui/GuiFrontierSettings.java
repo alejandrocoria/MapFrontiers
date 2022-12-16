@@ -113,8 +113,6 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
             PacketHandler.sendToServer(PacketRequestFrontierSettings.class, new PacketRequestFrontierSettings());
         }
 
-        minecraft.keyboardHandler.setSendRepeatsToGui(true);
-
         scaleFactor = ScreenHelper.getScaleFactorThatFit(this, 696, 326);
         actualWidth = (int) (width * scaleFactor);
         actualHeight = (int) (height * scaleFactor);
@@ -426,7 +424,6 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
 
     @Override
     public void removed() {
-        minecraft.keyboardHandler.setSendRepeatsToGui(false);
         ClientProxy.configUpdated();
         ClientProxy.setLastSettingsTab(tabSelected);
         ClientProxy.unsuscribeAllEvents(this);

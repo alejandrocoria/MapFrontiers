@@ -105,8 +105,6 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
 
     @Override
     public void init() {
-        minecraft.keyboardHandler.setSendRepeatsToGui(true);
-
         scaleFactor = ScreenHelper.getScaleFactorThatFit(this, 627, 336);
         actualWidth = (int) (width * scaleFactor);
         actualHeight = (int) (height * scaleFactor);
@@ -392,7 +390,6 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
     @Override
     public void removed() {
         sendChangesToServer();
-        minecraft.keyboardHandler.setSendRepeatsToGui(false);
         ClientProxy.unsuscribeAllEvents(this);
     }
 

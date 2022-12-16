@@ -95,7 +95,7 @@ public class GuiVertexShapeButtons extends AbstractWidget {
             return false;
         }
 
-        return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
+        return mouseX >= getX() && mouseX < getX() + width && mouseY >= getY() && mouseY < getY() + height;
     }
 
     @Override
@@ -105,8 +105,8 @@ public class GuiVertexShapeButtons extends AbstractWidget {
 
     @Override
     public void onClick(double mouseX, double mouseY) {
-        double col = (mouseX - x + 3) / 55.0;
-        double row = (mouseY - y - 13) / 55.0;
+        double col = (mouseX - getX() + 3) / 55.0;
+        double row = (mouseY - getY() - 13) / 55.0;
         if (col >= 0.0 && col < 6.0 && row >= 0.0 && row < 2.0) {
             selected = (int) col + (int) row * 6;
             updateVertexLabel();
@@ -134,7 +134,7 @@ public class GuiVertexShapeButtons extends AbstractWidget {
                 texY = 49;
             }
 
-            blit(matrixStack, x + col * 55, y + row * 55 + 16, texX, texY, 49, 49, textureSizeX, textureSizeY);
+            blit(matrixStack, getX() + col * 55, getY() + row * 55 + 16, texX, texY, 49, 49, textureSizeX, textureSizeY);
 
             ++col;
             if (col == 6) {
@@ -148,7 +148,7 @@ public class GuiVertexShapeButtons extends AbstractWidget {
     }
 
     @Override
-    public void updateNarration(NarrationElementOutput p_169152_) {
+    public void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
 
     }
 

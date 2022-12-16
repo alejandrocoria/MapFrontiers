@@ -127,25 +127,25 @@ public class TextUserBox extends TextBox {
             List<FormattedCharSequence> errorList = font.split(error, width - 8);
             int maxErrorWidth = width - 8;
 
-            fill(matrixStack, x - 1, y - errorList.size() * 12 - 5, x + maxErrorWidth + 9, y - 1,
+            fill(matrixStack, getX() - 1, getY() - errorList.size() * 12 - 5, getX() + maxErrorWidth + 9, getY() - 1,
                     GuiColors.SETTINGS_TEXT_BOX_EXTRA_BORDER);
-            fill(matrixStack, x, y - errorList.size() * 12 - 4, x + maxErrorWidth + 8, y - 1,
+            fill(matrixStack, getX(), getY() - errorList.size() * 12 - 4, getX() + maxErrorWidth + 8, getY() - 1,
                     GuiColors.SETTINGS_TEXT_BOX_EXTRA_BG);
 
-            int posX = x + 4;
-            int posY = y - errorList.size() * 12;
+            int posX = getX() + 4;
+            int posY = getY() - errorList.size() * 12;
             for (FormattedCharSequence e : errorList) {
                 font.draw(matrixStack, e, posX, posY, GuiColors.SETTINGS_TEXT_HIGHLIGHT);
                 posY += 12;
             }
         } else if (!suggestionsToDraw.isEmpty()) {
-            fill(matrixStack, x - 1, y - suggestionsToDraw.size() * 12 - 5, x + maxSuggestionWidth + 9, y - 1,
+            fill(matrixStack, getX() - 1, getY() - suggestionsToDraw.size() * 12 - 5, getX() + maxSuggestionWidth + 9, getY() - 1,
                     GuiColors.SETTINGS_TEXT_BOX_EXTRA_BORDER);
-            fill(matrixStack, x, y - suggestionsToDraw.size() * 12 - 4, x + maxSuggestionWidth + 8, y - 1,
+            fill(matrixStack, getX(), getY() - suggestionsToDraw.size() * 12 - 4, getX() + maxSuggestionWidth + 8, getY() - 1,
                     GuiColors.SETTINGS_TEXT_BOX_EXTRA_BG);
 
-            int posX = x + 4;
-            int posY = y - 12;
+            int posX = getX() + 4;
+            int posY = getY() - 12;
             for (int i = suggestionsToDraw.size() - 1; i >= 0; --i) {
                 String t = suggestionsToDraw.get(i);
                 // Strings are compared using == because they are the same objects

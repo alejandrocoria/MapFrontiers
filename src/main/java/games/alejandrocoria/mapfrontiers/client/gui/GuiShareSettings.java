@@ -71,8 +71,6 @@ public class GuiShareSettings extends Screen
             ScreenLayerManager.popLayer();
         }
 
-        minecraft.keyboardHandler.setSendRepeatsToGui(true);
-
         users = new GuiScrollBox(width / 2 - 215, 82, 430, height - 128, 16, this);
 
         textNewUser = new TextUserBox(minecraft, font, width / 2 - 125, height - 61, 238);
@@ -244,7 +242,6 @@ public class GuiShareSettings extends Screen
     @Override
     public void removed() {
         ClientProxy.unsuscribeAllEvents(this);
-        minecraft.keyboardHandler.setSendRepeatsToGui(false);
     }
 
     private void resetLabels() {

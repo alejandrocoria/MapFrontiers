@@ -5,7 +5,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
-import com.mojang.math.Matrix4f;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import org.joml.Matrix4f;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiColors;
 import games.alejandrocoria.mapfrontiers.common.ConfigData;
@@ -492,7 +494,7 @@ public class FrontierOverlay extends FrontierData {
 
         for (int i = 0; i < bannerDisplay.patternList.size(); ++i) {
             BannerPattern pattern = bannerDisplay.patternList.get(i);
-            TextureAtlasSprite sprite = mc.getTextureAtlas(Sheets.BANNER_SHEET).apply(BannerPattern.location(Registry.BANNER_PATTERN.getResourceKey(pattern).get(), true));
+            TextureAtlasSprite sprite = mc.getTextureAtlas(Sheets.BANNER_SHEET).apply(BannerPattern.location(BuiltInRegistries.BANNER_PATTERN.getResourceKey(pattern).get(), true));
             RenderSystem.setShader(GameRenderer::getPositionColorTexShader);
             RenderSystem.setShaderTexture(0, Sheets.BANNER_SHEET);
             RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
@@ -959,7 +961,7 @@ public class FrontierOverlay extends FrontierData {
         public BannerDisplayData(FrontierData.BannerData bannerData) {
             patternList = new ArrayList<>();
             colorList = new ArrayList<>();
-            patternList.add(Registry.BANNER_PATTERN.get(BannerPatterns.BASE));
+            patternList.add(BuiltInRegistries.BANNER_PATTERN.get(BannerPatterns.BASE));
             colorList.add(bannerData.baseColor);
             patternResourceLocation = "b" + bannerData.baseColor.getId();
 

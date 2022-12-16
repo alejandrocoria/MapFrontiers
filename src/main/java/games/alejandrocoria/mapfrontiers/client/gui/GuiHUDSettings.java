@@ -54,8 +54,6 @@ public class GuiHUDSettings extends Screen implements TextIntBox.TextIntBoxRespo
 
     @Override
     public void init() {
-        minecraft.keyboardHandler.setSendRepeatsToGui(true);
-
         if (UIManager.INSTANCE.isMiniMapEnabled()) {
             minimap = UIManager.INSTANCE.getMiniMap();
         }
@@ -323,7 +321,6 @@ public class GuiHUDSettings extends Screen implements TextIntBox.TextIntBoxRespo
 
     @Override
     public void removed() {
-        minecraft.keyboardHandler.setSendRepeatsToGui(false);
         ClientProxy.configUpdated();
     }
 

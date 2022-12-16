@@ -387,13 +387,13 @@ public class GuiHUD {
             case Name:
                 nameOffsetY = offsetY;
 
-                frontierName1.x = posX + hudWidth / 2;
-                frontierName1.y = posY + nameOffsetY + 2 * textScale;
+                frontierName1.setX(posX + hudWidth / 2);
+                frontierName1.setY(posY + nameOffsetY + 2 * textScale);
                 frontierName1.setScale(textScale);
                 frontierName1.setText(Component.literal(frontier.getName1()));
 
-                frontierName2.x = posX + hudWidth / 2;
-                frontierName2.y = posY + nameOffsetY + 14 * textScale;
+                frontierName2.setX(posX + hudWidth / 2);
+                frontierName2.setY(posY + nameOffsetY + 14 * textScale);
                 frontierName2.setScale(textScale);
                 frontierName2.setText(Component.literal(frontier.getName2()));
 
@@ -404,8 +404,8 @@ public class GuiHUD {
                     String owner = getOwnerString();
                     ownerOffsetY = offsetY;
 
-                    frontierOwner.x = posX + hudWidth / 2;
-                    frontierOwner.y = posY + ownerOffsetY + 2;
+                    frontierOwner.setX(posX + hudWidth / 2);
+                    frontierOwner.setY(posY + ownerOffsetY + 2);
                     frontierOwner.setScale(textScale);
                     frontierOwner.setText(Component.literal(ChatFormatting.ITALIC + owner));
 

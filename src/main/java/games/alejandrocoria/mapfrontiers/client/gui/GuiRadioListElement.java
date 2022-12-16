@@ -35,13 +35,13 @@ public class GuiRadioListElement extends GuiScrollBox.ScrollElement {
     @Override
     public void setX(int x) {
         super.setX(x);
-        label.x = x + 20;
+        label.setX(x + 20);
     }
 
     @Override
     public void setY(int y) {
         super.setY(y);
-        label.y = y + 4;
+        label.setY(y + 4);
     }
 
     @Override

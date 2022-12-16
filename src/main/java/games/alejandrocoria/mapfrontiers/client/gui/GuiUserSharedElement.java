@@ -67,7 +67,7 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
     public void setX(int x) {
         super.setX(x);
         if (buttonDelete != null) {
-            buttonDelete.x = this.x + 413;
+            buttonDelete.setX(this.x + 413);
         }
     }
 
@@ -75,7 +75,7 @@ public class GuiUserSharedElement extends GuiScrollBox.ScrollElement {
     public void setY(int y) {
         super.setY(y);
         if (buttonDelete != null) {
-            buttonDelete.y = this.y + 1;
+            buttonDelete.setY(this.y + 1);
         }
     }
 

@@ -51,13 +51,13 @@ public class GuiUserElement extends GuiScrollBox.ScrollElement {
     @Override
     public void setX(int x) {
         super.setX(x);
-        buttonDelete.x = this.x + 243;
+        buttonDelete.setX(this.x + 243);
     }
 
     @Override
     public void setY(int y) {
         super.setY(y);
-        buttonDelete.y = this.y + 1;
+        buttonDelete.setY(this.y + 1);
     }
 
     @Override
