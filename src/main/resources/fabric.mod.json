@@ -39,7 +39,7 @@
     "fabric": "*",
     "minecraft": "~1.19.1",
     "java": ">=17",
-    "journeymap": "*",
+    "journeymap": ">=1.19.2-5.9",
     "forgeconfigapiport": ">=4.1.4"
   }
 }
