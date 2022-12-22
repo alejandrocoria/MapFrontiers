@@ -25,13 +25,13 @@ This mod is an addon for Journey Map that allows you to divide the map into regi
 [[dependencies.mapfrontiers]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.19,)"
+    versionRange="[1.19.1,1.19.3)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.mapfrontiers]]
     modId="journeymap"
     mandatory=true
-    versionRange="[1.19-5.8,)"
+    versionRange="[1.19.2-5.9,)"
     ordering="NONE"
     side="BOTH"
