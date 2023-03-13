@@ -102,7 +102,7 @@ public class GuiFrontierListElement extends GuiScrollBox.ScrollElement {
         }
 
         font.draw(matrixStack, type, x + 170, y + 4, color);
-        font.draw(matrixStack, dimension, x + 170, y + 14, GuiColors.SETTINGS_BUTTON_TEXT);
+        font.draw(matrixStack, dimension, x + 170, y + 14, GuiColors.SETTINGS_TEXT_DIMENSION);
 
         if (frontier.getMode() == FrontierData.Mode.Vertex) {
             font.draw(matrixStack, vertices, x + 180 + offset1, y + 4, color);

@@ -12,3 +12,4 @@ build.bat
 logs/
 .idea/
 run-server/
+out/
