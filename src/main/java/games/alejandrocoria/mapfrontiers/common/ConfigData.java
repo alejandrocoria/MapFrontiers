@@ -78,6 +78,7 @@ public class ConfigData {
     public static Visibility minimapNameVisibility;
     public static Visibility minimapOwnerVisibility;
     public static boolean titleAnnouncementAboveHotbar;
+    public static boolean announceUnnamedFrontiers;
     public static boolean hideNamesThatDontFit;
     public static double polygonsOpacity;
     public static int snapDistance;
@@ -111,6 +112,7 @@ public class ConfigData {
         minimapNameVisibility = CLIENT.minimapNameVisibility.get();
         minimapOwnerVisibility = CLIENT.minimapOwnerVisibility.get();
         titleAnnouncementAboveHotbar = CLIENT.titleAnnouncementAboveHotbar.get();
+        announceUnnamedFrontiers = CLIENT.announceUnnamedFrontiers.get();
         hideNamesThatDontFit = CLIENT.hideNamesThatDontFit.get();
         polygonsOpacity = CLIENT.polygonsOpacity.get();
         snapDistance = CLIENT.snapDistance.get();
@@ -152,6 +154,7 @@ public class ConfigData {
         public final EnumValue<Visibility> minimapNameVisibility;
         public final EnumValue<Visibility> minimapOwnerVisibility;
         public final BooleanValue titleAnnouncementAboveHotbar;
+        public final BooleanValue announceUnnamedFrontiers;
         public final BooleanValue hideNamesThatDontFit;
         public final DoubleValue polygonsOpacity;
         public final IntValue snapDistance;
@@ -206,6 +209,10 @@ public class ConfigData {
                     "Show the frontier announcement above the hotbar instead of showing it as a title.")
                     .translation(MapFrontiers.MODID + ".config." + "titleAnnouncementAboveHotbar")
                     .define("titleAnnouncementAboveHotbar", false);
+            announceUnnamedFrontiers = builder.comment(
+                    "Announce unnamed frontiers in chat/title.")
+                    .translation(MapFrontiers.MODID + ".config." + "announceUnnamedFrontiers")
+                    .define("announceUnnamedFrontiers", false);
             hideNamesThatDontFit = builder.comment(
                     "Hides the name if it is wider than the frontier at the zoom level it is being viewed.")
                     .translation(MapFrontiers.MODID + ".config." + "hideNamesThatDontFit")
@@ -263,6 +270,7 @@ public class ConfigData {
         CLIENT.minimapNameVisibility.set(minimapNameVisibility);
         CLIENT.minimapOwnerVisibility.set(minimapOwnerVisibility);
         CLIENT.titleAnnouncementAboveHotbar.set(titleAnnouncementAboveHotbar);
+        CLIENT.announceUnnamedFrontiers.set(announceUnnamedFrontiers);
         CLIENT.hideNamesThatDontFit.set(hideNamesThatDontFit);
         CLIENT.polygonsOpacity.set(polygonsOpacity);
         CLIENT.snapDistance.set(snapDistance);

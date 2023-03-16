@@ -63,6 +63,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
     private GuiOptionButton buttonMinimapNameVisibility;
     private GuiOptionButton buttonMinimapOwnerVisibility;
     private GuiOptionButton ButtonTitleAnnouncementAboveHotbar;
+    private GuiOptionButton buttonAnnounceUnnamedFrontiers;
     private GuiOptionButton buttonHideNamesThatDontFit;
     private TextDoubleBox textPolygonsOpacity;
     private TextIntBox textSnapDistance;
@@ -174,27 +175,32 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         ButtonTitleAnnouncementAboveHotbar.addOption(Component.translatable("options.off"));
         ButtonTitleAnnouncementAboveHotbar.setSelected(ConfigData.titleAnnouncementAboveHotbar ? 0 : 1);
 
-        buttonHideNamesThatDontFit = new GuiOptionButton(font, actualWidth / 2 + 80, 150, 40, this::buttonPressed);
+        buttonAnnounceUnnamedFrontiers = new GuiOptionButton(font, actualWidth / 2 + 80, 150, 40, this::buttonPressed);
+        buttonAnnounceUnnamedFrontiers.addOption(Component.translatable("options.on"));
+        buttonAnnounceUnnamedFrontiers.addOption(Component.translatable("options.off"));
+        buttonAnnounceUnnamedFrontiers.setSelected(ConfigData.announceUnnamedFrontiers ? 0 : 1);
+
+        buttonHideNamesThatDontFit = new GuiOptionButton(font, actualWidth / 2 + 80, 166, 40, this::buttonPressed);
         buttonHideNamesThatDontFit.addOption(Component.translatable("options.on"));
         buttonHideNamesThatDontFit.addOption(Component.translatable("options.off"));
         buttonHideNamesThatDontFit.setSelected(ConfigData.hideNamesThatDontFit ? 0 : 1);
 
-        textPolygonsOpacity = new TextDoubleBox(0.4, 0.0, 1.0, font, actualWidth / 2 + 80, 166, 40);
+        textPolygonsOpacity = new TextDoubleBox(0.4, 0.0, 1.0, font, actualWidth / 2 + 80, 182, 40);
         textPolygonsOpacity.setValue(String.valueOf(ConfigData.polygonsOpacity));
         textPolygonsOpacity.setMaxLength(6);
         textPolygonsOpacity.setResponder(this);
 
-        textSnapDistance = new TextIntBox(8, 0, 16, font, actualWidth / 2 + 80, 182, 40);
+        textSnapDistance = new TextIntBox(8, 0, 16, font, actualWidth / 2 + 80, 198, 40);
         textSnapDistance.setValue(String.valueOf(ConfigData.snapDistance));
         textSnapDistance.setMaxLength(2);
         textSnapDistance.setResponder(this);
 
-        buttonHUDEnabled = new GuiOptionButton(font, actualWidth / 2 + 80, 236, 40, this::buttonPressed);
+        buttonHUDEnabled = new GuiOptionButton(font, actualWidth / 2 + 80, 252, 40, this::buttonPressed);
         buttonHUDEnabled.addOption(Component.translatable("options.on"));
         buttonHUDEnabled.addOption(Component.translatable("options.off"));
         buttonHUDEnabled.setSelected(ConfigData.hudEnabled ? 0 : 1);
 
-        buttonEditHUD = new GuiSettingsButton(font, actualWidth / 2 - 50, 256, 100,
+        buttonEditHUD = new GuiSettingsButton(font, actualWidth / 2 - 50, 272, 100,
                 Component.translatable("mapfrontiers.edit_hud"), this::buttonPressed);
 
         groups = new GuiScrollBox(50, 50, 160, actualHeight - 120, 16, this);
@@ -236,6 +242,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         addRenderableWidget(buttonMinimapOwnerVisibility);
         addRenderableWidget(ButtonTitleAnnouncementAboveHotbar);
         addRenderableWidget(buttonHideNamesThatDontFit);
+        addRenderableWidget(buttonAnnounceUnnamedFrontiers);
         addRenderableWidget(textPolygonsOpacity);
         addRenderableWidget(textSnapDistance);
         addRenderableWidget(buttonHUDEnabled);
@@ -390,6 +397,8 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
             ConfigData.titleAnnouncementAboveHotbar = ButtonTitleAnnouncementAboveHotbar.getSelected() == 0;
         } else if (button == buttonHideNamesThatDontFit) {
             ConfigData.hideNamesThatDontFit = buttonHideNamesThatDontFit.getSelected() == 0;
+        } else if (button == buttonAnnounceUnnamedFrontiers) {
+            ConfigData.announceUnnamedFrontiers = buttonAnnounceUnnamedFrontiers.getSelected() == 0;
         } else if (button == buttonHUDEnabled) {
             ConfigData.hudEnabled = buttonHUDEnabled.getSelected() == 0;
             buttonEditHUD.visible = ConfigData.hudEnabled;
@@ -560,20 +569,24 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
                     ConfigData.getTooltip("titleAnnouncementAboveHotbar"));
             addLabelWithTooltip(
                     new GuiSimpleLabel(font, actualWidth / 2 - 120, 152, GuiSimpleLabel.Align.Left,
+                            ConfigData.getTranslatedName("announceUnnamedFrontiers"), GuiColors.SETTINGS_TEXT),
+                    ConfigData.getTooltip("announceUnnamedFrontiers"));
+            addLabelWithTooltip(
+                    new GuiSimpleLabel(font, actualWidth / 2 - 120, 168, GuiSimpleLabel.Align.Left,
                             ConfigData.getTranslatedName("hideNamesThatDontFit"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("hideNamesThatDontFit"));
             addLabelWithTooltip(
-                    new GuiSimpleLabel(font, actualWidth / 2 - 120, 168, GuiSimpleLabel.Align.Left,
+                    new GuiSimpleLabel(font, actualWidth / 2 - 120, 184, GuiSimpleLabel.Align.Left,
                             ConfigData.getTranslatedName("polygonsOpacity"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("polygonsOpacity"));
             addLabelWithTooltip(
-                    new GuiSimpleLabel(font, actualWidth / 2 - 120, 184, GuiSimpleLabel.Align.Left,
+                    new GuiSimpleLabel(font, actualWidth / 2 - 120, 200, GuiSimpleLabel.Align.Left,
                             ConfigData.getTranslatedName("snapDistance"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("snapDistance"));
-            labels.add(new GuiSimpleLabel(font, actualWidth / 2, 218, GuiSimpleLabel.Align.Center,
+            labels.add(new GuiSimpleLabel(font, actualWidth / 2, 234, GuiSimpleLabel.Align.Center,
                     Component.translatable("mapfrontiers.hud"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             addLabelWithTooltip(
-                    new GuiSimpleLabel(font, actualWidth / 2 - 120, 238, GuiSimpleLabel.Align.Left,
+                    new GuiSimpleLabel(font, actualWidth / 2 - 120, 254, GuiSimpleLabel.Align.Left,
                             ConfigData.getTranslatedName("hud.enabled"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("hud.enabled"));
         } else if (tabSelected == Tab.Groups) {
@@ -629,6 +642,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         buttonMinimapOwnerVisibility.visible = tabSelected == Tab.General;
         ButtonTitleAnnouncementAboveHotbar.visible = tabSelected == Tab.General;
         buttonHideNamesThatDontFit.visible = tabSelected == Tab.General;
+        buttonAnnounceUnnamedFrontiers.visible = tabSelected == Tab.General;
         textPolygonsOpacity.visible = tabSelected == Tab.General;
         textSnapDistance.visible = tabSelected == Tab.General;
         buttonHUDEnabled.visible = tabSelected == Tab.General;

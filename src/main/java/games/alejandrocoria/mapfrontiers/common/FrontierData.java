@@ -23,6 +23,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.server.ServerLifecycleHooks;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -297,6 +298,10 @@ public class FrontierData {
 
     public String getName2() {
         return name2;
+    }
+
+    public boolean isNamed() {
+        return !StringUtils.isBlank(name1) || !StringUtils.isBlank(name2);
     }
 
     public void setVisible(boolean visible) {

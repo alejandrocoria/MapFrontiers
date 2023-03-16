@@ -105,7 +105,7 @@ public class ClientProxy {
                 for (Iterator<FrontierOverlay> i = insideFrontiers.iterator(); i.hasNext();) {
                     FrontierOverlay inside = i.next();
                     if (frontiers.stream().noneMatch(f -> f.getId().equals(inside.getId()))) {
-                        if (inside.getAnnounceInChat()) {
+                        if (inside.getAnnounceInChat() && (inside.isNamed() || ConfigData.announceUnnamedFrontiers)) {
                             player.displayClientMessage(Component.translatable("mapfrontiers.chat.leaving", createAnnounceTextWithName(inside)), false);
                         }
                         i.remove();
@@ -113,7 +113,7 @@ public class ClientProxy {
                 }
 
                 for (FrontierOverlay frontier : frontiers) {
-                    if (insideFrontiers.add(frontier)) {
+                    if (insideFrontiers.add(frontier) && (frontier.isNamed() || ConfigData.announceUnnamedFrontiers)) {
                         Component text = createAnnounceTextWithName(frontier);
                         if (frontier.getAnnounceInChat()) {
                             player.displayClientMessage(Component.translatable("mapfrontiers.chat.entering", text), false);
@@ -132,7 +132,7 @@ public class ClientProxy {
     }
 
     private static Component createAnnounceTextWithName(FrontierOverlay frontier) {
-        if (StringUtils.isBlank(frontier.getName1()) && StringUtils.isBlank(frontier.getName2())) {
+        if (!frontier.isNamed()) {
             MutableComponent text = Component.translatable("mapfrontiers.unnamed", ChatFormatting.ITALIC);
             text.withStyle(style -> style.withItalic(true).withColor(GuiColors.SETTINGS_TEXT_MEDIUM));
             return text;
