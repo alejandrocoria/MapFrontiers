@@ -633,30 +633,37 @@ public class FrontierOverlay extends FrontierData {
         PolygonOverlay polygonOverlayFullscreen = null;
         PolygonOverlay polygonOverlayMinimap = null;
 
-        if (fullscreenVisible && minimapVisible && (fullscreenNameVisible == minimapNameVisible) && (fullscreenOwnerVisible == minimapOwnerVisible)) {
+        boolean fullscreenV = ConfigData.getVisibilityValue(ConfigData.fullscreenVisibility, fullscreenVisible);
+        boolean fullscreenNameV = ConfigData.getVisibilityValue(ConfigData.fullscreenNameVisibility, fullscreenNameVisible);
+        boolean fullscreenOwnerV = ConfigData.getVisibilityValue(ConfigData.fullscreenOwnerVisibility, fullscreenOwnerVisible);
+        boolean minimapV = ConfigData.getVisibilityValue(ConfigData.minimapVisibility, minimapVisible);
+        boolean minimapNameV = ConfigData.getVisibilityValue(ConfigData.minimapNameVisibility, minimapNameVisible);
+        boolean minimapOwnerV = ConfigData.getVisibilityValue(ConfigData.minimapNameVisibility, minimapOwnerVisible);
+
+        if (fullscreenV && minimapV && (fullscreenNameV == minimapNameV) && (fullscreenOwnerV == minimapOwnerV)) {
             polygonOverlay = new PolygonOverlay(MapFrontiers.MODID, id, dimension, shapeProps, polygon, polygonHoles);
             polygonOverlay.setActiveUIs(EnumSet.of(Context.UI.Any));
         } else {
-            if (fullscreenVisible) {
+            if (fullscreenV) {
                 polygonOverlayFullscreen = new PolygonOverlay(MapFrontiers.MODID, id + "_fullscreen", dimension, shapeProps, polygon, polygonHoles);
                 polygonOverlayFullscreen.setActiveUIs(EnumSet.of(Context.UI.Fullscreen));
             }
-            if (minimapVisible) {
+            if (minimapV) {
                 polygonOverlayMinimap = new PolygonOverlay(MapFrontiers.MODID, id + "_minimap", dimension, shapeProps, polygon, polygonHoles);
                 polygonOverlayMinimap.setActiveUIs(EnumSet.of(Context.UI.Minimap, Context.UI.Webmap));
             }
         }
 
         if (polygonOverlay != null) {
-            addNameAndOwner(polygonOverlay, fullscreenNameVisible, fullscreenOwnerVisible);
+            addNameAndOwner(polygonOverlay, fullscreenNameV, fullscreenOwnerV);
             polygonOverlays.add(polygonOverlay);
         } else {
             if (polygonOverlayFullscreen != null) {
-                addNameAndOwner(polygonOverlayFullscreen, fullscreenNameVisible, fullscreenOwnerVisible);
+                addNameAndOwner(polygonOverlayFullscreen, fullscreenNameV, fullscreenOwnerV);
                 polygonOverlays.add(polygonOverlayFullscreen);
             }
             if (polygonOverlayMinimap != null) {
-                addNameAndOwner(polygonOverlayMinimap, minimapNameVisible, minimapOwnerVisible);
+                addNameAndOwner(polygonOverlayMinimap, minimapNameV, minimapOwnerV);
                 polygonOverlays.add(polygonOverlayMinimap);
             }
         }
@@ -676,14 +683,27 @@ public class FrontierOverlay extends FrontierData {
                 }
                 area = abs(area);
             } else {
-                for (int i = 0; i < vertices.size(); ++i) {
-                    String markerId = displayId + "_" + i;
-                    MarkerOverlay marker = new MarkerOverlay(MapFrontiers.MODID, markerId, vertices.get(i), markerVertex);
-                    marker.setDimension(dimension);
-                    marker.setDisplayOrder(100);
-                    markerOverlays.add(marker);
-                    if (i == 0 && vertices.size() == 2) {
-                        addMarkerDots(markerId, vertices.get(0), vertices.get(1));
+                boolean fullscreenV = ConfigData.getVisibilityValue(ConfigData.fullscreenVisibility, fullscreenVisible);
+                boolean minimapV = ConfigData.getVisibilityValue(ConfigData.minimapVisibility, minimapVisible);
+                if (fullscreenV || minimapV) {
+                    EnumSet<Context.UI> ui;
+                    if (fullscreenV && minimapV) {
+                        ui = EnumSet.of(Context.UI.Any);
+                    } else if (fullscreenV) {
+                        ui = EnumSet.of(Context.UI.Fullscreen);
+                    } else {
+                        ui = EnumSet.of(Context.UI.Minimap, Context.UI.Webmap);
+                    }
+                    for (int i = 0; i < vertices.size(); ++i) {
+                        String markerId = displayId + "_" + i;
+                        MarkerOverlay marker = new MarkerOverlay(MapFrontiers.MODID, markerId, vertices.get(i), markerVertex);
+                        marker.setDimension(dimension);
+                        marker.setDisplayOrder(100);
+                        marker.setActiveUIs(ui);
+                        markerOverlays.add(marker);
+                        if (i == 0 && vertices.size() == 2) {
+                            addMarkerDots(markerId, vertices.get(0), vertices.get(1), ui);
+                        }
                     }
                 }
             }
@@ -830,11 +850,6 @@ public class FrontierOverlay extends FrontierData {
             return;
         }
 
-        ConfigData.NameVisibility nameVisibility = ConfigData.nameVisibility;
-        if (nameVisibility == ConfigData.NameVisibility.Hide) {
-            return;
-        }
-
         TextProperties textProps = new TextProperties().setColor(color).setScale(2.f).setBackgroundOpacity(0.f);
         if (ConfigData.hideNamesThatDontFit) {
             if (mode == Mode.Vertex) {
@@ -856,7 +871,7 @@ public class FrontierOverlay extends FrontierData {
         int lines = 0;
         String label = "";
 
-        if (nameVisibility == ConfigData.NameVisibility.Show || nameVisible) {
+        if (nameVisible) {
             if (!name1.isEmpty()) {
                 ++lines;
                 label += name1 + "\n";
@@ -867,7 +882,7 @@ public class FrontierOverlay extends FrontierData {
             }
         }
 
-        if (nameVisibility == ConfigData.NameVisibility.Show || (ownerVisible && !owner.username.isEmpty())) {
+        if (ownerVisible && !owner.username.isEmpty()) {
             ++lines;
             label += ChatFormatting.ITALIC + owner.username + "\n";
         }
@@ -954,23 +969,23 @@ public class FrontierOverlay extends FrontierData {
     //
     // Functions adapted from https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
     //
-    private void addMarkerDots(String markerId, BlockPos from, BlockPos to) {
+    private void addMarkerDots(String markerId, BlockPos from, BlockPos to, EnumSet<Context.UI> ui) {
         if (abs(to.getZ() - from.getZ()) < abs(to.getX() - from.getX())) {
             if (from.getX() > to.getX()) {
-                addLineMarkerDots(markerId, to.getX(), to.getZ(), from.getX(), from.getZ());
+                addLineMarkerDots(markerId, to.getX(), to.getZ(), from.getX(), from.getZ(), ui);
             } else{
-                addLineMarkerDots(markerId, from.getX(), from.getZ(), to.getX(), to.getZ());
+                addLineMarkerDots(markerId, from.getX(), from.getZ(), to.getX(), to.getZ(), ui);
             }
         } else {
             if (from.getZ() > to.getZ()) {
-                addLineMarkerDots(markerId, to.getX(), to.getZ(), from.getX(), from.getZ());
+                addLineMarkerDots(markerId, to.getX(), to.getZ(), from.getX(), from.getZ(), ui);
             } else{
-                addLineMarkerDots(markerId, from.getX(), from.getZ(), to.getX(), to.getZ());
+                addLineMarkerDots(markerId, from.getX(), from.getZ(), to.getX(), to.getZ(), ui);
             }
         }
     }
 
-    private void addLineMarkerDots(String markerId, int x0, int z0, int x1, int z1) {
+    private void addLineMarkerDots(String markerId, int x0, int z0, int x1, int z1, EnumSet<Context.UI> ui) {
         int dx = abs(x1 - x0);
         int sx = x0 < x1 ? 1 : -1;
         int dz = -abs(z1 - z0);
@@ -1010,6 +1025,7 @@ public class FrontierOverlay extends FrontierData {
                 minZoom = 1;
             }
             dot.setMinZoom(minZoom);
+            dot.setActiveUIs(ui);
             markerOverlays.add(dot);
 
             ++i;
