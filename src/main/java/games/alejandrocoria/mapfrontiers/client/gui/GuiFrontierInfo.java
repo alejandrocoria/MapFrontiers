@@ -63,6 +63,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
     private GuiOptionButton buttonMinimapNameVisible;
     private GuiOptionButton buttonMinimapOwnerVisible;
     private GuiOptionButton buttonAnnounceInChat;
+    private GuiOptionButton buttonAnnounceInTitle;
     private TextIntBox textRed;
     private TextIntBox textGreen;
     private TextIntBox textBlue;
@@ -166,12 +167,19 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         buttonMinimapOwnerVisible.addOption(Component.translatable("options.off"));
         buttonMinimapOwnerVisible.setSelected(frontier.getMinimapOwnerVisible() ? 0 : 1);
 
-        addRenderableOnly(new GuiSimpleLabel(font, leftSide, top + 102, GuiSimpleLabel.Align.Left,
+        addRenderableOnly(new GuiSimpleLabel(font, leftSide, top + 86, GuiSimpleLabel.Align.Left,
                 Component.translatable("mapfrontiers.announce_in_chat"), GuiColors.SETTINGS_TEXT));
-        buttonAnnounceInChat = new GuiOptionButton(font, leftSide + 116, top + 100, 28, this::buttonPressed);
+        buttonAnnounceInChat = new GuiOptionButton(font, leftSide + 116, top + 84, 28, this::buttonPressed);
         buttonAnnounceInChat.addOption(Component.translatable("options.on"));
         buttonAnnounceInChat.addOption(Component.translatable("options.off"));
         buttonAnnounceInChat.setSelected(frontier.getAnnounceInChat() ? 0 : 1);
+
+        addRenderableOnly(new GuiSimpleLabel(font, leftSide, top + 102, GuiSimpleLabel.Align.Left,
+                Component.translatable("mapfrontiers.announce_in_title"), GuiColors.SETTINGS_TEXT));
+        buttonAnnounceInTitle = new GuiOptionButton(font, leftSide + 116, top + 100, 28, this::buttonPressed);
+        buttonAnnounceInTitle.addOption(Component.translatable("options.on"));
+        buttonAnnounceInTitle.addOption(Component.translatable("options.off"));
+        buttonAnnounceInTitle.setSelected(frontier.getAnnounceInTitle() ? 0 : 1);
 
         addRenderableOnly(new GuiSimpleLabel(font, rightSide, top + 152, GuiSimpleLabel.Align.Left,
                 Component.translatable("mapfrontiers.color"), GuiColors.LABEL_TEXT));
@@ -276,6 +284,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         addRenderableWidget(buttonMinimapNameVisible);
         addRenderableWidget(buttonMinimapOwnerVisible);
         addRenderableWidget(buttonAnnounceInChat);
+        addRenderableWidget(buttonAnnounceInTitle);
         addRenderableWidget(textRed);
         addRenderableWidget(textGreen);
         addRenderableWidget(textBlue);
@@ -394,6 +403,9 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
             sendChangesToServer();
         } else if (button == buttonAnnounceInChat) {
             frontier.setAnnounceInChat(buttonAnnounceInChat.getSelected() == 0);
+            sendChangesToServer();
+        } else if (button == buttonAnnounceInTitle) {
+            frontier.setAnnounceInTitle(buttonAnnounceInTitle.getSelected() == 0);
             sendChangesToServer();
         } else if (button == buttonRandomColor) {
             int newColor = ColorHelper.getRandomColor();
@@ -553,6 +565,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         buttonMinimapNameVisible.active = actions.canUpdate;
         buttonMinimapOwnerVisible.active = actions.canUpdate;
         buttonAnnounceInChat.active = actions.canUpdate;
+        buttonAnnounceInTitle.active = actions.canUpdate;
         textRed.setEditable(actions.canUpdate);
         textGreen.setEditable(actions.canUpdate);
         textBlue.setEditable(actions.canUpdate);

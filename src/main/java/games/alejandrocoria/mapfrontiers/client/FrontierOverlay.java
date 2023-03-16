@@ -137,6 +137,7 @@ public class FrontierOverlay extends FrontierData {
             hash = prime * hash + (minimapNameVisible ? 1231 : 1237);
             hash = prime * hash + (minimapOwnerVisible ? 1231 : 1237);
             hash = prime * hash + (announceInChat ? 1231 : 1237);
+            hash = prime * hash + (announceInTitle ? 1231 : 1237);
             hash = prime * hash + ((vertices == null) ? 0 : vertices.hashCode());
             hash = prime * hash + ((chunks == null) ? 0 : chunks.hashCode());
             hash = prime * hash + mode.ordinal();

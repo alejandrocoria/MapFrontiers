@@ -54,6 +54,7 @@ public class FrontierData {
     protected boolean minimapNameVisible = true;
     protected boolean minimapOwnerVisible = false;
     protected boolean announceInChat = false;
+    protected boolean announceInTitle = false;
     protected int color = 0xffffffff;
     protected ResourceKey<Level> dimension;
     protected SettingsUser owner = new SettingsUser();
@@ -83,6 +84,7 @@ public class FrontierData {
         minimapNameVisible = other.minimapNameVisible;
         minimapOwnerVisible = other.minimapOwnerVisible;
         announceInChat = other.announceInChat;
+        announceInTitle = other.announceInTitle;
         color = other.color;
 
         name1 = other.name1;
@@ -124,6 +126,7 @@ public class FrontierData {
             minimapNameVisible = other.minimapNameVisible;
             minimapOwnerVisible = other.minimapOwnerVisible;
             announceInChat = other.announceInChat;
+            announceInTitle = other.announceInTitle;
             color = other.color;
         }
 
@@ -368,6 +371,15 @@ public class FrontierData {
         return announceInChat;
     }
 
+    public void setAnnounceInTitle(boolean announceInTitle) {
+        this.announceInTitle = announceInChat;
+        changes.add(Change.Other);
+    }
+
+    public boolean getAnnounceInTitle() {
+        return announceInTitle;
+    }
+
     public void setColor(int color) {
         this.color = color;
         changes.add(Change.Other);
@@ -563,8 +575,12 @@ public class FrontierData {
             fullscreenOwnerVisible = nbt.getBoolean("ownerVisible");
             minimapOwnerVisible = nbt.getBoolean("ownerVisible");
         }
+
         if (nbt.contains("announceInChat")) {
             announceInChat = nbt.getBoolean("announceInChat");
+        }
+        if (nbt.contains("announceInTitle")) {
+            announceInTitle = nbt.getBoolean("announceInTitle");
         }
 
         personal = nbt.getBoolean("personal");
@@ -643,6 +659,7 @@ public class FrontierData {
         nbt.putBoolean("minimapNameVisible", minimapNameVisible);
         nbt.putBoolean("minimapOwnerVisible", minimapOwnerVisible);
         nbt.putBoolean("announceInChat", announceInChat);
+        nbt.putBoolean("announceInTitle", announceInTitle);
         nbt.putBoolean("personal", personal);
 
         CompoundTag nbtOwner = new CompoundTag();
@@ -718,6 +735,7 @@ public class FrontierData {
             minimapNameVisible = buf.readBoolean();
             minimapOwnerVisible = buf.readBoolean();
             announceInChat = buf.readBoolean();
+            announceInTitle = buf.readBoolean();
         }
 
         if (changes.contains(Change.Name)) {
@@ -816,6 +834,7 @@ public class FrontierData {
             buf.writeBoolean(minimapNameVisible);
             buf.writeBoolean(minimapOwnerVisible);
             buf.writeBoolean(announceInChat);
+            buf.writeBoolean(announceInTitle);
         }
 
         if (!onlyChanges || changes.contains(Change.Name)) {

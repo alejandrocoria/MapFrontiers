@@ -267,7 +267,7 @@ public class FrontiersOverlayManager {
         ArrayList<FrontierOverlay> frontiers = dimensionsFrontiers.get(dimension);
         if (frontiers != null) {
             for (FrontierOverlay frontier : frontiers) {
-                if (frontier.getAnnounceInChat() && frontier.pointIsInside(pos, 0.0)) {
+                if ((frontier.getAnnounceInChat() || frontier.getAnnounceInTitle()) && frontier.pointIsInside(pos, 0.0)) {
                     inPosition.add(frontier);
                 }
             }
