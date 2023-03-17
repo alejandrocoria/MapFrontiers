@@ -241,8 +241,8 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         addRenderableWidget(buttonMinimapNameVisibility);
         addRenderableWidget(buttonMinimapOwnerVisibility);
         addRenderableWidget(ButtonTitleAnnouncementAboveHotbar);
-        addRenderableWidget(buttonHideNamesThatDontFit);
         addRenderableWidget(buttonAnnounceUnnamedFrontiers);
+        addRenderableWidget(buttonHideNamesThatDontFit);
         addRenderableWidget(textPolygonsOpacity);
         addRenderableWidget(textSnapDistance);
         addRenderableWidget(buttonHUDEnabled);
@@ -395,10 +395,10 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
             ConfigData.minimapOwnerVisibility = ConfigData.Visibility.values()[buttonMinimapOwnerVisibility.getSelected()];
         } else if (button == ButtonTitleAnnouncementAboveHotbar) {
             ConfigData.titleAnnouncementAboveHotbar = ButtonTitleAnnouncementAboveHotbar.getSelected() == 0;
-        } else if (button == buttonHideNamesThatDontFit) {
-            ConfigData.hideNamesThatDontFit = buttonHideNamesThatDontFit.getSelected() == 0;
         } else if (button == buttonAnnounceUnnamedFrontiers) {
             ConfigData.announceUnnamedFrontiers = buttonAnnounceUnnamedFrontiers.getSelected() == 0;
+        } else if (button == buttonHideNamesThatDontFit) {
+            ConfigData.hideNamesThatDontFit = buttonHideNamesThatDontFit.getSelected() == 0;
         } else if (button == buttonHUDEnabled) {
             ConfigData.hudEnabled = buttonHUDEnabled.getSelected() == 0;
             buttonEditHUD.visible = ConfigData.hudEnabled;
@@ -641,8 +641,8 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         buttonMinimapNameVisibility.visible = tabSelected == Tab.General;
         buttonMinimapOwnerVisibility.visible = tabSelected == Tab.General;
         ButtonTitleAnnouncementAboveHotbar.visible = tabSelected == Tab.General;
-        buttonHideNamesThatDontFit.visible = tabSelected == Tab.General;
         buttonAnnounceUnnamedFrontiers.visible = tabSelected == Tab.General;
+        buttonHideNamesThatDontFit.visible = tabSelected == Tab.General;
         textPolygonsOpacity.visible = tabSelected == Tab.General;
         textSnapDistance.visible = tabSelected == Tab.General;
         buttonHUDEnabled.visible = tabSelected == Tab.General;

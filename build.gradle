@@ -2,7 +2,7 @@ plugins {
     id 'net.minecraftforge.gradle' version '5.1.+'
 }
 
-version = '1.19.3-2.4.0'
+version = '1.19.3-2.5.0'
 group = 'games.alejandrocoria.mapfrontiers' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'MapFrontiers'
 
@@ -103,7 +103,7 @@ dependencies {
     // The userdev artifact is a special name and will get all sorts of transformations applied to it.
     minecraft 'net.minecraftforge:forge:1.19.3-44.0.5'
 
-    implementation fg.deobf("curse.maven:journeymap-32274:4385902")
+    implementation fg.deobf("curse.maven:journeymap-32274:4437170")
 }
 
 jar {
