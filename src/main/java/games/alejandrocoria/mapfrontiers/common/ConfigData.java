@@ -18,7 +18,11 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.*;
+import net.minecraftforge.common.ForgeConfigSpec.BooleanValue;
+import net.minecraftforge.common.ForgeConfigSpec.DoubleValue;
+import net.minecraftforge.common.ForgeConfigSpec.EnumValue;
+import net.minecraftforge.common.ForgeConfigSpec.IntValue;
+import net.minecraftforge.common.ForgeConfigSpec.ValueSpec;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.config.ModConfig;
@@ -43,8 +47,8 @@ public class ConfigData {
         Info, Edit, Nothing
     }
 
-    public enum NameVisibility {
-        Manual, Show, Hide
+    public enum Visibility {
+        Custom, Always, Never
     }
 
     public enum FilterFrontierType {
@@ -72,7 +76,14 @@ public class ConfigData {
     public static int newFrontierChunkShapeLength;
     public static FrontierData.Mode newFrontierMode;
     public static AfterCreatingFrontier afterCreatingFrontier;
-    public static NameVisibility nameVisibility;
+    public static Visibility fullscreenVisibility;
+    public static Visibility fullscreenNameVisibility;
+    public static Visibility fullscreenOwnerVisibility;
+    public static Visibility minimapVisibility;
+    public static Visibility minimapNameVisibility;
+    public static Visibility minimapOwnerVisibility;
+    public static boolean titleAnnouncementAboveHotbar;
+    public static boolean announceUnnamedFrontiers;
     public static boolean hideNamesThatDontFit;
     public static double polygonsOpacity;
     public static int snapDistance;
@@ -99,7 +110,14 @@ public class ConfigData {
         newFrontierChunkShapeLength = CLIENT.newFrontierChunkShapeLength.get();
         newFrontierMode = CLIENT.newFrontierMode.get();
         afterCreatingFrontier = CLIENT.afterCreatingFrontier.get();
-        nameVisibility = CLIENT.nameVisibility.get();
+        fullscreenVisibility = CLIENT.fullscreenVisibility.get();
+        fullscreenNameVisibility = CLIENT.fullscreenNameVisibility.get();
+        fullscreenOwnerVisibility = CLIENT.fullscreenOwnerVisibility.get();
+        minimapVisibility = CLIENT.minimapVisibility.get();
+        minimapNameVisibility = CLIENT.minimapNameVisibility.get();
+        minimapOwnerVisibility = CLIENT.minimapOwnerVisibility.get();
+        titleAnnouncementAboveHotbar = CLIENT.titleAnnouncementAboveHotbar.get();
+        announceUnnamedFrontiers = CLIENT.announceUnnamedFrontiers.get();
         hideNamesThatDontFit = CLIENT.hideNamesThatDontFit.get();
         polygonsOpacity = CLIENT.polygonsOpacity.get();
         snapDistance = CLIENT.snapDistance.get();
@@ -134,7 +152,14 @@ public class ConfigData {
         public final IntValue newFrontierChunkShapeLength;
         public final EnumValue<FrontierData.Mode> newFrontierMode;
         public final EnumValue<AfterCreatingFrontier> afterCreatingFrontier;
-        public final EnumValue<NameVisibility> nameVisibility;
+        public final EnumValue<Visibility> fullscreenVisibility;
+        public final EnumValue<Visibility> fullscreenNameVisibility;
+        public final EnumValue<Visibility> fullscreenOwnerVisibility;
+        public final EnumValue<Visibility> minimapVisibility;
+        public final EnumValue<Visibility> minimapNameVisibility;
+        public final EnumValue<Visibility> minimapOwnerVisibility;
+        public final BooleanValue titleAnnouncementAboveHotbar;
+        public final BooleanValue announceUnnamedFrontiers;
         public final BooleanValue hideNamesThatDontFit;
         public final DoubleValue polygonsOpacity;
         public final IntValue snapDistance;
@@ -161,12 +186,40 @@ public class ConfigData {
             newFrontierChunkShapeLength = builder.defineInRange("newFrontierChunkShapeLength", 5, 0, 32);
             newFrontierMode = builder.defineEnum("newFrontierMode", FrontierData.Mode.Vertex);
             afterCreatingFrontier = builder.defineEnum("afterCreatingFrontier", AfterCreatingFrontier.Info);
-            nameVisibility = builder.comment(
-                    "Force all frontier names to be shown on the map or hidden. In Manual you can decide for each frontier.")
-                    .translation(MapFrontiers.MODID + ".config." + "nameVisibility")
-                    .defineEnum("nameVisibility", NameVisibility.Manual);
+            fullscreenVisibility = builder.comment(
+                            "Force all frontier to be shown or hidden on the fullscreen map. In Manual you can decide for each frontier.")
+                    .translation(MapFrontiers.MODID + ".config." + "fullscreenVisibility")
+                    .defineEnum("fullscreenVisibility", Visibility.Custom);
+            fullscreenNameVisibility = builder.comment(
+                            "Force all frontier names to be shown or hidden on the fullscreen map. In Manual you can decide for each frontier.")
+                    .translation(MapFrontiers.MODID + ".config." + "fullscreenNameVisibility")
+                    .defineEnum("fullscreenNameVisibility", Visibility.Custom);
+            fullscreenOwnerVisibility = builder.comment(
+                            "Force all frontier owners to be shown or hidden on the fullscreen map. In Manual you can decide for each frontier.")
+                    .translation(MapFrontiers.MODID + ".config." + "fullscreenOwnerVisibility")
+                    .defineEnum("fullscreenOwnerVisibility", Visibility.Custom);
+            minimapVisibility = builder.comment(
+                            "Force all frontier to be shown or hidden on the minimap. In Manual you can decide for each frontier.")
+                    .translation(MapFrontiers.MODID + ".config." + "minimapVisibility")
+                    .defineEnum("minimapVisibility", Visibility.Custom);
+            minimapNameVisibility = builder.comment(
+                            "Force all frontier names to be shown or hidden on the minimap. In Manual you can decide for each frontier.")
+                    .translation(MapFrontiers.MODID + ".config." + "minimapNameVisibility")
+                    .defineEnum("minimapNameVisibility", Visibility.Custom);
+            minimapOwnerVisibility = builder.comment(
+                            "Force all frontier owners to be shown or hidden on the minimap. In Manual you can decide for each frontier.")
+                    .translation(MapFrontiers.MODID + ".config." + "minimapOwnerVisibility")
+                    .defineEnum("minimapOwnerVisibility", Visibility.Custom);
+            titleAnnouncementAboveHotbar = builder.comment(
+                            "Show the frontier announcement above the hotbar instead of showing it as a title.")
+                    .translation(MapFrontiers.MODID + ".config." + "titleAnnouncementAboveHotbar")
+                    .define("titleAnnouncementAboveHotbar", false);
+            announceUnnamedFrontiers = builder.comment(
+                            "Announce unnamed frontiers in chat/title.")
+                    .translation(MapFrontiers.MODID + ".config." + "announceUnnamedFrontiers")
+                    .define("announceUnnamedFrontiers", false);
             hideNamesThatDontFit = builder.comment(
-                    "Hides the name if it is wider than the frontier at the zoom level it is being viewed.")
+                            "Hides the name if it is wider than the frontier at the zoom level it is being viewed.")
                     .translation(MapFrontiers.MODID + ".config." + "hideNamesThatDontFit")
                     .define("hideNamesThatDontFit", true);
             polygonsOpacity = builder
@@ -197,7 +250,7 @@ public class ConfigData {
             hudSlot3 = builder.comment("HUD element on slot 3.").translation(MapFrontiers.MODID + ".config.hud." + "slot3")
                     .defineEnum("slot3", HUDSlot.Banner);
             hudAnchor = builder.comment(
-                    "Anchor point of the HUD. In the case of choosing the minimap as an anchor, its default position will be used as a reference in the coordinates.")
+                            "Anchor point of the HUD. In the case of choosing the minimap as an anchor, its default position will be used as a reference in the coordinates.")
                     .translation(MapFrontiers.MODID + ".config.hud." + "anchor")
                     .defineEnum("anchor", HUDAnchor.MinimapHorizontal);
             hudXPosition = builder.defineInRange("xPosition", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
@@ -215,7 +268,14 @@ public class ConfigData {
         CLIENT.newFrontierChunkShapeLength.set(newFrontierChunkShapeLength);
         CLIENT.newFrontierMode.set(newFrontierMode);
         CLIENT.afterCreatingFrontier.set(afterCreatingFrontier);
-        CLIENT.nameVisibility.set(nameVisibility);
+        CLIENT.fullscreenVisibility.set(fullscreenVisibility);
+        CLIENT.fullscreenNameVisibility.set(fullscreenNameVisibility);
+        CLIENT.fullscreenOwnerVisibility.set(fullscreenOwnerVisibility);
+        CLIENT.minimapVisibility.set(minimapVisibility);
+        CLIENT.minimapNameVisibility.set(minimapNameVisibility);
+        CLIENT.minimapOwnerVisibility.set(minimapOwnerVisibility);
+        CLIENT.titleAnnouncementAboveHotbar.set(titleAnnouncementAboveHotbar);
+        CLIENT.announceUnnamedFrontiers.set(announceUnnamedFrontiers);
         CLIENT.hideNamesThatDontFit.set(hideNamesThatDontFit);
         CLIENT.polygonsOpacity.set(polygonsOpacity);
         CLIENT.snapDistance.set(snapDistance);
@@ -234,6 +294,17 @@ public class ConfigData {
         CLIENT.hudYPosition.set(hudYPosition);
 
         CLIENT_SPEC.save();
+    }
+
+    public static boolean getVisibilityValue(Visibility visibility, boolean manual) {
+        switch (visibility) {
+            case Always:
+                return true;
+            case Never:
+                return false;
+            default:
+                return manual;
+        }
     }
 
     public static Component getTranslatedName(String name) {
@@ -309,51 +380,51 @@ public class ConfigData {
         int displayHeight = mc.getWindow().getHeight();
 
         switch (anchor) {
-        case ScreenTop:
-            p.x = displayWidth / 2;
-            break;
-        case ScreenTopRight:
-            p.x = displayWidth;
-            break;
-        case ScreenRight:
-            p.x = displayWidth;
-            p.y = displayHeight / 2;
-            break;
-        case ScreenBottomRight:
-            p.x = displayWidth;
-            p.y = displayHeight;
-            break;
-        case ScreenBottom:
-            p.x = displayWidth / 2;
-            p.y = displayHeight;
-            break;
-        case ScreenBottomLeft:
-            p.y = displayHeight;
-            break;
-        case ScreenLeft:
-            p.y = displayHeight / 2;
-            break;
-        case ScreenTopLeft:
-            break;
-        case Minimap:
-            p = getMinimapCorner();
-            break;
-        case MinimapHorizontal:
-            p = getMinimapCorner();
-            if (p.y < displayHeight / 2) {
-                p.y = 0;
-            } else if (p.y > displayHeight / 2) {
-                p.y = displayHeight;
-            }
-            break;
-        case MinimapVertical:
-            p = getMinimapCorner();
-            if (p.x < displayWidth / 2) {
-                p.x = 0;
-            } else if (p.x > displayWidth / 2) {
+            case ScreenTop:
+                p.x = displayWidth / 2;
+                break;
+            case ScreenTopRight:
                 p.x = displayWidth;
-            }
-            break;
+                break;
+            case ScreenRight:
+                p.x = displayWidth;
+                p.y = displayHeight / 2;
+                break;
+            case ScreenBottomRight:
+                p.x = displayWidth;
+                p.y = displayHeight;
+                break;
+            case ScreenBottom:
+                p.x = displayWidth / 2;
+                p.y = displayHeight;
+                break;
+            case ScreenBottomLeft:
+                p.y = displayHeight;
+                break;
+            case ScreenLeft:
+                p.y = displayHeight / 2;
+                break;
+            case ScreenTopLeft:
+                break;
+            case Minimap:
+                p = getMinimapCorner();
+                break;
+            case MinimapHorizontal:
+                p = getMinimapCorner();
+                if (p.y < displayHeight / 2) {
+                    p.y = 0;
+                } else if (p.y > displayHeight / 2) {
+                    p.y = displayHeight;
+                }
+                break;
+            case MinimapVertical:
+                p = getMinimapCorner();
+                if (p.x < displayWidth / 2) {
+                    p.x = 0;
+                } else if (p.x > displayWidth / 2) {
+                    p.x = displayWidth;
+                }
+                break;
         }
 
         return p;
@@ -363,37 +434,37 @@ public class ConfigData {
         Point p = new Point();
 
         switch (anchor) {
-        case ScreenTop:
-            p.x = hudWidth / 2;
-            break;
-        case ScreenTopRight:
-            p.x = hudWidth;
-            break;
-        case ScreenRight:
-            p.x = hudWidth;
-            p.y = hudHeight / 2;
-            break;
-        case ScreenBottomRight:
-            p.x = hudWidth;
-            p.y = hudHeight;
-            break;
-        case ScreenBottom:
-            p.x = hudWidth / 2;
-            p.y = hudHeight;
-            break;
-        case ScreenBottomLeft:
-            p.y = hudHeight;
-            break;
-        case ScreenLeft:
-            p.y = hudHeight / 2;
-            break;
-        case ScreenTopLeft:
-            break;
-        case Minimap:
-        case MinimapHorizontal:
-        case MinimapVertical:
-            p = getHUDOriginFromMinimap(hudWidth, hudHeight);
-            break;
+            case ScreenTop:
+                p.x = hudWidth / 2;
+                break;
+            case ScreenTopRight:
+                p.x = hudWidth;
+                break;
+            case ScreenRight:
+                p.x = hudWidth;
+                p.y = hudHeight / 2;
+                break;
+            case ScreenBottomRight:
+                p.x = hudWidth;
+                p.y = hudHeight;
+                break;
+            case ScreenBottom:
+                p.x = hudWidth / 2;
+                p.y = hudHeight;
+                break;
+            case ScreenBottomLeft:
+                p.y = hudHeight;
+                break;
+            case ScreenLeft:
+                p.y = hudHeight / 2;
+                break;
+            case ScreenTopLeft:
+                break;
+            case Minimap:
+            case MinimapHorizontal:
+            case MinimapVertical:
+                p = getHUDOriginFromMinimap(hudWidth, hudHeight);
+                break;
         }
 
         return p;
@@ -409,25 +480,25 @@ public class ConfigData {
         int displayHeight = mc.getWindow().getHeight();
 
         switch (minimap.getCurrentMinimapProperties().position.get()) {
-        case TopRight:
-            corner.x = displayWidth;
-            break;
-        case BottomRight:
-            corner.x = displayWidth;
-            corner.y = displayHeight;
-            break;
-        case BottomLeft:
-            corner.y = displayHeight;
-            break;
-        case TopLeft:
-            break;
-        case TopCenter:
-            corner.x = displayWidth / 2;
-            break;
-        case Center:
-            corner.x = displayWidth / 2;
-            corner.y = displayHeight / 2;
-            break;
+            case TopRight:
+                corner.x = displayWidth;
+                break;
+            case BottomRight:
+                corner.x = displayWidth;
+                corner.y = displayHeight;
+                break;
+            case BottomLeft:
+                corner.y = displayHeight;
+                break;
+            case TopLeft:
+                break;
+            case TopCenter:
+                corner.x = displayWidth / 2;
+                break;
+            case Center:
+                corner.x = displayWidth / 2;
+                corner.y = displayHeight / 2;
+                break;
         }
 
         if (UIManager.INSTANCE.isMiniMapEnabled()) {
@@ -452,30 +523,30 @@ public class ConfigData {
                 translateY += displayHeight / 2;
 
                 switch (minimap.getCurrentMinimapProperties().position.get()) {
-                case TopRight:
-                    corner.x = translateX - minimapWidth / 2;
-                    corner.y = translateY + minimapHeight / 2;
-                    break;
-                case BottomRight:
-                    corner.x = translateX - minimapWidth / 2;
-                    corner.y = translateY - minimapHeight / 2;
-                    break;
-                case BottomLeft:
-                    corner.x = translateX + minimapWidth / 2;
-                    corner.y = translateY - minimapHeight / 2;
-                    break;
-                case TopLeft:
-                    corner.x = translateX + minimapWidth / 2;
-                    corner.y = translateY + minimapHeight / 2;
-                    break;
-                case TopCenter:
-                    corner.x = translateX;
-                    corner.y = translateY + minimapHeight / 2;
-                    break;
-                case Center:
-                    corner.x = translateX;
-                    corner.y = translateY;
-                    break;
+                    case TopRight:
+                        corner.x = translateX - minimapWidth / 2;
+                        corner.y = translateY + minimapHeight / 2;
+                        break;
+                    case BottomRight:
+                        corner.x = translateX - minimapWidth / 2;
+                        corner.y = translateY - minimapHeight / 2;
+                        break;
+                    case BottomLeft:
+                        corner.x = translateX + minimapWidth / 2;
+                        corner.y = translateY - minimapHeight / 2;
+                        break;
+                    case TopLeft:
+                        corner.x = translateX + minimapWidth / 2;
+                        corner.y = translateY + minimapHeight / 2;
+                        break;
+                    case TopCenter:
+                        corner.x = translateX;
+                        corner.y = translateY + minimapHeight / 2;
+                        break;
+                    case Center:
+                        corner.x = translateX;
+                        corner.y = translateY;
+                        break;
                 }
             } catch (Exception e) {
                 MapFrontiers.LOGGER.warn(e.getMessage(), e);
@@ -490,25 +561,25 @@ public class ConfigData {
         MiniMap minimap = UIManager.INSTANCE.getMiniMap();
 
         switch (minimap.getCurrentMinimapProperties().position.get()) {
-        case TopRight:
-            origin.x = hudWidth;
-            break;
-        case BottomRight:
-            origin.x = hudWidth;
-            origin.y = hudHeight;
-            break;
-        case BottomLeft:
-            origin.y = hudHeight;
-            break;
-        case TopLeft:
-            break;
-        case TopCenter:
-            origin.x = hudWidth / 2;
-            break;
-        case Center:
-            origin.x = hudWidth / 2;
-            origin.y = hudHeight / 2;
-            break;
+            case TopRight:
+                origin.x = hudWidth;
+                break;
+            case BottomRight:
+                origin.x = hudWidth;
+                origin.y = hudHeight;
+                break;
+            case BottomLeft:
+                origin.y = hudHeight;
+                break;
+            case TopLeft:
+                break;
+            case TopCenter:
+                origin.x = hudWidth / 2;
+                break;
+            case Center:
+                origin.x = hudWidth / 2;
+                origin.y = hudHeight / 2;
+                break;
         }
 
         return origin;

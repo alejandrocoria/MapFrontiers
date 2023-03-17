@@ -7,7 +7,12 @@ import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.event.NewFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
-import games.alejandrocoria.mapfrontiers.common.network.*;
+import games.alejandrocoria.mapfrontiers.common.network.PacketCreateFrontier;
+import games.alejandrocoria.mapfrontiers.common.network.PacketDeleteFrontier;
+import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
+import games.alejandrocoria.mapfrontiers.common.network.PacketPersonalFrontier;
+import games.alejandrocoria.mapfrontiers.common.network.PacketSharePersonalFrontier;
+import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateFrontier;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
@@ -36,7 +41,14 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -267,7 +279,7 @@ public class FrontiersOverlayManager {
         ArrayList<FrontierOverlay> frontiers = dimensionsFrontiers.get(dimension);
         if (frontiers != null) {
             for (FrontierOverlay frontier : frontiers) {
-                if (frontier.getAnnounceInChat() && frontier.pointIsInside(pos, 0.0)) {
+                if ((frontier.getAnnounceInChat() || frontier.getAnnounceInTitle()) && frontier.pointIsInside(pos, 0.0)) {
                     inPosition.add(frontier);
                 }
             }
