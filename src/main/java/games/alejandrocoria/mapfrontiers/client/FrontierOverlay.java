@@ -13,6 +13,7 @@ import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.BlockPosHelper;
 import journeymap.client.api.IClientAPI;
+import journeymap.client.api.display.Context;
 import journeymap.client.api.display.MarkerOverlay;
 import journeymap.client.api.display.PolygonOverlay;
 import journeymap.client.api.model.MapImage;
@@ -124,14 +125,19 @@ public class FrontierOverlay extends FrontierData {
             int prime = 31;
             hash = 1;
             hash = prime * hash + id.hashCode();
-            hash = prime * hash + (visible ? 1231 : 1237);
             hash = prime * hash + color;
             hash = prime * hash + ((dimension == null) ? 0 : dimension.hashCode());
             hash = prime * hash + ((name1 == null) ? 0 : name1.hashCode());
             hash = prime * hash + ((name2 == null) ? 0 : name2.hashCode());
-            hash = prime * hash + (nameVisible ? 1231 : 1237);
-            hash = prime * hash + (ownerVisible ? 1231 : 1237);
+            hash = prime * hash + (visible ? 1231 : 1237);
+            hash = prime * hash + (fullscreenVisible ? 1231 : 1237);
+            hash = prime * hash + (fullscreenNameVisible ? 1231 : 1237);
+            hash = prime * hash + (fullscreenOwnerVisible ? 1231 : 1237);
+            hash = prime * hash + (minimapVisible ? 1231 : 1237);
+            hash = prime * hash + (minimapNameVisible ? 1231 : 1237);
+            hash = prime * hash + (minimapOwnerVisible ? 1231 : 1237);
             hash = prime * hash + (announceInChat ? 1231 : 1237);
+            hash = prime * hash + (announceInTitle ? 1231 : 1237);
             hash = prime * hash + ((vertices == null) ? 0 : vertices.hashCode());
             hash = prime * hash + ((chunks == null) ? 0 : chunks.hashCode());
             hash = prime * hash + mode.ordinal();
@@ -386,17 +392,6 @@ public class FrontierOverlay extends FrontierData {
     }
 
     @Override
-    public void setVisible(boolean visible) {
-        super.setVisible(visible);
-
-        if (!visible) {
-            vertexSelected = -1;
-        }
-
-        needUpdateOverlay = true;
-    }
-
-    @Override
     public void setName1(String name) {
         super.setName1(name);
         needUpdateOverlay = true;
@@ -409,14 +404,49 @@ public class FrontierOverlay extends FrontierData {
     }
 
     @Override
-    public void setNameVisible(boolean nameVisible) {
-        super.setNameVisible(nameVisible);
+    public void setVisible(boolean visible) {
+        super.setVisible(visible);
+
+        if (!visible) {
+            vertexSelected = -1;
+        }
+
         needUpdateOverlay = true;
     }
 
     @Override
-    public void setOwnerVisible(boolean ownerVisible) {
-        super.setOwnerVisible(ownerVisible);
+    public void setFullscreenVisible(boolean visible) {
+        super.setFullscreenVisible(visible);
+        needUpdateOverlay = true;
+    }
+
+    @Override
+    public void setFullscreenNameVisible(boolean nameVisible) {
+        super.setFullscreenNameVisible(nameVisible);
+        needUpdateOverlay = true;
+    }
+
+    @Override
+    public void setFullscreenOwnerVisible(boolean ownerVisible) {
+        super.setFullscreenOwnerVisible(ownerVisible);
+        needUpdateOverlay = true;
+    }
+
+    @Override
+    public void setMinimapVisible(boolean visible) {
+        super.setMinimapVisible(visible);
+        needUpdateOverlay = true;
+    }
+
+    @Override
+    public void setMinimapNameVisible(boolean nameVisible) {
+        super.setMinimapNameVisible(nameVisible);
+        needUpdateOverlay = true;
+    }
+
+    @Override
+    public void setMinimapOwnerVisible(boolean ownerVisible) {
+        super.setMinimapOwnerVisible(ownerVisible);
         needUpdateOverlay = true;
     }
 
@@ -599,16 +629,53 @@ public class FrontierOverlay extends FrontierData {
         }
     }
 
+    private void addPolygonOverlays(String id, ShapeProperties shapeProps, MapPolygon polygon, @Nullable List<MapPolygon> polygonHoles) {
+        PolygonOverlay polygonOverlay = null;
+        PolygonOverlay polygonOverlayFullscreen = null;
+        PolygonOverlay polygonOverlayMinimap = null;
+
+        boolean fullscreenV = ConfigData.getVisibilityValue(ConfigData.fullscreenVisibility, fullscreenVisible);
+        boolean fullscreenNameV = ConfigData.getVisibilityValue(ConfigData.fullscreenNameVisibility, fullscreenNameVisible);
+        boolean fullscreenOwnerV = ConfigData.getVisibilityValue(ConfigData.fullscreenOwnerVisibility, fullscreenOwnerVisible);
+        boolean minimapV = ConfigData.getVisibilityValue(ConfigData.minimapVisibility, minimapVisible);
+        boolean minimapNameV = ConfigData.getVisibilityValue(ConfigData.minimapNameVisibility, minimapNameVisible);
+        boolean minimapOwnerV = ConfigData.getVisibilityValue(ConfigData.minimapNameVisibility, minimapOwnerVisible);
+
+        if (fullscreenV && minimapV && (fullscreenNameV == minimapNameV) && (fullscreenOwnerV == minimapOwnerV)) {
+            polygonOverlay = new PolygonOverlay(MapFrontiers.MODID, id, dimension, shapeProps, polygon, polygonHoles);
+            polygonOverlay.setActiveUIs(EnumSet.of(Context.UI.Any));
+        } else {
+            if (fullscreenV) {
+                polygonOverlayFullscreen = new PolygonOverlay(MapFrontiers.MODID, id + "_fullscreen", dimension, shapeProps, polygon, polygonHoles);
+                polygonOverlayFullscreen.setActiveUIs(EnumSet.of(Context.UI.Fullscreen));
+            }
+            if (minimapV) {
+                polygonOverlayMinimap = new PolygonOverlay(MapFrontiers.MODID, id + "_minimap", dimension, shapeProps, polygon, polygonHoles);
+                polygonOverlayMinimap.setActiveUIs(EnumSet.of(Context.UI.Minimap, Context.UI.Webmap));
+            }
+        }
+
+        if (polygonOverlay != null) {
+            addNameAndOwner(polygonOverlay, fullscreenNameV, fullscreenOwnerV);
+            polygonOverlays.add(polygonOverlay);
+        } else {
+            if (polygonOverlayFullscreen != null) {
+                addNameAndOwner(polygonOverlayFullscreen, fullscreenNameV, fullscreenOwnerV);
+                polygonOverlays.add(polygonOverlayFullscreen);
+            }
+            if (polygonOverlayMinimap != null) {
+                addNameAndOwner(polygonOverlayMinimap, minimapNameV, minimapOwnerV);
+                polygonOverlays.add(polygonOverlayMinimap);
+            }
+        }
+    }
+
     private void recalculateVertices(ShapeProperties shapeProps) {
         synchronized (vertices) {
             if (vertices.size() > 2) {
                 MapPolygon polygon = new MapPolygon(vertices);
-                PolygonOverlay polygonOverlay = new PolygonOverlay(MapFrontiers.MODID, displayId, dimension, shapeProps, polygon);
-                polygonArea = PolygonHelper.toArea(polygonOverlay.getOuterArea());
-
-                addNameAndOwner(polygonOverlay);
-
-                polygonOverlays.add(polygonOverlay);
+                addPolygonOverlays(displayId, shapeProps, polygon, null);
+                polygonArea = PolygonHelper.toArea(polygon);
 
                 BlockPos last = vertices.get(vertices.size() - 1);
                 for (BlockPos vertex : vertices) {
@@ -617,14 +684,27 @@ public class FrontierOverlay extends FrontierData {
                 }
                 area = abs(area);
             } else {
-                for (int i = 0; i < vertices.size(); ++i) {
-                    String markerId = displayId + "_" + i;
-                    MarkerOverlay marker = new MarkerOverlay(MapFrontiers.MODID, markerId, vertices.get(i), markerVertex);
-                    marker.setDimension(dimension);
-                    marker.setDisplayOrder(100);
-                    markerOverlays.add(marker);
-                    if (i == 0 && vertices.size() == 2) {
-                        addMarkerDots(markerId, vertices.get(0), vertices.get(1));
+                boolean fullscreenV = ConfigData.getVisibilityValue(ConfigData.fullscreenVisibility, fullscreenVisible);
+                boolean minimapV = ConfigData.getVisibilityValue(ConfigData.minimapVisibility, minimapVisible);
+                if (fullscreenV || minimapV) {
+                    EnumSet<Context.UI> ui;
+                    if (fullscreenV && minimapV) {
+                        ui = EnumSet.of(Context.UI.Any);
+                    } else if (fullscreenV) {
+                        ui = EnumSet.of(Context.UI.Fullscreen);
+                    } else {
+                        ui = EnumSet.of(Context.UI.Minimap, Context.UI.Webmap);
+                    }
+                    for (int i = 0; i < vertices.size(); ++i) {
+                        String markerId = displayId + "_" + i;
+                        MarkerOverlay marker = new MarkerOverlay(MapFrontiers.MODID, markerId, vertices.get(i), markerVertex);
+                        marker.setDimension(dimension);
+                        marker.setDisplayOrder(100);
+                        marker.setActiveUIs(ui);
+                        markerOverlays.add(marker);
+                        if (i == 0 && vertices.size() == 2) {
+                            addMarkerDots(markerId, vertices.get(0), vertices.get(1), ui);
+                        }
                     }
                 }
             }
@@ -726,21 +806,16 @@ public class FrontierOverlay extends FrontierData {
 
         for (List<ChunkPos> outer : outerPolygons) {
             MapPolygon polygon = new MapPolygon(Lists.transform(outer, (c) -> BlockPosHelper.toBlockPos(c, 70)));
-            PolygonOverlay polygonOverlay;
+            List<MapPolygon> polygonHoles = null;
 
             if (holesPolygons.containsKey(outer.get(0))) {
-                List<MapPolygon> polygonHoles = new ArrayList<>();
+                polygonHoles = new ArrayList<>();
                 for (List<ChunkPos> hole : holesPolygons.get(outer.get(0))) {
                     polygonHoles.add(new MapPolygon(Lists.transform(hole, (c) -> BlockPosHelper.toBlockPos(c, 70))));
                 }
-                polygonOverlay = new PolygonOverlay(MapFrontiers.MODID, displayId + outer.get(0), dimension, shapeProps, polygon, polygonHoles);
-            } else {
-                polygonOverlay = new PolygonOverlay(MapFrontiers.MODID, displayId + outer.get(0), dimension, shapeProps, polygon);
             }
 
-            addNameAndOwner(polygonOverlay);
-
-            polygonOverlays.add(polygonOverlay);
+            addPolygonOverlays(displayId + "_" + outer.get(0), shapeProps, polygon, polygonHoles);
         }
 
         area = chunks.size() * 256;
@@ -771,63 +846,64 @@ public class FrontierOverlay extends FrontierData {
         }
     }
 
-    private void addNameAndOwner(PolygonOverlay polygonOverlay) {
-        ConfigData.NameVisibility nameVisibility = ConfigData.nameVisibility;
-        if (nameVisibility == ConfigData.NameVisibility.Show || (nameVisibility == ConfigData.NameVisibility.Manual)) {
-            TextProperties textProps = new TextProperties().setColor(color).setScale(2.f).setBackgroundOpacity(0.f);
-            if (ConfigData.hideNamesThatDontFit) {
-                if (mode == Mode.Vertex) {
-                    textProps = setMinSizeTextPropierties(textProps, bottomRight.getX() - topLeft.getX());
-                } else {
-                    int minX = Integer.MAX_VALUE;
-                    int maxX = Integer.MIN_VALUE;
+    private void addNameAndOwner(PolygonOverlay polygonOverlay, boolean nameVisible, boolean ownerVisible) {
+        if (!nameVisible && !ownerVisible) {
+            return;
+        }
 
-                    for (BlockPos vertex : polygonOverlay.getOuterArea().getPoints()) {
-                        if (vertex.getX() < minX)
-                            minX = vertex.getX();
-                        if (vertex.getX() > maxX)
-                            maxX = vertex.getX();
-                    }
-                    textProps = setMinSizeTextPropierties(textProps, maxX - minX);
+        TextProperties textProps = new TextProperties().setColor(color).setScale(2.f).setBackgroundOpacity(0.f);
+        if (ConfigData.hideNamesThatDontFit) {
+            if (mode == Mode.Vertex) {
+                textProps = setMinSizeTextPropierties(textProps, bottomRight.getX() - topLeft.getX(), nameVisible, ownerVisible);
+            } else {
+                int minX = Integer.MAX_VALUE;
+                int maxX = Integer.MIN_VALUE;
+
+                for (BlockPos vertex : polygonOverlay.getOuterArea().getPoints()) {
+                    if (vertex.getX() < minX)
+                        minX = vertex.getX();
+                    if (vertex.getX() > maxX)
+                        maxX = vertex.getX();
                 }
+                textProps = setMinSizeTextPropierties(textProps, maxX - minX, nameVisible, ownerVisible);
             }
+        }
 
-            int lines = 0;
-            String label = "";
+        int lines = 0;
+        String label = "";
 
-            if (nameVisibility == ConfigData.NameVisibility.Show || nameVisible) {
-                if (!name1.isEmpty()) {
-                    ++lines;
-                    label += name1 + "\n";
-                }
-                if (!name2.isEmpty()) {
-                    ++lines;
-                    label += name2 + "\n";
-                }
-            }
-
-            if (nameVisibility == ConfigData.NameVisibility.Show || (ownerVisible && !owner.username.isEmpty())) {
+        if (nameVisible) {
+            if (!name1.isEmpty()) {
                 ++lines;
-                label += ChatFormatting.ITALIC + owner.username + "\n";
+                label += name1 + "\n";
             }
+            if (!name2.isEmpty()) {
+                ++lines;
+                label += name2 + "\n";
+            }
+        }
 
-            if (lines > 0) {
-                if (lines > 1) {
-                    textProps.setOffsetY(10);
-                }
-                polygonOverlay.setTextProperties(textProps).setOverlayGroupName("frontier").setLabel(label);
+        if (ownerVisible && !owner.username.isEmpty()) {
+            ++lines;
+            label += ChatFormatting.ITALIC + owner.username + "\n";
+        }
+
+        if (lines > 0) {
+            if (lines > 1) {
+                textProps.setOffsetY(10);
             }
+            polygonOverlay.setTextProperties(textProps).setOverlayGroupName("frontier").setLabel(label);
         }
     }
 
-    private TextProperties setMinSizeTextPropierties(TextProperties textProperties, int polygonWidth) {
-        int name1Width = Minecraft.getInstance().font.width(name1) * 2;
-        int name2Width = Minecraft.getInstance().font.width(name2) * 2;
-        int onwerWidth = Minecraft.getInstance().font.width(owner.username) * 2;
+    private TextProperties setMinSizeTextPropierties(TextProperties textProperties, int polygonWidth, boolean nameVisible, boolean ownerVisible) {
+        int name1Width = nameVisible ? Minecraft.getInstance().font.width(name1) * 2 : 0;
+        int name2Width = nameVisible ? Minecraft.getInstance().font.width(name2) * 2 : 0;
+        int onwerWidth = ownerVisible ? Minecraft.getInstance().font.width(owner.username) * 2 : 0;
         int labelWidth = Math.max(onwerWidth, Math.max(name1Width, name2Width)) + 6;
 
         int zoom = 0;
-        while (labelWidth > polygonWidth && zoom < 5) {
+        while (labelWidth > polygonWidth && zoom < 8) {
             ++zoom;
             polygonWidth *= 2;
         }
@@ -894,23 +970,23 @@ public class FrontierOverlay extends FrontierData {
     //
     // Functions adapted from https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
     //
-    private void addMarkerDots(String markerId, BlockPos from, BlockPos to) {
+    private void addMarkerDots(String markerId, BlockPos from, BlockPos to, EnumSet<Context.UI> ui) {
         if (abs(to.getZ() - from.getZ()) < abs(to.getX() - from.getX())) {
             if (from.getX() > to.getX()) {
-                addLineMarkerDots(markerId, to.getX(), to.getZ(), from.getX(), from.getZ());
+                addLineMarkerDots(markerId, to.getX(), to.getZ(), from.getX(), from.getZ(), ui);
             } else{
-                addLineMarkerDots(markerId, from.getX(), from.getZ(), to.getX(), to.getZ());
+                addLineMarkerDots(markerId, from.getX(), from.getZ(), to.getX(), to.getZ(), ui);
             }
         } else {
             if (from.getZ() > to.getZ()) {
-                addLineMarkerDots(markerId, to.getX(), to.getZ(), from.getX(), from.getZ());
+                addLineMarkerDots(markerId, to.getX(), to.getZ(), from.getX(), from.getZ(), ui);
             } else{
-                addLineMarkerDots(markerId, from.getX(), from.getZ(), to.getX(), to.getZ());
+                addLineMarkerDots(markerId, from.getX(), from.getZ(), to.getX(), to.getZ(), ui);
             }
         }
     }
 
-    private void addLineMarkerDots(String markerId, int x0, int z0, int x1, int z1) {
+    private void addLineMarkerDots(String markerId, int x0, int z0, int x1, int z1, EnumSet<Context.UI> ui) {
         int dx = abs(x1 - x0);
         int sx = x0 < x1 ? 1 : -1;
         int dz = -abs(z1 - z0);
@@ -950,6 +1026,7 @@ public class FrontierOverlay extends FrontierData {
                 minZoom = 1;
             }
             dot.setMinZoom(minZoom);
+            dot.setActiveUIs(ui);
             markerOverlays.add(dot);
 
             ++i;

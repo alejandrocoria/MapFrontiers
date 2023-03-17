@@ -163,12 +163,12 @@ public class GuiFullscreenMap {
         buttonFrontiers.setEnabled(!editing);
         buttonNew.setEnabled(!editing);
         buttonInfo.setEnabled(frontierHighlighted != null && !editing);
-        buttonEdit.setEnabled(actions.canUpdate && frontierHighlighted.getVisible());
+        buttonEdit.setEnabled(actions.canUpdate && frontierHighlighted.getVisible() && frontierHighlighted.getFullscreenVisible());
         buttonVisible.setEnabled(actions.canUpdate && !editing);
         buttonDelete.setEnabled(actions.canDelete && !editing);
 
         if (frontierHighlighted != null) {
-            buttonVisible.setToggled(frontierHighlighted.getVisible());
+            buttonVisible.setToggled(frontierHighlighted.getVisible() && frontierHighlighted.getFullscreenVisible());
         } else {
             buttonVisible.setToggled(false);
         }
