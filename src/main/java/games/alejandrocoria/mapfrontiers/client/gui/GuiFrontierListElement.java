@@ -32,12 +32,12 @@ public class GuiFrontierListElement extends GuiScrollBox.ScrollElement {
         this.font = font;
         this.frontier = frontier;
 
-        if (frontier.getName1().isEmpty() && frontier.getName2().isEmpty()) {
-            name1 = I18n.get("mapfrontiers.unnamed_1", ChatFormatting.ITALIC);
-            name2 = I18n.get("mapfrontiers.unnamed_2", ChatFormatting.ITALIC);
-        } else {
+        if (frontier.isNamed()) {
             name1 = frontier.getName1();
             name2 = frontier.getName2();
+        } else {
+            name1 = I18n.get("mapfrontiers.unnamed_1", ChatFormatting.ITALIC);
+            name2 = I18n.get("mapfrontiers.unnamed_2", ChatFormatting.ITALIC);
         }
 
         type = I18n.get("mapfrontiers.type", I18n.get(frontier.getPersonal() ? "mapfrontiers.config.Personal" : "mapfrontiers.config.Global"));
@@ -96,7 +96,7 @@ public class GuiFrontierListElement extends GuiScrollBox.ScrollElement {
         }
 
         font.draw(matrixStack, type, x + 170, y + 4, color);
-        font.draw(matrixStack, dimension, x + 170, y + 14, GuiColors.SETTINGS_BUTTON_TEXT);
+        font.draw(matrixStack, dimension, x + 170, y + 14, GuiColors.SETTINGS_TEXT_DIMENSION);
 
         if (frontier.getMode() == FrontierData.Mode.Vertex) {
             font.draw(matrixStack, vertices, x + 180 + offset1, y + 4, color);

@@ -436,7 +436,7 @@ public class GuiHUD {
 
     private void addSlot(ConfigData.HUDSlot slot) {
         if (slot == ConfigData.HUDSlot.Name) {
-            if (!StringUtils.isBlank(frontier.getName1()) || !StringUtils.isBlank(frontier.getName2())) {
+            if (frontier.isNamed()) {
                 slots.add(slot);
             }
         } else if (slot == ConfigData.HUDSlot.Owner) {

@@ -39,7 +39,7 @@ dependencies {
 	modApi group: 'info.journeymap', name: 'journeymap-api', version: project.journeymap_api_fabric_version, changing: true
 	modImplementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_fabric_file_id}"
 
-	modImplementation "net.minecraftforge:forgeconfigapiport-fabric:${forge_config_api_port_version}"
+	modImplementation "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${forge_config_api_port_version}"
 
 	modImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
 }

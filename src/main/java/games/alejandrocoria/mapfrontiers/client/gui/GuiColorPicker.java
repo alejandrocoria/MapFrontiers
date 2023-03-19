@@ -13,7 +13,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.awt.*;
+import java.awt.Color;
 import java.util.function.BiConsumer;
 
 @ParametersAreNonnullByDefault
@@ -140,14 +140,14 @@ public class GuiColorPicker extends AbstractWidget {
         blit(matrixStack, getX() + (int) hsX + 64 - 2, getY() + (int) hsY + 64 - 2, texX, 129, 5, 5, textureSizeX, textureSizeY);
         blit(matrixStack, getX() + 131, getY() + (int) v - 2, texX + 6, 129, 10, 5, textureSizeX, textureSizeY);
 
-        fill(matrixStack, getX() + 165, getY() + 57, getX() + 304, getY() + 127, 0xff000000);
+        fill(matrixStack, getX() + 165, getY() + 58, getX() + 304, getY() + 128, 0xff000000);
         int col = 0;
         int row = 0;
         for (int c : (active ? palette : paletteInactive)) {
             if (active && c == color) {
-                fill(matrixStack, getX() + 165 + col * 23, getY() + 57 + row * 23, getX() + 189 + col * 23, getY() + 81 + row * 23, 0xffffffff);
+                fill(matrixStack, getX() + 165 + col * 23, getY() + 58 + row * 23, getX() + 189 + col * 23, getY() + 82 + row * 23, 0xffffffff);
             }
-            fill(matrixStack, getX() + 166 + col * 23, getY() + 58 + row * 23, getX() + 188 + col * 23, getY() + 80 + row * 23, c);
+            fill(matrixStack, getX() + 166 + col * 23, getY() + 59 + row * 23, getX() + 188 + col * 23, getY() + 81 + row * 23, c);
             ++col;
             if (col == 6) {
                 col = 0;

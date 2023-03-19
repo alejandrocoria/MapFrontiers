@@ -38,7 +38,13 @@ import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -108,14 +114,26 @@ public class ClientProxy implements ClientModInitializer {
                 for (Iterator<FrontierOverlay> i = insideFrontiers.iterator(); i.hasNext();) {
                     FrontierOverlay inside = i.next();
                     if (frontiers.stream().noneMatch(f -> f.getId().equals(inside.getId()))) {
-                        player.displayClientMessage(createChatTextWithName("mapfrontiers.chat.leaving", inside), false);
+                        if (inside.getAnnounceInChat() && (inside.isNamed() || ConfigData.announceUnnamedFrontiers)) {
+                            player.displayClientMessage(Component.translatable("mapfrontiers.chat.leaving", createAnnounceTextWithName(inside)), false);
+                        }
                         i.remove();
                     }
                 }
 
                 for (FrontierOverlay frontier : frontiers) {
-                    if (insideFrontiers.add(frontier)) {
-                        player.displayClientMessage(createChatTextWithName("mapfrontiers.chat.entering", frontier), false);
+                    if (insideFrontiers.add(frontier) && (frontier.isNamed() || ConfigData.announceUnnamedFrontiers)) {
+                        Component text = createAnnounceTextWithName(frontier);
+                        if (frontier.getAnnounceInChat()) {
+                            player.displayClientMessage(Component.translatable("mapfrontiers.chat.entering", text), false);
+                        }
+                        if (frontier.getAnnounceInTitle()) {
+                            if (ConfigData.titleAnnouncementAboveHotbar) {
+                                Minecraft.getInstance().gui.setOverlayMessage(text, false);
+                            } else {
+                                Minecraft.getInstance().gui.setTitle(text);
+                            }
+                        }
                     }
                 }
             }
@@ -150,11 +168,11 @@ public class ClientProxy implements ClientModInitializer {
         MapFrontiers.LOGGER.info("onInitializeClient done");
     }
 
-    private static MutableComponent createChatTextWithName(String key, FrontierOverlay frontier) {
-        if (StringUtils.isBlank(frontier.getName1()) && StringUtils.isBlank(frontier.getName2())) {
+    private static Component createAnnounceTextWithName(FrontierOverlay frontier) {
+        if (!frontier.isNamed()) {
             MutableComponent text = Component.translatable("mapfrontiers.unnamed", ChatFormatting.ITALIC);
             text.withStyle(style -> style.withItalic(true).withColor(GuiColors.SETTINGS_TEXT_MEDIUM));
-            return Component.translatable(key, text);
+            return text;
         }
 
         String name = frontier.getName1().trim();
@@ -168,8 +186,7 @@ public class ClientProxy implements ClientModInitializer {
 
         MutableComponent text = Component.literal(name);
         text.withStyle(style -> style.withColor(frontier.getColor()));
-
-        return Component.translatable(key, text);
+        return text;
     }
 
     public static BlockPos snapVertex(BlockPos vertex, float snapDistance, ResourceKey<Level> dimension, @Nullable FrontierOverlay owner) {
