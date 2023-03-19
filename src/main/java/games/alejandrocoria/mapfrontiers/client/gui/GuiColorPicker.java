@@ -13,7 +13,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.awt.*;
+import java.awt.Color;
 import java.util.function.BiConsumer;
 
 @ParametersAreNonnullByDefault

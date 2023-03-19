@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common.util;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.awt.*;
+import java.awt.Color;
 import java.util.Random;
 
 @ParametersAreNonnullByDefault
