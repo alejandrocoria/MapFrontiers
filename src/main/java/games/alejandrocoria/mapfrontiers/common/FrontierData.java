@@ -22,10 +22,18 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class FrontierData {
@@ -40,15 +48,20 @@ public class FrontierData {
     }
 
     protected UUID id;
-    protected List<BlockPos> vertices = new ArrayList<>();
-    protected Set<ChunkPos> chunks = new HashSet<>();
+    protected final List<BlockPos> vertices = new ArrayList<>();
+    protected final Set<ChunkPos> chunks = new HashSet<>();
     protected Mode mode = Mode.Vertex;
-    protected boolean visible = true;
     protected String name1 = "New";
     protected String name2 = "Frontier";
-    protected boolean nameVisible = true;
-    protected boolean ownerVisible = false;
+    protected boolean visible = true;
+    protected boolean fullscreenVisible = true;
+    protected boolean fullscreenNameVisible = true;
+    protected boolean fullscreenOwnerVisible = false;
+    protected boolean minimapVisible = true;
+    protected boolean minimapNameVisible = true;
+    protected boolean minimapOwnerVisible = false;
     protected boolean announceInChat = false;
+    protected boolean announceInTitle = false;
     protected int color = 0xffffffff;
     protected ResourceKey<Level> dimension;
     protected SettingsUser owner = new SettingsUser();
@@ -71,9 +84,14 @@ public class FrontierData {
         personal = other.personal;
 
         visible = other.visible;
-        nameVisible = other.nameVisible;
-        ownerVisible = other.ownerVisible;
+        fullscreenVisible = other.fullscreenVisible;
+        fullscreenNameVisible = other.fullscreenNameVisible;
+        fullscreenOwnerVisible = other.fullscreenOwnerVisible;
+        minimapVisible = other.minimapVisible;
+        minimapNameVisible = other.minimapNameVisible;
+        minimapOwnerVisible = other.minimapOwnerVisible;
         announceInChat = other.announceInChat;
+        announceInTitle = other.announceInTitle;
         color = other.color;
 
         name1 = other.name1;
@@ -83,8 +101,10 @@ public class FrontierData {
 
         usersShared = other.usersShared;
 
-        vertices = other.vertices;
-        chunks = other.chunks;
+        vertices.clear();
+        vertices.addAll(other.vertices);
+        chunks.clear();
+        chunks.addAll(other.chunks);
         mode = other.mode;
 
         created = other.created;
@@ -106,9 +126,14 @@ public class FrontierData {
 
         if (other.changes.contains(Change.Other)) {
             visible = other.visible;
-            nameVisible = other.nameVisible;
-            ownerVisible = other.ownerVisible;
+            fullscreenVisible = other.fullscreenVisible;
+            fullscreenNameVisible = other.fullscreenNameVisible;
+            fullscreenOwnerVisible = other.fullscreenOwnerVisible;
+            minimapVisible = other.minimapVisible;
+            minimapNameVisible = other.minimapNameVisible;
+            minimapOwnerVisible = other.minimapOwnerVisible;
             announceInChat = other.announceInChat;
+            announceInTitle = other.announceInTitle;
             color = other.color;
         }
 
@@ -126,8 +151,10 @@ public class FrontierData {
         }
 
         if (other.changes.contains(Change.Vertices)) {
-            vertices = other.vertices;
-            chunks = other.chunks;
+            vertices.clear();
+            vertices.addAll(other.vertices);
+            chunks.clear();
+            chunks.addAll(other.chunks);
             mode = other.mode;
         }
 
@@ -174,12 +201,16 @@ public class FrontierData {
     }
 
     public void addVertex(BlockPos pos, int index) {
-        vertices.add(index, BlockPosHelper.atY(pos,70));
+        synchronized (vertices) {
+            vertices.add(index, BlockPosHelper.atY(pos, 70));
+        }
         changes.add(Change.Vertices);
     }
 
     public void addVertex(BlockPos pos) {
-        addVertex(pos, vertices.size());
+        synchronized (vertices) {
+            addVertex(pos, vertices.size());
+        }
     }
 
     public void removeVertex(int index) {
@@ -187,7 +218,9 @@ public class FrontierData {
             return;
         }
 
-        vertices.remove(index);
+        synchronized (vertices) {
+            vertices.remove(index);
+        }
         changes.add(Change.Vertices);
     }
 
@@ -196,15 +229,19 @@ public class FrontierData {
             return;
         }
 
-        vertices.set(index, pos);
+        synchronized (vertices) {
+            vertices.set(index, pos);
+        }
         changes.add(Change.Vertices);
     }
 
     public boolean toggleChunk(ChunkPos chunk) {
         boolean added = false;
-        if (!chunks.remove(chunk)) {
-            chunks.add(chunk);
-            added = true;
+        synchronized (chunks) {
+            if (!chunks.remove(chunk)) {
+                chunks.add(chunk);
+                added = true;
+            }
         }
 
         changes.add(Change.Vertices);
@@ -212,18 +249,22 @@ public class FrontierData {
     }
 
     public boolean addChunk(ChunkPos chunk) {
-        if (chunks.add(chunk)) {
-            changes.add(Change.Vertices);
-            return true;
+        synchronized (chunks) {
+            if (chunks.add(chunk)) {
+                changes.add(Change.Vertices);
+                return true;
+            }
         }
 
         return false;
     }
 
     public boolean removeChunk(ChunkPos chunk) {
-        if (chunks.remove(chunk)) {
-            changes.remove(Change.Vertices);
-            return true;
+        synchronized (chunks) {
+            if (chunks.remove(chunk)) {
+                changes.remove(Change.Vertices);
+                return true;
+            }
         }
 
         return false;
@@ -240,15 +281,6 @@ public class FrontierData {
 
     public Mode getMode() {
         return mode;
-    }
-
-    public void setVisible(boolean visible) {
-        this.visible = visible;
-        changes.add(Change.Other);
-    }
-
-    public boolean getVisible() {
-        return visible;
     }
 
     public void setName1(String name) {
@@ -269,22 +301,71 @@ public class FrontierData {
         return name2;
     }
 
-    public void setNameVisible(boolean nameVisible) {
-        this.nameVisible = nameVisible;
+    public boolean isNamed() {
+        return !StringUtils.isBlank(name1) || !StringUtils.isBlank(name2);
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
         changes.add(Change.Other);
     }
 
-    public boolean getNameVisible() {
-        return nameVisible;
+    public boolean getVisible() {
+        return visible;
     }
 
-    public void setOwnerVisible(boolean ownerVisible) {
-        this.ownerVisible = ownerVisible;
+    public void setFullscreenVisible(boolean visible) {
+        this.fullscreenVisible = visible;
         changes.add(Change.Other);
     }
 
-    public boolean getOwnerVisible() {
-        return ownerVisible;
+    public boolean getFullscreenVisible() {
+        return fullscreenVisible;
+    }
+
+    public void setMinimapVisible(boolean visible) {
+        this.minimapVisible = visible;
+        changes.add(Change.Other);
+    }
+
+    public boolean getMinimapVisible() {
+        return minimapVisible;
+    }
+
+    public void setFullscreenNameVisible(boolean nameVisible) {
+        this.fullscreenNameVisible = nameVisible;
+        changes.add(Change.Other);
+    }
+
+    public boolean getFullscreenNameVisible() {
+        return fullscreenNameVisible;
+    }
+
+    public void setFullscreenOwnerVisible(boolean ownerVisible) {
+        this.fullscreenOwnerVisible = ownerVisible;
+        changes.add(Change.Other);
+    }
+
+    public boolean getFullscreenOwnerVisible() {
+        return fullscreenOwnerVisible;
+    }
+
+    public void setMinimapNameVisible(boolean nameVisible) {
+        this.minimapNameVisible = nameVisible;
+        changes.add(Change.Other);
+    }
+
+    public boolean getMinimapNameVisible() {
+        return minimapNameVisible;
+    }
+
+    public void setMinimapOwnerVisible(boolean ownerVisible) {
+        this.minimapOwnerVisible = ownerVisible;
+        changes.add(Change.Other);
+    }
+
+    public boolean getMinimapOwnerVisible() {
+        return minimapOwnerVisible;
     }
 
     public void setAnnounceInChat(boolean announceInChat) {
@@ -294,6 +375,15 @@ public class FrontierData {
 
     public boolean getAnnounceInChat() {
         return announceInChat;
+    }
+
+    public void setAnnounceInTitle(boolean announceInTitle) {
+        this.announceInTitle = announceInChat;
+        changes.add(Change.Other);
+    }
+
+    public boolean getAnnounceInTitle() {
+        return announceInTitle;
     }
 
     public void setColor(int color) {
@@ -341,6 +431,20 @@ public class FrontierData {
         }
 
         usersShared.add(userShared);
+        changes.add(Change.Shared);
+    }
+
+    public void removeUserShared(int index) {
+        if (usersShared == null) {
+            return;
+        }
+
+        usersShared.remove(index);
+
+        if (usersShared.isEmpty()) {
+            usersShared = null;
+        }
+
         changes.add(Change.Shared);
     }
 
@@ -451,22 +555,38 @@ public class FrontierData {
     }
 
     public void readFromNBT(CompoundTag nbt, int version) {
+        boolean splitVisibility = version >= 10;
+
         id = UUID.fromString(nbt.getString("id"));
-        if (nbt.contains("visible")) {
-            visible = nbt.getBoolean("visible");
-        }
         color = nbt.getInt("color");
         dimension = ResourceKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation(nbt.getString("dimension")));
         name1 = nbt.getString("name1");
         name2 = nbt.getString("name2");
-        if (nbt.contains("nameVisible")) {
-            nameVisible = nbt.getBoolean("nameVisible");
+        visible = nbt.getBoolean("visible");
+        if (splitVisibility)
+        {
+            fullscreenVisible = nbt.getBoolean("fullscreenVisible");
+            fullscreenNameVisible = nbt.getBoolean("fullscreenNameVisible");
+            fullscreenOwnerVisible = nbt.getBoolean("fullscreenOwnerVisible");
+            minimapVisible = nbt.getBoolean("minimapVisible");
+            minimapNameVisible = nbt.getBoolean("minimapNameVisible");
+            minimapOwnerVisible = nbt.getBoolean("minimapOwnerVisible");
         }
-        if (nbt.contains("ownerVisible")) {
-            ownerVisible = nbt.getBoolean("ownerVisible");
+        else
+        {
+            fullscreenVisible = nbt.getBoolean("visible");
+            minimapVisible = nbt.getBoolean("visible");
+            fullscreenNameVisible = nbt.getBoolean("nameVisible");
+            minimapNameVisible = nbt.getBoolean("nameVisible");
+            fullscreenOwnerVisible = nbt.getBoolean("ownerVisible");
+            minimapOwnerVisible = nbt.getBoolean("ownerVisible");
         }
+
         if (nbt.contains("announceInChat")) {
             announceInChat = nbt.getBoolean("announceInChat");
+        }
+        if (nbt.contains("announceInTitle")) {
+            announceInTitle = nbt.getBoolean("announceInTitle");
         }
 
         personal = nbt.getBoolean("personal");
@@ -533,14 +653,19 @@ public class FrontierData {
 
     public void writeToNBT(CompoundTag nbt) {
         nbt.putString("id", id.toString());
-        nbt.putBoolean("visible", visible);
         nbt.putInt("color", color);
         nbt.putString("dimension", dimension.location().toString());
         nbt.putString("name1", name1);
         nbt.putString("name2", name2);
-        nbt.putBoolean("nameVisible", nameVisible);
-        nbt.putBoolean("ownerVisible", ownerVisible);
+        nbt.putBoolean("visible", visible);
+        nbt.putBoolean("fullscreenVisible", fullscreenVisible);
+        nbt.putBoolean("fullscreenNameVisible", fullscreenNameVisible);
+        nbt.putBoolean("fullscreenOwnerVisible", fullscreenOwnerVisible);
+        nbt.putBoolean("minimapVisible", minimapVisible);
+        nbt.putBoolean("minimapNameVisible", minimapNameVisible);
+        nbt.putBoolean("minimapOwnerVisible", minimapOwnerVisible);
         nbt.putBoolean("announceInChat", announceInChat);
+        nbt.putBoolean("announceInTitle", announceInTitle);
         nbt.putBoolean("personal", personal);
 
         CompoundTag nbtOwner = new CompoundTag();
@@ -607,11 +732,16 @@ public class FrontierData {
         owner.fromBytes(buf);
 
         if (changes.contains(Change.Other)) {
-            visible = buf.readBoolean();
             color = buf.readInt();
-            nameVisible = buf.readBoolean();
-            ownerVisible = buf.readBoolean();
+            visible = buf.readBoolean();
+            fullscreenVisible = buf.readBoolean();
+            fullscreenNameVisible = buf.readBoolean();
+            fullscreenOwnerVisible = buf.readBoolean();
+            minimapVisible = buf.readBoolean();
+            minimapNameVisible = buf.readBoolean();
+            minimapOwnerVisible = buf.readBoolean();
             announceInChat = buf.readBoolean();
+            announceInTitle = buf.readBoolean();
         }
 
         if (changes.contains(Change.Name)) {
@@ -652,14 +782,14 @@ public class FrontierData {
         }
 
         if (changes.contains(Change.Vertices)) {
-            vertices = new ArrayList<>();
+            vertices.clear();
             int vertexCount = buf.readInt();
             for (int i = 0; i < vertexCount; ++i) {
                 BlockPos vertex = BlockPos.of(buf.readLong());
                 vertices.add(vertex);
             }
 
-            chunks = new HashSet<>();
+            chunks.clear();
             int chunkCount = buf.readInt();
             for (int i = 0; i < chunkCount; ++i) {
                 ChunkPos chunk = new ChunkPos(buf.readLong());
@@ -701,11 +831,16 @@ public class FrontierData {
         owner.toBytes(buf);
 
         if (!onlyChanges || changes.contains(Change.Other)) {
-            buf.writeBoolean(visible);
             buf.writeInt(color);
-            buf.writeBoolean(nameVisible);
-            buf.writeBoolean(ownerVisible);
+            buf.writeBoolean(visible);
+            buf.writeBoolean(fullscreenVisible);
+            buf.writeBoolean(fullscreenNameVisible);
+            buf.writeBoolean(fullscreenOwnerVisible);
+            buf.writeBoolean(minimapVisible);
+            buf.writeBoolean(minimapNameVisible);
+            buf.writeBoolean(minimapOwnerVisible);
             buf.writeBoolean(announceInChat);
+            buf.writeBoolean(announceInTitle);
         }
 
         if (!onlyChanges || changes.contains(Change.Name)) {
