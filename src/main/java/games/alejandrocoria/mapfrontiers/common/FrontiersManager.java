@@ -27,7 +27,12 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class FrontiersManager {
@@ -42,7 +47,7 @@ public class FrontiersManager {
     private File ModDir;
     private boolean frontierOwnersChecked = false;
 
-    public static final int dataVersion = 9;
+    public static final int dataVersion = 10;
     private static int pendingShareFrontierID = 0;
     private static final int pendingShareFrontierTickDuration = 1200;
 

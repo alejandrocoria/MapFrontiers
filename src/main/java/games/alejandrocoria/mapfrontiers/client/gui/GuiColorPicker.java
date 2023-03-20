@@ -13,7 +13,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.awt.*;
+import java.awt.Color;
 import java.util.function.BiConsumer;
 
 @ParametersAreNonnullByDefault
@@ -140,14 +140,14 @@ public class GuiColorPicker extends AbstractWidget {
         blit(matrixStack, x + (int) hsX + 64 - 2, y + (int) hsY + 64 - 2, texX, 129, 5, 5, textureSizeX, textureSizeY);
         blit(matrixStack, x + 131, y + (int) v - 2, texX + 6, 129, 10, 5, textureSizeX, textureSizeY);
 
-        fill(matrixStack, x + 165, y + 57, x + 304, y + 127, 0xff000000);
+        fill(matrixStack, x + 165, y + 58, x + 304, y + 128, 0xff000000);
         int col = 0;
         int row = 0;
         for (int c : (active ? palette : paletteInactive)) {
             if (active && c == color) {
-                fill(matrixStack, x + 165 + col * 23, y + 57 + row * 23, x + 189 + col * 23, y + 81 + row * 23, 0xffffffff);
+                fill(matrixStack, x + 165 + col * 23, y + 58 + row * 23, x + 189 + col * 23, y + 82 + row * 23, 0xffffffff);
             }
-            fill(matrixStack, x + 166 + col * 23, y + 58 + row * 23, x + 188 + col * 23, y + 80 + row * 23, c);
+            fill(matrixStack, x + 166 + col * 23, y + 59 + row * 23, x + 188 + col * 23, y + 81 + row * 23, c);
             ++col;
             if (col == 6) {
                 col = 0;

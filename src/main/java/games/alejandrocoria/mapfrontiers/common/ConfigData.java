@@ -17,7 +17,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.*;
+import net.minecraftforge.common.ForgeConfigSpec.BooleanValue;
+import net.minecraftforge.common.ForgeConfigSpec.DoubleValue;
+import net.minecraftforge.common.ForgeConfigSpec.EnumValue;
+import net.minecraftforge.common.ForgeConfigSpec.IntValue;
+import net.minecraftforge.common.ForgeConfigSpec.ValueSpec;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
@@ -37,8 +41,8 @@ public class ConfigData {
         Info, Edit, Nothing
     }
 
-    public enum NameVisibility {
-        Manual, Show, Hide
+    public enum Visibility {
+        Custom, Always, Never
     }
 
     public enum FilterFrontierType {
@@ -66,7 +70,14 @@ public class ConfigData {
     public static int newFrontierChunkShapeLength;
     public static FrontierData.Mode newFrontierMode;
     public static AfterCreatingFrontier afterCreatingFrontier;
-    public static NameVisibility nameVisibility;
+    public static Visibility fullscreenVisibility;
+    public static Visibility fullscreenNameVisibility;
+    public static Visibility fullscreenOwnerVisibility;
+    public static Visibility minimapVisibility;
+    public static Visibility minimapNameVisibility;
+    public static Visibility minimapOwnerVisibility;
+    public static boolean titleAnnouncementAboveHotbar;
+    public static boolean announceUnnamedFrontiers;
     public static boolean hideNamesThatDontFit;
     public static double polygonsOpacity;
     public static int snapDistance;
@@ -93,7 +104,14 @@ public class ConfigData {
         newFrontierChunkShapeLength = CLIENT.newFrontierChunkShapeLength.get();
         newFrontierMode = CLIENT.newFrontierMode.get();
         afterCreatingFrontier = CLIENT.afterCreatingFrontier.get();
-        nameVisibility = CLIENT.nameVisibility.get();
+        fullscreenVisibility = CLIENT.fullscreenVisibility.get();
+        fullscreenNameVisibility = CLIENT.fullscreenNameVisibility.get();
+        fullscreenOwnerVisibility = CLIENT.fullscreenOwnerVisibility.get();
+        minimapVisibility = CLIENT.minimapVisibility.get();
+        minimapNameVisibility = CLIENT.minimapNameVisibility.get();
+        minimapOwnerVisibility = CLIENT.minimapOwnerVisibility.get();
+        titleAnnouncementAboveHotbar = CLIENT.titleAnnouncementAboveHotbar.get();
+        announceUnnamedFrontiers = CLIENT.announceUnnamedFrontiers.get();
         hideNamesThatDontFit = CLIENT.hideNamesThatDontFit.get();
         polygonsOpacity = CLIENT.polygonsOpacity.get();
         snapDistance = CLIENT.snapDistance.get();
@@ -121,7 +139,14 @@ public class ConfigData {
         public final IntValue newFrontierChunkShapeLength;
         public final EnumValue<FrontierData.Mode> newFrontierMode;
         public final EnumValue<AfterCreatingFrontier> afterCreatingFrontier;
-        public final EnumValue<NameVisibility> nameVisibility;
+        public final EnumValue<Visibility> fullscreenVisibility;
+        public final EnumValue<Visibility> fullscreenNameVisibility;
+        public final EnumValue<Visibility> fullscreenOwnerVisibility;
+        public final EnumValue<Visibility> minimapVisibility;
+        public final EnumValue<Visibility> minimapNameVisibility;
+        public final EnumValue<Visibility> minimapOwnerVisibility;
+        public final BooleanValue titleAnnouncementAboveHotbar;
+        public final BooleanValue announceUnnamedFrontiers;
         public final BooleanValue hideNamesThatDontFit;
         public final DoubleValue polygonsOpacity;
         public final IntValue snapDistance;
@@ -148,10 +173,38 @@ public class ConfigData {
             newFrontierChunkShapeLength = builder.defineInRange("newFrontierChunkShapeLength", 5, 0, 32);
             newFrontierMode = builder.defineEnum("newFrontierMode", FrontierData.Mode.Vertex);
             afterCreatingFrontier = builder.defineEnum("afterCreatingFrontier", AfterCreatingFrontier.Info);
-            nameVisibility = builder.comment(
-                            "Force all frontier names to be shown on the map or hidden. In Manual you can decide for each frontier.")
-                    .translation(MapFrontiers.MODID + ".config." + "nameVisibility")
-                    .defineEnum("nameVisibility", NameVisibility.Manual);
+            fullscreenVisibility = builder.comment(
+                            "Force all frontier to be shown or hidden on the fullscreen map. In Manual you can decide for each frontier.")
+                    .translation(MapFrontiers.MODID + ".config." + "fullscreenVisibility")
+                    .defineEnum("fullscreenVisibility", Visibility.Custom);
+            fullscreenNameVisibility = builder.comment(
+                            "Force all frontier names to be shown or hidden on the fullscreen map. In Manual you can decide for each frontier.")
+                    .translation(MapFrontiers.MODID + ".config." + "fullscreenNameVisibility")
+                    .defineEnum("fullscreenNameVisibility", Visibility.Custom);
+            fullscreenOwnerVisibility = builder.comment(
+                            "Force all frontier owners to be shown or hidden on the fullscreen map. In Manual you can decide for each frontier.")
+                    .translation(MapFrontiers.MODID + ".config." + "fullscreenOwnerVisibility")
+                    .defineEnum("fullscreenOwnerVisibility", Visibility.Custom);
+            minimapVisibility = builder.comment(
+                            "Force all frontier to be shown or hidden on the minimap. In Manual you can decide for each frontier.")
+                    .translation(MapFrontiers.MODID + ".config." + "minimapVisibility")
+                    .defineEnum("minimapVisibility", Visibility.Custom);
+            minimapNameVisibility = builder.comment(
+                            "Force all frontier names to be shown or hidden on the minimap. In Manual you can decide for each frontier.")
+                    .translation(MapFrontiers.MODID + ".config." + "minimapNameVisibility")
+                    .defineEnum("minimapNameVisibility", Visibility.Custom);
+            minimapOwnerVisibility = builder.comment(
+                            "Force all frontier owners to be shown or hidden on the minimap. In Manual you can decide for each frontier.")
+                    .translation(MapFrontiers.MODID + ".config." + "minimapOwnerVisibility")
+                    .defineEnum("minimapOwnerVisibility", Visibility.Custom);
+            titleAnnouncementAboveHotbar = builder.comment(
+                            "Show the frontier announcement above the hotbar instead of showing it as a title.")
+                    .translation(MapFrontiers.MODID + ".config." + "titleAnnouncementAboveHotbar")
+                    .define("titleAnnouncementAboveHotbar", false);
+            announceUnnamedFrontiers = builder.comment(
+                            "Announce unnamed frontiers in chat/title.")
+                    .translation(MapFrontiers.MODID + ".config." + "announceUnnamedFrontiers")
+                    .define("announceUnnamedFrontiers", false);
             hideNamesThatDontFit = builder.comment(
                             "Hides the name if it is wider than the frontier at the zoom level it is being viewed.")
                     .translation(MapFrontiers.MODID + ".config." + "hideNamesThatDontFit")
@@ -202,7 +255,14 @@ public class ConfigData {
         CLIENT.newFrontierChunkShapeLength.set(newFrontierChunkShapeLength);
         CLIENT.newFrontierMode.set(newFrontierMode);
         CLIENT.afterCreatingFrontier.set(afterCreatingFrontier);
-        CLIENT.nameVisibility.set(nameVisibility);
+        CLIENT.fullscreenVisibility.set(fullscreenVisibility);
+        CLIENT.fullscreenNameVisibility.set(fullscreenNameVisibility);
+        CLIENT.fullscreenOwnerVisibility.set(fullscreenOwnerVisibility);
+        CLIENT.minimapVisibility.set(minimapVisibility);
+        CLIENT.minimapNameVisibility.set(minimapNameVisibility);
+        CLIENT.minimapOwnerVisibility.set(minimapOwnerVisibility);
+        CLIENT.titleAnnouncementAboveHotbar.set(titleAnnouncementAboveHotbar);
+        CLIENT.announceUnnamedFrontiers.set(announceUnnamedFrontiers);
         CLIENT.hideNamesThatDontFit.set(hideNamesThatDontFit);
         CLIENT.polygonsOpacity.set(polygonsOpacity);
         CLIENT.snapDistance.set(snapDistance);
@@ -221,6 +281,17 @@ public class ConfigData {
         CLIENT.hudYPosition.set(hudYPosition);
 
         CLIENT_SPEC.save();
+    }
+
+    public static boolean getVisibilityValue(Visibility visibility, boolean manual) {
+        switch (visibility) {
+            case Always:
+                return true;
+            case Never:
+                return false;
+            default:
+                return manual;
+        }
     }
 
     public static Component getTranslatedName(String name) {
