@@ -88,7 +88,7 @@ public class GuiOptionButton extends Button {
     }
 
     @Override
-    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         int c = color;
         if (!active) {
             c = GuiColors.SETTINGS_TEXT_DARK;

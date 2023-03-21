@@ -91,7 +91,7 @@ public class GuiSimpleLabel extends AbstractWidget {
     }
 
     @Override
-    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         matrixStack.scale(scale, scale, 1.0F);
 
         if (align == Align.Left) {

@@ -114,14 +114,14 @@ public class TextUserBox extends TextBox {
     }
 
     @Override
-    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         if (error == null) {
             setTextColor(GuiColors.SETTINGS_TEXT_BOX_TEXT);
         } else {
             setTextColor(GuiColors.SETTINGS_TEXT_ERROR);
         }
 
-        super.renderButton(matrixStack, mouseX, mouseY, partialTicks);
+        super.renderWidget(matrixStack, mouseX, mouseY, partialTicks);
 
         if (error != null) {
             List<FormattedCharSequence> errorList = font.split(error, width - 8);
@@ -167,8 +167,8 @@ public class TextUserBox extends TextBox {
     }
 
     @Override
-    public void setFocus(boolean isFocusedIn) {
-        super.setFocus(isFocusedIn);
+    public void setFocused(boolean isFocusedIn) {
+        super.setFocused(isFocusedIn);
 
         if (!isFocusedIn) {
             suggestions.clear();

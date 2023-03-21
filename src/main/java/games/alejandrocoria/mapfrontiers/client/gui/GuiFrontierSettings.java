@@ -662,7 +662,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         textGroupName.setValue(element.getGroup().getName());
         textGroupName.setEditable(!element.getGroup().isSpecial());
         textGroupName.setBordered(!element.getGroup().isSpecial());
-        textGroupName.setFocus(false);
+        textGroupName.setFocused(false);
 
         resetLabels();
         updateUsers();

@@ -50,7 +50,7 @@ public class GuiPatreonButton extends AbstractWidget {
     }
 
     @Override
-    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         Minecraft mc = Minecraft.getInstance();
         int factor = (int) mc.getWindow().getGuiScale();
 

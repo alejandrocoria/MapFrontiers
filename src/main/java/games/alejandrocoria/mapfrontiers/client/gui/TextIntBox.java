@@ -100,7 +100,7 @@ public class TextIntBox extends EditBox {
             }
 
             if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
-                changeFocus(false);
+                setFocused(false);
             }
         }
 
@@ -152,12 +152,12 @@ public class TextIntBox extends EditBox {
     }
 
     @Override
-    public void setFocus(boolean isFocusedIn) {
+    public void setFocused(boolean isFocusedIn) {
         if (!isFocusedIn) {
             setValue(clamped());
         }
 
-        super.setFocus(isFocusedIn);
+        super.setFocused(isFocusedIn);
     }
 
     @OnlyIn(Dist.CLIENT)

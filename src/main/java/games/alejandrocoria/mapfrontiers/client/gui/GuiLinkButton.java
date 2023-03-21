@@ -42,7 +42,7 @@ public class GuiLinkButton extends AbstractWidget {
     }
 
     @Override
-    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         if (isHovered) {
             label.setColor(GuiColors.SETTINGS_LINK_HIGHLIGHT);
         } else {

@@ -311,7 +311,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
 
     @Override
     public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(matrixStack, 0);
+        renderBackground(matrixStack);
 
         mouseX *= scaleFactor;
         mouseY *= scaleFactor;
