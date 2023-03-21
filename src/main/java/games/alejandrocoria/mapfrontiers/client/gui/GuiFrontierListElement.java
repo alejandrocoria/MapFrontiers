@@ -76,7 +76,7 @@ public class GuiFrontierListElement extends GuiScrollBox.ScrollElement {
     }
 
     @Override
-    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
+    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
         int color = GuiColors.SETTINGS_TEXT;
         if (selected) {
             color = GuiColors.SETTINGS_TEXT_HIGHLIGHT;

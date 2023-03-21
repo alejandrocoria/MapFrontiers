@@ -70,7 +70,7 @@ public class TextBox extends EditBox {
             res = super.keyPressed(keyCode, scanCode, modifiers);
 
             if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
-                changeFocus(false);
+                setFocused(false);
             }
         }
 
@@ -78,12 +78,12 @@ public class TextBox extends EditBox {
     }
 
     @Override
-    public void setFocus(boolean isFocusedIn) {
+    public void setFocused(boolean isFocusedIn) {
         if (isFocused() && !isFocusedIn && responder != null) {
             responder.lostFocus(this, getValue());
         }
 
-        super.setFocus(isFocusedIn);
+        super.setFocused(isFocusedIn);
     }
 
     @Environment(EnvType.CLIENT)

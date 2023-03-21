@@ -47,7 +47,7 @@ public class GuiTabbedBox extends AbstractWidget {
     }
 
     @Override
-    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         for (int i = 0; i < tabs.size(); ++i) {
             tabs.get(i).render(matrixStack, mouseX, mouseY, partialTicks, i == selected);
         }

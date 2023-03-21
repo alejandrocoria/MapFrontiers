@@ -171,7 +171,7 @@ public class GuiHUDWidget extends AbstractWidget {
     }
 
     @Override
-    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         guiHUD.draw(matrixStack, partialTicks);
     }
 

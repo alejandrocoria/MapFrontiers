@@ -157,7 +157,7 @@ public class GuiScrollBox extends AbstractWidget {
     }
 
     @Override
-    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         for (int i = 0; i < elements.size(); ++i) {
             elements.get(i).render(matrixStack, mouseX, mouseY, partialTicks, selected == i);
         }
@@ -335,13 +335,13 @@ public class GuiScrollBox extends AbstractWidget {
         public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
             if (visible) {
                 isHovered = mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height;
-                renderButton(matrixStack, mouseX, mouseY, partialTicks, selected);
+                renderWidget(matrixStack, mouseX, mouseY, partialTicks, selected);
             } else {
                 isHovered = false;
             }
         }
 
-        public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
+        public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
         }
 
         public Action mousePressed(double mouseX, double mouseY) {

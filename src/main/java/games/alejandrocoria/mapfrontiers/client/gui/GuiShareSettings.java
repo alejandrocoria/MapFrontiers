@@ -172,7 +172,7 @@ public class GuiShareSettings extends Screen
         SettingsUser user = new SettingsUser();
 
         String usernameOrUUID = textNewUser.getValue();
-        textNewUser.setFocus(false);
+        textNewUser.setFocused(false);
         if (StringUtils.isBlank(usernameOrUUID)) {
             return;
         } else if (usernameOrUUID.length() < 28) {

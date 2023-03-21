@@ -123,7 +123,7 @@ public class GuiNewFrontier extends Screen implements TextIntBox.TextIntBoxRespo
 
     @Override
     public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(matrixStack, 0);
+        renderBackground(matrixStack);
 
         mouseX *= scaleFactor;
         mouseY *= scaleFactor;

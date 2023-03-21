@@ -93,7 +93,7 @@ public class GuiChunkShapeButtons extends AbstractWidget {
     }
 
     @Override
-    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderTexture(0, texture);
