@@ -198,7 +198,9 @@ public class FrontiersOverlayManager {
             frontier.removeChanges();
         } else if (personal && frontier.getOwner().equals(new SettingsUser(Minecraft.getInstance().player))) {
             FrontierOverlay frontierOverlay = updateFrontier(frontier);
-            MinecraftForge.EVENT_BUS.post(new UpdatedFrontierEvent(frontierOverlay, Minecraft.getInstance().player.getId()));
+            if (frontierOverlay != null) {
+                MinecraftForge.EVENT_BUS.post(new UpdatedFrontierEvent(frontierOverlay, Minecraft.getInstance().player.getId()));
+            }
         }
     }
 
