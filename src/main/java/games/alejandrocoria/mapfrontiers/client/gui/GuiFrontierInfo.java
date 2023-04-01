@@ -424,6 +424,8 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         } else if (button == buttonShareSettings) {
             ForgeHooksClient.pushGuiLayer(Minecraft.getInstance(), new GuiShareSettings(frontiersOverlayManager, frontier));
         } else if (button == buttonDelete) {
+            // Unsubscribing to not receive this same event.
+            MinecraftForge.EVENT_BUS.unregister(this);
             frontiersOverlayManager.clientDeleteFrontier(frontier);
             onClose();
         } else if (button == buttonDone) {
