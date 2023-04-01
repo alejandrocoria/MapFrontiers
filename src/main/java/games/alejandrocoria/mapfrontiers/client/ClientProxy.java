@@ -81,6 +81,10 @@ public class ClientProxy implements ClientModInitializer {
         ));
 
         ClientTickEvents.START_CLIENT_TICK.register(client -> {
+            if (client.level == null) {
+                return;
+            }
+
             if (frontiersOverlayManager != null) {
                 frontiersOverlayManager.updateAllOverlays(false);
                 personalFrontiersOverlayManager.updateAllOverlays(false);
@@ -92,6 +96,10 @@ public class ClientProxy implements ClientModInitializer {
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.level == null) {
+                return;
+            }
+
             if (frontiersOverlayManager == null) {
                 return;
             }
