@@ -46,7 +46,7 @@ public class FrontiersOverlayManager {
     private final HashMap<ResourceKey<Level>, MarkerOverlay> markersSelected;
     private final boolean personal;
     private File ModDir;
-    public static final int dataVersion = 9;
+    public static final int dataVersion = 10;
 
     private static final MapImage markerDotSelected = new MapImage(
             new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"), 20, 0, 10, 10, GuiColors.WHITE, 1.f);
