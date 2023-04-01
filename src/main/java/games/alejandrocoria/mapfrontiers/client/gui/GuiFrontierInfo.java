@@ -451,6 +451,8 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         } else if (button == buttonShareSettings) {
             ScreenLayerManager.pushLayer(new GuiShareSettings(frontiersOverlayManager, frontier));
         } else if (button == buttonDelete) {
+            // Unsubscribing to not receive this same event.
+            ClientProxy.unsuscribeAllEvents(this);
             frontiersOverlayManager.clientDeleteFrontier(frontier);
             onClose();
         } else if (button == buttonDone) {
