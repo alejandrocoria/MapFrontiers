@@ -63,6 +63,8 @@ public class ClientProxy {
     private static BlockPos lastPlayerPosition = new BlockPos(0, 0, 0);
     private static Set<FrontierOverlay> insideFrontiers = new HashSet<>();
 
+    private static FrontierData clipboard = null;
+
     @SubscribeEvent
     public static void clientSetup(FMLClientSetupEvent event) {
         MinecraftForge.EVENT_BUS.register(FrontierOverlay.class);
@@ -298,5 +300,13 @@ public class ClientProxy {
 
     public static boolean isModOnServer() {
         return settingsProfile != null;
+    }
+
+    public static void setClipboard(FrontierData newClipboard) {
+        clipboard = new FrontierData(newClipboard);
+    }
+
+    public static FrontierData getClipboard() {
+        return clipboard;
     }
 }

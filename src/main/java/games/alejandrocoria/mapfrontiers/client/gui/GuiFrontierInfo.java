@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.client.util.StringHelper;
+import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.event.DeletedFrontierEvent;
 import games.alejandrocoria.mapfrontiers.common.event.UpdatedFrontierEvent;
@@ -69,6 +70,18 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
     private TextIntBox textBlue;
     private GuiSettingsButton buttonRandomColor;
     private GuiColorPicker colorPicker;
+    private GuiButtonIcon buttonCopy;
+    private GuiButtonIcon buttonPaste;
+    private GuiButtonIcon buttonOpenPasteOptions;
+    private GuiButtonIcon buttonClosePasteOptions;
+    private GuiOptionButton buttonPasteName;
+    private GuiOptionButton buttonPasteVisibililty;
+    private GuiOptionButton buttonPasteColor;
+    private GuiOptionButton buttonPasteBanner;
+    private GuiSimpleLabel labelPasteName;
+    private GuiSimpleLabel labelPasteVisibililty;
+    private GuiSimpleLabel labelPasteColor;
+    private GuiSimpleLabel labelPasteBanner;
 
     private GuiSettingsButton buttonSelect;
     private GuiSettingsButton buttonShareSettings;
@@ -217,6 +230,42 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
 
         colorPicker = new GuiColorPicker(leftSide + 2, top + 156, frontier.getColor(), (picker, dragging) -> colorPickerUpdated(dragging));
 
+        buttonCopy = new GuiButtonIcon(rightSide + 154, top + 263, GuiButtonIcon.Type.Copy, this::buttonPressed);
+        buttonPaste = new GuiButtonIcon(rightSide + 174, top + 263, GuiButtonIcon.Type.Paste, this::buttonPressed);
+        buttonOpenPasteOptions = new GuiButtonIcon(rightSide + 191, top + 263, GuiButtonIcon.Type.ArrowUp, this::buttonPressed);
+        buttonClosePasteOptions = new GuiButtonIcon(rightSide + 191, top + 263, GuiButtonIcon.Type.ArrowDown, this::buttonPressed);
+
+        labelPasteName = new GuiSimpleLabel(font, rightSide + 154, top + 200, GuiSimpleLabel.Align.Left,
+                Component.translatable("mapfrontiers.paste_name"), GuiColors.SETTINGS_TEXT);
+        addRenderableOnly(labelPasteName);
+        buttonPasteName = new GuiOptionButton(font, rightSide + 154 + 116, top + 198, 28, this::buttonPressed);
+        buttonPasteName.addOption(Component.translatable("options.on"));
+        buttonPasteName.addOption(Component.translatable("options.off"));
+        buttonPasteName.setSelected(ConfigData.pasteName ? 0 : 1);
+
+        labelPasteVisibililty = new GuiSimpleLabel(font, rightSide + 154, top + 216, GuiSimpleLabel.Align.Left,
+                Component.translatable("mapfrontiers.paste_visibility"), GuiColors.SETTINGS_TEXT);
+        addRenderableOnly(labelPasteVisibililty);
+        buttonPasteVisibililty = new GuiOptionButton(font, rightSide + 154 + 116, top + 214, 28, this::buttonPressed);
+        buttonPasteVisibililty.addOption(Component.translatable("options.on"));
+        buttonPasteVisibililty.addOption(Component.translatable("options.off"));
+        buttonPasteVisibililty.setSelected(ConfigData.pasteVisibility ? 0 : 1);
+
+        labelPasteColor = new GuiSimpleLabel(font, rightSide + 154, top + 232, GuiSimpleLabel.Align.Left,
+                Component.translatable("mapfrontiers.paste_color"), GuiColors.SETTINGS_TEXT);
+        addRenderableOnly(labelPasteColor);
+        buttonPasteColor = new GuiOptionButton(font, rightSide + 154 + 116, top + 230, 28, this::buttonPressed);
+        buttonPasteColor.addOption(Component.translatable("options.on"));
+        buttonPasteColor.addOption(Component.translatable("options.off"));
+        buttonPasteColor.setSelected(ConfigData.pasteColor ? 0 : 1);
+
+        labelPasteBanner = new GuiSimpleLabel(font, rightSide + 154, top + 248, GuiSimpleLabel.Align.Left,
+                Component.translatable("mapfrontiers.paste_banner"), GuiColors.SETTINGS_TEXT);
+        addRenderableOnly(labelPasteBanner);
+        buttonPasteBanner = new GuiOptionButton(font, rightSide + 154 + 116, top + 246, 28, this::buttonPressed);
+        buttonPasteBanner.addOption(Component.translatable("options.on"));
+        buttonPasteBanner.addOption(Component.translatable("options.off"));
+        buttonPasteBanner.setSelected(ConfigData.pasteBanner ? 0 : 1);
 
         int offset1 = StringHelper.getMaxWidth(font,
                 I18n.get("mapfrontiers.type", I18n.get("mapfrontiers.config.Personal")),
@@ -290,6 +339,14 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         addRenderableWidget(textBlue);
         addRenderableWidget(buttonRandomColor);
         addRenderableWidget(colorPicker);
+        addRenderableWidget(buttonCopy);
+        addRenderableWidget(buttonPaste);
+        addRenderableWidget(buttonOpenPasteOptions);
+        addRenderableWidget(buttonClosePasteOptions);
+        addRenderableWidget(buttonPasteName);
+        addRenderableWidget(buttonPasteVisibililty);
+        addRenderableWidget(buttonPasteColor);
+        addRenderableWidget(buttonPasteBanner);
         addRenderableWidget(buttonSelect);
         addRenderableWidget(buttonShareSettings);
         addRenderableWidget(buttonDelete);
@@ -298,6 +355,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
 
         updateBannerButton();
         updateButtons();
+        updatePasteOptionsVisibility();
     }
 
     @Override
@@ -327,11 +385,19 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
             frontier.renderBanner(minecraft, matrixStack, actualWidth / 2 - 279, actualHeight / 2 - 122, 4);
         }
 
-        if (buttonBanner.visible && buttonBanner.isHoveredOrFocused()) {
+        if (buttonBanner.visible && buttonBanner.isHovered()) {
             if (!frontier.hasBanner() && ClientProxy.getHeldBanner() == null) {
                 MutableComponent prefix = Component.literal(GuiColors.WARNING + "! " + ChatFormatting.RESET);
                 renderTooltip(matrixStack, prefix.append(Component.translatable("mapfrontiers.assign_banner_warn")), mouseX, mouseY);
             }
+        } else if (buttonCopy.isHovered()) {
+            renderTooltip(matrixStack, Component.translatable("mapfrontiers.copy"), mouseX, mouseY);
+        } else if (buttonPaste.visible && buttonPaste.isHovered()) {
+            renderTooltip(matrixStack, Component.translatable("mapfrontiers.paste"), mouseX, mouseY);
+        } else if (buttonOpenPasteOptions.visible && buttonOpenPasteOptions.isHovered()) {
+            renderTooltip(matrixStack, Component.translatable("mapfrontiers.open_paste_options"), mouseX, mouseY);
+        } else if (buttonClosePasteOptions.visible && buttonClosePasteOptions.isHovered()) {
+            renderTooltip(matrixStack, Component.translatable("mapfrontiers.close_paste_options"), mouseX, mouseY);
         }
 
         if (scaleFactor != 1.f) {
@@ -415,6 +481,56 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
             textGreen.setValue((newColor & 0x00ff00) >> 8);
             textBlue.setValue(newColor & 0x0000ff);
             sendChangesToServer();
+        } else if (button == buttonCopy) {
+            ClientProxy.setClipboard(frontier);
+            updatePasteOptionsVisibility();
+        } else if (button == buttonPaste) {
+            FrontierData clipboard = ClientProxy.getClipboard();
+            if (clipboard != null && (ConfigData.pasteName || ConfigData.pasteVisibility || ConfigData.pasteColor || ConfigData.pasteBanner)) {
+                if (ConfigData.pasteName) {
+                    frontier.setName1(clipboard.getName1());
+                    frontier.setName2(clipboard.getName2());
+                }
+                if (ConfigData.pasteVisibility) {
+                    frontier.setVisible(clipboard.getVisible());
+                    frontier.setFullscreenVisible(clipboard.getFullscreenVisible());
+                    frontier.setFullscreenNameVisible(clipboard.getFullscreenNameVisible());
+                    frontier.setFullscreenOwnerVisible(clipboard.getFullscreenOwnerVisible());
+                    frontier.setMinimapVisible(clipboard.getMinimapVisible());
+                    frontier.setMinimapNameVisible(clipboard.getMinimapNameVisible());
+                    frontier.setMinimapOwnerVisible(clipboard.getMinimapOwnerVisible());
+                    frontier.setAnnounceInChat(clipboard.getAnnounceInChat());
+                    frontier.setAnnounceInTitle(clipboard.getAnnounceInTitle());
+                }
+                if (ConfigData.pasteColor) {
+                    frontier.setColor(clipboard.getColor());
+                }
+                if (ConfigData.pasteBanner) {
+                    frontier.setBannerData(clipboard.getbannerData());
+                }
+                sendChangesToServer();
+                init(minecraft, width, height);
+            }
+        } else if (button == buttonOpenPasteOptions) {
+            ConfigData.pasteOptionsVisible = true;
+            updatePasteOptionsVisibility();
+            ClientProxy.configUpdated();
+        } else if (button == buttonClosePasteOptions) {
+            ConfigData.pasteOptionsVisible = false;
+            updatePasteOptionsVisibility();
+            ClientProxy.configUpdated();
+        } else if (button == buttonPasteName) {
+            ConfigData.pasteName = buttonPasteName.getSelected() == 0;
+            ClientProxy.configUpdated();
+        } else if (button == buttonPasteVisibililty) {
+            ConfigData.pasteVisibility = buttonPasteVisibililty.getSelected() == 0;
+            ClientProxy.configUpdated();
+        } else if (button == buttonPasteColor) {
+            ConfigData.pasteColor = buttonPasteColor.getSelected() == 0;
+            ClientProxy.configUpdated();
+        } else if (button == buttonPasteBanner) {
+            ConfigData.pasteBanner = buttonPasteBanner.getSelected() == 0;
+            ClientProxy.configUpdated();
         } else if (button == buttonSelect) {
             BlockPos center = frontier.getCenter();
             ForgeHooksClient.popGuiLayer(minecraft);
@@ -573,10 +689,27 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         textBlue.setEditable(actions.canUpdate);
         buttonRandomColor.visible = actions.canUpdate;
         colorPicker.active = actions.canUpdate;
+        buttonPaste.active = actions.canUpdate;
+        buttonOpenPasteOptions.active = actions.canUpdate;
+        buttonClosePasteOptions.active = actions.canUpdate;
         buttonDelete.visible = actions.canDelete;
         buttonBanner.visible = actions.canUpdate;
         buttonSelect.visible = frontier.getDimension().equals(jmAPI.getUIState(Context.UI.Fullscreen).dimension);
         buttonShareSettings.visible = actions.canShare;
+    }
+
+    private void updatePasteOptionsVisibility() {
+        buttonPaste.visible = ClientProxy.getClipboard() != null;
+        buttonOpenPasteOptions.visible = buttonPaste.visible && !ConfigData.pasteOptionsVisible;
+        buttonClosePasteOptions.visible = buttonPaste.visible && ConfigData.pasteOptionsVisible;
+        buttonPasteName.visible = buttonPaste.visible && ConfigData.pasteOptionsVisible;
+        buttonPasteVisibililty.visible = buttonPaste.visible && ConfigData.pasteOptionsVisible;
+        buttonPasteColor.visible = buttonPaste.visible && ConfigData.pasteOptionsVisible;
+        buttonPasteBanner.visible = buttonPaste.visible && ConfigData.pasteOptionsVisible;
+        labelPasteName.visible = buttonPaste.visible && ConfigData.pasteOptionsVisible;
+        labelPasteVisibililty.visible = buttonPaste.visible && ConfigData.pasteOptionsVisible;
+        labelPasteColor.visible = buttonPaste.visible && ConfigData.pasteOptionsVisible;
+        labelPasteBanner.visible = buttonPaste.visible && ConfigData.pasteOptionsVisible;
     }
 
     private void sendChangesToServer() {

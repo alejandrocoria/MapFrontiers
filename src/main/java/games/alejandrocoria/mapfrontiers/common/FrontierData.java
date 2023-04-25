@@ -377,7 +377,7 @@ public class FrontierData {
     }
 
     public void setAnnounceInTitle(boolean announceInTitle) {
-        this.announceInTitle = announceInChat;
+        this.announceInTitle = announceInTitle;
         changes.add(Change.Other);
     }
 
@@ -414,6 +414,14 @@ public class FrontierData {
 
     public boolean hasBanner() {
         return banner != null;
+    }
+
+    public void setBannerData(@Nullable BannerData bannerData) {
+        banner = bannerData;
+    }
+
+    public BannerData getbannerData() {
+        return banner;
     }
 
     public void setPersonal(boolean personal) {
