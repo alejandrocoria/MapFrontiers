@@ -163,7 +163,7 @@ public class GuiHUDSettings extends Screen implements TextIntBox.TextIntBoxRespo
         super.render(matrixStack, mouseX, mouseY, partialTicks);
 
         for (GuiSimpleLabel label : labels) {
-            if (label.isHoveredOrFocused()) {
+            if (label.isHovered()) {
                 List<Component> tooltip = labelTooltips.get(label);
                 if (tooltip != null) {
                     renderTooltip(matrixStack, tooltip, Optional.empty(), mouseX, mouseY);
