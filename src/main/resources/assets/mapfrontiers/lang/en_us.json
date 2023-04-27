@@ -24,6 +24,8 @@
   "mapfrontiers.paste_visibility": "Paste visibility",
   "mapfrontiers.paste_color": "Paste color",
   "mapfrontiers.paste_banner": "Paste banner",
+  "mapfrontiers.undo": "Undo",
+  "mapfrontiers.redo": "Redo",
   "mapfrontiers.area": "Area: %1$.2fm²",
   "mapfrontiers.perimeter": "Perimeter: %1$.2fm",
   "mapfrontiers.owner": "Owner: %1$s",

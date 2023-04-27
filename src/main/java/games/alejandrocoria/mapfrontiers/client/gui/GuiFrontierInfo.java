@@ -34,11 +34,14 @@ import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Objects;
+import java.util.Stack;
 
 @ParametersAreNonnullByDefault
 @OnlyIn(Dist.CLIENT)
@@ -82,6 +85,8 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
     private GuiSimpleLabel labelPasteVisibililty;
     private GuiSimpleLabel labelPasteColor;
     private GuiSimpleLabel labelPasteBanner;
+    private GuiButtonIcon buttonUndo;
+    private GuiButtonIcon buttonRedo;
 
     private GuiSettingsButton buttonSelect;
     private GuiSettingsButton buttonShareSettings;
@@ -90,6 +95,9 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
     private GuiSettingsButton buttonBanner;
 
     private GuiSimpleLabel modifiedLabel;
+
+    private Stack<FrontierData> undoStack = new Stack();
+    private Stack<FrontierData> redoStack = new Stack();
 
     public GuiFrontierInfo(IClientAPI jmAPI, FrontierOverlay frontier) {
         this(jmAPI, frontier, null);
@@ -100,6 +108,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         this.afterClose = afterClose;
         frontiersOverlayManager = ClientProxy.getFrontiersOverlayManager(frontier.getPersonal());
         this.frontier = frontier;
+        undoStack.push(new FrontierData(frontier));
 
         MinecraftForge.EVENT_BUS.register(this);
     }
@@ -267,6 +276,9 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         buttonPasteBanner.addOption(Component.translatable("options.off"));
         buttonPasteBanner.setSelected(ConfigData.pasteBanner ? 0 : 1);
 
+        buttonUndo = new GuiButtonIcon(rightSide + 202, top + 263, GuiButtonIcon.Type.Undo, this::buttonPressed);
+        buttonRedo = new GuiButtonIcon(rightSide + 222, top + 263, GuiButtonIcon.Type.Redo, this::buttonPressed);
+
         int offset1 = StringHelper.getMaxWidth(font,
                 I18n.get("mapfrontiers.type", I18n.get("mapfrontiers.config.Personal")),
                 I18n.get("mapfrontiers.type", I18n.get("mapfrontiers.config.Global"))) + 10;
@@ -347,6 +359,8 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         addRenderableWidget(buttonPasteVisibililty);
         addRenderableWidget(buttonPasteColor);
         addRenderableWidget(buttonPasteBanner);
+        addRenderableWidget(buttonUndo);
+        addRenderableWidget(buttonRedo);
         addRenderableWidget(buttonSelect);
         addRenderableWidget(buttonShareSettings);
         addRenderableWidget(buttonDelete);
@@ -356,6 +370,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         updateBannerButton();
         updateButtons();
         updatePasteOptionsVisibility();
+        updateUndoRedoVisibility();
     }
 
     @Override
@@ -398,6 +413,10 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
             renderTooltip(matrixStack, Component.translatable("mapfrontiers.open_paste_options"), mouseX, mouseY);
         } else if (buttonClosePasteOptions.visible && buttonClosePasteOptions.isHovered()) {
             renderTooltip(matrixStack, Component.translatable("mapfrontiers.close_paste_options"), mouseX, mouseY);
+        } else if (buttonUndo.visible && buttonUndo.isHovered()) {
+            renderTooltip(matrixStack, Component.translatable("mapfrontiers.undo"), mouseX, mouseY);
+        } else if (buttonRedo.visible && buttonRedo.isHovered()) {
+            renderTooltip(matrixStack, Component.translatable("mapfrontiers.redo"), mouseX, mouseY);
         }
 
         if (scaleFactor != 1.f) {
@@ -445,6 +464,19 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         return super.mouseDragged(mouseX * scaleFactor, mouseY * scaleFactor, button, dragX * scaleFactor, dragY * scaleFactor);
     }
 
+    @Override
+    public boolean keyPressed(int key, int value, int modifier) {
+        if (key == GLFW.GLFW_KEY_Z && Screen.hasControlDown() && !Screen.hasShiftDown() && !Screen.hasAltDown()) {
+            undo();
+            return true;
+        } else if (key == GLFW.GLFW_KEY_Z && Screen.hasControlDown() && Screen.hasShiftDown() && !Screen.hasAltDown()) {
+            redo();
+            return true;
+        } else {
+            return super.keyPressed(key, value, modifier);
+        }
+    }
+
     protected void buttonPressed(Button button) {
         if (button == buttonVisible) {
             frontier.setVisible(buttonVisible.getSelected() == 0);
@@ -487,27 +519,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         } else if (button == buttonPaste) {
             FrontierData clipboard = ClientProxy.getClipboard();
             if (clipboard != null && (ConfigData.pasteName || ConfigData.pasteVisibility || ConfigData.pasteColor || ConfigData.pasteBanner)) {
-                if (ConfigData.pasteName) {
-                    frontier.setName1(clipboard.getName1());
-                    frontier.setName2(clipboard.getName2());
-                }
-                if (ConfigData.pasteVisibility) {
-                    frontier.setVisible(clipboard.getVisible());
-                    frontier.setFullscreenVisible(clipboard.getFullscreenVisible());
-                    frontier.setFullscreenNameVisible(clipboard.getFullscreenNameVisible());
-                    frontier.setFullscreenOwnerVisible(clipboard.getFullscreenOwnerVisible());
-                    frontier.setMinimapVisible(clipboard.getMinimapVisible());
-                    frontier.setMinimapNameVisible(clipboard.getMinimapNameVisible());
-                    frontier.setMinimapOwnerVisible(clipboard.getMinimapOwnerVisible());
-                    frontier.setAnnounceInChat(clipboard.getAnnounceInChat());
-                    frontier.setAnnounceInTitle(clipboard.getAnnounceInTitle());
-                }
-                if (ConfigData.pasteColor) {
-                    frontier.setColor(clipboard.getColor());
-                }
-                if (ConfigData.pasteBanner) {
-                    frontier.setBannerData(clipboard.getbannerData());
-                }
+                setFrontier(clipboard, ConfigData.pasteName, ConfigData.pasteVisibility, ConfigData.pasteColor, ConfigData.pasteBanner);
                 sendChangesToServer();
                 init(minecraft, width, height);
             }
@@ -531,6 +543,10 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         } else if (button == buttonPasteBanner) {
             ConfigData.pasteBanner = buttonPasteBanner.getSelected() == 0;
             ClientProxy.configUpdated();
+        } else if (button == buttonUndo) {
+            undo();
+        } else if (button == buttonRedo) {
+            redo();
         } else if (button == buttonSelect) {
             BlockPos center = frontier.getCenter();
             ForgeHooksClient.popGuiLayer(minecraft);
@@ -582,6 +598,7 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onUpdatedFrontierEvent(UpdatedFrontierEvent event) {
         if (frontier.getId().equals(event.frontierOverlay.getId())) {
+            addToUndo(new FrontierData(event.frontierOverlay));
             if (event.playerID != minecraft.player.getId()) {
                 init(minecraft, width, height);
             } else {
@@ -655,6 +672,52 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         }
     }
 
+    private void undo() {
+        if (undoStack.size() == 1) {
+            return;
+        }
+
+        redoStack.push(undoStack.pop());
+        setFrontier(undoStack.peek(), true, true, true, true);
+        sendChangesToServer();
+        init(minecraft, width, height);
+    }
+
+    private void redo() {
+        if (redoStack.empty()) {
+            return;
+        }
+
+        setFrontier(redoStack.peek(), true, true, true, true);
+        undoStack.push(redoStack.pop());
+        sendChangesToServer();
+        init(minecraft, width, height);
+    }
+
+    private void setFrontier(FrontierData other, boolean name, boolean visibility, boolean color, boolean banner) {
+        if (name) {
+            frontier.setName1(other.getName1());
+            frontier.setName2(other.getName2());
+        }
+        if (visibility) {
+            frontier.setVisible(other.getVisible());
+            frontier.setFullscreenVisible(other.getFullscreenVisible());
+            frontier.setFullscreenNameVisible(other.getFullscreenNameVisible());
+            frontier.setFullscreenOwnerVisible(other.getFullscreenOwnerVisible());
+            frontier.setMinimapVisible(other.getMinimapVisible());
+            frontier.setMinimapNameVisible(other.getMinimapNameVisible());
+            frontier.setMinimapOwnerVisible(other.getMinimapOwnerVisible());
+            frontier.setAnnounceInChat(other.getAnnounceInChat());
+            frontier.setAnnounceInTitle(other.getAnnounceInTitle());
+        }
+        if (color) {
+            frontier.setColor(other.getColor());
+        }
+        if (banner) {
+            frontier.setBannerData(other.getbannerData());
+        }
+    }
+
     private void updateBannerButton() {
         if (!frontier.hasBanner()) {
             MutableComponent message = Component.translatable("mapfrontiers.assign_banner");
@@ -712,7 +775,44 @@ public class GuiFrontierInfo extends Screen implements TextIntBox.TextIntBoxResp
         labelPasteBanner.visible = buttonPaste.visible && ConfigData.pasteOptionsVisible;
     }
 
+    private void updateUndoRedoVisibility() {
+        buttonUndo.visible = buttonPaste.active && undoStack.size() > 1;
+        buttonRedo.visible = buttonPaste.active && redoStack.size() > 0;
+    }
+
     private void sendChangesToServer() {
         frontiersOverlayManager.clientUpdatefrontier(frontier);
+    }
+
+    private void addToUndo(FrontierData frontier) {
+        boolean add = undoStack.empty();
+        if (!add) {
+            FrontierData u = undoStack.peek();
+            if (!Objects.equals(u.getName1(), (frontier.getName1()))
+                    || !Objects.equals(u.getName2(), (frontier.getName2()))
+                    || u.getVisible() != frontier.getVisible()
+                    || u.getFullscreenVisible() != frontier.getFullscreenVisible()
+                    || u.getFullscreenNameVisible() != frontier.getFullscreenNameVisible()
+                    || u.getFullscreenOwnerVisible() != frontier.getFullscreenOwnerVisible()
+                    || u.getMinimapVisible() != frontier.getMinimapVisible()
+                    || u.getMinimapNameVisible() != frontier.getMinimapNameVisible()
+                    || u.getMinimapOwnerVisible() != frontier.getMinimapOwnerVisible()
+                    || u.getAnnounceInChat() != frontier.getAnnounceInChat()
+                    || u.getAnnounceInTitle() != frontier.getAnnounceInTitle()
+                    || u.getColor() != frontier.getColor()
+                    || !Objects.equals(u.getbannerData(), frontier.getbannerData())) {
+                add = true;
+            }
+        }
+
+        if (add) {
+            undoStack.push(frontier);
+
+            if (!redoStack.empty()) {
+                redoStack.clear();
+            }
+
+            updateUndoRedoVisibility();
+        }
     }
 }

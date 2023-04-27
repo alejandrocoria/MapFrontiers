@@ -24,6 +24,8 @@
   "mapfrontiers.paste_visibility": "Pegar visibilidad",
   "mapfrontiers.paste_color": "Pegar color",
   "mapfrontiers.paste_banner": "Pegar estandarte",
+  "mapfrontiers.undo": "Deshacer",
+  "mapfrontiers.redo": "Rehacer",
   "mapfrontiers.area": "Área: %1$.2fm²",
   "mapfrontiers.perimeter": "Perímetro: %1$.2fm",
   "mapfrontiers.owner": "Dueño: %1$s",

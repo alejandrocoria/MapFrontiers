@@ -24,6 +24,8 @@
     "mapfrontiers.paste_visibility": "Colar visibilidade",
     "mapfrontiers.paste_color": "Colar cor",
     "mapfrontiers.paste_banner": "Colar banner",
+    "mapfrontiers.undo": "Desfazer",
+    "mapfrontiers.redo": "Refazer",
     "mapfrontiers.area": "Area: %1$.2fm²",
     "mapfrontiers.perimeter": "Perímetro: %1$.2fm",
     "mapfrontiers.owner": "Dono: %1$s",

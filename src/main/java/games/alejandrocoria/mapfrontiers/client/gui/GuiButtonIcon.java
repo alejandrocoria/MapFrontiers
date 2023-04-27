@@ -18,7 +18,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 public class GuiButtonIcon extends Button {
     private static final ResourceLocation texture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/buttons.png");
     private static final int textureSizeX = 34;
-    private static final int textureSizeY = 77;
+    private static final int textureSizeY = 111;
 
     public enum Type {
         Add       ( 0,  0, 13,  0, 13, 13),
@@ -26,7 +26,9 @@ public class GuiButtonIcon extends Button {
         Copy      ( 0, 26, 17, 26, 17, 17),
         Paste     ( 0, 43, 17, 43, 17, 17),
         ArrowUp   ( 0, 60,  8, 60,  8, 17),
-        ArrowDown (18, 60, 26, 60,  8, 17);
+        ArrowDown (18, 60, 26, 60,  8, 17),
+        Undo      ( 0, 77, 17, 77, 17, 17),
+        Redo      ( 0, 94, 17, 94, 17, 17);
 
         final int texX;
         final int texY;

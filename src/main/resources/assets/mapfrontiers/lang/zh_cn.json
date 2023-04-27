@@ -24,6 +24,8 @@
   "mapfrontiers.paste_visibility": "Paste visibility",
   "mapfrontiers.paste_color": "Paste color",
   "mapfrontiers.paste_banner": "Paste banner",
+  "mapfrontiers.undo": "Undo",
+  "mapfrontiers.redo": "Redo",
   "mapfrontiers.area": "面积: %1$.2f 平方米",
   "mapfrontiers.perimeter": "周长: %1$.2f 米",
   "mapfrontiers.owner": "所有者: %1$s",
