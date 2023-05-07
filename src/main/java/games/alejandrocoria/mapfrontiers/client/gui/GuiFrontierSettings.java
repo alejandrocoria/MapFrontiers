@@ -356,7 +356,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         }
 
         for (GuiSimpleLabel label : labels) {
-            if (label.visible && label.isHoveredOrFocused()) {
+            if (label.visible && label.isHovered()) {
                 List<Component> tooltip = labelTooltips.get(label);
                 if (tooltip != null) {
                     renderTooltip(matrixStack, tooltip, Optional.empty(), mouseX, mouseY);

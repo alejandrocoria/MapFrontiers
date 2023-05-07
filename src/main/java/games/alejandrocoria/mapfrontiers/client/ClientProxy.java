@@ -68,6 +68,8 @@ public class ClientProxy implements ClientModInitializer {
     private static BlockPos lastPlayerPosition = new BlockPos(0, 0, 0);
     private static Set<FrontierOverlay> insideFrontiers = new HashSet<>();
 
+    private static FrontierData clipboard = null;
+
     @Override
     public void onInitializeClient() {
         ModLoadingContext.registerConfig(MapFrontiers.MODID, ModConfig.Type.CLIENT, ConfigData.CLIENT_SPEC);
@@ -360,5 +362,13 @@ public class ClientProxy implements ClientModInitializer {
         for (Consumer<SettingsProfile> callback : updatedSettingsProfileEventMap.values()) {
             callback.accept(profile);
         }
+    }
+
+    public static void setClipboard(FrontierData newClipboard) {
+        clipboard = new FrontierData(newClipboard);
+    }
+
+    public static FrontierData getClipboard() {
+        return clipboard;
     }
 }
