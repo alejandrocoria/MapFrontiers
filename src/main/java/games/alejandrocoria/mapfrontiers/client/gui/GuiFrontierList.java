@@ -252,10 +252,12 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
             int selected = ((GuiRadioListElement) element).getId();
             ConfigData.filterFrontierType = ConfigData.FilterFrontierType.values()[selected];
             updateFrontiers();
+            ClientProxy.configUpdated();
         } else if (scrollBox == filterOwner) {
             int selected = ((GuiRadioListElement) element).getId();
             ConfigData.filterFrontierOwner = ConfigData.FilterFrontierOwner.values()[selected];
             updateFrontiers();
+            ClientProxy.configUpdated();
         } else if (scrollBox == filterDimension) {
             int selected = ((GuiRadioListElement) element).getId();
             if (selected == "all".hashCode()) {
@@ -266,6 +268,7 @@ public class GuiFrontierList extends Screen implements GuiScrollBox.ScrollBoxRes
                 ConfigData.filterFrontierDimension = getDimensionFromHash(selected);
             }
             updateFrontiers();
+            ClientProxy.configUpdated();
         }
 
         updateButtons();
