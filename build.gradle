@@ -103,7 +103,7 @@ dependencies {
     // The userdev artifact is a special name and will get all sorts of transformations applied to it.
     minecraft 'net.minecraftforge:forge:1.19.3-44.0.5'
 
-    implementation fg.deobf("curse.maven:journeymap-32274:4437170")
+    implementation fg.deobf("curse.maven:journeymap-32274:4517047")
 }
 
 jar {
