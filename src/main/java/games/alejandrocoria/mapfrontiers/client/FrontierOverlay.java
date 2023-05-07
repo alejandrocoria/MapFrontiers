@@ -484,6 +484,18 @@ public class FrontierOverlay extends FrontierData {
     }
 
     @Override
+    public void setBannerData(@Nullable BannerData bannerData) {
+        super.setBannerData(bannerData);
+        needUpdateOverlay = true;
+
+        if (bannerData == null) {
+            bannerDisplay = null;
+        } else {
+            bannerDisplay = new BannerDisplayData(banner);
+        }
+    }
+
+    @Override
     public void addUserShared(SettingsUserShared userShared) {
         super.addUserShared(userShared);
         dirtyhash = true;

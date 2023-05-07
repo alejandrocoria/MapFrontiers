@@ -70,6 +70,11 @@ public class ConfigData {
     public static int newFrontierChunkShapeLength;
     public static FrontierData.Mode newFrontierMode;
     public static AfterCreatingFrontier afterCreatingFrontier;
+    public static boolean pasteName;
+    public static boolean pasteVisibility;
+    public static boolean pasteColor;
+    public static boolean pasteBanner;
+    public static boolean pasteOptionsVisible;
     public static Visibility fullscreenVisibility;
     public static Visibility fullscreenNameVisibility;
     public static Visibility fullscreenOwnerVisibility;
@@ -104,6 +109,11 @@ public class ConfigData {
         newFrontierChunkShapeLength = CLIENT.newFrontierChunkShapeLength.get();
         newFrontierMode = CLIENT.newFrontierMode.get();
         afterCreatingFrontier = CLIENT.afterCreatingFrontier.get();
+        pasteName = CLIENT.pasteName.get();
+        pasteVisibility = CLIENT.pasteVisibility.get();
+        pasteColor = CLIENT.pasteColor.get();
+        pasteBanner = CLIENT.pasteBanner.get();
+        pasteOptionsVisible = CLIENT.pasteOptionsVisible.get();
         fullscreenVisibility = CLIENT.fullscreenVisibility.get();
         fullscreenNameVisibility = CLIENT.fullscreenNameVisibility.get();
         fullscreenOwnerVisibility = CLIENT.fullscreenOwnerVisibility.get();
@@ -139,6 +149,11 @@ public class ConfigData {
         public final IntValue newFrontierChunkShapeLength;
         public final EnumValue<FrontierData.Mode> newFrontierMode;
         public final EnumValue<AfterCreatingFrontier> afterCreatingFrontier;
+        public final BooleanValue pasteName;
+        public final BooleanValue pasteVisibility;
+        public final BooleanValue pasteColor;
+        public final BooleanValue pasteBanner;
+        public final BooleanValue pasteOptionsVisible;
         public final EnumValue<Visibility> fullscreenVisibility;
         public final EnumValue<Visibility> fullscreenNameVisibility;
         public final EnumValue<Visibility> fullscreenOwnerVisibility;
@@ -173,6 +188,11 @@ public class ConfigData {
             newFrontierChunkShapeLength = builder.defineInRange("newFrontierChunkShapeLength", 5, 0, 32);
             newFrontierMode = builder.defineEnum("newFrontierMode", FrontierData.Mode.Vertex);
             afterCreatingFrontier = builder.defineEnum("afterCreatingFrontier", AfterCreatingFrontier.Info);
+            pasteName = builder.define("pasteName", false);
+            pasteVisibility = builder.define("pasteVisibility", true);
+            pasteColor = builder.define("pasteColor", true);
+            pasteBanner = builder.define("pasteBanner", true);
+            pasteOptionsVisible = builder.define("pasteOptionsVisible", false);
             fullscreenVisibility = builder.comment(
                             "Force all frontier to be shown or hidden on the fullscreen map. In Manual you can decide for each frontier.")
                     .translation(MapFrontiers.MODID + ".config." + "fullscreenVisibility")
@@ -255,6 +275,11 @@ public class ConfigData {
         CLIENT.newFrontierChunkShapeLength.set(newFrontierChunkShapeLength);
         CLIENT.newFrontierMode.set(newFrontierMode);
         CLIENT.afterCreatingFrontier.set(afterCreatingFrontier);
+        CLIENT.pasteName.set(pasteName);
+        CLIENT.pasteVisibility.set(pasteVisibility);
+        CLIENT.pasteColor.set(pasteColor);
+        CLIENT.pasteBanner.set(pasteBanner);
+        CLIENT.pasteOptionsVisible.set(pasteOptionsVisible);
         CLIENT.fullscreenVisibility.set(fullscreenVisibility);
         CLIENT.fullscreenNameVisibility.set(fullscreenNameVisibility);
         CLIENT.fullscreenOwnerVisibility.set(fullscreenOwnerVisibility);
