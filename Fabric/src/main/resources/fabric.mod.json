@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${version}",
+  "name": "${mod_name}",
+  "description": "${mod_description}",
+  "authors": [
+    "${mod_author}"
+  ],
+  "contact": {
+    "email": "${mod_email}",
+    "homepage": "${mod_homepage}",
+    "issues": "${mod_issues}",
+    "sources": "${mod_sources}"
+  },
+
+  "license": "${mod_license}",
+  "icon": "${mod_logo}",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "games.alejandrocoria.mapfrontiers.MapFrontiersFabric"
+    ],
+    "client": [
+      "games.alejandrocoria.mapfrontiers.client.MapFrontiersClientFabric"
+    ],
+    "journeymap": [
+      "games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin"
+    ],
+    "modmenu": [
+      "games.alejandrocoria.mapfrontiers.client.modmenu.ModMenuApiImpl"
+    ]
+  },
+
+  "depends": {
+    "fabricloader": ">=0.14.17",
+    "fabric": "*",
+    "minecraft": "~1.19.4",
+    "java": ">=17",
+    "journeymap": ">=1.19.4-5.9.7",
+    "forgeconfigapiport": ">=6.0.2"
+  }
+}

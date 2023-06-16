@@ -1,15 +1,25 @@
-bin/
-build/
-run/
+# eclipse
+bin
+*.launch
+.settings
+.metadata
 .classpath
 .project
-*.svg
-*.launch
-*.txt
-.gradle/
-.settings/
-build.bat
-logs/
-.idea/
-run-server/
-out/
+
+# idea
+out
+*.ipr
+*.iws
+*.iml
+.idea/*
+!.idea/scopes
+
+# gradle
+build
+.gradle
+
+# other
+eclipse
+run
+Fabric/run-server/
+Forge/run-server/

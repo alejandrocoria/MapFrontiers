@@ -1,0 +1,81 @@
+plugins {
+    id 'fabric-loom' version '1.0-SNAPSHOT'
+    id 'maven-publish'
+    id 'idea'
+}
+
+version = "${project.version}"
+archivesBaseName = "${project.mod_name}-${project.minecraft_version}"
+remapJar.archiveClassifier = "fabric"
+
+repositories {
+    maven {
+        url "https://maven.terraformersmc.com/releases"
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
+    implementation group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.1'
+
+    modApi group: 'info.journeymap', name: 'journeymap-api', version: project.journeymap_api_fabric_version, changing: true
+    modImplementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_fabric_file_id}"
+    modImplementation "mysticdrew:common-networking:${project.common_networking_fabric_version}"
+    modApi "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${forge_config_api_port_version}"
+    modImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
+
+    implementation project(":Common")
+}
+
+loom {
+    runs {
+        client {
+            client()
+            setConfigName("Fabric Client")
+            ideConfigGenerated(true)
+            runDir("run")
+            programArg("--username=Dev")
+        }
+        server {
+            server()
+            serverWithGui()
+            setConfigName("Fabric Server")
+            ideConfigGenerated(true)
+            runDir("run-server")
+        }
+    }
+}
+
+processResources {
+    from project(":Common").sourceSets.main.resources
+
+    def buildProps = project.properties.clone()
+
+    filesMatching(['fabric.mod.json', 'pack.mcmeta']) {
+        expand buildProps
+    }
+}
+
+tasks.withType(JavaCompile) {
+    source(project(":Common").sourceSets.main.allSource)
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId project.group
+            artifactId project.archivesBaseName
+            version project.version
+            from components.java
+        }
+    }
+
+    repositories {
+        maven {
+            url "file://" + System.getenv("local_maven")
+        }
+    }
+}
