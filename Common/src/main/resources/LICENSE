@@ -26,10 +26,10 @@ SOFTWARE.
 
 MapFrontiers includes and/or makes use of the following software under their respective licenses:
 
-    JourneyMap 1.19 (http://journeymap.info/)
+    JourneyMap 1.20 (http://journeymap.info/)
     Copyright (c) 2011-2023  Techbrew Interactive, LLC <techbrew.net>.  All Rights Reserved.
 
-    JourneyMap API v1.19 (https://bitbucket.org/TeamJM/journeymap-api)
+    JourneyMap API v1.20 (https://bitbucket.org/TeamJM/journeymap-api)
     Copyright (c) 2011-2023  Techbrew Interactive, LLC <techbrew.net>.  All Rights Reserved.
     End-User License Agreement: https://bitbucket.org/TeamJM/journeymap-api/src/master/docs/license.md
 

@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component;
 import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -44,22 +44,22 @@ public class TabbedBox extends AbstractWidgetNoNarration {
     }
 
     @Override
-    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         for (int i = 0; i < tabs.size(); ++i) {
-            tabs.get(i).render(matrixStack, mouseX, mouseY, partialTicks, i == selected);
+            tabs.get(i).render(graphics, mouseX, mouseY, partialTicks, i == selected);
         }
 
         if (selected == -1) {
-            hLine(matrixStack, getX(), getX() + width, getY() + 16, ColorConstants.TAB_BORDER);
+            graphics.hLine(getX(), getX() + width, getY() + 16, ColorConstants.TAB_BORDER);
         } else {
             int selectedX = tabs.get(selected).x;
-            hLine(matrixStack, getX(), selectedX, getY() + 16, ColorConstants.TAB_BORDER);
-            hLine(matrixStack, selectedX + 70, getX() + width, getY() + 16, ColorConstants.TAB_BORDER);
+            graphics.hLine(getX(), selectedX, getY() + 16, ColorConstants.TAB_BORDER);
+            graphics.hLine(selectedX + 70, getX() + width, getY() + 16, ColorConstants.TAB_BORDER);
         }
 
-        hLine(matrixStack, getX(), getX() + width, getY() + height, ColorConstants.TAB_BORDER);
-        vLine(matrixStack, getX(), getY() + 16, getY() + height, ColorConstants.TAB_BORDER);
-        vLine(matrixStack, getX() + width, getY() + 16, getY() + height, ColorConstants.TAB_BORDER);
+        graphics.hLine(getX(), getX() + width, getY() + height, ColorConstants.TAB_BORDER);
+        graphics.vLine(getX(), getY() + 16, getY() + height, ColorConstants.TAB_BORDER);
+        graphics.vLine(getX() + width, getY() + 16, getY() + height, ColorConstants.TAB_BORDER);
     }
 
     @Override
@@ -89,7 +89,7 @@ public class TabbedBox extends AbstractWidgetNoNarration {
         }
     }
 
-    private static class Tab extends GuiComponent {
+    private static class Tab {
         private int x = 0;
         private int y = 0;
         private boolean isHovered = false;
@@ -101,16 +101,16 @@ public class TabbedBox extends AbstractWidgetNoNarration {
             this.label = new SimpleLabel(font, 0, 0, SimpleLabel.Align.Center, text, ColorConstants.TAB_TEXT);
         }
 
-        public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
+        public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks, boolean selected) {
             if (active) {
                 isHovered = mouseX >= x && mouseY >= y && mouseX < x + 71 && mouseY < y + 16;
             } else {
                 isHovered = false;
             }
 
-            hLine(matrixStack, x, x + 70, y, ColorConstants.TAB_BORDER);
-            vLine(matrixStack, x, y, y + 16, ColorConstants.TAB_BORDER);
-            vLine(matrixStack, x + 70, y, y + 16, ColorConstants.TAB_BORDER);
+            graphics.hLine(x, x + 70, y, ColorConstants.TAB_BORDER);
+            graphics.vLine(x, y, y + 16, ColorConstants.TAB_BORDER);
+            graphics.vLine(x + 70, y, y + 16, ColorConstants.TAB_BORDER);
 
             if (active) {
                 if (selected || isHovered) {
@@ -124,7 +124,7 @@ public class TabbedBox extends AbstractWidgetNoNarration {
 
             label.setX(x + 35);
             label.setY(y + 5);
-            label.render(matrixStack, mouseX, mouseY, partialTicks);
+            label.render(graphics, mouseX, mouseY, partialTicks);
         }
 
         public boolean clicked() {

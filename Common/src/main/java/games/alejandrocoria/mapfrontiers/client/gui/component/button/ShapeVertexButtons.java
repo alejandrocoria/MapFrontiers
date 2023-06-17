@@ -7,6 +7,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.AbstractWidgetNoNarration;
 import games.alejandrocoria.mapfrontiers.client.gui.component.SimpleLabel;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
@@ -118,10 +119,8 @@ public class ShapeVertexButtons extends AbstractWidgetNoNarration {
     }
 
     @Override
-    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderTexture(0, texture);
 
         int col = 0;
         int row = 0;
@@ -132,7 +131,7 @@ public class ShapeVertexButtons extends AbstractWidgetNoNarration {
                 texY = 49;
             }
 
-            blit(matrixStack, getX() + col * 55, getY() + row * 55 + 16, texX, texY, 49, 49, textureSizeX, textureSizeY);
+            graphics.blit(texture, getX() + col * 55, getY() + row * 55 + 16, texX, texY, 49, 49, textureSizeX, textureSizeY);
 
             ++col;
             if (col == 6) {
@@ -141,8 +140,8 @@ public class ShapeVertexButtons extends AbstractWidgetNoNarration {
             }
         }
 
-        labelShapes.render(matrixStack, mouseX, mouseY, partialTicks);
-        labelVertices.render(matrixStack, mouseX, mouseY, partialTicks);
+        labelShapes.render(graphics, mouseX, mouseY, partialTicks);
+        labelVertices.render(graphics, mouseX, mouseY, partialTicks);
     }
 
     private void updateVertexLabel() {

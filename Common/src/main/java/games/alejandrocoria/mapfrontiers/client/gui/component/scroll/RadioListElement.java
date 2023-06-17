@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.SimpleLabel;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -44,14 +45,14 @@ public class RadioListElement extends ScrollBox.ScrollElement {
     }
 
     @Override
-    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
+    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks, boolean selected) {
         if (isHovered) {
-            fill(matrixStack, x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
+            graphics.fill(x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
         }
 
-        drawRadio(matrixStack, x + 2, y + 2, selected);
+        drawRadio(graphics, x + 2, y + 2, selected);
 
-        label.render(matrixStack, mouseX, mouseY, partialTicks);
+        label.render(graphics, mouseX, mouseY, partialTicks);
     }
 
     @Override
@@ -63,11 +64,9 @@ public class RadioListElement extends ScrollBox.ScrollElement {
         return Action.None;
     }
 
-    private void drawRadio(PoseStack matrixStack, int x, int y, boolean checked) {
+    private void drawRadio(GuiGraphics graphics, int x, int y, boolean checked) {
         RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderTexture(0, texture);
 
-        blit(matrixStack, x, y, checked ? 12 : 0, 0, 12, 12, textureSizeX, textureSizeY);
+        graphics.blit(texture, x, y, checked ? 12 : 0, 0, 12, 12, textureSizeX, textureSizeY);
     }
 }

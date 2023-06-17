@@ -74,7 +74,7 @@ public class CommandAccept {
                 frontier.removeChange(FrontierData.Change.Shared);
 
                 // @Note: improve message and localize
-                source.sendSuccess(
+                source.sendSuccess(() ->
                         Component.literal("Accepting frontier " + frontier.getName1() + " " + frontier.getName2()),
                         false);
                 return messageID;

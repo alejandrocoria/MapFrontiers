@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
@@ -112,34 +113,34 @@ public class TextBoxUser extends TextBox {
     }
 
     @Override
-    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         if (error == null) {
             setTextColor(ColorConstants.TEXTBOX_TEXT);
         } else {
             setTextColor(ColorConstants.TEXT_ERROR);
         }
 
-        super.renderWidget(matrixStack, mouseX, mouseY, partialTicks);
+        super.renderWidget(graphics, mouseX, mouseY, partialTicks);
 
         if (error != null) {
             List<FormattedCharSequence> errorList = font.split(error, width - 8);
             int maxErrorWidth = width - 8;
 
-            fill(matrixStack, getX() - 1, getY() - errorList.size() * 12 - 5, getX() + maxErrorWidth + 9, getY() - 1,
+            graphics.fill(getX() - 1, getY() - errorList.size() * 12 - 5, getX() + maxErrorWidth + 9, getY() - 1,
                     ColorConstants.TEXTBOX_EXTRA_BORDER);
-            fill(matrixStack, getX(), getY() - errorList.size() * 12 - 4, getX() + maxErrorWidth + 8, getY() - 1,
+            graphics.fill(getX(), getY() - errorList.size() * 12 - 4, getX() + maxErrorWidth + 8, getY() - 1,
                     ColorConstants.TEXTBOX_EXTRA_BG);
 
             int posX = getX() + 4;
             int posY = getY() - errorList.size() * 12;
             for (FormattedCharSequence e : errorList) {
-                font.draw(matrixStack, e, posX, posY, ColorConstants.TEXT_HIGHLIGHT);
+                graphics.drawString(font, e, posX, posY, ColorConstants.TEXT_HIGHLIGHT);
                 posY += 12;
             }
         } else if (!suggestionsToDraw.isEmpty()) {
-            fill(matrixStack, getX() - 1, getY() - suggestionsToDraw.size() * 12 - 5, getX() + maxSuggestionWidth + 9, getY() - 1,
+            graphics.fill(getX() - 1, getY() - suggestionsToDraw.size() * 12 - 5, getX() + maxSuggestionWidth + 9, getY() - 1,
                     ColorConstants.TEXTBOX_EXTRA_BORDER);
-            fill(matrixStack, getX(), getY() - suggestionsToDraw.size() * 12 - 4, getX() + maxSuggestionWidth + 8, getY() - 1,
+            graphics.fill(getX(), getY() - suggestionsToDraw.size() * 12 - 4, getX() + maxSuggestionWidth + 8, getY() - 1,
                     ColorConstants.TEXTBOX_EXTRA_BG);
 
             int posX = getX() + 4;
@@ -150,12 +151,12 @@ public class TextBoxUser extends TextBox {
                 // that are added to suggestions and suggestionsToDraw
                 //noinspection StringEquality
                 if (suggestionsToDraw.get(i) == suggestions.get(suggestionIndex)) {
-                    font.draw(matrixStack, t, posX, posY, ColorConstants.TEXT_HIGHLIGHT);
+                    graphics.drawString(font, t, posX, posY, ColorConstants.TEXT_HIGHLIGHT);
                 } else {
                     String suffix = t.substring(0, partialText.length());
                     String rest = t.substring(partialText.length());
-                    font.draw(matrixStack, suffix, posX, posY, ColorConstants.TEXT_HIGHLIGHT);
-                    font.draw(matrixStack, rest, posX + font.width(suffix), posY,
+                    graphics.drawString(font, suffix, posX, posY, ColorConstants.TEXT_HIGHLIGHT);
+                    graphics.drawString(font, rest, posX + font.width(suffix), posY,
                             ColorConstants.TEXT_MEDIUM);
                 }
 

@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -60,40 +61,40 @@ public class UserElement extends ScrollBox.ScrollElement {
     }
 
     @Override
-    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
+    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks, boolean selected) {
         int color = ColorConstants.TEXT;
         if (selected) {
             color = ColorConstants.TEXT_HIGHLIGHT;
         }
 
         if (isHovered) {
-            fill(matrixStack, x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
+            graphics.fill(x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
             buttonDelete.visible = true;
         } else {
             buttonDelete.visible = false;
         }
 
-        font.draw(matrixStack, user.toString(), x + 4.f, y + 4.f, color);
+        graphics.drawString(font, user.toString(), x + 4, y + 4, color);
 
         if (pingBar > 0) {
-            drawPingLine(matrixStack, x - 11, y + 11, 2);
+            drawPingLine(graphics, x - 11, y + 11, 2);
         }
         if (pingBar > 1) {
-            drawPingLine(matrixStack, x - 9, y + 11, 3);
+            drawPingLine(graphics, x - 9, y + 11, 3);
         }
         if (pingBar > 2) {
-            drawPingLine(matrixStack, x - 7, y + 11, 4);
+            drawPingLine(graphics, x - 7, y + 11, 4);
         }
         if (pingBar > 3) {
-            drawPingLine(matrixStack, x - 5, y + 11, 5);
+            drawPingLine(graphics, x - 5, y + 11, 5);
         }
         if (pingBar > 4) {
-            drawPingLine(matrixStack, x - 3, y + 11, 6);
+            drawPingLine(graphics, x - 3, y + 11, 6);
         }
     }
 
-    private void drawPingLine(PoseStack matrixStack, int posX, int posY, int height) {
-        fill(matrixStack, posX, posY - height, posX + 1, posY, ColorConstants.PING_BAR);
+    private void drawPingLine(GuiGraphics graphics, int posX, int posY, int height) {
+        graphics.fill(posX, posY - height, posX + 1, posY, ColorConstants.PING_BAR);
     }
 
     @Override

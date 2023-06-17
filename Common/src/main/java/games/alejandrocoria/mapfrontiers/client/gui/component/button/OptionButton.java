@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 
@@ -76,7 +77,7 @@ public class OptionButton extends Button {
     }
 
     @Override
-    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         int c = color;
         if (!active) {
             c = ColorConstants.TEXT_DARK;
@@ -84,10 +85,10 @@ public class OptionButton extends Button {
             c = highlightedColor;
         }
 
-        fill(matrixStack, getX() - 1, getY() - 1, getX() + width + 1, getY() + height + 1, ColorConstants.OPTION_BORDER);
-        fill(matrixStack, getX(), getY(), getX() + width, getY() + height, ColorConstants.OPTION_BG);
+        graphics.fill(getX() - 1, getY() - 1, getX() + width + 1, getY() + height + 1, ColorConstants.OPTION_BORDER);
+        graphics.fill(getX(), getY(), getX() + width, getY() + height, ColorConstants.OPTION_BG);
 
-        font.draw(matrixStack, options.get(selected), getX() + 4, getY() + 2, c);
+        graphics.drawString(font, options.get(selected), getX() + 4, getY() + 2, c);
     }
 
     @Override

@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component.scroll;
 import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.AbstractWidgetNoNarration;
-import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -161,9 +161,9 @@ public class ScrollBox extends AbstractWidgetNoNarration {
     }
 
     @Override
-    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         for (int i = 0; i < elements.size(); ++i) {
-            elements.get(i).render(matrixStack, mouseX, mouseY, partialTicks, selected == i);
+            elements.get(i).render(graphics, mouseX, mouseY, partialTicks, selected == i);
         }
 
         if (scrollBarHeight > 0) {
@@ -179,8 +179,8 @@ public class ScrollBox extends AbstractWidgetNoNarration {
                 barColor = ColorConstants.SCROLLBAR_HOVERED;
             }
 
-            fill(matrixStack, getX() + width + 5, getY(), getX() + width + 15, getY() + height, ColorConstants.SCROLLBAR_BG);
-            fill(matrixStack, getX() + width + 5, getY() + scrollBarPos, getX() + width + 15, getY() + scrollBarPos + scrollBarHeight, barColor);
+            graphics.fill(getX() + width + 5, getY(), getX() + width + 15, getY() + height, ColorConstants.SCROLLBAR_BG);
+            graphics.fill(getX() + width + 5, getY() + scrollBarPos, getX() + width + 15, getY() + scrollBarPos + scrollBarHeight, barColor);
         }
     }
 
@@ -294,7 +294,7 @@ public class ScrollBox extends AbstractWidgetNoNarration {
         }
     }
 
-    public static class ScrollElement extends GuiComponent {
+    public static class ScrollElement {
         enum Action {
             None, Clicked, Deleted
         }
@@ -322,16 +322,16 @@ public class ScrollBox extends AbstractWidgetNoNarration {
             this.y = y;
         }
 
-        public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
+        public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks, boolean selected) {
             if (visible) {
                 isHovered = mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height;
-                renderWidget(matrixStack, mouseX, mouseY, partialTicks, selected);
+                renderWidget(graphics, mouseX, mouseY, partialTicks, selected);
             } else {
                 isHovered = false;
             }
         }
 
-        public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
+        public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks, boolean selected) {
         }
 
         public Action mousePressed(double mouseX, double mouseY) {

@@ -5,7 +5,6 @@ import com.google.common.collect.Multimap;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
@@ -24,6 +23,7 @@ import journeymap.client.api.model.TextProperties;
 import journeymap.client.api.util.PolygonHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -543,7 +543,7 @@ public class FrontierOverlay extends FrontierData {
         return closest;
     }
 
-    public void renderBanner(Minecraft mc, PoseStack matrixStack, int x, int y, int scale) {
+    public void renderBanner(Minecraft mc, GuiGraphics graphics, int x, int y, int scale) {
         if (bannerDisplay == null) {
             return;
         }
@@ -572,7 +572,7 @@ public class FrontierOverlay extends FrontierData {
             float v1 = sprite.getV0() + 1.f / 512.f;
             float v2 = sprite.getV0() + 41.f / 512.f;
             buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
-            Matrix4f matrix = matrixStack.last().pose();
+            Matrix4f matrix = graphics.pose().last().pose();
             buf.vertex(matrix, x, y + height, zLevel).color(colors[0], colors[1], colors[2], 1.f).uv(u1, v2).endVertex();
             buf.vertex(matrix, x + width, y + height, zLevel).color(colors[0], colors[1], colors[2], 1.f).uv(u2, v2).endVertex();
             buf.vertex(matrix, x + width, y, zLevel).color(colors[0], colors[1], colors[2], 1.f).uv(u2, v1).endVertex();

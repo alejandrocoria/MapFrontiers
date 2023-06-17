@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.SimpleLabel;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 
@@ -29,7 +30,7 @@ public class SimpleButton extends Button {
     }
 
     @Override
-    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         if (isHovered) {
             label.setColor(textColorHighlight);
         } else {
@@ -38,12 +39,12 @@ public class SimpleButton extends Button {
 
         RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
 
-        hLine(matrixStack, getX(), getX() + width, getY(), ColorConstants.SIMPLE_BUTTON_BORDER);
-        hLine(matrixStack, getX(), getX() + width, getY() + 16, ColorConstants.SIMPLE_BUTTON_BORDER);
-        vLine(matrixStack, getX(), getY(), getY() + 16, ColorConstants.SIMPLE_BUTTON_BORDER);
-        vLine(matrixStack, getX() + width, getY(), getY() + 16, ColorConstants.SIMPLE_BUTTON_BORDER);
+        graphics.hLine(getX(), getX() + width, getY(), ColorConstants.SIMPLE_BUTTON_BORDER);
+        graphics.hLine(getX(), getX() + width, getY() + 16, ColorConstants.SIMPLE_BUTTON_BORDER);
+        graphics.vLine(getX(), getY(), getY() + 16, ColorConstants.SIMPLE_BUTTON_BORDER);
+        graphics.vLine(getX() + width, getY(), getY() + 16, ColorConstants.SIMPLE_BUTTON_BORDER);
 
-        label.render(matrixStack, mouseX, mouseY, partialTicks);
+        label.render(graphics, mouseX, mouseY, partialTicks);
     }
 
     public void setTextColors(int color, int highlight) {

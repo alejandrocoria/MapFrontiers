@@ -7,7 +7,6 @@ import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 
 @ParametersAreNonnullByDefault

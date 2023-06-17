@@ -34,11 +34,11 @@
   },
 
   "depends": {
-    "fabricloader": ">=0.14.17",
+    "fabricloader": ">=0.14.21",
     "fabric": "*",
-    "minecraft": "~1.19.4",
+    "minecraft": "~1.20.1",
     "java": ">=17",
-    "journeymap": ">=1.19.4-5.9.7",
-    "forgeconfigapiport": ">=6.0.2"
+    "journeymap": ">=1.20.1-5.9.9",
+    "forgeconfigapiport": ">=8.0.0"
   }
 }

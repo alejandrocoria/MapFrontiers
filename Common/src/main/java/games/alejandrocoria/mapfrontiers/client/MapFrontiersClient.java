@@ -3,8 +3,8 @@ package games.alejandrocoria.mapfrontiers.client;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.ModSettings;
 import games.alejandrocoria.mapfrontiers.client.gui.hud.HUD;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.ModSettings;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
@@ -80,8 +80,8 @@ public class MapFrontiersClient {
             if (currentPlayerPosition.getX() != lastPlayerPosition.getX() || currentPlayerPosition.getZ() != lastPlayerPosition.getZ()) {
                 lastPlayerPosition = currentPlayerPosition;
 
-                Set<FrontierOverlay> frontiers = personalFrontiersOverlayManager.getFrontiersForAnnounce(player.level.dimension(), lastPlayerPosition);
-                frontiers.addAll(frontiersOverlayManager.getFrontiersForAnnounce(player.level.dimension(), lastPlayerPosition));
+                Set<FrontierOverlay> frontiers = personalFrontiersOverlayManager.getFrontiersForAnnounce(player.level().dimension(), lastPlayerPosition);
+                frontiers.addAll(frontiersOverlayManager.getFrontiersForAnnounce(player.level().dimension(), lastPlayerPosition));
 
                 for (Iterator<FrontierOverlay> i = insideFrontiers.iterator(); i.hasNext();) {
                     FrontierOverlay inside = i.next();
@@ -111,9 +111,9 @@ public class MapFrontiersClient {
             }
         });
 
-        ClientEventHandler.subscribeHudRenderEvent(MapFrontiersClient.class, (matrixStack, delta) -> {
+        ClientEventHandler.subscribeHudRenderEvent(MapFrontiersClient.class, (graphics, delta) -> {
             if (hud != null) {
-                hud.drawInGameHUD(matrixStack, delta);
+                hud.drawInGameHUD(graphics, delta);
             }
         });
 

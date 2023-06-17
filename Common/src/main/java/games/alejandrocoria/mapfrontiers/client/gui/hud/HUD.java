@@ -1,7 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.hud;
 
 import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
@@ -13,7 +12,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -124,9 +123,9 @@ public class HUD {
             lastPlayerPosition = currentPlayerPosition;
 
             FrontierOverlay newFrontier = personalFrontiersOverlayManager
-                    .getFrontierInPosition(mc.player.level.dimension(), lastPlayerPosition);
+                    .getFrontierInPosition(mc.player.level().dimension(), lastPlayerPosition);
             if (newFrontier == null) {
-                newFrontier = frontiersOverlayManager.getFrontierInPosition(mc.player.level.dimension(),
+                newFrontier = frontiersOverlayManager.getFrontierInPosition(mc.player.level().dimension(),
                         lastPlayerPosition);
             }
             if (newFrontier != null) {
@@ -161,10 +160,10 @@ public class HUD {
             return;
         }
 
-        FrontierOverlay newFrontier = personalFrontiersOverlayManager.getFrontierInPosition(mc.player.level.dimension(),
+        FrontierOverlay newFrontier = personalFrontiersOverlayManager.getFrontierInPosition(mc.player.level().dimension(),
                 lastPlayerPosition);
         if (newFrontier == null) {
-            newFrontier = frontiersOverlayManager.getFrontierInPosition(mc.player.level.dimension(), lastPlayerPosition);
+            newFrontier = frontiersOverlayManager.getFrontierInPosition(mc.player.level().dimension(), lastPlayerPosition);
         }
 
         if (newFrontier != null) {
@@ -180,7 +179,7 @@ public class HUD {
         }
     }
 
-    public void drawInGameHUD(PoseStack matrixStack, float partialTicks) {
+    public void drawInGameHUD(GuiGraphics graphics, float partialTicks) {
         if (previewMode) {
             return;
         }
@@ -197,10 +196,10 @@ public class HUD {
             return;
         }
 
-        draw(matrixStack, partialTicks);
+        draw(graphics, partialTicks);
     }
 
-    public void draw(PoseStack matrixStack, float partialTicks) {
+    public void draw(GuiGraphics graphics, float partialTicks) {
         if (displayWidth != mc.getWindow().getWidth() || displayHeight != mc.getWindow().getHeight()) {
             needUpdate = true;
         }
@@ -227,53 +226,53 @@ public class HUD {
         int textNameColor = Services.JOURNEYMAP.minimapLabelHighlightColor();
         int textOwnerColor = Services.JOURNEYMAP.minimapLabelForegroundColor();
 
-        matrixStack.pushPose();
-        matrixStack.scale(1.0f / factor, 1.0f / factor, 1.0f);
-        matrixStack.translate(0.0, 0.0, -100.0);
+        graphics.pose().pushPose();
+        graphics.pose().scale(1.0f / factor, 1.0f / factor, 1.0f);
+        graphics.pose().translate(0.0, 0.0, -100.0);
 
         for (Config.HUDSlot slot : slots) {
             switch (slot) {
             case Name:
-                drawName(matrixStack, frameColor, textNameColor, partialTicks);
+                drawName(graphics, frameColor, textNameColor, partialTicks);
                 break;
             case Owner:
-                drawOwner(matrixStack, frameColor, textOwnerColor, partialTicks);
+                drawOwner(graphics, frameColor, textOwnerColor, partialTicks);
                 break;
             case Banner:
-                drawBanner(matrixStack, frameColor);
+                drawBanner(graphics, frameColor);
                 break;
             case None:
                 break;
             }
         }
 
-        matrixStack.popPose();
+        graphics.pose().popPose();
         GlStateManager._enableBlend();
     }
 
-    private void drawName(PoseStack matrixStack, int frameColor, int textColor, float partialTicks) {
-        GuiComponent.fill(matrixStack, posX, posY + nameOffsetY, posX + hudWidth, posY + nameOffsetY + 24 * textScale, frameColor);
+    private void drawName(GuiGraphics graphics, int frameColor, int textColor, float partialTicks) {
+        graphics.fill(posX, posY + nameOffsetY, posX + hudWidth, posY + nameOffsetY + 24 * textScale, frameColor);
 
         frontierName1.setColor(textColor);
         frontierName2.setColor(textColor);
 
-        frontierName1.render(matrixStack, 0, 0, partialTicks);
-        frontierName2.render(matrixStack, 0, 0, partialTicks);
+        frontierName1.render(graphics, 0, 0, partialTicks);
+        frontierName2.render(graphics, 0, 0, partialTicks);
     }
 
-    private void drawOwner(PoseStack matrixStack, int frameColor, int textColor, float partialTicks) {
-        GuiComponent.fill(matrixStack, posX, posY + ownerOffsetY, posX + hudWidth, posY + ownerOffsetY + 12 * textScale,
+    private void drawOwner(GuiGraphics graphics, int frameColor, int textColor, float partialTicks) {
+        graphics.fill(posX, posY + ownerOffsetY, posX + hudWidth, posY + ownerOffsetY + 12 * textScale,
                 frameColor);
 
         frontierOwner.setColor(textColor);
-        frontierOwner.render(matrixStack, 0, 0, partialTicks);
+        frontierOwner.render(graphics, 0, 0, partialTicks);
     }
 
-    private void drawBanner(PoseStack matrixStack, int frameColor) {
-        GuiComponent.fill(matrixStack, posX + hudWidth / 2 - 11 * bannerScale - 2, posY + bannerOffsetY,
+    private void drawBanner(GuiGraphics graphics, int frameColor) {
+        graphics.fill(posX + hudWidth / 2 - 11 * bannerScale - 2, posY + bannerOffsetY,
                 posX + hudWidth / 2 + 11 * bannerScale + 2, posY + bannerOffsetY + 4 + 40 * bannerScale, frameColor);
 
-        frontier.renderBanner(mc, matrixStack, posX + hudWidth / 2 - 11 * bannerScale, posY + bannerOffsetY + 2, bannerScale);
+        frontier.renderBanner(mc, graphics, posX + hudWidth / 2 - 11 * bannerScale, posY + bannerOffsetY + 2, bannerScale);
     }
 
     private void updateData() {

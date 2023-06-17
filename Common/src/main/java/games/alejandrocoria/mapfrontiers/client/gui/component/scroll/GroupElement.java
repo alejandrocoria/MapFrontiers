@@ -7,6 +7,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 
@@ -60,14 +61,14 @@ public class GroupElement extends ScrollBox.ScrollElement {
     }
 
     @Override
-    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
+    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks, boolean selected) {
         int color = ColorConstants.TEXT;
         if (selected) {
             color = ColorConstants.TEXT_HIGHLIGHT;
         }
 
         if (isHovered) {
-            fill(matrixStack, x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
+            graphics.fill(x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
         }
 
         if (buttonDelete != null) {
@@ -79,7 +80,7 @@ public class GroupElement extends ScrollBox.ScrollElement {
             text = I18n.get("mapfrontiers.unnamed", ChatFormatting.ITALIC);
         }
 
-        font.draw(matrixStack, text, x + 4, y + 4, color);
+        graphics.drawString(font, text, x + 4, y + 4, color);
     }
 
     @Override

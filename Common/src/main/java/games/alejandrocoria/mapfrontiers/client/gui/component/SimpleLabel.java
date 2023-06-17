@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component;
 import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 
@@ -83,26 +84,26 @@ public class SimpleLabel extends AbstractWidgetNoNarration {
     }
 
     @Override
-    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        matrixStack.scale(scale, scale, 1.0F);
+    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        graphics.pose().scale(scale, scale, 1.0F);
 
         if (align == Align.Left) {
             for (int i = 0; i < texts.size(); ++i) {
-                font.draw(matrixStack, texts.get(i), Mth.floor(getX() / scale), Mth.floor((getY() + i * 12) / scale), color);
+                graphics.drawString(font, texts.get(i), Mth.floor(getX() / scale), Mth.floor((getY() + i * 12) / scale), color);
             }
         } else if (align == Align.Center) {
             for (int i = 0; i < texts.size(); ++i) {
-                font.draw(matrixStack, texts.get(i), Mth.floor(getX() / scale - (widths.get(i) - 1) / 2.f), Mth.floor((getY() + i * 12) / scale), color);
+                graphics.drawString(font, texts.get(i), Mth.floor(getX() / scale - (widths.get(i) - 1) / 2.f), Mth.floor((getY() + i * 12) / scale), color);
             }
         } else {
             for (int i = 0; i < texts.size(); ++i) {
-                font.draw(matrixStack, texts.get(i), Mth.floor(getX() / scale - widths.get(i)), Mth.floor((getY() + i * 12) / scale), color);
+                graphics.drawString(font, texts.get(i), Mth.floor(getX() / scale - widths.get(i)), Mth.floor((getY() + i * 12) / scale), color);
             }
         }
 
         isHovered = (mouseX >= topLeft.x * scale + getX() && mouseY >= topLeft.y * scale + getY() && mouseX < bottomRight.x * scale + getX()
                 && mouseY < bottomRight.y * scale + getY());
 
-        matrixStack.scale(1.0F / scale, 1.0F / scale, 1.0F);
+        graphics.pose().scale(1.0F / scale, 1.0F / scale, 1.0F);
     }
 }

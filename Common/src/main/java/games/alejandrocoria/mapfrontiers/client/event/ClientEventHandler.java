@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import journeymap.client.api.display.ModPopupMenu;
 import journeymap.client.api.display.ThemeButtonDisplay;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.entity.player.Player;
 
 import javax.annotation.Nullable;
@@ -21,7 +22,7 @@ public class ClientEventHandler {
     // Minecraft/Loader events
     private static final Map<Object, Consumer<Minecraft>> clientTickEventMap = new HashMap<>();
     private static final Map<Object, BiConsumer<Minecraft, Player>> playerTickEventMap = new HashMap<>();
-    private static final Map<Object, BiConsumer<PoseStack, Float>> hudRenderEventMap = new HashMap<>();
+    private static final Map<Object, BiConsumer<GuiGraphics, Float>> hudRenderEventMap = new HashMap<>();
     private static final Map<Object, Runnable> clientConnectedEventMap = new HashMap<>();
     private static final Map<Object, Runnable> clientDisconnectedEventMap = new HashMap<>();
     private static final Map<Object, Consumer<Integer>> mouseReleaseEventMap = new HashMap<>();
@@ -46,7 +47,7 @@ public class ClientEventHandler {
         playerTickEventMap.put(object, callback);
     }
 
-    public static void subscribeHudRenderEvent(Object object, BiConsumer<PoseStack, Float> callback) {
+    public static void subscribeHudRenderEvent(Object object, BiConsumer<GuiGraphics, Float> callback) {
         hudRenderEventMap.put(object, callback);
     }
 
@@ -129,9 +130,9 @@ public class ClientEventHandler {
         }
     }
 
-    public static void postHudRenderEvent(PoseStack poseStack, float delta) {
-        for (BiConsumer<PoseStack, Float> callback : hudRenderEventMap.values()) {
-            callback.accept(poseStack, delta);
+    public static void postHudRenderEvent(GuiGraphics graphics, float delta) {
+        for (BiConsumer<GuiGraphics, Float> callback : hudRenderEventMap.values()) {
+            callback.accept(graphics, delta);
         }
     }
 

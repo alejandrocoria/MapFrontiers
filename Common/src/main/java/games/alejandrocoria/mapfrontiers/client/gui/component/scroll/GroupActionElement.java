@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.language.I18n;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -40,9 +41,9 @@ public class GroupActionElement extends ScrollBox.ScrollElement {
     }
 
     @Override
-    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
+    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks, boolean selected) {
         if (isHovered) {
-            fill(matrixStack, x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
+            graphics.fill(x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
         }
 
         String text = group.getName();
@@ -50,18 +51,18 @@ public class GroupActionElement extends ScrollBox.ScrollElement {
             text = I18n.get("mapfrontiers.unnamed", ChatFormatting.ITALIC);
         }
 
-        font.draw(matrixStack, text, x + 4, y + 4, ColorConstants.TEXT_HIGHLIGHT);
+        graphics.drawString(font, text, x + 4, y + 4, ColorConstants.TEXT_HIGHLIGHT);
 
         if (!ownersGroup) {
-            drawBox(matrixStack, x + 154, y + 2, createFrontier);
+            drawBox(graphics, x + 154, y + 2, createFrontier);
         }
 
-        drawBox(matrixStack, x + 214, y + 2, deleteFrontier);
-        drawBox(matrixStack, x + 274, y + 2, updateFrontier);
+        drawBox(graphics, x + 214, y + 2, deleteFrontier);
+        drawBox(graphics, x + 274, y + 2, updateFrontier);
 
         if (!ownersGroup) {
-            drawBox(matrixStack, x + 334, y + 2, updateSettings);
-            drawBox(matrixStack, x + 394, y + 2, personalFrontier);
+            drawBox(graphics, x + 334, y + 2, updateSettings);
+            drawBox(graphics, x + 394, y + 2, personalFrontier);
         }
     }
 
@@ -89,11 +90,11 @@ public class GroupActionElement extends ScrollBox.ScrollElement {
         return ScrollBox.ScrollElement.Action.None;
     }
 
-    private void drawBox(PoseStack matrixStack, int x, int y, boolean checked) {
-        fill(matrixStack, x, y, x + 12, y + 12, ColorConstants.CHECKBOX_BORDER);
-        fill(matrixStack, x + 1, y + 1, x + 11, y + 11, ColorConstants.CHECKBOX_BG);
+    private void drawBox(GuiGraphics graphics, int x, int y, boolean checked) {
+        graphics.fill(x, y, x + 12, y + 12, ColorConstants.CHECKBOX_BORDER);
+        graphics.fill(x + 1, y + 1, x + 11, y + 11, ColorConstants.CHECKBOX_BG);
         if (checked) {
-            fill(matrixStack, x + 2, y + 2, x + 10, y + 10, ColorConstants.CHECKBOX_CHECK);
+            graphics.fill(x + 2, y + 2, x + 10, y + 10, ColorConstants.CHECKBOX_CHECK);
         }
     }
 

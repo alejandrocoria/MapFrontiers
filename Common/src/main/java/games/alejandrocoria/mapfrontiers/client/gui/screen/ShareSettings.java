@@ -19,6 +19,7 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateSharedUserPe
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.platform.Services;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
@@ -148,14 +149,14 @@ public class ShareSettings extends Screen {
     }
 
     @Override
-    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(matrixStack);
-        drawCenteredString(matrixStack, font, title, this.width / 2, 8, ColorConstants.WHITE);
-        super.render(matrixStack, mouseX, mouseY, partialTicks);
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        renderBackground(graphics);
+        graphics.drawCenteredString(font, title, this.width / 2, 8, ColorConstants.WHITE);
+        super.render(graphics, mouseX, mouseY, partialTicks);
 
         for (SimpleLabel label : labels) {
             if (label.visible) {
-                label.render(matrixStack, mouseX, mouseY, partialTicks);
+                label.render(graphics, mouseX, mouseY, partialTicks);
             }
         }
     }

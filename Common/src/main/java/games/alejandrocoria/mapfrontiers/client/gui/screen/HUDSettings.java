@@ -13,6 +13,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.hud.HUDWidget;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -168,20 +169,20 @@ public class HUDSettings extends Screen {
     }
 
     @Override
-    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         if (Services.JOURNEYMAP.isMinimapEnabled()) {
-            Services.JOURNEYMAP.drawMinimapPreview(matrixStack);
+            Services.JOURNEYMAP.drawMinimapPreview(graphics);
         }
 
-        drawAnchor(matrixStack, minecraft.getWindow());
+        drawAnchor(graphics, minecraft.getWindow());
 
-        fill(matrixStack, width / 2 - 238, height / 2 - 40, width / 2 + 238, height / 2 + 60, ColorConstants.SCREEN_BG);
+        graphics.fill(width / 2 - 238, height / 2 - 40, width / 2 + 238, height / 2 + 60, ColorConstants.SCREEN_BG);
 
-        super.render(matrixStack, mouseX, mouseY, partialTicks);
+        super.render(graphics, mouseX, mouseY, partialTicks);
 
         for (SimpleLabel label : labels) {
             if (label.visible) {
-                label.render(matrixStack, mouseX, mouseY, partialTicks);
+                label.render(graphics, mouseX, mouseY, partialTicks);
             }
         }
 
@@ -189,7 +190,7 @@ public class HUDSettings extends Screen {
             if (label.visible && label.isHovered()) {
                 List<Component> tooltip = labelTooltips.get(label);
                 if (tooltip != null) {
-                    renderTooltip(matrixStack, tooltip, Optional.empty(), mouseX, mouseY);
+                    graphics.renderTooltip(font, tooltip, Optional.empty(), mouseX, mouseY);
                 }
 
                 break;
@@ -207,10 +208,10 @@ public class HUDSettings extends Screen {
         }
     }
 
-    private void drawAnchor(PoseStack matrixStack, Window mainWindow) {
+    private void drawAnchor(GuiGraphics graphics, Window mainWindow) {
         float factor = (float) mainWindow.getGuiScale();
-        matrixStack.pushPose();
-        matrixStack.scale(1.f / factor, 1.f / factor, 1.f);
+        graphics.pose().pushPose();
+        graphics.pose().scale(1.f / factor, 1.f / factor, 1.f);
 
         int directionX = 0;
         int directionY = 0;
@@ -247,18 +248,18 @@ public class HUDSettings extends Screen {
         }
 
         if (directionX == 0) {
-            hLine(matrixStack, anchor.x - length, anchor.x + length, anchor.y, anchorLineColor);
+            graphics.hLine(anchor.x - length, anchor.x + length, anchor.y, anchorLineColor);
         } else {
-            hLine(matrixStack, anchor.x, anchor.x + length * directionX, anchor.y, anchorLineColor);
+            graphics.hLine(anchor.x, anchor.x + length * directionX, anchor.y, anchorLineColor);
         }
 
         if (directionY == 0) {
-            vLine(matrixStack, anchor.x, anchor.y - length, anchor.y + length, anchorLineColor);
+            graphics.vLine(anchor.x, anchor.y - length, anchor.y + length, anchorLineColor);
         } else {
-            vLine(matrixStack, anchor.x, anchor.y, anchor.y + length * directionY, anchorLineColor);
+            graphics.vLine(anchor.x, anchor.y, anchor.y + length * directionY, anchorLineColor);
         }
 
-        matrixStack.popPose();
+        graphics.pose().popPose();
     }
 
     protected void buttonPressed(Button button) {

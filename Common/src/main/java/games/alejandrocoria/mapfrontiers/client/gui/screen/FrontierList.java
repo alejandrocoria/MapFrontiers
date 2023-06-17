@@ -19,6 +19,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import journeymap.client.api.IClientAPI;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
@@ -193,28 +194,28 @@ public class FrontierList extends Screen {
     }
 
     @Override
-    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(matrixStack);
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        renderBackground(graphics);
 
         mouseX *= scaleFactor;
         mouseY *= scaleFactor;
 
         if (scaleFactor != 1.f) {
-            matrixStack.pushPose();
-            matrixStack.scale(1.0f / scaleFactor, 1.0f / scaleFactor, 1.0f);
+            graphics.pose().pushPose();
+            graphics.pose().scale(1.0f / scaleFactor, 1.0f / scaleFactor, 1.0f);
         }
 
-        drawCenteredString(matrixStack, font, title, this.actualWidth / 2, 8, ColorConstants.WHITE);
-        super.render(matrixStack, mouseX, mouseY, partialTicks);
+        graphics.drawCenteredString(font, title, this.actualWidth / 2, 8, ColorConstants.WHITE);
+        super.render(graphics, mouseX, mouseY, partialTicks);
 
         for (SimpleLabel label : labels) {
             if (label.visible) {
-                label.render(matrixStack, mouseX, mouseY, partialTicks);
+                label.render(graphics, mouseX, mouseY, partialTicks);
             }
         }
 
         if (scaleFactor != 1.f) {
-            matrixStack.popPose();
+            graphics.pose().popPose();
         }
     }
 

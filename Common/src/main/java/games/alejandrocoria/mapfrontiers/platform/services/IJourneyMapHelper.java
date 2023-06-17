@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.platform.services;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 
 import java.io.File;
 import java.util.List;
@@ -10,7 +10,7 @@ public interface IJourneyMapHelper {
     File getJMWorldDir(Minecraft client);
     void fullscreenMapCenterOn(int x, int z);
     boolean isMinimapEnabled();
-    void drawMinimapPreview(PoseStack matrixStack);
+    void drawMinimapPreview(GuiGraphics graphics);
     int getMinimapWidth() throws NoSuchFieldException, IllegalAccessException;
     int getMinimapHeight() throws NoSuchFieldException, IllegalAccessException;
     int getMinimapTranslateX() throws NoSuchFieldException, IllegalAccessException;

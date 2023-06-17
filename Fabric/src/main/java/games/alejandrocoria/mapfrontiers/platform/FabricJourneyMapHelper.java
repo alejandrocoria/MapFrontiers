@@ -15,6 +15,7 @@ import journeymap.client.ui.minimap.Shape;
 import journeymap.client.ui.theme.Theme;
 import journeymap.client.waypoint.WaypointStore;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -37,8 +38,8 @@ public class FabricJourneyMapHelper implements IJourneyMapHelper {
     }
 
     @Override
-    public void drawMinimapPreview(PoseStack matrixStack) {
-        UIManager.INSTANCE.getMiniMap().drawMap(matrixStack, true);
+    public void drawMinimapPreview(GuiGraphics graphics) {
+        UIManager.INSTANCE.getMiniMap().drawMap(graphics, true);
     }
 
     @Override

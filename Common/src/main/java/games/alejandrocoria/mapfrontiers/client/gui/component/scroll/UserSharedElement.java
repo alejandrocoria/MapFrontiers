@@ -8,6 +8,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 
@@ -79,44 +80,43 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
     }
 
     @Override
-    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
+    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks, boolean selected) {
         if (isHovered) {
-            fill(matrixStack, x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
+            graphics.fill(x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
         }
 
         if (buttonDelete != null) {
             buttonDelete.visible = isHovered;
         }
 
-        font.draw(matrixStack, user.getUser().toString(), x + 4.f, y + 4.f, ColorConstants.TEXT_HIGHLIGHT);
+        graphics.drawString(font, user.getUser().toString(), x + 4, y + 4, ColorConstants.TEXT_HIGHLIGHT);
 
-        drawBox(matrixStack, x + 244, y + 2, updateFrontier);
-        drawBox(matrixStack, x + 304, y + 2, updateSettings);
+        drawBox(graphics, x + 244, y + 2, updateFrontier);
+        drawBox(graphics, x + 304, y + 2, updateSettings);
 
         if (user.isPending()) {
-            font.draw(matrixStack, I18n.get("mapfrontiers.pending", ChatFormatting.ITALIC), x + 350.f, y + 4.f,
-                    ColorConstants.TEXT_PENDING);
+            graphics.drawString(font, I18n.get("mapfrontiers.pending", ChatFormatting.ITALIC), x + 350, y + 4, ColorConstants.TEXT_PENDING);
         }
 
         if (pingBar > 0) {
-            drawPingLine(matrixStack, x - 11, y + 11, 2);
+            drawPingLine(graphics, x - 11, y + 11, 2);
         }
         if (pingBar > 1) {
-            drawPingLine(matrixStack, x - 9, y + 11, 3);
+            drawPingLine(graphics, x - 9, y + 11, 3);
         }
         if (pingBar > 2) {
-            drawPingLine(matrixStack, x - 7, y + 11, 4);
+            drawPingLine(graphics, x - 7, y + 11, 4);
         }
         if (pingBar > 3) {
-            drawPingLine(matrixStack, x - 5, y + 11, 5);
+            drawPingLine(graphics, x - 5, y + 11, 5);
         }
         if (pingBar > 4) {
-            drawPingLine(matrixStack, x - 3, y + 11, 6);
+            drawPingLine(graphics, x - 3, y + 11, 6);
         }
     }
 
-    private void drawPingLine(PoseStack matrixStack, int posX, int posY, int height) {
-        fill(matrixStack, posX, posY - height, posX + 1, posY, ColorConstants.PING_BAR);
+    private void drawPingLine(GuiGraphics graphics, int posX, int posY, int height) {
+        graphics.fill(posX, posY - height, posX + 1, posY, ColorConstants.PING_BAR);
     }
 
     @Override
@@ -140,11 +140,11 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
         return ScrollBox.ScrollElement.Action.None;
     }
 
-    private void drawBox(PoseStack matrixStack, int x, int y, boolean checked) {
-        fill(matrixStack, x, y, x + 12, y + 12, ColorConstants.CHECKBOX_BORDER);
-        fill(matrixStack, x + 1, y + 1, x + 11, y + 11, ColorConstants.CHECKBOX_BG);
+    private void drawBox(GuiGraphics graphics, int x, int y, boolean checked) {
+        graphics.fill(x, y, x + 12, y + 12, ColorConstants.CHECKBOX_BORDER);
+        graphics.fill(x + 1, y + 1, x + 11, y + 11, ColorConstants.CHECKBOX_BG);
         if (checked) {
-            fill(matrixStack, x + 2, y + 2, x + 10, y + 10, ColorConstants.CHECKBOX_CHECK);
+            graphics.fill(x + 2, y + 2, x + 10, y + 10, ColorConstants.CHECKBOX_CHECK);
         }
     }
 

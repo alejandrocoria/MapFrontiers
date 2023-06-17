@@ -9,6 +9,7 @@ import games.alejandrocoria.mapfrontiers.platform.Services;
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
 import net.minecraft.Util;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.network.chat.Component;
 
@@ -39,14 +40,14 @@ public class LinkButton extends AbstractWidgetNoNarration {
     }
 
     @Override
-    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         if (isHovered) {
             label.setColor(ColorConstants.LINK_HIGHLIGHT);
         } else {
             label.setColor(ColorConstants.LINK);
         }
 
-        label.render(matrixStack, mouseX, mouseY, partialTicks);
+        label.render(graphics, mouseX, mouseY, partialTicks);
     }
 
     @Override

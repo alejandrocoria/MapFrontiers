@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component.button;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.sounds.SoundManager;
@@ -57,15 +58,13 @@ public class IconButton extends Button {
     }
 
     @Override
-    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderTexture(0, texture);
 
         if (isHovered) {
-            blit(matrixStack, getX(), getY(), type.texHoverX, type.texHoverY, width, height, textureSizeX, textureSizeY);
+            graphics.blit(texture, getX(), getY(), type.texHoverX, type.texHoverY, width, height, textureSizeX, textureSizeY);
         } else {
-            blit(matrixStack, getX(), getY(), type.texX, type.texY, width, height, textureSizeX, textureSizeY);
+            graphics.blit(texture, getX(), getY(), type.texX, type.texY, width, height, textureSizeX, textureSizeY);
         }
     }
 }

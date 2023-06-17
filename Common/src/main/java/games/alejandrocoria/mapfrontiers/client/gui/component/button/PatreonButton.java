@@ -8,6 +8,7 @@ import games.alejandrocoria.mapfrontiers.platform.Services;
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
@@ -46,7 +47,7 @@ public class PatreonButton extends AbstractWidgetNoNarration {
     }
 
     @Override
-    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         Minecraft mc = Minecraft.getInstance();
         int factor = (int) mc.getWindow().getGuiScale();
 
@@ -59,9 +60,7 @@ public class PatreonButton extends AbstractWidgetNoNarration {
             RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
         }
 
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderTexture(0, texture);
-        blit(matrixStack, getX() - width / 2 / factor, getY(), 0, 0, width / factor, height / factor,
+        graphics.blit(texture, getX() - width / 2 / factor, getY(), 0, 0, width / factor, height / factor,
                 textureSizeX / factor, textureSizeY / factor);
     }
 

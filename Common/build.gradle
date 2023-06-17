@@ -27,7 +27,7 @@ dependencies {
     implementation group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.1'
 
     compileOnly group: 'info.journeymap', name: 'journeymap-api', version: project.journeymap_api_common_version, changing: true
-    implementation "mysticdrew:common-networking:${project.common_networking_common_version}"
+    implementation "mysticdrew:common-networking-common:${project.common_networking_version}"
     compileOnly "fuzs.forgeconfigapiport:forgeconfigapiport-common:${forge_config_api_port_version}"
 }
 

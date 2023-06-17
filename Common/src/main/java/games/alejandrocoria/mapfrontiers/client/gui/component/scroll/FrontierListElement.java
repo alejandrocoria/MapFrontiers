@@ -7,6 +7,7 @@ import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.language.I18n;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -74,38 +75,38 @@ public class FrontierListElement extends ScrollBox.ScrollElement {
     }
 
     @Override
-    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, boolean selected) {
+    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks, boolean selected) {
         int color = ColorConstants.TEXT;
         if (selected) {
             color = ColorConstants.TEXT_HIGHLIGHT;
-            fill(matrixStack, x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_SELECTED);
+            graphics.fill(x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_SELECTED);
         } else if (isHovered) {
-            fill(matrixStack, x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
+            graphics.fill(x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
         }
 
         int hiddenColor = ColorConstants.TEXT_DARK;
 
         if (frontier.getVisible()) {
-            font.draw(matrixStack, name1, x + 26, y + 4, color);
-            font.draw(matrixStack, name2, x + 26, y + 14, color);
+            graphics.drawString(font, name1, x + 26, y + 4, color);
+            graphics.drawString(font, name2, x + 26, y + 14, color);
         } else {
-            font.draw(matrixStack, ChatFormatting.STRIKETHROUGH + name1, x + 26, y + 4, hiddenColor);
-            font.draw(matrixStack, ChatFormatting.STRIKETHROUGH + name2, x + 26, y + 14, hiddenColor);
+            graphics.drawString(font, ChatFormatting.STRIKETHROUGH + name1, x + 26, y + 4, hiddenColor);
+            graphics.drawString(font, ChatFormatting.STRIKETHROUGH + name2, x + 26, y + 14, hiddenColor);
         }
 
-        font.draw(matrixStack, type, x + 170, y + 4, color);
-        font.draw(matrixStack, dimension, x + 170, y + 14, ColorConstants.TEXT_DIMENSION);
+        graphics.drawString(font, type, x + 170, y + 4, color);
+        graphics.drawString(font, dimension, x + 170, y + 14, ColorConstants.TEXT_DIMENSION);
 
         if (frontier.getMode() == FrontierData.Mode.Vertex) {
-            font.draw(matrixStack, vertices, x + 180 + offset1, y + 4, color);
+            graphics.drawString(font, vertices, x + 180 + offset1, y + 4, color);
         } else {
-            font.draw(matrixStack, chunks, x + 180 + offset1, y + 4, color);
+            graphics.drawString(font, chunks, x + 180 + offset1, y + 4, color);
         }
 
-        font.draw(matrixStack, owner, x + 190 + offset1 + offset2, y + 4, color);
+        graphics.drawString(font, owner, x + 190 + offset1 + offset2, y + 4, color);
 
-        fill(matrixStack, x + 1, y + 1, x + 23, y + 23, ColorConstants.COLOR_INDICATOR_BORDER);
-        fill(matrixStack, x + 2, y + 2, x + 22, y + 22, frontier.getColor() | 0xff000000);
+        graphics.fill(x + 1, y + 1, x + 23, y + 23, ColorConstants.COLOR_INDICATOR_BORDER);
+        graphics.fill(x + 2, y + 2, x + 22, y + 22, frontier.getColor() | 0xff000000);
     }
 
     @Override

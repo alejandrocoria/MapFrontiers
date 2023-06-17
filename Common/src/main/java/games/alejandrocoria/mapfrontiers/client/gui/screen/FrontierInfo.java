@@ -26,6 +26,7 @@ import journeymap.client.api.display.Context;
 import journeymap.client.api.util.UIState;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
@@ -442,51 +443,51 @@ public class FrontierInfo extends Screen {
     }
 
     @Override
-    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(matrixStack);
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        renderBackground(graphics);
 
         mouseX *= scaleFactor;
         mouseY *= scaleFactor;
 
         if (scaleFactor != 1.f) {
-            matrixStack.pushPose();
-            matrixStack.scale(1.0f / scaleFactor, 1.0f / scaleFactor, 1.0f);
+            graphics.pose().pushPose();
+            graphics.pose().scale(1.0f / scaleFactor, 1.0f / scaleFactor, 1.0f);
         }
 
-        drawCenteredString(matrixStack, font, title, this.actualWidth / 2, 8, ColorConstants.WHITE);
-        super.render(matrixStack, mouseX, mouseY, partialTicks);
+        graphics.drawCenteredString(font, title, this.actualWidth / 2, 8, ColorConstants.WHITE);
+        super.render(graphics, mouseX, mouseY, partialTicks);
 
         if (frontier.hasBanner()) {
-            frontier.renderBanner(minecraft, matrixStack, actualWidth / 2 - 276, actualHeight / 2 - 122, 4);
+            frontier.renderBanner(minecraft, graphics, actualWidth / 2 - 276, actualHeight / 2 - 122, 4);
         }
 
         for (SimpleLabel label : labels) {
             if (label.visible) {
-                label.render(matrixStack, mouseX, mouseY, partialTicks);
+                label.render(graphics, mouseX, mouseY, partialTicks);
             }
         }
 
         if (buttonBanner.visible && buttonBanner.isHovered()) {
             if (!frontier.hasBanner() && getHeldBanner(minecraft) == null) {
                 MutableComponent prefix = Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET);
-                renderTooltip(matrixStack, prefix.append(Component.translatable("mapfrontiers.assign_banner_warn")), mouseX, mouseY);
+                graphics.renderTooltip(font, prefix.append(Component.translatable("mapfrontiers.assign_banner_warn")), mouseX, mouseY);
             }
         } else if (buttonCopy.isHovered()) {
-            renderTooltip(matrixStack, Component.translatable("mapfrontiers.copy"), mouseX, mouseY);
+            graphics.renderTooltip(font, Component.translatable("mapfrontiers.copy"), mouseX, mouseY);
         } else if (buttonPaste.visible && buttonPaste.isHovered()) {
-            renderTooltip(matrixStack, Component.translatable("mapfrontiers.paste"), mouseX, mouseY);
+            graphics.renderTooltip(font, Component.translatable("mapfrontiers.paste"), mouseX, mouseY);
         } else if (buttonOpenPasteOptions.visible && buttonOpenPasteOptions.isHovered()) {
-            renderTooltip(matrixStack, Component.translatable("mapfrontiers.open_paste_options"), mouseX, mouseY);
+            graphics.renderTooltip(font, Component.translatable("mapfrontiers.open_paste_options"), mouseX, mouseY);
         } else if (buttonClosePasteOptions.visible && buttonClosePasteOptions.isHovered()) {
-            renderTooltip(matrixStack, Component.translatable("mapfrontiers.close_paste_options"), mouseX, mouseY);
+            graphics.renderTooltip(font, Component.translatable("mapfrontiers.close_paste_options"), mouseX, mouseY);
         } else if (buttonUndo.visible && buttonUndo.isHovered()) {
-            renderTooltip(matrixStack, Component.translatable("mapfrontiers.undo"), mouseX, mouseY);
+            graphics.renderTooltip(font, Component.translatable("mapfrontiers.undo"), mouseX, mouseY);
         } else if (buttonRedo.visible && buttonRedo.isHovered()) {
-            renderTooltip(matrixStack, Component.translatable("mapfrontiers.redo"), mouseX, mouseY);
+            graphics.renderTooltip(font, Component.translatable("mapfrontiers.redo"), mouseX, mouseY);
         }
 
         if (scaleFactor != 1.f) {
-            matrixStack.popPose();
+            graphics.pose().popPose();
         }
     }
 
