@@ -22,7 +22,7 @@ public class GuiButtonIcon extends Button {
 
     public enum Type {
         Add       ( 0,  0, 13,  0, 13, 13),
-        Remove    ( 0, 13, 13,  0, 13, 13),
+        Remove    ( 0, 13, 13, 13, 13, 13),
         Copy      ( 0, 26, 17, 26, 17, 17),
         Paste     ( 0, 43, 17, 43, 17, 17),
         ArrowUp   ( 0, 60,  8, 60,  8, 17),
