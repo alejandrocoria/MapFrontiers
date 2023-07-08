@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.plugin;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.ClientProxy;
 import games.alejandrocoria.mapfrontiers.client.gui.GuiFullscreenMap;
+import games.alejandrocoria.mapfrontiers.common.ConfigData;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.IClientPlugin;
 import journeymap.client.api.display.Context;
@@ -48,6 +49,10 @@ public class MapFrontiersPlugin implements IClientPlugin {
 
     @Override
     public void onEvent(ClientEvent event) {
+        if (!ConfigData.fullscreenButtons) {
+            return;
+        }
+
         switch (event.type) {
             case MAP_CLICKED:
                 if (fullscreenMap != null) {
@@ -102,6 +107,10 @@ public class MapFrontiersPlugin implements IClientPlugin {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onFullscreenAddonButton(FullscreenDisplayEvent.AddonButtonDisplayEvent event) {
+        if (!ConfigData.fullscreenButtons) {
+            return;
+        }
+
         if (fullscreenMap == null) {
             fullscreenMap = new GuiFullscreenMap(jmAPI);
         }
@@ -112,6 +121,10 @@ public class MapFrontiersPlugin implements IClientPlugin {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onFullscreenpopupMenu(PopupMenuEvent.FullscreenPopupMenuEvent event) {
+        if (!ConfigData.fullscreenButtons) {
+            return;
+        }
+
         if (fullscreenMap != null) {
             ModPopupMenu popupMenu = event.getPopupMenu();
             fullscreenMap.addPopupMenu(popupMenu);
@@ -119,6 +132,10 @@ public class MapFrontiersPlugin implements IClientPlugin {
     }
 
     public static boolean isEditing() {
+        if (!ConfigData.fullscreenButtons) {
+            return false;
+        }
+
         return fullscreenMap != null && (fullscreenMap.isEditingVertices() || fullscreenMap.isEditingChunks());
     }
 }
