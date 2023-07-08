@@ -56,6 +56,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
     private GuiLinkButton buttonWeb;
     private GuiLinkButton buttonProject;
     private GuiPatreonButton buttonPatreon;
+    private GuiOptionButton buttonFullscreenButtons;
     private GuiOptionButton buttonFullscreenVisibility;
     private GuiOptionButton buttonFullscreenNameVisibility;
     private GuiOptionButton buttonFullscreenOwnerVisibility;
@@ -99,7 +100,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
             PacketHandler.INSTANCE.sendToServer(new PacketRequestFrontierSettings());
         }
 
-        scaleFactor = ScreenHelper.getScaleFactorThatFit(this, 696, 326);
+        scaleFactor = ScreenHelper.getScaleFactorThatFit(this, 696, 366);
         actualWidth = (int) (width * scaleFactor);
         actualHeight = (int) (height * scaleFactor);
 
@@ -134,73 +135,78 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         buttonPatreon = new GuiPatreonButton(actualWidth / 2, actualHeight / 2 + 36, "https://www.patreon.com/alejandrocoria",
                 (open) -> linkClicked(open, buttonPatreon));
 
-        buttonFullscreenVisibility = new GuiOptionButton(font, actualWidth / 2 - 120, 70, 80, this::buttonPressed);
+        buttonFullscreenButtons = new GuiOptionButton(font, actualWidth / 2 + 80, 54, 40, this::buttonPressed);
+        buttonFullscreenButtons.addOption(Component.translatable("options.on"));
+        buttonFullscreenButtons.addOption(Component.translatable("options.off"));
+        buttonFullscreenButtons.setSelected(ConfigData.fullscreenButtons ? 0 : 1);
+
+        buttonFullscreenVisibility = new GuiOptionButton(font, actualWidth / 2 - 120, 106, 80, this::buttonPressed);
         buttonFullscreenVisibility.addOption(ConfigData.getTranslatedEnum(ConfigData.Visibility.Custom));
         buttonFullscreenVisibility.addOption(ConfigData.getTranslatedEnum(ConfigData.Visibility.Always));
         buttonFullscreenVisibility.addOption(ConfigData.getTranslatedEnum(ConfigData.Visibility.Never));
         buttonFullscreenVisibility.setSelected(ConfigData.fullscreenVisibility.ordinal());
 
-        buttonFullscreenNameVisibility = new GuiOptionButton(font, actualWidth / 2 - 120, 86, 80, this::buttonPressed);
+        buttonFullscreenNameVisibility = new GuiOptionButton(font, actualWidth / 2 - 120, 122, 80, this::buttonPressed);
         buttonFullscreenNameVisibility.addOption(ConfigData.getTranslatedEnum(ConfigData.Visibility.Custom));
         buttonFullscreenNameVisibility.addOption(ConfigData.getTranslatedEnum(ConfigData.Visibility.Always));
         buttonFullscreenNameVisibility.addOption(ConfigData.getTranslatedEnum(ConfigData.Visibility.Never));
         buttonFullscreenNameVisibility.setSelected(ConfigData.fullscreenNameVisibility.ordinal());
 
-        buttonFullscreenOwnerVisibility = new GuiOptionButton(font, actualWidth / 2 - 120, 102, 80, this::buttonPressed);
+        buttonFullscreenOwnerVisibility = new GuiOptionButton(font, actualWidth / 2 - 120, 138, 80, this::buttonPressed);
         buttonFullscreenOwnerVisibility.addOption(ConfigData.getTranslatedEnum(ConfigData.Visibility.Custom));
         buttonFullscreenOwnerVisibility.addOption(ConfigData.getTranslatedEnum(ConfigData.Visibility.Always));
         buttonFullscreenOwnerVisibility.addOption(ConfigData.getTranslatedEnum(ConfigData.Visibility.Never));
         buttonFullscreenOwnerVisibility.setSelected(ConfigData.fullscreenOwnerVisibility.ordinal());
 
-        buttonMinimapVisibility = new GuiOptionButton(font, actualWidth / 2 + 140, 70, 80, this::buttonPressed);
+        buttonMinimapVisibility = new GuiOptionButton(font, actualWidth / 2 + 140, 106, 80, this::buttonPressed);
         buttonMinimapVisibility.addOption(ConfigData.getTranslatedEnum(ConfigData.Visibility.Custom));
         buttonMinimapVisibility.addOption(ConfigData.getTranslatedEnum(ConfigData.Visibility.Always));
         buttonMinimapVisibility.addOption(ConfigData.getTranslatedEnum(ConfigData.Visibility.Never));
         buttonMinimapVisibility.setSelected(ConfigData.minimapVisibility.ordinal());
 
-        buttonMinimapNameVisibility = new GuiOptionButton(font, actualWidth / 2 + 140, 86, 80, this::buttonPressed);
+        buttonMinimapNameVisibility = new GuiOptionButton(font, actualWidth / 2 + 140, 122, 80, this::buttonPressed);
         buttonMinimapNameVisibility.addOption(ConfigData.getTranslatedEnum(ConfigData.Visibility.Custom));
         buttonMinimapNameVisibility.addOption(ConfigData.getTranslatedEnum(ConfigData.Visibility.Always));
         buttonMinimapNameVisibility.addOption(ConfigData.getTranslatedEnum(ConfigData.Visibility.Never));
         buttonMinimapNameVisibility.setSelected(ConfigData.minimapNameVisibility.ordinal());
 
-        buttonMinimapOwnerVisibility = new GuiOptionButton(font, actualWidth / 2 + 140, 102, 80, this::buttonPressed);
+        buttonMinimapOwnerVisibility = new GuiOptionButton(font, actualWidth / 2 + 140, 138, 80, this::buttonPressed);
         buttonMinimapOwnerVisibility.addOption(ConfigData.getTranslatedEnum(ConfigData.Visibility.Custom));
         buttonMinimapOwnerVisibility.addOption(ConfigData.getTranslatedEnum(ConfigData.Visibility.Always));
         buttonMinimapOwnerVisibility.addOption(ConfigData.getTranslatedEnum(ConfigData.Visibility.Never));
         buttonMinimapOwnerVisibility.setSelected(ConfigData.minimapOwnerVisibility.ordinal());
 
-        ButtonTitleAnnouncementAboveHotbar = new GuiOptionButton(font, actualWidth / 2 + 80, 134, 40, this::buttonPressed);
+        ButtonTitleAnnouncementAboveHotbar = new GuiOptionButton(font, actualWidth / 2 + 80, 170, 40, this::buttonPressed);
         ButtonTitleAnnouncementAboveHotbar.addOption(Component.translatable("options.on"));
         ButtonTitleAnnouncementAboveHotbar.addOption(Component.translatable("options.off"));
         ButtonTitleAnnouncementAboveHotbar.setSelected(ConfigData.titleAnnouncementAboveHotbar ? 0 : 1);
 
-        buttonAnnounceUnnamedFrontiers = new GuiOptionButton(font, actualWidth / 2 + 80, 150, 40, this::buttonPressed);
+        buttonAnnounceUnnamedFrontiers = new GuiOptionButton(font, actualWidth / 2 + 80, 186, 40, this::buttonPressed);
         buttonAnnounceUnnamedFrontiers.addOption(Component.translatable("options.on"));
         buttonAnnounceUnnamedFrontiers.addOption(Component.translatable("options.off"));
         buttonAnnounceUnnamedFrontiers.setSelected(ConfigData.announceUnnamedFrontiers ? 0 : 1);
 
-        buttonHideNamesThatDontFit = new GuiOptionButton(font, actualWidth / 2 + 80, 166, 40, this::buttonPressed);
+        buttonHideNamesThatDontFit = new GuiOptionButton(font, actualWidth / 2 + 80, 202, 40, this::buttonPressed);
         buttonHideNamesThatDontFit.addOption(Component.translatable("options.on"));
         buttonHideNamesThatDontFit.addOption(Component.translatable("options.off"));
         buttonHideNamesThatDontFit.setSelected(ConfigData.hideNamesThatDontFit ? 0 : 1);
 
-        textPolygonsOpacity = new TextDoubleBox(0.4, 0.0, 1.0, font, actualWidth / 2 + 80, 182, 40);
+        textPolygonsOpacity = new TextDoubleBox(0.4, 0.0, 1.0, font, actualWidth / 2 + 80, 218, 40);
         textPolygonsOpacity.setValue(String.valueOf(ConfigData.polygonsOpacity));
         textPolygonsOpacity.setMaxLength(6);
         textPolygonsOpacity.setResponder(this);
 
-        textSnapDistance = new TextIntBox(8, 0, 16, font, actualWidth / 2 + 80, 198, 40);
+        textSnapDistance = new TextIntBox(8, 0, 16, font, actualWidth / 2 + 80, 234, 40);
         textSnapDistance.setValue(String.valueOf(ConfigData.snapDistance));
         textSnapDistance.setMaxLength(2);
         textSnapDistance.setResponder(this);
 
-        buttonHUDEnabled = new GuiOptionButton(font, actualWidth / 2 + 80, 252, 40, this::buttonPressed);
+        buttonHUDEnabled = new GuiOptionButton(font, actualWidth / 2 + 80, 288, 40, this::buttonPressed);
         buttonHUDEnabled.addOption(Component.translatable("options.on"));
         buttonHUDEnabled.addOption(Component.translatable("options.off"));
         buttonHUDEnabled.setSelected(ConfigData.hudEnabled ? 0 : 1);
 
-        buttonEditHUD = new GuiSettingsButton(font, actualWidth / 2 - 50, 272, 100,
+        buttonEditHUD = new GuiSettingsButton(font, actualWidth / 2 - 50, 308, 100,
                 Component.translatable("mapfrontiers.edit_hud"), this::buttonPressed);
 
         groups = new GuiScrollBox(50, 50, 160, actualHeight - 120, 16, this);
@@ -234,6 +240,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         addRenderableWidget(buttonWeb);
         addRenderableWidget(buttonProject);
         addRenderableWidget(buttonPatreon);
+        addRenderableWidget(buttonFullscreenButtons);
         addRenderableWidget(buttonFullscreenVisibility);
         addRenderableWidget(buttonFullscreenNameVisibility);
         addRenderableWidget(buttonFullscreenOwnerVisibility);
@@ -381,7 +388,9 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
     }
 
     protected void buttonPressed(Button button) {
-        if (button == buttonFullscreenVisibility) {
+        if (button == buttonFullscreenButtons) {
+            ConfigData.fullscreenButtons = buttonFullscreenButtons.getSelected() == 0;
+        } else if (button == buttonFullscreenVisibility) {
             ConfigData.fullscreenVisibility = ConfigData.Visibility.values()[buttonFullscreenVisibility.getSelected()];
         } else if (button == buttonFullscreenNameVisibility) {
             ConfigData.fullscreenNameVisibility = ConfigData.Visibility.values()[buttonFullscreenNameVisibility.getSelected()];
@@ -537,56 +546,60 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
             labels.add(new GuiSimpleLabel(font, actualWidth - 48, actualHeight - 54, GuiSimpleLabel.Align.Right,
                     Component.translatable(MapFrontiers.VERSION), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
         } else if (tabSelected == Tab.General) {
-            labels.add(new GuiSimpleLabel(font, actualWidth / 2, 54, GuiSimpleLabel.Align.Center,
+            addLabelWithTooltip(
+                    new GuiSimpleLabel(font, actualWidth / 2 - 120, 56, GuiSimpleLabel.Align.Left,
+                            ConfigData.getTranslatedName("fullscreenButtons"), GuiColors.SETTINGS_TEXT),
+                    ConfigData.getTooltip("fullscreenButtons"));
+            labels.add(new GuiSimpleLabel(font, actualWidth / 2, 90, GuiSimpleLabel.Align.Center,
                     Component.translatable("mapfrontiers.frontiers"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             addLabelWithTooltip(
-                    new GuiSimpleLabel(font, actualWidth / 2 - 300, 72, GuiSimpleLabel.Align.Left,
+                    new GuiSimpleLabel(font, actualWidth / 2 - 300, 108, GuiSimpleLabel.Align.Left,
                             ConfigData.getTranslatedName("fullscreenVisibility"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("fullscreenVisibility"));
             addLabelWithTooltip(
-                    new GuiSimpleLabel(font, actualWidth / 2 - 300, 88, GuiSimpleLabel.Align.Left,
+                    new GuiSimpleLabel(font, actualWidth / 2 - 300, 124, GuiSimpleLabel.Align.Left,
                             ConfigData.getTranslatedName("fullscreenNameVisibility"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("fullscreenNameVisibility"));
             addLabelWithTooltip(
-                    new GuiSimpleLabel(font, actualWidth / 2 - 300, 104, GuiSimpleLabel.Align.Left,
+                    new GuiSimpleLabel(font, actualWidth / 2 - 300, 140, GuiSimpleLabel.Align.Left,
                             ConfigData.getTranslatedName("fullscreenOwnerVisibility"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("fullscreenOwnerVisibility"));
             addLabelWithTooltip(
-                    new GuiSimpleLabel(font, actualWidth / 2 + 30, 72, GuiSimpleLabel.Align.Left,
+                    new GuiSimpleLabel(font, actualWidth / 2 + 30, 108, GuiSimpleLabel.Align.Left,
                             ConfigData.getTranslatedName("minimapVisibility"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("minimapVisibility"));
             addLabelWithTooltip(
-                    new GuiSimpleLabel(font, actualWidth / 2 + 30, 88, GuiSimpleLabel.Align.Left,
+                    new GuiSimpleLabel(font, actualWidth / 2 + 30, 124, GuiSimpleLabel.Align.Left,
                             ConfigData.getTranslatedName("minimapNameVisibility"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("minimapNameVisibility"));
             addLabelWithTooltip(
-                    new GuiSimpleLabel(font, actualWidth / 2 + 30, 104, GuiSimpleLabel.Align.Left,
+                    new GuiSimpleLabel(font, actualWidth / 2 + 30, 140, GuiSimpleLabel.Align.Left,
                             ConfigData.getTranslatedName("minimapOwnerVisibility"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("minimapOwnerVisibility"));
             addLabelWithTooltip(
-                    new GuiSimpleLabel(font, actualWidth / 2 - 120, 136, GuiSimpleLabel.Align.Left,
+                    new GuiSimpleLabel(font, actualWidth / 2 - 120, 172, GuiSimpleLabel.Align.Left,
                             ConfigData.getTranslatedName("titleAnnouncementAboveHotbar"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("titleAnnouncementAboveHotbar"));
             addLabelWithTooltip(
-                    new GuiSimpleLabel(font, actualWidth / 2 - 120, 152, GuiSimpleLabel.Align.Left,
+                    new GuiSimpleLabel(font, actualWidth / 2 - 120, 188, GuiSimpleLabel.Align.Left,
                             ConfigData.getTranslatedName("announceUnnamedFrontiers"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("announceUnnamedFrontiers"));
             addLabelWithTooltip(
-                    new GuiSimpleLabel(font, actualWidth / 2 - 120, 168, GuiSimpleLabel.Align.Left,
+                    new GuiSimpleLabel(font, actualWidth / 2 - 120, 204, GuiSimpleLabel.Align.Left,
                             ConfigData.getTranslatedName("hideNamesThatDontFit"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("hideNamesThatDontFit"));
             addLabelWithTooltip(
-                    new GuiSimpleLabel(font, actualWidth / 2 - 120, 184, GuiSimpleLabel.Align.Left,
+                    new GuiSimpleLabel(font, actualWidth / 2 - 120, 220, GuiSimpleLabel.Align.Left,
                             ConfigData.getTranslatedName("polygonsOpacity"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("polygonsOpacity"));
             addLabelWithTooltip(
-                    new GuiSimpleLabel(font, actualWidth / 2 - 120, 200, GuiSimpleLabel.Align.Left,
+                    new GuiSimpleLabel(font, actualWidth / 2 - 120, 236, GuiSimpleLabel.Align.Left,
                             ConfigData.getTranslatedName("snapDistance"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("snapDistance"));
-            labels.add(new GuiSimpleLabel(font, actualWidth / 2, 234, GuiSimpleLabel.Align.Center,
+            labels.add(new GuiSimpleLabel(font, actualWidth / 2, 270, GuiSimpleLabel.Align.Center,
                     Component.translatable("mapfrontiers.hud"), GuiColors.SETTINGS_TEXT_HIGHLIGHT));
             addLabelWithTooltip(
-                    new GuiSimpleLabel(font, actualWidth / 2 - 120, 254, GuiSimpleLabel.Align.Left,
+                    new GuiSimpleLabel(font, actualWidth / 2 - 120, 290, GuiSimpleLabel.Align.Left,
                             ConfigData.getTranslatedName("hud.enabled"), GuiColors.SETTINGS_TEXT),
                     ConfigData.getTooltip("hud.enabled"));
         } else if (tabSelected == Tab.Groups) {
@@ -634,6 +647,7 @@ public class GuiFrontierSettings extends Screen implements GuiScrollBox.ScrollBo
         buttonWeb.visible = tabSelected == Tab.Credits;
         buttonProject.visible = tabSelected == Tab.Credits;
         buttonPatreon.visible = tabSelected == Tab.Credits;
+        buttonFullscreenButtons.visible = tabSelected == Tab.General;
         buttonFullscreenVisibility.visible = tabSelected == Tab.General;
         buttonFullscreenNameVisibility.visible = tabSelected == Tab.General;
         buttonFullscreenOwnerVisibility.visible = tabSelected == Tab.General;
