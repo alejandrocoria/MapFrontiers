@@ -109,6 +109,7 @@
     "mapfrontiers.group_everyone_desc": "Este grupo representa todos os jogadores sem exceção.",
     "mapfrontiers.unnamed": "%1$sSem nome",
 
+    "mapfrontiers.config.fullscreenButtons": "Botões de mapa em tela cheia",
     "mapfrontiers.config.fullscreenVisibility": "Visibilidade mapa de tela cheia",
     "mapfrontiers.config.fullscreenNameVisibility": "Visibilidade do nome",
     "mapfrontiers.config.fullscreenOwnerVisibility": "Visibilidade do dono",
@@ -130,6 +131,7 @@
     "mapfrontiers.config.hud.anchor": "Âncora",
     "mapfrontiers.config.hud.position": "Posição",
 
+    "mapfrontiers.config.fullscreenButtons.tooltip": "Mostrar botões mod no mapa em tela cheia.",
     "mapfrontiers.config.fullscreenVisibility.tooltip": "Força todas as fronteira a serem mostradas ou ocultadas no mapa em tela cheia.\nNo Personalizado você pode decidir para cada fronteira.",
     "mapfrontiers.config.fullscreenNameVisibility.tooltip": "Força todos os nomes de fronteira a serem mostrados ou ocultos no mapa em tela cheia.\nNo Personalizado você pode decidir para cada fronteira.",
     "mapfrontiers.config.fullscreenOwnerVisibility.tooltip": "Força todos os dono de fronteira a mostrar ou ocultar no mapa em tela cheia.\nNo Personalizado você pode decidir para cada fronteira.",
