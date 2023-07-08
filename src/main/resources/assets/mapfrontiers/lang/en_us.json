@@ -109,6 +109,7 @@
   "mapfrontiers.group_everyone_desc": "This group represents all players without exception.",
   "mapfrontiers.unnamed": "%1$sUnnamed",
 
+  "mapfrontiers.config.fullscreenButtons": "Fullscreen map buttons",
   "mapfrontiers.config.fullscreenVisibility": "Fullscreen map visibility",
   "mapfrontiers.config.fullscreenNameVisibility": "Name visibility",
   "mapfrontiers.config.fullscreenOwnerVisibility": "Owner visibility",
@@ -130,6 +131,7 @@
   "mapfrontiers.config.hud.anchor": "Anchor",
   "mapfrontiers.config.hud.position": "Position",
 
+  "mapfrontiers.config.fullscreenButtons.tooltip": "Show mod buttons on fullscreen map.",
   "mapfrontiers.config.fullscreenVisibility.tooltip": "Force all frontier to be shown or hidden on the fullscreen map.\nIn Custom you can decide for each frontier.",
   "mapfrontiers.config.fullscreenNameVisibility.tooltip": "Force all frontier names to be shown or hidden on the fullscreen map.\nIn Custom you can decide for each frontier.",
   "mapfrontiers.config.fullscreenOwnerVisibility.tooltip": "Force all frontier owners to be shown or hidden on the fullscreen map.\nIn Custom you can decide for each frontier.",
