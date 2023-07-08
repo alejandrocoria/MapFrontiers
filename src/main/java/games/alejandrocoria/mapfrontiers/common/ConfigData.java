@@ -75,6 +75,7 @@ public class ConfigData {
     public static boolean pasteColor;
     public static boolean pasteBanner;
     public static boolean pasteOptionsVisible;
+    public static boolean fullscreenButtons;
     public static Visibility fullscreenVisibility;
     public static Visibility fullscreenNameVisibility;
     public static Visibility fullscreenOwnerVisibility;
@@ -114,6 +115,7 @@ public class ConfigData {
         pasteColor = CLIENT.pasteColor.get();
         pasteBanner = CLIENT.pasteBanner.get();
         pasteOptionsVisible = CLIENT.pasteOptionsVisible.get();
+        fullscreenButtons = CLIENT.fullscreenButtons.get();
         fullscreenVisibility = CLIENT.fullscreenVisibility.get();
         fullscreenNameVisibility = CLIENT.fullscreenNameVisibility.get();
         fullscreenOwnerVisibility = CLIENT.fullscreenOwnerVisibility.get();
@@ -154,6 +156,7 @@ public class ConfigData {
         public final BooleanValue pasteColor;
         public final BooleanValue pasteBanner;
         public final BooleanValue pasteOptionsVisible;
+        public final BooleanValue fullscreenButtons;
         public final EnumValue<Visibility> fullscreenVisibility;
         public final EnumValue<Visibility> fullscreenNameVisibility;
         public final EnumValue<Visibility> fullscreenOwnerVisibility;
@@ -193,6 +196,9 @@ public class ConfigData {
             pasteColor = builder.define("pasteColor", true);
             pasteBanner = builder.define("pasteBanner", true);
             pasteOptionsVisible = builder.define("pasteOptionsVisible", false);
+            fullscreenButtons = builder.comment("Show buttons on fullscreen map.")
+                    .translation(MapFrontiers.MODID + ".config." + "fullscreenButtons")
+                    .define("fullscreenButtons", true);
             fullscreenVisibility = builder.comment(
                             "Force all frontier to be shown or hidden on the fullscreen map. In Manual you can decide for each frontier.")
                     .translation(MapFrontiers.MODID + ".config." + "fullscreenVisibility")
@@ -280,6 +286,7 @@ public class ConfigData {
         CLIENT.pasteColor.set(pasteColor);
         CLIENT.pasteBanner.set(pasteBanner);
         CLIENT.pasteOptionsVisible.set(pasteOptionsVisible);
+        CLIENT.fullscreenButtons.set(fullscreenButtons);
         CLIENT.fullscreenVisibility.set(fullscreenVisibility);
         CLIENT.fullscreenNameVisibility.set(fullscreenNameVisibility);
         CLIENT.fullscreenOwnerVisibility.set(fullscreenOwnerVisibility);
