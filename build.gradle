@@ -2,7 +2,7 @@ plugins {
     id 'net.minecraftforge.gradle' version '5.1.+'
 }
 
-version = '1.19.4-2.5.0'
+version = '1.19.4-2.5.1'
 group = 'games.alejandrocoria.mapfrontiers' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'MapFrontiers'
 
