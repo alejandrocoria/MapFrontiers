@@ -1,6 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
@@ -71,6 +70,7 @@ public class ModSettings extends Screen {
     private LinkButton buttonWeb;
     private LinkButton buttonProject;
     private PatreonButton buttonPatreon;
+    private OptionButton buttonFullscreenButtons;
     private OptionButton buttonFullscreenVisibility;
     private OptionButton buttonFullscreenNameVisibility;
     private OptionButton buttonFullscreenOwnerVisibility;
@@ -138,7 +138,7 @@ public class ModSettings extends Screen {
             PacketHandler.sendToServer(new PacketRequestFrontierSettings());
         }
 
-        scaleFactor = ScreenHelper.getScaleFactorThatFit(minecraft, this, 696, 326);
+        scaleFactor = ScreenHelper.getScaleFactorThatFit(minecraft, this, 696, 366);
         actualWidth = (int) (width * scaleFactor);
         actualHeight = (int) (height * scaleFactor);
 
@@ -179,73 +179,78 @@ public class ModSettings extends Screen {
         buttonPatreon = new PatreonButton(actualWidth / 2, actualHeight / 2 + 36, "https://www.patreon.com/alejandrocoria",
                 (open) -> linkClicked(open, buttonPatreon));
 
-        buttonFullscreenVisibility = new OptionButton(font, actualWidth / 2 - 120, 70, 80, this::buttonPressed);
+        buttonFullscreenButtons = new OptionButton(font, actualWidth / 2 + 80, 54, 40, this::buttonPressed);
+        buttonFullscreenButtons.addOption(Component.translatable("options.on"));
+        buttonFullscreenButtons.addOption(Component.translatable("options.off"));
+        buttonFullscreenButtons.setSelected(Config.fullscreenButtons ? 0 : 1);
+
+        buttonFullscreenVisibility = new OptionButton(font, actualWidth / 2 - 120, 106, 80, this::buttonPressed);
         buttonFullscreenVisibility.addOption(Config.getTranslatedEnum(Config.Visibility.Custom));
         buttonFullscreenVisibility.addOption(Config.getTranslatedEnum(Config.Visibility.Always));
         buttonFullscreenVisibility.addOption(Config.getTranslatedEnum(Config.Visibility.Never));
         buttonFullscreenVisibility.setSelected(Config.fullscreenVisibility.ordinal());
 
-        buttonFullscreenNameVisibility = new OptionButton(font, actualWidth / 2 - 120, 86, 80, this::buttonPressed);
+        buttonFullscreenNameVisibility = new OptionButton(font, actualWidth / 2 - 120, 122, 80, this::buttonPressed);
         buttonFullscreenNameVisibility.addOption(Config.getTranslatedEnum(Config.Visibility.Custom));
         buttonFullscreenNameVisibility.addOption(Config.getTranslatedEnum(Config.Visibility.Always));
         buttonFullscreenNameVisibility.addOption(Config.getTranslatedEnum(Config.Visibility.Never));
         buttonFullscreenNameVisibility.setSelected(Config.fullscreenNameVisibility.ordinal());
 
-        buttonFullscreenOwnerVisibility = new OptionButton(font, actualWidth / 2 - 120, 102, 80, this::buttonPressed);
+        buttonFullscreenOwnerVisibility = new OptionButton(font, actualWidth / 2 - 120, 138, 80, this::buttonPressed);
         buttonFullscreenOwnerVisibility.addOption(Config.getTranslatedEnum(Config.Visibility.Custom));
         buttonFullscreenOwnerVisibility.addOption(Config.getTranslatedEnum(Config.Visibility.Always));
         buttonFullscreenOwnerVisibility.addOption(Config.getTranslatedEnum(Config.Visibility.Never));
         buttonFullscreenOwnerVisibility.setSelected(Config.fullscreenOwnerVisibility.ordinal());
 
-        buttonMinimapVisibility = new OptionButton(font, actualWidth / 2 + 140, 70, 80, this::buttonPressed);
+        buttonMinimapVisibility = new OptionButton(font, actualWidth / 2 + 140, 106, 80, this::buttonPressed);
         buttonMinimapVisibility.addOption(Config.getTranslatedEnum(Config.Visibility.Custom));
         buttonMinimapVisibility.addOption(Config.getTranslatedEnum(Config.Visibility.Always));
         buttonMinimapVisibility.addOption(Config.getTranslatedEnum(Config.Visibility.Never));
         buttonMinimapVisibility.setSelected(Config.minimapVisibility.ordinal());
 
-        buttonMinimapNameVisibility = new OptionButton(font, actualWidth / 2 + 140, 86, 80, this::buttonPressed);
+        buttonMinimapNameVisibility = new OptionButton(font, actualWidth / 2 + 140, 122, 80, this::buttonPressed);
         buttonMinimapNameVisibility.addOption(Config.getTranslatedEnum(Config.Visibility.Custom));
         buttonMinimapNameVisibility.addOption(Config.getTranslatedEnum(Config.Visibility.Always));
         buttonMinimapNameVisibility.addOption(Config.getTranslatedEnum(Config.Visibility.Never));
         buttonMinimapNameVisibility.setSelected(Config.minimapNameVisibility.ordinal());
 
-        buttonMinimapOwnerVisibility = new OptionButton(font, actualWidth / 2 + 140, 102, 80, this::buttonPressed);
+        buttonMinimapOwnerVisibility = new OptionButton(font, actualWidth / 2 + 140, 138, 80, this::buttonPressed);
         buttonMinimapOwnerVisibility.addOption(Config.getTranslatedEnum(Config.Visibility.Custom));
         buttonMinimapOwnerVisibility.addOption(Config.getTranslatedEnum(Config.Visibility.Always));
         buttonMinimapOwnerVisibility.addOption(Config.getTranslatedEnum(Config.Visibility.Never));
         buttonMinimapOwnerVisibility.setSelected(Config.minimapOwnerVisibility.ordinal());
 
-        ButtonTitleAnnouncementAboveHotbar = new OptionButton(font, actualWidth / 2 + 80, 134, 40, this::buttonPressed);
+        ButtonTitleAnnouncementAboveHotbar = new OptionButton(font, actualWidth / 2 + 80, 170, 40, this::buttonPressed);
         ButtonTitleAnnouncementAboveHotbar.addOption(Component.translatable("options.on"));
         ButtonTitleAnnouncementAboveHotbar.addOption(Component.translatable("options.off"));
         ButtonTitleAnnouncementAboveHotbar.setSelected(Config.titleAnnouncementAboveHotbar ? 0 : 1);
 
-        buttonAnnounceUnnamedFrontiers = new OptionButton(font, actualWidth / 2 + 80, 150, 40, this::buttonPressed);
+        buttonAnnounceUnnamedFrontiers = new OptionButton(font, actualWidth / 2 + 80, 186, 40, this::buttonPressed);
         buttonAnnounceUnnamedFrontiers.addOption(Component.translatable("options.on"));
         buttonAnnounceUnnamedFrontiers.addOption(Component.translatable("options.off"));
         buttonAnnounceUnnamedFrontiers.setSelected(Config.announceUnnamedFrontiers ? 0 : 1);
 
-        buttonHideNamesThatDontFit = new OptionButton(font, actualWidth / 2 + 80, 166, 40, this::buttonPressed);
+        buttonHideNamesThatDontFit = new OptionButton(font, actualWidth / 2 + 80, 202, 40, this::buttonPressed);
         buttonHideNamesThatDontFit.addOption(Component.translatable("options.on"));
         buttonHideNamesThatDontFit.addOption(Component.translatable("options.off"));
         buttonHideNamesThatDontFit.setSelected(Config.hideNamesThatDontFit ? 0 : 1);
 
-        textPolygonsOpacity = new TextBoxDouble(0.4, 0.0, 1.0, font, actualWidth / 2 + 80, 182, 40);
+        textPolygonsOpacity = new TextBoxDouble(0.4, 0.0, 1.0, font, actualWidth / 2 + 80, 218, 40);
         textPolygonsOpacity.setValue(String.valueOf(Config.polygonsOpacity));
         textPolygonsOpacity.setMaxLength(6);
         textPolygonsOpacity.setValueChangedCallback(value -> Config.polygonsOpacity = value);
 
-        textSnapDistance = new TextBoxInt(8, 0, 16, font, actualWidth / 2 + 80, 198, 40);
+        textSnapDistance = new TextBoxInt(8, 0, 16, font, actualWidth / 2 + 80, 234, 40);
         textSnapDistance.setValue(String.valueOf(Config.snapDistance));
         textSnapDistance.setMaxLength(2);
         textSnapDistance.setValueChangedCallback(value -> Config.snapDistance = value);
 
-        buttonHUDEnabled = new OptionButton(font, actualWidth / 2 + 80, 252, 40, this::buttonPressed);
+        buttonHUDEnabled = new OptionButton(font, actualWidth / 2 + 80, 288, 40, this::buttonPressed);
         buttonHUDEnabled.addOption(Component.translatable("options.on"));
         buttonHUDEnabled.addOption(Component.translatable("options.off"));
         buttonHUDEnabled.setSelected(Config.hudEnabled ? 0 : 1);
 
-        buttonEditHUD = new SimpleButton(font, actualWidth / 2 - 50, 272, 100, Component.translatable("mapfrontiers.edit_hud"), this::buttonPressed);
+        buttonEditHUD = new SimpleButton(font, actualWidth / 2 - 50, 308, 100, Component.translatable("mapfrontiers.edit_hud"), this::buttonPressed);
 
         groups = new ScrollBox(50, 50, 160, actualHeight - 120, 16);
         groups.setElementClickedCallback(element -> {
@@ -300,6 +305,7 @@ public class ModSettings extends Screen {
         addRenderableWidget(buttonWeb);
         addRenderableWidget(buttonProject);
         addRenderableWidget(buttonPatreon);
+        addRenderableWidget(buttonFullscreenButtons);
         addRenderableWidget(buttonFullscreenVisibility);
         addRenderableWidget(buttonFullscreenNameVisibility);
         addRenderableWidget(buttonFullscreenOwnerVisibility);
@@ -454,7 +460,9 @@ public class ModSettings extends Screen {
     }
 
     protected void buttonPressed(Button button) {
-        if (button == buttonFullscreenVisibility) {
+        if (button == buttonFullscreenButtons) {
+            Config.fullscreenButtons = buttonFullscreenButtons.getSelected() == 0;
+        } else if (button == buttonFullscreenVisibility) {
             Config.fullscreenVisibility = Config.Visibility.values()[buttonFullscreenVisibility.getSelected()];
         } else if (button == buttonFullscreenNameVisibility) {
             Config.fullscreenNameVisibility = Config.Visibility.values()[buttonFullscreenNameVisibility.getSelected()];
@@ -616,56 +624,60 @@ public class ModSettings extends Screen {
             labels.add(new SimpleLabel(font, 50, actualHeight - 54, SimpleLabel.Align.Left,
                     Component.translatable("mapfrontiers.credits_translation"), ColorConstants.TEXT_HIGHLIGHT));
         } else if (tabSelected == Tab.General) {
-            labels.add(new SimpleLabel(font, actualWidth / 2, 54, SimpleLabel.Align.Center,
+            addLabelWithTooltip(
+                    new SimpleLabel(font, actualWidth / 2 - 120, 56, SimpleLabel.Align.Left,
+                            Config.getTranslatedName("fullscreenButtons"), ColorConstants.TEXT),
+                    Config.getTooltip("fullscreenButtons"));
+            labels.add(new SimpleLabel(font, actualWidth / 2, 90, SimpleLabel.Align.Center,
                     Component.translatable("mapfrontiers.frontiers"), ColorConstants.TEXT_HIGHLIGHT));
             addLabelWithTooltip(
-                    new SimpleLabel(font, actualWidth / 2 - 300, 72, SimpleLabel.Align.Left,
+                    new SimpleLabel(font, actualWidth / 2 - 300, 108, SimpleLabel.Align.Left,
                             Config.getTranslatedName("fullscreenVisibility"), ColorConstants.TEXT),
                     Config.getTooltip("fullscreenVisibility"));
             addLabelWithTooltip(
-                    new SimpleLabel(font, actualWidth / 2 - 300, 88, SimpleLabel.Align.Left,
+                    new SimpleLabel(font, actualWidth / 2 - 300, 124, SimpleLabel.Align.Left,
                             Config.getTranslatedName("fullscreenNameVisibility"), ColorConstants.TEXT),
                     Config.getTooltip("fullscreenNameVisibility"));
             addLabelWithTooltip(
-                    new SimpleLabel(font, actualWidth / 2 - 300, 104, SimpleLabel.Align.Left,
+                    new SimpleLabel(font, actualWidth / 2 - 300, 140, SimpleLabel.Align.Left,
                             Config.getTranslatedName("fullscreenOwnerVisibility"), ColorConstants.TEXT),
                     Config.getTooltip("fullscreenOwnerVisibility"));
             addLabelWithTooltip(
-                    new SimpleLabel(font, actualWidth / 2 + 30, 72, SimpleLabel.Align.Left,
+                    new SimpleLabel(font, actualWidth / 2 + 30, 108, SimpleLabel.Align.Left,
                             Config.getTranslatedName("minimapVisibility"), ColorConstants.TEXT),
                     Config.getTooltip("minimapVisibility"));
             addLabelWithTooltip(
-                    new SimpleLabel(font, actualWidth / 2 + 30, 88, SimpleLabel.Align.Left,
+                    new SimpleLabel(font, actualWidth / 2 + 30, 124, SimpleLabel.Align.Left,
                             Config.getTranslatedName("minimapNameVisibility"), ColorConstants.TEXT),
                     Config.getTooltip("minimapNameVisibility"));
             addLabelWithTooltip(
-                    new SimpleLabel(font, actualWidth / 2 + 30, 104, SimpleLabel.Align.Left,
+                    new SimpleLabel(font, actualWidth / 2 + 30, 140, SimpleLabel.Align.Left,
                             Config.getTranslatedName("minimapOwnerVisibility"), ColorConstants.TEXT),
                     Config.getTooltip("minimapOwnerVisibility"));
             addLabelWithTooltip(
-                    new SimpleLabel(font, actualWidth / 2 - 120, 136, SimpleLabel.Align.Left,
+                    new SimpleLabel(font, actualWidth / 2 - 120, 172, SimpleLabel.Align.Left,
                             Config.getTranslatedName("titleAnnouncementAboveHotbar"), ColorConstants.TEXT),
                     Config.getTooltip("titleAnnouncementAboveHotbar"));
             addLabelWithTooltip(
-                    new SimpleLabel(font, actualWidth / 2 - 120, 152, SimpleLabel.Align.Left,
+                    new SimpleLabel(font, actualWidth / 2 - 120, 188, SimpleLabel.Align.Left,
                             Config.getTranslatedName("announceUnnamedFrontiers"), ColorConstants.TEXT),
                     Config.getTooltip("announceUnnamedFrontiers"));
             addLabelWithTooltip(
-                    new SimpleLabel(font, actualWidth / 2 - 120, 168, SimpleLabel.Align.Left,
+                    new SimpleLabel(font, actualWidth / 2 - 120, 204, SimpleLabel.Align.Left,
                             Config.getTranslatedName("hideNamesThatDontFit"), ColorConstants.TEXT),
                     Config.getTooltip("hideNamesThatDontFit"));
             addLabelWithTooltip(
-                    new SimpleLabel(font, actualWidth / 2 - 120, 184, SimpleLabel.Align.Left,
+                    new SimpleLabel(font, actualWidth / 2 - 120, 220, SimpleLabel.Align.Left,
                             Config.getTranslatedName("polygonsOpacity"), ColorConstants.TEXT),
                     Config.getTooltip("polygonsOpacity"));
             addLabelWithTooltip(
-                    new SimpleLabel(font, actualWidth / 2 - 120, 200, SimpleLabel.Align.Left,
+                    new SimpleLabel(font, actualWidth / 2 - 120, 236, SimpleLabel.Align.Left,
                             Config.getTranslatedName("snapDistance"), ColorConstants.TEXT),
                     Config.getTooltip("snapDistance"));
-            labels.add(new SimpleLabel(font, actualWidth / 2, 234, SimpleLabel.Align.Center,
+            labels.add(new SimpleLabel(font, actualWidth / 2, 270, SimpleLabel.Align.Center,
                     Component.translatable("mapfrontiers.hud"), ColorConstants.TEXT_HIGHLIGHT));
             addLabelWithTooltip(
-                    new SimpleLabel(font, actualWidth / 2 - 120, 254, SimpleLabel.Align.Left,
+                    new SimpleLabel(font, actualWidth / 2 - 120, 290, SimpleLabel.Align.Left,
                             Config.getTranslatedName("hud.enabled"), ColorConstants.TEXT),
                     Config.getTooltip("hud.enabled"));
         } else if (tabSelected == Tab.Groups) {
@@ -721,6 +733,7 @@ public class ModSettings extends Screen {
         buttonWeb.visible = tabSelected == Tab.Credits;
         buttonProject.visible = tabSelected == Tab.Credits;
         buttonPatreon.visible = tabSelected == Tab.Credits;
+        buttonFullscreenButtons.visible = tabSelected == Tab.General;
         buttonFullscreenVisibility.visible = tabSelected == Tab.General;
         buttonFullscreenNameVisibility.visible = tabSelected == Tab.General;
         buttonFullscreenOwnerVisibility.visible = tabSelected == Tab.General;

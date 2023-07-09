@@ -79,7 +79,7 @@
   "mapfrontiers.groups": "分组设置",
   "mapfrontiers.actions": "操作权限",
   "mapfrontiers.credits_created_by": "本模组由 Alejandro Coria (MemeSapiens) 制作",
-  "mapfrontiers.credits_many_thanks": "特别感谢 Mojang 工作室，%1$s 和旅行地图。",
+  "mapfrontiers.credits_many_thanks": "特别感谢 Mojang 工作室，Forge 和旅行地图。",
   "mapfrontiers.credits_project": "关注模组进展：",
   "mapfrontiers.credits_patreon": "如果你喜欢本模组，请考虑赞助我们！",
   "mapfrontiers.credits_translation": "汉化翻译：dlfnn",
@@ -109,6 +109,7 @@
   "mapfrontiers.group_everyone_desc": "本分组代表全部玩家。",
   "mapfrontiers.unnamed": "%1$s未命名",
 
+  "mapfrontiers.config.fullscreenButtons": "Fullscreen map buttons",
   "mapfrontiers.config.fullscreenVisibility": "Fullscreen map visibility",
   "mapfrontiers.config.fullscreenNameVisibility": "Name visibility",
   "mapfrontiers.config.fullscreenOwnerVisibility": "Owner visibility",
@@ -130,6 +131,7 @@
   "mapfrontiers.config.hud.anchor": "锚点",
   "mapfrontiers.config.hud.position": "位置",
 
+  "mapfrontiers.config.fullscreenButtons.tooltip": "Show mod buttons on fullscreen map.",
   "mapfrontiers.config.fullscreenVisibility.tooltip": "Force all frontier to be shown or hidden on the fullscreen map.\nIn Custom you can decide for each frontier.",
   "mapfrontiers.config.fullscreenNameVisibility.tooltip": "Force all frontier names to be shown or hidden on the fullscreen map.\nIn Custom you can decide for each frontier.",
   "mapfrontiers.config.fullscreenOwnerVisibility.tooltip": "Force all frontier owners to be shown or hidden on the fullscreen map.\nIn Custom you can decide for each frontier.",
@@ -183,7 +185,6 @@
 
   "mapfrontiers.key.category": "领域地图",
   "mapfrontiers.key.open_settings": "开启设置",
-  "mapfrontiers.key.open_settings.hint": "Puedes usar [%1$s] para abrir esta pantalla durante el juego",
 
   "mapfrontiers.chat.entering": "您已进入%1$s",
   "mapfrontiers.chat.leaving": "您已离开%1$s"

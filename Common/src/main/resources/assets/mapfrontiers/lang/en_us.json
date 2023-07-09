@@ -79,7 +79,7 @@
   "mapfrontiers.groups": "Groups",
   "mapfrontiers.actions": "Actions",
   "mapfrontiers.credits_created_by": "Created by Alejandro Coria (MemeSapiens)",
-  "mapfrontiers.credits_many_thanks": "Many thanks to Mojang Studios, %1$s and JourneyMap.",
+  "mapfrontiers.credits_many_thanks": "Many thanks to Mojang Studios, Forge and JourneyMap.",
   "mapfrontiers.credits_project": "Follow the project in",
   "mapfrontiers.credits_patreon": "If you like the mod please consider becoming a Patron",
   "mapfrontiers.credits_translation": "",
@@ -109,6 +109,7 @@
   "mapfrontiers.group_everyone_desc": "This group represents all players without exception.",
   "mapfrontiers.unnamed": "%1$sUnnamed",
 
+  "mapfrontiers.config.fullscreenButtons": "Fullscreen map buttons",
   "mapfrontiers.config.fullscreenVisibility": "Fullscreen map visibility",
   "mapfrontiers.config.fullscreenNameVisibility": "Name visibility",
   "mapfrontiers.config.fullscreenOwnerVisibility": "Owner visibility",
@@ -130,6 +131,7 @@
   "mapfrontiers.config.hud.anchor": "Anchor",
   "mapfrontiers.config.hud.position": "Position",
 
+  "mapfrontiers.config.fullscreenButtons.tooltip": "Show mod buttons on fullscreen map.",
   "mapfrontiers.config.fullscreenVisibility.tooltip": "Force all frontier to be shown or hidden on the fullscreen map.\nIn Custom you can decide for each frontier.",
   "mapfrontiers.config.fullscreenNameVisibility.tooltip": "Force all frontier names to be shown or hidden on the fullscreen map.\nIn Custom you can decide for each frontier.",
   "mapfrontiers.config.fullscreenOwnerVisibility.tooltip": "Force all frontier owners to be shown or hidden on the fullscreen map.\nIn Custom you can decide for each frontier.",
@@ -183,7 +185,6 @@
 
   "mapfrontiers.key.category": "MapFrontiers",
   "mapfrontiers.key.open_settings": "Open settings",
-  "mapfrontiers.key.open_settings.hint": "You can use [%1$s] to open this screen during gameplay",
 
   "mapfrontiers.chat.entering": "Entering %1$s",
   "mapfrontiers.chat.leaving": "Leaving %1$s"

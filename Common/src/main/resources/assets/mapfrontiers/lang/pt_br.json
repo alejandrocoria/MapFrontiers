@@ -79,7 +79,7 @@
     "mapfrontiers.groups": "Grupos",
     "mapfrontiers.actions": "Ações",
     "mapfrontiers.credits_created_by": "Criado por Alejandro Coria (MemeSapiens)",
-    "mapfrontiers.credits_many_thanks": "Muito obrigado a Mojang Studios, %1$s e Journey Map.",
+    "mapfrontiers.credits_many_thanks": "Muito obrigado a Mojang Studios, Forge e Journey Map.",
     "mapfrontiers.credits_project": "Acompanhe o projeto em",
     "mapfrontiers.credits_patreon": "Se você gosta do mod, considere se tornar um patrono",
     "mapfrontiers.credits_translation": "Traduzido por ITFCF",
@@ -109,6 +109,7 @@
     "mapfrontiers.group_everyone_desc": "Este grupo representa todos os jogadores sem exceção.",
     "mapfrontiers.unnamed": "%1$sSem nome",
 
+    "mapfrontiers.config.fullscreenButtons": "Botões de mapa em tela cheia",
     "mapfrontiers.config.fullscreenVisibility": "Visibilidade mapa de tela cheia",
     "mapfrontiers.config.fullscreenNameVisibility": "Visibilidade do nome",
     "mapfrontiers.config.fullscreenOwnerVisibility": "Visibilidade do dono",
@@ -130,6 +131,7 @@
     "mapfrontiers.config.hud.anchor": "Âncora",
     "mapfrontiers.config.hud.position": "Posição",
 
+    "mapfrontiers.config.fullscreenButtons.tooltip": "Mostrar botões mod no mapa em tela cheia.",
     "mapfrontiers.config.fullscreenVisibility.tooltip": "Força todas as fronteira a serem mostradas ou ocultadas no mapa em tela cheia.\nNo Personalizado você pode decidir para cada fronteira.",
     "mapfrontiers.config.fullscreenNameVisibility.tooltip": "Força todos os nomes de fronteira a serem mostrados ou ocultos no mapa em tela cheia.\nNo Personalizado você pode decidir para cada fronteira.",
     "mapfrontiers.config.fullscreenOwnerVisibility.tooltip": "Força todos os dono de fronteira a mostrar ou ocultar no mapa em tela cheia.\nNo Personalizado você pode decidir para cada fronteira.",
@@ -183,7 +185,6 @@
 
     "mapfrontiers.key.category": "MapFrontiers",
     "mapfrontiers.key.open_settings": "Abrir configurações",
-    "mapfrontiers.key.open_settings.hint": "Você pode usar [%1$s] para abrir esta tela durante o jogo",
 
     "mapfrontiers.chat.entering": "Entrando %1$s",
     "mapfrontiers.chat.leaving": "Saindo %1$s"

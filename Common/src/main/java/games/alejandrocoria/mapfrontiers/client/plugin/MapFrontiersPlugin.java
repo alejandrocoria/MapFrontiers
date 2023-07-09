@@ -4,6 +4,7 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.FullscreenMap;
+import games.alejandrocoria.mapfrontiers.common.Config;
 import journeymap.client.api.IClientAPI;
 import journeymap.client.api.IClientPlugin;
 import journeymap.client.api.display.Context;
@@ -29,6 +30,10 @@ public class MapFrontiersPlugin implements IClientPlugin {
                 ClientEvent.Type.DISPLAY_UPDATE));
 
         ClientEventHandler.subscribeAddonButtonDisplayEvent(MapFrontiersPlugin.class, buttonDisplay -> {
+            if (!Config.fullscreenButtons) {
+                return;
+            }
+
             if (fullscreenMap == null) {
                 fullscreenMap = new FullscreenMap(jmAPI);
             }
@@ -37,6 +42,10 @@ public class MapFrontiersPlugin implements IClientPlugin {
         });
 
         ClientEventHandler.subscribeFullscreenPopupMenuEvent(MapFrontiersPlugin.class, popupMenu -> {
+            if (!Config.fullscreenButtons) {
+                return;
+            }
+
             if (fullscreenMap != null) {
                 fullscreenMap.addPopupMenu(popupMenu);
             }
@@ -50,6 +59,10 @@ public class MapFrontiersPlugin implements IClientPlugin {
 
     @Override
     public void onEvent(ClientEvent event) {
+        if (!Config.fullscreenButtons) {
+            return;
+        }
+
         if (fullscreenMap == null) {
             return;
         }
@@ -99,6 +112,10 @@ public class MapFrontiersPlugin implements IClientPlugin {
     }
 
     public static boolean isEditing() {
+        if (!Config.fullscreenButtons) {
+            return false;
+        }
+
         return fullscreenMap != null && (fullscreenMap.isEditingVertices() || fullscreenMap.isEditingChunks());
     }
 }
