@@ -21,11 +21,12 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
     implementation group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.1'
 
-    modApi group: 'info.journeymap', name: 'journeymap-api', version: project.journeymap_api_fabric_version, changing: true
-    modImplementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_fabric_file_id}"
-    include(modImplementation "mysticdrew:common-networking-fabric:${project.common_networking_version}")
+    modImplementation group: 'mysticdrew', name: 'common-networking-fabric', version: project.common_networking_version, changing: true
+    modApi include(group: 'mysticdrew', name: 'common-networking-fabric', version: project.common_networking_version, changing: true)
     modApi "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${forge_config_api_port_version}"
     modImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
+    modApi group: 'info.journeymap', name: 'journeymap-api', version: project.journeymap_api_fabric_version, changing: true
+    modImplementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_fabric_file_id}"
 
     implementation project(":Common")
 }
