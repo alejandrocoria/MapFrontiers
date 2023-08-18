@@ -79,7 +79,7 @@
   "mapfrontiers.groups": "分组设置",
   "mapfrontiers.actions": "操作权限",
   "mapfrontiers.credits_created_by": "本模组由 Alejandro Coria (MemeSapiens) 制作",
-  "mapfrontiers.credits_many_thanks": "特别感谢 Mojang 工作室，Forge 和旅行地图。",
+  "mapfrontiers.credits_many_thanks": "特别感谢 Mojang 工作室，%1$s 和旅行地图。",
   "mapfrontiers.credits_project": "关注模组进展：",
   "mapfrontiers.credits_patreon": "如果你喜欢本模组，请考虑赞助我们！",
   "mapfrontiers.credits_translation": "汉化翻译：dlfnn",
@@ -185,6 +185,7 @@
 
   "mapfrontiers.key.category": "领域地图",
   "mapfrontiers.key.open_settings": "开启设置",
+  "mapfrontiers.key.open_settings.hint": "Puedes usar [%1$s] para abrir esta pantalla durante el juego",
 
   "mapfrontiers.chat.entering": "您已进入%1$s",
   "mapfrontiers.chat.leaving": "您已离开%1$s"

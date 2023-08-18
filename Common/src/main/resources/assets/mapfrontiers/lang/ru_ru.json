@@ -81,7 +81,7 @@
   "mapfrontiers.groups": "Группы",
   "mapfrontiers.actions": "Действия",
   "mapfrontiers.credits_created_by": "Мод создан Alejandro Coria (MemeSapiens)",
-  "mapfrontiers.credits_many_thanks": "Большое спасибо Mojang Studios, Forge и JourneyMap.",
+  "mapfrontiers.credits_many_thanks": "Большое спасибо Mojang Studios, %1$s и JourneyMap.",
   "mapfrontiers.credits_project": "Следите за проектом в",
   "mapfrontiers.credits_patreon": "Если вам понравился мод, пожалуйста, подумайте о том, чтобы стать Патроном",
   "mapfrontiers.credits_translation": "Переведено Articuno (https://pixelmon.pro)",
@@ -187,6 +187,7 @@
 
   "mapfrontiers.key.category": "Карта Территорий",
   "mapfrontiers.key.open_settings": "Открыть настройки",
+  "mapfrontiers.key.open_settings.hint": "You can use [%1$s] to open this screen during gameplay",
 
   "mapfrontiers.chat.entering": "Entering %1$s",
   "mapfrontiers.chat.leaving": "Leaving %1$s"

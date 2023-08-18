@@ -79,7 +79,7 @@
   "mapfrontiers.groups": "Grupos",
   "mapfrontiers.actions": "Acciones",
   "mapfrontiers.credits_created_by": "Creado por Alejandro Coria (MemeSapiens)",
-  "mapfrontiers.credits_many_thanks": "Muchas gracias a Mojang Studios, Forge y JourneyMap.",
+  "mapfrontiers.credits_many_thanks": "Muchas gracias a Mojang Studios, %1$s y JourneyMap.",
   "mapfrontiers.credits_project": "Seguí el proyecto en",
   "mapfrontiers.credits_patreon": "Si te gusta el mod por favor conciderá convertirte en Patron.",
   "mapfrontiers.credits_translation": "",
@@ -185,6 +185,7 @@
 
   "mapfrontiers.key.category": "MapFrontiers",
   "mapfrontiers.key.open_settings": "Abrir opciones",
+  "mapfrontiers.key.open_settings.hint": "Podés usar [%1$s] para abrir esta pantalla durante el juego",
 
   "mapfrontiers.chat.entering": "Entrando a %1$s",
   "mapfrontiers.chat.leaving": "Saliendo de %1$s"
