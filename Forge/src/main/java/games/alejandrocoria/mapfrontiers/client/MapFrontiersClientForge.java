@@ -17,6 +17,8 @@ import net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingIn;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingOut;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.client.event.RenderGuiOverlayEvent;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
@@ -61,6 +63,13 @@ public class MapFrontiersClientForge extends MapFrontiersClient {
     public static void onRenderTick(TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
             ClientEventHandler.postClientTickEvent(Minecraft.getInstance());
+        }
+    }
+
+    @SubscribeEvent
+    public static void RenderGameOverlayEvent(RenderGuiOverlayEvent.Pre event) {
+        if (event.getOverlay().id().equals(VanillaGuiOverlay.POTION_ICONS.id())) {
+            ClientEventHandler.postHudRenderEvent(event.getGuiGraphics(), event.getPartialTick());
         }
     }
 
