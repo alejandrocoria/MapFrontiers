@@ -26,7 +26,7 @@ public class MapFrontiersFabric extends MapFrontiers implements ModInitializer {
         ServerLifecycleEvents.SERVER_STARTED.register(EventHandler::postServerStartingEvent);
         ServerLifecycleEvents.SERVER_STOPPING.register(EventHandler::postServerStoppingEvent);
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> EventHandler.postPlayerJoinedEvent(server, handler.player));
-        ServerTickEvents.START_SERVER_TICK.register(server -> {});
+        ServerTickEvents.START_SERVER_TICK.register(EventHandler::postServerTickEvent);
 
         LOGGER.info("Fabric onInitialize done");
     }

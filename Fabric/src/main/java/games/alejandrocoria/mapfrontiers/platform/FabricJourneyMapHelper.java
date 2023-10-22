@@ -1,6 +1,5 @@
 package games.alejandrocoria.mapfrontiers.platform;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.common.util.ReflectionHelper;
 import games.alejandrocoria.mapfrontiers.platform.services.IJourneyMapHelper;
 import journeymap.client.data.WorldData;
