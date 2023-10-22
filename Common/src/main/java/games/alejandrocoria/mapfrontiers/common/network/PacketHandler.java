@@ -33,6 +33,7 @@ public class PacketHandler {
 
         // both
         Network.registerPacket(PacketFrontierSettings.CHANNEL, PacketFrontierSettings.class, PacketFrontierSettings::encode, PacketFrontierSettings::decode, PacketFrontierSettings::handle);
+        Network.registerPacket(PacketHandshake.CHANNEL, PacketHandshake.class, PacketHandshake::encode, PacketHandshake::decode, PacketHandshake::handle);
 
         MapFrontiers.LOGGER.info("PacketHandler init done");
     }

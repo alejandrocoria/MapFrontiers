@@ -8,6 +8,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.ModSettings;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
+import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import journeymap.client.api.IClientAPI;
 import net.minecraft.ChatFormatting;
@@ -26,6 +27,7 @@ import java.util.Set;
 @ParametersAreNonnullByDefault
 public class MapFrontiersClient {
     private static IClientAPI jmAPI;
+    private static boolean handshakeReceived = false;
     private static FrontiersOverlayManager frontiersOverlayManager;
     private static FrontiersOverlayManager personalFrontiersOverlayManager;
     private static SettingsProfile settingsProfile;
@@ -121,6 +123,10 @@ public class MapFrontiersClient {
             initializeManagers();
             hud = new HUD(frontiersOverlayManager, personalFrontiersOverlayManager);
 
+            if (!handshakeReceived) {
+                PacketHandler.sendToServer(new PacketHandshake());
+            }
+
             MapFrontiers.LOGGER.info("ClientConnectedEvent done");
         });
 
@@ -137,6 +143,7 @@ public class MapFrontiersClient {
             }
 
             settingsProfile = null;
+            handshakeReceived = false;
 
             MapFrontiers.LOGGER.info("ClientDisconnectedEvent done");
         });
@@ -165,6 +172,13 @@ public class MapFrontiersClient {
 
     public static void setjmAPI(IClientAPI newJmAPI) {
         jmAPI = newJmAPI;
+    }
+
+    public static void receiveHandshake() {
+        if (settingsProfile == null) {
+            handshakeReceived = true;
+            PacketHandler.sendToServer(new PacketHandshake());
+        }
     }
 
     private static void initializeManagers() {
@@ -218,7 +232,7 @@ public class MapFrontiersClient {
     }
 
     public static boolean isModOnServer() {
-        return settingsProfile != null;
+        return handshakeReceived;
     }
 
     public static void setClipboard(FrontierData newClipboard) {
