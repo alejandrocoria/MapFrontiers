@@ -195,7 +195,7 @@ public class FrontierList extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(graphics);
+        renderBackground(graphics, mouseX, mouseY, partialTicks);
 
         mouseX *= scaleFactor;
         mouseY *= scaleFactor;
@@ -239,8 +239,8 @@ public class FrontierList extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        return super.mouseScrolled(mouseX * scaleFactor, mouseY * scaleFactor, delta);
+    public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
+        return super.mouseScrolled(mouseX * scaleFactor, mouseY * scaleFactor, hDelta, vDelta);
     }
 
     @Override

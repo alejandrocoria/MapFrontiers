@@ -54,9 +54,9 @@ public class OptionButton extends Button {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
         if (visible && isHovered) {
-            if (delta > 0) {
+            if (vDelta > 0) {
                 ++selected;
                 if (selected >= options.size()) {
                     selected = 0;

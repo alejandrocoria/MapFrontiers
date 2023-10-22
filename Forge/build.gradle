@@ -74,7 +74,7 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
     implementation fg.deobf(group: 'mysticdrew', name: 'common-networking-forge', version: project.common_networking_version)
-    jarJar (group: 'mysticdrew', name: 'common-networking-forge', version: '[1.0.1, 5.0.0)') {
+    jarJar (group: 'mysticdrew', name: 'common-networking-forge', version: project.common_networking_jarjar_version) {
         jarJar.pin(it, project.common_networking_version)
     }
     implementation fg.deobf("curse.maven:journeymap-${project.jm_project_id}:${project.jm_forge_file_id}")

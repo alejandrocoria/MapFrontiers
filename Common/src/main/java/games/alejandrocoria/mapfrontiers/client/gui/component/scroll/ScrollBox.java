@@ -135,9 +135,9 @@ public class ScrollBox extends AbstractWidgetNoNarration {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
         if (visible && (isHovered || scrollBarHovered) && !scrollBarGrabbed) {
-            int amount = (int) -delta;
+            int amount = (int) -vDelta;
             if (amount < 0 && scrollStart == 0) {
                 return false;
             } else if (amount > 0 && scrollStart + scrollHeight >= elements.size()) {
@@ -189,9 +189,9 @@ public class ScrollBox extends AbstractWidgetNoNarration {
         if (visible) {
             if (scrollBarHeight > 0 && mouseX >= getX() + width + 5 && mouseY >= getY() && mouseX < getX() + width + 15 && mouseY < getY() + height) {
                 if (mouseY < getY() + scrollBarPos) {
-                    mouseScrolled(mouseX, mouseY, 1);
+                    mouseScrolled(mouseX, mouseY, 0, 1);
                 } else if (mouseY > getY() + scrollBarPos + scrollBarHeight) {
-                    mouseScrolled(mouseX, mouseY, -1);
+                    mouseScrolled(mouseX, mouseY, 0, -1);
                 } else {
                     scrollBarGrabbed = true;
                     scrollBarGrabbedYPos = (int) mouseY - getY() - scrollBarPos;

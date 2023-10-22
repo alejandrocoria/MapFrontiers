@@ -78,8 +78,8 @@ public class TextBoxInt extends EditBox {
                 } catch (Exception e) {
                     return true;
                 } finally {
-                    moveCursorToStart();
-                    moveCursorToEnd();
+                    moveCursorToStart(false);
+                    moveCursorToEnd(false);
                 }
 
                 if (valueChangedCallback != null) {
@@ -110,7 +110,7 @@ public class TextBoxInt extends EditBox {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
         if (visible && isHovered) {
             int current;
             try {
@@ -119,10 +119,10 @@ public class TextBoxInt extends EditBox {
                 current = defaultValue;
             }
 
-            if (delta > 0 && current < max) {
+            if (vDelta > 0 && current < max) {
                 playDownSound(Minecraft.getInstance().getSoundManager());
                 setValue(++current);
-            } else if (delta < 0 && current > min) {
+            } else if (vDelta < 0 && current > min) {
                 playDownSound(Minecraft.getInstance().getSoundManager());
                 setValue(--current);
             }

@@ -434,17 +434,8 @@ public class FrontierInfo extends Screen {
     }
 
     @Override
-    public void tick() {
-        textName1.tick();
-        textName2.tick();
-        textRed.tick();
-        textGreen.tick();
-        textBlue.tick();
-    }
-
-    @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(graphics);
+        renderBackground(graphics, mouseX, mouseY, partialTicks);
 
         mouseX *= scaleFactor;
         mouseY *= scaleFactor;
@@ -522,8 +513,8 @@ public class FrontierInfo extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        return super.mouseScrolled(mouseX * scaleFactor, mouseY * scaleFactor, delta);
+    public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
+        return super.mouseScrolled(mouseX * scaleFactor, mouseY * scaleFactor, hDelta, vDelta);
     }
 
     @Override

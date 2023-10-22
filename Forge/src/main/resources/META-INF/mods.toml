@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[46,)"
+loaderVersion="[48,)"
 license="${mod_license}"
 issueTrackerURL="${mod_issues}"
 
@@ -17,7 +17,7 @@ issueTrackerURL="${mod_issues}"
 [[dependencies.${mod_id}]]
     modId="forge"
     mandatory=true
-    versionRange="[46,)"
+    versionRange="[48,)"
     ordering="NONE"
     side="BOTH"
 
@@ -31,6 +31,6 @@ issueTrackerURL="${mod_issues}"
 [[dependencies.${mod_id}]]
     modId="journeymap"
     mandatory=true
-    versionRange="[1.20.1-5.9.15,)"
+    versionRange="[1.20.2-5.9.15,)"
     ordering="NONE"
     side="BOTH"
