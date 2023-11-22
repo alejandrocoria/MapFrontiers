@@ -30,10 +30,10 @@ public class PacketHandler {
         Network.registerPacket(PacketSharePersonalFrontier.CHANNEL, PacketSharePersonalFrontier.class, PacketSharePersonalFrontier::encode, PacketSharePersonalFrontier::decode, PacketSharePersonalFrontier::handle);
         Network.registerPacket(PacketRemoveSharedUserPersonalFrontier.CHANNEL, PacketRemoveSharedUserPersonalFrontier.class, PacketRemoveSharedUserPersonalFrontier::encode, PacketRemoveSharedUserPersonalFrontier::decode, PacketRemoveSharedUserPersonalFrontier::handle);
         Network.registerPacket(PacketUpdateSharedUserPersonalFrontier.CHANNEL, PacketUpdateSharedUserPersonalFrontier.class, PacketUpdateSharedUserPersonalFrontier::encode, PacketUpdateSharedUserPersonalFrontier::decode, PacketUpdateSharedUserPersonalFrontier::handle);
+        Network.registerPacket(PacketHandshake.CHANNEL, PacketHandshake.class, PacketHandshake::encode, PacketHandshake::decode, PacketHandshake::handle);
 
         // both
         Network.registerPacket(PacketFrontierSettings.CHANNEL, PacketFrontierSettings.class, PacketFrontierSettings::encode, PacketFrontierSettings::decode, PacketFrontierSettings::handle);
-        Network.registerPacket(PacketHandshake.CHANNEL, PacketHandshake.class, PacketHandshake::encode, PacketHandshake::decode, PacketHandshake::handle);
 
         MapFrontiers.LOGGER.info("PacketHandler init done");
     }

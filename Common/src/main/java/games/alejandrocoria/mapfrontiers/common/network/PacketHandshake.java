@@ -3,7 +3,6 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -41,8 +40,6 @@ public class PacketHandshake {
                 return;
             }
             MapFrontiers.ReceiveHandshake(player);
-        } else if (Side.CLIENT.equals(ctx.side())) {
-            MapFrontiersClient.receiveHandshake();
         }
     }
 }
