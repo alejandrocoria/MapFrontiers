@@ -6,7 +6,6 @@ import games.alejandrocoria.mapfrontiers.common.command.CommandAccept;
 import games.alejandrocoria.mapfrontiers.common.event.EventHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontiers;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
-import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.server.MinecraftServer;
@@ -58,37 +57,24 @@ public class MapFrontiers {
             }
 
             frontiersManager.ensureOwners(server);
-            playerJoined(player);
 
             LOGGER.info("PlayerJoinedEvent done (" + player.getStringUUID() + ")");
         });
     }
 
     public static void ReceiveHandshake(ServerPlayer player) {
-        playerJoined(player);
-    }
+        PacketHandler.sendTo(new PacketSettingsProfile(frontiersManager.getSettings().getProfile(player)), player);
 
-    private static void playerJoined(ServerPlayer player) {
-        if (pendingJoinedPlayers.contains(player)) {
-            PacketHandler.sendTo(new PacketSettingsProfile(frontiersManager.getSettings().getProfile(player)), player);
-
-            PacketFrontiers packetFrontiers = new PacketFrontiers();
-            for (ArrayList<FrontierData> frontiers : frontiersManager.getAllGlobalFrontiers().values()) {
-                packetFrontiers.addGlobalFrontiers(frontiers);
-            }
-
-            for (ArrayList<FrontierData> frontiers : frontiersManager.getAllPersonalFrontiers(new SettingsUser(player)).values()) {
-                packetFrontiers.addPersonalFrontiers(frontiers);
-            }
-
-            PacketHandler.sendTo(packetFrontiers, player);
-            pendingJoinedPlayers.remove(player);
-
-            LOGGER.info("First packages sent to the joined player (" + player.getStringUUID() + ")");
-        } else {
-            pendingJoinedPlayers.add(player);
-            PacketHandler.sendTo(new PacketHandshake(), player);
+        PacketFrontiers packetFrontiers = new PacketFrontiers();
+        for (ArrayList<FrontierData> frontiers : frontiersManager.getAllGlobalFrontiers().values()) {
+            packetFrontiers.addGlobalFrontiers(frontiers);
         }
+
+        for (ArrayList<FrontierData> frontiers : frontiersManager.getAllPersonalFrontiers(new SettingsUser(player)).values()) {
+            packetFrontiers.addPersonalFrontiers(frontiers);
+        }
+
+        PacketHandler.sendTo(packetFrontiers, player);
     }
 
     public static boolean isOPorHost(ServerPlayer player) {
