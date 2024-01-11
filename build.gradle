@@ -1,3 +1,13 @@
+plugins {
+    // Required for NeoGradle
+    id "org.jetbrains.gradle.plugin.idea-ext" version "1.1.7"
+}
+
+configurations.all {
+    // Check for snapshots more frequently than Gradle's default of 1 day. 0 = every build.
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
 subprojects {
     apply plugin: 'java'
 
@@ -21,6 +31,7 @@ subprojects {
     }
 
     repositories {
+        mavenLocal()
         mavenCentral()
 
         maven {
@@ -29,7 +40,7 @@ subprojects {
         }
 
         maven {
-            name = 'BlameJared Maven (CrT / Bookshelf)'
+            name = 'BlameJared Maven (JEI / CraftTweaker / Bookshelf)'
             url = 'https://maven.blamejared.com'
         }
 
@@ -45,10 +56,6 @@ subprojects {
         maven {
             name = "Fuzs Mod Resources"
             url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/"
-        }
-
-        maven {
-            url = "https://jm.gserv.me/repository/maven-public/"
         }
     }
 

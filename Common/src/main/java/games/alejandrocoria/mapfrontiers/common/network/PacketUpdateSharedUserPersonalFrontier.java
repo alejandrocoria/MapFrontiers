@@ -48,7 +48,7 @@ public class PacketUpdateSharedUserPersonalFrontier {
     public static void handle(PacketContext<PacketUpdateSharedUserPersonalFrontier> ctx) {
         if (Side.SERVER.equals(ctx.side())) {
             PacketUpdateSharedUserPersonalFrontier message = ctx.message();
-            ServerPlayer player = ctx.sender();
+            ServerPlayer player = (ServerPlayer) ctx.sender();
             if (player == null) {
                 return;
             }

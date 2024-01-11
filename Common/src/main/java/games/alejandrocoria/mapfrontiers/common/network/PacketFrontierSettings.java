@@ -44,7 +44,7 @@ public class PacketFrontierSettings {
     public static void handle(PacketContext<PacketFrontierSettings> ctx) {
         PacketFrontierSettings message = ctx.message();
         if (Side.SERVER.equals(ctx.side())) {
-            ServerPlayer player = ctx.sender();
+            ServerPlayer player = (ServerPlayer) ctx.sender();
             if (player == null) {
                 return;
             }
