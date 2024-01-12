@@ -1,12 +1,10 @@
 plugins {
     id "java-library"
     id "idea"
-    id "net.neoforged.gradle.userdev" version "[7.0.41,)"
-    id "net.neoforged.gradle.mixin" version "[7.0.41,)"
+    id "net.neoforged.gradle.userdev" version "[7.0.64,)"
 }
 
 version = "${project.version}"
-archivesBaseName = "${project.mod_name}-${project.minecraft_version}"
 jar.archiveClassifier = "neoforge"
 
 configurations {
