@@ -42,7 +42,7 @@ public class PacketUpdateFrontier {
     public static void handle(PacketContext<PacketUpdateFrontier> ctx) {
         if (Side.SERVER.equals(ctx.side())) {
             PacketUpdateFrontier message = ctx.message();
-            ServerPlayer player = ctx.sender();
+            ServerPlayer player = (ServerPlayer) ctx.sender();
             if (player == null) {
                 return;
             }

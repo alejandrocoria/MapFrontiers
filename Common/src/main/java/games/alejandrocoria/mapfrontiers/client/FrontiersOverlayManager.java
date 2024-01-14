@@ -22,6 +22,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceKey;
@@ -406,7 +407,7 @@ public class FrontiersOverlayManager {
         File f = new File(ModDir, filename);
         if (f.exists()) {
             try (FileInputStream inputStream = new FileInputStream(f)) {
-                return NbtIo.readCompressed(inputStream);
+                return NbtIo.readCompressed(inputStream, NbtAccounter.unlimitedHeap());
             } catch (Exception e) {
                 MapFrontiers.LOGGER.error(e.getMessage(), e);
             }

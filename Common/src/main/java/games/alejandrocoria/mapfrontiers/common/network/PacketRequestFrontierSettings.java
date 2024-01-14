@@ -37,7 +37,7 @@ public class PacketRequestFrontierSettings {
     public static void handle(PacketContext<PacketRequestFrontierSettings> ctx) {
         if (Side.SERVER.equals(ctx.side())) {
             PacketRequestFrontierSettings message = ctx.message();
-            ServerPlayer player = ctx.sender();
+            ServerPlayer player = (ServerPlayer) ctx.sender();
             if (player == null) {
                 return;
             }
