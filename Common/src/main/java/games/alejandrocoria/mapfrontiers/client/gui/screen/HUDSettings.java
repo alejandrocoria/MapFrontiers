@@ -1,7 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
 import com.mojang.blaze3d.platform.Window;
-import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.SimpleLabel;
@@ -16,6 +15,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Renderable;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
@@ -178,7 +179,11 @@ public class HUDSettings extends Screen {
 
         graphics.fill(width / 2 - 238, height / 2 - 40, width / 2 + 238, height / 2 + 60, ColorConstants.SCREEN_BG);
 
-        super.render(graphics, mouseX, mouseY, partialTicks);
+        // Rendering manually so the background is not drawn.
+        for(GuiEventListener child : children()) {
+            if (child instanceof Renderable renderable)
+                renderable.render(graphics, mouseX, mouseY, partialTicks);
+        }
 
         for (SimpleLabel label : labels) {
             if (label.visible) {
