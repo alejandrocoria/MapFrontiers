@@ -5,12 +5,8 @@ plugins {
 
 version = "${project.version}"
 archivesBaseName = "${project.mod_name}-${project.minecraft_version}"
-jar.archiveClassifier = "forge"
-
-configurations {
-    library
-    implementation.extendsFrom library
-}
+// The jarJar task doesn't work if they both have the same classifier for some reason.
+//jar.archiveClassifier = "forge"
 
 configurations.all {
     // Check for snapshots more frequently than Gradle's default of 1 day. 0 = every build.
@@ -92,13 +88,7 @@ dependencies {
     compileOnly project(":Common")
 }
 
-minecraft.runs.all {
-    lazyToken('minecraft_classpath') {
-        configurations.library.copyRecursive().resolve().collect { it.absolutePath }.join(File.pathSeparator)
-    }
-}
-
-tasks.withType(JavaCompile) {
+tasks.withType(JavaCompile).configureEach {
     source(project(":Common").sourceSets.main.allSource)
 }
 
@@ -120,6 +110,10 @@ sourceSets.each {
     def dir = layout.buildDirectory.dir("sourcesSets/$it.name")
     it.output.resourcesDir = dir
     it.java.destinationDirectory = dir
+}
+
+reobf {
+    jarJar {}
 }
 
 jar.finalizedBy('reobfJar')
