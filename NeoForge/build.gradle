@@ -5,12 +5,9 @@ plugins {
 }
 
 version = "${project.version}"
-jar.archiveClassifier = "neoforge"
-
-configurations {
-    library
-    implementation.extendsFrom library
-}
+archivesBaseName = "${project.mod_name}-${project.minecraft_version}"
+// The jarJar task doesn't work if they both have the same classifier for some reason.
+//jar.archiveClassifier = "neoforge"
 
 configurations.all {
     // Check for snapshots more frequently than Gradle"s default of 1 day. 0 = every build.
@@ -20,10 +17,6 @@ configurations.all {
 jarJar.enable()
 tasks.jarJar.configure {
     archiveClassifier.set("neoforge")
-}
-
-tasks.named("build").configure {
-    dependsOn("jarJar")
 }
 
 sourceSets.main.resources { srcDir "src/generated/resources" }

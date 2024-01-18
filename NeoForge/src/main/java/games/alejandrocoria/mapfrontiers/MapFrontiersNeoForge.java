@@ -24,7 +24,7 @@ import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 @Mod(MapFrontiersNeoForge.MODID)
 public class MapFrontiersNeoForge extends MapFrontiers {
     public MapFrontiersNeoForge() {
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, (IConfigSpec<?>) Config.CLIENT_SPEC);
+        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, Config.CLIENT_SPEC);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(MapFrontiersNeoForge::commonSetup);
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> MapFrontiersNeoForge::addListenerClientSetup);
     }
