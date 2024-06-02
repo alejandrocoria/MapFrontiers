@@ -31,12 +31,24 @@ public class PacketUpdateFrontier {
 
     public static PacketUpdateFrontier decode(FriendlyByteBuf buf) {
         PacketUpdateFrontier packet = new PacketUpdateFrontier();
-        packet.frontier.fromBytes(buf);
+
+        try {
+            if (buf.readableBytes() > 1) {
+                packet.frontier.fromBytes(buf);
+            }
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketUpdateFrontier: %s", t));
+        }
+
         return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {
-        frontier.toBytes(buf);
+        try {
+            frontier.toBytes(buf);
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketUpdateFrontier: %s", t));
+        }
     }
 
     public static void handle(PacketContext<PacketUpdateFrontier> ctx) {

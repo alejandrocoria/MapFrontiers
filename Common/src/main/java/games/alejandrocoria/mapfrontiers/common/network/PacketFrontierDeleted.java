@@ -37,18 +37,30 @@ public class PacketFrontierDeleted {
 
     public static PacketFrontierDeleted decode(FriendlyByteBuf buf) {
         PacketFrontierDeleted packet = new PacketFrontierDeleted();
-        packet.dimension = ResourceKey.create(Registries.DIMENSION, buf.readResourceLocation());
-        packet.frontierID = UUIDHelper.fromBytes(buf);
-        packet.personal = buf.readBoolean();
-        packet.playerID = buf.readInt();
+
+        try {
+            if (buf.readableBytes() > 1) {
+                packet.dimension = ResourceKey.create(Registries.DIMENSION, buf.readResourceLocation());
+                packet.frontierID = UUIDHelper.fromBytes(buf);
+                packet.personal = buf.readBoolean();
+                packet.playerID = buf.readInt();
+            }
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketFrontierDeleted: %s", t));
+        }
+
         return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {
-        buf.writeResourceLocation(dimension.location());
-        UUIDHelper.toBytes(buf, frontierID);
-        buf.writeBoolean(personal);
-        buf.writeInt(playerID);
+        try {
+            buf.writeResourceLocation(dimension.location());
+            UUIDHelper.toBytes(buf, frontierID);
+            buf.writeBoolean(personal);
+            buf.writeInt(playerID);
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketFrontierDeleted: %s", t));
+        }
     }
 
     public static void handle(PacketContext<PacketFrontierDeleted> ctx) {

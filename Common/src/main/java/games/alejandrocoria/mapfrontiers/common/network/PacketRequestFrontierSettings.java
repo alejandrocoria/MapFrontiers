@@ -16,7 +16,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 public class PacketRequestFrontierSettings {
     public static final ResourceLocation CHANNEL = new ResourceLocation(MapFrontiers.MODID, "packet_request_frontier_settings");
 
-    private final int changeCounter;
+    private int changeCounter;
 
     public PacketRequestFrontierSettings() {
         changeCounter = 0;
@@ -27,11 +27,25 @@ public class PacketRequestFrontierSettings {
     }
 
     public static PacketRequestFrontierSettings decode(FriendlyByteBuf buf) {
-        return new PacketRequestFrontierSettings(buf.readInt());
+        PacketRequestFrontierSettings packet = new PacketRequestFrontierSettings();
+
+        try {
+            if (buf.readableBytes() > 1) {
+                packet.changeCounter = buf.readInt();
+            }
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketRequestFrontierSettings: %s", t));
+        }
+
+        return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {
-        buf.writeInt(changeCounter);
+        try {
+            buf.writeInt(changeCounter);
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketRequestFrontierSettings: %s", t));
+        }
     }
 
     public static void handle(PacketContext<PacketRequestFrontierSettings> ctx) {

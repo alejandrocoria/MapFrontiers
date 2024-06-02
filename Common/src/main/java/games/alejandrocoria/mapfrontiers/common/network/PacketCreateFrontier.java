@@ -43,50 +43,62 @@ public class PacketCreateFrontier {
 
     public static PacketCreateFrontier decode(FriendlyByteBuf buf) {
         PacketCreateFrontier packet = new PacketCreateFrontier();
-        packet.dimension = ResourceKey.create(Registries.DIMENSION, buf.readResourceLocation());
-        packet.personal = buf.readBoolean();
 
-        boolean hasVertex = buf.readBoolean();
-        if (hasVertex) {
-            packet.vertices = new ArrayList<>();
-            int vertexCount = buf.readInt();
-            for (int i = 0; i < vertexCount; ++i) {
-                BlockPos vertex = BlockPos.of(buf.readLong());
-                packet.vertices.add(vertex);
+        try {
+            if (buf.readableBytes() > 1) {
+                packet.dimension = ResourceKey.create(Registries.DIMENSION, buf.readResourceLocation());
+                packet.personal = buf.readBoolean();
+
+                boolean hasVertex = buf.readBoolean();
+                if (hasVertex) {
+                    packet.vertices = new ArrayList<>();
+                    int vertexCount = buf.readInt();
+                    for (int i = 0; i < vertexCount; ++i) {
+                        BlockPos vertex = BlockPos.of(buf.readLong());
+                        packet.vertices.add(vertex);
+                    }
+                }
+
+                boolean hasChunks = buf.readBoolean();
+                if (hasChunks) {
+                    packet.chunks = new ArrayList<>();
+                    int chunksCount = buf.readInt();
+                    for (int i = 0; i < chunksCount; ++i) {
+                        ChunkPos chunk = new ChunkPos(buf.readLong());
+                        packet.chunks.add(chunk);
+                    }
+                }
             }
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketCreateFrontier: %s", t));
         }
 
-        boolean hasChunks = buf.readBoolean();
-        if (hasChunks) {
-            packet.chunks = new ArrayList<>();
-            int chunksCount = buf.readInt();
-            for (int i = 0; i < chunksCount; ++i) {
-                ChunkPos chunk = new ChunkPos(buf.readLong());
-                packet.chunks.add(chunk);
-            }
-        }
 
         return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {
-        buf.writeResourceLocation(dimension.location());
-        buf.writeBoolean(personal);
+        try {
+            buf.writeResourceLocation(dimension.location());
+            buf.writeBoolean(personal);
 
-        buf.writeBoolean(vertices != null);
-        if (vertices != null) {
-            buf.writeInt(vertices.size());
-            for (BlockPos pos : vertices) {
-                buf.writeLong(pos.asLong());
+            buf.writeBoolean(vertices != null);
+            if (vertices != null) {
+                buf.writeInt(vertices.size());
+                for (BlockPos pos : vertices) {
+                    buf.writeLong(pos.asLong());
+                }
             }
-        }
 
-        buf.writeBoolean(chunks != null);
-        if (chunks != null) {
-            buf.writeInt(chunks.size());
-            for (ChunkPos pos : chunks) {
-                buf.writeLong(pos.toLong());
+            buf.writeBoolean(chunks != null);
+            if (chunks != null) {
+                buf.writeInt(chunks.size());
+                for (ChunkPos pos : chunks) {
+                    buf.writeLong(pos.toLong());
+                }
             }
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketCreateFrontier: %s", t));
         }
     }
 

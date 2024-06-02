@@ -43,32 +43,42 @@ public class PacketFrontiers {
     public static PacketFrontiers decode(FriendlyByteBuf buf) {
         PacketFrontiers packet = new PacketFrontiers();
 
-        int size = buf.readInt();
-        for (int i = 0; i < size; ++i) {
-            FrontierData frontier = new FrontierData();
-            frontier.fromBytes(buf);
-            packet.addGlobalFrontier(frontier);
-        }
+        try {
+            if (buf.readableBytes() > 1) {
+                int size = buf.readInt();
+                for (int i = 0; i < size; ++i) {
+                    FrontierData frontier = new FrontierData();
+                    frontier.fromBytes(buf);
+                    packet.addGlobalFrontier(frontier);
+                }
 
-        size = buf.readInt();
-        for (int i = 0; i < size; ++i) {
-            FrontierData frontier = new FrontierData();
-            frontier.fromBytes(buf);
-            packet.addPersonalFrontier(frontier);
+                size = buf.readInt();
+                for (int i = 0; i < size; ++i) {
+                    FrontierData frontier = new FrontierData();
+                    frontier.fromBytes(buf);
+                    packet.addPersonalFrontier(frontier);
+                }
+            }
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketFrontiers: %s", t));
         }
 
         return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {
-        buf.writeInt(globalFrontiers.size());
-        for (FrontierData frontier : globalFrontiers) {
-            frontier.toBytes(buf, false);
-        }
+        try {
+            buf.writeInt(globalFrontiers.size());
+            for (FrontierData frontier : globalFrontiers) {
+                frontier.toBytes(buf, false);
+            }
 
-        buf.writeInt(personalFrontiers.size());
-        for (FrontierData frontier : personalFrontiers) {
-            frontier.toBytes(buf, false);
+            buf.writeInt(personalFrontiers.size());
+            for (FrontierData frontier : personalFrontiers) {
+                frontier.toBytes(buf, false);
+            }
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketFrontiers: %s", t));
         }
     }
 

@@ -27,12 +27,24 @@ public class PacketSettingsProfile {
 
     public static PacketSettingsProfile decode(FriendlyByteBuf buf) {
         PacketSettingsProfile packet = new PacketSettingsProfile();
-        packet.profile.fromBytes(buf);
+
+        try {
+            if (buf.readableBytes() > 1) {
+                packet.profile.fromBytes(buf);
+            }
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketSettingsProfile: %s", t));
+        }
+
         return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {
-        profile.toBytes(buf);
+        try {
+            profile.toBytes(buf);
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketSettingsProfile: %s", t));
+        }
     }
 
     public static void handle(PacketContext<PacketSettingsProfile> ctx) {

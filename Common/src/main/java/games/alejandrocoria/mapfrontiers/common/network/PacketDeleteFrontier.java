@@ -21,18 +21,35 @@ import java.util.UUID;
 public class PacketDeleteFrontier {
     public static final ResourceLocation CHANNEL = new ResourceLocation(MapFrontiers.MODID, "packet_delete_frontier");
 
-    private final UUID frontierID;
+    private UUID frontierID;
+
+    public PacketDeleteFrontier() {
+    }
 
     public PacketDeleteFrontier(UUID frontierID) {
         this.frontierID = frontierID;
     }
 
     public static PacketDeleteFrontier decode(FriendlyByteBuf buf) {
-        return new PacketDeleteFrontier(UUIDHelper.fromBytes(buf));
+        PacketDeleteFrontier packet = new PacketDeleteFrontier();
+
+        try {
+            if (buf.readableBytes() > 1) {
+                packet.frontierID = UUIDHelper.fromBytes(buf);
+            }
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketDeleteFrontier: %s", t));
+        }
+
+        return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {
-        UUIDHelper.toBytes(buf, frontierID);
+        try {
+            UUIDHelper.toBytes(buf, frontierID);
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketDeleteFrontier: %s", t));
+        }
     }
 
     public static void handle(PacketContext<PacketDeleteFrontier> ctx) {

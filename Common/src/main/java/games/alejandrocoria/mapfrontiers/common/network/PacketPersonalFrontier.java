@@ -28,12 +28,24 @@ public class PacketPersonalFrontier {
 
     public static PacketPersonalFrontier decode(FriendlyByteBuf buf) {
         PacketPersonalFrontier packet = new PacketPersonalFrontier();
-        packet.frontier.fromBytes(buf);
+
+        try {
+            if (buf.readableBytes() > 1) {
+                packet.frontier.fromBytes(buf);
+            }
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketPersonalFrontier: %s", t));
+        }
+
         return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {
-        frontier.toBytes(buf, false);
+        try {
+            frontier.toBytes(buf, false);
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketPersonalFrontier: %s", t));
+        }
     }
 
     public static void handle(PacketContext<PacketPersonalFrontier> ctx) {

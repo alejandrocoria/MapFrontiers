@@ -51,7 +51,7 @@ public class MapFrontiersClient {
                 return;
             }
 
-            if (!handshakeSended) {
+            if (!handshakeSended && frontiersOverlayManager != null) {
                 handshakeSended = true;
                 PacketHandler.sendToServer(new PacketHandshake());
             }

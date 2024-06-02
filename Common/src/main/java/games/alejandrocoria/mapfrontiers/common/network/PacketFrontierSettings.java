@@ -31,14 +31,26 @@ public class PacketFrontierSettings {
 
     public static PacketFrontierSettings decode(FriendlyByteBuf buf) {
         PacketFrontierSettings packet = new PacketFrontierSettings();
-        packet.settings.fromBytes(buf);
-        packet.settings.setChangeCounter(buf.readInt());
+
+        try {
+            if (buf.readableBytes() > 1) {
+                packet.settings.fromBytes(buf);
+                packet.settings.setChangeCounter(buf.readInt());
+            }
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketFrontierSettings: %s", t));
+        }
+
         return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {
-        settings.toBytes(buf);
-        buf.writeInt(settings.getChangeCounter());
+        try {
+            settings.toBytes(buf);
+            buf.writeInt(settings.getChangeCounter());
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketFrontierSettings: %s", t));
+        }
     }
 
     public static void handle(PacketContext<PacketFrontierSettings> ctx) {

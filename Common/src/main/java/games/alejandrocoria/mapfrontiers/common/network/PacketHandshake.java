@@ -23,12 +23,24 @@ public class PacketHandshake {
 
     public static PacketHandshake decode(FriendlyByteBuf buf) {
         PacketHandshake packet = new PacketHandshake();
-        packet.version = buf.readUtf(32767);
+
+        try {
+            if (buf.readableBytes() > 1) {
+                packet.version = buf.readUtf();
+            }
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketHandshake: %s", t));
+        }
+
         return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {
-        buf.writeUtf(version);
+        try {
+            buf.writeUtf(version);
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketHandshake: %s", t));
+        }
     }
 
     public static void handle(PacketContext<PacketHandshake> ctx) {

@@ -35,14 +35,26 @@ public class PacketUpdateSharedUserPersonalFrontier {
 
     public static PacketUpdateSharedUserPersonalFrontier decode(FriendlyByteBuf buf) {
         PacketUpdateSharedUserPersonalFrontier packet = new PacketUpdateSharedUserPersonalFrontier();
-        packet.frontierID = UUIDHelper.fromBytes(buf);
-        packet.userShared.fromBytes(buf);
+
+        try {
+            if (buf.readableBytes() > 1) {
+                packet.frontierID = UUIDHelper.fromBytes(buf);
+                packet.userShared.fromBytes(buf);
+            }
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketUpdateSharedUserPersonalFrontier: %s", t));
+        }
+
         return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {
-        UUIDHelper.toBytes(buf, frontierID);
-        userShared.toBytes(buf);
+        try {
+            UUIDHelper.toBytes(buf, frontierID);
+            userShared.toBytes(buf);
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketUpdateSharedUserPersonalFrontier: %s", t));
+        }
     }
 
     public static void handle(PacketContext<PacketUpdateSharedUserPersonalFrontier> ctx) {

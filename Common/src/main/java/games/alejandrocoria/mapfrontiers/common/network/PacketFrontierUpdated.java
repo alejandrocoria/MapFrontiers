@@ -34,14 +34,26 @@ public class PacketFrontierUpdated {
 
     public static PacketFrontierUpdated decode(FriendlyByteBuf buf) {
         PacketFrontierUpdated packet = new PacketFrontierUpdated();
-        packet.frontier.fromBytes(buf);
-        packet.playerID = buf.readInt();
+
+        try {
+            if (buf.readableBytes() > 1) {
+                packet.frontier.fromBytes(buf);
+                packet.playerID = buf.readInt();
+            }
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketFrontierUpdated: %s", t));
+        }
+
         return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {
-        frontier.toBytes(buf);
-        buf.writeInt(playerID);
+        try {
+            frontier.toBytes(buf);
+            buf.writeInt(playerID);
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketFrontierUpdated: %s", t));
+        }
     }
 
     public static void handle(PacketContext<PacketFrontierUpdated> ctx) {

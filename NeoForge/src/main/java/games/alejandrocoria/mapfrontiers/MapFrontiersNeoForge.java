@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers;
 
+import fuzs.forgeconfigapiport.neoforge.api.forge.v4.ForgeConfigRegistry;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClientNeoForge;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.event.EventHandler;
@@ -8,9 +9,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.DistExecutor;
-import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.IConfigSpec;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -24,7 +23,7 @@ import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 @Mod(MapFrontiersNeoForge.MODID)
 public class MapFrontiersNeoForge extends MapFrontiers {
     public MapFrontiersNeoForge() {
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, (IConfigSpec<?>) Config.CLIENT_SPEC);
+        ForgeConfigRegistry.INSTANCE.register(ModConfig.Type.CLIENT, Config.CLIENT_SPEC);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(MapFrontiersNeoForge::commonSetup);
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> MapFrontiersNeoForge::addListenerClientSetup);
     }

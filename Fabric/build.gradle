@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.4+'
+    id 'fabric-loom' version '1.6-SNAPSHOT'
     id 'maven-publish'
     id 'idea'
 }
@@ -37,7 +37,7 @@ loom {
             client()
             setConfigName("Fabric Client")
             ideConfigGenerated(true)
-            runDir("run")
+            runDir("runs/client")
             programArg("--username=Dev")
         }
         server {
@@ -45,7 +45,7 @@ loom {
             serverWithGui()
             setConfigName("Fabric Server")
             ideConfigGenerated(true)
-            runDir("run-server")
+            runDir("runs/server")
         }
     }
 }

@@ -1,16 +1,12 @@
 plugins {
     id "java-library"
     id "idea"
-    id "net.neoforged.gradle.userdev" version "[7.0.64,)"
+    id "net.neoforged.gradle.userdev" version "7.0.135"
 }
 
 version = "${project.version}"
-jar.archiveClassifier = "neoforge"
-
-configurations {
-    library
-    implementation.extendsFrom library
-}
+archivesBaseName = "${project.mod_name}-${project.minecraft_version}"
+//jar.archiveClassifier = "neoforge"
 
 configurations.all {
     // Check for snapshots more frequently than Gradle"s default of 1 day. 0 = every build.
@@ -35,6 +31,7 @@ dependencies {
     jarJar (group: "mysticdrew", name: "common-networking-neoforge", version: project.common_networking_jarjar_version) {
         jarJar.pin(it, project.common_networking_version)
     }
+    api "fuzs.forgeconfigapiport:forgeconfigapiport-neoforge:${forge_config_api_port_version}"
     implementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_neoforge_file_id}"
 
     compileOnly project(":Common")
@@ -48,10 +45,10 @@ runs {
         modSource project.sourceSets.main
     }
     client {
-        workingDirectory project.file("run/client")
+        workingDirectory project.file("runs/client")
     }
     server {
-        workingDirectory project.file("run/server")
+        workingDirectory project.file("runs/server")
     }
 }
 

@@ -27,7 +27,7 @@ dependencies {
     compileOnly group:'org.spongepowered', name:'mixin', version:'0.8.5'
     implementation group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.1'
 
-    compileOnly group: 'mysticdrew', name: 'common-networking-common', version: project.common_networking_version
+    implementation group: 'mysticdrew', name: 'common-networking-common', version: project.common_networking_version
     compileOnly "fuzs.forgeconfigapiport:forgeconfigapiport-common-forgeapi:${forge_config_api_port_version}"
     compileOnly group: 'info.journeymap', name: 'journeymap-api', version: project.journeymap_api_common_version, changing: true
 }

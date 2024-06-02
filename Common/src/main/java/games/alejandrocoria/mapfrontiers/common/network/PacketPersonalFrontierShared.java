@@ -45,20 +45,32 @@ public class PacketPersonalFrontierShared {
 
     public static PacketPersonalFrontierShared decode(FriendlyByteBuf buf) {
         PacketPersonalFrontierShared packet = new PacketPersonalFrontierShared();
-        packet.shareMessageID = buf.readInt();
-        packet.playerSharing.fromBytes(buf);
-        packet.owner.fromBytes(buf);
-        packet.name1 = buf.readUtf(17);
-        packet.name2 = buf.readUtf(17);
+
+        try {
+            if (buf.readableBytes() > 1) {
+                packet.shareMessageID = buf.readInt();
+                packet.playerSharing.fromBytes(buf);
+                packet.owner.fromBytes(buf);
+                packet.name1 = buf.readUtf(17);
+                packet.name2 = buf.readUtf(17);
+            }
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketPersonalFrontierShared: %s", t));
+        }
+
         return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {
-        buf.writeInt(shareMessageID);
-        playerSharing.toBytes(buf);
-        owner.toBytes(buf);
-        buf.writeUtf(name1);
-        buf.writeUtf(name2);
+        try {
+            buf.writeInt(shareMessageID);
+            playerSharing.toBytes(buf);
+            owner.toBytes(buf);
+            buf.writeUtf(name1);
+            buf.writeUtf(name2);
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketPersonalFrontierShared: %s", t));
+        }
     }
 
     public static void handle(PacketContext<PacketPersonalFrontierShared> ctx) {
