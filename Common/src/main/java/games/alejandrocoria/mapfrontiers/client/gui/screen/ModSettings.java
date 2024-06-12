@@ -134,10 +134,6 @@ public class ModSettings extends Screen {
 
     @Override
     public void init() {
-        if (MapFrontiersClient.isModOnServer()) {
-            PacketHandler.sendToServer(new PacketRequestFrontierSettings());
-        }
-
         scaleFactor = ScreenHelper.getScaleFactorThatFit(minecraft, this, 696, 366);
         actualWidth = (int) (width * scaleFactor);
         actualHeight = (int) (height * scaleFactor);
@@ -331,6 +327,10 @@ public class ModSettings extends Screen {
 
         resetLabels();
         updateButtonsVisibility();
+
+        if (MapFrontiersClient.isModOnServer()) {
+            PacketHandler.sendToServer(new PacketRequestFrontierSettings());
+        }
     }
 
     @Override
