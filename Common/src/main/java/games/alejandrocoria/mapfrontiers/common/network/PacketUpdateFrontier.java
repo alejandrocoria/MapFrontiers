@@ -14,19 +14,23 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.Set;
 
 @ParametersAreNonnullByDefault
 public class PacketUpdateFrontier {
     public static final ResourceLocation CHANNEL = new ResourceLocation(MapFrontiers.MODID, "packet_update_frontier");
 
     private final FrontierData frontier;
+    private final Set<FrontierData.Change> changes;
 
     public PacketUpdateFrontier() {
         frontier = new FrontierData();
+        changes = null;
     }
 
     public PacketUpdateFrontier(FrontierData frontier) {
         this.frontier = frontier;
+        changes = frontier.getChanges();
     }
 
     public static PacketUpdateFrontier decode(FriendlyByteBuf buf) {
@@ -45,7 +49,7 @@ public class PacketUpdateFrontier {
 
     public void encode(FriendlyByteBuf buf) {
         try {
-            frontier.toBytes(buf);
+            frontier.toBytes(buf, changes);
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketUpdateFrontier: %s", t));
         }
@@ -54,7 +58,7 @@ public class PacketUpdateFrontier {
     public static void handle(PacketContext<PacketUpdateFrontier> ctx) {
         if (Side.SERVER.equals(ctx.side())) {
             PacketUpdateFrontier message = ctx.message();
-            ServerPlayer player = (ServerPlayer) ctx.sender();
+            ServerPlayer player = ctx.sender();
             if (player == null) {
                 return;
             }

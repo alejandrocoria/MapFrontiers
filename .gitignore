@@ -21,8 +21,4 @@ build
 # other
 eclipse
 run
-Fabric/run-server/
-Forge/run-server/
-Fabric/runs/
-Forge/runs/
-NeoForge/runs/
+runs

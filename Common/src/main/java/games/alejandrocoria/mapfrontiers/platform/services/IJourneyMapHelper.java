@@ -31,6 +31,6 @@ public interface IJourneyMapHelper {
         TopLeft,
         TopCenter,
         Center,
-        Custom;
+        Custom
     }
 }

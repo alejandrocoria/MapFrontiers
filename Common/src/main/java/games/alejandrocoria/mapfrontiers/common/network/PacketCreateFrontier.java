@@ -105,7 +105,7 @@ public class PacketCreateFrontier {
     public static void handle(PacketContext<PacketCreateFrontier> ctx) {
         if (Side.SERVER.equals(ctx.side())) {
             PacketCreateFrontier message = ctx.message();
-            ServerPlayer player = (ServerPlayer) ctx.sender();
+            ServerPlayer player = ctx.sender();
             if (player == null) {
                 return;
             }

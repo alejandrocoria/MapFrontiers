@@ -26,17 +26,17 @@ public class StringHelper {
         }
 
         if (list.size() == 1) {
-            return list.get(0).name();
+            return list.getFirst().name();
         }
 
-        StringBuilder string = new StringBuilder(list.get(0).name());
+        StringBuilder string = new StringBuilder(list.getFirst().name());
         for (int i2 = 1; i2 < list.size() - 1; ++i2) {
             string.append(", ");
             string.append(list.get(i2).name());
         }
 
         string.append(" or ");
-        string.append(list.get(list.size() - 1).name());
+        string.append(list.getLast().name());
         return string.toString();
     }
 

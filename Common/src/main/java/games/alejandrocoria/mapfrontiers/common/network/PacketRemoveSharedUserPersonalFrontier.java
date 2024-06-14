@@ -60,7 +60,7 @@ public class PacketRemoveSharedUserPersonalFrontier {
     public static void handle(PacketContext<PacketRemoveSharedUserPersonalFrontier> ctx) {
         if (Side.SERVER.equals(ctx.side())) {
             PacketRemoveSharedUserPersonalFrontier message = ctx.message();
-            ServerPlayer player = (ServerPlayer) ctx.sender();
+            ServerPlayer player = ctx.sender();
             if (player == null) {
                 return;
             }

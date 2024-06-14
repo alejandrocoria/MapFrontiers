@@ -47,7 +47,7 @@ public class PacketHandshake {
         // No version check at the moment.
 
         if (Side.SERVER.equals(ctx.side())) {
-            ServerPlayer player = (ServerPlayer) ctx.sender();
+            ServerPlayer player = ctx.sender();
             if (player == null) {
                 return;
             }

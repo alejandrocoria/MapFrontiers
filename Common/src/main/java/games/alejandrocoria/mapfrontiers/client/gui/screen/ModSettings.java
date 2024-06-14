@@ -34,6 +34,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientPacketListener;
@@ -385,7 +386,7 @@ public class ModSettings extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(graphics, mouseX, mouseY, partialTicks);
+        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
 
         mouseX *= scaleFactor;
         mouseY *= scaleFactor;
@@ -395,8 +396,13 @@ public class ModSettings extends Screen {
             graphics.pose().scale(1.0f / scaleFactor, 1.0f / scaleFactor, 1.0f);
         }
 
+        // Rendering manually so the background is not scaled.
+        for(GuiEventListener child : children()) {
+            if (child instanceof Renderable renderable)
+                renderable.render(graphics, mouseX, mouseY, partialTicks);
+        }
+
         graphics.drawCenteredString(font, title, this.actualWidth / 2, 8, ColorConstants.WHITE);
-        super.render(graphics, mouseX, mouseY, partialTicks);
 
         for (SimpleLabel label : labels) {
             if (label.visible) {
@@ -577,10 +583,6 @@ public class ModSettings extends Screen {
 
     public void setFrontierSettings(FrontierSettings settings) {
         this.settings = settings;
-
-        if (groups == null) {
-            return;
-        }
 
         GroupElement selectedElement = (GroupElement) groups.getSelectedElement();
         int selectedIndex = groups.getSelectedIndex();

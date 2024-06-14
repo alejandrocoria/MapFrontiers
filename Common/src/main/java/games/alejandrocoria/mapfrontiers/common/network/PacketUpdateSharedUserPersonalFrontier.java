@@ -60,7 +60,7 @@ public class PacketUpdateSharedUserPersonalFrontier {
     public static void handle(PacketContext<PacketUpdateSharedUserPersonalFrontier> ctx) {
         if (Side.SERVER.equals(ctx.side())) {
             PacketUpdateSharedUserPersonalFrontier message = ctx.message();
-            ServerPlayer player = (ServerPlayer) ctx.sender();
+            ServerPlayer player = ctx.sender();
             if (player == null) {
                 return;
             }

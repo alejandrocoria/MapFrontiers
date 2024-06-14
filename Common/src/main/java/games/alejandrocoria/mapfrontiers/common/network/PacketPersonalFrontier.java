@@ -51,7 +51,7 @@ public class PacketPersonalFrontier {
     public static void handle(PacketContext<PacketPersonalFrontier> ctx) {
         if (Side.SERVER.equals(ctx.side())) {
             PacketPersonalFrontier message = ctx.message();
-            ServerPlayer player = (ServerPlayer) ctx.sender();
+            ServerPlayer player = ctx.sender();
             if (player == null) {
                 return;
             }

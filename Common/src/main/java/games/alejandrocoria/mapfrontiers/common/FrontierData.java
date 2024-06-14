@@ -5,11 +5,14 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceKey;
@@ -21,6 +24,7 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BannerPatternLayers;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nullable;
@@ -31,6 +35,7 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -175,7 +180,7 @@ public class FrontierData {
             } else {
                 List<ServerPlayer> playerList = server.getPlayerList().getPlayers();
                 if (!playerList.isEmpty()) {
-                    owner = new SettingsUser(playerList.get(0));
+                    owner = new SettingsUser(playerList.getFirst());
                 }
             }
         } else {
@@ -412,6 +417,11 @@ public class FrontierData {
         }
     }
 
+    public void setBanner(DyeColor base, BannerPatternLayers bannerPatterns) {
+        banner = new BannerData(base, bannerPatterns);
+        changes.add(Change.Banner);
+    }
+
     public boolean hasBanner() {
         return banner != null;
     }
@@ -561,6 +571,10 @@ public class FrontierData {
         return changes.contains(change);
     }
 
+    public Set<Change> getChanges() {
+        return EnumSet.copyOf(changes);
+    }
+
     public void readFromNBT(CompoundTag nbt, int version) {
         boolean splitVisibility = version >= 10;
 
@@ -621,7 +635,8 @@ public class FrontierData {
 
         ListTag verticesTagList = nbt.getList("vertices", Tag.TAG_COMPOUND);
         for (int i = 0; i < verticesTagList.size(); ++i) {
-            vertices.add(NbtUtils.readBlockPos(verticesTagList.getCompound(i)));
+            CompoundTag posTag = verticesTagList.getCompound(i);
+            vertices.add(new BlockPos(posTag.getInt("X"), 70, posTag.getInt("Z")));
         }
 
         ListTag chunksTagList = nbt.getList("chunks", Tag.TAG_COMPOUND);
@@ -698,7 +713,11 @@ public class FrontierData {
 
         ListTag verticesTagList = new ListTag();
         for (BlockPos pos : vertices) {
-            verticesTagList.add(NbtUtils.writeBlockPos(pos));
+            CompoundTag compoundtag = new CompoundTag();
+            compoundtag.putInt("X", pos.getX());
+            compoundtag.putInt("Y", pos.getY());
+            compoundtag.putInt("Z", pos.getZ());
+            verticesTagList.add(compoundtag);
         }
 
         nbt.put("vertices", verticesTagList);
@@ -824,9 +843,13 @@ public class FrontierData {
     }
 
     public void toBytes(FriendlyByteBuf buf, boolean onlyChanges) {
+        toBytes(buf, onlyChanges ? changes : null);
+    }
+
+    public void toBytes(FriendlyByteBuf buf, @Nullable Set<FrontierData.Change> withChanges) {
         for (Change change : Change.valuesArray) {
-            if (onlyChanges) {
-                buf.writeBoolean(changes.contains(change));
+            if (withChanges != null) {
+                buf.writeBoolean(withChanges.contains(change));
             } else {
                 buf.writeBoolean(true);
             }
@@ -837,7 +860,7 @@ public class FrontierData {
         buf.writeBoolean(personal);
         owner.toBytes(buf);
 
-        if (!onlyChanges || changes.contains(Change.Other)) {
+        if (withChanges == null || withChanges.contains(Change.Other)) {
             buf.writeInt(color);
             buf.writeBoolean(visible);
             buf.writeBoolean(fullscreenVisible);
@@ -850,14 +873,14 @@ public class FrontierData {
             buf.writeBoolean(announceInTitle);
         }
 
-        if (!onlyChanges || changes.contains(Change.Name)) {
+        if (withChanges == null || withChanges.contains(Change.Name)) {
             int maxCharacters = 17;
             int maxBytes = maxCharacters * 4;
             buf.writeUtf(name1, maxBytes);
             buf.writeUtf(name2, maxBytes);
         }
 
-        if (!onlyChanges || changes.contains(Change.Banner)) {
+        if (withChanges == null || withChanges.contains(Change.Banner)) {
             if (banner == null) {
                 buf.writeBoolean(false);
             } else {
@@ -866,7 +889,7 @@ public class FrontierData {
             }
         }
 
-        if (!onlyChanges || changes.contains(Change.Shared)) {
+        if (withChanges == null || withChanges.contains(Change.Shared)) {
             if (personal && usersShared != null) {
                 buf.writeBoolean(true);
 
@@ -879,7 +902,7 @@ public class FrontierData {
             }
         }
 
-        if (!onlyChanges || changes.contains(Change.Vertices)) {
+        if (withChanges == null || withChanges.contains(Change.Vertices)) {
             buf.writeInt(vertices.size());
             for (BlockPos pos : vertices) {
                 buf.writeLong(pos.asLong());
@@ -916,16 +939,33 @@ public class FrontierData {
             baseColor = DyeColor.WHITE;
         }
 
-        public BannerData(ItemStack itemBanner) {
-            CompoundTag blockEntityTag = itemBanner.getTagElement("BlockEntityTag");
+        public BannerData(ItemStack item) {
+            this(getDyeColor(item), getBannerPatternLayers(item));
+        }
 
-            if (blockEntityTag != null && blockEntityTag.contains("Patterns", Tag.TAG_LIST)) {
-                patterns = blockEntityTag.getList("Patterns", Tag.TAG_COMPOUND);
-            }
+        public BannerData(DyeColor base, BannerPatternLayers bannerPatterns) {
+            baseColor = base;
+            ClientLevel level = Minecraft.getInstance().level;
+            Optional<Tag> patternsOptional = BannerPatternLayers.CODEC.encodeStart(level.registryAccess().createSerializationContext(NbtOps.INSTANCE), bannerPatterns).result();
+            patternsOptional.ifPresent(tag -> {
+                if (tag.getType().equals(ListTag.TYPE)) {
+                    patterns = (ListTag) tag.copy();
+                }
+            });
+        }
 
-            if (itemBanner.getItem() instanceof BannerItem) {
-                baseColor = ((BannerItem) itemBanner.getItem()).getColor();
+        private static DyeColor getDyeColor(ItemStack item) {
+            if (item.getItem() instanceof BannerItem itemBanner) {
+                return itemBanner.getColor();
             }
+            return DyeColor.BLACK;
+        }
+
+        private static BannerPatternLayers getBannerPatternLayers(ItemStack item) {
+            if (item.getComponents().has(DataComponents.BANNER_PATTERNS)) {
+                return item.getComponents().get(DataComponents.BANNER_PATTERNS);
+            }
+            return BannerPatternLayers.EMPTY;
         }
 
         public void readFromNBT(CompoundTag nbt) {

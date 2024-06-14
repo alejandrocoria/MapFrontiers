@@ -1,119 +1,85 @@
 plugins {
-    id 'idea'
-    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+    id 'multiloader-loader'
+    id 'net.minecraftforge.gradle' version '[6.0.24,6.2)'
+    id 'org.spongepowered.mixin' version '0.7-SNAPSHOT'
 }
 
-version = "${project.version}"
 archivesBaseName = "${project.mod_name}-${project.minecraft_version}"
-// The jarJar task doesn't work if they both have the same classifier for some reason.
-//jar.archiveClassifier = "forge"
-
-configurations.all {
-    // Check for snapshots more frequently than Gradle's default of 1 day. 0 = every build.
-    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
-}
+jar.archiveClassifier = 'forge'
 
 jarJar.enable()
 tasks.jarJar.configure {
     archiveClassifier.set('forge')
 }
 
-dependencies {
-    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+tasks.named("build").configure {
+    dependsOn("jarJar")
+}
 
-    implementation fg.deobf(group: 'mysticdrew', name: 'common-networking-forge', version: project.common_networking_version)
-    jarJar (group: 'mysticdrew', name: 'common-networking-forge', version: project.common_networking_jarjar_version) {
-        jarJar.pin(it, project.common_networking_version)
-    }
-    implementation fg.deobf("curse.maven:journeymap-${project.jm_project_id}:${project.jm_forge_file_id}")
+java {
+    sourcesJar.enabled = false
+    javadocJar.enabled = false
+}
 
-    compileOnly project(":Common")
+mixin {
+    config("${mod_id}.forge.mixins.json")
 }
 
 minecraft {
     mappings channel: 'official', version: minecraft_version
 
     copyIdeResources = true //Calls processResources when in dev
-
-    if (project.hasProperty('forge_ats_enabled') && project.findProperty('forge_ats_enabled').toBoolean()) {
-        // This location is hardcoded in Forge and can not be changed.
-        // https://github.com/MinecraftForge/MinecraftForge/blob/be1698bb1554f9c8fa2f58e32b9ab70bc4385e60/fmlloader/src/main/java/net/minecraftforge/fml/loading/moddiscovery/ModFile.java#L123
-        accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
-        project.logger.debug('Forge Access Transformers are enabled for this project.')
-    }
+    reobf = false
 
     runs {
-        client {
-            workingDirectory project.file('runs/client')
-            ideaModule "${rootProject.name}.${project.name}.main"
-            taskName 'Client'
-            property 'mixin.env.remapRefMap', 'true'
-            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+        configureEach {
             mods {
                 modClientRun {
-                    source sourceSets.main
-                    source project(":Common").sourceSets.main
+                    source project.sourceSets.main
                 }
             }
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
         }
-
+        client {
+            ideaModule "${rootProject.name}.${project.name}.main"
+            workingDirectory project.file('runs/client')
+        }
         server {
+            ideaModule "${rootProject.name}.${project.name}.main"
             workingDirectory project.file('runs/server')
-            ideaModule "${rootProject.name}.${project.name}.main"
-            taskName 'Server'
-            property 'mixin.env.remapRefMap', 'true'
-            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
-            mods {
-                modServerRun {
-                    source sourceSets.main
-                    source project(":Common").sourceSets.main
-                }
-            }
         }
-
         data {
-            workingDirectory project.file('run')
             ideaModule "${rootProject.name}.${project.name}.main"
-            args '--mod', mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
-            taskName 'Data'
-            property 'mixin.env.remapRefMap', 'true'
-            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
-            mods {
-                modDataRun {
-                    source sourceSets.main
-                    source project(":Common").sourceSets.main
-                }
-            }
+            args '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
         }
     }
 }
 
-tasks.withType(JavaCompile).configureEach {
-    source(project(":Common").sourceSets.main.allSource)
-}
+sourceSets.main.resources { srcDir 'src/generated/resources' }
 
-processResources {
-    from project(":Common").sourceSets.main.resources
+dependencies {
+    minecraft "net.minecraftforge:forge:${forge_version}"
+    annotationProcessor 'org.spongepowered:mixin:0.8.5-SNAPSHOT:processor'
+    implementation('net.sf.jopt-simple:jopt-simple:5.0.4') { version { strictly '5.0.4' } } // https://forums.minecraftforge.net/topic/149009-error-on-launch/
 
-    def buildProps = project.properties.clone()
-
-    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
-        expand buildProps
+    implementation group: 'mysticdrew', name: 'common-networking-forge', version: project.common_networking_version
+    jarJar (group: 'mysticdrew', name: 'common-networking-forge', version: project.common_networking_jarjar_version) {
+        jarJar.pin(it, project.common_networking_version)
     }
+    implementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_forge_file_id}"
 }
 
-// Merge the resources and classes into the same directory.
-// This is done because java expects modules to be in a single directory.
-// And if we have it in multiple we have to do performance intensive hacks like having the UnionFileSystem
-// This will eventually be migrated to ForgeGradle so modders don't need to manually do it. But that is later.
 sourceSets.each {
     def dir = layout.buildDirectory.dir("sourcesSets/$it.name")
     it.output.resourcesDir = dir
     it.java.destinationDirectory = dir
 }
 
-reobf {
-    jarJar {}
+jar {
+    manifest {
+        attributes([
+                "MixinConfigs" : "${mod_id}.forge.mixins.json"
+        ])
+    }
 }
-
-jar.finalizedBy('reobfJar')

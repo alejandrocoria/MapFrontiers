@@ -135,7 +135,7 @@ public class TextBoxInt extends EditBox {
 
     public int clamped() {
         String text = getValue();
-        if (text.length() == 0) {
+        if (text.isEmpty()) {
             return defaultValue;
         }
 

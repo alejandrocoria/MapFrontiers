@@ -24,21 +24,19 @@ import journeymap.client.api.util.PolygonHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BannerPattern;
-import net.minecraft.world.level.block.entity.BannerPatterns;
+import net.minecraft.world.level.block.entity.BannerPatternLayers;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
@@ -485,6 +483,13 @@ public class FrontierOverlay extends FrontierData {
     }
 
     @Override
+    public void setBanner(DyeColor base, BannerPatternLayers bannerPatterns) {
+        super.setBanner(base, bannerPatterns);
+        bannerDisplay = new BannerDisplayData(banner);
+        needUpdateOverlay = true;
+    }
+
+    @Override
     public void setBannerData(@Nullable BannerData bannerData) {
         super.setBannerData(bannerData);
         needUpdateOverlay = true;
@@ -548,13 +553,10 @@ public class FrontierOverlay extends FrontierData {
             return;
         }
 
-        for (int i = 0; i < bannerDisplay.patternList.size(); ++i) {
-            BannerPattern pattern = bannerDisplay.patternList.get(i);
-            Optional<ResourceKey<BannerPattern>> patternResource = BuiltInRegistries.BANNER_PATTERN.getResourceKey(pattern);
-            if (patternResource.isEmpty()) {
-                continue;
-            }
-            TextureAtlasSprite sprite = mc.getTextureAtlas(Sheets.BANNER_SHEET).apply(BannerPattern.location(patternResource.get(), true));
+        for (int i = 0; i < bannerDisplay.patternLayers.layers().size(); ++i) {
+            BannerPatternLayers.Layer layer = bannerDisplay.patternLayers.layers().get(i);
+            ResourceLocation patternTextureLocation = layer.pattern().value().assetId().withPrefix("entity/banner/");
+            TextureAtlasSprite sprite = mc.getTextureAtlas(Sheets.BANNER_SHEET).apply(patternTextureLocation);
             RenderSystem.setShader(GameRenderer::getPositionColorTexShader);
             RenderSystem.setShaderTexture(0, Sheets.BANNER_SHEET);
             RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
@@ -563,7 +565,7 @@ public class FrontierOverlay extends FrontierData {
 
             Tesselator tessellator = Tesselator.getInstance();
             BufferBuilder buf = tessellator.getBuilder();
-            float[] colors = bannerDisplay.colorList.get(i).getTextureDiffuseColors();
+            float[] colors = layer.color().getTextureDiffuseColors();
             int width = 22 * scale;
             int height = 40 * scale;
             float zLevel = 0.f;
@@ -589,7 +591,7 @@ public class FrontierOverlay extends FrontierData {
         }
 
         super.removeVertex(vertexSelected);
-        if (vertices.size() == 0) {
+        if (vertices.isEmpty()) {
             vertexSelected = -1;
         } else if (vertexSelected > 0) {
             --vertexSelected;
@@ -730,7 +732,7 @@ public class FrontierOverlay extends FrontierData {
                 addPolygonOverlays(displayId, shapeProps, polygon, null);
                 polygonArea = PolygonHelper.toArea(polygon);
 
-                BlockPos last = vertices.get(vertices.size() - 1);
+                BlockPos last = vertices.getLast();
                 for (BlockPos vertex : vertices) {
                     area += abs(vertex.getZ() + last.getZ()) / 2.f * (vertex.getX() - last.getX());
                     last = vertex;
@@ -763,7 +765,7 @@ public class FrontierOverlay extends FrontierData {
             }
 
             if (vertices.size() > 1) {
-                BlockPos last = vertices.get(vertices.size() - 1);
+                BlockPos last = vertices.getLast();
                 for (BlockPos vertex : vertices) {
                     perimeter += Math.sqrt(vertex.distSqr(last));
                     last = vertex;
@@ -813,11 +815,11 @@ public class FrontierOverlay extends FrontierData {
             if (clockwise) {
                 outerPolygons.add(polygon);
             } else {
-                ChunkPos ray = polygon.get(0);
+                ChunkPos ray = polygon.getFirst();
                 ChunkPos outerFound = null;
                 for (int i = 0; i < 999; ++i) {
                     for (List<ChunkPos> outer : outerPolygons) {
-                        ChunkPos outerStart = outer.get(0);
+                        ChunkPos outerStart = outer.getFirst();
                         if (outer.contains(ray)) {
                             outerFound = outerStart;
                             break;
@@ -845,14 +847,14 @@ public class FrontierOverlay extends FrontierData {
                 if (outerFound != null) {
                     holesPolygons.put(outerFound, polygon);
                 } else {
-                    MapFrontiers.LOGGER.warn(String.format("Frontier %1$s is too large and the polygon corresponding to the hole %2$s could not be located", id, polygon.get(0)));
+                    MapFrontiers.LOGGER.warn(String.format("Frontier %1$s is too large and the polygon corresponding to the hole %2$s could not be located", id, polygon.getFirst()));
                 }
             }
         }
 
         for (List<ChunkPos> outer : outerPolygons) {
             removeCollinear(outer);
-            for (List<ChunkPos> hole : holesPolygons.get(outer.get(0))) {
+            for (List<ChunkPos> hole : holesPolygons.get(outer.getFirst())) {
                 removeCollinear(hole);
             }
         }
@@ -861,14 +863,14 @@ public class FrontierOverlay extends FrontierData {
             MapPolygon polygon = new MapPolygon(outer.stream().map(c -> new BlockPos(c.getMinBlockX(), 70, c.getMinBlockZ())).toList());
             List<MapPolygon> polygonHoles = null;
 
-            if (holesPolygons.containsKey(outer.get(0))) {
+            if (holesPolygons.containsKey(outer.getFirst())) {
                 polygonHoles = new ArrayList<>();
-                for (List<ChunkPos> hole : holesPolygons.get(outer.get(0))) {
+                for (List<ChunkPos> hole : holesPolygons.get(outer.getFirst())) {
                     polygonHoles.add(new MapPolygon(hole.stream().map(c -> new BlockPos(c.getMinBlockX(), 70, c.getMinBlockZ())).toList()));
                 }
             }
 
-            addPolygonOverlays(displayId + "_" + outer.get(0), shapeProps, polygon, polygonHoles);
+            addPolygonOverlays(displayId + "_" + outer.getFirst(), shapeProps, polygon, polygonHoles);
         }
 
         area = chunks.size() * 256;
@@ -885,7 +887,7 @@ public class FrontierOverlay extends FrontierData {
             return;
         }
 
-        ChunkPos prev = chunks.get(0);
+        ChunkPos prev = chunks.getFirst();
         for (int i = chunks.size() - 1; i > 0; --i) {
             ChunkPos next = chunks.get(i - 1);
 
@@ -1086,34 +1088,12 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public static class BannerDisplayData {
-        public final List<BannerPattern> patternList;
-        public final List<DyeColor> colorList;
-        public String patternResourceLocation;
+        public BannerPatternLayers patternLayers;
 
         public BannerDisplayData(FrontierData.BannerData bannerData) {
-            patternList = new ArrayList<>();
-            colorList = new ArrayList<>();
-            patternList.add(BuiltInRegistries.BANNER_PATTERN.get(BannerPatterns.BASE));
-            colorList.add(bannerData.baseColor);
-            StringBuilder patternResLocBuilder = new StringBuilder("b");
-            patternResLocBuilder.append(bannerData.baseColor.getId());
-
-            if (bannerData.patterns != null) {
-                for (int i = 0; i < bannerData.patterns.size(); ++i) {
-                    CompoundTag nbtTagCompound = bannerData.patterns.getCompound(i);
-                    Holder<BannerPattern> bannerPattern = BannerPattern.byHash(nbtTagCompound.getString("Pattern"));
-
-                    if (bannerPattern != null) {
-                        patternList.add(bannerPattern.value());
-                        int j = nbtTagCompound.getInt("Color");
-                        colorList.add(DyeColor.byId(j));
-                        patternResLocBuilder.append(bannerPattern.value().getHashname());
-                        patternResLocBuilder.append(j);
-                    }
-                }
-            }
-
-            patternResourceLocation = patternResLocBuilder.toString();
+            ClientLevel level = Minecraft.getInstance().level;
+            Optional<BannerPatternLayers> bannerPatterns = BannerPatternLayers.CODEC.parse(level.registryAccess().createSerializationContext(NbtOps.INSTANCE), bannerData.patterns).result();
+            bannerPatterns.ifPresent((p) -> patternLayers = p);
         }
     }
 }

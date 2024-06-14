@@ -149,9 +149,8 @@ public class ShareSettings extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(graphics, mouseX, mouseY, partialTicks);
-        graphics.drawCenteredString(font, title, this.width / 2, 8, ColorConstants.WHITE);
         super.render(graphics, mouseX, mouseY, partialTicks);
+        graphics.drawCenteredString(font, title, this.width / 2, 8, ColorConstants.WHITE);
 
         for (SimpleLabel label : labels) {
             if (label.visible) {

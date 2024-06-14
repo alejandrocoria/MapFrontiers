@@ -1,44 +1,44 @@
 {
-  "schemaVersion": 1,
-  "id": "${mod_id}",
-  "version": "${version}",
-  "name": "${mod_name}",
-  "description": "${mod_description}",
-  "authors": [
-    "${mod_author}"
-  ],
-  "contact": {
-    "email": "${mod_email}",
-    "homepage": "${mod_homepage}",
-    "issues": "${mod_issues}",
-    "sources": "${mod_sources}"
-  },
-
-  "license": "${mod_license}",
-  "icon": "${mod_logo}",
-
-  "environment": "*",
-  "entrypoints": {
-    "main": [
-      "games.alejandrocoria.mapfrontiers.MapFrontiersFabric"
+    "schemaVersion": 1,
+    "id": "${mod_id}",
+    "version": "${version}",
+    "name": "${mod_name}",
+    "description": "${mod_description}",
+    "authors": [
+        "${mod_author}"
     ],
-    "client": [
-      "games.alejandrocoria.mapfrontiers.client.MapFrontiersClientFabric"
-    ],
-    "journeymap": [
-      "games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin"
-    ],
-    "modmenu": [
-      "games.alejandrocoria.mapfrontiers.client.modmenu.ModMenuApiImpl"
-    ]
-  },
+    "contact": {
+        "email": "${mod_email}",
+        "homepage": "${mod_homepage}",
+        "issues": "${mod_issues}",
+        "sources": "${mod_sources}"
+    },
 
-  "depends": {
-    "fabricloader": ">=0.15.2",
-    "fabric": "*",
-    "minecraft": "~1.20",
-    "java": ">=17",
-    "journeymap": ">=1.20.4-5.9.20",
-    "forgeconfigapiport": ">=20.4.0"
-  }
+    "license": "${mod_license}",
+    "icon": "${mod_logo}",
+
+    "environment": "*",
+    "entrypoints": {
+        "main": [
+            "games.alejandrocoria.mapfrontiers.MapFrontiersFabric"
+        ],
+        "client": [
+            "games.alejandrocoria.mapfrontiers.client.MapFrontiersClientFabric"
+        ],
+        "journeymap": [
+            "games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin"
+        ],
+        "modmenu": [
+            "games.alejandrocoria.mapfrontiers.client.modmenu.ModMenuApiImpl"
+        ]
+    },
+
+    "depends": {
+        "fabricloader": ">=0.15.2",
+        "fabric": "*",
+        "minecraft": ">=${minecraft_version}",
+        "java": "${java_version}",
+        "journeymap": ">=${journeymap_min_version}",
+        "forgeconfigapiport": ">=20.4.0"
+    }
 }

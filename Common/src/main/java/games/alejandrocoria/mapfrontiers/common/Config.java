@@ -372,7 +372,7 @@ public class Config {
             return null;
         }
 
-        Object value = valueMap.valueMap().get(path.get(0));
+        Object value = valueMap.valueMap().get(path.getFirst());
         if (value == null) {
             return null;
         }

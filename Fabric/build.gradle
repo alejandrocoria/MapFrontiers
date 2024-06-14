@@ -1,17 +1,14 @@
 plugins {
+    id 'multiloader-loader'
     id 'fabric-loom' version '1.6-SNAPSHOT'
-    id 'maven-publish'
-    id 'idea'
 }
 
-version = "${project.version}"
 archivesBaseName = "${project.mod_name}-${project.minecraft_version}"
 remapJar.archiveClassifier = "fabric"
 
-repositories {
-    maven {
-        url "https://maven.terraformersmc.com/releases"
-    }
+java {
+    sourcesJar.enabled = false
+    javadocJar.enabled = false
 }
 
 dependencies {
@@ -23,15 +20,17 @@ dependencies {
 
     modImplementation group: 'mysticdrew', name: 'common-networking-fabric', version: project.common_networking_version, changing: true
     modApi include(group: 'mysticdrew', name: 'common-networking-fabric', version: project.common_networking_version, changing: true)
+    modApi group: 'info.journeymap', name: 'journeymap-api', version: project.journeymap_api_fabric_version, changing: true
     modApi "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${forge_config_api_port_version}"
     modImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
-    modApi group: 'info.journeymap', name: 'journeymap-api', version: project.journeymap_api_fabric_version, changing: true
     modImplementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_fabric_file_id}"
-
-    implementation project(":Common")
 }
 
 loom {
+    def aw = project(":Common").file("src/main/resources/${mod_id}.accesswidener")
+    if (aw.exists()) {
+        accessWidenerPath.set(aw)
+    }
     runs {
         client {
             client()
@@ -48,18 +47,4 @@ loom {
             runDir("runs/server")
         }
     }
-}
-
-processResources {
-    from project(":Common").sourceSets.main.resources
-
-    def buildProps = project.properties.clone()
-
-    filesMatching(['fabric.mod.json', 'pack.mcmeta']) {
-        expand buildProps
-    }
-}
-
-tasks.withType(JavaCompile) {
-    source(project(":Common").sourceSets.main.allSource)
 }

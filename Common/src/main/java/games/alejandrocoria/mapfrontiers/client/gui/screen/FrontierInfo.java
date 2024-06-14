@@ -27,6 +27,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
@@ -358,7 +359,7 @@ public class FrontierInfo extends Screen {
             labels.add(new SimpleLabel(font, rightSide + offset1, top, SimpleLabel.Align.Left, chunks, ColorConstants.WHITE));
         }
 
-        Component owner = Component.translatable("mapfrontiers.owner", frontier.getOwner());
+        Component owner = Component.translatable("mapfrontiers.owner", frontier.getOwner().toString());
         labels.add(new SimpleLabel(font, rightSide + offset1 + offset2, top, SimpleLabel.Align.Left, owner, ColorConstants.WHITE));
 
         Component dimension = Component.translatable("mapfrontiers.dimension", frontier.getDimension().location().toString());
@@ -434,7 +435,7 @@ public class FrontierInfo extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(graphics, mouseX, mouseY, partialTicks);
+        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
 
         mouseX *= scaleFactor;
         mouseY *= scaleFactor;
@@ -444,8 +445,13 @@ public class FrontierInfo extends Screen {
             graphics.pose().scale(1.0f / scaleFactor, 1.0f / scaleFactor, 1.0f);
         }
 
+        // Rendering manually so the background is not scaled.
+        for(GuiEventListener child : children()) {
+            if (child instanceof Renderable renderable)
+                renderable.render(graphics, mouseX, mouseY, partialTicks);
+        }
+
         graphics.drawCenteredString(font, title, this.actualWidth / 2, 8, ColorConstants.WHITE);
-        super.render(graphics, mouseX, mouseY, partialTicks);
 
         if (frontier.hasBanner()) {
             frontier.renderBanner(minecraft, graphics, actualWidth / 2 - 276, actualHeight / 2 - 122, 4);

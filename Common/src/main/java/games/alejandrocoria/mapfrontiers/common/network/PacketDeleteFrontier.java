@@ -55,7 +55,7 @@ public class PacketDeleteFrontier {
     public static void handle(PacketContext<PacketDeleteFrontier> ctx) {
         if (Side.SERVER.equals(ctx.side())) {
             PacketDeleteFrontier message = ctx.message();
-            ServerPlayer player = (ServerPlayer) ctx.sender();
+            ServerPlayer player = ctx.sender();
             if (player == null) {
                 return;
             }

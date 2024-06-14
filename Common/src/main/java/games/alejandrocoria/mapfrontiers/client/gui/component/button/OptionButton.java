@@ -84,8 +84,8 @@ public class OptionButton extends Button {
             c = highlightedColor;
         }
 
-        graphics.fill(getX() - 1, getY() - 1, getX() + width + 1, getY() + height + 1, ColorConstants.OPTION_BORDER);
-        graphics.fill(getX(), getY(), getX() + width, getY() + height, ColorConstants.OPTION_BG);
+        graphics.fill(getX(), getY(), getX() + width, getY() + height, ColorConstants.OPTION_BORDER);
+        graphics.fill(getX() + 1, getY() + 1, getX() + width - 1, getY() + height - 1, ColorConstants.OPTION_BG);
 
         graphics.drawString(font, options.get(selected), getX() + 4, getY() + 2, c);
     }

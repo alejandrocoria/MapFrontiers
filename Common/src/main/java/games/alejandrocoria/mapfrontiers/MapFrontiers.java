@@ -14,15 +14,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 
 public class MapFrontiers {
     public static final String MODID = "mapfrontiers";
     public static final Logger LOGGER = LogManager.getLogger("MapFrontiers");
 
     private static FrontiersManager frontiersManager;
-
-    private static final HashSet<ServerPlayer> pendingJoinedPlayers = new HashSet<>();
 
     public MapFrontiers() {
 
@@ -45,8 +42,6 @@ public class MapFrontiers {
                 frontiersManager.close();
             }
             frontiersManager = null;
-
-            pendingJoinedPlayers.clear();
 
             LOGGER.info("ServerStoppingEvent done");
         });

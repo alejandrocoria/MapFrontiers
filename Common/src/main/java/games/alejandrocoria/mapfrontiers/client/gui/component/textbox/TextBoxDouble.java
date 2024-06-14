@@ -141,7 +141,7 @@ public class TextBoxDouble extends EditBox {
 
     public double clamped() {
         String text = getValue();
-        if (text.length() == 0) {
+        if (text.isEmpty()) {
             return defaultValue;
         }
 

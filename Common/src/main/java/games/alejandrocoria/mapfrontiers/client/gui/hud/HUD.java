@@ -15,13 +15,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.BannerPattern;
+import net.minecraft.world.level.block.entity.BannerPatternLayers;
 import net.minecraft.world.level.block.entity.BannerPatterns;
 import org.apache.commons.lang3.StringUtils;
 
@@ -61,21 +60,20 @@ public class HUD {
         HUD hud = new HUD(null, null);
         hud.previewMode = true;
 
-        ItemStack itemBanner = new ItemStack(Items.BLACK_BANNER);
-        CompoundTag entityTag = itemBanner.getOrCreateTagElement("BlockEntityTag");
-        ListTag patterns = (new BannerPattern.Builder()).addPattern(BannerPatterns.FLOWER, DyeColor.GREEN)
-                .addPattern(BannerPatterns.BRICKS, DyeColor.LIGHT_GRAY)
-                .addPattern(BannerPatterns.BORDER, DyeColor.LIGHT_BLUE)
-                .addPattern(BannerPatterns.TRIANGLE_TOP, DyeColor.LIGHT_BLUE)
-                .addPattern(BannerPatterns.TRIANGLE_BOTTOM, DyeColor.BLACK)
-                .addPattern(BannerPatterns.STRIPE_BOTTOM, DyeColor.GREEN).toListTag();
-        entityTag.put("Patterns", patterns);
+        HolderLookup<BannerPattern> patternRegistry = mc.level.registryAccess().lookup(Registries.BANNER_PATTERN).get();
+        BannerPatternLayers patterns = (new BannerPatternLayers.Builder())
+                .add(patternRegistry.get(BannerPatterns.FLOWER).get(), DyeColor.GREEN)
+                .add(patternRegistry.get(BannerPatterns.BRICKS).get(), DyeColor.LIGHT_GRAY)
+                .add(patternRegistry.get(BannerPatterns.BORDER).get(), DyeColor.LIGHT_BLUE)
+                .add(patternRegistry.get(BannerPatterns.TRIANGLE_TOP).get(), DyeColor.LIGHT_BLUE)
+                .add(patternRegistry.get(BannerPatterns.TRIANGLE_BOTTOM).get(), DyeColor.BLACK)
+                .add(patternRegistry.get(BannerPatterns.STRIPE_BOTTOM).get(), DyeColor.GREEN).build();
 
         FrontierData frontierData = new FrontierData();
         frontierData.setOwner(new SettingsUser(mc.player));
         frontierData.setName1("Preview Frontier");
         frontierData.setName2("-----------------");
-        frontierData.setBanner(itemBanner);
+        frontierData.setBanner(DyeColor.BLACK, patterns);
 
         hud.frontier = new FrontierOverlay(frontierData, null);
 

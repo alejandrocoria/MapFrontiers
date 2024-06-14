@@ -20,6 +20,7 @@ import games.alejandrocoria.mapfrontiers.platform.Services;
 import journeymap.client.api.IClientAPI;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -194,7 +195,7 @@ public class FrontierList extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(graphics, mouseX, mouseY, partialTicks);
+        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
 
         mouseX *= scaleFactor;
         mouseY *= scaleFactor;
@@ -204,8 +205,13 @@ public class FrontierList extends Screen {
             graphics.pose().scale(1.0f / scaleFactor, 1.0f / scaleFactor, 1.0f);
         }
 
+        // Rendering manually so the background is not scaled.
+        for(GuiEventListener child : children()) {
+            if (child instanceof Renderable renderable)
+                renderable.render(graphics, mouseX, mouseY, partialTicks);
+        }
+
         graphics.drawCenteredString(font, title, this.actualWidth / 2, 8, ColorConstants.WHITE);
-        super.render(graphics, mouseX, mouseY, partialTicks);
 
         for (SimpleLabel label : labels) {
             if (label.visible) {

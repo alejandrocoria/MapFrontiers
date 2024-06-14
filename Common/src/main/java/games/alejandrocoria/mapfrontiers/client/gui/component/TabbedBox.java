@@ -48,6 +48,8 @@ public class TabbedBox extends AbstractWidgetNoNarration {
             tabs.get(i).render(graphics, mouseX, mouseY, partialTicks, i == selected);
         }
 
+        graphics.fill(getX(), getY() + 16, getX() + width, getY() + height, ColorConstants.SCREEN_BG);
+
         if (selected == -1) {
             graphics.hLine(getX(), getX() + width, getY() + 16, ColorConstants.TAB_BORDER);
         } else {
@@ -106,6 +108,8 @@ public class TabbedBox extends AbstractWidgetNoNarration {
             } else {
                 isHovered = false;
             }
+
+            graphics.fill(x, y, x + 70, y + 16, ColorConstants.SCREEN_BG);
 
             graphics.hLine(x, x + 70, y, ColorConstants.TAB_BORDER);
             graphics.vLine(x, y, y + 16, ColorConstants.TAB_BORDER);

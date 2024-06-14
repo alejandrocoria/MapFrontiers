@@ -177,7 +177,15 @@ public class HUDSettings extends Screen {
 
         drawAnchor(graphics, minecraft.getWindow());
 
-        graphics.fill(width / 2 - 238, height / 2 - 40, width / 2 + 238, height / 2 + 60, ColorConstants.SCREEN_BG);
+        int x1 = width / 2 - 238;
+        int x2 = width / 2 + 238;
+        int y1 = height / 2 - 40;
+        int y2 = height / 2 + 60;
+        graphics.fill(x1, y1, x2, y2, ColorConstants.SCREEN_BG);
+        graphics.hLine(x1, x2, y1, ColorConstants.TAB_BORDER);
+        graphics.hLine(x1, x2, y2, ColorConstants.TAB_BORDER);
+        graphics.vLine(x1, y1, y2, ColorConstants.TAB_BORDER);
+        graphics.vLine(x2, y1, y2, ColorConstants.TAB_BORDER);
 
         // Rendering manually so the background is not drawn.
         for(GuiEventListener child : children()) {
