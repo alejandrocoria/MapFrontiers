@@ -6,11 +6,6 @@ plugins {
 archivesBaseName = "${project.mod_name}-${project.minecraft_version}"
 remapJar.archiveClassifier = "fabric"
 
-java {
-    sourcesJar.enabled = false
-    javadocJar.enabled = false
-}
-
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
     mappings loom.officialMojangMappings()

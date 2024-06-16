@@ -12,7 +12,6 @@ tasks.jarJar.configure {
 
 java {
     sourcesJar.enabled = false
-    javadocJar.enabled = false
 }
 
 // Automatically enable neoforge AccessTransformers if the file exists
