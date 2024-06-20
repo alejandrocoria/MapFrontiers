@@ -2,12 +2,12 @@ plugins {
     id 'java'
     id 'eclipse'
     id 'maven-publish'
-    id 'net.minecraftforge.gradle' version '5.1.+'
+    id 'net.minecraftforge.gradle' version '6.0.+'
 }
 
 version = "${project.version}"
 archivesBaseName = "${project.mod_name}-${project.minecraft_version}"
-jar.archiveClassifier = "forge"
+//jar.archiveClassifier = "forge"
 
 jarJar.enable()
 tasks.jarJar.configure {
