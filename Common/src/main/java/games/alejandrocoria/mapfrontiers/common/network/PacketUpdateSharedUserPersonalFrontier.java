@@ -19,7 +19,7 @@ import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class PacketUpdateSharedUserPersonalFrontier {
-    public static final ResourceLocation CHANNEL = new ResourceLocation(MapFrontiers.MODID, "packet_update_shared_user_personal_frontier");
+    public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_update_shared_user_personal_frontier");
 
     private UUID frontierID;
     private final SettingsUserShared userShared;

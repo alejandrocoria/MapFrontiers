@@ -4,6 +4,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
@@ -12,15 +13,15 @@ import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
-import journeymap.client.api.IClientAPI;
-import journeymap.client.api.display.Context;
-import journeymap.client.api.display.MarkerOverlay;
-import journeymap.client.api.display.PolygonOverlay;
-import journeymap.client.api.model.MapImage;
-import journeymap.client.api.model.MapPolygon;
-import journeymap.client.api.model.ShapeProperties;
-import journeymap.client.api.model.TextProperties;
-import journeymap.client.api.util.PolygonHelper;
+import journeymap.api.v2.client.IClientAPI;
+import journeymap.api.v2.client.display.Context;
+import journeymap.api.v2.client.display.MarkerOverlay;
+import journeymap.api.v2.client.display.PolygonOverlay;
+import journeymap.api.v2.client.model.MapImage;
+import journeymap.api.v2.client.model.MapPolygon;
+import journeymap.api.v2.client.model.ShapeProperties;
+import journeymap.api.v2.client.model.TextProperties;
+import journeymap.api.v2.client.util.PolygonHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -46,7 +47,6 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.awt.geom.Area;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -56,9 +56,9 @@ import static java.lang.Math.abs;
 
 @ParametersAreNonnullByDefault
 public class FrontierOverlay extends FrontierData {
-    private static final MapImage markerVertex = new MapImage(new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"), 0,
+    private static final MapImage markerVertex = new MapImage(ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/marker.png"), 0,
             0, 12, 12, ColorConstants.WHITE, 1.f);
-    private static final MapImage markerDot = new MapImage(new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"), 12, 0,
+    private static final MapImage markerDot = new MapImage(ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/marker.png"), 12, 0,
             8, 8, ColorConstants.WHITE, 1.f);
 
     static {
@@ -80,7 +80,6 @@ public class FrontierOverlay extends FrontierData {
     private final List<PolygonOverlay> polygonOverlays = new ArrayList<>();
     private Area polygonArea;
     private final List<MarkerOverlay> markerOverlays = new ArrayList<>();
-    private String displayId;
     private BannerDisplayData bannerDisplay;
 
     private int hash;
@@ -91,7 +90,6 @@ public class FrontierOverlay extends FrontierData {
     public FrontierOverlay(FrontierData data, @Nullable IClientAPI jmAPI) {
         super(data);
         this.jmAPI = jmAPI;
-        displayId = "frontier_" + id.toString();
         updateOverlay();
 
         if (banner != null) {
@@ -333,7 +331,6 @@ public class FrontierOverlay extends FrontierData {
     @Override
     public void setId(UUID id) {
         super.setId(id);
-        displayId = "frontier_" + id;
         needUpdateOverlay = true;
     }
 
@@ -557,15 +554,15 @@ public class FrontierOverlay extends FrontierData {
             BannerPatternLayers.Layer layer = bannerDisplay.patternLayers.layers().get(i);
             ResourceLocation patternTextureLocation = layer.pattern().value().assetId().withPrefix("entity/banner/");
             TextureAtlasSprite sprite = mc.getTextureAtlas(Sheets.BANNER_SHEET).apply(patternTextureLocation);
-            RenderSystem.setShader(GameRenderer::getPositionColorTexShader);
+            RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
             RenderSystem.setShaderTexture(0, Sheets.BANNER_SHEET);
             RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
 
             RenderSystem.enableBlend();
 
-            Tesselator tessellator = Tesselator.getInstance();
-            BufferBuilder buf = tessellator.getBuilder();
-            float[] colors = layer.color().getTextureDiffuseColors();
+            Tesselator tesselator = Tesselator.getInstance();
+            BufferBuilder buf = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+            int color = layer.color().getTextureDiffuseColor();
             int width = 22 * scale;
             int height = 40 * scale;
             float zLevel = 0.f;
@@ -573,13 +570,12 @@ public class FrontierOverlay extends FrontierData {
             float u2 = sprite.getU0() + 22.f / 512.f;
             float v1 = sprite.getV0() + 1.f / 512.f;
             float v2 = sprite.getV0() + 41.f / 512.f;
-            buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
             Matrix4f matrix = graphics.pose().last().pose();
-            buf.vertex(matrix, x, y + height, zLevel).color(colors[0], colors[1], colors[2], 1.f).uv(u1, v2).endVertex();
-            buf.vertex(matrix, x + width, y + height, zLevel).color(colors[0], colors[1], colors[2], 1.f).uv(u2, v2).endVertex();
-            buf.vertex(matrix, x + width, y, zLevel).color(colors[0], colors[1], colors[2], 1.f).uv(u2, v1).endVertex();
-            buf.vertex(matrix, x, y, zLevel).color(colors[0], colors[1], colors[2], 1.f).uv(u1, v1).endVertex();
-            tessellator.end();
+            buf.addVertex(matrix, x, y + height, zLevel).setUv(u1, v2).setColor(color);
+            buf.addVertex(matrix, x + width, y + height, zLevel).setUv(u2, v2).setColor(color);
+            buf.addVertex(matrix, x + width, y, zLevel).setUv(u2, v1).setColor(color);
+            buf.addVertex(matrix, x, y, zLevel).setUv(u1, v1).setColor(color);
+            BufferUploader.drawWithShader(buf.buildOrThrow());
 
             RenderSystem.disableBlend();
         }
@@ -684,7 +680,7 @@ public class FrontierOverlay extends FrontierData {
         }
     }
 
-    private void addPolygonOverlays(String id, ShapeProperties shapeProps, MapPolygon polygon, @Nullable List<MapPolygon> polygonHoles) {
+    private void addPolygonOverlays(ShapeProperties shapeProps, MapPolygon polygon, @Nullable List<MapPolygon> polygonHoles) {
         PolygonOverlay polygonOverlay = null;
         PolygonOverlay polygonOverlayFullscreen = null;
         PolygonOverlay polygonOverlayMinimap = null;
@@ -697,16 +693,16 @@ public class FrontierOverlay extends FrontierData {
         boolean minimapOwnerV = Config.getVisibilityValue(Config.minimapOwnerVisibility, minimapOwnerVisible);
 
         if (fullscreenV && minimapV && (fullscreenNameV == minimapNameV) && (fullscreenOwnerV == minimapOwnerV)) {
-            polygonOverlay = new PolygonOverlay(MapFrontiers.MODID, id, dimension, shapeProps, polygon, polygonHoles);
-            polygonOverlay.setActiveUIs(EnumSet.of(Context.UI.Any));
+            polygonOverlay = new PolygonOverlay(MapFrontiers.MODID, dimension, shapeProps, polygon, polygonHoles);
+            polygonOverlay.setActiveUIs(Context.UI.Fullscreen, Context.UI.Minimap, Context.UI.Webmap);
         } else {
             if (fullscreenV) {
-                polygonOverlayFullscreen = new PolygonOverlay(MapFrontiers.MODID, id + "_fullscreen", dimension, shapeProps, polygon, polygonHoles);
-                polygonOverlayFullscreen.setActiveUIs(EnumSet.of(Context.UI.Fullscreen));
+                polygonOverlayFullscreen = new PolygonOverlay(MapFrontiers.MODID, dimension, shapeProps, polygon, polygonHoles);
+                polygonOverlayFullscreen.setActiveUIs(Context.UI.Fullscreen);
             }
             if (minimapV) {
-                polygonOverlayMinimap = new PolygonOverlay(MapFrontiers.MODID, id + "_minimap", dimension, shapeProps, polygon, polygonHoles);
-                polygonOverlayMinimap.setActiveUIs(EnumSet.of(Context.UI.Minimap, Context.UI.Webmap));
+                polygonOverlayMinimap = new PolygonOverlay(MapFrontiers.MODID, dimension, shapeProps, polygon, polygonHoles);
+                polygonOverlayMinimap.setActiveUIs(Context.UI.Minimap, Context.UI.Webmap);
             }
         }
 
@@ -729,7 +725,7 @@ public class FrontierOverlay extends FrontierData {
         synchronized (vertices) {
             if (vertices.size() > 2) {
                 MapPolygon polygon = new MapPolygon(vertices);
-                addPolygonOverlays(displayId, shapeProps, polygon, null);
+                addPolygonOverlays(shapeProps, polygon, null);
                 polygonArea = PolygonHelper.toArea(polygon);
 
                 BlockPos last = vertices.getLast();
@@ -742,23 +738,26 @@ public class FrontierOverlay extends FrontierData {
                 boolean fullscreenV = Config.getVisibilityValue(Config.fullscreenVisibility, fullscreenVisible);
                 boolean minimapV = Config.getVisibilityValue(Config.minimapVisibility, minimapVisible);
                 if (fullscreenV || minimapV) {
-                    EnumSet<Context.UI> ui;
+                    List<Context.UI> ui = new ArrayList<>();
                     if (fullscreenV && minimapV) {
-                        ui = EnumSet.of(Context.UI.Any);
+                        ui.add(Context.UI.Fullscreen);
+                        ui.add(Context.UI.Minimap);
+                        ui.add(Context.UI.Webmap);
                     } else if (fullscreenV) {
-                        ui = EnumSet.of(Context.UI.Fullscreen);
+                        ui.add(Context.UI.Fullscreen);
                     } else {
-                        ui = EnumSet.of(Context.UI.Minimap, Context.UI.Webmap);
+                        ui.add(Context.UI.Minimap);
+                        ui.add(Context.UI.Webmap);
                     }
+                    Context.UI[] uiArray = ui.toArray(new Context.UI[0]);
                     for (int i = 0; i < vertices.size(); ++i) {
-                        String markerId = displayId + "_" + i;
-                        MarkerOverlay marker = new MarkerOverlay(MapFrontiers.MODID, markerId, vertices.get(i), markerVertex);
+                        MarkerOverlay marker = new MarkerOverlay(MapFrontiers.MODID, vertices.get(i), markerVertex);
                         marker.setDimension(dimension);
                         marker.setDisplayOrder(100);
-                        marker.setActiveUIs(ui);
+                        marker.setActiveUIs(uiArray);
                         markerOverlays.add(marker);
                         if (i == 0 && vertices.size() == 2) {
-                            addMarkerDots(markerId, vertices.get(0), vertices.get(1));
+                            addMarkerDots(vertices.get(0), vertices.get(1));
                         }
                     }
                 }
@@ -767,7 +766,7 @@ public class FrontierOverlay extends FrontierData {
             if (vertices.size() > 1) {
                 BlockPos last = vertices.getLast();
                 for (BlockPos vertex : vertices) {
-                    perimeter += Math.sqrt(vertex.distSqr(last));
+                    perimeter += (float) Math.sqrt(vertex.distSqr(last));
                     last = vertex;
                 }
             }
@@ -870,7 +869,7 @@ public class FrontierOverlay extends FrontierData {
                 }
             }
 
-            addPolygonOverlays(displayId + "_" + outer.getFirst(), shapeProps, polygon, polygonHoles);
+            addPolygonOverlays(shapeProps, polygon, polygonHoles);
         }
 
         area = chunks.size() * 256;
@@ -909,7 +908,7 @@ public class FrontierOverlay extends FrontierData {
         TextProperties textProps = new TextProperties().setColor(color).setScale(2.f).setBackgroundOpacity(0.f);
         if (Config.hideNamesThatDontFit) {
             if (mode == Mode.Vertex) {
-                textProps = setMinSizeTextPropierties(textProps, bottomRight.getX() - topLeft.getX(), nameVisible, ownerVisible);
+                textProps = setMinSizeTextProperties(textProps, bottomRight.getX() - topLeft.getX(), nameVisible, ownerVisible);
             } else {
                 int minX = Integer.MAX_VALUE;
                 int maxX = Integer.MIN_VALUE;
@@ -920,7 +919,7 @@ public class FrontierOverlay extends FrontierData {
                     if (vertex.getX() > maxX)
                         maxX = vertex.getX();
                 }
-                textProps = setMinSizeTextPropierties(textProps, maxX - minX, nameVisible, ownerVisible);
+                textProps = setMinSizeTextProperties(textProps, maxX - minX, nameVisible, ownerVisible);
             }
         }
 
@@ -951,11 +950,11 @@ public class FrontierOverlay extends FrontierData {
         }
     }
 
-    private TextProperties setMinSizeTextPropierties(TextProperties textProperties, int polygonWidth, boolean nameVisible, boolean ownerVisible) {
+    private TextProperties setMinSizeTextProperties(TextProperties textProperties, int polygonWidth, boolean nameVisible, boolean ownerVisible) {
         int name1Width = nameVisible ? Minecraft.getInstance().font.width(name1) * 2 : 0;
         int name2Width = nameVisible ? Minecraft.getInstance().font.width(name2) * 2 : 0;
-        int onwerWidth = ownerVisible ? Minecraft.getInstance().font.width(owner.username) * 2 : 0;
-        int labelWidth = Math.max(onwerWidth, Math.max(name1Width, name2Width)) + 6;
+        int ownerWidth = ownerVisible ? Minecraft.getInstance().font.width(owner.username) * 2 : 0;
+        int labelWidth = Math.max(ownerWidth, Math.max(name1Width, name2Width)) + 6;
 
         int zoom = 0;
         while (labelWidth > polygonWidth && zoom < 8) {
@@ -1025,23 +1024,23 @@ public class FrontierOverlay extends FrontierData {
     //
     // Functions adapted from https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
     //
-    private void addMarkerDots(String markerId, BlockPos from, BlockPos to) {
+    private void addMarkerDots(BlockPos from, BlockPos to) {
         if (abs(to.getZ() - from.getZ()) < abs(to.getX() - from.getX())) {
             if (from.getX() > to.getX()) {
-                addLineMarkerDots(markerId, to.getX(), to.getZ(), from.getX(), from.getZ());
+                addLineMarkerDots(to.getX(), to.getZ(), from.getX(), from.getZ());
             } else{
-                addLineMarkerDots(markerId, from.getX(), from.getZ(), to.getX(), to.getZ());
+                addLineMarkerDots(from.getX(), from.getZ(), to.getX(), to.getZ());
             }
         } else {
             if (from.getZ() > to.getZ()) {
-                addLineMarkerDots(markerId, to.getX(), to.getZ(), from.getX(), from.getZ());
+                addLineMarkerDots(to.getX(), to.getZ(), from.getX(), from.getZ());
             } else{
-                addLineMarkerDots(markerId, from.getX(), from.getZ(), to.getX(), to.getZ());
+                addLineMarkerDots(from.getX(), from.getZ(), to.getX(), to.getZ());
             }
         }
     }
 
-    private void addLineMarkerDots(String markerId, int x0, int z0, int x1, int z1) {
+    private void addLineMarkerDots(int x0, int z0, int x1, int z1) {
         int dx = abs(x1 - x0);
         int sx = x0 < x1 ? 1 : -1;
         int dz = -abs(z1 - z0);
@@ -1069,7 +1068,7 @@ public class FrontierOverlay extends FrontierData {
             }
 
             BlockPos pos = new BlockPos(x0, 70, z0);
-            MarkerOverlay dot = new MarkerOverlay(MapFrontiers.MODID, markerId + "_" + i, pos, markerDot);
+            MarkerOverlay dot = new MarkerOverlay(MapFrontiers.MODID, pos, markerDot);
             dot.setDimension(dimension);
             dot.setDisplayOrder(99);
             int minZoom = 0;

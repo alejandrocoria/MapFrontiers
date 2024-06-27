@@ -2,10 +2,12 @@ package games.alejandrocoria.mapfrontiers.client.event;
 
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
-import journeymap.client.api.display.ModPopupMenu;
-import journeymap.client.api.display.ThemeButtonDisplay;
+import journeymap.api.v2.client.fullscreen.ModPopupMenu;
+import journeymap.api.v2.client.fullscreen.ThemeButtonDisplay;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.world.entity.player.Player;
 
 import javax.annotation.Nullable;
@@ -27,7 +29,7 @@ public class ClientEventHandler {
     private static final Map<Object, Consumer<Integer>> mouseReleaseEventMap = new HashMap<>();
 
     // JourneyMap events
-    private static final Map<Object, Consumer<ThemeButtonDisplay>> addonButtonDisplayEventMap = new HashMap<>();
+    private static final Map<Object, BiConsumer<ThemeButtonDisplay, Screen>> addonButtonDisplayEventMap = new HashMap<>();
     private static final Map<Object, Consumer<ModPopupMenu>> fullscreenPopupMenuEventMap = new HashMap<>();
 
     // Our events
@@ -64,7 +66,7 @@ public class ClientEventHandler {
 
 
     // JourneyMap events
-    public static void subscribeAddonButtonDisplayEvent(Object object, Consumer<ThemeButtonDisplay> callback) {
+    public static void subscribeAddonButtonDisplayEvent(Object object, BiConsumer<ThemeButtonDisplay, Screen> callback) {
         addonButtonDisplayEventMap.put(object, callback);
     }
 
@@ -129,9 +131,9 @@ public class ClientEventHandler {
         }
     }
 
-    public static void postHudRenderEvent(GuiGraphics graphics, float delta) {
+    public static void postHudRenderEvent(GuiGraphics graphics, DeltaTracker timer) {
         for (BiConsumer<GuiGraphics, Float> callback : hudRenderEventMap.values()) {
-            callback.accept(graphics, delta);
+            callback.accept(graphics, timer.getGameTimeDeltaTicks());
         }
     }
 
@@ -155,9 +157,9 @@ public class ClientEventHandler {
 
 
     // JourneyMap events
-    public static void postAddonButtonDisplayEvent(ThemeButtonDisplay buttonDisplay) {
-        for (Consumer<ThemeButtonDisplay> callback : addonButtonDisplayEventMap.values()) {
-            callback.accept(buttonDisplay);
+    public static void postAddonButtonDisplayEvent(ThemeButtonDisplay buttonDisplay, Screen fullscreen) {
+        for (BiConsumer<ThemeButtonDisplay, Screen> callback : addonButtonDisplayEventMap.values()) {
+            callback.accept(buttonDisplay, fullscreen);
         }
     }
 

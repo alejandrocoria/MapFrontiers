@@ -368,7 +368,7 @@ public class FrontiersManager {
         try {
             File mcDir;
             if (server.isDedicatedServer()) {
-                mcDir = server.getServerDirectory();
+                mcDir = server.getServerDirectory().toFile();
             } else if (Minecraft.getInstance().getSingleplayerServer() != null) {
                 mcDir = Minecraft.getInstance().getSingleplayerServer().getWorldPath(LevelResource.ROOT).toFile();
             } else {

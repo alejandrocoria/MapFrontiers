@@ -11,7 +11,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.hud.HUD;
 import games.alejandrocoria.mapfrontiers.client.gui.hud.HUDWidget;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.platform.Services;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -31,10 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @ParametersAreNonnullByDefault
-public class HUDSettings extends Screen {
-    private final Screen previousScreen;
-    private final boolean showKeyHint;
-
+public class HUDSettings extends StackeableScreen {
     private HUDWidget HUDWidget;
     private OptionButton buttonSlot1;
     private OptionButton buttonSlot2;
@@ -52,10 +48,8 @@ public class HUDSettings extends Screen {
     private int anchorLineColor = ColorConstants.HUD_ANCHOR_LIGHT;
     private int anchorLineColorTick = 0;
 
-    public HUDSettings(@Nullable Screen previousScreen, boolean showKeyHint) {
-        super(Component.empty());
-        this.previousScreen = previousScreen;
-        this.showKeyHint = showKeyHint;
+    public HUDSettings(@Nullable Screen returnScreen) {
+        super(Component.empty(), returnScreen);
         labels = new ArrayList<>();
         labelTooltips = new HashMap<>();
         hud = HUD.asPreview();
@@ -214,7 +208,7 @@ public class HUDSettings extends Screen {
     @Override
     public boolean keyPressed(int key, int value, int modifier) {
         if (key == GLFW.GLFW_KEY_E && !(getFocused() instanceof EditBox)) {
-            onClose();
+            closeAndReturn();
             return true;
         } else {
             return super.keyPressed(key, value, modifier);
@@ -293,7 +287,7 @@ public class HUDSettings extends Screen {
             Config.hudSnapToBorder = buttonSnapToBorder.getSelected() == 0;
             ClientEventHandler.postUpdatedConfigEvent();
         } else if (button == buttonDone) {
-            onClose();
+            closeAndReturn();
         }
     }
 
@@ -349,11 +343,6 @@ public class HUDSettings extends Screen {
     @Override
     public void removed() {
         ClientEventHandler.postUpdatedConfigEvent();
-    }
-
-    @Override
-    public void onClose() {
-        Minecraft.getInstance().setScreen(new ModSettings(previousScreen, showKeyHint));
     }
 
     private void resetLabels() {

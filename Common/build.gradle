@@ -17,7 +17,7 @@ dependencies {
 
     compileOnly group: 'mysticdrew', name: 'common-networking-common', version: project.common_networking_version
     api "fuzs.forgeconfigapiport:forgeconfigapiport-common-forgeapi:${forge_config_api_port_version}"
-    compileOnly group: 'info.journeymap', name: 'journeymap-api', version: project.journeymap_api_common_version, changing: true
+    compileOnly group: 'info.journeymap', name: 'journeymap-api-common', version: project.journeymap_api_version, changing: true
 }
 
 configurations {

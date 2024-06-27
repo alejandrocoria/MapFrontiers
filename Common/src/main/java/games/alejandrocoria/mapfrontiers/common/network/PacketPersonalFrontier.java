@@ -14,7 +14,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class PacketPersonalFrontier {
-    public static final ResourceLocation CHANNEL = new ResourceLocation(MapFrontiers.MODID, "packet_personal_frontier");
+    public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_personal_frontier");
 
     private final FrontierData frontier;
 

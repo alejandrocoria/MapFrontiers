@@ -1,41 +1,22 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.button;
 
-import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
-import games.alejandrocoria.mapfrontiers.client.gui.component.AbstractWidgetNoNarration;
 import games.alejandrocoria.mapfrontiers.client.gui.component.SimpleLabel;
-import games.alejandrocoria.mapfrontiers.platform.Services;
-import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
-import net.minecraft.Util;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.ConfirmLinkScreen;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 @ParametersAreNonnullByDefault
-public class LinkButton extends AbstractWidgetNoNarration {
-    private final BooleanConsumer callbackFunction;
+public class LinkButton extends Button {
     private final SimpleLabel label;
-    private final String uri;
 
-    public LinkButton(Font font, int x, int y, Component text, String uri, BooleanConsumer callbackFunction) {
-        super(x, y, font.width(text.getString()) + 8, 16, text);
-        this.callbackFunction = callbackFunction;
+    public LinkButton(Font font, int x, int y, Component text, OnPress pressedAction) {
+        super(x, y, font.width(text.getString()) + 8, 16, text, pressedAction, Button.DEFAULT_NARRATION);
         setX(getX() - width / 2);
         this.label = new SimpleLabel(font, x, y + 5, SimpleLabel.Align.Center, text, ColorConstants.SIMPLE_BUTTON_TEXT);
-        this.uri = uri;
-    }
-
-    public void openLink() {
-        try {
-            Util.getPlatform().openUri(new URI(uri));
-        } catch (UnsupportedOperationException | URISyntaxException e) {
-            MapFrontiers.LOGGER.error(e.getMessage(), e);
-        }
     }
 
     @Override
@@ -47,10 +28,5 @@ public class LinkButton extends AbstractWidgetNoNarration {
         }
 
         label.render(graphics, mouseX, mouseY, partialTicks);
-    }
-
-    @Override
-    public void onClick(double mouseX, double mouseY) {
-        Services.PLATFORM.pushGuiLayer(new ConfirmLinkScreen(callbackFunction, uri, false));
     }
 }

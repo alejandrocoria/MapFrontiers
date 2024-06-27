@@ -3,9 +3,6 @@ package games.alejandrocoria.mapfrontiers.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import games.alejandrocoria.mapfrontiers.MapFrontiersFabric;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
-import journeymap.client.api.display.ModPopupMenu;
-import journeymap.client.api.display.ThemeButtonDisplay;
-import journeymap.client.api.event.fabric.FabricEvents;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -33,16 +30,6 @@ public class MapFrontiersClientFabric extends MapFrontiersClient implements Clie
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ClientEventHandler.postClientDisconnectedEvent());
         ScreenEvents.BEFORE_INIT.register((client, theScreen, scaledWidth, scaledHeight) -> {
             ScreenMouseEvents.beforeMouseRelease(theScreen).register((screen, mouseX, mouseY, button) -> ClientEventHandler.postMouseReleaseEvent(button));
-        });
-
-        FabricEvents.ADDON_BUTTON_DISPLAY_EVENT.register(event -> {
-            ThemeButtonDisplay buttonDisplay = event.getThemeButtonDisplay();
-            ClientEventHandler.postAddonButtonDisplayEvent(buttonDisplay);
-        });
-
-        FabricEvents.FULLSCREEN_POPUP_MENU_EVENT.register(event -> {
-            ModPopupMenu popupMenu = event.getPopupMenu();
-            ClientEventHandler.postFullscreenPopupMenuEvent(popupMenu);
         });
 
         init();

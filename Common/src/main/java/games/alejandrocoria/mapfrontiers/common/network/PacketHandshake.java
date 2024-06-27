@@ -13,7 +13,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 public class PacketHandshake {
     private static final String VERSION = "1";
 
-    public static final ResourceLocation CHANNEL = new ResourceLocation(MapFrontiers.MODID, "packet_handshake");
+    public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_handshake");
 
     private String version;
 

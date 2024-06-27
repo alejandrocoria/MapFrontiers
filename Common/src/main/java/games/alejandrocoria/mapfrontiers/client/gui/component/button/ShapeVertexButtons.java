@@ -31,7 +31,7 @@ public class ShapeVertexButtons extends AbstractWidgetNoNarration {
         None, Width, Radius
     }
 
-    private static final ResourceLocation texture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/shape_buttons.png");
+    private static final ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/shape_buttons.png");
     private static final int textureSizeX = 980;
     private static final int textureSizeY = 98;
 
@@ -44,7 +44,7 @@ public class ShapeVertexButtons extends AbstractWidgetNoNarration {
         super(x, y, 324, 120, Component.empty());
         this.selected = selected;
         labelShapes = new SimpleLabel(font, x + 162, y, SimpleLabel.Align.Center, Component.translatable("mapfrontiers.initial_shape"), ColorConstants.WHITE);
-        labelVertices = new SimpleLabel(font, x + 162, y + 126, SimpleLabel.Align.Center, Component.literal(""), ColorConstants.WHITE);
+        labelVertices = new SimpleLabel(font, x + 162, y + 127, SimpleLabel.Align.Center, Component.literal(""), ColorConstants.WHITE);
         this.callbackShapeUpdated = callbackShapeUpdated;
 
         updateVertexLabel();

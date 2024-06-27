@@ -14,7 +14,7 @@ import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class PacketFrontiers {
-    public static final ResourceLocation CHANNEL = new ResourceLocation(MapFrontiers.MODID, "packet_frontier");
+    public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_frontier");
 
     private final List<FrontierData> globalFrontiers;
     private final List<FrontierData> personalFrontiers;

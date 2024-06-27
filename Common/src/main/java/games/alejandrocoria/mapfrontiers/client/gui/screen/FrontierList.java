@@ -17,7 +17,7 @@ import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.platform.Services;
-import journeymap.client.api.IClientAPI;
+import journeymap.api.v2.client.IClientAPI;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Renderable;
@@ -31,9 +31,11 @@ import java.util.List;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class FrontierList extends Screen {
+public class FrontierList extends StackeableScreen {
     private final IClientAPI jmAPI;
     private final FullscreenMap fullscreenMap;
+
+    private final Screen returnScreen;
 
     private float scaleFactor;
     private int actualWidth;
@@ -52,10 +54,11 @@ public class FrontierList extends Screen {
 
     private final List<SimpleLabel> labels;
 
-    public FrontierList(IClientAPI jmAPI, FullscreenMap fullscreenMap) {
-        super(Component.translatable("mapfrontiers.title_frontiers"));
+    public FrontierList(IClientAPI jmAPI, FullscreenMap fullscreenMap, Screen returnScreen) {
+        super(Component.translatable("mapfrontiers.title_frontiers"), returnScreen);
         this.jmAPI = jmAPI;
         this.fullscreenMap = fullscreenMap;
+        this.returnScreen = returnScreen;
         labels = new ArrayList<>();
 
         ClientEventHandler.subscribeDeletedFrontierEvent(this, frontierID -> {
@@ -80,7 +83,7 @@ public class FrontierList extends Screen {
 
     @Override
     public void init() {
-        scaleFactor = ScreenHelper.getScaleFactorThatFit(minecraft, this, 772, 332);
+        scaleFactor = ScreenHelper.getScaleFactorThatFit(minecraft, this, 778, 302);
         actualWidth = (int) (width * scaleFactor);
         actualHeight = (int) (height * scaleFactor);
 
@@ -205,6 +208,16 @@ public class FrontierList extends Screen {
             graphics.pose().scale(1.0f / scaleFactor, 1.0f / scaleFactor, 1.0f);
         }
 
+        int x1 = actualWidth / 2 - 389;
+        int x2 = actualWidth / 2 + 389;
+        int y1 = actualHeight / 2 - frontiers.getHeight() / 2 - 14;
+        int y2 = actualHeight / 2 + frontiers.getHeight() / 2 + 14;
+        graphics.fill(x1, y1, x2, y2, ColorConstants.SCREEN_BG);
+        graphics.hLine(x1, x2, y1, ColorConstants.TAB_BORDER);
+        graphics.hLine(x1, x2, y2, ColorConstants.TAB_BORDER);
+        graphics.vLine(x1, y1, y2, ColorConstants.TAB_BORDER);
+        graphics.vLine(x2, y1, y2, ColorConstants.TAB_BORDER);
+
         // Rendering manually so the background is not scaled.
         for(GuiEventListener child : children()) {
             if (child instanceof Renderable renderable)
@@ -264,13 +277,10 @@ public class FrontierList extends Screen {
             updateFrontiers();
             updateButtons();
         } else if (button == buttonCreate) {
-            Services.PLATFORM.popGuiLayer();
-            Services.PLATFORM.pushGuiLayer(new NewFrontier(jmAPI));
+            StackeableScreen.open(new NewFrontier(jmAPI, this));
         } else if (button == buttonInfo) {
-            Services.PLATFORM.popGuiLayer();
             FrontierOverlay frontier = ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
-            Services.PLATFORM.pushGuiLayer(new FrontierInfo(jmAPI, frontier,
-                    () -> Services.PLATFORM.pushGuiLayer(new FrontierList(jmAPI, fullscreenMap))));
+            StackeableScreen.open(new FrontierInfo(jmAPI, frontier, this));
         } else if (button == buttonDelete) {
             FrontierOverlay frontier = ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
             FrontiersOverlayManager frontierManager = MapFrontiersClient.getFrontiersOverlayManager(frontier.getPersonal());
@@ -282,7 +292,7 @@ public class FrontierList extends Screen {
             frontier.setVisible(!frontier.getVisible());
             updateButtons();
         } else if (button == buttonDone) {
-            Services.PLATFORM.popGuiLayer();
+            closeAndReturn();
         }
     }
 

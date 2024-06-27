@@ -18,7 +18,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class PacketPersonalFrontierShared {
-    public static final ResourceLocation CHANNEL = new ResourceLocation(MapFrontiers.MODID, "packet_personal_frontier_shared");
+    public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_personal_frontier_shared");
 
     private int shareMessageID;
     private final SettingsUser playerSharing;

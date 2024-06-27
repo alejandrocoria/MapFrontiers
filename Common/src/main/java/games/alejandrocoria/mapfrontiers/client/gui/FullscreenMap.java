@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
@@ -7,21 +8,23 @@ import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.FrontierInfo;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.FrontierList;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.NewFrontier;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.StackeableScreen;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.platform.Services;
-import journeymap.client.api.IClientAPI;
-import journeymap.client.api.display.Context;
-import journeymap.client.api.display.IThemeButton;
-import journeymap.client.api.display.ModPopupMenu;
-import journeymap.client.api.display.ThemeButtonDisplay;
-import journeymap.client.api.util.UIState;
+import journeymap.api.v2.client.IClientAPI;
+import journeymap.api.v2.client.display.Context;
+import journeymap.api.v2.client.fullscreen.IThemeButton;
+import journeymap.api.v2.client.fullscreen.ModPopupMenu;
+import journeymap.api.v2.client.fullscreen.ThemeButtonDisplay;
+import journeymap.api.v2.client.util.UIState;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -36,6 +39,7 @@ public class FullscreenMap {
     }
 
     private final IClientAPI jmAPI;
+    private Screen fullscreen;
 
     private FrontierOverlay frontierHighlighted;
 
@@ -120,15 +124,18 @@ public class FullscreenMap {
         ClientEventHandler.unsuscribeAllEvents(this);
     }
 
-    public void addButtons(ThemeButtonDisplay buttonDisplay) {
-        buttonFrontiers = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_frontiers"), "frontiers", b -> buttonFrontiersPressed());
-        buttonNew = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_new_frontier"), "new_frontier", b -> buttonNewPressed());
-        buttonInfo = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_frontier_info"), "info_frontier", b -> buttonInfoPressed());
+    public void addButtons(ThemeButtonDisplay buttonDisplay, Screen fullscreen) {
+        this.fullscreen = fullscreen;
+
+        String path = "textures/gui/journeymap/";
+        buttonFrontiers = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_frontiers"), ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, path + "frontiers.png"), b -> buttonFrontiersPressed());
+        buttonNew = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_new_frontier"), ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, path + "new_frontier.png"), b -> buttonNewPressed());
+        buttonInfo = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_frontier_info"), ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, path + "info_frontier.png"), b -> buttonInfoPressed());
         buttonEdit = buttonDisplay.addThemeToggleButton(I18n.get("mapfrontiers.button_done_editing"), I18n.get("mapfrontiers.button_edit_frontier"),
-                "edit_frontier", editing, b -> buttonEditToggled());
+                ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, path + "edit_frontier.png"), editing, b -> buttonEditToggled());
         buttonVisible = buttonDisplay.addThemeToggleButton(I18n.get("mapfrontiers.button_hide_frontier"), I18n.get("mapfrontiers.button_show_frontier"),
-                "visible_frontier", false, b -> buttonVisibleToggled());
-        buttonDelete = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_delete_frontier"), "delete_frontier", b -> buttonDelete());
+                ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, path + "visible_frontier.png"), false, b -> buttonVisibleToggled());
+        buttonDelete = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_delete_frontier"), ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, path + "delete_frontier.png"), b -> buttonDelete());
 
         updateButtons();
     }
@@ -177,7 +184,7 @@ public class FullscreenMap {
     }
 
     private void buttonFrontiersPressed() {
-        Services.PLATFORM.pushGuiLayer(new FrontierList(jmAPI, this));
+        StackeableScreen.open(new FrontierList(jmAPI, this, fullscreen));
     }
 
     private void buttonNewPressed() {
@@ -186,13 +193,13 @@ public class FullscreenMap {
             frontierHighlighted = null;
         }
 
-        Services.PLATFORM.pushGuiLayer(new NewFrontier(jmAPI));
+        StackeableScreen.open(new NewFrontier(jmAPI, fullscreen));
 
         updateButtons();
     }
 
     private void buttonInfoPressed() {
-        Services.PLATFORM.pushGuiLayer(new FrontierInfo(jmAPI, frontierHighlighted));
+        StackeableScreen.open(new FrontierInfo(jmAPI, frontierHighlighted, fullscreen));
     }
 
     private void buttonEditToggled() {

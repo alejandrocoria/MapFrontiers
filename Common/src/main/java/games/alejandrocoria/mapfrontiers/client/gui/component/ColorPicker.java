@@ -13,7 +13,7 @@ import java.util.function.BiConsumer;
 
 @ParametersAreNonnullByDefault
 public class ColorPicker extends AbstractWidgetNoNarration {
-    private static final ResourceLocation texture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/color_picker.png");
+    private static final ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/color_picker.png");
     private static final int textureSizeX = 274;
     private static final int textureSizeY = 134;
     private static final int[] palette = {

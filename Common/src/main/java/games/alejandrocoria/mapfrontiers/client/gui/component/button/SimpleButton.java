@@ -42,6 +42,7 @@ public class SimpleButton extends Button {
         graphics.hLine(getX(), getX() + width, getY() + 16, ColorConstants.SIMPLE_BUTTON_BORDER);
         graphics.vLine(getX(), getY(), getY() + 16, ColorConstants.SIMPLE_BUTTON_BORDER);
         graphics.vLine(getX() + width, getY(), getY() + 16, ColorConstants.SIMPLE_BUTTON_BORDER);
+        graphics.fill(getX() + 1, getY() + 1, getX() + width, getY() + 16, ColorConstants.SIMPLE_BUTTON_BG);
 
         label.render(graphics, mouseX, mouseY, partialTicks);
     }

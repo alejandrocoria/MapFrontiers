@@ -5,10 +5,6 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.MapFrontiersForge;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.common.Config;
-import journeymap.client.api.display.ModPopupMenu;
-import journeymap.client.api.display.ThemeButtonDisplay;
-import journeymap.client.api.event.forge.FullscreenDisplayEvent;
-import journeymap.client.api.event.forge.PopupMenuEvent;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
@@ -20,7 +16,6 @@ import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
@@ -79,18 +74,6 @@ public class MapFrontiersClientForge extends MapFrontiersClient {
         if (event.getAction() == GLFW.GLFW_RELEASE) {
             ClientEventHandler.postMouseReleaseEvent(event.getButton());
         }
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onFullscreenAddonButton(FullscreenDisplayEvent.AddonButtonDisplayEvent event) {
-        ThemeButtonDisplay buttonDisplay = event.getThemeButtonDisplay();
-        ClientEventHandler.postAddonButtonDisplayEvent(buttonDisplay);
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onFullscreenpopupMenu(PopupMenuEvent.FullscreenPopupMenuEvent event) {
-        ModPopupMenu popupMenu = event.getPopupMenu();
-        ClientEventHandler.postFullscreenPopupMenuEvent(popupMenu);
     }
 
     @Mod.EventBusSubscriber(modid = MapFrontiers.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)

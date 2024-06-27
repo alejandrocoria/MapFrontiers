@@ -18,7 +18,7 @@ import java.util.Set;
 
 @ParametersAreNonnullByDefault
 public class PacketUpdateFrontier {
-    public static final ResourceLocation CHANNEL = new ResourceLocation(MapFrontiers.MODID, "packet_update_frontier");
+    public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_update_frontier");
 
     private final FrontierData frontier;
     private final Set<FrontierData.Change> changes;

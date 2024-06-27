@@ -10,7 +10,7 @@ import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
-import journeymap.client.api.IClientAPI;
+import journeymap.api.v2.client.IClientAPI;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.core.BlockPos;
@@ -74,7 +74,7 @@ public class MapFrontiersClient {
             }
 
             while (openSettingsKey.consumeClick()) {
-                client.setScreen(new ModSettings(null, false));
+                client.setScreen(new ModSettings(false, null));
             }
 
             if (player == null) {

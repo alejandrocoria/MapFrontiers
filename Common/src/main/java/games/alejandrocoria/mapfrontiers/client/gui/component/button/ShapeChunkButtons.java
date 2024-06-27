@@ -20,7 +20,7 @@ public class ShapeChunkButtons extends AbstractWidgetNoNarration {
         None, Width, Length
     }
 
-    private static final ResourceLocation texture = new ResourceLocation(MapFrontiers.MODID + ":textures/gui/shape_buttons.png");
+    private static final ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/shape_buttons.png");
     private static final int textureSizeX = 980;
     private static final int textureSizeY = 98;
 
@@ -34,7 +34,7 @@ public class ShapeChunkButtons extends AbstractWidgetNoNarration {
         super(x, y, 214, 120, Component.empty());
         this.selected = selected;
         labelShapes = new SimpleLabel(font, x + 107, y, SimpleLabel.Align.Center, Component.translatable("mapfrontiers.initial_shape"), ColorConstants.WHITE);
-        labelChunks = new SimpleLabel(font, x + 107, y + 126, SimpleLabel.Align.Center, Component.literal(""), ColorConstants.WHITE);
+        labelChunks = new SimpleLabel(font, x + 107, y + 127, SimpleLabel.Align.Center, Component.literal(""), ColorConstants.WHITE);
         this.callbackShapeUpdated = callbackShapeUpdated;
 
         updateChunksLabel();

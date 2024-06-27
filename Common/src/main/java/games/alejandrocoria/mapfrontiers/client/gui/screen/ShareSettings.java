@@ -17,7 +17,6 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketRemoveSharedUserPe
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateSharedUserPersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
-import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -34,7 +33,7 @@ import java.util.List;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class ShareSettings extends Screen {
+public class ShareSettings extends StackeableScreen {
     private final FrontiersOverlayManager frontiersOverlayManager;
     private FrontierOverlay frontier;
     private ScrollBox users;
@@ -46,8 +45,8 @@ public class ShareSettings extends Screen {
     private boolean canUpdate;
     private int ticksSinceLastUpdate = 0;
 
-    public ShareSettings(FrontiersOverlayManager frontiersOverlayManager, FrontierOverlay frontier) {
-        super(Component.translatable("mapfrontiers.title_share_settings"));
+    public ShareSettings(FrontiersOverlayManager frontiersOverlayManager, FrontierOverlay frontier, Screen returnScreen) {
+        super(Component.translatable("mapfrontiers.title_share_settings"), returnScreen);
         this.frontiersOverlayManager = frontiersOverlayManager;
         this.frontier = frontier;
 
@@ -55,7 +54,7 @@ public class ShareSettings extends Screen {
 
         ClientEventHandler.subscribeDeletedFrontierEvent(this, frontierID -> {
             if (frontierID.equals(this.frontier.getId())) {
-                Services.PLATFORM.popGuiLayer();
+                closeAndReturn();
             }
         });
 
@@ -72,7 +71,7 @@ public class ShareSettings extends Screen {
     @Override
     public void init() {
         if (!MapFrontiersClient.isModOnServer()) {
-            Services.PLATFORM.popGuiLayer();
+            closeAndReturn();
         }
 
         users = new ScrollBox(width / 2 - 215, 82, 430, height - 128, 16);
@@ -172,7 +171,7 @@ public class ShareSettings extends Screen {
 
     protected void buttonPressed(Button button) {
         if (button == buttonDone) {
-            Services.PLATFORM.popGuiLayer();
+            closeAndReturn();
         }
     }
 

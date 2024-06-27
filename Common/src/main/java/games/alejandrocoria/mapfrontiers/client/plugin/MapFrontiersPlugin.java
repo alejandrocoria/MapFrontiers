@@ -5,31 +5,108 @@ import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.FullscreenMap;
 import games.alejandrocoria.mapfrontiers.common.Config;
-import journeymap.client.api.IClientAPI;
-import journeymap.client.api.IClientPlugin;
-import journeymap.client.api.display.Context;
-import journeymap.client.api.event.ClientEvent;
-import journeymap.client.api.event.DisplayUpdateEvent;
-import journeymap.client.api.event.FullscreenMapEvent;
+import journeymap.api.v2.client.IClientAPI;
+import journeymap.api.v2.client.IClientPlugin;
+import journeymap.api.v2.client.JourneyMapPlugin;
+import journeymap.api.v2.client.display.Context;
+import journeymap.api.v2.client.event.FullscreenMapEvent;
+import journeymap.api.v2.client.fullscreen.ModPopupMenu;
+import journeymap.api.v2.client.fullscreen.ThemeButtonDisplay;
+import journeymap.api.v2.common.event.ClientEventRegistry;
+import net.minecraft.client.gui.screens.Screen;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.EnumSet;
 
 @ParametersAreNonnullByDefault
-@journeymap.client.api.ClientPlugin
+@JourneyMapPlugin(apiVersion = "2.0.0-SNAPSHOT")
 public class MapFrontiersPlugin implements IClientPlugin {
     private static FullscreenMap fullscreenMap;
 
     @Override
     public void initialize(final IClientAPI jmAPI) {
         MapFrontiersClient.setjmAPI(jmAPI);
-        jmAPI.subscribe(MapFrontiers.MODID, EnumSet.of(
-                ClientEvent.Type.MAP_CLICKED,
-                ClientEvent.Type.MAP_DRAGGED,
-                ClientEvent.Type.MAP_MOUSE_MOVED,
-                ClientEvent.Type.DISPLAY_UPDATE));
 
-        ClientEventHandler.subscribeAddonButtonDisplayEvent(MapFrontiersPlugin.class, buttonDisplay -> {
+        ClientEventRegistry.FULLSCREEN_MAP_CLICK_EVENT.subscribe(MapFrontiers.MODID, (clickEvent) -> {
+            if (!Config.fullscreenButtons) {
+                return;
+            }
+            if (fullscreenMap == null) {
+                return;
+            }
+
+            FullscreenMapEvent.Stage relevantStage;
+            if ((fullscreenMap.isEditingVertices() || fullscreenMap.isEditingChunks()) && clickEvent.getButton() == 1) {
+                relevantStage = FullscreenMapEvent.Stage.PRE;
+            } else {
+                relevantStage = FullscreenMapEvent.Stage.POST;
+            }
+            if (clickEvent.getStage() == relevantStage) {
+                boolean cancel = fullscreenMap.mapClicked(clickEvent.dimension, clickEvent.getLocation(), clickEvent.getButton());
+                if (cancel) {
+                    clickEvent.cancel();
+                }
+            }
+        });
+
+        ClientEventRegistry.FULLSCREEN_MAP_DRAG_EVENT.subscribe(MapFrontiers.MODID, (mouseDraggedEvent) -> {
+            if (!Config.fullscreenButtons) {
+                return;
+            }
+            if (fullscreenMap == null) {
+                return;
+            }
+
+            if (mouseDraggedEvent.getStage() == FullscreenMapEvent.Stage.PRE) {
+                boolean cancel = fullscreenMap.mapDragged(mouseDraggedEvent.dimension, mouseDraggedEvent.getLocation());
+                if (cancel) {
+                    mouseDraggedEvent.cancel();
+                }
+            }
+        });
+
+        ClientEventRegistry.FULLSCREEN_MAP_MOVE_EVENT.subscribe(MapFrontiers.MODID, (mouseMoveEvent) -> {
+            if (!Config.fullscreenButtons) {
+                return;
+            }
+            if (fullscreenMap == null) {
+                return;
+            }
+
+            fullscreenMap.mouseMoved(mouseMoveEvent.dimension, mouseMoveEvent.getLocation());
+        });
+
+        ClientEventRegistry.DISPLAY_UPDATE_EVENT.subscribe(MapFrontiers.MODID, (displayUpdateEvent) -> {
+            if (!Config.fullscreenButtons) {
+                return;
+            }
+
+            if (fullscreenMap == null) {
+                return;
+            }
+
+            if (displayUpdateEvent.uiState.ui == Context.UI.Fullscreen) {
+                if (displayUpdateEvent.uiState.active) {
+                    fullscreenMap.updateButtons();
+                } else {
+                    fullscreenMap.stopEditing();
+                    fullscreenMap.close();
+                    fullscreenMap = null;
+                }
+            }
+        });
+
+        ClientEventRegistry.ADDON_BUTTON_DISPLAY_EVENT.subscribe(MapFrontiers.MODID, (addonButtonDisplayEvent) -> {
+            ThemeButtonDisplay buttonDisplay = addonButtonDisplayEvent.getThemeButtonDisplay();
+            Screen fullscreen = addonButtonDisplayEvent.getFullscreen().getScreen();
+            ClientEventHandler.postAddonButtonDisplayEvent(buttonDisplay, fullscreen);
+        });
+
+        ClientEventRegistry.FULLSCREEN_POPUP_MENU_EVENT.subscribe(MapFrontiers.MODID, (fullscreenPopupMenuEvent) -> {
+            ModPopupMenu popupMenu = fullscreenPopupMenuEvent.getPopupMenu();
+            ClientEventHandler.postFullscreenPopupMenuEvent(popupMenu);
+        });
+
+        ClientEventHandler.subscribeAddonButtonDisplayEvent(MapFrontiersPlugin.class, (buttonDisplay, fullscreen) -> {
             if (!Config.fullscreenButtons) {
                 return;
             }
@@ -38,7 +115,7 @@ public class MapFrontiersPlugin implements IClientPlugin {
                 fullscreenMap = new FullscreenMap(jmAPI);
             }
 
-            fullscreenMap.addButtons(buttonDisplay);
+            fullscreenMap.addButtons(buttonDisplay, fullscreen);
         });
 
         ClientEventHandler.subscribeFullscreenPopupMenuEvent(MapFrontiersPlugin.class, popupMenu -> {
@@ -55,60 +132,6 @@ public class MapFrontiersPlugin implements IClientPlugin {
     @Override
     public String getModId() {
         return MapFrontiers.MODID;
-    }
-
-    @Override
-    public void onEvent(ClientEvent event) {
-        if (!Config.fullscreenButtons) {
-            return;
-        }
-
-        if (fullscreenMap == null) {
-            return;
-        }
-
-        switch (event.type) {
-            case MAP_CLICKED -> {
-                FullscreenMapEvent.ClickEvent clickEvent = (FullscreenMapEvent.ClickEvent) event;
-                FullscreenMapEvent.Stage relevantStage;
-                if ((fullscreenMap.isEditingVertices() || fullscreenMap.isEditingChunks()) && clickEvent.getButton() == 1) {
-                    relevantStage = FullscreenMapEvent.Stage.PRE;
-                } else {
-                    relevantStage = FullscreenMapEvent.Stage.POST;
-                }
-                if (clickEvent.getStage() == relevantStage) {
-                    boolean cancel = fullscreenMap.mapClicked(clickEvent.dimension, clickEvent.getLocation(), clickEvent.getButton());
-                    if (cancel) {
-                        clickEvent.cancel();
-                    }
-                }
-            }
-            case MAP_DRAGGED -> {
-                FullscreenMapEvent.MouseDraggedEvent mouseDraggedEvent = (FullscreenMapEvent.MouseDraggedEvent) event;
-                if (mouseDraggedEvent.getStage() == FullscreenMapEvent.Stage.PRE) {
-                    boolean cancel = fullscreenMap.mapDragged(mouseDraggedEvent.dimension, mouseDraggedEvent.getLocation());
-                    if (cancel) {
-                        mouseDraggedEvent.cancel();
-                    }
-                }
-            }
-            case MAP_MOUSE_MOVED -> {
-                FullscreenMapEvent.MouseMoveEvent mouseMoveEvent = (FullscreenMapEvent.MouseMoveEvent) event;
-                fullscreenMap.mouseMoved(mouseMoveEvent.dimension, mouseMoveEvent.getLocation());
-            }
-            case DISPLAY_UPDATE -> {
-                DisplayUpdateEvent displayEvent = (DisplayUpdateEvent) event;
-                if (displayEvent.uiState.ui == Context.UI.Fullscreen) {
-                    if (displayEvent.uiState.active) {
-                        fullscreenMap.updateButtons();
-                    } else {
-                        fullscreenMap.stopEditing();
-                        fullscreenMap.close();
-                        fullscreenMap = null;
-                    }
-                }
-            }
-        }
     }
 
     public static boolean isEditing() {

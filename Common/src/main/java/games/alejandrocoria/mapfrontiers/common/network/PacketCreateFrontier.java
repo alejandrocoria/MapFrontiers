@@ -24,7 +24,7 @@ import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class PacketCreateFrontier {
-    public static final ResourceLocation CHANNEL = new ResourceLocation(MapFrontiers.MODID, "packet_create_frontier");
+    public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_create_frontier");
 
     private ResourceKey<Level> dimension = Level.OVERWORLD;
     private boolean personal = false;

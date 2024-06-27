@@ -12,7 +12,7 @@ import journeymap.client.ui.minimap.MiniMap;
 import journeymap.client.ui.minimap.Position;
 import journeymap.client.ui.minimap.Shape;
 import journeymap.client.ui.theme.Theme;
-import journeymap.client.waypoint.WaypointStore;
+import journeymap.common.waypoint.WaypointStore;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 
@@ -141,7 +141,7 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
     @Override
     public List<String> getDimensionList() {
         List<String> list = new ArrayList<>();
-        List<WorldData.DimensionProvider> dimensionProviders = WorldData.getDimensionProviders(WaypointStore.INSTANCE.getLoadedDimensions());
+        List<WorldData.DimensionProvider> dimensionProviders = WorldData.getDimensionProviders(WaypointStore.getInstance().getLoadedDimensions());
         for (WorldData.DimensionProvider dimension : dimensionProviders) {
             list.add(dimension.getDimensionId());
         }

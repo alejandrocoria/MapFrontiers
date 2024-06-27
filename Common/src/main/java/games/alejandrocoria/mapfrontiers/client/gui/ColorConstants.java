@@ -28,6 +28,7 @@ public final class ColorConstants {
     public static final int SCROLL_ELEMENT_HOVERED = 0xa0222222;
     public static final int SCROLL_ELEMENT_SELECTED = 0xff222222;
     public static final int SIMPLE_BUTTON_BORDER = 0xff777777;
+    public static final int SIMPLE_BUTTON_BG = 0xc7101010;
     public static final int SIMPLE_BUTTON_TEXT = 0xff999999;
     public static final int SIMPLE_BUTTON_TEXT_DELETE = 0xffff7777;
     public static final int SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT = 0xffff0000;

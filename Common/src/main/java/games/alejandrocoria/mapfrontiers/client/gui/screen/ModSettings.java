@@ -31,11 +31,11 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
@@ -54,7 +54,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class ModSettings extends Screen {
+public class ModSettings extends StackeableScreen {
     public enum Tab {
         Credits, General, Groups, Actions
     }
@@ -63,7 +63,7 @@ public class ModSettings extends Screen {
     private int actualWidth;
     private int actualHeight;
 
-    private final Screen previousScreen;
+    private final Screen returnScreen;
     private final boolean showKeyHint;
 
     private FrontierSettings settings;
@@ -101,9 +101,9 @@ public class ModSettings extends Screen {
     private Tab tabSelected;
     private int ticksSinceLastUpdate = 0;
 
-    public ModSettings(@Nullable Screen previousScreen, boolean showKeyHint) {
-        super(Component.translatable("mapfrontiers.title_settings"));
-        this.previousScreen = previousScreen;
+    public ModSettings(boolean showKeyHint, @Nullable Screen returnScreen) {
+        super(Component.translatable("mapfrontiers.title_settings"), returnScreen);
+        this.returnScreen = returnScreen;
         this.showKeyHint = showKeyHint;
         labels = new ArrayList<>();
         labelTooltips = new HashMap<>();
@@ -117,13 +117,13 @@ public class ModSettings extends Screen {
                 MapFrontiersClient.setLastSettingsTab(tabSelected);
             }
 
-            minecraft.setScreen(new ModSettings(previousScreen, showKeyHint));
+            minecraft.setScreen(new ModSettings(showKeyHint, returnScreen));
         });
     }
 
     private ModSettings() {
-        super(Component.empty());
-        previousScreen = null;
+        super(Component.empty(), null);
+        returnScreen = null;
         showKeyHint = false;
         labels = null;
         labelTooltips = null;
@@ -166,15 +166,21 @@ public class ModSettings extends Screen {
         }
         tabbedBox.setTabSelected(tabSelected.ordinal());
 
-        buttonWeb = new LinkButton(font, actualWidth / 2, actualHeight / 2 - 98, Component.literal("alejandrocoria.games"),
-                "https://alejandrocoria.games", (open) -> linkClicked(open, buttonWeb));
+        buttonWeb = new LinkButton(font, actualWidth / 2, actualHeight / 2 - 98, Component.literal("alejandrocoria.games"), (b) -> {
+            MapFrontiersClient.setLastSettingsTab(tabSelected);
+            ConfirmLinkScreen.confirmLinkNow(this, "https://alejandrocoria.games", false);
+        });
 
         buttonProject = new LinkButton(font, actualWidth / 2, actualHeight / 2 - 20,
-                Component.literal("curseforge.com/minecraft/mc-mods/mapfrontiers"),
-                "https://www.curseforge.com/minecraft/mc-mods/mapfrontiers", (open) -> linkClicked(open, buttonProject));
+                Component.literal("curseforge.com/minecraft/mc-mods/mapfrontiers"), (b) -> {
+            MapFrontiersClient.setLastSettingsTab(tabSelected);
+            ConfirmLinkScreen.confirmLinkNow(this, "https://www.curseforge.com/minecraft/mc-mods/mapfrontiers", false);
+        });
 
-        buttonPatreon = new PatreonButton(actualWidth / 2, actualHeight / 2 + 36, "https://www.patreon.com/alejandrocoria",
-                (open) -> linkClicked(open, buttonPatreon));
+        buttonPatreon = new PatreonButton(actualWidth / 2, actualHeight / 2 + 36, (b) -> {
+            MapFrontiersClient.setLastSettingsTab(tabSelected);
+            ConfirmLinkScreen.confirmLinkNow(this, "https://www.patreon.com/alejandrocoria", false);
+        });
 
         buttonFullscreenButtons = new OptionButton(font, actualWidth / 2 + 80, 54, 40, this::buttonPressed);
         buttonFullscreenButtons.addOption(Component.translatable("options.on"));
@@ -429,7 +435,7 @@ public class ModSettings extends Screen {
     @Override
     public boolean keyPressed(int key, int value, int modifier) {
         if (key == GLFW.GLFW_KEY_E && !(getFocused() instanceof EditBox)) {
-            onClose();
+            closeAndReturn();
             return true;
         } else {
             return super.keyPressed(key, value, modifier);
@@ -491,7 +497,7 @@ public class ModSettings extends Screen {
             updateButtonsVisibility();
         } else if (button == buttonEditHUD) {
             MapFrontiersClient.setLastSettingsTab(tabSelected);
-            minecraft.setScreen(new HUDSettings(previousScreen, showKeyHint));
+            minecraft.setScreen(new HUDSettings(this));
         } else if (button == buttonNewGroup) {
             if (settings != null) {
                 SettingsGroup group = settings.createCustomGroup(textNewGroupName.getValue());
@@ -548,7 +554,7 @@ public class ModSettings extends Screen {
 
             sendChangesToServer();
         } else if (button == buttonDone) {
-            onClose();
+            closeAndReturn();
         }
     }
 
@@ -557,28 +563,6 @@ public class ModSettings extends Screen {
         ClientEventHandler.postUpdatedConfigEvent();
         MapFrontiersClient.setLastSettingsTab(tabSelected);
         ClientEventHandler.unsuscribeAllEvents(this);
-    }
-
-    @Override
-    public void onClose() {
-        minecraft.setScreen(previousScreen);
-    }
-
-    public void linkClicked(boolean open, AbstractWidget widget) {
-        if (open) {
-            if (widget == buttonWeb) {
-                buttonWeb.openLink();
-            } else if (widget == buttonProject) {
-                buttonProject.openLink();
-            } else if (widget == buttonPatreon) {
-                buttonPatreon.openLink();
-            } else {
-                return;
-            }
-        }
-
-        MapFrontiersClient.setLastSettingsTab(tabSelected);
-        minecraft.setScreen(new ModSettings(previousScreen, showKeyHint));
     }
 
     public void setFrontierSettings(FrontierSettings settings) {

@@ -17,7 +17,7 @@ import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class PacketFrontierDeleted {
-    public static final ResourceLocation CHANNEL = new ResourceLocation(MapFrontiers.MODID, "packet_frontier_deleted");
+    public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_frontier_deleted");
 
     private ResourceKey<Level> dimension = Level.OVERWORLD;
     private UUID frontierID;

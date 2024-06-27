@@ -580,7 +580,7 @@ public class FrontierData {
 
         id = UUID.fromString(nbt.getString("id"));
         color = nbt.getInt("color");
-        dimension = ResourceKey.create(Registries.DIMENSION, new ResourceLocation(nbt.getString("dimension")));
+        dimension = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(nbt.getString("dimension")));
         name1 = nbt.getString("name1");
         name2 = nbt.getString("name2");
         visible = nbt.getBoolean("visible");

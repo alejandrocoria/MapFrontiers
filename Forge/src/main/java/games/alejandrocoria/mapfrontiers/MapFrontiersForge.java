@@ -5,7 +5,6 @@ import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.event.EventHandler;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -34,7 +33,6 @@ public class MapFrontiersForge extends MapFrontiers {
         LOGGER.info("Forge commonSetup done");
     }
 
-    @OnlyIn(Dist.CLIENT)
     public static void addListenerClientSetup() {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(MapFrontiersClientForge::clientSetup);
     }

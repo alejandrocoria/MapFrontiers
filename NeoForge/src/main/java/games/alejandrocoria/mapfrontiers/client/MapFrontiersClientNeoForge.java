@@ -5,10 +5,6 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.MapFrontiersNeoForge;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.common.Config;
-import journeymap.client.api.display.ModPopupMenu;
-import journeymap.client.api.display.ThemeButtonDisplay;
-import journeymap.client.api.event.neoforge.FullscreenDisplayEvent;
-import journeymap.client.api.event.neoforge.PopupMenuEvent;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
@@ -50,8 +46,6 @@ public class MapFrontiersClientNeoForge extends MapFrontiersClient {
         NeoForge.EVENT_BUS.addListener(MapFrontiersClientNeoForge::clientConnectedToServer);
         NeoForge.EVENT_BUS.addListener(MapFrontiersClientNeoForge::clientDisconnectionFromServer);
         NeoForge.EVENT_BUS.addListener(MapFrontiersClientNeoForge::mouseEvent);
-        NeoForge.EVENT_BUS.addListener(MapFrontiersClientNeoForge::onFullscreenAddonButton);
-        NeoForge.EVENT_BUS.addListener(MapFrontiersClientNeoForge::onFullscreenpopupMenu);
 
         MapFrontiersNeoForge.LOGGER.info("NeoForge clientSetup done");
     }
@@ -90,16 +84,6 @@ public class MapFrontiersClientNeoForge extends MapFrontiersClient {
         if (event.getAction() == GLFW.GLFW_RELEASE) {
             ClientEventHandler.postMouseReleaseEvent(event.getButton());
         }
-    }
-
-    public static void onFullscreenAddonButton(FullscreenDisplayEvent.AddonButtonDisplayEvent event) {
-        ThemeButtonDisplay buttonDisplay = event.getThemeButtonDisplay();
-        ClientEventHandler.postAddonButtonDisplayEvent(buttonDisplay);
-    }
-
-    public static void onFullscreenpopupMenu(PopupMenuEvent.FullscreenPopupMenuEvent event) {
-        ModPopupMenu popupMenu = event.getPopupMenu();
-        ClientEventHandler.postFullscreenPopupMenuEvent(popupMenu);
     }
 
     @EventBusSubscriber(modid = MapFrontiers.MODID, bus = EventBusSubscriber.Bus.MOD)

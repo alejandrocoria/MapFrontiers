@@ -20,9 +20,9 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
 import games.alejandrocoria.mapfrontiers.platform.Services;
-import journeymap.client.api.IClientAPI;
-import journeymap.client.api.display.Context;
-import journeymap.client.api.util.UIState;
+import journeymap.api.v2.client.IClientAPI;
+import journeymap.api.v2.client.display.Context;
+import journeymap.api.v2.client.util.UIState;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -49,11 +49,10 @@ import java.util.Objects;
 import java.util.Stack;
 
 @ParametersAreNonnullByDefault
-public class FrontierInfo extends Screen {
+public class FrontierInfo extends StackeableScreen {
     static final DateFormat dateFormat = new SimpleDateFormat();
 
     private final IClientAPI jmAPI;
-    private final Runnable afterClose;
 
     private float scaleFactor;
     private int actualWidth;
@@ -104,14 +103,9 @@ public class FrontierInfo extends Screen {
     private final Stack<FrontierData> undoStack = new Stack<>();
     private final Stack<FrontierData> redoStack = new Stack<>();
 
-    public FrontierInfo(IClientAPI jmAPI, FrontierOverlay frontier) {
-        this(jmAPI, frontier, null);
-    }
-
-    public FrontierInfo(IClientAPI jmAPI, FrontierOverlay frontier, @Nullable  Runnable afterClose) {
-        super(Component.translatable("mapfrontiers.title_info"));
+    public FrontierInfo(IClientAPI jmAPI, FrontierOverlay frontier, Screen returnScreen) {
+        super(Component.translatable("mapfrontiers.title_info"), returnScreen);
         this.jmAPI = jmAPI;
-        this.afterClose = afterClose;
         frontiersOverlayManager = MapFrontiersClient.getFrontiersOverlayManager(frontier.getPersonal());
         this.frontier = frontier;
         labels = new ArrayList<>();
@@ -119,7 +113,7 @@ public class FrontierInfo extends Screen {
 
         ClientEventHandler.subscribeDeletedFrontierEvent(this, frontierID -> {
             if (frontier.getId().equals(frontierID)) {
-                onClose();
+                closeAndReturn();
             }
         });
 
@@ -145,7 +139,7 @@ public class FrontierInfo extends Screen {
 
     @Override
     public void init() {
-        scaleFactor = ScreenHelper.getScaleFactorThatFit(minecraft, this, 627, 336);
+        scaleFactor = ScreenHelper.getScaleFactorThatFit(minecraft, this, 636, 350);
         actualWidth = (int) (width * scaleFactor);
         actualHeight = (int) (height * scaleFactor);
 
@@ -382,14 +376,14 @@ public class FrontierInfo extends Screen {
             labels.add(modifiedLabel);
         }
 
-        buttonSelect = new SimpleButton(font, leftSide - 154, top + 290, 144,
+        buttonSelect = new SimpleButton(font, leftSide - 154, top + 300, 144,
                 Component.translatable("mapfrontiers.select_in_map"), this::buttonPressed);
-        buttonShareSettings = new SimpleButton(font, leftSide, top + 290, 144,
+        buttonShareSettings = new SimpleButton(font, leftSide, top + 300, 144,
                 Component.translatable("mapfrontiers.share_settings"), this::buttonPressed);
-        buttonDelete = new SimpleButton(font, rightSide, top + 290, 144,
+        buttonDelete = new SimpleButton(font, rightSide, top + 300, 144,
                 Component.translatable("mapfrontiers.delete"), this::buttonPressed);
         buttonDelete.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
-        buttonDone = new SimpleButton(font, rightSide + 154, top + 290, 144,
+        buttonDone = new SimpleButton(font, rightSide + 154, top + 300, 144,
                 Component.translatable("gui.done"), this::buttonPressed);
 
         buttonBanner = new SimpleButton(font, leftSide - 152, top, 144,
@@ -444,6 +438,16 @@ public class FrontierInfo extends Screen {
             graphics.pose().pushPose();
             graphics.pose().scale(1.0f / scaleFactor, 1.0f / scaleFactor, 1.0f);
         }
+
+        int x1 = actualWidth / 2 - 318;
+        int x2 = actualWidth / 2 + 318;
+        int y1 = actualHeight / 2 - 152;
+        int y2 = actualHeight / 2 + 152;
+        graphics.fill(x1, y1, x2, y2, ColorConstants.SCREEN_BG);
+        graphics.hLine(x1, x2, y1, ColorConstants.TAB_BORDER);
+        graphics.hLine(x1, x2, y2, ColorConstants.TAB_BORDER);
+        graphics.vLine(x1, y1, y2, ColorConstants.TAB_BORDER);
+        graphics.vLine(x2, y1, y2, ColorConstants.TAB_BORDER);
 
         // Rendering manually so the background is not scaled.
         for(GuiEventListener child : children()) {
@@ -612,17 +616,17 @@ public class FrontierInfo extends Screen {
             redo();
         } else if (button == buttonSelect) {
             BlockPos center = frontier.getCenter();
-            Services.PLATFORM.popGuiLayer();
+            closeAndReturn();
             Services.JOURNEYMAP.fullscreenMapCenterOn(center.getX(), center.getZ());
         } else if (button == buttonShareSettings) {
-            Services.PLATFORM.pushGuiLayer(new ShareSettings(frontiersOverlayManager, frontier));
+            StackeableScreen.open(new ShareSettings(frontiersOverlayManager, frontier, this));
         } else if (button == buttonDelete) {
             // Unsubscribing to not receive this same event.
             ClientEventHandler.unsuscribeAllEvents(this);
             frontiersOverlayManager.clientDeleteFrontier(frontier);
-            onClose();
+            closeAndReturn();
         } else if (button == buttonDone) {
-            onClose();
+            closeAndReturn();
         } else if (button == buttonBanner) {
             if (!frontier.hasBanner()) {
                 ItemStack heldBanner = getHeldBanner(minecraft);
@@ -641,15 +645,6 @@ public class FrontierInfo extends Screen {
     public void removed() {
         sendChangesToServer();
         ClientEventHandler.unsuscribeAllEvents(this);
-    }
-
-    @Override
-    public void onClose() {
-        Services.PLATFORM.popGuiLayer();
-
-        if (afterClose != null) {
-            afterClose.run();
-        }
     }
 
     private void colorPickerUpdated(boolean dragging) {

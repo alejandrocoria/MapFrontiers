@@ -66,6 +66,7 @@ dependencies {
     jarJar (group: 'mysticdrew', name: 'common-networking-forge', version: project.common_networking_jarjar_version) {
         jarJar.pin(it, project.common_networking_version)
     }
+    api group: 'info.journeymap', name: 'journeymap-api-forge', version: project.journeymap_api_version, changing: true
     implementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_forge_file_id}"
 }
 

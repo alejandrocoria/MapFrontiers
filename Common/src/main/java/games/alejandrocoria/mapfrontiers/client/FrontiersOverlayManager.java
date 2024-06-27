@@ -15,9 +15,9 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import games.alejandrocoria.mapfrontiers.platform.Services;
-import journeymap.client.api.IClientAPI;
-import journeymap.client.api.display.MarkerOverlay;
-import journeymap.client.api.model.MapImage;
+import journeymap.api.v2.client.IClientAPI;
+import journeymap.api.v2.client.display.MarkerOverlay;
+import journeymap.api.v2.client.model.MapImage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -55,7 +55,7 @@ public class FrontiersOverlayManager {
     private static final Minecraft minecraft = Minecraft.getInstance();
 
     private static final MapImage markerDotSelected = new MapImage(
-            new ResourceLocation(MapFrontiers.MODID + ":textures/gui/marker.png"), 20, 0, 10, 10, ColorConstants.WHITE, 1.f);
+            ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/marker.png"), 20, 0, 10, 10, ColorConstants.WHITE, 1.f);
     private static float targetDotSelectedOpacity = 0.3f;
 
     static {
@@ -67,13 +67,13 @@ public class FrontiersOverlayManager {
             if (MapFrontiersPlugin.isEditing()) {
                 float opacity = markerDotSelected.getOpacity();
                 if (opacity < targetDotSelectedOpacity) {
-                    opacity += client.getDeltaFrameTime() * 0.5f;
+                    opacity += client.getTimer().getGameTimeDeltaTicks() * 0.5f;
                     if (opacity >= targetDotSelectedOpacity) {
                         opacity = targetDotSelectedOpacity;
                         targetDotSelectedOpacity = 0.f;
                     }
                 } else {
-                    opacity -= client.getDeltaFrameTime() * 0.07f;
+                    opacity -= client.getTimer().getGameTimeDeltaTicks() * 0.07f;
                     if (opacity <= targetDotSelectedOpacity) {
                         opacity = targetDotSelectedOpacity;
                         targetDotSelectedOpacity = 1.f;
@@ -321,7 +321,7 @@ public class FrontiersOverlayManager {
         if (frontier != null) {
             BlockPos pos = frontier.getSelectedVertex();
             if (pos != null) {
-                marker = new MarkerOverlay(MapFrontiers.MODID, "selected_vertex_" + dimension.location(), pos, markerDotSelected);
+                marker = new MarkerOverlay(MapFrontiers.MODID, pos, markerDotSelected);
                 marker.setDimension(dimension);
                 marker.setDisplayOrder(101);
 
