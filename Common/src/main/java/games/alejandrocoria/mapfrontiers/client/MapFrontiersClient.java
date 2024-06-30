@@ -42,8 +42,6 @@ public class MapFrontiersClient {
     private static FrontierData clipboard = null;
 
     protected static void init() {
-        PacketHandler.init();
-
         ClientEventHandler.subscribeUpdatedSettingsProfileEvent(MapFrontiersClient.class, profile -> settingsProfile = profile);
 
         ClientEventHandler.subscribeClientTickEvent(MapFrontiersClient.class, client -> {
