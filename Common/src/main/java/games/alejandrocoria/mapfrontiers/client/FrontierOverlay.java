@@ -63,9 +63,7 @@ public class FrontierOverlay extends FrontierData {
 
     static {
         markerVertex.setAnchorX(markerVertex.getDisplayWidth() / 2.0).setAnchorY(markerVertex.getDisplayHeight() / 2.0);
-        markerVertex.setRotation(0);
         markerDot.setAnchorX(markerDot.getDisplayWidth() / 2.0).setAnchorY(markerDot.getDisplayHeight() / 2.0);
-        markerDot.setRotation(0);
     }
 
     public BlockPos topLeft;
@@ -956,10 +954,11 @@ public class FrontierOverlay extends FrontierData {
         int ownerWidth = ownerVisible ? Minecraft.getInstance().font.width(owner.username) * 2 : 0;
         int labelWidth = Math.max(ownerWidth, Math.max(name1Width, name2Width)) + 6;
 
-        int zoom = 0;
-        while (labelWidth > polygonWidth && zoom < 8) {
-            ++zoom;
-            polygonWidth *= 2;
+        float polygonWidthScaled = polygonWidth / 256.f;
+        int zoom = 2;
+        while (labelWidth > polygonWidthScaled && zoom < 8192) {
+            zoom *= 2;
+            polygonWidthScaled *= 2.f;
         }
 
         return textProperties.setMinZoom(zoom);
@@ -1071,13 +1070,13 @@ public class FrontierOverlay extends FrontierData {
             MarkerOverlay dot = new MarkerOverlay(MapFrontiers.MODID, pos, markerDot);
             dot.setDimension(dimension);
             dot.setDisplayOrder(99);
-            int minZoom = 0;
+            int minZoom = 2;
             if (i % 2 == 0) {
-                minZoom = 3;
+                minZoom = 16384;
             } else if (i % 4 == 1) {
-                minZoom = 2;
+                minZoom = 8192;
             } else if (i % 8 == 3) {
-                minZoom = 1;
+                minZoom = 4096;
             }
             dot.setMinZoom(minZoom);
             markerOverlays.add(dot);

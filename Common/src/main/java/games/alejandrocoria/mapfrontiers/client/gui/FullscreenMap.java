@@ -287,7 +287,7 @@ public class FullscreenMap {
             return false;
         }
 
-        double maxDistanceToClosest = Math.pow(2.0, Math.max(4.0 - uiState.zoom, 1.0));
+        double maxDistanceToClosest = Math.max(2.0, 8192.0 / uiState.zoom);
 
         if (editing && frontierHighlighted != null) {
             if (frontierHighlighted.getMode() == FrontierData.Mode.Vertex) {
