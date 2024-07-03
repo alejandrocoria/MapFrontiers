@@ -374,6 +374,9 @@ public class FrontiersManager {
             } else {
                 mcDir = Minecraft.getInstance().gameDirectory;
             }
+            if (mcDir.getPath().isEmpty()) {
+                mcDir = new File(".");
+            }
             ModDir = new File(mcDir, "mapfrontiers");
             if (ModDir.mkdirs()) {
                 MapFrontiers.LOGGER.info("Created folder: " + ModDir.toString());
