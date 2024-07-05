@@ -37,7 +37,7 @@
         "fabricloader": ">=0.15.2",
         "fabric": "*",
         "minecraft": ">=${minecraft_version}",
-        "java": "${java_version}",
+        "java": ">=${java_version}",
         "journeymap": ">=${journeymap_min_version}",
         "forgeconfigapiport": ">=20.4.0"
     }
