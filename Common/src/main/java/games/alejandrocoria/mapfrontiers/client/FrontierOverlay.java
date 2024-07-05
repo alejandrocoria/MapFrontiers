@@ -548,35 +548,42 @@ public class FrontierOverlay extends FrontierData {
             return;
         }
 
+        renderBannerLayer(graphics, x, y, scale, Sheets.BANNER_BASE.atlasLocation(), Sheets.BANNER_BASE.sprite(), banner.baseColor);
+
         for (int i = 0; i < bannerDisplay.patternLayers.layers().size(); ++i) {
             BannerPatternLayers.Layer layer = bannerDisplay.patternLayers.layers().get(i);
             ResourceLocation patternTextureLocation = layer.pattern().value().assetId().withPrefix("entity/banner/");
             TextureAtlasSprite sprite = mc.getTextureAtlas(Sheets.BANNER_SHEET).apply(patternTextureLocation);
-            RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
-            RenderSystem.setShaderTexture(0, Sheets.BANNER_SHEET);
-            RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
 
-            RenderSystem.enableBlend();
-
-            Tesselator tesselator = Tesselator.getInstance();
-            BufferBuilder buf = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-            int color = layer.color().getTextureDiffuseColor();
-            int width = 22 * scale;
-            int height = 40 * scale;
-            float zLevel = 0.f;
-            float u1 = sprite.getU0();
-            float u2 = sprite.getU0() + 22.f / 512.f;
-            float v1 = sprite.getV0() + 1.f / 512.f;
-            float v2 = sprite.getV0() + 41.f / 512.f;
-            Matrix4f matrix = graphics.pose().last().pose();
-            buf.addVertex(matrix, x, y + height, zLevel).setUv(u1, v2).setColor(color);
-            buf.addVertex(matrix, x + width, y + height, zLevel).setUv(u2, v2).setColor(color);
-            buf.addVertex(matrix, x + width, y, zLevel).setUv(u2, v1).setColor(color);
-            buf.addVertex(matrix, x, y, zLevel).setUv(u1, v1).setColor(color);
-            BufferUploader.drawWithShader(buf.buildOrThrow());
-
-            RenderSystem.disableBlend();
+            renderBannerLayer(graphics, x, y, scale, Sheets.BANNER_SHEET, sprite, layer.color());
         }
+    }
+
+    private void renderBannerLayer(GuiGraphics graphics, int x, int y, int scale, ResourceLocation sheet, TextureAtlasSprite sprite, DyeColor dye) {
+        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
+        RenderSystem.setShaderTexture(0, sheet);
+        RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
+
+        RenderSystem.enableBlend();
+
+        Tesselator tesselator = Tesselator.getInstance();
+        BufferBuilder buf = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+        int color = dye.getTextureDiffuseColor();
+        int width = 22 * scale;
+        int height = 40 * scale;
+        float zLevel = 0.f;
+        float u1 = sprite.getU0();
+        float u2 = sprite.getU0() + 22.f / 512.f;
+        float v1 = sprite.getV0() + 1.f / 512.f;
+        float v2 = sprite.getV0() + 41.f / 512.f;
+        Matrix4f matrix = graphics.pose().last().pose();
+        buf.addVertex(matrix, x, y + height, zLevel).setUv(u1, v2).setColor(color);
+        buf.addVertex(matrix, x + width, y + height, zLevel).setUv(u2, v2).setColor(color);
+        buf.addVertex(matrix, x + width, y, zLevel).setUv(u2, v1).setColor(color);
+        buf.addVertex(matrix, x, y, zLevel).setUv(u1, v1).setColor(color);
+        BufferUploader.drawWithShader(buf.buildOrThrow());
+
+        RenderSystem.disableBlend();
     }
 
     public void removeSelectedVertex() {
