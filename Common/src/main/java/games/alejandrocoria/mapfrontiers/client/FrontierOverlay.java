@@ -544,7 +544,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void renderBanner(Minecraft mc, GuiGraphics graphics, int x, int y, int scale) {
-        if (bannerDisplay == null) {
+        if (bannerDisplay == null || bannerDisplay.patternLayers == null) {
             return;
         }
 
@@ -1098,7 +1098,7 @@ public class FrontierOverlay extends FrontierData {
         public BannerDisplayData(FrontierData.BannerData bannerData) {
             ClientLevel level = Minecraft.getInstance().level;
             Optional<BannerPatternLayers> bannerPatterns = BannerPatternLayers.CODEC.parse(level.registryAccess().createSerializationContext(NbtOps.INSTANCE), bannerData.patterns).result();
-            bannerPatterns.ifPresent((p) -> patternLayers = p);
+            bannerPatterns.ifPresentOrElse((p) -> patternLayers = p, () -> MapFrontiers.LOGGER.error("Error creating banner pattern layers"));
         }
     }
 }
