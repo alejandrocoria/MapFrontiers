@@ -34,3 +34,11 @@ issueTrackerURL="${mod_issues}"
     versionRange="${journeymap_version_range}"
     ordering="NONE"
     side="BOTH"
+
+
+[[dependencies.${mod_id}]]
+    modId="forgeconfigapiport"
+    type="required"
+    versionRange="${forge_config_api_port_version_range}"
+    ordering="NONE"
+    side="BOTH"
