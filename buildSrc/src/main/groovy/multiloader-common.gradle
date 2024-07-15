@@ -146,6 +146,7 @@ processResources {
             "neoforge_loader_version_range": neoforge_loader_version_range,
             "journeymap_min_version": journeymap_min_version,
             "journeymap_version_range": journeymap_version_range,
+            "forge_config_api_port_version": forge_config_api_port_version,
             "forge_config_api_port_version_range": forge_config_api_port_version_range
     ]
 

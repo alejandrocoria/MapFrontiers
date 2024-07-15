@@ -39,6 +39,6 @@
         "minecraft": ">=${minecraft_version}",
         "java": ">=${java_version}",
         "journeymap": ">=${journeymap_min_version}",
-        "forgeconfigapiport": ">=20.4.0"
+        "forgeconfigapiport": ">=${forge_config_api_port_version}"
     }
 }

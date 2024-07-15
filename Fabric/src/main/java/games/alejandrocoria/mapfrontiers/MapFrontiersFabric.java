@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers;
 
 import fuzs.forgeconfigapiport.fabric.api.forge.v4.ForgeConfigRegistry;
-import fuzs.forgeconfigapiport.fabric.api.forge.v4.ForgeModConfigEvents;
+import fuzs.forgeconfigapiport.fabric.api.neoforge.v4.NeoForgeModConfigEvents;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.event.EventHandler;
 import net.fabricmc.api.ModInitializer;
@@ -9,7 +9,7 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.minecraftforge.fml.config.ModConfig;
+import net.neoforged.fml.config.ModConfig;
 
 public class MapFrontiersFabric extends MapFrontiers implements ModInitializer {
     public MapFrontiersFabric() {
@@ -17,7 +17,7 @@ public class MapFrontiersFabric extends MapFrontiers implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        ForgeModConfigEvents.loading(MapFrontiers.MODID).register(config -> Config.bakeConfig());
+        NeoForgeModConfigEvents.loading(MapFrontiers.MODID).register(config -> Config.bakeConfig());
         ForgeConfigRegistry.INSTANCE.register(MapFrontiersFabric.MODID, ModConfig.Type.CLIENT, Config.CLIENT_SPEC);
 
         init();
