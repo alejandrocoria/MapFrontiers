@@ -8,6 +8,7 @@ import games.alejandrocoria.mapfrontiers.common.Config;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -35,11 +36,7 @@ public class MapFrontiersClientNeoForge extends MapFrontiersClient {
     }
 
     public static void clientSetup(FMLClientSetupEvent event, IEventBus eventBus) {
-        openSettingsKey = new KeyMapping("mapfrontiers.key.open_settings", KeyConflictContext.IN_GAME,
-                InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, "mapfrontiers.key.category");
-
         init();
-        eventBus.addListener(MapFrontiersClientNeoForge::registerKeyMappingsEvent);
         NeoForge.EVENT_BUS.addListener(MapFrontiersClientNeoForge::livingUpdateEvent);
         NeoForge.EVENT_BUS.addListener(MapFrontiersClientNeoForge::onRenderTick);
         NeoForge.EVENT_BUS.addListener(MapFrontiersClientNeoForge::RenderGameOverlayEvent);
@@ -48,10 +45,6 @@ public class MapFrontiersClientNeoForge extends MapFrontiersClient {
         NeoForge.EVENT_BUS.addListener(MapFrontiersClientNeoForge::mouseEvent);
 
         MapFrontiersNeoForge.LOGGER.info("NeoForge clientSetup done");
-    }
-
-    public static void registerKeyMappingsEvent(RegisterKeyMappingsEvent event) {
-        event.register(openSettingsKey);
     }
 
     public static void livingUpdateEvent(ClientTickEvent.Post event) {
@@ -83,6 +76,16 @@ public class MapFrontiersClientNeoForge extends MapFrontiersClient {
     public static void mouseEvent(InputEvent.MouseButton.Post event) {
         if (event.getAction() == GLFW.GLFW_RELEASE) {
             ClientEventHandler.postMouseReleaseEvent(event.getButton());
+        }
+    }
+
+    @EventBusSubscriber(value = Dist.CLIENT, modid = MapFrontiers.MODID, bus = EventBusSubscriber.Bus.MOD)
+    public static class KeyMappingsEventHandler {
+        @SubscribeEvent
+        public static void registerKeyMappingsEvent(RegisterKeyMappingsEvent event) {
+            openSettingsKey = new KeyMapping("mapfrontiers.key.open_settings", KeyConflictContext.IN_GAME,
+                    InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, "mapfrontiers.key.category");
+            event.register(openSettingsKey);
         }
     }
 
