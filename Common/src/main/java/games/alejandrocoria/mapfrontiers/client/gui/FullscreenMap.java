@@ -154,7 +154,7 @@ public class FullscreenMap {
             editing = false;
             boolean personalFrontier = frontierHighlighted.getPersonal();
             FrontiersOverlayManager frontierManager = MapFrontiersClient.getFrontiersOverlayManager(personalFrontier);
-            frontierManager.clientUpdatefrontier(frontierHighlighted);
+            frontierManager.clientUpdateFrontier(frontierHighlighted);
         }
     }
 
@@ -220,7 +220,7 @@ public class FullscreenMap {
 
         boolean personalFrontier = frontierHighlighted.getPersonal();
         FrontiersOverlayManager frontierManager = MapFrontiersClient.getFrontiersOverlayManager(personalFrontier);
-        frontierManager.clientUpdatefrontier(frontierHighlighted);
+        frontierManager.clientUpdateFrontier(frontierHighlighted);
 
         updateButtons();
     }

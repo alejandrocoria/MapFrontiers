@@ -200,7 +200,7 @@ public class FrontiersOverlayManager {
         }
     }
 
-    public void clientUpdatefrontier(FrontierOverlay frontier) {
+    public void clientUpdateFrontier(FrontierOverlay frontier) {
         if (MapFrontiersClient.isModOnServer()) {
             PacketHandler.sendToServer(new PacketUpdateFrontier(frontier));
             frontier.removeChanges();

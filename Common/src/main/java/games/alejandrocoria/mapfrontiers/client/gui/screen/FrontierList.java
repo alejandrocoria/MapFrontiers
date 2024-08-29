@@ -290,6 +290,8 @@ public class FrontierList extends StackeableScreen {
         } else if (button == buttonVisible) {
             FrontierOverlay frontier = ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
             frontier.setVisible(!frontier.getVisible());
+            FrontiersOverlayManager frontierManager = MapFrontiersClient.getFrontiersOverlayManager(frontier.getPersonal());
+            frontierManager.clientUpdateFrontier(frontier);
             updateButtons();
         } else if (button == buttonDone) {
             closeAndReturn();

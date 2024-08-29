@@ -790,7 +790,7 @@ public class FrontierInfo extends StackeableScreen {
     }
 
     private void sendChangesToServer() {
-        frontiersOverlayManager.clientUpdatefrontier(frontier);
+        frontiersOverlayManager.clientUpdateFrontier(frontier);
     }
 
     private void addToUndo(FrontierData frontier) {
