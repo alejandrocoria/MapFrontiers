@@ -1,6 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client.gui.hud;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.gui.component.AbstractWidgetNoNarration;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import net.minecraft.client.Minecraft;

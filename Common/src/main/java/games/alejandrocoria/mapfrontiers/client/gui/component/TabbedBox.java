@@ -1,6 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;

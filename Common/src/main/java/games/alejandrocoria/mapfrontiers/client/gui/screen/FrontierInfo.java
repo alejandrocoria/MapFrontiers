@@ -1,6 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
@@ -799,7 +798,7 @@ public class FrontierInfo extends Screen {
     }
 
     private void sendChangesToServer() {
-        frontiersOverlayManager.clientUpdatefrontier(frontier);
+        frontiersOverlayManager.clientUpdateFrontier(frontier);
     }
 
     private void addToUndo(FrontierData frontier) {

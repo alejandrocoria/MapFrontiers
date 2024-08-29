@@ -1,6 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client.event;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import journeymap.client.api.display.ModPopupMenu;

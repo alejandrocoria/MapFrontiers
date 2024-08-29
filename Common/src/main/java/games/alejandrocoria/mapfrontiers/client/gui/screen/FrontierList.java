@@ -1,6 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
@@ -275,6 +274,8 @@ public class FrontierList extends Screen {
         } else if (button == buttonVisible) {
             FrontierOverlay frontier = ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
             frontier.setVisible(!frontier.getVisible());
+            FrontiersOverlayManager frontierManager = MapFrontiersClient.getFrontiersOverlayManager(frontier.getPersonal());
+            frontierManager.clientUpdateFrontier(frontier);
             updateButtons();
         } else if (button == buttonDone) {
             Services.PLATFORM.popGuiLayer();
