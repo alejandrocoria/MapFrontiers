@@ -10,6 +10,9 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -25,14 +28,12 @@ import java.util.List;
 @ParametersAreNonnullByDefault
 public class PacketCreateFrontier {
     public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_create_frontier");
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketCreateFrontier> STREAM_CODEC = StreamCodec.ofMember(PacketCreateFrontier::encode, PacketCreateFrontier::new);
 
     private ResourceKey<Level> dimension = Level.OVERWORLD;
     private boolean personal = false;
     private List<BlockPos> vertices;
     private List<ChunkPos> chunks;
-
-    public PacketCreateFrontier() {
-    }
 
     public PacketCreateFrontier(ResourceKey<Level> dimension, boolean personal, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
         this.dimension = dimension;
@@ -41,40 +42,39 @@ public class PacketCreateFrontier {
         this.chunks = chunks;
     }
 
-    public static PacketCreateFrontier decode(FriendlyByteBuf buf) {
-        PacketCreateFrontier packet = new PacketCreateFrontier();
+    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
+        return new CustomPacketPayload.Type<>(CHANNEL);
+    }
 
+    public PacketCreateFrontier(FriendlyByteBuf buf) {
         try {
             if (buf.readableBytes() > 1) {
-                packet.dimension = ResourceKey.create(Registries.DIMENSION, buf.readResourceLocation());
-                packet.personal = buf.readBoolean();
+                this.dimension = ResourceKey.create(Registries.DIMENSION, buf.readResourceLocation());
+                this.personal = buf.readBoolean();
 
                 boolean hasVertex = buf.readBoolean();
                 if (hasVertex) {
-                    packet.vertices = new ArrayList<>();
+                    this.vertices = new ArrayList<>();
                     int vertexCount = buf.readInt();
                     for (int i = 0; i < vertexCount; ++i) {
                         BlockPos vertex = BlockPos.of(buf.readLong());
-                        packet.vertices.add(vertex);
+                        this.vertices.add(vertex);
                     }
                 }
 
                 boolean hasChunks = buf.readBoolean();
                 if (hasChunks) {
-                    packet.chunks = new ArrayList<>();
+                    this.chunks = new ArrayList<>();
                     int chunksCount = buf.readInt();
                     for (int i = 0; i < chunksCount; ++i) {
                         ChunkPos chunk = new ChunkPos(buf.readLong());
-                        packet.chunks.add(chunk);
+                        this.chunks.add(chunk);
                     }
                 }
             }
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketCreateFrontier: %s", t));
         }
-
-
-        return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {

@@ -9,6 +9,9 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,32 +22,31 @@ import java.util.Set;
 @ParametersAreNonnullByDefault
 public class PacketUpdateFrontier {
     public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_update_frontier");
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketUpdateFrontier> STREAM_CODEC = StreamCodec.ofMember(PacketUpdateFrontier::encode, PacketUpdateFrontier::new);
 
     private final FrontierData frontier;
     private final Set<FrontierData.Change> changes;
-
-    public PacketUpdateFrontier() {
-        frontier = new FrontierData();
-        changes = null;
-    }
 
     public PacketUpdateFrontier(FrontierData frontier) {
         this.frontier = frontier;
         changes = frontier.getChanges();
     }
 
-    public static PacketUpdateFrontier decode(FriendlyByteBuf buf) {
-        PacketUpdateFrontier packet = new PacketUpdateFrontier();
+    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
+        return new CustomPacketPayload.Type<>(CHANNEL);
+    }
+
+    public PacketUpdateFrontier(FriendlyByteBuf buf) {
+        this.frontier = new FrontierData();
+        this.changes = null;
 
         try {
             if (buf.readableBytes() > 1) {
-                packet.frontier.fromBytes(buf);
+                this.frontier.fromBytes(buf);
             }
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketUpdateFrontier: %s", t));
         }
-
-        return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {

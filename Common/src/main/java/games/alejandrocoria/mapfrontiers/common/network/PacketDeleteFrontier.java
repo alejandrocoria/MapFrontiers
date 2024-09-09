@@ -10,6 +10,9 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,28 +23,26 @@ import java.util.UUID;
 @ParametersAreNonnullByDefault
 public class PacketDeleteFrontier {
     public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_delete_frontier");
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketDeleteFrontier> STREAM_CODEC = StreamCodec.ofMember(PacketDeleteFrontier::encode, PacketDeleteFrontier::new);
 
     private UUID frontierID;
-
-    public PacketDeleteFrontier() {
-    }
 
     public PacketDeleteFrontier(UUID frontierID) {
         this.frontierID = frontierID;
     }
 
-    public static PacketDeleteFrontier decode(FriendlyByteBuf buf) {
-        PacketDeleteFrontier packet = new PacketDeleteFrontier();
+    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
+        return new CustomPacketPayload.Type<>(CHANNEL);
+    }
 
+    public PacketDeleteFrontier(FriendlyByteBuf buf) {
         try {
             if (buf.readableBytes() > 1) {
-                packet.frontierID = UUIDHelper.fromBytes(buf);
+                this.frontierID = UUIDHelper.fromBytes(buf);
             }
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketDeleteFrontier: %s", t));
         }
-
-        return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {

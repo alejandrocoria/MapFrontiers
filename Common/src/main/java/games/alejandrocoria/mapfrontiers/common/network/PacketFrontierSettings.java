@@ -9,6 +9,9 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,30 +21,29 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 public class PacketFrontierSettings {
     public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_frontier_settings");
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketFrontierSettings> STREAM_CODEC = StreamCodec.ofMember(PacketFrontierSettings::encode, PacketFrontierSettings::new);
 
     private final FrontierSettings settings;
-
-    public PacketFrontierSettings() {
-        settings = new FrontierSettings();
-    }
 
     public PacketFrontierSettings(FrontierSettings settings) {
         this.settings = settings;
     }
 
-    public static PacketFrontierSettings decode(FriendlyByteBuf buf) {
-        PacketFrontierSettings packet = new PacketFrontierSettings();
+    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
+        return new CustomPacketPayload.Type<>(CHANNEL);
+    }
+
+    public PacketFrontierSettings(FriendlyByteBuf buf) {
+        this.settings = new FrontierSettings();
 
         try {
             if (buf.readableBytes() > 1) {
-                packet.settings.fromBytes(buf);
-                packet.settings.setChangeCounter(buf.readInt());
+                this.settings.fromBytes(buf);
+                this.settings.setChangeCounter(buf.readInt());
             }
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketFrontierSettings: %s", t));
         }
-
-        return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {

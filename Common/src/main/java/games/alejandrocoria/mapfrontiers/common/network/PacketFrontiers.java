@@ -6,6 +6,9 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -15,6 +18,7 @@ import java.util.List;
 @ParametersAreNonnullByDefault
 public class PacketFrontiers {
     public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_frontier");
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketFrontiers> STREAM_CODEC = StreamCodec.ofMember(PacketFrontiers::encode, PacketFrontiers::new);
 
     private final List<FrontierData> globalFrontiers;
     private final List<FrontierData> personalFrontiers;
@@ -22,6 +26,10 @@ public class PacketFrontiers {
     public PacketFrontiers() {
         globalFrontiers = new ArrayList<>();
         personalFrontiers = new ArrayList<>();
+    }
+
+    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
+        return new CustomPacketPayload.Type<>(CHANNEL);
     }
 
     public void addGlobalFrontier(FrontierData frontier) {
@@ -40,8 +48,9 @@ public class PacketFrontiers {
         personalFrontiers.addAll(frontiers);
     }
 
-    public static PacketFrontiers decode(FriendlyByteBuf buf) {
-        PacketFrontiers packet = new PacketFrontiers();
+    public PacketFrontiers(FriendlyByteBuf buf) {
+        globalFrontiers = new ArrayList<>();
+        personalFrontiers = new ArrayList<>();
 
         try {
             if (buf.readableBytes() > 1) {
@@ -49,21 +58,19 @@ public class PacketFrontiers {
                 for (int i = 0; i < size; ++i) {
                     FrontierData frontier = new FrontierData();
                     frontier.fromBytes(buf);
-                    packet.addGlobalFrontier(frontier);
+                    this.addGlobalFrontier(frontier);
                 }
 
                 size = buf.readInt();
                 for (int i = 0; i < size; ++i) {
                     FrontierData frontier = new FrontierData();
                     frontier.fromBytes(buf);
-                    packet.addPersonalFrontier(frontier);
+                    this.addPersonalFrontier(frontier);
                 }
             }
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketFrontiers: %s", t));
         }
-
-        return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {

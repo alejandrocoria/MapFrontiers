@@ -10,6 +10,9 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,32 +23,31 @@ import java.util.UUID;
 @ParametersAreNonnullByDefault
 public class PacketRemoveSharedUserPersonalFrontier {
     public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_remove_shared_user_personal_frontier");
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketRemoveSharedUserPersonalFrontier> STREAM_CODEC = StreamCodec.ofMember(PacketRemoveSharedUserPersonalFrontier::encode, PacketRemoveSharedUserPersonalFrontier::new);
 
     private UUID frontierID;
     private final SettingsUser targetUser;
-
-    public PacketRemoveSharedUserPersonalFrontier() {
-        targetUser = new SettingsUser();
-    }
 
     public PacketRemoveSharedUserPersonalFrontier(UUID frontierID, SettingsUser user) {
         this.frontierID = frontierID;
         targetUser = user;
     }
 
-    public static PacketRemoveSharedUserPersonalFrontier decode(FriendlyByteBuf buf) {
-        PacketRemoveSharedUserPersonalFrontier packet = new PacketRemoveSharedUserPersonalFrontier();
+    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
+        return new CustomPacketPayload.Type<>(CHANNEL);
+    }
+
+    public PacketRemoveSharedUserPersonalFrontier(FriendlyByteBuf buf) {
+        this.targetUser = new SettingsUser();
 
         try {
             if (buf.readableBytes() > 1) {
-                packet.frontierID = UUIDHelper.fromBytes(buf);
-                packet.targetUser.fromBytes(buf);
+                this.frontierID = UUIDHelper.fromBytes(buf);
+                this.targetUser.fromBytes(buf);
             }
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketRemoveSharedUserPersonalFrontier: %s", t));
         }
-
-        return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {

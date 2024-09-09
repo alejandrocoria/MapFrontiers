@@ -8,6 +8,9 @@ import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -15,13 +18,10 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 public class PacketFrontierUpdated {
     public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_frontier_updated");
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketFrontierUpdated> STREAM_CODEC = StreamCodec.ofMember(PacketFrontierUpdated::encode, PacketFrontierUpdated::new);
 
     private final FrontierData frontier;
     private int playerID = -1;
-
-    public PacketFrontierUpdated() {
-        frontier = new FrontierData();
-    }
 
     public PacketFrontierUpdated(FrontierData frontier) {
         this.frontier = frontier;
@@ -32,19 +32,21 @@ public class PacketFrontierUpdated {
         this.playerID = playerID;
     }
 
-    public static PacketFrontierUpdated decode(FriendlyByteBuf buf) {
-        PacketFrontierUpdated packet = new PacketFrontierUpdated();
+    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
+        return new CustomPacketPayload.Type<>(CHANNEL);
+    }
+
+    public PacketFrontierUpdated(FriendlyByteBuf buf) {
+        this.frontier = new FrontierData();
 
         try {
             if (buf.readableBytes() > 1) {
-                packet.frontier.fromBytes(buf);
-                packet.playerID = buf.readInt();
+                this.frontier.fromBytes(buf);
+                this.playerID = buf.readInt();
             }
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketFrontierUpdated: %s", t));
         }
-
-        return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {

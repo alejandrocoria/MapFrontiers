@@ -7,10 +7,13 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import org.apache.commons.lang3.StringUtils;
 
@@ -19,20 +22,13 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 public class PacketPersonalFrontierShared {
     public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_personal_frontier_shared");
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketPersonalFrontierShared> STREAM_CODEC = StreamCodec.ofMember(PacketPersonalFrontierShared::encode, PacketPersonalFrontierShared::new);
 
     private int shareMessageID;
     private final SettingsUser playerSharing;
     private final SettingsUser owner;
     private String name1;
     private String name2;
-
-    public PacketPersonalFrontierShared() {
-        shareMessageID = -1;
-        playerSharing = new SettingsUser();
-        owner = new SettingsUser();
-        name1 = "";
-        name2 = "";
-    }
 
     public PacketPersonalFrontierShared(int shareMessageID, SettingsUser playerSharing, SettingsUser owner, String name1,
             String name2) {
@@ -43,22 +39,25 @@ public class PacketPersonalFrontierShared {
         this.name2 = name2;
     }
 
-    public static PacketPersonalFrontierShared decode(FriendlyByteBuf buf) {
-        PacketPersonalFrontierShared packet = new PacketPersonalFrontierShared();
+    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
+        return new CustomPacketPayload.Type<>(CHANNEL);
+    }
+
+    public PacketPersonalFrontierShared(FriendlyByteBuf buf) {
+        this.playerSharing = new SettingsUser();
+        this.owner = new SettingsUser();
 
         try {
             if (buf.readableBytes() > 1) {
-                packet.shareMessageID = buf.readInt();
-                packet.playerSharing.fromBytes(buf);
-                packet.owner.fromBytes(buf);
-                packet.name1 = buf.readUtf(17);
-                packet.name2 = buf.readUtf(17);
+                this.shareMessageID = buf.readInt();
+                this.playerSharing.fromBytes(buf);
+                this.owner.fromBytes(buf);
+                this.name1 = buf.readUtf(17);
+                this.name2 = buf.readUtf(17);
             }
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketPersonalFrontierShared: %s", t));
         }
-
-        return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {

@@ -10,6 +10,9 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,6 +23,7 @@ import java.util.UUID;
 @ParametersAreNonnullByDefault
 public class PacketSharePersonalFrontier {
     public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_share_personal_frontier");
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketSharePersonalFrontier> STREAM_CODEC = StreamCodec.ofMember(PacketSharePersonalFrontier::encode, PacketSharePersonalFrontier::new);
 
     private UUID frontierID;
     private final SettingsUser targetUser;
@@ -33,19 +37,21 @@ public class PacketSharePersonalFrontier {
         targetUser = user;
     }
 
-    public static PacketSharePersonalFrontier decode(FriendlyByteBuf buf) {
-        PacketSharePersonalFrontier packet = new PacketSharePersonalFrontier();
+    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
+        return new CustomPacketPayload.Type<>(CHANNEL);
+    }
+
+    public PacketSharePersonalFrontier(FriendlyByteBuf buf) {
+        this.targetUser = new SettingsUser();
 
         try {
             if (buf.readableBytes() > 1) {
-                packet.frontierID = UUIDHelper.fromBytes(buf);
-                packet.targetUser.fromBytes(buf);
+                this.frontierID = UUIDHelper.fromBytes(buf);
+                this.targetUser.fromBytes(buf);
             }
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketSharePersonalFrontier: %s", t));
         }
-
-        return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {

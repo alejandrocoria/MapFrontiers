@@ -10,6 +10,9 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,32 +23,31 @@ import java.util.UUID;
 @ParametersAreNonnullByDefault
 public class PacketUpdateSharedUserPersonalFrontier {
     public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_update_shared_user_personal_frontier");
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketUpdateSharedUserPersonalFrontier> STREAM_CODEC = StreamCodec.ofMember(PacketUpdateSharedUserPersonalFrontier::encode, PacketUpdateSharedUserPersonalFrontier::new);
 
     private UUID frontierID;
     private final SettingsUserShared userShared;
-
-    public PacketUpdateSharedUserPersonalFrontier() {
-        userShared = new SettingsUserShared();
-    }
 
     public PacketUpdateSharedUserPersonalFrontier(UUID frontierID, SettingsUserShared user) {
         this.frontierID = frontierID;
         userShared = user;
     }
 
-    public static PacketUpdateSharedUserPersonalFrontier decode(FriendlyByteBuf buf) {
-        PacketUpdateSharedUserPersonalFrontier packet = new PacketUpdateSharedUserPersonalFrontier();
+    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
+        return new CustomPacketPayload.Type<>(CHANNEL);
+    }
+
+    public PacketUpdateSharedUserPersonalFrontier(FriendlyByteBuf buf) {
+        this.userShared = new SettingsUserShared();
 
         try {
             if (buf.readableBytes() > 1) {
-                packet.frontierID = UUIDHelper.fromBytes(buf);
-                packet.userShared.fromBytes(buf);
+                this.frontierID = UUIDHelper.fromBytes(buf);
+                this.userShared.fromBytes(buf);
             }
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketUpdateSharedUserPersonalFrontier: %s", t));
         }
-
-        return packet;
     }
 
     public void encode(FriendlyByteBuf buf) {
