@@ -58,19 +58,14 @@ public class PacketHandler {
     }
 
     public static <MSG> void sendTo(MSG message, ServerPlayer player) {
-        Dispatcher.sendToClient(message, player);
         Network.getNetworkHandler().sendToClient(message, player, true);
     }
 
     public static <MSG> void sendToAll(MSG message, MinecraftServer server) {
-//        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-//            Dispatcher.sendToClient(message, player);
-//        }
         Network.getNetworkHandler().sendToAllClients(message, server, true);
     }
 
     public static <MSG> void sendToServer(MSG message) {
-//        Dispatcher.sendToServer(message);
         Dispatcher.sendToServer(message, true);
     }
 }
