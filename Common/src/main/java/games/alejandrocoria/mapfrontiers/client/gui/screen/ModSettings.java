@@ -19,7 +19,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxDouble;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
-import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
@@ -36,7 +35,6 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.resources.language.I18n;
@@ -44,7 +42,6 @@ import net.minecraft.network.chat.Component;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.glfw.GLFW;
 
-import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,16 +51,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class ModSettings extends StackeableScreen {
+public class ModSettings extends AutoScaledScreen {
     public enum Tab {
         Credits, General, Groups, Actions
     }
 
-    private float scaleFactor;
-    private int actualWidth;
-    private int actualHeight;
-
-    private final Screen returnScreen;
     private final boolean showKeyHint;
 
     private FrontierSettings settings;
@@ -101,9 +93,8 @@ public class ModSettings extends StackeableScreen {
     private Tab tabSelected;
     private int ticksSinceLastUpdate = 0;
 
-    public ModSettings(boolean showKeyHint, @Nullable Screen returnScreen) {
-        super(Component.translatable("mapfrontiers.title_settings"), returnScreen);
-        this.returnScreen = returnScreen;
+    public ModSettings(boolean showKeyHint) {
+        super(Component.translatable("mapfrontiers.title_settings"), 696, 366);
         this.showKeyHint = showKeyHint;
         labels = new ArrayList<>();
         labelTooltips = new HashMap<>();
@@ -117,13 +108,13 @@ public class ModSettings extends StackeableScreen {
                 MapFrontiersClient.setLastSettingsTab(tabSelected);
             }
 
-            minecraft.setScreen(new ModSettings(showKeyHint, returnScreen));
+            onClose();
+            new ModSettings(showKeyHint).display();
         });
     }
 
     private ModSettings() {
-        super(Component.empty(), null);
-        returnScreen = null;
+        super(Component.empty());
         showKeyHint = false;
         labels = null;
         labelTooltips = null;
@@ -134,11 +125,7 @@ public class ModSettings extends StackeableScreen {
     }
 
     @Override
-    public void init() {
-        scaleFactor = ScreenHelper.getScaleFactorThatFit(minecraft, this, 696, 366);
-        actualWidth = (int) (width * scaleFactor);
-        actualHeight = (int) (height * scaleFactor);
-
+    public void initScreen() {
         canEditGroups = MapFrontiersClient.isModOnServer() && MapFrontiersClient.getSettingsProfile().updateSettings == SettingsProfile.State.Enabled;
 
         if (tabSelected == null) {
@@ -391,24 +378,12 @@ public class ModSettings extends StackeableScreen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
-
-        mouseX *= scaleFactor;
-        mouseY *= scaleFactor;
-
-        if (scaleFactor != 1.f) {
-            graphics.pose().pushPose();
-            graphics.pose().scale(1.0f / scaleFactor, 1.0f / scaleFactor, 1.0f);
-        }
-
+    public void renderScaledScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         // Rendering manually so the background is not scaled.
         for(GuiEventListener child : children()) {
             if (child instanceof Renderable renderable)
                 renderable.render(graphics, mouseX, mouseY, partialTicks);
         }
-
-        graphics.drawCenteredString(font, title, this.actualWidth / 2, 8, ColorConstants.WHITE);
 
         for (SimpleLabel label : labels) {
             if (label.visible) {
@@ -426,16 +401,12 @@ public class ModSettings extends StackeableScreen {
                 break;
             }
         }
-
-        if (scaleFactor != 1.f) {
-            graphics.pose().popPose();
-        }
     }
 
     @Override
     public boolean keyPressed(int key, int value, int modifier) {
         if (key == GLFW.GLFW_KEY_E && !(getFocused() instanceof EditBox)) {
-            closeAndReturn();
+            onClose();
             return true;
         } else {
             return super.keyPressed(key, value, modifier);
@@ -443,15 +414,7 @@ public class ModSettings extends StackeableScreen {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        return super.mouseClicked(mouseX * scaleFactor, mouseY * scaleFactor, mouseButton);
-    }
-
-    @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        mouseX *= scaleFactor;
-        mouseY *= scaleFactor;
-
         for (GuiEventListener w : children()) {
             if (w instanceof ScrollBox) {
                 ((ScrollBox) w).mouseReleased();
@@ -459,16 +422,6 @@ public class ModSettings extends StackeableScreen {
         }
 
         return super.mouseReleased(mouseX, mouseY, button);
-    }
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
-        return super.mouseScrolled(mouseX * scaleFactor, mouseY * scaleFactor, hDelta, vDelta);
-    }
-
-    @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        return super.mouseDragged(mouseX * scaleFactor, mouseY * scaleFactor, button, dragX * scaleFactor, dragY * scaleFactor);
     }
 
     protected void buttonPressed(Button button) {
@@ -497,7 +450,7 @@ public class ModSettings extends StackeableScreen {
             updateButtonsVisibility();
         } else if (button == buttonEditHUD) {
             MapFrontiersClient.setLastSettingsTab(tabSelected);
-            minecraft.setScreen(new HUDSettings(this));
+            new HUDSettings().display();
         } else if (button == buttonNewGroup) {
             if (settings != null) {
                 SettingsGroup group = settings.createCustomGroup(textNewGroupName.getValue());
@@ -554,7 +507,7 @@ public class ModSettings extends StackeableScreen {
 
             sendChangesToServer();
         } else if (button == buttonDone) {
-            closeAndReturn();
+            onClose();
         }
     }
 

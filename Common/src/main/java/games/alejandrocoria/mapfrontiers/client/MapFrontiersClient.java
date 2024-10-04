@@ -74,7 +74,7 @@ public class MapFrontiersClient {
             }
 
             while (openSettingsKey != null && openSettingsKey.consumeClick()) {
-                client.setScreen(new ModSettings(false, null));
+                new ModSettings(false).display();
             }
 
             if (player == null) {

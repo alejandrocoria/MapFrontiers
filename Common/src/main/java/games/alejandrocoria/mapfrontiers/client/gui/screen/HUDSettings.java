@@ -11,6 +11,8 @@ import games.alejandrocoria.mapfrontiers.client.gui.hud.HUD;
 import games.alejandrocoria.mapfrontiers.client.gui.hud.HUDWidget;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.platform.Services;
+import journeymap.api.v2.client.ui.component.LayeredScreen;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -20,7 +22,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
-import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,7 +31,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @ParametersAreNonnullByDefault
-public class HUDSettings extends StackeableScreen {
+public class HUDSettings extends LayeredScreen {
     private HUDWidget HUDWidget;
     private OptionButton buttonSlot1;
     private OptionButton buttonSlot2;
@@ -48,11 +49,28 @@ public class HUDSettings extends StackeableScreen {
     private int anchorLineColor = ColorConstants.HUD_ANCHOR_LIGHT;
     private int anchorLineColorTick = 0;
 
-    public HUDSettings(@Nullable Screen returnScreen) {
-        super(Component.empty(), returnScreen);
+    private Screen previousScreen;
+
+    public HUDSettings() {
+        super(Component.empty());
         labels = new ArrayList<>();
         labelTooltips = new HashMap<>();
         hud = HUD.asPreview();
+    }
+
+    @Override
+    public void display() {
+        super.display();
+        previousScreen = backgroundScreen;
+        backgroundScreen = null;
+    }
+
+    @Override
+    public void resize(Minecraft minecraft, int width, int height) {
+        super.resize(minecraft, width, height);
+        if (previousScreen != null) {
+            previousScreen.resize(this.minecraft, this.width, this.height);
+        }
     }
 
     @Override
@@ -164,7 +182,7 @@ public class HUDSettings extends StackeableScreen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void renderPopupScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         if (Services.JOURNEYMAP.isMinimapEnabled()) {
             Services.JOURNEYMAP.drawMinimapPreview(graphics);
         }
@@ -181,7 +199,6 @@ public class HUDSettings extends StackeableScreen {
         graphics.vLine(x1, y1, y2, ColorConstants.TAB_BORDER);
         graphics.vLine(x2, y1, y2, ColorConstants.TAB_BORDER);
 
-        // Rendering manually so the background is not drawn.
         for(GuiEventListener child : children()) {
             if (child instanceof Renderable renderable)
                 renderable.render(graphics, mouseX, mouseY, partialTicks);
@@ -208,7 +225,7 @@ public class HUDSettings extends StackeableScreen {
     @Override
     public boolean keyPressed(int key, int value, int modifier) {
         if (key == GLFW.GLFW_KEY_E && !(getFocused() instanceof EditBox)) {
-            closeAndReturn();
+            onClose();
             return true;
         } else {
             return super.keyPressed(key, value, modifier);
@@ -287,7 +304,7 @@ public class HUDSettings extends StackeableScreen {
             Config.hudSnapToBorder = buttonSnapToBorder.getSelected() == 0;
             ClientEventHandler.postUpdatedConfigEvent();
         } else if (button == buttonDone) {
-            closeAndReturn();
+            onClose();
         }
     }
 
@@ -338,6 +355,12 @@ public class HUDSettings extends StackeableScreen {
             buttonSlot2.setColor(ColorConstants.TEXT_ERROR, ColorConstants.TEXT_ERROR_HIGHLIGHT);
             buttonSlot3.setColor(ColorConstants.TEXT_ERROR, ColorConstants.TEXT_ERROR_HIGHLIGHT);
         }
+    }
+
+    @Override
+    public void onClose() {
+        backgroundScreen = previousScreen;
+        super.onClose();
     }
 
     @Override

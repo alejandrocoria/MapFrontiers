@@ -15,7 +15,9 @@ public class ModMenuApiImpl implements ModMenuApi {
                     return ModSettings.createDummy();
                 }
             }
-            return new ModSettings(true, s);
+            ModSettings screen = new ModSettings(true);
+            screen.display();
+            return screen;
         };
     }
 }

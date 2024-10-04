@@ -6,12 +6,11 @@ import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.FullscreenMap;
-import games.alejandrocoria.mapfrontiers.client.gui.component.SimpleLabel;
+import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.FrontierListElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.RadioListElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox;
-import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
@@ -19,10 +18,11 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import journeymap.api.v2.client.IClientAPI;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.layouts.GridLayout;
+import net.minecraft.client.gui.layouts.LayoutSettings;
+import net.minecraft.client.gui.layouts.LinearLayout;
+import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.network.chat.Component;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -31,15 +31,24 @@ import java.util.List;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class FrontierList extends StackeableScreen {
+public class FrontierList extends AutoScaledScreen {
+    private static final Component resetFiltersLabel = Component.translatable("mapfrontiers.reset_filters");
+    private static final Component filterTypeLabel = Component.translatable("mapfrontiers.filter_type");
+    private static final Component filterOwnerLabel = Component.translatable("mapfrontiers.filter_owner");
+    private static final Component filterDimensionLabel = Component.translatable("mapfrontiers.filter_dimension");
+    private static final Component configAllLabel = Component.translatable("mapfrontiers.config.All");
+    private static final Component configCurrentLabel = Component.translatable("mapfrontiers.config.Current");
+    private static final Component overworldLabel = Component.literal("minecraft:overworld");
+    private static final Component theNetherLabel = Component.literal("minecraft:the_nether");
+    private static final Component theEndLabel = Component.literal("minecraft:the_end");
+    private static final Component createLabel = Component.translatable("mapfrontiers.create");
+    private static final Component infoLabel = Component.translatable("mapfrontiers.info");
+    private static final Component deleteLabel = Component.translatable("mapfrontiers.delete");
+    private static final Component hideLabel = Component.translatable("mapfrontiers.hide");
+    private static final Component doneLabel = Component.translatable("gui.done");
+
     private final IClientAPI jmAPI;
     private final FullscreenMap fullscreenMap;
-
-    private final Screen returnScreen;
-
-    private float scaleFactor;
-    private int actualWidth;
-    private int actualHeight;
 
     private ScrollBox frontiers;
     private ScrollBox filterType;
@@ -52,14 +61,10 @@ public class FrontierList extends StackeableScreen {
     private SimpleButton buttonVisible;
     private SimpleButton buttonDone;
 
-    private final List<SimpleLabel> labels;
-
-    public FrontierList(IClientAPI jmAPI, FullscreenMap fullscreenMap, Screen returnScreen) {
-        super(Component.translatable("mapfrontiers.title_frontiers"), returnScreen);
+    public FrontierList(IClientAPI jmAPI, FullscreenMap fullscreenMap) {
+        super(Component.translatable("mapfrontiers.title_frontiers"), 778, 302);
         this.jmAPI = jmAPI;
         this.fullscreenMap = fullscreenMap;
-        this.returnScreen = returnScreen;
-        labels = new ArrayList<>();
 
         ClientEventHandler.subscribeDeletedFrontierEvent(this, frontierID -> {
             updateFrontiers();
@@ -82,25 +87,40 @@ public class FrontierList extends StackeableScreen {
     }
 
     @Override
-    public void init() {
-        scaleFactor = ScreenHelper.getScaleFactorThatFit(minecraft, this, 778, 302);
-        actualWidth = (int) (width * scaleFactor);
-        actualHeight = (int) (height * scaleFactor);
+    public void initScreen() {
+        GridLayout mainLayout = new GridLayout(2, 1).spacing(8);
+        content.addChild(mainLayout);
+        LayoutSettings leftColumnSettings = LayoutSettings.defaults().alignHorizontallyRight();
+        LayoutSettings rightColumnSettings = LayoutSettings.defaults().alignHorizontallyLeft();
 
-        labels.clear();
-
-        frontiers = new ScrollBox(actualWidth / 2 - 300, 50, 450, actualHeight - 100, 24);
+        frontiers = new ScrollBox(450, actualHeight - 100, 24);
         frontiers.setElementDeletedCallback(element -> updateButtons());
         frontiers.setElementClickedCallback(element -> {
             FrontierOverlay frontier = ((FrontierListElement) element).getFrontier();
             fullscreenMap.selectFrontier(frontier);
             updateButtons();
         });
+        mainLayout.addChild(frontiers, 0, 0, leftColumnSettings);
 
-        labels.add(new SimpleLabel(font, actualWidth / 2 + 170, 74, SimpleLabel.Align.Left,
-                Component.translatable("mapfrontiers.filter_type"), ColorConstants.TEXT));
 
-        filterType = new ScrollBox(actualWidth / 2 + 170, 86, 200, 48, 16);
+        LinearLayout rightColumn = LinearLayout.vertical().spacing(2);
+        rightColumn.defaultCellSetting().alignHorizontallyLeft();
+        mainLayout.addChild(rightColumn, 0, 1, rightColumnSettings);
+
+        buttonResetFilters = rightColumn.addChild(new SimpleButton(font, 110, resetFiltersLabel, (b) -> {
+            Config.filterFrontierType = Config.FilterFrontierType.All;
+            filterType.selectElementIf((element) -> ((RadioListElement) element).getId() == Config.filterFrontierType.ordinal());
+            Config.filterFrontierOwner = Config.FilterFrontierOwner.All;
+            filterOwner.selectElementIf((element) -> ((RadioListElement) element).getId() == Config.filterFrontierOwner.ordinal());
+            Config.filterFrontierDimension = "all";
+            filterDimension.selectElementIf((element) -> ((RadioListElement) element).getId() == Config.filterFrontierDimension.hashCode());
+            updateFrontiers();
+            updateButtons();
+        }));
+
+        rightColumn.addChild(SpacerElement.height(4));
+        rightColumn.addChild(new StringWidget(filterTypeLabel, font).setColor(ColorConstants.TEXT));
+        filterType = new ScrollBox(200, 48, 16);
         filterType.addElement(new RadioListElement(font, Config.getTranslatedEnum(Config.FilterFrontierType.All), Config.FilterFrontierType.All.ordinal()));
         filterType.addElement(new RadioListElement(font, Config.getTranslatedEnum(Config.FilterFrontierType.Global), Config.FilterFrontierType.Global.ordinal()));
         filterType.addElement(new RadioListElement(font, Config.getTranslatedEnum(Config.FilterFrontierType.Personal), Config.FilterFrontierType.Personal.ordinal()));
@@ -113,11 +133,11 @@ public class FrontierList extends StackeableScreen {
             ClientEventHandler.postUpdatedConfigEvent();
             updateButtons();
         });
+        rightColumn.addChild(filterType);
 
-        labels.add(new SimpleLabel(font, actualWidth / 2 + 170, 144, SimpleLabel.Align.Left,
-                Component.translatable("mapfrontiers.filter_owner"), ColorConstants.TEXT));
-
-        filterOwner = new ScrollBox(actualWidth / 2 + 170, 156, 200, 48, 16);
+        rightColumn.addChild(SpacerElement.height(4));
+        rightColumn.addChild(new StringWidget(filterOwnerLabel, font).setColor(ColorConstants.TEXT));
+        filterOwner = new ScrollBox(200, 48, 16);
         filterOwner.addElement(new RadioListElement(font, Config.getTranslatedEnum(Config.FilterFrontierOwner.All), Config.FilterFrontierOwner.All.ordinal()));
         filterOwner.addElement(new RadioListElement(font, Config.getTranslatedEnum(Config.FilterFrontierOwner.You), Config.FilterFrontierOwner.You.ordinal()));
         filterOwner.addElement(new RadioListElement(font, Config.getTranslatedEnum(Config.FilterFrontierOwner.Others), Config.FilterFrontierOwner.Others.ordinal()));
@@ -130,16 +150,16 @@ public class FrontierList extends StackeableScreen {
             ClientEventHandler.postUpdatedConfigEvent();
             updateButtons();
         });
+        rightColumn.addChild(filterOwner);
 
-        labels.add(new SimpleLabel(font, actualWidth / 2 + 170, 214, SimpleLabel.Align.Left,
-                Component.translatable("mapfrontiers.filter_dimension"), ColorConstants.TEXT));
-
-        filterDimension = new ScrollBox(actualWidth / 2 + 170, 226, 200, actualHeight - 296, 16);
-        filterDimension.addElement(new RadioListElement(font, Component.translatable("mapfrontiers.config.All"), "all".hashCode()));
-        filterDimension.addElement(new RadioListElement(font, Component.translatable("mapfrontiers.config.Current"), "current".hashCode()));
-        filterDimension.addElement(new RadioListElement(font, Component.literal("minecraft:overworld"), "minecraft:overworld".hashCode()));
-        filterDimension.addElement(new RadioListElement(font, Component.literal("minecraft:the_nether"), "minecraft:the_nether".hashCode()));
-        filterDimension.addElement(new RadioListElement(font, Component.literal("minecraft:the_end"), "minecraft:the_end".hashCode()));
+        rightColumn.addChild(SpacerElement.height(4));
+        rightColumn.addChild(new StringWidget(filterDimensionLabel, font).setColor(ColorConstants.TEXT));
+        filterDimension = new ScrollBox(200, actualHeight - 269, 16);
+        filterDimension.addElement(new RadioListElement(font, configAllLabel, "all".hashCode()));
+        filterDimension.addElement(new RadioListElement(font, configCurrentLabel, "current".hashCode()));
+        filterDimension.addElement(new RadioListElement(font, overworldLabel, "minecraft:overworld".hashCode()));
+        filterDimension.addElement(new RadioListElement(font, theNetherLabel, "minecraft:the_nether".hashCode()));
+        filterDimension.addElement(new RadioListElement(font, theEndLabel, "minecraft:the_end".hashCode()));
         addDimensionsToFilter();
         filterDimension.selectElementIf((element) -> ((RadioListElement) element).getId() == Config.filterFrontierDimension.hashCode());
         filterDimension.setElementDeletedCallback(element -> updateButtons());
@@ -160,32 +180,29 @@ public class FrontierList extends StackeableScreen {
             Config.filterFrontierDimension = "all";
             filterDimension.selectElementIf((element) -> ((RadioListElement) element).getId() == Config.filterFrontierDimension.hashCode());
         }
+        rightColumn.addChild(filterDimension);
 
-        buttonResetFilters = new SimpleButton(font, actualWidth / 2 + 170, 50, 110,
-                Component.translatable("mapfrontiers.reset_filters"), this::buttonPressed);
-
-        buttonCreate = new SimpleButton(font, actualWidth / 2 - 295, actualHeight - 28, 110,
-                Component.translatable("mapfrontiers.create"), this::buttonPressed);
-        buttonInfo = new SimpleButton(font, actualWidth / 2 - 175, actualHeight - 28, 110,
-                Component.translatable("mapfrontiers.info"), this::buttonPressed);
-        buttonDelete = new SimpleButton(font, actualWidth / 2 - 55, actualHeight - 28, 110,
-                Component.translatable("mapfrontiers.delete"), this::buttonPressed);
+        buttonCreate = bottomButtons.addChild(new SimpleButton(font, 110, createLabel, (b) -> new NewFrontier(jmAPI).display()));
+        buttonInfo = bottomButtons.addChild(new SimpleButton(font, 110, infoLabel, (b) -> {
+            FrontierOverlay frontier = ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
+            new FrontierInfo(jmAPI, frontier).display();
+        }));
+        buttonDelete = bottomButtons.addChild(new SimpleButton(font, 110, deleteLabel, (b) -> {
+            FrontierOverlay frontier = ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
+            FrontiersOverlayManager frontierManager = MapFrontiersClient.getFrontiersOverlayManager(frontier.getPersonal());
+            frontierManager.clientDeleteFrontier(frontier);
+            frontiers.removeElement(frontiers.getSelectedElement());
+            updateButtons();
+        }));
         buttonDelete.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
-        buttonVisible = new SimpleButton(font, actualWidth / 2 + 65, actualHeight - 28, 110,
-                Component.translatable("mapfrontiers.hide"), this::buttonPressed);
-        buttonDone = new SimpleButton(font, actualWidth / 2 + 185, actualHeight - 28, 110,
-                Component.translatable("gui.done"), this::buttonPressed);
-
-        addRenderableWidget(frontiers);
-        addRenderableWidget(filterType);
-        addRenderableWidget(filterOwner);
-        addRenderableWidget(filterDimension);
-        addRenderableWidget(buttonResetFilters);
-        addRenderableWidget(buttonCreate);
-        addRenderableWidget(buttonInfo);
-        addRenderableWidget(buttonDelete);
-        addRenderableWidget(buttonVisible);
-        addRenderableWidget(buttonDone);
+        buttonVisible = bottomButtons.addChild(new SimpleButton(font, 110, hideLabel, (b) -> {
+            FrontierOverlay frontier = ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
+            frontier.setVisible(!frontier.getVisible());
+            FrontiersOverlayManager frontierManager = MapFrontiersClient.getFrontiersOverlayManager(frontier.getPersonal());
+            frontierManager.clientUpdateFrontier(frontier);
+            updateButtons();
+        }));
+        buttonDone = bottomButtons.addChild(new SimpleButton(font, 110, doneLabel, (b) -> onClose()));
 
         updateFrontiers();
 
@@ -197,56 +214,20 @@ public class FrontierList extends StackeableScreen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
-
-        mouseX *= scaleFactor;
-        mouseY *= scaleFactor;
-
-        if (scaleFactor != 1.f) {
-            graphics.pose().pushPose();
-            graphics.pose().scale(1.0f / scaleFactor, 1.0f / scaleFactor, 1.0f);
-        }
-
-        int x1 = actualWidth / 2 - 389;
-        int x2 = actualWidth / 2 + 389;
-        int y1 = actualHeight / 2 - frontiers.getHeight() / 2 - 14;
-        int y2 = actualHeight / 2 + frontiers.getHeight() / 2 + 14;
-        graphics.fill(x1, y1, x2, y2, ColorConstants.SCREEN_BG);
-        graphics.hLine(x1, x2, y1, ColorConstants.TAB_BORDER);
-        graphics.hLine(x1, x2, y2, ColorConstants.TAB_BORDER);
-        graphics.vLine(x1, y1, y2, ColorConstants.TAB_BORDER);
-        graphics.vLine(x2, y1, y2, ColorConstants.TAB_BORDER);
-
-        // Rendering manually so the background is not scaled.
-        for(GuiEventListener child : children()) {
-            if (child instanceof Renderable renderable)
-                renderable.render(graphics, mouseX, mouseY, partialTicks);
-        }
-
-        graphics.drawCenteredString(font, title, this.actualWidth / 2, 8, ColorConstants.WHITE);
-
-        for (SimpleLabel label : labels) {
-            if (label.visible) {
-                label.render(graphics, mouseX, mouseY, partialTicks);
-            }
-        }
-
-        if (scaleFactor != 1.f) {
-            graphics.pose().popPose();
-        }
+    public void repositionElements() {
+        frontiers.setSize(450, actualHeight - 100);
+        filterDimension.setSize(200, actualHeight - 269);
+        super.repositionElements();
+        content.setPosition((actualWidth - content.getWidth()) / 2, 60);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        return super.mouseClicked(mouseX * scaleFactor, mouseY * scaleFactor, mouseButton);
+    public void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        drawCenteredBoxBackground(graphics, actualWidth - 60, actualHeight - 60);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        mouseX *= scaleFactor;
-        mouseY *= scaleFactor;
-
         for (GuiEventListener w : children()) {
             if (w instanceof ScrollBox) {
                 ((ScrollBox) w).mouseReleased();
@@ -254,48 +235,6 @@ public class FrontierList extends StackeableScreen {
         }
 
         return super.mouseReleased(mouseX, mouseY, button);
-    }
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
-        return super.mouseScrolled(mouseX * scaleFactor, mouseY * scaleFactor, hDelta, vDelta);
-    }
-
-    @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        return super.mouseDragged(mouseX * scaleFactor, mouseY * scaleFactor, button, dragX * scaleFactor, dragY * scaleFactor);
-    }
-
-    protected void buttonPressed(Button button) {
-        if (button == buttonResetFilters) {
-            Config.filterFrontierType = Config.FilterFrontierType.All;
-            filterType.selectElementIf((element) -> ((RadioListElement) element).getId() == Config.filterFrontierType.ordinal());
-            Config.filterFrontierOwner = Config.FilterFrontierOwner.All;
-            filterOwner.selectElementIf((element) -> ((RadioListElement) element).getId() == Config.filterFrontierOwner.ordinal());
-            Config.filterFrontierDimension = "all";
-            filterDimension.selectElementIf((element) -> ((RadioListElement) element).getId() == Config.filterFrontierDimension.hashCode());
-            updateFrontiers();
-            updateButtons();
-        } else if (button == buttonCreate) {
-            StackeableScreen.open(new NewFrontier(jmAPI, this));
-        } else if (button == buttonInfo) {
-            FrontierOverlay frontier = ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
-            StackeableScreen.open(new FrontierInfo(jmAPI, frontier, this));
-        } else if (button == buttonDelete) {
-            FrontierOverlay frontier = ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
-            FrontiersOverlayManager frontierManager = MapFrontiersClient.getFrontiersOverlayManager(frontier.getPersonal());
-            frontierManager.clientDeleteFrontier(frontier);
-            frontiers.removeElement(frontiers.getSelectedElement());
-            updateButtons();
-        } else if (button == buttonVisible) {
-            FrontierOverlay frontier = ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
-            frontier.setVisible(!frontier.getVisible());
-            FrontiersOverlayManager frontierManager = MapFrontiersClient.getFrontiersOverlayManager(frontier.getPersonal());
-            frontierManager.clientUpdateFrontier(frontier);
-            updateButtons();
-        } else if (button == buttonDone) {
-            closeAndReturn();
-        }
     }
 
     @Override
@@ -391,9 +330,9 @@ public class FrontierList extends StackeableScreen {
         FrontierData frontier = frontiers.getSelectedElement() == null ? null : ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
         SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontier, playerUser);
 
-        buttonInfo.visible = frontiers.getSelectedElement() != null;
-        buttonDelete.visible = actions.canDelete;
-        buttonVisible.visible = actions.canUpdate;
+        buttonInfo.active = frontiers.getSelectedElement() != null;
+        buttonDelete.active = actions.canDelete;
+        buttonVisible.active = actions.canUpdate;
 
         if (frontier != null && frontier.getVisible()) {
             buttonVisible.setMessage(Component.translatable("mapfrontiers.hide"));

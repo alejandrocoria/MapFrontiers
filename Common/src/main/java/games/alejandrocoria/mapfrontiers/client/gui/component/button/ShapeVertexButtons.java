@@ -40,11 +40,11 @@ public class ShapeVertexButtons extends AbstractWidgetNoNarration {
     private final SimpleLabel labelVertices;
     private final Consumer<ShapeVertexButtons> callbackShapeUpdated;
 
-    public ShapeVertexButtons(Font font, int x, int y, int selected, Consumer<ShapeVertexButtons> callbackShapeUpdated) {
-        super(x, y, 324, 120, Component.empty());
+    public ShapeVertexButtons(Font font, int selected, Consumer<ShapeVertexButtons> callbackShapeUpdated) {
+        super(0, 0, 324, 140, Component.empty());
         this.selected = selected;
-        labelShapes = new SimpleLabel(font, x + 162, y, SimpleLabel.Align.Center, Component.translatable("mapfrontiers.initial_shape"), ColorConstants.WHITE);
-        labelVertices = new SimpleLabel(font, x + 162, y + 127, SimpleLabel.Align.Center, Component.literal(""), ColorConstants.WHITE);
+        labelShapes = new SimpleLabel(font, 0, 0, SimpleLabel.Align.Center, Component.translatable("mapfrontiers.initial_shape"), ColorConstants.WHITE);
+        labelVertices = new SimpleLabel(font, 0, 0, SimpleLabel.Align.Center, Component.empty(), ColorConstants.WHITE);
         this.callbackShapeUpdated = callbackShapeUpdated;
 
         updateVertexLabel();
@@ -87,6 +87,20 @@ public class ShapeVertexButtons extends AbstractWidgetNoNarration {
     }
 
     @Override
+    public void setX(int x) {
+        super.setX(x);
+        labelShapes.setX(x + 162);
+        labelVertices.setX(x + 162);
+    }
+
+    @Override
+    public void setY(int y) {
+        super.setY(y);
+        labelShapes.setY(y + 2);
+        labelVertices.setY(y + 129);
+    }
+
+    @Override
     public boolean clicked(double mouseX, double mouseY) {
         if (!active || !visible) {
             return false;
@@ -103,7 +117,7 @@ public class ShapeVertexButtons extends AbstractWidgetNoNarration {
     @Override
     public void onClick(double mouseX, double mouseY) {
         double col = (mouseX - getX() + 3) / 55.0;
-        double row = (mouseY - getY() - 13) / 55.0;
+        double row = (mouseY - getY() - 15) / 55.0;
         if (col >= 0.0 && col < 6.0 && row >= 0.0 && row < 2.0) {
             selected = (int) col + (int) row * 6;
             updateVertexLabel();
@@ -129,7 +143,7 @@ public class ShapeVertexButtons extends AbstractWidgetNoNarration {
                 texY = 49;
             }
 
-            graphics.blit(texture, getX() + col * 55, getY() + row * 55 + 16, texX, texY, 49, 49, textureSizeX, textureSizeY);
+            graphics.blit(texture, getX() + col * 55, getY() + row * 55 + 18, texX, texY, 49, 49, textureSizeX, textureSizeY);
 
             ++col;
             if (col == 6) {

@@ -16,7 +16,7 @@ import java.util.function.Predicate;
 public class ScrollBox extends AbstractWidgetNoNarration {
     private final int elementHeight;
     private int scrollStart = 0;
-    private final int scrollHeight;
+    private int scrollHeight;
     private int scrollBarPos = 0;
     private int scrollBarHeight = 0;
     private boolean scrollBarHovered = false;
@@ -27,8 +27,18 @@ public class ScrollBox extends AbstractWidgetNoNarration {
     private Consumer<ScrollElement> elementClickedCallback;
     private Consumer<ScrollElement> elementDeletedCallback;
 
+    // TODO remove
     public ScrollBox(int x, int y, int width, int height, int elementHeight) {
         super(x, y, width, Math.max(height, elementHeight), Component.empty());
+        elements = new ArrayList<>();
+        selected = -1;
+        this.elementHeight = elementHeight;
+        scrollHeight = this.height / elementHeight;
+        this.height = scrollHeight * elementHeight;
+    }
+
+    public ScrollBox(int width, int height, int elementHeight) {
+        super(0, 0, width, Math.max(height, elementHeight), Component.empty());
         elements = new ArrayList<>();
         selected = -1;
         this.elementHeight = elementHeight;
@@ -129,6 +139,31 @@ public class ScrollBox extends AbstractWidgetNoNarration {
         elements.clear();
         selected = -1;
         scrollBarGrabbed = false;
+        updateScrollWindow();
+        updateScrollBar();
+    }
+
+    @Override
+    public void setX(int x) {
+        super.setX(x);
+        for (ScrollElement element : elements) {
+            element.setX(x);
+        }
+    }
+
+    @Override
+    public void setY(int y) {
+        super.setY(y);
+        for (int i = 0; i < elements.size(); ++i) {
+            elements.get(i).setY(y + i * elementHeight);
+        }
+    }
+
+    @Override
+    public void setSize(int width, int height) {
+        super.setSize(width, height);
+        scrollHeight = this.height / elementHeight;
+        this.height = scrollHeight * elementHeight;
         updateScrollWindow();
         updateScrollBar();
     }

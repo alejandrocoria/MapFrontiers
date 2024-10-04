@@ -19,8 +19,8 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class ShareSettings extends StackeableScreen {
+public class ShareSettings extends AutoScaledScreen {
     private final FrontiersOverlayManager frontiersOverlayManager;
     private FrontierOverlay frontier;
     private ScrollBox users;
@@ -45,8 +45,8 @@ public class ShareSettings extends StackeableScreen {
     private boolean canUpdate;
     private int ticksSinceLastUpdate = 0;
 
-    public ShareSettings(FrontiersOverlayManager frontiersOverlayManager, FrontierOverlay frontier, Screen returnScreen) {
-        super(Component.translatable("mapfrontiers.title_share_settings"), returnScreen);
+    public ShareSettings(FrontiersOverlayManager frontiersOverlayManager, FrontierOverlay frontier) {
+        super(Component.translatable("mapfrontiers.title_share_settings"));
         this.frontiersOverlayManager = frontiersOverlayManager;
         this.frontier = frontier;
 
@@ -54,7 +54,7 @@ public class ShareSettings extends StackeableScreen {
 
         ClientEventHandler.subscribeDeletedFrontierEvent(this, frontierID -> {
             if (frontierID.equals(this.frontier.getId())) {
-                closeAndReturn();
+                onClose();
             }
         });
 
@@ -69,9 +69,9 @@ public class ShareSettings extends StackeableScreen {
     }
 
     @Override
-    public void init() {
+    public void initScreen() {
         if (!MapFrontiersClient.isModOnServer()) {
-            closeAndReturn();
+            onClose();
         }
 
         users = new ScrollBox(width / 2 - 215, 82, 430, height - 128, 16);
@@ -147,9 +147,13 @@ public class ShareSettings extends StackeableScreen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.render(graphics, mouseX, mouseY, partialTicks);
-        graphics.drawCenteredString(font, title, this.width / 2, 8, ColorConstants.WHITE);
+    public void renderScaledScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        drawCenteredBoxBackground(graphics, width - 80, height - 80);
+
+        for(GuiEventListener child : children()) {
+            if (child instanceof Renderable renderable)
+                renderable.render(graphics, mouseX, mouseY, partialTicks);
+        }
 
         for (SimpleLabel label : labels) {
             if (label.visible) {
@@ -171,7 +175,7 @@ public class ShareSettings extends StackeableScreen {
 
     protected void buttonPressed(Button button) {
         if (button == buttonDone) {
-            closeAndReturn();
+            onClose();
         }
     }
 

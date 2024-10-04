@@ -3,25 +3,21 @@ package games.alejandrocoria.mapfrontiers.client.gui.screen;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
-import games.alejandrocoria.mapfrontiers.client.gui.component.SimpleLabel;
+import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.ShapeChunkButtons;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.ShapeVertexButtons;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
-import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.Context;
-import journeymap.api.v2.client.fullscreen.IFullscreen;
 import journeymap.api.v2.client.util.UIState;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Renderable;
-import net.minecraft.client.gui.components.events.GuiEventListener;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.layouts.GridLayout;
+import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.ChunkPos;
@@ -34,76 +30,79 @@ import java.util.List;
 import java.util.Set;
 
 @ParametersAreNonnullByDefault
-public class NewFrontier extends StackeableScreen {
-    private final IClientAPI jmAPI;
+public class NewFrontier extends AutoScaledScreen {
+    private static final Component titleLabel = Component.translatable("mapfrontiers.title_new_frontier");
+    private static final Component frontierTypeLabel = Component.translatable("mapfrontiers.frontier_type");
+    private static final Component frontierModeLabel = Component.translatable("mapfrontiers.frontier_mode");
+    private static final Component afterCreatingLabel = Component.translatable("mapfrontiers.after_creating");
+    private static final Component createLabel = Component.translatable("mapfrontiers.create");
+    private static final Component cancelLabel = Component.translatable("gui.cancel");
 
-    private float scaleFactor;
-    private int actualWidth;
-    private int actualHeight;
+    private final IClientAPI jmAPI;
 
     private OptionButton buttonFrontierType;
     private OptionButton buttonFrontierMode;
     private OptionButton buttonAfterCreate;
     private ShapeVertexButtons shapeVertexButtons;
     private ShapeChunkButtons shapeChunkButtons;
-    private SimpleLabel labelSize;
+    private StringWidget labelSize;
     private TextBoxInt textSize;
-    private SimpleButton buttonCreateFrontier;
-    private SimpleButton buttonCancel;
 
-    private final List<SimpleLabel> labels;
-
-    public NewFrontier(IClientAPI jmAPI, Screen returnScreen) {
-        super(Component.translatable("mapfrontiers.title_new_frontier"), returnScreen);
+    public NewFrontier(IClientAPI jmAPI) {
+        super(titleLabel, 344, 295);
         this.jmAPI = jmAPI;
-        labels = new ArrayList<>();
 
         ClientEventHandler.subscribeUpdatedSettingsProfileEvent(this, profile -> {
-            StackeableScreen.popAndOpen(new NewFrontier(jmAPI, returnScreen));
+            onClose();
+            new NewFrontier(jmAPI).display();
         });
     }
 
     @Override
-    public void init() {
-        scaleFactor = ScreenHelper.getScaleFactorThatFit(minecraft, this, 344, 279);
-        actualWidth = (int) (width * scaleFactor);
-        actualHeight = (int) (height * scaleFactor);
+    public void initScreen() {
+        GridLayout mainLayout = new GridLayout(2, 5).spacing(8);
+        content.addChild(mainLayout);
+        LayoutSettings leftColumnSettings = LayoutSettings.defaults().alignHorizontallyRight();
+        LayoutSettings rightColumnSettings = LayoutSettings.defaults().alignHorizontallyLeft();
+        LayoutSettings centerColumnSettings = LayoutSettings.defaults().alignHorizontallyCenter();
 
-        labels.clear();
-
-        labels.add(new SimpleLabel(font, actualWidth / 2 - 130, actualHeight / 2 - 105, SimpleLabel.Align.Left,
-                Component.translatable("mapfrontiers.frontier_type"), ColorConstants.TEXT));
-        buttonFrontierType = new OptionButton(font, actualWidth / 2, actualHeight / 2 - 107, 130, this::buttonPressed);
+        mainLayout.addChild(new StringWidget(frontierTypeLabel, font).setColor(ColorConstants.TEXT), 0, 0, leftColumnSettings);
+        buttonFrontierType = new OptionButton(font, 0, 0, 130, OptionButton.DO_NOTHING);
         buttonFrontierType.addOption(Config.getTranslatedEnum(Config.FilterFrontierType.Global));
         buttonFrontierType.addOption(Config.getTranslatedEnum(Config.FilterFrontierType.Personal));
         buttonFrontierType.setSelected(0);
-
         if (!MapFrontiersClient.isModOnServer() || MapFrontiersClient.getSettingsProfile().createFrontier != SettingsProfile.State.Enabled) {
             buttonFrontierType.setSelected(1);
             buttonFrontierType.active = false;
         }
+        mainLayout.addChild(buttonFrontierType, 0, 1, rightColumnSettings);
 
-        labels.add(new SimpleLabel(font, actualWidth / 2 - 130, actualHeight / 2 - 89, SimpleLabel.Align.Left,
-                Component.translatable("mapfrontiers.frontier_mode"), ColorConstants.TEXT));
-        buttonFrontierMode = new OptionButton(font, actualWidth / 2, actualHeight / 2 - 91, 130, this::buttonPressed);
+        mainLayout.addChild(new StringWidget(frontierModeLabel, font).setColor(ColorConstants.TEXT), 1, 0, leftColumnSettings);
+        buttonFrontierMode = new OptionButton(font, 130, (b) -> {
+                    Config.newFrontierMode = FrontierData.Mode.values()[b.getSelected()];
+                    shapeButtonsUpdated();
+        });
         buttonFrontierMode.addOption(Config.getTranslatedEnum(FrontierData.Mode.Vertex));
         buttonFrontierMode.addOption(Config.getTranslatedEnum(FrontierData.Mode.Chunk));
         buttonFrontierMode.setSelected(Config.newFrontierMode.ordinal());
+        mainLayout.addChild(buttonFrontierMode, 1, 1, rightColumnSettings);
 
-        labels.add(new SimpleLabel(font, actualWidth / 2 - 130, actualHeight / 2 - 73, SimpleLabel.Align.Left,
-                Component.translatable("mapfrontiers.after_creating"), ColorConstants.TEXT));
-        buttonAfterCreate = new OptionButton(font, actualWidth / 2, actualHeight / 2 - 75, 130, this::buttonPressed);
+        mainLayout.addChild(new StringWidget(afterCreatingLabel, font).setColor(ColorConstants.TEXT), 2, 0, leftColumnSettings);
+        buttonAfterCreate = new OptionButton(font, 130,
+                (b) -> Config.afterCreatingFrontier = Config.AfterCreatingFrontier.values()[b.getSelected()]);
         buttonAfterCreate.addOption(Config.getTranslatedEnum(Config.AfterCreatingFrontier.Info));
         buttonAfterCreate.addOption(Config.getTranslatedEnum(Config.AfterCreatingFrontier.Edit));
         buttonAfterCreate.addOption(Config.getTranslatedEnum(Config.AfterCreatingFrontier.Nothing));
         buttonAfterCreate.setSelected(Config.afterCreatingFrontier.ordinal());
+        mainLayout.addChild(buttonAfterCreate, 2, 1, rightColumnSettings);
 
-        shapeVertexButtons = new ShapeVertexButtons(font, actualWidth / 2 - 162, actualHeight / 2 - 45, Config.newFrontierShape, (s) -> shapeButtonsUpdated());
-        shapeChunkButtons = new ShapeChunkButtons(font, actualWidth / 2 - 107, actualHeight / 2 - 45, Config.newFrontierChunkShape, (s) -> shapeButtonsUpdated());
+        shapeVertexButtons = new ShapeVertexButtons(font, Config.newFrontierShape, (s) -> shapeButtonsUpdated());
+        mainLayout.addChild(shapeVertexButtons, 3, 0, 1, 2, centerColumnSettings);
+        shapeChunkButtons = new ShapeChunkButtons(font, Config.newFrontierChunkShape, (s) -> shapeButtonsUpdated());
+        mainLayout.addChild(shapeChunkButtons, 3, 0, 1, 2, centerColumnSettings);
 
-        labelSize = new SimpleLabel(font, actualWidth / 2 - 80, actualHeight / 2 + 98, SimpleLabel.Align.Left, Component.literal(""), ColorConstants.WHITE);
-        labels.add(labelSize);
-        textSize = new TextBoxInt(1, 1, 999, font, actualWidth / 2 + 16, actualHeight / 2 + 96, 64);
+        labelSize = mainLayout.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.WHITE), 4, 0, leftColumnSettings);
+        textSize = new TextBoxInt(1, 1, 999, font, 0, 0, 64);
         textSize.setValueChangedCallback(value -> {
             if (Config.newFrontierMode == FrontierData.Mode.Vertex) {
                 if (shapeVertexButtons.getShapeMeasure() == ShapeVertexButtons.ShapeMeasure.Width) {
@@ -129,108 +128,24 @@ public class NewFrontier extends StackeableScreen {
                 }
             }
         });
+        mainLayout.addChild(textSize, 4, 1, rightColumnSettings);
 
-        buttonCreateFrontier = new SimpleButton(font, actualWidth / 2 - 110, actualHeight / 2 + 123, 100,
-                Component.translatable("mapfrontiers.create"), this::buttonPressed);
-        buttonCancel = new SimpleButton(font, actualWidth / 2 + 10, actualHeight / 2 + 123, 100,
-                Component.translatable("gui.cancel"), this::buttonPressed);
-
-        addRenderableWidget(buttonFrontierType);
-        addRenderableWidget(buttonFrontierMode);
-        addRenderableWidget(buttonAfterCreate);
-        addRenderableWidget(shapeVertexButtons);
-        addRenderableWidget(shapeChunkButtons);
-        addRenderableWidget(textSize);
-        addRenderableWidget(buttonCreateFrontier);
-        addRenderableWidget(buttonCancel);
+        bottomButtons.addChild(new SimpleButton(font, 100, createLabel, (b) -> {
+            boolean personal = buttonFrontierType.getSelected() == 1;
+            closeAndReturnToFullscreenMap();
+            UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
+            if (uiState != null) {
+                MapFrontiersClient.getFrontiersOverlayManager(personal).clientCreateNewfrontier(uiState.dimension, calculateVertices(), calculateChunks());
+            }
+        }));
+        bottomButtons.addChild(new SimpleButton(font, 100, cancelLabel, b -> onClose()));
 
         shapeButtonsUpdated();
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
-
-        mouseX *= scaleFactor;
-        mouseY *= scaleFactor;
-
-        if (scaleFactor != 1.f) {
-            graphics.pose().pushPose();
-            graphics.pose().scale(1.0f / scaleFactor, 1.0f / scaleFactor, 1.0f);
-        }
-
-        int x1 = actualWidth / 2 - 172;
-        int x2 = actualWidth / 2 + 172;
-        int y1 = actualHeight / 2 - 117;
-        int y2 = actualHeight / 2 + 117;
-        graphics.fill(x1, y1, x2, y2, ColorConstants.SCREEN_BG);
-        graphics.hLine(x1, x2, y1, ColorConstants.TAB_BORDER);
-        graphics.hLine(x1, x2, y2, ColorConstants.TAB_BORDER);
-        graphics.vLine(x1, y1, y2, ColorConstants.TAB_BORDER);
-        graphics.vLine(x2, y1, y2, ColorConstants.TAB_BORDER);
-
-        // Rendering manually so the background is not scaled.
-        for(GuiEventListener child : children()) {
-            if (child instanceof Renderable renderable)
-                renderable.render(graphics, mouseX, mouseY, partialTicks);
-        }
-
-        graphics.drawCenteredString(font, title, this.actualWidth / 2, 8, ColorConstants.WHITE);
-
-        for (SimpleLabel label : labels) {
-            if (label.visible) {
-                label.render(graphics, mouseX, mouseY, partialTicks);
-            }
-        }
-
-        if (scaleFactor != 1.f) {
-            graphics.pose().popPose();
-        }
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        mouseX *= scaleFactor;
-        mouseY *= scaleFactor;
-
-        if (mouseButton == 0) {
-            textSize.mouseClicked(mouseX, mouseY, mouseButton);
-        }
-
-        return super.mouseClicked(mouseX, mouseY, mouseButton);
-    }
-
-    @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        return super.mouseReleased(mouseX * scaleFactor, mouseY * scaleFactor, button);
-    }
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
-        return super.mouseScrolled(mouseX * scaleFactor, mouseY * scaleFactor, hDelta, vDelta);
-    }
-
-    @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        return super.mouseDragged(mouseX * scaleFactor, mouseY * scaleFactor, button, dragX * scaleFactor, dragY * scaleFactor);
-    }
-
-    protected void buttonPressed(Button button) {
-        if (button == buttonFrontierMode) {
-            Config.newFrontierMode = FrontierData.Mode.values()[buttonFrontierMode.getSelected()];
-            shapeButtonsUpdated();
-        } else if (button == buttonAfterCreate) {
-            Config.afterCreatingFrontier = Config.AfterCreatingFrontier.values()[buttonAfterCreate.getSelected()];
-        } else if (button == buttonCreateFrontier) {
-            boolean personal = buttonFrontierType.getSelected() == 1;
-            closeAndReturnUntil(IFullscreen.class);
-            UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
-            if (uiState != null) {
-                MapFrontiersClient.getFrontiersOverlayManager(personal).clientCreateNewfrontier(uiState.dimension, calculateVertices(), calculateChunks());
-            }
-        } else if (button == buttonCancel) {
-            closeAndReturn();
-        }
+    public void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        drawCenteredBoxBackground(graphics, 344, 234);
     }
 
     @Override
@@ -250,6 +165,7 @@ public class NewFrontier extends StackeableScreen {
             if (selected == 0 || selected == 1) {
                 labelSize.visible = false;
                 textSize.visible = false;
+                repositionElements();
                 return;
             }
 
@@ -257,10 +173,10 @@ public class NewFrontier extends StackeableScreen {
             textSize.visible = true;
 
             if (shapeVertexButtons.getShapeMeasure() == ShapeVertexButtons.ShapeMeasure.Width) {
-                labelSize.setText(Component.translatable("mapfrontiers.shape_width"));
+                setLabelSizeMessage("mapfrontiers.shape_width");
                 textSize.setValue(String.valueOf(Config.newFrontierShapeWidth));
             } else if (shapeVertexButtons.getShapeMeasure() == ShapeVertexButtons.ShapeMeasure.Radius) {
-                labelSize.setText(Component.translatable("mapfrontiers.shape_radius"));
+                setLabelSizeMessage("mapfrontiers.shape_radius");
                 textSize.setValue(String.valueOf(Config.newFrontierShapeRadius));
             }
         } else {
@@ -273,6 +189,7 @@ public class NewFrontier extends StackeableScreen {
             if (selected == 0 || selected == 1 || selected == 7) {
                 labelSize.visible = false;
                 textSize.visible = false;
+                repositionElements();
                 return;
             }
 
@@ -280,15 +197,22 @@ public class NewFrontier extends StackeableScreen {
             textSize.visible = true;
 
             if (shapeChunkButtons.getShapeMeasure() == ShapeChunkButtons.ShapeMeasure.Width) {
-                labelSize.setText(Component.translatable("mapfrontiers.shape_width"));
+                setLabelSizeMessage("mapfrontiers.shape_width");
                 textSize.setValue(String.valueOf(Config.newFrontierChunkShapeWidth));
                 shapeChunkButtons.setSize(Config.newFrontierChunkShapeWidth);
             } else if (shapeChunkButtons.getShapeMeasure() == ShapeChunkButtons.ShapeMeasure.Length) {
-                labelSize.setText(Component.translatable("mapfrontiers.shape_length"));
+                setLabelSizeMessage("mapfrontiers.shape_length");
                 textSize.setValue(String.valueOf(Config.newFrontierChunkShapeLength));
                 shapeChunkButtons.setSize(Config.newFrontierChunkShapeLength);
             }
         }
+
+        repositionElements();
+    }
+
+    private void setLabelSizeMessage(String key) {
+        labelSize.setMessage(Component.translatable(key));
+        labelSize.setWidth(font.width(labelSize.getMessage()));
     }
 
     private List<BlockPos> calculateVertices() {

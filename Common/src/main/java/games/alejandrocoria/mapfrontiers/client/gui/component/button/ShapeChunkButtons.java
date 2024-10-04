@@ -30,11 +30,11 @@ public class ShapeChunkButtons extends AbstractWidgetNoNarration {
     private final SimpleLabel labelChunks;
     private final Consumer<ShapeChunkButtons> callbackShapeUpdated;
 
-    public ShapeChunkButtons(Font font, int x, int y, int selected, Consumer<ShapeChunkButtons> callbackShapeUpdated) {
-        super(x, y, 214, 120, Component.empty());
+    public ShapeChunkButtons(Font font, int selected, Consumer<ShapeChunkButtons> callbackShapeUpdated) {
+        super(0, 0, 214, 140, Component.empty());
         this.selected = selected;
-        labelShapes = new SimpleLabel(font, x + 107, y, SimpleLabel.Align.Center, Component.translatable("mapfrontiers.initial_shape"), ColorConstants.WHITE);
-        labelChunks = new SimpleLabel(font, x + 107, y + 127, SimpleLabel.Align.Center, Component.literal(""), ColorConstants.WHITE);
+        labelShapes = new SimpleLabel(font, 0, 0, SimpleLabel.Align.Center, Component.translatable("mapfrontiers.initial_shape"), ColorConstants.WHITE);
+        labelChunks = new SimpleLabel(font, 0, 0, SimpleLabel.Align.Center, Component.empty(), ColorConstants.WHITE);
         this.callbackShapeUpdated = callbackShapeUpdated;
 
         updateChunksLabel();
@@ -60,6 +60,20 @@ public class ShapeChunkButtons extends AbstractWidgetNoNarration {
     }
 
     @Override
+    public void setX(int x) {
+        super.setX(x);
+        labelShapes.setX(x + 107);
+        labelChunks.setX(x + 107);
+    }
+
+    @Override
+    public void setY(int y) {
+        super.setY(y);
+        labelShapes.setY(y + 2);
+        labelChunks.setY(y + 129);
+    }
+
+    @Override
     public boolean clicked(double mouseX, double mouseY) {
         if (!active || !visible) {
             return false;
@@ -76,7 +90,7 @@ public class ShapeChunkButtons extends AbstractWidgetNoNarration {
     @Override
     public void onClick(double mouseX, double mouseY) {
         double col = (mouseX - getX() + 3) / 55.0;
-        double row = (mouseY - getY() - 13) / 55.0;
+        double row = (mouseY - getY() - 15) / 55.0;
         if (col >= 0.0 && col < 4.0 && row >= 0.0 && row < 2.0) {
             selected = (int) col + (int) row * 4;
             updateChunksLabel();
@@ -102,7 +116,7 @@ public class ShapeChunkButtons extends AbstractWidgetNoNarration {
                 texY = 49;
             }
 
-            graphics.blit(texture, getX() + col * 55, getY() + row * 55 + 16, texX + 588, texY, 49, 49, textureSizeX, textureSizeY);
+            graphics.blit(texture, getX() + col * 55, getY() + row * 55 + 18, texX + 588, texY, 49, 49, textureSizeX, textureSizeY);
 
             ++col;
             if (col == 4) {

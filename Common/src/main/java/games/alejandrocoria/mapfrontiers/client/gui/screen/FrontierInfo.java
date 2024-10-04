@@ -12,7 +12,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButto
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
-import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
@@ -49,14 +48,10 @@ import java.util.Objects;
 import java.util.Stack;
 
 @ParametersAreNonnullByDefault
-public class FrontierInfo extends StackeableScreen {
+public class FrontierInfo extends AutoScaledScreen {
     static final DateFormat dateFormat = new SimpleDateFormat();
 
     private final IClientAPI jmAPI;
-
-    private float scaleFactor;
-    private int actualWidth;
-    private int actualHeight;
 
     private final FrontiersOverlayManager frontiersOverlayManager;
     private final FrontierOverlay frontier;
@@ -103,8 +98,8 @@ public class FrontierInfo extends StackeableScreen {
     private final Stack<FrontierData> undoStack = new Stack<>();
     private final Stack<FrontierData> redoStack = new Stack<>();
 
-    public FrontierInfo(IClientAPI jmAPI, FrontierOverlay frontier, Screen returnScreen) {
-        super(Component.translatable("mapfrontiers.title_info"), returnScreen);
+    public FrontierInfo(IClientAPI jmAPI, FrontierOverlay frontier) {
+        super(Component.translatable("mapfrontiers.title_info"), 636, 350);
         this.jmAPI = jmAPI;
         frontiersOverlayManager = MapFrontiersClient.getFrontiersOverlayManager(frontier.getPersonal());
         this.frontier = frontier;
@@ -113,7 +108,7 @@ public class FrontierInfo extends StackeableScreen {
 
         ClientEventHandler.subscribeDeletedFrontierEvent(this, frontierID -> {
             if (frontier.getId().equals(frontierID)) {
-                closeAndReturn();
+                onClose();
             }
         });
 
@@ -138,11 +133,7 @@ public class FrontierInfo extends StackeableScreen {
     }
 
     @Override
-    public void init() {
-        scaleFactor = ScreenHelper.getScaleFactorThatFit(minecraft, this, 636, 350);
-        actualWidth = (int) (width * scaleFactor);
-        actualHeight = (int) (height * scaleFactor);
-
+    public void initScreen() {
         int leftSide = actualWidth / 2 - 154;
         int rightSide = actualWidth / 2 + 10;
         int top = actualHeight / 2 - 142;
@@ -428,34 +419,14 @@ public class FrontierInfo extends StackeableScreen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
-
-        mouseX *= scaleFactor;
-        mouseY *= scaleFactor;
-
-        if (scaleFactor != 1.f) {
-            graphics.pose().pushPose();
-            graphics.pose().scale(1.0f / scaleFactor, 1.0f / scaleFactor, 1.0f);
-        }
-
-        int x1 = actualWidth / 2 - 318;
-        int x2 = actualWidth / 2 + 318;
-        int y1 = actualHeight / 2 - 152;
-        int y2 = actualHeight / 2 + 152;
-        graphics.fill(x1, y1, x2, y2, ColorConstants.SCREEN_BG);
-        graphics.hLine(x1, x2, y1, ColorConstants.TAB_BORDER);
-        graphics.hLine(x1, x2, y2, ColorConstants.TAB_BORDER);
-        graphics.vLine(x1, y1, y2, ColorConstants.TAB_BORDER);
-        graphics.vLine(x2, y1, y2, ColorConstants.TAB_BORDER);
+    public void renderScaledScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        drawCenteredBoxBackground(graphics, 636, 304);
 
         // Rendering manually so the background is not scaled.
         for(GuiEventListener child : children()) {
             if (child instanceof Renderable renderable)
                 renderable.render(graphics, mouseX, mouseY, partialTicks);
         }
-
-        graphics.drawCenteredString(font, title, this.actualWidth / 2, 8, ColorConstants.WHITE);
 
         if (frontier.hasBanner()) {
             frontier.renderBanner(minecraft, graphics, actualWidth / 2 - 276, actualHeight / 2 - 122, 4);
@@ -485,33 +456,10 @@ public class FrontierInfo extends StackeableScreen {
         } else if (buttonRedo.visible && buttonRedo.isHovered()) {
             graphics.renderTooltip(font, Component.translatable("mapfrontiers.redo"), mouseX, mouseY);
         }
-
-        if (scaleFactor != 1.f) {
-            graphics.pose().popPose();
-        }
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        mouseX *= scaleFactor;
-        mouseY *= scaleFactor;
-
-        if (mouseButton == 0) {
-            textName1.mouseClicked(mouseX, mouseY, mouseButton);
-            textName2.mouseClicked(mouseX, mouseY, mouseButton);
-            textRed.mouseClicked(mouseX, mouseY, mouseButton);
-            textGreen.mouseClicked(mouseX, mouseY, mouseButton);
-            textBlue.mouseClicked(mouseX, mouseY, mouseButton);
-        }
-
-        return super.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        mouseX *= scaleFactor;
-        mouseY *= scaleFactor;
-
         for (GuiEventListener w : children()) {
             if (w instanceof ColorPicker) {
                 w.mouseReleased(mouseX, mouseY, button);
@@ -519,16 +467,6 @@ public class FrontierInfo extends StackeableScreen {
         }
 
         return super.mouseReleased(mouseX, mouseY, button);
-    }
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
-        return super.mouseScrolled(mouseX * scaleFactor, mouseY * scaleFactor, hDelta, vDelta);
-    }
-
-    @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        return super.mouseDragged(mouseX * scaleFactor, mouseY * scaleFactor, button, dragX * scaleFactor, dragY * scaleFactor);
     }
 
     @Override
@@ -616,17 +554,17 @@ public class FrontierInfo extends StackeableScreen {
             redo();
         } else if (button == buttonSelect) {
             BlockPos center = frontier.getCenter();
-            closeAndReturn();
+            closeAndReturnToFullscreenMap();
             Services.JOURNEYMAP.fullscreenMapCenterOn(center.getX(), center.getZ());
         } else if (button == buttonShareSettings) {
-            StackeableScreen.open(new ShareSettings(frontiersOverlayManager, frontier, this));
+            new ShareSettings(frontiersOverlayManager, frontier).display();
         } else if (button == buttonDelete) {
             // Unsubscribing to not receive this same event.
             ClientEventHandler.unsuscribeAllEvents(this);
             frontiersOverlayManager.clientDeleteFrontier(frontier);
-            closeAndReturn();
+            onClose();
         } else if (button == buttonDone) {
-            closeAndReturn();
+            onClose();
         } else if (button == buttonBanner) {
             if (!frontier.hasBanner()) {
                 ItemStack heldBanner = getHeldBanner(minecraft);

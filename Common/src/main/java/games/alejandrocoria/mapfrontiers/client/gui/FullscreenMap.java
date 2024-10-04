@@ -8,7 +8,6 @@ import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.FrontierInfo;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.FrontierList;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.NewFrontier;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.StackeableScreen;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
@@ -184,7 +183,7 @@ public class FullscreenMap {
     }
 
     private void buttonFrontiersPressed() {
-        StackeableScreen.open(new FrontierList(jmAPI, this, fullscreen));
+        new FrontierList(jmAPI, this).display();
     }
 
     private void buttonNewPressed() {
@@ -193,13 +192,13 @@ public class FullscreenMap {
             frontierHighlighted = null;
         }
 
-        StackeableScreen.open(new NewFrontier(jmAPI, fullscreen));
+        new NewFrontier(jmAPI).display();
 
         updateButtons();
     }
 
     private void buttonInfoPressed() {
-        StackeableScreen.open(new FrontierInfo(jmAPI, frontierHighlighted, fullscreen));
+        new FrontierInfo(jmAPI, frontierHighlighted).display();
     }
 
     private void buttonEditToggled() {

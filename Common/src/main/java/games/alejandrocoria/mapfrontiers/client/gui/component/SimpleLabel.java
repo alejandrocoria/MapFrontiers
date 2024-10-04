@@ -10,6 +10,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.List;
 
+// TODO remove
 @ParametersAreNonnullByDefault
 public class SimpleLabel extends AbstractWidgetNoNarration {
     public enum Align {
