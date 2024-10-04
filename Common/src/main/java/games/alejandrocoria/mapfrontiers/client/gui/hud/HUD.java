@@ -153,7 +153,7 @@ public class HUD {
         }
     }
 
-    private void frontierChanged() {
+    public void frontierChanged() {
         if (previewMode || frontiersOverlayManager == null || personalFrontiersOverlayManager == null) {
             return;
         }

@@ -191,6 +191,9 @@ public class MapFrontiersClient {
         initializeManagers();
         frontiersOverlayManager.setFrontiersFromServer(globalFrontiers);
         personalFrontiersOverlayManager.setFrontiersFromServer(personalFrontiers);
+        if (hud != null) {
+            hud.frontierChanged();
+        }
     }
 
     public static FrontiersOverlayManager getFrontiersOverlayManager(boolean personal) {
