@@ -16,15 +16,6 @@ public class ColorPicker extends AbstractWidgetNoNarration {
     private static final ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/color_picker.png");
     private static final int textureSizeX = 274;
     private static final int textureSizeY = 134;
-    private static final int[] palette = {
-            0xffff0000, 0xffff8000, 0xffffff00, 0xff80ff00, 0xff00ff00, 0xff00ff80,
-            0xff00ffff, 0xff0080ff, 0xff0000ff, 0xff8000ff, 0xffff00ff, 0xffff0080,
-            0xff572f07, 0xff000000, 0xff404040, 0xff808080, 0xffbfbfbf, 0xffffffff};
-
-    private static final int[] paletteInactive = {
-            0xff343434, 0xff595959, 0xff7e7e7e, 0xff6b6b6b, 0xff585858, 0xff5f5f5f,
-            0xff666666, 0xff424242, 0xff1c1c1c, 0xff2f2f2f, 0xff424242, 0xff3b3b3b,
-            0xff292929, 0xff0e0e0e, 0xff2e2e2e, 0xff4d4d4d, 0xff6d6d6d, 0xff8d8d8d};
 
     private double hsX;
     private double hsY;
@@ -33,10 +24,10 @@ public class ColorPicker extends AbstractWidgetNoNarration {
     private int colorFullBrightness;
     private boolean hsGrabbed = false;
     private boolean vGrabbed = false;
-    private final BiConsumer<ColorPicker, Boolean> callbackColorUpdated;
+    private final BiConsumer<Integer, Boolean> callbackColorUpdated;
 
-    public ColorPicker(int x, int y, int color, BiConsumer<ColorPicker, Boolean> callbackColorUpdated) {
-        super(x, y, 304, 127, Component.empty());
+    public ColorPicker(int color, BiConsumer<Integer, Boolean> callbackColorUpdated) {
+        super(0, 0, 141, 128, Component.empty());
         this.callbackColorUpdated = callbackColorUpdated;
         setColor(color);
     }
@@ -57,34 +48,11 @@ public class ColorPicker extends AbstractWidgetNoNarration {
     }
 
     @Override
-    public boolean clicked(double mouseX, double mouseY) {
-        if (!active || !visible) {
-            return false;
-        }
-
-        return mouseX >= getX() && mouseX < getX() + width && mouseY >= getY() && mouseY < getY() + height;
-    }
-
-    @Override
-    public boolean isMouseOver(double mouseX, double mouseY) {
-        return clicked(mouseX, mouseY);
-    }
-
-    @Override
     public void onClick(double mouseX, double mouseY) {
         hsGrabbed = false;
         vGrabbed = false;
 
         updateMouse(mouseX, mouseY, false);
-
-        if (!hsGrabbed && !vGrabbed) {
-            double paletteX = (mouseX - (getX() + 165)) / 23.0;
-            double paletteY = (mouseY - (getY() + 57)) / 23.0;
-            if (paletteX >= 0.0 && paletteX < 6.0 && paletteY >= 0.0 && paletteY < 3.0) {
-                setColor(palette[(int) paletteX + (int) paletteY * 6]);
-                callbackColorUpdated.accept(this, false);
-            }
-        }
     }
 
     @Override
@@ -131,21 +99,6 @@ public class ColorPicker extends AbstractWidgetNoNarration {
         RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
         graphics.blit(texture, getX() + (int) hsX + 64 - 2, getY() + (int) hsY + 64 - 2, texX, 129, 5, 5, textureSizeX, textureSizeY);
         graphics.blit(texture, getX() + 131, getY() + (int) v - 2, texX + 6, 129, 10, 5, textureSizeX, textureSizeY);
-
-        graphics.fill(getX() + 165, getY() + 58, getX() + 304, getY() + 128, 0xff000000);
-        int col = 0;
-        int row = 0;
-        for (int c : (active ? palette : paletteInactive)) {
-            if (active && c == color) {
-                graphics.fill(getX() + 165 + col * 23, getY() + 58 + row * 23, getX() + 189 + col * 23, getY() + 82 + row * 23, 0xffffffff);
-            }
-            graphics.fill(getX() + 166 + col * 23, getY() + 59 + row * 23, getX() + 188 + col * 23, getY() + 81 + row * 23, c);
-            ++col;
-            if (col == 6) {
-                col = 0;
-                ++row;
-            }
-        }
     }
 
     private void updateMouse(double mouseX, double mouseY, boolean dragging) {
@@ -194,6 +147,6 @@ public class ColorPicker extends AbstractWidgetNoNarration {
 
         color = Color.HSBtoRGB((float) hue, (float) sat, (float) lum);
         colorFullBrightness = Color.HSBtoRGB((float) hue, (float) sat, 1.f);
-        callbackColorUpdated.accept(this, dragging);
+        callbackColorUpdated.accept(color, dragging);
     }
 }

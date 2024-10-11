@@ -32,6 +32,7 @@ import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class FrontierList extends AutoScaledScreen {
+    private static final Component titleLabel = Component.translatable("mapfrontiers.title_frontiers");
     private static final Component resetFiltersLabel = Component.translatable("mapfrontiers.reset_filters");
     private static final Component filterTypeLabel = Component.translatable("mapfrontiers.filter_type");
     private static final Component filterOwnerLabel = Component.translatable("mapfrontiers.filter_owner");
@@ -62,7 +63,7 @@ public class FrontierList extends AutoScaledScreen {
     private SimpleButton buttonDone;
 
     public FrontierList(IClientAPI jmAPI, FullscreenMap fullscreenMap) {
-        super(Component.translatable("mapfrontiers.title_frontiers"), 778, 302);
+        super(titleLabel, 778, 302);
         this.jmAPI = jmAPI;
         this.fullscreenMap = fullscreenMap;
 
@@ -93,7 +94,7 @@ public class FrontierList extends AutoScaledScreen {
         LayoutSettings leftColumnSettings = LayoutSettings.defaults().alignHorizontallyRight();
         LayoutSettings rightColumnSettings = LayoutSettings.defaults().alignHorizontallyLeft();
 
-        frontiers = new ScrollBox(450, actualHeight - 100, 24);
+        frontiers = new ScrollBox(actualHeight - 100, 450, 24);
         frontiers.setElementDeletedCallback(element -> updateButtons());
         frontiers.setElementClickedCallback(element -> {
             FrontierOverlay frontier = ((FrontierListElement) element).getFrontier();
@@ -120,7 +121,7 @@ public class FrontierList extends AutoScaledScreen {
 
         rightColumn.addChild(SpacerElement.height(4));
         rightColumn.addChild(new StringWidget(filterTypeLabel, font).setColor(ColorConstants.TEXT));
-        filterType = new ScrollBox(200, 48, 16);
+        filterType = new ScrollBox(48, 200, 16);
         filterType.addElement(new RadioListElement(font, Config.getTranslatedEnum(Config.FilterFrontierType.All), Config.FilterFrontierType.All.ordinal()));
         filterType.addElement(new RadioListElement(font, Config.getTranslatedEnum(Config.FilterFrontierType.Global), Config.FilterFrontierType.Global.ordinal()));
         filterType.addElement(new RadioListElement(font, Config.getTranslatedEnum(Config.FilterFrontierType.Personal), Config.FilterFrontierType.Personal.ordinal()));
@@ -137,7 +138,7 @@ public class FrontierList extends AutoScaledScreen {
 
         rightColumn.addChild(SpacerElement.height(4));
         rightColumn.addChild(new StringWidget(filterOwnerLabel, font).setColor(ColorConstants.TEXT));
-        filterOwner = new ScrollBox(200, 48, 16);
+        filterOwner = new ScrollBox(48, 200, 16);
         filterOwner.addElement(new RadioListElement(font, Config.getTranslatedEnum(Config.FilterFrontierOwner.All), Config.FilterFrontierOwner.All.ordinal()));
         filterOwner.addElement(new RadioListElement(font, Config.getTranslatedEnum(Config.FilterFrontierOwner.You), Config.FilterFrontierOwner.You.ordinal()));
         filterOwner.addElement(new RadioListElement(font, Config.getTranslatedEnum(Config.FilterFrontierOwner.Others), Config.FilterFrontierOwner.Others.ordinal()));
@@ -154,7 +155,7 @@ public class FrontierList extends AutoScaledScreen {
 
         rightColumn.addChild(SpacerElement.height(4));
         rightColumn.addChild(new StringWidget(filterDimensionLabel, font).setColor(ColorConstants.TEXT));
-        filterDimension = new ScrollBox(200, actualHeight - 269, 16);
+        filterDimension = new ScrollBox(actualHeight - 269, 200, 16);
         filterDimension.addElement(new RadioListElement(font, configAllLabel, "all".hashCode()));
         filterDimension.addElement(new RadioListElement(font, configCurrentLabel, "current".hashCode()));
         filterDimension.addElement(new RadioListElement(font, overworldLabel, "minecraft:overworld".hashCode()));
@@ -238,8 +239,9 @@ public class FrontierList extends AutoScaledScreen {
     }
 
     @Override
-    public void removed() {
+    public void onClose() {
         ClientEventHandler.unsuscribeAllEvents(this);
+        super.onClose();
     }
 
     private void addDimensionsToFilter() {

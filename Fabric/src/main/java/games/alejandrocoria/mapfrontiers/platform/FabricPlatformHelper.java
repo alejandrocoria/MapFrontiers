@@ -12,16 +12,6 @@ import java.util.Optional;
 
 public class FabricPlatformHelper implements IPlatformHelper {
     @Override
-    public void addButtonToScreen(AbstractButton button, Screen screen) {
-        Screens.getButtons(screen).add(button);
-    }
-
-    @Override
-    public void removeButtonOfScreen(AbstractButton button, Screen screen) {
-        Screens.getButtons(screen).remove(button);
-    }
-
-    @Override
     public String getPlatformName() {
         return "Fabric";
     }

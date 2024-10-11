@@ -28,8 +28,8 @@ public class ScrollBox extends AbstractWidgetNoNarration {
     private Consumer<ScrollElement> elementDeletedCallback;
 
     // TODO remove
-    public ScrollBox(int x, int y, int width, int height, int elementHeight) {
-        super(x, y, width, Math.max(height, elementHeight), Component.empty());
+    public ScrollBox(int x, int y, int height, int elementWidth, int elementHeight) {
+        super(x, y, elementWidth + 15, Math.max(height, elementHeight), Component.empty());
         elements = new ArrayList<>();
         selected = -1;
         this.elementHeight = elementHeight;
@@ -37,8 +37,8 @@ public class ScrollBox extends AbstractWidgetNoNarration {
         this.height = scrollHeight * elementHeight;
     }
 
-    public ScrollBox(int width, int height, int elementHeight) {
-        super(0, 0, width, Math.max(height, elementHeight), Component.empty());
+    public ScrollBox(int height, int elementWidth, int elementHeight) {
+        super(0, 0, elementWidth + 15, Math.max(height, elementHeight), Component.empty());
         elements = new ArrayList<>();
         selected = -1;
         this.elementHeight = elementHeight;
@@ -111,7 +111,6 @@ public class ScrollBox extends AbstractWidgetNoNarration {
     }
 
     private void removeElement(ScrollElement element, ListIterator<ScrollElement> it) {
-        element.delete();
         it.remove();
 
         if (selected == elements.size()) {
@@ -132,10 +131,6 @@ public class ScrollBox extends AbstractWidgetNoNarration {
     }
 
     public void removeAll() {
-        for (ScrollElement element : elements) {
-            element.delete();
-        }
-
         elements.clear();
         selected = -1;
         scrollBarGrabbed = false;
@@ -160,8 +155,8 @@ public class ScrollBox extends AbstractWidgetNoNarration {
     }
 
     @Override
-    public void setSize(int width, int height) {
-        super.setSize(width, height);
+    public void setSize(int elementWidth, int height) {
+        super.setSize(elementWidth + 15, height);
         scrollHeight = this.height / elementHeight;
         this.height = scrollHeight * elementHeight;
         updateScrollWindow();
@@ -201,9 +196,9 @@ public class ScrollBox extends AbstractWidgetNoNarration {
         }
 
         if (scrollBarHeight > 0) {
-            scrollBarHovered = mouseX >= getX() + width + 5
+            scrollBarHovered = mouseX >= getX() + width - 10
                             && mouseY >= getY()
-                            && mouseX < getX() + width + 15
+                            && mouseX < getX() + width
                             && mouseY < getY() + height;
 
             int barColor = ColorConstants.SCROLLBAR;
@@ -213,15 +208,15 @@ public class ScrollBox extends AbstractWidgetNoNarration {
                 barColor = ColorConstants.SCROLLBAR_HOVERED;
             }
 
-            graphics.fill(getX() + width + 5, getY(), getX() + width + 15, getY() + height, ColorConstants.SCROLLBAR_BG);
-            graphics.fill(getX() + width + 5, getY() + scrollBarPos, getX() + width + 15, getY() + scrollBarPos + scrollBarHeight, barColor);
+            graphics.fill(getX() + width - 10, getY(), getX() + width, getY() + height, ColorConstants.SCROLLBAR_BG);
+            graphics.fill(getX() + width - 10, getY() + scrollBarPos, getX() + width, getY() + scrollBarPos + scrollBarHeight, barColor);
         }
     }
 
     @Override
     public boolean clicked(double mouseX, double mouseY) {
         if (visible) {
-            if (scrollBarHeight > 0 && mouseX >= getX() + width + 5 && mouseY >= getY() && mouseX < getX() + width + 15 && mouseY < getY() + height) {
+            if (scrollBarHeight > 0 && mouseX >= getX() + width - 10 && mouseY >= getY() && mouseX < getX() + width && mouseY < getY() + height) {
                 if (mouseY < getY() + scrollBarPos) {
                     mouseScrolled(mouseX, mouseY, 0, 1);
                 } else if (mouseY > getY() + scrollBarPos + scrollBarHeight) {
@@ -329,7 +324,7 @@ public class ScrollBox extends AbstractWidgetNoNarration {
     }
 
     public static class ScrollElement {
-        enum Action {
+        public enum Action {
             None, Clicked, Deleted
         }
 
@@ -343,9 +338,6 @@ public class ScrollBox extends AbstractWidgetNoNarration {
         public ScrollElement(int width, int height) {
             this.width = width;
             this.height = height;
-        }
-
-        public void delete() {
         }
 
         public void setX(int x) {

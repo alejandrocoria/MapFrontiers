@@ -15,8 +15,13 @@ public class TextBox extends EditBox {
     private Consumer<String> valueChangedCallback;
     private Consumer<String> lostFocusCallback;
 
+    // TODO remove
     public TextBox(Font font, int x, int y, int width) {
         this(font, x, y, width, "");
+    }
+
+    public TextBox(Font font, int width) {
+        this(font, 0, 0, width, "");
     }
 
     public TextBox(Font font, int x, int y, int width, String defaultText) {

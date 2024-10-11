@@ -16,8 +16,17 @@ public class TextBoxInt extends EditBox {
     private final int max;
     private IntConsumer valueChangedCallback;
 
+    // TODO remove
     public TextBoxInt(int defaultValue, int min, int max, Font font, int x, int y, int width) {
         super(font, x, y, width, 12, Component.empty());
+        this.defaultValue = defaultValue;
+        this.min = min;
+        this.max = max;
+        this.setValue(defaultValue);
+    }
+
+    public TextBoxInt(int defaultValue, int min, int max, Font font, int width) {
+        super(font, 0, 0, width, 12, Component.empty());
         this.defaultValue = defaultValue;
         this.min = min;
         this.max = max;

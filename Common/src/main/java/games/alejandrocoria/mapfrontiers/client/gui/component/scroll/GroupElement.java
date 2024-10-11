@@ -17,25 +17,14 @@ public class GroupElement extends ScrollBox.ScrollElement {
     private final Font font;
     private final SettingsGroup group;
     private IconButton buttonDelete;
-    private final Screen screen;
 
-    public GroupElement(Font font, Screen screen, SettingsGroup group) {
+    public GroupElement(Font font, SettingsGroup group) {
         super(160, 16);
         this.font = font;
         this.group = group;
-        this.screen = screen;
 
         if (!group.isSpecial()) {
             buttonDelete = new IconButton(0, 0, IconButton.Type.Remove, (button) -> {});
-            buttonDelete.visible = false;
-            Services.PLATFORM.addButtonToScreen(buttonDelete, screen);
-        }
-    }
-
-    @Override
-    public void delete() {
-        if (buttonDelete != null) {
-            Services.PLATFORM.removeButtonOfScreen(buttonDelete, screen);
         }
     }
 
@@ -68,10 +57,9 @@ public class GroupElement extends ScrollBox.ScrollElement {
 
         if (isHovered) {
             graphics.fill(x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
-        }
-
-        if (buttonDelete != null) {
-            buttonDelete.visible = isHovered;
+            if (buttonDelete != null) {
+                buttonDelete.render(graphics, mouseX, mouseY, partialTicks);
+            }
         }
 
         String text = group.getName();

@@ -23,9 +23,8 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
     private IconButton buttonDelete;
     private final boolean enabled;
     private int pingBar = 0;
-    private final Screen screen;
 
-    public UserSharedElement(Font font, Screen screen, SettingsUserShared user, boolean enabled, boolean removable, ActionChangedConsumer actionChangedCallback) {
+    public UserSharedElement(Font font, SettingsUserShared user, boolean enabled, boolean removable, ActionChangedConsumer actionChangedCallback) {
         super(430, 16);
         this.font = font;
         this.user = user;
@@ -33,18 +32,9 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
         updateFrontier = user.hasAction(SettingsUserShared.Action.UpdateFrontier);
         updateSettings = user.hasAction(SettingsUserShared.Action.UpdateSettings);
         this.enabled = enabled;
-        this.screen = screen;
 
         if (removable && enabled) {
             buttonDelete = new IconButton(0, 0, IconButton.Type.Remove, (button) -> {});
-            Services.PLATFORM.addButtonToScreen(buttonDelete, screen);
-        }
-    }
-
-    @Override
-    public void delete() {
-        if (buttonDelete != null) {
-            Services.PLATFORM.removeButtonOfScreen(buttonDelete, screen);
         }
     }
 
@@ -82,13 +72,12 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
     public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks, boolean selected) {
         if (isHovered) {
             graphics.fill(x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
+            if (buttonDelete != null) {
+                buttonDelete.render(graphics, mouseX, mouseY, partialTicks);
+            }
         }
 
-        if (buttonDelete != null) {
-            buttonDelete.visible = isHovered;
-        }
-
-        graphics.drawString(font, user.getUser().toString(), x + 4, y + 4, ColorConstants.TEXT_HIGHLIGHT);
+        graphics.drawString(font, user.getUser().toString(), x + 16, y + 4, ColorConstants.TEXT_HIGHLIGHT);
 
         drawBox(graphics, x + 244, y + 2, updateFrontier);
         drawBox(graphics, x + 304, y + 2, updateSettings);
@@ -98,19 +87,19 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
         }
 
         if (pingBar > 0) {
-            drawPingLine(graphics, x - 11, y + 11, 2);
+            drawPingLine(graphics, x + 3, y + 11, 2);
         }
         if (pingBar > 1) {
-            drawPingLine(graphics, x - 9, y + 11, 3);
+            drawPingLine(graphics, x + 5, y + 11, 3);
         }
         if (pingBar > 2) {
-            drawPingLine(graphics, x - 7, y + 11, 4);
+            drawPingLine(graphics, x + 7, y + 11, 4);
         }
         if (pingBar > 3) {
-            drawPingLine(graphics, x - 5, y + 11, 5);
+            drawPingLine(graphics, x + 9, y + 11, 5);
         }
         if (pingBar > 4) {
-            drawPingLine(graphics, x - 3, y + 11, 6);
+            drawPingLine(graphics, x + 11, y + 11, 6);
         }
     }
 

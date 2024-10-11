@@ -11,16 +11,6 @@ import java.util.Optional;
 
 public class ForgePlatformHelper implements IPlatformHelper {
     @Override
-    public void addButtonToScreen(AbstractButton button, Screen screen) {
-        screen.renderables.add(button);
-    }
-
-    @Override
-    public void removeButtonOfScreen(AbstractButton button, Screen screen) {
-        screen.renderables.remove(button);
-    }
-
-    @Override
     public String getPlatformName() {
         return "Forge";
     }

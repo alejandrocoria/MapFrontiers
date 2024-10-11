@@ -149,9 +149,10 @@ public class NewFrontier extends AutoScaledScreen {
     }
 
     @Override
-    public void removed() {
+    public void onClose() {
         ClientEventHandler.unsuscribeAllEvents(this);
         ClientEventHandler.postUpdatedConfigEvent();
+        super.onClose();
     }
 
     private void shapeButtonsUpdated() {

@@ -5,8 +5,9 @@ import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPaletteWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPicker;
-import games.alejandrocoria.mapfrontiers.client.gui.component.SimpleLabel;
+import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
@@ -17,7 +18,6 @@ import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
-import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.Context;
@@ -26,13 +26,15 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Renderable;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.layouts.GridLayout;
+import net.minecraft.client.gui.layouts.LayoutSettings;
+import net.minecraft.client.gui.layouts.LinearLayout;
+import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.BannerItem;
 import net.minecraft.world.item.ItemStack;
@@ -42,14 +44,58 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.Stack;
+import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
 public class FrontierInfo extends AutoScaledScreen {
     static final DateFormat dateFormat = new SimpleDateFormat();
+    private static final Component titleLabel = Component.translatable("mapfrontiers.title_info");
+    private static final Component assignBannerLabel = Component.translatable("mapfrontiers.assign_banner");
+    private static final Component assignBannerWarnLabel = assignBannerLabel.copy().append(Component.literal(ColorConstants.WARNING + " !"));
+    private static final Component removeBannerLabel = Component.translatable("mapfrontiers.remove_banner");
+    private static final Component nameLabel = Component.translatable("mapfrontiers.name");
+    private static final Component personalLabel = Component.translatable("mapfrontiers.config.Personal");
+    private static final Component globalLabel = Component.translatable("mapfrontiers.config.Global");
+    private static final String verticesKey = "mapfrontiers.vertices";
+    private static final String chunksKey = "mapfrontiers.chunks";
+    private static final String ownerKey = "mapfrontiers.owner";
+    private static final String dimensionKey = "mapfrontiers.dimension";
+    private static final String areaKey = "mapfrontiers.area";
+    private static final String perimeterKey = "mapfrontiers.perimeter";
+    private static final String createdKey = "mapfrontiers.created";
+    private static final String modifiedKey = "mapfrontiers.modified";
+    private static final Component showFrontierLabel = Component.translatable("mapfrontiers.show_frontier");
+    private static final Component announceInChatLabel = Component.translatable("mapfrontiers.announce_in_chat");
+    private static final Component announceInTitleLabel = Component.translatable("mapfrontiers.announce_in_title");
+    private static final Component showFullscreenLabel = Component.translatable("mapfrontiers.show_fullscreen");
+    private static final Component showNameLabel = Component.translatable("mapfrontiers.show_name");
+    private static final Component showOwnerLabel = Component.translatable("mapfrontiers.show_owner");
+    private static final Component showMinimapLabel = Component.translatable("mapfrontiers.show_minimap");
+    private static final Component colorLabel = Component.translatable("mapfrontiers.color");
+    private static final Component rLabel = Component.literal("R");
+    private static final Component gLabel = Component.literal("G");
+    private static final Component bLabel = Component.literal("B");
+    private static final Component randomColorLabel = Component.translatable("mapfrontiers.random_color");
+    private static final Component pasteNameLabel = Component.translatable("mapfrontiers.paste_name");
+    private static final Component pasteVisibilityLabel = Component.translatable("mapfrontiers.paste_visibility");
+    private static final Component pasteColorLabel = Component.translatable("mapfrontiers.paste_color");
+    private static final Component pasteBannerLabel = Component.translatable("mapfrontiers.paste_banner");
+    private static final Component selectInMapLabel = Component.translatable("mapfrontiers.select_in_map");
+    private static final Component shareSettingsLabel = Component.translatable("mapfrontiers.share_settings");
+    private static final Component deleteLabel = Component.translatable("mapfrontiers.delete");
+    private static final Component doneLabel = Component.translatable("gui.done");
+    private static final Component onLabel = Component.translatable("options.on");
+    private static final Component offLabel = Component.translatable("options.off");
+
+    private static final Tooltip copyTooltip = Tooltip.create(Component.translatable("mapfrontiers.copy"));
+    private static final Tooltip pasteTooltip = Tooltip.create(Component.translatable("mapfrontiers.paste"));
+    private static final Tooltip openPasteTooltip = Tooltip.create(Component.translatable("mapfrontiers.open_paste_options"));
+    private static final Tooltip closePasteTooltip = Tooltip.create(Component.translatable("mapfrontiers.close_paste_options"));
+    private static final Tooltip undoTooltip = Tooltip.create(Component.translatable("mapfrontiers.undo"));
+    private static final Tooltip redoTooltip = Tooltip.create(Component.translatable("mapfrontiers.redo"));
+    private static final Tooltip assignBannerWarnTooltip = Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET).append(Component.translatable("mapfrontiers.assign_banner_warn")));
 
     private final IClientAPI jmAPI;
 
@@ -71,18 +117,18 @@ public class FrontierInfo extends AutoScaledScreen {
     private TextBoxInt textBlue;
     private SimpleButton buttonRandomColor;
     private ColorPicker colorPicker;
+    private ColorPaletteWidget colorPalette;
     private IconButton buttonCopy;
     private IconButton buttonPaste;
-    private IconButton buttonOpenPasteOptions;
-    private IconButton buttonClosePasteOptions;
+    private IconButton buttonPasteOptions;
     private OptionButton buttonPasteName;
     private OptionButton buttonPasteVisibility;
     private OptionButton buttonPasteColor;
     private OptionButton buttonPasteBanner;
-    private SimpleLabel labelPasteName;
-    private SimpleLabel labelPasteVisibility;
-    private SimpleLabel labelPasteColor;
-    private SimpleLabel labelPasteBanner;
+    private StringWidget labelPasteName;
+    private StringWidget labelPasteVisibility;
+    private StringWidget labelPasteColor;
+    private StringWidget labelPasteBanner;
     private IconButton buttonUndo;
     private IconButton buttonRedo;
 
@@ -92,18 +138,16 @@ public class FrontierInfo extends AutoScaledScreen {
     private SimpleButton buttonDone;
     private SimpleButton buttonBanner;
 
-    private final List<SimpleLabel> labels;
-    private SimpleLabel modifiedLabel;
+    private StringWidget modifiedLabel;
 
     private final Stack<FrontierData> undoStack = new Stack<>();
     private final Stack<FrontierData> redoStack = new Stack<>();
 
     public FrontierInfo(IClientAPI jmAPI, FrontierOverlay frontier) {
-        super(Component.translatable("mapfrontiers.title_info"), 636, 350);
+        super(titleLabel, 636, 350);
         this.jmAPI = jmAPI;
         frontiersOverlayManager = MapFrontiersClient.getFrontiersOverlayManager(frontier.getPersonal());
         this.frontier = frontier;
-        labels = new ArrayList<>();
         undoStack.push(new FrontierData(frontier));
 
         ClientEventHandler.subscribeDeletedFrontierEvent(this, frontierID -> {
@@ -116,11 +160,12 @@ public class FrontierInfo extends AutoScaledScreen {
             if (minecraft.player != null && frontier.getId().equals(frontierOverlay.getId())) {
                 addToUndo(new FrontierData(frontierOverlay));
                 if (playerID != minecraft.player.getId()) {
-                    init(minecraft, width, height);
+                    rebuildWidgets();
+                    repositionElements();
                 } else {
                     if (frontier.getModified() != null) {
                         Component modified = Component.translatable("mapfrontiers.modified", dateFormat.format(frontier.getModified()));
-                        modifiedLabel.setText(modified);
+                        modifiedLabel.setMessage(modified);
                     }
                 }
             }
@@ -134,16 +179,29 @@ public class FrontierInfo extends AutoScaledScreen {
 
     @Override
     public void initScreen() {
-        int leftSide = actualWidth / 2 - 154;
-        int rightSide = actualWidth / 2 + 10;
-        int top = actualHeight / 2 - 142;
+        GridLayout mainLayout = new GridLayout(4, 5).columnSpacing(10).rowSpacing(10);
+        content.addChild(mainLayout);
 
-        labels.clear();
+        buttonBanner = new SimpleButton(font, 144, assignBannerLabel, (b) -> {
+            if (!frontier.hasBanner()) {
+                ItemStack heldBanner = getHeldBanner(minecraft);
+                if (heldBanner != null) {
+                    frontier.setBanner(heldBanner);
+                }
+            } else {
+                frontier.setBanner(null);
+            }
+            updateBannerButton();
+            sendChangesToServer();
+        });
+        mainLayout.addChild(buttonBanner, 0, 0);
 
-        labels.add(new SimpleLabel(font, leftSide, top, SimpleLabel.Align.Left,
-                Component.translatable("mapfrontiers.name"), ColorConstants.INFO_LABEL_TEXT));
+        LinearLayout nameColumn = LinearLayout.vertical().spacing(2);
+        nameColumn.defaultCellSetting().alignHorizontallyLeft();
+        mainLayout.addChild(nameColumn, 0, 1, 2, 1);
 
-        textName1 = new TextBox(font, leftSide, top + 12, 144);
+        nameColumn.addChild(new StringWidget(nameLabel, font).setColor(ColorConstants.INFO_LABEL_TEXT));
+        textName1 = new TextBox(font, 144);
         textName1.setMaxLength(17);
         textName1.setHeight(20);
         textName1.setValue(frontier.getName1());
@@ -153,7 +211,8 @@ public class FrontierInfo extends AutoScaledScreen {
                 frontier.setName1(value);
             }
         });
-        textName2 = new TextBox(font, leftSide, top + 40, 144);
+        nameColumn.addChild(textName1);
+        textName2 = new TextBox(font, 144);
         textName2.setMaxLength(17);
         textName2.setHeight(20);
         textName2.setValue(frontier.getName2());
@@ -163,77 +222,111 @@ public class FrontierInfo extends AutoScaledScreen {
                 frontier.setName2(value);
             }
         });
+        nameColumn.addChild(textName2);
 
-        labels.add(new SimpleLabel(font, leftSide, top + 70, SimpleLabel.Align.Left,
-                Component.translatable("mapfrontiers.show_frontier"), ColorConstants.TEXT));
-        buttonVisible = new OptionButton(font, leftSide + 116, top + 68, 28, this::buttonPressed);
-        buttonVisible.addOption(Component.translatable("options.on"));
-        buttonVisible.addOption(Component.translatable("options.off"));
-        buttonVisible.setSelected(frontier.getVisible() ? 0 : 1);
+        LinearLayout dataRow1 = LinearLayout.vertical();
+        mainLayout.addChild(dataRow1, 0, 2, 1, 2, LayoutSettings.defaults().alignHorizontallyLeft());
+        LinearLayout dataRow1sub = LinearLayout.horizontal().spacing(12);
+        dataRow1.addChild(dataRow1sub);
 
-        labels.add(new SimpleLabel(font, rightSide, top + 70, SimpleLabel.Align.Left,
-                Component.translatable("mapfrontiers.show_fullscreen"), ColorConstants.TEXT));
-        buttonFullscreenVisible = new OptionButton(font, rightSide + 116, top + 68, 28, this::buttonPressed);
-        buttonFullscreenVisible.addOption(Component.translatable("options.on"));
-        buttonFullscreenVisible.addOption(Component.translatable("options.off"));
-        buttonFullscreenVisible.setSelected(frontier.getFullscreenVisible() ? 0 : 1);
+        dataRow1sub.addChild(new StringWidget(frontier.getPersonal() ? personalLabel : globalLabel, font).setColor(ColorConstants.WHITE));
 
-        labels.add(new SimpleLabel(font, rightSide, top + 86, SimpleLabel.Align.Left,
-                Component.translatable("mapfrontiers.show_name"), ColorConstants.TEXT));
-        buttonFullscreenNameVisible = new OptionButton(font, rightSide + 116, top + 84, 28, this::buttonPressed);
-        buttonFullscreenNameVisible.addOption(Component.translatable("options.on"));
-        buttonFullscreenNameVisible.addOption(Component.translatable("options.off"));
-        buttonFullscreenNameVisible.setSelected(frontier.getFullscreenNameVisible() ? 0 : 1);
+        if (frontier.getMode() == FrontierData.Mode.Vertex) {
+            Component vertices = Component.translatable(verticesKey, frontier.getVertexCount());
+            dataRow1sub.addChild(new StringWidget(vertices, font).setColor(ColorConstants.WHITE));
+        } else {
+            Component chunks = Component.translatable(chunksKey, frontier.getChunkCount());
+            dataRow1sub.addChild(new StringWidget(chunks, font).setColor(ColorConstants.WHITE));
+        }
 
-        labels.add(new SimpleLabel(font, rightSide, top + 102, SimpleLabel.Align.Left,
-                Component.translatable("mapfrontiers.show_owner"), ColorConstants.TEXT));
-        buttonFullscreenOwnerVisible = new OptionButton(font, rightSide + 116, top + 100, 28, this::buttonPressed);
-        buttonFullscreenOwnerVisible.addOption(Component.translatable("options.on"));
-        buttonFullscreenOwnerVisible.addOption(Component.translatable("options.off"));
-        buttonFullscreenOwnerVisible.setSelected(frontier.getFullscreenOwnerVisible() ? 0 : 1);
+        Component owner = Component.translatable(ownerKey, frontier.getOwner().toString());
+        dataRow1sub.addChild(new StringWidget(owner, font).setColor(ColorConstants.WHITE));
 
-        labels.add(new SimpleLabel(font, rightSide + 154, top + 70, SimpleLabel.Align.Left,
-                Component.translatable("mapfrontiers.show_minimap"), ColorConstants.TEXT));
-        buttonMinimapVisible = new OptionButton(font, rightSide + 154 + 116, top + 68, 28, this::buttonPressed);
-        buttonMinimapVisible.addOption(Component.translatable("options.on"));
-        buttonMinimapVisible.addOption(Component.translatable("options.off"));
-        buttonMinimapVisible.setSelected(frontier.getMinimapVisible() ? 0 : 1);
+        Component dimension = Component.translatable(dimensionKey, frontier.getDimension().location().toString());
+        dataRow1.addChild(new StringWidget(dimension, font).setColor(ColorConstants.TEXT_DIMENSION));
 
-        labels.add(new SimpleLabel(font, rightSide + 154, top + 86, SimpleLabel.Align.Left,
-                Component.translatable("mapfrontiers.show_name"), ColorConstants.TEXT));
-        buttonMinimapNameVisible = new OptionButton(font, rightSide + 154 + 116, top + 84, 28, this::buttonPressed);
-        buttonMinimapNameVisible.addOption(Component.translatable("options.on"));
-        buttonMinimapNameVisible.addOption(Component.translatable("options.off"));
-        buttonMinimapNameVisible.setSelected(frontier.getMinimapNameVisible() ? 0 : 1);
+        LinearLayout dataRow2Col1 = LinearLayout.vertical();
+        mainLayout.addChild(dataRow2Col1, 1, 2, LayoutSettings.defaults().alignHorizontallyLeft());
 
-        labels.add(new SimpleLabel(font, rightSide + 154, top + 102, SimpleLabel.Align.Left,
-                Component.translatable("mapfrontiers.show_owner"), ColorConstants.TEXT));
-        buttonMinimapOwnerVisible = new OptionButton(font, rightSide + 154 + 116, top + 100, 28, this::buttonPressed);
-        buttonMinimapOwnerVisible.addOption(Component.translatable("options.on"));
-        buttonMinimapOwnerVisible.addOption(Component.translatable("options.off"));
-        buttonMinimapOwnerVisible.setSelected(frontier.getMinimapOwnerVisible() ? 0 : 1);
+        Component area = Component.translatable(areaKey, frontier.area);
+        dataRow2Col1.addChild(new StringWidget(area, font).setColor(ColorConstants.WHITE));
 
-        labels.add(new SimpleLabel(font, leftSide, top + 86, SimpleLabel.Align.Left,
-                Component.translatable("mapfrontiers.announce_in_chat"), ColorConstants.TEXT));
-        buttonAnnounceInChat = new OptionButton(font, leftSide + 116, top + 84, 28, this::buttonPressed);
-        buttonAnnounceInChat.addOption(Component.translatable("options.on"));
-        buttonAnnounceInChat.addOption(Component.translatable("options.off"));
-        buttonAnnounceInChat.setSelected(frontier.getAnnounceInChat() ? 0 : 1);
+        Component perimeter = Component.translatable(perimeterKey, frontier.perimeter);
+        dataRow2Col1.addChild(new StringWidget(perimeter, font).setColor(ColorConstants.WHITE));
 
-        labels.add(new SimpleLabel(font, leftSide, top + 102, SimpleLabel.Align.Left,
-                Component.translatable("mapfrontiers.announce_in_title"), ColorConstants.TEXT));
-        buttonAnnounceInTitle = new OptionButton(font, leftSide + 116, top + 100, 28, this::buttonPressed);
-        buttonAnnounceInTitle.addOption(Component.translatable("options.on"));
-        buttonAnnounceInTitle.addOption(Component.translatable("options.off"));
-        buttonAnnounceInTitle.setSelected(frontier.getAnnounceInTitle() ? 0 : 1);
+        LinearLayout dataRow2Col2 = LinearLayout.vertical();
+        mainLayout.addChild(dataRow2Col2, 1, 3, LayoutSettings.defaults().alignHorizontallyLeft());
 
-        labels.add(new SimpleLabel(font, rightSide, top + 152, SimpleLabel.Align.Left,
-                Component.translatable("mapfrontiers.color"), ColorConstants.INFO_LABEL_TEXT));
+        if (frontier.getCreated() != null) {
+            Component created = Component.translatable(createdKey, dateFormat.format(frontier.getCreated()));
+            dataRow2Col2.addChild(new StringWidget(created, font).setColor(ColorConstants.WHITE));
+        }
 
-        labels.add(new SimpleLabel(font, rightSide - 11, top + 170, SimpleLabel.Align.Left,
-                Component.literal("R"), ColorConstants.INFO_LABEL_TEXT));
+        if (frontier.getModified() != null) {
+            Component modified = Component.translatable(modifiedKey, dateFormat.format(frontier.getModified()));
+            modifiedLabel = dataRow2Col2.addChild(new StringWidget(modified, font).setColor(ColorConstants.WHITE));
+        }
 
-        textRed = new TextBoxInt(0, 0, 255, font, rightSide, top + 164, 29);
+        GridLayout visibilityCol1 = new GridLayout(2, 3).rowSpacing(4);
+        visibilityCol1.defaultCellSetting().alignHorizontallyLeft();
+        visibilityCol1.addChild(SpacerElement.width(116), 0, 0);
+        mainLayout.addChild(visibilityCol1, 2, 1);
+
+        visibilityCol1.addChild(new StringWidget(showFrontierLabel, font).setColor(ColorConstants.TEXT), 0, 0);
+        buttonVisible = visibilityCol1.addChild(createVisibilityOptionButton(frontier.getVisible(), frontier::setVisible), 0, 1);
+
+        visibilityCol1.addChild(new StringWidget(announceInChatLabel, font).setColor(ColorConstants.TEXT), 1, 0);
+        buttonAnnounceInChat = visibilityCol1.addChild(createVisibilityOptionButton(frontier.getAnnounceInChat(), frontier::setAnnounceInChat), 1, 1);
+
+        visibilityCol1.addChild(new StringWidget(announceInTitleLabel, font).setColor(ColorConstants.TEXT), 2, 0);
+        buttonAnnounceInTitle = visibilityCol1.addChild(createVisibilityOptionButton(frontier.getAnnounceInTitle(), frontier::setAnnounceInTitle), 2, 1);
+
+        GridLayout visibilityCol2 = new GridLayout(2, 3).rowSpacing(4);
+        visibilityCol2.defaultCellSetting().alignHorizontallyLeft();
+        visibilityCol2.addChild(SpacerElement.width(116), 0, 0);
+        mainLayout.addChild(visibilityCol2, 2, 2);
+
+        visibilityCol2.addChild(new StringWidget(showFullscreenLabel, font).setColor(ColorConstants.TEXT), 0, 0);
+        buttonFullscreenVisible = visibilityCol2.addChild(createVisibilityOptionButton(frontier.getFullscreenVisible(), frontier::setFullscreenVisible), 0, 1);
+
+        visibilityCol2.addChild(new StringWidget(showNameLabel, font).setColor(ColorConstants.TEXT), 1, 0);
+        buttonFullscreenNameVisible = visibilityCol2.addChild(createVisibilityOptionButton(frontier.getFullscreenNameVisible(), frontier::setFullscreenNameVisible), 1, 1);
+
+        visibilityCol2.addChild(new StringWidget(showOwnerLabel, font).setColor(ColorConstants.TEXT), 2, 0);
+        buttonFullscreenOwnerVisible = visibilityCol2.addChild(createVisibilityOptionButton(frontier.getFullscreenOwnerVisible(), frontier::setFullscreenOwnerVisible), 2, 1);
+
+        GridLayout visibilityCol3 = new GridLayout(2, 3).rowSpacing(4);
+        visibilityCol3.defaultCellSetting().alignHorizontallyLeft();
+        visibilityCol3.addChild(SpacerElement.width(116), 0, 0);
+        mainLayout.addChild(visibilityCol3, 2, 3);
+
+        visibilityCol3.addChild(new StringWidget(showMinimapLabel, font).setColor(ColorConstants.TEXT), 0, 0);
+        buttonMinimapVisible = visibilityCol3.addChild(createVisibilityOptionButton(frontier.getMinimapVisible(), frontier::setMinimapVisible), 0, 1);
+
+        visibilityCol3.addChild(new StringWidget(showNameLabel, font).setColor(ColorConstants.TEXT), 1, 0);
+        buttonMinimapNameVisible = visibilityCol3.addChild(createVisibilityOptionButton(frontier.getMinimapNameVisible(), frontier::setMinimapNameVisible), 1, 1);
+
+        visibilityCol3.addChild(new StringWidget(showOwnerLabel, font).setColor(ColorConstants.TEXT), 2, 0);
+        buttonMinimapOwnerVisible = visibilityCol3.addChild(createVisibilityOptionButton(frontier.getMinimapOwnerVisible(), frontier::setMinimapOwnerVisible), 2, 1);
+
+        colorPicker = new ColorPicker(frontier.getColor(), (color, dragging) -> {
+            colorPalette.setColor(color);
+            colorPickerUpdated(color, dragging);
+        });
+        mainLayout.addChild(colorPicker, 3, 1, LayoutSettings.defaults().alignVerticallyBottom());
+
+        LinearLayout colorCol = LinearLayout.vertical().spacing(4);
+        colorCol.defaultCellSetting().alignHorizontallyCenter();
+        mainLayout.addChild(colorCol, 3, 2);
+
+        colorCol.addChild(new StringWidget(colorLabel, font).setColor(ColorConstants.INFO_LABEL_TEXT), LayoutSettings.defaults().alignHorizontallyLeft());
+
+        LinearLayout rgbRow = LinearLayout.horizontal().spacing(3);
+        rgbRow.defaultCellSetting().alignVerticallyMiddle();
+        colorCol.addChild(rgbRow);
+
+        rgbRow.addChild(new StringWidget(rLabel, font, 8).setColor(ColorConstants.INFO_LABEL_TEXT));
+        textRed = new TextBoxInt(0, 0, 255, font, 29);
         textRed.setHeight(20);
         textRed.setWidth(34);
         textRed.setValueChangedCallback(value -> {
@@ -241,14 +334,15 @@ public class FrontierInfo extends AutoScaledScreen {
             if (newColor != frontier.getColor()) {
                 frontier.setColor(newColor);
                 colorPicker.setColor(newColor);
+                colorPalette.setColor(newColor);
                 sendChangesToServer();
             }
         });
+        rgbRow.addChild(textRed);
+        rgbRow.addChild(SpacerElement.width(1));
 
-        labels.add(new SimpleLabel(font, rightSide + 44, top + 170, SimpleLabel.Align.Left,
-                Component.literal("G"), ColorConstants.INFO_LABEL_TEXT));
-
-        textGreen = new TextBoxInt(0, 0, 255, font, rightSide + 55, top + 164, 29);
+        rgbRow.addChild(new StringWidget(gLabel, font, 8).setColor(ColorConstants.INFO_LABEL_TEXT));
+        textGreen = new TextBoxInt(0, 0, 255, font, 29);
         textGreen.setHeight(20);
         textGreen.setWidth(34);
         textGreen.setValueChangedCallback(value -> {
@@ -256,14 +350,15 @@ public class FrontierInfo extends AutoScaledScreen {
             if (newColor != frontier.getColor()) {
                 frontier.setColor(newColor);
                 colorPicker.setColor(newColor);
+                colorPalette.setColor(newColor);
                 sendChangesToServer();
             }
         });
+        rgbRow.addChild(textGreen);
+        rgbRow.addChild(SpacerElement.width(1));
 
-        labels.add(new SimpleLabel(font, rightSide + 99, top + 170, SimpleLabel.Align.Left,
-                Component.literal("B"), ColorConstants.INFO_LABEL_TEXT));
-
-        textBlue = new TextBoxInt(0, 0, 255, font, rightSide + 110, top + 164, 29);
+        rgbRow.addChild(new StringWidget(bLabel, font, 8).setColor(ColorConstants.INFO_LABEL_TEXT));
+        textBlue = new TextBoxInt(0, 0, 255, font, 29);
         textBlue.setHeight(20);
         textBlue.setWidth(34);
         textBlue.setValueChangedCallback(value -> {
@@ -271,146 +366,99 @@ public class FrontierInfo extends AutoScaledScreen {
             if (newColor != frontier.getColor()) {
                 frontier.setColor(newColor);
                 colorPicker.setColor(newColor);
+                colorPalette.setColor(newColor);
                 sendChangesToServer();
             }
         });
+        rgbRow.addChild(textBlue);
 
         textRed.setValue((frontier.getColor() & 0xff0000) >> 16);
         textGreen.setValue((frontier.getColor() & 0x00ff00) >> 8);
         textBlue.setValue(frontier.getColor() & 0x0000ff);
 
-        buttonRandomColor = new SimpleButton(font, rightSide, top + 190, 145,
-                Component.translatable("mapfrontiers.random_color"), this::buttonPressed);
+        buttonRandomColor = new SimpleButton(font, 144, randomColorLabel, (b) -> {
+            int newColor = ColorHelper.getRandomColor();
+            frontier.setColor(newColor);
+            colorPicker.setColor(newColor);
+            textRed.setValue((newColor & 0xff0000) >> 16);
+            textGreen.setValue((newColor & 0x00ff00) >> 8);
+            textBlue.setValue(newColor & 0x0000ff);
+            sendChangesToServer();
+        });
+        colorCol.addChild(buttonRandomColor);
 
-        colorPicker = new ColorPicker(leftSide + 2, top + 156, frontier.getColor(), (picker, dragging) -> colorPickerUpdated(dragging));
+        colorPalette = new ColorPaletteWidget(frontier.getColor(), (color) -> {
+            colorPicker.setColor(color);
+            colorPickerUpdated(color, false);
+        });
+        colorCol.addChild(colorPalette);
 
-        buttonCopy = new IconButton(rightSide + 154, top + 263, IconButton.Type.Copy, this::buttonPressed);
-        buttonPaste = new IconButton(rightSide + 174, top + 263, IconButton.Type.Paste, this::buttonPressed);
-        buttonOpenPasteOptions = new IconButton(rightSide + 191, top + 263, IconButton.Type.ArrowUp, this::buttonPressed);
-        buttonClosePasteOptions = new IconButton(rightSide + 191, top + 263, IconButton.Type.ArrowDown, this::buttonPressed);
+        GridLayout editCol = new GridLayout(2, 5).rowSpacing(4);
+        editCol.defaultCellSetting().alignHorizontallyLeft();
+        editCol.addChild(SpacerElement.width(116), 0, 0);
+        mainLayout.addChild(editCol, 3, 3, LayoutSettings.defaults().alignVerticallyBottom());
 
-        labelPasteName = new SimpleLabel(font, rightSide + 154, top + 200, SimpleLabel.Align.Left,
-                Component.translatable("mapfrontiers.paste_name"), ColorConstants.TEXT);
-        labels.add(labelPasteName);
-        buttonPasteName = new OptionButton(font, rightSide + 154 + 116, top + 198, 28, this::buttonPressed);
-        buttonPasteName.addOption(Component.translatable("options.on"));
-        buttonPasteName.addOption(Component.translatable("options.off"));
-        buttonPasteName.setSelected(Config.pasteName ? 0 : 1);
+        labelPasteName = editCol.addChild(new StringWidget(pasteNameLabel, font).setColor(ColorConstants.TEXT), 0, 0);
+        buttonPasteName = editCol.addChild(createVisibilityOptionButton(Config.pasteName, (value) -> Config.pasteName = value), 0, 1);
 
-        labelPasteVisibility = new SimpleLabel(font, rightSide + 154, top + 216, SimpleLabel.Align.Left,
-                Component.translatable("mapfrontiers.paste_visibility"), ColorConstants.TEXT);
-        labels.add(labelPasteVisibility);
-        buttonPasteVisibility = new OptionButton(font, rightSide + 154 + 116, top + 214, 28, this::buttonPressed);
-        buttonPasteVisibility.addOption(Component.translatable("options.on"));
-        buttonPasteVisibility.addOption(Component.translatable("options.off"));
-        buttonPasteVisibility.setSelected(Config.pasteVisibility ? 0 : 1);
+        labelPasteVisibility = editCol.addChild(new StringWidget(pasteVisibilityLabel, font).setColor(ColorConstants.TEXT), 1, 0);
+        buttonPasteVisibility = editCol.addChild(createVisibilityOptionButton(Config.pasteVisibility, (value) -> Config.pasteVisibility = value), 1, 1);
 
-        labelPasteColor = new SimpleLabel(font, rightSide + 154, top + 232, SimpleLabel.Align.Left,
-                Component.translatable("mapfrontiers.paste_color"), ColorConstants.TEXT);
-        labels.add(labelPasteColor);
-        buttonPasteColor = new OptionButton(font, rightSide + 154 + 116, top + 230, 28, this::buttonPressed);
-        buttonPasteColor.addOption(Component.translatable("options.on"));
-        buttonPasteColor.addOption(Component.translatable("options.off"));
-        buttonPasteColor.setSelected(Config.pasteColor ? 0 : 1);
+        labelPasteColor = editCol.addChild(new StringWidget(pasteColorLabel, font).setColor(ColorConstants.TEXT), 2, 0);
+        buttonPasteColor = editCol.addChild(createVisibilityOptionButton(Config.pasteColor, (value) -> Config.pasteColor = value), 2, 1);
 
-        labelPasteBanner = new SimpleLabel(font, rightSide + 154, top + 248, SimpleLabel.Align.Left,
-                Component.translatable("mapfrontiers.paste_banner"), ColorConstants.TEXT);
-        labels.add(labelPasteBanner);
-        buttonPasteBanner = new OptionButton(font, rightSide + 154 + 116, top + 246, 28, this::buttonPressed);
-        buttonPasteBanner.addOption(Component.translatable("options.on"));
-        buttonPasteBanner.addOption(Component.translatable("options.off"));
-        buttonPasteBanner.setSelected(Config.pasteBanner ? 0 : 1);
+        labelPasteBanner = editCol.addChild(new StringWidget(pasteBannerLabel, font).setColor(ColorConstants.TEXT), 3, 0);
+        buttonPasteBanner = editCol.addChild(createVisibilityOptionButton(Config.pasteBanner, (value) -> Config.pasteBanner = value), 3, 1);
 
-        buttonUndo = new IconButton(rightSide + 202, top + 263, IconButton.Type.Undo, this::buttonPressed);
-        buttonRedo = new IconButton(rightSide + 222, top + 263, IconButton.Type.Redo, this::buttonPressed);
+        LinearLayout editButtons = LinearLayout.horizontal().spacing(3);
+        editCol.addChild(editButtons, 4, 0);
 
-        int offset1 = StringHelper.getMaxWidth(font,
-                I18n.get("mapfrontiers.type", I18n.get("mapfrontiers.config.Personal")),
-                I18n.get("mapfrontiers.type", I18n.get("mapfrontiers.config.Global"))) + 10;
+        buttonCopy = editButtons.addChild(new IconButton(IconButton.Type.Copy, (b) -> {
+            MapFrontiersClient.setClipboard(frontier);
+            updatePasteOptionsVisibility();
+        }));
+        buttonCopy.setTooltip(copyTooltip);
 
-        int offset2 = StringHelper.getMaxWidth(font,
-                I18n.get("mapfrontiers.vertices", 9999),
-                I18n.get("mapfrontiers.chunks", 9999)) + 10;
+        LinearLayout pasteButtons = LinearLayout.horizontal();
+        editButtons.addChild(pasteButtons);
 
-        Component type = Component.translatable("mapfrontiers.type",
-                Component.translatable(frontier.getPersonal() ? "mapfrontiers.config.Personal" : "mapfrontiers.config.Global"));
-        labels.add(new SimpleLabel(font, rightSide, top, SimpleLabel.Align.Left, type, ColorConstants.WHITE));
+        buttonPaste = pasteButtons.addChild(new IconButton(IconButton.Type.Paste, (b) -> {
+            FrontierData clipboard = MapFrontiersClient.getClipboard();
+            if (clipboard != null && (Config.pasteName || Config.pasteVisibility || Config.pasteColor || Config.pasteBanner)) {
+                setFrontier(clipboard, Config.pasteName, Config.pasteVisibility, Config.pasteColor, Config.pasteBanner);
+                sendChangesToServer();
+                rebuildWidgets();
+                repositionElements();
+            }
+        }));
+        buttonPaste.setTooltip(pasteTooltip);
 
-        if (frontier.getMode() == FrontierData.Mode.Vertex) {
-            Component vertices = Component.translatable("mapfrontiers.vertices", frontier.getVertexCount());
-            labels.add(new SimpleLabel(font, rightSide + offset1, top, SimpleLabel.Align.Left, vertices, ColorConstants.WHITE));
-        } else {
-            Component chunks = Component.translatable("mapfrontiers.chunks", frontier.getChunkCount());
-            labels.add(new SimpleLabel(font, rightSide + offset1, top, SimpleLabel.Align.Left, chunks, ColorConstants.WHITE));
-        }
+        buttonPasteOptions = pasteButtons.addChild(new IconButton(IconButton.Type.ArrowUp, (b) -> {
+            Config.pasteOptionsVisible = !Config.pasteOptionsVisible;
+            updatePasteOptionsVisibility();
+            ClientEventHandler.postUpdatedConfigEvent();
+        }));
+        buttonPasteOptions.setTooltip(openPasteTooltip);
 
-        Component owner = Component.translatable("mapfrontiers.owner", frontier.getOwner().toString());
-        labels.add(new SimpleLabel(font, rightSide + offset1 + offset2, top, SimpleLabel.Align.Left, owner, ColorConstants.WHITE));
+        buttonUndo = editButtons.addChild(new IconButton(IconButton.Type.Undo, (b) -> undo()));
+        buttonUndo.setTooltip(undoTooltip);
+        buttonRedo = editButtons.addChild(new IconButton(IconButton.Type.Redo, (b) -> redo()));
+        buttonRedo.setTooltip(redoTooltip);
 
-        Component dimension = Component.translatable("mapfrontiers.dimension", frontier.getDimension().location().toString());
-        labels.add(new SimpleLabel(font, rightSide, top + 10, SimpleLabel.Align.Left, dimension, ColorConstants.TEXT_DIMENSION));
-
-        Component area = Component.translatable("mapfrontiers.area", frontier.area);
-        labels.add(new SimpleLabel(font, rightSide, top + 32, SimpleLabel.Align.Left, area, ColorConstants.WHITE));
-
-        Component perimeter = Component.translatable("mapfrontiers.perimeter", frontier.perimeter);
-        labels.add(new SimpleLabel(font, rightSide, top + 42, SimpleLabel.Align.Left, perimeter, ColorConstants.WHITE));
-
-        if (frontier.getCreated() != null) {
-            Component created = Component.translatable("mapfrontiers.created", dateFormat.format(frontier.getCreated()));
-            labels.add(new SimpleLabel(font, rightSide + 154, top + 32, SimpleLabel.Align.Left, created, ColorConstants.WHITE));
-        }
-
-        if (frontier.getModified() != null) {
-            Component modified = Component.translatable("mapfrontiers.modified", dateFormat.format(frontier.getModified()));
-            modifiedLabel = new SimpleLabel(font, rightSide + 154, top + 42, SimpleLabel.Align.Left, modified, ColorConstants.WHITE);
-            labels.add(modifiedLabel);
-        }
-
-        buttonSelect = new SimpleButton(font, leftSide - 154, top + 300, 144,
-                Component.translatable("mapfrontiers.select_in_map"), this::buttonPressed);
-        buttonShareSettings = new SimpleButton(font, leftSide, top + 300, 144,
-                Component.translatable("mapfrontiers.share_settings"), this::buttonPressed);
-        buttonDelete = new SimpleButton(font, rightSide, top + 300, 144,
-                Component.translatable("mapfrontiers.delete"), this::buttonPressed);
+        buttonSelect = bottomButtons.addChild(new SimpleButton(font, 144, selectInMapLabel, (b) -> {
+            BlockPos center = frontier.getCenter();
+            closeAndReturnToFullscreenMap();
+            Services.JOURNEYMAP.fullscreenMapCenterOn(center.getX(), center.getZ());
+        }));
+        buttonShareSettings = bottomButtons.addChild(new SimpleButton(font, 144, shareSettingsLabel, (b) -> new ShareSettings(frontiersOverlayManager, frontier).display()));
+        buttonDelete = bottomButtons.addChild(new SimpleButton(font, 144, deleteLabel, (b) -> {
+            // Unsubscribing to not receive this same event.
+            ClientEventHandler.unsuscribeAllEvents(this);
+            frontiersOverlayManager.clientDeleteFrontier(frontier);
+            onClose();
+        }));
         buttonDelete.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
-        buttonDone = new SimpleButton(font, rightSide + 154, top + 300, 144,
-                Component.translatable("gui.done"), this::buttonPressed);
-
-        buttonBanner = new SimpleButton(font, leftSide - 152, top, 144,
-                Component.translatable("mapfrontiers.assign_banner"), this::buttonPressed);
-
-        addRenderableWidget(textName1);
-        addRenderableWidget(textName2);
-        addRenderableWidget(buttonVisible);
-        addRenderableWidget(buttonFullscreenVisible);
-        addRenderableWidget(buttonFullscreenNameVisible);
-        addRenderableWidget(buttonFullscreenOwnerVisible);
-        addRenderableWidget(buttonMinimapVisible);
-        addRenderableWidget(buttonMinimapNameVisible);
-        addRenderableWidget(buttonMinimapOwnerVisible);
-        addRenderableWidget(buttonAnnounceInChat);
-        addRenderableWidget(buttonAnnounceInTitle);
-        addRenderableWidget(textRed);
-        addRenderableWidget(textGreen);
-        addRenderableWidget(textBlue);
-        addRenderableWidget(buttonRandomColor);
-        addRenderableWidget(colorPicker);
-        addRenderableWidget(buttonCopy);
-        addRenderableWidget(buttonPaste);
-        addRenderableWidget(buttonOpenPasteOptions);
-        addRenderableWidget(buttonClosePasteOptions);
-        addRenderableWidget(buttonPasteName);
-        addRenderableWidget(buttonPasteVisibility);
-        addRenderableWidget(buttonPasteColor);
-        addRenderableWidget(buttonPasteBanner);
-        addRenderableWidget(buttonUndo);
-        addRenderableWidget(buttonRedo);
-        addRenderableWidget(buttonSelect);
-        addRenderableWidget(buttonShareSettings);
-        addRenderableWidget(buttonDelete);
-        addRenderableWidget(buttonDone);
-        addRenderableWidget(buttonBanner);
+        buttonDone = bottomButtons.addChild(new SimpleButton(font, 144, doneLabel, (b) -> onClose()));
 
         updateBannerButton();
         updateButtons();
@@ -418,43 +466,26 @@ public class FrontierInfo extends AutoScaledScreen {
         updateUndoRedoVisibility();
     }
 
+    private OptionButton createVisibilityOptionButton(boolean defaultValue, Consumer<Boolean> consumer) {
+        OptionButton button = new OptionButton(font, 28, (b) -> {
+            consumer.accept(b.getSelected() == 0);
+            sendChangesToServer();
+        });
+        button.addOption(onLabel);
+        button.addOption(offLabel);
+        button.setSelected(defaultValue ? 0 : 1);
+        return button;
+    }
+
+    @Override
+    public void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        drawCenteredBoxBackground(graphics, content.getWidth() + 20, content.getHeight() + 20);
+    }
+
     @Override
     public void renderScaledScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        drawCenteredBoxBackground(graphics, 636, 304);
-
-        // Rendering manually so the background is not scaled.
-        for(GuiEventListener child : children()) {
-            if (child instanceof Renderable renderable)
-                renderable.render(graphics, mouseX, mouseY, partialTicks);
-        }
-
         if (frontier.hasBanner()) {
-            frontier.renderBanner(minecraft, graphics, actualWidth / 2 - 276, actualHeight / 2 - 122, 4);
-        }
-
-        for (SimpleLabel label : labels) {
-            if (label.visible) {
-                label.render(graphics, mouseX, mouseY, partialTicks);
-            }
-        }
-
-        if (buttonBanner.visible && buttonBanner.isHovered()) {
-            if (!frontier.hasBanner() && getHeldBanner(minecraft) == null) {
-                MutableComponent prefix = Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET);
-                graphics.renderTooltip(font, prefix.append(Component.translatable("mapfrontiers.assign_banner_warn")), mouseX, mouseY);
-            }
-        } else if (buttonCopy.isHovered()) {
-            graphics.renderTooltip(font, Component.translatable("mapfrontiers.copy"), mouseX, mouseY);
-        } else if (buttonPaste.visible && buttonPaste.isHovered()) {
-            graphics.renderTooltip(font, Component.translatable("mapfrontiers.paste"), mouseX, mouseY);
-        } else if (buttonOpenPasteOptions.visible && buttonOpenPasteOptions.isHovered()) {
-            graphics.renderTooltip(font, Component.translatable("mapfrontiers.open_paste_options"), mouseX, mouseY);
-        } else if (buttonClosePasteOptions.visible && buttonClosePasteOptions.isHovered()) {
-            graphics.renderTooltip(font, Component.translatable("mapfrontiers.close_paste_options"), mouseX, mouseY);
-        } else if (buttonUndo.visible && buttonUndo.isHovered()) {
-            graphics.renderTooltip(font, Component.translatable("mapfrontiers.undo"), mouseX, mouseY);
-        } else if (buttonRedo.visible && buttonRedo.isHovered()) {
-            graphics.renderTooltip(font, Component.translatable("mapfrontiers.redo"), mouseX, mouseY);
+            frontier.renderBanner(minecraft, graphics, buttonBanner.getX() + buttonBanner.getWidth() / 2 - 44, buttonBanner.getY() + 20, 4);
         }
     }
 
@@ -482,111 +513,15 @@ public class FrontierInfo extends AutoScaledScreen {
         }
     }
 
-    protected void buttonPressed(Button button) {
-        if (button == buttonVisible) {
-            frontier.setVisible(buttonVisible.getSelected() == 0);
-            sendChangesToServer();
-        } else if (button == buttonFullscreenVisible) {
-            frontier.setFullscreenVisible(buttonFullscreenVisible.getSelected() == 0);
-            sendChangesToServer();
-        } else if (button == buttonFullscreenNameVisible) {
-            frontier.setFullscreenNameVisible(buttonFullscreenNameVisible.getSelected() == 0);
-            sendChangesToServer();
-        } else if (button == buttonFullscreenOwnerVisible) {
-            frontier.setFullscreenOwnerVisible(buttonFullscreenOwnerVisible.getSelected() == 0);
-            sendChangesToServer();
-        } else if (button == buttonMinimapVisible) {
-            frontier.setMinimapVisible(buttonMinimapVisible.getSelected() == 0);
-            sendChangesToServer();
-        } else if (button == buttonMinimapNameVisible) {
-            frontier.setMinimapNameVisible(buttonMinimapNameVisible.getSelected() == 0);
-            sendChangesToServer();
-        } else if (button == buttonMinimapOwnerVisible) {
-            frontier.setMinimapOwnerVisible(buttonMinimapOwnerVisible.getSelected() == 0);
-            sendChangesToServer();
-        } else if (button == buttonAnnounceInChat) {
-            frontier.setAnnounceInChat(buttonAnnounceInChat.getSelected() == 0);
-            sendChangesToServer();
-        } else if (button == buttonAnnounceInTitle) {
-            frontier.setAnnounceInTitle(buttonAnnounceInTitle.getSelected() == 0);
-            sendChangesToServer();
-        } else if (button == buttonRandomColor) {
-            int newColor = ColorHelper.getRandomColor();
-            frontier.setColor(newColor);
-            colorPicker.setColor(newColor);
-            textRed.setValue((newColor & 0xff0000) >> 16);
-            textGreen.setValue((newColor & 0x00ff00) >> 8);
-            textBlue.setValue(newColor & 0x0000ff);
-            sendChangesToServer();
-        } else if (button == buttonCopy) {
-            MapFrontiersClient.setClipboard(frontier);
-            updatePasteOptionsVisibility();
-        } else if (button == buttonPaste) {
-            FrontierData clipboard = MapFrontiersClient.getClipboard();
-            if (clipboard != null && (Config.pasteName || Config.pasteVisibility || Config.pasteColor || Config.pasteBanner)) {
-                setFrontier(clipboard, Config.pasteName, Config.pasteVisibility, Config.pasteColor, Config.pasteBanner);
-                sendChangesToServer();
-                init(minecraft, width, height);
-            }
-        } else if (button == buttonOpenPasteOptions) {
-            Config.pasteOptionsVisible = true;
-            updatePasteOptionsVisibility();
-            ClientEventHandler.postUpdatedConfigEvent();
-        } else if (button == buttonClosePasteOptions) {
-            Config.pasteOptionsVisible = false;
-            updatePasteOptionsVisibility();
-            ClientEventHandler.postUpdatedConfigEvent();
-        } else if (button == buttonPasteName) {
-            Config.pasteName = buttonPasteName.getSelected() == 0;
-            ClientEventHandler.postUpdatedConfigEvent();
-        } else if (button == buttonPasteVisibility) {
-            Config.pasteVisibility = buttonPasteVisibility.getSelected() == 0;
-            ClientEventHandler.postUpdatedConfigEvent();
-        } else if (button == buttonPasteColor) {
-            Config.pasteColor = buttonPasteColor.getSelected() == 0;
-            ClientEventHandler.postUpdatedConfigEvent();
-        } else if (button == buttonPasteBanner) {
-            Config.pasteBanner = buttonPasteBanner.getSelected() == 0;
-            ClientEventHandler.postUpdatedConfigEvent();
-        } else if (button == buttonUndo) {
-            undo();
-        } else if (button == buttonRedo) {
-            redo();
-        } else if (button == buttonSelect) {
-            BlockPos center = frontier.getCenter();
-            closeAndReturnToFullscreenMap();
-            Services.JOURNEYMAP.fullscreenMapCenterOn(center.getX(), center.getZ());
-        } else if (button == buttonShareSettings) {
-            new ShareSettings(frontiersOverlayManager, frontier).display();
-        } else if (button == buttonDelete) {
-            // Unsubscribing to not receive this same event.
-            ClientEventHandler.unsuscribeAllEvents(this);
-            frontiersOverlayManager.clientDeleteFrontier(frontier);
-            onClose();
-        } else if (button == buttonDone) {
-            onClose();
-        } else if (button == buttonBanner) {
-            if (!frontier.hasBanner()) {
-                ItemStack heldBanner = getHeldBanner(minecraft);
-                if (heldBanner != null) {
-                    frontier.setBanner(heldBanner);
-                }
-            } else {
-                frontier.setBanner(null);
-            }
-            updateBannerButton();
-            sendChangesToServer();
-        }
-    }
-
     @Override
-    public void removed() {
+    public void onClose() {
         sendChangesToServer();
         ClientEventHandler.unsuscribeAllEvents(this);
+        super.onClose();
     }
 
-    private void colorPickerUpdated(boolean dragging) {
-        frontier.setColor(colorPicker.getColor());
+    private void colorPickerUpdated(int color, boolean dragging) {
+        frontier.setColor(color);
         textRed.setValue((frontier.getColor() & 0xff0000) >> 16);
         textGreen.setValue((frontier.getColor() & 0x00ff00) >> 8);
         textBlue.setValue(frontier.getColor() & 0x0000ff);
@@ -604,7 +539,8 @@ public class FrontierInfo extends AutoScaledScreen {
         redoStack.push(undoStack.pop());
         setFrontier(undoStack.peek(), true, true, true, true);
         sendChangesToServer();
-        init(minecraft, width, height);
+        rebuildWidgets();
+        repositionElements();
     }
 
     private void redo() {
@@ -615,7 +551,8 @@ public class FrontierInfo extends AutoScaledScreen {
         setFrontier(redoStack.peek(), true, true, true, true);
         undoStack.push(redoStack.pop());
         sendChangesToServer();
-        init(minecraft, width, height);
+        rebuildWidgets();
+        repositionElements();
     }
 
     private void setFrontier(FrontierData other, boolean name, boolean visibility, boolean color, boolean banner) {
@@ -644,14 +581,16 @@ public class FrontierInfo extends AutoScaledScreen {
 
     private void updateBannerButton() {
         if (!frontier.hasBanner()) {
-            MutableComponent message = Component.translatable("mapfrontiers.assign_banner");
-            if (getHeldBanner(minecraft) == null) {
-                message.append(Component.literal(ColorConstants.WARNING + " !"));
+            if (getHeldBanner(minecraft) != null) {
+                buttonBanner.setMessage(assignBannerLabel);
+                buttonBanner.setTooltip(null);
+            } else {
+                buttonBanner.setMessage(assignBannerWarnLabel);
+                buttonBanner.setTooltip(assignBannerWarnTooltip);
             }
-
-            buttonBanner.setMessage(message);
         } else {
-            buttonBanner.setMessage(Component.translatable("mapfrontiers.remove_banner"));
+            buttonBanner.setMessage(removeBannerLabel);
+            buttonBanner.setTooltip(null);
         }
     }
 
@@ -696,22 +635,23 @@ public class FrontierInfo extends AutoScaledScreen {
         textRed.setEditable(actions.canUpdate);
         textGreen.setEditable(actions.canUpdate);
         textBlue.setEditable(actions.canUpdate);
-        buttonRandomColor.visible = actions.canUpdate;
+        buttonRandomColor.active = actions.canUpdate;
         colorPicker.active = actions.canUpdate;
+        colorPalette.active = actions.canUpdate;
         buttonPaste.active = actions.canUpdate;
-        buttonOpenPasteOptions.active = actions.canUpdate;
-        buttonClosePasteOptions.active = actions.canUpdate;
-        buttonDelete.visible = actions.canDelete;
+        buttonPasteOptions.active = actions.canUpdate;
+        buttonDelete.active = actions.canDelete;
         buttonBanner.visible = actions.canUpdate;
         UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
-        buttonSelect.visible = uiState != null && frontier.getDimension().equals(uiState.dimension);
-        buttonShareSettings.visible = actions.canShare;
+        buttonSelect.active = uiState != null && frontier.getDimension().equals(uiState.dimension);
+        buttonShareSettings.active = actions.canShare;
     }
 
     private void updatePasteOptionsVisibility() {
-        buttonPaste.visible = MapFrontiersClient.getClipboard() != null;
-        buttonOpenPasteOptions.visible = buttonPaste.visible && !Config.pasteOptionsVisible;
-        buttonClosePasteOptions.visible = buttonPaste.visible && Config.pasteOptionsVisible;
+        buttonPaste.visible = buttonPaste.active && MapFrontiersClient.getClipboard() != null;
+        buttonPasteOptions.visible = buttonPaste.visible;
+        buttonPasteOptions.setType(Config.pasteOptionsVisible ? IconButton.Type.ArrowDown : IconButton.Type.ArrowUp);
+        buttonPasteOptions.setTooltip(Config.pasteOptionsVisible ? closePasteTooltip : openPasteTooltip);
         buttonPasteName.visible = buttonPaste.visible && Config.pasteOptionsVisible;
         buttonPasteVisibility.visible = buttonPaste.visible && Config.pasteOptionsVisible;
         buttonPasteColor.visible = buttonPaste.visible && Config.pasteOptionsVisible;
@@ -728,7 +668,13 @@ public class FrontierInfo extends AutoScaledScreen {
     }
 
     private void sendChangesToServer() {
-        frontiersOverlayManager.clientUpdateFrontier(frontier);
+        SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
+        SettingsUser playerUser = new SettingsUser(minecraft.player);
+        SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontier, playerUser);
+
+        if (actions.canUpdate) {
+            frontiersOverlayManager.clientUpdateFrontier(frontier);
+        }
     }
 
     private void addToUndo(FrontierData frontier) {

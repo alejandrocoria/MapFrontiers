@@ -16,21 +16,13 @@ public class UserElement extends ScrollBox.ScrollElement {
     private final SettingsUser user;
     private final IconButton buttonDelete;
     private int pingBar = 0;
-    private final Screen screen;
 
-    public UserElement(Font font, Screen screen, SettingsUser user) {
+    public UserElement(Font font, SettingsUser user) {
         super(258, 16);
         this.font = font;
         this.user = user;
-        this.screen = screen;
 
         buttonDelete = new IconButton(0, 0, IconButton.Type.Remove, (button) -> {});
-        Services.PLATFORM.addButtonToScreen(buttonDelete, screen);
-    }
-
-    @Override
-    public void delete() {
-        Services.PLATFORM.removeButtonOfScreen(buttonDelete, screen);
     }
 
     public SettingsUser getUser() {
@@ -68,9 +60,7 @@ public class UserElement extends ScrollBox.ScrollElement {
 
         if (isHovered) {
             graphics.fill(x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
-            buttonDelete.visible = true;
-        } else {
-            buttonDelete.visible = false;
+            buttonDelete.render(graphics, mouseX, mouseY, partialTicks);
         }
 
         graphics.drawString(font, user.toString(), x + 4, y + 4, color);

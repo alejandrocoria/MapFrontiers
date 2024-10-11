@@ -20,8 +20,8 @@ public abstract class AutoScaledScreen extends LayeredScreen {
     protected int actualWidth;
     protected int actualHeight;
 
-    protected LinearLayout content = LinearLayout.vertical();
-    protected LinearLayout bottomButtons = LinearLayout.horizontal();
+    protected LinearLayout content;
+    protected LinearLayout bottomButtons;
 
     public AutoScaledScreen(Component title) {
         this(title, 0, 0);
@@ -37,6 +37,8 @@ public abstract class AutoScaledScreen extends LayeredScreen {
     public final void init() {
         updateScale(width, height);
 
+        content = LinearLayout.vertical();
+        bottomButtons = LinearLayout.horizontal();
         initScreen();
         content.visitWidgets(this::addRenderableWidget);
         content.visitWidgets((w) -> w.setTabOrderGroup(0));
@@ -144,8 +146,8 @@ public abstract class AutoScaledScreen extends LayeredScreen {
         }
 
         onClose();
-        if (minecraft.screen != null && !(minecraft.screen instanceof IFullscreen)) {
-            minecraft.screen.onClose();
+        if (minecraft.screen != null && minecraft.screen instanceof AutoScaledScreen autoScaledScreen) {
+            autoScaledScreen.closeAndReturnToFullscreenMap();
         }
     }
 

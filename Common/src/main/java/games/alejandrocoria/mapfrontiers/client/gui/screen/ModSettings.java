@@ -242,7 +242,7 @@ public class ModSettings extends AutoScaledScreen {
 
         buttonEditHUD = new SimpleButton(font, actualWidth / 2 - 50, 308, 100, Component.translatable("mapfrontiers.edit_hud"), this::buttonPressed);
 
-        groups = new ScrollBox(50, 50, 160, actualHeight - 120, 16);
+        groups = new ScrollBox(50, 50, actualHeight - 120, 160, 16);
         groups.setElementClickedCallback(element -> {
             groupClicked((GroupElement) element);
             updateButtonsVisibility();
@@ -255,14 +255,14 @@ public class ModSettings extends AutoScaledScreen {
             sendChangesToServer();
         });
 
-        users = new ScrollBox(250, 82, 258, actualHeight - 150, 16);
+        users = new ScrollBox(250, 82, actualHeight - 150, 258, 16);
         users.setElementDeletedCallback(element -> {
             SettingsGroup group = ((GroupElement) groups.getSelectedElement()).getGroup();
             group.removeUser(((UserElement) element).getUser());
             sendChangesToServer();
         });
 
-        groupsActions = new ScrollBox(actualWidth / 2 - 215, 82, 430, actualHeight - 128, 16);
+        groupsActions = new ScrollBox(actualWidth / 2 - 215, 82, actualHeight - 128, 130, 16);
 
         textNewGroupName = new TextBox(font, 50, actualHeight - 61, 140, I18n.get("mapfrontiers.new_group_name"));
         textNewGroupName.setMaxLength(22);
@@ -455,7 +455,7 @@ public class ModSettings extends AutoScaledScreen {
             if (settings != null) {
                 SettingsGroup group = settings.createCustomGroup(textNewGroupName.getValue());
                 textNewGroupName.setValue("");
-                GroupElement element = new GroupElement(font, this, group);
+                GroupElement element = new GroupElement(font, group);
                 groups.addElement(element);
                 groups.scrollBottom();
                 groupClicked(element);
@@ -499,7 +499,7 @@ public class ModSettings extends AutoScaledScreen {
             }
 
             group.addUser(user);
-            UserElement element = new UserElement(font, this, user);
+            UserElement element = new UserElement(font, user);
             users.addElement(element);
             users.scrollBottom();
 
@@ -525,12 +525,12 @@ public class ModSettings extends AutoScaledScreen {
         int selectedIndex = groups.getSelectedIndex();
 
         groups.removeAll();
-        groups.addElement(new GroupElement(font, this, settings.getOPsGroup()));
-        groups.addElement(new GroupElement(font, this, settings.getOwnersGroup()));
-        groups.addElement(new GroupElement(font, this, settings.getEveryoneGroup()));
+        groups.addElement(new GroupElement(font, settings.getOPsGroup()));
+        groups.addElement(new GroupElement(font, settings.getOwnersGroup()));
+        groups.addElement(new GroupElement(font, settings.getEveryoneGroup()));
 
         for (SettingsGroup group : settings.getCustomGroups()) {
-            groups.addElement(new GroupElement(font, this, group));
+            groups.addElement(new GroupElement(font, group));
         }
 
         updateGroupsActions();
@@ -723,7 +723,7 @@ public class ModSettings extends AutoScaledScreen {
         GroupElement element = (GroupElement) groups.getSelectedElement();
         if (element != null && !element.getGroup().isSpecial()) {
             for (SettingsUser user : element.getGroup().getUsers()) {
-                users.addElement(new UserElement(font, this, user));
+                users.addElement(new UserElement(font, user));
             }
         }
 

@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.SimpleLabel;
+import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox;
@@ -19,8 +20,11 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.layouts.LinearLayout;
+import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
@@ -34,23 +38,32 @@ import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class ShareSettings extends AutoScaledScreen {
+    private static final Component titleLabel = Component.translatable("mapfrontiers.title_share_settings");
+    private static final Component updateFrontierLabel = Component.translatable("mapfrontiers.update_frontier");
+    private static final Component updateSettingsLabel = Component.translatable("mapfrontiers.update_settings");
+    private static final Component errorUUIDSizeLabel = Component.translatable("mapfrontiers.new_user_error_uuid_size");
+    private static final Component errorUUIDFormatLabel = Component.translatable("mapfrontiers.new_user_error_uuid_format");
+    private static final Component errorUserNotFoundLabel = Component.translatable("mapfrontiers.new_user_shared_error_user_not_found");
+    private static final Component errorSelfLabel = Component.translatable("mapfrontiers.new_user_shared_error_self");
+    private static final Component errorOwnerLabel = Component.translatable("mapfrontiers.new_user_shared_error_owner");
+    private static final Component errorRepeatedLabel = Component.translatable("mapfrontiers.new_user_shared_error_user_repeated");
+    private static final Component doneLabel = Component.translatable("gui.done");
+
     private final FrontiersOverlayManager frontiersOverlayManager;
     private FrontierOverlay frontier;
+    private MultiLineTextWidget updateFrontier;
+    private MultiLineTextWidget updateSettings;
     private ScrollBox users;
     private TextBoxUser textNewUser;
     private IconButton buttonNewUser;
-    private SimpleButton buttonDone;
 
-    private final List<SimpleLabel> labels;
     private boolean canUpdate;
     private int ticksSinceLastUpdate = 0;
 
     public ShareSettings(FrontiersOverlayManager frontiersOverlayManager, FrontierOverlay frontier) {
-        super(Component.translatable("mapfrontiers.title_share_settings"));
+        super(titleLabel, 470, 120);
         this.frontiersOverlayManager = frontiersOverlayManager;
         this.frontier = frontier;
-
-        labels = new ArrayList<>();
 
         ClientEventHandler.subscribeDeletedFrontierEvent(this, frontierID -> {
             if (frontierID.equals(this.frontier.getId())) {
@@ -74,27 +87,41 @@ public class ShareSettings extends AutoScaledScreen {
             onClose();
         }
 
-        users = new ScrollBox(width / 2 - 215, 82, 430, height - 128, 16);
+        LinearLayout mainLayout = LinearLayout.vertical().spacing(8);
+        mainLayout.defaultCellSetting().alignHorizontallyCenter();
+        content.addChild(mainLayout);
+
+        LinearLayout header = LinearLayout.horizontal();
+        mainLayout.addChild(header);
+
+        updateFrontier = header.addChild(new MultiLineTextWidget(updateFrontierLabel, font));
+        updateFrontier.setColor(ColorConstants.TEXT_HIGHLIGHT);
+        updateFrontier.setCentered(true);
+        updateSettings = header.addChild(new MultiLineTextWidget(updateSettingsLabel, font));
+        updateSettings.setColor(ColorConstants.TEXT_HIGHLIGHT);
+        updateSettings.setCentered(true);
+
+        users = new ScrollBox(actualHeight - 128, 430, 16);
         users.setElementDeletedCallback(element -> {
             SettingsUser user = ((UserSharedElement) element).getUser();
             frontier.removeUserShared(user);
             PacketHandler.sendToServer(new PacketRemoveSharedUserPersonalFrontier(frontier.getId(), user));
             resetLabels();
         });
+        mainLayout.addChild(users);
 
-        textNewUser = new TextBoxUser(minecraft, font, width / 2 - 125, height - 61, 238);
+        LinearLayout newUserLayout = LinearLayout.horizontal().spacing(4);
+        mainLayout.addChild(newUserLayout);
+
+        textNewUser = new TextBoxUser(minecraft, font, 238);
         textNewUser.setMaxLength(38);
+        newUserLayout.addChild(textNewUser);
 
-        buttonNewUser = new IconButton(width / 2 + 114, height - 61, IconButton.Type.Add, (button) -> buttonNewUserPressed());
+        buttonNewUser = new IconButton(IconButton.Type.Add, (b) -> buttonNewUserPressed());
         buttonNewUser.visible = false;
+        newUserLayout.addChild(buttonNewUser);
 
-        buttonDone = new SimpleButton(font, width / 2 - 70, height - 28, 140,
-                Component.translatable("gui.done"), this::buttonPressed);
-
-        addRenderableWidget(buttonNewUser);
-        addRenderableWidget(users);
-        addRenderableWidget(textNewUser);
-        addRenderableWidget(buttonDone);
+        bottomButtons.addChild(new SimpleButton(font, 140, doneLabel, (b) -> onClose()));
 
         updateCanUpdate();
         updateButtonsVisibility();
@@ -147,19 +174,16 @@ public class ShareSettings extends AutoScaledScreen {
     }
 
     @Override
-    public void renderScaledScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        drawCenteredBoxBackground(graphics, width - 80, height - 80);
+    public void repositionElements() {
+        users.setSize(430, actualHeight - 128);
+        super.repositionElements();
+        updateFrontier.setX(users.getX() + 250 - updateFrontier.getWidth() / 2);
+        updateSettings.setX(users.getX() + 310 - updateSettings.getWidth() / 2);
+    }
 
-        for(GuiEventListener child : children()) {
-            if (child instanceof Renderable renderable)
-                renderable.render(graphics, mouseX, mouseY, partialTicks);
-        }
-
-        for (SimpleLabel label : labels) {
-            if (label.visible) {
-                label.render(graphics, mouseX, mouseY, partialTicks);
-            }
-        }
+    @Override
+    public void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        drawCenteredBoxBackground(graphics, content.getWidth() + 20, content.getHeight() + 20);
     }
 
     @Override
@@ -171,12 +195,6 @@ public class ShareSettings extends AutoScaledScreen {
         }
 
         return super.mouseReleased(mouseX, mouseY, button);
-    }
-
-    protected void buttonPressed(Button button) {
-        if (button == buttonDone) {
-            onClose();
-        }
     }
 
     private void buttonNewUserPressed() {
@@ -196,7 +214,7 @@ public class ShareSettings extends AutoScaledScreen {
         } else {
             usernameOrUUID = usernameOrUUID.replaceAll("[^0-9a-fA-F]", "");
             if (usernameOrUUID.length() != 32) {
-                textNewUser.setError(Component.translatable("mapfrontiers.new_user_error_uuid_size"));
+                textNewUser.setError(errorUUIDSizeLabel);
                 return;
             }
             usernameOrUUID = usernameOrUUID.toLowerCase();
@@ -208,36 +226,36 @@ public class ShareSettings extends AutoScaledScreen {
                 user.uuid = UUID.fromString(uuid);
                 user.fillMissingInfo(true, null);
             } catch (Exception e) {
-                textNewUser.setError(Component.translatable("mapfrontiers.new_user_error_uuid_format"));
+                textNewUser.setError(errorUUIDFormatLabel);
                 return;
             }
         }
 
         if (user.uuid == null) {
-            textNewUser.setError(Component.translatable("mapfrontiers.new_user_shared_error_user_not_found"));
+            textNewUser.setError(errorUserNotFoundLabel);
             return;
         }
 
         ClientPacketListener handler = minecraft.getConnection();
         if (handler != null) {
             if (handler.getPlayerInfo(user.uuid) == null) {
-                textNewUser.setError(Component.translatable("mapfrontiers.new_user_shared_error_user_not_found"));
+                textNewUser.setError(errorUserNotFoundLabel);
                 return;
             }
         }
 
         if (user.username.equals(minecraft.player.getGameProfile().getName())) {
-            textNewUser.setError(Component.translatable("mapfrontiers.new_user_shared_error_self"));
+            textNewUser.setError(errorSelfLabel);
             return;
         }
 
         if (frontier.getOwner().equals(user)) {
-            textNewUser.setError(Component.translatable("mapfrontiers.new_user_shared_error_owner"));
+            textNewUser.setError(errorOwnerLabel);
             return;
         }
 
         if (frontier.hasUserShared(user)) {
-            textNewUser.setError(Component.translatable("mapfrontiers.new_user_shared_error_user_repeated"));
+            textNewUser.setError(errorRepeatedLabel);
             return;
         }
 
@@ -246,7 +264,7 @@ public class ShareSettings extends AutoScaledScreen {
         frontier.addUserShared(userShared);
         frontiersOverlayManager.clientShareFrontier(frontier.getId(), user);
 
-        UserSharedElement element = new UserSharedElement(font, this, userShared, canUpdate, true, this::actionChanged);
+        UserSharedElement element = new UserSharedElement(font, userShared, canUpdate, true, this::actionChanged);
         users.addElement(element);
         users.scrollBottom();
 
@@ -255,24 +273,22 @@ public class ShareSettings extends AutoScaledScreen {
     }
 
     @Override
-    public void removed() {
+    public void onClose() {
         ClientEventHandler.unsuscribeAllEvents(this);
+        super.onClose();
     }
 
     private void resetLabels() {
-        labels.clear();
-
-        if (!users.getElements().isEmpty()) {
-            int x = width / 2 + 35;
-            labels.add(new SimpleLabel(font, x, 54, SimpleLabel.Align.Center,
-                    Component.translatable("mapfrontiers.update_frontier"), ColorConstants.TEXT_HIGHLIGHT));
-            labels.add(new SimpleLabel(font, x + 60, 54, SimpleLabel.Align.Center,
-                    Component.translatable("mapfrontiers.update_settings"), ColorConstants.TEXT_HIGHLIGHT));
+        if (users.getElements().isEmpty()) {
+            updateFrontier.visible = false;
+            updateSettings.visible = false;
+        } else {
+            updateFrontier.visible = true;
+            updateSettings.visible = true;
         }
     }
 
     private void updateButtonsVisibility() {
-        users.visible = true;
         buttonNewUser.visible = canUpdate;
         textNewUser.visible = canUpdate;
     }
@@ -311,7 +327,7 @@ public class ShareSettings extends AutoScaledScreen {
         SettingsUser player = new SettingsUser(minecraft.player);
         if (frontier.getUsersShared() != null) {
             for (SettingsUserShared user : frontier.getUsersShared()) {
-                users.addElement(new UserSharedElement(font, this, user, canUpdate, !user.getUser().equals(player), this::actionChanged));
+                users.addElement(new UserSharedElement(font, user, canUpdate, !user.getUser().equals(player), this::actionChanged));
             }
         }
 

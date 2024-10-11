@@ -43,11 +43,22 @@ public class IconButton extends Button {
         }
     }
 
-    private final Type type;
+    private Type type;
 
+    // TODO remove
     public IconButton(int x, int y, Type type, OnPress pressedAction) {
         super(x, y, type.width, type.height, Component.empty(), pressedAction, Button.DEFAULT_NARRATION);
         this.type = type;
+    }
+
+    public IconButton(Type type, OnPress pressedAction) {
+        super(0, 0, type.width, type.height, Component.empty(), pressedAction, Button.DEFAULT_NARRATION);
+        this.type = type;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
+        setSize(type.width, type.height);
     }
 
     @Override
