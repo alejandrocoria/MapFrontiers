@@ -60,7 +60,7 @@ public class NewFrontier extends AutoScaledScreen {
 
     @Override
     public void initScreen() {
-        GridLayout mainLayout = new GridLayout(2, 5).spacing(8);
+        GridLayout mainLayout = new GridLayout().spacing(8);
         content.addChild(mainLayout);
         LayoutSettings leftColumnSettings = LayoutSettings.defaults().alignHorizontallyRight();
         LayoutSettings rightColumnSettings = LayoutSettings.defaults().alignHorizontallyLeft();

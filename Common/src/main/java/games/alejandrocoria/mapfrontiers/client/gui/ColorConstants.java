@@ -25,8 +25,8 @@ public final class ColorConstants {
     public static final int SCROLLBAR_BG = 0x1affffff;
     public static final int SCROLLBAR_GRABBED = 0xff666666;
     public static final int SCROLLBAR_HOVERED = 0xffaaaaaa;
-    public static final int SCROLL_ELEMENT_HOVERED = 0xa0222222;
-    public static final int SCROLL_ELEMENT_SELECTED = 0xff222222;
+    public static final int SCROLL_ELEMENT_HOVERED = 0xa0303030;
+    public static final int SCROLL_ELEMENT_SELECTED = 0xff303030;
     public static final int SIMPLE_BUTTON_BORDER = 0xff777777;
     public static final int SIMPLE_BUTTON_BG = 0xc7101010;
     public static final int SIMPLE_BUTTON_TEXT = 0xff999999;
@@ -37,7 +37,7 @@ public final class ColorConstants {
     public static final int TAB_TEXT = 0xff777777;
     public static final int TAB_TEXT_DISABLED = 0xff444444;
     public static final int TAB_TEXT_HIGHLIGHT = 0xffffffff;
-    public static final int TEXT = 0xffdddddd;
+    public static final int TEXT = 0xffc0c0c0;
     public static final int TEXTBOX_EXTRA_BG = 0xff000000;
     public static final int TEXTBOX_EXTRA_BORDER = 0xffa0a0a0;
     public static final int TEXTBOX_TEXT = 0xffe0e0e0;

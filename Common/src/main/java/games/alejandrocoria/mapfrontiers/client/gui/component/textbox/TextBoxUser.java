@@ -27,17 +27,12 @@ public class TextBoxUser extends TextBox {
     private int maxSuggestionWidth = 0;
     private int suggestionIndex = 0;
 
-    // TODO remove
-    public TextBoxUser(Minecraft mc, Font font, int x, int y, int width) {
-        this(mc, font,x, y, width, "");
-    }
-
     public TextBoxUser(Minecraft mc, Font font, int width) {
-        this(mc, font, 0, 0, width, "");
+        this(mc, font, width, "");
     }
 
-    public TextBoxUser(Minecraft mc, Font font, int x, int y, int width, String defaultText) {
-        super(font, x, y, width, defaultText);
+    public TextBoxUser(Minecraft mc, Font font, int width, String defaultText) {
+        super(font, width, defaultText);
         this.mc = mc;
         this.font = font;
         suggestions = new ArrayList<>();

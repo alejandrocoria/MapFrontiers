@@ -373,15 +373,15 @@ public class HUDSettings extends LayeredScreen {
         labelTooltips.clear();
 
         addLabelWithTooltip(new SimpleLabel(font, width / 2 - 230, height / 2 - 30, SimpleLabel.Align.Left,
-                Config.getTranslatedName("hud.slot1"), ColorConstants.TEXT), Config.getTooltip("hud.slot1"));
+                Config.getTranslatedName("hud.slot1"), ColorConstants.TEXT), Config.getTooltipOld("hud.slot1"));
         addLabelWithTooltip(new SimpleLabel(font, width / 2 - 230, height / 2 - 14, SimpleLabel.Align.Left,
-                Config.getTranslatedName("hud.slot2"), ColorConstants.TEXT), Config.getTooltip("hud.slot2"));
+                Config.getTranslatedName("hud.slot2"), ColorConstants.TEXT), Config.getTooltipOld("hud.slot2"));
         addLabelWithTooltip(new SimpleLabel(font, width / 2 - 230, height / 2 + 2, SimpleLabel.Align.Left,
-                Config.getTranslatedName("hud.slot3"), ColorConstants.TEXT), Config.getTooltip("hud.slot3"));
+                Config.getTranslatedName("hud.slot3"), ColorConstants.TEXT), Config.getTooltipOld("hud.slot3"));
         addLabelWithTooltip(new SimpleLabel(font, width / 2 - 230, height / 2 + 18, SimpleLabel.Align.Left,
-                Config.getTranslatedName("hud.bannerSize"), ColorConstants.TEXT), Config.getTooltip("hud.bannerSize"));
+                Config.getTranslatedName("hud.bannerSize"), ColorConstants.TEXT), Config.getTooltipOld("hud.bannerSize"));
         addLabelWithTooltip(new SimpleLabel(font, width / 2 - 30, height / 2 - 30, SimpleLabel.Align.Left,
-                Config.getTranslatedName("hud.anchor"), ColorConstants.TEXT), Config.getTooltip("hud.anchor"));
+                Config.getTranslatedName("hud.anchor"), ColorConstants.TEXT), Config.getTooltipOld("hud.anchor"));
         addLabelWithTooltip(
                 new SimpleLabel(font, width / 2 - 30, height / 2 - 14, SimpleLabel.Align.Left,
                         Component.translatable("mapfrontiers.config.hud.position"), ColorConstants.TEXT),
@@ -391,11 +391,11 @@ public class HUDSettings extends LayeredScreen {
         addLabelWithTooltip(
                 new SimpleLabel(font, width / 2 - 30, height / 2 + 2, SimpleLabel.Align.Left,
                         Config.getTranslatedName("hud.autoAdjustAnchor"), ColorConstants.TEXT),
-                Config.getTooltip("hud.autoAdjustAnchor"));
+                Config.getTooltipOld("hud.autoAdjustAnchor"));
         addLabelWithTooltip(
                 new SimpleLabel(font, width / 2 - 30, height / 2 + 18, SimpleLabel.Align.Left,
                         Config.getTranslatedName("hud.snapToBorder"), ColorConstants.TEXT),
-                Config.getTooltip("hud.snapToBorder"));
+                Config.getTooltipOld("hud.snapToBorder"));
     }
 
     private void addLabelWithTooltip(SimpleLabel label, List<Component> tooltip) {

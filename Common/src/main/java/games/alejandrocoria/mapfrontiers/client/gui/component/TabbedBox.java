@@ -3,35 +3,51 @@ package games.alejandrocoria.mapfrontiers.client.gui.component;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.layouts.FrameLayout;
+import net.minecraft.client.gui.layouts.Layout;
+import net.minecraft.client.gui.layouts.LayoutElement;
+import net.minecraft.client.gui.layouts.LayoutSettings;
+import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.network.chat.Component;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 @ParametersAreNonnullByDefault
-public class TabbedBox extends AbstractWidgetNoNarration {
+public class TabbedBox implements Layout {
     private final Font font;
     private final IntConsumer tabChanged;
-    private final int width;
-    private final int height;
-    private final List<Tab> tabs;
+    private int width;
+    private int height;
+    private final List<Tab> tabs = new ArrayList<>();
+    private final List<FrameLayout> contents = new ArrayList<>();
+    private final LinearLayout mainLayout = LinearLayout.vertical().spacing(16);
+    private final LinearLayout tabLayouts = LinearLayout.horizontal();
+    private final FrameLayout contentLayouts = new FrameLayout();
     private int selected;
 
-    public TabbedBox(Font font, int x, int y, int width, int height, IntConsumer tabChanged) {
-        super(x, y, width, 16, Component.empty());
+    public TabbedBox(Font font, int width, int height, IntConsumer tabChanged) {
+        super();
         this.font = font;
         this.tabChanged = tabChanged;
-        tabs = new ArrayList<>();
         selected = -1;
         this.width = width;
         this.height = height;
+        contentLayouts.setMinDimensions(width, height - 32);
+        mainLayout.addChild(tabLayouts, LayoutSettings.defaults().alignHorizontallyCenter());
+        mainLayout.addChild(contentLayouts, LayoutSettings.defaults().alignHorizontallyCenter());
     }
 
     public void addTab(Component text, boolean enabled) {
-        tabs.add(new Tab(font, text, enabled));
-        updateTabPositions();
+        tabs.add(new Tab(font, text, tabs.size(), enabled, this::setTabSelected));
+        tabLayouts.addChild(tabs.getLast());
+
+        contents.add(new FrameLayout(width, height - 32));
+        contentLayouts.addChild(contents.getLast());
 
         if (selected == -1) {
             selected = 0;
@@ -39,23 +55,92 @@ public class TabbedBox extends AbstractWidgetNoNarration {
     }
 
     public void setTabSelected(int tab) {
+        if (selected != -1) {
+            tabs.get(selected).setSelected(false);
+        }
         selected = tab;
+        tabs.get(selected).setSelected(true);
+
+        for (int i = 0; i < contents.size(); ++i) {
+            if (i == selected) {
+                contents.get(i).visitWidgets((widget) -> widget.visible = true);
+            } else {
+                contents.get(i).visitWidgets((widget) -> widget.visible = false);
+            }
+        }
+
+        tabChanged.accept(selected);
+    }
+
+    public void setSize(int width, int height) {
+        this.width = width;
+        this.height = height;
+        contentLayouts.setMinDimensions(width, height - 32);
+        for (FrameLayout content : contents) {
+            content.setMinDimensions(width, height - 32);
+        }
+        arrangeElements();
+    }
+
+    public <T extends LayoutElement> T addChild(T layoutElement, int tab) {
+        contents.get(tab).addChild(layoutElement);
+        return layoutElement;
+    }
+
+    public <T extends LayoutElement> T addChild(T layoutElement, int tab, LayoutSettings layoutSettings) {
+        contents.get(tab).addChild(layoutElement, layoutSettings);
+        return layoutElement;
     }
 
     @Override
-    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        for (int i = 0; i < tabs.size(); ++i) {
-            tabs.get(i).render(graphics, mouseX, mouseY, partialTicks, i == selected);
-        }
+    public void visitChildren(Consumer<LayoutElement> visitor) {
+        mainLayout.visitChildren(visitor);
+    }
 
+    @Override
+    public void arrangeElements() {
+        mainLayout.arrangeElements();
+    }
+
+    @Override
+    public int getWidth() {
+        return mainLayout.getWidth();
+    }
+
+    @Override
+    public int getHeight() {
+        return mainLayout.getHeight();
+    }
+
+    @Override
+    public void setX(int x) {
+        mainLayout.setX(x);
+    }
+
+    @Override
+    public void setY(int y) {
+        mainLayout.setY(y);
+    }
+
+    @Override
+    public int getX() {
+        return mainLayout.getX();
+    }
+
+    @Override
+    public int getY() {
+        return mainLayout.getY();
+    }
+
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         graphics.fill(getX(), getY() + 16, getX() + width, getY() + height, ColorConstants.SCREEN_BG);
 
         if (selected == -1) {
             graphics.hLine(getX(), getX() + width, getY() + 16, ColorConstants.TAB_BORDER);
         } else {
-            int selectedX = tabs.get(selected).x;
-            graphics.hLine(getX(), selectedX, getY() + 16, ColorConstants.TAB_BORDER);
-            graphics.hLine(selectedX + 70, getX() + width, getY() + 16, ColorConstants.TAB_BORDER);
+            Tab tab = tabs.get(selected);
+            graphics.hLine(getX(), tab.getX(), getY() + 16, ColorConstants.TAB_BORDER);
+            graphics.hLine(tab.getX() + tab.getWidth(), getX() + width, getY() + 16, ColorConstants.TAB_BORDER);
         }
 
         graphics.hLine(getX(), getX() + width, getY() + height, ColorConstants.TAB_BORDER);
@@ -63,75 +148,36 @@ public class TabbedBox extends AbstractWidgetNoNarration {
         graphics.vLine(getX() + width, getY() + 16, getY() + height, ColorConstants.TAB_BORDER);
     }
 
-    @Override
-    public boolean clicked(double mouseX, double mouseY) {
-        for (int i = 0; i < tabs.size(); ++i) {
-            if (tabs.get(i).clicked()) {
-                if (selected != i) {
-                    selected = i;
-                    if (tabChanged != null) {
-                        tabChanged.accept(selected);
-                    }
-                    return true;
-                }
-            }
+    private static class Tab extends Button {
+        private final Font font;
+        private boolean selected = false;
+
+        public Tab(Font font, Component text, int index, boolean enabled, Consumer<Integer> onPress) {
+            super(0, 0, 70, 16, text, (b) -> onPress.accept(index), Button.DEFAULT_NARRATION);
+            this.font = font;
+            this.active = enabled;
         }
 
-        return false;
-    }
-
-    private void updateTabPositions() {
-        int tabX = getX() + width / 2 - tabs.size() * 35;
-
-        for (Tab tab : tabs) {
-            tab.x = tabX;
-            tab.y = getY();
-            tabX += 70;
-        }
-    }
-
-    private static class Tab {
-        private int x = 0;
-        private int y = 0;
-        private boolean isHovered = false;
-        private final boolean active;
-        private final SimpleLabel label;
-
-        public Tab(Font font, Component text, boolean active) {
-            this.active = active;
-            this.label = new SimpleLabel(font, 0, 0, SimpleLabel.Align.Center, text, ColorConstants.TAB_TEXT);
+        public void setSelected(boolean selected) {
+            this.selected = selected;
         }
 
-        public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks, boolean selected) {
-            if (active) {
-                isHovered = mouseX >= x && mouseY >= y && mouseX < x + 71 && mouseY < y + 16;
-            } else {
-                isHovered = false;
+        @Override
+        public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+            graphics.fill(getX(), getY(), getX() + getWidth(), getY() + getHeight(), ColorConstants.SCREEN_BG);
+
+            graphics.hLine(getX(), getX() + getWidth(), getY(), ColorConstants.TAB_BORDER);
+            graphics.vLine(getX(), getY(), getY() + getHeight(), ColorConstants.TAB_BORDER);
+            graphics.vLine(getX() + getWidth(), getY(), getY() + getHeight(), ColorConstants.TAB_BORDER);
+
+            int labelColor = ColorConstants.TAB_TEXT;
+            if (!active) {
+                labelColor = ColorConstants.TAB_TEXT_DISABLED;
+            } else if (selected || isHovered) {
+                labelColor = ColorConstants.TAB_TEXT_HIGHLIGHT;
             }
 
-            graphics.fill(x, y, x + 70, y + 16, ColorConstants.SCREEN_BG);
-
-            graphics.hLine(x, x + 70, y, ColorConstants.TAB_BORDER);
-            graphics.vLine(x, y, y + 16, ColorConstants.TAB_BORDER);
-            graphics.vLine(x + 70, y, y + 16, ColorConstants.TAB_BORDER);
-
-            if (active) {
-                if (selected || isHovered) {
-                    label.setColor(ColorConstants.TAB_TEXT_HIGHLIGHT);
-                } else {
-                    label.setColor(ColorConstants.TAB_TEXT);
-                }
-            } else {
-                label.setColor(ColorConstants.TAB_TEXT_DISABLED);
-            }
-
-            label.setX(x + 35);
-            label.setY(y + 5);
-            label.render(graphics, mouseX, mouseY, partialTicks);
-        }
-
-        public boolean clicked() {
-            return isHovered;
+            graphics.drawCenteredString(font, getMessage(), getX() + getWidth() / 2, getY() + 5, labelColor);
         }
     }
 }

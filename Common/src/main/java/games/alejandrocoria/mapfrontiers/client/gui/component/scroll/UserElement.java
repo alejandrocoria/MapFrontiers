@@ -3,10 +3,8 @@ package games.alejandrocoria.mapfrontiers.client.gui.component.scroll;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -63,22 +61,22 @@ public class UserElement extends ScrollBox.ScrollElement {
             buttonDelete.render(graphics, mouseX, mouseY, partialTicks);
         }
 
-        graphics.drawString(font, user.toString(), x + 4, y + 4, color);
+        graphics.drawString(font, user.toString(), x + 16, y + 4, color);
 
         if (pingBar > 0) {
-            drawPingLine(graphics, x - 11, y + 11, 2);
+            drawPingLine(graphics, x + 3, y + 11, 2);
         }
         if (pingBar > 1) {
-            drawPingLine(graphics, x - 9, y + 11, 3);
+            drawPingLine(graphics, x + 5, y + 11, 3);
         }
         if (pingBar > 2) {
-            drawPingLine(graphics, x - 7, y + 11, 4);
+            drawPingLine(graphics, x + 7, y + 11, 4);
         }
         if (pingBar > 3) {
-            drawPingLine(graphics, x - 5, y + 11, 5);
+            drawPingLine(graphics, x + 9, y + 11, 5);
         }
         if (pingBar > 4) {
-            drawPingLine(graphics, x - 3, y + 11, 6);
+            drawPingLine(graphics, x + 11, y + 11, 6);
         }
     }
 

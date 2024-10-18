@@ -2,7 +2,6 @@ package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
-import journeymap.api.v2.client.fullscreen.IFullscreen;
 import journeymap.api.v2.client.ui.component.LayeredScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;

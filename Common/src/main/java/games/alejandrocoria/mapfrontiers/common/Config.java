@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -18,6 +19,7 @@ import net.minecraftforge.common.ForgeConfigSpec.IntValue;
 import net.minecraftforge.common.ForgeConfigSpec.ValueSpec;
 import org.apache.commons.lang3.tuple.Pair;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -331,7 +333,7 @@ public class Config {
         return Component.translatable("mapfrontiers.config." + value.name());
     }
 
-    public static List<Component> getTooltip(String name) {
+    public static List<Component> getTooltipOld(String name) {
         List<Component> tooltip = new ArrayList<>();
 
         ValueSpec valueSpec = getValueSpec(name);
@@ -343,6 +345,16 @@ public class Config {
         }
 
         return tooltip;
+    }
+
+    @Nullable
+    public static Tooltip getTooltip(String name) {
+        ValueSpec valueSpec = getValueSpec(name);
+        if (valueSpec != null) {
+            return Tooltip.create(Component.translatable(valueSpec.getTranslationKey() + ".tooltip"));
+        }
+
+        return null;
     }
 
     public static String getDefault(String name) {

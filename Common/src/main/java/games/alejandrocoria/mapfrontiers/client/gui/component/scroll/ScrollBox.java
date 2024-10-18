@@ -27,16 +27,6 @@ public class ScrollBox extends AbstractWidgetNoNarration {
     private Consumer<ScrollElement> elementClickedCallback;
     private Consumer<ScrollElement> elementDeletedCallback;
 
-    // TODO remove
-    public ScrollBox(int x, int y, int height, int elementWidth, int elementHeight) {
-        super(x, y, elementWidth + 15, Math.max(height, elementHeight), Component.empty());
-        elements = new ArrayList<>();
-        selected = -1;
-        this.elementHeight = elementHeight;
-        scrollHeight = this.height / elementHeight;
-        this.height = scrollHeight * elementHeight;
-    }
-
     public ScrollBox(int height, int elementWidth, int elementHeight) {
         super(0, 0, elementWidth + 15, Math.max(height, elementHeight), Component.empty());
         elements = new ArrayList<>();
@@ -80,7 +70,7 @@ public class ScrollBox extends AbstractWidgetNoNarration {
     }
 
     public void selectIndex(int index) {
-        selected = Math.min(Math.max(index, -1), elements.size() - 1);
+        selected = Math.min(Math.max(index, 0), elements.size() - 1);
     }
 
     public int getSelectedIndex() {
@@ -157,6 +147,17 @@ public class ScrollBox extends AbstractWidgetNoNarration {
     @Override
     public void setSize(int elementWidth, int height) {
         super.setSize(elementWidth + 15, height);
+        setHeight(height);
+    }
+
+    @Override
+    public void setWidth(int elementWidth) {
+        super.setWidth(elementWidth + 15);
+    }
+
+    @Override
+    public void setHeight(int height) {
+        super.setHeight(height);
         scrollHeight = this.height / elementHeight;
         this.height = scrollHeight * elementHeight;
         updateScrollWindow();
@@ -238,11 +239,13 @@ public class ScrollBox extends AbstractWidgetNoNarration {
                         removeElement(element, it);
                         return true;
                     } else if (action == ScrollElement.Action.Clicked) {
-                        selectElement(element);
-                        if (elementClickedCallback != null) {
-                            elementClickedCallback.accept(element);
+                        if (getSelectedElement() != element) {
+                            selectElement(element);
+                            if (elementClickedCallback != null) {
+                                elementClickedCallback.accept(element);
+                            }
+                            return true;
                         }
-                        return true;
                     }
                 }
             }

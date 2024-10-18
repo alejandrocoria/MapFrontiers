@@ -25,7 +25,6 @@ import journeymap.api.v2.client.util.UIState;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.GridLayout;
@@ -179,7 +178,7 @@ public class FrontierInfo extends AutoScaledScreen {
 
     @Override
     public void initScreen() {
-        GridLayout mainLayout = new GridLayout(4, 5).columnSpacing(10).rowSpacing(10);
+        GridLayout mainLayout = new GridLayout().columnSpacing(10).rowSpacing(10);
         content.addChild(mainLayout);
 
         buttonBanner = new SimpleButton(font, 144, assignBannerLabel, (b) -> {
@@ -267,7 +266,7 @@ public class FrontierInfo extends AutoScaledScreen {
             modifiedLabel = dataRow2Col2.addChild(new StringWidget(modified, font).setColor(ColorConstants.WHITE));
         }
 
-        GridLayout visibilityCol1 = new GridLayout(2, 3).rowSpacing(4);
+        GridLayout visibilityCol1 = new GridLayout().rowSpacing(4);
         visibilityCol1.defaultCellSetting().alignHorizontallyLeft();
         visibilityCol1.addChild(SpacerElement.width(116), 0, 0);
         mainLayout.addChild(visibilityCol1, 2, 1);
@@ -281,7 +280,7 @@ public class FrontierInfo extends AutoScaledScreen {
         visibilityCol1.addChild(new StringWidget(announceInTitleLabel, font).setColor(ColorConstants.TEXT), 2, 0);
         buttonAnnounceInTitle = visibilityCol1.addChild(createVisibilityOptionButton(frontier.getAnnounceInTitle(), frontier::setAnnounceInTitle), 2, 1);
 
-        GridLayout visibilityCol2 = new GridLayout(2, 3).rowSpacing(4);
+        GridLayout visibilityCol2 = new GridLayout().rowSpacing(4);
         visibilityCol2.defaultCellSetting().alignHorizontallyLeft();
         visibilityCol2.addChild(SpacerElement.width(116), 0, 0);
         mainLayout.addChild(visibilityCol2, 2, 2);
@@ -295,7 +294,7 @@ public class FrontierInfo extends AutoScaledScreen {
         visibilityCol2.addChild(new StringWidget(showOwnerLabel, font).setColor(ColorConstants.TEXT), 2, 0);
         buttonFullscreenOwnerVisible = visibilityCol2.addChild(createVisibilityOptionButton(frontier.getFullscreenOwnerVisible(), frontier::setFullscreenOwnerVisible), 2, 1);
 
-        GridLayout visibilityCol3 = new GridLayout(2, 3).rowSpacing(4);
+        GridLayout visibilityCol3 = new GridLayout().rowSpacing(4);
         visibilityCol3.defaultCellSetting().alignHorizontallyLeft();
         visibilityCol3.addChild(SpacerElement.width(116), 0, 0);
         mainLayout.addChild(visibilityCol3, 2, 3);
@@ -393,7 +392,7 @@ public class FrontierInfo extends AutoScaledScreen {
         });
         colorCol.addChild(colorPalette);
 
-        GridLayout editCol = new GridLayout(2, 5).rowSpacing(4);
+        GridLayout editCol = new GridLayout().rowSpacing(4);
         editCol.defaultCellSetting().alignHorizontallyLeft();
         editCol.addChild(SpacerElement.width(116), 0, 0);
         mainLayout.addChild(editCol, 3, 3, LayoutSettings.defaults().alignVerticallyBottom());

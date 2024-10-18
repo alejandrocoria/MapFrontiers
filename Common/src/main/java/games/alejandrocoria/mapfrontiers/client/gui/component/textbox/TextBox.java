@@ -15,17 +15,12 @@ public class TextBox extends EditBox {
     private Consumer<String> valueChangedCallback;
     private Consumer<String> lostFocusCallback;
 
-    // TODO remove
-    public TextBox(Font font, int x, int y, int width) {
-        this(font, x, y, width, "");
-    }
-
     public TextBox(Font font, int width) {
-        this(font, 0, 0, width, "");
+        this(font, width, "");
     }
 
-    public TextBox(Font font, int x, int y, int width, String defaultText) {
-        super(font, x, y, width, 12, Component.empty());
+    public TextBox(Font font, int width, String defaultText) {
+        super(font, 0, 0, width, 12, Component.empty());
         this.defaultText = defaultText;
         if (!StringUtils.isBlank(defaultText)) {
             setResponder((value) -> updateDefaultText());
