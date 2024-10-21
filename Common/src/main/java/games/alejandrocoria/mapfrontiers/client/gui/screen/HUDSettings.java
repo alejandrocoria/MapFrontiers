@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.screen;
 import com.mojang.blaze3d.platform.Window;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
-import games.alejandrocoria.mapfrontiers.client.gui.component.SimpleLabel;
+import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
@@ -11,27 +11,43 @@ import games.alejandrocoria.mapfrontiers.client.gui.hud.HUD;
 import games.alejandrocoria.mapfrontiers.client.gui.hud.HUDWidget;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.platform.Services;
-import journeymap.api.v2.client.ui.component.LayeredScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.components.Renderable;
-import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.layouts.GridLayout;
+import net.minecraft.client.gui.layouts.LayoutSettings;
+import net.minecraft.client.gui.layouts.LinearLayout;
+import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 @ParametersAreNonnullByDefault
-public class HUDSettings extends LayeredScreen {
+public class HUDSettings extends AutoScaledScreen {
+    private static final Component slot1Label = Config.getTranslatedName("hud.slot1");
+    private static final Tooltip slot1Tooltip = Config.getTooltip("hud.slot1");
+    private static final Component slot2Label = Config.getTranslatedName("hud.slot2");
+    private static final Tooltip slot2Tooltip = Config.getTooltip("hud.slot2");
+    private static final Component slot3Label = Config.getTranslatedName("hud.slot3");
+    private static final Tooltip slot3Tooltip = Config.getTooltip("hud.slot3");
+    private static final Component bannerSizeLabel = Config.getTranslatedName("hud.bannerSize");
+    private static final Tooltip bannerSizeTooltip = Config.getTooltip("hud.bannerSize");
+    private static final Component anchorLabel = Config.getTranslatedName("hud.anchor");
+    private static final Tooltip anchorTooltip = Config.getTooltip("hud.anchor");
+    private static final Component positionLabel = Component.translatable("mapfrontiers.config.hud.position");
+    private static final Tooltip positionTooltip = Tooltip.create(Component.literal("HUD position relative to anchor."));
+    private static final Component positionSeparatorLabel = Component.literal("x");
+    private static final Component autoAdjustAnchorLabel = Config.getTranslatedName("hud.autoAdjustAnchor");
+    private static final Tooltip autoAdjustAnchorTooltip = Config.getTooltip("hud.autoAdjustAnchor");
+    private static final Component snapToBorderLabel = Config.getTranslatedName("hud.snapToBorder");
+    private static final Tooltip snapToBorderTooltip = Config.getTooltip("hud.snapToBorder");
+    private static final Component doneLabel = Component.translatable("gui.done");
+    private static final Component onLabel = Component.translatable("options.on");
+    private static final Component offLabel = Component.translatable("options.off");
+
     private HUDWidget HUDWidget;
     private OptionButton buttonSlot1;
     private OptionButton buttonSlot2;
@@ -43,8 +59,6 @@ public class HUDSettings extends LayeredScreen {
     private OptionButton buttonAutoAdjustAnchor;
     private OptionButton buttonSnapToBorder;
     private SimpleButton buttonDone;
-    private final List<SimpleLabel> labels;
-    private final Map<SimpleLabel, List<Component>> labelTooltips;
     private final HUD hud;
     private int anchorLineColor = ColorConstants.HUD_ANCHOR_LIGHT;
     private int anchorLineColorTick = 0;
@@ -53,8 +67,6 @@ public class HUDSettings extends LayeredScreen {
 
     public HUDSettings() {
         super(Component.empty());
-        labels = new ArrayList<>();
-        labelTooltips = new HashMap<>();
         hud = HUD.asPreview();
     }
 
@@ -74,31 +86,46 @@ public class HUDSettings extends LayeredScreen {
     }
 
     @Override
-    public void init() {
+    public void initScreen() {
         ClientEventHandler.postUpdatedConfigEvent();
-        HUDWidget = new HUDWidget(hud, Services.JOURNEYMAP.isMinimapEnabled(), (widget) -> HUDUpdated());
 
-        buttonSlot1 = new OptionButton(font, width / 2 - 104, height / 2 - 32, 64, this::buttonPressed);
+        HUDWidget = addRenderableWidget(new HUDWidget(hud, Services.JOURNEYMAP.isMinimapEnabled(), (widget) -> HUDUpdated()));
+
+        GridLayout mainLayout = new GridLayout().spacing(4);
+        content.addChild(mainLayout);
+
+        StringWidget labelSlot1 = mainLayout.addChild(new StringWidget(slot1Label, font).setColor(ColorConstants.TEXT), 0, 0);
+        labelSlot1.setTooltip(slot1Tooltip);
+        buttonSlot1 = new OptionButton(font, width / 2 - 104, height / 2 - 32, 64, (b) -> updateSlots());
         buttonSlot1.addOption(Config.getTranslatedEnum(Config.HUDSlot.None));
         buttonSlot1.addOption(Config.getTranslatedEnum(Config.HUDSlot.Name));
         buttonSlot1.addOption(Config.getTranslatedEnum(Config.HUDSlot.Owner));
         buttonSlot1.addOption(Config.getTranslatedEnum(Config.HUDSlot.Banner));
         buttonSlot1.setSelected(Config.hudSlot1.ordinal());
+        mainLayout.addChild(buttonSlot1, 0, 1);
 
-        buttonSlot2 = new OptionButton(font, width / 2 - 104, height / 2 - 16, 64, this::buttonPressed);
+        StringWidget labelSlot2 = mainLayout.addChild(new StringWidget(slot2Label, font).setColor(ColorConstants.TEXT), 1, 0);
+        labelSlot2.setTooltip(slot2Tooltip);
+        buttonSlot2 = new OptionButton(font, width / 2 - 104, height / 2 - 16, 64, (b) -> updateSlots());
         buttonSlot2.addOption(Config.getTranslatedEnum(Config.HUDSlot.None));
         buttonSlot2.addOption(Config.getTranslatedEnum(Config.HUDSlot.Name));
         buttonSlot2.addOption(Config.getTranslatedEnum(Config.HUDSlot.Owner));
         buttonSlot2.addOption(Config.getTranslatedEnum(Config.HUDSlot.Banner));
         buttonSlot2.setSelected(Config.hudSlot2.ordinal());
+        mainLayout.addChild(buttonSlot2, 1, 1);
 
-        buttonSlot3 = new OptionButton(font, width / 2 - 104, height / 2, 64, this::buttonPressed);
+        StringWidget labelSlot3 = mainLayout.addChild(new StringWidget(slot3Label, font).setColor(ColorConstants.TEXT), 2, 0);
+        labelSlot3.setTooltip(slot3Tooltip);
+        buttonSlot3 = new OptionButton(font, width / 2 - 104, height / 2, 64, (b) -> updateSlots());
         buttonSlot3.addOption(Config.getTranslatedEnum(Config.HUDSlot.None));
         buttonSlot3.addOption(Config.getTranslatedEnum(Config.HUDSlot.Name));
         buttonSlot3.addOption(Config.getTranslatedEnum(Config.HUDSlot.Owner));
         buttonSlot3.addOption(Config.getTranslatedEnum(Config.HUDSlot.Banner));
         buttonSlot3.setSelected(Config.hudSlot3.ordinal());
+        mainLayout.addChild(buttonSlot3, 2, 1);
 
+        StringWidget labelBannerSize = mainLayout.addChild(new StringWidget(bannerSizeLabel, font).setColor(ColorConstants.TEXT), 3, 0);
+        labelBannerSize.setTooltip(bannerSizeTooltip);
         textBannerSize = new TextBoxInt(3, 1, 8, font, width / 2 - 104, height / 2 + 16, 64);
         textBannerSize.setValue(String.valueOf(Config.hudBannerSize));
         textBannerSize.setMaxLength(1);
@@ -107,8 +134,15 @@ public class HUDSettings extends LayeredScreen {
             ClientEventHandler.postUpdatedConfigEvent();
             updatePosition();
         });
+        mainLayout.addChild(textBannerSize, 3, 1);
 
-        buttonAnchor = new OptionButton(font, width / 2 + 96, height / 2 - 32, 134, this::buttonPressed);
+        StringWidget labelAnchorLabel = mainLayout.addChild(new StringWidget(anchorLabel, font).setColor(ColorConstants.TEXT), 0, 3);
+        labelAnchorLabel.setTooltip(anchorTooltip);
+        buttonAnchor = new OptionButton(font, width / 2 + 96, height / 2 - 32, 134, (b) -> {
+            Config.hudAnchor = Config.HUDAnchor.values()[b.getSelected()];
+            ClientEventHandler.postUpdatedConfigEvent();
+            updatePosition();
+        });
         buttonAnchor.addOption(Config.getTranslatedEnum(Config.HUDAnchor.ScreenTop));
         buttonAnchor.addOption(Config.getTranslatedEnum(Config.HUDAnchor.ScreenTopRight));
         buttonAnchor.addOption(Config.getTranslatedEnum(Config.HUDAnchor.ScreenRight));
@@ -121,6 +155,12 @@ public class HUDSettings extends LayeredScreen {
         buttonAnchor.addOption(Config.getTranslatedEnum(Config.HUDAnchor.MinimapHorizontal));
         buttonAnchor.addOption(Config.getTranslatedEnum(Config.HUDAnchor.MinimapVertical));
         buttonAnchor.setSelected(Config.hudAnchor.ordinal());
+        mainLayout.addChild(buttonAnchor, 0, 4);
+
+        StringWidget labelPosition = mainLayout.addChild(new StringWidget(positionLabel, font).setColor(ColorConstants.TEXT), 1, 3);
+        labelPosition.setTooltip(positionTooltip);
+        LinearLayout positionLayout = LinearLayout.horizontal();
+        mainLayout.addChild(positionLayout, 1, 4);
 
         textPositionX = new TextBoxInt(0, Integer.MIN_VALUE, Integer.MAX_VALUE, font, width / 2 + 96, height / 2 - 16, 61);
         textPositionX.setValue(String.valueOf(Config.hudXPosition));
@@ -129,6 +169,11 @@ public class HUDSettings extends LayeredScreen {
             Config.hudXPosition = value;
             ClientEventHandler.postUpdatedConfigEvent();
         });
+        positionLayout.addChild(textPositionX);
+
+        positionLayout.addChild(SpacerElement.width(3));
+        positionLayout.addChild(new StringWidget(positionSeparatorLabel, font).setColor(ColorConstants.TEXT_DARK));
+        positionLayout.addChild(SpacerElement.width(2));
 
         textPositionY = new TextBoxInt(0, Integer.MIN_VALUE, Integer.MAX_VALUE, font, width / 2 + 168, height / 2 - 16, 62);
         textPositionY.setValue(String.valueOf(Config.hudYPosition));
@@ -137,33 +182,33 @@ public class HUDSettings extends LayeredScreen {
             Config.hudYPosition = value;
             ClientEventHandler.postUpdatedConfigEvent();
         });
+        positionLayout.addChild(textPositionY);
 
-        buttonAutoAdjustAnchor = new OptionButton(font, width / 2 + 96, height / 2, 134, this::buttonPressed);
-        buttonAutoAdjustAnchor.addOption(Component.translatable("options.on"));
-        buttonAutoAdjustAnchor.addOption(Component.translatable("options.off"));
+        StringWidget labelAutoAdjustAnchor = mainLayout.addChild(new StringWidget(autoAdjustAnchorLabel, font).setColor(ColorConstants.TEXT), 2, 3);
+        labelAutoAdjustAnchor.setTooltip(autoAdjustAnchorTooltip);
+        buttonAutoAdjustAnchor = new OptionButton(font, width / 2 + 96, height / 2, 134, (b) -> {
+            Config.hudAutoAdjustAnchor = b.getSelected() == 0;
+            ClientEventHandler.postUpdatedConfigEvent();
+        });
+        buttonAutoAdjustAnchor.addOption(onLabel);
+        buttonAutoAdjustAnchor.addOption(offLabel);
         buttonAutoAdjustAnchor.setSelected(Config.hudAutoAdjustAnchor ? 0 : 1);
+        mainLayout.addChild(buttonAutoAdjustAnchor, 2, 4);
 
-        buttonSnapToBorder = new OptionButton(font, width / 2 + 96, height / 2 + 16, 134, this::buttonPressed);
-        buttonSnapToBorder.addOption(Component.translatable("options.on"));
-        buttonSnapToBorder.addOption(Component.translatable("options.off"));
+        StringWidget labelSnapToBorder = mainLayout.addChild(new StringWidget(snapToBorderLabel, font).setColor(ColorConstants.TEXT), 3, 3);
+        labelSnapToBorder.setTooltip(snapToBorderTooltip);
+        buttonSnapToBorder = new OptionButton(font, width / 2 + 96, height / 2 + 16, 134, (b) -> {
+            Config.hudSnapToBorder = b.getSelected() == 0;
+            ClientEventHandler.postUpdatedConfigEvent();
+        });
+        buttonSnapToBorder.addOption(onLabel);
+        buttonSnapToBorder.addOption(offLabel);
         buttonSnapToBorder.setSelected(Config.hudSnapToBorder ? 0 : 1);
+        mainLayout.addChild(buttonSnapToBorder, 3, 4);
 
-        buttonDone = new SimpleButton(font, width / 2 - 50, height / 2 + 36, 100,
-                Component.translatable("mapfrontiers.done"), this::buttonPressed);
+        buttonDone = new SimpleButton(font, width / 2 - 50, height / 2 + 36, 100, doneLabel, (b) -> onClose());
+        mainLayout.addChild(buttonDone, 4, 0, 1, 5, LayoutSettings.defaults().alignHorizontallyCenter());
 
-        addRenderableWidget(HUDWidget);
-        addRenderableWidget(buttonSlot1);
-        addRenderableWidget(buttonSlot2);
-        addRenderableWidget(buttonSlot3);
-        addRenderableWidget(textBannerSize);
-        addRenderableWidget(buttonAnchor);
-        addRenderableWidget(textPositionX);
-        addRenderableWidget(textPositionY);
-        addRenderableWidget(buttonAutoAdjustAnchor);
-        addRenderableWidget(buttonSnapToBorder);
-        addRenderableWidget(buttonDone);
-
-        resetLabels();
         updatePosition();
     }
 
@@ -182,44 +227,13 @@ public class HUDSettings extends LayeredScreen {
     }
 
     @Override
-    public void renderPopupScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         if (Services.JOURNEYMAP.isMinimapEnabled()) {
             Services.JOURNEYMAP.drawMinimapPreview(graphics);
         }
 
         drawAnchor(graphics, minecraft.getWindow());
-
-        int x1 = width / 2 - 238;
-        int x2 = width / 2 + 238;
-        int y1 = height / 2 - 40;
-        int y2 = height / 2 + 60;
-        graphics.fill(x1, y1, x2, y2, ColorConstants.SCREEN_BG);
-        graphics.hLine(x1, x2, y1, ColorConstants.TAB_BORDER);
-        graphics.hLine(x1, x2, y2, ColorConstants.TAB_BORDER);
-        graphics.vLine(x1, y1, y2, ColorConstants.TAB_BORDER);
-        graphics.vLine(x2, y1, y2, ColorConstants.TAB_BORDER);
-
-        for(GuiEventListener child : children()) {
-            if (child instanceof Renderable renderable)
-                renderable.render(graphics, mouseX, mouseY, partialTicks);
-        }
-
-        for (SimpleLabel label : labels) {
-            if (label.visible) {
-                label.render(graphics, mouseX, mouseY, partialTicks);
-            }
-        }
-
-        for (SimpleLabel label : labels) {
-            if (label.visible && label.isHovered()) {
-                List<Component> tooltip = labelTooltips.get(label);
-                if (tooltip != null) {
-                    graphics.renderTooltip(font, tooltip, Optional.empty(), mouseX, mouseY);
-                }
-
-                break;
-            }
-        }
+        drawCenteredBoxBackground(graphics, content.getWidth() + 20, content.getHeight() + 20);
     }
 
     @Override
@@ -286,28 +300,6 @@ public class HUDSettings extends LayeredScreen {
         graphics.pose().popPose();
     }
 
-    protected void buttonPressed(Button button) {
-        if (button == buttonSlot1) {
-            updateSlots();
-        } else if (button == buttonSlot2) {
-            updateSlots();
-        } else if (button == buttonSlot3) {
-            updateSlots();
-        } else if (button == buttonAnchor) {
-            Config.hudAnchor = Config.HUDAnchor.values()[buttonAnchor.getSelected()];
-            ClientEventHandler.postUpdatedConfigEvent();
-            updatePosition();
-        } else if (button == buttonAutoAdjustAnchor) {
-            Config.hudAutoAdjustAnchor = buttonAutoAdjustAnchor.getSelected() == 0;
-            ClientEventHandler.postUpdatedConfigEvent();
-        } else if (button == buttonSnapToBorder) {
-            Config.hudSnapToBorder = buttonSnapToBorder.getSelected() == 0;
-            ClientEventHandler.postUpdatedConfigEvent();
-        } else if (button == buttonDone) {
-            onClose();
-        }
-    }
-
     private void updateSlots() {
         updateSlotsValidity();
         boolean updated = false;
@@ -366,41 +358,6 @@ public class HUDSettings extends LayeredScreen {
     @Override
     public void removed() {
         ClientEventHandler.postUpdatedConfigEvent();
-    }
-
-    private void resetLabels() {
-        labels.clear();
-        labelTooltips.clear();
-
-        addLabelWithTooltip(new SimpleLabel(font, width / 2 - 230, height / 2 - 30, SimpleLabel.Align.Left,
-                Config.getTranslatedName("hud.slot1"), ColorConstants.TEXT), Config.getTooltipOld("hud.slot1"));
-        addLabelWithTooltip(new SimpleLabel(font, width / 2 - 230, height / 2 - 14, SimpleLabel.Align.Left,
-                Config.getTranslatedName("hud.slot2"), ColorConstants.TEXT), Config.getTooltipOld("hud.slot2"));
-        addLabelWithTooltip(new SimpleLabel(font, width / 2 - 230, height / 2 + 2, SimpleLabel.Align.Left,
-                Config.getTranslatedName("hud.slot3"), ColorConstants.TEXT), Config.getTooltipOld("hud.slot3"));
-        addLabelWithTooltip(new SimpleLabel(font, width / 2 - 230, height / 2 + 18, SimpleLabel.Align.Left,
-                Config.getTranslatedName("hud.bannerSize"), ColorConstants.TEXT), Config.getTooltipOld("hud.bannerSize"));
-        addLabelWithTooltip(new SimpleLabel(font, width / 2 - 30, height / 2 - 30, SimpleLabel.Align.Left,
-                Config.getTranslatedName("hud.anchor"), ColorConstants.TEXT), Config.getTooltipOld("hud.anchor"));
-        addLabelWithTooltip(
-                new SimpleLabel(font, width / 2 - 30, height / 2 - 14, SimpleLabel.Align.Left,
-                        Component.translatable("mapfrontiers.config.hud.position"), ColorConstants.TEXT),
-                Collections.singletonList(Component.literal("HUD position relative to anchor.")));
-        labels.add(new SimpleLabel(font, width / 2 + 162, height / 2 - 14, SimpleLabel.Align.Center,
-                Component.literal("x"), ColorConstants.TEXT_DARK));
-        addLabelWithTooltip(
-                new SimpleLabel(font, width / 2 - 30, height / 2 + 2, SimpleLabel.Align.Left,
-                        Config.getTranslatedName("hud.autoAdjustAnchor"), ColorConstants.TEXT),
-                Config.getTooltipOld("hud.autoAdjustAnchor"));
-        addLabelWithTooltip(
-                new SimpleLabel(font, width / 2 - 30, height / 2 + 18, SimpleLabel.Align.Left,
-                        Config.getTranslatedName("hud.snapToBorder"), ColorConstants.TEXT),
-                Config.getTooltipOld("hud.snapToBorder"));
-    }
-
-    private void addLabelWithTooltip(SimpleLabel label, List<Component> tooltip) {
-        labels.add(label);
-        labelTooltips.put(label, tooltip);
     }
 
     private void updatePosition() {

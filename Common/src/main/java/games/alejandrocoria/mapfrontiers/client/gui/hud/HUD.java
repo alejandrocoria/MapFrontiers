@@ -109,6 +109,14 @@ public class HUD {
         return x >= posX && x < posX + hudWidth && y >= posY && y < posY + hudHeight;
     }
 
+    public int getPosX() {
+        return posX;
+    }
+
+    public int getPosY() {
+        return posY;
+    }
+
     public void tick() {
         if (previewMode || frontiersOverlayManager == null || personalFrontiersOverlayManager == null || mc.player == null) {
             return;

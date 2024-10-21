@@ -169,5 +169,9 @@ public class HUDWidget extends AbstractWidgetNoNarration {
     @Override
     public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         hud.draw(graphics, partialTicks);
+        if (!grabbed) {
+            positionHUD.x = hud.getPosX();
+            positionHUD.y = hud.getPosY();
+        }
     }
 }

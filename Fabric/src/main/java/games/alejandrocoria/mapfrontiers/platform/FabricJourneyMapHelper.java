@@ -127,8 +127,8 @@ public class FabricJourneyMapHelper implements IJourneyMapHelper {
         MiniMapProperties minimapProperties = UIManager.INSTANCE.getMiniMap().getCurrentMinimapProperties();
         if (minimapEnabled != minimapProperties.enabled.get() || minimapSize != minimapProperties.sizePercent.get()
                 || minimapShape != minimapProperties.shape.get() || minimapPosition != minimapProperties.position.get()
-                || minimapInfo1.equals(minimapProperties.info1Label.get()) || minimapInfo2.equals(minimapProperties.info2Label.get())
-                || minimapInfo3.equals(minimapProperties.info3Label.get()) || minimapInfo4.equals(minimapProperties.info4Label.get())
+                || !minimapInfo1.equals(minimapProperties.info1Label.get()) || !minimapInfo2.equals(minimapProperties.info2Label.get())
+                || !minimapInfo3.equals(minimapProperties.info3Label.get()) || !minimapInfo4.equals(minimapProperties.info4Label.get())
                 || minimapFontScale != minimapProperties.fontScale.get().intValue()
                 || minimapCompassFontScale != minimapProperties.compassFontScale.get().intValue()) {
             setAllMinimapProperties();

@@ -178,7 +178,7 @@ public class FrontierInfo extends AutoScaledScreen {
 
     @Override
     public void initScreen() {
-        GridLayout mainLayout = new GridLayout().columnSpacing(10).rowSpacing(10);
+        GridLayout mainLayout = new GridLayout().spacing(10);
         content.addChild(mainLayout);
 
         buttonBanner = new SimpleButton(font, 144, assignBannerLabel, (b) -> {
