@@ -353,6 +353,12 @@ public class FrontierOverlay extends FrontierData {
     }
 
     @Override
+    public void moveAllVertices(BlockPos delta) {
+        super.moveAllVertices(delta);
+        needUpdateOverlay = true;
+    }
+
+    @Override
     public boolean toggleChunk(ChunkPos chunk) {
         boolean added = super.toggleChunk(chunk);
         needUpdateOverlay = true;
@@ -377,6 +383,12 @@ public class FrontierOverlay extends FrontierData {
         }
 
         return false;
+    }
+
+    @Override
+    public void moveAllChunks(ChunkPos delta) {
+        super.moveAllChunks(delta);
+        needUpdateOverlay = true;
     }
 
     public boolean hasChunk(ChunkPos chunk) {

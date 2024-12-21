@@ -53,6 +53,8 @@ public class FullscreenMap {
     private IThemeButton buttonDelete;
 
     private boolean editing = false;
+    private boolean relocating = false;
+    private BlockPos relocatingPrevPos;
     private ChunkDrawing drawingChunk = ChunkDrawing.Nothing;
     private ChunkPos lastEditedChunk;
 
@@ -63,6 +65,7 @@ public class FullscreenMap {
             if (frontierHighlighted != null && frontierHighlighted.getId().equals(frontierID)) {
                 frontierHighlighted = null;
                 editing = false;
+                relocating = false;
                 updateButtons();
             }
         });
@@ -98,6 +101,7 @@ public class FullscreenMap {
                 frontierHighlighted = frontierOverlay;
                 frontierHighlighted.setHighlighted(true);
                 editing = false;
+                relocating = false;
                 updateButtons();
             }
         });
@@ -177,12 +181,17 @@ public class FullscreenMap {
                     }
                 }
             }
+
+            if (!relocating && !frontierHighlighted.isEmpty()) {
+                popupMenu.addMenuItem(I18n.get("mapfrontiers.relocate_frontier"), this::buttonRelocateFrontier);
+            }
         }
     }
 
     public void stopEditing() {
         if (editing) {
             editing = false;
+            relocating = false;
             boolean personalFrontier = frontierHighlighted.getPersonal();
             FrontiersOverlayManager frontierManager = MapFrontiersClient.getFrontiersOverlayManager(personalFrontier);
             frontierManager.clientUpdateFrontier(frontierHighlighted);
@@ -293,6 +302,11 @@ public class FullscreenMap {
         }
     }
 
+    private void buttonRelocateFrontier(BlockPos pos) {
+        relocating = true;
+        relocatingPrevPos = pos;
+    }
+
     public boolean isEditingVertices() {
         return editing && frontierHighlighted.getMode() == FrontierData.Mode.Vertex;
     }
@@ -331,6 +345,11 @@ public class FullscreenMap {
         }
 
         double maxDistanceToClosest = Math.max(2.0, 8192.0 / uiState.zoom);
+
+        if (relocating && button == 1) {
+            relocating = false;
+            return true;
+        }
 
         if (editing && frontierHighlighted != null) {
             if (frontierHighlighted.getMode() == FrontierData.Mode.Vertex) {
@@ -371,7 +390,7 @@ public class FullscreenMap {
     public boolean mapDragged(ResourceKey<Level> dimension, BlockPos position) {
         UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
 
-        if (uiState == null || !editing) {
+        if (uiState == null || !editing || relocating) {
             return false;
         }
 
@@ -393,7 +412,28 @@ public class FullscreenMap {
     }
 
     public void mouseMoved(ResourceKey<Level> dimension, BlockPos position) {
-        if (!editing || drawingChunk == ChunkDrawing.Nothing) {
+        if (!editing) {
+            return;
+        }
+
+        if (relocating) {
+            if (frontierHighlighted.getMode() == FrontierData.Mode.Vertex) {
+                if (!position.equals(relocatingPrevPos)) {
+                    frontierHighlighted.moveAllVertices(position.subtract(relocatingPrevPos));
+                    relocatingPrevPos = position;
+                }
+            } else {
+                ChunkPos chunkPos = new ChunkPos(position);
+                ChunkPos prevChunkPos = new ChunkPos(relocatingPrevPos);
+                if (!chunkPos.equals(prevChunkPos)) {
+                    frontierHighlighted.moveAllChunks(new ChunkPos(chunkPos.x - prevChunkPos.x, chunkPos.z - prevChunkPos.z));
+                    relocatingPrevPos = position;
+                }
+            }
+            return;
+        }
+
+        if (drawingChunk == ChunkDrawing.Nothing) {
             return;
         }
 

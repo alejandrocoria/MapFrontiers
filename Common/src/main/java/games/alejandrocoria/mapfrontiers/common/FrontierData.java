@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @ParametersAreNonnullByDefault
 public class FrontierData {
@@ -53,7 +54,7 @@ public class FrontierData {
 
     protected UUID id;
     protected final List<BlockPos> vertices = new ArrayList<>();
-    protected final Set<ChunkPos> chunks = new HashSet<>();
+    protected Set<ChunkPos> chunks = new HashSet<>();
     protected Mode mode = Mode.Vertex;
     protected String name1 = "New";
     protected String name2 = "Frontier";
@@ -184,7 +185,7 @@ public class FrontierData {
         return vertices.size();
     }
 
-    public void addVertex(BlockPos pos, int index) {
+    protected void addVertex(BlockPos pos, int index) {
         synchronized (vertices) {
             vertices.add(index, pos.atY(70));
         }
@@ -208,13 +209,20 @@ public class FrontierData {
         changes.add(Change.Vertices);
     }
 
-    public void moveVertex(BlockPos pos, int index) {
+    protected void moveVertex(BlockPos pos, int index) {
         if (index < 0 || index >= vertices.size()) {
             return;
         }
 
         synchronized (vertices) {
             vertices.set(index, pos);
+        }
+        changes.add(Change.Vertices);
+    }
+
+    public void moveAllVertices(BlockPos delta) {
+        synchronized (vertices) {
+            vertices.replaceAll(blockPos -> blockPos.offset(delta));
         }
         changes.add(Change.Vertices);
     }
@@ -258,6 +266,13 @@ public class FrontierData {
         return chunks.size();
     }
 
+    public void moveAllChunks(ChunkPos delta) {
+        synchronized (chunks) {
+            chunks = chunks.stream().map(chunk -> new ChunkPos(chunk.x + delta.x, chunk.z + delta.z)).collect(Collectors.toSet());
+        }
+        changes.add(Change.Vertices);
+    }
+
     public void setMode(Mode mode) {
         this.mode = mode;
         changes.add(Change.Vertices);
@@ -265,6 +280,14 @@ public class FrontierData {
 
     public Mode getMode() {
         return mode;
+    }
+
+    public boolean isEmpty() {
+        if (mode == Mode.Vertex) {
+            return vertices.isEmpty();
+        } else {
+            return chunks.isEmpty();
+        }
     }
 
     public void setName1(String name) {
