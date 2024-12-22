@@ -115,6 +115,8 @@ public class FullscreenMap {
                 return;
             }
 
+            relocating = false;
+
             if (!editing || drawingChunk == ChunkDrawing.Nothing || frontierHighlighted.getMode() != FrontierData.Mode.Chunk) {
                 return;
             }
@@ -180,10 +182,6 @@ public class FullscreenMap {
                         popupMenu.addMenuItem(I18n.get("mapfrontiers.fill_region_of_chunks"), p -> buttonFillRegion(chunksToFill));
                     }
                 }
-            }
-
-            if (!relocating && !frontierHighlighted.isEmpty()) {
-                popupMenu.addMenuItem(I18n.get("mapfrontiers.relocate_frontier"), this::buttonRelocateFrontier);
             }
         }
     }
@@ -302,11 +300,6 @@ public class FullscreenMap {
         }
     }
 
-    private void buttonRelocateFrontier(BlockPos pos) {
-        relocating = true;
-        relocatingPrevPos = pos;
-    }
-
     public boolean isEditingVertices() {
         return editing && frontierHighlighted.getMode() == FrontierData.Mode.Vertex;
     }
@@ -346,13 +339,13 @@ public class FullscreenMap {
 
         double maxDistanceToClosest = Math.max(2.0, 8192.0 / uiState.zoom);
 
-        if (relocating && button == 1) {
-            relocating = false;
-            return true;
-        }
-
         if (editing && frontierHighlighted != null) {
-            if (frontierHighlighted.getMode() == FrontierData.Mode.Vertex) {
+            if (Screen.hasControlDown() && button == 1) {
+                relocating = true;
+                relocatingPrevPos = position;
+                return true;
+            }
+            else if (frontierHighlighted.getMode() == FrontierData.Mode.Vertex) {
                 frontierHighlighted.selectClosestVertex(position, maxDistanceToClosest);
             } else if (button == 1) {
                 lastEditedChunk = new ChunkPos(position);
