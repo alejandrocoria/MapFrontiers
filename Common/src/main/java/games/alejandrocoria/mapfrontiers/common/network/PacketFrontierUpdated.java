@@ -14,6 +14,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.Set;
 
 @ParametersAreNonnullByDefault
 public class PacketFrontierUpdated {
@@ -21,14 +22,17 @@ public class PacketFrontierUpdated {
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketFrontierUpdated> STREAM_CODEC = StreamCodec.ofMember(PacketFrontierUpdated::encode, PacketFrontierUpdated::new);
 
     private final FrontierData frontier;
+    private final Set<FrontierData.Change> changes;
     private int playerID = -1;
 
     public PacketFrontierUpdated(FrontierData frontier) {
         this.frontier = frontier;
+        changes = frontier.getChanges();
     }
 
     public PacketFrontierUpdated(FrontierData frontier, int playerID) {
         this.frontier = frontier;
+        changes = frontier.getChanges();
         this.playerID = playerID;
     }
 
@@ -38,6 +42,7 @@ public class PacketFrontierUpdated {
 
     public PacketFrontierUpdated(FriendlyByteBuf buf) {
         this.frontier = new FrontierData();
+        this.changes = null;
 
         try {
             if (buf.readableBytes() > 1) {
@@ -51,7 +56,7 @@ public class PacketFrontierUpdated {
 
     public void encode(FriendlyByteBuf buf) {
         try {
-            frontier.toBytes(buf);
+            frontier.toBytes(buf, changes);
             buf.writeInt(playerID);
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketFrontierUpdated: %s", t));

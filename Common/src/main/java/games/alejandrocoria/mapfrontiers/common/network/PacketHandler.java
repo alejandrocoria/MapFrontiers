@@ -10,6 +10,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class PacketHandler {
@@ -35,6 +36,8 @@ public class PacketHandler {
 
         // both
         CommonNetworkMod.registerPacket(PacketFrontierSettings.type(), PacketFrontierSettings.class, PacketFrontierSettings.STREAM_CODEC, PacketFrontierSettings::handle);
+        CommonNetworkMod.registerPacket(PacketChangeFrontierToGlobal.type(), PacketChangeFrontierToGlobal.class, PacketChangeFrontierToGlobal.STREAM_CODEC, PacketChangeFrontierToGlobal::handle);
+        CommonNetworkMod.registerPacket(PacketChangeFrontierToPersonal.type(), PacketChangeFrontierToPersonal.class, PacketChangeFrontierToPersonal.STREAM_CODEC, PacketChangeFrontierToPersonal::handle);
 
         MapFrontiers.LOGGER.info("PacketHandler init done");
     }
@@ -61,8 +64,30 @@ public class PacketHandler {
         Network.getNetworkHandler().sendToClient(message, player, true);
     }
 
+    public static <MSG> void sendTo(MSG message, List<ServerPlayer> players) {
+        for (ServerPlayer player : players) {
+            sendTo(message, player);
+        }
+    }
+
     public static <MSG> void sendToAll(MSG message, MinecraftServer server) {
         Network.getNetworkHandler().sendToAllClients(message, server, true);
+    }
+
+    public static <MSG> void sendToAllExcept(MSG message, MinecraftServer server, ServerPlayer ignorePlayer) {
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            if (!player.equals(ignorePlayer)) {
+                sendTo(message, player);
+            }
+        }
+    }
+
+    public static <MSG> void sendToAllExcept(MSG message, MinecraftServer server, List<ServerPlayer> ignorePlayers) {
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            if (!ignorePlayers.contains(player)) {
+                sendTo(message, player);
+            }
+        }
     }
 
     public static <MSG> void sendToServer(MSG message) {

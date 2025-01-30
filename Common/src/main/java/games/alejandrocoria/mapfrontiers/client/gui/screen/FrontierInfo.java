@@ -18,6 +18,9 @@ import games.alejandrocoria.mapfrontiers.client.gui.dialog.DeleteConfirmationDia
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.VisibilityDialog;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToGlobal;
+import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToPersonal;
+import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
@@ -93,6 +96,8 @@ public class FrontierInfo extends AutoScaledScreen {
     private static final Tooltip closePasteTooltip = Tooltip.create(Component.translatable("mapfrontiers.close_paste_options"));
     private static final Tooltip undoTooltip = Tooltip.create(Component.translatable("mapfrontiers.undo"));
     private static final Tooltip redoTooltip = Tooltip.create(Component.translatable("mapfrontiers.redo"));
+    private static final Tooltip changeToPersonalTooltip = Tooltip.create(Component.translatable("mapfrontiers.change_to_personal"));
+    private static final Tooltip changeToGlobalTooltip = Tooltip.create(Component.translatable("mapfrontiers.change_to_global"));
     private static final Tooltip assignBannerWarnTooltip = Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET).append(Component.translatable("mapfrontiers.assign_banner_warn")));
 
     private final IClientAPI jmAPI;
@@ -122,6 +127,7 @@ public class FrontierInfo extends AutoScaledScreen {
     private StringWidget labelPasteBanner;
     private IconButton buttonUndo;
     private IconButton buttonRedo;
+    private IconButton buttonChangeToPersonalGlobal;
 
     private SimpleButton buttonSelect;
     private SimpleButton buttonShareSettings;
@@ -220,7 +226,37 @@ public class FrontierInfo extends AutoScaledScreen {
         LinearLayout dataRow1sub = LinearLayout.horizontal().spacing(12);
         dataRow1.addChild(dataRow1sub);
 
-        dataRow1sub.addChild(new StringWidget(frontier.getPersonal() ? personalLabel : globalLabel, font).setColor(ColorConstants.WHITE));
+        LinearLayout dataRow1subPersonalGlobal = LinearLayout.horizontal().spacing(4);
+        dataRow1sub.addChild(dataRow1subPersonalGlobal);
+
+        dataRow1subPersonalGlobal.addChild(new StringWidget(frontier.getPersonal() ? personalLabel : globalLabel, font).setColor(ColorConstants.WHITE));
+
+        buttonChangeToPersonalGlobal = dataRow1subPersonalGlobal.addChild(new IconButton(IconButton.Type.Swap, (b) -> {
+            if (frontier.getPersonal()) {
+                new ConfirmationDialog(
+                        "mapfrontiers.change_to_global_frontier_dialog",
+                        "mapfrontiers.change_to_global_frontier_dialog_desc",
+                        "mapfrontiers.change_to_global",
+                        "gui.cancel",
+                        null,
+                        response -> {
+                            changeToGlobal();
+                        }
+                ).display();
+            } else {
+                new ConfirmationDialog(
+                        "mapfrontiers.change_to_personal_frontier_dialog",
+                        "mapfrontiers.change_to_personal_frontier_dialog_desc",
+                        "mapfrontiers.change_to_personal",
+                        "gui.cancel",
+                        null,
+                        response -> {
+                            changeToPersonal();
+                        }
+                ).display();
+            }
+        }));
+        buttonChangeToPersonalGlobal.setTooltip(frontier.getPersonal() ? changeToGlobalTooltip : changeToPersonalTooltip);
 
         if (frontier.getMode() == FrontierData.Mode.Vertex) {
             Component vertices = Component.translatable(verticesKey, frontier.getVertexCount());
@@ -609,6 +645,18 @@ public class FrontierInfo extends AutoScaledScreen {
         return heldBanner;
     }
 
+    private void changeToGlobal() {
+        undoStack.clear();
+        redoStack.clear();
+        PacketHandler.sendToServer(new PacketChangeFrontierToGlobal(frontier.getId(), null));
+    }
+
+    private void changeToPersonal() {
+        undoStack.clear();
+        redoStack.clear();
+        PacketHandler.sendToServer(new PacketChangeFrontierToPersonal(frontier.getId(), null));
+    }
+
     private void updateButtons() {
         if (minecraft.player == null) {
             return;
@@ -629,6 +677,11 @@ public class FrontierInfo extends AutoScaledScreen {
         colorPalette.active = actions.canUpdate;
         buttonPaste.active = actions.canUpdate;
         buttonPasteOptions.active = actions.canUpdate;
+        if (frontier.getPersonal()) {
+            buttonChangeToPersonalGlobal.visible = MapFrontiersClient.isModOnServer() && frontier.getOwner().equals(playerUser) && profile.createFrontier == SettingsProfile.State.Enabled;
+        } else {
+            buttonChangeToPersonalGlobal.visible = actions.canDelete;
+        }
         buttonDelete.active = actions.canDelete;
         buttonBanner.visible = actions.canUpdate;
         UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);

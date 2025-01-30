@@ -192,7 +192,10 @@ public class FrontiersManager {
 
         boolean deleted = frontiers.removeIf(x -> x.id.equals(id));
         deleted |= allFrontiers.remove(id) != null;
-        saveFrontierData();
+
+        if (deleted) {
+            saveFrontierData();
+        }
 
         return deleted;
     }
@@ -208,16 +211,15 @@ public class FrontiersManager {
             return false;
         }
 
-        for (FrontierData frontier : frontiers) {
-            if (frontier.getOwner().equals(user)) {
-                allFrontiers.remove(id);
-                break;
-            }
+        if (allFrontiers.get(id).getOwner().equals(user)) {
+            allFrontiers.remove(id);
         }
 
         boolean deleted = frontiers.removeIf(x -> x.id.equals(id));
 
-        saveFrontierData();
+        if (deleted) {
+            saveFrontierData();
+        }
 
         return deleted;
     }
@@ -269,6 +271,58 @@ public class FrontiersManager {
         saveFrontierData();
 
         return true;
+    }
+
+    public boolean changePersonalFrontierToGlobal(SettingsUser user, ResourceKey<Level> dimension, UUID id) {
+        Map<ResourceKey<Level>, ArrayList<FrontierData>> dimensionsPersonalFrontiers = usersDimensionsPersonalFrontiers.get(user);
+        if (dimensionsPersonalFrontiers == null) {
+            return false;
+        }
+
+        List<FrontierData> frontiers = dimensionsPersonalFrontiers.get(dimension);
+        if (frontiers == null) {
+            return false;
+        }
+
+        boolean deleted = frontiers.removeIf(x -> x.id.equals(id));
+        if (deleted) {
+            FrontierData frontier = allFrontiers.get(id);
+            if (frontier.getOwner().equals(user)) {
+                if (frontier.getUsersShared() != null) {
+                    for (SettingsUserShared userShared : frontier.getUsersShared()) {
+                        changePersonalFrontierToGlobal(userShared.getUser(), dimension, id);
+                    }
+                }
+                frontier.setPersonal(false);
+                frontier.setModified(new Date());
+                frontier.removeAllUserShared();
+                frontier.removeChanges();
+                getAllGlobalFrontiers(dimension).add(frontier);
+                saveFrontierData();
+            }
+        }
+
+        return deleted;
+    }
+
+    public boolean changeGlobalFrontierToPersonal(SettingsUser newOwner, ResourceKey<Level> dimension, UUID id) {
+        List<FrontierData> frontiers = dimensionsGlobalFrontiers.get(dimension);
+
+        if (frontiers == null) {
+            return false;
+        }
+
+        boolean deleted = frontiers.removeIf(x -> x.id.equals(id));
+        if (deleted) {
+            FrontierData frontier = allFrontiers.get(id);
+            frontier.setPersonal(true);
+            frontier.setModified(new Date());
+            frontier.setOwner(newOwner);
+            getAllPersonalFrontiers(newOwner, dimension).add(frontier);
+            saveFrontierData();
+        }
+
+        return deleted;
     }
 
     public boolean hasPersonalFrontier(SettingsUser user, UUID frontierID) {
