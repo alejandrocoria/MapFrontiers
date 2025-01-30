@@ -43,7 +43,7 @@ public class CommandAccept {
                 source.sendFailure(Component.literal("Invitation expired"));
             } else if (pending.targetUser.equals(new SettingsUser(source.getPlayerOrException()))) {
                 FrontierData frontier = FrontiersManager.instance.getFrontierFromID(pending.frontierID);
-                if (frontier == null) {
+                if (frontier == null || !frontier.getPersonal()) {
                     FrontiersManager.instance.removePendingShareFrontier(messageID);
                     source.sendFailure(Component.literal("The frontier no longer exists"));
                     return messageID;

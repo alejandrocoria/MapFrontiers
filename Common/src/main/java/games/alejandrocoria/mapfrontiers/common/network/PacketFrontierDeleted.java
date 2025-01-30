@@ -66,7 +66,7 @@ public class PacketFrontierDeleted {
     public static void handle(PacketContext<PacketFrontierDeleted> ctx) {
         if (Side.CLIENT.equals(ctx.side())) {
             PacketFrontierDeleted message = ctx.message();
-            boolean deleted = MapFrontiersClient.getFrontiersOverlayManager(message.personal).deleteFrontier(message.dimension,message.frontierID);
+            boolean deleted = MapFrontiersClient.getFrontiersOverlayManager(message.personal).deleteFrontier(message.dimension,message.frontierID) != null;
 
             if (deleted) {
                 ClientEventHandler.postDeletedFrontierEvent(message.frontierID);

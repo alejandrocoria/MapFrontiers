@@ -55,6 +55,13 @@
   "mapfrontiers.delete_user_dialog": "¿Seguro que quieres eliminar el usuario?",
   "mapfrontiers.delete_frontier_dont_ask": "Eliminar y no preguntar de nuevo",
 
+  "mapfrontiers.change_to_global_frontier_dialog": "¿Seguro que quieres cambiar la frontera a Global?",
+  "mapfrontiers.change_to_global_frontier_dialog_desc": "Esta frontera será visible para todos los jugadores.\nCualquier jugador con permisos suficientes podrá editarla o eliminarla.",
+  "mapfrontiers.change_to_global": "Cambiar a Global",
+  "mapfrontiers.change_to_personal_frontier_dialog": "¿Seguro que quieres cambiar la frontera a Personal?",
+  "mapfrontiers.change_to_personal_frontier_dialog_desc": "Ningún jugador podrá ver la frontera excepto tú.",
+  "mapfrontiers.change_to_personal": "Cambiar a Personal",
+
   "mapfrontiers.reset_filters": "Reiniciar Filtros",
   "mapfrontiers.filter_type": "Tipo:",
   "mapfrontiers.filter_owner": "Dueño:",

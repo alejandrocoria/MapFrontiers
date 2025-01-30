@@ -55,6 +55,13 @@
   "mapfrontiers.delete_user_dialog": "Are you sure you want to delete the user?",
   "mapfrontiers.delete_frontier_dont_ask": "Delete and don't ask again",
 
+  "mapfrontiers.change_to_global_frontier_dialog": "Are you sure you want to change the frontier to Global?",
+  "mapfrontiers.change_to_global_frontier_dialog_desc": "This frontier will be visible to all players.\nAny player with sufficient permissions will be able to edit or delete it.",
+  "mapfrontiers.change_to_global": "Change to Global",
+  "mapfrontiers.change_to_personal_frontier_dialog": "Are you sure you want to change the frontier to Personal?",
+  "mapfrontiers.change_to_personal_frontier_dialog_desc": "No player will be able to see the frontier except you.",
+  "mapfrontiers.change_to_personal": "Change to Personal",
+
   "mapfrontiers.reset_filters": "重置过滤器",
   "mapfrontiers.filter_type": "类别：",
   "mapfrontiers.filter_owner": "所有者：",

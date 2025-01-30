@@ -158,6 +158,15 @@ public class FrontiersOverlayManager {
         return frontierOverlay;
     }
 
+    public void addFrontier(FrontierOverlay frontierOverlay) {
+        List<FrontierOverlay> frontiers = getAllFrontiers(frontierOverlay.getDimension());
+        frontiers.add(frontierOverlay);
+
+        if (personal && !minecraft.isLocalServer()) {
+            saveData();
+        }
+    }
+
     public void clientCreateNewfrontier(ResourceKey<Level> dimension, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
         if (MapFrontiersClient.isModOnServer()) {
             PacketHandler.sendToServer(new PacketCreateFrontier(dimension, personal, vertices, chunks));
@@ -217,24 +226,34 @@ public class FrontiersOverlayManager {
         }
     }
 
-    public boolean deleteFrontier(ResourceKey<Level> dimension, UUID id) {
+    public FrontierOverlay deleteFrontier(UUID id) {
+        for (ResourceKey<Level> dimension : dimensionsFrontiers.keySet()) {
+            FrontierOverlay frontierOverlay = deleteFrontier(dimension, id);
+            if (frontierOverlay != null) {
+                return frontierOverlay;
+            }
+        }
+
+        return null;
+    }
+
+    public FrontierOverlay deleteFrontier(ResourceKey<Level> dimension, UUID id) {
         List<FrontierOverlay> frontiers = getAllFrontiers(dimension);
 
         int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId().equals(id));
 
         if (index < 0) {
-            return false;
+            return null;
         }
 
-        FrontierOverlay frontier = frontiers.get(index);
+        FrontierOverlay frontier = frontiers.remove(index);
         frontier.removeOverlay();
-        frontiers.remove(index);
 
         if (personal && !minecraft.isLocalServer()) {
             saveData();
         }
 
-        return true;
+        return frontier;
     }
 
     public FrontierOverlay updateFrontier(FrontierData data) {
