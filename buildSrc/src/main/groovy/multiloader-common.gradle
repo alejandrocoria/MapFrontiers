@@ -44,19 +44,25 @@ repositories {
         )
         filter { includeGroup('org.parchmentmc.data') }
     }
-    maven {
-        name = 'BlameJared'
-        url = 'https://maven.blamejared.com'
-    }
     exclusiveContent {
         forRepository {
             maven {
-                name = 'JourneyMap API and CommonNetworking'
-                url = 'https://jm.gserv.me/repository/maven-public/'
+                name = 'JourneyMap API'
+                url = 'https://maven.blamejared.com'
             }
         }
         filter {
             includeGroupAndSubgroups("info.journeymap")
+        }
+    }
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'CommonNetworking'
+                url = 'https://jm.gserv.me/repository/maven-public/'
+            }
+        }
+        filter {
             includeGroupAndSubgroups("mysticdrew")
         }
     }
