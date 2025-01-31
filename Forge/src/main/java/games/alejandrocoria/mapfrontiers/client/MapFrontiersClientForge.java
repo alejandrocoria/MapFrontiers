@@ -45,7 +45,7 @@ public class MapFrontiersClientForge extends MapFrontiersClient {
     }
 
     @SubscribeEvent
-    public static void onRenderTick(TickEvent.RenderTickEvent event) {
+    public static void onRenderTick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
             ClientEventHandler.postClientTickEvent(Minecraft.getInstance());
         }
