@@ -484,6 +484,8 @@ public class FrontierInfo extends AutoScaledScreen {
         updateButtons();
         updatePasteOptionsVisibility();
         updateUndoRedoVisibility();
+
+        setInitialFocus(buttonDone);
     }
 
     private OptionButton createVisibilityOptionButton(boolean defaultValue, Consumer<Boolean> consumer) {
