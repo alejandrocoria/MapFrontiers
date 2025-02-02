@@ -78,6 +78,7 @@ public abstract class AutoScaledScreen extends LayeredScreen {
 
     @Override
     protected final void renderPopupScreenBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        graphics.flush();
         renderBlurredBackground();
     }
 
