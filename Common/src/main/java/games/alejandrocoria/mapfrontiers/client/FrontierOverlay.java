@@ -13,6 +13,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.mixin.TextureAtlasInvoker;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import it.unimi.dsi.fastutil.Pair;
 import journeymap.api.v2.client.IClientAPI;
@@ -322,6 +323,12 @@ public class FrontierOverlay extends FrontierData {
             } else {
                 return new Vec3(edge1.x + u * edge.x, point.y, edge1.z + u * edge.z);
             }
+        }
+    }
+
+    public void setCurrentPlayerAsOwner() {
+        if (Minecraft.getInstance().player != null) {
+            owner = new SettingsUser(Minecraft.getInstance().player);
         }
     }
 

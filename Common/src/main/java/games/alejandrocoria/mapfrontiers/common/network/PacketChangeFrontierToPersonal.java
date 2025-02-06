@@ -12,7 +12,6 @@ import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -103,7 +102,7 @@ public class PacketChangeFrontierToPersonal {
             if (message.modified != null) {
                 frontierOverlay.setModified(message.modified);
             }
-            frontierOverlay.setOwner(new SettingsUser(Minecraft.getInstance().player));
+            frontierOverlay.setCurrentPlayerAsOwner();
             MapFrontiersClient.getFrontiersOverlayManager(true).addFrontier(frontierOverlay);
             ClientEventHandler.postUpdatedFrontierEvent(frontierOverlay, -1);
         }
