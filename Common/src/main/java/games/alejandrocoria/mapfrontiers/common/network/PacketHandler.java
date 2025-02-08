@@ -67,6 +67,6 @@ public class PacketHandler {
     }
 
     public static <MSG> void sendToServer(MSG message) {
-        Dispatcher.sendToServer(message);
+        Dispatcher.sendToServer(message, true);
     }
 }
