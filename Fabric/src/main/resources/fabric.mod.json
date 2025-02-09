@@ -17,6 +17,10 @@
   "license": "${mod_license}",
   "icon": "${mod_logo}",
 
+  "mixins": [
+    "${mod_id}.mixins.json"
+  ],
+
   "environment": "*",
   "entrypoints": {
     "main": [

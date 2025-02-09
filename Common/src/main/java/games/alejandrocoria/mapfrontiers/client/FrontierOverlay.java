@@ -9,6 +9,7 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.mixin.TextureAtlasInvoker;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
@@ -26,6 +27,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.Sheets;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -548,6 +550,10 @@ public class FrontierOverlay extends FrontierData {
             return;
         }
 
+        TextureAtlasInvoker atlas = (TextureAtlasInvoker) mc.getModelManager().getAtlas(Sheets.BANNER_SHEET);
+        int atlasWidth = atlas.mapfrontiers$getWidth();
+        int atlasHeight = atlas.mapfrontiers$getHeight();
+
         for (int i = 0; i < bannerDisplay.patternList.size(); ++i) {
             BannerPattern pattern = bannerDisplay.patternList.get(i);
             Optional<ResourceKey<BannerPattern>> patternResource = BuiltInRegistries.BANNER_PATTERN.getResourceKey(pattern);
@@ -568,9 +574,9 @@ public class FrontierOverlay extends FrontierData {
             int height = 40 * scale;
             float zLevel = 0.f;
             float u1 = sprite.getU0();
-            float u2 = sprite.getU0() + 22.f / 512.f;
-            float v1 = sprite.getV0() + 1.f / 512.f;
-            float v2 = sprite.getV0() + 41.f / 512.f;
+            float u2 = sprite.getU0() + 22.f / atlasWidth;
+            float v1 = sprite.getV0() + 1.f / atlasHeight;
+            float v2 = sprite.getV0() + 41.f / atlasHeight;
             buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
             Matrix4f matrix = graphics.pose().last().pose();
             buf.vertex(matrix, x, y + height, zLevel).color(colors[0], colors[1], colors[2], 1.f).uv(u1, v2).endVertex();

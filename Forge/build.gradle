@@ -3,6 +3,7 @@ plugins {
     id 'eclipse'
     id 'maven-publish'
     id 'net.minecraftforge.gradle' version '6.0.+'
+    id 'org.spongepowered.mixin' version '0.7-SNAPSHOT'
 }
 
 version = "${project.version}"
@@ -12,6 +13,17 @@ archivesBaseName = "${project.mod_name}-${project.minecraft_version}"
 jarJar.enable()
 tasks.jarJar.configure {
     archiveClassifier.set('forge')
+}
+
+mixin {
+    add sourceSets.main, "mapfrontiers-refmap.json"
+    config("${mod_id}.mixins.json")
+}
+
+jar {
+    manifest {
+        attributes["MixinConfigs"] = "${mod_id}.mixins.json"
+    }
 }
 
 minecraft {
@@ -72,6 +84,7 @@ minecraft {
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    annotationProcessor 'org.spongepowered:mixin:0.8.5-SNAPSHOT:processor'
 
     implementation fg.deobf(group: 'mysticdrew', name: 'common-networking-forge', version: project.common_networking_version)
     jarJar (group: 'mysticdrew', name: 'common-networking-forge', version: '[1.0.1, 5.0.0)') {

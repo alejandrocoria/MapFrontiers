@@ -32,6 +32,9 @@ dependencies {
 }
 
 loom {
+    mixin {
+        useLegacyMixinAp = false
+    }
     runs {
         client {
             client()
