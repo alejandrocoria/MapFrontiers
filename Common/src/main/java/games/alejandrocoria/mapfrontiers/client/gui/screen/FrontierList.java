@@ -48,6 +48,7 @@ public class FrontierList extends AutoScaledScreen {
     private static final Component infoLabel = Component.translatable("mapfrontiers.info");
     private static final Component deleteLabel = Component.translatable("mapfrontiers.delete");
     private static final Component hideLabel = Component.translatable("mapfrontiers.hide");
+    private static final Component settingsLabel = Component.translatable("mapfrontiers.settings");
     private static final Component doneLabel = Component.translatable("gui.done");
 
     private final IClientAPI jmAPI;
@@ -62,6 +63,7 @@ public class FrontierList extends AutoScaledScreen {
     private SimpleButton buttonInfo;
     private SimpleButton buttonDelete;
     private SimpleButton buttonVisible;
+    private SimpleButton buttonSettings;
     private SimpleButton buttonDone;
 
     public FrontierList(IClientAPI jmAPI, FullscreenMap fullscreenMap) {
@@ -211,6 +213,7 @@ public class FrontierList extends AutoScaledScreen {
             frontierManager.clientUpdateFrontier(frontier);
             updateButtons();
         }));
+        buttonSettings = bottomButtons.addChild(new SimpleButton(font, 110, settingsLabel, (b) -> new ModSettings(true).display()));
         buttonDone = bottomButtons.addChild(new SimpleButton(font, 110, doneLabel, (b) -> onClose()));
 
         updateFrontiers();
