@@ -10,6 +10,7 @@ import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
+import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 
@@ -26,6 +27,7 @@ public class VisibilityDialog extends AutoScaledScreen {
     private static final Component fullscreenLabel = Component.translatable("mapfrontiers.fullscreen");
     private static final Component showNameLabel = Component.translatable("mapfrontiers.show_name");
     private static final Component showOwnerLabel = Component.translatable("mapfrontiers.show_owner");
+    private static final Component showBannerLabel = Component.translatable("mapfrontiers.show_banner");
     private static final Component minimapLabel = Component.translatable("mapfrontiers.minimap");
     private static final Component webmapLabel = Component.translatable("mapfrontiers.webmap");
     private static final Component dayLabel = Component.translatable("mapfrontiers.day");
@@ -73,9 +75,11 @@ public class VisibilityDialog extends AutoScaledScreen {
 
         GridLayout generalGrid = new GridLayout().spacing(4);
         generalColumn.addChild(generalGrid);
-        createWidgets(generalGrid, 1, showFrontierLabel, FrontierData.VisibilityData.Visibility.Frontier);
-        createWidgets(generalGrid, 2, announceInChatLabel, FrontierData.VisibilityData.Visibility.AnnounceInChat);
-        createWidgets(generalGrid, 3, announceInTitleLabel, FrontierData.VisibilityData.Visibility.AnnounceInTitle);
+        int row = 1;
+        createWidgets(generalGrid, row++, showFrontierLabel, FrontierData.VisibilityData.Visibility.Frontier);
+        generalGrid.addChild(SpacerElement.height(2), row++, 0);
+        createWidgets(generalGrid, row++, announceInChatLabel, FrontierData.VisibilityData.Visibility.AnnounceInChat);
+        createWidgets(generalGrid, row++, announceInTitleLabel, FrontierData.VisibilityData.Visibility.AnnounceInTitle);
 
         LinearLayout fullscreenColumn = LinearLayout.vertical().spacing(6);
         fullscreenColumn.defaultCellSetting().alignHorizontallyCenter();
@@ -84,14 +88,18 @@ public class VisibilityDialog extends AutoScaledScreen {
 
         GridLayout fullscreenGrid = new GridLayout().spacing(4);
         fullscreenColumn.addChild(fullscreenGrid);
-        createWidgets(fullscreenGrid, 1, showFrontierLabel, FrontierData.VisibilityData.Visibility.Fullscreen);
-        createWidgets(fullscreenGrid, 2, showNameLabel, FrontierData.VisibilityData.Visibility.FullscreenName);
-        createWidgets(fullscreenGrid, 3, showOwnerLabel, FrontierData.VisibilityData.Visibility.FullscreenOwner);
-        createWidgets(fullscreenGrid, 4, dayLabel, FrontierData.VisibilityData.Visibility.FullscreenDay);
-        createWidgets(fullscreenGrid, 5, nightLabel, FrontierData.VisibilityData.Visibility.FullscreenNight);
-        createWidgets(fullscreenGrid, 6, undergroundLabel, FrontierData.VisibilityData.Visibility.FullscreenUnderground);
-        createWidgets(fullscreenGrid, 7, topoLabel, FrontierData.VisibilityData.Visibility.FullscreenTopo);
-        createWidgets(fullscreenGrid, 8, biomeLabel, FrontierData.VisibilityData.Visibility.FullscreenBiome);
+        row = 1;
+        createWidgets(fullscreenGrid, row++, showFrontierLabel, FrontierData.VisibilityData.Visibility.Fullscreen);
+        fullscreenGrid.addChild(SpacerElement.height(2), row++, 0);
+        createWidgets(fullscreenGrid, row++, showNameLabel, FrontierData.VisibilityData.Visibility.FullscreenName);
+        createWidgets(fullscreenGrid, row++, showOwnerLabel, FrontierData.VisibilityData.Visibility.FullscreenOwner);
+        createWidgets(fullscreenGrid, row++, showBannerLabel, FrontierData.VisibilityData.Visibility.FullscreenBanner);
+        fullscreenGrid.addChild(SpacerElement.height(2), row++, 0);
+        createWidgets(fullscreenGrid, row++, dayLabel, FrontierData.VisibilityData.Visibility.FullscreenDay);
+        createWidgets(fullscreenGrid, row++, nightLabel, FrontierData.VisibilityData.Visibility.FullscreenNight);
+        createWidgets(fullscreenGrid, row++, undergroundLabel, FrontierData.VisibilityData.Visibility.FullscreenUnderground);
+        createWidgets(fullscreenGrid, row++, topoLabel, FrontierData.VisibilityData.Visibility.FullscreenTopo);
+        createWidgets(fullscreenGrid, row++, biomeLabel, FrontierData.VisibilityData.Visibility.FullscreenBiome);
 
         LinearLayout minimapColumn = LinearLayout.vertical().spacing(6);
         minimapColumn.defaultCellSetting().alignHorizontallyCenter();
@@ -100,14 +108,18 @@ public class VisibilityDialog extends AutoScaledScreen {
 
         GridLayout minimapGrid = new GridLayout().spacing(4);
         minimapColumn.addChild(minimapGrid);
-        createWidgets(minimapGrid, 1, showFrontierLabel, FrontierData.VisibilityData.Visibility.Minimap);
-        createWidgets(minimapGrid, 2, showNameLabel, FrontierData.VisibilityData.Visibility.MinimapName);
-        createWidgets(minimapGrid, 3, showOwnerLabel, FrontierData.VisibilityData.Visibility.MinimapOwner);
-        createWidgets(minimapGrid, 4, dayLabel, FrontierData.VisibilityData.Visibility.MinimapDay);
-        createWidgets(minimapGrid, 5, nightLabel, FrontierData.VisibilityData.Visibility.MinimapNight);
-        createWidgets(minimapGrid, 6, undergroundLabel, FrontierData.VisibilityData.Visibility.MinimapUnderground);
-        createWidgets(minimapGrid, 7, topoLabel, FrontierData.VisibilityData.Visibility.MinimapTopo);
-        createWidgets(minimapGrid, 8, biomeLabel, FrontierData.VisibilityData.Visibility.MinimapBiome);
+        row = 1;
+        createWidgets(minimapGrid, row++, showFrontierLabel, FrontierData.VisibilityData.Visibility.Minimap);
+        minimapGrid.addChild(SpacerElement.height(2), row++, 0);
+        createWidgets(minimapGrid, row++, showNameLabel, FrontierData.VisibilityData.Visibility.MinimapName);
+        createWidgets(minimapGrid, row++, showOwnerLabel, FrontierData.VisibilityData.Visibility.MinimapOwner);
+        createWidgets(minimapGrid, row++, showBannerLabel, FrontierData.VisibilityData.Visibility.MinimapBanner);
+        minimapGrid.addChild(SpacerElement.height(2), row++, 0);
+        createWidgets(minimapGrid, row++, dayLabel, FrontierData.VisibilityData.Visibility.MinimapDay);
+        createWidgets(minimapGrid, row++, nightLabel, FrontierData.VisibilityData.Visibility.MinimapNight);
+        createWidgets(minimapGrid, row++, undergroundLabel, FrontierData.VisibilityData.Visibility.MinimapUnderground);
+        createWidgets(minimapGrid, row++, topoLabel, FrontierData.VisibilityData.Visibility.MinimapTopo);
+        createWidgets(minimapGrid, row++, biomeLabel, FrontierData.VisibilityData.Visibility.MinimapBiome);
 
         LinearLayout webmapColumn = LinearLayout.vertical().spacing(6);
         webmapColumn.defaultCellSetting().alignHorizontallyCenter();
@@ -116,14 +128,18 @@ public class VisibilityDialog extends AutoScaledScreen {
 
         GridLayout webmapGrid = new GridLayout().spacing(4);
         webmapColumn.addChild(webmapGrid);
-        createWidgets(webmapGrid, 1, showFrontierLabel, FrontierData.VisibilityData.Visibility.Webmap);
-        createWidgets(webmapGrid, 2, showNameLabel, FrontierData.VisibilityData.Visibility.WebmapName);
-        createWidgets(webmapGrid, 3, showOwnerLabel, FrontierData.VisibilityData.Visibility.WebmapOwner);
-        createWidgets(webmapGrid, 4, dayLabel, FrontierData.VisibilityData.Visibility.WebmapDay);
-        createWidgets(webmapGrid, 5, nightLabel, FrontierData.VisibilityData.Visibility.WebmapNight);
-        createWidgets(webmapGrid, 6, undergroundLabel, FrontierData.VisibilityData.Visibility.WebmapUnderground);
-        createWidgets(webmapGrid, 7, topoLabel, FrontierData.VisibilityData.Visibility.WebmapTopo);
-        createWidgets(webmapGrid, 8, biomeLabel, FrontierData.VisibilityData.Visibility.WebmapBiome);
+        row = 1;
+        createWidgets(webmapGrid, row++, showFrontierLabel, FrontierData.VisibilityData.Visibility.Webmap);
+        webmapGrid.addChild(SpacerElement.height(2), row++, 0);
+        createWidgets(webmapGrid, row++, showNameLabel, FrontierData.VisibilityData.Visibility.WebmapName);
+        createWidgets(webmapGrid, row++, showOwnerLabel, FrontierData.VisibilityData.Visibility.WebmapOwner);
+        createWidgets(webmapGrid, row++, showBannerLabel, FrontierData.VisibilityData.Visibility.WebmapBanner);
+        webmapGrid.addChild(SpacerElement.height(2), row++, 0);
+        createWidgets(webmapGrid, row++, dayLabel, FrontierData.VisibilityData.Visibility.WebmapDay);
+        createWidgets(webmapGrid, row++, nightLabel, FrontierData.VisibilityData.Visibility.WebmapNight);
+        createWidgets(webmapGrid, row++, undergroundLabel, FrontierData.VisibilityData.Visibility.WebmapUnderground);
+        createWidgets(webmapGrid, row++, topoLabel, FrontierData.VisibilityData.Visibility.WebmapTopo);
+        createWidgets(webmapGrid, row++, biomeLabel, FrontierData.VisibilityData.Visibility.WebmapBiome);
 
         doneButton = mainLayout.addChild(new SimpleButton(font, 100, doneLabel, (b) -> onClose()));
     }
