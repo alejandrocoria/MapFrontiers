@@ -184,7 +184,7 @@ public class FrontierList extends AutoScaledScreen {
         }
         rightColumn.addChild(filterDimension);
 
-        buttonCreate = bottomButtons.addChild(new SimpleButton(font, 110, createLabel, (b) -> new NewFrontier(jmAPI).display()));
+        buttonCreate = bottomButtons.addChild(new SimpleButton(font, 110, createLabel, (b) -> new NewFrontier(jmAPI, minecraft.player.blockPosition()).display()));
         buttonInfo = bottomButtons.addChild(new SimpleButton(font, 110, infoLabel, (b) -> {
             FrontierOverlay frontier = ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
             new FrontierInfo(jmAPI, frontier).display();

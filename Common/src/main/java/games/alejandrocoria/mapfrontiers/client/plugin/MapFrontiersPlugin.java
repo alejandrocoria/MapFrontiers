@@ -4,7 +4,6 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.FullscreenMap;
-import games.alejandrocoria.mapfrontiers.common.Config;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.IClientPlugin;
 import journeymap.api.v2.client.JourneyMapPlugin;
@@ -14,7 +13,6 @@ import journeymap.api.v2.client.fullscreen.ModPopupMenu;
 import journeymap.api.v2.client.fullscreen.ThemeButtonDisplay;
 import journeymap.api.v2.common.event.ClientEventRegistry;
 import journeymap.api.v2.common.event.FullscreenEventRegistry;
-import net.minecraft.client.gui.screens.Screen;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -28,15 +26,12 @@ public class MapFrontiersPlugin implements IClientPlugin {
         MapFrontiersClient.setjmAPI(jmAPI);
 
         FullscreenEventRegistry.FULLSCREEN_MAP_CLICK_EVENT.subscribe(MapFrontiers.MODID, (clickEvent) -> {
-            if (!Config.fullscreenButtons) {
-                return;
-            }
             if (fullscreenMap == null) {
                 return;
             }
 
             FullscreenMapEvent.Stage relevantStage;
-            if ((fullscreenMap.isEditingVertices() || fullscreenMap.isEditingChunks()) && clickEvent.getButton() == 1) {
+            if (clickEvent.getButton() == 1) {
                 relevantStage = FullscreenMapEvent.Stage.PRE;
             } else {
                 relevantStage = FullscreenMapEvent.Stage.POST;
@@ -50,9 +45,6 @@ public class MapFrontiersPlugin implements IClientPlugin {
         });
 
         FullscreenEventRegistry.FULLSCREEN_MAP_DRAG_EVENT.subscribe(MapFrontiers.MODID, (mouseDraggedEvent) -> {
-            if (!Config.fullscreenButtons) {
-                return;
-            }
             if (fullscreenMap == null) {
                 return;
             }
@@ -66,9 +58,6 @@ public class MapFrontiersPlugin implements IClientPlugin {
         });
 
         FullscreenEventRegistry.FULLSCREEN_MAP_MOVE_EVENT.subscribe(MapFrontiers.MODID, (mouseMoveEvent) -> {
-            if (!Config.fullscreenButtons) {
-                return;
-            }
             if (fullscreenMap == null) {
                 return;
             }
@@ -77,10 +66,6 @@ public class MapFrontiersPlugin implements IClientPlugin {
         });
 
         ClientEventRegistry.DISPLAY_UPDATE_EVENT.subscribe(MapFrontiers.MODID, (displayUpdateEvent) -> {
-            if (!Config.fullscreenButtons) {
-                return;
-            }
-
             if (fullscreenMap == null) {
                 return;
             }
@@ -98,8 +83,7 @@ public class MapFrontiersPlugin implements IClientPlugin {
 
         FullscreenEventRegistry.ADDON_BUTTON_DISPLAY_EVENT.subscribe(MapFrontiers.MODID, (addonButtonDisplayEvent) -> {
             ThemeButtonDisplay buttonDisplay = addonButtonDisplayEvent.getThemeButtonDisplay();
-            Screen fullscreen = addonButtonDisplayEvent.getFullscreen().getScreen();
-            ClientEventHandler.postAddonButtonDisplayEvent(buttonDisplay, fullscreen);
+            ClientEventHandler.postAddonButtonDisplayEvent(buttonDisplay);
         });
 
         FullscreenEventRegistry.FULLSCREEN_POPUP_MENU_EVENT.subscribe(MapFrontiers.MODID, (fullscreenPopupMenuEvent) -> {
@@ -107,23 +91,15 @@ public class MapFrontiersPlugin implements IClientPlugin {
             ClientEventHandler.postFullscreenPopupMenuEvent(popupMenu);
         });
 
-        ClientEventHandler.subscribeAddonButtonDisplayEvent(MapFrontiersPlugin.class, (buttonDisplay, fullscreen) -> {
-            if (!Config.fullscreenButtons) {
-                return;
-            }
-
+        ClientEventHandler.subscribeAddonButtonDisplayEvent(MapFrontiersPlugin.class, (buttonDisplay) -> {
             if (fullscreenMap == null) {
                 fullscreenMap = new FullscreenMap(jmAPI);
             }
 
-            fullscreenMap.addButtons(buttonDisplay, fullscreen);
+            fullscreenMap.addButtons(buttonDisplay);
         });
 
         ClientEventHandler.subscribeFullscreenPopupMenuEvent(MapFrontiersPlugin.class, popupMenu -> {
-            if (!Config.fullscreenButtons) {
-                return;
-            }
-
             if (fullscreenMap != null) {
                 fullscreenMap.addPopupMenu(popupMenu);
             }
@@ -136,10 +112,6 @@ public class MapFrontiersPlugin implements IClientPlugin {
     }
 
     public static boolean isEditing() {
-        if (!Config.fullscreenButtons) {
-            return false;
-        }
-
         return fullscreenMap != null && (fullscreenMap.isEditingVertices() || fullscreenMap.isEditingChunks());
     }
 }
