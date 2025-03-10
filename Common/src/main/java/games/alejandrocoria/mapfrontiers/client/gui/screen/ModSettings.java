@@ -82,6 +82,10 @@ public class ModSettings extends AutoScaledScreen {
     private static final String keyHintkey = "mapfrontiers.key.open_settings.hint";
     private static final Component frontiersLabel = Component.translatable("mapfrontiers.frontiers");
     private static final Component forcedVisibilityLabel = Component.translatable("mapfrontiers.forced_visibility");
+    private static final Component titleAnnouncementDurationLabel = Config.getTranslatedName("titleAnnouncementDuration");
+    private static final Tooltip titleAnnouncementDurationTooltip = Config.getTooltip("titleAnnouncementDuration");
+    private static final Component titleAnnouncementTimeoutLabel = Config.getTranslatedName("titleAnnouncementTimeout");
+    private static final Tooltip titleAnnouncementTimeoutTooltip = Config.getTooltip("titleAnnouncementTimeout");
     private static final Component titleAnnouncementAboveHotbarLabel = Config.getTranslatedName("titleAnnouncementAboveHotbar");
     private static final Tooltip titleAnnouncementAboveHotbarTooltip = Config.getTooltip("titleAnnouncementAboveHotbar");
     private static final Component announceUnnamedFrontiersLabel = Config.getTranslatedName("announceUnnamedFrontiers");
@@ -124,6 +128,8 @@ public class ModSettings extends AutoScaledScreen {
     private LinkButton buttonWeb;
     private LinkButton buttonCurseForge;
     private LinkButton buttonModrinth;
+    private StringWidget labelTitleAnnouncementDuration;
+    private StringWidget labelTitleAnnouncementTimeout;
     private StringWidget labelTitleAnnouncementAboveHotbar;
     private StringWidget labelAnnounceUnnamedFrontiers;
     private StringWidget labelHideNamesThatDontFit;
@@ -134,6 +140,8 @@ public class ModSettings extends AutoScaledScreen {
     private StringWidget labelAskConfirmationGroupDelete;
     private StringWidget labelAskConfirmationUserDelete;
     private StringWidget labelHUDEnabled;
+    private TextBoxInt textTitleAnnouncementDuration;
+    private TextBoxInt textTitleAnnouncementTimeout;
     private OptionButton buttonTitleAnnouncementAboveHotbar;
     private OptionButton buttonAnnounceUnnamedFrontiers;
     private OptionButton buttonHideNamesThatDontFit;
@@ -266,6 +274,20 @@ public class ModSettings extends AutoScaledScreen {
         miscLayout.defaultCellSetting().alignHorizontallyLeft();
         generalLayout.addChild(miscLayout);
         int row = 0;
+
+        labelTitleAnnouncementDuration = miscLayout.addChild(new StringWidget(titleAnnouncementDurationLabel, font).setColor(ColorConstants.TEXT), row, 0);
+        labelTitleAnnouncementDuration.setTooltip(titleAnnouncementDurationTooltip);
+        textTitleAnnouncementDuration = miscLayout.addChild(new TextBoxInt(70, 0, 1200, font, 40), row++, 1);
+        textTitleAnnouncementDuration.setValue(String.valueOf(Config.titleAnnouncementDuration));
+        textTitleAnnouncementDuration.setMaxLength(2);
+        textTitleAnnouncementDuration.setValueChangedCallback(value -> Config.titleAnnouncementDuration = value);
+
+        labelTitleAnnouncementTimeout = miscLayout.addChild(new StringWidget(titleAnnouncementTimeoutLabel, font).setColor(ColorConstants.TEXT), row, 0);
+        labelTitleAnnouncementTimeout.setTooltip(titleAnnouncementTimeoutTooltip);
+        textTitleAnnouncementTimeout = miscLayout.addChild(new TextBoxInt(0, 0, 1200, font, 40), row++, 1);
+        textTitleAnnouncementTimeout.setValue(String.valueOf(Config.titleAnnouncementTimeout));
+        textTitleAnnouncementTimeout.setMaxLength(2);
+        textTitleAnnouncementTimeout.setValueChangedCallback(value -> Config.titleAnnouncementTimeout = value);
 
         labelTitleAnnouncementAboveHotbar = miscLayout.addChild(new StringWidget(titleAnnouncementAboveHotbarLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelTitleAnnouncementAboveHotbar.setTooltip(titleAnnouncementAboveHotbarTooltip);

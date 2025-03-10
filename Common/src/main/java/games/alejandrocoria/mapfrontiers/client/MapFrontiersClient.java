@@ -39,6 +39,7 @@ public class MapFrontiersClient {
 
     private static BlockPos lastPlayerPosition = new BlockPos(0, 0, 0);
     private static final Set<FrontierOverlay> insideFrontiers = new HashSet<>();
+    private static long lastTitleTime;
 
     private static FrontierData clipboard = null;
 
@@ -108,7 +109,9 @@ public class MapFrontiersClient {
                         if (frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInTitle)) {
                             if (Config.titleAnnouncementAboveHotbar) {
                                 client.gui.setOverlayMessage(text, false);
-                            } else {
+                            } else if (System.currentTimeMillis() >= lastTitleTime + Config.titleAnnouncementTimeout / 20 * 1000L) {
+                                lastTitleTime = System.currentTimeMillis();
+                                client.gui.setTimes(10, Config.titleAnnouncementDuration, 20);
                                 client.gui.setTitle(text);
                             }
                         }
