@@ -90,6 +90,8 @@ public class FrontierInfo extends AutoScaledScreen {
     private static final Component onLabel = Component.translatable("options.on");
     private static final Component offLabel = Component.translatable("options.off");
 
+    private static final Tooltip visibilityTooltip = Tooltip.create(Component.translatable("mapfrontiers.visibility.tooltip"));
+    private static final Tooltip visibilityOverrideTooltip = Tooltip.create(Component.translatable("mapfrontiers.visibility_override.tooltip"));
     private static final Tooltip copyTooltip = Tooltip.create(Component.translatable("mapfrontiers.copy"));
     private static final Tooltip pasteTooltip = Tooltip.create(Component.translatable("mapfrontiers.paste"));
     private static final Tooltip openPasteTooltip = Tooltip.create(Component.translatable("mapfrontiers.open_paste_options"));
@@ -302,6 +304,7 @@ public class FrontierInfo extends AutoScaledScreen {
                 }
             }).display();
         });
+        buttonVisibility.setTooltip(visibilityTooltip);
         mainLayout.addChild(buttonVisibility, 2, 1);
 
         buttonVisibilityOverride = new SimpleButton(font, 144, visibilityOverrideLabel, (b) -> {
@@ -314,6 +317,7 @@ public class FrontierInfo extends AutoScaledScreen {
                 }
             }).display();
         });
+        buttonVisibilityOverride.setTooltip(visibilityOverrideTooltip);
         mainLayout.addChild(buttonVisibilityOverride, 2, 2);
 
         colorPicker = new ColorPicker(frontier.getColor(), (color, dragging) -> {
