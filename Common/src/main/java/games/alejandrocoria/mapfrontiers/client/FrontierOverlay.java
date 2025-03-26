@@ -157,6 +157,14 @@ public class FrontierOverlay extends FrontierData {
         return hash;
     }
 
+    public List<PolygonOverlay> getPolygonOverlays() {
+        return polygonOverlays;
+    }
+
+    public List<MarkerOverlay> getBannerOverlays() {
+        return bannerOverlays;
+    }
+
     public void updateOverlayIfNeeded() {
         if (needUpdateOverlay) {
             needUpdateOverlay = false;
@@ -768,7 +776,7 @@ public class FrontierOverlay extends FrontierData {
         return closest;
     }
 
-    private void recalculateOverlays() {
+    public void recalculateOverlays() {
         polygonOverlays.clear();
         markerOverlays.clear();
         bannerOverlays.clear();
@@ -1138,12 +1146,12 @@ public class FrontierOverlay extends FrontierData {
         }
 
         if (bannerVisible) {
-            MapImage bannerIcon = new MapImage(bannerRenderer.getImage(), 0, 0, 20, 40, ColorConstants.WHITE, 1.f);
+            MapImage bannerIcon = new MapImage(bannerRenderer.getImage());
             bannerIcon.setBlur(false);
             bannerIcon.setAnchorX(10);
             bannerIcon.setAnchorY(bannerOffset);
-            bannerIcon.setDisplayWidth(bannerRenderer.getImage().getWidth());
-            bannerIcon.setDisplayHeight(bannerRenderer.getImage().getHeight());
+            bannerIcon.setDisplayWidth(20);
+            bannerIcon.setDisplayHeight(40);
             BlockPos polygonCenter = BlockPos.containing(polygonBound.getCenterX(), 70, polygonBound.getCenterY());
 
             MarkerOverlay bannerOverlay = new MarkerOverlay(MapFrontiers.MODID, polygonCenter, bannerIcon);

@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers.platform;
 
 import games.alejandrocoria.mapfrontiers.common.util.ReflectionHelper;
 import games.alejandrocoria.mapfrontiers.platform.services.IJourneyMapHelper;
+import games.alejandrocoria.mapfrontiers.platform.services.IJourneyMapCustomPreviewRenderer;
 import journeymap.client.data.WorldData;
 import journeymap.client.io.FileHandler;
 import journeymap.client.io.ThemeLoader;
@@ -136,6 +137,11 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
         }
 
         return false;
+    }
+
+    @Override
+    public IJourneyMapCustomPreviewRenderer createCustomPreviewRenderer() {
+        return new NeoForgeJourneyMapCustomPreviewRenderer();
     }
 
     @Override

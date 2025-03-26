@@ -15,11 +15,11 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox.ScrollElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.UserElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
-import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxDouble;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.DeleteConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.dialog.FrontierAppearanceDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.VisibilityDialog;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
@@ -81,6 +81,7 @@ public class ModSettings extends AutoScaledScreen {
     private static final Component versionLabel = Component.literal(Services.PLATFORM.getModVersion());
     private static final String keyHintkey = "mapfrontiers.key.open_settings.hint";
     private static final Component frontiersLabel = Component.translatable("mapfrontiers.frontiers");
+    private static final Component frontierAppearanceLabel = Component.translatable("mapfrontiers.frontier_appearance");
     private static final Component forcedVisibilityLabel = Component.translatable("mapfrontiers.forced_visibility");
     private static final Component titleAnnouncementDurationLabel = Config.getTranslatedName("titleAnnouncementDuration");
     private static final Tooltip titleAnnouncementDurationTooltip = Config.getTooltip("titleAnnouncementDuration");
@@ -90,10 +91,6 @@ public class ModSettings extends AutoScaledScreen {
     private static final Tooltip titleAnnouncementAboveHotbarTooltip = Config.getTooltip("titleAnnouncementAboveHotbar");
     private static final Component announceUnnamedFrontiersLabel = Config.getTranslatedName("announceUnnamedFrontiers");
     private static final Tooltip announceUnnamedFrontiersTooltip = Config.getTooltip("announceUnnamedFrontiers");
-    private static final Component hideNamesThatDontFitLabel = Config.getTranslatedName("hideNamesThatDontFit");
-    private static final Tooltip hideNamesThatDontFitTooltip = Config.getTooltip("hideNamesThatDontFit");
-    private static final Component polygonsOpacityLabel = Config.getTranslatedName("polygonsOpacity");
-    private static final Tooltip polygonsOpacityTooltip = Config.getTooltip("polygonsOpacity");
     private static final Component snapDistanceLabel = Config.getTranslatedName("snapDistance");
     private static final Tooltip snapDistanceTooltip = Config.getTooltip("snapDistance");
     private static final Component guiLabel = Component.translatable("mapfrontiers.gui");
@@ -132,8 +129,6 @@ public class ModSettings extends AutoScaledScreen {
     private StringWidget labelTitleAnnouncementTimeout;
     private StringWidget labelTitleAnnouncementAboveHotbar;
     private StringWidget labelAnnounceUnnamedFrontiers;
-    private StringWidget labelHideNamesThatDontFit;
-    private StringWidget labelPolygonsOpacity;
     private StringWidget labelSnapDistance;
     private StringWidget labelFullscreenButtons;
     private StringWidget labelAskConfirmationFrontierDelete;
@@ -144,8 +139,6 @@ public class ModSettings extends AutoScaledScreen {
     private TextBoxInt textTitleAnnouncementTimeout;
     private OptionButton buttonTitleAnnouncementAboveHotbar;
     private OptionButton buttonAnnounceUnnamedFrontiers;
-    private OptionButton buttonHideNamesThatDontFit;
-    private TextBoxDouble textPolygonsOpacity;
     private TextBoxInt textSnapDistance;
     private OptionButton buttonFullscreenButtons;
     private OptionButton buttonAskConfirmationFrontierDelete;
@@ -307,26 +300,21 @@ public class ModSettings extends AutoScaledScreen {
         buttonAnnounceUnnamedFrontiers.addOption(offLabel);
         buttonAnnounceUnnamedFrontiers.setSelected(Config.announceUnnamedFrontiers ? 0 : 1);
 
-        labelHideNamesThatDontFit = miscLayout.addChild(new StringWidget(hideNamesThatDontFitLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelHideNamesThatDontFit.setTooltip(hideNamesThatDontFitTooltip);
-        buttonHideNamesThatDontFit = miscLayout.addChild(new OptionButton(font, 40, (b) -> Config.hideNamesThatDontFit = b.getSelected() == 0), row++, 1);
-        buttonHideNamesThatDontFit.addOption(onLabel);
-        buttonHideNamesThatDontFit.addOption(offLabel);
-        buttonHideNamesThatDontFit.setSelected(Config.hideNamesThatDontFit ? 0 : 1);
-
-        labelPolygonsOpacity = miscLayout.addChild(new StringWidget(polygonsOpacityLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelPolygonsOpacity.setTooltip(polygonsOpacityTooltip);
-        textPolygonsOpacity = miscLayout.addChild(new TextBoxDouble(0.4, 0.0, 1.0, font, 40), row++, 1);
-        textPolygonsOpacity.setValue(String.valueOf(Config.polygonsOpacity));
-        textPolygonsOpacity.setMaxLength(6);
-        textPolygonsOpacity.setValueChangedCallback(value -> Config.polygonsOpacity = value);
-
         labelSnapDistance = miscLayout.addChild(new StringWidget(snapDistanceLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelSnapDistance.setTooltip(snapDistanceTooltip);
         textSnapDistance = miscLayout.addChild(new TextBoxInt(8, 0, 16, font, 40), row++, 1);
         textSnapDistance.setValue(String.valueOf(Config.snapDistance));
         textSnapDistance.setMaxLength(2);
         textSnapDistance.setValueChangedCallback(value -> Config.snapDistance = value);
+
+        SimpleButton buttonFrontierAppearance = new SimpleButton(font, 144, frontierAppearanceLabel, (b) -> {
+            new FrontierAppearanceDialog().display();
+        }) {
+            public @NotNull ScreenRectangle getRectangle() {
+                return new ScreenRectangle(this.getX(), this.getY(), getWidth() + 100, this.getHeight());
+            }
+        };
+        miscLayout.addChild(buttonFrontierAppearance, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
 
         SimpleButton buttonVisibility = new SimpleButton(font, 144, forcedVisibilityLabel, (b) -> {
             new VisibilityDialog(createForcedVisibility(), createForcedVisibilityMask(), this::setForcedVisibility).display();

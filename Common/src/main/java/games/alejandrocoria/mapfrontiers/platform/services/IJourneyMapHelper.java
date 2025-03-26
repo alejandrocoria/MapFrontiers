@@ -22,6 +22,7 @@ public interface IJourneyMapHelper {
     int minimapLabelHighlightColor();
     int minimapLabelForegroundColor();
     boolean minimapPropertiesChanged();
+    IJourneyMapCustomPreviewRenderer createCustomPreviewRenderer();
     List<String> getDimensionList();
 
     enum JMPosition {
