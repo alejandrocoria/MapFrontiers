@@ -2,8 +2,6 @@ package games.alejandrocoria.mapfrontiers.platform;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.platform.services.IPlatformHelper;
-import net.minecraft.client.gui.components.AbstractButton;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
 

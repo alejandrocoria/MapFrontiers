@@ -787,13 +787,32 @@ public class FrontierOverlay extends FrontierData {
         perimeter = 0.f;
         polygonArea = null;
 
-        ShapeProperties shapeProps = new ShapeProperties().setStrokeWidth(highlighted ? 3 : 0).setStrokeColor(ColorConstants.WHITE)
-                .setFillColor(color).setFillOpacity((float) Config.polygonsOpacity);
+        ShapeProperties shapeProps = new ShapeProperties()
+                .setStrokeWidth(Config.borderWidth)
+                .setStrokeColor(color)
+                .setStrokeOpacity((float) Config.borderOpacity)
+                .setStrokePosition(ShapeProperties.StrokePosition.INSIDE)
+                .setFillColor(color)
+                .setFillOpacity((float) Config.polygonsOpacity);
 
         if (mode == Mode.Vertex) {
             recalculateVertices(shapeProps);
         } else {
             recalculateChunks(shapeProps);
+        }
+
+        if (highlighted) {
+            ShapeProperties highlightShapeProps = new ShapeProperties()
+                    .setStrokeWidth(2)
+                    .setStrokeColor(0xFFFFFF)
+                    .setStrokeOpacity(1)
+                    .setStrokePosition(ShapeProperties.StrokePosition.OUTSIDE)
+                    .setFillOpacity(0);
+            List<PolygonOverlay> highlightedOverlays = new ArrayList<>();
+            for (PolygonOverlay polygonOverlay : polygonOverlays) {
+                highlightedOverlays.add(new PolygonOverlay(MapFrontiers.MODID, dimension, highlightShapeProps, polygonOverlay.getOuterArea(), polygonOverlay.getHoles()));
+            }
+            polygonOverlays.addAll(highlightedOverlays);
         }
     }
 
@@ -1083,7 +1102,7 @@ public class FrontierOverlay extends FrontierData {
             return;
         }
 
-        TextProperties textProps = new TextProperties().setColor(color).setScale(2.f).setBackgroundOpacity(0.f);
+        TextProperties textProps = new TextProperties().setColor(color).setOpacity((float) Config.textOpacity).setScale(Config.textSize).setBackgroundOpacity(0.f);
 
         int lines = 0;
         int totalWidth = 0;
@@ -1114,14 +1133,16 @@ public class FrontierOverlay extends FrontierData {
             label += ChatFormatting.ITALIC + owner.username;
         }
 
-        int totalHeight = lines * 18;
+        totalWidth *= Config.textSize;
+
+        int totalHeight = lines * 9 * Config.textSize;
         if (bannerVisible) {
-            totalHeight += 40;
+            totalHeight += 40 * Config.bannerSize;
         }
 
         int topOffset = totalHeight / 2;
-        int textOffset = topOffset - lines * 9;
-        int bannerOffset = topOffset - lines * 18;
+        int textOffset = topOffset - lines * 9 * Config.textSize / 2;
+        int bannerOffset = topOffset - lines * 9 * Config.textSize;
         if (lines > 1) {
             if (bannerVisible) {
                 textOffset -= 6;
@@ -1138,9 +1159,8 @@ public class FrontierOverlay extends FrontierData {
         textProps.setOffsetY(textOffset);
 
         if (Config.hideNamesThatDontFit) {
-            totalWidth *= 2;
             if (bannerVisible) {
-                totalWidth = Math.max(totalWidth, 20);
+                totalWidth = Math.max(totalWidth, 20 * Config.bannerSize);
             }
             setMinSizeTextProperties(textProps, polygonBound, totalWidth + 6, totalHeight + 6);
         }
@@ -1148,10 +1168,11 @@ public class FrontierOverlay extends FrontierData {
         if (bannerVisible) {
             MapImage bannerIcon = new MapImage(bannerRenderer.getImage());
             bannerIcon.setBlur(false);
-            bannerIcon.setAnchorX(10);
+            bannerIcon.setAnchorX(10 * Config.bannerSize);
             bannerIcon.setAnchorY(bannerOffset);
-            bannerIcon.setDisplayWidth(20);
-            bannerIcon.setDisplayHeight(40);
+            bannerIcon.setDisplayWidth(20 * Config.bannerSize);
+            bannerIcon.setDisplayHeight(40 * Config.bannerSize);
+            bannerIcon.setOpacity((float) Config.bannerOpacity);
             BlockPos polygonCenter = BlockPos.containing(polygonBound.getCenterX(), 70, polygonBound.getCenterY());
 
             MarkerOverlay bannerOverlay = new MarkerOverlay(MapFrontiers.MODID, polygonCenter, bannerIcon);

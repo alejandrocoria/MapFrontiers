@@ -1,11 +1,12 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.platform.Services;
-import games.alejandrocoria.mapfrontiers.platform.services.IJourneyMapCustomPreviewRenderer;
+import games.alejandrocoria.mapfrontiers.platform.services.IJourneyMapHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphics;
@@ -23,15 +24,20 @@ import net.minecraft.world.level.block.entity.BannerPatterns;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
+import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
-    private IJourneyMapCustomPreviewRenderer customPreviewRenderer;
-    private FrontierOverlay previewFrontier;
-    private float scaleFactor = 1.f;
+    private static final ResourceLocation backgroundTexture = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/frontier_preview_bg.png");
+    private static final int SIZE = 420;
+
+    private final IJourneyMapHelper.ICustomPreviewRenderer customPreviewRenderer;
+    private final List<FrontierOverlay> previewFrontiers = new ArrayList<>();
+    private float scaleFactor = 1;
 
     public PreviewFrontiersWidget() {
-        super(0, 0, 300, 300, Component.empty());
+        super(0, 0, SIZE, SIZE, Component.empty());
         customPreviewRenderer = Services.JOURNEYMAP.createCustomPreviewRenderer();
 
         HolderLookup<BannerPattern> patternRegistry = Minecraft.getInstance().level.registryAccess().lookup(Registries.BANNER_PATTERN).get();
@@ -43,8 +49,10 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
                 .add(patternRegistry.get(BannerPatterns.TRIANGLE_BOTTOM).get(), DyeColor.BLACK)
                 .add(patternRegistry.get(BannerPatterns.STRIPE_BOTTOM).get(), DyeColor.GREEN).build();
 
+        SettingsUser owner = new SettingsUser();
+        owner.username = "Player";
         FrontierData frontierData = new FrontierData();
-        frontierData.setOwner(new SettingsUser(Minecraft.getInstance().player));
+        frontierData.setOwner(owner);
         frontierData.setName1("Preview");
         frontierData.setName2("Frontier");
         frontierData.setColor(0xFFCCFF70);
@@ -54,32 +62,55 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
         frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenName, true);
         frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenOwner, true);
         frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenBanner, true);
+        frontierData.addVertex(new BlockPos(10, 70, 10));
+        frontierData.addVertex(new BlockPos(10, 70, 410));
+        frontierData.addVertex(new BlockPos(270, 70, 410));
+        frontierData.addVertex(new BlockPos(270, 70, 10));
+        previewFrontiers.add(new FrontierOverlay(frontierData, null));
 
-        frontierData.addVertex(new BlockPos(0, 70, 0));
-        frontierData.addVertex(new BlockPos(0, 70, 300));
-        frontierData.addVertex(new BlockPos(300, 70, 300));
-        frontierData.addVertex(new BlockPos(300, 70, 0));
+        frontierData = new FrontierData();
+        frontierData.setOwner(owner);
+        frontierData.setName1("Long name");
+        frontierData.setName2("12345678901234567");
+        frontierData.setColor(0xFFA0A0FF);
+        frontierData.setDimension(ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld")));
+        frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenDay, true);
+        frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenName, true);
+        frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenOwner, false);
+        frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenBanner, false);
+        frontierData.addVertex(new BlockPos(240, 70, 280));
+        frontierData.addVertex(new BlockPos(300, 70, 245));
+        frontierData.addVertex(new BlockPos(360, 70, 280));
+        frontierData.addVertex(new BlockPos(360, 70, 350));
+        frontierData.addVertex(new BlockPos(300, 70, 385));
+        frontierData.addVertex(new BlockPos(240, 70, 350));
+        previewFrontiers.add(new FrontierOverlay(frontierData, null));
 
-        previewFrontier = new FrontierOverlay(frontierData, null);
-        previewFrontier.recalculateOverlays();
+        configUpdated();
     }
 
     public void configUpdated() {
-        previewFrontier.recalculateOverlays();
+        for (FrontierOverlay frontierOverlay : previewFrontiers) {
+            frontierOverlay.recalculateOverlays();
+        }
     }
 
     public void setScaleFactor(float scaleFactor) {
         this.scaleFactor = scaleFactor;
+        double guiScale = Minecraft.getInstance().getWindow().getGuiScale() / scaleFactor;
+        setWidth((int) (SIZE / guiScale));
+        setHeight((int) (SIZE / guiScale));
     }
 
     @Override
     protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        graphics.fill(getX(), getY(), getX() + getWidth(), getY() + getHeight(), 0xFF202020);
+        graphics.blit(backgroundTexture, getX(), getY(), getWidth(), getHeight(), 0, 0, SIZE, SIZE, SIZE, SIZE);
         graphics.hLine(getX(), getX() + getWidth() - 1, getY(), ColorConstants.OPTION_BORDER);
         graphics.hLine(getX(), getX() + getWidth() - 1, getY() + getHeight() - 1, ColorConstants.OPTION_BORDER);
         graphics.vLine(getX(), getY(), getY() + getHeight() - 1, ColorConstants.OPTION_BORDER);
         graphics.vLine(getX() + getWidth() - 1, getY(), getY() + getHeight() - 1, ColorConstants.OPTION_BORDER);
-        customPreviewRenderer.draw(graphics, previewFrontier);
+
+        customPreviewRenderer.draw(graphics, previewFrontiers, getX(), getY(), SIZE, scaleFactor);
     }
 
     @Nullable

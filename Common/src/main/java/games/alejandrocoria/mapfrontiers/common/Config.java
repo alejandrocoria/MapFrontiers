@@ -113,9 +113,16 @@ public class Config {
     public static int titleAnnouncementTimeout;
     public static boolean titleAnnouncementAboveHotbar;
     public static boolean announceUnnamedFrontiers;
+    public static int snapDistance;
+
     public static boolean hideNamesThatDontFit;
     public static double polygonsOpacity;
-    public static int snapDistance;
+    public static int borderWidth;
+    public static double borderOpacity;
+    public static int textSize;
+    public static double textOpacity;
+    public static int bannerSize;
+    public static double bannerOpacity;
 
     // GUI
     public static boolean fullscreenButtons;
@@ -192,9 +199,16 @@ public class Config {
         titleAnnouncementTimeout = CLIENT.titleAnnouncementTimeout.get();
         titleAnnouncementAboveHotbar = CLIENT.titleAnnouncementAboveHotbar.get();
         announceUnnamedFrontiers = CLIENT.announceUnnamedFrontiers.get();
+        snapDistance = CLIENT.snapDistance.get();
+
         hideNamesThatDontFit = CLIENT.hideNamesThatDontFit.get();
         polygonsOpacity = CLIENT.polygonsOpacity.get();
-        snapDistance = CLIENT.snapDistance.get();
+        borderWidth = CLIENT.borderWidth.get();
+        borderOpacity = CLIENT.borderOpacity.get();
+        textSize = CLIENT.textSize.get();
+        textOpacity = CLIENT.textOpacity.get();
+        bannerSize = CLIENT.bannerSize.get();
+        bannerOpacity = CLIENT.bannerOpacity.get();
 
         fullscreenButtons = CLIENT.fullscreenButtons.get();
         askConfirmationFrontierDelete = CLIENT.askConfirmationFrontierDelete.get();
@@ -269,9 +283,16 @@ public class Config {
         public final IntValue titleAnnouncementTimeout;
         public final BooleanValue titleAnnouncementAboveHotbar;
         public final BooleanValue announceUnnamedFrontiers;
+        public final IntValue snapDistance;
+
         public final BooleanValue hideNamesThatDontFit;
         public final DoubleValue polygonsOpacity;
-        public final IntValue snapDistance;
+        public final IntValue borderWidth;
+        public final DoubleValue borderOpacity;
+        public final IntValue textSize;
+        public final DoubleValue textOpacity;
+        public final IntValue bannerSize;
+        public final DoubleValue bannerOpacity;
 
         public final BooleanValue fullscreenButtons;
         public final BooleanValue askConfirmationFrontierDelete;
@@ -445,6 +466,9 @@ public class Config {
                     "Announce unnamed frontiers in chat/title.")
                     .translation(MapFrontiers.MODID + ".config." + "announceUnnamedFrontiers")
                     .define("announceUnnamedFrontiers", false);
+            snapDistance = builder.comment("Distance at which vertices are attached to nearby vertices.")
+                    .translation(MapFrontiers.MODID + ".config." + "snapDistance").defineInRange("snapDistance", 8, 0, 16);
+
             hideNamesThatDontFit = builder.comment(
                     "Hides the name if it is wider than the frontier at the zoom level it is being viewed.")
                     .translation(MapFrontiers.MODID + ".config." + "hideNamesThatDontFit")
@@ -453,8 +477,30 @@ public class Config {
                     .comment("Transparency of the frontier polygons. 0.0 is fully transparent and 1.0 is opaque.")
                     .translation(MapFrontiers.MODID + ".config." + "polygonsOpacity")
                     .defineInRange("polygonsOpacity", 0.4, 0.0, 1.0);
-            snapDistance = builder.comment("Distance at which vertices are attached to nearby vertices.")
-                    .translation(MapFrontiers.MODID + ".config." + "snapDistance").defineInRange("snapDistance", 8, 0, 16);
+            borderWidth = builder
+                    .comment("Width of the frontier border.")
+                    .translation(MapFrontiers.MODID + ".config." + "borderWidth")
+                    .defineInRange("borderWidth", 0, 0, 64);
+            borderOpacity = builder
+                    .comment("Transparency of the frontier border. 0.0 is fully transparent and 1.0 is opaque.")
+                    .translation(MapFrontiers.MODID + ".config." + "borderOpacity")
+                    .defineInRange("borderOpacity", 1.0, 0.0, 1.0);
+            textSize = builder
+                    .comment("Size of the frontier text.")
+                    .translation(MapFrontiers.MODID + ".config." + "textSize")
+                    .defineInRange("textSize", 2, 1, 5);
+            textOpacity = builder
+                    .comment("Transparency of the frontier text. 0.0 is fully transparent and 1.0 is opaque.")
+                    .translation(MapFrontiers.MODID + ".config." + "textOpacity")
+                    .defineInRange("textOpacity", 1.0, 0.0, 1.0);
+            bannerSize = builder
+                    .comment("Size of the frontier banner.")
+                    .translation(MapFrontiers.MODID + ".config." + "bannerSize")
+                    .defineInRange("bannerSize", 1, 1, 5);
+            bannerOpacity = builder
+                    .comment("Transparency of the frontier banner. 0.0 is fully transparent and 1.0 is opaque.")
+                    .translation(MapFrontiers.MODID + ".config." + "bannerOpacity")
+                    .defineInRange("bannerOpacity", 1.0, 0.0, 1.0);
 
             fullscreenButtons = builder.comment("Show buttons on fullscreen map.")
                     .translation(MapFrontiers.MODID + ".config." + "fullscreenButtons")
@@ -552,9 +598,16 @@ public class Config {
         CLIENT.titleAnnouncementTimeout.set(titleAnnouncementTimeout);
         CLIENT.titleAnnouncementAboveHotbar.set(titleAnnouncementAboveHotbar);
         CLIENT.announceUnnamedFrontiers.set(announceUnnamedFrontiers);
+        CLIENT.snapDistance.set(snapDistance);
+
         CLIENT.hideNamesThatDontFit.set(hideNamesThatDontFit);
         CLIENT.polygonsOpacity.set(polygonsOpacity);
-        CLIENT.snapDistance.set(snapDistance);
+        CLIENT.borderWidth.set(borderWidth);
+        CLIENT.borderOpacity.set(borderOpacity);
+        CLIENT.textSize.set(textSize);
+        CLIENT.textOpacity.set(textOpacity);
+        CLIENT.bannerSize.set(bannerSize);
+        CLIENT.bannerOpacity.set(bannerOpacity);
 
         CLIENT.fullscreenButtons.set(fullscreenButtons);
         CLIENT.askConfirmationFrontierDelete.set(askConfirmationFrontierDelete);
