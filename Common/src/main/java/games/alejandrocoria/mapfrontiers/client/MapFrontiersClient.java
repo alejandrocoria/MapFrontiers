@@ -16,6 +16,8 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -128,7 +130,7 @@ public class MapFrontiersClient {
 
         ClientEventHandler.subscribeClientConnectedEvent(MapFrontiersClient.class, () -> {
             initializeManagers();
-            hud = new HUD(frontiersOverlayManager, personalFrontiersOverlayManager);
+            hud = new HUD();
 
             MapFrontiers.LOGGER.info("ClientConnectedEvent done");
         });
@@ -213,6 +215,19 @@ public class MapFrontiersClient {
         } else {
             return frontiersOverlayManager;
         }
+    }
+
+    public static List<FrontierOverlay> getFrontiersInPosition(ResourceKey<Level> dimension, BlockPos pos) {
+        return getFrontiersInPosition(dimension, pos, 0.0);
+    }
+
+    public static List<FrontierOverlay> getFrontiersInPosition(ResourceKey<Level> dimension, BlockPos pos, double maxDistanceToOpen) {
+        initializeManagers();
+
+        List<FrontierOverlay> frontiers = personalFrontiersOverlayManager.getFrontiersInPosition(dimension, pos, maxDistanceToOpen);
+        frontiers.addAll(frontiersOverlayManager.getFrontiersInPosition(dimension, pos, maxDistanceToOpen));
+        frontiers.sort((f1, f2) -> Float.compare(f1.area, f2.area));
+        return frontiers;
     }
 
     public static FrontierLocalOverrides getLocalOverrides() {
