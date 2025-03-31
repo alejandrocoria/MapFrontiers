@@ -41,7 +41,6 @@ public class FullscreenMap {
     }
 
     private final IClientAPI jmAPI;
-    private Screen fullscreen;
 
     private FrontierOverlay frontierHighlighted;
 
@@ -110,6 +109,8 @@ public class FullscreenMap {
             updateButtons();
         });
 
+        ClientEventHandler.subscribeUpdatedConfigEvent(this, this::updateButtons);
+
         ClientEventHandler.subscribeMouseReleaseEvent(this, button -> {
             if (button != 1) {
                 return;
@@ -132,33 +133,21 @@ public class FullscreenMap {
         ClientEventHandler.unsubscribeAllEvents(this);
     }
 
-    public void addButtons(ThemeButtonDisplay buttonDisplay, Screen fullscreen) {
-        this.fullscreen = fullscreen;
+    public void addButtons(ThemeButtonDisplay buttonDisplay) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) {
+            return;
+        }
 
         String path = "textures/gui/journeymap/";
         buttonFrontiers = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_frontiers"), ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, path + "frontiers.png"), b -> buttonFrontiersPressed());
-        buttonNew = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_new_frontier"), ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, path + "new_frontier.png"), b -> buttonNewPressed());
+        buttonNew = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_new_frontier"), ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, path + "new_frontier.png"), b -> buttonNewPressed(mc.player.blockPosition()));
         buttonInfo = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_frontier_info"), ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, path + "info_frontier.png"), b -> buttonInfoPressed());
         buttonEdit = buttonDisplay.addThemeToggleButton(I18n.get("mapfrontiers.button_done_editing"), I18n.get("mapfrontiers.button_edit_frontier"),
                 ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, path + "edit_frontier.png"), editing, b -> buttonEditToggled());
         buttonVisible = buttonDisplay.addThemeToggleButton(I18n.get("mapfrontiers.button_hide_frontier"), I18n.get("mapfrontiers.button_show_frontier"),
                 ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, path + "visible_frontier.png"), false, b -> buttonVisibleToggled());
-        buttonDelete = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_delete_frontier"), ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, path + "delete_frontier.png"), b -> {
-            if (Config.askConfirmationFrontierDelete) {
-                new DeleteConfirmationDialog(
-                        "mapfrontiers.delete_frontier_dialog",
-                        response -> {
-                            if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                                Config.askConfirmationFrontierDelete = false;
-                                ClientEventHandler.postUpdatedConfigEvent();
-                            }
-                            buttonDelete();
-                        }
-                ).display();
-            } else {
-                buttonDelete();
-            }
-        });
+        buttonDelete = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_delete_frontier"), ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, path + "delete_frontier.png"), b -> buttonDelete());
 
         updateButtons();
     }
@@ -183,6 +172,32 @@ public class FullscreenMap {
                     }
                 }
             }
+            popupMenu.addMenuItem(I18n.get("mapfrontiers.button_done_editing"), p -> buttonEditToggled());
+        } else {
+            Player player = Minecraft.getInstance().player;
+            if (player == null) {
+                return;
+            }
+
+            SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
+            SettingsUser playerUser = new SettingsUser(player);
+            SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerUser);
+
+            ModPopupMenu subMenu = popupMenu.createSubItemList("MapFrontiers");
+            subMenu.addMenuItem(I18n.get("mapfrontiers.button_frontiers"), p -> buttonFrontiersPressed());
+            subMenu.addMenuItem(I18n.get("mapfrontiers.button_new_frontier"), p -> buttonNewPressed(p));
+            if (frontierHighlighted != null) {
+                subMenu.addMenuItem(I18n.get("mapfrontiers.button_frontier_info"), p -> buttonInfoPressed());
+            }
+            if (actions.canUpdate && frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Frontier) && frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Fullscreen)) {
+                subMenu.addMenuItem(I18n.get("mapfrontiers.button_edit_frontier"), p -> buttonEditToggled());
+            }
+            if (actions.canUpdate) {
+                subMenu.addMenuItem(I18n.get("mapfrontiers.button_hide_frontier"), p -> buttonVisibleToggled());
+            }
+            if (actions.canUpdate) {
+                subMenu.addMenuItem(I18n.get("mapfrontiers.button_delete_frontier"), p -> buttonDelete());
+            }
         }
     }
 
@@ -202,6 +217,13 @@ public class FullscreenMap {
         if (buttonInfo == null || player == null) {
             return;
         }
+
+        buttonFrontiers.setDrawButton(Config.fullscreenButtons);
+        buttonNew.setDrawButton(Config.fullscreenButtons);
+        buttonInfo.setDrawButton(Config.fullscreenButtons);
+        buttonEdit.setDrawButton(Config.fullscreenButtons);
+        buttonVisible.setDrawButton(Config.fullscreenButtons);
+        buttonDelete.setDrawButton(Config.fullscreenButtons);
 
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
         SettingsUser playerUser = new SettingsUser(player);
@@ -225,13 +247,13 @@ public class FullscreenMap {
         new FrontierList(jmAPI, this).display();
     }
 
-    private void buttonNewPressed() {
+    private void buttonNewPressed(BlockPos centerPos) {
         if (frontierHighlighted != null) {
             frontierHighlighted.setHighlighted(false);
             frontierHighlighted = null;
         }
 
-        new NewFrontier(jmAPI).display();
+        new NewFrontier(jmAPI, centerPos).display();
 
         updateButtons();
     }
@@ -242,8 +264,7 @@ public class FullscreenMap {
 
     private void buttonEditToggled() {
         buttonEdit.toggle();
-        boolean toggled = buttonEdit.getToggled();
-        if (toggled) {
+        if (!editing) {
             editing = true;
             drawingChunk = ChunkDrawing.Nothing;
         } else {
@@ -254,7 +275,7 @@ public class FullscreenMap {
     }
 
     private void buttonVisibleToggled() {
-        frontierHighlighted.setVisibility(FrontierData.VisibilityData.Visibility.Frontier, !buttonVisible.getToggled());
+        frontierHighlighted.setVisibility(FrontierData.VisibilityData.Visibility.Frontier, !frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Frontier));
 
         boolean personalFrontier = frontierHighlighted.getPersonal();
         FrontiersOverlayManager frontierManager = MapFrontiersClient.getFrontiersOverlayManager(personalFrontier);
@@ -264,6 +285,23 @@ public class FullscreenMap {
     }
 
     private void buttonDelete() {
+        if (Config.askConfirmationFrontierDelete) {
+            new DeleteConfirmationDialog(
+                    "mapfrontiers.delete_frontier_dialog",
+                    response -> {
+                        if (response == ConfirmationDialog.Response.ConfirmAlternative) {
+                            Config.askConfirmationFrontierDelete = false;
+                            ClientEventHandler.postUpdatedConfigEvent();
+                        }
+                        deleteFrontier();
+                    }
+            ).display();
+        } else {
+            deleteFrontier();
+        }
+    }
+
+    private void deleteFrontier() {
         if (editing) {
             stopEditing();
         }

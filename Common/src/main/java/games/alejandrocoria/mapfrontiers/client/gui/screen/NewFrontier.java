@@ -55,14 +55,16 @@ public class NewFrontier extends AutoScaledScreen {
     private StringWidget labelSize;
     private StringWidget labelSizeInfo;
     private TextBoxInt textSize;
+    private BlockPos centerPos;
 
-    public NewFrontier(IClientAPI jmAPI) {
+    public NewFrontier(IClientAPI jmAPI, BlockPos centerPos) {
         super(titleLabel, 344, 295);
         this.jmAPI = jmAPI;
+        this.centerPos = centerPos;
 
         ClientEventHandler.subscribeUpdatedSettingsProfileEvent(this, profile -> {
             onClose();
-            new NewFrontier(jmAPI).display();
+            new NewFrontier(jmAPI, centerPos).display();
         });
     }
 
@@ -263,7 +265,7 @@ public class NewFrontier extends AutoScaledScreen {
     }
 
     private List<BlockPos> calculateVertices() {
-        if (minecraft.player == null || Config.newFrontierMode != FrontierData.Mode.Vertex) {
+        if (Config.newFrontierMode != FrontierData.Mode.Vertex) {
             return null;
         }
 
@@ -298,11 +300,10 @@ public class NewFrontier extends AutoScaledScreen {
         }
 
         Set<BlockPos> polygonVertices = new LinkedHashSet<>();
-        BlockPos playerPos = minecraft.player.blockPosition();
 
         for (Vec2 vertex : shapeVertices) {
-            int x = (int) Math.round(vertex.x * radius) + playerPos.getX();
-            int z = (int) Math.round(vertex.y * radius) + playerPos.getZ();
+            int x = (int) Math.round(vertex.x * radius) + centerPos.getX();
+            int z = (int) Math.round(vertex.y * radius) + centerPos.getZ();
             polygonVertices.add(new BlockPos(x, 70, z));
         }
 
@@ -310,12 +311,12 @@ public class NewFrontier extends AutoScaledScreen {
     }
 
     private List<ChunkPos> calculateChunks() {
-        if (minecraft.player == null || Config.newFrontierMode != FrontierData.Mode.Chunk) {
+        if (Config.newFrontierMode != FrontierData.Mode.Chunk) {
             return null;
         }
 
         List<ChunkPos> chunks = new ArrayList<>();
-        ChunkPos playerChunk = new ChunkPos(minecraft.player.blockPosition());
+        ChunkPos playerChunk = new ChunkPos(centerPos);
         int selected = shapeChunkButtons.getSelected();
 
         if (selected == 1) {
