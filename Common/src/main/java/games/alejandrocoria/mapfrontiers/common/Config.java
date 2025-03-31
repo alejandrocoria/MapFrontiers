@@ -109,6 +109,8 @@ public class Config {
     public static Visibility webmapTopoVisibility;
     public static Visibility webmapBiomeVisibility;
 
+    public static int titleAnnouncementDuration;
+    public static int titleAnnouncementTimeout;
     public static boolean titleAnnouncementAboveHotbar;
     public static boolean announceUnnamedFrontiers;
     public static boolean hideNamesThatDontFit;
@@ -186,6 +188,8 @@ public class Config {
         webmapTopoVisibility = CLIENT.webmapTopoVisibility.get();
         webmapBiomeVisibility = CLIENT.webmapBiomeVisibility.get();
 
+        titleAnnouncementDuration = CLIENT.titleAnnouncementDuration.get();
+        titleAnnouncementTimeout = CLIENT.titleAnnouncementTimeout.get();
         titleAnnouncementAboveHotbar = CLIENT.titleAnnouncementAboveHotbar.get();
         announceUnnamedFrontiers = CLIENT.announceUnnamedFrontiers.get();
         hideNamesThatDontFit = CLIENT.hideNamesThatDontFit.get();
@@ -261,6 +265,8 @@ public class Config {
         public final EnumValue<Visibility> webmapTopoVisibility;
         public final EnumValue<Visibility> webmapBiomeVisibility;
 
+        public final IntValue titleAnnouncementDuration;
+        public final IntValue titleAnnouncementTimeout;
         public final BooleanValue titleAnnouncementAboveHotbar;
         public final BooleanValue announceUnnamedFrontiers;
         public final BooleanValue hideNamesThatDontFit;
@@ -425,6 +431,12 @@ public class Config {
                     .translation(MapFrontiers.MODID + ".config." + "webmapBiomeVisibility")
                     .defineEnum("webmapBiomeVisibility", Visibility.Custom);
 
+            titleAnnouncementDuration = builder.comment("Duration of title announcement, in game ticks.")
+                    .translation(MapFrontiers.MODID + ".config." + "titleAnnouncementDuration")
+                    .defineInRange("titleAnnouncementDuration", 70, 0, 1200);
+            titleAnnouncementTimeout = builder.comment("Minimum time between consecutive title announcement, in game ticks.")
+                    .translation(MapFrontiers.MODID + ".config." + "titleAnnouncementTimeout")
+                    .defineInRange("titleAnnouncementTimeout", 0, 0, 1200);
             titleAnnouncementAboveHotbar = builder.comment(
                     "Show the frontier announcement above the hotbar instead of showing it as a title.")
                     .translation(MapFrontiers.MODID + ".config." + "titleAnnouncementAboveHotbar")
@@ -536,6 +548,8 @@ public class Config {
         CLIENT.webmapTopoVisibility.set(webmapTopoVisibility);
         CLIENT.webmapBiomeVisibility.set(webmapBiomeVisibility);
 
+        CLIENT.titleAnnouncementDuration.set(titleAnnouncementDuration);
+        CLIENT.titleAnnouncementTimeout.set(titleAnnouncementTimeout);
         CLIENT.titleAnnouncementAboveHotbar.set(titleAnnouncementAboveHotbar);
         CLIENT.announceUnnamedFrontiers.set(announceUnnamedFrontiers);
         CLIENT.hideNamesThatDontFit.set(hideNamesThatDontFit);
