@@ -610,6 +610,7 @@ public class ModSettings extends AutoScaledScreen {
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.Fullscreen, Config.fullscreenVisibility != Config.Visibility.Never);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenName, Config.fullscreenNameVisibility != Config.Visibility.Never);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenOwner, Config.fullscreenOwnerVisibility == Config.Visibility.Always);
+        visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenBanner, Config.fullscreenBannerVisibility == Config.Visibility.Always);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenDay, Config.fullscreenDayVisibility != Config.Visibility.Never);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenNight, Config.fullscreenNightVisibility != Config.Visibility.Never);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenUnderground, Config.fullscreenUndergroundVisibility != Config.Visibility.Never);
@@ -618,6 +619,7 @@ public class ModSettings extends AutoScaledScreen {
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.Minimap, Config.minimapVisibility != Config.Visibility.Never);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapName, Config.minimapNameVisibility != Config.Visibility.Never);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapOwner, Config.minimapOwnerVisibility == Config.Visibility.Always);
+        visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapBanner, Config.minimapBannerVisibility == Config.Visibility.Always);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapDay, Config.minimapDayVisibility != Config.Visibility.Never);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapNight, Config.minimapNightVisibility != Config.Visibility.Never);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapUnderground, Config.minimapUndergroundVisibility != Config.Visibility.Never);
@@ -626,6 +628,7 @@ public class ModSettings extends AutoScaledScreen {
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.Webmap, Config.webmapVisibility != Config.Visibility.Never);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapName, Config.webmapNameVisibility != Config.Visibility.Never);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapOwner, Config.webmapOwnerVisibility == Config.Visibility.Always);
+        visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapBanner, Config.webmapBannerVisibility == Config.Visibility.Always);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapDay, Config.webmapDayVisibility != Config.Visibility.Never);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapNight, Config.webmapNightVisibility != Config.Visibility.Never);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapUnderground, Config.webmapUndergroundVisibility != Config.Visibility.Never);
@@ -642,6 +645,7 @@ public class ModSettings extends AutoScaledScreen {
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.Fullscreen, Config.fullscreenVisibility != Config.Visibility.Custom);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenName, Config.fullscreenNameVisibility != Config.Visibility.Custom);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenOwner, Config.fullscreenOwnerVisibility != Config.Visibility.Custom);
+        visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenBanner, Config.fullscreenBannerVisibility != Config.Visibility.Custom);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenDay, Config.fullscreenDayVisibility != Config.Visibility.Custom);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenNight, Config.fullscreenNightVisibility != Config.Visibility.Custom);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenUnderground, Config.fullscreenUndergroundVisibility != Config.Visibility.Custom);
@@ -650,6 +654,7 @@ public class ModSettings extends AutoScaledScreen {
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.Minimap, Config.minimapVisibility != Config.Visibility.Custom);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapName, Config.minimapNameVisibility != Config.Visibility.Custom);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapOwner, Config.minimapOwnerVisibility != Config.Visibility.Custom);
+        visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapBanner, Config.minimapBannerVisibility != Config.Visibility.Custom);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapDay, Config.minimapDayVisibility != Config.Visibility.Custom);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapNight, Config.minimapNightVisibility != Config.Visibility.Custom);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapUnderground, Config.minimapUndergroundVisibility != Config.Visibility.Custom);
@@ -658,6 +663,7 @@ public class ModSettings extends AutoScaledScreen {
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.Webmap, Config.webmapVisibility != Config.Visibility.Custom);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapName, Config.webmapNameVisibility != Config.Visibility.Custom);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapOwner, Config.webmapOwnerVisibility != Config.Visibility.Custom);
+        visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapBanner, Config.webmapBannerVisibility != Config.Visibility.Custom);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapDay, Config.webmapDayVisibility != Config.Visibility.Custom);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapNight, Config.webmapNightVisibility != Config.Visibility.Custom);
         visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapUnderground, Config.webmapUndergroundVisibility != Config.Visibility.Custom);
@@ -673,6 +679,7 @@ public class ModSettings extends AutoScaledScreen {
         Config.fullscreenVisibility = getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.Fullscreen);
         Config.fullscreenNameVisibility = getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.FullscreenName);
         Config.fullscreenOwnerVisibility = getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.FullscreenOwner);
+        Config.fullscreenBannerVisibility = getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.FullscreenBanner);
         Config.fullscreenDayVisibility = getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.FullscreenDay);
         Config.fullscreenNightVisibility = getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.FullscreenNight);
         Config.fullscreenUndergroundVisibility = getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.FullscreenUnderground);
@@ -681,6 +688,7 @@ public class ModSettings extends AutoScaledScreen {
         Config.minimapVisibility = getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.Minimap);
         Config.minimapNameVisibility = getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.MinimapName);
         Config.minimapOwnerVisibility = getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.MinimapOwner);
+        Config.minimapBannerVisibility = getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.MinimapBanner);
         Config.minimapDayVisibility = getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.MinimapDay);
         Config.minimapNightVisibility = getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.MinimapNight);
         Config.minimapUndergroundVisibility = getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.MinimapUnderground);
@@ -689,6 +697,7 @@ public class ModSettings extends AutoScaledScreen {
         Config.webmapVisibility = getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.Webmap);
         Config.webmapNameVisibility = getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.WebmapName);
         Config.webmapOwnerVisibility = getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.WebmapOwner);
+        Config.webmapBannerVisibility = getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.WebmapBanner);
         Config.webmapDayVisibility = getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.WebmapDay);
         Config.webmapNightVisibility = getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.WebmapNight);
         Config.webmapUndergroundVisibility = getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.WebmapUnderground);

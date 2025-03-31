@@ -506,8 +506,8 @@ public class FrontierInfo extends AutoScaledScreen {
 
     @Override
     public void renderScaledScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        if (frontier.hasBanner()) {
-            frontier.renderBanner(minecraft, graphics, buttonBanner.getX() + buttonBanner.getWidth() / 2 - 44, buttonBanner.getY() + 20, 4);
+        if (frontier.getBannerRenderer().hasBanner()) {
+            frontier.getBannerRenderer().renderBanner(graphics, buttonBanner.getX() + buttonBanner.getWidth() / 2, buttonBanner.getY() + 20, 4);
         }
     }
 

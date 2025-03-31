@@ -913,6 +913,7 @@ public class FrontierData {
             Fullscreen,
             FullscreenName,
             FullscreenOwner,
+            FullscreenBanner,
             FullscreenDay,
             FullscreenNight,
             FullscreenUnderground,
@@ -921,6 +922,7 @@ public class FrontierData {
             Minimap,
             MinimapName,
             MinimapOwner,
+            MinimapBanner,
             MinimapDay,
             MinimapNight,
             MinimapUnderground,
@@ -929,6 +931,7 @@ public class FrontierData {
             Webmap,
             WebmapName,
             WebmapOwner,
+            WebmapBanner,
             WebmapDay,
             WebmapNight,
             WebmapUnderground,
@@ -1019,6 +1022,7 @@ public class FrontierData {
                 setValue(Visibility.Fullscreen, nbt.getBoolean("fullscreenVisible"));
                 setValue(Visibility.FullscreenName, nbt.getBoolean("fullscreenNameVisible"));
                 setValue(Visibility.FullscreenOwner, nbt.getBoolean("fullscreenOwnerVisible"));
+                setValue(Visibility.FullscreenBanner, nbt.getBoolean("fullscreenBannerVisible"));
                 setValue(Visibility.FullscreenDay, nbt.contains("fullscreenDay") ? nbt.getBoolean("fullscreenDay") : true);
                 setValue(Visibility.FullscreenNight, nbt.contains("fullscreenNight") ? nbt.getBoolean("fullscreenNight") : true);
                 setValue(Visibility.FullscreenUnderground, nbt.contains("fullscreenUnderground") ? nbt.getBoolean("fullscreenUnderground") : true);
@@ -1027,6 +1031,7 @@ public class FrontierData {
                 setValue(Visibility.Minimap, nbt.getBoolean("minimapVisible"));
                 setValue(Visibility.MinimapName, nbt.getBoolean("minimapNameVisible"));
                 setValue(Visibility.MinimapOwner, nbt.getBoolean("minimapOwnerVisible"));
+                setValue(Visibility.MinimapBanner, nbt.getBoolean("minimapBannerVisible"));
                 setValue(Visibility.MinimapDay, nbt.contains("minimapDay") ? nbt.getBoolean("minimapDay") : true);
                 setValue(Visibility.MinimapNight, nbt.contains("minimapNight") ? nbt.getBoolean("minimapNight") : true);
                 setValue(Visibility.MinimapUnderground, nbt.contains("minimapUnderground") ? nbt.getBoolean("minimapUnderground") : true);
@@ -1035,6 +1040,7 @@ public class FrontierData {
                 setValue(Visibility.Webmap, nbt.contains("webmapVisible") ? nbt.getBoolean("webmapVisible") : getValue(Visibility.Minimap));
                 setValue(Visibility.WebmapName, nbt.contains("webmapNameVisible") ? nbt.getBoolean("webmapNameVisible") : getValue(Visibility.MinimapName));
                 setValue(Visibility.WebmapOwner, nbt.contains("webmapOwnerVisible") ? nbt.getBoolean("webmapOwnerVisible") : getValue(Visibility.MinimapOwner));
+                setValue(Visibility.WebmapBanner, nbt.contains("webmapBannerVisible") ? nbt.getBoolean("webmapBannerVisible") : getValue(Visibility.MinimapBanner));
                 setValue(Visibility.WebmapDay, nbt.contains("webmapDay") ? nbt.getBoolean("webmapDay") : getValue(Visibility.MinimapDay));
                 setValue(Visibility.WebmapNight, nbt.contains("webmapNight") ? nbt.getBoolean("webmapNight") : getValue(Visibility.MinimapNight));
                 setValue(Visibility.WebmapUnderground, nbt.contains("webmapUnderground") ? nbt.getBoolean("webmapUnderground") : getValue(Visibility.MinimapUnderground));
@@ -1046,6 +1052,7 @@ public class FrontierData {
                 setValue(Visibility.Fullscreen, nbt.getBoolean("visible"));
                 setValue(Visibility.FullscreenName, nbt.getBoolean("visible"));
                 setValue(Visibility.FullscreenOwner, nbt.getBoolean("nameVisible"));
+                setValue(Visibility.FullscreenBanner, false);
                 setValue(Visibility.FullscreenDay, nbt.getBoolean("visible"));
                 setValue(Visibility.FullscreenNight, nbt.getBoolean("visible"));
                 setValue(Visibility.FullscreenUnderground, nbt.getBoolean("visible"));
@@ -1054,6 +1061,7 @@ public class FrontierData {
                 setValue(Visibility.Minimap, nbt.getBoolean("visible"));
                 setValue(Visibility.MinimapName, nbt.getBoolean("nameVisible"));
                 setValue(Visibility.MinimapOwner, nbt.getBoolean("ownerVisible"));
+                setValue(Visibility.MinimapBanner, false);
                 setValue(Visibility.MinimapDay, nbt.getBoolean("visible"));
                 setValue(Visibility.MinimapNight, nbt.getBoolean("visible"));
                 setValue(Visibility.MinimapUnderground, nbt.getBoolean("visible"));
@@ -1062,6 +1070,7 @@ public class FrontierData {
                 setValue(Visibility.Webmap, nbt.getBoolean("visible"));
                 setValue(Visibility.WebmapName, nbt.getBoolean("nameVisible"));
                 setValue(Visibility.WebmapOwner, nbt.getBoolean("ownerVisible"));
+                setValue(Visibility.WebmapBanner, false);
                 setValue(Visibility.WebmapDay, nbt.getBoolean("visible"));
                 setValue(Visibility.WebmapNight, nbt.getBoolean("visible"));
                 setValue(Visibility.WebmapUnderground, nbt.getBoolean("visible"));
@@ -1084,6 +1093,7 @@ public class FrontierData {
             nbt.putBoolean("fullscreenVisible", getValue(Visibility.Fullscreen));
             nbt.putBoolean("fullscreenNameVisible", getValue(Visibility.FullscreenName));
             nbt.putBoolean("fullscreenOwnerVisible", getValue(Visibility.FullscreenOwner));
+            nbt.putBoolean("fullscreenBannerVisible", getValue(Visibility.FullscreenBanner));
             nbt.putBoolean("fullscreenDay", getValue(Visibility.FullscreenDay));
             nbt.putBoolean("fullscreenNight", getValue(Visibility.FullscreenNight));
             nbt.putBoolean("fullscreenUnderground", getValue(Visibility.FullscreenUnderground));
@@ -1092,6 +1102,7 @@ public class FrontierData {
             nbt.putBoolean("minimapVisible", getValue(Visibility.Minimap));
             nbt.putBoolean("minimapNameVisible", getValue(Visibility.MinimapName));
             nbt.putBoolean("minimapOwnerVisible", getValue(Visibility.MinimapOwner));
+            nbt.putBoolean("minimapBannerVisible", getValue(Visibility.MinimapBanner));
             nbt.putBoolean("minimapDay", getValue(Visibility.MinimapDay));
             nbt.putBoolean("minimapNight", getValue(Visibility.MinimapNight));
             nbt.putBoolean("minimapUnderground", getValue(Visibility.MinimapUnderground));
@@ -1100,6 +1111,7 @@ public class FrontierData {
             nbt.putBoolean("webmapVisible", getValue(Visibility.Webmap));
             nbt.putBoolean("webmapNameVisible", getValue(Visibility.WebmapName));
             nbt.putBoolean("webmapOwnerVisible", getValue(Visibility.WebmapOwner));
+            nbt.putBoolean("webmapBannerVisible", getValue(Visibility.WebmapBanner));
             nbt.putBoolean("webmapDay", getValue(Visibility.WebmapDay));
             nbt.putBoolean("webmapNight", getValue(Visibility.WebmapNight));
             nbt.putBoolean("webmapUnderground", getValue(Visibility.WebmapUnderground));
@@ -1114,6 +1126,7 @@ public class FrontierData {
             setValue(Visibility.Fullscreen, buf.readBoolean());
             setValue(Visibility.FullscreenName, buf.readBoolean());
             setValue(Visibility.FullscreenOwner, buf.readBoolean());
+            setValue(Visibility.FullscreenBanner, buf.readBoolean());
             setValue(Visibility.FullscreenDay, buf.readBoolean());
             setValue(Visibility.FullscreenNight, buf.readBoolean());
             setValue(Visibility.FullscreenUnderground, buf.readBoolean());
@@ -1122,6 +1135,7 @@ public class FrontierData {
             setValue(Visibility.Minimap, buf.readBoolean());
             setValue(Visibility.MinimapName, buf.readBoolean());
             setValue(Visibility.MinimapOwner, buf.readBoolean());
+            setValue(Visibility.MinimapBanner, buf.readBoolean());
             setValue(Visibility.MinimapDay, buf.readBoolean());
             setValue(Visibility.MinimapNight, buf.readBoolean());
             setValue(Visibility.MinimapUnderground, buf.readBoolean());
@@ -1130,6 +1144,7 @@ public class FrontierData {
             setValue(Visibility.Webmap, buf.readBoolean());
             setValue(Visibility.WebmapName, buf.readBoolean());
             setValue(Visibility.WebmapOwner, buf.readBoolean());
+            setValue(Visibility.WebmapBanner, buf.readBoolean());
             setValue(Visibility.WebmapDay, buf.readBoolean());
             setValue(Visibility.WebmapNight, buf.readBoolean());
             setValue(Visibility.WebmapUnderground, buf.readBoolean());
@@ -1144,6 +1159,7 @@ public class FrontierData {
             buf.writeBoolean(getValue(Visibility.Fullscreen));
             buf.writeBoolean(getValue(Visibility.FullscreenName));
             buf.writeBoolean(getValue(Visibility.FullscreenOwner));
+            buf.writeBoolean(getValue(Visibility.FullscreenBanner));
             buf.writeBoolean(getValue(Visibility.FullscreenDay));
             buf.writeBoolean(getValue(Visibility.FullscreenNight));
             buf.writeBoolean(getValue(Visibility.FullscreenUnderground));
@@ -1152,6 +1168,7 @@ public class FrontierData {
             buf.writeBoolean(getValue(Visibility.Minimap));
             buf.writeBoolean(getValue(Visibility.MinimapName));
             buf.writeBoolean(getValue(Visibility.MinimapOwner));
+            buf.writeBoolean(getValue(Visibility.MinimapBanner));
             buf.writeBoolean(getValue(Visibility.MinimapDay));
             buf.writeBoolean(getValue(Visibility.MinimapNight));
             buf.writeBoolean(getValue(Visibility.MinimapUnderground));
@@ -1160,6 +1177,7 @@ public class FrontierData {
             buf.writeBoolean(getValue(Visibility.Webmap));
             buf.writeBoolean(getValue(Visibility.WebmapName));
             buf.writeBoolean(getValue(Visibility.WebmapOwner));
+            buf.writeBoolean(getValue(Visibility.WebmapBanner));
             buf.writeBoolean(getValue(Visibility.WebmapDay));
             buf.writeBoolean(getValue(Visibility.WebmapNight));
             buf.writeBoolean(getValue(Visibility.WebmapUnderground));

@@ -271,10 +271,12 @@ public class HUD {
     }
 
     private void drawBanner(GuiGraphics graphics, int frameColor) {
-        graphics.fill(posX + hudWidth / 2 - 11 * bannerScale - 2, posY + bannerOffsetY,
-                posX + hudWidth / 2 + 11 * bannerScale + 2, posY + bannerOffsetY + 4 + 40 * bannerScale, frameColor);
+        int bannerWidth = 20;
+        int bannerHeight = 40;
+        graphics.fill(posX + (hudWidth - bannerWidth * bannerScale) / 2 - 2, posY + bannerOffsetY,
+                posX + (hudWidth + bannerWidth * bannerScale) / 2 + 2, posY + bannerOffsetY + 4 + bannerHeight * bannerScale, frameColor);
 
-        frontier.renderBanner(mc, graphics, posX + hudWidth / 2 - 11 * bannerScale, posY + bannerOffsetY + 2, bannerScale);
+        frontier.getBannerRenderer().renderBanner(graphics, posX + hudWidth / 2, posY + bannerOffsetY + 2, bannerScale);
     }
 
     private void updateData() {
@@ -319,7 +321,7 @@ public class HUD {
                     }
                     break;
                 case Banner:
-                    hudWidth = Math.max(hudWidth, 22 * bannerScale + 4);
+                    hudWidth = Math.max(hudWidth, 20 * bannerScale + 4);
                     hudHeight += 40 * bannerScale + 4;
                     break;
                 case None:
@@ -399,7 +401,7 @@ public class HUD {
                 slots.add(slot);
             }
         } else if (slot == Config.HUDSlot.Banner) {
-            if (frontier.hasBanner()) {
+            if (frontier.getBannerRenderer().hasBanner()) {
                 slots.add(slot);
             }
         }

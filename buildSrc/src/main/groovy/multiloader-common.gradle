@@ -130,6 +130,7 @@ jar {
 }
 
 processResources {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     def expandProps = [
             "version":                              version,
             "group":                                project.group, //Else we target the task's group.

@@ -100,7 +100,7 @@ public class FrontiersOverlayManager {
 
         for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
             for (FrontierOverlay frontier : frontiers) {
-                frontier.removeOverlay();
+                frontier.deleted();
             }
         }
 
@@ -247,7 +247,7 @@ public class FrontiersOverlayManager {
         }
 
         FrontierOverlay frontier = frontiers.remove(index);
-        frontier.removeOverlay();
+        frontier.deleted();
 
         if (personal && !minecraft.isLocalServer()) {
             saveData();

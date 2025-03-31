@@ -84,6 +84,7 @@ public class Config {
     public static Visibility fullscreenVisibility;
     public static Visibility fullscreenNameVisibility;
     public static Visibility fullscreenOwnerVisibility;
+    public static Visibility fullscreenBannerVisibility;
     public static Visibility fullscreenDayVisibility;
     public static Visibility fullscreenNightVisibility;
     public static Visibility fullscreenUndergroundVisibility;
@@ -92,6 +93,7 @@ public class Config {
     public static Visibility minimapVisibility;
     public static Visibility minimapNameVisibility;
     public static Visibility minimapOwnerVisibility;
+    public static Visibility minimapBannerVisibility;
     public static Visibility minimapDayVisibility;
     public static Visibility minimapNightVisibility;
     public static Visibility minimapUndergroundVisibility;
@@ -100,6 +102,7 @@ public class Config {
     public static Visibility webmapVisibility;
     public static Visibility webmapNameVisibility;
     public static Visibility webmapOwnerVisibility;
+    public static Visibility webmapBannerVisibility;
     public static Visibility webmapDayVisibility;
     public static Visibility webmapNightVisibility;
     public static Visibility webmapUndergroundVisibility;
@@ -158,6 +161,7 @@ public class Config {
         fullscreenVisibility = CLIENT.fullscreenVisibility.get();
         fullscreenNameVisibility = CLIENT.fullscreenNameVisibility.get();
         fullscreenOwnerVisibility = CLIENT.fullscreenOwnerVisibility.get();
+        fullscreenBannerVisibility = CLIENT.fullscreenBannerVisibility.get();
         fullscreenDayVisibility = CLIENT.fullscreenDayVisibility.get();
         fullscreenNightVisibility = CLIENT.fullscreenNightVisibility.get();
         fullscreenUndergroundVisibility = CLIENT.fullscreenUndergroundVisibility.get();
@@ -166,6 +170,7 @@ public class Config {
         minimapVisibility = CLIENT.minimapVisibility.get();
         minimapNameVisibility = CLIENT.minimapNameVisibility.get();
         minimapOwnerVisibility = CLIENT.minimapOwnerVisibility.get();
+        minimapBannerVisibility = CLIENT.minimapBannerVisibility.get();
         minimapDayVisibility = CLIENT.minimapDayVisibility.get();
         minimapNightVisibility = CLIENT.minimapNightVisibility.get();
         minimapUndergroundVisibility = CLIENT.minimapUndergroundVisibility.get();
@@ -174,6 +179,7 @@ public class Config {
         webmapVisibility = CLIENT.webmapVisibility.get();
         webmapNameVisibility = CLIENT.webmapNameVisibility.get();
         webmapOwnerVisibility = CLIENT.webmapOwnerVisibility.get();
+        webmapBannerVisibility = CLIENT.webmapBannerVisibility.get();
         webmapDayVisibility = CLIENT.webmapDayVisibility.get();
         webmapNightVisibility = CLIENT.webmapNightVisibility.get();
         webmapUndergroundVisibility = CLIENT.webmapUndergroundVisibility.get();
@@ -230,6 +236,7 @@ public class Config {
         public final EnumValue<Visibility> fullscreenVisibility;
         public final EnumValue<Visibility> fullscreenNameVisibility;
         public final EnumValue<Visibility> fullscreenOwnerVisibility;
+        public final EnumValue<Visibility> fullscreenBannerVisibility;
         public final EnumValue<Visibility> fullscreenDayVisibility;
         public final EnumValue<Visibility> fullscreenNightVisibility;
         public final EnumValue<Visibility> fullscreenUndergroundVisibility;
@@ -238,6 +245,7 @@ public class Config {
         public final EnumValue<Visibility> minimapVisibility;
         public final EnumValue<Visibility> minimapNameVisibility;
         public final EnumValue<Visibility> minimapOwnerVisibility;
+        public final EnumValue<Visibility> minimapBannerVisibility;
         public final EnumValue<Visibility> minimapDayVisibility;
         public final EnumValue<Visibility> minimapNightVisibility;
         public final EnumValue<Visibility> minimapUndergroundVisibility;
@@ -246,6 +254,7 @@ public class Config {
         public final EnumValue<Visibility> webmapVisibility;
         public final EnumValue<Visibility> webmapNameVisibility;
         public final EnumValue<Visibility> webmapOwnerVisibility;
+        public final EnumValue<Visibility> webmapBannerVisibility;
         public final EnumValue<Visibility> webmapDayVisibility;
         public final EnumValue<Visibility> webmapNightVisibility;
         public final EnumValue<Visibility> webmapUndergroundVisibility;
@@ -319,6 +328,10 @@ public class Config {
                     "Force all frontier owners to be shown or hidden on the fullscreen map. In Custom you can decide for each frontier.")
                     .translation(MapFrontiers.MODID + ".config." + "fullscreenOwnerVisibility")
                     .defineEnum("fullscreenOwnerVisibility", Visibility.Custom);
+            fullscreenBannerVisibility = builder.comment(
+                    "Force all frontier banners to be shown or hidden on the fullscreen map. In Custom you can decide for each frontier.")
+                    .translation(MapFrontiers.MODID + ".config." + "fullscreenBannerVisibility")
+                    .defineEnum("fullscreenBannerVisibility", Visibility.Custom);
             fullscreenDayVisibility = builder.comment(
                     "Force all frontier to be shown or hidden on the day fullscreen map. In Custom you can decide for each frontier.")
                     .translation(MapFrontiers.MODID + ".config." + "fullscreenDayVisibility")
@@ -351,6 +364,10 @@ public class Config {
                     "Force all frontier owners to be shown or hidden on the minimap. In Custom you can decide for each frontier.")
                     .translation(MapFrontiers.MODID + ".config." + "minimapOwnerVisibility")
                     .defineEnum("minimapOwnerVisibility", Visibility.Custom);
+            minimapBannerVisibility = builder.comment(
+                    "Force all frontier banners to be shown or hidden on the minimap. In Custom you can decide for each frontier.")
+                    .translation(MapFrontiers.MODID + ".config." + "minimapBannerVisibility")
+                    .defineEnum("minimapBannerVisibility", Visibility.Custom);
             minimapDayVisibility = builder.comment(
                             "Force all frontier to be shown or hidden on the day minimap. In Custom you can decide for each frontier.")
                     .translation(MapFrontiers.MODID + ".config." + "minimapDayVisibility")
@@ -383,6 +400,10 @@ public class Config {
                     "Force all frontier owners to be shown or hidden on the webmap. In Custom you can decide for each frontier.")
                     .translation(MapFrontiers.MODID + ".config." + "webmapOwnerVisibility")
                     .defineEnum("webmapOwnerVisibility", Visibility.Custom);
+            webmapBannerVisibility = builder.comment(
+                    "Force all frontier banners to be shown or hidden on the webmap. In Custom you can decide for each frontier.")
+                    .translation(MapFrontiers.MODID + ".config." + "webmapBannerVisibility")
+                    .defineEnum("webmapBannerVisibility", Visibility.Custom);
             webmapDayVisibility = builder.comment(
                             "Force all frontier to be shown or hidden on the day webmap. In Custom you can decide for each frontier.")
                     .translation(MapFrontiers.MODID + ".config." + "webmapDayVisibility")
@@ -490,6 +511,7 @@ public class Config {
         CLIENT.fullscreenVisibility.set(fullscreenVisibility);
         CLIENT.fullscreenNameVisibility.set(fullscreenNameVisibility);
         CLIENT.fullscreenOwnerVisibility.set(fullscreenOwnerVisibility);
+        CLIENT.fullscreenBannerVisibility.set(fullscreenBannerVisibility);
         CLIENT.fullscreenDayVisibility.set(fullscreenDayVisibility);
         CLIENT.fullscreenNightVisibility.set(fullscreenNightVisibility);
         CLIENT.fullscreenUndergroundVisibility.set(fullscreenUndergroundVisibility);
@@ -498,6 +520,7 @@ public class Config {
         CLIENT.minimapVisibility.set(minimapVisibility);
         CLIENT.minimapNameVisibility.set(minimapNameVisibility);
         CLIENT.minimapOwnerVisibility.set(minimapOwnerVisibility);
+        CLIENT.minimapBannerVisibility.set(minimapBannerVisibility);
         CLIENT.minimapDayVisibility.set(minimapDayVisibility);
         CLIENT.minimapNightVisibility.set(minimapNightVisibility);
         CLIENT.minimapUndergroundVisibility.set(minimapUndergroundVisibility);
@@ -506,6 +529,7 @@ public class Config {
         CLIENT.webmapVisibility.set(webmapVisibility);
         CLIENT.webmapNameVisibility.set(webmapNameVisibility);
         CLIENT.webmapOwnerVisibility.set(webmapOwnerVisibility);
+        CLIENT.webmapBannerVisibility.set(webmapBannerVisibility);
         CLIENT.webmapDayVisibility.set(webmapDayVisibility);
         CLIENT.webmapNightVisibility.set(webmapNightVisibility);
         CLIENT.webmapUndergroundVisibility.set(webmapUndergroundVisibility);

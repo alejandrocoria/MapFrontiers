@@ -2,15 +2,18 @@ package games.alejandrocoria.mapfrontiers.client;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
-import games.alejandrocoria.mapfrontiers.client.mixin.TextureAtlasInvoker;
+import games.alejandrocoria.mapfrontiers.client.mixin.CubeInvoker;
+import games.alejandrocoria.mapfrontiers.client.mixin.SpriteContentsInvoker;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -28,14 +31,20 @@ import journeymap.api.v2.client.util.PolygonHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.model.geom.ModelLayers;
+import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.CoreShaders;
 import net.minecraft.client.renderer.Sheets;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.ARGB;
+import net.minecraft.util.Mth;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
@@ -48,6 +57,7 @@ import org.joml.Matrix4f;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.awt.geom.Area;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -84,7 +94,8 @@ public class FrontierOverlay extends FrontierData {
     private final List<PolygonOverlay> polygonOverlays = new ArrayList<>();
     private Area polygonArea;
     private final List<MarkerOverlay> markerOverlays = new ArrayList<>();
-    private BannerDisplayData bannerDisplay;
+    private final List<MarkerOverlay> bannerOverlays = new ArrayList<>();
+    private final BannerRenderer bannerRenderer = new BannerRenderer();
 
     private int hash;
     private boolean dirtyhash = true;
@@ -95,11 +106,10 @@ public class FrontierOverlay extends FrontierData {
         super(data);
         this.jmAPI = jmAPI;
         setVisibilityOverride(MapFrontiersClient.getLocalOverrides().getVisibility(id));
-        updateOverlay();
-
         if (banner != null) {
-            bannerDisplay = new BannerDisplayData(banner);
+            bannerRenderer.createTexture(id, banner);
         }
+        updateOverlay();
     }
 
     @Override
@@ -117,9 +127,9 @@ public class FrontierOverlay extends FrontierData {
 
         if (other.hasChange(Change.Banner)) {
             if (banner == null) {
-                bannerDisplay = null;
+                bannerRenderer.releaseTexture();
             } else {
-                bannerDisplay = new BannerDisplayData(banner);
+                bannerRenderer.createTexture(id, banner);
             }
             dirtyhash = true;
         }
@@ -173,13 +183,17 @@ public class FrontierOverlay extends FrontierData {
                 for (MarkerOverlay marker : markerOverlays) {
                     jmAPI.show(marker);
                 }
+
+                for (MarkerOverlay banner : bannerOverlays) {
+                    jmAPI.show(banner);
+                }
             } catch (Throwable t) {
                 MapFrontiers.LOGGER.error(t.getMessage(), t);
             }
         }
     }
 
-    public void removeOverlay() {
+    private void removeOverlay() {
         for (PolygonOverlay polygon : polygonOverlays) {
             jmAPI.remove(polygon);
         }
@@ -187,6 +201,15 @@ public class FrontierOverlay extends FrontierData {
         for (MarkerOverlay marker : markerOverlays) {
             jmAPI.remove(marker);
         }
+
+        for (MarkerOverlay banner : bannerOverlays) {
+            jmAPI.remove(banner);
+        }
+    }
+
+    public void deleted() {
+        removeOverlay();
+        bannerRenderer.releaseTexture();
     }
 
     public boolean pointIsInside(BlockPos pos, double maxDistanceToOpen) {
@@ -590,16 +613,16 @@ public class FrontierOverlay extends FrontierData {
         needUpdateOverlay = true;
 
         if (itemBanner == null) {
-            bannerDisplay = null;
+            bannerRenderer.releaseTexture();
         } else {
-            bannerDisplay = new BannerDisplayData(banner);
+            bannerRenderer.createTexture(id, banner);
         }
     }
 
     @Override
     public void setBanner(DyeColor base, BannerPatternLayers bannerPatterns) {
         super.setBanner(base, bannerPatterns);
-        bannerDisplay = new BannerDisplayData(banner);
+        bannerRenderer.createTexture(id, banner);
         needUpdateOverlay = true;
     }
 
@@ -609,9 +632,9 @@ public class FrontierOverlay extends FrontierData {
         needUpdateOverlay = true;
 
         if (bannerData == null) {
-            bannerDisplay = null;
+            bannerRenderer.releaseTexture();
         } else {
-            bannerDisplay = new BannerDisplayData(banner);
+            bannerRenderer.createTexture(id, banner);
         }
     }
 
@@ -662,53 +685,8 @@ public class FrontierOverlay extends FrontierData {
         return closest;
     }
 
-    public void renderBanner(Minecraft mc, GuiGraphics graphics, int x, int y, int scale) {
-        if (bannerDisplay == null || bannerDisplay.patternLayers == null) {
-            return;
-        }
-
-        TextureAtlasInvoker atlas = (TextureAtlasInvoker) Minecraft.getInstance().getTextureManager().getTexture(Sheets.BANNER_BASE.atlasLocation());
-        int atlasWidth = atlas.mapfrontiers$getWidth();
-        int atlasHeight = atlas.mapfrontiers$getHeight();
-
-        renderBannerLayer(graphics, x, y, atlasWidth, atlasHeight, scale, Sheets.BANNER_BASE.atlasLocation(), Sheets.BANNER_BASE.sprite(), banner.baseColor);
-
-        for (int i = 0; i < bannerDisplay.patternLayers.layers().size(); ++i) {
-            BannerPatternLayers.Layer layer = bannerDisplay.patternLayers.layers().get(i);
-            ResourceLocation patternTextureLocation = layer.pattern().value().assetId().withPrefix("entity/banner/");
-            TextureAtlasSprite sprite = mc.getTextureAtlas(Sheets.BANNER_SHEET).apply(patternTextureLocation);
-
-            renderBannerLayer(graphics, x, y, atlasWidth, atlasHeight, scale, Sheets.BANNER_SHEET, sprite, layer.color());
-        }
-    }
-
-    private void renderBannerLayer(GuiGraphics graphics, int x, int y, int atlasWidth, int atlasHeight, int scale, ResourceLocation sheet, TextureAtlasSprite sprite, DyeColor dye) {
-        // TODO find an alternative to not flush all buffers
-        graphics.flush();
-
-        RenderSystem.setShader(CoreShaders.POSITION_TEX_COLOR);
-        RenderSystem.setShaderTexture(0, sheet);
-
-        RenderSystem.enableBlend();
-
-        Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder buf = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-        int color = dye.getTextureDiffuseColor();
-        int width = 22 * scale;
-        int height = 40 * scale;
-        float zLevel = 0.f;
-        float u1 = sprite.getU0();
-        float u2 = sprite.getU0() + 22.f / atlasWidth;
-        float v1 = sprite.getV0() + 1.f / atlasHeight;
-        float v2 = sprite.getV0() + 41.f / atlasHeight;
-        Matrix4f matrix = graphics.pose().last().pose();
-        buf.addVertex(matrix, x, y + height, zLevel).setUv(u1, v2).setColor(color);
-        buf.addVertex(matrix, x + width, y + height, zLevel).setUv(u2, v2).setColor(color);
-        buf.addVertex(matrix, x + width, y, zLevel).setUv(u2, v1).setColor(color);
-        buf.addVertex(matrix, x, y, zLevel).setUv(u1, v1).setColor(color);
-        BufferUploader.drawWithShader(buf.buildOrThrow());
-
-        RenderSystem.disableBlend();
+    public BannerRenderer getBannerRenderer() {
+        return bannerRenderer;
     }
 
     public void removeSelectedVertex() {
@@ -793,6 +771,7 @@ public class FrontierOverlay extends FrontierData {
     private void recalculateOverlays() {
         polygonOverlays.clear();
         markerOverlays.clear();
+        bannerOverlays.clear();
 
         updateBounds();
 
@@ -814,6 +793,7 @@ public class FrontierOverlay extends FrontierData {
         boolean fullscreenV = Config.getVisibilityValue(Config.fullscreenVisibility, getVisibility(VisibilityData.Visibility.Fullscreen));
         boolean fullscreenNameV = Config.getVisibilityValue(Config.fullscreenNameVisibility, getVisibility(VisibilityData.Visibility.FullscreenName));
         boolean fullscreenOwnerV = Config.getVisibilityValue(Config.fullscreenOwnerVisibility, getVisibility(VisibilityData.Visibility.FullscreenOwner));
+        boolean fullscreenBannerV = Config.getVisibilityValue(Config.fullscreenBannerVisibility, getVisibility(VisibilityData.Visibility.FullscreenBanner));
         boolean fullscreenDayV = Config.getVisibilityValue(Config.fullscreenDayVisibility, getVisibility(VisibilityData.Visibility.FullscreenDay));
         boolean fullscreenNightV = Config.getVisibilityValue(Config.fullscreenNightVisibility, getVisibility(VisibilityData.Visibility.FullscreenNight));
         boolean fullscreenUndergroundV = Config.getVisibilityValue(Config.fullscreenUndergroundVisibility, getVisibility(VisibilityData.Visibility.FullscreenUnderground));
@@ -822,6 +802,7 @@ public class FrontierOverlay extends FrontierData {
         boolean minimapV = Config.getVisibilityValue(Config.minimapVisibility, getVisibility(VisibilityData.Visibility.Minimap));
         boolean minimapNameV = Config.getVisibilityValue(Config.minimapNameVisibility, getVisibility(VisibilityData.Visibility.MinimapName));
         boolean minimapOwnerV = Config.getVisibilityValue(Config.minimapOwnerVisibility, getVisibility(VisibilityData.Visibility.MinimapOwner));
+        boolean minimapBannerV = Config.getVisibilityValue(Config.minimapBannerVisibility, getVisibility(VisibilityData.Visibility.MinimapBanner));
         boolean minimapDayV = Config.getVisibilityValue(Config.minimapDayVisibility, getVisibility(VisibilityData.Visibility.MinimapDay));
         boolean minimapNightV = Config.getVisibilityValue(Config.minimapNightVisibility, getVisibility(VisibilityData.Visibility.MinimapNight));
         boolean minimapUndergroundV = Config.getVisibilityValue(Config.minimapUndergroundVisibility, getVisibility(VisibilityData.Visibility.MinimapUnderground));
@@ -830,31 +811,39 @@ public class FrontierOverlay extends FrontierData {
         boolean webmapV = Config.getVisibilityValue(Config.webmapVisibility, getVisibility(VisibilityData.Visibility.Webmap));
         boolean webmapNameV = Config.getVisibilityValue(Config.webmapNameVisibility, getVisibility(VisibilityData.Visibility.WebmapName));
         boolean webmapOwnerV = Config.getVisibilityValue(Config.webmapOwnerVisibility, getVisibility(VisibilityData.Visibility.WebmapOwner));
+        boolean webmapBannerV = Config.getVisibilityValue(Config.webmapBannerVisibility, getVisibility(VisibilityData.Visibility.WebmapBanner));
         boolean webmapDayV = Config.getVisibilityValue(Config.webmapDayVisibility, getVisibility(VisibilityData.Visibility.WebmapDay));
         boolean webmapNightV = Config.getVisibilityValue(Config.webmapNightVisibility, getVisibility(VisibilityData.Visibility.WebmapNight));
         boolean webmapUndergroundV = Config.getVisibilityValue(Config.webmapUndergroundVisibility, getVisibility(VisibilityData.Visibility.WebmapUnderground));
         boolean webmapTopoV = Config.getVisibilityValue(Config.webmapTopoVisibility, getVisibility(VisibilityData.Visibility.WebmapTopo));
         boolean webmapBiomeV = Config.getVisibilityValue(Config.webmapBiomeVisibility, getVisibility(VisibilityData.Visibility.WebmapBiome));
 
+
+        BlockPos firstpoint = polygon.getPoints().getFirst();
+        Rectangle2D.Double polygonBound = new Rectangle2D.Double(firstpoint.getX(), firstpoint.getZ(), 1, 1);
+        for (BlockPos point : polygon.getPoints()) {
+            polygonBound.add(point.getX(), point.getZ());
+        }
+
         if (fullscreenV) {
             PolygonOverlay overlay = new PolygonOverlay(MapFrontiers.MODID, dimension, shapeProps, polygon, polygonHoles);
             overlay.setActiveUIs(Context.UI.Fullscreen);
             overlay.setActiveMapTypes(getActiveMapTypes(fullscreenDayV, fullscreenNightV, fullscreenUndergroundV, fullscreenTopoV, fullscreenBiomeV));
-            addNameAndOwner(overlay, fullscreenNameV, fullscreenOwnerV);
+            addNameOwnerAndBanner(overlay, polygonBound, fullscreenNameV, fullscreenOwnerV, fullscreenBannerV);
             polygonOverlays.add(overlay);
         }
         if (minimapV) {
             PolygonOverlay overlay = new PolygonOverlay(MapFrontiers.MODID, dimension, shapeProps, polygon, polygonHoles);
             overlay.setActiveUIs(Context.UI.Minimap);
             overlay.setActiveMapTypes(getActiveMapTypes(minimapDayV, minimapNightV, minimapUndergroundV, minimapTopoV, minimapBiomeV));
-            addNameAndOwner(overlay, minimapNameV, minimapOwnerV);
+            addNameOwnerAndBanner(overlay, polygonBound, minimapNameV, minimapOwnerV, minimapBannerV);
             polygonOverlays.add(overlay);
         }
         if (webmapV) {
             PolygonOverlay overlay = new PolygonOverlay(MapFrontiers.MODID, dimension, shapeProps, polygon, polygonHoles);
             overlay.setActiveUIs(Context.UI.Webmap);
             overlay.setActiveMapTypes(getActiveMapTypes(webmapDayV, webmapNightV, webmapUndergroundV, webmapTopoV, webmapBiomeV));
-            addNameAndOwner(overlay, webmapNameV, webmapOwnerV);
+            addNameOwnerAndBanner(overlay, polygonBound, webmapNameV, webmapOwnerV, webmapBannerV);
             polygonOverlays.add(overlay);
         }
     }
@@ -1080,70 +1069,112 @@ public class FrontierOverlay extends FrontierData {
         }
     }
 
-    private void addNameAndOwner(PolygonOverlay polygonOverlay, boolean nameVisible, boolean ownerVisible) {
-        if (!nameVisible && !ownerVisible) {
+    private void addNameOwnerAndBanner(PolygonOverlay polygonOverlay, Rectangle2D.Double polygonBound, boolean nameVisible, boolean ownerVisible, boolean bannerVisible) {
+        bannerVisible = bannerVisible && bannerRenderer.hasBanner();
+        if (!nameVisible && !ownerVisible && !bannerVisible) {
             return;
         }
 
         TextProperties textProps = new TextProperties().setColor(color).setScale(2.f).setBackgroundOpacity(0.f);
-        if (Config.hideNamesThatDontFit) {
-            if (mode == Mode.Vertex) {
-                textProps = setMinSizeTextProperties(textProps, bottomRight.getX() - topLeft.getX(), nameVisible, ownerVisible);
-            } else {
-                int minX = Integer.MAX_VALUE;
-                int maxX = Integer.MIN_VALUE;
-
-                for (BlockPos vertex : polygonOverlay.getOuterArea().getPoints()) {
-                    if (vertex.getX() < minX)
-                        minX = vertex.getX();
-                    if (vertex.getX() > maxX)
-                        maxX = vertex.getX();
-                }
-                textProps = setMinSizeTextProperties(textProps, maxX - minX, nameVisible, ownerVisible);
-            }
-        }
 
         int lines = 0;
+        int totalWidth = 0;
         String label = "";
 
         if (nameVisible) {
             if (!name1.isEmpty()) {
                 ++lines;
-                label += name1 + "\n";
+                totalWidth = Math.max(totalWidth, Minecraft.getInstance().font.width(name1));
+                label += name1;
             }
             if (!name2.isEmpty()) {
                 ++lines;
-                label += name2 + "\n";
+                totalWidth = Math.max(totalWidth, Minecraft.getInstance().font.width(name2));
+                if (!label.isEmpty()) {
+                    label += "\n";
+                }
+                label += name2;
             }
         }
 
         if (ownerVisible && !owner.username.isEmpty()) {
             ++lines;
-            label += ChatFormatting.ITALIC + owner.username + "\n";
+            totalWidth = Math.max(totalWidth, Minecraft.getInstance().font.width(owner.username));
+            if (!label.isEmpty()) {
+                label += "\n";
+            }
+            label += ChatFormatting.ITALIC + owner.username;
         }
 
-        if (lines > 0) {
-            if (lines > 1) {
-                textProps.setOffsetY(10);
+        int totalHeight = lines * 18;
+        if (bannerVisible) {
+            totalHeight += 40;
+        }
+
+        int topOffset = totalHeight / 2;
+        int textOffset = topOffset - lines * 9;
+        int bannerOffset = topOffset - lines * 18;
+        if (lines > 1) {
+            if (bannerVisible) {
+                textOffset -= 6;
+            } else {
+                textOffset += 12;
             }
-            polygonOverlay.setTextProperties(textProps).setOverlayGroupName("frontier").setLabel(label);
+        } else if (lines == 1) {
+            if (bannerVisible) {
+                textOffset += 5;
+            } else {
+                textOffset += 3;
+            }
+        }
+        textProps.setOffsetY(textOffset);
+
+        if (Config.hideNamesThatDontFit) {
+            totalWidth *= 2;
+            if (bannerVisible) {
+                totalWidth = Math.max(totalWidth, 20);
+            }
+            setMinSizeTextProperties(textProps, polygonBound, totalWidth + 6, totalHeight + 6);
+        }
+
+        if (bannerVisible) {
+            MapImage bannerIcon = new MapImage(bannerRenderer.getImage(), 0, 0, 20, 40, ColorConstants.WHITE, 1.f);
+            bannerIcon.setBlur(false);
+            bannerIcon.setAnchorX(10);
+            bannerIcon.setAnchorY(bannerOffset);
+            bannerIcon.setDisplayWidth(bannerRenderer.getImage().getWidth());
+            bannerIcon.setDisplayHeight(bannerRenderer.getImage().getHeight());
+            BlockPos polygonCenter = BlockPos.containing(polygonBound.getCenterX(), 70, polygonBound.getCenterY());
+
+            MarkerOverlay bannerOverlay = new MarkerOverlay(MapFrontiers.MODID, polygonCenter, bannerIcon);
+            bannerOverlay.setActiveUIs(polygonOverlay.getActiveUIs().toArray(new Context.UI[0]));
+            bannerOverlay.setActiveMapTypes(polygonOverlay.getActiveMapTypes().toArray(new Context.MapType[0]));
+            bannerOverlay.setDimension(dimension);
+            bannerOverlay.setMinZoom(textProps.getMinZoom());
+            bannerOverlay.setMaxZoom(textProps.getMaxZoom());
+            bannerOverlays.add(bannerOverlay);
+
+            if (lines > 0) {
+                bannerOverlay.setTextProperties(textProps).setOverlayGroupName("frontier").setLabel(label);
+            }
+        } else {
+            if (lines > 0) {
+                polygonOverlay.setTextProperties(textProps).setOverlayGroupName("frontier").setLabel(label);
+            }
         }
     }
 
-    private TextProperties setMinSizeTextProperties(TextProperties textProperties, int polygonWidth, boolean nameVisible, boolean ownerVisible) {
-        int name1Width = nameVisible ? Minecraft.getInstance().font.width(name1) * 2 : 0;
-        int name2Width = nameVisible ? Minecraft.getInstance().font.width(name2) * 2 : 0;
-        int ownerWidth = ownerVisible ? Minecraft.getInstance().font.width(owner.username) * 2 : 0;
-        int labelWidth = Math.max(ownerWidth, Math.max(name1Width, name2Width)) + 6;
-
-        float polygonWidthScaled = polygonWidth / 256.f;
+    private void setMinSizeTextProperties(TextProperties textProperties, Rectangle2D.Double polygonBound, int width, int height) {
+        double polygonWidthScaled = polygonBound.getWidth() / 256.0;
+        double polygonHeightScaled = polygonBound.getHeight() / 256.0;
         int zoom = 2;
-        while (labelWidth > polygonWidthScaled && zoom < 8192) {
+        while ((width > polygonWidthScaled || height > polygonHeightScaled) && zoom < 8192) {
             zoom *= 2;
-            polygonWidthScaled *= 2.f;
+            polygonWidthScaled *= 2.0;
+            polygonHeightScaled *= 2.0;
         }
 
-        return textProperties.setMinZoom(zoom);
+        textProperties.setMinZoom(zoom);
     }
 
     private void updateBounds() {
@@ -1269,13 +1300,170 @@ public class FrontierOverlay extends FrontierData {
         }
     }
 
-    public static class BannerDisplayData {
-        public BannerPatternLayers patternLayers;
+    public static class BannerRenderer {
+        private ResourceLocation textureLocation;
+        private NativeImage bannerImage;
 
-        public BannerDisplayData(FrontierData.BannerData bannerData) {
-            ClientLevel level = Minecraft.getInstance().level;
+        private void createTexture(UUID id, BannerData bannerData) {
+            releaseTexture();
+
+            Minecraft mc = Minecraft.getInstance();
+            ClientLevel level = mc.level;
+            if (level == null) {
+                return;
+            }
+
+            BannerPatternLayers patternLayers;
             Optional<BannerPatternLayers> bannerPatterns = BannerPatternLayers.CODEC.parse(level.registryAccess().createSerializationContext(NbtOps.INSTANCE), bannerData.patterns).result();
-            bannerPatterns.ifPresentOrElse((p) -> patternLayers = p, () -> MapFrontiers.LOGGER.error("Error creating banner pattern layers"));
+            if (bannerPatterns.isPresent()) {
+                patternLayers = bannerPatterns.get();
+            } else {
+                MapFrontiers.LOGGER.error("Error creating banner pattern layers");
+                return;
+            }
+
+            ModelPart bannerModelPart = mc.getEntityModels().bakeLayer(ModelLayers.STANDING_BANNER_FLAG).getChild("flag");
+            float[] flagUV = {0, 0, 0, 0};
+            bannerModelPart.visit(new PoseStack(), (pose, path, i, cube) -> {
+                for (ModelPart.Polygon polygon : ((CubeInvoker) cube).mapfrontiers$getPolygon()) {
+                    if (polygon.normal().z() < 0) {
+                        flagUV[0] = polygon.vertices()[0].u();
+                        flagUV[1] = polygon.vertices()[0].v();
+                        flagUV[2] = polygon.vertices()[2].u();
+                        flagUV[3] = polygon.vertices()[2].v();
+                    }
+                }
+            });
+
+            if (flagUV[0] == flagUV[2] || flagUV[1] == flagUV[3]) {
+                MapFrontiers.LOGGER.error("Error creating banner pattern layers");
+                return;
+            }
+
+            TextureAtlasSprite base = Sheets.BANNER_BASE.sprite();
+            SpriteContents baseSprite = base.contents();
+            int width = (int) (abs(flagUV[0] - flagUV[2]) * baseSprite.width());
+            int height = (int) (abs(flagUV[1] - flagUV[3]) * baseSprite.height());
+            bannerImage = new NativeImage(width, height, false);
+
+            generateBannerLayer(bannerImage, flagUV, baseSprite, bannerData.baseColor);
+
+            for (int i = 0; i < patternLayers.layers().size(); ++i) {
+                BannerPatternLayers.Layer layer = patternLayers.layers().get(i);
+                ResourceLocation patternTextureLocation = layer.pattern().value().assetId().withPrefix("entity/banner/");
+                TextureAtlasSprite sprite = mc.getTextureAtlas(Sheets.BANNER_SHEET).apply(patternTextureLocation);
+
+                generateBannerLayer(bannerImage, flagUV, sprite.contents(), layer.color());
+            }
+
+            bannerImage.applyToAllPixels(ARGB::opaque);
+
+            textureLocation = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, id.toString());
+            DynamicTexture texture = new DynamicTexture(bannerImage);
+            texture.setFilter(false, false);
+            mc.getTextureManager().register(textureLocation, texture);
+        }
+
+        private static void generateBannerLayer(NativeImage bannerImage, float[] flagUV, SpriteContents sprite, DyeColor dye) {
+            NativeImage spriteImage = ((SpriteContentsInvoker) sprite).mapfrontiers$getOriginalImage();
+            for (int y = 0; y < bannerImage.getHeight(); ++y) {
+                for (int x = 0; x < bannerImage.getWidth(); ++x) {
+                    int u = (int) (Mth.lerp((x + 0.5f) / bannerImage.getWidth(), flagUV[2], flagUV[0]) * sprite.width());
+                    int v = (int) (Mth.lerp((y + 0.5f) / bannerImage.getHeight(), flagUV[1], flagUV[3]) * sprite.height());
+                    int color = ARGB.multiply(spriteImage.getPixel(u, v), dye.getTextureDiffuseColor());
+                    blendPixel(bannerImage, x, y, color);
+                }
+            }
+        }
+
+        private static void blendPixel(NativeImage image, int x, int y, int color) {
+            int i = image.getPixel(x, y);
+            float f = (float) ARGB.alpha(color) / 255.0F;
+            float f1 = (float) ARGB.red(color) / 255.0F;
+            float f2 = (float) ARGB.green(color) / 255.0F;
+            float f3 = (float) ARGB.blue(color) / 255.0F;
+            float f4 = (float) ARGB.alpha(i) / 255.0F;
+            float f5 = (float) ARGB.red(i) / 255.0F;
+            float f6 = (float) ARGB.green(i) / 255.0F;
+            float f7 = (float) ARGB.blue(i) / 255.0F;
+            float f8 = 1.0F - f;
+            float f9 = f * f + f4 * f8;
+            float f10 = f1 * f + f5 * f8;
+            float f11 = f2 * f + f6 * f8;
+            float f12 = f3 * f + f7 * f8;
+            if (f9 > 1.0F)
+            {
+                f9 = 1.0F;
+            }
+
+            if (f10 > 1.0F)
+            {
+                f10 = 1.0F;
+            }
+
+            if (f11 > 1.0F)
+            {
+                f11 = 1.0F;
+            }
+
+            if (f12 > 1.0F)
+            {
+                f12 = 1.0F;
+            }
+
+            int j = (int) (f9 * 255.0F);
+            int k = (int) (f10 * 255.0F);
+            int l = (int) (f11 * 255.0F);
+            int i1 = (int) (f12 * 255.0F);
+            image.setPixel(x, y, ARGB.color(j, k, l, i1));
+        }
+
+        public void renderBanner(GuiGraphics graphics, int x, int y, int scale) {
+            if (textureLocation == null) {
+                return;
+            }
+
+            graphics.flush();
+
+            RenderSystem.setShader(CoreShaders.POSITION_TEX_COLOR);
+            RenderSystem.setShaderTexture(0, textureLocation);
+            RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
+
+            RenderSystem.enableBlend();
+
+            Tesselator tesselator = Tesselator.getInstance();
+            BufferBuilder buf = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+            int color = 0xFFFFFFFF;
+            int width = 20 * scale;
+            int height = 40 * scale;
+            float zLevel = 0.f;
+            x -= width / 2;
+            Matrix4f matrix = graphics.pose().last().pose();
+            buf.addVertex(matrix, x, y + height, zLevel).setUv(0, 1).setColor(color);
+            buf.addVertex(matrix, x + width, y + height, zLevel).setUv(1, 1).setColor(color);
+            buf.addVertex(matrix, x + width, y, zLevel).setUv(1, 0).setColor(color);
+            buf.addVertex(matrix, x, y, zLevel).setUv(0, 0).setColor(color);
+            BufferUploader.drawWithShader(buf.buildOrThrow());
+        }
+
+        public boolean hasBanner() {
+            return textureLocation != null;
+        }
+
+        public NativeImage getImage() {
+            return bannerImage;
+        }
+
+        private void releaseTexture() {
+            if (textureLocation != null) {
+                Minecraft.getInstance().getTextureManager().release(textureLocation);
+                textureLocation = null;
+            }
+
+            if (bannerImage != null) {
+                bannerImage.close();
+                bannerImage = null;
+            }
         }
     }
 }
