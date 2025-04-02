@@ -1,11 +1,23 @@
 package games.alejandrocoria.mapfrontiers.platform;
 
+import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.util.ReflectionHelper;
 import games.alejandrocoria.mapfrontiers.platform.services.IJourneyMapHelper;
+import journeymap.api.v2.client.display.Context;
+import journeymap.api.v2.client.display.MarkerOverlay;
+import journeymap.api.v2.client.display.PolygonOverlay;
 import journeymap.client.data.WorldData;
 import journeymap.client.io.FileHandler;
 import journeymap.client.io.ThemeLoader;
+import journeymap.client.model.MapState;
+import journeymap.client.model.MapType;
 import journeymap.client.properties.MiniMapProperties;
+import journeymap.client.render.JMRenderTypes;
+import journeymap.client.render.draw.DrawMarkerStep;
+import journeymap.client.render.draw.DrawPolygonStep;
+import journeymap.client.render.draw.DrawStep;
+import journeymap.client.render.draw.DrawUtil;
+import journeymap.client.render.map.MapRenderer;
 import journeymap.client.ui.UIManager;
 import journeymap.client.ui.minimap.DisplayVars;
 import journeymap.client.ui.minimap.MiniMap;
@@ -15,7 +27,12 @@ import journeymap.client.ui.theme.Theme;
 import journeymap.common.waypoint.WaypointStore;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 
+import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -149,6 +166,11 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
         return list;
     }
 
+    @Override
+    public ICustomPreviewRenderer createCustomPreviewRenderer() {
+        return new CustomPreviewRenderer();
+    }
+
     private static int colorSpecToInt(Theme.ColorSpec colorSpec) {
         int color = colorSpec.getColor();
         color |= Math.round(colorSpec.alpha * 255) << 24;
@@ -187,4 +209,66 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
     private static String minimapInfo4;
     private static int minimapFontScale;
     private static int minimapCompassFontScale;
+
+
+    private static class CustomPreviewRenderer implements ICustomPreviewRenderer {
+        private final MapRenderer mapRenderer;
+
+        public CustomPreviewRenderer() {
+
+            mapRenderer = new MapRenderer(Context.UI.Fullscreen);
+            mapRenderer.setZoom(512);
+            mapRenderer.setViewPortBounds(null);
+            MapState mapState = new MapState();
+            mapState.setMapType(MapType.day(ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld"))));
+            mapRenderer.setContext(mapState);
+            mapRenderer.center(mapState.getWorldDir(), mapState.getMapType(), 0, 0, 512);
+        }
+
+        @Override
+        public void draw(GuiGraphics graphics, MultiBufferSource.BufferSource buffers, List<FrontierOverlay> frontierOverlays, int x, int y, int size, float scaleFactor) {
+
+            List<DrawStep> drawSteps = new ArrayList<>();
+            for (FrontierOverlay frontierOverlay : frontierOverlays) {
+                for (PolygonOverlay polygon : frontierOverlay.getPolygonOverlays()) {
+                    drawSteps.add(new DrawPolygonStep(polygon));
+                }
+                for (MarkerOverlay banner : frontierOverlay.getBannerOverlays()) {
+                    drawSteps.add(new DrawMarkerStep(banner));
+                }
+            }
+
+            if (drawSteps.isEmpty()) {
+                return;
+            }
+
+            int width = Minecraft.getInstance().getWindow().getScreenWidth();
+            int height = Minecraft.getInstance().getWindow().getScreenHeight();
+            double guiScale = Minecraft.getInstance().getWindow().getGuiScale();
+            DrawUtil.sizeDisplay(width, height);
+
+            graphics.pose().pushPose();
+            graphics.pose().translate(-width * scaleFactor / 2 + x * guiScale, -height * scaleFactor / 2 + y * guiScale, 0);
+            graphics.pose().scale(scaleFactor, scaleFactor, scaleFactor);
+
+            mapRenderer.setViewPortBounds(new Rectangle2D.Double(0, 0, width * scaleFactor, height * scaleFactor));
+            graphics.fill(JMRenderTypes.MINIMAP_RECTANGLE_MASK_RENDER_TYPE, width / 2 + 1, height / 2 + 1, width / 2 + size - 1, height / 2 + size - 1, 0, 0xFFFFFFFF);
+
+            for(DrawStep.Pass pass : DrawStep.Pass.values()) {
+                int zLevel = 0;
+
+                for (DrawStep drawStep : drawSteps) {
+                    ++zLevel;
+                    graphics.pose().pushPose();
+                    graphics.pose().translate(0, 0, zLevel);
+                    drawStep.draw(graphics, buffers, pass, 0, 0, mapRenderer, 1, 0);
+                    graphics.pose().popPose();
+                }
+            }
+
+            graphics.pose().popPose();
+
+            DrawUtil.sizeDisplay(width / guiScale, height / guiScale);
+        }
+    }
 }

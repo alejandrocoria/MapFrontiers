@@ -1,7 +1,9 @@
 package games.alejandrocoria.mapfrontiers.platform.services;
 
+import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.MultiBufferSource;
 
 import java.io.File;
 import java.util.List;
@@ -23,6 +25,7 @@ public interface IJourneyMapHelper {
     int minimapLabelForegroundColor();
     boolean minimapPropertiesChanged();
     List<String> getDimensionList();
+    ICustomPreviewRenderer createCustomPreviewRenderer();
 
     enum JMPosition {
         TopRight,
@@ -32,5 +35,9 @@ public interface IJourneyMapHelper {
         TopCenter,
         Center,
         Custom
+    }
+
+    interface ICustomPreviewRenderer {
+        void draw(GuiGraphics graphics, MultiBufferSource.BufferSource buffers, List<FrontierOverlay> frontierOverlays, int x, int y, int size, float scaleFactor);
     }
 }

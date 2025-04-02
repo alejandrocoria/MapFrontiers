@@ -13,7 +13,7 @@ import net.minecraft.network.chat.contents.PlainTextContents;
 import org.lwjgl.glfw.GLFW;
 
 public abstract class AutoScaledScreen extends LayeredScreen {
-    private float scaleFactor = 1.f;
+    protected float scaleFactor = 1.f;
     private final int minWidth;
     private final int minHeight;
     protected int actualWidth;

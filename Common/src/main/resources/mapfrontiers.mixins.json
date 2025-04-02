@@ -6,6 +6,7 @@
   "refmap": "mapfrontiers-refmap.json",
   "client": [
     "CubeInvoker",
+    "GuiGraphicsAccessor",
     "SpriteContentsInvoker"
   ],
   "server": [],
