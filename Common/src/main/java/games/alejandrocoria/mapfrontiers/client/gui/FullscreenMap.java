@@ -401,19 +401,20 @@ public class FullscreenMap {
             return false;
         }
 
-        FrontiersOverlayManager globalManager = MapFrontiersClient.getFrontiersOverlayManager(false);
-        FrontiersOverlayManager personalManager = MapFrontiersClient.getFrontiersOverlayManager(true);
-
-        if (globalManager == null || personalManager == null || Config.frontierVisibility == Config.Visibility.Never) {
+        if (Config.frontierVisibility == Config.Visibility.Never) {
             return false;
         }
 
-        FrontierOverlay newFrontierHighlighted = personalManager.getFrontierInPosition(dimension, position, maxDistanceToClosest);
-        if (newFrontierHighlighted == null) {
-            newFrontierHighlighted = globalManager.getFrontierInPosition(dimension, position, maxDistanceToClosest);
+        List<FrontierOverlay> frontiers = MapFrontiersClient.getFrontiersInPosition(dimension, position, maxDistanceToClosest);
+        if (frontiers.isEmpty()) {
+            selectFrontier(null);
+        } else if (frontiers.size() == 1 || frontierHighlighted == null) {
+            selectFrontier(frontiers.getFirst());
+        } else {
+            int i = frontiers.indexOf(frontierHighlighted);
+            i = (i + 1) % frontiers.size();
+            selectFrontier(frontiers.get(i));
         }
-
-        selectFrontier(newFrontierHighlighted);
 
         return false;
     }

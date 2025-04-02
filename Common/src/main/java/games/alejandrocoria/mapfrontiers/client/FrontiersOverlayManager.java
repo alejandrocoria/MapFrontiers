@@ -285,21 +285,18 @@ public class FrontiersOverlayManager {
         return dimensionsFrontiers.computeIfAbsent(dimension, k -> new ArrayList<>());
     }
 
-    public FrontierOverlay getFrontierInPosition(ResourceKey<Level> dimension, BlockPos pos) {
-        return getFrontierInPosition(dimension, pos, 0.0);
-    }
-
-    public FrontierOverlay getFrontierInPosition(ResourceKey<Level> dimension, BlockPos pos, double maxDistanceToOpen) {
+    public List<FrontierOverlay> getFrontiersInPosition(ResourceKey<Level> dimension, BlockPos pos, double maxDistanceToOpen) {
+        List<FrontierOverlay> frontiersInPosition = new ArrayList<>();
         ArrayList<FrontierOverlay> frontiers = dimensionsFrontiers.get(dimension);
         if (frontiers != null) {
             for (FrontierOverlay frontier : frontiers) {
                 if (frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier) && frontier.pointIsInside(pos, maxDistanceToOpen)) {
-                    return frontier;
+                    frontiersInPosition.add(frontier);
                 }
             }
         }
 
-        return null;
+        return frontiersInPosition;
     }
 
     public Set<FrontierOverlay> getFrontiersForAnnounce(ResourceKey<Level> dimension, BlockPos pos) {

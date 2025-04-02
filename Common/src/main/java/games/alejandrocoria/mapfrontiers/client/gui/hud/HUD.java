@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.hud;
 import com.mojang.blaze3d.platform.GlStateManager;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.common.Config;
@@ -32,8 +33,6 @@ import java.util.List;
 public class HUD {
     private static final Minecraft mc = Minecraft.getInstance();
 
-    private final FrontiersOverlayManager frontiersOverlayManager;
-    private final FrontiersOverlayManager personalFrontiersOverlayManager;
     private FrontierOverlay frontier;
     private int frontierHash;
     private BlockPos lastPlayerPosition = new BlockPos(0, 0, 0);
@@ -56,7 +55,7 @@ public class HUD {
     private int displayHeight;
 
     public static HUD asPreview() {
-        HUD hud = new HUD(null, null);
+        HUD hud = new HUD();
         hud.previewMode = true;
 
         HolderLookup<BannerPattern> patternRegistry = mc.level.registryAccess().lookup(Registries.BANNER_PATTERN).get();
@@ -79,9 +78,7 @@ public class HUD {
         return hud;
     }
 
-    public HUD(@Nullable FrontiersOverlayManager frontiersOverlayManager, @Nullable FrontiersOverlayManager personalFrontiersOverlayManager) {
-        this.frontiersOverlayManager = frontiersOverlayManager;
-        this.personalFrontiersOverlayManager = personalFrontiersOverlayManager;
+    public HUD() {
         slots = new ArrayList<>();
         frontierName1 = new StringWidget(Component.empty(), mc.font, StringWidget.Align.Center);
         frontierName2 = new StringWidget(Component.empty(), mc.font, StringWidget.Align.Center);
@@ -114,7 +111,7 @@ public class HUD {
     }
 
     public void tick() {
-        if (previewMode || frontiersOverlayManager == null || personalFrontiersOverlayManager == null || mc.player == null || Config.frontierVisibility == Config.Visibility.Never) {
+        if (previewMode || mc.player == null || Config.frontierVisibility == Config.Visibility.Never) {
             return;
         }
 
@@ -124,13 +121,9 @@ public class HUD {
                 || currentPlayerPosition.getZ() != lastPlayerPosition.getZ()) {
             lastPlayerPosition = currentPlayerPosition;
 
-            FrontierOverlay newFrontier = personalFrontiersOverlayManager
-                    .getFrontierInPosition(mc.player.level().dimension(), lastPlayerPosition);
-            if (newFrontier == null) {
-                newFrontier = frontiersOverlayManager.getFrontierInPosition(mc.player.level().dimension(),
-                        lastPlayerPosition);
-            }
-            if (newFrontier != null) {
+            List<FrontierOverlay> frontiers = MapFrontiersClient.getFrontiersInPosition(mc.player.level().dimension(), lastPlayerPosition);
+            if (!frontiers.isEmpty()) {
+                FrontierOverlay newFrontier = frontiers.getFirst();
                 if (frontierHash != newFrontier.getHash()) {
                     frontier = newFrontier;
                     frontierHash = newFrontier.getHash();
@@ -158,17 +151,13 @@ public class HUD {
     }
 
     public void frontierChanged() {
-        if (previewMode || frontiersOverlayManager == null || personalFrontiersOverlayManager == null) {
+        if (previewMode) {
             return;
         }
 
-        FrontierOverlay newFrontier = personalFrontiersOverlayManager.getFrontierInPosition(mc.player.level().dimension(),
-                lastPlayerPosition);
-        if (newFrontier == null) {
-            newFrontier = frontiersOverlayManager.getFrontierInPosition(mc.player.level().dimension(), lastPlayerPosition);
-        }
-
-        if (newFrontier != null) {
+        List<FrontierOverlay> frontiers = MapFrontiersClient.getFrontiersInPosition(mc.player.level().dimension(), lastPlayerPosition);
+        if (!frontiers.isEmpty()) {
+            FrontierOverlay newFrontier = frontiers.getFirst();
             if (frontierHash != newFrontier.getHash()) {
                 frontier = newFrontier;
                 frontierHash = newFrontier.getHash();
