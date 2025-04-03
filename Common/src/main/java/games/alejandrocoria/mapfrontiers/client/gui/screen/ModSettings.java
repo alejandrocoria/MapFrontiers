@@ -264,14 +264,14 @@ public class ModSettings extends AutoScaledScreen {
         labelTitleAnnouncementDuration.setTooltip(titleAnnouncementDurationTooltip);
         textTitleAnnouncementDuration = miscLayout.addChild(new TextBoxInt(70, 0, 1200, font, 40), row++, 1);
         textTitleAnnouncementDuration.setValue(String.valueOf(Config.titleAnnouncementDuration));
-        textTitleAnnouncementDuration.setMaxLength(2);
+        textTitleAnnouncementDuration.setMaxLength(4);
         textTitleAnnouncementDuration.setValueChangedCallback(value -> Config.titleAnnouncementDuration = value);
 
         labelTitleAnnouncementTimeout = miscLayout.addChild(new StringWidget(titleAnnouncementTimeoutLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelTitleAnnouncementTimeout.setTooltip(titleAnnouncementTimeoutTooltip);
         textTitleAnnouncementTimeout = miscLayout.addChild(new TextBoxInt(0, 0, 1200, font, 40), row++, 1);
         textTitleAnnouncementTimeout.setValue(String.valueOf(Config.titleAnnouncementTimeout));
-        textTitleAnnouncementTimeout.setMaxLength(2);
+        textTitleAnnouncementTimeout.setMaxLength(4);
         textTitleAnnouncementTimeout.setValueChangedCallback(value -> Config.titleAnnouncementTimeout = value);
 
         labelTitleAnnouncementAboveHotbar = miscLayout.addChild(new StringWidget(titleAnnouncementAboveHotbarLabel, font).setColor(ColorConstants.TEXT), row, 0);
