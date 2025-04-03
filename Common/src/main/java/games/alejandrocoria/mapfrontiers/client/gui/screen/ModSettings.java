@@ -140,6 +140,7 @@ public class ModSettings extends AutoScaledScreen {
     private OptionButton buttonTitleAnnouncementAboveHotbar;
     private OptionButton buttonAnnounceUnnamedFrontiers;
     private TextBoxInt textSnapDistance;
+    private SimpleButton buttonFrontierAppearance;
     private OptionButton buttonFullscreenButtons;
     private OptionButton buttonAskConfirmationFrontierDelete;
     private OptionButton buttonAskConfirmationGroupDelete;
@@ -182,15 +183,6 @@ public class ModSettings extends AutoScaledScreen {
             onClose();
             new ModSettings(showKeyHint).display();
         });
-    }
-
-    private ModSettings() {
-        super(Component.empty());
-        showKeyHint = false;
-    }
-
-    public static ModSettings createDummy() {
-        return new ModSettings();
     }
 
     @Override
@@ -307,7 +299,7 @@ public class ModSettings extends AutoScaledScreen {
         textSnapDistance.setMaxLength(2);
         textSnapDistance.setValueChangedCallback(value -> Config.snapDistance = value);
 
-        SimpleButton buttonFrontierAppearance = new SimpleButton(font, 144, frontierAppearanceLabel, (b) -> {
+        buttonFrontierAppearance = new SimpleButton(font, 144, frontierAppearanceLabel, (b) -> {
             new FrontierAppearanceDialog().display();
         }) {
             public @NotNull ScreenRectangle getRectangle() {
@@ -822,6 +814,7 @@ public class ModSettings extends AutoScaledScreen {
 
     private void updateButtonsVisibility() {
         buttonEditHUD.visible = tabSelected == Tab.General && Config.hudEnabled && minecraft.player != null;
+        buttonFrontierAppearance.visible = tabSelected == Tab.General && minecraft.player != null;
         textNewUser.visible = canAddNewUser();
         buttonNewUser.visible = canAddNewUser();
     }
