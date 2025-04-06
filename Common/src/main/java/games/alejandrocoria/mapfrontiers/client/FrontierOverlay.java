@@ -884,10 +884,10 @@ public class FrontierOverlay extends FrontierData {
 
                 BlockPos last = vertices.getLast();
                 for (BlockPos vertex : vertices) {
-                    area += abs(vertex.getZ() + last.getZ()) / 2.f * (vertex.getX() - last.getX());
+                    area += last.getX() * vertex.getZ() - last.getZ() * vertex.getX();
                     last = vertex;
                 }
-                area = abs(area);
+                area = abs(area / 2.f);
             } else {
                 boolean fullscreenV = Config.getVisibilityValue(Config.fullscreenVisibility, getVisibility(VisibilityData.Visibility.Fullscreen));
                 boolean fullscreenDayV = Config.getVisibilityValue(Config.fullscreenDayVisibility, getVisibility(VisibilityData.Visibility.FullscreenDay));

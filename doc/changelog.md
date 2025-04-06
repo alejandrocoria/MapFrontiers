@@ -6,6 +6,7 @@
 * Added: tooltips to visibility buttons in Info screen.
 * Added: all mod buttons on the fullscreen map are now also available in the context menu.
 * Changed: Improved click selection of frontiers and prioritizing frontiers with smaller area.
+* Fixed: frontier area calculation.
  
 **Beta 5:**
 * Fixed: server side crash due to use of LocalPlayer.
