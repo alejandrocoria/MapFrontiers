@@ -92,13 +92,13 @@ if (!project.hasProperty("modrinthApiKey")) {
 task publishCurseForge(type: net.darkhax.curseforgegradle.TaskPublishCurseForge) {
     apiToken = "${curseForgeApiKey}"
     def mainFile = upload(curseforge_project_id, jar)
-    mainFile.displayName = "TESTING AUTOMATED PUBLISHING ${mod_name}-${minecraft_version}-${version}-neoforge"
+    mainFile.displayName = "${mod_name}-${minecraft_version}-${version}-neoforge"
     mainFile.releaseType = release_type
     mainFile.addModLoader("NeoForge")
     mainFile.addJavaVersion("Java 21")
     mainFile.addGameVersion("${minecraft_version}")
     mainFile.addEnvironment("Server", "Client")
-    mainFile.addRelations("requiredDependency", "journeymap", "forge-config-api-port-neoforge")
+    mainFile.addRelations("requiredDependency", "journeymap", "forge-config-api-port-fabric")
     mainFile.addRelation("modmenu", "optionalDependency")
     mainFile.changelogType = "markdown"
     mainFile.changelog = file("$project.buildDir/doc/changelog.md")

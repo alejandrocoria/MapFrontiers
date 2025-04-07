@@ -81,7 +81,7 @@ if (!project.hasProperty("modrinthApiKey")) {
 task publishCurseForge(type: net.darkhax.curseforgegradle.TaskPublishCurseForge) {
     apiToken = "${curseForgeApiKey}"
     def mainFile = upload(curseforge_project_id, remapJar)
-    mainFile.displayName = "TESTING AUTOMATED PUBLISHING ${mod_name}-${minecraft_version}-${version}-fabric"
+    mainFile.displayName = "${mod_name}-${minecraft_version}-${version}-fabric"
     mainFile.releaseType = release_type
     mainFile.addModLoader("Fabric", "Quilt")
     mainFile.addJavaVersion("Java 21")
