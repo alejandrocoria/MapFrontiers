@@ -1,6 +1,11 @@
+import com.modrinth.minotaur.dependencies.ModDependency
+import com.modrinth.minotaur.dependencies.VersionDependency
+
 plugins {
     id 'multiloader-loader'
     id 'net.neoforged.moddev'
+    id 'net.darkhax.curseforgegradle' version '1.+'
+    id "com.modrinth.minotaur" version "2.+"
 }
 
 archivesBaseName = "${project.mod_name}-${project.minecraft_version}"
@@ -93,3 +98,67 @@ neoForge {
 }
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+jar {
+    dependsOn "processDocs"
+}
+
+task processDocs(type: Copy) {
+    // update docs
+    from(file("../doc/")) {
+        include '*.md'
+        expand 'loaderversion': fabric_version,
+                'loadername': "NeoForge",
+                'journeymap_doc_version': journeymap_doc_version,
+                'extra_doc_requirements': "* Forge Config API Port: ${forge_config_api_port_version}"
+    }
+    into 'build/doc'
+}
+
+if (!project.hasProperty("curseForgeApiKey")) {
+    ext.curseForgeApiKey = project.findProperty("curseforge_api_key") ?: "notset"
+}
+if (!project.hasProperty("modrinthApiKey")) {
+    ext.modrinthApiKey = project.findProperty("modrinth_api_key") ?: "notset"
+}
+
+task publishCurseForge(type: net.darkhax.curseforgegradle.TaskPublishCurseForge) {
+    apiToken = "${curseForgeApiKey}"
+    def mainFile = upload(curseforge_project_id, jar)
+    mainFile.displayName = "${mod_name}-${minecraft_version}-${version}-neoforge"
+    mainFile.releaseType = release_type
+    mainFile.addModLoader("NeoForge")
+    mainFile.addJavaVersion("Java 21")
+    mainFile.addGameVersion("${minecraft_version}")
+    mainFile.addEnvironment("Server", "Client")
+    mainFile.addRelations("requiredDependency", "journeymap", "forge-config-api-port-fabric")
+    mainFile.addRelation("modmenu", "optionalDependency")
+    mainFile.changelogType = "markdown"
+    mainFile.changelog = file("$project.buildDir/doc/changelog.md")
+}
+
+tasks.modrinth.dependsOn(tasks.build)
+
+modrinth {
+//    debugMode.set(true)
+    token = "${modrinthApiKey}"
+    projectId = modrinth_project_id
+    versionNumber = "${minecraft_version}-${version}-neoforge"
+    versionName = "${mod_name}-${minecraft_version}-${version}-neoforge"
+    versionType = release_type
+    uploadFile = jar
+    gameVersions = ["${minecraft_version}"]
+    loaders = ["neoforge"]
+    dependencies = [
+            new VersionDependency("journeymap", "${journeymap_doc_version}+neoforge", "required"),
+            new VersionDependency("forge-config-api-port", "v${forge_config_api_port_version}-${minecraft_version}-NeoForge", "required"),
+    ]
+    changelog = file("$project.buildDir/doc/changelog.md").exists() ? file("$project.buildDir/doc/changelog.md").text : null
+}
+
+project.afterEvaluate {
+    project.tasks.findAll { task -> (task.name.startsWith('curseforge') || task.name.startsWith('modrinth'))
+    }.each {
+        projectTask -> projectTask.dependsOn build
+    }
+}

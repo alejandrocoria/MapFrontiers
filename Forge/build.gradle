@@ -1,7 +1,12 @@
+import com.modrinth.minotaur.dependencies.ModDependency
+import com.modrinth.minotaur.dependencies.VersionDependency
+
 plugins {
     id 'multiloader-loader'
     id 'net.minecraftforge.gradle' version '[6.0.24,6.2)'
     id 'org.spongepowered.mixin' version '0.7-SNAPSHOT'
+    id 'net.darkhax.curseforgegradle' version '1.+'
+    id "com.modrinth.minotaur" version "2.+"
 }
 
 archivesBaseName = "${project.mod_name}-${project.minecraft_version}"
@@ -114,3 +119,65 @@ sourceSets.each {
 //        ])
 //    }
 //}
+
+jar {
+    dependsOn "processDocs"
+}
+
+task processDocs(type: Copy) {
+    // update docs
+    from(file("../doc/")) {
+        include '*.md'
+        expand 'loaderversion': forge_version,
+                'loadername': "Forge",
+                'journeymap_doc_version': journeymap_doc_version,
+                'extra_doc_requirements': ""
+    }
+    into 'build/doc'
+}
+
+if (!project.hasProperty("curseForgeApiKey")) {
+    ext.curseForgeApiKey = project.findProperty("curseforge_api_key") ?: "notset"
+}
+if (!project.hasProperty("modrinthApiKey")) {
+    ext.modrinthApiKey = project.findProperty("modrinth_api_key") ?: "notset"
+}
+
+task publishCurseForge(type: net.darkhax.curseforgegradle.TaskPublishCurseForge) {
+    apiToken = "${curseForgeApiKey}"
+    def mainFile = upload(curseforge_project_id, jar)
+    mainFile.displayName = "${mod_name}-${minecraft_version}-${version}-forge"
+    mainFile.releaseType = release_type
+    mainFile.addModLoader("Forge")
+    mainFile.addJavaVersion("Java 21")
+    mainFile.addGameVersion("${minecraft_version}")
+    mainFile.addEnvironment("Server", "Client")
+    mainFile.addRelations("requiredDependency", "journeymap")
+    mainFile.changelogType = "markdown"
+    mainFile.changelog = file("$project.buildDir/doc/changelog.md")
+}
+
+tasks.modrinth.dependsOn(tasks.build)
+
+modrinth {
+//    debugMode.set(true)
+    token = "${modrinthApiKey}"
+    projectId = modrinth_project_id
+    versionNumber = "${minecraft_version}-${version}-forge"
+    versionName = "${mod_name}-${minecraft_version}-${version}-forge"
+    versionType = release_type
+    uploadFile = jar
+    gameVersions = ["${minecraft_version}"]
+    loaders = ["forge"]
+    dependencies = [
+            new VersionDependency("journeymap", "${journeymap_doc_version}+forge", "required")
+    ]
+    changelog = file("$project.buildDir/doc/changelog.md").exists() ? file("$project.buildDir/doc/changelog.md").text : null
+}
+
+project.afterEvaluate {
+    project.tasks.findAll { task -> (task.name.startsWith('curseforge') || task.name.startsWith('modrinth'))
+    }.each {
+        projectTask -> projectTask.dependsOn build
+    }
+}
