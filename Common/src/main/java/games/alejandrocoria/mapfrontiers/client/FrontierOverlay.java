@@ -3,10 +3,9 @@ package games.alejandrocoria.mapfrontiers.client;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.mojang.blaze3d.platform.NativeImage;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
@@ -34,7 +33,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.CoreShaders;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.SpriteContents;
@@ -1373,22 +1372,22 @@ public class FrontierOverlay extends FrontierData {
             SpriteContents baseSprite = base.contents();
             int width = (int) (abs(flagUV[0] - flagUV[2]) * baseSprite.width());
             int height = (int) (abs(flagUV[1] - flagUV[3]) * baseSprite.height());
-            bannerImage = new NativeImage(width, height, false);
+            NativeImage tempBannerImage = new NativeImage(width, height, false);
 
-            generateBannerLayer(bannerImage, flagUV, baseSprite, bannerData.baseColor);
+            generateBannerLayer(tempBannerImage, flagUV, baseSprite, bannerData.baseColor);
 
             for (int i = 0; i < patternLayers.layers().size(); ++i) {
                 BannerPatternLayers.Layer layer = patternLayers.layers().get(i);
                 ResourceLocation patternTextureLocation = layer.pattern().value().assetId().withPrefix("entity/banner/");
                 TextureAtlasSprite sprite = mc.getTextureAtlas(Sheets.BANNER_SHEET).apply(patternTextureLocation);
 
-                generateBannerLayer(bannerImage, flagUV, sprite.contents(), layer.color());
+                generateBannerLayer(tempBannerImage, flagUV, sprite.contents(), layer.color());
             }
 
-            bannerImage.applyToAllPixels(ARGB::opaque);
+            bannerImage = tempBannerImage.mappedCopy(ARGB::opaque);
 
             textureLocation = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, id.toString());
-            DynamicTexture texture = new DynamicTexture(bannerImage);
+            DynamicTexture texture = new DynamicTexture(() -> textureLocation.toString(), bannerImage);
             texture.setFilter(false, false);
             mc.getTextureManager().register(textureLocation, texture);
         }
@@ -1454,12 +1453,6 @@ public class FrontierOverlay extends FrontierData {
 
             graphics.flush();
 
-            RenderSystem.setShader(CoreShaders.POSITION_TEX_COLOR);
-            RenderSystem.setShaderTexture(0, textureLocation);
-            RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
-
-            RenderSystem.enableBlend();
-
             Tesselator tesselator = Tesselator.getInstance();
             BufferBuilder buf = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
             int color = 0xFFFFFFFF;
@@ -1472,7 +1465,12 @@ public class FrontierOverlay extends FrontierData {
             buf.addVertex(matrix, x + width, y + height, zLevel).setUv(1, 1).setColor(color);
             buf.addVertex(matrix, x + width, y, zLevel).setUv(1, 0).setColor(color);
             buf.addVertex(matrix, x, y, zLevel).setUv(0, 0).setColor(color);
-            BufferUploader.drawWithShader(buf.buildOrThrow());
+
+            RenderType renderType = RenderType.guiTexturedOverlay(textureLocation);
+            try (MeshData meshData = buf.buildOrThrow())
+            {
+                renderType.draw(meshData);
+            }
         }
 
         public boolean hasBanner() {

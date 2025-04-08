@@ -150,7 +150,7 @@ public class FrontierSettings {
     public boolean readFromNBT(CompoundTag nbt) {
         boolean needBackup = false;
         try {
-            int version = nbt.getInt("Version");
+            int version = nbt.getIntOr("Version", 0);
             if (version == 0) {
                 MapFrontiers.LOGGER.warn("Data version in settings not found, expected " + MapFrontiers.SETTINGS_DATA_VERSION);
                 needBackup = true;
@@ -162,20 +162,20 @@ public class FrontierSettings {
                 needBackup = true;
             }
 
-            CompoundTag OPsTag = nbt.getCompound("OPs");
+            CompoundTag OPsTag = nbt.getCompoundOrEmpty("OPs");
             OPs.readFromNBT(OPsTag, version);
 
-            CompoundTag ownersTag = nbt.getCompound("Owners");
+            CompoundTag ownersTag = nbt.getCompoundOrEmpty("Owners");
             owners.readFromNBT(ownersTag, version);
 
-            CompoundTag everyoneTag = nbt.getCompound("Everyone");
+            CompoundTag everyoneTag = nbt.getCompoundOrEmpty("Everyone");
             everyone.readFromNBT(everyoneTag, version);
 
             customGroups.clear();
-            ListTag customGroupsTagList = nbt.getList("customGroups", Tag.TAG_COMPOUND);
+            ListTag customGroupsTagList = nbt.getListOrEmpty("customGroups");
             for (int i = 0; i < customGroupsTagList.size(); ++i) {
                 SettingsGroup group = new SettingsGroup();
-                CompoundTag groupTag = customGroupsTagList.getCompound(i);
+                CompoundTag groupTag = customGroupsTagList.getCompoundOrEmpty(i);
                 group.readFromNBT(groupTag, version);
                 customGroups.add(group);
             }

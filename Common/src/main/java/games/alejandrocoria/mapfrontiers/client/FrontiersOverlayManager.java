@@ -353,7 +353,7 @@ public class FrontiersOverlayManager {
     private boolean readFromNBT(CompoundTag nbt) {
         boolean needBackup = false;
         try {
-            int version = nbt.getInt("Version");
+            int version = nbt.getIntOr("Version", 0);
             if (version == 0) {
                 MapFrontiers.LOGGER.warn("Data version in personal_frontiers not found, expected " + MapFrontiers.FRONTIER_DATA_VERSION);
                 needBackup = true;
@@ -362,10 +362,10 @@ public class FrontiersOverlayManager {
                 needBackup = true;
             }
 
-            ListTag frontiersTagList = nbt.getList("frontiers", Tag.TAG_COMPOUND);
+            ListTag frontiersTagList = nbt.getListOrEmpty("frontiers");
             for (int i = 0; i < frontiersTagList.size(); ++i) {
                 FrontierData frontier = new FrontierData();
-                CompoundTag frontierTag = frontiersTagList.getCompound(i);
+                CompoundTag frontierTag = frontiersTagList.getCompound(i).get();
                 frontier.readFromNBT(frontierTag, version);
                 List<FrontierOverlay> frontiers = getAllFrontiers(frontier.getDimension());
                 FrontierOverlay frontierOverlay = new FrontierOverlay(frontier, jmAPI);

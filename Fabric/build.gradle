@@ -3,7 +3,7 @@ import com.modrinth.minotaur.dependencies.VersionDependency
 
 plugins {
     id 'multiloader-loader'
-    id 'fabric-loom'
+    id 'fabric-loom' version '1.10-SNAPSHOT'
     id 'net.darkhax.curseforgegradle' version '1.+'
     id "com.modrinth.minotaur" version "2.+"
 }

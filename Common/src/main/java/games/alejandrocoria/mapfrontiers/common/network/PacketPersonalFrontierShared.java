@@ -92,11 +92,9 @@ public class PacketPersonalFrontierShared {
             }
 
             MutableComponent button = Component.literal(frontierName);
-            button.withStyle(style -> style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                    Component.literal("Click to accept or use command /mfaccept " + message.shareMessageID))));
+            button.withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to accept or use command /mfaccept " + message.shareMessageID))));
             button.withStyle(style -> style.withBold(true));
-            button.withStyle(style -> style
-                    .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mapfrontiersaccept " + message.shareMessageID)));
+            button.withStyle(style -> style.withClickEvent(new ClickEvent.RunCommand("/mapfrontiersaccept " + message.shareMessageID)));
 
             MutableComponent text = Component.literal(userToString(message.playerSharing) + " ");
             if (message.playerSharing.equals(message.owner)) {

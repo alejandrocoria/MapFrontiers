@@ -81,21 +81,21 @@ public class SettingsGroup {
 
     public void readFromNBT(CompoundTag nbt, int version) {
         if (!special) {
-            name = nbt.getString("name");
+            name = nbt.getStringOr("name", "");
             users.clear();
-            ListTag usersTagList = nbt.getList("users", Tag.TAG_COMPOUND);
+            ListTag usersTagList = nbt.getListOrEmpty("users");
             for (int i = 0; i < usersTagList.size(); ++i) {
                 SettingsUser user = new SettingsUser();
-                CompoundTag userTag = usersTagList.getCompound(i);
+                CompoundTag userTag = usersTagList.getCompound(i).get();
                 user.readFromNBT(userTag);
                 users.add(user);
             }
         }
 
         actions.clear();
-        ListTag actionsTagList = nbt.getList("actions", Tag.TAG_STRING);
+        ListTag actionsTagList = nbt.getListOrEmpty("actions");
         for (int i = 0; i < actionsTagList.size(); ++i) {
-            String actionTag = actionsTagList.getString(i);
+            String actionTag = actionsTagList.getString(i).get();
             List<FrontierSettings.Action> availableActions = FrontierSettings.getAvailableActions(name);
 
             try {

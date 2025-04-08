@@ -376,7 +376,7 @@ public class FrontiersManager {
     private boolean readFromNBT(CompoundTag nbt) {
         boolean needBackup = false;
         try {
-            int version = nbt.getInt("Version");
+            int version = nbt.getIntOr("Version", 0);
             if (version == 0) {
                 MapFrontiers.LOGGER.warn("Data version in frontiers not found, expected " + MapFrontiers.FRONTIER_DATA_VERSION);
                 needBackup = true;
@@ -388,10 +388,10 @@ public class FrontiersManager {
                 needBackup = true;
             }
 
-            ListTag allFrontiersTagList = nbt.getList("frontiers", Tag.TAG_COMPOUND);
+            ListTag allFrontiersTagList = nbt.getListOrEmpty("frontiers");
             for (int i = 0; i < allFrontiersTagList.size(); ++i) {
                 FrontierData frontier = new FrontierData();
-                CompoundTag frontierTag = allFrontiersTagList.getCompound(i);
+                CompoundTag frontierTag = allFrontiersTagList.getCompound(i).get();
                 frontier.readFromNBT(frontierTag, version);
                 frontier.removePendingUsersShared();
                 allFrontiers.put(frontier.getId(), frontier);

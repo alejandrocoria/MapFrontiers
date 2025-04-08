@@ -521,49 +521,50 @@ public class FrontierData {
     }
 
     public void readFromNBT(CompoundTag nbt, int version) {
-        id = UUID.fromString(nbt.getString("id"));
-        color = nbt.getInt("color");
-        dimension = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(nbt.getString("dimension")));
-        name1 = nbt.getString("name1");
-        name2 = nbt.getString("name2");
+        id = UUID.fromString(nbt.getString("id").get());
+        color = nbt.getInt("color").get();
+        dimension = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(nbt.getString("dimension").get()));
+        name1 = nbt.getStringOr("name1", "");
+        name2 = nbt.getStringOr("name2", "");
 
         visibilityData.readFromNBT(nbt, version);
 
-        personal = nbt.getBoolean("personal");
+        personal = nbt.getBooleanOr("personal", true);
 
         owner = new SettingsUser();
-        owner.readFromNBT(nbt.getCompound("owner"));
+        owner.readFromNBT(nbt.getCompoundOrEmpty("owner"));
 
         if (nbt.contains("banner")) {
             banner = new BannerData();
-            banner.readFromNBT(nbt.getCompound("banner"));
+            banner.readFromNBT(nbt.getCompound("banner").get());
         }
 
         if (personal) {
-            ListTag usersSharedTagList = nbt.getList("usersShared", Tag.TAG_COMPOUND);
+            ListTag usersSharedTagList = nbt.getListOrEmpty("usersShared");
             if (!usersSharedTagList.isEmpty()) {
                 usersShared = new ArrayList<>();
 
                 for (int i = 0; i < usersSharedTagList.size(); ++i) {
                     SettingsUserShared userShared = new SettingsUserShared();
-                    userShared.readFromNBT(usersSharedTagList.getCompound(i));
+                    userShared.readFromNBT(usersSharedTagList.getCompound(i).get());
                     usersShared.add(userShared);
                 }
             }
         }
 
-        ListTag verticesTagList = nbt.getList("vertices", Tag.TAG_COMPOUND);
+        ListTag verticesTagList = nbt.getListOrEmpty("vertices");
         for (int i = 0; i < verticesTagList.size(); ++i) {
-            CompoundTag posTag = verticesTagList.getCompound(i);
-            vertices.add(new BlockPos(posTag.getInt("X"), 70, posTag.getInt("Z")));
+            CompoundTag posTag = verticesTagList.getCompound(i).get();
+            vertices.add(new BlockPos(posTag.getInt("X").get(), 70, posTag.getInt("Z").get()));
         }
 
-        ListTag chunksTagList = nbt.getList("chunks", Tag.TAG_COMPOUND);
+        ListTag chunksTagList = nbt.getListOrEmpty("chunks");
         for (int i = 0; i < chunksTagList.size(); ++i) {
-            chunks.add(new ChunkPos(chunksTagList.getCompound(i).getInt("X"), chunksTagList.getCompound(i).getInt("Z")));
+            CompoundTag posTag = verticesTagList.getCompound(i).get();
+            chunks.add(new ChunkPos(posTag.getInt("X").get(), posTag.getInt("Z").get()));
         }
 
-        String modeTag = nbt.getString("mode");
+        String modeTag = nbt.getStringOr("mode", "");
         if (modeTag.isEmpty()) {
             mode = Mode.Vertex;
         } else {
@@ -584,11 +585,11 @@ public class FrontierData {
         }
 
         if (nbt.contains("created")) {
-            created = new Date(nbt.getLong("created"));
+            created = new Date(nbt.getLong("created").get());
         }
 
         if (nbt.contains("modified")) {
-            modified = new Date(nbt.getLong("modified"));
+            modified = new Date(nbt.getLong("modified").get());
         }
     }
 
@@ -871,8 +872,8 @@ public class FrontierData {
         }
 
         public void readFromNBT(CompoundTag nbt) {
-            baseColor = DyeColor.byId(nbt.getInt("Base"));
-            patterns = nbt.getList("Patterns", Tag.TAG_COMPOUND);
+            baseColor = DyeColor.byId(nbt.getInt("Base").get());
+            patterns = nbt.getListOrEmpty("Patterns");
         }
 
         public void writeToNBT(CompoundTag nbt) {
@@ -888,7 +889,7 @@ public class FrontierData {
 
             CompoundTag nbt = buf.readNbt();
             if (nbt != null) {
-                patterns = nbt.getList("Patterns", Tag.TAG_COMPOUND);
+                patterns = nbt.getListOrEmpty("Patterns");
             }
         }
 
@@ -1016,73 +1017,73 @@ public class FrontierData {
         public void readFromNBT(CompoundTag nbt, int version) {
             boolean splitVisibility = version >= 10;
 
-            setValue(Visibility.Frontier, nbt.getBoolean("visible"));
+            setValue(Visibility.Frontier, nbt.getBoolean("visible").get());
             if (splitVisibility)
             {
-                setValue(Visibility.Fullscreen, nbt.getBoolean("fullscreenVisible"));
-                setValue(Visibility.FullscreenName, nbt.getBoolean("fullscreenNameVisible"));
-                setValue(Visibility.FullscreenOwner, nbt.getBoolean("fullscreenOwnerVisible"));
-                setValue(Visibility.FullscreenBanner, nbt.getBoolean("fullscreenBannerVisible"));
-                setValue(Visibility.FullscreenDay, nbt.contains("fullscreenDay") ? nbt.getBoolean("fullscreenDay") : true);
-                setValue(Visibility.FullscreenNight, nbt.contains("fullscreenNight") ? nbt.getBoolean("fullscreenNight") : true);
-                setValue(Visibility.FullscreenUnderground, nbt.contains("fullscreenUnderground") ? nbt.getBoolean("fullscreenUnderground") : true);
-                setValue(Visibility.FullscreenTopo, nbt.contains("fullscreenTopo") ? nbt.getBoolean("fullscreenTopo") : true);
-                setValue(Visibility.FullscreenBiome, nbt.contains("fullscreenBiome") ? nbt.getBoolean("fullscreenBiome") : true);
-                setValue(Visibility.Minimap, nbt.getBoolean("minimapVisible"));
-                setValue(Visibility.MinimapName, nbt.getBoolean("minimapNameVisible"));
-                setValue(Visibility.MinimapOwner, nbt.getBoolean("minimapOwnerVisible"));
-                setValue(Visibility.MinimapBanner, nbt.getBoolean("minimapBannerVisible"));
-                setValue(Visibility.MinimapDay, nbt.contains("minimapDay") ? nbt.getBoolean("minimapDay") : true);
-                setValue(Visibility.MinimapNight, nbt.contains("minimapNight") ? nbt.getBoolean("minimapNight") : true);
-                setValue(Visibility.MinimapUnderground, nbt.contains("minimapUnderground") ? nbt.getBoolean("minimapUnderground") : true);
-                setValue(Visibility.MinimapTopo, nbt.contains("minimapTopo") ? nbt.getBoolean("minimapTopo") : true);
-                setValue(Visibility.MinimapBiome, nbt.contains("minimapBiome") ? nbt.getBoolean("minimapBiome") : true);
-                setValue(Visibility.Webmap, nbt.contains("webmapVisible") ? nbt.getBoolean("webmapVisible") : getValue(Visibility.Minimap));
-                setValue(Visibility.WebmapName, nbt.contains("webmapNameVisible") ? nbt.getBoolean("webmapNameVisible") : getValue(Visibility.MinimapName));
-                setValue(Visibility.WebmapOwner, nbt.contains("webmapOwnerVisible") ? nbt.getBoolean("webmapOwnerVisible") : getValue(Visibility.MinimapOwner));
-                setValue(Visibility.WebmapBanner, nbt.contains("webmapBannerVisible") ? nbt.getBoolean("webmapBannerVisible") : getValue(Visibility.MinimapBanner));
-                setValue(Visibility.WebmapDay, nbt.contains("webmapDay") ? nbt.getBoolean("webmapDay") : getValue(Visibility.MinimapDay));
-                setValue(Visibility.WebmapNight, nbt.contains("webmapNight") ? nbt.getBoolean("webmapNight") : getValue(Visibility.MinimapNight));
-                setValue(Visibility.WebmapUnderground, nbt.contains("webmapUnderground") ? nbt.getBoolean("webmapUnderground") : getValue(Visibility.MinimapUnderground));
-                setValue(Visibility.WebmapTopo, nbt.contains("webmapTopo") ? nbt.getBoolean("webmapTopo") : getValue(Visibility.MinimapTopo));
-                setValue(Visibility.WebmapBiome, nbt.contains("webmapBiome") ? nbt.getBoolean("webmapBiome") : getValue(Visibility.MinimapBiome));
+                setValue(Visibility.Fullscreen, nbt.getBoolean("fullscreenVisible").get());
+                setValue(Visibility.FullscreenName, nbt.getBoolean("fullscreenNameVisible").get());
+                setValue(Visibility.FullscreenOwner, nbt.getBoolean("fullscreenOwnerVisible").get());
+                setValue(Visibility.FullscreenBanner, nbt.getBoolean("fullscreenBannerVisible").get());
+                setValue(Visibility.FullscreenDay, nbt.contains("fullscreenDay") ? nbt.getBoolean("fullscreenDay").get() : true);
+                setValue(Visibility.FullscreenNight, nbt.contains("fullscreenNight") ? nbt.getBoolean("fullscreenNight").get() : true);
+                setValue(Visibility.FullscreenUnderground, nbt.contains("fullscreenUnderground") ? nbt.getBoolean("fullscreenUnderground").get() : true);
+                setValue(Visibility.FullscreenTopo, nbt.contains("fullscreenTopo") ? nbt.getBoolean("fullscreenTopo").get() : true);
+                setValue(Visibility.FullscreenBiome, nbt.contains("fullscreenBiome") ? nbt.getBoolean("fullscreenBiome").get() : true);
+                setValue(Visibility.Minimap, nbt.getBoolean("minimapVisible").get());
+                setValue(Visibility.MinimapName, nbt.getBoolean("minimapNameVisible").get());
+                setValue(Visibility.MinimapOwner, nbt.getBoolean("minimapOwnerVisible").get());
+                setValue(Visibility.MinimapBanner, nbt.getBoolean("minimapBannerVisible").get());
+                setValue(Visibility.MinimapDay, nbt.contains("minimapDay") ? nbt.getBoolean("minimapDay").get() : true);
+                setValue(Visibility.MinimapNight, nbt.contains("minimapNight") ? nbt.getBoolean("minimapNight").get() : true);
+                setValue(Visibility.MinimapUnderground, nbt.contains("minimapUnderground") ? nbt.getBoolean("minimapUnderground").get() : true);
+                setValue(Visibility.MinimapTopo, nbt.contains("minimapTopo") ? nbt.getBoolean("minimapTopo").get() : true);
+                setValue(Visibility.MinimapBiome, nbt.contains("minimapBiome") ? nbt.getBoolean("minimapBiome").get() : true);
+                setValue(Visibility.Webmap, nbt.contains("webmapVisible") ? nbt.getBoolean("webmapVisible") .get(): getValue(Visibility.Minimap));
+                setValue(Visibility.WebmapName, nbt.contains("webmapNameVisible") ? nbt.getBoolean("webmapNameVisible").get() : getValue(Visibility.MinimapName));
+                setValue(Visibility.WebmapOwner, nbt.contains("webmapOwnerVisible") ? nbt.getBoolean("webmapOwnerVisible").get() : getValue(Visibility.MinimapOwner));
+                setValue(Visibility.WebmapBanner, nbt.contains("webmapBannerVisible") ? nbt.getBoolean("webmapBannerVisible").get() : getValue(Visibility.MinimapBanner));
+                setValue(Visibility.WebmapDay, nbt.contains("webmapDay") ? nbt.getBoolean("webmapDay").get() : getValue(Visibility.MinimapDay));
+                setValue(Visibility.WebmapNight, nbt.contains("webmapNight") ? nbt.getBoolean("webmapNight").get() : getValue(Visibility.MinimapNight));
+                setValue(Visibility.WebmapUnderground, nbt.contains("webmapUnderground") ? nbt.getBoolean("webmapUnderground").get() : getValue(Visibility.MinimapUnderground));
+                setValue(Visibility.WebmapTopo, nbt.contains("webmapTopo") ? nbt.getBoolean("webmapTopo").get() : getValue(Visibility.MinimapTopo));
+                setValue(Visibility.WebmapBiome, nbt.contains("webmapBiome") ? nbt.getBoolean("webmapBiome").get() : getValue(Visibility.MinimapBiome));
             }
             else
             {
-                setValue(Visibility.Fullscreen, nbt.getBoolean("visible"));
-                setValue(Visibility.FullscreenName, nbt.getBoolean("visible"));
-                setValue(Visibility.FullscreenOwner, nbt.getBoolean("nameVisible"));
+                setValue(Visibility.Fullscreen, nbt.getBoolean("visible").get());
+                setValue(Visibility.FullscreenName, nbt.getBoolean("visible").get());
+                setValue(Visibility.FullscreenOwner, nbt.getBoolean("nameVisible").get());
                 setValue(Visibility.FullscreenBanner, false);
-                setValue(Visibility.FullscreenDay, nbt.getBoolean("visible"));
-                setValue(Visibility.FullscreenNight, nbt.getBoolean("visible"));
-                setValue(Visibility.FullscreenUnderground, nbt.getBoolean("visible"));
-                setValue(Visibility.FullscreenTopo, nbt.getBoolean("visible"));
-                setValue(Visibility.FullscreenBiome, nbt.getBoolean("visible"));
-                setValue(Visibility.Minimap, nbt.getBoolean("visible"));
-                setValue(Visibility.MinimapName, nbt.getBoolean("nameVisible"));
-                setValue(Visibility.MinimapOwner, nbt.getBoolean("ownerVisible"));
+                setValue(Visibility.FullscreenDay, nbt.getBoolean("visible").get());
+                setValue(Visibility.FullscreenNight, nbt.getBoolean("visible").get());
+                setValue(Visibility.FullscreenUnderground, nbt.getBoolean("visible").get());
+                setValue(Visibility.FullscreenTopo, nbt.getBoolean("visible").get());
+                setValue(Visibility.FullscreenBiome, nbt.getBoolean("visible").get());
+                setValue(Visibility.Minimap, nbt.getBoolean("visible").get());
+                setValue(Visibility.MinimapName, nbt.getBoolean("nameVisible").get());
+                setValue(Visibility.MinimapOwner, nbt.getBoolean("ownerVisible").get());
                 setValue(Visibility.MinimapBanner, false);
-                setValue(Visibility.MinimapDay, nbt.getBoolean("visible"));
-                setValue(Visibility.MinimapNight, nbt.getBoolean("visible"));
-                setValue(Visibility.MinimapUnderground, nbt.getBoolean("visible"));
-                setValue(Visibility.MinimapTopo, nbt.getBoolean("visible"));
-                setValue(Visibility.MinimapBiome, nbt.getBoolean("visible"));
-                setValue(Visibility.Webmap, nbt.getBoolean("visible"));
-                setValue(Visibility.WebmapName, nbt.getBoolean("nameVisible"));
-                setValue(Visibility.WebmapOwner, nbt.getBoolean("ownerVisible"));
+                setValue(Visibility.MinimapDay, nbt.getBoolean("visible").get());
+                setValue(Visibility.MinimapNight, nbt.getBoolean("visible").get());
+                setValue(Visibility.MinimapUnderground, nbt.getBoolean("visible").get());
+                setValue(Visibility.MinimapTopo, nbt.getBoolean("visible").get());
+                setValue(Visibility.MinimapBiome, nbt.getBoolean("visible").get());
+                setValue(Visibility.Webmap, nbt.getBoolean("visible").get());
+                setValue(Visibility.WebmapName, nbt.getBoolean("nameVisible").get());
+                setValue(Visibility.WebmapOwner, nbt.getBoolean("ownerVisible").get());
                 setValue(Visibility.WebmapBanner, false);
-                setValue(Visibility.WebmapDay, nbt.getBoolean("visible"));
-                setValue(Visibility.WebmapNight, nbt.getBoolean("visible"));
-                setValue(Visibility.WebmapUnderground, nbt.getBoolean("visible"));
-                setValue(Visibility.WebmapTopo, nbt.getBoolean("visible"));
-                setValue(Visibility.WebmapBiome, nbt.getBoolean("visible"));
+                setValue(Visibility.WebmapDay, nbt.getBoolean("visible").get());
+                setValue(Visibility.WebmapNight, nbt.getBoolean("visible").get());
+                setValue(Visibility.WebmapUnderground, nbt.getBoolean("visible").get());
+                setValue(Visibility.WebmapTopo, nbt.getBoolean("visible").get());
+                setValue(Visibility.WebmapBiome, nbt.getBoolean("visible").get());
             }
 
             if (nbt.contains("announceInChat")) {
-                setValue(Visibility.AnnounceInChat, nbt.getBoolean("announceInChat"));
+                setValue(Visibility.AnnounceInChat, nbt.getBoolean("announceInChat").get());
             }
             if (nbt.contains("announceInTitle")) {
-                setValue(Visibility.AnnounceInTitle, nbt.getBoolean("announceInTitle"));
+                setValue(Visibility.AnnounceInTitle, nbt.getBoolean("announceInTitle").get());
             }
         }
 

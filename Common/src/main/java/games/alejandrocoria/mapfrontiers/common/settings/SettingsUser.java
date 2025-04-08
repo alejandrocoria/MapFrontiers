@@ -48,9 +48,9 @@ public class SettingsUser {
     }
 
     public void readFromNBT(CompoundTag nbt) {
-        username = nbt.getString("username");
+        username = nbt.getStringOr("username", "");
         try {
-            uuid = UUID.fromString(nbt.getString("UUID"));
+            uuid = UUID.fromString(nbt.getStringOr("UUID", ""));
         } catch (Exception e) {
             MapFrontiers.LOGGER.error(e.getMessage(), e);
         }

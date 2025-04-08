@@ -46,7 +46,7 @@ public class FrontierLocalOverrides {
     private boolean readFromNBT(CompoundTag nbt) {
         boolean needBackup = false;
         try {
-            int version = nbt.getInt("Version");
+            int version = nbt.getIntOr("Version", 0);
             if (version == 0) {
                 MapFrontiers.LOGGER.warn("Data version in frontier_overrides not found, expected " + MapFrontiers.FRONTIER_DATA_VERSION);
                 needBackup = true;
@@ -55,16 +55,16 @@ public class FrontierLocalOverrides {
                 needBackup = true;
             }
 
-            ListTag overridesTagList = nbt.getList("overrides", Tag.TAG_COMPOUND);
+            ListTag overridesTagList = nbt.getListOrEmpty("overrides");
             for (int i = 0; i < overridesTagList.size(); ++i) {
-                CompoundTag overrideTag = overridesTagList.getCompound(i);
-                UUID id = UUID.fromString(overrideTag.getString("id"));
+                CompoundTag overrideTag = overridesTagList.getCompound(i).get();
+                UUID id = UUID.fromString(overrideTag.getString("id").get());
 
-                CompoundTag dataTag = overrideTag.getCompound("data");
+                CompoundTag dataTag = overrideTag.getCompound("data").get();
                 FrontierData.VisibilityData data = new FrontierData.VisibilityData();
                 data.readFromNBT(dataTag, version);
 
-                CompoundTag maskTag = overrideTag.getCompound("mask");
+                CompoundTag maskTag = overrideTag.getCompound("mask").get();
                 FrontierData.VisibilityData mask = new FrontierData.VisibilityData(false);
                 mask.readFromNBT(maskTag, version);
 

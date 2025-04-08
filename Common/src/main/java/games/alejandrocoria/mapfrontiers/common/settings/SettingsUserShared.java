@@ -71,12 +71,12 @@ public class SettingsUserShared {
 
     public void readFromNBT(CompoundTag nbt) {
         user.readFromNBT(nbt);
-        pending = nbt.getBoolean("pending");
+        pending = nbt.getBooleanOr("pending", false);
 
         actions.clear();
-        ListTag actionsTagList = nbt.getList("actions", Tag.TAG_STRING);
+        ListTag actionsTagList = nbt.getListOrEmpty("actions");
         for (int i = 0; i < actionsTagList.size(); ++i) {
-            String actionTag = actionsTagList.getString(i);
+            String actionTag = actionsTagList.getString(i).get();
 
             try {
                 Action action = Action.valueOf(actionTag);

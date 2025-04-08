@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers;
 
-import fuzs.forgeconfigapiport.fabric.api.forge.v4.ForgeConfigRegistry;
-import fuzs.forgeconfigapiport.fabric.api.neoforge.v4.NeoForgeModConfigEvents;
+import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;
+import fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.event.EventHandler;
 import net.fabricmc.api.ModInitializer;
@@ -17,8 +17,8 @@ public class MapFrontiersFabric extends MapFrontiers implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        NeoForgeModConfigEvents.loading(MapFrontiers.MODID).register(config -> Config.bakeConfig());
-        ForgeConfigRegistry.INSTANCE.register(MapFrontiersFabric.MODID, ModConfig.Type.CLIENT, Config.CLIENT_SPEC);
+        ModConfigEvents.loading(MapFrontiers.MODID).register(config -> Config.bakeConfig());
+        ConfigRegistry.INSTANCE.register(MapFrontiersFabric.MODID, ModConfig.Type.CLIENT, Config.CLIENT_SPEC);
 
         init();
 
