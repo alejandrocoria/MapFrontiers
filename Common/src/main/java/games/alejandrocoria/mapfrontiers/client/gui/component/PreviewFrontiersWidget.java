@@ -40,7 +40,6 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
 
     public PreviewFrontiersWidget() {
         super(0, 0, SIZE, SIZE, Component.empty());
-        customPreviewRenderer = Services.JOURNEYMAP.createCustomPreviewRenderer();
 
         HolderLookup<BannerPattern> patternRegistry = Minecraft.getInstance().level.registryAccess().lookup(Registries.BANNER_PATTERN).get();
         BannerPatternLayers patterns = (new BannerPatternLayers.Builder())
@@ -88,6 +87,7 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
         frontierData.addVertex(new BlockPos(240, 70, 350));
         previewFrontiers.add(new FrontierOverlay(frontierData, null));
 
+        customPreviewRenderer = Services.JOURNEYMAP.createCustomPreviewRenderer();
         configUpdated();
     }
 
@@ -95,6 +95,8 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
         for (FrontierOverlay frontierOverlay : previewFrontiers) {
             frontierOverlay.recalculateOverlays();
         }
+
+        customPreviewRenderer.setFrontiers(previewFrontiers);
     }
 
     public void setScaleFactor(float scaleFactor) {
@@ -112,7 +114,7 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
         graphics.vLine(getX(), getY(), getY() + getHeight() - 1, ColorConstants.OPTION_BORDER);
         graphics.vLine(getX() + getWidth() - 1, getY(), getY() + getHeight() - 1, ColorConstants.OPTION_BORDER);
 
-        customPreviewRenderer.draw(graphics, ((GuiGraphicsAccessor) graphics).getBufferSource(), previewFrontiers, getX(), getY(), SIZE, scaleFactor);
+        customPreviewRenderer.draw(graphics, ((GuiGraphicsAccessor) graphics).getBufferSource(), getX(), getY(), SIZE, scaleFactor);
     }
 
     @Nullable

@@ -38,6 +38,7 @@ public interface IJourneyMapHelper {
     }
 
     interface ICustomPreviewRenderer {
-        void draw(GuiGraphics graphics, MultiBufferSource.BufferSource buffers, List<FrontierOverlay> frontierOverlays, int x, int y, int size, float scaleFactor);
+        void setFrontiers(List<FrontierOverlay> frontierOverlays);
+        void draw(GuiGraphics graphics, MultiBufferSource.BufferSource buffers, int x, int y, int size, float scaleFactor);
     }
 }
