@@ -212,9 +212,9 @@ public class ForgeJourneyMapHelper implements IJourneyMapHelper {
 
     private static class CustomPreviewRenderer implements ICustomPreviewRenderer {
         private final MapRenderer mapRenderer;
+        private final List<DrawStep> drawSteps = new ArrayList<>();
 
         public CustomPreviewRenderer() {
-
             mapRenderer = new MapRenderer(Context.UI.Fullscreen);
             mapRenderer.setZoom(512);
             mapRenderer.setViewPortBounds(null);
@@ -225,9 +225,9 @@ public class ForgeJourneyMapHelper implements IJourneyMapHelper {
         }
 
         @Override
-        public void draw(GuiGraphics graphics, List<FrontierOverlay> frontierOverlays, int x, int y, int size, float scaleFactor) {
+        public void setFrontiers(List<FrontierOverlay> frontierOverlays) {
+            drawSteps.clear();
 
-            List<DrawStep> drawSteps = new ArrayList<>();
             for (FrontierOverlay frontierOverlay : frontierOverlays) {
                 for (PolygonOverlay polygon : frontierOverlay.getPolygonOverlays()) {
                     drawSteps.add(new DrawPolygonStep(polygon));
@@ -236,7 +236,10 @@ public class ForgeJourneyMapHelper implements IJourneyMapHelper {
                     drawSteps.add(new DrawMarkerStep(banner));
                 }
             }
+        }
 
+        @Override
+        public void draw(GuiGraphics graphics, int x, int y, int size, float scaleFactor) {
             if (drawSteps.isEmpty()) {
                 return;
             }

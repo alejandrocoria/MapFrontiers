@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.platform.services;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.MultiBufferSource;
 
 import java.io.File;
 import java.util.List;
@@ -37,6 +38,7 @@ public interface IJourneyMapHelper {
     }
 
     interface ICustomPreviewRenderer {
-        void draw(GuiGraphics graphics, List<FrontierOverlay> frontierOverlays, int x, int y, int size, float scaleFactor);
+        void setFrontiers(List<FrontierOverlay> frontierOverlays);
+        void draw(GuiGraphics graphics, int x, int y, int size, float scaleFactor);
     }
 }
