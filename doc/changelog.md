@@ -1,3 +1,6 @@
+**Beta 7:**
+* Changed: optimized the frontier preview screen (caching JM drawsteps).
+ 
 **Beta 6:**
 * Added: frontier banners to maps.
 * Added: frontier appearance dialog with a preview example.
