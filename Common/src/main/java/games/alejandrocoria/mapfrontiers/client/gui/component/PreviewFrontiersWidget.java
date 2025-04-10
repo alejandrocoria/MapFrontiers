@@ -102,6 +102,8 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
         double guiScale = Minecraft.getInstance().getWindow().getGuiScale() / scaleFactor;
         setWidth((int) (SIZE / guiScale));
         setHeight((int) (SIZE / guiScale));
+
+        customPreviewRenderer.setFrontiers(previewFrontiers);
     }
 
     @Override
