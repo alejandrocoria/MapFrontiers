@@ -1020,19 +1020,19 @@ public class FrontierData {
             setValue(Visibility.Frontier, nbt.getBoolean("visible").get());
             if (splitVisibility)
             {
-                setValue(Visibility.Fullscreen, nbt.getBoolean("fullscreenVisible").get());
-                setValue(Visibility.FullscreenName, nbt.getBoolean("fullscreenNameVisible").get());
-                setValue(Visibility.FullscreenOwner, nbt.getBoolean("fullscreenOwnerVisible").get());
-                setValue(Visibility.FullscreenBanner, nbt.getBoolean("fullscreenBannerVisible").get());
+                setValue(Visibility.Fullscreen, nbt.contains("fullscreenVisible") ? nbt.getBoolean("fullscreenVisible").get() : true);
+                setValue(Visibility.FullscreenName, nbt.contains("fullscreenNameVisible") ? nbt.getBoolean("fullscreenNameVisible").get() : true);
+                setValue(Visibility.FullscreenOwner, nbt.contains("fullscreenOwnerVisible") ? nbt.getBoolean("fullscreenOwnerVisible").get() : false);
+                setValue(Visibility.FullscreenBanner, nbt.contains("fullscreenBannerVisible") ? nbt.getBoolean("fullscreenBannerVisible").get() : false);
                 setValue(Visibility.FullscreenDay, nbt.contains("fullscreenDay") ? nbt.getBoolean("fullscreenDay").get() : true);
                 setValue(Visibility.FullscreenNight, nbt.contains("fullscreenNight") ? nbt.getBoolean("fullscreenNight").get() : true);
                 setValue(Visibility.FullscreenUnderground, nbt.contains("fullscreenUnderground") ? nbt.getBoolean("fullscreenUnderground").get() : true);
                 setValue(Visibility.FullscreenTopo, nbt.contains("fullscreenTopo") ? nbt.getBoolean("fullscreenTopo").get() : true);
                 setValue(Visibility.FullscreenBiome, nbt.contains("fullscreenBiome") ? nbt.getBoolean("fullscreenBiome").get() : true);
-                setValue(Visibility.Minimap, nbt.getBoolean("minimapVisible").get());
-                setValue(Visibility.MinimapName, nbt.getBoolean("minimapNameVisible").get());
-                setValue(Visibility.MinimapOwner, nbt.getBoolean("minimapOwnerVisible").get());
-                setValue(Visibility.MinimapBanner, nbt.getBoolean("minimapBannerVisible").get());
+                setValue(Visibility.Minimap, nbt.contains("minimapVisible") ? nbt.getBoolean("minimapVisible").get() : true);
+                setValue(Visibility.MinimapName, nbt.contains("minimapNameVisible") ? nbt.getBoolean("minimapNameVisible").get() : true);
+                setValue(Visibility.MinimapOwner, nbt.contains("minimapOwnerVisible") ? nbt.getBoolean("minimapOwnerVisible").get() : false);
+                setValue(Visibility.MinimapBanner, nbt.contains("minimapBannerVisible") ? nbt.getBoolean("minimapBannerVisible").get() : false);
                 setValue(Visibility.MinimapDay, nbt.contains("minimapDay") ? nbt.getBoolean("minimapDay").get() : true);
                 setValue(Visibility.MinimapNight, nbt.contains("minimapNight") ? nbt.getBoolean("minimapNight").get() : true);
                 setValue(Visibility.MinimapUnderground, nbt.contains("minimapUnderground") ? nbt.getBoolean("minimapUnderground").get() : true);

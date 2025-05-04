@@ -1,3 +1,6 @@
+**Beta 8:**
+* Fixed: error when opening frontiers from previous versions that are missing certain visibility parameters.
+ 
 **Beta 7:**
 * Changed: optimized the frontier preview screen (caching JM drawsteps).
  
