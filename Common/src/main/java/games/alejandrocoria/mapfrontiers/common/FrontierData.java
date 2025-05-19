@@ -560,7 +560,7 @@ public class FrontierData {
 
         ListTag chunksTagList = nbt.getListOrEmpty("chunks");
         for (int i = 0; i < chunksTagList.size(); ++i) {
-            CompoundTag posTag = verticesTagList.getCompound(i).get();
+            CompoundTag posTag = chunksTagList.getCompound(i).get();
             chunks.add(new ChunkPos(posTag.getInt("X").get(), posTag.getInt("Z").get()));
         }
 

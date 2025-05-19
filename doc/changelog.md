@@ -1,3 +1,6 @@
+**Beta 9:**
+* Fixed: bug when reading chunk frontiers from file.
+ 
 **Beta 8:**
 * Fixed: error when opening frontiers from previous versions that are missing certain visibility parameters.
  
