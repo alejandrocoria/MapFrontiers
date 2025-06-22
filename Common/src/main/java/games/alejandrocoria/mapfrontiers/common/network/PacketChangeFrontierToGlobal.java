@@ -79,7 +79,7 @@ public class PacketChangeFrontierToGlobal {
             if (player == null) {
                 return;
             }
-            MinecraftServer server = player.server;
+            MinecraftServer server = player.getServer();
             SettingsUser playerUser = new SettingsUser(player);
             FrontierData frontier = FrontiersManager.instance.getFrontierFromID(message.frontierID);
 

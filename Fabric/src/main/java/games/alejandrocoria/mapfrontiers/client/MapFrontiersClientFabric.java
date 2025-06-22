@@ -1,16 +1,18 @@
 package games.alejandrocoria.mapfrontiers.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.MapFrontiersFabric;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.resources.ResourceLocation;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -25,7 +27,7 @@ public class MapFrontiersClientFabric extends MapFrontiersClient implements Clie
 
         ClientTickEvents.START_CLIENT_TICK.register(ClientEventHandler::postClientTickEvent);
         ClientTickEvents.END_CLIENT_TICK.register(client -> ClientEventHandler.postPlayerTickEvent(client, client.player));
-        HudRenderCallback.EVENT.register(ClientEventHandler::postHudRenderEvent);
+        HudElementRegistry.addLast(ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "hud"), ClientEventHandler::postHudRenderEvent);
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> ClientEventHandler.postClientConnectedEvent());
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ClientEventHandler.postClientDisconnectedEvent());
         ScreenEvents.BEFORE_INIT.register((client, theScreen, scaledWidth, scaledHeight) -> {

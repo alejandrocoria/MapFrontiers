@@ -47,7 +47,7 @@ public class MapFrontiersNeoForge extends MapFrontiers {
 
     public static void playerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         ServerPlayer player = (ServerPlayer) event.getEntity();
-        EventHandler.postPlayerJoinedEvent(player.server, player);
+        EventHandler.postPlayerJoinedEvent(player.getServer(), player);
     }
 
     public static void onServerTick(ServerTickEvent.Post event) {

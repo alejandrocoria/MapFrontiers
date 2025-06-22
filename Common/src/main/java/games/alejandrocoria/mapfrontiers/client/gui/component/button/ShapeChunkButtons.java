@@ -8,7 +8,7 @@ import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -119,7 +119,7 @@ public class ShapeChunkButtons extends AbstractWidgetNoNarration {
                 texY = 49;
             }
 
-            graphics.blit(RenderType::guiTextured, texture, getX() + col * 55, getY() + row * 55 + 18, texX + 588, texY, 49, 49, textureSizeX, textureSizeY);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, texture, getX() + col * 55, getY() + row * 55 + 18, texX + 588, texY, 49, 49, textureSizeX, textureSizeY);
 
             ++col;
             if (col == 4) {

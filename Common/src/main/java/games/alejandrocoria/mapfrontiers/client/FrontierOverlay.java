@@ -3,15 +3,11 @@ package games.alejandrocoria.mapfrontiers.client;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.mojang.blaze3d.platform.NativeImage;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.mixin.CubeInvoker;
+import games.alejandrocoria.mapfrontiers.client.mixin.GuiGraphicsAccessor;
 import games.alejandrocoria.mapfrontiers.client.mixin.SpriteContentsInvoker;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
@@ -33,7 +29,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.SpriteContents;
@@ -51,7 +47,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BannerPatternLayers;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix4f;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -1451,26 +1446,10 @@ public class FrontierOverlay extends FrontierData {
                 return;
             }
 
-            graphics.flush();
-
-            Tesselator tesselator = Tesselator.getInstance();
-            BufferBuilder buf = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-            int color = 0xFFFFFFFF;
             int width = 20 * scale;
             int height = 40 * scale;
-            float zLevel = 0.f;
             x -= width / 2;
-            Matrix4f matrix = graphics.pose().last().pose();
-            buf.addVertex(matrix, x, y + height, zLevel).setUv(0, 1).setColor(color);
-            buf.addVertex(matrix, x + width, y + height, zLevel).setUv(1, 1).setColor(color);
-            buf.addVertex(matrix, x + width, y, zLevel).setUv(1, 0).setColor(color);
-            buf.addVertex(matrix, x, y, zLevel).setUv(0, 0).setColor(color);
-
-            RenderType renderType = RenderType.guiTexturedOverlay(textureLocation);
-            try (MeshData meshData = buf.buildOrThrow())
-            {
-                renderType.draw(meshData);
-            }
+            ((GuiGraphicsAccessor) graphics).innerBlitInvoker(RenderPipelines.GUI_TEXTURED, textureLocation, x, x + width, y, y + height, 0, 1, 0, 1, 0xFFFFFFFF);
         }
 
         public boolean hasBanner() {

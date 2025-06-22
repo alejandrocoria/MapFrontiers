@@ -9,7 +9,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
-import net.minecraft.nbt.Tag;
 
 import java.io.File;
 import java.io.FileInputStream;

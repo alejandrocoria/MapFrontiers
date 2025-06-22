@@ -214,9 +214,8 @@ public class HUD {
         int textNameColor = Services.JOURNEYMAP.minimapLabelHighlightColor();
         int textOwnerColor = Services.JOURNEYMAP.minimapLabelForegroundColor();
 
-        graphics.pose().pushPose();
-        graphics.pose().scale(1.0f / factor, 1.0f / factor, 1.0f);
-        graphics.pose().translate(0.0, 0.0, -100.0);
+        graphics.pose().pushMatrix();
+        graphics.pose().scale(1.0f / factor, 1.0f / factor);
 
         for (Config.HUDSlot slot : slots) {
             switch (slot) {
@@ -234,7 +233,7 @@ public class HUD {
             }
         }
 
-        graphics.pose().popPose();
+        graphics.pose().popMatrix();
     }
 
     private void drawName(GuiGraphics graphics, int frameColor, int textColor, float partialTicks) {

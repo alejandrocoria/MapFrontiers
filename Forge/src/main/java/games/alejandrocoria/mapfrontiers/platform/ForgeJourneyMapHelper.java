@@ -9,14 +9,13 @@ import journeymap.api.v2.client.display.PolygonOverlay;
 import journeymap.client.data.WorldData;
 import journeymap.client.io.FileHandler;
 import journeymap.client.io.ThemeLoader;
-import journeymap.client.model.MapState;
-import journeymap.client.model.MapType;
+import journeymap.client.model.map.MapState;
+import journeymap.client.model.map.MapType;
 import journeymap.client.properties.MiniMapProperties;
-import journeymap.client.render.JMRenderTypes;
+import journeymap.client.render.Pipelines;
 import journeymap.client.render.draw.DrawMarkerStep;
 import journeymap.client.render.draw.DrawPolygonStep;
 import journeymap.client.render.draw.DrawStep;
-import journeymap.client.render.draw.DrawUtil;
 import journeymap.client.render.map.MapRenderer;
 import journeymap.client.ui.UIManager;
 import journeymap.client.ui.minimap.DisplayVars;
@@ -59,22 +58,22 @@ public class ForgeJourneyMapHelper implements IJourneyMapHelper {
     }
 
     @Override
-    public int getMinimapWidth() throws NoSuchFieldException, IllegalAccessException {
+    public double getMinimapWidth() throws NoSuchFieldException, IllegalAccessException {
         return ReflectionHelper.getPrivateField(getDisplayVars(), "minimapWidth");
     }
 
     @Override
-    public int getMinimapHeight() throws NoSuchFieldException, IllegalAccessException {
+    public double getMinimapHeight() throws NoSuchFieldException, IllegalAccessException {
         return ReflectionHelper.getPrivateField(getDisplayVars(), "minimapHeight");
     }
 
     @Override
-    public int getMinimapTranslateX() throws NoSuchFieldException, IllegalAccessException {
+    public double getMinimapTranslateX() throws NoSuchFieldException, IllegalAccessException {
         return ReflectionHelper.getPrivateField(getDisplayVars(), "translateX");
     }
 
     @Override
-    public int getMinimapTranslateY() throws NoSuchFieldException, IllegalAccessException {
+    public double getMinimapTranslateY() throws NoSuchFieldException, IllegalAccessException {
         return ReflectionHelper.getPrivateField(getDisplayVars(), "translateY");
     }
 
@@ -248,30 +247,19 @@ public class ForgeJourneyMapHelper implements IJourneyMapHelper {
             int width = Minecraft.getInstance().getWindow().getScreenWidth();
             int height = Minecraft.getInstance().getWindow().getScreenHeight();
             double guiScale = Minecraft.getInstance().getWindow().getGuiScale();
-            DrawUtil.sizeDisplay(width, height);
 
-            graphics.pose().pushPose();
-            graphics.pose().translate(-width * scaleFactor / 2 + x * guiScale, -height * scaleFactor / 2 + y * guiScale, 0);
-            graphics.pose().scale(scaleFactor, scaleFactor, scaleFactor);
+            graphics.pose().pushMatrix();
+            graphics.pose().translate((float) (-width * scaleFactor / 2 + x * guiScale), (float) (-height * scaleFactor / 2 + y * guiScale));
+            graphics.pose().scale(scaleFactor, scaleFactor);
 
             mapRenderer.setViewPortBounds(new Rectangle2D.Double(0, 0, width * scaleFactor, height * scaleFactor));
-            graphics.fill(JMRenderTypes.MINIMAP_RECTANGLE_MASK_RENDER_TYPE, width / 2 + 1, height / 2 + 1, width / 2 + size - 1, height / 2 + size - 1, 0, 0xFFFFFFFF);
+            graphics.fill(Pipelines.MINIMAP_RECTANGLE_MASK_RENDER_PIPELINE, width / 2 + 1, height / 2 + 1, width / 2 + size - 1, height / 2 + size - 1, 0xFFFFFFFF);
 
-            for(DrawStep.Pass pass : DrawStep.Pass.values()) {
-                int zLevel = 0;
-
-                for (DrawStep drawStep : drawSteps) {
-                    ++zLevel;
-                    graphics.pose().pushPose();
-                    graphics.pose().translate(0, 0, zLevel);
-                    drawStep.draw(graphics, buffers, pass, 0, 0, mapRenderer, 1, 0);
-                    graphics.pose().popPose();
-                }
+            for (DrawStep drawStep : drawSteps) {
+                drawStep.draw(graphics, 0, 0, mapRenderer, 1, 0);
             }
 
-            graphics.pose().popPose();
-
-            DrawUtil.sizeDisplay(width / guiScale, height / guiScale);
+            graphics.pose().popMatrix();
         }
     }
 }

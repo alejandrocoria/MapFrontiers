@@ -66,7 +66,7 @@ public class PacketUpdateSharedUserPersonalFrontier {
             if (player == null) {
                 return;
             }
-            MinecraftServer server = player.server;
+            MinecraftServer server = player.getServer();
             SettingsUser playerUser = new SettingsUser(player);
             FrontierData currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontierID);
 

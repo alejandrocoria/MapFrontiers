@@ -4,7 +4,7 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -92,12 +92,12 @@ public class ColorPicker extends AbstractWidgetNoNarration {
     public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         int texX = active ? 0 : 137;
 
-        graphics.blit(RenderType::guiTextured, texture, getX(), getY(), texX, 0, 128, 128, textureSizeX, textureSizeY);
-        graphics.blit(RenderType::guiTextured, texture, getX() + 132, getY(), texX + 129, 0, 8, 128, textureSizeX, textureSizeY, active ? colorFullBrightness : 0xFFFFFFFF);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, getX(), getY(), texX, 0, 128, 128, textureSizeX, textureSizeY);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, getX() + 132, getY(), texX + 129, 0, 8, 128, textureSizeX, textureSizeY, active ? colorFullBrightness : 0xFFFFFFFF);
         graphics.fill(getX() + (int) hsX + 64, getY() + (int) hsY + 64, getX() + (int) hsX + 65, getY() + (int) hsY + 65, active ? 0xFFFFFFFF : colorFullBrightness);
         graphics.fill(getX() + 131, getY() + (int) v, getX() + 139, getY() + (int) v + 1, color);
-        graphics.blit(RenderType::guiTextured, texture, getX() + (int) hsX + 64 - 2, getY() + (int) hsY + 64 - 2, texX, 129, 5, 5, textureSizeX, textureSizeY);
-        graphics.blit(RenderType::guiTextured, texture, getX() + 131, getY() + (int) v - 2, texX + 6, 129, 10, 5, textureSizeX, textureSizeY);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, getX() + (int) hsX + 64 - 2, getY() + (int) hsY + 64 - 2, texX, 129, 5, 5, textureSizeX, textureSizeY);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, getX() + 131, getY() + (int) v - 2, texX + 6, 129, 10, 5, textureSizeX, textureSizeY);
     }
 
     private void updateMouse(double mouseX, double mouseY, boolean dragging) {

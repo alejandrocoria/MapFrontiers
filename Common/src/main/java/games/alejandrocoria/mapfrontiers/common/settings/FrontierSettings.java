@@ -3,7 +3,6 @@ package games.alejandrocoria.mapfrontiers.common.settings;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 

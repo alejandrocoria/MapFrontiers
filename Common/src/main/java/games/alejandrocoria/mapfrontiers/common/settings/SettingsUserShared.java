@@ -5,7 +5,6 @@ import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 
 import javax.annotation.ParametersAreNonnullByDefault;

@@ -3,7 +3,6 @@ package games.alejandrocoria.mapfrontiers.client.gui.component;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
-import games.alejandrocoria.mapfrontiers.client.mixin.GuiGraphicsAccessor;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.platform.Services;
@@ -12,7 +11,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
@@ -110,13 +109,13 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
 
     @Override
     protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        graphics.blit(RenderType::guiTextured, backgroundTexture, getX(), getY(), 0, 0, getWidth(), getHeight(), SIZE, SIZE, SIZE, SIZE);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, backgroundTexture, getX(), getY(), 0, 0, getWidth(), getHeight(), SIZE, SIZE, SIZE, SIZE);
         graphics.hLine(getX(), getX() + getWidth() - 1, getY(), ColorConstants.OPTION_BORDER);
         graphics.hLine(getX(), getX() + getWidth() - 1, getY() + getHeight() - 1, ColorConstants.OPTION_BORDER);
         graphics.vLine(getX(), getY(), getY() + getHeight() - 1, ColorConstants.OPTION_BORDER);
         graphics.vLine(getX() + getWidth() - 1, getY(), getY() + getHeight() - 1, ColorConstants.OPTION_BORDER);
 
-        customPreviewRenderer.draw(graphics, ((GuiGraphicsAccessor) graphics).getBufferSource(), getX(), getY(), SIZE, scaleFactor);
+        customPreviewRenderer.draw(graphics, Minecraft.getInstance().renderBuffers().bufferSource(), getX(), getY(), SIZE, scaleFactor);
     }
 
     @Nullable

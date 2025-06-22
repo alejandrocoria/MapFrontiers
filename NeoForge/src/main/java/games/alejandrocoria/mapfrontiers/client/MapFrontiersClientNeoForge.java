@@ -79,7 +79,7 @@ public class MapFrontiersClientNeoForge extends MapFrontiersClient {
         }
     }
 
-    @EventBusSubscriber(value = Dist.CLIENT, modid = MapFrontiers.MODID, bus = EventBusSubscriber.Bus.MOD)
+    @EventBusSubscriber(value = Dist.CLIENT, modid = MapFrontiers.MODID)
     public static class KeyMappingsEventHandler {
         @SubscribeEvent
         public static void registerKeyMappingsEvent(RegisterKeyMappingsEvent event) {
@@ -89,7 +89,7 @@ public class MapFrontiersClientNeoForge extends MapFrontiersClient {
         }
     }
 
-    @EventBusSubscriber(modid = MapFrontiers.MODID, bus = EventBusSubscriber.Bus.MOD)
+    @EventBusSubscriber(modid = MapFrontiers.MODID)
     public static class ConfigEventHandler {
         @SubscribeEvent
         public static void onModConfigEvent(ModConfigEvent.Loading configEvent) {

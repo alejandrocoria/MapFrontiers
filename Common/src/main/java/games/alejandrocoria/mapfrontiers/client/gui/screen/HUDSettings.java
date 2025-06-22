@@ -248,8 +248,8 @@ public class HUDSettings extends AutoScaledScreen {
 
     private void drawAnchor(GuiGraphics graphics, Window mainWindow) {
         float factor = (float) mainWindow.getGuiScale();
-        graphics.pose().pushPose();
-        graphics.pose().scale(1.f / factor, 1.f / factor, 1.f);
+        graphics.pose().pushMatrix();
+        graphics.pose().scale(1.f / factor, 1.f / factor);
 
         int directionX = 0;
         int directionY = 0;
@@ -297,7 +297,7 @@ public class HUDSettings extends AutoScaledScreen {
             graphics.vLine(anchor.x, anchor.y, anchor.y + length * directionY, anchorLineColor);
         }
 
-        graphics.pose().popPose();
+        graphics.pose().popMatrix();
     }
 
     private void updateSlots() {

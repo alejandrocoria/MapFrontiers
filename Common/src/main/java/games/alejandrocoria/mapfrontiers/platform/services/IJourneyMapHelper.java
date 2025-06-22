@@ -13,10 +13,10 @@ public interface IJourneyMapHelper {
     void fullscreenMapCenterOn(int x, int z);
     boolean isMinimapEnabled();
     void drawMinimapPreview(GuiGraphics graphics);
-    int getMinimapWidth() throws NoSuchFieldException, IllegalAccessException;
-    int getMinimapHeight() throws NoSuchFieldException, IllegalAccessException;
-    int getMinimapTranslateX() throws NoSuchFieldException, IllegalAccessException;
-    int getMinimapTranslateY() throws NoSuchFieldException, IllegalAccessException;
+    double getMinimapWidth() throws NoSuchFieldException, IllegalAccessException;
+    double getMinimapHeight() throws NoSuchFieldException, IllegalAccessException;
+    double getMinimapTranslateX() throws NoSuchFieldException, IllegalAccessException;
+    double getMinimapTranslateY() throws NoSuchFieldException, IllegalAccessException;
     int getMinimapMargin();
     JMPosition getMinimapPosition();
     int getMinimapFontScale();

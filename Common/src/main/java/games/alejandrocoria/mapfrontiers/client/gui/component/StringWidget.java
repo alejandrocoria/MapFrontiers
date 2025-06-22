@@ -49,8 +49,8 @@ public class StringWidget extends net.minecraft.client.gui.components.StringWidg
     @Override
     public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         if (scale != 1.f) {
-            guiGraphics.pose().pushPose();
-            guiGraphics.pose().scale(scale, scale, 1.f);
+            guiGraphics.pose().pushMatrix();
+            guiGraphics.pose().scale(scale, scale);
         }
 
         int x = Mth.floor(this.getX() / scale);
@@ -65,7 +65,7 @@ public class StringWidget extends net.minecraft.client.gui.components.StringWidg
         }
 
         if (scale != 1.f) {
-            guiGraphics.pose().popPose();
+            guiGraphics.pose().popMatrix();
         }
     }
 }

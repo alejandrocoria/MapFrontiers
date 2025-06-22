@@ -1,7 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.MapFrontiersForge;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.common.Config;
@@ -16,7 +15,7 @@ import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.eventbus.api.listener.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
@@ -68,23 +67,17 @@ public class MapFrontiersClientForge extends MapFrontiersClient {
         }
     }
 
-    @Mod.EventBusSubscriber(value = Dist.CLIENT, modid = MapFrontiers.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
-    public static class KeyMappingsEventHandler {
-        @SubscribeEvent
-        public static void registerKeyMappingsEvent(RegisterKeyMappingsEvent event) {
-            openSettingsKey = new KeyMapping("mapfrontiers.key.open_settings", KeyConflictContext.IN_GAME,
-                    InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, "mapfrontiers.key.category");
-            event.register(openSettingsKey);
-        }
+    @SubscribeEvent
+    public static void registerKeyMappingsEvent(RegisterKeyMappingsEvent event) {
+        openSettingsKey = new KeyMapping("mapfrontiers.key.open_settings", KeyConflictContext.IN_GAME,
+                InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, "mapfrontiers.key.category");
+        event.register(openSettingsKey);
     }
 
-    @Mod.EventBusSubscriber(modid = MapFrontiers.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
-    public static class ConfigEventHandler {
-        @SubscribeEvent
-        public static void onModConfigEvent(ModConfigEvent.Loading configEvent) {
-            if (configEvent.getConfig().getModId().equals(MapFrontiersForge.MODID) && configEvent.getConfig().getType() == ModConfig.Type.CLIENT) {
-                Config.bakeConfig();
-            }
+    @SubscribeEvent
+    public static void onModConfigEvent(ModConfigEvent.Loading configEvent) {
+        if (configEvent.getConfig().getModId().equals(MapFrontiersForge.MODID) && configEvent.getConfig().getType() == ModConfig.Type.CLIENT) {
+            Config.bakeConfig();
         }
     }
 }

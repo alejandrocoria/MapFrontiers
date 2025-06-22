@@ -66,7 +66,7 @@ public class PacketRemoveSharedUserPersonalFrontier {
             if (player == null) {
                 return;
             }
-            MinecraftServer server = player.server;
+            MinecraftServer server = player.getServer();
             SettingsUser playerUser = new SettingsUser(player);
 
             message.targetUser.fillMissingInfo(false, server);

@@ -78,8 +78,9 @@ public abstract class AutoScaledScreen extends LayeredScreen {
 
     @Override
     protected final void renderPopupScreenBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        graphics.flush();
-        renderBlurredBackground();
+        if (minecraft.screen == this) {
+            graphics.blurBeforeThisStratum();
+        }
     }
 
     @Override
@@ -88,8 +89,8 @@ public abstract class AutoScaledScreen extends LayeredScreen {
         mouseY = (int) (mouseY * scaleFactor);
 
         if (scaleFactor != 1.f) {
-            graphics.pose().pushPose();
-            graphics.pose().scale(1.0f / scaleFactor, 1.0f / scaleFactor, 1.0f);
+            graphics.pose().pushMatrix();
+            graphics.pose().scale(1.0f / scaleFactor, 1.0f / scaleFactor);
         }
 
         if (title.getContents() != PlainTextContents.EMPTY) {
@@ -106,8 +107,12 @@ public abstract class AutoScaledScreen extends LayeredScreen {
 
         renderScaledScreen(graphics, mouseX, mouseY, partialTicks);
 
+        if (minecraft.screen == this) {
+            graphics.renderDeferredTooltip();
+        }
+
         if (scaleFactor != 1.f) {
-            graphics.pose().popPose();
+            graphics.pose().popMatrix();
         }
     }
 

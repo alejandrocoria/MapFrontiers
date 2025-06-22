@@ -804,10 +804,11 @@ public class Config {
 
         if (Services.JOURNEYMAP.isMinimapEnabled()) {
             try {
-                int minimapWidth = Services.JOURNEYMAP.getMinimapWidth();
-                int minimapHeight = Services.JOURNEYMAP.getMinimapHeight();
-                int translateX = Services.JOURNEYMAP.getMinimapTranslateX();
-                int translateY = Services.JOURNEYMAP.getMinimapTranslateY();
+                int guiScale = mc.getWindow().getGuiScale();
+                int minimapWidth = (int) Services.JOURNEYMAP.getMinimapWidth() * guiScale;
+                int minimapHeight = (int) Services.JOURNEYMAP.getMinimapHeight() * guiScale;
+                int translateX = (int) Services.JOURNEYMAP.getMinimapTranslateX() * guiScale;
+                int translateY = (int) Services.JOURNEYMAP.getMinimapTranslateY() * guiScale;
                 int margin = Services.JOURNEYMAP.getMinimapMargin();
                 minimapWidth += margin * 2;
                 minimapHeight += margin * 2;

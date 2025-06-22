@@ -109,7 +109,7 @@ public class PacketCreateFrontier {
             if (player == null) {
                 return;
             }
-            MinecraftServer server = player.server;
+            MinecraftServer server = player.getServer();
             FrontierData frontier;
 
             if (message.personal) {
