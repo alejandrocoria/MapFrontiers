@@ -55,7 +55,7 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
         frontierData.setOwner(owner);
         frontierData.setName1("Preview");
         frontierData.setName2("Frontier");
-        frontierData.setColor(0xFFCCFF70);
+        frontierData.setColor(0xFFAACC60);
         frontierData.setBanner(DyeColor.BLACK, patterns);
         frontierData.setDimension(ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld")));
         frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenDay, true);

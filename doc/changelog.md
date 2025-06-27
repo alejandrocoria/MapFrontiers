@@ -1,3 +1,6 @@
+**Beta 10:**
+* Added: setting to change the color of the frontier text.
+ 
 **Beta 9:**
 * Fixed: bug when reading chunk frontiers from file.
  

@@ -59,6 +59,10 @@ public class Config {
         None, Name, Owner, Banner
     }
 
+    public enum TextColor {
+        Frontier, Bright, White
+    }
+
     // New Frontier
     public static int newFrontierShape;
     public static int newFrontierCount;
@@ -121,6 +125,7 @@ public class Config {
     public static double borderOpacity;
     public static int textSize;
     public static double textOpacity;
+    public static TextColor textColor;
     public static int bannerSize;
     public static double bannerOpacity;
 
@@ -207,6 +212,7 @@ public class Config {
         borderOpacity = CLIENT.borderOpacity.get();
         textSize = CLIENT.textSize.get();
         textOpacity = CLIENT.textOpacity.get();
+        textColor = CLIENT.textColor.get();
         bannerSize = CLIENT.bannerSize.get();
         bannerOpacity = CLIENT.bannerOpacity.get();
 
@@ -291,6 +297,7 @@ public class Config {
         public final DoubleValue borderOpacity;
         public final IntValue textSize;
         public final DoubleValue textOpacity;
+        public final EnumValue<TextColor> textColor;
         public final IntValue bannerSize;
         public final DoubleValue bannerOpacity;
 
@@ -493,6 +500,10 @@ public class Config {
                     .comment("Transparency of the frontier text. 0.0 is fully transparent and 1.0 is opaque.")
                     .translation(MapFrontiers.MODID + ".config." + "textOpacity")
                     .defineInRange("textOpacity", 1.0, 0.0, 1.0);
+            textColor = builder
+                    .comment("Color of the frontier text. Frontier will use the frontier color. Bright will also use the same color but with maximum brightness.")
+                    .translation(MapFrontiers.MODID + ".config." + "textColor")
+                    .defineEnum("textColor", TextColor.Frontier);
             bannerSize = builder
                     .comment("Size of the frontier banner.")
                     .translation(MapFrontiers.MODID + ".config." + "bannerSize")
@@ -606,6 +617,7 @@ public class Config {
         CLIENT.borderOpacity.set(borderOpacity);
         CLIENT.textSize.set(textSize);
         CLIENT.textOpacity.set(textOpacity);
+        CLIENT.textColor.set(textColor);
         CLIENT.bannerSize.set(bannerSize);
         CLIENT.bannerOpacity.set(bannerOpacity);
 
