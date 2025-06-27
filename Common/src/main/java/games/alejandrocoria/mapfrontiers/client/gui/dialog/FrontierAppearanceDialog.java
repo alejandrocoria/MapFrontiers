@@ -32,6 +32,8 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
     private static final Tooltip textSizeTooltip = Config.getTooltip("textSize");
     private static final Component textOpacityLabel = Config.getTranslatedName("textOpacity");
     private static final Tooltip textOpacityTooltip = Config.getTooltip("textOpacity");
+    private static final Component textColorLabel = Config.getTranslatedName("textColor");
+    private static final Tooltip textColorTooltip = Config.getTooltip("textColor");
     private static final Component bannerSizeLabel = Config.getTranslatedName("bannerSize");
     private static final Tooltip bannerSizeTooltip = Config.getTooltip("bannerSize");
     private static final Component bannerOpacityLabel = Config.getTranslatedName("bannerOpacity");
@@ -46,6 +48,7 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
     private StringWidget labelBorderOpacity;
     private StringWidget labelTextSize;
     private StringWidget labelTextOpacity;
+    private StringWidget labelTextUsesCustomColor;
     private StringWidget labelBannerSize;
     private StringWidget labelBannerOpacity;
     private OptionButton buttonHideNamesThatDontFit;
@@ -54,6 +57,7 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
     private TextBoxDouble textBorderOpacity;
     private TextBoxInt textTextSize;
     private TextBoxDouble textTextOpacity;
+    private OptionButton buttonTextUsesCustomColor;
     private TextBoxInt textBannerSize;
     private TextBoxDouble textBannerOpacity;
     private PreviewFrontiersWidget previewFrontiers;
@@ -80,7 +84,7 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
         labelHideNamesThatDontFit = settingsLayout.addChild(new StringWidget(hideNamesThatDontFitLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelHideNamesThatDontFit.setTooltip(hideNamesThatDontFitTooltip);
-        buttonHideNamesThatDontFit = settingsLayout.addChild(new OptionButton(font, 40, (b) -> {
+        buttonHideNamesThatDontFit = settingsLayout.addChild(new OptionButton(font, 60, (b) -> {
             Config.hideNamesThatDontFit = b.getSelected() == 0;
             previewFrontiers.configUpdated();
         }), row++, 1);
@@ -90,7 +94,7 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
         labelPolygonsOpacity = settingsLayout.addChild(new StringWidget(polygonsOpacityLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelPolygonsOpacity.setTooltip(polygonsOpacityTooltip);
-        textPolygonsOpacity = settingsLayout.addChild(new TextBoxDouble(0.4, 0.0, 1.0, font, 40), row++, 1);
+        textPolygonsOpacity = settingsLayout.addChild(new TextBoxDouble(0.4, 0.0, 1.0, font, 60), row++, 1);
         textPolygonsOpacity.setValue(String.valueOf(Config.polygonsOpacity));
         textPolygonsOpacity.setMaxLength(6);
         textPolygonsOpacity.setValueChangedCallback(value -> {
@@ -100,7 +104,7 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
         labelBorderWidth = settingsLayout.addChild(new StringWidget(borderWidthLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelBorderWidth.setTooltip(borderWidthTooltip);
-        textBorderWidth = settingsLayout.addChild(new TextBoxInt(0, 0, 64, font, 40), row++, 1);
+        textBorderWidth = settingsLayout.addChild(new TextBoxInt(0, 0, 64, font, 60), row++, 1);
         textBorderWidth.setValue(String.valueOf(Config.borderWidth));
         textBorderWidth.setMaxLength(2);
         textBorderWidth.setValueChangedCallback(value -> {
@@ -110,7 +114,7 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
         labelBorderOpacity = settingsLayout.addChild(new StringWidget(borderOpacityLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelBorderOpacity.setTooltip(borderOpacityTooltip);
-        textBorderOpacity = settingsLayout.addChild(new TextBoxDouble(1.0, 0.0, 1.0, font, 40), row++, 1);
+        textBorderOpacity = settingsLayout.addChild(new TextBoxDouble(1.0, 0.0, 1.0, font, 60), row++, 1);
         textBorderOpacity.setValue(String.valueOf(Config.borderOpacity));
         textBorderOpacity.setMaxLength(6);
         textBorderOpacity.setValueChangedCallback(value -> {
@@ -120,7 +124,7 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
         labelTextSize = settingsLayout.addChild(new StringWidget(textSizeLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelTextSize.setTooltip(textSizeTooltip);
-        textTextSize = settingsLayout.addChild(new TextBoxInt(2, 1, 5, font, 40), row++, 1);
+        textTextSize = settingsLayout.addChild(new TextBoxInt(2, 1, 5, font, 60), row++, 1);
         textTextSize.setValue(String.valueOf(Config.textSize));
         textTextSize.setMaxLength(2);
         textTextSize.setValueChangedCallback(value -> {
@@ -130,7 +134,7 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
         labelTextOpacity = settingsLayout.addChild(new StringWidget(textOpacityLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelTextOpacity.setTooltip(textOpacityTooltip);
-        textTextOpacity = settingsLayout.addChild(new TextBoxDouble(1.0, 0.0, 1.0, font, 40), row++, 1);
+        textTextOpacity = settingsLayout.addChild(new TextBoxDouble(1.0, 0.0, 1.0, font, 60), row++, 1);
         textTextOpacity.setValue(String.valueOf(Config.textOpacity));
         textTextOpacity.setMaxLength(6);
         textTextOpacity.setValueChangedCallback(value -> {
@@ -138,9 +142,20 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
             previewFrontiers.configUpdated();
         });
 
+        labelTextUsesCustomColor = settingsLayout.addChild(new StringWidget(textColorLabel, font).setColor(ColorConstants.TEXT), row, 0);
+        labelTextUsesCustomColor.setTooltip(textColorTooltip);
+        buttonTextUsesCustomColor = settingsLayout.addChild(new OptionButton(font, 60, (b) -> {
+            Config.textColor = Config.TextColor.values()[b.getSelected()];
+            previewFrontiers.configUpdated();
+        }), row++, 1);
+        buttonTextUsesCustomColor.addOption(Config.getTranslatedEnum(Config.TextColor.Frontier));
+        buttonTextUsesCustomColor.addOption(Config.getTranslatedEnum(Config.TextColor.Bright));
+        buttonTextUsesCustomColor.addOption(Config.getTranslatedEnum(Config.TextColor.White));
+        buttonTextUsesCustomColor.setSelected(Config.textColor.ordinal());
+
         labelBannerSize = settingsLayout.addChild(new StringWidget(bannerSizeLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelBannerSize.setTooltip(bannerSizeTooltip);
-        textBannerSize = settingsLayout.addChild(new TextBoxInt(2, 1, 5, font, 40), row++, 1);
+        textBannerSize = settingsLayout.addChild(new TextBoxInt(2, 1, 5, font, 60), row++, 1);
         textBannerSize.setValue(String.valueOf(Config.bannerSize));
         textBannerSize.setMaxLength(2);
         textBannerSize.setValueChangedCallback(value -> {
@@ -150,7 +165,7 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
         labelBannerOpacity = settingsLayout.addChild(new StringWidget(bannerOpacityLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelBannerOpacity.setTooltip(bannerOpacityTooltip);
-        textBannerOpacity = settingsLayout.addChild(new TextBoxDouble(1.0, 0.0, 1.0, font, 40), row++, 1);
+        textBannerOpacity = settingsLayout.addChild(new TextBoxDouble(1.0, 0.0, 1.0, font, 60), row++, 1);
         textBannerOpacity.setValue(String.valueOf(Config.bannerOpacity));
         textBannerOpacity.setMaxLength(6);
         textBannerOpacity.setValueChangedCallback(value -> {

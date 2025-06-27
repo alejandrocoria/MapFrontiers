@@ -56,6 +56,7 @@ import org.joml.Matrix4f;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.awt.Color;
 import java.awt.geom.Area;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
@@ -1102,7 +1103,12 @@ public class FrontierOverlay extends FrontierData {
             return;
         }
 
-        TextProperties textProps = new TextProperties().setColor(color).setOpacity((float) Config.textOpacity).setScale(Config.textSize).setBackgroundOpacity(0.f);
+        TextProperties textProps = new TextProperties().setOpacity((float) Config.textOpacity).setScale(Config.textSize).setBackgroundOpacity(0.f);
+        switch (Config.textColor) {
+            case Config.TextColor.Frontier -> textProps.setColor(color);
+            case Config.TextColor.Bright -> textProps.setColor(colorMaxBrightness(color));
+            case Config.TextColor.White -> textProps.setColor(ColorConstants.WHITE);
+        }
 
         int lines = 0;
         int totalWidth = 0;
@@ -1191,6 +1197,11 @@ public class FrontierOverlay extends FrontierData {
                 polygonOverlay.setTextProperties(textProps).setOverlayGroupName("frontier").setLabel(label);
             }
         }
+    }
+
+    private int colorMaxBrightness(int color) {
+        float[] hsv = Color.RGBtoHSB((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, null);
+        return Color.HSBtoRGB(hsv[0], hsv[1], 1.f);
     }
 
     private void setMinSizeTextProperties(TextProperties textProperties, Rectangle2D.Double polygonBound, int width, int height) {
