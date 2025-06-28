@@ -4,6 +4,7 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin;
+import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketCreateFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketDeleteFrontier;
@@ -300,10 +301,16 @@ public class FrontiersOverlayManager {
 
     public Set<FrontierOverlay> getFrontiersForAnnounce(ResourceKey<Level> dimension, BlockPos pos) {
         Set<FrontierOverlay> inPosition = new HashSet<>();
+        if (Config.announceInChat == Config.Visibility.Never && Config.announceInTitle == Config.Visibility.Never) {
+            return inPosition;
+        }
+
         ArrayList<FrontierOverlay> frontiers = dimensionsFrontiers.get(dimension);
+        boolean forcedAnnounceInChat = Config.announceInChat == Config.Visibility.Always;
+        boolean forcedAnnounceInTitle = Config.announceInTitle == Config.Visibility.Always;
         if (frontiers != null) {
             for (FrontierOverlay frontier : frontiers) {
-                if ((frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat) || frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInTitle)) && frontier.pointIsInside(pos, 0.0)) {
+                if ((forcedAnnounceInChat || forcedAnnounceInTitle || frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat) || frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInTitle)) && frontier.pointIsInside(pos, 0.0)) {
                     inPosition.add(frontier);
                 }
             }
