@@ -1,5 +1,6 @@
 **Beta 10:**
 * Added: setting to change the color of the frontier text.
+* Fixed: global forced announce in chat and title settings do not work.
  
 **Beta 9:**
 * Fixed: bug when reading chunk frontiers from file.

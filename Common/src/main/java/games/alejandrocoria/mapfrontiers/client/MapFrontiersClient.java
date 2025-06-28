@@ -95,7 +95,8 @@ public class MapFrontiersClient {
                 for (Iterator<FrontierOverlay> i = insideFrontiers.iterator(); i.hasNext();) {
                     FrontierOverlay inside = i.next();
                     if (frontiers.stream().noneMatch(f -> f.getId().equals(inside.getId()))) {
-                        if (inside.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat) && (inside.isNamed() || Config.announceUnnamedFrontiers)) {
+                        boolean frontierAnnounceInChat = inside.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat);
+                        if (Config.getVisibilityValue(Config.announceInChat, frontierAnnounceInChat) && (inside.isNamed() || Config.announceUnnamedFrontiers)) {
                             player.displayClientMessage(Component.translatable("mapfrontiers.chat.leaving", createAnnounceTextWithName(inside)), false);
                         }
                         i.remove();
@@ -105,10 +106,14 @@ public class MapFrontiersClient {
                 for (FrontierOverlay frontier : frontiers) {
                     if (insideFrontiers.add(frontier) && (frontier.isNamed() || Config.announceUnnamedFrontiers)) {
                         Component text = createAnnounceTextWithName(frontier);
-                        if (frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat)) {
+
+                        boolean frontierAnnounceInChat = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat);
+                        if (Config.getVisibilityValue(Config.announceInChat, frontierAnnounceInChat)) {
                             player.displayClientMessage(Component.translatable("mapfrontiers.chat.entering", text), false);
                         }
-                        if (frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInTitle)) {
+
+                        boolean frontierAnnounceInTitle = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInTitle);
+                        if (Config.getVisibilityValue(Config.announceInTitle, frontierAnnounceInTitle)) {
                             if (Config.titleAnnouncementAboveHotbar) {
                                 client.gui.setOverlayMessage(text, false);
                             } else if (System.currentTimeMillis() >= lastTitleTime + Config.titleAnnouncementTimeout / 20 * 1000L) {
