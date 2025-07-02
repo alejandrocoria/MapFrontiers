@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.FullscreenMap;
+import games.alejandrocoria.mapfrontiers.client.gui.component.SortToolbar;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.FrontierListElement;
@@ -54,6 +55,7 @@ public class FrontierList extends AutoScaledScreen {
     private final IClientAPI jmAPI;
     private final FullscreenMap fullscreenMap;
 
+    private SortToolbar sortToolbar;
     private ScrollBox frontiers;
     private ScrollBox filterType;
     private ScrollBox filterOwner;
@@ -93,26 +95,28 @@ public class FrontierList extends AutoScaledScreen {
 
     @Override
     public void initScreen() {
-        GridLayout mainLayout = new GridLayout().spacing(8);
+        GridLayout mainLayout = new GridLayout().columnSpacing(8).rowSpacing(4);
         content.addChild(mainLayout);
-        LayoutSettings leftColumnSettings = LayoutSettings.defaults().alignHorizontallyRight();
-        LayoutSettings rightColumnSettings = LayoutSettings.defaults().alignHorizontallyLeft();
+        LayoutSettings alignRightSettings = LayoutSettings.defaults().alignHorizontallyRight();
+        LayoutSettings alignLeftSettings = LayoutSettings.defaults().alignHorizontallyLeft();
 
-        frontiers = new ScrollBox(actualHeight - 100, 450, 24);
+
+        sortToolbar = new SortToolbar(font, this::updateFrontiers);
+        mainLayout.addChild(sortToolbar, 0, 0, alignLeftSettings);
+
+
+        frontiers = new ScrollBox(actualHeight - 120, 450, 24);
         frontiers.setElementDeletedCallback(element -> updateButtons());
         frontiers.setElementClickedCallback(element -> {
             FrontierOverlay frontier = ((FrontierListElement) element).getFrontier();
             fullscreenMap.selectFrontier(frontier);
             updateButtons();
         });
-        mainLayout.addChild(frontiers, 0, 0, leftColumnSettings);
+        mainLayout.addChild(frontiers, 1, 0, alignRightSettings);
 
 
-        LinearLayout rightColumn = LinearLayout.vertical().spacing(2);
-        rightColumn.defaultCellSetting().alignHorizontallyLeft();
-        mainLayout.addChild(rightColumn, 0, 1, rightColumnSettings);
 
-        buttonResetFilters = rightColumn.addChild(new SimpleButton(font, 110, resetFiltersLabel, (b) -> {
+        buttonResetFilters = new SimpleButton(font, 110, resetFiltersLabel, (b) -> {
             Config.filterFrontierType = Config.FilterFrontierType.All;
             filterType.selectElementIf((element) -> ((RadioListElement) element).getId() == Config.filterFrontierType.ordinal());
             Config.filterFrontierOwner = Config.FilterFrontierOwner.All;
@@ -121,9 +125,14 @@ public class FrontierList extends AutoScaledScreen {
             filterDimension.selectElementIf((element) -> ((RadioListElement) element).getId() == Config.filterFrontierDimension.hashCode());
             updateFrontiers();
             updateButtons();
-        }));
+        });
+        mainLayout.addChild(buttonResetFilters, 0, 1, alignLeftSettings);
 
-        rightColumn.addChild(SpacerElement.height(4));
+
+        LinearLayout rightColumn = LinearLayout.vertical().spacing(2);
+        rightColumn.defaultCellSetting().alignHorizontallyLeft();
+        mainLayout.addChild(rightColumn, 1, 1, alignLeftSettings);
+
         rightColumn.addChild(new StringWidget(filterTypeLabel, font).setColor(ColorConstants.TEXT));
         filterType = new ScrollBox(52, 200, 16);
         filterType.addElement(new RadioListElement(font, Config.getTranslatedEnum(Config.FilterFrontierType.All), Config.FilterFrontierType.All.ordinal()));
@@ -287,13 +296,13 @@ public class FrontierList extends AutoScaledScreen {
         FrontierData selectedFrontier = frontiers.getSelectedElement() == null ? null : ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
         UUID frontierID = selectedFrontier == null ? null : selectedFrontier.getId();
 
-        frontiers.removeAll();
+        List<FrontierOverlay> toAdd = new ArrayList<>();
 
         if (Config.filterFrontierType == Config.FilterFrontierType.All || Config.filterFrontierType == Config.FilterFrontierType.Personal) {
             for (ArrayList<FrontierOverlay> dimension : MapFrontiersClient.getFrontiersOverlayManager(true).getAllFrontiers().values()) {
                 for (FrontierOverlay frontier : dimension) {
                     if (checkFilterOwner(frontier) && checkFilterDimension(frontier)) {
-                        frontiers.addElement(new FrontierListElement(font, frontier));
+                        toAdd.add(frontier);
                     }
                 }
             }
@@ -303,10 +312,58 @@ public class FrontierList extends AutoScaledScreen {
             for (ArrayList<FrontierOverlay> dimension : MapFrontiersClient.getFrontiersOverlayManager(false).getAllFrontiers().values()) {
                 for (FrontierOverlay frontier : dimension) {
                     if (checkFilterOwner(frontier) && checkFilterDimension(frontier)) {
-                        frontiers.addElement(new FrontierListElement(font, frontier));
+                        toAdd.add(frontier);
                     }
                 }
             }
+        }
+
+        toAdd.sort((a, b) -> {
+            for (Config.Sorting sort : Config.frontierSorting) {
+                int order = switch (sort) {
+                    case Config.Sorting.Name -> {
+                        int c = a.getName1().compareToIgnoreCase(b.getName1());
+                        yield c == 0 ? a.getName2().compareToIgnoreCase(b.getName2()) : c;
+                    }
+                    case Config.Sorting.Owner -> a.getOwner().compareTo(b.getOwner());
+                    case Config.Sorting.VertexChunk -> Integer.compare(Math.max(a.getChunkCount(), a.getVertexCount()), Math.max(b.getChunkCount(), b.getVertexCount()));
+                    case Config.Sorting.Area -> Float.compare(a.area, b.area);
+                    case Config.Sorting.Modified -> {
+                        if (a.getModified() == null && b.getModified() == null) {
+                            yield 0;
+                        } else if (a.getModified() == null) {
+                            yield -1;
+                        } else if (b.getModified() == null) {
+                            yield 1;
+                        } else {
+                            yield a.getModified().compareTo(b.getModified());
+                        }
+                    }
+                    case Config.Sorting.Created -> {
+                        if (a.getCreated() == null && b.getCreated() == null) {
+                            yield 0;
+                        } else if (a.getCreated() == null) {
+                            yield -1;
+                        } else if (b.getCreated() == null) {
+                            yield 1;
+                        } else {
+                            yield a.getCreated().compareTo(b.getCreated());
+                        }
+                    }
+                };
+
+                if (order != 0) {
+                    boolean ascending = Config.frontierSortingDirection.get(Config.frontierSorting.indexOf(sort));
+                    return ascending ? order : -order;
+                }
+            }
+
+            return 0;
+        });
+
+        frontiers.removeAll();
+        for (FrontierOverlay frontier : toAdd) {
+            frontiers.addElement(new FrontierListElement(font, frontier));
         }
 
         if (frontierID != null) {

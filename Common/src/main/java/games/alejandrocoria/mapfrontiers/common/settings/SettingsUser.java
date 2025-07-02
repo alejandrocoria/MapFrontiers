@@ -11,9 +11,11 @@ import net.minecraft.world.entity.player.Player;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
 
-public class SettingsUser {
+@ParametersAreNonnullByDefault
+public class SettingsUser implements Comparable<SettingsUser> {
     public String username;
     public UUID uuid;
 
@@ -128,5 +130,26 @@ public class SettingsUser {
         }
 
         return username;
+    }
+
+    @Override
+    public int compareTo(SettingsUser other) {
+        if (StringUtils.isBlank(username) && StringUtils.isBlank(other.username)) {
+            if (uuid == null || other.uuid == null) {
+                return 0;
+            } else {
+                return uuid.compareTo(other.uuid);
+            }
+        }
+
+        if (username == null) {
+            return other.username == null ? 0 : -1;
+        }
+
+        if (other.username == null) {
+            return 1;
+        }
+
+        return username.compareTo(other.username);
     }
 }
