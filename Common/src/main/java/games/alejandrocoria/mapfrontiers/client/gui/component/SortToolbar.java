@@ -1,0 +1,140 @@
+package games.alejandrocoria.mapfrontiers.client.gui.component;
+
+import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.gui.component.button.ButtonBase;
+import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
+import games.alejandrocoria.mapfrontiers.common.Config;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.layouts.LinearLayout;
+import net.minecraft.network.chat.Component;
+
+import javax.annotation.ParametersAreNonnullByDefault;
+
+public class SortToolbar extends LinearLayout {
+    private SortButton selected;
+    private Runnable onChange;
+
+    public SortToolbar(Font font, Runnable onChange) {
+        super(0, 0, Orientation.HORIZONTAL);
+        spacing(8);
+
+        this.onChange = onChange;
+
+        for (Config.Sorting sort : Config.Sorting.values()) {
+            int index = Config.frontierSorting.indexOf(sort);
+            if (index == -1) {
+                continue;
+            }
+            SortButton button = addChild(new SortButton(font, sort, Config.frontierSortingDirection.get(index), this::buttonPressed));
+            if (index == 0) {
+                selected = button;
+                selected.setSelected(true);
+            }
+        }
+    }
+
+    private void buttonPressed(Button button) {
+        if (button instanceof SortButton sortButton) {
+            if (sortButton == selected) {
+                sortButton.changeDirection();
+                Config.frontierSortingDirection.set(0, !Config.frontierSortingDirection.getFirst());
+            } else {
+                selected.setSelected(false);
+
+                int index = Config.frontierSorting.indexOf(sortButton.getSorting());
+                Config.frontierSorting.addFirst(Config.frontierSorting.remove(index));
+                Config.frontierSortingDirection.addFirst(Config.frontierSortingDirection.remove(index));
+
+                selected = sortButton;
+                selected.setSelected(true);
+            }
+
+            ClientEventHandler.postUpdatedConfigEvent();
+        }
+
+        onChange.run();
+    }
+
+
+    @ParametersAreNonnullByDefault
+    public static class SortButton extends ButtonBase {
+        private final LinearLayout layout = LinearLayout.horizontal();
+        private boolean selected = false;
+        private final Config.Sorting sorting;
+        private boolean direction;
+        private final StringWidget label;
+        private final IconButton iconButton;
+
+        public SortButton(Font font, Config.Sorting sorting, boolean direction, OnPress onPress) {
+            super(0, 0, 0, 0, Component.empty(), onPress, DEFAULT_NARRATION);
+            this.sorting = sorting;
+            this.direction = direction;
+
+            layout.defaultCellSetting().alignVerticallyMiddle();
+
+            Component text = Config.getTranslatedEnum(sorting);
+            this.label = layout.addChild(new StringWidget(text, font, 20));
+            iconButton = layout.addChild(new IconButton(direction ? IconButton.Type.SortUp : IconButton.Type.SortDown, (b) -> {}));
+
+            layout.arrangeElements();
+        }
+
+        public void setSelected(boolean selected) {
+            this.selected = selected;
+            iconButton.setAlpha(selected ? 1 : 0);
+        }
+
+        public void changeDirection() {
+            direction = !direction;
+
+            iconButton.setType(direction ? IconButton.Type.SortUp : IconButton.Type.SortDown);
+        }
+
+        public Config.Sorting getSorting() {
+            return sorting;
+        }
+
+
+        @Override
+        public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+            if (isHoveredOrKeyboardFocused()) {
+                label.setColor(ColorConstants.SIMPLE_BUTTON_TEXT_HIGHLIGHT);
+                iconButton.setFocused(true);
+            } else {
+                label.setColor(ColorConstants.SIMPLE_BUTTON_TEXT);
+                iconButton.setFocused(false);
+            }
+
+            label.render(graphics, mouseX, mouseY, partialTicks);
+            if (selected) {
+                iconButton.render(graphics, mouseX, mouseY, partialTicks);
+            }
+        }
+
+
+        @Override
+        public void setX(int x) {
+            super.setX(x);
+            layout.setX(x);
+        }
+
+        @Override
+        public void setY(int y) {
+            super.setY(y);
+            layout.setY(y);
+        }
+
+        @Override
+        public int getWidth() {
+            return layout.getWidth();
+        }
+
+        @Override
+        public int getHeight() {
+            return layout.getHeight();
+        }
+    }
+}

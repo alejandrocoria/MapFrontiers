@@ -21,12 +21,17 @@ import net.minecraftforge.common.ForgeConfigSpec.ValueSpec;
 import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Config {
     public static final ClientConfig CLIENT;
     public static final ForgeConfigSpec CLIENT_SPEC;
+    public static Sorting[] DEFAULT_SORTING = {Sorting.Created, Sorting.Name, Sorting.Owner,  Sorting.VertexChunk, Sorting.Area, Sorting.Modified};
+    public static Boolean[] DEFAULT_SORTING_DIRECTION = {false, true, true,  true, true, false};
     static {
         final Pair<ClientConfig, ForgeConfigSpec> specPair = new Builder().configure(ClientConfig::new);
         CLIENT_SPEC = specPair.getRight();
@@ -40,6 +45,10 @@ public class Config {
 
     public enum Visibility {
         Custom, Always, Never
+    }
+
+    public enum Sorting {
+        Name, Owner, VertexChunk, Area, Modified, Created
     }
 
     public enum FilterFrontierType {
@@ -135,7 +144,9 @@ public class Config {
     public static boolean askConfirmationGroupDelete;
     public static boolean askConfirmationUserDelete;
 
-    // Filters
+    // Sorting and Filters
+    public static List<Sorting> frontierSorting;
+    public static List<Boolean> frontierSortingDirection;
     public static FilterFrontierType filterFrontierType;
     public static FilterFrontierOwner filterFrontierOwner;
     public static String filterFrontierDimension;
@@ -221,6 +232,8 @@ public class Config {
         askConfirmationGroupDelete = CLIENT.askConfirmationGroupDelete.get();
         askConfirmationUserDelete = CLIENT.askConfirmationUserDelete.get();
 
+        frontierSorting = CLIENT.frontierSorting.get().stream().map(Sorting::valueOf).collect(Collectors.toList());
+        frontierSortingDirection = new ArrayList<>(CLIENT.frontierSortingDirection.get());
         filterFrontierType = CLIENT.filterFrontierType.get();
         filterFrontierOwner = CLIENT.filterFrontierOwner.get();
         filterFrontierDimension = CLIENT.filterFrontierDimension.get();
@@ -235,6 +248,8 @@ public class Config {
         hudAnchor = CLIENT.hudAnchor.get();
         hudXPosition = CLIENT.hudXPosition.get();
         hudYPosition = CLIENT.hudYPosition.get();
+
+        validateSorting();
     }
 
     public static class ClientConfig {
@@ -306,6 +321,8 @@ public class Config {
         public final BooleanValue askConfirmationGroupDelete;
         public final BooleanValue askConfirmationUserDelete;
 
+        public final ConfigValue<List<? extends String>> frontierSorting;
+        public final ConfigValue<List<? extends Boolean>> frontierSortingDirection;
         public final EnumValue<FilterFrontierType> filterFrontierType;
         public final EnumValue<FilterFrontierOwner> filterFrontierOwner;
         public final ConfigValue<String> filterFrontierDimension;
@@ -526,6 +543,14 @@ public class Config {
                     .translation(MapFrontiers.MODID + ".config." + "askConfirmationUserDelete")
                     .define("askConfirmationUserDelete", true);
 
+            frontierSorting = builder.comment("Order of the frontier list sorting modes.")
+                    .defineList("frontierSorting",
+                            () -> Arrays.stream(DEFAULT_SORTING).map(Enum::toString).toList(),
+                            Config::isValidSorting);
+            frontierSortingDirection = builder.comment("Direction of the frontier list sorting modes. True means ascending and false means descending.")
+                    .defineList("frontierSortingDirection",
+                            () -> Arrays.asList(DEFAULT_SORTING_DIRECTION),
+                            Config::isValidSortingDirection);
             filterFrontierType = builder.defineEnum("filterFrontierType", FilterFrontierType.All);
             filterFrontierOwner = builder.defineEnum("filterFrontierOwner", FilterFrontierOwner.All);
             filterFrontierDimension = builder.define("filterFrontierDimension", "all");
@@ -626,6 +651,8 @@ public class Config {
         CLIENT.askConfirmationGroupDelete.set(askConfirmationGroupDelete);
         CLIENT.askConfirmationUserDelete.set(askConfirmationUserDelete);
 
+        CLIENT.frontierSorting.set(frontierSorting.stream().map(Enum::toString).toList());
+        CLIENT.frontierSortingDirection.set(frontierSortingDirection);
         CLIENT.filterFrontierType.set(filterFrontierType);
         CLIENT.filterFrontierOwner.set(filterFrontierOwner);
         CLIENT.filterFrontierDimension.set(filterFrontierDimension);
@@ -880,6 +907,67 @@ public class Config {
 
         return origin;
     }
+
+    private static void validateSorting() {
+        if (frontierSorting.size() > Sorting.values().length || frontierSortingDirection.size() != frontierSorting.size()) {
+            frontierSorting = new ArrayList<>(Arrays.asList(DEFAULT_SORTING));
+            frontierSortingDirection = new ArrayList<>(Arrays.asList(DEFAULT_SORTING_DIRECTION));
+            save();
+            return;
+        }
+
+        List<Sorting> missings = new ArrayList<>();
+        for (Sorting sort : Sorting.values()) {
+            int count = Collections.frequency(frontierSorting, sort);
+            if (count > 1) {
+                frontierSorting = new ArrayList<>(Arrays.asList(DEFAULT_SORTING));
+                frontierSortingDirection = new ArrayList<>(Arrays.asList(DEFAULT_SORTING_DIRECTION));
+                save();
+                return;
+            }
+            if (count == 0) {
+                missings.add(sort);
+            }
+        }
+
+        if (!missings.isEmpty()) {
+            for (Sorting missing : missings) {
+                frontierSorting.add(missing);
+                int index = Arrays.asList(DEFAULT_SORTING).indexOf(missing);
+                frontierSortingDirection.add(DEFAULT_SORTING_DIRECTION[index]);
+            }
+
+            save();
+        }
+    }
+
+    private static boolean isValidSorting(Object s) {
+        try {
+            if (s instanceof Sorting) {
+                return true;
+            }
+            if (s instanceof String string) {
+                Sorting.valueOf(string);
+                return true;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+
+        return false;
+    }
+
+    private static boolean isValidSortingDirection(Object s) {
+        if (s instanceof Boolean) {
+            return true;
+        }
+        if (s instanceof String string) {
+            return string.equals("true") || string.equals("false");
+        }
+
+        return false;
+    }
+
 
     public static class Point {
         public int x = 0;
