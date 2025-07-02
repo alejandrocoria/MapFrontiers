@@ -25,7 +25,9 @@ public class IconButton extends ButtonBase {
         ArrowDown (18,  60, 26,  60,  8, 17),
         Undo      ( 0,  77, 17,  77, 17, 17),
         Redo      ( 0,  94, 17,  94, 17, 17),
-        Swap      ( 0, 111,  9, 111,  9,  9);
+        Swap      ( 0, 111,  9, 111,  9,  9),
+        SortUp    (27,   0, 27,   6,  7,  6),
+        SortDown  (27,  12, 27,  18,  7,  6);
 
         final int texX;
         final int texY;
