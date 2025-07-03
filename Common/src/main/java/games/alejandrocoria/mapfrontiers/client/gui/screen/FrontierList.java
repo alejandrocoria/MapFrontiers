@@ -12,6 +12,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButto
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.FrontierListElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.RadioListElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox;
+import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.common.Config;
@@ -26,7 +27,9 @@ import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.StringUtil;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
@@ -56,6 +59,7 @@ public class FrontierList extends AutoScaledScreen {
     private final FullscreenMap fullscreenMap;
 
     private SortToolbar sortToolbar;
+    private TextBox searchBox;
     private ScrollBox frontiers;
     private ScrollBox filterType;
     private ScrollBox filterOwner;
@@ -101,8 +105,20 @@ public class FrontierList extends AutoScaledScreen {
         LayoutSettings alignLeftSettings = LayoutSettings.defaults().alignHorizontallyLeft();
 
 
+        LinearLayout toolbar = LinearLayout.horizontal();
+        toolbar.defaultCellSetting().alignVerticallyMiddle();
+        mainLayout.addChild(toolbar, 0, 0, alignLeftSettings);
+
         sortToolbar = new SortToolbar(font, this::updateFrontiers);
-        mainLayout.addChild(sortToolbar, 0, 0, alignLeftSettings);
+        toolbar.addChild(sortToolbar);
+        toolbar.addChild(SpacerElement.width(16));
+
+        searchBox = new TextBox(font, 100, I18n.get("mapfrontiers.search"));
+        searchBox.setMaxLength(40);
+        searchBox.setHeight(16);
+        searchBox.setValueChangedCallback(value -> updateFrontiers());
+        toolbar.addChild(searchBox);
+
 
 
         frontiers = new ScrollBox(actualHeight - 120, 450, 24);
@@ -316,6 +332,27 @@ public class FrontierList extends AutoScaledScreen {
                     }
                 }
             }
+        }
+
+        if (!StringUtil.isBlank(searchBox.getValue())) {
+            String searchText = searchBox.getValue().toLowerCase();
+            toAdd.removeIf(frontier -> {
+                String name = frontier.getName1().toLowerCase() + " " + frontier.getName2().toLowerCase();
+                if (name.contains(searchText)) {
+                    return false;
+                }
+                if (!StringUtil.isBlank(frontier.getOwner().username)) {
+                    if (frontier.getOwner().username.toLowerCase().contains(searchText)) {
+                        return false;
+                    }
+                }
+                if (!StringUtil.isBlank(frontier.getOwner().uuid.toString())) {
+                    if (frontier.getOwner().uuid.toString().toLowerCase().contains(searchText)) {
+                        return false;
+                    }
+                }
+                return true;
+            });
         }
 
         toAdd.sort((a, b) -> {

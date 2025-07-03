@@ -76,7 +76,7 @@ public class SortToolbar extends LinearLayout {
             layout.defaultCellSetting().alignVerticallyMiddle();
 
             Component text = Config.getTranslatedEnum(sorting);
-            this.label = layout.addChild(new StringWidget(text, font, 20));
+            this.label = layout.addChild(new StringWidget(text, font, 16));
             iconButton = layout.addChild(new IconButton(direction ? IconButton.Type.SortUp : IconButton.Type.SortDown, (b) -> {}));
 
             layout.arrangeElements();

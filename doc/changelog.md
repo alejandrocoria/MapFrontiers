@@ -1,5 +1,6 @@
 **Beta 10:**
 * Added: sort buttons to frontier list.
+* Added: search field to frontier list.
 * Added: setting to change the color of the frontier text.
 * Fixed: global forced announce in chat and title settings do not work.
  
