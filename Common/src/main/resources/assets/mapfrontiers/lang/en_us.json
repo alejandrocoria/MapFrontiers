@@ -66,6 +66,7 @@
   "mapfrontiers.change_to_personal_frontier_dialog_desc": "No player will be able to see the frontier except you.",
   "mapfrontiers.change_to_personal": "Change to Personal",
 
+  "mapfrontiers.search": "Search",
   "mapfrontiers.reset_filters": "Reset Filters",
   "mapfrontiers.filter_type": "Type:",
   "mapfrontiers.filter_owner": "Owner:",
