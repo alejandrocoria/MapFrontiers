@@ -66,6 +66,7 @@
   "mapfrontiers.change_to_personal_frontier_dialog_desc": "No player will be able to see the frontier except you.",
   "mapfrontiers.change_to_personal": "Change to Personal",
 
+  "mapfrontiers.search": "搜索",
   "mapfrontiers.reset_filters": "重置过滤器",
   "mapfrontiers.filter_type": "类别：",
   "mapfrontiers.filter_owner": "所有者：",
