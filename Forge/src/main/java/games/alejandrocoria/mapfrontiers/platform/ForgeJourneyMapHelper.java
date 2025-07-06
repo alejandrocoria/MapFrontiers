@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.platform;
 
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.util.ReflectionHelper;
 import games.alejandrocoria.mapfrontiers.platform.services.IJourneyMapHelper;
@@ -12,17 +13,21 @@ import journeymap.client.io.ThemeLoader;
 import journeymap.client.model.map.MapState;
 import journeymap.client.model.map.MapType;
 import journeymap.client.properties.MiniMapProperties;
-import journeymap.client.render.Pipelines;
+import journeymap.client.render.JMRenderTypes;
 import journeymap.client.render.draw.DrawMarkerStep;
 import journeymap.client.render.draw.DrawPolygonStep;
 import journeymap.client.render.draw.DrawStep;
+import journeymap.client.render.draw.DrawUtil;
 import journeymap.client.render.map.MapRenderer;
+import journeymap.client.render.pip.PolygonPipRenderState;
 import journeymap.client.ui.UIManager;
 import journeymap.client.ui.minimap.DisplayVars;
 import journeymap.client.ui.minimap.MiniMap;
 import journeymap.client.ui.minimap.Position;
 import journeymap.client.ui.minimap.Shape;
 import journeymap.client.ui.theme.Theme;
+import journeymap.common.accessors.GuiRenderStateMixinAccess;
+import journeymap.common.mixin.client.GuiGraphicsAccessor;
 import journeymap.common.waypoint.WaypointStore;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -249,17 +254,38 @@ public class ForgeJourneyMapHelper implements IJourneyMapHelper {
             double guiScale = Minecraft.getInstance().getWindow().getGuiScale();
 
             graphics.pose().pushMatrix();
-            graphics.pose().translate((float) (-width * scaleFactor / 2 + x * guiScale), (float) (-height * scaleFactor / 2 + y * guiScale));
-            graphics.pose().scale(scaleFactor, scaleFactor);
+            graphics.pose().translate((float) (-width / guiScale / 2 * scaleFactor) + x, (float) (-height / guiScale / 2 * scaleFactor) + y);
+            graphics.pose().scale((float) (1 / guiScale) * scaleFactor, (float) (1 / guiScale) * scaleFactor);
 
             mapRenderer.setViewPortBounds(new Rectangle2D.Double(0, 0, width * scaleFactor, height * scaleFactor));
-            graphics.fill(Pipelines.MINIMAP_RECTANGLE_MASK_RENDER_PIPELINE, width / 2 + 1, height / 2 + 1, width / 2 + size - 1, height / 2 + size - 1, 0xFFFFFFFF);
+
 
             for (DrawStep drawStep : drawSteps) {
+                if (drawStep instanceof DrawPolygonStep) {
+                    continue;
+                }
                 drawStep.draw(graphics, 0, 0, mapRenderer, 1, 0);
             }
 
             graphics.pose().popMatrix();
+            graphics.nextStratum();
+
+            ((GuiRenderStateMixinAccess) ((GuiGraphicsAccessor) graphics).jm$GuiRenderStateAccessor()).jm$submitPicturesInPictureStateCurrentLayer(
+                    new PolygonPipRenderState(
+                            graphics,
+                            Context.UI.Fullscreen,
+                            0, (buf, poseStack) -> {
+                        VertexConsumer maskBuffer = buffers.getBuffer(JMRenderTypes.MINIMAP_RECTANGLE_MASK_RENDER_TYPE);
+                        DrawUtil.drawQuad(poseStack, maskBuffer, 0xFFFFFF, 1, x * guiScale / scaleFactor + 1, y * guiScale / scaleFactor + 1, size - 1, size - 1, 0, false);
+                        drawSteps.forEach(drawStep -> {
+                            if (drawStep instanceof DrawPolygonStep drawPolygonStep) {
+                                poseStack.pushPose();
+                                drawPolygonStep.draw(graphics, poseStack, buf, (-width / 2 + x * guiScale / scaleFactor), (-height / 2 + y * guiScale / scaleFactor), mapRenderer, 1, 0);
+                                poseStack.popPose();
+                            }
+                        });
+                    }
+                    ));
         }
     }
 }
