@@ -1,3 +1,6 @@
+**Beta 11:**
+* Fixed: crash when using JourneyMap's "Vault" theme or any theme that does not have the circle shape.
+ 
 **Beta 10:**
 * Added: sort buttons to frontier list.
 * Added: search field to frontier list.
