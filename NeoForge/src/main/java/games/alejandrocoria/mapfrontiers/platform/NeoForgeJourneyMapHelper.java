@@ -80,7 +80,7 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
     @Override
     public int getMinimapMargin() {
         Theme.Minimap.MinimapSpec minimapSpec;
-        if (UIManager.INSTANCE.getMiniMap().getCurrentMinimapProperties().shape.get() == Shape.Circle) {
+        if (UIManager.INSTANCE.getMiniMap().getCurrentMinimapProperties().shape.get() == Shape.Circle && ThemeLoader.getCurrentTheme().minimap.circle != null) {
             minimapSpec = ThemeLoader.getCurrentTheme().minimap.circle;
         } else {
             minimapSpec = ThemeLoader.getCurrentTheme().minimap.square;
@@ -108,7 +108,7 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
 
     @Override
     public int minimapLabelBackgroundColor() {
-        if (UIManager.INSTANCE.getMiniMap().getCurrentMinimapProperties().shape.get() == Shape.Circle) {
+        if (UIManager.INSTANCE.getMiniMap().getCurrentMinimapProperties().shape.get() == Shape.Circle && ThemeLoader.getCurrentTheme().minimap.circle != null) {
             return colorSpecToInt(ThemeLoader.getCurrentTheme().minimap.circle.labelTop.background);
         } else {
             return colorSpecToInt(ThemeLoader.getCurrentTheme().minimap.square.labelTop.background);
@@ -117,7 +117,7 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
 
     @Override
     public int minimapLabelHighlightColor() {
-        if (UIManager.INSTANCE.getMiniMap().getCurrentMinimapProperties().shape.get() == Shape.Circle) {
+        if (UIManager.INSTANCE.getMiniMap().getCurrentMinimapProperties().shape.get() == Shape.Circle && ThemeLoader.getCurrentTheme().minimap.circle != null) {
             return colorSpecToInt(ThemeLoader.getCurrentTheme().minimap.circle.labelTop.highlight);
         } else {
             return colorSpecToInt(ThemeLoader.getCurrentTheme().minimap.square.labelTop.highlight);
@@ -126,7 +126,7 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
 
     @Override
     public int minimapLabelForegroundColor() {
-        if (UIManager.INSTANCE.getMiniMap().getCurrentMinimapProperties().shape.get() == Shape.Circle) {
+        if (UIManager.INSTANCE.getMiniMap().getCurrentMinimapProperties().shape.get() == Shape.Circle && ThemeLoader.getCurrentTheme().minimap.circle != null) {
             return colorSpecToInt(ThemeLoader.getCurrentTheme().minimap.circle.labelTop.foreground);
         } else {
             return colorSpecToInt(ThemeLoader.getCurrentTheme().minimap.square.labelTop.foreground);
