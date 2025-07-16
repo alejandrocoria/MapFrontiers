@@ -106,6 +106,7 @@ public class FrontierInfo extends AutoScaledScreen {
 
     private final FrontiersOverlayManager frontiersOverlayManager;
     private final FrontierOverlay frontier;
+    private int frontierHash;
     private TextBox textName1;
     private TextBox textName2;
     private SimpleButton buttonVisibility;
@@ -147,6 +148,7 @@ public class FrontierInfo extends AutoScaledScreen {
         this.jmAPI = jmAPI;
         frontiersOverlayManager = MapFrontiersClient.getFrontiersOverlayManager(frontier.getPersonal());
         this.frontier = frontier;
+        frontierHash = frontier.getHash();
         undoStack.push(new FrontierData(frontier));
 
         ClientEventHandler.subscribeDeletedFrontierEvent(this, frontierID -> {
@@ -721,7 +723,10 @@ public class FrontierInfo extends AutoScaledScreen {
         SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontier, playerUser);
 
         if (actions.canUpdate) {
-            frontiersOverlayManager.clientUpdateFrontier(frontier);
+            if (frontier.getHash() != frontierHash) {
+                frontierHash = frontier.getHash();
+                frontiersOverlayManager.clientUpdateFrontier(frontier);
+            }
         }
     }
 
