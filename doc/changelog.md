@@ -1,3 +1,6 @@
+**Beta 12:**
+* Fixed: packets are no longer sent to the server when nothing is changed in Frontier Info.
+ 
 **Beta 11:**
 * Fixed: crash when using JourneyMap's "Vault" theme or any theme that does not have the circle shape.
  
