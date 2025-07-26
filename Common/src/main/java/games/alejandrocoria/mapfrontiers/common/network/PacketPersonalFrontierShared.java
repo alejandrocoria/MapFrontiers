@@ -15,7 +15,6 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -98,28 +97,15 @@ public class PacketPersonalFrontierShared {
             button.withStyle(style -> style
                     .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mapfrontiersaccept " + message.shareMessageID)));
 
-            MutableComponent text = Component.literal(userToString(message.playerSharing) + " ");
+            MutableComponent text = Component.literal(message.playerSharing.toString("User not found") + " ");
             if (message.playerSharing.equals(message.owner)) {
                 text.append("want to share a frontier with you: ");
             } else {
-                text.append("want to share a frontier from " + userToString(message.owner) + " with you: ");
+                text.append("want to share a frontier of " + message.owner.toString("User not found") + " with you: ");
             }
 
             text.append(button);
             player.sendSystemMessage(text);
         }
-    }
-
-    private static String userToString(SettingsUser user) {
-        String string;
-        if (!StringUtils.isBlank(user.username)) {
-            string = user.username;
-        } else if (user.uuid != null) {
-            string = user.uuid.toString();
-        } else {
-            string = "User not found";
-        }
-
-        return string;
     }
 }

@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers;
 import fuzs.forgeconfigapiport.neoforge.api.forge.v4.ForgeConfigRegistry;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClientNeoForge;
 import games.alejandrocoria.mapfrontiers.common.Config;
+import games.alejandrocoria.mapfrontiers.common.command.CommandAccept;
 import games.alejandrocoria.mapfrontiers.common.event.EventHandler;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.IEventBus;
@@ -34,7 +35,7 @@ public class MapFrontiersNeoForge extends MapFrontiers {
     }
 
     public static void registerCommands(RegisterCommandsEvent event) {
-        EventHandler.postCommandRegistrationEvent(event.getDispatcher());
+        CommandAccept.register(event.getDispatcher());
     }
 
     public static void serverStarting(ServerStartingEvent event) {

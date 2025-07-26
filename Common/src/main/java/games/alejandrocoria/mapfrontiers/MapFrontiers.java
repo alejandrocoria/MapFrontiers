@@ -2,7 +2,6 @@ package games.alejandrocoria.mapfrontiers;
 
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
-import games.alejandrocoria.mapfrontiers.common.command.CommandAccept;
 import games.alejandrocoria.mapfrontiers.common.event.EventHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontiers;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
@@ -33,8 +32,6 @@ public class MapFrontiers {
 
     protected static void init() {
         PacketHandler.init();
-
-        EventHandler.subscribeCommandRegistrationEvent(MapFrontiers.class, CommandAccept::register);
 
         EventHandler.subscribeServerStartingEvent(MapFrontiers.class, server -> {
             frontiersManager = new FrontiersManager();

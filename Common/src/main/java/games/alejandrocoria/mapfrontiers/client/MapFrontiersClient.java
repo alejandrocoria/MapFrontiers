@@ -156,6 +156,8 @@ public class MapFrontiersClient {
             settingsProfile = null;
             handshakeSent = false;
 
+            ChatFrontiers.clear();
+
             MapFrontiers.LOGGER.info("ClientDisconnectedEvent done");
         });
     }

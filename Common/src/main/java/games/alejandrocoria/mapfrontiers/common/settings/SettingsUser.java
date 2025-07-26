@@ -121,15 +121,17 @@ public class SettingsUser implements Comparable<SettingsUser> {
 
     @Override
     public String toString() {
-        if (StringUtils.isBlank(username)) {
-            if (uuid == null) {
-                return I18n.get("mapfrontiers.unnamed", ChatFormatting.ITALIC);
-            } else {
-                return uuid.toString();
-            }
-        }
+        return toString(I18n.get("mapfrontiers.unnamed", ChatFormatting.ITALIC));
+    }
 
-        return username;
+    public String toString(String blank) {
+        if (!StringUtils.isBlank(username)) {
+            return username;
+        } else if (uuid != null) {
+            return uuid.toString();
+        } else {
+            return blank;
+        }
     }
 
     @Override

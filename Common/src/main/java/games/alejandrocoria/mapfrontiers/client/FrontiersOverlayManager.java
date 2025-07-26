@@ -97,7 +97,7 @@ public class FrontiersOverlayManager {
     }
 
     public void close() {
-        ClientEventHandler.unsuscribeAllEvents(this);
+        ClientEventHandler.unsubscribeAllEvents(this);
 
         for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
             for (FrontierOverlay frontier : frontiers) {
@@ -168,7 +168,7 @@ public class FrontiersOverlayManager {
         }
     }
 
-    public void clientCreateNewfrontier(ResourceKey<Level> dimension, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
+    public void clientCreateNewFrontier(ResourceKey<Level> dimension, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
         if (MapFrontiersClient.isModOnServer()) {
             PacketHandler.sendToServer(new PacketCreateFrontier(dimension, personal, vertices, chunks));
         } else if (personal && minecraft.player != null) {
@@ -267,6 +267,7 @@ public class FrontiersOverlayManager {
         } else {
             FrontierOverlay frontierOverlay = frontiers.get(index);
             frontierOverlay.updateFromData(data);
+            frontierOverlay.setModified(new Date());
 
             if (personal && !minecraft.isLocalServer()) {
                 saveData();
@@ -318,6 +319,19 @@ public class FrontiersOverlayManager {
         }
 
         return inPosition;
+    }
+
+    @Nullable
+    public FrontierOverlay getFrontierCopiedFrom(UUID copiedFromId) {
+
+        for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
+            for (FrontierOverlay frontier : frontiers) {
+                if (frontier.wasCopied() && frontier.getCopiedFromId().equals(copiedFromId)) {
+                    return frontier;
+                }
+            }
+        }
+        return null;
     }
 
     public void updateAllOverlays(boolean forceUpdate) {

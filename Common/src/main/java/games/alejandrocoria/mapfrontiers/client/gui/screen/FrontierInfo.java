@@ -41,6 +41,7 @@ import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.BannerItem;
 import net.minecraft.world.item.ItemStack;
@@ -67,6 +68,7 @@ public class FrontierInfo extends AutoScaledScreen {
     private static final String verticesKey = "mapfrontiers.vertices";
     private static final String chunksKey = "mapfrontiers.chunks";
     private static final String ownerKey = "mapfrontiers.owner";
+    private static final String originalOwnerKey = "mapfrontiers.original_owner";
     private static final String dimensionKey = "mapfrontiers.dimension";
     private static final String areaKey = "mapfrontiers.area";
     private static final String perimeterKey = "mapfrontiers.perimeter";
@@ -85,6 +87,7 @@ public class FrontierInfo extends AutoScaledScreen {
     private static final Component pasteBannerLabel = Component.translatable("mapfrontiers.paste_banner");
     private static final Component selectInMapLabel = Component.translatable("mapfrontiers.select_in_map");
     private static final Component shareSettingsLabel = Component.translatable("mapfrontiers.share_settings");
+    private static final Component sendLabel = Component.translatable("mapfrontiers.send");
     private static final Component deleteLabel = Component.translatable("mapfrontiers.delete");
     private static final Component doneLabel = Component.translatable("gui.done");
     private static final Component onLabel = Component.translatable("options.on");
@@ -270,8 +273,15 @@ public class FrontierInfo extends AutoScaledScreen {
             dataRow1sub.addChild(new StringWidget(chunks, font).setColor(ColorConstants.WHITE));
         }
 
-        Component owner = Component.translatable(ownerKey, frontier.getOwner().toString());
-        dataRow1sub.addChild(new StringWidget(owner, font).setColor(ColorConstants.WHITE));
+        MutableComponent owner = Component.translatable(ownerKey, frontier.getOwner().toString());
+        if (frontier.wasCopied()) {
+            owner.append(Component.literal(ColorConstants.WARNING + " !"));
+        }
+        StringWidget ownerWidget = dataRow1sub.addChild(new StringWidget(owner, font).setColor(ColorConstants.WHITE));
+        if (frontier.wasCopied()) {
+            Tooltip ownerTooltip = Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET).append(Component.translatable(originalOwnerKey, frontier.getCopiedFromUser().toString())));
+            ownerWidget.setTooltip(ownerTooltip);
+        }
 
         Component dimension = Component.translatable(dimensionKey, frontier.getDimension().location().toString());
         dataRow1.addChild(new StringWidget(dimension, font).setColor(ColorConstants.TEXT_DIMENSION));
@@ -466,7 +476,13 @@ public class FrontierInfo extends AutoScaledScreen {
             closeAndReturnToFullscreenMap();
             Services.JOURNEYMAP.fullscreenMapCenterOn(center.getX(), center.getZ());
         }));
-        buttonShareSettings = bottomButtons.addChild(new SimpleButton(font, 144, shareSettingsLabel, (b) -> new ShareSettings(frontiersOverlayManager, frontier).display()));
+        buttonShareSettings = bottomButtons.addChild(new SimpleButton(font, 144, shareSettingsLabel, (b) -> {
+            if (MapFrontiersClient.isModOnServer()) {
+                new ShareSettings(frontiersOverlayManager, frontier).display();
+            } else {
+                new SendFrontier(frontier).display();
+            }
+        }));
         buttonDelete = bottomButtons.addChild(new SimpleButton(font, 144, deleteLabel, (b) -> {
             if (Config.askConfirmationFrontierDelete) {
                 new DeleteConfirmationDialog(
@@ -544,13 +560,13 @@ public class FrontierInfo extends AutoScaledScreen {
     @Override
     public void onClose() {
         sendChangesToServer();
-        ClientEventHandler.unsuscribeAllEvents(this);
+        ClientEventHandler.unsubscribeAllEvents(this);
         super.onClose();
     }
 
     private void deleteFrontier() {
         // Unsubscribing to not receive this same event.
-        ClientEventHandler.unsuscribeAllEvents(this);
+        ClientEventHandler.unsubscribeAllEvents(this);
         frontiersOverlayManager.clientDeleteFrontier(frontier);
         onClose();
     }
@@ -694,7 +710,12 @@ public class FrontierInfo extends AutoScaledScreen {
         buttonBanner.visible = actions.canUpdate;
         UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
         buttonSelect.active = uiState != null && frontier.getDimension().equals(uiState.dimension);
-        buttonShareSettings.active = actions.canShare;
+        if (MapFrontiersClient.isModOnServer()) {
+            buttonShareSettings.setMessage(shareSettingsLabel);
+            buttonShareSettings.active = actions.canShare;
+        } else {
+            buttonShareSettings.setMessage(sendLabel);
+        }
     }
 
     private void updatePasteOptionsVisibility() {

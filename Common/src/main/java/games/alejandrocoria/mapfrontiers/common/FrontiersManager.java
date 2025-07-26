@@ -89,7 +89,7 @@ public class FrontiersManager {
     }
 
     public void close() {
-        EventHandler.unsuscribeAllEvents(this);
+        EventHandler.unsubscribeAllEvents(this);
     }
 
     public void setSettings(FrontierSettings frontierSettings) {
@@ -339,6 +339,9 @@ public class FrontiersManager {
 
     public int addShareMessage(SettingsUser targetUser, UUID frontierID) {
         ++pendingShareFrontierID;
+        if (pendingShareFrontierID == 1000) {
+            pendingShareFrontierID = 1;
+        }
         pendingShareFrontiers.put(pendingShareFrontierID, new PendingShareFrontier(frontierID, targetUser));
 
         return pendingShareFrontierID;

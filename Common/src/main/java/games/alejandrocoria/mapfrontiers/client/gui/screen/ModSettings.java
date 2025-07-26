@@ -777,7 +777,7 @@ public class ModSettings extends AutoScaledScreen {
     public void onClose() {
         ClientEventHandler.postUpdatedConfigEvent();
         MapFrontiersClient.setLastSettingsTab(tabSelected);
-        ClientEventHandler.unsuscribeAllEvents(this);
+        ClientEventHandler.unsubscribeAllEvents(this);
         super.onClose();
     }
 

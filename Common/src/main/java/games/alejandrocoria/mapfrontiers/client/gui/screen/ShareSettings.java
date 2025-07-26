@@ -289,7 +289,7 @@ public class ShareSettings extends AutoScaledScreen {
 
     @Override
     public void onClose() {
-        ClientEventHandler.unsuscribeAllEvents(this);
+        ClientEventHandler.unsubscribeAllEvents(this);
         super.onClose();
     }
 

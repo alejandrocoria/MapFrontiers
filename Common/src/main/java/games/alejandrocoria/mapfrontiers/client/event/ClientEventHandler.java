@@ -96,7 +96,7 @@ public class ClientEventHandler {
     }
 
 
-    public static void unsuscribeAllEvents(Object object) {
+    public static void unsubscribeAllEvents(Object object) {
         // Minecraft/Loader events
         clientTickEventMap.remove(object);
         playerTickEventMap.remove(object);
