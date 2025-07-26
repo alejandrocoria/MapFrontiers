@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers;
 import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;
 import fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents;
 import games.alejandrocoria.mapfrontiers.common.Config;
+import games.alejandrocoria.mapfrontiers.common.command.CommandAccept;
 import games.alejandrocoria.mapfrontiers.common.event.EventHandler;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -22,7 +23,7 @@ public class MapFrontiersFabric extends MapFrontiers implements ModInitializer {
 
         init();
 
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> EventHandler.postCommandRegistrationEvent(dispatcher));
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> CommandAccept.register(dispatcher));
         ServerLifecycleEvents.SERVER_STARTED.register(EventHandler::postServerStartingEvent);
         ServerLifecycleEvents.SERVER_STOPPING.register(EventHandler::postServerStoppingEvent);
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> EventHandler.postPlayerJoinedEvent(server, handler.player));

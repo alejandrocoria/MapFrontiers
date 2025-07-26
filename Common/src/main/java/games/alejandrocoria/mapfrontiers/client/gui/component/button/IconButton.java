@@ -14,18 +14,19 @@ import javax.annotation.ParametersAreNonnullByDefault;
 public class IconButton extends ButtonBase {
     private static final ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/buttons.png");
     private static final int textureSizeX = 34;
-    private static final int textureSizeY = 120;
+    private static final int textureSizeY = 133;
 
     public enum Type {
         Add       ( 0,   0, 13,   0, 13, 13),
         Remove    ( 0,  13, 13,  13, 13, 13),
-        Copy      ( 0,  26, 17,  26, 17, 17),
-        Paste     ( 0,  43, 17,  43, 17, 17),
-        ArrowUp   ( 0,  60,  8,  60,  8, 17),
-        ArrowDown (18,  60, 26,  60,  8, 17),
-        Undo      ( 0,  77, 17,  77, 17, 17),
-        Redo      ( 0,  94, 17,  94, 17, 17),
-        Swap      ( 0, 111,  9, 111,  9,  9),
+        Send      ( 0,  26, 13,  26, 13, 13),
+        Copy      ( 0,  39, 17,  39, 17, 17),
+        Paste     ( 0,  56, 17,  56, 17, 17),
+        ArrowUp   ( 0,  73,  8,  73,  8, 17),
+        ArrowDown (18,  73, 26,  73,  8, 17),
+        Undo      ( 0,  90, 17,  90, 17, 17),
+        Redo      ( 0, 107, 17, 107, 17, 17),
+        Swap      ( 0, 124,  9, 124,  9,  9),
         SortUp    (27,   0, 27,   6,  7,  6),
         SortDown  (27,  12, 27,  18,  7,  6);
 

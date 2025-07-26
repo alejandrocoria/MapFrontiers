@@ -22,7 +22,7 @@ public class CommandAccept {
         LiteralCommandNode<CommandSourceStack> literalcommandnode = dispatcher
                 .register(Commands.literal("mapfrontiersaccept").requires(
                         (commandSource) -> commandSource.hasPermission(0) && checkPermission(commandSource))
-                        .then(Commands.argument("invitation id", IntegerArgumentType.integer(0)).executes(
+                        .then(Commands.argument("invitation id", IntegerArgumentType.integer(0, 999)).executes(
                                 (commandSource) -> acceptInvitation(commandSource.getSource(),
                                         IntegerArgumentType.getInteger(commandSource, "invitation id")))
                         )

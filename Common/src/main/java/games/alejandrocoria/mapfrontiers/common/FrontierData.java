@@ -35,6 +35,7 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -65,6 +66,7 @@ public class FrontierData {
     protected BannerData banner;
     protected boolean personal = false;
     protected List<SettingsUserShared> usersShared;
+    protected CopiedFrom copiedFrom;
     protected Date created;
     protected Date modified;
 
@@ -96,6 +98,8 @@ public class FrontierData {
         chunks.clear();
         chunks.addAll(other.chunks);
         mode = other.mode;
+
+        copiedFrom = other.copiedFrom;
 
         created = other.created;
         modified = other.modified;
@@ -142,6 +146,8 @@ public class FrontierData {
             chunks.addAll(other.chunks);
             mode = other.mode;
         }
+
+        copiedFrom = other.copiedFrom;
 
         modified = other.modified;
 
@@ -490,6 +496,42 @@ public class FrontierData {
         return created;
     }
 
+    public boolean wasCopied() {
+        return copiedFrom != null;
+    }
+
+    public void removeCopiedFromInfo() {
+        copiedFrom = null;
+    }
+
+    public void setCopiedFromId(UUID id) {
+        if (!wasCopied()) {
+            copiedFrom = new CopiedFrom();
+        }
+        copiedFrom.id = id;
+    }
+
+    public UUID getCopiedFromId() {
+        if (copiedFrom == null) {
+            return id;
+        }
+        return copiedFrom.id;
+    }
+
+    public void setCopiedFromUser(SettingsUser user) {
+        if (!wasCopied()) {
+            copiedFrom = new CopiedFrom();
+        }
+        copiedFrom.user = user;
+    }
+
+    public SettingsUser getCopiedFromUser() {
+        if (copiedFrom == null) {
+            return owner;
+        }
+        return copiedFrom.user;
+    }
+
     public void setModified(Date modified) {
         this.modified = modified;
     }
@@ -584,6 +626,11 @@ public class FrontierData {
             }
         }
 
+        if (nbt.contains("copiedFrom")) {
+            copiedFrom = new CopiedFrom();
+            copiedFrom.readFromNBT(nbt.getCompound("copiedFrom").get(), version);
+        }
+
         if (nbt.contains("created")) {
             created = new Date(nbt.getLong("created").get());
         }
@@ -645,6 +692,12 @@ public class FrontierData {
         nbt.put("chunks", chunksTagList);
 
         nbt.putString("mode", mode.name());
+
+        if (wasCopied()) {
+            CompoundTag nbtCopiedFrom = new CompoundTag();
+            copiedFrom.writeToNBT(nbtCopiedFrom);
+            nbt.put("copiedFrom", nbtCopiedFrom);
+        }
 
         if (created != null) {
             nbt.putLong("created", created.getTime());
@@ -733,6 +786,13 @@ public class FrontierData {
         }
 
         if (buf.readBoolean()) {
+            copiedFrom = new CopiedFrom();
+            copiedFrom.fromBytes(buf);
+        } else {
+            copiedFrom = null;
+        }
+
+        if (buf.readBoolean()) {
             created = new Date(buf.readLong());
         } else {
             created = null;
@@ -816,6 +876,13 @@ public class FrontierData {
             }
 
             buf.writeInt(mode.ordinal());
+        }
+
+        if (wasCopied()) {
+            buf.writeBoolean(true);
+            copiedFrom.toBytes(buf);
+        } else {
+            buf.writeBoolean(false);
         }
 
         if (created == null) {
@@ -981,7 +1048,8 @@ public class FrontierData {
             values = other.values.clone();
         }
 
-        public int getHash() {
+        @Override
+        public int hashCode() {
             return values.hashCode();
         }
 
@@ -1184,6 +1252,44 @@ public class FrontierData {
             buf.writeBoolean(getValue(Visibility.WebmapUnderground));
             buf.writeBoolean(getValue(Visibility.WebmapTopo));
             buf.writeBoolean(getValue(Visibility.WebmapBiome));
+        }
+    }
+
+    public static class CopiedFrom {
+        protected UUID id;
+        protected SettingsUser user = new SettingsUser();
+
+        public void readFromNBT(CompoundTag nbt, int version) {
+            id = UUID.fromString(nbt.getString("id").get());
+
+            user = new SettingsUser();
+            user.readFromNBT(nbt.getCompoundOrEmpty("user"));
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id, user);
+        }
+
+        public void writeToNBT(CompoundTag nbt) {
+            nbt.putString("id", id.toString());
+
+            CompoundTag nbtOwner = new CompoundTag();
+            user.writeToNBT(nbtOwner);
+            nbt.put("user", nbtOwner);
+        }
+
+        public void fromBytes(FriendlyByteBuf buf) {
+            id = UUIDHelper.fromBytes(buf);
+
+            user = new SettingsUser();
+            user.fromBytes(buf);
+        }
+
+        public void toBytes(FriendlyByteBuf buf) {
+            UUIDHelper.toBytes(buf, id);
+
+            user.toBytes(buf);
         }
     }
 }

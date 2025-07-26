@@ -3,15 +3,21 @@ package games.alejandrocoria.mapfrontiers.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.MapFrontiersForge;
+import games.alejandrocoria.mapfrontiers.client.command.ClientCommandAccept;
+import games.alejandrocoria.mapfrontiers.client.command.ClientCommandAccept;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingIn;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingOut;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.client.event.RegisterClientCommandsEvent;
+import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.event.TickEvent;
@@ -68,6 +74,11 @@ public class MapFrontiersClientForge extends MapFrontiersClient {
         }
     }
 
+    @SubscribeEvent
+    public static void onRegisterClientCommands(RegisterClientCommandsEvent event) {
+        ClientCommandAccept.register(event.getDispatcher());
+    }
+
     @Mod.EventBusSubscriber(value = Dist.CLIENT, modid = MapFrontiers.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
     public static class KeyMappingsEventHandler {
         @SubscribeEvent
@@ -85,6 +96,15 @@ public class MapFrontiersClientForge extends MapFrontiersClient {
             if (configEvent.getConfig().getModId().equals(MapFrontiersForge.MODID) && configEvent.getConfig().getType() == ModConfig.Type.CLIENT) {
                 Config.bakeConfig();
             }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onClientChat(ClientChatReceivedEvent event) {
+        boolean cancel = ChatFrontiers.receiveFrontierFromChat(event.getMessage(), event.getSender());
+        if (cancel) {
+            // Cannot be canceled
+            event.setMessage(Component.empty());
         }
     }
 }
