@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers;
 
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClientForge;
 import games.alejandrocoria.mapfrontiers.common.Config;
+import games.alejandrocoria.mapfrontiers.common.command.CommandAccept;
 import games.alejandrocoria.mapfrontiers.common.event.EventHandler;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -38,7 +39,7 @@ public class MapFrontiersForge extends MapFrontiers {
 
     @SubscribeEvent
     public static void registerCommands(RegisterCommandsEvent event) {
-        EventHandler.postCommandRegistrationEvent(event.getDispatcher());
+        CommandAccept.register(event.getDispatcher());
     }
 
     @SubscribeEvent

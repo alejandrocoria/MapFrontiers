@@ -32,6 +32,7 @@ public class Config {
     public static final ForgeConfigSpec CLIENT_SPEC;
     public static Sorting[] DEFAULT_SORTING = {Sorting.Created, Sorting.Name, Sorting.Owner,  Sorting.VertexChunk, Sorting.Area, Sorting.Modified};
     public static Boolean[] DEFAULT_SORTING_DIRECTION = {false, true, true,  true, true, false};
+
     static {
         final Pair<ClientConfig, ForgeConfigSpec> specPair = new Builder().configure(ClientConfig::new);
         CLIENT_SPEC = specPair.getRight();
@@ -128,6 +129,8 @@ public class Config {
     public static boolean announceUnnamedFrontiers;
     public static int snapDistance;
 
+    public static String sendCommand;
+
     public static boolean hideNamesThatDontFit;
     public static double polygonsOpacity;
     public static int borderWidth;
@@ -217,6 +220,8 @@ public class Config {
         announceUnnamedFrontiers = CLIENT.announceUnnamedFrontiers.get();
         snapDistance = CLIENT.snapDistance.get();
 
+        sendCommand = CLIENT.sendCommand.get();
+
         hideNamesThatDontFit = CLIENT.hideNamesThatDontFit.get();
         polygonsOpacity = CLIENT.polygonsOpacity.get();
         borderWidth = CLIENT.borderWidth.get();
@@ -305,6 +310,8 @@ public class Config {
         public final BooleanValue titleAnnouncementAboveHotbar;
         public final BooleanValue announceUnnamedFrontiers;
         public final IntValue snapDistance;
+
+        public final ConfigValue<String> sendCommand;
 
         public final BooleanValue hideNamesThatDontFit;
         public final DoubleValue polygonsOpacity;
@@ -493,6 +500,8 @@ public class Config {
             snapDistance = builder.comment("Distance at which vertices are attached to nearby vertices.")
                     .translation(MapFrontiers.MODID + ".config." + "snapDistance").defineInRange("snapDistance", 8, 0, 16);
 
+            sendCommand = builder.define("sendCommand", "msg");
+
             hideNamesThatDontFit = builder.comment(
                     "Hides the name if it is wider than the frontier at the zoom level it is being viewed.")
                     .translation(MapFrontiers.MODID + ".config." + "hideNamesThatDontFit")
@@ -635,6 +644,8 @@ public class Config {
         CLIENT.titleAnnouncementAboveHotbar.set(titleAnnouncementAboveHotbar);
         CLIENT.announceUnnamedFrontiers.set(announceUnnamedFrontiers);
         CLIENT.snapDistance.set(snapDistance);
+
+        CLIENT.sendCommand.set(sendCommand);
 
         CLIENT.hideNamesThatDontFit.set(hideNamesThatDontFit);
         CLIENT.polygonsOpacity.set(polygonsOpacity);

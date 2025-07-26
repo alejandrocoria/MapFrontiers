@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.MapFrontiersNeoForge;
+import games.alejandrocoria.mapfrontiers.client.command.ClientCommandAccept;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import net.minecraft.client.KeyMapping;
@@ -19,6 +20,7 @@ import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingIn;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
@@ -43,6 +45,7 @@ public class MapFrontiersClientNeoForge extends MapFrontiersClient {
         NeoForge.EVENT_BUS.addListener(MapFrontiersClientNeoForge::clientConnectedToServer);
         NeoForge.EVENT_BUS.addListener(MapFrontiersClientNeoForge::clientDisconnectionFromServer);
         NeoForge.EVENT_BUS.addListener(MapFrontiersClientNeoForge::mouseEvent);
+        NeoForge.EVENT_BUS.addListener(MapFrontiersClientNeoForge::onRegisterClientCommands);
 
         MapFrontiersNeoForge.LOGGER.info("NeoForge clientSetup done");
     }
@@ -77,6 +80,11 @@ public class MapFrontiersClientNeoForge extends MapFrontiersClient {
         if (event.getAction() == GLFW.GLFW_RELEASE) {
             ClientEventHandler.postMouseReleaseEvent(event.getButton());
         }
+    }
+
+    @SubscribeEvent
+    public static void onRegisterClientCommands(RegisterClientCommandsEvent event) {
+        ClientCommandAccept.register(event.getDispatcher());
     }
 
     @EventBusSubscriber(value = Dist.CLIENT, modid = MapFrontiers.MODID)
