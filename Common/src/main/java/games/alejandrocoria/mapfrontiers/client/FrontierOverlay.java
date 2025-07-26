@@ -64,6 +64,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -139,20 +140,7 @@ public class FrontierOverlay extends FrontierData {
     public int getHash() {
         if (dirtyhash) {
             dirtyhash = false;
-
-            int prime = 31;
-            hash = 1;
-            hash = prime * hash + id.hashCode();
-            hash = prime * hash + color;
-            hash = prime * hash + ((dimension == null) ? 0 : dimension.hashCode());
-            hash = prime * hash + ((name1 == null) ? 0 : name1.hashCode());
-            hash = prime * hash + ((name2 == null) ? 0 : name2.hashCode());
-            hash = prime * hash + visibilityData.getHash();
-            hash = prime * hash + ((vertices == null) ? 0 : vertices.hashCode());
-            hash = prime * hash + ((chunks == null) ? 0 : chunks.hashCode());
-            hash = prime * hash + mode.ordinal();
-            hash = prime * hash + ((banner == null) ? 0 : banner.hashCode());
-            hash = prime * hash + ((usersShared == null) ? 0 : usersShared.hashCode());
+            hash = Objects.hash(id, color, dimension, name1, name2, visibilityData, vertices, chunks, mode, banner, usersShared, copiedFrom);
         }
 
         return hash;

@@ -339,6 +339,9 @@ public class FrontiersManager {
 
     public int addShareMessage(SettingsUser targetUser, UUID frontierID) {
         ++pendingShareFrontierID;
+        if (pendingShareFrontierID == 1000) {
+            pendingShareFrontierID = 1;
+        }
         pendingShareFrontiers.put(pendingShareFrontierID, new PendingShareFrontier(frontierID, targetUser));
 
         return pendingShareFrontierID;

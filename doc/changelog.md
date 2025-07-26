@@ -1,5 +1,7 @@
 **Beta 12:**
-* Fixed: packets are no longer sent to the server when nothing is changed in Frontier Info.
+* Added: screen to send a copy of a frontier to another player via chat for when the server doesn't have the mod.
+* Fixed: packets are sent to the server when nothing is changed in Frontier Info upon closing the screen.
+* Fixed: modifying personal frontiers when the server doesn't have the mod doesn't update the modification date.
  
 **Beta 11:**
 * Fixed: crash when using JourneyMap's "Vault" theme or any theme that does not have the circle shape.
