@@ -42,6 +42,7 @@ public class HUD {
     private int nameOffsetY = 0;
     private int ownerOffsetY = 0;
     private int bannerOffsetY = 0;
+    private int nameLinesCount = 0;
     private int hudWidth = 0;
     private int hudHeight = 0;
     private int textScale = 1;
@@ -238,7 +239,7 @@ public class HUD {
     }
 
     private void drawName(GuiGraphics graphics, int frameColor, int textColor, float partialTicks) {
-        graphics.fill(posX, posY + nameOffsetY, posX + hudWidth, posY + nameOffsetY + 24 * textScale, frameColor);
+        graphics.fill(posX, posY + nameOffsetY, posX + hudWidth, posY + nameOffsetY + 12 * nameLinesCount * textScale, frameColor);
 
         frontierName1.setColor(textColor);
         frontierName2.setColor(textColor);
@@ -285,17 +286,24 @@ public class HUD {
         hudWidth = 0;
         hudHeight = 0;
         bannerScale = Config.hudBannerSize;
+        nameLinesCount = 0;
 
         textScale = Services.JOURNEYMAP.getMinimapFontScale();
 
         for (Config.HUDSlot slot : slots) {
             switch (slot) {
                 case Name:
+                    if (!StringUtils.isBlank(frontier.getName1())) {
+                        ++nameLinesCount;
+                    }
+                    if (!StringUtils.isBlank(frontier.getName2())) {
+                        ++nameLinesCount;
+                    }
                     int name1Width = mc.font.width(frontier.getName1()) + 3;
                     int name2Width = mc.font.width(frontier.getName2()) + 3;
                     int nameWidth = Math.max(name1Width, name2Width) * textScale;
                     hudWidth = Math.max(hudWidth, nameWidth);
-                    hudHeight += 24 * textScale;
+                    hudHeight += 12 * nameLinesCount * textScale;
                     break;
                 case Owner:
                     if (!frontier.getOwner().isEmpty()) {
@@ -329,17 +337,25 @@ public class HUD {
                 case Name:
                     nameOffsetY = offsetY;
 
-                    frontierName1.setX(posX + hudWidth / 2);
-                    frontierName1.setY(posY + nameOffsetY + 2 * textScale);
-                    frontierName1.setScale(textScale);
-                    frontierName1.setMessage(Component.literal(frontier.getName1()));
+                    if (StringUtils.isBlank(frontier.getName1())) {
+                        frontierName1.setMessage(Component.empty());
+                    } else {
+                        frontierName1.setX(posX + hudWidth / 2);
+                        frontierName1.setY(posY + nameOffsetY + 2 * textScale);
+                        frontierName1.setScale(textScale);
+                        frontierName1.setMessage(Component.literal(frontier.getName1()));
+                        offsetY += 12 * textScale;
+                    }
 
-                    frontierName2.setX(posX + hudWidth / 2);
-                    frontierName2.setY(posY + nameOffsetY + 14 * textScale);
-                    frontierName2.setScale(textScale);
-                    frontierName2.setMessage(Component.literal(frontier.getName2()));
-
-                    offsetY += 24 * textScale;
+                    if (StringUtils.isBlank(frontier.getName2())) {
+                        frontierName2.setMessage(Component.empty());
+                    } else {
+                        frontierName2.setX(posX + hudWidth / 2);
+                        frontierName2.setY(posY + offsetY + 2 * textScale);
+                        frontierName2.setScale(textScale);
+                        frontierName2.setMessage(Component.literal(frontier.getName2()));
+                        offsetY += 12 * textScale;
+                    }
                     break;
                 case Owner:
                     if (!frontier.getOwner().isEmpty()) {
