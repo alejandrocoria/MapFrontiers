@@ -158,6 +158,7 @@ public class Config {
     public static boolean hudEnabled;
     public static boolean hudAutoAdjustAnchor;
     public static boolean hudSnapToBorder;
+    public static int hudTextSize;
     public static int hudBannerSize;
     public static HUDSlot hudSlot1;
     public static HUDSlot hudSlot2;
@@ -246,6 +247,7 @@ public class Config {
         hudEnabled = CLIENT.hudEnabled.get();
         hudAutoAdjustAnchor = CLIENT.hudAutoAdjustAnchor.get();
         hudSnapToBorder = CLIENT.hudSnapToBorder.get();
+        hudTextSize = CLIENT.hudTextSize.get();
         hudBannerSize = CLIENT.hudBannerSize.get();
         hudSlot1 = CLIENT.hudSlot1.get();
         hudSlot2 = CLIENT.hudSlot2.get();
@@ -337,6 +339,7 @@ public class Config {
         public final BooleanValue hudEnabled;
         public final BooleanValue hudAutoAdjustAnchor;
         public final BooleanValue hudSnapToBorder;
+        public final IntValue hudTextSize;
         public final IntValue hudBannerSize;
         public final EnumValue<HUDSlot> hudSlot1;
         public final EnumValue<HUDSlot> hudSlot2;
@@ -573,6 +576,8 @@ public class Config {
             hudSnapToBorder = builder
                     .comment("Automatically snap to closest border when HUD position is edited (on settings screen).")
                     .translation(MapFrontiers.MODID + ".config.hud." + "snapToBorder").define("snapToBorder", true);
+            hudTextSize = builder.comment("Size of the HUD text.")
+                    .translation(MapFrontiers.MODID + ".config.hud." + "textSize").defineInRange("textSize", 1, 1, 8);
             hudBannerSize = builder.comment("Size of the HUD banner.")
                     .translation(MapFrontiers.MODID + ".config.hud." + "bannerSize").defineInRange("bannerSize", 3, 1, 8);
             hudSlot1 = builder.comment("HUD element on slot 1.").translation(MapFrontiers.MODID + ".config.hud." + "slot1")
@@ -671,6 +676,7 @@ public class Config {
         CLIENT.hudEnabled.set(hudEnabled);
         CLIENT.hudAutoAdjustAnchor.set(hudAutoAdjustAnchor);
         CLIENT.hudSnapToBorder.set(hudSnapToBorder);
+        CLIENT.hudTextSize.set(hudTextSize);
         CLIENT.hudBannerSize.set(hudBannerSize);
         CLIENT.hudSlot1.set(hudSlot1);
         CLIENT.hudSlot2.set(hudSlot2);

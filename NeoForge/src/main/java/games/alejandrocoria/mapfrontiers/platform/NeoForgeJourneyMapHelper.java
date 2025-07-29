@@ -103,11 +103,6 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
     }
 
     @Override
-    public int getMinimapFontScale() {
-        return UIManager.INSTANCE.getMiniMap().getCurrentMinimapProperties().fontScale.get().intValue();
-    }
-
-    @Override
     public int minimapLabelBackgroundColor() {
         if (UIManager.INSTANCE.getMiniMap().getCurrentMinimapProperties().shape.get() == Shape.Circle && ThemeLoader.getCurrentTheme().minimap.circle != null) {
             return colorSpecToInt(ThemeLoader.getCurrentTheme().minimap.circle.labelTop.background);
