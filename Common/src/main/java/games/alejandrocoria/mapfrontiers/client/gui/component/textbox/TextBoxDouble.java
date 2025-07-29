@@ -127,10 +127,10 @@ public class TextBoxDouble extends EditBox {
 
             if (vDelta > 0) {
                 playDownSound(Minecraft.getInstance().getSoundManager());
-                setValue(Math.min(current + 0.1, max));
+                setValue(Math.min(Math.round((current + 0.1) * 10) / 10.0, max));
             } else if (vDelta < 0) {
                 playDownSound(Minecraft.getInstance().getSoundManager());
-                setValue(Math.max(current - 0.1, min));
+                setValue(Math.max(Math.round((current - 0.1) * 10) / 10.0, min));
             }
 
             return true;
