@@ -287,7 +287,7 @@ public class HUD {
         bannerScale = Config.hudBannerSize;
         nameLinesCount = 0;
 
-        textScale = Services.JOURNEYMAP.getMinimapFontScale();
+        textScale = Config.hudTextSize;
 
         for (Config.HUDSlot slot : slots) {
             switch (slot) {
@@ -362,7 +362,7 @@ public class HUD {
                         ownerOffsetY = offsetY;
 
                         frontierOwner.setX(posX + hudWidth / 2);
-                        frontierOwner.setY(posY + ownerOffsetY + 2);
+                        frontierOwner.setY(posY + ownerOffsetY + 2 * textScale);
                         frontierOwner.setScale(textScale);
                         frontierOwner.setMessage(Component.literal(ChatFormatting.ITALIC + owner));
 

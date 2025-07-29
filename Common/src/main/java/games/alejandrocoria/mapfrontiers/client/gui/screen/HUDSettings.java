@@ -33,6 +33,8 @@ public class HUDSettings extends AutoScaledScreen {
     private static final Tooltip slot2Tooltip = Config.getTooltip("hud.slot2");
     private static final Component slot3Label = Config.getTranslatedName("hud.slot3");
     private static final Tooltip slot3Tooltip = Config.getTooltip("hud.slot3");
+    private static final Component textSizeLabel = Config.getTranslatedName("hud.textSize");
+    private static final Tooltip textSizeTooltip = Config.getTooltip("hud.textSize");
     private static final Component bannerSizeLabel = Config.getTranslatedName("hud.bannerSize");
     private static final Tooltip bannerSizeTooltip = Config.getTooltip("hud.bannerSize");
     private static final Component anchorLabel = Config.getTranslatedName("hud.anchor");
@@ -52,6 +54,7 @@ public class HUDSettings extends AutoScaledScreen {
     private OptionButton buttonSlot1;
     private OptionButton buttonSlot2;
     private OptionButton buttonSlot3;
+    private TextBoxInt textTextSize;
     private TextBoxInt textBannerSize;
     private OptionButton buttonAnchor;
     private TextBoxInt textPositionX;
@@ -124,7 +127,19 @@ public class HUDSettings extends AutoScaledScreen {
         buttonSlot3.setSelected(Config.hudSlot3.ordinal());
         mainLayout.addChild(buttonSlot3, 2, 1);
 
-        StringWidget labelBannerSize = mainLayout.addChild(new StringWidget(bannerSizeLabel, font).setColor(ColorConstants.TEXT), 3, 0);
+        StringWidget labelTextSize = mainLayout.addChild(new StringWidget(textSizeLabel, font).setColor(ColorConstants.TEXT), 3, 0);
+        labelTextSize.setTooltip(textSizeTooltip);
+        textTextSize = new TextBoxInt(1, 1, 8, font, 64);
+        textTextSize.setValue(String.valueOf(Config.hudTextSize));
+        textTextSize.setMaxLength(1);
+        textTextSize.setValueChangedCallback(value -> {
+            Config.hudTextSize = value;
+            ClientEventHandler.postUpdatedConfigEvent();
+            updatePosition();
+        });
+        mainLayout.addChild(textTextSize, 3, 1);
+
+        StringWidget labelBannerSize = mainLayout.addChild(new StringWidget(bannerSizeLabel, font).setColor(ColorConstants.TEXT), 4, 0);
         labelBannerSize.setTooltip(bannerSizeTooltip);
         textBannerSize = new TextBoxInt(3, 1, 8, font, 64);
         textBannerSize.setValue(String.valueOf(Config.hudBannerSize));
@@ -134,7 +149,7 @@ public class HUDSettings extends AutoScaledScreen {
             ClientEventHandler.postUpdatedConfigEvent();
             updatePosition();
         });
-        mainLayout.addChild(textBannerSize, 3, 1);
+        mainLayout.addChild(textBannerSize, 4, 1);
 
         StringWidget labelAnchorLabel = mainLayout.addChild(new StringWidget(anchorLabel, font).setColor(ColorConstants.TEXT), 0, 3);
         labelAnchorLabel.setTooltip(anchorTooltip);
@@ -207,7 +222,7 @@ public class HUDSettings extends AutoScaledScreen {
         mainLayout.addChild(buttonSnapToBorder, 3, 4);
 
         buttonDone = new SimpleButton(font, 100, doneLabel, (b) -> onClose());
-        mainLayout.addChild(buttonDone, 4, 0, 1, 5, LayoutSettings.defaults().alignHorizontallyCenter());
+        mainLayout.addChild(buttonDone, 5, 0, 1, 5, LayoutSettings.defaults().alignHorizontallyCenter());
 
         updatePosition();
     }

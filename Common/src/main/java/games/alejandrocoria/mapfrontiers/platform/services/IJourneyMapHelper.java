@@ -19,7 +19,6 @@ public interface IJourneyMapHelper {
     double getMinimapTranslateY() throws NoSuchFieldException, IllegalAccessException;
     int getMinimapMargin();
     JMPosition getMinimapPosition();
-    int getMinimapFontScale();
     int minimapLabelBackgroundColor();
     int minimapLabelHighlightColor();
     int minimapLabelForegroundColor();
