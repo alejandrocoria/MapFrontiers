@@ -1,3 +1,6 @@
+**Beta 13:**
+* Fixed: the banner disappears when a frontier is changed from personal to global or the other way around.
+ 
 **Beta 12:**
 * Added: screen to send a copy of a frontier to another player via chat for when the server doesn't have the mod.
 * Added: setting to change HUD text size.

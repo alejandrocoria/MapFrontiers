@@ -118,6 +118,7 @@ public class PacketChangeFrontierToGlobal {
             }
             frontierOverlay.removeAllUserShared();
             frontierOverlay.removeChanges();
+            frontierOverlay.recreateBannerRenderer();
             MapFrontiersClient.getFrontiersOverlayManager(false).addFrontier(frontierOverlay);
             ClientEventHandler.postUpdatedFrontierEvent(frontierOverlay, -1);
             frontierOverlay.updateOverlay();

@@ -103,8 +103,10 @@ public class PacketChangeFrontierToPersonal {
                 frontierOverlay.setModified(message.modified);
             }
             frontierOverlay.setCurrentPlayerAsOwner();
+            frontierOverlay.recreateBannerRenderer();
             MapFrontiersClient.getFrontiersOverlayManager(true).addFrontier(frontierOverlay);
             ClientEventHandler.postUpdatedFrontierEvent(frontierOverlay, -1);
+            frontierOverlay.updateOverlay();
         }
     }
 }

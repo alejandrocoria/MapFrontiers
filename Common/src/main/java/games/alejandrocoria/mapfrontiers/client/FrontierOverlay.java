@@ -680,6 +680,13 @@ public class FrontierOverlay extends FrontierData {
         return bannerRenderer;
     }
 
+    public void recreateBannerRenderer() {
+        bannerRenderer.releaseTexture();
+        if (banner != null) {
+            bannerRenderer.createTexture(id, banner);
+        }
+    }
+
     public void removeSelectedVertex() {
         if (vertexSelected < 0) {
             return;
