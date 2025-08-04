@@ -64,6 +64,25 @@ public class SimpleSlider extends AbstractSliderButton
     }
 
     @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        if (visible && isHovered) {
+            int val = denormalize(value);
+            if (delta > 0) {
+                val = Math.min(val + 1, maxValue);
+            } else {
+                val = Math.max(val - 1, minValue);
+            }
+
+            setValue(val);
+            applyValue();
+
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
     public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         if (isHovered) {
             label.setColor(textColorHighlight);
@@ -78,8 +97,8 @@ public class SimpleSlider extends AbstractSliderButton
         graphics.vLine(getX(), getY(), getY() + 16, ColorConstants.SIMPLE_BUTTON_BORDER);
         graphics.vLine(getX() + width, getY(), getY() + 16, ColorConstants.SIMPLE_BUTTON_BORDER);
 
-        int handleX = getX() + (int)(value * (width - 4));
-        graphics.fill(handleX, getY(), handleX + 4, getY() + 16, isHoveredOrFocused() ? 0xFFFFFFFF : 0xFFAAAAAA);
+        int handleX = getX() + (int)(value * (width - 5)) + 1;
+        graphics.fill(handleX, getY() + 1, handleX + 4, getY() + 16, isHoveredOrFocused() ? 0xFFFFFFFF : 0xFFAAAAAA);
 
         label.render(graphics, mouseX, mouseY, partialTick);
     }
