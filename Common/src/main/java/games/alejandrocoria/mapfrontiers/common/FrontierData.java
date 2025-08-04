@@ -424,6 +424,15 @@ public class FrontierData {
         return banner;
     }
 
+    public void setBannerRotation(int rotation)
+    {
+        banner.rotation = rotation;
+    }
+
+    public int getBannerRotation() {
+        return banner.rotation;
+    }
+
     public void setPersonal(boolean personal) {
         this.personal = personal;
     }
@@ -911,9 +920,11 @@ public class FrontierData {
     public static class BannerData {
         public DyeColor baseColor;
         public ListTag patterns;
+        public int rotation;
 
         public BannerData() {
             baseColor = DyeColor.WHITE;
+            rotation = 0;
         }
 
         public BannerData(ItemStack itemBanner) {
@@ -926,11 +937,14 @@ public class FrontierData {
             if (itemBanner.getItem() instanceof BannerItem) {
                 baseColor = ((BannerItem) itemBanner.getItem()).getColor();
             }
+
+            rotation = 0;
         }
 
         public void readFromNBT(CompoundTag nbt) {
             baseColor = DyeColor.byId(nbt.getInt("Base"));
             patterns = nbt.getList("Patterns", Tag.TAG_COMPOUND);
+            rotation = nbt.getInt("Rotation");
         }
 
         public void writeToNBT(CompoundTag nbt) {
@@ -939,6 +953,8 @@ public class FrontierData {
             if (patterns != null) {
                 nbt.put("Patterns", patterns);
             }
+
+            nbt.putInt("Rotation", rotation);
         }
 
         public void fromBytes(FriendlyByteBuf buf) {
@@ -948,6 +964,8 @@ public class FrontierData {
             if (nbt != null) {
                 patterns = nbt.getList("Patterns", Tag.TAG_COMPOUND);
             }
+
+            rotation = buf.readInt();
         }
 
         public void toBytes(FriendlyByteBuf buf) {
@@ -960,6 +978,8 @@ public class FrontierData {
                 nbt.put("Patterns", patterns);
                 buf.writeNbt(nbt);
             }
+
+            buf.writeInt(rotation);
         }
     }
 }

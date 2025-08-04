@@ -7,6 +7,7 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.math.Axis;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.mixin.TextureAtlasInvoker;
@@ -499,6 +500,12 @@ public class FrontierOverlay extends FrontierData {
     }
 
     @Override
+    public void setBannerRotation(int rotation) {
+        super.setBannerRotation(rotation);
+        needUpdateOverlay = true;
+    }
+
+    @Override
     public void addUserShared(SettingsUserShared userShared) {
         super.addUserShared(userShared);
         dirtyhash = true;
@@ -545,6 +552,27 @@ public class FrontierOverlay extends FrontierData {
         return closest;
     }
 
+    public int[] getBannerBounds(int x, int y, int scale) {
+        int width = 22 * scale;
+        int height = 40 * scale;
+        float centerX = x + width / 2f;
+        float centerY = y + height / 2f;
+
+        double radians = Math.toRadians(banner.rotation);
+        double cos = Math.abs(Math.cos(radians));
+        double sin = Math.abs(Math.sin(radians));
+
+        float rotatedWidth = (float)(width * cos + height * sin);
+        float rotatedHeight = (float)(width * sin + height * cos);
+
+        int minX = (int) Math.floor(centerX - rotatedWidth / 2f);
+        int maxX = (int) Math.ceil(centerX + rotatedWidth / 2f);
+        int minY = (int) Math.floor(centerY - rotatedHeight / 2f);
+        int maxY = (int) Math.ceil(centerY + rotatedHeight / 2f);
+
+        return new int[] { minX, minY, maxX, maxY };
+    }
+
     public void renderBanner(Minecraft mc, GuiGraphics graphics, int x, int y, int scale) {
         if (bannerDisplay == null) {
             return;
@@ -577,6 +605,15 @@ public class FrontierOverlay extends FrontierData {
             float u2 = sprite.getU0() + 22.f / atlasWidth;
             float v1 = sprite.getV0() + 1.f / atlasHeight;
             float v2 = sprite.getV0() + 41.f / atlasHeight;
+
+            float centerX = x + width / 2f;
+            float centerY = y + height / 2f;
+
+            graphics.pose().pushPose();
+            graphics.pose().translate(centerX, centerY, 0);
+            graphics.pose().mulPose(Axis.ZP.rotationDegrees(banner.rotation));
+            graphics.pose().translate(-centerX, -centerY, 0);
+
             buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
             Matrix4f matrix = graphics.pose().last().pose();
             buf.vertex(matrix, x, y + height, zLevel).color(colors[0], colors[1], colors[2], 1.f).uv(u1, v2).endVertex();
@@ -586,6 +623,8 @@ public class FrontierOverlay extends FrontierData {
             tessellator.end();
 
             RenderSystem.disableBlend();
+
+            graphics.pose().popPose();
         }
     }
 
