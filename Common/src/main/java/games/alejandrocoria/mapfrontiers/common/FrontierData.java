@@ -31,6 +31,7 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -96,7 +97,7 @@ public class FrontierData {
         name1 = other.name1;
         name2 = other.name2;
 
-        banner = other.banner;
+        banner = new BannerData(other.banner);
 
         usersShared = other.usersShared;
 
@@ -142,7 +143,7 @@ public class FrontierData {
         }
 
         if (other.changes.contains(Change.Banner)) {
-            banner = other.banner;
+            banner = new BannerData(other.banner);
         }
 
         if (other.changes.contains(Change.Shared)) {
@@ -417,7 +418,13 @@ public class FrontierData {
     }
 
     public void setBannerData(@Nullable BannerData bannerData) {
-        banner = bannerData;
+        changes.add(Change.Banner);
+
+        if (bannerData == null) {
+            banner = null;
+        } else {
+            banner = new BannerData(bannerData);
+        }
     }
 
     public BannerData getbannerData() {
@@ -927,6 +934,12 @@ public class FrontierData {
             rotation = 0;
         }
 
+        public BannerData(BannerData other) {
+            baseColor = other.baseColor;
+            patterns = other.patterns.copy();
+            rotation = other.rotation;
+        }
+
         public BannerData(ItemStack itemBanner) {
             CompoundTag blockEntityTag = itemBanner.getTagElement("BlockEntityTag");
 
@@ -980,6 +993,19 @@ public class FrontierData {
             }
 
             buf.writeInt(rotation);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof BannerData that)) {
+                return false;
+            }
+            return rotation == that.rotation && baseColor == that.baseColor && Objects.equals(patterns, that.patterns);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(baseColor, patterns, rotation);
         }
     }
 }
