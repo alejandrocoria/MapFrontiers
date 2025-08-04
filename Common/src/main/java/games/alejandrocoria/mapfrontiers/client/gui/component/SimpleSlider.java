@@ -13,6 +13,7 @@ public class SimpleSlider extends AbstractSliderButton
     private final int minValue;
     private final int maxValue;
     private final ValueChanged callback;
+    private boolean dragging = false;
 
     private String translationKey;
 
@@ -23,7 +24,7 @@ public class SimpleSlider extends AbstractSliderButton
     private int textColorHighlight = ColorConstants.SIMPLE_BUTTON_TEXT_HIGHLIGHT;
 
     public interface ValueChanged {
-        void onChanged(int value);
+        void onChanged(int value, boolean dragging);
     }
 
     public SimpleSlider(Font font, int x, int y, int width, String translationKey, int minValue, int maxValue, int initialValue, ValueChanged callback) {
@@ -55,7 +56,7 @@ public class SimpleSlider extends AbstractSliderButton
     @Override
     protected void applyValue() {
         int val = denormalize(value);
-        callback.onChanged(val);
+        callback.onChanged(val, dragging);
     }
 
     public void setValue(int value) {
@@ -80,6 +81,20 @@ public class SimpleSlider extends AbstractSliderButton
         }
 
         return false;
+    }
+
+    @Override
+    protected void onDrag(double mouseX, double mouseY, double dragX, double dragY) {
+        dragging = true;
+        super.onDrag(mouseX, mouseY, dragX, dragY);
+    }
+
+    // Custom mouseReleased to be called from the Screen.
+    public void mouseReleased() {
+        if (dragging) {
+            dragging = false;
+            applyValue();
+        }
     }
 
     @Override

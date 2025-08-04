@@ -396,9 +396,11 @@ public class FrontierInfo extends Screen {
         buttonBanner = new SimpleButton(font, leftSide - 152, top, 144,
                 Component.translatable("mapfrontiers.assign_banner"), this::buttonPressed);
         sliderBannerRotation = new SimpleSlider(font, leftSide - 152, top + 20, 144, "mapfrontiers.banner_rotation", 0, 360, frontier.hasBanner() ? frontier.getBannerRotation() : 0,
-                angle -> {
+                (angle, dragging) -> {
                     frontier.setBannerRotation(angle);
-                    sendChangesToServer();
+                    if (!dragging) {
+                        sendChangesToServer();
+                    }
                 });
 
         addRenderableWidget(textName1);
@@ -524,6 +526,8 @@ public class FrontierInfo extends Screen {
                 w.mouseReleased(mouseX, mouseY, button);
             }
         }
+
+        sliderBannerRotation.mouseReleased();
 
         return super.mouseReleased(mouseX, mouseY, button);
     }
