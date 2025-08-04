@@ -424,8 +424,8 @@ public class FrontierData {
         return banner;
     }
 
-    public void setBannerRotation(int rotation)
-    {
+    public void setBannerRotation(int rotation) {
+        changes.add(Change.Banner);
         banner.rotation = rotation;
     }
 
