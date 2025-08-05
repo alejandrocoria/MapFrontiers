@@ -37,7 +37,7 @@
   "mapfrontiers.assign_banner": "Assign banner",
   "mapfrontiers.remove_banner": "Remove banner",
   "mapfrontiers.assign_banner_warn": "You need to have a banner in hand to assign it",
-  "mapfrontiers.banner_rotation": "Banner rotation: %1$s",
+  "mapfrontiers.banner_rotation": "Rotation: %1$s",
   "mapfrontiers.select_in_map": "Select in map",
   "mapfrontiers.close": "Close",
 
