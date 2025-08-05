@@ -97,7 +97,11 @@ public class FrontierData {
         name1 = other.name1;
         name2 = other.name2;
 
-        banner = new BannerData(other.banner);
+        if (other.banner == null) {
+            banner = null;
+        } else {
+            banner = new BannerData(other.banner);
+        }
 
         usersShared = other.usersShared;
 
@@ -143,7 +147,11 @@ public class FrontierData {
         }
 
         if (other.changes.contains(Change.Banner)) {
-            banner = new BannerData(other.banner);
+            if (other.banner == null) {
+                banner = null;
+            } else {
+                banner = new BannerData(other.banner);
+            }
         }
 
         if (other.changes.contains(Change.Shared)) {
