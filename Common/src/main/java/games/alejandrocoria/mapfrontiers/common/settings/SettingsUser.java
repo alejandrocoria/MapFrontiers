@@ -95,7 +95,15 @@ public class SettingsUser {
 
     @Override
     public int hashCode() {
-        return uuid.hashCode();
+        if (StringUtils.isBlank(username)) {
+            if (uuid == null) {
+                return 0;
+            } else {
+                return uuid.hashCode();
+            }
+        }
+
+        return username.hashCode();
     }
 
     @Override
