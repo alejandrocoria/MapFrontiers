@@ -944,7 +944,9 @@ public class FrontierData {
 
         public BannerData(BannerData other) {
             baseColor = other.baseColor;
-            patterns = other.patterns.copy();
+            if (other.patterns != null) {
+                patterns = other.patterns.copy();
+            }
             rotation = other.rotation;
         }
 
