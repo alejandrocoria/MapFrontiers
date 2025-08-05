@@ -31,6 +31,7 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -96,7 +97,11 @@ public class FrontierData {
         name1 = other.name1;
         name2 = other.name2;
 
-        banner = other.banner;
+        if (other.banner == null) {
+            banner = null;
+        } else {
+            banner = new BannerData(other.banner);
+        }
 
         usersShared = other.usersShared;
 
@@ -142,7 +147,11 @@ public class FrontierData {
         }
 
         if (other.changes.contains(Change.Banner)) {
-            banner = other.banner;
+            if (other.banner == null) {
+                banner = null;
+            } else {
+                banner = new BannerData(other.banner);
+            }
         }
 
         if (other.changes.contains(Change.Shared)) {
@@ -417,11 +426,26 @@ public class FrontierData {
     }
 
     public void setBannerData(@Nullable BannerData bannerData) {
-        banner = bannerData;
+        changes.add(Change.Banner);
+
+        if (bannerData == null) {
+            banner = null;
+        } else {
+            banner = new BannerData(bannerData);
+        }
     }
 
     public BannerData getbannerData() {
         return banner;
+    }
+
+    public void setBannerRotation(int rotation) {
+        changes.add(Change.Banner);
+        banner.rotation = rotation;
+    }
+
+    public int getBannerRotation() {
+        return banner.rotation;
     }
 
     public void setPersonal(boolean personal) {
@@ -911,9 +935,17 @@ public class FrontierData {
     public static class BannerData {
         public DyeColor baseColor;
         public ListTag patterns;
+        public int rotation;
 
         public BannerData() {
             baseColor = DyeColor.WHITE;
+            rotation = 0;
+        }
+
+        public BannerData(BannerData other) {
+            baseColor = other.baseColor;
+            patterns = other.patterns.copy();
+            rotation = other.rotation;
         }
 
         public BannerData(ItemStack itemBanner) {
@@ -926,11 +958,14 @@ public class FrontierData {
             if (itemBanner.getItem() instanceof BannerItem) {
                 baseColor = ((BannerItem) itemBanner.getItem()).getColor();
             }
+
+            rotation = 0;
         }
 
         public void readFromNBT(CompoundTag nbt) {
             baseColor = DyeColor.byId(nbt.getInt("Base"));
             patterns = nbt.getList("Patterns", Tag.TAG_COMPOUND);
+            rotation = nbt.getInt("Rotation");
         }
 
         public void writeToNBT(CompoundTag nbt) {
@@ -939,6 +974,8 @@ public class FrontierData {
             if (patterns != null) {
                 nbt.put("Patterns", patterns);
             }
+
+            nbt.putInt("Rotation", rotation);
         }
 
         public void fromBytes(FriendlyByteBuf buf) {
@@ -948,6 +985,8 @@ public class FrontierData {
             if (nbt != null) {
                 patterns = nbt.getList("Patterns", Tag.TAG_COMPOUND);
             }
+
+            rotation = buf.readInt();
         }
 
         public void toBytes(FriendlyByteBuf buf) {
@@ -960,6 +999,21 @@ public class FrontierData {
                 nbt.put("Patterns", patterns);
                 buf.writeNbt(nbt);
             }
+
+            buf.writeInt(rotation);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof BannerData that)) {
+                return false;
+            }
+            return rotation == that.rotation && baseColor == that.baseColor && Objects.equals(patterns, that.patterns);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(baseColor, patterns, rotation);
         }
     }
 }

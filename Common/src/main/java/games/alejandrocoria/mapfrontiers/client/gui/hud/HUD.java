@@ -269,10 +269,15 @@ public class HUD {
     }
 
     private void drawBanner(GuiGraphics graphics, int frameColor) {
-        graphics.fill(posX + hudWidth / 2 - 11 * bannerScale - 2, posY + bannerOffsetY,
-                posX + hudWidth / 2 + 11 * bannerScale + 2, posY + bannerOffsetY + 4 + 40 * bannerScale, frameColor);
 
-        frontier.renderBanner(mc, graphics, posX + hudWidth / 2 - 11 * bannerScale, posY + bannerOffsetY + 2, bannerScale);
+        int bannerX = posX + hudWidth / 2 - 11 * bannerScale;
+        int bannerY = posY + bannerOffsetY + 2;
+
+        int[] bannerBounds = frontier.getBannerBounds(bannerX, bannerY, bannerScale);
+
+        graphics.fill(bannerBounds[0] - 2, bannerBounds[1] - 2, bannerBounds[2] + 2, bannerBounds[3] + 2, frameColor);
+
+        frontier.renderBanner(mc, graphics, bannerX, bannerY, bannerScale);
     }
 
     private void updateData() {
@@ -317,8 +322,9 @@ public class HUD {
                     }
                     break;
                 case Banner:
-                    hudWidth = Math.max(hudWidth, 22 * bannerScale + 4);
-                    hudHeight += 40 * bannerScale + 4;
+                    int[] bannerBounds = frontier.getBannerBounds(0, 0, bannerScale);
+                    hudWidth = Math.max(hudWidth, bannerBounds[2] - bannerBounds[0] + 4);
+                    hudHeight += bannerBounds[3] - bannerBounds[1] + 4;
                     break;
                 case None:
                     break;
@@ -366,8 +372,10 @@ public class HUD {
                     }
                     break;
                 case Banner:
-                    bannerOffsetY = offsetY;
-                    offsetY += 40 * bannerScale + 4;
+                    int[] bannerBounds = frontier.getBannerBounds(0, 0, bannerScale);
+                    int bannerHeight = bannerBounds[3] - bannerBounds[1];
+                    bannerOffsetY = (offsetY - bannerBounds[1]);
+                    offsetY += (bannerHeight) + 4;
                     break;
                 case None:
                     break;

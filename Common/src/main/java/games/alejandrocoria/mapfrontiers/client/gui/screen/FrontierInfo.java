@@ -7,6 +7,7 @@ import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPicker;
 import games.alejandrocoria.mapfrontiers.client.gui.component.SimpleLabel;
+import games.alejandrocoria.mapfrontiers.client.gui.component.SimpleSlider;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
@@ -96,6 +97,7 @@ public class FrontierInfo extends Screen {
     private SimpleButton buttonDelete;
     private SimpleButton buttonDone;
     private SimpleButton buttonBanner;
+    private SimpleSlider sliderBannerRotation;
 
     private final List<SimpleLabel> labels;
     private SimpleLabel modifiedLabel;
@@ -393,6 +395,13 @@ public class FrontierInfo extends Screen {
 
         buttonBanner = new SimpleButton(font, leftSide - 152, top, 144,
                 Component.translatable("mapfrontiers.assign_banner"), this::buttonPressed);
+        sliderBannerRotation = new SimpleSlider(font, leftSide - 152, top + 20, 144, "mapfrontiers.banner_rotation", 0, 360, frontier.hasBanner() ? frontier.getBannerRotation() : 0,
+                (angle, dragging) -> {
+                    frontier.setBannerRotation(angle);
+                    if (!dragging) {
+                        sendChangesToServer();
+                    }
+                });
 
         addRenderableWidget(textName1);
         addRenderableWidget(textName2);
@@ -425,6 +434,7 @@ public class FrontierInfo extends Screen {
         addRenderableWidget(buttonDelete);
         addRenderableWidget(buttonDone);
         addRenderableWidget(buttonBanner);
+        addRenderableWidget(sliderBannerRotation);
 
         updateBannerButton();
         updateButtons();
@@ -457,7 +467,7 @@ public class FrontierInfo extends Screen {
         super.render(graphics, mouseX, mouseY, partialTicks);
 
         if (frontier.hasBanner()) {
-            frontier.renderBanner(minecraft, graphics, actualWidth / 2 - 276, actualHeight / 2 - 122, 4);
+            frontier.renderBanner(minecraft, graphics, actualWidth / 2 - 265, actualHeight / 2 - 94, 3);
         }
 
         for (SimpleLabel label : labels) {
@@ -516,6 +526,8 @@ public class FrontierInfo extends Screen {
                 w.mouseReleased(mouseX, mouseY, button);
             }
         }
+
+        sliderBannerRotation.mouseReleased();
 
         return super.mouseReleased(mouseX, mouseY, button);
     }
@@ -634,6 +646,7 @@ public class FrontierInfo extends Screen {
                 }
             } else {
                 frontier.setBanner(null);
+                sliderBannerRotation.setValue(0);
             }
             updateBannerButton();
             sendChangesToServer();
@@ -720,8 +733,10 @@ public class FrontierInfo extends Screen {
             }
 
             buttonBanner.setMessage(message);
+            sliderBannerRotation.visible = false;
         } else {
             buttonBanner.setMessage(Component.translatable("mapfrontiers.remove_banner"));
+            sliderBannerRotation.visible = true;
         }
     }
 
@@ -773,6 +788,7 @@ public class FrontierInfo extends Screen {
         buttonClosePasteOptions.active = actions.canUpdate;
         buttonDelete.visible = actions.canDelete;
         buttonBanner.visible = actions.canUpdate;
+        sliderBannerRotation.visible = actions.canUpdate && frontier.hasBanner();
         UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
         buttonSelect.visible = uiState != null && frontier.getDimension().equals(uiState.dimension);
         buttonShareSettings.visible = actions.canShare;
