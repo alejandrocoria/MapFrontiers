@@ -50,6 +50,7 @@
   "mapfrontiers.assign_banner": "指定旗帜",
   "mapfrontiers.remove_banner": "移除旗帜",
   "mapfrontiers.assign_banner_warn": "你需要拿着一面旗帜以指定领地旗~",
+  "mapfrontiers.banner_rotation": "Rotation: %1$s",
   "mapfrontiers.select_in_map": "在地图中选中",
   "mapfrontiers.close": "关闭",
   "mapfrontiers.default": "Default: %1$s",

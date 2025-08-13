@@ -9,6 +9,7 @@ import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.math.Axis;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.mixin.CubeInvoker;
@@ -635,6 +636,16 @@ public class FrontierOverlay extends FrontierData {
     }
 
     @Override
+    public void setBannerRotation(int rotation) {
+        if (hasBanner()) {
+            super.setBannerRotation(rotation);
+            bannerRenderer.setRotation(rotation);
+            needUpdateOverlay = true;
+            dirtyhash = true;
+        }
+    }
+
+    @Override
     public void addUserShared(SettingsUserShared userShared) {
         super.addUserShared(userShared);
         dirtyhash = true;
@@ -679,6 +690,27 @@ public class FrontierOverlay extends FrontierData {
         }
 
         return closest;
+    }
+
+    public int[] getBannerBounds(int x, int y, int scale) {
+        int width = 22 * scale;
+        int height = 40 * scale;
+        float centerX = x + width / 2f;
+        float centerY = y + height / 2f;
+
+        double radians = Math.toRadians(banner.rotation);
+        double cos = Math.abs(Math.cos(radians));
+        double sin = Math.abs(Math.sin(radians));
+
+        float rotatedWidth = (float)(width * cos + height * sin);
+        float rotatedHeight = (float)(width * sin + height * cos);
+
+        int minX = (int) Math.floor(centerX - rotatedWidth / 2f);
+        int maxX = (int) Math.ceil(centerX + rotatedWidth / 2f);
+        int minY = (int) Math.floor(centerY - rotatedHeight / 2f);
+        int maxY = (int) Math.ceil(centerY + rotatedHeight / 2f);
+
+        return new int[] { minX, minY, maxX, maxY };
     }
 
     public BannerRenderer getBannerRenderer() {
@@ -1173,6 +1205,7 @@ public class FrontierOverlay extends FrontierData {
             bannerIcon.setDisplayWidth(20 * Config.bannerSize);
             bannerIcon.setDisplayHeight(40 * Config.bannerSize);
             bannerIcon.setOpacity((float) Config.bannerOpacity);
+            bannerIcon.setRotation(-bannerRenderer.getRotation());
             BlockPos polygonCenter = BlockPos.containing(polygonBound.getCenterX(), 70, polygonBound.getCenterY());
 
             MarkerOverlay bannerOverlay = new MarkerOverlay(MapFrontiers.MODID, polygonCenter, bannerIcon);
@@ -1337,9 +1370,12 @@ public class FrontierOverlay extends FrontierData {
     public static class BannerRenderer {
         private ResourceLocation textureLocation;
         private NativeImage bannerImage;
+        private int rotation;
 
         private void createTexture(UUID id, BannerData bannerData) {
             releaseTexture();
+
+            rotation = bannerData.rotation;
 
             Minecraft mc = Minecraft.getInstance();
             ClientLevel level = mc.level;
@@ -1452,7 +1488,7 @@ public class FrontierOverlay extends FrontierData {
             image.setPixel(x, y, ARGB.color(j, k, l, i1));
         }
 
-        public void renderBanner(GuiGraphics graphics, int x, int y, int scale) {
+        public void renderBanner(GuiGraphics graphics, int centerX, int y, int scale) {
             if (textureLocation == null) {
                 return;
             }
@@ -1465,7 +1501,14 @@ public class FrontierOverlay extends FrontierData {
             int width = 20 * scale;
             int height = 40 * scale;
             float zLevel = 0.f;
-            x -= width / 2;
+            int x = centerX - width / 2;
+            float centerY = y + height / 2f;
+
+            graphics.pose().pushPose();
+            graphics.pose().translate(centerX, centerY, 0);
+            graphics.pose().mulPose(Axis.ZP.rotationDegrees(rotation));
+            graphics.pose().translate(-centerX, -centerY, 0);
+
             Matrix4f matrix = graphics.pose().last().pose();
             buf.addVertex(matrix, x, y + height, zLevel).setUv(0, 1).setColor(color);
             buf.addVertex(matrix, x + width, y + height, zLevel).setUv(1, 1).setColor(color);
@@ -1477,6 +1520,8 @@ public class FrontierOverlay extends FrontierData {
             {
                 renderType.draw(meshData);
             }
+
+            graphics.pose().popPose();
         }
 
         public boolean hasBanner() {
@@ -1497,6 +1542,14 @@ public class FrontierOverlay extends FrontierData {
                 bannerImage.close();
                 bannerImage = null;
             }
+        }
+
+        public void setRotation(int rotation) {
+            this.rotation = rotation;
+        }
+
+        public int getRotation() {
+            return rotation;
         }
     }
 }
