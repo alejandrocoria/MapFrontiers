@@ -7,6 +7,7 @@ import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPaletteWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPicker;
+import games.alejandrocoria.mapfrontiers.client.gui.component.SimpleSlider;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
@@ -62,6 +63,7 @@ public class FrontierInfo extends AutoScaledScreen {
     private static final Component assignBannerLabel = Component.translatable("mapfrontiers.assign_banner");
     private static final Component assignBannerWarnLabel = assignBannerLabel.copy().append(Component.literal(ColorConstants.WARNING + " !"));
     private static final Component removeBannerLabel = Component.translatable("mapfrontiers.remove_banner");
+    private static final String bannerRotationKey = "mapfrontiers.banner_rotation";
     private static final Component nameLabel = Component.translatable("mapfrontiers.name");
     private static final Component personalLabel = Component.translatable("mapfrontiers.config.Personal");
     private static final Component globalLabel = Component.translatable("mapfrontiers.config.Global");
@@ -140,6 +142,7 @@ public class FrontierInfo extends AutoScaledScreen {
     private SimpleButton buttonDelete;
     private SimpleButton buttonDone;
     private SimpleButton buttonBanner;
+    private SimpleSlider sliderBannerRotation;
 
     private StringWidget modifiedLabel;
 
@@ -186,6 +189,10 @@ public class FrontierInfo extends AutoScaledScreen {
         GridLayout mainLayout = new GridLayout().spacing(10);
         content.addChild(mainLayout);
 
+        LinearLayout bannerColumn = LinearLayout.vertical().spacing(2);
+        bannerColumn.defaultCellSetting().alignHorizontallyCenter();
+        mainLayout.addChild(bannerColumn, 0, 0);
+
         buttonBanner = new SimpleButton(font, 144, assignBannerLabel, (b) -> {
             if (!frontier.hasBanner()) {
                 ItemStack heldBanner = getHeldBanner(minecraft);
@@ -198,7 +205,15 @@ public class FrontierInfo extends AutoScaledScreen {
             updateBannerButton();
             sendChangesToServer();
         });
-        mainLayout.addChild(buttonBanner, 0, 0);
+        bannerColumn.addChild(buttonBanner);
+
+        sliderBannerRotation = new SimpleSlider(font, 144, bannerRotationKey, 0, 360, frontier.getBannerRotation(), (angle, dragging) -> {
+            frontier.setBannerRotation(angle);
+            if (!dragging) {
+                sendChangesToServer();
+            }
+        });
+        bannerColumn.addChild(sliderBannerRotation);
 
         LinearLayout nameColumn = LinearLayout.vertical().spacing(2);
         nameColumn.defaultCellSetting().alignHorizontallyLeft();
@@ -529,7 +544,7 @@ public class FrontierInfo extends AutoScaledScreen {
     @Override
     public void renderScaledScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         if (frontier.getBannerRenderer().hasBanner()) {
-            frontier.getBannerRenderer().renderBanner(graphics, buttonBanner.getX() + buttonBanner.getWidth() / 2, buttonBanner.getY() + 20, 4);
+            frontier.getBannerRenderer().renderBanner(graphics, buttonBanner.getX() + buttonBanner.getWidth() / 2, sliderBannerRotation.getY() + 25, 3);
         }
     }
 
@@ -540,6 +555,8 @@ public class FrontierInfo extends AutoScaledScreen {
                 w.mouseReleased(mouseX, mouseY, button);
             }
         }
+
+        sliderBannerRotation.mouseReleased();
 
         return super.mouseReleased(mouseX, mouseY, button);
     }
@@ -645,9 +662,11 @@ public class FrontierInfo extends AutoScaledScreen {
                 buttonBanner.setMessage(assignBannerWarnLabel);
                 buttonBanner.setTooltip(assignBannerWarnTooltip);
             }
+            sliderBannerRotation.visible = false;
         } else {
             buttonBanner.setMessage(removeBannerLabel);
             buttonBanner.setTooltip(null);
+            sliderBannerRotation.visible = true;
         }
     }
 
@@ -708,6 +727,7 @@ public class FrontierInfo extends AutoScaledScreen {
         }
         buttonDelete.active = actions.canDelete;
         buttonBanner.visible = actions.canUpdate;
+        sliderBannerRotation.visible = actions.canUpdate && frontier.hasBanner();
         UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
         buttonSelect.active = uiState != null && frontier.getDimension().equals(uiState.dimension);
         if (MapFrontiersClient.isModOnServer()) {
