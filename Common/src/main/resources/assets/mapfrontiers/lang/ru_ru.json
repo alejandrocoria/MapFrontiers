@@ -52,6 +52,7 @@
   "mapfrontiers.assign_banner": "Добавить баннер",
   "mapfrontiers.remove_banner": "Удалить баннер",
   "mapfrontiers.assign_banner_warn": "Вы должны иметь баннер в другой руке!",
+  "mapfrontiers.banner_rotation": "Rotation: %1$s",
   "mapfrontiers.select_in_map": "Выбрать на карте",
   "mapfrontiers.close": "Закрыть",
   "mapfrontiers.default": "Default: %1$s",

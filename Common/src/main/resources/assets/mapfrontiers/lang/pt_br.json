@@ -50,6 +50,7 @@
     "mapfrontiers.assign_banner": "Atribuir estandarte",
     "mapfrontiers.remove_banner": "Remover estandarte",
     "mapfrontiers.assign_banner_warn": "Você precisa ter um estandarte em mãos para atribuí-lo",
+    "mapfrontiers.banner_rotation": "Rotação: %1$s",
     "mapfrontiers.select_in_map": "Selecione no mapa",
     "mapfrontiers.close": "Fechar",
     "mapfrontiers.default": "Padrão: %1$s",

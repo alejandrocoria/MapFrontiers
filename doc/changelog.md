@@ -1,3 +1,6 @@
+**Beta 14:**
+* Added: banner rotation.
+ 
 **Beta 13:**
 * Fixed: the banner disappears when a frontier is changed from personal to global or the other way around.
  
