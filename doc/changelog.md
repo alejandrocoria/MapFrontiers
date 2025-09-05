@@ -1,3 +1,6 @@
+**Beta 15:**
+* Fixed: [Forge] HUD not drawing.
+ 
 **Beta 14:**
 * Added: banner rotation.
  

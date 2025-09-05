@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.MapFrontiersForge;
 import games.alejandrocoria.mapfrontiers.client.command.ClientCommandAccept;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
@@ -8,14 +9,18 @@ import games.alejandrocoria.mapfrontiers.common.Config;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.AddGuiOverlayLayersEvent;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingIn;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingOut;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.client.gui.overlay.ForgeLayer;
+import net.minecraftforge.client.gui.overlay.ForgeLayeredDraw;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
@@ -48,10 +53,13 @@ public class MapFrontiersClientForge extends MapFrontiersClient {
     }
 
     @SubscribeEvent
-    public static void onRenderTick(TickEvent.ClientTickEvent event) {
-        if (event.phase == TickEvent.Phase.START) {
-            ClientEventHandler.postClientTickEvent(Minecraft.getInstance());
-        }
+    public static void onRenderTick(TickEvent.ClientTickEvent.Pre event) {
+        ClientEventHandler.postClientTickEvent(Minecraft.getInstance());
+    }
+
+    @SubscribeEvent
+    public static void addGuiOverlayLayersEvent(AddGuiOverlayLayersEvent event) {
+        event.getLayeredDraw().add(ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "hud"), ClientEventHandler::postHudRenderEvent);
     }
 
     @SubscribeEvent
