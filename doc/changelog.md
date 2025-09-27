@@ -1,3 +1,9 @@
+**Beta 16:**
+* Fixed: Snapping acting weird.
+ 
+**Beta 15:**
+* Fixed: [Forge] HUD not drawing.
+ 
 **Beta 14:**
 * Added: banner rotation.
  
