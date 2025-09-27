@@ -73,7 +73,7 @@ public class MapFrontiersClient {
                 return;
             }
 
-            while (openSettingsKey.consumeClick()) {
+            while (openSettingsKey != null && openSettingsKey.consumeClick()) {
                 client.setScreen(new ModSettings(null, false));
             }
 
@@ -219,7 +219,7 @@ public class MapFrontiersClient {
     }
 
     public static Component getOpenSettingsKey() {
-        if (openSettingsKey.isUnbound()) {
+        if (openSettingsKey == null || openSettingsKey.isUnbound()) {
             return null;
         } else {
             return openSettingsKey.getTranslatedKeyMessage();

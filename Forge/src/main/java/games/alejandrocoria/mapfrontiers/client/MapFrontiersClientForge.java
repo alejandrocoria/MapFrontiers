@@ -37,17 +37,9 @@ import javax.annotation.ParametersAreNonnullByDefault;
 public class MapFrontiersClientForge extends MapFrontiersClient {
     @SubscribeEvent
     public static void clientSetup(FMLClientSetupEvent event) {
-        openSettingsKey = new KeyMapping("mapfrontiers.key.open_settings", KeyConflictContext.IN_GAME,
-                InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, "mapfrontiers.key.category");
-
         init();
 
         MapFrontiersForge.LOGGER.info("Forge clientSetup done");
-    }
-
-    @SubscribeEvent
-    public static void registerKeyMappingsEvent(RegisterKeyMappingsEvent event) {
-        event.register(openSettingsKey);
     }
 
     @SubscribeEvent
@@ -100,6 +92,16 @@ public class MapFrontiersClientForge extends MapFrontiersClient {
     public static void onFullscreenpopupMenu(PopupMenuEvent.FullscreenPopupMenuEvent event) {
         ModPopupMenu popupMenu = event.getPopupMenu();
         ClientEventHandler.postFullscreenPopupMenuEvent(popupMenu);
+    }
+
+    @Mod.EventBusSubscriber(value = Dist.CLIENT, modid = MapFrontiers.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
+    public static class KeyMappingsEventHandler {
+        @SubscribeEvent
+        public static void registerKeyMappingsEvent(RegisterKeyMappingsEvent event) {
+            openSettingsKey = new KeyMapping("mapfrontiers.key.open_settings", KeyConflictContext.IN_GAME,
+                    InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, "mapfrontiers.key.category");
+            event.register(openSettingsKey);
+        }
     }
 
     @Mod.EventBusSubscriber(modid = MapFrontiers.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
