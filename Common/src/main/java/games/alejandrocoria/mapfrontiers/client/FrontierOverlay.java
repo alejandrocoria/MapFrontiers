@@ -677,7 +677,8 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private BlockPos snapVertex(BlockPos vertex, float snapDistance) {
-        BlockPos closest = vertex.atY(70);
+        vertex = vertex.atY(70);
+        BlockPos closest = vertex;
         double closestDistance = snapDistance * snapDistance;
 
         for (FrontierOverlay frontier : MapFrontiersClient.getFrontiersOverlayManager(true).getAllFrontiers(dimension)) {
@@ -685,10 +686,13 @@ public class FrontierOverlay extends FrontierData {
                 continue;
             }
 
-            BlockPos v = frontier.getClosestVertex(closest, closestDistance);
+            BlockPos v = frontier.getClosestVertex(vertex, closestDistance);
             if (v != null) {
-                closest = v;
-                closestDistance = v.distSqr(vertex);
+                double dist = v.distSqr(vertex);
+                if (dist <= closestDistance) {
+                    closest = v;
+                    closestDistance = dist;
+                }
             }
         }
 
@@ -697,10 +701,13 @@ public class FrontierOverlay extends FrontierData {
                 continue;
             }
 
-            BlockPos v = frontier.getClosestVertex(closest, closestDistance);
+            BlockPos v = frontier.getClosestVertex(vertex, closestDistance);
             if (v != null) {
-                closest = v;
-                closestDistance = v.distSqr(vertex);
+                double dist = v.distSqr(vertex);
+                if (dist <= closestDistance) {
+                    closest = v;
+                    closestDistance = dist;
+                }
             }
         }
 
