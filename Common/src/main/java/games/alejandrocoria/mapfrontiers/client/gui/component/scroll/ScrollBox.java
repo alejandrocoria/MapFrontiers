@@ -9,9 +9,10 @@ import net.minecraft.client.gui.components.AbstractContainerWidget;
 import net.minecraft.client.gui.components.events.ContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.client.gui.navigation.CommonInputs;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.gui.navigation.ScreenAxis;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
@@ -349,16 +350,16 @@ public class ScrollBox extends AbstractContainerWidget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (active && visible && isValidClickButton(button)) {
-            if (scrollBarHeight > 0 && mouseX >= getX() + width - 10 && mouseY >= getY() && mouseX < getX() + width && mouseY < getY() + height) {
-                if (mouseY < getY() + scrollBarPos) {
-                    mouseScrolled(mouseX, mouseY, 0, 1);
-                } else if (mouseY > getY() + scrollBarPos + scrollBarHeight) {
-                    mouseScrolled(mouseX, mouseY, 0, -1);
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (active && visible && isValidClickButton(event.buttonInfo())) {
+            if (scrollBarHeight > 0 && event.x() >= getX() + width - 10 && event.y() >= getY() && event.x() < getX() + width && event.y() < getY() + height) {
+                if (event.y() < getY() + scrollBarPos) {
+                    mouseScrolled(event.x(), event.y(), 0, 1);
+                } else if (event.y() > getY() + scrollBarPos + scrollBarHeight) {
+                    mouseScrolled(event.x(), event.y(), 0, -1);
                 } else {
                     scrollBarGrabbed = true;
-                    scrollBarGrabbedYPos = (int) mouseY - getY() - scrollBarPos;
+                    scrollBarGrabbedYPos = (int) event.y() - getY() - scrollBarPos;
                 }
 
                 return true;
@@ -368,7 +369,7 @@ public class ScrollBox extends AbstractContainerWidget {
                 ListIterator<ScrollElement> it = elements.listIterator();
                 while (it.hasNext()) {
                     ScrollElement element = it.next();
-                    ScrollElement.Action action = element.mousePressed(mouseX, mouseY);
+                    ScrollElement.Action action = element.mousePressed(event, doubleClick);
                     if (action == ScrollElement.Action.Deleted) {
                         if (elementDeletePressedCallback != null) {
                             elementDeletePressedCallback.accept(element);
@@ -401,14 +402,14 @@ public class ScrollBox extends AbstractContainerWidget {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent event) {
         if (this.active && this.visible) {
-            if (CommonInputs.selected(keyCode)) {
+            if (event.isSelection()) {
                 selectIndex(focused);
                 if (selected != -1) {
                     ScrollElement focusedElement = elements.get(focused);
                     if (!focusedElement.children().isEmpty()) {
-                        focusedElement.keyPressed(keyCode, scanCode, modifiers);
+                        focusedElement.keyPressed(event);
                     } else if (elementClickedCallback != null) {
                         elementClickedCallback.accept(getSelectedElement());
                     }
@@ -416,7 +417,7 @@ public class ScrollBox extends AbstractContainerWidget {
                 return true;
             }
 
-            if (keyCode == GLFW.GLFW_KEY_DELETE && focused != -1) {
+            if (event.input() == GLFW.GLFW_KEY_DELETE && focused != -1) {
                 ScrollElement element = elements.get(focused);
                 if (element.canBeDeleted()) {
                     if (elementDeletePressedCallback != null) {
@@ -429,13 +430,13 @@ public class ScrollBox extends AbstractContainerWidget {
             }
         }
 
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override
-    public void onDrag(double mouseX, double mouseY, double dragX, double dragY) {
+    public void onDrag(MouseButtonEvent event, double dragX, double dragY) {
         if (scrollBarHeight > 0 && scrollBarGrabbed) {
-            int delta = (int) mouseY - getY() - scrollBarPos - scrollBarGrabbedYPos;
+            int delta = (int) event.y() - getY() - scrollBarPos - scrollBarGrabbedYPos;
 
             if (delta == 0) {
                 return;
@@ -549,7 +550,7 @@ public class ScrollBox extends AbstractContainerWidget {
         protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks, boolean selected, boolean focused) {
         }
 
-        protected Action mousePressed(double mouseX, double mouseY) {
+        protected Action mousePressed(MouseButtonEvent event, boolean doubleClick) {
             return Action.None;
         }
 

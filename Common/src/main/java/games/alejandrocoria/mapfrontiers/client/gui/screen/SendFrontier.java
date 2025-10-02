@@ -140,7 +140,7 @@ public class SendFrontier extends AutoScaledScreen {
             return;
         }
 
-        if (user.username.equals(minecraft.player.getGameProfile().getName())) {
+        if (user.username.equals(minecraft.player.getGameProfile().name())) {
             textNewUser.setError(errorSelfLabel);
             return;
         }

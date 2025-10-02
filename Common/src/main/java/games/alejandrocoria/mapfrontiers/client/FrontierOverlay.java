@@ -35,6 +35,7 @@ import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
+import net.minecraft.data.AtlasIds;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -1411,7 +1412,7 @@ public class FrontierOverlay extends FrontierData {
                 return;
             }
 
-            TextureAtlasSprite base = Sheets.BANNER_BASE.sprite();
+            TextureAtlasSprite base = mc.getAtlasManager().get(Sheets.BANNER_BASE);
             SpriteContents baseSprite = base.contents();
             int width = (int) (abs(flagUV[0] - flagUV[2]) * baseSprite.width());
             int height = (int) (abs(flagUV[1] - flagUV[3]) * baseSprite.height());
@@ -1422,7 +1423,7 @@ public class FrontierOverlay extends FrontierData {
             for (int i = 0; i < patternLayers.layers().size(); ++i) {
                 BannerPatternLayers.Layer layer = patternLayers.layers().get(i);
                 ResourceLocation patternTextureLocation = layer.pattern().value().assetId().withPrefix("entity/banner/");
-                TextureAtlasSprite sprite = mc.getTextureAtlas(Sheets.BANNER_SHEET).apply(patternTextureLocation);
+                TextureAtlasSprite sprite = mc.getAtlasManager().getAtlasOrThrow(AtlasIds.BANNER_PATTERNS).getSprite(patternTextureLocation);
 
                 generateBannerLayer(tempBannerImage, flagUV, sprite.contents(), layer.color());
             }

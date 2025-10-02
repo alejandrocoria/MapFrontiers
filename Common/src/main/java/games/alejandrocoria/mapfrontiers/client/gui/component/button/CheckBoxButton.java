@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component.button;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.network.chat.Component;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -38,9 +39,9 @@ public class CheckBoxButton extends ButtonBase {
     }
 
     @Override
-    public void onPress() {
+    public void onPress(InputWithModifiers modifiers) {
         toggle();
-        super.onPress();
+        super.onPress(modifiers);
     }
 
 

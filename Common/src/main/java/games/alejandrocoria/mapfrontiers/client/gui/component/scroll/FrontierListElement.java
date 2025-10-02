@@ -5,13 +5,16 @@ import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
 import net.minecraft.ChatFormatting;
+import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.language.I18n;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 public class FrontierListElement extends ScrollBox.ScrollElement {
     private final Font font;
     private final FrontierOverlay frontier;
@@ -109,7 +112,7 @@ public class FrontierListElement extends ScrollBox.ScrollElement {
     }
 
     @Override
-    public ScrollBox.ScrollElement.Action mousePressed(double mouseX, double mouseY) {
+    public ScrollBox.ScrollElement.Action mousePressed(MouseButtonEvent event, boolean doubleClick) {
         if (visible && isHovered) {
             return ScrollBox.ScrollElement.Action.Clicked;
         }

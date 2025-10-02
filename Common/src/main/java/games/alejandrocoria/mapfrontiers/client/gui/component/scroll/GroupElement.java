@@ -4,13 +4,16 @@ import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import net.minecraft.ChatFormatting;
+import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.language.I18n;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 public class GroupElement extends ScrollBox.ScrollElement {
     private final Font font;
     private final SettingsGroup group;
@@ -70,9 +73,9 @@ public class GroupElement extends ScrollBox.ScrollElement {
     }
 
     @Override
-    protected ScrollBox.ScrollElement.Action mousePressed(double mouseX, double mouseY) {
+    protected ScrollBox.ScrollElement.Action mousePressed(MouseButtonEvent event, boolean doubleClick) {
         if (visible && isHovered) {
-            if (buttonDelete != null && buttonDelete.isMouseOver(mouseX, mouseY)) {
+            if (buttonDelete != null && buttonDelete.isMouseOver(event.x(), event.y())) {
                 return ScrollBox.ScrollElement.Action.Deleted;
             } else {
                 return ScrollBox.ScrollElement.Action.Clicked;

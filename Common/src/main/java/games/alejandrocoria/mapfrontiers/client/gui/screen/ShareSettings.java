@@ -23,6 +23,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.LinearLayout;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
@@ -194,14 +195,14 @@ public class ShareSettings extends AutoScaledScreen {
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(MouseButtonEvent event) {
         for (GuiEventListener w : children()) {
             if (w instanceof ScrollBox) {
                 ((ScrollBox) w).mouseReleased();
             }
         }
 
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(event);
     }
 
     private void deleteUserPressed(ScrollElement element) {
@@ -259,7 +260,7 @@ public class ShareSettings extends AutoScaledScreen {
             }
         }
 
-        if (user.username.equals(minecraft.player.getGameProfile().getName())) {
+        if (user.username.equals(minecraft.player.getGameProfile().name())) {
             textNewUser.setError(errorSelfLabel);
             return;
         }

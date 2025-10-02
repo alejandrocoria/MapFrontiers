@@ -10,6 +10,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.dialog.DeleteConfirmationDia
 import games.alejandrocoria.mapfrontiers.client.gui.screen.FrontierInfo;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.FrontierList;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.NewFrontier;
+import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
@@ -378,7 +379,7 @@ public class FullscreenMap {
         double maxDistanceToClosest = Math.max(2.0, 8192.0 / uiState.zoom);
 
         if (editing && frontierHighlighted != null) {
-            if (Screen.hasControlDown() && button == 1) {
+            if (ScreenHelper.hasControlDown() && button == 1) {
                 relocating = true;
                 relocatingPrevPos = position;
                 return true;
@@ -387,7 +388,7 @@ public class FullscreenMap {
                 frontierHighlighted.selectClosestVertex(position, maxDistanceToClosest);
             } else if (button == 1) {
                 lastEditedChunk = new ChunkPos(position);
-                if (Screen.hasShiftDown()) {
+                if (ScreenHelper.hasShiftDown()) {
                     return false;
                 }else {
                     if (frontierHighlighted.toggleChunk(lastEditedChunk)) {

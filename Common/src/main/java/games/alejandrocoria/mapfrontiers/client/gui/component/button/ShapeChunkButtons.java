@@ -8,6 +8,7 @@ import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
@@ -94,13 +95,15 @@ public class ShapeChunkButtons extends AbstractWidgetNoNarration {
     }
 
     @Override
-    public void onClick(double mouseX, double mouseY) {
-        double col = (mouseX - getX() + 3) / 55.0;
-        double row = (mouseY - getY() - 15) / 55.0;
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double col = (event.x() - getX() + 3) / 55.0;
+        double row = (event.y() - getY() - 15) / 55.0;
         if (col >= 0.0 && col < 4.0 && row >= 0.0 && row < 2.0) {
             selected = (int) col + (int) row * 4;
             callbackShapeUpdated.accept(this);
         }
+
+        return true;
     }
 
     @Override

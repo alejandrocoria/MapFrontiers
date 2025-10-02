@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
 import javax.annotation.Nullable;
@@ -40,13 +41,15 @@ public class ColorPaletteWidget extends AbstractWidgetNoNarration {
     }
 
     @Override
-    public void onClick(double mouseX, double mouseY) {
-        double paletteX = (mouseX - getX()) / 23.0;
-        double paletteY = (mouseY - getY()) / 23.0;
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double paletteX = (event.x() - getX()) / 23.0;
+        double paletteY = (event.y() - getY()) / 23.0;
         if (paletteX >= 0.0 && paletteX < 6.0 && paletteY >= 0.0 && paletteY < 3.0) {
             color = palette[(int) paletteX + (int) paletteY * 6];
             onPress.accept(color);
         }
+
+        return true;
     }
 
     @Override

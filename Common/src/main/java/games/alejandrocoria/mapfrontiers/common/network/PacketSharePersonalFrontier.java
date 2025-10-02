@@ -70,7 +70,7 @@ public class PacketSharePersonalFrontier {
             if (player == null) {
                 return;
             }
-            MinecraftServer server = player.getServer();
+            MinecraftServer server = player.level().getServer();
             SettingsUser playerUser = new SettingsUser(player);
 
             message.targetUser.fillMissingInfo(false, server);

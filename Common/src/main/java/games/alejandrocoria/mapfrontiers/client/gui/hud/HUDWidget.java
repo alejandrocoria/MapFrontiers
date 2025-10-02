@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
 
@@ -48,27 +49,29 @@ public class HUDWidget extends AbstractWidgetNoNarration {
     }
 
     @Override
-    public void onClick(double mouseX, double mouseY) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         int factor = (int) Minecraft.getInstance().getWindow().getGuiScale();
-        int xScaled = (int) mouseX * factor;
-        int yScaled = (int) mouseY * factor;
+        int xScaled = (int) event.x() * factor;
+        int yScaled = (int) event.y() * factor;
         grabOffset.x = xScaled - positionHUD.x;
         grabOffset.y = yScaled - positionHUD.y;
         grabbed = true;
+
+        return true;
     }
 
     @Override
-    public void onRelease(double mouseX, double mouseY) {
+    public void onRelease(MouseButtonEvent event) {
         grabbed = false;
     }
 
     @Override
-    public void onDrag(double mouseX, double mouseY, double dragX, double dragY) {
+    public void onDrag(MouseButtonEvent event, double dragX, double dragY) {
         if (grabbed) {
             Minecraft mc = Minecraft.getInstance();
             float factor = (float) mc.getWindow().getGuiScale();
-            mouseX *= factor;
-            mouseY *= factor;
+            double mouseX = event.x() * factor;
+            double mouseY = event.y() * factor;
 
             positionHUD.x = (int) mouseX - grabOffset.x;
             positionHUD.y = (int) mouseY - grabOffset.y;

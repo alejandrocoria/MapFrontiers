@@ -92,7 +92,7 @@ public class MapFrontiersClientNeoForge extends MapFrontiersClient {
         @SubscribeEvent
         public static void registerKeyMappingsEvent(RegisterKeyMappingsEvent event) {
             openSettingsKey = new KeyMapping("mapfrontiers.key.open_settings", KeyConflictContext.IN_GAME,
-                    InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, "mapfrontiers.key.category");
+                    InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, MapFrontiersClient.registerKeyMappingCategory());
             event.register(openSettingsKey);
         }
     }

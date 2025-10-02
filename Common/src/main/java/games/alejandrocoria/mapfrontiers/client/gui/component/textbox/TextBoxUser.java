@@ -4,6 +4,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
@@ -51,16 +52,16 @@ public class TextBoxUser extends TextBox {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent event) {
         // @Note: Can't use Tab because it's used for accessibility.
-        if (keyCode == GLFW.GLFW_KEY_LEFT_ALT) {
+        if (event.input() == GLFW.GLFW_KEY_LEFT_ALT) {
             if (suggestions.isEmpty()) {
                 suggestionIndex = 0;
                 ClientPacketListener handler = mc.getConnection();
                 if (!StringUtils.isBlank(getValue()) && handler != null) {
                     partialText = getValue();
                     for (PlayerInfo playerInfo : handler.getOnlinePlayers()) {
-                        String name = playerInfo.getProfile().getName();
+                        String name = playerInfo.getProfile().name();
                         if (name != null && name.regionMatches(true, 0, partialText, 0, partialText.length())) {
                             suggestions.add(name);
                         }
@@ -107,7 +108,7 @@ public class TextBoxUser extends TextBox {
         } else {
             suggestions.clear();
             suggestionsToDraw.clear();
-            return super.keyPressed(keyCode, scanCode, modifiers);
+            return super.keyPressed(event);
         }
     }
 

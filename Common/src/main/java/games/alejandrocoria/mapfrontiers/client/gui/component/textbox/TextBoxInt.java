@@ -3,6 +3,8 @@ package games.alejandrocoria.mapfrontiers.client.gui.component.textbox;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
@@ -63,10 +65,10 @@ public class TextBoxInt extends EditBox {
     }
 
     @Override
-    public boolean charTyped(char c, int key) {
+    public boolean charTyped(CharacterEvent event) {
         boolean res = false;
         if (isHoveredOrFocused()) {
-            res = super.charTyped(c, key);
+            res = super.charTyped(event);
             if (res) {
                 int current;
                 try {
@@ -92,16 +94,16 @@ public class TextBoxInt extends EditBox {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent event) {
         boolean res = false;
         if (isHoveredOrFocused()) {
-            res = super.keyPressed(keyCode, scanCode, modifiers);
+            res = super.keyPressed(event);
 
-            if (valueChangedCallback != null && (keyCode == GLFW.GLFW_KEY_BACKSPACE || keyCode == GLFW.GLFW_KEY_DELETE)) {
+            if (valueChangedCallback != null && (event.input() == GLFW.GLFW_KEY_BACKSPACE || event.input() == GLFW.GLFW_KEY_DELETE)) {
                 valueChangedCallback.accept(clamped());
             }
 
-            if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+            if (event.input() == GLFW.GLFW_KEY_ENTER || event.input() == GLFW.GLFW_KEY_KP_ENTER) {
                 setFocused(false);
             }
         }

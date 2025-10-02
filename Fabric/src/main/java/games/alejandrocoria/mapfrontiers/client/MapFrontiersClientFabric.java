@@ -24,7 +24,7 @@ public class MapFrontiersClientFabric extends MapFrontiersClient implements Clie
     @Override
     public void onInitializeClient() {
         openSettingsKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-                "mapfrontiers.key.open_settings", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, "mapfrontiers.key.category"
+                "mapfrontiers.key.open_settings", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, MapFrontiersClient.registerKeyMappingCategory()
         ));
 
         ClientTickEvents.START_CLIENT_TICK.register(ClientEventHandler::postClientTickEvent);
@@ -33,13 +33,13 @@ public class MapFrontiersClientFabric extends MapFrontiersClient implements Clie
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> ClientEventHandler.postClientConnectedEvent());
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ClientEventHandler.postClientDisconnectedEvent());
         ScreenEvents.BEFORE_INIT.register((client, theScreen, scaledWidth, scaledHeight) -> {
-            ScreenMouseEvents.beforeMouseRelease(theScreen).register((screen, mouseX, mouseY, button) -> ClientEventHandler.postMouseReleaseEvent(button));
+            ScreenMouseEvents.beforeMouseRelease(theScreen).register((screen, event) -> ClientEventHandler.postMouseReleaseEvent(event.button()));
         });
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> FabricClientCommandAccept.register(dispatcher));
 
         ClientReceiveMessageEvents.ALLOW_CHAT.register((message, signedMessage, sender, params, receptionTimestamp) -> {
-            boolean cancel = ChatFrontiers.receiveFrontierFromChat(message, sender != null ? sender.getId() : null);
+            boolean cancel = ChatFrontiers.receiveFrontierFromChat(message, sender != null ? sender.id() : null);
             return !cancel;
         });
 

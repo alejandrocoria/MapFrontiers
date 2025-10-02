@@ -5,8 +5,12 @@ import games.alejandrocoria.mapfrontiers.client.mixin.AbstractSliderButtonAccess
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractSliderButton;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
+@ParametersAreNonnullByDefault
 public class SimpleSlider extends AbstractSliderButton
 {
     private final Font font;
@@ -76,9 +80,9 @@ public class SimpleSlider extends AbstractSliderButton
     }
 
     @Override
-    protected void onDrag(double mouseX, double mouseY, double dragX, double dragY) {
+    protected void onDrag(MouseButtonEvent event, double dragX, double dragY) {
         dragging = true;
-        super.onDrag(mouseX, mouseY, dragX, dragY);
+        super.onDrag(event, dragX, dragY);
     }
 
     // Custom mouseReleased to be called from the Screen.

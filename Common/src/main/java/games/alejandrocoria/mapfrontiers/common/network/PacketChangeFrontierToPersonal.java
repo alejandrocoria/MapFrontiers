@@ -77,7 +77,7 @@ public class PacketChangeFrontierToPersonal {
             if (player == null) {
                 return;
             }
-            MinecraftServer server = player.getServer();
+            MinecraftServer server = player.level().getServer();
             SettingsUser playerUser = new SettingsUser(player);
             FrontierData frontier = FrontiersManager.instance.getFrontierFromID(message.frontierID);
 

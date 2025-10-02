@@ -62,7 +62,7 @@ public class PacketFrontierSettings {
             if (player == null) {
                 return;
             }
-            MinecraftServer server = player.getServer();
+            MinecraftServer server = player.level().getServer();
             if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.UpdateSettings,
                     new SettingsUser(player), MapFrontiers.isOPorHost(player), null)) {
                 FrontiersManager.instance.setSettings(message.settings);

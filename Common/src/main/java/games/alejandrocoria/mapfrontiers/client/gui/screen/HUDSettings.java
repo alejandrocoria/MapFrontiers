@@ -20,6 +20,7 @@ import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
@@ -252,12 +253,12 @@ public class HUDSettings extends AutoScaledScreen {
     }
 
     @Override
-    public boolean keyPressed(int key, int value, int modifier) {
-        if (key == GLFW.GLFW_KEY_E && !(getFocused() instanceof EditBox)) {
+    public boolean keyPressed(KeyEvent event) {
+        if (event.input() == GLFW.GLFW_KEY_E && !(getFocused() instanceof EditBox)) {
             onClose();
             return true;
         } else {
-            return super.keyPressed(key, value, modifier);
+            return super.keyPressed(event);
         }
     }
 

@@ -3,12 +3,15 @@ package games.alejandrocoria.mapfrontiers.client.gui.component.scroll;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.input.MouseButtonEvent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 public class UserElement extends ScrollBox.ScrollElement {
     private final Font font;
     private final SettingsUser user;
@@ -88,9 +91,9 @@ public class UserElement extends ScrollBox.ScrollElement {
     }
 
     @Override
-    protected ScrollBox.ScrollElement.Action mousePressed(double mouseX, double mouseY) {
+    protected ScrollBox.ScrollElement.Action mousePressed(MouseButtonEvent event, boolean doubleClick) {
         if (visible && isHovered) {
-            if (buttonDelete.isMouseOver(mouseX, mouseY)) {
+            if (buttonDelete.isMouseOver(event.x(), event.y())) {
                 return ScrollBox.ScrollElement.Action.Deleted;
             } else {
                 return ScrollBox.ScrollElement.Action.Clicked;

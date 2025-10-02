@@ -76,12 +76,8 @@ public class MapFrontiers {
     }
 
     public static boolean isOPorHost(ServerPlayer player) {
-        MinecraftServer server = player.getServer();
-        if (server == null) {
-            return false;
-        }
-
-        return server.getPlayerList().isOp(player.getGameProfile());
+        MinecraftServer server = player.level().getServer();
+        return server.getPlayerList().isOp(player.nameAndId());
     }
 
     public static void createBackup(File folder, String filename) {

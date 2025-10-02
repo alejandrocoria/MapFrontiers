@@ -8,10 +8,15 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.LinearLayout;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.PlainTextContents;
 import org.lwjgl.glfw.GLFW;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
+@ParametersAreNonnullByDefault
 public abstract class AutoScaledScreen extends LayeredScreen {
     protected float scaleFactor = 1.f;
     private final int minWidth;
@@ -108,7 +113,7 @@ public abstract class AutoScaledScreen extends LayeredScreen {
         renderScaledScreen(graphics, mouseX, mouseY, partialTicks);
 
         if (minecraft.screen == this) {
-            graphics.renderDeferredTooltip();
+            graphics.renderDeferredElements();
         }
 
         if (scaleFactor != 1.f) {
@@ -117,22 +122,24 @@ public abstract class AutoScaledScreen extends LayeredScreen {
     }
 
     @Override
-    public boolean keyPressed(int key, int value, int modifier) {
-        if (key == GLFW.GLFW_KEY_ESCAPE) {
+    public boolean keyPressed(KeyEvent event) {
+        if (event.input() == GLFW.GLFW_KEY_ESCAPE) {
             this.onClose();
             return true;
         }
-        return super.keyPressed(key, value, modifier);
+        return super.keyPressed(event);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        return super.mouseClicked(mouseX * scaleFactor, mouseY * scaleFactor, button);
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        MouseButtonEvent scaledEvent = new MouseButtonEvent(event.x() * scaleFactor, event.y() * scaleFactor, event.buttonInfo());
+        return super.mouseClicked(scaledEvent, doubleClick);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        return super.mouseReleased(mouseX * scaleFactor, mouseY * scaleFactor, button);
+    public boolean mouseReleased(MouseButtonEvent event) {
+        MouseButtonEvent scaledEvent = new MouseButtonEvent(event.x() * scaleFactor, event.y() * scaleFactor, event.buttonInfo());
+        return super.mouseReleased(scaledEvent);
     }
 
     @Override
@@ -141,8 +148,9 @@ public abstract class AutoScaledScreen extends LayeredScreen {
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        return super.mouseDragged(mouseX * scaleFactor, mouseY * scaleFactor, button, dragX * scaleFactor, dragY * scaleFactor);
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        MouseButtonEvent scaledEvent = new MouseButtonEvent(event.x() * scaleFactor, event.y() * scaleFactor, event.buttonInfo());
+        return super.mouseDragged(scaledEvent, dragX * scaleFactor, dragY * scaleFactor);
     }
 
     protected void closeAndReturnToFullscreenMap() {

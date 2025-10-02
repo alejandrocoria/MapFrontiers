@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.network.chat.Component;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -70,7 +71,7 @@ public class OptionButton extends ButtonBase {
             }
 
             playDownSound(Minecraft.getInstance().getSoundManager());
-            super.onPress();
+            this.onPress.onPress(this);
             return true;
         }
 
@@ -94,13 +95,13 @@ public class OptionButton extends ButtonBase {
     }
 
     @Override
-    public void onPress() {
+    public void onPress(InputWithModifiers modifiers) {
         ++selected;
         if (selected >= options.size()) {
             selected = 0;
         }
 
-        super.onPress();
+        super.onPress(modifiers);
     }
 
 

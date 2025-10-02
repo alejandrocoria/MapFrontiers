@@ -4,6 +4,7 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
@@ -56,31 +57,33 @@ public class ColorPicker extends AbstractWidgetNoNarration {
     }
 
     @Override
-    public void onClick(double mouseX, double mouseY) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         hsGrabbed = false;
         vGrabbed = false;
 
-        updateMouse(mouseX, mouseY, false);
+        updateMouse(event.x(), event.y(), false);
+
+        return true;
     }
 
     @Override
-    public void onRelease(double mouseX, double mouseY) {
+    public void onRelease(MouseButtonEvent event) {
         if (!hsGrabbed && !vGrabbed) {
             return;
         }
 
-        updateMouse(mouseX, mouseY, false);
+        updateMouse(event.x(), event.y(), false);
         hsGrabbed = false;
         vGrabbed = false;
     }
 
     @Override
-    public void onDrag(double mouseX, double mouseY, double dragX, double dragY) {
+    public void onDrag(MouseButtonEvent event, double dragX, double dragY) {
         if (!hsGrabbed && !vGrabbed) {
             return;
         }
 
-        updateMouse(mouseX, mouseY, true);
+        updateMouse(event.x(), event.y(), true);
     }
 
     @Override

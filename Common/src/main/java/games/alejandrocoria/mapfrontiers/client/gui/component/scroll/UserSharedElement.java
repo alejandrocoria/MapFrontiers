@@ -10,6 +10,7 @@ import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.language.I18n;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -124,16 +125,16 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
     }
 
     @Override
-    protected ScrollBox.ScrollElement.Action mousePressed(double mouseX, double mouseY) {
+    protected ScrollBox.ScrollElement.Action mousePressed(MouseButtonEvent event, boolean doubleClick) {
         if (enabled && visible && isHovered) {
             for (GuiEventListener checkBox : children) {
-                if (checkBox.mouseClicked(mouseX, mouseY, 0)) {
+                if (checkBox.mouseClicked(event, doubleClick)) {
                     return ScrollBox.ScrollElement.Action.None;
                 }
             }
 
             if (buttonDelete != null) {
-                if (buttonDelete.isMouseOver(mouseX, mouseY)) {
+                if (buttonDelete.isMouseOver(event.x(), event.y())) {
                     return ScrollBox.ScrollElement.Action.Deleted;
                 }
             }
