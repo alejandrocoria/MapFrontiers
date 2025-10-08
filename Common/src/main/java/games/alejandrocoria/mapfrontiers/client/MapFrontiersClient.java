@@ -13,6 +13,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import journeymap.api.v2.client.IClientAPI;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -44,6 +45,7 @@ public class MapFrontiersClient {
     private static long lastTitleTime;
 
     private static FrontierData clipboard = null;
+    private static ClientLevel lastClientLevel = null;
 
     protected static void init() {
         ClientEventHandler.subscribeUpdatedSettingsProfileEvent(MapFrontiersClient.class, profile -> settingsProfile = profile);
@@ -51,6 +53,14 @@ public class MapFrontiersClient {
         ClientEventHandler.subscribeClientTickEvent(MapFrontiersClient.class, client -> {
             if (client.level == null) {
                 return;
+            }
+
+            if (client.level != lastClientLevel) {
+                if (settingsProfile == null) {
+                    handshakeSent = false;
+                    MapFrontiers.LOGGER.info("World changed and not synchronized with server, attempting handshake again.");
+                }
+                lastClientLevel = client.level;
             }
 
             if (!handshakeSent) {
@@ -155,6 +165,7 @@ public class MapFrontiersClient {
 
             settingsProfile = null;
             handshakeSent = false;
+            lastClientLevel = null;
 
             ChatFrontiers.clear();
 
