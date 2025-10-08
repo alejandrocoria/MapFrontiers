@@ -13,6 +13,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import journeymap.client.api.IClientAPI;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -27,7 +28,7 @@ import java.util.Set;
 @ParametersAreNonnullByDefault
 public class MapFrontiersClient {
     private static IClientAPI jmAPI;
-    private static boolean handshakeSended = false;
+    private static boolean handshakeSent = false;
     private static FrontiersOverlayManager frontiersOverlayManager;
     private static FrontiersOverlayManager personalFrontiersOverlayManager;
     private static SettingsProfile settingsProfile;
@@ -40,6 +41,7 @@ public class MapFrontiersClient {
     private static final Set<FrontierOverlay> insideFrontiers = new HashSet<>();
 
     private static FrontierData clipboard = null;
+    private static ClientLevel lastClientLevel = null;
 
     protected static void init() {
         ClientEventHandler.subscribeUpdatedSettingsProfileEvent(MapFrontiersClient.class, profile -> settingsProfile = profile);
@@ -49,8 +51,16 @@ public class MapFrontiersClient {
                 return;
             }
 
-            if (!handshakeSended) {
-                handshakeSended = true;
+            if (client.level != lastClientLevel) {
+                if (settingsProfile == null) {
+                    handshakeSent = false;
+                    MapFrontiers.LOGGER.info("World changed and not synchronized with server, attempting handshake again.");
+                }
+                lastClientLevel = client.level;
+            }
+
+            if (!handshakeSent) {
+                handshakeSent = true;
                 PacketHandler.sendToServer(new PacketHandshake());
             }
 
@@ -142,7 +152,8 @@ public class MapFrontiersClient {
             }
 
             settingsProfile = null;
-            handshakeSended = false;
+            handshakeSent = false;
+            lastClientLevel = null;
 
             MapFrontiers.LOGGER.info("ClientDisconnectedEvent done");
         });
