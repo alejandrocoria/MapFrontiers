@@ -783,10 +783,10 @@ public class FrontierOverlay extends FrontierData {
 
                 BlockPos last = vertices.get(vertices.size() - 1);
                 for (BlockPos vertex : vertices) {
-                    area += abs(vertex.getZ() + last.getZ()) / 2.f * (vertex.getX() - last.getX());
+                    area += last.getX() * vertex.getZ() - last.getZ() * vertex.getX();
                     last = vertex;
                 }
-                area = abs(area);
+                area = abs(area / 2.f);
             } else {
                 boolean fullscreenV = Config.getVisibilityValue(Config.fullscreenVisibility, fullscreenVisible);
                 boolean minimapV = Config.getVisibilityValue(Config.minimapVisibility, minimapVisible);
