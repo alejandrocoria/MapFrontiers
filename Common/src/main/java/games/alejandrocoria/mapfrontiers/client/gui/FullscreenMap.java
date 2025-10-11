@@ -22,7 +22,6 @@ import journeymap.api.v2.client.fullscreen.ModPopupMenu;
 import journeymap.api.v2.client.fullscreen.ThemeButtonDisplay;
 import journeymap.api.v2.client.util.UIState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;

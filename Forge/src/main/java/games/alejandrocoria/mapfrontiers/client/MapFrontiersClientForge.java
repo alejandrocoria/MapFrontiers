@@ -5,45 +5,33 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.MapFrontiersForge;
 import games.alejandrocoria.mapfrontiers.client.command.ClientCommandAccept;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
-import games.alejandrocoria.mapfrontiers.common.Config;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.AddGuiOverlayLayersEvent;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingIn;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingOut;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.client.gui.overlay.ForgeLayer;
-import net.minecraftforge.client.gui.overlay.ForgeLayeredDraw;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
-import net.minecraftforge.eventbus.api.listener.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-@Mod.EventBusSubscriber(value = Dist.CLIENT, modid = MapFrontiersForge.MODID)
 public class MapFrontiersClientForge extends MapFrontiersClient {
-    @SubscribeEvent
     public static void clientSetup(FMLClientSetupEvent event) {
         init();
 
         MapFrontiersForge.LOGGER.info("Forge clientSetup done");
     }
 
-    @SubscribeEvent
     public static void livingUpdateEvent(LivingEvent.LivingTickEvent event) {
         Minecraft client = Minecraft.getInstance();
         if (event.getEntity() == client.player) {
@@ -52,53 +40,38 @@ public class MapFrontiersClientForge extends MapFrontiersClient {
         }
     }
 
-    @SubscribeEvent
     public static void onRenderTick(TickEvent.ClientTickEvent.Pre event) {
         ClientEventHandler.postClientTickEvent(Minecraft.getInstance());
     }
 
-    @SubscribeEvent
     public static void addGuiOverlayLayersEvent(AddGuiOverlayLayersEvent event) {
         event.getLayeredDraw().add(ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "hud"), ClientEventHandler::postHudRenderEvent);
     }
 
-    @SubscribeEvent
-    public static void clientConnectedToServer(LoggingIn event) {
+    public static void clientConnectedToServer(ClientPlayerNetworkEvent.LoggingIn event) {
         ClientEventHandler.postClientConnectedEvent();
     }
 
-    @SubscribeEvent
-    public static void clientDisconnectionFromServer(LoggingOut event) {
+    public static void clientDisconnectionFromServer(ClientPlayerNetworkEvent.LoggingOut event) {
         ClientEventHandler.postClientDisconnectedEvent();
     }
 
-    @SubscribeEvent
-    public static void mouseEvent(InputEvent.MouseButton event) {
+    public static void mouseEvent(InputEvent.MouseButton.Pre event) {
         if (event.getAction() == GLFW.GLFW_RELEASE) {
             ClientEventHandler.postMouseReleaseEvent(event.getButton());
         }
     }
 
-    @SubscribeEvent
     public static void registerKeyMappingsEvent(RegisterKeyMappingsEvent event) {
         openSettingsKey = new KeyMapping("mapfrontiers.key.open_settings", KeyConflictContext.IN_GAME,
-                InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, "mapfrontiers.key.category");
+                InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, MapFrontiersClient.registerKeyMappingCategory());
         event.register(openSettingsKey);
     }
 
-    @SubscribeEvent
     public static void onRegisterClientCommands(RegisterClientCommandsEvent event) {
         ClientCommandAccept.register(event.getDispatcher());
     }
 
-    @SubscribeEvent
-    public static void onModConfigEvent(ModConfigEvent.Loading configEvent) {
-        if (configEvent.getConfig().getModId().equals(MapFrontiersForge.MODID) && configEvent.getConfig().getType() == ModConfig.Type.CLIENT) {
-            Config.bakeConfig();
-        }
-    }
-
-    @SubscribeEvent
     public static void onClientChat(ClientChatReceivedEvent event) {
         boolean cancel = ChatFrontiers.receiveFrontierFromChat(event.getMessage(), event.getSender());
         if (cancel) {

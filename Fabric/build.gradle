@@ -108,7 +108,7 @@ modrinth {
     dependencies = [
             new ModDependency("fabric-api", "required"),
             new VersionDependency("journeymap", "${journeymap_doc_version}+fabric", "required"),
-            new VersionDependency("forge-config-api-port", "v${forge_config_api_port_version}-${minecraft_version}-Fabric", "required"),
+            new VersionDependency("forge-config-api-port", "${forge_config_api_port_version}", "required"),
             new VersionDependency("modmenu", "${modmenu_version}", "optional")
     ]
     changelog = file("$project.buildDir/doc/changelog.md").exists() ? file("$project.buildDir/doc/changelog.md").text : null

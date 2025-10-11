@@ -151,7 +151,7 @@ modrinth {
     loaders = ["neoforge"]
     dependencies = [
             new VersionDependency("journeymap", "${journeymap_doc_version}+neoforge", "required"),
-            new VersionDependency("forge-config-api-port", "v${forge_config_api_port_version}-${minecraft_version}-NeoForge", "required"),
+            new VersionDependency("forge-config-api-port", "${forge_config_api_port_version}", "required"),
     ]
     changelog = file("$project.buildDir/doc/changelog.md").exists() ? file("$project.buildDir/doc/changelog.md").text : null
 }
