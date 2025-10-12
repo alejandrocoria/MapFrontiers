@@ -1,6 +1,9 @@
+**Beta 18:**
+* Fixed: Compatibility with the latest beta of JourneyMap (52).
+ 
 **Beta 17:**
 * Fixed: Server connection on Velocity servers (Thanks to Stikulzon for the fix).
-
+ 
 **Beta 16:**
 * Fixed: Snapping acting weird.
  
