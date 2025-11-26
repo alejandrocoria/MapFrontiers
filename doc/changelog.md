@@ -1,3 +1,6 @@
+**Beta 19:**
+* Fixed: Crash occurs when opening the settings screen from the mod menu.
+ 
 **Beta 17:**
 * Fixed: Server connection on Velocity servers (Thanks to Stikulzon for the fix).
  
