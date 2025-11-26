@@ -8,6 +8,7 @@
     "AbstractSliderButtonAccessor",
     "CubeInvoker",
     "GuiGraphicsAccessor",
+    "GuiRenderStateAccessor",
     "SpriteContentsInvoker"
   ],
   "server": [],
