@@ -1,6 +1,8 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.mixin.GuiGraphicsAccessor;
+import games.alejandrocoria.mapfrontiers.client.mixin.GuiRenderStateAccessor;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import journeymap.api.v2.client.ui.component.LayeredScreen;
 import net.minecraft.client.Minecraft;
@@ -79,7 +81,12 @@ public abstract class AutoScaledScreen extends LayeredScreen {
     @Override
     protected final void renderPopupScreenBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         if (minecraft.screen == this) {
-            graphics.blurBeforeThisStratum();
+            // Do not draw blur if it has already been drawn because Minecraft throws an exception for some reason.
+            if (((GuiRenderStateAccessor) ((GuiGraphicsAccessor) graphics).mapfrontiers$getGuiRenderState()).mapfrontiers$setFirstStratumAfterBlur() == Integer.MAX_VALUE) {
+                graphics.blurBeforeThisStratum();
+            } else {
+                graphics.fill(0, 0, width, height, 0xBF000000);
+            }
         }
     }
 
