@@ -1,6 +1,17 @@
 plugins {
     // see https://fabricmc.net/develop/ for new versions
-    id 'fabric-loom' version '1.11-SNAPSHOT' apply false
+    id 'fabric-loom' version '1.14-SNAPSHOT' apply false
     // see https://projects.neoforged.net/neoforged/moddevgradle for new versions
     id 'net.neoforged.moddev' version '2.0.107' apply false
+}
+
+configurations.configureEach {
+    // Check for snapshots more frequently than Gradle's default of 1 day. 0 = every build.
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
+tasks.configureEach { task ->
+    if (task instanceof Copy || task instanceof AbstractArchiveTask) {
+        task.duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    }
 }

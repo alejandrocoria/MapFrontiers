@@ -91,11 +91,9 @@ public class ShareSettings extends AutoScaledScreen {
         LinearLayout header = LinearLayout.horizontal();
         mainLayout.addChild(header);
 
-        updateFrontier = header.addChild(new MultiLineTextWidget(updateFrontierLabel, font));
-        updateFrontier.setColor(ColorConstants.TEXT_HIGHLIGHT);
+        updateFrontier = header.addChild(new MultiLineTextWidget(updateFrontierLabel.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
         updateFrontier.setCentered(true);
-        updateSettings = header.addChild(new MultiLineTextWidget(updateSettingsLabel, font));
-        updateSettings.setColor(ColorConstants.TEXT_HIGHLIGHT);
+        updateSettings = header.addChild(new MultiLineTextWidget(updateSettingsLabel.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
         updateSettings.setCentered(true);
 
         users = new ScrollBox(actualHeight - 128, 430, 16);

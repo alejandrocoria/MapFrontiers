@@ -299,7 +299,7 @@ public class FrontierInfo extends AutoScaledScreen {
             ownerWidget.setTooltip(ownerTooltip);
         }
 
-        Component dimension = Component.translatable(dimensionKey, frontier.getDimension().location().toString());
+        Component dimension = Component.translatable(dimensionKey, frontier.getDimension().identifier().toString());
         dataRow1.addChild(new StringWidget(dimension, font).setColor(ColorConstants.TEXT_DIMENSION));
 
         LinearLayout dataRow2Col1 = LinearLayout.vertical();

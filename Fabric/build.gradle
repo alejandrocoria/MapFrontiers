@@ -3,19 +3,20 @@ import com.modrinth.minotaur.dependencies.VersionDependency
 
 plugins {
     id 'multiloader-loader'
-    id 'fabric-loom' version '1.11-SNAPSHOT'
+    id 'fabric-loom'
+    id 'idea'
     id 'net.darkhax.curseforgegradle' version '1.+'
     id "com.modrinth.minotaur" version "2.+"
 }
 
-archivesBaseName = "${project.mod_name}-${project.minecraft_version}"
+base.archivesName = "${project.mod_name}-${project.minecraft_version}"
 remapJar.archiveClassifier = "fabric"
 
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
     mappings loom.layered {
         officialMojangMappings()
-        parchment("org.parchmentmc.data:parchment-${parchment_minecraft}:${parchment_version}@zip")
+        parchment("org.parchmentmc.data:parchment-${project.mappings_mc_version}:${project.mappings_date}@zip")
     }
     modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
@@ -24,7 +25,7 @@ dependencies {
     modImplementation group: 'mysticdrew', name: 'common-networking-fabric', version: project.common_networking_version, changing: true
     modApi include(group: 'mysticdrew', name: 'common-networking-fabric', version: project.common_networking_version, changing: true)
     modApi "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${forge_config_api_port_version}"
-    modCompileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+    modApi "com.terraformersmc:modmenu:${project.modmenu_version}"
     modApi group: 'info.journeymap', name: 'journeymap-api-fabric', version: project.journeymap_api_version, changing: true
     modImplementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_fabric_file_id}"
 }
@@ -41,6 +42,7 @@ loom {
         client {
             client()
             setConfigName("Fabric Client")
+            property("mixin.debug.export", "true")
             ideConfigGenerated(true)
             runDir("runs/client")
             programArg("--username=Dev")
@@ -49,6 +51,7 @@ loom {
             server()
             serverWithGui()
             setConfigName("Fabric Server")
+            property("mixin.debug.export", "true")
             ideConfigGenerated(true)
             runDir("runs/server")
         }
@@ -59,7 +62,7 @@ jar {
     dependsOn "processDocs"
 }
 
-task processDocs(type: Copy) {
+tasks.register('processDocs', Copy) {
     // update docs
     from(file("../doc/")) {
         include '*.md'
@@ -87,7 +90,7 @@ task publishCurseForge(type: net.darkhax.curseforgegradle.TaskPublishCurseForge)
     mainFile.addJavaVersion("Java 21")
     mainFile.addGameVersion("${minecraft_version}")
     mainFile.addEnvironment("Server", "Client")
-    mainFile.addRelations("requiredDependency", "fabric-api", "journeymap", "forge-config-api-port-fabric")
+    mainFile.addRelations("requiredDependency", "fabric-api", "journeymap", "forge-config-api-port")
     mainFile.addRelation("modmenu", "optionalDependency")
     mainFile.changelogType = "markdown"
     mainFile.changelog = file("$project.buildDir/doc/changelog.md")

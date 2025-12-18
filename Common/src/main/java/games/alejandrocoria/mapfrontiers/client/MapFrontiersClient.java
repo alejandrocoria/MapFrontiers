@@ -17,8 +17,8 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import org.apache.commons.lang3.StringUtils;
 
@@ -267,7 +267,7 @@ public class MapFrontiersClient {
     }
 
     public static KeyMapping.Category registerKeyMappingCategory() {
-        return KeyMapping.Category.register(ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "keybinding_category"));
+        return KeyMapping.Category.register(Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "keybinding_category"));
     }
 
     public static Component getOpenSettingsKey() {

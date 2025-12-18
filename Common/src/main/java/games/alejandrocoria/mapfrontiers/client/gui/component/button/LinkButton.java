@@ -18,7 +18,7 @@ public class LinkButton extends ButtonBase {
     }
 
     @Override
-    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         graphics.drawString(font, getMessage(), getX(), getY() + 2, isHoveredOrKeyboardFocused() ? ColorConstants.LINK_HIGHLIGHT : ColorConstants.LINK);
     }
 }

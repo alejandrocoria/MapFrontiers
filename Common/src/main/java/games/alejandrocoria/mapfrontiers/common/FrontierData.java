@@ -15,8 +15,8 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.BannerItem;
@@ -591,7 +591,7 @@ public class FrontierData {
     public void readFromNBT(CompoundTag nbt, int version) {
         id = UUID.fromString(nbt.getString("id").get());
         color = nbt.getInt("color").get();
-        dimension = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(nbt.getString("dimension").get()));
+        dimension = ResourceKey.create(Registries.DIMENSION, Identifier.parse(nbt.getString("dimension").get()));
         name1 = nbt.getStringOr("name1", "");
         name2 = nbt.getStringOr("name2", "");
 
@@ -669,7 +669,7 @@ public class FrontierData {
     public void writeToNBT(CompoundTag nbt) {
         nbt.putString("id", id.toString());
         nbt.putInt("color", color);
-        nbt.putString("dimension", dimension.location().toString());
+        nbt.putString("dimension", dimension.identifier().toString());
         nbt.putString("name1", name1);
         nbt.putString("name2", name2);
         visibilityData.writeToNBT(nbt);
@@ -743,7 +743,7 @@ public class FrontierData {
         }
 
         id = UUIDHelper.fromBytes(buf);
-        dimension = ResourceKey.create(Registries.DIMENSION, buf.readResourceLocation());
+        dimension = ResourceKey.create(Registries.DIMENSION, buf.readIdentifier());
         personal = buf.readBoolean();
         owner = new SettingsUser();
         owner.fromBytes(buf);
@@ -849,7 +849,7 @@ public class FrontierData {
         }
 
         UUIDHelper.toBytes(buf, id);
-        buf.writeResourceLocation(dimension.location());
+        buf.writeIdentifier(dimension.identifier());
         buf.writeBoolean(personal);
         owner.toBytes(buf);
 

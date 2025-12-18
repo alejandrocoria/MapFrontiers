@@ -13,8 +13,8 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
@@ -27,7 +27,7 @@ import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class PacketCreateFrontier {
-    public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_create_frontier");
+    public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_create_frontier");
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketCreateFrontier> STREAM_CODEC = StreamCodec.ofMember(PacketCreateFrontier::encode, PacketCreateFrontier::new);
 
     private ResourceKey<Level> dimension = Level.OVERWORLD;
@@ -49,7 +49,7 @@ public class PacketCreateFrontier {
     public PacketCreateFrontier(FriendlyByteBuf buf) {
         try {
             if (buf.readableBytes() > 1) {
-                this.dimension = ResourceKey.create(Registries.DIMENSION, buf.readResourceLocation());
+                this.dimension = ResourceKey.create(Registries.DIMENSION, buf.readIdentifier());
                 this.personal = buf.readBoolean();
 
                 boolean hasVertex = buf.readBoolean();
@@ -79,7 +79,7 @@ public class PacketCreateFrontier {
 
     public void encode(FriendlyByteBuf buf) {
         try {
-            buf.writeResourceLocation(dimension.location());
+            buf.writeIdentifier(dimension.identifier());
             buf.writeBoolean(personal);
 
             buf.writeBoolean(vertices != null);

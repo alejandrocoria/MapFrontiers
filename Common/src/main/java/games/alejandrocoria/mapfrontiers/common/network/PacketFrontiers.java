@@ -9,7 +9,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
@@ -17,7 +17,7 @@ import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class PacketFrontiers {
-    public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_frontier");
+    public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_frontier");
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketFrontiers> STREAM_CODEC = StreamCodec.ofMember(PacketFrontiers::encode, PacketFrontiers::new);
 
     private final List<FrontierData> globalFrontiers;

@@ -99,7 +99,7 @@ public class SortToolbar extends LinearLayout {
 
 
         @Override
-        public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        public void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
             if (isHoveredOrKeyboardFocused()) {
                 label.setColor(ColorConstants.SIMPLE_BUTTON_TEXT_HIGHLIGHT);
                 iconButton.setFocused(true);

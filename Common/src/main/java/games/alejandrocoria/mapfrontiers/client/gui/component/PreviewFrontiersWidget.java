@@ -16,8 +16,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.block.entity.BannerPattern;
 import net.minecraft.world.level.block.entity.BannerPatternLayers;
@@ -30,7 +30,7 @@ import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
-    private static final ResourceLocation backgroundTexture = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/frontier_preview_bg.png");
+    private static final Identifier backgroundTexture = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/frontier_preview_bg.png");
     private static final int SIZE = 420;
 
     private final IJourneyMapHelper.ICustomPreviewRenderer customPreviewRenderer;
@@ -57,7 +57,7 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
         frontierData.setName2("Frontier");
         frontierData.setColor(0xFFAACC60);
         frontierData.setBanner(DyeColor.BLACK, patterns);
-        frontierData.setDimension(ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld")));
+        frontierData.setDimension(ResourceKey.create(Registries.DIMENSION, Identifier.withDefaultNamespace("overworld")));
         frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenDay, true);
         frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenName, true);
         frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenOwner, true);
@@ -73,7 +73,7 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
         frontierData.setName1("Long name");
         frontierData.setName2("12345678901234567");
         frontierData.setColor(0xFFA0A0FF);
-        frontierData.setDimension(ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld")));
+        frontierData.setDimension(ResourceKey.create(Registries.DIMENSION, Identifier.withDefaultNamespace("overworld")));
         frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenDay, true);
         frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenName, true);
         frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenOwner, false);

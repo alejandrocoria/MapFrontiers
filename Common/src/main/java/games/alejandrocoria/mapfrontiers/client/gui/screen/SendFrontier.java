@@ -65,8 +65,7 @@ public class SendFrontier extends AutoScaledScreen {
         LinearLayout header = LinearLayout.horizontal();
         mainLayout.addChild(header);
 
-        description = header.addChild(new MultiLineTextWidget(descriptionLabel, font));
-        description.setColor(ColorConstants.TEXT_HIGHLIGHT);
+        description = header.addChild(new MultiLineTextWidget(descriptionLabel.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
         description.setCentered(true);
 
         LinearLayout newUserLayout = LinearLayout.horizontal().spacing(4);

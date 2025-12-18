@@ -1,11 +1,10 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
+import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -18,6 +17,7 @@ public class StringWidget extends net.minecraft.client.gui.components.StringWidg
 
     private float scale = 1.f;
     private final Align align;
+    private int color = 0xFFFFFFFF;
 
     public StringWidget(Component message, Font font) {
         this(message, font, 12, Align.Left);
@@ -40,10 +40,13 @@ public class StringWidget extends net.minecraft.client.gui.components.StringWidg
         this.scale = scale;
     }
 
-    @Override
-    public @NotNull StringWidget setColor(int color) {
-        super.setColor(color);
+    public StringWidget setColor(int color) {
+        this.color = color;
         return this;
+    }
+
+    public int getColor() {
+        return color;
     }
 
     @Override

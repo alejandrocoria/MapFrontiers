@@ -11,8 +11,8 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -20,7 +20,7 @@ import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class PacketFrontierDeleted {
-    public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_frontier_deleted");
+    public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_frontier_deleted");
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketFrontierDeleted> STREAM_CODEC = StreamCodec.ofMember(PacketFrontierDeleted::encode, PacketFrontierDeleted::new);
 
     private ResourceKey<Level> dimension = Level.OVERWORLD;
@@ -42,7 +42,7 @@ public class PacketFrontierDeleted {
     public PacketFrontierDeleted(FriendlyByteBuf buf) {
         try {
             if (buf.readableBytes() > 1) {
-                this.dimension = ResourceKey.create(Registries.DIMENSION, buf.readResourceLocation());
+                this.dimension = ResourceKey.create(Registries.DIMENSION, buf.readIdentifier());
                 this.frontierID = UUIDHelper.fromBytes(buf);
                 this.personal = buf.readBoolean();
                 this.playerID = buf.readInt();
@@ -54,7 +54,7 @@ public class PacketFrontierDeleted {
 
     public void encode(FriendlyByteBuf buf) {
         try {
-            buf.writeResourceLocation(dimension.location());
+            buf.writeIdentifier(dimension.identifier());
             UUIDHelper.toBytes(buf, frontierID);
             buf.writeBoolean(personal);
             buf.writeInt(playerID);

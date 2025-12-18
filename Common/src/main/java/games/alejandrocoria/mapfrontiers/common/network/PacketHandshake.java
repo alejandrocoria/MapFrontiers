@@ -7,7 +7,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -16,7 +16,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 public class PacketHandshake {
     private static final String VERSION = "1";
 
-    public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_handshake");
+    public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_handshake");
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketHandshake> STREAM_CODEC = StreamCodec.ofMember(PacketHandshake::encode, PacketHandshake::new);
 
     private String version;

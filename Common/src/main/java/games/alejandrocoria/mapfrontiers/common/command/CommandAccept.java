@@ -20,16 +20,14 @@ import net.minecraft.world.level.Level;
 public class CommandAccept {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         LiteralCommandNode<CommandSourceStack> literalcommandnode = dispatcher
-                .register(Commands.literal("mapfrontiersaccept").requires(
-                        (commandSource) -> commandSource.hasPermission(0) && checkPermission(commandSource))
+                .register(Commands.literal("mapfrontiersaccept").requires(CommandAccept::checkPermission)
                         .then(Commands.argument("invitation id", IntegerArgumentType.integer(0, 999)).executes(
                                 (commandSource) -> acceptInvitation(commandSource.getSource(),
                                         IntegerArgumentType.getInteger(commandSource, "invitation id")))
                         )
                 );
 
-        dispatcher.register(Commands.literal("mfaccept").requires(
-                (commandSource) -> commandSource.hasPermission(0) && checkPermission(commandSource))
+        dispatcher.register(Commands.literal("mfaccept").requires(CommandAccept::checkPermission)
                 .redirect(literalcommandnode)
         );
     }

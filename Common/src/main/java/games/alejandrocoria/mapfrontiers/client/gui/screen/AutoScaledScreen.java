@@ -5,7 +5,6 @@ import games.alejandrocoria.mapfrontiers.client.mixin.GuiGraphicsAccessor;
 import games.alejandrocoria.mapfrontiers.client.mixin.GuiRenderStateAccessor;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import journeymap.api.v2.client.ui.component.LayeredScreen;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -64,11 +63,11 @@ public abstract class AutoScaledScreen extends LayeredScreen {
     }
 
     @Override
-    public void resize(Minecraft minecraft, int width, int height) {
+    public void resize(int width, int height) {
         this.width = width;
         this.height = height;
         updateScale(width, height);
-        super.resize(minecraft, width, height);
+        super.resize(width, height);
     }
 
     private void updateScale(int width, int height) {

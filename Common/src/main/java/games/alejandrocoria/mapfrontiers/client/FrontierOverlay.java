@@ -37,8 +37,8 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.data.AtlasIds;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.DyeColor;
@@ -68,9 +68,9 @@ import static java.lang.Math.abs;
 
 @ParametersAreNonnullByDefault
 public class FrontierOverlay extends FrontierData {
-    private static final MapImage markerVertex = new MapImage(ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/marker.png"), 0,
+    private static final MapImage markerVertex = new MapImage(Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/marker.png"), 0,
             0, 12, 12, ColorConstants.WHITE, 1.f);
-    private static final MapImage markerDot = new MapImage(ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/marker.png"), 12, 0,
+    private static final MapImage markerDot = new MapImage(Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/marker.png"), 12, 0,
             8, 8, ColorConstants.WHITE, 1.f);
 
     static {
@@ -1370,7 +1370,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public static class BannerRenderer {
-        private ResourceLocation textureLocation;
+        private Identifier textureLocation;
         private NativeImage bannerImage;
         private int rotation;
 
@@ -1422,7 +1422,7 @@ public class FrontierOverlay extends FrontierData {
 
             for (int i = 0; i < patternLayers.layers().size(); ++i) {
                 BannerPatternLayers.Layer layer = patternLayers.layers().get(i);
-                ResourceLocation patternTextureLocation = layer.pattern().value().assetId().withPrefix("entity/banner/");
+                Identifier patternTextureLocation = layer.pattern().value().assetId().withPrefix("entity/banner/");
                 TextureAtlasSprite sprite = mc.getAtlasManager().getAtlasOrThrow(AtlasIds.BANNER_PATTERNS).getSprite(patternTextureLocation);
 
                 generateBannerLayer(tempBannerImage, flagUV, sprite.contents(), layer.color());
@@ -1430,9 +1430,8 @@ public class FrontierOverlay extends FrontierData {
 
             bannerImage = tempBannerImage.mappedCopy(ARGB::opaque);
 
-            textureLocation = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, id.toString());
+            textureLocation = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, id.toString());
             DynamicTexture texture = new DynamicTexture(() -> textureLocation.toString(), bannerImage);
-            texture.setFilter(false, false);
             mc.getTextureManager().register(textureLocation, texture);
         }
 

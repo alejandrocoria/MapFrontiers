@@ -8,7 +8,7 @@ import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.client.event.AddGuiOverlayLayersEvent;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
@@ -45,7 +45,7 @@ public class MapFrontiersClientForge extends MapFrontiersClient {
     }
 
     public static void addGuiOverlayLayersEvent(AddGuiOverlayLayersEvent event) {
-        event.getLayeredDraw().add(ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "hud"), ClientEventHandler::postHudRenderEvent);
+        event.getLayeredDraw().add(Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "hud"), ClientEventHandler::postHudRenderEvent);
     }
 
     public static void clientConnectedToServer(ClientPlayerNetworkEvent.LoggingIn event) {
@@ -64,7 +64,7 @@ public class MapFrontiersClientForge extends MapFrontiersClient {
 
     public static void registerKeyMappingsEvent(RegisterKeyMappingsEvent event) {
         openSettingsKey = new KeyMapping("mapfrontiers.key.open_settings", KeyConflictContext.IN_GAME,
-                InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, MapFrontiersClient.registerKeyMappingCategory());
+                InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, MapFrontiersClient.registerKeyMappingCategory(), 0);
         event.register(openSettingsKey);
     }
 

@@ -79,7 +79,7 @@ public class OptionButton extends ButtonBase {
     }
 
     @Override
-    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         int c = color;
         if (!active) {
             c = ColorConstants.TEXT_DARK;

@@ -12,7 +12,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec2;
 
 import javax.annotation.Nullable;
@@ -35,7 +35,7 @@ public class ShapeVertexButtons extends AbstractWidgetNoNarration {
         None, Width, Radius
     }
 
-    private static final ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/shape_buttons.png");
+    private static final Identifier texture = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/shape_buttons.png");
     private static final int textureSizeX = 980;
     private static final int textureSizeY = 98;
 

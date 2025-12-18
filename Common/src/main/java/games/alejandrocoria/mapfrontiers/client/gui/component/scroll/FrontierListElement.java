@@ -1,11 +1,11 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.scroll;
 
+import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
 import net.minecraft.ChatFormatting;
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -43,7 +43,7 @@ public class FrontierListElement extends ScrollBox.ScrollElement {
 
         type = I18n.get("mapfrontiers.type", I18n.get(frontier.getPersonal() ? "mapfrontiers.config.Personal" : "mapfrontiers.config.Global"));
         owner = I18n.get("mapfrontiers.owner", frontier.getOwner());
-        dimension = I18n.get("mapfrontiers.dimension", frontier.getDimension().location().toString());
+        dimension = I18n.get("mapfrontiers.dimension", frontier.getDimension().identifier().toString());
 
         if (frontier.getMode() == FrontierData.Mode.Vertex) {
             vertices = I18n.get("mapfrontiers.vertices", frontier.getVertexCount());

@@ -435,7 +435,7 @@ public class ModSettings extends AutoScaledScreen {
             }
         });
 
-        labelGroupDesc = usersCol.addChild(new MultiLineTextWidget(groupOpsDescLabel, font).setColor(ColorConstants.TEXT));
+        labelGroupDesc = usersCol.addChild(new MultiLineTextWidget(groupOpsDescLabel.copy().withColor(ColorConstants.TEXT), font));
 
         users = usersCol.addChild(new ScrollBox(actualHeight - 160, 258, 16));
         users.setElementDeletePressedCallback(element -> {
@@ -477,15 +477,15 @@ public class ModSettings extends AutoScaledScreen {
         LinearLayout actionsHeader = LinearLayout.horizontal();
         actionsLayout.addChild(actionsHeader);
 
-        labelCreateFrontier = actionsHeader.addChild(new MultiLineTextWidget(createGlobalFrontierLabel, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
+        labelCreateFrontier = actionsHeader.addChild(new MultiLineTextWidget(createGlobalFrontierLabel.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
         labelCreateFrontier.setCentered(true);
-        labelDeleteFrontier = actionsHeader.addChild(new MultiLineTextWidget(deleteGlobalFrontierLabel, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
+        labelDeleteFrontier = actionsHeader.addChild(new MultiLineTextWidget(deleteGlobalFrontierLabel.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
         labelDeleteFrontier.setCentered(true);
-        labelUpdateFrontier = actionsHeader.addChild(new MultiLineTextWidget(updateGlobalFrontierLabel, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
+        labelUpdateFrontier = actionsHeader.addChild(new MultiLineTextWidget(updateGlobalFrontierLabel.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
         labelUpdateFrontier.setCentered(true);
-        labelUpdateSettings = actionsHeader.addChild(new MultiLineTextWidget(updateSettingsLabel, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
+        labelUpdateSettings = actionsHeader.addChild(new MultiLineTextWidget(updateSettingsLabel.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
         labelUpdateSettings.setCentered(true);
-        labelSharePersonalFrontier = actionsHeader.addChild(new MultiLineTextWidget(sharePersonalFrontierLabel, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
+        labelSharePersonalFrontier = actionsHeader.addChild(new MultiLineTextWidget(sharePersonalFrontierLabel.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
         labelSharePersonalFrontier.setCentered(true);
 
         groupsActions = actionsLayout.addChild(new ScrollBox(actualHeight - 128, 430, 16));

@@ -33,8 +33,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 
 import java.awt.geom.Rectangle2D;
 import java.io.File;
@@ -219,7 +219,7 @@ public class FabricJourneyMapHelper implements IJourneyMapHelper {
             mapRenderer.setZoom(512);
             mapRenderer.setViewPortBounds(null);
             MapState mapState = new MapState();
-            mapState.setMapType(MapType.day(ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld"))));
+            mapState.setMapType(MapType.day(ResourceKey.create(Registries.DIMENSION, Identifier.withDefaultNamespace("overworld"))));
             mapRenderer.setContext(mapState);
             mapRenderer.center(mapState.getWorldDir(), mapState.getMapType(), 0, 0, 512);
         }

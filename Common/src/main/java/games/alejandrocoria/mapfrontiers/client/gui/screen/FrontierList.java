@@ -430,10 +430,10 @@ public class FrontierList extends AutoScaledScreen {
 
         String dimension = Config.filterFrontierDimension;
         if (dimension.equals("current") && minecraft.level != null) {
-            dimension = minecraft.level.dimension().location().toString();
+            dimension = minecraft.level.dimension().identifier().toString();
         }
 
-        return frontier.getDimension().location().toString().equals(dimension);
+        return frontier.getDimension().identifier().toString().equals(dimension);
     }
 
     private void updateButtons() {
