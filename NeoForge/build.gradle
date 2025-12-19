@@ -1,5 +1,6 @@
 import com.modrinth.minotaur.dependencies.ModDependency
 import com.modrinth.minotaur.dependencies.VersionDependency
+import net.darkhax.curseforgegradle.TaskPublishCurseForge
 
 plugins {
     id 'multiloader-loader'
@@ -83,7 +84,7 @@ if (!project.hasProperty("modrinthApiKey")) {
     ext.modrinthApiKey = project.findProperty("modrinth_api_key") ?: "notset"
 }
 
-task publishCurseForge(type: net.darkhax.curseforgegradle.TaskPublishCurseForge) {
+tasks.register('publishCurseForge', TaskPublishCurseForge) {
     apiToken = "${curseForgeApiKey}"
     def mainFile = upload(curseforge_project_id, jar)
     mainFile.displayName = "${mod_name}-${minecraft_version}-${version}-neoforge"
