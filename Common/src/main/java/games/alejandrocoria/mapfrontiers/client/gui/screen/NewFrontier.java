@@ -302,12 +302,20 @@ public class NewFrontier extends AutoScaledScreen {
         Set<BlockPos> polygonVertices = new LinkedHashSet<>();
 
         for (Vec2 vertex : shapeVertices) {
-            int x = (int) Math.round(vertex.x * radius) + centerPos.getX();
-            int z = (int) Math.round(vertex.y * radius) + centerPos.getZ();
+            int x = round(vertex.x * radius) + centerPos.getX();
+            int z = round(vertex.y * radius) + centerPos.getZ();
             polygonVertices.add(new BlockPos(x, 70, z));
         }
 
         return new ArrayList<>(polygonVertices);
+    }
+
+    private static int round(double value) {
+        if (Math.abs(value - Math.floor(value) - 0.5) < 0.001) {
+            return (int) Math.ceil(value);
+        } else {
+            return (int) Math.round(value);
+        }
     }
 
     private List<ChunkPos> calculateChunks() {

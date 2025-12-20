@@ -1,3 +1,6 @@
+**Beta 20:**
+* Fixed: New shapes are the wrong size when using an odd width.
+ 
 **Beta 19:**
 * Fixed: Crash occurs when opening the settings screen from the mod menu.
  
