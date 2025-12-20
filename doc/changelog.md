@@ -1,5 +1,8 @@
-**Beta 18:**
-* Fixed: Compatibility with the latest beta of JourneyMap (52).
+**Beta 20:**
+* Fixed: New shapes are the wrong size when using an odd width.
+ 
+**Beta 19:**
+* Fixed: Crash occurs when opening the settings screen from the mod menu.
  
 **Beta 17:**
 * Fixed: Server connection on Velocity servers (Thanks to Stikulzon for the fix).
@@ -41,7 +44,7 @@
  
 **Beta 7:**
 * Changed: optimized the frontier preview screen (caching JM drawsteps).
-
+ 
 **Beta 6:**
 * Added: frontier banners to maps.
 * Added: frontier appearance dialog with a preview example.
