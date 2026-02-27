@@ -34,11 +34,19 @@ import net.minecraft.util.StringUtil;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class FrontierList extends AutoScaledScreen {
+    private static final int FILTER_DIMENSION_ALL_ID = 0;
+    private static final int FILTER_DIMENSION_CURRENT_ID = 1;
+    private static final int FILTER_DIMENSION_OVERWORLD_ID = 2;
+    private static final int FILTER_DIMENSION_NETHER_ID = 3;
+    private static final int FILTER_DIMENSION_END_ID = 4;
+
     private static final Component titleLabel = Component.translatable("mapfrontiers.title_frontiers");
     private static final Component resetFiltersLabel = Component.translatable("mapfrontiers.reset_filters");
     private static final Component filterTypeLabel = Component.translatable("mapfrontiers.filter_type");
@@ -72,6 +80,7 @@ public class FrontierList extends AutoScaledScreen {
     private SimpleButton buttonVisible;
     private SimpleButton buttonSettings;
     private SimpleButton buttonDone;
+    private final Map<Integer, String> dimensionFilterById = new HashMap<>();
 
     public FrontierList(IClientAPI jmAPI, FullscreenMap fullscreenMap) {
         super(titleLabel, 778, 302);
@@ -139,7 +148,7 @@ public class FrontierList extends AutoScaledScreen {
             Config.filterFrontierOwner = Config.FilterFrontierOwner.All;
             filterOwner.selectElementIf((element) -> ((RadioListElement) element).getId() == Config.filterFrontierOwner.ordinal());
             Config.filterFrontierDimension = "all";
-            filterDimension.selectElementIf((element) -> ((RadioListElement) element).getId() == Config.filterFrontierDimension.hashCode());
+            filterDimension.selectElementIf((element) -> ((RadioListElement) element).getId() == FILTER_DIMENSION_ALL_ID);
             updateFrontiers();
             updateButtons();
         });
@@ -184,29 +193,31 @@ public class FrontierList extends AutoScaledScreen {
         rightColumn.addChild(SpacerElement.height(4));
         rightColumn.addChild(new StringWidget(filterDimensionLabel, font).setColor(ColorConstants.TEXT));
         filterDimension = new ScrollBox(actualHeight - 274, 200, 16);
-        filterDimension.addElement(new RadioListElement(font, configAllLabel, "all".hashCode()));
-        filterDimension.addElement(new RadioListElement(font, configCurrentLabel, "current".hashCode()));
-        filterDimension.addElement(new RadioListElement(font, overworldLabel, "minecraft:overworld".hashCode()));
-        filterDimension.addElement(new RadioListElement(font, theNetherLabel, "minecraft:the_nether".hashCode()));
-        filterDimension.addElement(new RadioListElement(font, theEndLabel, "minecraft:the_end".hashCode()));
+        filterDimension.addElement(new RadioListElement(font, configAllLabel, FILTER_DIMENSION_ALL_ID));
+        filterDimension.addElement(new RadioListElement(font, configCurrentLabel, FILTER_DIMENSION_CURRENT_ID));
+        filterDimension.addElement(new RadioListElement(font, overworldLabel, FILTER_DIMENSION_OVERWORLD_ID));
+        filterDimension.addElement(new RadioListElement(font, theNetherLabel, FILTER_DIMENSION_NETHER_ID));
+        filterDimension.addElement(new RadioListElement(font, theEndLabel, FILTER_DIMENSION_END_ID));
+
+        dimensionFilterById.clear();
+        dimensionFilterById.put(FILTER_DIMENSION_ALL_ID, "all");
+        dimensionFilterById.put(FILTER_DIMENSION_CURRENT_ID, "current");
+        dimensionFilterById.put(FILTER_DIMENSION_OVERWORLD_ID, "minecraft:overworld");
+        dimensionFilterById.put(FILTER_DIMENSION_NETHER_ID, "minecraft:the_nether");
+        dimensionFilterById.put(FILTER_DIMENSION_END_ID, "minecraft:the_end");
+
         addDimensionsToFilter();
-        filterDimension.selectElementIf((element) -> ((RadioListElement) element).getId() == Config.filterFrontierDimension.hashCode());
+        filterDimension.selectElementIf((element) -> ((RadioListElement) element).getId() == getDimensionFilterId(Config.filterFrontierDimension));
         filterDimension.setElementClickedCallback(element -> {
             int selected = ((RadioListElement) element).getId();
-            if (selected == "all".hashCode()) {
-                Config.filterFrontierDimension = "all";
-            } else if (selected == "current".hashCode()) {
-                Config.filterFrontierDimension = "current";
-            } else {
-                Config.filterFrontierDimension = getDimensionFromHash(selected);
-            }
+            Config.filterFrontierDimension = dimensionFilterById.getOrDefault(selected, "all");
             updateFrontiers();
             ClientEventHandler.postUpdatedConfigEvent();
             updateButtons();
         });
         if (filterDimension.getSelectedElement() == null) {
             Config.filterFrontierDimension = "all";
-            filterDimension.selectElementIf((element) -> ((RadioListElement) element).getId() == Config.filterFrontierDimension.hashCode());
+            filterDimension.selectElementIf((element) -> ((RadioListElement) element).getId() == FILTER_DIMENSION_ALL_ID);
         }
         rightColumn.addChild(filterDimension);
 
@@ -291,22 +302,24 @@ public class FrontierList extends AutoScaledScreen {
 
     private void addDimensionsToFilter() {
         List<String> dimensions = Services.JOURNEYMAP.getDimensionList();
+        int dynamicDimensionId = FILTER_DIMENSION_END_ID + 1;
         for (String dimension : dimensions) {
             if (!dimension.equals("minecraft:overworld") && !dimension.equals("minecraft:the_nether") && !dimension.equals("minecraft:the_end")) {
-                filterDimension.addElement(new RadioListElement(font, Component.literal(dimension), dimension.hashCode()));
+                filterDimension.addElement(new RadioListElement(font, Component.literal(dimension), dynamicDimensionId));
+                dimensionFilterById.put(dynamicDimensionId, dimension);
+                ++dynamicDimensionId;
             }
         }
     }
 
-    private String getDimensionFromHash(int hash) {
-        List<String> dimensions = Services.JOURNEYMAP.getDimensionList();
-        for (String dimension : dimensions) {
-            if (dimension.hashCode() == hash) {
-                return dimension;
+    private int getDimensionFilterId(String dimension) {
+        for (Map.Entry<Integer, String> entry : dimensionFilterById.entrySet()) {
+            if (entry.getValue().equals(dimension)) {
+                return entry.getKey();
             }
         }
 
-        return "";
+        return FILTER_DIMENSION_ALL_ID;
     }
 
     private void updateFrontiers() {
@@ -347,8 +360,9 @@ public class FrontierList extends AutoScaledScreen {
                         return false;
                     }
                 }
-                if (!StringUtil.isBlank(frontier.getOwner().uuid.toString())) {
-                    if (frontier.getOwner().uuid.toString().toLowerCase().contains(searchText)) {
+                if (frontier.getOwner().uuid != null) {
+                    String ownerUuid = frontier.getOwner().uuid.toString().toLowerCase();
+                    if (ownerUuid.contains(searchText)) {
                         return false;
                     }
                 }

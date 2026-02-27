@@ -51,10 +51,18 @@ public class SettingsUser implements Comparable<SettingsUser> {
 
     public void readFromNBT(CompoundTag nbt) {
         username = nbt.getStringOr("username", "");
+
+        String rawUUID = nbt.getStringOr("UUID", "");
+        if (StringUtils.isBlank(rawUUID)) {
+            uuid = null;
+            return;
+        }
+
         try {
-            uuid = UUID.fromString(nbt.getStringOr("UUID", ""));
-        } catch (Exception e) {
-            MapFrontiers.LOGGER.error(e.getMessage(), e);
+            uuid = UUID.fromString(rawUUID);
+        } catch (IllegalArgumentException e) {
+            uuid = null;
+            MapFrontiers.LOGGER.warn("Invalid UUID in SettingsUser NBT: {}", rawUUID, e);
         }
     }
 
@@ -99,7 +107,11 @@ public class SettingsUser implements Comparable<SettingsUser> {
 
     @Override
     public int hashCode() {
-        return uuid.hashCode();
+        if (uuid != null) {
+            return uuid.hashCode();
+        }
+
+        return username == null ? 0 : username.hashCode();
     }
 
     @Override
@@ -109,11 +121,11 @@ public class SettingsUser implements Comparable<SettingsUser> {
         }
 
         if (other instanceof SettingsUser user) {
-            if (uuid != null) {
-                return uuid.equals(user.uuid);
+            if (uuid != null || user.uuid != null) {
+                return uuid != null && uuid.equals(user.uuid);
             }
 
-            return username.equals(user.username);
+            return username != null && username.equals(user.username);
         }
 
         return false;

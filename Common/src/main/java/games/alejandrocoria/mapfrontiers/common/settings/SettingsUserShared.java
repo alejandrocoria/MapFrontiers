@@ -83,7 +83,7 @@ public class SettingsUserShared {
             } catch (IllegalArgumentException e) {
                 String userName = user.username;
                 if (userName.isEmpty()) {
-                    userName = user.uuid.toString();
+                    userName = user.uuid == null ? "<unknown>" : user.uuid.toString();
                 }
 
                 String availableActions = StringHelper.enumValuesToString(Arrays.asList(Action.values()));
