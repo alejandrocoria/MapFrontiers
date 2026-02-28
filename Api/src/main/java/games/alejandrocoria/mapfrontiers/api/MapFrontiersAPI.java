@@ -27,39 +27,45 @@ public final class MapFrontiersAPI {
         return Optional.ofNullable(clientAPI);
     }
 
-    public static void registerClientPlugin(IMapFrontiersClientPlugin plugin) {
+    public static synchronized void registerClientPlugin(IMapFrontiersClientPlugin plugin) {
+        if (CLIENT_PLUGINS.stream().anyMatch(p -> p.getModId().equals(plugin.getModId()))) {
+            return;
+        }
         CLIENT_PLUGINS.add(plugin);
         if (clientAPI != null) {
             plugin.initialize(clientAPI);
         }
     }
 
-    public static void registerServerPlugin(IMapFrontiersServerPlugin plugin) {
+    public static synchronized void registerServerPlugin(IMapFrontiersServerPlugin plugin) {
+        if (SERVER_PLUGINS.stream().anyMatch(p -> p.getModId().equals(plugin.getModId()))) {
+            return;
+        }
         SERVER_PLUGINS.add(plugin);
         if (serverAPI != null) {
             plugin.initialize(serverAPI);
         }
     }
 
-    public static void setClientAPI(IMapFrontiersClientAPI api) {
+    public static synchronized void setClientAPI(IMapFrontiersClientAPI api) {
         clientAPI = api;
         for (IMapFrontiersClientPlugin plugin : CLIENT_PLUGINS) {
             plugin.initialize(api);
         }
     }
 
-    public static void setServerAPI(IMapFrontiersServerAPI api) {
+    public static synchronized void setServerAPI(IMapFrontiersServerAPI api) {
         serverAPI = api;
         for (IMapFrontiersServerPlugin plugin : SERVER_PLUGINS) {
             plugin.initialize(api);
         }
     }
 
-    public static void clearClientAPI() {
+    public static synchronized void clearClientAPI() {
         clientAPI = null;
     }
 
-    public static void clearServerAPI() {
+    public static synchronized void clearServerAPI() {
         serverAPI = null;
     }
 }

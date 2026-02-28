@@ -183,14 +183,19 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
         }
 
         SettingsUserShared targetAccess = ApiConverters.toSharedUser(sharedUserAccess);
-        targetAccess.setPending(false);
+        targetAccess.setPending(sharedUserAccess.pending());
         frontier.addUserShared(targetAccess);
-        if (!frontiersManager.hasPersonalFrontier(targetUser, frontier.getId())) {
+        if (!targetAccess.isPending() && !frontiersManager.hasPersonalFrontier(targetUser, frontier.getId())) {
             frontiersManager.addPersonalFrontier(targetUser, frontier);
-        } else {
+        } else if (!targetAccess.isPending()) {
             frontiersManager.updatePersonalFrontier(frontier.getOwner(), frontier);
         }
-        notifyPersonalShared(frontier, targetUser, user);
+        if (!targetAccess.isPending()) {
+            notifyPersonalShared(frontier, targetUser, user);
+        } else {
+            frontiersManager.updatePersonalFrontier(frontier.getOwner(), frontier);
+            notifyPersonalUpdated(frontier, user);
+        }
 
         FrontierDataView view = ApiConverters.fromFrontier(frontier);
         eventBus.post(new FrontierUpdatedEvent(view));
@@ -262,6 +267,8 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
         if (!shared.isPending()) {
             frontiersManager.deletePersonalFrontier(userToRemove, frontier.getDimension(), frontier.getId());
             notifyPersonalDeletedForUser(frontier, userToRemove, user);
+        } else {
+            frontiersManager.removePendingShareFrontier(userToRemove);
         }
         frontiersManager.updatePersonalFrontier(frontier.getOwner(), frontier);
         notifyPersonalUpdated(frontier, user);
@@ -274,7 +281,10 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
     @Override
     public Optional<FrontierDataView> getFrontier(FrontierId frontierId) {
         FrontierData frontier = frontiersManager.getFrontierFromID(frontierId.value());
-        return frontier == null ? Optional.empty() : Optional.of(ApiConverters.fromFrontier(frontier));
+        if (frontier == null || frontier.getPersonal()) {
+            return Optional.empty();
+        }
+        return Optional.of(ApiConverters.fromFrontier(frontier));
     }
 
     @Override

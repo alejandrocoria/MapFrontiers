@@ -14,17 +14,25 @@ import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
 import games.alejandrocoria.mapfrontiers.common.api.SimpleEventBus;
+import games.alejandrocoria.mapfrontiers.common.network.PacketPersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToGlobal;
 import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToPersonal;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketRemoveSharedUserPersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSharePersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateSharedUserPersonalFrontier;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public class ClientFrontierServiceImpl implements ClientFrontierService {
     private final SimpleEventBus eventBus;
@@ -37,6 +45,40 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
     public Optional<FrontierDataView> createPersonalFrontier(DimensionId dimension, FrontierShape shape) {
         FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(true);
         ResourceKey<Level> resourceKey = ApiConverters.toDimension(dimension);
+
+        // On remote servers, creation is asynchronous and manager returns null.
+        // Build the local frontier immediately and sync it with PacketPersonalFrontier.
+        if (MapFrontiersClient.isModOnServer()) {
+            Minecraft minecraft = Minecraft.getInstance();
+            if (minecraft.player == null) {
+                return Optional.empty();
+            }
+
+            FrontierData frontier = new FrontierData();
+            frontier.setId(UUID.randomUUID());
+            frontier.setOwner(new SettingsUser(minecraft.player));
+            frontier.setDimension(resourceKey);
+            frontier.setPersonal(true);
+            frontier.setColor(ColorHelper.getRandomColor());
+            frontier.setCreated(new Date());
+
+            if (shape.type() == games.alejandrocoria.mapfrontiers.api.model.FrontierShapeType.VERTEX) {
+                frontier.setMode(FrontierData.Mode.Vertex);
+                for (var vertex : shape.vertices()) {
+                    frontier.addVertex(new BlockPos(vertex.x(), 0, vertex.z()));
+                }
+            } else {
+                frontier.setMode(FrontierData.Mode.Chunk);
+                for (var chunk : shape.chunks()) {
+                    frontier.toggleChunk(new ChunkPos(chunk.x(), chunk.z()));
+                }
+            }
+
+            FrontierOverlay overlay = manager.addFrontier(frontier);
+            PacketHandler.sendToServer(new PacketPersonalFrontier(frontier));
+            return Optional.of(ApiConverters.fromFrontier(overlay));
+        }
+
         FrontierOverlay frontier = manager.clientCreateNewFrontierAndReturn(resourceKey, shape);
         return Optional.ofNullable(frontier).map(ApiConverters::fromFrontier);
     }
