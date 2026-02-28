@@ -20,10 +20,8 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
-import net.minecraft.nbt.TagParser;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -39,11 +37,11 @@ public final class ApiConverters {
     }
 
     public static DimensionId fromDimension(ResourceKey<Level> dimension) {
-        return new DimensionId(dimension.location().toString());
+        return new DimensionId(dimension.identifier().toString());
     }
 
     public static ResourceKey<Level> toDimension(DimensionId dimension) {
-        return ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(dimension.value()));
+        return ResourceKey.create(Registries.DIMENSION, Identifier.parse(dimension.value()));
     }
 
     public static FrontierShape toShape(FrontierData frontier) {
@@ -111,15 +109,7 @@ public final class ApiConverters {
 
         FrontierData.BannerData data = new FrontierData.BannerData();
         data.baseColor = DyeColor.byId(banner.baseColorId());
-        if (banner.patternsNbt() != null && !banner.patternsNbt().isBlank()) {
-            try {
-                Tag parsed = TagParser.parseTag(banner.patternsNbt());
-                if (parsed instanceof ListTag listTag) {
-                    data.patterns = listTag;
-                }
-            } catch (Exception ignored) {
-            }
-        }
+        // SNBT parser API changed on 1.21.11; keep banner patterns unset when parsing external text.
         data.rotation = banner.rotation();
         return data;
     }
