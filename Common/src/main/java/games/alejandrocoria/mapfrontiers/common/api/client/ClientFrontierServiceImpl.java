@@ -1,8 +1,6 @@
 package games.alejandrocoria.mapfrontiers.common.api.client;
 
 import games.alejandrocoria.mapfrontiers.api.client.ClientFrontierService;
-import games.alejandrocoria.mapfrontiers.api.event.FrontierDeletedEvent;
-import games.alejandrocoria.mapfrontiers.api.event.FrontierUpdatedEvent;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
@@ -13,6 +11,7 @@ import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
+import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
 import games.alejandrocoria.mapfrontiers.common.api.SimpleEventBus;
 import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToGlobal;
@@ -70,7 +69,6 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
         ApiConverters.applyMutation(frontier, mutation);
         manager.clientUpdateFrontier(frontier);
         FrontierDataView view = ApiConverters.fromFrontier(frontier);
-        eventBus.post(new FrontierUpdatedEvent(view));
         return Optional.of(view);
     }
 
@@ -89,7 +87,6 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
         }
 
         manager.clientDeleteFrontier(frontier);
-        eventBus.post(new FrontierDeletedEvent(frontierId));
         return true;
     }
 
@@ -164,6 +161,15 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
         if (frontier == null || !frontier.getPersonal()) {
             return Optional.empty();
         }
+
+        var currentShared = frontier.getUserShared(ApiConverters.toUser(sharedUserAccess.user()));
+        if (currentShared == null) {
+            return Optional.empty();
+        }
+
+        currentShared.setActions(ApiConverters.toSharedUser(sharedUserAccess).getActions());
+        currentShared.setPending(sharedUserAccess.pending());
+        frontier.addChange(FrontierData.Change.Shared);
 
         PacketHandler.sendToServer(new PacketUpdateSharedUserPersonalFrontier(frontierId.value(), ApiConverters.toSharedUser(sharedUserAccess)));
         return Optional.of(ApiConverters.fromFrontier(frontier));

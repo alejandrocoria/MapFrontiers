@@ -11,14 +11,21 @@ import games.alejandrocoria.mapfrontiers.api.model.FrontierShape;
 import games.alejandrocoria.mapfrontiers.api.model.SharedUserAccess;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.api.server.ServerFrontierService;
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
 import games.alejandrocoria.mapfrontiers.common.api.SimpleEventBus;
+import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierCreated;
+import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierDeleted;
+import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierUpdated;
+import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 
 import java.util.Date;
@@ -51,6 +58,7 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
         ApiConverters.applyShape(frontier, shape);
 
         frontiersManager.addGlobalFrontier(frontier);
+        notifyGlobalCreated(frontier, user);
 
         FrontierDataView view = ApiConverters.fromFrontier(frontier);
         eventBus.post(new FrontierCreatedEvent(view));
@@ -75,6 +83,7 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
         if (!updated) {
             return Optional.empty();
         }
+        notifyGlobalUpdated(frontier, user);
 
         FrontierDataView view = ApiConverters.fromFrontier(frontier);
         eventBus.post(new FrontierUpdatedEvent(view));
@@ -96,6 +105,7 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
 
         boolean deleted = frontiersManager.deleteGlobalFrontier(frontier.getDimension(), frontier.getId());
         if (deleted) {
+            notifyGlobalDeleted(frontier, user);
             eventBus.post(new FrontierDeletedEvent(frontierId));
         }
 
@@ -122,6 +132,8 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
         }
 
         FrontierData updated = frontiersManager.getFrontierFromID(frontierId.value());
+        notifyGlobalDeleted(frontier, user);
+        notifyPersonalCreated(updated, user);
         FrontierDataView view = ApiConverters.fromFrontier(updated);
         eventBus.post(new FrontierUpdatedEvent(view));
         return Optional.of(view);
@@ -139,12 +151,15 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
             return Optional.empty();
         }
 
+        List<SettingsUserShared> previousSharedUsers = frontier.getUsersShared() == null ? List.of() : List.copyOf(frontier.getUsersShared());
         boolean changed = frontiersManager.changePersonalFrontierToGlobal(frontier.getOwner(), frontier.getDimension(), frontier.getId());
         if (!changed) {
             return Optional.empty();
         }
 
         FrontierData updated = frontiersManager.getFrontierFromID(frontierId.value());
+        notifyPersonalDeleted(frontier, previousSharedUsers, user);
+        notifyGlobalCreated(updated, user);
         FrontierDataView view = ApiConverters.fromFrontier(updated);
         eventBus.post(new FrontierUpdatedEvent(view));
         return Optional.of(view);
@@ -167,7 +182,16 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
             return Optional.empty();
         }
 
-        frontier.addUserShared(ApiConverters.toSharedUser(sharedUserAccess));
+        SettingsUserShared targetAccess = ApiConverters.toSharedUser(sharedUserAccess);
+        targetAccess.setPending(false);
+        frontier.addUserShared(targetAccess);
+        if (!frontiersManager.hasPersonalFrontier(targetUser, frontier.getId())) {
+            frontiersManager.addPersonalFrontier(targetUser, frontier);
+        } else {
+            frontiersManager.updatePersonalFrontier(frontier.getOwner(), frontier);
+        }
+        notifyPersonalShared(frontier, targetUser, user);
+
         FrontierDataView view = ApiConverters.fromFrontier(frontier);
         eventBus.post(new FrontierUpdatedEvent(view));
         return Optional.of(view);
@@ -191,9 +215,26 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
             return Optional.empty();
         }
 
+        boolean wasPending = currentShared.isPending();
         currentShared.setActions(ApiConverters.toSharedUser(sharedUserAccess).getActions());
         currentShared.setPending(sharedUserAccess.pending());
+
+        if (wasPending && !currentShared.isPending()) {
+            if (!frontiersManager.hasPersonalFrontier(targetUser, frontier.getId())) {
+                frontiersManager.addPersonalFrontier(targetUser, frontier);
+            }
+            notifyPersonalCreatedForUser(frontier, targetUser, user);
+        } else if (!wasPending && currentShared.isPending()) {
+            frontiersManager.deletePersonalFrontier(targetUser, frontier.getDimension(), frontier.getId());
+            notifyPersonalDeletedForUser(frontier, targetUser, user);
+            frontiersManager.updatePersonalFrontier(frontier.getOwner(), frontier);
+        } else {
+            frontiersManager.updatePersonalFrontier(frontier.getOwner(), frontier);
+        }
+
         frontier.addChange(FrontierData.Change.Shared);
+        notifyPersonalUpdated(frontier, user);
+
         FrontierDataView view = ApiConverters.fromFrontier(frontier);
         eventBus.post(new FrontierUpdatedEvent(view));
         return Optional.of(view);
@@ -220,7 +261,10 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
         frontier.removeUserShared(userToRemove);
         if (!shared.isPending()) {
             frontiersManager.deletePersonalFrontier(userToRemove, frontier.getDimension(), frontier.getId());
+            notifyPersonalDeletedForUser(frontier, userToRemove, user);
         }
+        frontiersManager.updatePersonalFrontier(frontier.getOwner(), frontier);
+        notifyPersonalUpdated(frontier, user);
 
         FrontierDataView view = ApiConverters.fromFrontier(frontier);
         eventBus.post(new FrontierUpdatedEvent(view));
@@ -247,5 +291,102 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
         }
 
         return frontier.checkActionUserShared(actorUser, SettingsUserShared.Action.UpdateSettings);
+    }
+
+    private int resolveActorId(UserRef user) {
+        MinecraftServer server = MapFrontiers.getCurrentServer();
+        if (server == null || user.id() == null) {
+            return -1;
+        }
+
+        ServerPlayer player = server.getPlayerList().getPlayer(user.id());
+        return player == null ? -1 : player.getId();
+    }
+
+    private void notifyGlobalCreated(FrontierData frontier, UserRef actor) {
+        MinecraftServer server = MapFrontiers.getCurrentServer();
+        if (server != null) {
+            PacketHandler.sendToAll(new PacketFrontierCreated(frontier, resolveActorId(actor)), server);
+        }
+    }
+
+    private void notifyGlobalUpdated(FrontierData frontier, UserRef actor) {
+        MinecraftServer server = MapFrontiers.getCurrentServer();
+        if (server != null) {
+            PacketHandler.sendToAll(new PacketFrontierUpdated(frontier, resolveActorId(actor)), server);
+        }
+    }
+
+    private void notifyGlobalDeleted(FrontierData frontier, UserRef actor) {
+        MinecraftServer server = MapFrontiers.getCurrentServer();
+        if (server != null) {
+            PacketHandler.sendToAll(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(), false, resolveActorId(actor)), server);
+        }
+    }
+
+    private void notifyPersonalCreated(FrontierData frontier, UserRef actor) {
+        MinecraftServer server = MapFrontiers.getCurrentServer();
+        if (server != null) {
+            PacketHandler.sendToUsersWithAccess(new PacketFrontierCreated(frontier, resolveActorId(actor)), frontier, server);
+        }
+    }
+
+    private void notifyPersonalUpdated(FrontierData frontier, UserRef actor) {
+        MinecraftServer server = MapFrontiers.getCurrentServer();
+        if (server != null) {
+            PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier, resolveActorId(actor)), frontier, server);
+        }
+    }
+
+    private void notifyPersonalDeleted(FrontierData frontier, List<SettingsUserShared> previousSharedUsers, UserRef actor) {
+        MinecraftServer server = MapFrontiers.getCurrentServer();
+        if (server == null) {
+            return;
+        }
+
+        int actorId = resolveActorId(actor);
+        ServerPlayer ownerPlayer = server.getPlayerList().getPlayer(frontier.getOwner().uuid);
+        if (ownerPlayer != null) {
+            PacketHandler.sendTo(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(), true, actorId), ownerPlayer);
+        }
+
+        for (SettingsUserShared shared : previousSharedUsers) {
+            if (shared.isPending()) {
+                continue;
+            }
+            ServerPlayer player = server.getPlayerList().getPlayer(shared.getUser().uuid);
+            if (player != null) {
+                PacketHandler.sendTo(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(), true, actorId), player);
+            }
+        }
+    }
+
+    private void notifyPersonalCreatedForUser(FrontierData frontier, SettingsUser user, UserRef actor) {
+        MinecraftServer server = MapFrontiers.getCurrentServer();
+        if (server == null || user.uuid == null) {
+            return;
+        }
+
+        ServerPlayer player = server.getPlayerList().getPlayer(user.uuid);
+        if (player != null) {
+            PacketHandler.sendTo(new PacketFrontierCreated(frontier, resolveActorId(actor)), player);
+        }
+    }
+
+    private void notifyPersonalDeletedForUser(FrontierData frontier, SettingsUser user, UserRef actor) {
+        MinecraftServer server = MapFrontiers.getCurrentServer();
+        if (server == null || user.uuid == null) {
+            return;
+        }
+
+        ServerPlayer player = server.getPlayerList().getPlayer(user.uuid);
+        if (player != null) {
+            PacketHandler.sendTo(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(), true, resolveActorId(actor)), player);
+        }
+    }
+
+    private void notifyPersonalShared(FrontierData frontier, SettingsUser targetUser, UserRef actor) {
+        notifyPersonalCreatedForUser(frontier, targetUser, actor);
+        notifyPersonalUpdated(frontier, actor);
     }
 }

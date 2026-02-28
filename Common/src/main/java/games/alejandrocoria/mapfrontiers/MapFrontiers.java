@@ -27,6 +27,7 @@ public class MapFrontiers {
     public static final int SETTINGS_DATA_VERSION = 4;
 
     private static FrontiersManager frontiersManager;
+    private static MinecraftServer currentServer;
 
     public MapFrontiers() {
 
@@ -36,6 +37,7 @@ public class MapFrontiers {
         PacketHandler.init();
 
         EventHandler.subscribeServerStartingEvent(MapFrontiers.class, server -> {
+            currentServer = server;
             frontiersManager = new FrontiersManager();
             frontiersManager.loadOrCreateData(server);
             MapFrontiersAPI.setServerAPI(new MapFrontiersServerAPIImpl(frontiersManager));
@@ -49,6 +51,7 @@ public class MapFrontiers {
             }
             MapFrontiersAPI.clearServerAPI();
             frontiersManager = null;
+            currentServer = null;
 
             LOGGER.info("ServerStoppingEvent done");
         });
@@ -82,6 +85,10 @@ public class MapFrontiers {
     public static boolean isOPorHost(ServerPlayer player) {
         MinecraftServer server = player.level().getServer();
         return server.getPlayerList().isOp(player.nameAndId());
+    }
+
+    public static MinecraftServer getCurrentServer() {
+        return currentServer;
     }
 
     public static void createBackup(File folder, String filename) {
