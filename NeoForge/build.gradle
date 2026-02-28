@@ -51,6 +51,7 @@ neoForge {
     }
 
     dependencies {
+        implementation project(':Api')
         implementation group: "mysticdrew", name: "common-networking-neoforge", version: project.common_networking_version
         jarJar (group: "mysticdrew", name: "common-networking-neoforge", version: project.common_networking_version)
         api "fuzs.forgeconfigapiport:forgeconfigapiport-neoforge:${forge_config_api_port_version}"
@@ -63,6 +64,8 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 jar {
     dependsOn "processDocs"
+    dependsOn project(':Api').tasks.named('classes')
+    from project(':Api').sourceSets.main.output
 }
 
 tasks.register('processDocs', Copy) {

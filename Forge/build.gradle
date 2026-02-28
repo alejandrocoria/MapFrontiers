@@ -34,6 +34,7 @@ repositories {
 }
 
 dependencies {
+    implementation project(':Api')
     implementation minecraft.dependency("net.minecraftforge:forge:${forge_version}")
     annotationProcessor 'net.minecraftforge:eventbus-validator:7.0-beta.10'
 
@@ -80,6 +81,8 @@ sourceSets.each {
 
 jar {
     dependsOn "processDocs"
+    dependsOn project(':Api').tasks.named('classes')
+    from project(':Api').sourceSets.main.output
     manifest {
         attributes["MixinConfigs"] = "${mod_id}.mixins.json,${mod_id}.forge.mixins.json"
     }
