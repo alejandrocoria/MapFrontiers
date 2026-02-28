@@ -199,6 +199,19 @@ public class FrontierData {
         return vertices.size();
     }
 
+    public List<BlockPos> getVertices() {
+        synchronized (vertices) {
+            return new ArrayList<>(vertices);
+        }
+    }
+
+    public void clearVertices() {
+        synchronized (vertices) {
+            vertices.clear();
+        }
+        changes.add(Change.Vertices);
+    }
+
     protected void addVertex(BlockPos pos, int index) {
         synchronized (vertices) {
             vertices.add(index, pos.atY(70));
@@ -278,6 +291,19 @@ public class FrontierData {
 
     public int getChunkCount() {
         return chunks.size();
+    }
+
+    public Set<ChunkPos> getChunks() {
+        synchronized (chunks) {
+            return new HashSet<>(chunks);
+        }
+    }
+
+    public void clearChunks() {
+        synchronized (chunks) {
+            chunks.clear();
+        }
+        changes.add(Change.Vertices);
     }
 
     public void moveAllChunks(ChunkPos delta) {

@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client;
 
+import games.alejandrocoria.mapfrontiers.api.MapFrontiersAPI;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
@@ -9,6 +10,7 @@ import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
+import games.alejandrocoria.mapfrontiers.common.api.client.MapFrontiersClientAPIImpl;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import journeymap.api.v2.client.IClientAPI;
 import net.minecraft.ChatFormatting;
@@ -47,6 +49,7 @@ public class MapFrontiersClient {
 
     private static FrontierData clipboard = null;
     private static ClientLevel lastClientLevel = null;
+    private static MapFrontiersClientAPIImpl clientApiImpl;
 
     protected static void init() {
         ClientEventHandler.subscribeUpdatedSettingsProfileEvent(MapFrontiersClient.class, profile -> settingsProfile = profile);
@@ -148,6 +151,8 @@ public class MapFrontiersClient {
 
         ClientEventHandler.subscribeClientConnectedEvent(MapFrontiersClient.class, () -> {
             initializeManagers();
+            clientApiImpl = new MapFrontiersClientAPIImpl();
+            MapFrontiersAPI.setClientAPI(clientApiImpl);
 
             MapFrontiers.LOGGER.info("ClientConnectedEvent done");
         });
@@ -168,6 +173,11 @@ public class MapFrontiersClient {
             settingsProfile = null;
             handshakeSent = false;
             lastClientLevel = null;
+            if (clientApiImpl != null) {
+                clientApiImpl.close();
+                clientApiImpl = null;
+            }
+            MapFrontiersAPI.clearClientAPI();
 
             ChatFrontiers.clear();
 

@@ -177,6 +177,18 @@ public class FrontiersManager {
         saveFrontierData();
     }
 
+    public void addGlobalFrontier(FrontierData frontier) {
+        if (frontier.getPersonal()) {
+            return;
+        }
+
+        List<FrontierData> frontiers = getAllGlobalFrontiers(frontier.getDimension());
+        frontiers.add(frontier);
+        allFrontiers.put(frontier.getId(), frontier);
+
+        saveFrontierData();
+    }
+
     public void addPersonalFrontier(SettingsUser user, FrontierData frontier) {
         List<FrontierData> frontiers = this.getAllPersonalFrontiers(user, frontier.getDimension());
         frontiers.add(frontier);

@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.api.model.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.network.PacketCreateFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketDeleteFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
@@ -168,8 +169,21 @@ public class FrontiersOverlayManager {
     }
 
     public void clientCreateNewFrontier(ResourceKey<Level> dimension, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
+        clientCreateNewFrontierAndReturn(dimension, vertices, chunks);
+    }
+
+    @Nullable
+    public FrontierOverlay clientCreateNewFrontierAndReturn(ResourceKey<Level> dimension, FrontierShape shape) {
+        List<BlockPos> vertices = shape.vertices().isEmpty() ? null : shape.vertices().stream().map(vertex -> new BlockPos(vertex.x(), 0, vertex.z())).toList();
+        List<ChunkPos> chunks = shape.chunks().isEmpty() ? null : shape.chunks().stream().map(chunk -> new ChunkPos(chunk.x(), chunk.z())).toList();
+        return clientCreateNewFrontierAndReturn(dimension, vertices, chunks);
+    }
+
+    @Nullable
+    public FrontierOverlay clientCreateNewFrontierAndReturn(ResourceKey<Level> dimension, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
         if (MapFrontiersClient.isModOnServer()) {
             PacketHandler.sendToServer(new PacketCreateFrontier(dimension, personal, vertices, chunks));
+            return null;
         } else if (personal && minecraft.player != null) {
             FrontierData frontier = new FrontierData();
             frontier.setId(UUID.randomUUID());
@@ -196,7 +210,10 @@ public class FrontiersOverlayManager {
             FrontierOverlay frontierOverlay = addFrontier(frontier);
 
             ClientEventHandler.postNewFrontierEvent(frontierOverlay, minecraft.player.getId());
+            return frontierOverlay;
         }
+
+        return null;
     }
 
     public void clientDeleteFrontier(FrontierOverlay frontier) {
@@ -330,6 +347,19 @@ public class FrontiersOverlayManager {
                 }
             }
         }
+        return null;
+    }
+
+    @Nullable
+    public FrontierOverlay getFrontier(UUID frontierId) {
+        for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
+            for (FrontierOverlay frontier : frontiers) {
+                if (frontier.getId().equals(frontierId)) {
+                    return frontier;
+                }
+            }
+        }
+
         return null;
     }
 

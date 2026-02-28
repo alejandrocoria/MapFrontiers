@@ -1,7 +1,9 @@
 package games.alejandrocoria.mapfrontiers;
 
+import games.alejandrocoria.mapfrontiers.api.MapFrontiersAPI;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
+import games.alejandrocoria.mapfrontiers.common.api.server.MapFrontiersServerAPIImpl;
 import games.alejandrocoria.mapfrontiers.common.event.EventHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontiers;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
@@ -36,6 +38,7 @@ public class MapFrontiers {
         EventHandler.subscribeServerStartingEvent(MapFrontiers.class, server -> {
             frontiersManager = new FrontiersManager();
             frontiersManager.loadOrCreateData(server);
+            MapFrontiersAPI.setServerAPI(new MapFrontiersServerAPIImpl(frontiersManager));
 
             LOGGER.info("ServerStartingEvent done");
         });
@@ -44,6 +47,7 @@ public class MapFrontiers {
             if (frontiersManager != null) {
                 frontiersManager.close();
             }
+            MapFrontiersAPI.clearServerAPI();
             frontiersManager = null;
 
             LOGGER.info("ServerStoppingEvent done");
