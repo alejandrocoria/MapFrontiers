@@ -20,6 +20,7 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierCreated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierDeleted;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierUpdated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
+import games.alejandrocoria.mapfrontiers.common.network.PacketPersonalFrontierShared;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
@@ -183,6 +184,10 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
         }
 
         SettingsUserShared targetAccess = ApiConverters.toSharedUser(sharedUserAccess);
+        if (targetAccess.isPending() && !sendPendingShareInvite(frontier, targetUser, actorUser)) {
+            return Optional.empty();
+        }
+
         targetAccess.setPending(sharedUserAccess.pending());
         frontier.addUserShared(targetAccess);
         if (!targetAccess.isPending() && !frontiersManager.hasPersonalFrontier(targetUser, frontier.getId())) {
@@ -217,6 +222,10 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
         SettingsUser targetUser = ApiConverters.toUser(sharedUserAccess.user());
         SettingsUserShared currentShared = frontier.getUserShared(targetUser);
         if (currentShared == null) {
+            return Optional.empty();
+        }
+
+        if (!currentShared.isPending() && sharedUserAccess.pending() && !sendPendingShareInvite(frontier, targetUser, actorUser)) {
             return Optional.empty();
         }
 
@@ -398,5 +407,29 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
     private void notifyPersonalShared(FrontierData frontier, SettingsUser targetUser, UserRef actor) {
         notifyPersonalCreatedForUser(frontier, targetUser, actor);
         notifyPersonalUpdated(frontier, actor);
+    }
+
+    private boolean sendPendingShareInvite(FrontierData frontier, SettingsUser targetUser, SettingsUser actorUser) {
+        MinecraftServer server = MapFrontiers.getCurrentServer();
+        if (server == null) {
+            return false;
+        }
+
+        targetUser.fillMissingInfo(false, server);
+        if (targetUser.uuid == null) {
+            return false;
+        }
+
+        actorUser.fillMissingInfo(false, server);
+        ServerPlayer targetPlayer = server.getPlayerList().getPlayer(targetUser.uuid);
+        if (targetPlayer == null) {
+            return false;
+        }
+
+        int shareMessageID = frontiersManager.addShareMessage(targetUser, frontier.getId());
+        PacketHandler.sendTo(new PacketPersonalFrontierShared(shareMessageID, actorUser, frontier.getOwner(),
+                frontier.getName1(), frontier.getName2()), targetPlayer);
+
+        return true;
     }
 }
