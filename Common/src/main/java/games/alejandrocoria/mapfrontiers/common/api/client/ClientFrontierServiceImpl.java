@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common.api.client;
 
 import games.alejandrocoria.mapfrontiers.api.client.ClientFrontierService;
+import games.alejandrocoria.mapfrontiers.api.event.FrontierCreatedEvent;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
@@ -76,6 +77,7 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
 
             FrontierOverlay overlay = manager.addFrontier(frontier);
             PacketHandler.sendToServer(new PacketPersonalFrontier(frontier));
+            eventBus.post(new FrontierCreatedEvent(ApiConverters.fromFrontier(overlay)));
             return Optional.of(ApiConverters.fromFrontier(overlay));
         }
 
