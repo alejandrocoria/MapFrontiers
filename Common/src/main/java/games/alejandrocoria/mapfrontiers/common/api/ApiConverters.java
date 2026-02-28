@@ -20,6 +20,8 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.DyeColor;
@@ -109,7 +111,15 @@ public final class ApiConverters {
 
         FrontierData.BannerData data = new FrontierData.BannerData();
         data.baseColor = DyeColor.byId(banner.baseColorId());
-        // SNBT parser API changed on 1.21.11; keep banner patterns unset when parsing external text.
+        if (banner.patternsNbt() != null && !banner.patternsNbt().isBlank()) {
+            try {
+                Object parsed = TagParser.create(NbtOps.INSTANCE).parseFully(banner.patternsNbt());
+                if (parsed instanceof ListTag listTag) {
+                    data.patterns = listTag;
+                }
+            } catch (Exception ignored) {
+            }
+        }
         data.rotation = banner.rotation();
         return data;
     }
