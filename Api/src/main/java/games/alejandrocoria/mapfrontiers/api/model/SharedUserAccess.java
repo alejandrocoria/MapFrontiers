@@ -13,6 +13,6 @@ public record SharedUserAccess(UserRef user, Set<FrontierSharePermission> permis
         if (permissions != null) {
             normalized.addAll(permissions);
         }
-        permissions = normalized;
+        permissions = Set.copyOf(normalized);
     }
 }

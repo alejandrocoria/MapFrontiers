@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common.api.client;
 
 import games.alejandrocoria.mapfrontiers.api.client.ClientFrontierService;
+import games.alejandrocoria.mapfrontiers.api.client.FrontierActionResult;
 import games.alejandrocoria.mapfrontiers.api.event.FrontierCreatedEvent;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
@@ -43,7 +44,7 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
     }
 
     @Override
-    public Optional<FrontierDataView> createPersonalFrontier(DimensionId dimension, FrontierShape shape) {
+    public FrontierActionResult createPersonalFrontier(DimensionId dimension, FrontierShape shape) {
         FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(true);
         ResourceKey<Level> resourceKey = ApiConverters.toDimension(dimension);
 
@@ -52,7 +53,7 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
         if (MapFrontiersClient.isModOnServer()) {
             Minecraft minecraft = Minecraft.getInstance();
             if (minecraft.player == null) {
-                return Optional.empty();
+                return FrontierActionResult.rejected();
             }
 
             FrontierData frontier = new FrontierData();
@@ -78,11 +79,30 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
             FrontierOverlay overlay = manager.addFrontier(frontier);
             PacketHandler.sendToServer(new PacketPersonalFrontier(frontier));
             eventBus.post(new FrontierCreatedEvent(ApiConverters.fromFrontier(overlay)));
-            return Optional.of(ApiConverters.fromFrontier(overlay));
+            return FrontierActionResult.applied(ApiConverters.fromFrontier(overlay));
         }
 
         FrontierOverlay frontier = manager.clientCreateNewFrontierAndReturn(resourceKey, shape);
-        return Optional.ofNullable(frontier).map(ApiConverters::fromFrontier);
+        if (frontier == null) {
+            return FrontierActionResult.rejected();
+        }
+
+        return FrontierActionResult.applied(ApiConverters.fromFrontier(frontier));
+    }
+
+    @Override
+    public FrontierActionResult createGlobalFrontier(DimensionId dimension, FrontierShape shape) {
+        FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(false);
+        ResourceKey<Level> resourceKey = ApiConverters.toDimension(dimension);
+        FrontierOverlay frontier = manager.clientCreateNewFrontierAndReturn(resourceKey, shape);
+        if (frontier == null) {
+            if (MapFrontiersClient.isModOnServer()) {
+                return FrontierActionResult.acceptedAsync();
+            }
+            return FrontierActionResult.rejected();
+        }
+
+        return FrontierActionResult.applied(ApiConverters.fromFrontier(frontier));
     }
 
     @Override
@@ -97,61 +117,43 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
     }
 
     @Override
-    public Optional<FrontierDataView> updateFrontier(FrontierId frontierId, FrontierMutation mutation) {
-        FrontiersOverlayManager personal = MapFrontiersClient.getFrontiersOverlayManager(true);
-        FrontierOverlay frontier = personal.getFrontier(frontierId.value());
-        FrontiersOverlayManager manager = personal;
-        if (frontier == null) {
-            manager = MapFrontiersClient.getFrontiersOverlayManager(false);
-            frontier = manager.getFrontier(frontierId.value());
+    public FrontierActionResult updateGlobalFrontier(FrontierId frontierId, FrontierMutation mutation) {
+        FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(false);
+        FrontierOverlay frontier = manager.getFrontier(frontierId.value());
+        if (frontier == null || frontier.getPersonal()) {
+            return FrontierActionResult.notFound(frontierId);
         }
-
-        if (frontier == null) {
-            return Optional.empty();
-        }
-
-        ApiConverters.applyMutation(frontier, mutation);
-        manager.clientUpdateFrontier(frontier);
-        FrontierDataView view = ApiConverters.fromFrontier(frontier);
-        return Optional.of(view);
+        return updateFrontierInManager(frontierId, mutation, manager, frontier);
     }
 
     @Override
-    public boolean deleteFrontier(FrontierId frontierId) {
-        FrontiersOverlayManager personal = MapFrontiersClient.getFrontiersOverlayManager(true);
-        FrontierOverlay frontier = personal.getFrontier(frontierId.value());
-        FrontiersOverlayManager manager = personal;
-        if (frontier == null) {
-            manager = MapFrontiersClient.getFrontiersOverlayManager(false);
-            frontier = manager.getFrontier(frontierId.value());
+    public FrontierActionResult deleteGlobalFrontier(FrontierId frontierId) {
+        FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(false);
+        FrontierOverlay frontier = manager.getFrontier(frontierId.value());
+        if (frontier == null || frontier.getPersonal()) {
+            return FrontierActionResult.notFound(frontierId);
         }
-
-        if (frontier == null) {
-            return false;
-        }
-
-        manager.clientDeleteFrontier(frontier);
-        return true;
+        return deleteFrontierInManager(frontierId, manager, frontier);
     }
 
     @Override
-    public Optional<FrontierDataView> updatePersonalFrontier(FrontierId frontierId, FrontierMutation mutation) {
+    public FrontierActionResult updatePersonalFrontier(FrontierId frontierId, FrontierMutation mutation) {
         FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(true);
         FrontierOverlay frontier = manager.getFrontier(frontierId.value());
         if (frontier == null || !frontier.getPersonal()) {
-            return Optional.empty();
+            return FrontierActionResult.notFound(frontierId);
         }
-        return updateFrontier(frontierId, mutation);
+        return updateFrontierInManager(frontierId, mutation, manager, frontier);
     }
 
     @Override
-    public boolean deletePersonalFrontier(FrontierId frontierId) {
+    public FrontierActionResult deletePersonalFrontier(FrontierId frontierId) {
         FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(true);
         FrontierOverlay frontier = manager.getFrontier(frontierId.value());
         if (frontier == null || !frontier.getPersonal()) {
-            return false;
+            return FrontierActionResult.notFound(frontierId);
         }
-        return deleteFrontier(frontierId);
+        return deleteFrontierInManager(frontierId, manager, frontier);
     }
 
     @Override
@@ -162,53 +164,60 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
     }
 
     @Override
-    public Optional<FrontierDataView> changeToGlobal(FrontierId frontierId) {
+    public List<FrontierDataView> listGlobalFrontiers(DimensionId dimension) {
+        FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(false);
+        ResourceKey<Level> resourceKey = ApiConverters.toDimension(dimension);
+        return manager.getAllFrontiers(resourceKey).stream().map(ApiConverters::fromFrontier).toList();
+    }
+
+    @Override
+    public FrontierActionResult changeToGlobal(FrontierId frontierId) {
         FrontiersOverlayManager personal = MapFrontiersClient.getFrontiersOverlayManager(true);
         FrontierOverlay frontier = personal.getFrontier(frontierId.value());
         if (frontier == null) {
-            return Optional.empty();
+            return FrontierActionResult.notFound(frontierId);
         }
 
         PacketHandler.sendToServer(new PacketChangeFrontierToGlobal(frontierId.value(), null));
-        return Optional.of(ApiConverters.fromFrontier(frontier));
+        return FrontierActionResult.acceptedAsync(frontierId);
     }
 
     @Override
-    public Optional<FrontierDataView> changeToPersonal(FrontierId frontierId) {
+    public FrontierActionResult changeToPersonal(FrontierId frontierId) {
         FrontiersOverlayManager global = MapFrontiersClient.getFrontiersOverlayManager(false);
         FrontierOverlay frontier = global.getFrontier(frontierId.value());
         if (frontier == null) {
-            return Optional.empty();
+            return FrontierActionResult.notFound(frontierId);
         }
 
         PacketHandler.sendToServer(new PacketChangeFrontierToPersonal(frontierId.value(), null));
-        return Optional.of(ApiConverters.fromFrontier(frontier));
+        return FrontierActionResult.acceptedAsync(frontierId);
     }
 
     @Override
-    public Optional<FrontierDataView> sharePersonalFrontier(FrontierId frontierId, SharedUserAccess sharedUserAccess) {
+    public FrontierActionResult sharePersonalFrontier(FrontierId frontierId, SharedUserAccess sharedUserAccess) {
         FrontiersOverlayManager personal = MapFrontiersClient.getFrontiersOverlayManager(true);
         FrontierOverlay frontier = personal.getFrontier(frontierId.value());
         if (frontier == null || !frontier.getPersonal()) {
-            return Optional.empty();
+            return FrontierActionResult.notFound(frontierId);
         }
 
         PacketHandler.sendToServer(new PacketSharePersonalFrontier(frontierId.value(), ApiConverters.toUser(sharedUserAccess.user())));
         frontier.addUserShared(ApiConverters.toSharedUser(sharedUserAccess));
-        return Optional.of(ApiConverters.fromFrontier(frontier));
+        return FrontierActionResult.applied(ApiConverters.fromFrontier(frontier));
     }
 
     @Override
-    public Optional<FrontierDataView> updateSharedUserAccess(FrontierId frontierId, SharedUserAccess sharedUserAccess) {
+    public FrontierActionResult updateSharedUserAccess(FrontierId frontierId, SharedUserAccess sharedUserAccess) {
         FrontiersOverlayManager personal = MapFrontiersClient.getFrontiersOverlayManager(true);
         FrontierOverlay frontier = personal.getFrontier(frontierId.value());
         if (frontier == null || !frontier.getPersonal()) {
-            return Optional.empty();
+            return FrontierActionResult.notFound(frontierId);
         }
 
         var currentShared = frontier.getUserShared(ApiConverters.toUser(sharedUserAccess.user()));
         if (currentShared == null) {
-            return Optional.empty();
+            return FrontierActionResult.notFound(frontierId);
         }
 
         currentShared.setActions(ApiConverters.toSharedUser(sharedUserAccess).getActions());
@@ -216,19 +225,42 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
         frontier.addChange(FrontierData.Change.Shared);
 
         PacketHandler.sendToServer(new PacketUpdateSharedUserPersonalFrontier(frontierId.value(), ApiConverters.toSharedUser(sharedUserAccess)));
-        return Optional.of(ApiConverters.fromFrontier(frontier));
+        return FrontierActionResult.applied(ApiConverters.fromFrontier(frontier));
     }
 
     @Override
-    public Optional<FrontierDataView> removeSharedUser(FrontierId frontierId, UserRef user) {
+    public FrontierActionResult removeSharedUser(FrontierId frontierId, UserRef user) {
         FrontiersOverlayManager personal = MapFrontiersClient.getFrontiersOverlayManager(true);
         FrontierOverlay frontier = personal.getFrontier(frontierId.value());
         if (frontier == null || !frontier.getPersonal()) {
-            return Optional.empty();
+            return FrontierActionResult.notFound(frontierId);
         }
 
         PacketHandler.sendToServer(new PacketRemoveSharedUserPersonalFrontier(frontierId.value(), ApiConverters.toUser(user)));
         frontier.removeUserShared(ApiConverters.toUser(user));
-        return Optional.of(ApiConverters.fromFrontier(frontier));
+        return FrontierActionResult.applied(ApiConverters.fromFrontier(frontier));
+    }
+
+    private FrontierActionResult updateFrontierInManager(FrontierId frontierId,
+                                                         FrontierMutation mutation,
+                                                         FrontiersOverlayManager manager,
+                                                         FrontierOverlay frontier) {
+        ApiConverters.applyMutation(frontier, mutation);
+        manager.clientUpdateFrontier(frontier);
+        if (MapFrontiersClient.isModOnServer()) {
+            return FrontierActionResult.acceptedAsync(frontierId);
+        }
+        return FrontierActionResult.applied(ApiConverters.fromFrontier(frontier));
+    }
+
+    private FrontierActionResult deleteFrontierInManager(FrontierId frontierId,
+                                                         FrontiersOverlayManager manager,
+                                                         FrontierOverlay frontier) {
+        manager.clientDeleteFrontier(frontier);
+        if (MapFrontiersClient.isModOnServer()) {
+            return FrontierActionResult.acceptedAsync(frontierId);
+        }
+        FrontierDataView deleted = ApiConverters.fromFrontier(frontier);
+        return FrontierActionResult.applied(deleted);
     }
 }

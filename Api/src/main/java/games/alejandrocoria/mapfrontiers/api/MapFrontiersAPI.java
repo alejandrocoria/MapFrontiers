@@ -47,25 +47,25 @@ public final class MapFrontiersAPI {
         }
     }
 
-    public static synchronized void setClientAPI(IMapFrontiersClientAPI api) {
+    static synchronized void setClientAPI(IMapFrontiersClientAPI api) {
         clientAPI = api;
         for (IMapFrontiersClientPlugin plugin : CLIENT_PLUGINS) {
             plugin.initialize(api);
         }
     }
 
-    public static synchronized void setServerAPI(IMapFrontiersServerAPI api) {
+    static synchronized void setServerAPI(IMapFrontiersServerAPI api) {
         serverAPI = api;
         for (IMapFrontiersServerPlugin plugin : SERVER_PLUGINS) {
             plugin.initialize(api);
         }
     }
 
-    public static synchronized void clearClientAPI() {
+    static synchronized void clearClientAPI() {
         clientAPI = null;
     }
 
-    public static synchronized void clearServerAPI() {
+    static synchronized void clearServerAPI() {
         serverAPI = null;
     }
 }

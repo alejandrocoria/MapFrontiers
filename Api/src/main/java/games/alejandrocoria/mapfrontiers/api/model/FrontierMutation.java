@@ -8,7 +8,8 @@ public record FrontierMutation(Optional<String> name1,
                                Optional<Integer> color,
                                Optional<FrontierShape> shape,
                                Optional<Set<FrontierVisibilityFlag>> visibility,
-                               Optional<FrontierBanner> banner) {
+                               Optional<FrontierBanner> banner,
+                               boolean clearBanner) {
     public FrontierMutation {
         name1 = name1 == null ? Optional.empty() : name1;
         name2 = name2 == null ? Optional.empty() : name2;
@@ -16,9 +17,18 @@ public record FrontierMutation(Optional<String> name1,
         shape = shape == null ? Optional.empty() : shape;
         visibility = visibility == null ? Optional.empty() : visibility;
         banner = banner == null ? Optional.empty() : banner;
+        visibility = visibility.map(Set::copyOf);
+
+        if (clearBanner && banner.isPresent()) {
+            throw new IllegalArgumentException("Mutation cannot set and clear banner at the same time");
+        }
     }
 
     public static FrontierMutation empty() {
-        return new FrontierMutation(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+        return new FrontierMutation(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), false);
+    }
+
+    public static FrontierMutation withClearedBanner() {
+        return new FrontierMutation(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), true);
     }
 }

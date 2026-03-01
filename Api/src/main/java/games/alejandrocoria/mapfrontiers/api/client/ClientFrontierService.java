@@ -12,16 +12,25 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ClientFrontierService {
+    // Any frontier
     Optional<FrontierDataView> getFrontier(FrontierId frontierId);
-    Optional<FrontierDataView> createPersonalFrontier(DimensionId dimension, FrontierShape shape);
-    Optional<FrontierDataView> updateFrontier(FrontierId frontierId, FrontierMutation mutation);
-    boolean deleteFrontier(FrontierId frontierId);
-    Optional<FrontierDataView> updatePersonalFrontier(FrontierId frontierId, FrontierMutation mutation);
-    boolean deletePersonalFrontier(FrontierId frontierId);
+
+    // Global frontier
+    FrontierActionResult createGlobalFrontier(DimensionId dimension, FrontierShape shape);
+    FrontierActionResult updateGlobalFrontier(FrontierId frontierId, FrontierMutation mutation);
+    FrontierActionResult deleteGlobalFrontier(FrontierId frontierId);
+    FrontierActionResult changeToPersonal(FrontierId frontierId); // global -> personal
+    List<FrontierDataView> listGlobalFrontiers(DimensionId dimension);
+
+    // Personal frontier
+    FrontierActionResult createPersonalFrontier(DimensionId dimension, FrontierShape shape);
+    FrontierActionResult updatePersonalFrontier(FrontierId frontierId, FrontierMutation mutation);
+    FrontierActionResult deletePersonalFrontier(FrontierId frontierId);
+    FrontierActionResult changeToGlobal(FrontierId frontierId);   // personal -> global
     List<FrontierDataView> listPersonalFrontiers(DimensionId dimension);
-    Optional<FrontierDataView> changeToGlobal(FrontierId frontierId);
-    Optional<FrontierDataView> changeToPersonal(FrontierId frontierId);
-    Optional<FrontierDataView> sharePersonalFrontier(FrontierId frontierId, SharedUserAccess sharedUserAccess);
-    Optional<FrontierDataView> updateSharedUserAccess(FrontierId frontierId, SharedUserAccess sharedUserAccess);
-    Optional<FrontierDataView> removeSharedUser(FrontierId frontierId, UserRef user);
+
+    // Personal sharing
+    FrontierActionResult sharePersonalFrontier(FrontierId frontierId, SharedUserAccess sharedUserAccess);
+    FrontierActionResult updateSharedUserAccess(FrontierId frontierId, SharedUserAccess sharedUserAccess);
+    FrontierActionResult removeSharedUser(FrontierId frontierId, UserRef user);
 }

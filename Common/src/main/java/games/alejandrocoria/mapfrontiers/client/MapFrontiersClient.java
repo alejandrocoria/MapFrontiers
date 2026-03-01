@@ -1,6 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client;
 
-import games.alejandrocoria.mapfrontiers.api.MapFrontiersAPI;
+import games.alejandrocoria.mapfrontiers.api.MapFrontiersAPIBootstrap;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
@@ -152,7 +152,7 @@ public class MapFrontiersClient {
         ClientEventHandler.subscribeClientConnectedEvent(MapFrontiersClient.class, () -> {
             initializeManagers();
             clientApiImpl = new MapFrontiersClientAPIImpl();
-            MapFrontiersAPI.setClientAPI(clientApiImpl);
+            MapFrontiersAPIBootstrap.setClientAPI(clientApiImpl);
 
             MapFrontiers.LOGGER.info("ClientConnectedEvent done");
         });
@@ -177,7 +177,7 @@ public class MapFrontiersClient {
                 clientApiImpl.close();
                 clientApiImpl = null;
             }
-            MapFrontiersAPI.clearClientAPI();
+            MapFrontiersAPIBootstrap.clearClientAPI();
 
             ChatFrontiers.clear();
 

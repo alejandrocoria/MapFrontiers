@@ -186,6 +186,10 @@ public final class ApiConverters {
         Optional<FrontierShape> shape = mutation.shape();
         shape.ifPresent(value -> applyShape(frontier, value));
         mutation.visibility().ifPresent(value -> frontier.setVisibilityData(toVisibility(value)));
-        mutation.banner().ifPresent(value -> frontier.setBannerData(toBanner(value)));
+        if (mutation.clearBanner()) {
+            frontier.setBannerData(null);
+        } else {
+            mutation.banner().ifPresent(value -> frontier.setBannerData(toBanner(value)));
+        }
     }
 }

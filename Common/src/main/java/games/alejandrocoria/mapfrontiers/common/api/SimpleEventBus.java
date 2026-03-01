@@ -13,17 +13,34 @@ public class SimpleEventBus implements EventBus {
 
     @Override
     @SuppressWarnings("unchecked")
-    public synchronized <T> void subscribe(Class<T> eventType, Consumer<T> listener) {
-        listeners.computeIfAbsent(eventType, key -> new ArrayList<>()).add((Consumer<Object>) listener);
+    public synchronized <T> Subscription subscribe(Class<T> eventType, Consumer<T> listener) {
+        Consumer<Object> handler = (Consumer<Object>) listener;
+        listeners.computeIfAbsent(eventType, key -> new ArrayList<>()).add(handler);
+
+        return () -> unsubscribe(eventType, handler);
     }
 
-    @Override
+    private synchronized void unsubscribe(Class<?> eventType, Consumer<Object> listener) {
+        List<Consumer<Object>> handlers = listeners.get(eventType);
+        if (handlers == null) {
+            return;
+        }
+
+        handlers.remove(listener);
+        if (handlers.isEmpty()) {
+            listeners.remove(eventType);
+        }
+    }
+
     public synchronized void post(Object event) {
         List<Consumer<Object>> handlers = listeners.get(event.getClass());
         if (handlers == null) {
             return;
         }
-        for (Consumer<Object> handler : handlers) {
+
+        // Snapshot to allow listeners to unsubscribe safely during dispatch.
+        List<Consumer<Object>> snapshot = List.copyOf(handlers);
+        for (Consumer<Object> handler : snapshot) {
             handler.accept(event);
         }
     }

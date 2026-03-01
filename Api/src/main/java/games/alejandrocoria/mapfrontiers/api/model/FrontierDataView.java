@@ -14,4 +14,8 @@ public record FrontierDataView(FrontierId id,
                                FrontierBanner banner,
                                UserRef owner,
                                List<SharedUserAccess> sharedUsers) {
+    public FrontierDataView {
+        visibility = visibility == null ? Set.of() : Set.copyOf(visibility);
+        sharedUsers = sharedUsers == null ? List.of() : List.copyOf(sharedUsers);
+    }
 }
