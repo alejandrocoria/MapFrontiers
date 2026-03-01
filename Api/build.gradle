@@ -1,5 +1,51 @@
 plugins {
     id 'java-library'
+    id 'com.vanniktech.maven.publish' version '0.36.0'
+}
+
+group = "games.alejandrocoria"
+version = project.api_version
+
+base {
+    archivesName = "mapfrontiers-api"
+}
+
+java {
+    withSourcesJar()
+}
+
+mavenPublishing {
+    publishToMavenCentral()
+    signAllPublications()
+
+    coordinates(project.group.toString(), base.archivesName.get(), project.version.toString())
+
+    pom {
+        name.set("${mod_name} API")
+        description.set("Public API for ${mod_name}.")
+        url.set(mod_sources)
+
+        licenses {
+            license {
+                name.set(mod_license)
+                url.set("https://opensource.org/licenses/MIT")
+            }
+        }
+
+        developers {
+            developer {
+                id.set("alejandrocoria")
+                name.set(mod_author)
+                email.set(mod_email)
+            }
+        }
+
+        scm {
+            connection.set("scm:git:git://github.com/alejandrocoria/MapFrontiers.git")
+            developerConnection.set("scm:git:ssh://github.com:alejandrocoria/MapFrontiers.git")
+            url.set(mod_sources)
+        }
+    }
 }
 
 dependencies {
