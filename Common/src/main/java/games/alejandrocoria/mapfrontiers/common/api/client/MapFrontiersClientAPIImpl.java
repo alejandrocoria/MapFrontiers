@@ -17,7 +17,7 @@ public class MapFrontiersClientAPIImpl implements IMapFrontiersClientAPI {
 
     public MapFrontiersClientAPIImpl() {
         this.eventBus = new SimpleEventBus();
-        this.frontiers = new ClientFrontierServiceImpl(eventBus);
+        this.frontiers = new ClientFrontierServiceImpl();
 
         ClientEventHandler.subscribeNewFrontierEvent(this, (frontier, playerId) -> eventBus.post(new FrontierCreatedEvent(ApiConverters.fromFrontier(frontier))));
         ClientEventHandler.subscribeUpdatedFrontierEvent(this, (frontier, playerId) -> eventBus.post(new FrontierUpdatedEvent(ApiConverters.fromFrontier(frontier))));
