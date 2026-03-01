@@ -26,6 +26,7 @@ import net.minecraft.world.level.Level;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public class ClientFrontierServiceImpl implements ClientFrontierService {
     public ClientFrontierServiceImpl() {
@@ -35,10 +36,11 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
     public FrontierActionResult createPersonalFrontier(DimensionId dimension, FrontierShape shape) {
         FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(true);
         ResourceKey<Level> resourceKey = ApiConverters.toDimension(dimension);
-        FrontierOverlay frontier = manager.clientCreateNewFrontierAndReturn(resourceKey, shape);
+        FrontierId frontierId = new FrontierId(UUID.randomUUID());
+        FrontierOverlay frontier = manager.clientCreateNewFrontierAndReturn(frontierId.value(), resourceKey, shape);
         if (frontier == null) {
             if (MapFrontiersClient.isModOnServer()) {
-                return FrontierActionResult.acceptedAsync();
+                return FrontierActionResult.acceptedAsync(frontierId);
             }
             return FrontierActionResult.rejected();
         }
@@ -50,10 +52,11 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
     public FrontierActionResult createGlobalFrontier(DimensionId dimension, FrontierShape shape) {
         FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(false);
         ResourceKey<Level> resourceKey = ApiConverters.toDimension(dimension);
-        FrontierOverlay frontier = manager.clientCreateNewFrontierAndReturn(resourceKey, shape);
+        FrontierId frontierId = new FrontierId(UUID.randomUUID());
+        FrontierOverlay frontier = manager.clientCreateNewFrontierAndReturn(frontierId.value(), resourceKey, shape);
         if (frontier == null) {
             if (MapFrontiersClient.isModOnServer()) {
-                return FrontierActionResult.acceptedAsync();
+                return FrontierActionResult.acceptedAsync(frontierId);
             }
             return FrontierActionResult.rejected();
         }

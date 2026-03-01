@@ -123,21 +123,19 @@ public class FrontiersManager {
         return allFrontiers.get(id);
     }
 
-    public FrontierData createNewGlobalFrontier(ResourceKey<Level> dimension, ServerPlayer player, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
+    public FrontierData createNewGlobalFrontier(UUID frontierId, ResourceKey<Level> dimension, ServerPlayer player, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
         List<FrontierData> frontiers = getAllGlobalFrontiers(dimension);
-
-        return createNewFrontier(frontiers, dimension, false, player, vertices, chunks);
+        return createNewFrontier(frontierId, frontiers, dimension, false, player, vertices, chunks);
     }
 
-    public FrontierData createNewPersonalFrontier(ResourceKey<Level> dimension, ServerPlayer player, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
+    public FrontierData createNewPersonalFrontier(UUID frontierId, ResourceKey<Level> dimension, ServerPlayer player, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
         List<FrontierData> frontiers = getAllPersonalFrontiers(new SettingsUser(player), dimension);
-
-        return createNewFrontier(frontiers, dimension, true, player, vertices, chunks);
+        return createNewFrontier(frontierId, frontiers, dimension, true, player, vertices, chunks);
     }
 
-    private FrontierData createNewFrontier(List<FrontierData> frontiers, ResourceKey<Level> dimension, boolean personal, ServerPlayer player, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
+    private FrontierData createNewFrontier(UUID frontierId, List<FrontierData> frontiers, ResourceKey<Level> dimension, boolean personal, ServerPlayer player, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
         FrontierData frontier = new FrontierData();
-        frontier.setId(UUID.randomUUID());
+        frontier.setId(frontierId);
         frontier.setOwner(new SettingsUser(player));
         frontier.setDimension(dimension);
         frontier.setPersonal(personal);

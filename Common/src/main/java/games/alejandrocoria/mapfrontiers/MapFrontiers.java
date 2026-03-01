@@ -7,6 +7,7 @@ import games.alejandrocoria.mapfrontiers.common.api.server.MapFrontiersServerAPI
 import games.alejandrocoria.mapfrontiers.common.event.EventHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontiers;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
+import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.server.MinecraftServer;
@@ -67,7 +68,8 @@ public class MapFrontiers {
         });
     }
 
-    public static void ReceiveHandshake(ServerPlayer player) {
+    public static void ReceiveHandshake(ServerPlayer player, long nonce) {
+        PacketHandler.sendTo(new PacketHandshake(nonce), player);
         PacketHandler.sendTo(new PacketSettingsProfile(frontiersManager.getSettings().getProfile(player)), player);
 
         PacketFrontiers packetFrontiers = new PacketFrontiers();

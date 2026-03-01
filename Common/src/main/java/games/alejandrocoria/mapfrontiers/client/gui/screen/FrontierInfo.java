@@ -722,7 +722,10 @@ public class FrontierInfo extends AutoScaledScreen {
         buttonPaste.active = actions.canUpdate;
         buttonPasteOptions.active = actions.canUpdate;
         if (frontier.getPersonal()) {
-            buttonChangeToPersonalGlobal.visible = MapFrontiersClient.isModOnServer() && frontier.getOwner().equals(playerUser) && profile.createFrontier == SettingsProfile.State.Enabled;
+            buttonChangeToPersonalGlobal.visible = MapFrontiersClient.isModOnServer()
+                    && frontier.getOwner().equals(playerUser)
+                    && profile != null
+                    && profile.createFrontier == SettingsProfile.State.Enabled;
         } else {
             buttonChangeToPersonalGlobal.visible = actions.canDelete;
         }

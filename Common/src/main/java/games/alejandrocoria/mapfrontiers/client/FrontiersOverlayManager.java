@@ -169,24 +169,24 @@ public class FrontiersOverlayManager {
     }
 
     public void clientCreateNewFrontier(ResourceKey<Level> dimension, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
-        clientCreateNewFrontierAndReturn(dimension, vertices, chunks);
+        clientCreateNewFrontierAndReturn(UUID.randomUUID(), dimension, vertices, chunks);
     }
 
     @Nullable
-    public FrontierOverlay clientCreateNewFrontierAndReturn(ResourceKey<Level> dimension, FrontierShape shape) {
+    public FrontierOverlay clientCreateNewFrontierAndReturn(UUID frontierId, ResourceKey<Level> dimension, FrontierShape shape) {
         List<BlockPos> vertices = shape.vertices().isEmpty() ? null : shape.vertices().stream().map(vertex -> new BlockPos(vertex.x(), 0, vertex.z())).toList();
         List<ChunkPos> chunks = shape.chunks().isEmpty() ? null : shape.chunks().stream().map(chunk -> new ChunkPos(chunk.x(), chunk.z())).toList();
-        return clientCreateNewFrontierAndReturn(dimension, vertices, chunks);
+        return clientCreateNewFrontierAndReturn(frontierId, dimension, vertices, chunks);
     }
 
     @Nullable
-    public FrontierOverlay clientCreateNewFrontierAndReturn(ResourceKey<Level> dimension, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
+    public FrontierOverlay clientCreateNewFrontierAndReturn(UUID frontierId, ResourceKey<Level> dimension, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
         if (MapFrontiersClient.isModOnServer()) {
-            PacketHandler.sendToServer(new PacketCreateFrontier(dimension, personal, vertices, chunks));
+            PacketHandler.sendToServer(new PacketCreateFrontier(frontierId, dimension, personal, vertices, chunks));
             return null;
         } else if (personal && minecraft.player != null) {
             FrontierData frontier = new FrontierData();
-            frontier.setId(UUID.randomUUID());
+            frontier.setId(frontierId);
             frontier.setOwner(new SettingsUser(minecraft.player));
             frontier.setDimension(dimension);
             frontier.setPersonal(true);
