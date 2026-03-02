@@ -1,32 +1,62 @@
 package games.alejandrocoria.mapfrontiers.api.model;
 
 import java.util.List;
+import java.util.Objects;
 
-public record FrontierShape(FrontierShapeType type, List<Point2i> vertices, List<ChunkCoord> chunks) {
-    public FrontierShape {
+public final class FrontierShape {
+    private final FrontierShapeType type;
+    private final List<Point2i> vertices;
+    private final List<ChunkCoord> chunks;
+
+    private FrontierShape(FrontierShapeType type, List<Point2i> vertices, List<ChunkCoord> chunks) {
         if (type == null) {
             throw new IllegalArgumentException("Shape type cannot be null");
         }
-
-        vertices = vertices == null ? List.of() : List.copyOf(vertices);
-        chunks = chunks == null ? List.of() : List.copyOf(chunks);
-
-        if (type == FrontierShapeType.VERTEX) {
-            if (vertices.isEmpty() || !chunks.isEmpty()) {
-                throw new IllegalArgumentException("Vertex shape requires vertices and forbids chunks");
-            }
-        } else {
-            if (chunks.isEmpty() || !vertices.isEmpty()) {
-                throw new IllegalArgumentException("Chunk shape requires chunks and forbids vertices");
-            }
-        }
+        this.type = type;
+        this.vertices = vertices;
+        this.chunks = chunks;
     }
 
     public static FrontierShape vertex(List<Point2i> vertices) {
-        return new FrontierShape(FrontierShapeType.VERTEX, vertices, List.of());
+        List<Point2i> safeVertices = vertices == null ? List.of() : List.copyOf(vertices);
+        return new FrontierShape(FrontierShapeType.VERTEX, safeVertices, null);
     }
 
     public static FrontierShape chunk(List<ChunkCoord> chunks) {
-        return new FrontierShape(FrontierShapeType.CHUNK, List.of(), chunks);
+        List<ChunkCoord> safeChunks = chunks == null ? List.of() : List.copyOf(chunks);
+        return new FrontierShape(FrontierShapeType.CHUNK, null, safeChunks);
+    }
+
+    public FrontierShapeType type() {
+        return type;
+    }
+
+    public List<Point2i> vertices() {
+        return vertices;
+    }
+
+    public List<ChunkCoord> chunks() {
+        return chunks;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (!(other instanceof FrontierShape that)) {
+            return false;
+        }
+        return type == that.type && Objects.equals(vertices, that.vertices) && Objects.equals(chunks, that.chunks);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, vertices, chunks);
+    }
+
+    @Override
+    public String toString() {
+        return "FrontierShape[type=" + type + ", vertices=" + vertices + ", chunks=" + chunks + "]";
     }
 }

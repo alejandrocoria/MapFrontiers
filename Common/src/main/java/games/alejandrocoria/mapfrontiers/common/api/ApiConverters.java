@@ -63,13 +63,17 @@ public final class ApiConverters {
 
         if (shape.type() == FrontierShapeType.VERTEX) {
             frontier.setMode(FrontierData.Mode.Vertex);
-            for (Point2i vertex : shape.vertices()) {
-                frontier.addVertex(new BlockPos(vertex.x(), 0, vertex.z()));
+            if (shape.vertices() != null) {
+                for (Point2i vertex : shape.vertices()) {
+                    frontier.addVertex(new BlockPos(vertex.x(), 0, vertex.z()));
+                }
             }
         } else {
             frontier.setMode(FrontierData.Mode.Chunk);
-            for (ChunkCoord chunk : shape.chunks()) {
-                frontier.addChunk(new ChunkPos(chunk.x(), chunk.z()));
+            if (shape.chunks() != null) {
+                for (ChunkCoord chunk : shape.chunks()) {
+                    frontier.addChunk(new ChunkPos(chunk.x(), chunk.z()));
+                }
             }
         }
     }

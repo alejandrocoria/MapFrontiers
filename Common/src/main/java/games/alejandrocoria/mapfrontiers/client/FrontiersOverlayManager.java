@@ -6,7 +6,9 @@ import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.api.model.ChunkCoord;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierShape;
+import games.alejandrocoria.mapfrontiers.api.model.Point2i;
 import games.alejandrocoria.mapfrontiers.common.network.PacketCreateFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketDeleteFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
@@ -174,8 +176,10 @@ public class FrontiersOverlayManager {
 
     @Nullable
     public FrontierOverlay clientCreateNewFrontierAndReturn(UUID frontierId, ResourceKey<Level> dimension, FrontierShape shape) {
-        List<BlockPos> vertices = shape.vertices().isEmpty() ? null : shape.vertices().stream().map(vertex -> new BlockPos(vertex.x(), 0, vertex.z())).toList();
-        List<ChunkPos> chunks = shape.chunks().isEmpty() ? null : shape.chunks().stream().map(chunk -> new ChunkPos(chunk.x(), chunk.z())).toList();
+        List<Point2i> shapeVertices = shape.vertices();
+        List<ChunkCoord> shapeChunks = shape.chunks();
+        List<BlockPos> vertices = shapeVertices == null || shapeVertices.isEmpty() ? null : shapeVertices.stream().map(vertex -> new BlockPos(vertex.x(), 0, vertex.z())).toList();
+        List<ChunkPos> chunks = shapeChunks == null || shapeChunks.isEmpty() ? null : shapeChunks.stream().map(chunk -> new ChunkPos(chunk.x(), chunk.z())).toList();
         return clientCreateNewFrontierAndReturn(frontierId, dimension, vertices, chunks);
     }
 
