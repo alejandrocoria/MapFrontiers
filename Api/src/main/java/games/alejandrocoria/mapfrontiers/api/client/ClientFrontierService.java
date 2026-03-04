@@ -11,6 +11,7 @@ import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import java.util.List;
 import java.util.Optional;
 
+@SuppressWarnings("unused")
 public interface ClientFrontierService {
     // Any frontier
     Optional<FrontierDataView> getFrontier(FrontierId frontierId);

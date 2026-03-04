@@ -10,6 +10,7 @@ import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import java.util.List;
 import java.util.Optional;
 
+@SuppressWarnings("unused")
 public interface ServerFrontierService {
     // Global frontier
     FrontierDataView createGlobalFrontier(DimensionId dimension, FrontierShape shape);
