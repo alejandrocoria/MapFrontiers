@@ -26,7 +26,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -34,7 +33,6 @@ import java.util.UUID;
 
 public class ServerFrontierServiceImpl implements ServerFrontierService {
     private static final int SYSTEM_ACTOR_ID = -1;
-    private static final SettingsUser SYSTEM_USER = createSystemUser();
 
     private final FrontiersManager frontiersManager;
     private final SimpleEventBus eventBus;
@@ -45,12 +43,13 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
     }
 
     @Override
-    public FrontierDataView createGlobalFrontier(DimensionId dimension, FrontierShape shape) {
+    public FrontierDataView createGlobalFrontier(UserRef owner, DimensionId dimension, FrontierShape shape) {
         ResourceKey<Level> level = ApiConverters.toDimension(dimension);
+        SettingsUser frontierOwner = ApiConverters.toUser(owner);
 
         FrontierData frontier = new FrontierData();
         frontier.setId(UUID.randomUUID());
-        frontier.setOwner(copySystemUser());
+        frontier.setOwner(frontierOwner);
         frontier.setDimension(level);
         frontier.setPersonal(false);
         frontier.setCreated(new Date());
@@ -206,17 +205,4 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
         }
     }
 
-    private static SettingsUser createSystemUser() {
-        SettingsUser system = new SettingsUser();
-        system.username = "MapFrontiersSystem";
-        system.uuid = UUID.nameUUIDFromBytes("mapfrontiers:system".getBytes(StandardCharsets.UTF_8));
-        return system;
-    }
-
-    private static SettingsUser copySystemUser() {
-        SettingsUser copy = new SettingsUser();
-        copy.username = SYSTEM_USER.username;
-        copy.uuid = SYSTEM_USER.uuid;
-        return copy;
-    }
 }

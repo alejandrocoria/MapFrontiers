@@ -13,7 +13,7 @@ import java.util.Optional;
 @SuppressWarnings("unused")
 public interface ServerFrontierService {
     // Global frontier
-    FrontierDataView createGlobalFrontier(DimensionId dimension, FrontierShape shape);
+    FrontierDataView createGlobalFrontier(UserRef owner, DimensionId dimension, FrontierShape shape);
     Optional<FrontierDataView> updateGlobalFrontier(FrontierId frontierId, FrontierMutation mutation);
     boolean deleteGlobalFrontier(FrontierId frontierId);
     Optional<FrontierDataView> changeGlobalToPersonal(FrontierId frontierId, UserRef newOwner); // global -> personal
