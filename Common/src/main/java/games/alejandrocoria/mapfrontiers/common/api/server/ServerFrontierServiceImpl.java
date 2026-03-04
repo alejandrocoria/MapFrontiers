@@ -21,6 +21,7 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierUpdated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -52,6 +53,7 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
         frontier.setOwner(frontierOwner);
         frontier.setDimension(level);
         frontier.setPersonal(false);
+        frontier.setColor(ColorHelper.getRandomColor());
         frontier.setCreated(new Date());
         ApiConverters.applyShape(frontier, shape);
 
