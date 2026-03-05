@@ -454,6 +454,7 @@ public class FrontierInfo extends AutoScaledScreen {
 
         buttonCopy = editButtons.addChild(new IconButton(IconButton.Type.Copy, (b) -> {
             MapFrontiersClient.setClipboard(frontier);
+            Minecraft.getInstance().keyboardHandler.setClipboard(frontier.getId().toString());
             updatePasteOptionsVisibility();
         }));
         buttonCopy.setTooltip(copyTooltip);
