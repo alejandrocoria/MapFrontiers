@@ -3,6 +3,9 @@ package games.alejandrocoria.mapfrontiers.api.model;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Immutable snapshot view of frontier data exposed by the API.
+ */
 public record FrontierDataView(FrontierId id,
                                FrontierType type,
                                DimensionId dimension,
@@ -15,6 +18,7 @@ public record FrontierDataView(FrontierId id,
                                UserRef owner,
                                List<SharedUserAccess> sharedUsers) {
     public FrontierDataView {
+        // Defensive copies ensure API callers cannot mutate internal state by reference.
         visibility = visibility == null ? Set.of() : Set.copyOf(visibility);
         sharedUsers = sharedUsers == null ? List.of() : List.copyOf(sharedUsers);
     }

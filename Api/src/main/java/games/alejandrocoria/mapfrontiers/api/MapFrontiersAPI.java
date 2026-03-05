@@ -17,6 +17,9 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Static API entry point used by plugins to register and obtain client/server API instances.
+ */
 public final class MapFrontiersAPI {
     private static final Logger LOGGER = Logger.getLogger(MapFrontiersAPI.class.getName());
 
@@ -31,14 +34,31 @@ public final class MapFrontiersAPI {
     private MapFrontiersAPI() {
     }
 
+    /**
+     * Returns the currently active server API, if any.
+     *
+     * @return server API when available
+     */
     public static Optional<IMapFrontiersServerAPI> getServerAPI() {
         return Optional.ofNullable(serverAPI);
     }
 
+    /**
+     * Returns the currently active client API, if any.
+     *
+     * @return client API when available
+     */
     public static Optional<IMapFrontiersClientAPI> getClientAPI() {
         return Optional.ofNullable(clientAPI);
     }
 
+    /**
+     * Registers a client plugin.
+     * If client API is already active, plugin initialization runs immediately.
+     * Duplicate mod ids are ignored.
+     *
+     * @param plugin plugin instance to register
+     */
     public static synchronized void registerClientPlugin(IMapFrontiersClientPlugin plugin) {
         if (CLIENT_PLUGINS.stream().anyMatch(p -> p.getModId().equals(plugin.getModId()))) {
             return;
@@ -49,6 +69,13 @@ public final class MapFrontiersAPI {
         }
     }
 
+    /**
+     * Registers a server plugin.
+     * If server API is already active, plugin initialization runs immediately.
+     * Duplicate mod ids are ignored.
+     *
+     * @param plugin plugin instance to register
+     */
     public static synchronized void registerServerPlugin(IMapFrontiersServerPlugin plugin) {
         if (SERVER_PLUGINS.stream().anyMatch(p -> p.getModId().equals(plugin.getModId()))) {
             return;

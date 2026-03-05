@@ -10,18 +10,70 @@ import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Server-side frontier operations.
+ * <p>
+ * Methods in this service mutate authoritative server state immediately.
+ */
 @SuppressWarnings("unused")
 public interface ServerFrontierService {
-    // Global frontier
+    /**
+     * Creates a global frontier directly on server state.
+     *
+     * @param owner owner to persist in the created frontier
+     * @param dimension target dimension
+     * @param shape initial frontier shape
+     * @return created frontier snapshot
+     */
     FrontierDataView createGlobalFrontier(UserRef owner, DimensionId dimension, FrontierShape shape);
+
+    /**
+     * Updates a global frontier directly on server state.
+     *
+     * @param frontierId target frontier id
+     * @param mutation partial update payload
+     * @return updated frontier snapshot, or empty when not found or not global
+     */
     Optional<FrontierDataView> updateGlobalFrontier(FrontierId frontierId, FrontierMutation mutation);
+
+    /**
+     * Deletes a global frontier directly on server state.
+     *
+     * @param frontierId target frontier id
+     * @return true when deleted
+     */
     boolean deleteGlobalFrontier(FrontierId frontierId);
-    Optional<FrontierDataView> changeGlobalToPersonal(FrontierId frontierId, UserRef newOwner); // global -> personal
+
+    /**
+     * Converts a global frontier into personal ownership.
+     *
+     * @param frontierId target frontier id
+     * @param newOwner new personal owner
+     * @return updated frontier snapshot, or empty when conversion fails
+     */
+    Optional<FrontierDataView> changeGlobalToPersonal(FrontierId frontierId, UserRef newOwner);
+
+    /**
+     * Lists global frontier snapshots for a dimension.
+     *
+     * @param dimension target dimension
+     * @return global frontier snapshots
+     */
     List<FrontierDataView> listGlobalFrontiers(DimensionId dimension);
 
-    // Personal frontier conversion
-    Optional<FrontierDataView> changePersonalToGlobal(FrontierId frontierId); // personal -> global
+    /**
+     * Converts a personal frontier into a global frontier.
+     *
+     * @param frontierId target frontier id
+     * @return updated frontier snapshot, or empty when conversion fails
+     */
+    Optional<FrontierDataView> changePersonalToGlobal(FrontierId frontierId);
 
-    // Any frontier
+    /**
+     * Returns a global frontier snapshot by id.
+     *
+     * @param frontierId target frontier id
+     * @return empty when id is unknown or references a personal frontier
+     */
     Optional<FrontierDataView> getFrontier(FrontierId frontierId);
 }

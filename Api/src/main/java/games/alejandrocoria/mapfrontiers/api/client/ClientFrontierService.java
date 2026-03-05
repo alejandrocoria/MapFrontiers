@@ -11,27 +11,149 @@ import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Client-side frontier operations.
+ * <p>
+ * Methods that mutate data usually return quickly with {@link FrontierActionStatus#ACCEPTED_ASYNC}
+ * and are finalized by logical-server updates (including singleplayer).
+ */
 @SuppressWarnings("unused")
 public interface ClientFrontierService {
-    // Any frontier
+    /**
+     * Returns the last frontier snapshot currently known by the client.
+     * This method does not trigger network requests.
+     *
+     * @param frontierId target frontier id
+     * @return cached snapshot when known
+     */
     Optional<FrontierDataView> getFrontier(FrontierId frontierId);
 
-    // Global frontier
+    /**
+     * Requests creation of a global frontier from the client side.
+     * In multiplayer and singleplayer this is handled asynchronously by the logical server.
+     *
+     * @param dimension target dimension
+     * @param shape initial frontier shape
+     * @return request status and optional target id
+     */
     FrontierActionResult createGlobalFrontier(DimensionId dimension, FrontierShape shape);
+
+    /**
+     * Requests an update for a global frontier.
+     * In multiplayer and singleplayer this is handled asynchronously by the logical server.
+     *
+     * @param frontierId target frontier id
+     * @param mutation partial update payload
+     * @return request status
+     */
     FrontierActionResult updateGlobalFrontier(FrontierId frontierId, FrontierMutation mutation);
+
+    /**
+     * Requests deletion of a global frontier.
+     * In multiplayer and singleplayer this is handled asynchronously by the logical server.
+     *
+     * @param frontierId target frontier id
+     * @return request status
+     */
     FrontierActionResult deleteGlobalFrontier(FrontierId frontierId);
-    FrontierActionResult changeToPersonal(FrontierId frontierId); // global -> personal
+
+    /**
+     * Requests conversion of a global frontier to personal for the current client actor.
+     * In multiplayer and singleplayer this is handled asynchronously by the logical server.
+     *
+     * @param frontierId target frontier id
+     * @return request status
+     */
+    FrontierActionResult changeToPersonal(FrontierId frontierId);
+
+    /**
+     * Returns global frontiers currently cached on the client for the dimension.
+     *
+     * @param dimension target dimension
+     * @return cached global frontier snapshots
+     */
     List<FrontierDataView> listGlobalFrontiers(DimensionId dimension);
 
-    // Personal frontier
+    /**
+     * Requests creation of a personal frontier owned by the current client actor.
+     * In singleplayer this is handled asynchronously by the logical server.
+     * In multiplayer this is asynchronous when the mod is present on the server, and may be handled locally when it is not.
+     *
+     * @param dimension target dimension
+     * @param shape initial frontier shape
+     * @return request status and optional target id
+     */
     FrontierActionResult createPersonalFrontier(DimensionId dimension, FrontierShape shape);
+
+    /**
+     * Requests an update for a personal frontier.
+     * In singleplayer this is handled asynchronously by the logical server.
+     * In multiplayer this is asynchronous when the mod is present on the server, and may be handled locally when it is not.
+     *
+     * @param frontierId target frontier id
+     * @param mutation partial update payload
+     * @return request status
+     */
     FrontierActionResult updatePersonalFrontier(FrontierId frontierId, FrontierMutation mutation);
+
+    /**
+     * Requests deletion of a personal frontier.
+     * In singleplayer this is handled asynchronously by the logical server.
+     * In multiplayer this is asynchronous when the mod is present on the server, and may be handled locally when it is not.
+     *
+     * @param frontierId target frontier id
+     * @return request status
+     */
     FrontierActionResult deletePersonalFrontier(FrontierId frontierId);
-    FrontierActionResult changeToGlobal(FrontierId frontierId);   // personal -> global
+
+    /**
+     * Requests conversion of a personal frontier to global.
+     * In singleplayer this is handled asynchronously by the logical server.
+     * In multiplayer this is asynchronous when the mod is present on the server, and may be handled locally when it is not.
+     *
+     * @param frontierId target frontier id
+     * @return request status
+     */
+    FrontierActionResult changeToGlobal(FrontierId frontierId);
+
+    /**
+     * Returns personal frontiers currently cached on the client for the dimension.
+     *
+     * @param dimension target dimension
+     * @return cached personal frontier snapshots
+     */
     List<FrontierDataView> listPersonalFrontiers(DimensionId dimension);
 
-    // Personal sharing
+    /**
+     * Requests sharing a personal frontier with another user.
+     * In singleplayer this is handled asynchronously by the logical server.
+     * In multiplayer this is asynchronous when the mod is present on the server, and may be handled locally when it is not.
+     *
+     * @param frontierId target frontier id
+     * @param sharedUserAccess user and permissions to add
+     * @return request status
+     */
     FrontierActionResult sharePersonalFrontier(FrontierId frontierId, SharedUserAccess sharedUserAccess);
+
+    /**
+     * Requests updating permissions for an already shared user.
+     * In singleplayer this is handled asynchronously by the logical server.
+     * In multiplayer this is asynchronous when the mod is present on the server, and may be handled locally when it is not.
+     *
+     * @param frontierId target frontier id
+     * @param sharedUserAccess target user with new permissions
+     * @return request status
+     */
     FrontierActionResult updateSharedUserAccess(FrontierId frontierId, SharedUserAccess sharedUserAccess);
+
+    /**
+     * Requests removing a shared user from a personal frontier.
+     * In singleplayer this is handled asynchronously by the logical server.
+     * In multiplayer this is asynchronous when the mod is present on the server, and may be handled locally when it is not.
+     *
+     * @param frontierId target frontier id
+     * @param user user to remove from sharing
+     * @return request status
+     */
     FrontierActionResult removeSharedUser(FrontierId frontierId, UserRef user);
 }

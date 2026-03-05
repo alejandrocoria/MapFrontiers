@@ -4,6 +4,10 @@ import java.util.Optional;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Partial frontier update payload.
+ * Only present fields are applied when this mutation is used.
+ */
 public final class FrontierMutation {
     private final Optional<String> name1;
     private final Optional<String> name2;
@@ -33,10 +37,16 @@ public final class FrontierMutation {
         }
     }
 
+    /**
+     * Creates a builder for combining multiple changes in one mutation.
+     */
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * Returns a mutation with no changes.
+     */
     public static FrontierMutation empty() {
         return builder().build();
     }
@@ -190,6 +200,9 @@ public final class FrontierMutation {
             return this;
         }
 
+        /**
+         * Builds an immutable mutation from the current builder state.
+         */
         public FrontierMutation build() {
             return new FrontierMutation(name1, name2, color, shape, visibility, banner, clearBanner);
         }
