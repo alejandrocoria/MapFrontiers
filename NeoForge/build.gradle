@@ -1,4 +1,3 @@
-import com.modrinth.minotaur.dependencies.ModDependency
 import com.modrinth.minotaur.dependencies.VersionDependency
 import net.darkhax.curseforgegradle.TaskPublishCurseForge
 

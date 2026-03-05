@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.api.model;
 
-import java.util.Optional;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
