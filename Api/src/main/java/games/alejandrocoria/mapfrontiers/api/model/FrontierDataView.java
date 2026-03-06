@@ -5,6 +5,8 @@ import java.util.Set;
 
 /**
  * Immutable snapshot view of frontier data exposed by the API.
+ * <p>
+ * For now, MapFrontiers limits {@code name1} and {@code name2} to 17 characters each.
  */
 public record FrontierDataView(FrontierId id,
                                FrontierType type,

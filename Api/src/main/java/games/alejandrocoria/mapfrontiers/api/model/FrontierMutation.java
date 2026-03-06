@@ -7,8 +7,12 @@ import java.util.Set;
 /**
  * Partial frontier update payload.
  * Only present fields are applied when this mutation is used.
+ * <p>
+ * For now, MapFrontiers limits each frontier name field to 17 characters.
  */
 public final class FrontierMutation {
+    private static final int MAX_NAME_LENGTH = 17;
+
     private final Optional<String> name1;
     private final Optional<String> name2;
     private final Optional<Integer> color;
@@ -51,14 +55,32 @@ public final class FrontierMutation {
         return builder().build();
     }
 
+    /**
+     * Returns a mutation that updates both name fields.
+     * For now, each name field is limited to 17 characters.
+     *
+     * @throws IllegalArgumentException when either name exceeds 17 characters
+     */
     public static FrontierMutation names(String name1, String name2) {
         return builder().names(name1, name2).build();
     }
 
+    /**
+     * Returns a mutation that updates the first name field.
+     * For now, the name field is limited to 17 characters.
+     *
+     * @throws IllegalArgumentException when the name exceeds 17 characters
+     */
     public static FrontierMutation name1(String name1) {
         return builder().name1(name1).build();
     }
 
+    /**
+     * Returns a mutation that updates the second name field.
+     * For now, the name field is limited to 17 characters.
+     *
+     * @throws IllegalArgumentException when the name exceeds 17 characters
+     */
     public static FrontierMutation name2(String name2) {
         return builder().name2(name2).build();
     }
@@ -157,17 +179,39 @@ public final class FrontierMutation {
         private Builder() {
         }
 
+        /**
+         * Sets the first name field.
+         * For now, the name field is limited to 17 characters.
+         *
+         * @throws IllegalArgumentException when the name exceeds 17 characters
+         */
         public Builder name1(String value) {
+            validateNameLength("name1", value);
             name1 = Optional.ofNullable(value);
             return this;
         }
 
+        /**
+         * Sets the second name field.
+         * For now, the name field is limited to 17 characters.
+         *
+         * @throws IllegalArgumentException when the name exceeds 17 characters
+         */
         public Builder name2(String value) {
+            validateNameLength("name2", value);
             name2 = Optional.ofNullable(value);
             return this;
         }
 
+        /**
+         * Sets both name fields.
+         * For now, each name field is limited to 17 characters.
+         *
+         * @throws IllegalArgumentException when either name exceeds 17 characters
+         */
         public Builder names(String value1, String value2) {
+            validateNameLength("name1", value1);
+            validateNameLength("name2", value2);
             name1 = Optional.ofNullable(value1);
             name2 = Optional.ofNullable(value2);
             return this;
@@ -205,6 +249,12 @@ public final class FrontierMutation {
          */
         public FrontierMutation build() {
             return new FrontierMutation(name1, name2, color, shape, visibility, banner, clearBanner);
+        }
+    }
+
+    private static void validateNameLength(String fieldName, String value) {
+        if (value != null && value.length() > MAX_NAME_LENGTH) {
+            throw new IllegalArgumentException(fieldName + " cannot be longer than " + MAX_NAME_LENGTH + " characters");
         }
     }
 }
