@@ -20,11 +20,9 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierDeleted;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierUpdated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 
 import java.util.Date;
@@ -101,48 +99,6 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
     }
 
     @Override
-    public Optional<FrontierDataView> changeGlobalToPersonal(FrontierId frontierId, UserRef newOwner) {
-        FrontierData frontier = frontiersManager.getFrontierFromID(frontierId.value());
-        if (frontier == null || frontier.getPersonal()) {
-            return Optional.empty();
-        }
-
-        SettingsUser owner = ApiConverters.toUser(newOwner);
-        boolean changed = frontiersManager.changeGlobalFrontierToPersonal(owner, frontier.getDimension(), frontier.getId());
-        if (!changed) {
-            return Optional.empty();
-        }
-
-        FrontierData updated = frontiersManager.getFrontierFromID(frontierId.value());
-        notifyGlobalDeleted(frontier);
-        notifyPersonalCreated(updated);
-        FrontierDataView view = ApiConverters.fromFrontier(updated);
-        eventBus.post(new FrontierUpdatedEvent(view));
-        return Optional.of(view);
-    }
-
-    @Override
-    public Optional<FrontierDataView> changePersonalToGlobal(FrontierId frontierId) {
-        FrontierData frontier = frontiersManager.getFrontierFromID(frontierId.value());
-        if (frontier == null || !frontier.getPersonal()) {
-            return Optional.empty();
-        }
-
-        List<SettingsUserShared> previousSharedUsers = frontier.getUsersShared() == null ? List.of() : List.copyOf(frontier.getUsersShared());
-        boolean changed = frontiersManager.changePersonalFrontierToGlobal(frontier.getOwner(), frontier.getDimension(), frontier.getId());
-        if (!changed) {
-            return Optional.empty();
-        }
-
-        FrontierData updated = frontiersManager.getFrontierFromID(frontierId.value());
-        notifyPersonalDeleted(frontier, previousSharedUsers);
-        notifyGlobalCreated(updated);
-        FrontierDataView view = ApiConverters.fromFrontier(updated);
-        eventBus.post(new FrontierUpdatedEvent(view));
-        return Optional.of(view);
-    }
-
-    @Override
     public Optional<FrontierDataView> getFrontier(FrontierId frontierId) {
         FrontierData frontier = frontiersManager.getFrontierFromID(frontierId.value());
         if (frontier == null || frontier.getPersonal()) {
@@ -175,35 +131,6 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
         MinecraftServer server = MapFrontiers.getCurrentServer();
         if (server != null) {
             PacketHandler.sendToAll(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(), false, SYSTEM_ACTOR_ID), server);
-        }
-    }
-
-    private void notifyPersonalCreated(FrontierData frontier) {
-        MinecraftServer server = MapFrontiers.getCurrentServer();
-        if (server != null) {
-            PacketHandler.sendToUsersWithAccess(new PacketFrontierCreated(frontier, SYSTEM_ACTOR_ID), frontier, server);
-        }
-    }
-
-    private void notifyPersonalDeleted(FrontierData frontier, List<SettingsUserShared> previousSharedUsers) {
-        MinecraftServer server = MapFrontiers.getCurrentServer();
-        if (server == null) {
-            return;
-        }
-
-        ServerPlayer ownerPlayer = server.getPlayerList().getPlayer(frontier.getOwner().uuid);
-        if (ownerPlayer != null) {
-            PacketHandler.sendTo(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(), true, SYSTEM_ACTOR_ID), ownerPlayer);
-        }
-
-        for (SettingsUserShared shared : previousSharedUsers) {
-            if (shared.isPending()) {
-                continue;
-            }
-            ServerPlayer player = server.getPlayerList().getPlayer(shared.getUser().uuid);
-            if (player != null) {
-                PacketHandler.sendTo(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(), true, SYSTEM_ACTOR_ID), player);
-            }
         }
     }
 

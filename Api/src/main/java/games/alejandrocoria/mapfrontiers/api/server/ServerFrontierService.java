@@ -45,29 +45,12 @@ public interface ServerFrontierService {
     boolean deleteGlobalFrontier(FrontierId frontierId);
 
     /**
-     * Converts a global frontier into personal ownership.
-     *
-     * @param frontierId target frontier id
-     * @param newOwner new personal owner
-     * @return updated frontier snapshot, or empty when conversion fails
-     */
-    Optional<FrontierDataView> changeGlobalToPersonal(FrontierId frontierId, UserRef newOwner);
-
-    /**
      * Lists global frontier snapshots for a dimension.
      *
      * @param dimension target dimension
      * @return global frontier snapshots
      */
     List<FrontierDataView> listGlobalFrontiers(DimensionId dimension);
-
-    /**
-     * Converts a personal frontier into a global frontier.
-     *
-     * @param frontierId target frontier id
-     * @return updated frontier snapshot, or empty when conversion fails
-     */
-    Optional<FrontierDataView> changePersonalToGlobal(FrontierId frontierId);
 
     /**
      * Returns a global frontier snapshot by id.
