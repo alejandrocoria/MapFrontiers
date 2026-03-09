@@ -76,6 +76,7 @@ public class FrontiersManager {
                         if (frontier.getUsersShared() != null) {
                             boolean removed = frontier.getUsersShared().removeIf(x -> x.getUser().equals(pending.targetUser));
                             if (removed) {
+                                saveFrontierData();
                                 PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier), frontier, server);
                             }
                         }
@@ -484,7 +485,7 @@ public class FrontiersManager {
         }
     }
 
-    private void saveFrontierData() {
+    public void saveFrontierData() {
         CompoundTag nbtFrontiers = new CompoundTag();
         writeToNBT(nbtFrontiers);
         saveFile("frontiers.dat", nbtFrontiers);

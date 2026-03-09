@@ -103,6 +103,7 @@ public class PacketSharePersonalFrontier {
 
                         message.userShared.setPending(true);
                         currentFrontier.addUserShared(message.userShared);
+                        FrontiersManager.instance.saveFrontierData();
 
                         PacketHandler.sendTo(new PacketPersonalFrontierShared(shareMessageID, playerUser,
                                 currentFrontier.getOwner(), currentFrontier.getName1(), currentFrontier.getName2()), targetPlayer);
