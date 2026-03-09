@@ -178,7 +178,16 @@ public final class ApiConverters {
         mutation.color().ifPresent(frontier::setColor);
         Optional<FrontierShape> shape = mutation.shape();
         shape.ifPresent(value -> applyShape(frontier, value));
-        mutation.visibility().ifPresent(value -> frontier.setVisibilityData(toVisibility(value)));
+        if (mutation.visibility().isPresent() || !mutation.visibilityToAdd().isEmpty() || !mutation.visibilityToRemove().isEmpty()) {
+            EnumSet<FrontierVisibilityFlag> visibility = EnumSet.noneOf(FrontierVisibilityFlag.class);
+            mutation.visibility().ifPresentOrElse(
+                    visibility::addAll,
+                    () -> visibility.addAll(fromVisibility(frontier.getVisibilityData()))
+            );
+            visibility.addAll(mutation.visibilityToAdd());
+            visibility.removeAll(mutation.visibilityToRemove());
+            frontier.setVisibilityData(toVisibility(visibility));
+        }
         if (mutation.clearBanner()) {
             frontier.setBannerData(null);
         } else {

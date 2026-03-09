@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.api.model;
 
+import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -18,6 +19,8 @@ public final class FrontierMutation {
     private final Optional<Integer> color;
     private final Optional<FrontierShape> shape;
     private final Optional<Set<FrontierVisibilityFlag>> visibility;
+    private final Set<FrontierVisibilityFlag> visibilityToAdd;
+    private final Set<FrontierVisibilityFlag> visibilityToRemove;
     private final Optional<FrontierBanner> banner;
     private final boolean clearBanner;
 
@@ -26,6 +29,8 @@ public final class FrontierMutation {
                              Optional<Integer> color,
                              Optional<FrontierShape> shape,
                              Optional<Set<FrontierVisibilityFlag>> visibility,
+                             Set<FrontierVisibilityFlag> visibilityToAdd,
+                             Set<FrontierVisibilityFlag> visibilityToRemove,
                              Optional<FrontierBanner> banner,
                              boolean clearBanner) {
         this.name1 = name1;
@@ -33,6 +38,8 @@ public final class FrontierMutation {
         this.color = color;
         this.shape = shape;
         this.visibility = visibility.map(Set::copyOf);
+        this.visibilityToAdd = Set.copyOf(visibilityToAdd);
+        this.visibilityToRemove = Set.copyOf(visibilityToRemove);
         this.banner = banner;
         this.clearBanner = clearBanner;
 
@@ -97,6 +104,20 @@ public final class FrontierMutation {
         return builder().visibility(visibility).build();
     }
 
+    /**
+     * Returns a mutation that adds visibility flags to the current set.
+     */
+    public static FrontierMutation addVisibility(Set<FrontierVisibilityFlag> visibility) {
+        return builder().addVisibility(visibility).build();
+    }
+
+    /**
+     * Returns a mutation that removes visibility flags from the current set.
+     */
+    public static FrontierMutation removeVisibility(Set<FrontierVisibilityFlag> visibility) {
+        return builder().removeVisibility(visibility).build();
+    }
+
     public static FrontierMutation banner(FrontierBanner banner) {
         return builder().banner(banner).build();
     }
@@ -125,6 +146,14 @@ public final class FrontierMutation {
         return visibility;
     }
 
+    public Set<FrontierVisibilityFlag> visibilityToAdd() {
+        return visibilityToAdd;
+    }
+
+    public Set<FrontierVisibilityFlag> visibilityToRemove() {
+        return visibilityToRemove;
+    }
+
     public Optional<FrontierBanner> banner() {
         return banner;
     }
@@ -147,12 +176,14 @@ public final class FrontierMutation {
                 && color.equals(that.color)
                 && shape.equals(that.shape)
                 && visibility.equals(that.visibility)
+                && visibilityToAdd.equals(that.visibilityToAdd)
+                && visibilityToRemove.equals(that.visibilityToRemove)
                 && banner.equals(that.banner);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name1, name2, color, shape, visibility, banner, clearBanner);
+        return Objects.hash(name1, name2, color, shape, visibility, visibilityToAdd, visibilityToRemove, banner, clearBanner);
     }
 
     @Override
@@ -162,6 +193,8 @@ public final class FrontierMutation {
                 + ", color=" + color
                 + ", shape=" + shape
                 + ", visibility=" + visibility
+                + ", visibilityToAdd=" + visibilityToAdd
+                + ", visibilityToRemove=" + visibilityToRemove
                 + ", banner=" + banner
                 + ", clearBanner=" + clearBanner
                 + "]";
@@ -173,6 +206,8 @@ public final class FrontierMutation {
         private Optional<Integer> color = Optional.empty();
         private Optional<FrontierShape> shape = Optional.empty();
         private Optional<Set<FrontierVisibilityFlag>> visibility = Optional.empty();
+        private final EnumSet<FrontierVisibilityFlag> visibilityToAdd = EnumSet.noneOf(FrontierVisibilityFlag.class);
+        private final EnumSet<FrontierVisibilityFlag> visibilityToRemove = EnumSet.noneOf(FrontierVisibilityFlag.class);
         private Optional<FrontierBanner> banner = Optional.empty();
         private boolean clearBanner = false;
 
@@ -232,6 +267,28 @@ public final class FrontierMutation {
             return this;
         }
 
+        /**
+         * Adds visibility flags to the current frontier visibility set.
+         */
+        public Builder addVisibility(Set<FrontierVisibilityFlag> value) {
+            if (value != null) {
+                visibilityToAdd.addAll(value);
+                visibilityToRemove.removeAll(value);
+            }
+            return this;
+        }
+
+        /**
+         * Removes visibility flags from the current frontier visibility set.
+         */
+        public Builder removeVisibility(Set<FrontierVisibilityFlag> value) {
+            if (value != null) {
+                visibilityToRemove.addAll(value);
+                visibilityToAdd.removeAll(value);
+            }
+            return this;
+        }
+
         public Builder banner(FrontierBanner value) {
             banner = Optional.ofNullable(value);
             clearBanner = false;
@@ -248,7 +305,7 @@ public final class FrontierMutation {
          * Builds an immutable mutation from the current builder state.
          */
         public FrontierMutation build() {
-            return new FrontierMutation(name1, name2, color, shape, visibility, banner, clearBanner);
+            return new FrontierMutation(name1, name2, color, shape, visibility, visibilityToAdd, visibilityToRemove, banner, clearBanner);
         }
     }
 

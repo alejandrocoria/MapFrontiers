@@ -196,6 +196,40 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
     }
 
     @Override
+    public FrontierActionResult updateSharedUserPermissions(FrontierId frontierId,
+                                                            UserRef user,
+                                                            Set<FrontierSharePermission> permissionsToAdd,
+                                                            Set<FrontierSharePermission> permissionsToRemove) {
+        if (!MapFrontiersClient.isModOnServer()) {
+            return FrontierActionResult.rejected();
+        }
+
+        FrontiersOverlayManager personal = MapFrontiersClient.getFrontiersOverlayManager(true);
+        FrontierOverlay frontier = personal.getFrontier(frontierId.value());
+        if (frontier == null || !frontier.getPersonal()) {
+            return FrontierActionResult.notFound(frontierId);
+        }
+
+        SettingsUserShared currentSharedUser = frontier.getUserShared(ApiConverters.toUser(user));
+        if (currentSharedUser == null) {
+            return FrontierActionResult.rejected();
+        }
+
+        EnumSet<FrontierSharePermission> permissions = EnumSet.noneOf(FrontierSharePermission.class);
+        for (SettingsUserShared.Action action : currentSharedUser.getActions()) {
+            permissions.add(FrontierSharePermission.valueOf(action.name()));
+        }
+        if (permissionsToAdd != null) {
+            permissions.addAll(permissionsToAdd);
+        }
+        if (permissionsToRemove != null) {
+            permissions.removeAll(permissionsToRemove);
+        }
+
+        return updateSharedUserPermissions(frontierId, user, permissions);
+    }
+
+    @Override
     public FrontierActionResult removeSharedUser(FrontierId frontierId, UserRef user) {
         if (!MapFrontiersClient.isModOnServer()) {
             return FrontierActionResult.rejected();

@@ -152,6 +152,23 @@ public interface ClientFrontierService {
     FrontierActionResult updateSharedUserPermissions(FrontierId frontierId, UserRef user, Set<FrontierSharePermission> permissions);
 
     /**
+     * Requests a partial permission update for an already shared user.
+     * This requires the mod to be present on the server.
+     * In singleplayer and in multiplayer with the mod on the server, this is handled asynchronously by the logical server.
+     * In multiplayer without the mod on the server, this request is rejected.
+     *
+     * @param frontierId target frontier id
+     * @param user shared user to update
+     * @param permissionsToAdd permissions to add; null is treated as an empty set
+     * @param permissionsToRemove permissions to remove; null is treated as an empty set
+     * @return request status
+     */
+    FrontierActionResult updateSharedUserPermissions(FrontierId frontierId,
+                                                     UserRef user,
+                                                     Set<FrontierSharePermission> permissionsToAdd,
+                                                     Set<FrontierSharePermission> permissionsToRemove);
+
+    /**
      * Requests removing a shared user from a personal frontier.
      * This requires the mod to be present on the server.
      * In singleplayer and in multiplayer with the mod on the server, this is handled asynchronously by the logical server.
