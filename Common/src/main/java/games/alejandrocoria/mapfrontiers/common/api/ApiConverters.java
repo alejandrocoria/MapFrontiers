@@ -137,17 +137,6 @@ public final class ApiConverters {
         return new SharedUserAccess(fromUser(userShared.getUser()), permissions, userShared.isPending());
     }
 
-    public static SettingsUserShared toSharedUser(SharedUserAccess sharedUserAccess) {
-        SettingsUser user = toUser(sharedUserAccess.user());
-        SettingsUserShared userShared = new SettingsUserShared(user, sharedUserAccess.pending());
-        EnumSet<SettingsUserShared.Action> actions = EnumSet.noneOf(SettingsUserShared.Action.class);
-        for (FrontierSharePermission permission : sharedUserAccess.permissions()) {
-            actions.add(SettingsUserShared.Action.valueOf(permission.name()));
-        }
-        userShared.setActions(actions);
-        return userShared;
-    }
-
     public static FrontierDataView fromFrontier(FrontierData frontier) {
         UserRef owner = fromUser(frontier.getOwner());
         List<SharedUserAccess> sharedUsers = new ArrayList<>();

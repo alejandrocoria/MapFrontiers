@@ -5,11 +5,12 @@ import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierShape;
-import games.alejandrocoria.mapfrontiers.api.model.SharedUserAccess;
+import games.alejandrocoria.mapfrontiers.api.model.FrontierSharePermission;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Client-side frontier operations.
@@ -126,30 +127,35 @@ public interface ClientFrontierService {
 
     /**
      * Requests sharing a personal frontier with another user.
-     * In singleplayer this is handled asynchronously by the logical server.
-     * In multiplayer this is asynchronous when the mod is present on the server, and may be handled locally when it is not.
+     * This requires the mod to be present on the server.
+     * In singleplayer and in multiplayer with the mod on the server, this is handled asynchronously by the logical server.
+     * In multiplayer without the mod on the server, this request is rejected.
      *
      * @param frontierId target frontier id
-     * @param sharedUserAccess user and permissions to add
+     * @param user user to share with
+     * @param permissions permissions to grant; null is treated as an empty set
      * @return request status
      */
-    FrontierActionResult sharePersonalFrontier(FrontierId frontierId, SharedUserAccess sharedUserAccess);
+    FrontierActionResult sharePersonalFrontier(FrontierId frontierId, UserRef user, Set<FrontierSharePermission> permissions);
 
     /**
      * Requests updating permissions for an already shared user.
-     * In singleplayer this is handled asynchronously by the logical server.
-     * In multiplayer this is asynchronous when the mod is present on the server, and may be handled locally when it is not.
+     * This requires the mod to be present on the server.
+     * In singleplayer and in multiplayer with the mod on the server, this is handled asynchronously by the logical server.
+     * In multiplayer without the mod on the server, this request is rejected.
      *
      * @param frontierId target frontier id
-     * @param sharedUserAccess target user with new permissions
+     * @param user shared user to update
+     * @param permissions permissions to persist; null is treated as an empty set
      * @return request status
      */
-    FrontierActionResult updateSharedUserAccess(FrontierId frontierId, SharedUserAccess sharedUserAccess);
+    FrontierActionResult updateSharedUserPermissions(FrontierId frontierId, UserRef user, Set<FrontierSharePermission> permissions);
 
     /**
      * Requests removing a shared user from a personal frontier.
-     * In singleplayer this is handled asynchronously by the logical server.
-     * In multiplayer this is asynchronous when the mod is present on the server, and may be handled locally when it is not.
+     * This requires the mod to be present on the server.
+     * In singleplayer and in multiplayer with the mod on the server, this is handled asynchronously by the logical server.
+     * In multiplayer without the mod on the server, this request is rejected.
      *
      * @param frontierId target frontier id
      * @param user user to remove from sharing

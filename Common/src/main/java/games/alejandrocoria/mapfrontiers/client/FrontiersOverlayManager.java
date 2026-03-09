@@ -16,6 +16,7 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketPersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSharePersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateFrontier;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import games.alejandrocoria.mapfrontiers.platform.Services;
@@ -40,6 +41,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -243,7 +245,9 @@ public class FrontiersOverlayManager {
 
     public void clientShareFrontier(UUID frontierID, SettingsUser targetUser) {
         if (MapFrontiersClient.isModOnServer()) {
-            PacketHandler.sendToServer(new PacketSharePersonalFrontier(frontierID, targetUser));
+            SettingsUserShared sharedUser = new SettingsUserShared(targetUser, false);
+            sharedUser.setActions(EnumSet.noneOf(SettingsUserShared.Action.class));
+            PacketHandler.sendToServer(new PacketSharePersonalFrontier(frontierID, sharedUser));
         }
     }
 
