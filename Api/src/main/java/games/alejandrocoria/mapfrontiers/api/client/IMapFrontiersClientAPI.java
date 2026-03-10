@@ -5,6 +5,7 @@ import games.alejandrocoria.mapfrontiers.api.event.EventBus;
 /**
  * Root entry point for client-side API access.
  */
+@SuppressWarnings("unused")
 public interface IMapFrontiersClientAPI {
     /**
      * Frontier operations available on the client side.

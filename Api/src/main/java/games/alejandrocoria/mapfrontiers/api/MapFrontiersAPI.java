@@ -1,8 +1,20 @@
 package games.alejandrocoria.mapfrontiers.api;
 
 import games.alejandrocoria.mapfrontiers.api.client.ClientFrontierService;
+import games.alejandrocoria.mapfrontiers.api.client.FrontierActionResult;
 import games.alejandrocoria.mapfrontiers.api.client.IMapFrontiersClientAPI;
 import games.alejandrocoria.mapfrontiers.api.event.EventBus;
+import games.alejandrocoria.mapfrontiers.api.internal.InternalMapFrontiersClientAPI;
+import games.alejandrocoria.mapfrontiers.api.internal.InternalMapFrontiersServerAPI;
+import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedClientFrontierService;
+import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedServerFrontierService;
+import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
+import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
+import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
+import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
+import games.alejandrocoria.mapfrontiers.api.model.FrontierShape;
+import games.alejandrocoria.mapfrontiers.api.model.FrontierSharePermission;
+import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.api.plugin.IMapFrontiersClientPlugin;
 import games.alejandrocoria.mapfrontiers.api.plugin.IMapFrontiersServerPlugin;
 import games.alejandrocoria.mapfrontiers.api.server.IMapFrontiersServerAPI;
@@ -12,6 +24,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,6 +33,7 @@ import java.util.logging.Logger;
 /**
  * Static API entry point used by plugins to register client and server integrations.
  */
+@SuppressWarnings("unused")
 public final class MapFrontiersAPI {
     private static final Logger LOGGER = Logger.getLogger(MapFrontiersAPI.class.getName());
 
@@ -27,8 +42,8 @@ public final class MapFrontiersAPI {
     private static final Map<IMapFrontiersClientPlugin, PluginClientAPI> CLIENT_PLUGIN_APIS = new HashMap<>();
     private static final Map<IMapFrontiersServerPlugin, PluginServerAPI> SERVER_PLUGIN_APIS = new HashMap<>();
 
-    private static IMapFrontiersClientAPI clientAPI;
-    private static IMapFrontiersServerAPI serverAPI;
+    private static InternalMapFrontiersClientAPI clientAPI;
+    private static InternalMapFrontiersServerAPI serverAPI;
 
     private MapFrontiersAPI() {
     }
@@ -67,7 +82,7 @@ public final class MapFrontiersAPI {
         }
     }
 
-    static synchronized void setClientAPI(IMapFrontiersClientAPI api) {
+    static synchronized void setClientAPI(InternalMapFrontiersClientAPI api) {
         clientAPI = api;
         CLIENT_PLUGIN_APIS.clear();
         for (IMapFrontiersClientPlugin plugin : CLIENT_PLUGINS) {
@@ -75,7 +90,7 @@ public final class MapFrontiersAPI {
         }
     }
 
-    static synchronized void setServerAPI(IMapFrontiersServerAPI api) {
+    static synchronized void setServerAPI(InternalMapFrontiersServerAPI api) {
         serverAPI = api;
         SERVER_PLUGIN_APIS.clear();
         for (IMapFrontiersServerPlugin plugin : SERVER_PLUGINS) {
@@ -132,7 +147,7 @@ public final class MapFrontiersAPI {
             return;
         }
 
-        PluginClientAPI api = new PluginClientAPI(clientAPI);
+        PluginClientAPI api = new PluginClientAPI(clientAPI, plugin.getModId());
         CLIENT_PLUGIN_APIS.put(plugin, api);
         try {
             plugin.initialize(api);
@@ -146,7 +161,7 @@ public final class MapFrontiersAPI {
             return;
         }
 
-        PluginServerAPI api = new PluginServerAPI(serverAPI);
+        PluginServerAPI api = new PluginServerAPI(serverAPI, plugin.getModId());
         SERVER_PLUGIN_APIS.put(plugin, api);
         try {
             plugin.initialize(api);
@@ -185,17 +200,17 @@ public final class MapFrontiersAPI {
     }
 
     private static final class PluginClientAPI implements IMapFrontiersClientAPI {
-        private final IMapFrontiersClientAPI delegate;
+        private final ClientFrontierService frontiers;
         private final TrackingEventBus events;
 
-        private PluginClientAPI(IMapFrontiersClientAPI delegate) {
-            this.delegate = delegate;
+        private PluginClientAPI(InternalMapFrontiersClientAPI delegate, String pluginModId) {
+            this.frontiers = new PluginClientFrontierService(delegate.frontiers(), pluginModId);
             this.events = new TrackingEventBus(delegate.events());
         }
 
         @Override
         public ClientFrontierService frontiers() {
-            return delegate.frontiers();
+            return frontiers;
         }
 
         @Override
@@ -209,17 +224,17 @@ public final class MapFrontiersAPI {
     }
 
     private static final class PluginServerAPI implements IMapFrontiersServerAPI {
-        private final IMapFrontiersServerAPI delegate;
+        private final ServerFrontierService frontiers;
         private final TrackingEventBus events;
 
-        private PluginServerAPI(IMapFrontiersServerAPI delegate) {
-            this.delegate = delegate;
+        private PluginServerAPI(InternalMapFrontiersServerAPI delegate, String pluginModId) {
+            this.frontiers = new PluginServerFrontierService(delegate.frontiers(), pluginModId);
             this.events = new TrackingEventBus(delegate.events());
         }
 
         @Override
         public ServerFrontierService frontiers() {
-            return delegate.frontiers();
+            return frontiers;
         }
 
         @Override
@@ -229,6 +244,131 @@ public final class MapFrontiersAPI {
 
         private void clearSubscriptions() {
             events.clearSubscriptions();
+        }
+    }
+
+    private static final class PluginClientFrontierService implements ClientFrontierService {
+        private final PluginScopedClientFrontierService delegate;
+        private final String pluginModId;
+
+        private PluginClientFrontierService(PluginScopedClientFrontierService delegate, String pluginModId) {
+            this.delegate = delegate;
+            this.pluginModId = pluginModId;
+        }
+
+        @Override
+        public Optional<FrontierDataView> getFrontier(FrontierId frontierId) {
+            return delegate.getFrontier(pluginModId, frontierId);
+        }
+
+        @Override
+        public FrontierActionResult createGlobalFrontier(DimensionId dimension, FrontierShape shape) {
+            return delegate.createGlobalFrontier(pluginModId, dimension, shape);
+        }
+
+        @Override
+        public FrontierActionResult updateGlobalFrontier(FrontierId frontierId, FrontierMutation mutation) {
+            return delegate.updateGlobalFrontier(pluginModId, frontierId, mutation);
+        }
+
+        @Override
+        public FrontierActionResult deleteGlobalFrontier(FrontierId frontierId) {
+            return delegate.deleteGlobalFrontier(pluginModId, frontierId);
+        }
+
+        @Override
+        public FrontierActionResult changeToPersonal(FrontierId frontierId) {
+            return delegate.changeToPersonal(pluginModId, frontierId);
+        }
+
+        @Override
+        public List<FrontierDataView> listGlobalFrontiers(DimensionId dimension) {
+            return delegate.listGlobalFrontiers(pluginModId, dimension);
+        }
+
+        @Override
+        public FrontierActionResult createPersonalFrontier(DimensionId dimension, FrontierShape shape) {
+            return delegate.createPersonalFrontier(pluginModId, dimension, shape);
+        }
+
+        @Override
+        public FrontierActionResult updatePersonalFrontier(FrontierId frontierId, FrontierMutation mutation) {
+            return delegate.updatePersonalFrontier(pluginModId, frontierId, mutation);
+        }
+
+        @Override
+        public FrontierActionResult deletePersonalFrontier(FrontierId frontierId) {
+            return delegate.deletePersonalFrontier(pluginModId, frontierId);
+        }
+
+        @Override
+        public FrontierActionResult changeToGlobal(FrontierId frontierId) {
+            return delegate.changeToGlobal(pluginModId, frontierId);
+        }
+
+        @Override
+        public List<FrontierDataView> listPersonalFrontiers(DimensionId dimension) {
+            return delegate.listPersonalFrontiers(pluginModId, dimension);
+        }
+
+        @Override
+        public FrontierActionResult sharePersonalFrontier(FrontierId frontierId, UserRef user, Set<FrontierSharePermission> permissions) {
+            return delegate.sharePersonalFrontier(pluginModId, frontierId, user, permissions);
+        }
+
+        @Override
+        public FrontierActionResult updateSharedUserPermissions(FrontierId frontierId,
+                                                                UserRef user,
+                                                                Set<FrontierSharePermission> permissions) {
+            return delegate.updateSharedUserPermissions(pluginModId, frontierId, user, permissions);
+        }
+
+        @Override
+        public FrontierActionResult updateSharedUserPermissions(FrontierId frontierId,
+                                                                UserRef user,
+                                                                Set<FrontierSharePermission> permissionsToAdd,
+                                                                Set<FrontierSharePermission> permissionsToRemove) {
+            return delegate.updateSharedUserPermissions(pluginModId, frontierId, user, permissionsToAdd, permissionsToRemove);
+        }
+
+        @Override
+        public FrontierActionResult removeSharedUser(FrontierId frontierId, UserRef user) {
+            return delegate.removeSharedUser(pluginModId, frontierId, user);
+        }
+    }
+
+    private static final class PluginServerFrontierService implements ServerFrontierService {
+        private final PluginScopedServerFrontierService delegate;
+        private final String pluginModId;
+
+        private PluginServerFrontierService(PluginScopedServerFrontierService delegate, String pluginModId) {
+            this.delegate = delegate;
+            this.pluginModId = pluginModId;
+        }
+
+        @Override
+        public FrontierDataView createGlobalFrontier(UserRef owner, DimensionId dimension, FrontierShape shape) {
+            return delegate.createGlobalFrontier(pluginModId, owner, dimension, shape);
+        }
+
+        @Override
+        public Optional<FrontierDataView> updateGlobalFrontier(FrontierId frontierId, FrontierMutation mutation) {
+            return delegate.updateGlobalFrontier(pluginModId, frontierId, mutation);
+        }
+
+        @Override
+        public boolean deleteGlobalFrontier(FrontierId frontierId) {
+            return delegate.deleteGlobalFrontier(pluginModId, frontierId);
+        }
+
+        @Override
+        public List<FrontierDataView> listGlobalFrontiers(DimensionId dimension) {
+            return delegate.listGlobalFrontiers(pluginModId, dimension);
+        }
+
+        @Override
+        public Optional<FrontierDataView> getFrontier(FrontierId frontierId) {
+            return delegate.getFrontier(pluginModId, frontierId);
         }
     }
 }

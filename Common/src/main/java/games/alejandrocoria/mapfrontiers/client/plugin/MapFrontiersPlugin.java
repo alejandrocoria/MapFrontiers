@@ -10,9 +10,9 @@ import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.event.FullscreenMapEvent;
 import journeymap.api.v2.client.fullscreen.ModPopupMenu;
 import journeymap.api.v2.client.fullscreen.ThemeButtonDisplay;
+import journeymap.api.v2.common.JourneyMapPlugin;
 import journeymap.api.v2.common.event.ClientEventRegistry;
 import journeymap.api.v2.common.event.FullscreenEventRegistry;
-import journeymap.api.v2.common.JourneyMapPlugin;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 

@@ -1,13 +1,13 @@
 package games.alejandrocoria.mapfrontiers.common.api.server;
 
 import games.alejandrocoria.mapfrontiers.api.event.EventBus;
-import games.alejandrocoria.mapfrontiers.api.server.IMapFrontiersServerAPI;
-import games.alejandrocoria.mapfrontiers.api.server.ServerFrontierService;
+import games.alejandrocoria.mapfrontiers.api.internal.InternalMapFrontiersServerAPI;
+import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedServerFrontierService;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.api.SimpleEventBus;
 
-public class MapFrontiersServerAPIImpl implements IMapFrontiersServerAPI {
-    private final ServerFrontierService frontiers;
+public class MapFrontiersServerAPIImpl implements InternalMapFrontiersServerAPI {
+    private final PluginScopedServerFrontierService frontiers;
     private final SimpleEventBus eventBus;
 
     public MapFrontiersServerAPIImpl(FrontiersManager frontiersManager) {
@@ -16,7 +16,7 @@ public class MapFrontiersServerAPIImpl implements IMapFrontiersServerAPI {
     }
 
     @Override
-    public ServerFrontierService frontiers() {
+    public PluginScopedServerFrontierService frontiers() {
         return frontiers;
     }
 

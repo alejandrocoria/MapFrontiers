@@ -4,13 +4,13 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.api.event.FrontierCreatedEvent;
 import games.alejandrocoria.mapfrontiers.api.event.FrontierDeletedEvent;
 import games.alejandrocoria.mapfrontiers.api.event.FrontierUpdatedEvent;
+import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedServerFrontierService;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierShape;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
-import games.alejandrocoria.mapfrontiers.api.server.ServerFrontierService;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public class ServerFrontierServiceImpl implements ServerFrontierService {
+public class ServerFrontierServiceImpl implements PluginScopedServerFrontierService {
     private static final int SYSTEM_ACTOR_ID = -1;
 
     private final FrontiersManager frontiersManager;
@@ -42,7 +42,7 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
     }
 
     @Override
-    public FrontierDataView createGlobalFrontier(UserRef owner, DimensionId dimension, FrontierShape shape) {
+    public FrontierDataView createGlobalFrontier(String pluginModId, UserRef owner, DimensionId dimension, FrontierShape shape) {
         ResourceKey<Level> level = ApiConverters.toDimension(dimension);
         SettingsUser frontierOwner = ApiConverters.toUser(owner);
 
@@ -64,7 +64,7 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
     }
 
     @Override
-    public Optional<FrontierDataView> updateGlobalFrontier(FrontierId frontierId, FrontierMutation mutation) {
+    public Optional<FrontierDataView> updateGlobalFrontier(String pluginModId, FrontierId frontierId, FrontierMutation mutation) {
         FrontierData frontier = frontiersManager.getFrontierFromID(frontierId.value());
         if (frontier == null || frontier.getPersonal()) {
             return Optional.empty();
@@ -83,7 +83,7 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
     }
 
     @Override
-    public boolean deleteGlobalFrontier(FrontierId frontierId) {
+    public boolean deleteGlobalFrontier(String pluginModId, FrontierId frontierId) {
         FrontierData frontier = frontiersManager.getFrontierFromID(frontierId.value());
         if (frontier == null || frontier.getPersonal()) {
             return false;
@@ -99,7 +99,7 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
     }
 
     @Override
-    public Optional<FrontierDataView> getFrontier(FrontierId frontierId) {
+    public Optional<FrontierDataView> getFrontier(String pluginModId, FrontierId frontierId) {
         FrontierData frontier = frontiersManager.getFrontierFromID(frontierId.value());
         if (frontier == null || frontier.getPersonal()) {
             return Optional.empty();
@@ -108,7 +108,7 @@ public class ServerFrontierServiceImpl implements ServerFrontierService {
     }
 
     @Override
-    public List<FrontierDataView> listGlobalFrontiers(DimensionId dimension) {
+    public List<FrontierDataView> listGlobalFrontiers(String pluginModId, DimensionId dimension) {
         ResourceKey<Level> level = ApiConverters.toDimension(dimension);
         return frontiersManager.getAllGlobalFrontiers(level).stream().map(ApiConverters::fromFrontier).toList();
     }

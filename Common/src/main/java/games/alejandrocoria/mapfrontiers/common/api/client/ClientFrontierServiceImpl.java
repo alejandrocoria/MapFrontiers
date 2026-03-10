@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common.api.client;
 
-import games.alejandrocoria.mapfrontiers.api.client.ClientFrontierService;
 import games.alejandrocoria.mapfrontiers.api.client.FrontierActionResult;
+import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedClientFrontierService;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
@@ -31,12 +31,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-public class ClientFrontierServiceImpl implements ClientFrontierService {
+public class ClientFrontierServiceImpl implements PluginScopedClientFrontierService {
     public ClientFrontierServiceImpl() {
     }
 
     @Override
-    public FrontierActionResult createPersonalFrontier(DimensionId dimension, FrontierShape shape) {
+    public FrontierActionResult createPersonalFrontier(String pluginModId, DimensionId dimension, FrontierShape shape) {
         FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(true);
         ResourceKey<Level> resourceKey = ApiConverters.toDimension(dimension);
         FrontierId frontierId = new FrontierId(UUID.randomUUID());
@@ -52,7 +52,7 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
     }
 
     @Override
-    public FrontierActionResult createGlobalFrontier(DimensionId dimension, FrontierShape shape) {
+    public FrontierActionResult createGlobalFrontier(String pluginModId, DimensionId dimension, FrontierShape shape) {
         FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(false);
         ResourceKey<Level> resourceKey = ApiConverters.toDimension(dimension);
         FrontierId frontierId = new FrontierId(UUID.randomUUID());
@@ -68,7 +68,7 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
     }
 
     @Override
-    public Optional<FrontierDataView> getFrontier(FrontierId frontierId) {
+    public Optional<FrontierDataView> getFrontier(String pluginModId, FrontierId frontierId) {
         FrontiersOverlayManager personal = MapFrontiersClient.getFrontiersOverlayManager(true);
         FrontierOverlay frontier = personal.getFrontier(frontierId.value());
         if (frontier == null) {
@@ -79,7 +79,7 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
     }
 
     @Override
-    public FrontierActionResult updateGlobalFrontier(FrontierId frontierId, FrontierMutation mutation) {
+    public FrontierActionResult updateGlobalFrontier(String pluginModId, FrontierId frontierId, FrontierMutation mutation) {
         FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(false);
         FrontierOverlay frontier = manager.getFrontier(frontierId.value());
         if (frontier == null || frontier.getPersonal()) {
@@ -89,7 +89,7 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
     }
 
     @Override
-    public FrontierActionResult deleteGlobalFrontier(FrontierId frontierId) {
+    public FrontierActionResult deleteGlobalFrontier(String pluginModId, FrontierId frontierId) {
         FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(false);
         FrontierOverlay frontier = manager.getFrontier(frontierId.value());
         if (frontier == null || frontier.getPersonal()) {
@@ -99,7 +99,7 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
     }
 
     @Override
-    public FrontierActionResult updatePersonalFrontier(FrontierId frontierId, FrontierMutation mutation) {
+    public FrontierActionResult updatePersonalFrontier(String pluginModId, FrontierId frontierId, FrontierMutation mutation) {
         FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(true);
         FrontierOverlay frontier = manager.getFrontier(frontierId.value());
         if (frontier == null || !frontier.getPersonal()) {
@@ -109,7 +109,7 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
     }
 
     @Override
-    public FrontierActionResult deletePersonalFrontier(FrontierId frontierId) {
+    public FrontierActionResult deletePersonalFrontier(String pluginModId, FrontierId frontierId) {
         FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(true);
         FrontierOverlay frontier = manager.getFrontier(frontierId.value());
         if (frontier == null || !frontier.getPersonal()) {
@@ -119,21 +119,21 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
     }
 
     @Override
-    public List<FrontierDataView> listPersonalFrontiers(DimensionId dimension) {
+    public List<FrontierDataView> listPersonalFrontiers(String pluginModId, DimensionId dimension) {
         FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(true);
         ResourceKey<Level> resourceKey = ApiConverters.toDimension(dimension);
         return manager.getAllFrontiers(resourceKey).stream().map(ApiConverters::fromFrontier).toList();
     }
 
     @Override
-    public List<FrontierDataView> listGlobalFrontiers(DimensionId dimension) {
+    public List<FrontierDataView> listGlobalFrontiers(String pluginModId, DimensionId dimension) {
         FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(false);
         ResourceKey<Level> resourceKey = ApiConverters.toDimension(dimension);
         return manager.getAllFrontiers(resourceKey).stream().map(ApiConverters::fromFrontier).toList();
     }
 
     @Override
-    public FrontierActionResult changeToGlobal(FrontierId frontierId) {
+    public FrontierActionResult changeToGlobal(String pluginModId, FrontierId frontierId) {
         FrontiersOverlayManager personal = MapFrontiersClient.getFrontiersOverlayManager(true);
         FrontierOverlay frontier = personal.getFrontier(frontierId.value());
         if (frontier == null) {
@@ -148,7 +148,7 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
     }
 
     @Override
-    public FrontierActionResult changeToPersonal(FrontierId frontierId) {
+    public FrontierActionResult changeToPersonal(String pluginModId, FrontierId frontierId) {
         FrontiersOverlayManager global = MapFrontiersClient.getFrontiersOverlayManager(false);
         FrontierOverlay frontier = global.getFrontier(frontierId.value());
         if (frontier == null) {
@@ -163,7 +163,7 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
     }
 
     @Override
-    public FrontierActionResult sharePersonalFrontier(FrontierId frontierId, UserRef user, Set<FrontierSharePermission> permissions) {
+    public FrontierActionResult sharePersonalFrontier(String pluginModId, FrontierId frontierId, UserRef user, Set<FrontierSharePermission> permissions) {
         if (!MapFrontiersClient.isModOnServer()) {
             return FrontierActionResult.rejected();
         }
@@ -179,7 +179,10 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
     }
 
     @Override
-    public FrontierActionResult updateSharedUserPermissions(FrontierId frontierId, UserRef user, Set<FrontierSharePermission> permissions) {
+    public FrontierActionResult updateSharedUserPermissions(String pluginModId,
+                                                            FrontierId frontierId,
+                                                            UserRef user,
+                                                            Set<FrontierSharePermission> permissions) {
         if (!MapFrontiersClient.isModOnServer()) {
             return FrontierActionResult.rejected();
         }
@@ -196,10 +199,19 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
     }
 
     @Override
-    public FrontierActionResult updateSharedUserPermissions(FrontierId frontierId,
+    public FrontierActionResult updateSharedUserPermissions(String pluginModId,
+                                                            FrontierId frontierId,
                                                             UserRef user,
                                                             Set<FrontierSharePermission> permissionsToAdd,
                                                             Set<FrontierSharePermission> permissionsToRemove) {
+        return updateSharedUserPermissionsPartial(pluginModId, frontierId, user, permissionsToAdd, permissionsToRemove);
+    }
+
+    private FrontierActionResult updateSharedUserPermissionsPartial(String pluginModId,
+                                                                    FrontierId frontierId,
+                                                                    UserRef user,
+                                                                    Set<FrontierSharePermission> permissionsToAdd,
+                                                                    Set<FrontierSharePermission> permissionsToRemove) {
         if (!MapFrontiersClient.isModOnServer()) {
             return FrontierActionResult.rejected();
         }
@@ -226,11 +238,11 @@ public class ClientFrontierServiceImpl implements ClientFrontierService {
             permissions.removeAll(permissionsToRemove);
         }
 
-        return updateSharedUserPermissions(frontierId, user, permissions);
+        return updateSharedUserPermissions(pluginModId, frontierId, user, permissions);
     }
 
     @Override
-    public FrontierActionResult removeSharedUser(FrontierId frontierId, UserRef user) {
+    public FrontierActionResult removeSharedUser(String pluginModId, FrontierId frontierId, UserRef user) {
         if (!MapFrontiersClient.isModOnServer()) {
             return FrontierActionResult.rejected();
         }

@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.api;
 
-import games.alejandrocoria.mapfrontiers.api.client.IMapFrontiersClientAPI;
-import games.alejandrocoria.mapfrontiers.api.server.IMapFrontiersServerAPI;
+import games.alejandrocoria.mapfrontiers.api.internal.InternalMapFrontiersClientAPI;
+import games.alejandrocoria.mapfrontiers.api.internal.InternalMapFrontiersServerAPI;
 
 import java.util.Set;
 
@@ -17,12 +17,12 @@ public final class MapFrontiersAPIBootstrap {
     private MapFrontiersAPIBootstrap() {
     }
 
-    public static void setClientAPI(IMapFrontiersClientAPI api) {
+    public static void setClientAPI(InternalMapFrontiersClientAPI api) {
         assertTrustedCaller();
         MapFrontiersAPI.setClientAPI(api);
     }
 
-    public static void setServerAPI(IMapFrontiersServerAPI api) {
+    public static void setServerAPI(InternalMapFrontiersServerAPI api) {
         assertTrustedCaller();
         MapFrontiersAPI.setServerAPI(api);
     }
