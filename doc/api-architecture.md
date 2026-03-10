@@ -66,10 +66,6 @@ games.alejandrocoria.mapfrontiers.api
 
 ```java
 public final class MapFrontiersAPI {
-    public static Optional<IMapFrontiersServerAPI> getServerAPI();
-    public static Optional<IMapFrontiersClientAPI> getClientAPI();
-
-    // JourneyMap-like plugin registration style
     public static void registerClientPlugin(IMapFrontiersClientPlugin plugin);
     public static void registerServerPlugin(IMapFrontiersServerPlugin plugin);
 }

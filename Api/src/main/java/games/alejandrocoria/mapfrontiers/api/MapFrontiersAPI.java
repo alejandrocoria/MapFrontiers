@@ -12,13 +12,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Static API entry point used by plugins to register and obtain client/server API instances.
+ * Static API entry point used by plugins to register client and server integrations.
  */
 public final class MapFrontiersAPI {
     private static final Logger LOGGER = Logger.getLogger(MapFrontiersAPI.class.getName());
@@ -32,24 +31,6 @@ public final class MapFrontiersAPI {
     private static IMapFrontiersServerAPI serverAPI;
 
     private MapFrontiersAPI() {
-    }
-
-    /**
-     * Returns the currently active server API, if any.
-     *
-     * @return server API when available
-     */
-    public static Optional<IMapFrontiersServerAPI> getServerAPI() {
-        return Optional.ofNullable(serverAPI);
-    }
-
-    /**
-     * Returns the currently active client API, if any.
-     *
-     * @return client API when available
-     */
-    public static Optional<IMapFrontiersClientAPI> getClientAPI() {
-        return Optional.ofNullable(clientAPI);
     }
 
     /**
