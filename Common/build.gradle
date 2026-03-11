@@ -3,6 +3,10 @@ plugins {
     id 'net.neoforged.moddev'
 }
 
+tasks.processResources {
+    from(rootProject.file('LICENSE'))
+}
+
 neoForge {
     neoFormVersion = neo_form_version
     // Automatically enable AccessTransformers if the file exists

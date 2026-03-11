@@ -1,6 +1,7 @@
 plugins {
     id 'java-library'
-    id 'com.vanniktech.maven.publish' version '0.36.0'
+    id 'maven-publish'
+    id "com.modrinth.minotaur" version "2.9.0"
 }
 
 group = "games.alejandrocoria"
@@ -12,39 +13,44 @@ base {
 
 java {
     withSourcesJar()
+    withJavadocJar()
 }
 
-mavenPublishing {
-    publishToMavenCentral()
-    signAllPublications()
+tasks.processResources {
+    from(rootProject.file('LICENSE'))
+}
 
-    coordinates(project.group.toString(), base.archivesName.get(), project.version.toString())
+if (!project.hasProperty("modrinthApiKey")) {
+    ext.modrinthApiKey = project.findProperty("modrinth_api_key") ?: "notset"
+}
 
-    pom {
-        name.set("${mod_name} API")
-        description.set("Public API for ${mod_name}.")
-        url.set(mod_sources)
+tasks.modrinth.dependsOn(tasks.build)
 
-        licenses {
-            license {
-                name.set(mod_license)
-                url.set("https://opensource.org/licenses/MIT")
-            }
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            groupId = project.group.toString()
+            artifactId = base.archivesName.get()
+            version = project.version.toString()
         }
+    }
+}
 
-        developers {
-            developer {
-                id.set("alejandrocoria")
-                name.set(mod_author)
-                email.set(mod_email)
-            }
-        }
-
-        scm {
-            connection.set("scm:git:git://github.com/alejandrocoria/MapFrontiers.git")
-            developerConnection.set("scm:git:ssh://github.com:alejandrocoria/MapFrontiers.git")
-            url.set(mod_sources)
-        }
+modrinth {
+    debugMode.set(true)
+    token = "${modrinthApiKey}"
+    projectId = api_modrinth_project_id
+    versionNumber = "${api_version}"
+    versionName = "${mod_name}-API-${api_version}"
+    versionType = api_release_type
+    detectLoaders = false
+    uploadFile = jar
+    gameVersions = ["${minecraft_version}"]
+    loaders = ["java-agent"]
+    additionalFiles {
+        sourcesJar(tasks.named('sourcesJar'))
+        javadocJar(tasks.named('javadocJar'))
     }
 }
 

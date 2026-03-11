@@ -11,16 +11,25 @@ Plugins register themselves through `MapFrontiersAPI` and receive an API instanc
 
 ## Add the dependency
 
-The exact Maven coordinates depend on how you publish the API, but a typical Gradle setup looks like this:
+The API is published on Modrinth at <https://modrinth.com/mod/mapfrontiers-api>. A typical Gradle setup looks like this:
 
 ```groovy
 repositories {
-    mavenCentral()
-    mavenLocal()
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Modrinth"
+                url = "https://api.modrinth.com/maven"
+            }
+        }
+        filter {
+            includeGroup "maven.modrinth"
+        }
+    }
 }
 
 dependencies {
-    implementation "games.alejandrocoria:mapfrontiers-api:0.1.0-SNAPSHOT"
+    implementation "maven.modrinth:mapfrontiers-api:0.1.0-SNAPSHOT"
 }
 ```
 
