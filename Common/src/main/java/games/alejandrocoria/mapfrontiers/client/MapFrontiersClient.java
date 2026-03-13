@@ -58,6 +58,9 @@ public class MapFrontiersClient {
     private static long lastHandshakeSentAtMs = 0L;
     private static boolean handshakeResolved = false;
     private static boolean modOnServer = false;
+    private static boolean initialSettingsProfileReceived = false;
+    private static boolean initialFrontiersReceived = false;
+    private static boolean clientApiPublished = false;
     private static FrontiersOverlayManager frontiersOverlayManager;
     private static FrontiersOverlayManager personalFrontiersOverlayManager;
     private static FrontierLocalOverrides localOverrides;
@@ -78,7 +81,9 @@ public class MapFrontiersClient {
     protected static void init() {
         ClientEventHandler.subscribeUpdatedSettingsProfileEvent(MapFrontiersClient.class, profile -> {
             settingsProfile = profile;
+            initialSettingsProfileReceived = true;
             resolveHandshake(true, HandshakeSignal.SETTINGS_PROFILE);
+            tryPublishClientApi();
         });
 
         ClientEventHandler.subscribeClientTickEvent(MapFrontiersClient.class, client -> {
@@ -199,6 +204,9 @@ public class MapFrontiersClient {
             handshakeSent = false;
             handshakeResolved = false;
             modOnServer = false;
+            initialSettingsProfileReceived = false;
+            initialFrontiersReceived = false;
+            clientApiPublished = false;
             handshakeNonce = 0L;
             handshakeStartedAtMs = 0L;
             lastHandshakeSentAtMs = 0L;
@@ -262,6 +270,8 @@ public class MapFrontiersClient {
         initializeManagers();
         frontiersOverlayManager.setFrontiersFromServer(globalFrontiers);
         personalFrontiersOverlayManager.setFrontiersFromServer(personalFrontiers);
+        initialFrontiersReceived = true;
+        tryPublishClientApi();
         if (hud != null) {
             hud.frontierChanged();
         }
@@ -362,6 +372,9 @@ public class MapFrontiersClient {
         handshakeNonce = 0L;
         handshakeStartedAtMs = 0L;
         lastHandshakeSentAtMs = 0L;
+        initialSettingsProfileReceived = false;
+        initialFrontiersReceived = false;
+        clientApiPublished = false;
         settingsProfile = null;
     }
 
@@ -375,7 +388,7 @@ public class MapFrontiersClient {
 
         handshakeResolved = true;
         modOnServer = hasModOnServer;
-        ensureClientApiInitialized();
+        tryPublishClientApi();
         MapFrontiers.LOGGER.info("Handshake resolved. mapfrontiers on server: {}", modOnServer);
     }
 
@@ -400,8 +413,21 @@ public class MapFrontiersClient {
         initializeManagers();
         if (clientApiImpl == null) {
             clientApiImpl = new MapFrontiersClientAPIImpl();
-            MapFrontiersAPIBootstrap.setClientAPI(clientApiImpl);
         }
+    }
+
+    private static void tryPublishClientApi() {
+        if (!handshakeResolved || clientApiPublished) {
+            return;
+        }
+
+        if (modOnServer && (!initialSettingsProfileReceived || !initialFrontiersReceived)) {
+            return;
+        }
+
+        ensureClientApiInitialized();
+        MapFrontiersAPIBootstrap.setClientAPI(clientApiImpl);
+        clientApiPublished = true;
     }
 
     public static void setClipboard(FrontierData newClipboard) {
