@@ -156,6 +156,7 @@ public final class ApiConverters {
                 toShape(frontier),
                 fromVisibility(frontier.getVisibilityData()),
                 fromBanner(frontier.getbannerData()),
+                Optional.ofNullable(frontier.getSourcePluginId()),
                 owner,
                 sharedUsers
         );
