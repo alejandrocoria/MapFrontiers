@@ -40,7 +40,7 @@ public class ClientFrontierServiceImpl implements PluginScopedClientFrontierServ
         FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(true);
         ResourceKey<Level> resourceKey = ApiConverters.toDimension(dimension);
         FrontierId frontierId = new FrontierId(UUID.randomUUID());
-        FrontierOverlay frontier = manager.clientCreateNewFrontierAndReturn(frontierId.value(), resourceKey, shape);
+        FrontierOverlay frontier = manager.clientCreateNewFrontierAndReturn(frontierId.value(), resourceKey, pluginModId, shape);
         if (frontier == null) {
             if (MapFrontiersClient.isModOnServer()) {
                 return FrontierActionResult.acceptedAsync(frontierId);
@@ -56,7 +56,7 @@ public class ClientFrontierServiceImpl implements PluginScopedClientFrontierServ
         FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(false);
         ResourceKey<Level> resourceKey = ApiConverters.toDimension(dimension);
         FrontierId frontierId = new FrontierId(UUID.randomUUID());
-        FrontierOverlay frontier = manager.clientCreateNewFrontierAndReturn(frontierId.value(), resourceKey, shape);
+        FrontierOverlay frontier = manager.clientCreateNewFrontierAndReturn(frontierId.value(), resourceKey, pluginModId, shape);
         if (frontier == null) {
             if (MapFrontiersClient.isModOnServer()) {
                 return FrontierActionResult.acceptedAsync(frontierId);

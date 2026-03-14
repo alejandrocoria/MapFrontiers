@@ -67,6 +67,7 @@ public class FrontierData {
     protected boolean personal = false;
     protected List<SettingsUserShared> usersShared;
     protected CopiedFrom copiedFrom;
+    protected @Nullable String sourcePluginId;
     protected Date created;
     protected Date modified;
 
@@ -104,6 +105,7 @@ public class FrontierData {
         mode = other.mode;
 
         copiedFrom = other.copiedFrom;
+        sourcePluginId = other.sourcePluginId;
 
         created = other.created;
         modified = other.modified;
@@ -156,6 +158,7 @@ public class FrontierData {
         }
 
         copiedFrom = other.copiedFrom;
+        sourcePluginId = other.sourcePluginId;
 
         modified = other.modified;
 
@@ -592,6 +595,14 @@ public class FrontierData {
         return modified;
     }
 
+    public void setSourcePluginId(@Nullable String sourcePluginId) {
+        this.sourcePluginId = sourcePluginId;
+    }
+
+    public @Nullable String getSourcePluginId() {
+        return sourcePluginId;
+    }
+
     // @Note: To record changes if done outside this class.
     // It would be better to change that.
     public void addChange(Change change) {
@@ -624,6 +635,7 @@ public class FrontierData {
         visibilityData.readFromNBT(nbt, version);
 
         personal = nbt.getBooleanOr("personal", true);
+        sourcePluginId = nbt.getStringOr("sourcePluginId", null);
 
         owner = new SettingsUser();
         owner.readFromNBT(nbt.getCompoundOrEmpty("owner"));
@@ -700,6 +712,9 @@ public class FrontierData {
         nbt.putString("name2", name2);
         visibilityData.writeToNBT(nbt);
         nbt.putBoolean("personal", personal);
+        if (sourcePluginId != null) {
+            nbt.putString("sourcePluginId", sourcePluginId);
+        }
 
         CompoundTag nbtOwner = new CompoundTag();
         owner.writeToNBT(nbtOwner);
@@ -771,6 +786,11 @@ public class FrontierData {
         id = UUIDHelper.fromBytes(buf);
         dimension = ResourceKey.create(Registries.DIMENSION, buf.readIdentifier());
         personal = buf.readBoolean();
+        if (buf.readBoolean()) {
+            sourcePluginId = buf.readUtf();
+        } else {
+            sourcePluginId = null;
+        }
         owner = new SettingsUser();
         owner.fromBytes(buf);
 
@@ -877,6 +897,12 @@ public class FrontierData {
         UUIDHelper.toBytes(buf, id);
         buf.writeIdentifier(dimension.identifier());
         buf.writeBoolean(personal);
+        if (sourcePluginId == null) {
+            buf.writeBoolean(false);
+        } else {
+            buf.writeBoolean(true);
+            buf.writeUtf(sourcePluginId);
+        }
         owner.toBytes(buf);
 
         if (withChanges == null || withChanges.contains(Change.Visibility)) {

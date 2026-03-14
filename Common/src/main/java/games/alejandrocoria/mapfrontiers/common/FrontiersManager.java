@@ -126,20 +126,48 @@ public class FrontiersManager {
 
     public FrontierData createNewGlobalFrontier(UUID frontierId, ResourceKey<Level> dimension, ServerPlayer player, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
         List<FrontierData> frontiers = getAllGlobalFrontiers(dimension);
-        return createNewFrontier(frontierId, frontiers, dimension, false, player, vertices, chunks);
+        return createNewFrontier(frontierId, frontiers, dimension, false, player, null, vertices, chunks);
     }
 
     public FrontierData createNewPersonalFrontier(UUID frontierId, ResourceKey<Level> dimension, ServerPlayer player, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
         List<FrontierData> frontiers = getAllPersonalFrontiers(new SettingsUser(player), dimension);
-        return createNewFrontier(frontierId, frontiers, dimension, true, player, vertices, chunks);
+        return createNewFrontier(frontierId, frontiers, dimension, true, player, null, vertices, chunks);
     }
 
-    private FrontierData createNewFrontier(UUID frontierId, List<FrontierData> frontiers, ResourceKey<Level> dimension, boolean personal, ServerPlayer player, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
+    public FrontierData createNewGlobalFrontier(UUID frontierId,
+                                                ResourceKey<Level> dimension,
+                                                ServerPlayer player,
+                                                @Nullable String sourcePluginId,
+                                                @Nullable List<BlockPos> vertices,
+                                                @Nullable List<ChunkPos> chunks) {
+        List<FrontierData> frontiers = getAllGlobalFrontiers(dimension);
+        return createNewFrontier(frontierId, frontiers, dimension, false, player, sourcePluginId, vertices, chunks);
+    }
+
+    public FrontierData createNewPersonalFrontier(UUID frontierId,
+                                                  ResourceKey<Level> dimension,
+                                                  ServerPlayer player,
+                                                  @Nullable String sourcePluginId,
+                                                  @Nullable List<BlockPos> vertices,
+                                                  @Nullable List<ChunkPos> chunks) {
+        List<FrontierData> frontiers = getAllPersonalFrontiers(new SettingsUser(player), dimension);
+        return createNewFrontier(frontierId, frontiers, dimension, true, player, sourcePluginId, vertices, chunks);
+    }
+
+    private FrontierData createNewFrontier(UUID frontierId,
+                                           List<FrontierData> frontiers,
+                                           ResourceKey<Level> dimension,
+                                           boolean personal,
+                                           ServerPlayer player,
+                                           @Nullable String sourcePluginId,
+                                           @Nullable List<BlockPos> vertices,
+                                           @Nullable List<ChunkPos> chunks) {
         FrontierData frontier = new FrontierData();
         frontier.setId(frontierId);
         frontier.setOwner(new SettingsUser(player));
         frontier.setDimension(dimension);
         frontier.setPersonal(personal);
+        frontier.setSourcePluginId(sourcePluginId);
         frontier.setColor(ColorHelper.getRandomColor());
         frontier.setCreated(new Date());
 

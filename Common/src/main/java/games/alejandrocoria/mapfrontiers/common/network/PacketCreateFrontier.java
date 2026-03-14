@@ -35,13 +35,24 @@ public class PacketCreateFrontier {
     private ResourceKey<Level> dimension = Level.OVERWORLD;
     private boolean personal = false;
     private UUID frontierId = new UUID(0L, 0L);
+    private @Nullable String sourcePluginId;
     private List<BlockPos> vertices;
     private List<ChunkPos> chunks;
 
     public PacketCreateFrontier(UUID frontierId, ResourceKey<Level> dimension, boolean personal, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
+        this(frontierId, dimension, personal, null, vertices, chunks);
+    }
+
+    public PacketCreateFrontier(UUID frontierId,
+                                ResourceKey<Level> dimension,
+                                boolean personal,
+                                @Nullable String sourcePluginId,
+                                @Nullable List<BlockPos> vertices,
+                                @Nullable List<ChunkPos> chunks) {
         this.frontierId = frontierId;
         this.dimension = dimension;
         this.personal = personal;
+        this.sourcePluginId = sourcePluginId;
         this.vertices = vertices;
         this.chunks = chunks;
     }
@@ -56,6 +67,7 @@ public class PacketCreateFrontier {
                 this.dimension = ResourceKey.create(Registries.DIMENSION, buf.readIdentifier());
                 this.personal = buf.readBoolean();
                 this.frontierId = UUIDHelper.fromBytes(buf);
+                this.sourcePluginId = buf.readNullable(FriendlyByteBuf::readUtf);
 
                 boolean hasVertex = buf.readBoolean();
                 if (hasVertex) {
@@ -87,6 +99,7 @@ public class PacketCreateFrontier {
             buf.writeIdentifier(dimension.identifier());
             buf.writeBoolean(personal);
             UUIDHelper.toBytes(buf, frontierId);
+            buf.writeNullable(sourcePluginId, FriendlyByteBuf::writeUtf);
 
             buf.writeBoolean(vertices != null);
             if (vertices != null) {
@@ -119,14 +132,14 @@ public class PacketCreateFrontier {
             FrontierData frontier;
 
             if (message.personal) {
-                frontier = FrontiersManager.instance.createNewPersonalFrontier(message.frontierId, message.dimension, player, message.vertices, message.chunks);
+                frontier = FrontiersManager.instance.createNewPersonalFrontier(message.frontierId, message.dimension, player, message.sourcePluginId, message.vertices, message.chunks);
                 PacketHandler.sendToUsersWithAccess(new PacketFrontierCreated(frontier, player.getId()), frontier, server);
 
                 return;
             } else {
                 if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.CreateGlobalFrontier,
                         new SettingsUser(player), MapFrontiers.isOPorHost(player), null)) {
-                    frontier = FrontiersManager.instance.createNewGlobalFrontier(message.frontierId, message.dimension, player, message.vertices, message.chunks);
+                    frontier = FrontiersManager.instance.createNewGlobalFrontier(message.frontierId, message.dimension, player, message.sourcePluginId, message.vertices, message.chunks);
                     PacketHandler.sendToAll(new PacketFrontierCreated(frontier, player.getId()), server);
 
                     return;

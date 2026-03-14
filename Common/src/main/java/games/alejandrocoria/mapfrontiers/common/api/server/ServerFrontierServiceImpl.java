@@ -53,6 +53,7 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
         frontier.setPersonal(false);
         frontier.setColor(ColorHelper.getRandomColor());
         frontier.setCreated(new Date());
+        frontier.setSourcePluginId(pluginModId);
         ApiConverters.applyShape(frontier, shape);
 
         frontiersManager.addGlobalFrontier(frontier);
@@ -135,3 +136,4 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
     }
 
 }
+

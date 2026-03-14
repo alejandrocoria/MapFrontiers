@@ -177,18 +177,27 @@ public class FrontiersOverlayManager {
     }
 
     @Nullable
-    public FrontierOverlay clientCreateNewFrontierAndReturn(UUID frontierId, ResourceKey<Level> dimension, FrontierShape shape) {
+    public FrontierOverlay clientCreateNewFrontierAndReturn(UUID frontierId, ResourceKey<Level> dimension, @Nullable String sourcePluginId, FrontierShape shape) {
         List<Point2i> shapeVertices = shape.vertices();
         List<ChunkCoord> shapeChunks = shape.chunks();
         List<BlockPos> vertices = shapeVertices == null || shapeVertices.isEmpty() ? null : shapeVertices.stream().map(vertex -> new BlockPos(vertex.x(), 0, vertex.z())).toList();
         List<ChunkPos> chunks = shapeChunks == null || shapeChunks.isEmpty() ? null : shapeChunks.stream().map(chunk -> new ChunkPos(chunk.x(), chunk.z())).toList();
-        return clientCreateNewFrontierAndReturn(frontierId, dimension, vertices, chunks);
+        return clientCreateNewFrontierAndReturn(frontierId, dimension, sourcePluginId, vertices, chunks);
     }
 
     @Nullable
     public FrontierOverlay clientCreateNewFrontierAndReturn(UUID frontierId, ResourceKey<Level> dimension, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
+        return clientCreateNewFrontierAndReturn(frontierId, dimension, null, vertices, chunks);
+    }
+
+    @Nullable
+    public FrontierOverlay clientCreateNewFrontierAndReturn(UUID frontierId,
+                                                            ResourceKey<Level> dimension,
+                                                            @Nullable String sourcePluginId,
+                                                            @Nullable List<BlockPos> vertices,
+                                                            @Nullable List<ChunkPos> chunks) {
         if (MapFrontiersClient.isModOnServer()) {
-            PacketHandler.sendToServer(new PacketCreateFrontier(frontierId, dimension, personal, vertices, chunks));
+            PacketHandler.sendToServer(new PacketCreateFrontier(frontierId, dimension, personal, sourcePluginId, vertices, chunks));
             return null;
         } else if (personal && minecraft.player != null) {
             FrontierData frontier = new FrontierData();
@@ -196,6 +205,7 @@ public class FrontiersOverlayManager {
             frontier.setOwner(new SettingsUser(minecraft.player));
             frontier.setDimension(dimension);
             frontier.setPersonal(true);
+            frontier.setSourcePluginId(sourcePluginId);
             frontier.setColor(ColorHelper.getRandomColor());
             frontier.setCreated(new Date());
 
