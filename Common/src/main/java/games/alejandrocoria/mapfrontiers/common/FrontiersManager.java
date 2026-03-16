@@ -124,16 +124,6 @@ public class FrontiersManager {
         return allFrontiers.get(id);
     }
 
-    public FrontierData createNewGlobalFrontier(UUID frontierId, ResourceKey<Level> dimension, ServerPlayer player, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
-        List<FrontierData> frontiers = getAllGlobalFrontiers(dimension);
-        return createNewFrontier(frontierId, frontiers, dimension, false, player, null, vertices, chunks);
-    }
-
-    public FrontierData createNewPersonalFrontier(UUID frontierId, ResourceKey<Level> dimension, ServerPlayer player, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
-        List<FrontierData> frontiers = getAllPersonalFrontiers(new SettingsUser(player), dimension);
-        return createNewFrontier(frontierId, frontiers, dimension, true, player, null, vertices, chunks);
-    }
-
     public FrontierData createNewGlobalFrontier(UUID frontierId,
                                                 ResourceKey<Level> dimension,
                                                 ServerPlayer player,
