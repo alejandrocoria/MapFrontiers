@@ -19,6 +19,8 @@ import games.alejandrocoria.mapfrontiers.api.plugin.IMapFrontiersClientPlugin;
 import games.alejandrocoria.mapfrontiers.api.plugin.IMapFrontiersServerPlugin;
 import games.alejandrocoria.mapfrontiers.api.server.IMapFrontiersServerAPI;
 import games.alejandrocoria.mapfrontiers.api.server.ServerFrontierService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,15 +29,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Static API entry point used by plugins to register client and server integrations.
  */
 @SuppressWarnings("unused")
 public final class MapFrontiersAPI {
-    private static final Logger LOGGER = Logger.getLogger(MapFrontiersAPI.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger("MapFrontiersAPI");
 
     private static final List<IMapFrontiersClientPlugin> CLIENT_PLUGINS = new ArrayList<>();
     private static final List<IMapFrontiersServerPlugin> SERVER_PLUGINS = new ArrayList<>();
@@ -57,9 +57,11 @@ public final class MapFrontiersAPI {
      */
     public static synchronized void registerClientPlugin(IMapFrontiersClientPlugin plugin) {
         if (CLIENT_PLUGINS.stream().anyMatch(p -> p.getModId().equals(plugin.getModId()))) {
+            LOGGER.warn("Ignoring duplicate client plugin registration: {}", plugin.getModId());
             return;
         }
         CLIENT_PLUGINS.add(plugin);
+        LOGGER.info("Registered client plugin: {}", plugin.getModId());
         if (clientAPI != null) {
             initializeClientPlugin(plugin);
         }
@@ -74,9 +76,11 @@ public final class MapFrontiersAPI {
      */
     public static synchronized void registerServerPlugin(IMapFrontiersServerPlugin plugin) {
         if (SERVER_PLUGINS.stream().anyMatch(p -> p.getModId().equals(plugin.getModId()))) {
+            LOGGER.warn("Ignoring duplicate server plugin registration: {}", plugin.getModId());
             return;
         }
         SERVER_PLUGINS.add(plugin);
+        LOGGER.info("Registered server plugin: {}", plugin.getModId());
         if (serverAPI != null) {
             initializeServerPlugin(plugin);
         }
@@ -85,6 +89,7 @@ public final class MapFrontiersAPI {
     static synchronized void setClientAPI(InternalMapFrontiersClientAPI api) {
         clientAPI = api;
         CLIENT_PLUGIN_APIS.clear();
+        LOGGER.info("Client API activated. Initializing {} registered client plugins.", CLIENT_PLUGINS.size());
         for (IMapFrontiersClientPlugin plugin : CLIENT_PLUGINS) {
             initializeClientPlugin(plugin);
         }
@@ -93,6 +98,7 @@ public final class MapFrontiersAPI {
     static synchronized void setServerAPI(InternalMapFrontiersServerAPI api) {
         serverAPI = api;
         SERVER_PLUGIN_APIS.clear();
+        LOGGER.info("Server API activated. Initializing {} registered server plugins.", SERVER_PLUGINS.size());
         for (IMapFrontiersServerPlugin plugin : SERVER_PLUGINS) {
             initializeServerPlugin(plugin);
         }
@@ -110,9 +116,10 @@ public final class MapFrontiersAPI {
             }
             api.clearSubscriptions();
             try {
+                LOGGER.info("Shutting down client plugin: {}", plugin.getModId());
                 plugin.shutdown(api);
             } catch (Throwable t) {
-                LOGGER.log(Level.SEVERE, "Client plugin shutdown failed: " + plugin.getModId(), t);
+                LOGGER.error("Client plugin shutdown failed: {}", plugin.getModId(), t);
             }
         }
 
@@ -132,9 +139,10 @@ public final class MapFrontiersAPI {
             }
             api.clearSubscriptions();
             try {
+                LOGGER.info("Shutting down server plugin: {}", plugin.getModId());
                 plugin.shutdown(api);
             } catch (Throwable t) {
-                LOGGER.log(Level.SEVERE, "Server plugin shutdown failed: " + plugin.getModId(), t);
+                LOGGER.error("Server plugin shutdown failed: {}", plugin.getModId(), t);
             }
         }
 
@@ -150,9 +158,10 @@ public final class MapFrontiersAPI {
         PluginClientAPI api = new PluginClientAPI(clientAPI, plugin.getModId());
         CLIENT_PLUGIN_APIS.put(plugin, api);
         try {
+            LOGGER.info("Initializing client plugin: {}", plugin.getModId());
             plugin.initialize(api);
         } catch (Throwable t) {
-            LOGGER.log(Level.SEVERE, "Client plugin initialize failed: " + plugin.getModId(), t);
+            LOGGER.error("Client plugin initialize failed: {}", plugin.getModId(), t);
         }
     }
 
@@ -164,9 +173,10 @@ public final class MapFrontiersAPI {
         PluginServerAPI api = new PluginServerAPI(serverAPI, plugin.getModId());
         SERVER_PLUGIN_APIS.put(plugin, api);
         try {
+            LOGGER.info("Initializing server plugin: {}", plugin.getModId());
             plugin.initialize(api);
         } catch (Throwable t) {
-            LOGGER.log(Level.SEVERE, "Server plugin initialize failed: " + plugin.getModId(), t);
+            LOGGER.error("Server plugin initialize failed: {}", plugin.getModId(), t);
         }
     }
 

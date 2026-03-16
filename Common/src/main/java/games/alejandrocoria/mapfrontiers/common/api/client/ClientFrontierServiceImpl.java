@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.common.api.client;
 
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.api.client.FrontierActionResult;
 import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedClientFrontierService;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
@@ -165,12 +166,16 @@ public class ClientFrontierServiceImpl implements PluginScopedClientFrontierServ
     @Override
     public FrontierActionResult sharePersonalFrontier(String pluginModId, FrontierId frontierId, UserRef user, Set<FrontierSharePermission> permissions) {
         if (!MapFrontiersClient.isModOnServer()) {
+            MapFrontiers.LOGGER.debug("Rejected sharePersonalFrontier because MapFrontiers is not present on the server. pluginModId={}, frontierId={}, targetUser={}",
+                    pluginModId, frontierId.value(), user.name());
             return FrontierActionResult.rejected();
         }
 
         FrontiersOverlayManager personal = MapFrontiersClient.getFrontiersOverlayManager(true);
         FrontierOverlay frontier = personal.getFrontier(frontierId.value());
         if (frontier == null || !frontier.getPersonal()) {
+            MapFrontiers.LOGGER.debug("Could not share personal frontier because it was not found locally or is not personal. pluginModId={}, frontierId={}, targetUser={}",
+                    pluginModId, frontierId.value(), user.name());
             return FrontierActionResult.notFound(frontierId);
         }
 
@@ -184,12 +189,16 @@ public class ClientFrontierServiceImpl implements PluginScopedClientFrontierServ
                                                             UserRef user,
                                                             Set<FrontierSharePermission> permissions) {
         if (!MapFrontiersClient.isModOnServer()) {
+            MapFrontiers.LOGGER.debug("Rejected updateSharedUserPermissions because MapFrontiers is not present on the server. pluginModId={}, frontierId={}, targetUser={}",
+                    pluginModId, frontierId.value(), user.name());
             return FrontierActionResult.rejected();
         }
 
         FrontiersOverlayManager personal = MapFrontiersClient.getFrontiersOverlayManager(true);
         FrontierOverlay frontier = personal.getFrontier(frontierId.value());
         if (frontier == null || !frontier.getPersonal()) {
+            MapFrontiers.LOGGER.debug("Could not update shared user permissions because frontier was not found locally or is not personal. pluginModId={}, frontierId={}, targetUser={}",
+                    pluginModId, frontierId.value(), user.name());
             return FrontierActionResult.notFound(frontierId);
         }
 
@@ -213,17 +222,23 @@ public class ClientFrontierServiceImpl implements PluginScopedClientFrontierServ
                                                                     Set<FrontierSharePermission> permissionsToAdd,
                                                                     Set<FrontierSharePermission> permissionsToRemove) {
         if (!MapFrontiersClient.isModOnServer()) {
+            MapFrontiers.LOGGER.debug("Rejected partial shared-permission update because MapFrontiers is not present on the server. pluginModId={}, frontierId={}, targetUser={}",
+                    pluginModId, frontierId.value(), user.name());
             return FrontierActionResult.rejected();
         }
 
         FrontiersOverlayManager personal = MapFrontiersClient.getFrontiersOverlayManager(true);
         FrontierOverlay frontier = personal.getFrontier(frontierId.value());
         if (frontier == null || !frontier.getPersonal()) {
+            MapFrontiers.LOGGER.debug("Could not partially update shared user permissions because frontier was not found locally or is not personal. pluginModId={}, frontierId={}, targetUser={}",
+                    pluginModId, frontierId.value(), user.name());
             return FrontierActionResult.notFound(frontierId);
         }
 
         SettingsUserShared currentSharedUser = frontier.getUserShared(ApiConverters.toUser(user));
         if (currentSharedUser == null) {
+            MapFrontiers.LOGGER.debug("Rejected partial shared-permission update because target user is not currently shared. pluginModId={}, frontierId={}, targetUser={}",
+                    pluginModId, frontierId.value(), user.name());
             return FrontierActionResult.rejected();
         }
 
@@ -244,12 +259,16 @@ public class ClientFrontierServiceImpl implements PluginScopedClientFrontierServ
     @Override
     public FrontierActionResult removeSharedUser(String pluginModId, FrontierId frontierId, UserRef user) {
         if (!MapFrontiersClient.isModOnServer()) {
+            MapFrontiers.LOGGER.debug("Rejected removeSharedUser because MapFrontiers is not present on the server. pluginModId={}, frontierId={}, targetUser={}",
+                    pluginModId, frontierId.value(), user.name());
             return FrontierActionResult.rejected();
         }
 
         FrontiersOverlayManager personal = MapFrontiersClient.getFrontiersOverlayManager(true);
         FrontierOverlay frontier = personal.getFrontier(frontierId.value());
         if (frontier == null || !frontier.getPersonal()) {
+            MapFrontiers.LOGGER.debug("Could not remove shared user because frontier was not found locally or is not personal. pluginModId={}, frontierId={}, targetUser={}",
+                    pluginModId, frontierId.value(), user.name());
             return FrontierActionResult.notFound(frontierId);
         }
 

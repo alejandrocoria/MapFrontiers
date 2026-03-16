@@ -57,6 +57,8 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
         ApiConverters.applyShape(frontier, shape);
 
         frontiersManager.addGlobalFrontier(frontier);
+        MapFrontiers.LOGGER.info("Created global frontier via server API. pluginModId={}, frontierId={}, owner={}, dimension={}",
+                pluginModId, frontier.getId(), frontierOwner.username, level.identifier());
         notifyGlobalCreated(frontier);
 
         FrontierDataView view = ApiConverters.fromFrontier(frontier);

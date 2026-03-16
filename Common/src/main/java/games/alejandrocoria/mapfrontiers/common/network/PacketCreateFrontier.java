@@ -126,10 +126,16 @@ public class PacketCreateFrontier {
             PacketCreateFrontier message = ctx.message();
             ServerPlayer player = ctx.sender();
             if (player == null) {
+                MapFrontiers.LOGGER.warn("Ignoring PacketCreateFrontier because sender is null.");
                 return;
             }
             MinecraftServer server = player.level().getServer();
             FrontierData frontier;
+
+            MapFrontiers.LOGGER.debug(
+                    "Handling PacketCreateFrontier from player={} frontierId={} personal={} sourcePluginId={}",
+                    player.getGameProfile().name(), message.frontierId, message.personal, message.sourcePluginId
+            );
 
             if (message.personal) {
                 frontier = FrontiersManager.instance.createNewPersonalFrontier(message.frontierId, message.dimension, player, message.sourcePluginId, message.vertices, message.chunks);
@@ -145,6 +151,10 @@ public class PacketCreateFrontier {
                     return;
                 }
             }
+            MapFrontiers.LOGGER.warn(
+                    "Rejected PacketCreateFrontier from player={} frontierId={} personal={} sourcePluginId={}",
+                    player.getGameProfile().name(), message.frontierId, message.personal, message.sourcePluginId
+            );
             PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
         }
     }

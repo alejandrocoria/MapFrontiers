@@ -82,6 +82,7 @@ public class MapFrontiersClient {
         ClientEventHandler.subscribeUpdatedSettingsProfileEvent(MapFrontiersClient.class, profile -> {
             settingsProfile = profile;
             initialSettingsProfileReceived = true;
+            MapFrontiers.LOGGER.debug("Received settings profile from server.");
             resolveHandshake(true, HandshakeSignal.SETTINGS_PROFILE);
             tryPublishClientApi();
         });
@@ -268,6 +269,8 @@ public class MapFrontiersClient {
 
     public static void setFrontiersFromServer(List<FrontierData> globalFrontiers, List<FrontierData> personalFrontiers) {
         initializeManagers();
+        MapFrontiers.LOGGER.debug("Received initial frontier snapshot from server. global={}, personal={}",
+                globalFrontiers.size(), personalFrontiers.size());
         frontiersOverlayManager.setFrontiersFromServer(globalFrontiers);
         personalFrontiersOverlayManager.setFrontiersFromServer(personalFrontiers);
         initialFrontiersReceived = true;
@@ -334,11 +337,13 @@ public class MapFrontiersClient {
 
     public static void receiveHandshakeAck(long nonce) {
         if (!handshakeResolved && nonce == handshakeNonce) {
+            MapFrontiers.LOGGER.debug("Received handshake acknowledgment from server.");
             resolveHandshake(true, HandshakeSignal.ACK);
             return;
         }
 
         if (handshakeResolved && !modOnServer && nonce == handshakeNonce) {
+            MapFrontiers.LOGGER.debug("Received late handshake acknowledgment from server.");
             upgradeToModOnServer(HandshakeSignal.ACK);
         }
     }
@@ -353,6 +358,7 @@ public class MapFrontiersClient {
             if (!handshakeSent) {
                 handshakeNonce = now;
                 handshakeStartedAtMs = now;
+                MapFrontiers.LOGGER.debug("Sending initial handshake to server.");
             }
 
             handshakeSent = true;
@@ -361,6 +367,7 @@ public class MapFrontiersClient {
         }
 
         if (handshakeStartedAtMs > 0L && now - handshakeStartedAtMs >= HANDSHAKE_TIMEOUT_MS) {
+            MapFrontiers.LOGGER.debug("Handshake timed out after {} ms.", HANDSHAKE_TIMEOUT_MS);
             resolveHandshake(false, HandshakeSignal.TIMEOUT);
         }
     }
@@ -389,7 +396,8 @@ public class MapFrontiersClient {
         handshakeResolved = true;
         modOnServer = hasModOnServer;
         tryPublishClientApi();
-        MapFrontiers.LOGGER.info("Handshake resolved. mapfrontiers on server: {}", modOnServer);
+        MapFrontiers.LOGGER.info("Handshake resolved from {}. mapfrontiers on server: {}",
+                source.displayName(), modOnServer);
     }
 
     private static void upgradeToModOnServer(HandshakeSignal source) {
@@ -428,6 +436,10 @@ public class MapFrontiersClient {
         ensureClientApiInitialized();
         MapFrontiersAPIBootstrap.setClientAPI(clientApiImpl);
         clientApiPublished = true;
+        MapFrontiers.LOGGER.info(
+                "Published client API. modOnServer={}, initialSettingsProfileReceived={}, initialFrontiersReceived={}",
+                modOnServer, initialSettingsProfileReceived, initialFrontiersReceived
+        );
     }
 
     public static void setClipboard(FrontierData newClipboard) {
