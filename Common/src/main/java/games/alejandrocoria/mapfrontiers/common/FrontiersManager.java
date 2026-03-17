@@ -77,6 +77,7 @@ public class FrontiersManager {
                         if (frontier.getUsersShared() != null) {
                             boolean removed = frontier.getUsersShared().removeIf(x -> x.getUser().equals(pending.targetUser));
                             if (removed) {
+                                saveFrontierData();
                                 PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier), frontier, server);
                             }
                         }
@@ -124,24 +125,40 @@ public class FrontiersManager {
         return allFrontiers.get(id);
     }
 
-    public FrontierData createNewGlobalFrontier(ResourceKey<Level> dimension, ServerPlayer player, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
+    public FrontierData createNewGlobalFrontier(UUID frontierId,
+                                                ResourceKey<Level> dimension,
+                                                ServerPlayer player,
+                                                @Nullable String sourcePluginId,
+                                                @Nullable List<BlockPos> vertices,
+                                                @Nullable List<ChunkPos> chunks) {
         List<FrontierData> frontiers = getAllGlobalFrontiers(dimension);
-
-        return createNewFrontier(frontiers, dimension, false, player, vertices, chunks);
+        return createNewFrontier(frontierId, frontiers, dimension, false, player, sourcePluginId, vertices, chunks);
     }
 
-    public FrontierData createNewPersonalFrontier(ResourceKey<Level> dimension, ServerPlayer player, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
+    public FrontierData createNewPersonalFrontier(UUID frontierId,
+                                                  ResourceKey<Level> dimension,
+                                                  ServerPlayer player,
+                                                  @Nullable String sourcePluginId,
+                                                  @Nullable List<BlockPos> vertices,
+                                                  @Nullable List<ChunkPos> chunks) {
         List<FrontierData> frontiers = getAllPersonalFrontiers(new SettingsUser(player), dimension);
-
-        return createNewFrontier(frontiers, dimension, true, player, vertices, chunks);
+        return createNewFrontier(frontierId, frontiers, dimension, true, player, sourcePluginId, vertices, chunks);
     }
 
-    private FrontierData createNewFrontier(List<FrontierData> frontiers, ResourceKey<Level> dimension, boolean personal, ServerPlayer player, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
+    private FrontierData createNewFrontier(UUID frontierId,
+                                           List<FrontierData> frontiers,
+                                           ResourceKey<Level> dimension,
+                                           boolean personal,
+                                           ServerPlayer player,
+                                           @Nullable String sourcePluginId,
+                                           @Nullable List<BlockPos> vertices,
+                                           @Nullable List<ChunkPos> chunks) {
         FrontierData frontier = new FrontierData();
-        frontier.setId(UUID.randomUUID());
+        frontier.setId(frontierId);
         frontier.setOwner(new SettingsUser(player));
         frontier.setDimension(dimension);
         frontier.setPersonal(personal);
+        frontier.setSourcePluginId(sourcePluginId);
         frontier.setColor(ColorHelper.getRandomColor());
         frontier.setCreated(new Date());
 
@@ -172,6 +189,18 @@ public class FrontiersManager {
         }
 
         List<FrontierData> frontiers = getAllPersonalFrontiers(frontier.getOwner(), frontier.getDimension());
+        frontiers.add(frontier);
+        allFrontiers.put(frontier.getId(), frontier);
+
+        saveFrontierData();
+    }
+
+    public void addGlobalFrontier(FrontierData frontier) {
+        if (frontier.getPersonal()) {
+            return;
+        }
+
+        List<FrontierData> frontiers = getAllGlobalFrontiers(frontier.getDimension());
         frontiers.add(frontier);
         allFrontiers.put(frontier.getId(), frontier);
 
@@ -475,7 +504,7 @@ public class FrontiersManager {
         }
     }
 
-    private void saveFrontierData() {
+    public void saveFrontierData() {
         CompoundTag nbtFrontiers = new CompoundTag();
         writeToNBT(nbtFrontiers);
         saveFile("frontiers.dat", nbtFrontiers);

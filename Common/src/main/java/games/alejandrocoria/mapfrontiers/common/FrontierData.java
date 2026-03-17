@@ -67,6 +67,7 @@ public class FrontierData {
     protected boolean personal = false;
     protected List<SettingsUserShared> usersShared;
     protected CopiedFrom copiedFrom;
+    protected @Nullable String sourcePluginId;
     protected Date created;
     protected Date modified;
 
@@ -104,6 +105,7 @@ public class FrontierData {
         mode = other.mode;
 
         copiedFrom = other.copiedFrom;
+        sourcePluginId = other.sourcePluginId;
 
         created = other.created;
         modified = other.modified;
@@ -156,6 +158,7 @@ public class FrontierData {
         }
 
         copiedFrom = other.copiedFrom;
+        sourcePluginId = other.sourcePluginId;
 
         modified = other.modified;
 
@@ -197,6 +200,19 @@ public class FrontierData {
 
     public int getVertexCount() {
         return vertices.size();
+    }
+
+    public List<BlockPos> getVertices() {
+        synchronized (vertices) {
+            return new ArrayList<>(vertices);
+        }
+    }
+
+    public void clearVertices() {
+        synchronized (vertices) {
+            vertices.clear();
+        }
+        changes.add(Change.Vertices);
     }
 
     protected void addVertex(BlockPos pos, int index) {
@@ -278,6 +294,19 @@ public class FrontierData {
 
     public int getChunkCount() {
         return chunks.size();
+    }
+
+    public Set<ChunkPos> getChunks() {
+        synchronized (chunks) {
+            return new HashSet<>(chunks);
+        }
+    }
+
+    public void clearChunks() {
+        synchronized (chunks) {
+            chunks.clear();
+        }
+        changes.add(Change.Vertices);
     }
 
     public void moveAllChunks(ChunkPos delta) {
@@ -566,6 +595,14 @@ public class FrontierData {
         return modified;
     }
 
+    public void setSourcePluginId(@Nullable String sourcePluginId) {
+        this.sourcePluginId = sourcePluginId;
+    }
+
+    public @Nullable String getSourcePluginId() {
+        return sourcePluginId;
+    }
+
     // @Note: To record changes if done outside this class.
     // It would be better to change that.
     public void addChange(Change change) {
@@ -597,7 +634,8 @@ public class FrontierData {
 
         visibilityData.readFromNBT(nbt, version);
 
-        personal = nbt.getBoolean("personal");
+        personal = nbt.contains("personal") ? nbt.getBoolean("personal") : true;
+        sourcePluginId = nbt.contains("sourcePluginId") ? nbt.getString("sourcePluginId") : null;
 
         owner = new SettingsUser();
         owner.readFromNBT(nbt.getCompound("owner"));
@@ -673,6 +711,9 @@ public class FrontierData {
         nbt.putString("name2", name2);
         visibilityData.writeToNBT(nbt);
         nbt.putBoolean("personal", personal);
+        if (sourcePluginId != null) {
+            nbt.putString("sourcePluginId", sourcePluginId);
+        }
 
         CompoundTag nbtOwner = new CompoundTag();
         owner.writeToNBT(nbtOwner);
@@ -744,6 +785,11 @@ public class FrontierData {
         id = UUIDHelper.fromBytes(buf);
         dimension = ResourceKey.create(Registries.DIMENSION, buf.readResourceLocation());
         personal = buf.readBoolean();
+        if (buf.readBoolean()) {
+            sourcePluginId = buf.readUtf();
+        } else {
+            sourcePluginId = null;
+        }
         owner = new SettingsUser();
         owner.fromBytes(buf);
 
@@ -850,6 +896,12 @@ public class FrontierData {
         UUIDHelper.toBytes(buf, id);
         buf.writeResourceLocation(dimension.location());
         buf.writeBoolean(personal);
+        if (sourcePluginId == null) {
+            buf.writeBoolean(false);
+        } else {
+            buf.writeBoolean(true);
+            buf.writeUtf(sourcePluginId);
+        }
         owner.toBytes(buf);
 
         if (withChanges == null || withChanges.contains(Change.Visibility)) {
@@ -931,6 +983,14 @@ public class FrontierData {
         public ListTag patterns;
         public int rotation;
 
+        public static @Nullable ListTag normalizePatterns(@Nullable ListTag patterns) {
+            if (patterns == null || patterns.isEmpty()) {
+                return null;
+            }
+
+            return patterns;
+        }
+
         public BannerData() {
             baseColor = DyeColor.WHITE;
             rotation = 0;
@@ -938,9 +998,7 @@ public class FrontierData {
 
         public BannerData(BannerData other) {
             baseColor = other.baseColor;
-            if (other.patterns != null) {
-                patterns = other.patterns.copy();
-            }
+            patterns = normalizePatterns(other.patterns == null ? null : other.patterns.copy());
             rotation = other.rotation;
         }
 
@@ -954,7 +1012,7 @@ public class FrontierData {
             Optional<Tag> patternsOptional = BannerPatternLayers.CODEC.encodeStart(level.registryAccess().createSerializationContext(NbtOps.INSTANCE), bannerPatterns).result();
             patternsOptional.ifPresent(tag -> {
                 if (tag.getType().equals(ListTag.TYPE)) {
-                    patterns = (ListTag) tag.copy();
+                    patterns = normalizePatterns((ListTag) tag.copy());
                 }
             });
             rotation = 0;
@@ -976,7 +1034,7 @@ public class FrontierData {
 
         public void readFromNBT(CompoundTag nbt) {
             baseColor = DyeColor.byId(nbt.getInt("Base"));
-            patterns = nbt.getList("Patterns", Tag.TAG_COMPOUND);
+            patterns = normalizePatterns(nbt.getList("Patterns", Tag.TAG_COMPOUND));
             rotation = nbt.getInt("Rotation");
         }
 
@@ -995,7 +1053,7 @@ public class FrontierData {
 
             CompoundTag nbt = buf.readNbt();
             if (nbt != null) {
-                patterns = nbt.getList("Patterns", Tag.TAG_COMPOUND);
+                patterns = normalizePatterns(nbt.getList("Patterns", Tag.TAG_COMPOUND));
             }
 
             rotation = buf.readInt();

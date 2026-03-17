@@ -69,6 +69,12 @@ public class SettingsProfile {
         AvailableActions actions = new AvailableActions();
 
         if (profile == null) {
+            // While connected to a server with MapFrontiers but profile not received yet,
+            // keep actions disabled until permissions are known.
+            if (MapFrontiersClient.isModOnServer()) {
+                return actions;
+            }
+
             if (frontier != null) {
                 actions.canDelete = true;
                 actions.canUpdate = true;

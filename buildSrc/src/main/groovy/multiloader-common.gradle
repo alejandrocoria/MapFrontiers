@@ -111,17 +111,8 @@ repositories {
     }
 }
 
-sourcesJar {
-    from(rootProject.file("LICENSE")) {
-        rename { "${it}_${mod_name}" }
-    }
-}
-
 jar {
-    from(rootProject.file("LICENSE")) {
-        rename { "${it}_${mod_name}" }
-    }
-
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
         attributes([
                 'Specification-Title'   : mod_name,
@@ -186,3 +177,4 @@ processResources {
 //        }
 //    }
 //}
+

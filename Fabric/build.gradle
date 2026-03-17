@@ -8,10 +8,11 @@ plugins {
     id "com.modrinth.minotaur" version "2.+"
 }
 
-archivesBaseName = "${project.mod_name}-${project.minecraft_version}"
+base.archivesName = "${project.mod_name}-${project.minecraft_version}"
 remapJar.archiveClassifier = "fabric"
 
 dependencies {
+    implementation project(':Api')
     minecraft "com.mojang:minecraft:${minecraft_version}"
     mappings loom.layered {
         officialMojangMappings()
@@ -22,7 +23,6 @@ dependencies {
     implementation group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.1'
 
     modImplementation group: 'mysticdrew', name: 'common-networking-fabric', version: project.common_networking_version, changing: true
-    modApi include(group: 'mysticdrew', name: 'common-networking-fabric', version: project.common_networking_version, changing: true)
     modApi "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${forge_config_api_port_version}"
     modImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
     modApi group: 'info.journeymap', name: 'journeymap-api-fabric', version: project.journeymap_api_version, changing: true
@@ -57,6 +57,8 @@ loom {
 
 jar {
     dependsOn "processDocs"
+    dependsOn project(':Api').tasks.named('classes')
+    from project(':Api').sourceSets.main.output
 }
 
 task processDocs(type: Copy) {

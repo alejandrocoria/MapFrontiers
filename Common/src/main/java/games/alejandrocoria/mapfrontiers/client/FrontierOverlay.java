@@ -41,6 +41,7 @@ import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -141,7 +142,7 @@ public class FrontierOverlay extends FrontierData {
     public int getHash() {
         if (dirtyhash) {
             dirtyhash = false;
-            hash = Objects.hash(id, color, dimension, name1, name2, visibilityData, vertices, chunks, mode, banner, usersShared, copiedFrom);
+            hash = Objects.hash(id, color, dimension, name1, name2, visibilityData, vertices, chunks, mode, banner, usersShared, copiedFrom, sourcePluginId);
         }
 
         return hash;
@@ -1391,13 +1392,16 @@ public class FrontierOverlay extends FrontierData {
                 return;
             }
 
-            BannerPatternLayers patternLayers;
-            Optional<BannerPatternLayers> bannerPatterns = BannerPatternLayers.CODEC.parse(level.registryAccess().createSerializationContext(NbtOps.INSTANCE), bannerData.patterns).result();
-            if (bannerPatterns.isPresent()) {
-                patternLayers = bannerPatterns.get();
-            } else {
-                MapFrontiers.LOGGER.error("Error creating banner pattern layers");
-                return;
+            ListTag patterns = FrontierData.BannerData.normalizePatterns(bannerData.patterns);
+            BannerPatternLayers patternLayers = BannerPatternLayers.EMPTY;
+            if (patterns != null) {
+                Optional<BannerPatternLayers> bannerPatterns = BannerPatternLayers.CODEC.parse(level.registryAccess().createSerializationContext(NbtOps.INSTANCE), patterns).result();
+                if (bannerPatterns.isPresent()) {
+                    patternLayers = bannerPatterns.get();
+                } else {
+                    MapFrontiers.LOGGER.error("Error creating banner pattern layers");
+                    return;
+                }
             }
 
             ModelPart bannerModelPart = mc.getEntityModels().bakeLayer(ModelLayers.BANNER).getChild("flag");

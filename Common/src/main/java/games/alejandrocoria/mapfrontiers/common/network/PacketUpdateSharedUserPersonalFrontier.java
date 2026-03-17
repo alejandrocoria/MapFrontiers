@@ -81,6 +81,7 @@ public class PacketUpdateSharedUserPersonalFrontier {
 
                     currentUserShared.setActions(message.userShared.getActions());
                     currentFrontier.addChange(FrontierData.Change.Shared);
+                    FrontiersManager.instance.saveFrontierData();
 
                     PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(currentFrontier, player.getId()), currentFrontier, server);
                 } else {

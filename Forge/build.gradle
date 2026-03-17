@@ -1,35 +1,28 @@
-import com.modrinth.minotaur.dependencies.ModDependency
 import com.modrinth.minotaur.dependencies.VersionDependency
 
 plugins {
     id 'multiloader-loader'
-    id 'net.minecraftforge.gradle' version '[6.0.24,6.2)'
-    id 'org.spongepowered.mixin' version '0.7-SNAPSHOT'
+    id 'net.minecraftforge.gradle' version '[7.0.2,8.0)'
     id 'net.darkhax.curseforgegradle' version '1.+'
     id "com.modrinth.minotaur" version "2.+"
 }
 
-archivesBaseName = "${project.mod_name}-${project.minecraft_version}"
+repositories {
+    maven minecraft.mavenizer
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    maven {
+        name = 'Fabric'
+        url = uri('https://maven.fabricmc.net')
+    }
+    mavenCentral()
+}
+
+base.archivesName = "${project.mod_name}-${project.minecraft_version}"
 jar.archiveClassifier = 'forge'
-
-jarJar.enable()
-tasks.jarJar.configure {
-    archiveClassifier.set('forge')
-}
-
-tasks.named("build").configure {
-    dependsOn("jarJar")
-}
 
 java {
     sourcesJar.enabled = false
-}
-
-mixin {
-//    add sourceSets.main, "mapfrontiers-refmap.json"
-
-    config("${mod_id}.mixins.json")
-    config("${mod_id}.forge.mixins.json")
 }
 
 jar {
@@ -41,23 +34,19 @@ jar {
 minecraft {
     mappings channel: 'official', version: minecraft_version
 
-    copyIdeResources = true //Calls processResources when in dev
-    reobf = false
-
-    // Automatically enable forge AccessTransformers if the file exists
-    // This location is hardcoded in Forge and can not be changed.
-    // https://github.com/MinecraftForge/MinecraftForge/blob/be1698bb1554f9c8fa2f58e32b9ab70bc4385e60/fmlloader/src/main/java/net/minecraftforge/fml/loading/moddiscovery/ModFile.java#L123
-    // Forge still uses SRG names during compile time, so we cannot use the common AT's
-    def at = file('src/main/resources/META-INF/accesstransformer.cfg')
-    if (at.exists()) {
-        accessTransformer = at
-    }
+    accessTransformers = files('src/main/resources/META-INF/accesstransformer.cfg')
 
     runs {
+        configureEach {
+            args "--mixin.config=${mod_id}.mixins.json"
+            args "--mixin.config=${mod_id}.forge.mixins.json"
+        }
+
         client {
-            workingDirectory file('runs/client')
-            ideaModule "${rootProject.name}.${project.name}.main"
-            taskName 'Client'
+            workingDir.convention layout.projectDirectory.dir("runs/client")
+            systemProperty "mixin.debug.export", "true"
+            systemProperty "mixin.env.remapRefMap", "true"
+            systemProperty "mixin.env.refMapRemappingFile", "${buildDir}/createSrgToMcp/output.srg"
             mods {
                 modClientRun {
                     source sourceSets.main
@@ -66,9 +55,10 @@ minecraft {
         }
 
         server {
-            workingDirectory file('runs/server')
-            ideaModule "${rootProject.name}.${project.name}.main"
-            taskName 'Server'
+            workingDir.convention layout.projectDirectory.dir("runs/server")
+            systemProperty "mixin.debug.export", "true"
+            systemProperty "mixin.env.remapRefMap", "true"
+            systemProperty "mixin.env.refMapRemappingFile", "${buildDir}/createSrgToMcp/output.srg"
             mods {
                 modServerRun {
                     source sourceSets.main
@@ -77,10 +67,11 @@ minecraft {
         }
 
         data {
-            workingDirectory file('runs/data')
-            ideaModule "${rootProject.name}.${project.name}.main"
+            workingDir.convention layout.projectDirectory.dir("runs/data")
             args '--mod', mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
-            taskName 'Data'
+            systemProperty "mixin.debug.export", "true"
+            systemProperty "mixin.env.remapRefMap", "true"
+            systemProperty "mixin.env.refMapRemappingFile", "${buildDir}/createSrgToMcp/output.srg"
             mods {
                 modDataRun {
                     source sourceSets.main
@@ -93,15 +84,12 @@ minecraft {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 dependencies {
-    minecraft "net.minecraftforge:forge:${forge_version}"
-    annotationProcessor 'org.spongepowered:mixin:0.8.5-SNAPSHOT:processor'
+    implementation project(':Api')
+    implementation minecraft.dependency("net.minecraftforge:forge:${forge_version}")
     // Forge's hack fix
     implementation('net.sf.jopt-simple:jopt-simple:5.0.4') { version { strictly '5.0.4' } }
 
     implementation group: 'mysticdrew', name: 'common-networking-forge', version: project.common_networking_version
-    jarJar (group: 'mysticdrew', name: 'common-networking-forge', version: project.common_networking_jarjar_version) {
-        jarJar.pin(it, project.common_networking_version)
-    }
     api group: 'info.journeymap', name: 'journeymap-api-forge', version: project.journeymap_api_version, changing: true
     implementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_forge_file_id}"
 }
@@ -112,16 +100,13 @@ sourceSets.each {
     it.java.destinationDirectory = dir
 }
 
-//jar {
-//    manifest {
-//        attributes([
-//                "MixinConfigs" : "${mod_id}.forge.mixins.json"
-//        ])
-//    }
-//}
-
 jar {
     dependsOn "processDocs"
+    dependsOn project(':Api').tasks.named('classes')
+    from project(':Api').sourceSets.main.output
+    manifest {
+        attributes["MixinConfigs"] = "${mod_id}.mixins.json,${mod_id}.forge.mixins.json"
+    }
 }
 
 task processDocs(type: Copy) {

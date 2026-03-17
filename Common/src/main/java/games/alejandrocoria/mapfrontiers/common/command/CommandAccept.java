@@ -65,6 +65,7 @@ public class CommandAccept {
 
                 userShared.setPending(false);
                 frontier.addChange(FrontierData.Change.Shared);
+                FrontiersManager.instance.saveFrontierData();
 
                 FrontiersManager.instance.removePendingShareFrontier(messageID);
 

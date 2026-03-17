@@ -87,6 +87,7 @@ public class PacketRemoveSharedUserPersonalFrontier {
 
                     if (currentFrontier.checkActionUserShared(playerUser, SettingsUserShared.Action.UpdateSettings)) {
                         currentFrontier.removeUserShared(message.targetUser);
+                        FrontiersManager.instance.saveFrontierData();
 
                         if (userShared.isPending()) {
                             FrontiersManager.instance.removePendingShareFrontier(message.targetUser);

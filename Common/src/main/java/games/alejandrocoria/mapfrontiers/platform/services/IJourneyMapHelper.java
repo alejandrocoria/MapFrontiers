@@ -3,7 +3,6 @@ package games.alejandrocoria.mapfrontiers.platform.services;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.MultiBufferSource;
 
 import java.io.File;
 import java.util.List;
