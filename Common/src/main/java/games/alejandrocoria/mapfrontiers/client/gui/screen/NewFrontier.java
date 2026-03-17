@@ -81,7 +81,10 @@ public class NewFrontier extends AutoScaledScreen {
         buttonFrontierType.addOption(Config.getTranslatedEnum(Config.FilterFrontierType.Global));
         buttonFrontierType.addOption(Config.getTranslatedEnum(Config.FilterFrontierType.Personal));
         buttonFrontierType.setSelected(0);
-        if (!MapFrontiersClient.isModOnServer() || MapFrontiersClient.getSettingsProfile().createFrontier != SettingsProfile.State.Enabled) {
+        SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
+        boolean canCreateGlobal = !MapFrontiersClient.isModOnServer()
+                || (profile != null && profile.createFrontier == SettingsProfile.State.Enabled);
+        if (!canCreateGlobal) {
             buttonFrontierType.setSelected(1);
             buttonFrontierType.active = false;
         }

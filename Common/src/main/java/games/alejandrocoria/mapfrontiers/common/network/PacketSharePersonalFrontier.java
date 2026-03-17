@@ -18,6 +18,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.EnumSet;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
@@ -26,15 +27,19 @@ public class PacketSharePersonalFrontier {
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketSharePersonalFrontier> STREAM_CODEC = StreamCodec.ofMember(PacketSharePersonalFrontier::encode, PacketSharePersonalFrontier::new);
 
     private UUID frontierID;
-    private final SettingsUser targetUser;
+    private final SettingsUserShared userShared;
 
     public PacketSharePersonalFrontier() {
-        targetUser = new SettingsUser();
+        userShared = new SettingsUserShared();
     }
 
     public PacketSharePersonalFrontier(UUID frontierID, SettingsUser user) {
+        this(frontierID, createSharedUser(user));
+    }
+
+    public PacketSharePersonalFrontier(UUID frontierID, SettingsUserShared userShared) {
         this.frontierID = frontierID;
-        targetUser = user;
+        this.userShared = userShared;
     }
 
     public static CustomPacketPayload.Type<CustomPacketPayload> type() {
@@ -42,12 +47,12 @@ public class PacketSharePersonalFrontier {
     }
 
     public PacketSharePersonalFrontier(FriendlyByteBuf buf) {
-        this.targetUser = new SettingsUser();
+        this.userShared = new SettingsUserShared();
 
         try {
             if (buf.readableBytes() > 1) {
                 this.frontierID = UUIDHelper.fromBytes(buf);
-                this.targetUser.fromBytes(buf);
+                this.userShared.fromBytes(buf);
             }
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketSharePersonalFrontier: %s", t));
@@ -57,7 +62,7 @@ public class PacketSharePersonalFrontier {
     public void encode(FriendlyByteBuf buf) {
         try {
             UUIDHelper.toBytes(buf, frontierID);
-            targetUser.toBytes(buf);
+            userShared.toBytes(buf);
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketSharePersonalFrontier: %s", t));
         }
@@ -73,12 +78,12 @@ public class PacketSharePersonalFrontier {
             MinecraftServer server = player.level().getServer();
             SettingsUser playerUser = new SettingsUser(player);
 
-            message.targetUser.fillMissingInfo(false, server);
-            if (message.targetUser.uuid == null) {
+            message.userShared.getUser().fillMissingInfo(false, server);
+            if (message.userShared.getUser().uuid == null) {
                 return;
             }
 
-            ServerPlayer targetPlayer = server.getPlayerList().getPlayer(message.targetUser.uuid);
+            ServerPlayer targetPlayer = server.getPlayerList().getPlayer(message.userShared.getUser().uuid);
             if (targetPlayer == null) {
                 return;
             }
@@ -86,17 +91,19 @@ public class PacketSharePersonalFrontier {
             FrontierData currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontierID);
 
             if (currentFrontier != null && currentFrontier.getPersonal()) {
-                if (currentFrontier.getOwner().equals(message.targetUser) || currentFrontier.hasUserShared(message.targetUser)) {
+                if (currentFrontier.getOwner().equals(message.userShared.getUser()) || currentFrontier.hasUserShared(message.userShared.getUser())) {
                     return;
                 }
 
                 if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.SharePersonalFrontier, playerUser,
                         MapFrontiers.isOPorHost(player), currentFrontier.getOwner())) {
                     if (currentFrontier.checkActionUserShared(playerUser, SettingsUserShared.Action.UpdateSettings)) {
-                        int shareMessageID = FrontiersManager.instance.addShareMessage(message.targetUser,
+                        int shareMessageID = FrontiersManager.instance.addShareMessage(message.userShared.getUser(),
                                 currentFrontier.getId());
 
-                        currentFrontier.addUserShared(new SettingsUserShared(message.targetUser, true));
+                        message.userShared.setPending(true);
+                        currentFrontier.addUserShared(message.userShared);
+                        FrontiersManager.instance.saveFrontierData();
 
                         PacketHandler.sendTo(new PacketPersonalFrontierShared(shareMessageID, playerUser,
                                 currentFrontier.getOwner(), currentFrontier.getName1(), currentFrontier.getName2()), targetPlayer);
@@ -108,5 +115,11 @@ public class PacketSharePersonalFrontier {
                 }
             }
         }
+    }
+
+    private static SettingsUserShared createSharedUser(SettingsUser user) {
+        SettingsUserShared sharedUser = new SettingsUserShared(user, false);
+        sharedUser.setActions(EnumSet.noneOf(SettingsUserShared.Action.class));
+        return sharedUser;
     }
 }

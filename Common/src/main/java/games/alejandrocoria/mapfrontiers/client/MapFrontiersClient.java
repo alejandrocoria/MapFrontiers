@@ -1,12 +1,14 @@
 package games.alejandrocoria.mapfrontiers.client;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.api.MapFrontiersAPIBootstrap;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.hud.HUD;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.ModSettings;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.api.client.MapFrontiersClientAPIImpl;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
@@ -30,8 +32,35 @@ import java.util.Set;
 
 @ParametersAreNonnullByDefault
 public class MapFrontiersClient {
+    private enum HandshakeSignal {
+        ACK("handshake acknowledgment"),
+        SETTINGS_PROFILE("settings profile"),
+        TIMEOUT("timeout");
+
+        private final String displayName;
+
+        HandshakeSignal(String displayName) {
+            this.displayName = displayName;
+        }
+
+        public String displayName() {
+            return displayName;
+        }
+    }
+
+    private static final long HANDSHAKE_TIMEOUT_MS = 1800L;
+    private static final long HANDSHAKE_RETRY_MS = 600L;
+
     private static IClientAPI jmAPI;
     private static boolean handshakeSent = false;
+    private static long handshakeNonce = 0L;
+    private static long handshakeStartedAtMs = 0L;
+    private static long lastHandshakeSentAtMs = 0L;
+    private static boolean handshakeResolved = false;
+    private static boolean modOnServer = false;
+    private static boolean initialSettingsProfileReceived = false;
+    private static boolean initialFrontiersReceived = false;
+    private static boolean clientApiPublished = false;
     private static FrontiersOverlayManager frontiersOverlayManager;
     private static FrontiersOverlayManager personalFrontiersOverlayManager;
     private static FrontierLocalOverrides localOverrides;
@@ -47,9 +76,16 @@ public class MapFrontiersClient {
 
     private static FrontierData clipboard = null;
     private static ClientLevel lastClientLevel = null;
+    private static MapFrontiersClientAPIImpl clientApiImpl;
 
     protected static void init() {
-        ClientEventHandler.subscribeUpdatedSettingsProfileEvent(MapFrontiersClient.class, profile -> settingsProfile = profile);
+        ClientEventHandler.subscribeUpdatedSettingsProfileEvent(MapFrontiersClient.class, profile -> {
+            settingsProfile = profile;
+            initialSettingsProfileReceived = true;
+            MapFrontiers.LOGGER.debug("Received settings profile from server.");
+            resolveHandshake(true, HandshakeSignal.SETTINGS_PROFILE);
+            tryPublishClientApi();
+        });
 
         ClientEventHandler.subscribeClientTickEvent(MapFrontiersClient.class, client -> {
             if (client.level == null) {
@@ -57,17 +93,16 @@ public class MapFrontiersClient {
             }
 
             if (client.level != lastClientLevel) {
-                if (settingsProfile == null) {
-                    handshakeSent = false;
-                    MapFrontiers.LOGGER.info("World changed and not synchronized with server, attempting handshake again.");
+                if (!handshakeResolved) {
+                    restartHandshake();
+                    if (lastClientLevel != null) {
+                        MapFrontiers.LOGGER.info("World changed before handshake resolution, restarting handshake.");
+                    }
                 }
                 lastClientLevel = client.level;
             }
 
-            if (!handshakeSent) {
-                handshakeSent = true;
-                PacketHandler.sendToServer(new PacketHandshake());
-            }
+            processHandshake();
 
             if (frontiersOverlayManager != null) {
                 frontiersOverlayManager.updateAllOverlays(false);
@@ -148,6 +183,7 @@ public class MapFrontiersClient {
 
         ClientEventHandler.subscribeClientConnectedEvent(MapFrontiersClient.class, () -> {
             initializeManagers();
+            restartHandshake();
 
             MapFrontiers.LOGGER.info("ClientConnectedEvent done");
         });
@@ -167,7 +203,20 @@ public class MapFrontiersClient {
 
             settingsProfile = null;
             handshakeSent = false;
+            handshakeResolved = false;
+            modOnServer = false;
+            initialSettingsProfileReceived = false;
+            initialFrontiersReceived = false;
+            clientApiPublished = false;
+            handshakeNonce = 0L;
+            handshakeStartedAtMs = 0L;
+            lastHandshakeSentAtMs = 0L;
             lastClientLevel = null;
+            if (clientApiImpl != null) {
+                clientApiImpl.close();
+                clientApiImpl = null;
+            }
+            MapFrontiersAPIBootstrap.clearClientAPI();
 
             ChatFrontiers.clear();
 
@@ -220,8 +269,12 @@ public class MapFrontiersClient {
 
     public static void setFrontiersFromServer(List<FrontierData> globalFrontiers, List<FrontierData> personalFrontiers) {
         initializeManagers();
+        MapFrontiers.LOGGER.debug("Received initial frontier snapshot from server. global={}, personal={}",
+                globalFrontiers.size(), personalFrontiers.size());
         frontiersOverlayManager.setFrontiersFromServer(globalFrontiers);
         personalFrontiersOverlayManager.setFrontiersFromServer(personalFrontiers);
+        initialFrontiersReceived = true;
+        tryPublishClientApi();
         if (hud != null) {
             hud.frontierChanged();
         }
@@ -279,7 +332,114 @@ public class MapFrontiersClient {
     }
 
     public static boolean isModOnServer() {
-        return settingsProfile != null;
+        return modOnServer;
+    }
+
+    public static void receiveHandshakeAck(long nonce) {
+        if (!handshakeResolved && nonce == handshakeNonce) {
+            MapFrontiers.LOGGER.debug("Received handshake acknowledgment from server.");
+            resolveHandshake(true, HandshakeSignal.ACK);
+            return;
+        }
+
+        if (handshakeResolved && !modOnServer && nonce == handshakeNonce) {
+            MapFrontiers.LOGGER.debug("Received late handshake acknowledgment from server.");
+            upgradeToModOnServer(HandshakeSignal.ACK);
+        }
+    }
+
+    private static void processHandshake() {
+        if (handshakeResolved) {
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        if (!handshakeSent || now - lastHandshakeSentAtMs >= HANDSHAKE_RETRY_MS) {
+            if (!handshakeSent) {
+                handshakeNonce = now;
+                handshakeStartedAtMs = now;
+                MapFrontiers.LOGGER.debug("Sending initial handshake to server.");
+            }
+
+            handshakeSent = true;
+            lastHandshakeSentAtMs = now;
+            PacketHandler.sendToServer(new PacketHandshake(handshakeNonce));
+        }
+
+        if (handshakeStartedAtMs > 0L && now - handshakeStartedAtMs >= HANDSHAKE_TIMEOUT_MS) {
+            MapFrontiers.LOGGER.debug("Handshake timed out after {} ms.", HANDSHAKE_TIMEOUT_MS);
+            resolveHandshake(false, HandshakeSignal.TIMEOUT);
+        }
+    }
+
+    private static void restartHandshake() {
+        handshakeSent = false;
+        handshakeResolved = false;
+        modOnServer = false;
+        handshakeNonce = 0L;
+        handshakeStartedAtMs = 0L;
+        lastHandshakeSentAtMs = 0L;
+        initialSettingsProfileReceived = false;
+        initialFrontiersReceived = false;
+        clientApiPublished = false;
+        settingsProfile = null;
+    }
+
+    private static void resolveHandshake(boolean hasModOnServer, HandshakeSignal source) {
+        if (handshakeResolved) {
+            if (!modOnServer && hasModOnServer) {
+                upgradeToModOnServer(source);
+            }
+            return;
+        }
+
+        handshakeResolved = true;
+        modOnServer = hasModOnServer;
+        tryPublishClientApi();
+        MapFrontiers.LOGGER.info("Handshake resolved from {}. mapfrontiers on server: {}",
+                source.displayName(), modOnServer);
+    }
+
+    private static void upgradeToModOnServer(HandshakeSignal source) {
+        modOnServer = true;
+
+        long elapsedMs = handshakeStartedAtMs > 0L ? Math.max(0L, System.currentTimeMillis() - handshakeStartedAtMs) : -1L;
+        if (elapsedMs >= 0L) {
+            MapFrontiers.LOGGER.warn(
+                    "Received {} after handshake timeout (expected {} ms, received at {} ms). Upgrading connection mode to server-mod.",
+                    source.displayName(), HANDSHAKE_TIMEOUT_MS, elapsedMs
+            );
+        } else {
+            MapFrontiers.LOGGER.warn(
+                    "Received {} after handshake timeout (expected {} ms). Upgrading connection mode to server-mod.",
+                    source.displayName(), HANDSHAKE_TIMEOUT_MS
+            );
+        }
+    }
+
+    private static void ensureClientApiInitialized() {
+        initializeManagers();
+        if (clientApiImpl == null) {
+            clientApiImpl = new MapFrontiersClientAPIImpl();
+        }
+    }
+
+    private static void tryPublishClientApi() {
+        if (!handshakeResolved || clientApiPublished) {
+            return;
+        }
+
+        if (modOnServer && (!initialSettingsProfileReceived || !initialFrontiersReceived)) {
+            return;
+        }
+
+        ensureClientApiInitialized();
+        MapFrontiersAPIBootstrap.setClientAPI(clientApiImpl);
+        clientApiPublished = true;
+        MapFrontiers.LOGGER.info(
+                "Published client API. modOnServer={}, initialSettingsProfileReceived={}, initialFrontiersReceived={}",
+                modOnServer, initialSettingsProfileReceived, initialFrontiersReceived
+        );
     }
 
     public static void setClipboard(FrontierData newClipboard) {

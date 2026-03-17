@@ -1,3 +1,7 @@
+**Beta 21:**
+* Added: API available soon.
+* Change: The copy button puts the frontier ID on the clipboard.
+
 **Beta 20:**
 * Fixed: New shapes are the wrong size when using an odd width.
  

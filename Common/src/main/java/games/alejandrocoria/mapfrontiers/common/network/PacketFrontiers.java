@@ -92,6 +92,8 @@ public class PacketFrontiers {
     public static void handle(PacketContext<PacketFrontiers> ctx) {
         if (Side.CLIENT.equals(ctx.side())) {
             PacketFrontiers message = ctx.message();
+            MapFrontiers.LOGGER.debug("Handling PacketFrontiers. global={}, personal={}",
+                    message.globalFrontiers.size(), message.personalFrontiers.size());
             MapFrontiersClient.setFrontiersFromServer(message.globalFrontiers, message.personalFrontiers);
         }
     }

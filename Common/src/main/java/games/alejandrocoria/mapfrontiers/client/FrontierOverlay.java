@@ -135,7 +135,7 @@ public class FrontierOverlay extends FrontierData {
     public int getHash() {
         if (dirtyhash) {
             dirtyhash = false;
-            hash = Objects.hash(id, color, dimension, name1, name2, visibilityData, vertices, chunks, mode, banner, usersShared, copiedFrom);
+            hash = Objects.hash(id, color, dimension, name1, name2, visibilityData, vertices, chunks, mode, banner, usersShared, copiedFrom, sourcePluginId);
         }
 
         return hash;

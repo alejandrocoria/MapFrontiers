@@ -32,9 +32,9 @@ public class PacketHandler {
         CommonNetworkMod.registerPacket(PacketSharePersonalFrontier.type(), PacketSharePersonalFrontier.class, PacketSharePersonalFrontier.STREAM_CODEC, PacketSharePersonalFrontier::handle);
         CommonNetworkMod.registerPacket(PacketRemoveSharedUserPersonalFrontier.type(), PacketRemoveSharedUserPersonalFrontier.class, PacketRemoveSharedUserPersonalFrontier.STREAM_CODEC, PacketRemoveSharedUserPersonalFrontier::handle);
         CommonNetworkMod.registerPacket(PacketUpdateSharedUserPersonalFrontier.type(), PacketUpdateSharedUserPersonalFrontier.class, PacketUpdateSharedUserPersonalFrontier.STREAM_CODEC, PacketUpdateSharedUserPersonalFrontier::handle);
-        CommonNetworkMod.registerPacket(PacketHandshake.type(), PacketHandshake.class, PacketHandshake.STREAM_CODEC, PacketHandshake::handle);
 
         // both
+        CommonNetworkMod.registerPacket(PacketHandshake.type(), PacketHandshake.class, PacketHandshake.STREAM_CODEC, PacketHandshake::handle);
         CommonNetworkMod.registerPacket(PacketFrontierSettings.type(), PacketFrontierSettings.class, PacketFrontierSettings.STREAM_CODEC, PacketFrontierSettings::handle);
         CommonNetworkMod.registerPacket(PacketChangeFrontierToGlobal.type(), PacketChangeFrontierToGlobal.class, PacketChangeFrontierToGlobal.STREAM_CODEC, PacketChangeFrontierToGlobal::handle);
         CommonNetworkMod.registerPacket(PacketChangeFrontierToPersonal.type(), PacketChangeFrontierToPersonal.class, PacketChangeFrontierToPersonal.STREAM_CODEC, PacketChangeFrontierToPersonal::handle);

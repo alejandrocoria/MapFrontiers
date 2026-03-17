@@ -193,7 +193,10 @@ public class ModSettings extends AutoScaledScreen {
             tabSelected = MapFrontiersClient.getLastSettingsTab();
         }
 
-        canEditGroups = MapFrontiersClient.isModOnServer() && MapFrontiersClient.getSettingsProfile().updateSettings == SettingsProfile.State.Enabled;
+        SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
+        canEditGroups = MapFrontiersClient.isModOnServer()
+                && profile != null
+                && profile.updateSettings == SettingsProfile.State.Enabled;
         if (!canEditGroups) {
             if (tabSelected == Tab.Groups || tabSelected == Tab.Actions) {
                 tabSelected = Tab.Credits;

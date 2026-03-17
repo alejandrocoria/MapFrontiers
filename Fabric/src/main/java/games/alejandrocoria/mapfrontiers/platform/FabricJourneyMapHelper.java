@@ -49,7 +49,7 @@ public class FabricJourneyMapHelper implements IJourneyMapHelper {
 
     @Override
     public void fullscreenMapCenterOn(int x, int z) {
-        UIManager.INSTANCE.openFullscreenMap().centerOn(x, z);
+        UIManager.INSTANCE.getOrOpenFullscreenMap().centerOn(x, z);
     }
 
     @Override

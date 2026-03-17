@@ -7,6 +7,7 @@ import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
@@ -24,6 +25,7 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class PacketCreateFrontier {
@@ -32,12 +34,25 @@ public class PacketCreateFrontier {
 
     private ResourceKey<Level> dimension = Level.OVERWORLD;
     private boolean personal = false;
+    private UUID frontierId = new UUID(0L, 0L);
+    private @Nullable String sourcePluginId;
     private List<BlockPos> vertices;
     private List<ChunkPos> chunks;
 
-    public PacketCreateFrontier(ResourceKey<Level> dimension, boolean personal, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
+    public PacketCreateFrontier(UUID frontierId, ResourceKey<Level> dimension, boolean personal, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
+        this(frontierId, dimension, personal, null, vertices, chunks);
+    }
+
+    public PacketCreateFrontier(UUID frontierId,
+                                ResourceKey<Level> dimension,
+                                boolean personal,
+                                @Nullable String sourcePluginId,
+                                @Nullable List<BlockPos> vertices,
+                                @Nullable List<ChunkPos> chunks) {
+        this.frontierId = frontierId;
         this.dimension = dimension;
         this.personal = personal;
+        this.sourcePluginId = sourcePluginId;
         this.vertices = vertices;
         this.chunks = chunks;
     }
@@ -51,6 +66,8 @@ public class PacketCreateFrontier {
             if (buf.readableBytes() > 1) {
                 this.dimension = ResourceKey.create(Registries.DIMENSION, buf.readIdentifier());
                 this.personal = buf.readBoolean();
+                this.frontierId = UUIDHelper.fromBytes(buf);
+                this.sourcePluginId = buf.readNullable(FriendlyByteBuf::readUtf);
 
                 boolean hasVertex = buf.readBoolean();
                 if (hasVertex) {
@@ -81,6 +98,8 @@ public class PacketCreateFrontier {
         try {
             buf.writeIdentifier(dimension.identifier());
             buf.writeBoolean(personal);
+            UUIDHelper.toBytes(buf, frontierId);
+            buf.writeNullable(sourcePluginId, FriendlyByteBuf::writeUtf);
 
             buf.writeBoolean(vertices != null);
             if (vertices != null) {
@@ -107,25 +126,35 @@ public class PacketCreateFrontier {
             PacketCreateFrontier message = ctx.message();
             ServerPlayer player = ctx.sender();
             if (player == null) {
+                MapFrontiers.LOGGER.warn("Ignoring PacketCreateFrontier because sender is null.");
                 return;
             }
             MinecraftServer server = player.level().getServer();
             FrontierData frontier;
 
+            MapFrontiers.LOGGER.debug(
+                    "Handling PacketCreateFrontier from player={} frontierId={} personal={} sourcePluginId={}",
+                    player.getGameProfile().name(), message.frontierId, message.personal, message.sourcePluginId
+            );
+
             if (message.personal) {
-                frontier = FrontiersManager.instance.createNewPersonalFrontier(message.dimension, player, message.vertices, message.chunks);
+                frontier = FrontiersManager.instance.createNewPersonalFrontier(message.frontierId, message.dimension, player, message.sourcePluginId, message.vertices, message.chunks);
                 PacketHandler.sendToUsersWithAccess(new PacketFrontierCreated(frontier, player.getId()), frontier, server);
 
                 return;
             } else {
                 if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.CreateGlobalFrontier,
                         new SettingsUser(player), MapFrontiers.isOPorHost(player), null)) {
-                    frontier = FrontiersManager.instance.createNewGlobalFrontier(message.dimension, player, message.vertices, message.chunks);
+                    frontier = FrontiersManager.instance.createNewGlobalFrontier(message.frontierId, message.dimension, player, message.sourcePluginId, message.vertices, message.chunks);
                     PacketHandler.sendToAll(new PacketFrontierCreated(frontier, player.getId()), server);
 
                     return;
                 }
             }
+            MapFrontiers.LOGGER.warn(
+                    "Rejected PacketCreateFrontier from player={} frontierId={} personal={} sourcePluginId={}",
+                    player.getGameProfile().name(), message.frontierId, message.personal, message.sourcePluginId
+            );
             PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
         }
     }

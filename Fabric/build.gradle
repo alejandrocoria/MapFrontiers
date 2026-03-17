@@ -14,6 +14,7 @@ base.archivesName = "${project.mod_name}-${project.minecraft_version}"
 remapJar.archiveClassifier = "fabric"
 
 dependencies {
+    implementation project(':Api')
     minecraft "com.mojang:minecraft:${minecraft_version}"
     mappings loom.layered {
         officialMojangMappings()
@@ -61,6 +62,8 @@ loom {
 
 jar {
     dependsOn "processDocs"
+    dependsOn project(':Api').tasks.named('classes')
+    from project(':Api').sourceSets.main.output
 }
 
 tasks.register('processDocs', Copy) {
