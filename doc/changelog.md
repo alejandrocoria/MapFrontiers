@@ -1,4 +1,5 @@
 **Beta 21:**
+* Added: API available soon.
 * Change: The copy button puts the frontier ID on the clipboard.
 
 **Beta 20:**
