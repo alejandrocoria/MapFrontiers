@@ -20,3 +20,22 @@ subprojects {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
 }
+
+tasks.register("publishMod") {
+    group = "release"
+    description = "Publishes Fabric, Forge, and NeoForge builds to CurseForge and Modrinth."
+    dependsOn(
+            ":Fabric:publishCurseForge",
+            ":Forge:publishCurseForge",
+            ":NeoForge:publishCurseForge",
+            ":Fabric:modrinth",
+            ":Forge:modrinth",
+            ":NeoForge:modrinth"
+    )
+}
+
+tasks.register("publishApi") {
+    group = "release"
+    description = "Publishes the API artifact to Modrinth."
+    dependsOn(":Api:modrinth")
+}
