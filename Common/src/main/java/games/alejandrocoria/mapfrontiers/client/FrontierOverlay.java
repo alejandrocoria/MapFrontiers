@@ -36,6 +36,7 @@ import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.data.AtlasIds;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -1385,13 +1386,16 @@ public class FrontierOverlay extends FrontierData {
                 return;
             }
 
-            BannerPatternLayers patternLayers;
-            Optional<BannerPatternLayers> bannerPatterns = BannerPatternLayers.CODEC.parse(level.registryAccess().createSerializationContext(NbtOps.INSTANCE), bannerData.patterns).result();
-            if (bannerPatterns.isPresent()) {
-                patternLayers = bannerPatterns.get();
-            } else {
-                MapFrontiers.LOGGER.error("Error creating banner pattern layers");
-                return;
+            ListTag patterns = FrontierData.BannerData.normalizePatterns(bannerData.patterns);
+            BannerPatternLayers patternLayers = BannerPatternLayers.EMPTY;
+            if (patterns != null) {
+                Optional<BannerPatternLayers> bannerPatterns = BannerPatternLayers.CODEC.parse(level.registryAccess().createSerializationContext(NbtOps.INSTANCE), patterns).result();
+                if (bannerPatterns.isPresent()) {
+                    patternLayers = bannerPatterns.get();
+                } else {
+                    MapFrontiers.LOGGER.error("Error creating banner pattern layers");
+                    return;
+                }
             }
 
             ModelPart bannerModelPart = mc.getEntityModels().bakeLayer(ModelLayers.STANDING_BANNER_FLAG).getChild("flag");

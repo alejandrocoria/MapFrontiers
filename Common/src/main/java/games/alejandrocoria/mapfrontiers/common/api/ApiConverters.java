@@ -101,9 +101,11 @@ public final class ApiConverters {
             return null;
         }
 
+        ListTag patterns = FrontierData.BannerData.normalizePatterns(bannerData.patterns);
+
         return new FrontierBanner(
                 bannerData.baseColor.getId(),
-                bannerData.patterns == null ? null : bannerData.patterns.toString(),
+                patterns == null ? "[]" : patterns.toString(),
                 bannerData.rotation
         );
     }
@@ -115,14 +117,12 @@ public final class ApiConverters {
 
         FrontierData.BannerData data = new FrontierData.BannerData();
         data.baseColor = DyeColor.byId(banner.baseColorId());
-        if (banner.patternsNbt() != null && !banner.patternsNbt().isBlank()) {
-            try {
-                Object parsed = TagParser.create(NbtOps.INSTANCE).parseFully(banner.patternsNbt());
-                if (parsed instanceof ListTag listTag) {
-                    data.patterns = listTag;
-                }
-            } catch (Exception ignored) {
+        try {
+            Object parsed = TagParser.create(NbtOps.INSTANCE).parseFully(banner.patternsNbt());
+            if (parsed instanceof ListTag listTag) {
+                data.patterns = FrontierData.BannerData.normalizePatterns(listTag);
             }
+        } catch (Exception ignored) {
         }
         data.rotation = banner.rotation();
         return data;

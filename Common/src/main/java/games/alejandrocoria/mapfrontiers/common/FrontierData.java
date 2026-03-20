@@ -984,6 +984,14 @@ public class FrontierData {
         public ListTag patterns;
         public int rotation;
 
+        public static @Nullable ListTag normalizePatterns(@Nullable ListTag patterns) {
+            if (patterns == null || patterns.isEmpty()) {
+                return null;
+            }
+
+            return patterns;
+        }
+
         public BannerData() {
             baseColor = DyeColor.WHITE;
             rotation = 0;
@@ -991,9 +999,7 @@ public class FrontierData {
 
         public BannerData(BannerData other) {
             baseColor = other.baseColor;
-            if (other.patterns != null) {
-                patterns = other.patterns.copy();
-            }
+            patterns = normalizePatterns(other.patterns == null ? null : other.patterns.copy());
             rotation = other.rotation;
         }
 
@@ -1007,7 +1013,7 @@ public class FrontierData {
             Optional<Tag> patternsOptional = BannerPatternLayers.CODEC.encodeStart(level.registryAccess().createSerializationContext(NbtOps.INSTANCE), bannerPatterns).result();
             patternsOptional.ifPresent(tag -> {
                 if (tag.getType().equals(ListTag.TYPE)) {
-                    patterns = (ListTag) tag.copy();
+                    patterns = normalizePatterns((ListTag) tag.copy());
                 }
             });
             rotation = 0;
@@ -1029,7 +1035,7 @@ public class FrontierData {
 
         public void readFromNBT(CompoundTag nbt) {
             baseColor = DyeColor.byId(nbt.getInt("Base").get());
-            patterns = nbt.getListOrEmpty("Patterns");
+            patterns = normalizePatterns(nbt.getListOrEmpty("Patterns"));
             rotation = nbt.getIntOr("Rotation", 0);
         }
 
@@ -1048,7 +1054,7 @@ public class FrontierData {
 
             CompoundTag nbt = buf.readNbt();
             if (nbt != null) {
-                patterns = nbt.getListOrEmpty("Patterns");
+                patterns = normalizePatterns(nbt.getListOrEmpty("Patterns"));
             }
 
             rotation = buf.readInt();
