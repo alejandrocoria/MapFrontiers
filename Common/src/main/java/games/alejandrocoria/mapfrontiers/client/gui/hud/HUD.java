@@ -174,6 +174,10 @@ public class HUD {
             return;
         }
 
+        if (mc.options.hideGui) {
+            return;
+        }
+
         if (mc.screen != null && !(mc.screen instanceof ChatScreen)) {
             return;
         }
