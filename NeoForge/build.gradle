@@ -10,11 +10,6 @@ plugins {
 
 base.archivesName = "${project.mod_name}-${project.minecraft_version}"
 
-jarJar.setEnabled(true)
-tasks.jarJar.configure {
-    jar.archiveClassifier.set('neoforge')
-}
-
 java {
     sourcesJar.enabled = false
 }
@@ -52,7 +47,6 @@ neoForge {
     dependencies {
         implementation project(':Api')
         implementation group: "mysticdrew", name: "common-networking-neoforge", version: project.common_networking_version
-        jarJar (group: "mysticdrew", name: "common-networking-neoforge", version: project.common_networking_version)
         api "fuzs.forgeconfigapiport:forgeconfigapiport-neoforge:${forge_config_api_port_version}"
         api group: 'info.journeymap', name: 'journeymap-api-neoforge', version: project.journeymap_api_version, changing: true
         implementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_neoforge_file_id}"

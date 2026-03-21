@@ -5,21 +5,12 @@ plugins {
     id 'multiloader-loader'
     id 'net.minecraftforge.accesstransformers' version '5.0.2'
     id 'net.minecraftforge.gradle' version '7.0.0-beta.55'
-    id 'net.minecraftforge.jarjar' version '0.2.3'
     id 'net.darkhax.curseforgegradle' version '1.+'
     id "com.modrinth.minotaur" version "2.+"
 }
 
 base.archivesName = "${project.mod_name}-${project.minecraft_version}"
 jar.archiveClassifier = 'forge'
-
-jarJar.register() {
-    archiveClassifier = 'forge'
-}
-
-tasks.named("build").configure {
-    dependsOn("jarJar")
-}
 
 java {
     sourcesJar.enabled = false
@@ -38,7 +29,6 @@ dependencies {
     annotationProcessor 'net.minecraftforge:eventbus-validator:7.0-beta.10'
 
     implementation group: 'mysticdrew', name: 'common-networking-forge', version: project.common_networking_version
-    jarJar (group: 'mysticdrew', name: 'common-networking-forge', version: project.common_networking_version)
     api group: 'info.journeymap', name: 'journeymap-api-forge', version: project.journeymap_api_version, changing: true
     implementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_forge_file_id}"
 }

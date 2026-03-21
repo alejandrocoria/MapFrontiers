@@ -25,7 +25,6 @@ dependencies {
     implementation group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.1'
 
     modImplementation group: 'mysticdrew', name: 'common-networking-fabric', version: project.common_networking_version, changing: true
-    modApi include(group: 'mysticdrew', name: 'common-networking-fabric', version: project.common_networking_version, changing: true)
     modApi "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${forge_config_api_port_version}"
     modApi "com.terraformersmc:modmenu:${project.modmenu_version}"
     modApi group: 'info.journeymap', name: 'journeymap-api-fabric', version: project.journeymap_api_version, changing: true
