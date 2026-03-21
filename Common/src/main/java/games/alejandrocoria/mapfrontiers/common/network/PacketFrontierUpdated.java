@@ -3,9 +3,7 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -66,12 +64,7 @@ public class PacketFrontierUpdated {
     public static void handle(PacketContext<PacketFrontierUpdated> ctx) {
         if (Side.CLIENT.equals(ctx.side())) {
             PacketFrontierUpdated message = ctx.message();
-            FrontierOverlay frontierOverlay = MapFrontiersClient.getFrontiersOverlayManager(message.frontier.getPersonal())
-                    .updateFrontier(message.frontier);
-
-            if (frontierOverlay != null) {
-                ClientEventHandler.postUpdatedFrontierEvent(frontierOverlay, message.playerID);
-            }
+            MapFrontiersClient.getCommandService().applyFrontierUpdated(message.frontier, message.playerID);
         }
     }
 }

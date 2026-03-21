@@ -1,9 +1,6 @@
 package games.alejandrocoria.mapfrontiers.common.api.server;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.api.event.FrontierCreatedEvent;
-import games.alejandrocoria.mapfrontiers.api.event.FrontierDeletedEvent;
-import games.alejandrocoria.mapfrontiers.api.event.FrontierUpdatedEvent;
 import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedServerFrontierService;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
@@ -12,33 +9,26 @@ import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierShape;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
-import games.alejandrocoria.mapfrontiers.common.api.SimpleEventBus;
-import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierCreated;
-import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierDeleted;
-import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierUpdated;
-import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreationFactory;
+import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierCommandResult;
+import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierCommandService;
+import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierEventHub;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.Level;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public class ServerFrontierServiceImpl implements PluginScopedServerFrontierService {
-    private static final int SYSTEM_ACTOR_ID = -1;
+    private final ServerFrontierCommandService commandService;
+    private final ServerFrontierEventHub eventHub;
 
-    private final FrontiersManager frontiersManager;
-    private final SimpleEventBus eventBus;
-
-    public ServerFrontierServiceImpl(FrontiersManager frontiersManager, SimpleEventBus eventBus) {
-        this.frontiersManager = frontiersManager;
-        this.eventBus = eventBus;
+    public ServerFrontierServiceImpl(ServerFrontierCommandService commandService, ServerFrontierEventHub eventHub) {
+        this.commandService = commandService;
+        this.eventHub = eventHub;
     }
 
     @Override
@@ -46,64 +36,52 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
         ResourceKey<Level> level = ApiConverters.toDimension(dimension);
         SettingsUser frontierOwner = ApiConverters.toUser(owner);
 
-        FrontierData frontier = new FrontierData();
-        frontier.setId(UUID.randomUUID());
-        frontier.setOwner(frontierOwner);
-        frontier.setDimension(level);
-        frontier.setPersonal(false);
-        frontier.setColor(ColorHelper.getRandomColor());
-        frontier.setCreated(new Date());
-        frontier.setSourcePluginId(pluginModId);
+        FrontierData frontier = FrontierCreationFactory.createFrontier(UUID.randomUUID(), frontierOwner, level, false, pluginModId, null, null);
         ApiConverters.applyShape(frontier, shape);
 
-        frontiersManager.addGlobalFrontier(frontier);
+        ServerFrontierCommandResult result = commandService.createGlobalFrontier(frontier);
+        result.dispatchNetworkActions();
         MapFrontiers.LOGGER.info("Created global frontier via server API. pluginModId={}, frontierId={}, owner={}, dimension={}",
                 pluginModId, frontier.getId(), frontierOwner.username, level.identifier());
-        notifyGlobalCreated(frontier);
 
         FrontierDataView view = ApiConverters.fromFrontier(frontier);
-        eventBus.post(new FrontierCreatedEvent(view));
+        eventHub.postCreated(frontier);
         return view;
     }
 
     @Override
     public Optional<FrontierDataView> updateGlobalFrontier(String pluginModId, FrontierId frontierId, FrontierMutation mutation) {
-        FrontierData frontier = frontiersManager.getFrontierFromID(frontierId.value());
+        FrontierData frontier = commandService.getFrontier(frontierId.value());
         if (frontier == null || frontier.getPersonal()) {
             return Optional.empty();
         }
 
         ApiConverters.applyMutation(frontier, mutation);
-        boolean updated = frontiersManager.updateGlobalFrontier(frontier);
-        if (!updated) {
+        ServerFrontierCommandResult result = commandService.updateGlobalFrontier(frontier);
+        if (!result.isSuccess()) {
             return Optional.empty();
         }
-        notifyGlobalUpdated(frontier);
+        result.dispatchNetworkActions();
 
         FrontierDataView view = ApiConverters.fromFrontier(frontier);
-        eventBus.post(new FrontierUpdatedEvent(view));
+        eventHub.postUpdated(frontier);
         return Optional.of(view);
     }
 
     @Override
     public boolean deleteGlobalFrontier(String pluginModId, FrontierId frontierId) {
-        FrontierData frontier = frontiersManager.getFrontierFromID(frontierId.value());
-        if (frontier == null || frontier.getPersonal()) {
-            return false;
+        ServerFrontierCommandResult result = commandService.deleteGlobalFrontier(frontierId.value());
+        if (result.isSuccess()) {
+            result.dispatchNetworkActions();
+            eventHub.postDeleted(frontierId.value());
         }
 
-        boolean deleted = frontiersManager.deleteGlobalFrontier(frontier.getDimension(), frontier.getId());
-        if (deleted) {
-            notifyGlobalDeleted(frontier);
-            eventBus.post(new FrontierDeletedEvent(frontierId));
-        }
-
-        return deleted;
+        return result.isSuccess();
     }
 
     @Override
     public Optional<FrontierDataView> getFrontier(String pluginModId, FrontierId frontierId) {
-        FrontierData frontier = frontiersManager.getFrontierFromID(frontierId.value());
+        FrontierData frontier = commandService.getFrontier(frontierId.value());
         if (frontier == null || frontier.getPersonal()) {
             return Optional.empty();
         }
@@ -113,29 +91,7 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
     @Override
     public List<FrontierDataView> listGlobalFrontiers(String pluginModId, DimensionId dimension) {
         ResourceKey<Level> level = ApiConverters.toDimension(dimension);
-        return frontiersManager.getAllGlobalFrontiers(level).stream().map(ApiConverters::fromFrontier).toList();
-    }
-
-    private void notifyGlobalCreated(FrontierData frontier) {
-        MinecraftServer server = MapFrontiers.getCurrentServer();
-        if (server != null) {
-            PacketHandler.sendToAll(new PacketFrontierCreated(frontier, SYSTEM_ACTOR_ID), server);
-        }
-    }
-
-    private void notifyGlobalUpdated(FrontierData frontier) {
-        MinecraftServer server = MapFrontiers.getCurrentServer();
-        if (server != null) {
-            PacketHandler.sendToAll(new PacketFrontierUpdated(frontier, SYSTEM_ACTOR_ID), server);
-        }
-    }
-
-    private void notifyGlobalDeleted(FrontierData frontier) {
-        MinecraftServer server = MapFrontiers.getCurrentServer();
-        if (server != null) {
-            PacketHandler.sendToAll(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(), false, SYSTEM_ACTOR_ID), server);
-        }
+        return commandService.getAllGlobalFrontiers(level).stream().map(ApiConverters::fromFrontier).toList();
     }
 
 }
-

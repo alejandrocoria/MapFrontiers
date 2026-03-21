@@ -8,7 +8,8 @@ import games.alejandrocoria.mapfrontiers.client.gui.hud.HUD;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.ModSettings;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.api.client.MapFrontiersClientAPIImpl;
+import games.alejandrocoria.mapfrontiers.common.frontier.client.ClientFrontierCommandService;
+import games.alejandrocoria.mapfrontiers.common.frontier.client.ClientFrontierRuntime;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
@@ -24,11 +25,13 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class MapFrontiersClient {
@@ -61,9 +64,7 @@ public class MapFrontiersClient {
     private static boolean initialSettingsProfileReceived = false;
     private static boolean initialFrontiersReceived = false;
     private static boolean clientApiPublished = false;
-    private static FrontiersOverlayManager frontiersOverlayManager;
-    private static FrontiersOverlayManager personalFrontiersOverlayManager;
-    private static FrontierLocalOverrides localOverrides;
+    private static ClientFrontierRuntime frontierRuntime;
     private static SettingsProfile settingsProfile;
     private static ModSettings.Tab lastSettingsTab = ModSettings.Tab.Credits;
 
@@ -76,17 +77,8 @@ public class MapFrontiersClient {
 
     private static FrontierData clipboard = null;
     private static ClientLevel lastClientLevel = null;
-    private static MapFrontiersClientAPIImpl clientApiImpl;
 
     protected static void init() {
-        ClientEventHandler.subscribeUpdatedSettingsProfileEvent(MapFrontiersClient.class, profile -> {
-            settingsProfile = profile;
-            initialSettingsProfileReceived = true;
-            MapFrontiers.LOGGER.debug("Received settings profile from server.");
-            resolveHandshake(true, HandshakeSignal.SETTINGS_PROFILE);
-            tryPublishClientApi();
-        });
-
         ClientEventHandler.subscribeClientTickEvent(MapFrontiersClient.class, client -> {
             if (client.level == null) {
                 return;
@@ -104,9 +96,14 @@ public class MapFrontiersClient {
 
             processHandshake();
 
-            if (frontiersOverlayManager != null) {
-                frontiersOverlayManager.updateAllOverlays(false);
-                personalFrontiersOverlayManager.updateAllOverlays(false);
+            ClientFrontierRuntime runtime = frontierRuntime;
+            if (runtime != null && runtime.hasInitializedManagers()) {
+                FrontiersOverlayManager frontiersOverlayManager = runtime.getGlobalFrontiersOverlayManager();
+                FrontiersOverlayManager personalFrontiersOverlayManager = runtime.getPersonalFrontiersOverlayManager();
+                if (frontiersOverlayManager != null && personalFrontiersOverlayManager != null) {
+                    frontiersOverlayManager.updateAllOverlays(false);
+                    personalFrontiersOverlayManager.updateAllOverlays(false);
+                }
             }
 
             if (hud != null) {
@@ -119,7 +116,9 @@ public class MapFrontiersClient {
                 return;
             }
 
-            if (frontiersOverlayManager == null) {
+            FrontiersOverlayManager frontiersOverlayManager = getFrontiersOverlayManagerOrNull(false);
+            FrontiersOverlayManager personalFrontiersOverlayManager = getFrontiersOverlayManagerOrNull(true);
+            if (frontiersOverlayManager == null || personalFrontiersOverlayManager == null) {
                 return;
             }
 
@@ -182,19 +181,16 @@ public class MapFrontiersClient {
         });
 
         ClientEventHandler.subscribeClientConnectedEvent(MapFrontiersClient.class, () -> {
-            initializeManagers();
+            ensureFrontierRuntime();
             restartHandshake();
 
             MapFrontiers.LOGGER.info("ClientConnectedEvent done");
         });
 
         ClientEventHandler.subscribeClientDisconnectedEvent(MapFrontiersClient.class, () -> {
-            if (frontiersOverlayManager != null) {
-                frontiersOverlayManager.close();
-                frontiersOverlayManager = null;
-                personalFrontiersOverlayManager.close();
-                personalFrontiersOverlayManager = null;
-                localOverrides = null;
+            if (frontierRuntime != null) {
+                frontierRuntime.close();
+                frontierRuntime = null;
             }
 
             if (hud != null) {
@@ -212,10 +208,6 @@ public class MapFrontiersClient {
             handshakeStartedAtMs = 0L;
             lastHandshakeSentAtMs = 0L;
             lastClientLevel = null;
-            if (clientApiImpl != null) {
-                clientApiImpl.close();
-                clientApiImpl = null;
-            }
             MapFrontiersAPIBootstrap.clearClientAPI();
 
             ChatFrontiers.clear();
@@ -247,32 +239,47 @@ public class MapFrontiersClient {
 
     public static void setjmAPI(IClientAPI newJmAPI) {
         jmAPI = newJmAPI;
+        if (frontierRuntime != null) {
+            frontierRuntime.setJourneyMapApi(newJmAPI);
+        }
     }
 
-    private static void initializeManagers() {
-        if (jmAPI == null) {
-            return;
+    private static ClientFrontierRuntime ensureFrontierRuntime() {
+        if (frontierRuntime == null) {
+            frontierRuntime = new ClientFrontierRuntime(jmAPI);
+            frontierRuntime.getSettingsProfileBridge().subscribeUpdated(MapFrontiersClient.class, profile -> {
+                settingsProfile = profile;
+                initialSettingsProfileReceived = true;
+                MapFrontiers.LOGGER.debug("Received settings profile from server.");
+                resolveHandshake(true, HandshakeSignal.SETTINGS_PROFILE);
+                tryPublishClientApi();
+            });
+        } else {
+            frontierRuntime.setJourneyMapApi(jmAPI);
         }
 
-        if (frontiersOverlayManager == null) {
-            frontiersOverlayManager = new FrontiersOverlayManager(jmAPI, false);
+        frontierRuntime.ensureInitialized();
+        return frontierRuntime;
+    }
+
+    private static FrontiersOverlayManager getFrontiersOverlayManagerOrNull(boolean personal) {
+        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        if (personal) {
+            return runtime.getPersonalFrontiersOverlayManager();
         }
 
-        if (personalFrontiersOverlayManager == null) {
-            personalFrontiersOverlayManager = new FrontiersOverlayManager(jmAPI, true);
-        }
-
-        if (localOverrides == null) {
-            localOverrides = new FrontierLocalOverrides();
-        }
+        return runtime.getGlobalFrontiersOverlayManager();
     }
 
     public static void setFrontiersFromServer(List<FrontierData> globalFrontiers, List<FrontierData> personalFrontiers) {
-        initializeManagers();
+        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        if (!runtime.hasInitializedManagers()) {
+            return;
+        }
+
         MapFrontiers.LOGGER.debug("Received initial frontier snapshot from server. global={}, personal={}",
                 globalFrontiers.size(), personalFrontiers.size());
-        frontiersOverlayManager.setFrontiersFromServer(globalFrontiers);
-        personalFrontiersOverlayManager.setFrontiersFromServer(personalFrontiers);
+        runtime.getSyncService().applyServerSnapshot(globalFrontiers, personalFrontiers);
         initialFrontiersReceived = true;
         tryPublishClientApi();
         if (hud != null) {
@@ -280,14 +287,34 @@ public class MapFrontiersClient {
         }
     }
 
-    public static FrontiersOverlayManager getFrontiersOverlayManager(boolean personal) {
-        initializeManagers();
-
-        if (personal) {
-            return personalFrontiersOverlayManager;
-        } else {
-            return frontiersOverlayManager;
+    public static List<FrontierOverlay> getFrontiers(boolean personal, ResourceKey<Level> dimension) {
+        FrontiersOverlayManager manager = getFrontiersOverlayManagerOrNull(personal);
+        if (manager == null) {
+            return List.of();
         }
+
+        return manager.getAllFrontiers(dimension);
+    }
+
+    public static List<FrontierOverlay> getAllFrontiers(boolean personal) {
+        FrontiersOverlayManager manager = getFrontiersOverlayManagerOrNull(personal);
+        if (manager == null) {
+            return List.of();
+        }
+
+        return manager.getAllFrontiers().values().stream().flatMap(List::stream).toList();
+    }
+
+    public static void updateSelectedFrontierMarker(boolean personal, ResourceKey<Level> dimension, @Nullable FrontierOverlay frontier) {
+        FrontiersOverlayManager manager = getFrontiersOverlayManagerOrNull(personal);
+        if (manager != null) {
+            manager.updateSelectedMarker(dimension, frontier);
+        }
+    }
+
+    public static @Nullable FrontierOverlay getCopiedPersonalFrontier(UUID copiedFromId) {
+        FrontiersOverlayManager manager = getFrontiersOverlayManagerOrNull(true);
+        return manager == null ? null : manager.getFrontierCopiedFrom(copiedFromId);
     }
 
     public static List<FrontierOverlay> getFrontiersInPosition(ResourceKey<Level> dimension, BlockPos pos) {
@@ -295,7 +322,11 @@ public class MapFrontiersClient {
     }
 
     public static List<FrontierOverlay> getFrontiersInPosition(ResourceKey<Level> dimension, BlockPos pos, double maxDistanceToOpen) {
-        initializeManagers();
+        FrontiersOverlayManager personalFrontiersOverlayManager = getFrontiersOverlayManagerOrNull(true);
+        FrontiersOverlayManager frontiersOverlayManager = getFrontiersOverlayManagerOrNull(false);
+        if (personalFrontiersOverlayManager == null || frontiersOverlayManager == null) {
+            return List.of();
+        }
 
         List<FrontierOverlay> frontiers = personalFrontiersOverlayManager.getFrontiersInPosition(dimension, pos, maxDistanceToOpen);
         frontiers.addAll(frontiersOverlayManager.getFrontiersInPosition(dimension, pos, maxDistanceToOpen));
@@ -304,7 +335,13 @@ public class MapFrontiersClient {
     }
 
     public static FrontierLocalOverrides getLocalOverrides() {
-        return localOverrides;
+        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        return runtime.getLocalOverrides();
+    }
+
+    public static ClientFrontierCommandService getCommandService() {
+        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        return runtime.getCommandService();
     }
 
     public static SettingsProfile getSettingsProfile() {
@@ -333,6 +370,15 @@ public class MapFrontiersClient {
 
     public static boolean isModOnServer() {
         return modOnServer;
+    }
+
+    public static void receiveSettingsProfile(SettingsProfile profile) {
+        SettingsProfile currentProfile = settingsProfile;
+        if (currentProfile != null && currentProfile.equals(profile)) {
+            return;
+        }
+
+        ensureFrontierRuntime().getSettingsProfileBridge().postUpdated(profile);
     }
 
     public static void receiveHandshakeAck(long nonce) {
@@ -418,10 +464,7 @@ public class MapFrontiersClient {
     }
 
     private static void ensureClientApiInitialized() {
-        initializeManagers();
-        if (clientApiImpl == null) {
-            clientApiImpl = new MapFrontiersClientAPIImpl();
-        }
+        ensureFrontierRuntime();
     }
 
     private static void tryPublishClientApi() {
@@ -434,7 +477,7 @@ public class MapFrontiersClient {
         }
 
         ensureClientApiInitialized();
-        MapFrontiersAPIBootstrap.setClientAPI(clientApiImpl);
+        MapFrontiersAPIBootstrap.setClientAPI(frontierRuntime.getOrCreateClientApi());
         clientApiPublished = true;
         MapFrontiers.LOGGER.info(
                 "Published client API. modOnServer={}, initialSettingsProfileReceived={}, initialFrontiersReceived={}",

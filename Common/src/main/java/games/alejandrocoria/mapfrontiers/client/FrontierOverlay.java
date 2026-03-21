@@ -255,7 +255,7 @@ public class FrontierOverlay extends FrontierData {
         }
 
         vertexSelected = closest;
-        MapFrontiersClient.getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
     }
 
     public void selectClosestEdge(BlockPos pos) {
@@ -321,7 +321,7 @@ public class FrontierOverlay extends FrontierData {
         }
 
         vertexSelected = closest;
-        MapFrontiersClient.getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
     }
 
     private static Vec3 closestPointToEdge(Vec3 point, Vec3 edge1, Vec3 edge2) {
@@ -538,7 +538,7 @@ public class FrontierOverlay extends FrontierData {
 
         super.moveVertex(pos, vertexSelected);
         needUpdateOverlay = true;
-        MapFrontiersClient.getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
     }
 
     @Override
@@ -734,7 +734,7 @@ public class FrontierOverlay extends FrontierData {
             vertexSelected = vertices.size() - 1;
         }
 
-        MapFrontiersClient.getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
 
         needUpdateOverlay = true;
     }
@@ -744,7 +744,7 @@ public class FrontierOverlay extends FrontierData {
         if (vertexSelected >= vertices.size()) {
             vertexSelected = -1;
         }
-        MapFrontiersClient.getFrontiersOverlayManager(personal).updateSelectedMarker(getDimension(), this);
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
     }
 
     public int getSelectedVertexIndex() {
@@ -773,7 +773,7 @@ public class FrontierOverlay extends FrontierData {
         BlockPos closest = vertex;
         double closestDistance = snapDistance * snapDistance;
 
-        for (FrontierOverlay frontier : MapFrontiersClient.getFrontiersOverlayManager(true).getAllFrontiers(dimension)) {
+        for (FrontierOverlay frontier : MapFrontiersClient.getFrontiers(true, dimension)) {
             if (frontier == this) {
                 continue;
             }
@@ -788,7 +788,7 @@ public class FrontierOverlay extends FrontierData {
             }
         }
 
-        for (FrontierOverlay frontier : MapFrontiersClient.getFrontiersOverlayManager(false).getAllFrontiers(dimension)) {
+        for (FrontierOverlay frontier : MapFrontiersClient.getFrontiers(false, dimension)) {
             if (frontier == this) {
                 continue;
             }

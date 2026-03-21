@@ -4,16 +4,14 @@ import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.ModSettings;
-import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
+import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerSettingsCommandResult;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -59,20 +57,13 @@ public class PacketFrontierSettings {
         PacketFrontierSettings message = ctx.message();
         if (Side.SERVER.equals(ctx.side())) {
             ServerPlayer player = ctx.sender();
-            if (player == null) {
+            if (player == null || MapFrontiers.getServerRuntime() == null) {
                 return;
             }
-            MinecraftServer server = player.level().getServer();
-            if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.UpdateSettings,
-                    new SettingsUser(player), MapFrontiers.isOPorHost(player), null)) {
-                FrontiersManager.instance.setSettings(message.settings);
 
-                for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-                    PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(p)), p);
-                }
-            } else {
-                PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
-            }
+            ServerSettingsCommandResult result = MapFrontiers.getServerRuntime().getSettingsService()
+                    .updateSettings(player, message.settings);
+            result.dispatchNetworkActions();
         } else if (Side.CLIENT.equals(ctx.side())) {
             if (Minecraft.getInstance().screen instanceof ModSettings) {
                 ((ModSettings) Minecraft.getInstance().screen).setFrontierSettings(message.settings);

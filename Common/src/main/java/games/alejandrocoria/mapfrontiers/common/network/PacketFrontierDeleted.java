@@ -4,7 +4,6 @@ import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
@@ -66,11 +65,7 @@ public class PacketFrontierDeleted {
     public static void handle(PacketContext<PacketFrontierDeleted> ctx) {
         if (Side.CLIENT.equals(ctx.side())) {
             PacketFrontierDeleted message = ctx.message();
-            boolean deleted = MapFrontiersClient.getFrontiersOverlayManager(message.personal).deleteFrontier(message.dimension,message.frontierID) != null;
-
-            if (deleted) {
-                ClientEventHandler.postDeletedFrontierEvent(message.frontierID);
-            }
+            MapFrontiersClient.getCommandService().applyFrontierDeleted(message.dimension, message.frontierID, message.personal);
         }
     }
 }

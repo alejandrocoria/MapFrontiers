@@ -5,7 +5,6 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import games.alejandrocoria.mapfrontiers.client.ChatFrontiers;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.AcceptFrontierCopyDialog;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
@@ -35,8 +34,7 @@ public class ClientCommandAccept {
             return messageID;
         }
 
-        FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(true);
-        FrontierOverlay currentFrontier = manager.getFrontierCopiedFrom(receivedFrontier.getCopiedFromId());
+        FrontierOverlay currentFrontier = MapFrontiersClient.getCopiedPersonalFrontier(receivedFrontier.getCopiedFromId());
         Minecraft.getInstance().setScreen(null);
         Minecraft.getInstance().schedule(() -> new AcceptFrontierCopyDialog(messageID, receivedFrontier, currentFrontier).display());
 

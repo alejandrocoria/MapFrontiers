@@ -4,16 +4,12 @@ import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
-import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierCommandResult;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -64,48 +60,12 @@ public class PacketUpdateFrontier {
             if (player == null) {
                 return;
             }
-            MinecraftServer server = player.level().getServer();
-            SettingsUser playerUser = new SettingsUser(player);
-            FrontierData currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontier.getId());
-
-            if (currentFrontier != null) {
-                message.frontier.setPersonal(currentFrontier.getPersonal());
-                if (!currentFrontier.getOwner().isEmpty()) {
-                    message.frontier.setOwner(currentFrontier.getOwner());
-                }
-
-                message.frontier.setUsersShared(currentFrontier.getUsersShared());
-                message.frontier.removeChange(FrontierData.Change.Shared);
-
-                if (message.frontier.getPersonal()) {
-                    if (currentFrontier.checkActionUserShared(playerUser, SettingsUserShared.Action.UpdateFrontier)) {
-                        boolean updated = FrontiersManager.instance.updatePersonalFrontier(message.frontier.getOwner(), message.frontier);
-                        if (updated) {
-                            if (message.frontier.getUsersShared() != null) {
-                                for (SettingsUserShared userShared : message.frontier.getUsersShared()) {
-                                    FrontiersManager.instance.updatePersonalFrontier(userShared.getUser(), message.frontier);
-                                }
-                            }
-                            PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(message.frontier, player.getId()),
-                                    message.frontier, server);
-                        }
-                    }
-
-                    return;
-                } else {
-                    if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.UpdateGlobalFrontier, playerUser,
-                            MapFrontiers.isOPorHost(player), message.frontier.getOwner())) {
-                        boolean updated = FrontiersManager.instance.updateGlobalFrontier(message.frontier);
-                        if (updated) {
-                            PacketHandler.sendToAll(new PacketFrontierUpdated(message.frontier, player.getId()), server);
-                        }
-
-                        return;
-                    }
-                }
-
-                PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
+            if (MapFrontiers.getServerRuntime() == null) {
+                return;
             }
+
+            ServerFrontierCommandResult result = MapFrontiers.getServerRuntime().getCommandService().updateFrontier(player, message.frontier);
+            result.dispatchNetworkActions();
         }
     }
 }

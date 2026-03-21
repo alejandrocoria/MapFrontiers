@@ -32,8 +32,7 @@ public class FabricClientCommandAccept {
             return messageID;
         }
 
-        FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(true);
-        FrontierOverlay currentFrontier = manager.getFrontierCopiedFrom(receivedFrontier.getCopiedFromId());
+        FrontierOverlay currentFrontier = MapFrontiersClient.getCopiedPersonalFrontier(receivedFrontier.getCopiedFromId());
         Minecraft.getInstance().setScreen(null);
         Minecraft.getInstance().schedule(() -> new AcceptFrontierCopyDialog(messageID, receivedFrontier, currentFrontier).display());
 

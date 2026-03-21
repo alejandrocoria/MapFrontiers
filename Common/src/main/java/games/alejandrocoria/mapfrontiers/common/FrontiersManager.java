@@ -1,13 +1,10 @@
 package games.alejandrocoria.mapfrontiers.common;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.common.event.EventHandler;
-import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierUpdated;
-import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreationFactory;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
-import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -36,60 +33,25 @@ import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class FrontiersManager {
-    public static FrontiersManager instance;
-
     private final HashMap<UUID, FrontierData> allFrontiers;
     private final HashMap<ResourceKey<Level>, ArrayList<FrontierData>> dimensionsGlobalFrontiers;
     private final HashMap<SettingsUser, HashMap<ResourceKey<Level>, ArrayList<FrontierData>>> usersDimensionsPersonalFrontiers;
     private final HashMap<Integer, PendingShareFrontier> pendingShareFrontiers;
-    private int pendingShareFrontiersTick = 0;
     private FrontierSettings frontierSettings;
     private File ModDir;
     private boolean frontierOwnersChecked = false;
 
     private static int pendingShareFrontierID = 0;
-    private static final int pendingShareFrontierTickDuration = 1200;
 
     public FrontiersManager() {
-        instance = this;
         allFrontiers = new HashMap<>();
         dimensionsGlobalFrontiers = new HashMap<>();
         usersDimensionsPersonalFrontiers = new HashMap<>();
         pendingShareFrontiers = new HashMap<>();
         frontierSettings = new FrontierSettings();
-
-        EventHandler.subscribeServerTickEvent(this, server -> {
-            ++pendingShareFrontiersTick;
-
-            if (pendingShareFrontiersTick >= 100) {
-                pendingShareFrontiersTick -= 100;
-
-                for (PendingShareFrontier pending : pendingShareFrontiers.values()) {
-                    pending.tickCount += 100;
-
-                    if (pending.tickCount >= pendingShareFrontierTickDuration) {
-                        FrontierData frontier = getFrontierFromID(pending.frontierID);
-                        if (frontier == null) {
-                            continue;
-                        }
-
-                        if (frontier.getUsersShared() != null) {
-                            boolean removed = frontier.getUsersShared().removeIf(x -> x.getUser().equals(pending.targetUser));
-                            if (removed) {
-                                saveFrontierData();
-                                PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier), frontier, server);
-                            }
-                        }
-                    }
-                }
-
-                pendingShareFrontiers.entrySet().removeIf(x -> x.getValue().tickCount >= pendingShareFrontierTickDuration);
-            }
-        });
     }
 
     public void close() {
-        EventHandler.unsubscribeAllEvents(this);
     }
 
     public void setSettings(FrontierSettings frontierSettings) {
@@ -152,28 +114,8 @@ public class FrontiersManager {
                                            @Nullable String sourcePluginId,
                                            @Nullable List<BlockPos> vertices,
                                            @Nullable List<ChunkPos> chunks) {
-        FrontierData frontier = new FrontierData();
-        frontier.setId(frontierId);
-        frontier.setOwner(new SettingsUser(player));
-        frontier.setDimension(dimension);
-        frontier.setPersonal(personal);
-        frontier.setSourcePluginId(sourcePluginId);
-        frontier.setColor(ColorHelper.getRandomColor());
-        frontier.setCreated(new Date());
-
-        if (vertices != null) {
-            frontier.setMode(FrontierData.Mode.Vertex);
-            for (BlockPos vertex : vertices) {
-                frontier.addVertex(vertex);
-            }
-        }
-
-        if (chunks != null) {
-            frontier.setMode(FrontierData.Mode.Chunk);
-            for (ChunkPos chunk : chunks) {
-                frontier.toggleChunk(chunk);
-            }
-        }
+        FrontierData frontier = FrontierCreationFactory.createFrontier(frontierId, new SettingsUser(player), dimension, personal, sourcePluginId,
+                vertices, chunks);
 
         frontiers.add(frontier);
         allFrontiers.put(frontier.getId(), frontier);
@@ -379,17 +321,16 @@ public class FrontiersManager {
         return pendingShareFrontiers.get(messageID);
     }
 
+    public Map<Integer, PendingShareFrontier> getPendingShareFrontiers() {
+        return pendingShareFrontiers;
+    }
+
     public void removePendingShareFrontier(int messageID) {
         pendingShareFrontiers.remove(messageID);
     }
 
     public void removePendingShareFrontier(SettingsUser user) {
         pendingShareFrontiers.entrySet().removeIf(x -> x.getValue().targetUser.equals(user));
-    }
-
-    public boolean canSendCommandAcceptFrontier(ServerPlayer player) {
-        return frontierSettings.checkAction(FrontierSettings.Action.SharePersonalFrontier, new SettingsUser(player),
-                MapFrontiers.isOPorHost(player), null);
     }
 
     public void ensureOwners(MinecraftServer server) {

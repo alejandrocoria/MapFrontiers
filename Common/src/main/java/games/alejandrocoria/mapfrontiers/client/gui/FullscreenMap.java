@@ -2,7 +2,6 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.ConfirmationDialog;
@@ -205,9 +204,7 @@ public class FullscreenMap {
         if (editing) {
             editing = false;
             relocating = false;
-            boolean personalFrontier = frontierHighlighted.getPersonal();
-            FrontiersOverlayManager frontierManager = MapFrontiersClient.getFrontiersOverlayManager(personalFrontier);
-            frontierManager.clientUpdateFrontier(frontierHighlighted);
+            MapFrontiersClient.getCommandService().updateFrontier(frontierHighlighted);
         }
     }
 
@@ -276,10 +273,7 @@ public class FullscreenMap {
 
     private void buttonVisibleToggled() {
         frontierHighlighted.setVisibility(FrontierData.VisibilityData.Visibility.Frontier, !frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Frontier));
-
-        boolean personalFrontier = frontierHighlighted.getPersonal();
-        FrontiersOverlayManager frontierManager = MapFrontiersClient.getFrontiersOverlayManager(personalFrontier);
-        frontierManager.clientUpdateFrontier(frontierHighlighted);
+        MapFrontiersClient.getCommandService().updateFrontier(frontierHighlighted);
 
         updateButtons();
     }
@@ -305,10 +299,7 @@ public class FullscreenMap {
         if (editing) {
             stopEditing();
         }
-
-        boolean personalFrontier = frontierHighlighted.getPersonal();
-        FrontiersOverlayManager frontierManager = MapFrontiersClient.getFrontiersOverlayManager(personalFrontier);
-        frontierManager.clientDeleteFrontier(frontierHighlighted);
+        MapFrontiersClient.getCommandService().deleteFrontier(frontierHighlighted);
         frontierHighlighted = null;
         updateButtons();
     }

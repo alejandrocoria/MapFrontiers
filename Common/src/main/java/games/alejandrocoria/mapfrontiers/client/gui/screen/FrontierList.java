@@ -1,7 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
@@ -235,8 +234,7 @@ public class FrontierList extends AutoScaledScreen {
         buttonVisible = bottomButtons.addChild(new SimpleButton(font, 110, hideLabel, (b) -> {
             FrontierOverlay frontier = ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
             frontier.toggleVisibility(FrontierData.VisibilityData.Visibility.Frontier);
-            FrontiersOverlayManager frontierManager = MapFrontiersClient.getFrontiersOverlayManager(frontier.getPersonal());
-            frontierManager.clientUpdateFrontier(frontier);
+            MapFrontiersClient.getCommandService().updateFrontier(frontier);
             updateButtons();
         }));
         buttonSettings = bottomButtons.addChild(new SimpleButton(font, 110, settingsLabel, (b) -> new ModSettings(true).display()));
@@ -283,8 +281,7 @@ public class FrontierList extends AutoScaledScreen {
 
     private void deleteSelectedFrontier() {
         FrontierOverlay frontier = ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
-        FrontiersOverlayManager frontierManager = MapFrontiersClient.getFrontiersOverlayManager(frontier.getPersonal());
-        frontierManager.clientDeleteFrontier(frontier);
+        MapFrontiersClient.getCommandService().deleteFrontier(frontier);
         frontiers.removeElement(frontiers.getSelectedElement());
         updateButtons();
     }
@@ -316,21 +313,17 @@ public class FrontierList extends AutoScaledScreen {
         List<FrontierOverlay> toAdd = new ArrayList<>();
 
         if (Config.filterFrontierType == Config.FilterFrontierType.All || Config.filterFrontierType == Config.FilterFrontierType.Personal) {
-            for (ArrayList<FrontierOverlay> dimension : MapFrontiersClient.getFrontiersOverlayManager(true).getAllFrontiers().values()) {
-                for (FrontierOverlay frontier : dimension) {
-                    if (checkFilterOwner(frontier) && checkFilterDimension(frontier)) {
-                        toAdd.add(frontier);
-                    }
+            for (FrontierOverlay frontier : MapFrontiersClient.getAllFrontiers(true)) {
+                if (checkFilterOwner(frontier) && checkFilterDimension(frontier)) {
+                    toAdd.add(frontier);
                 }
             }
         }
 
         if (Config.filterFrontierType == Config.FilterFrontierType.All || Config.filterFrontierType == Config.FilterFrontierType.Global) {
-            for (ArrayList<FrontierOverlay> dimension : MapFrontiersClient.getFrontiersOverlayManager(false).getAllFrontiers().values()) {
-                for (FrontierOverlay frontier : dimension) {
-                    if (checkFilterOwner(frontier) && checkFilterDimension(frontier)) {
-                        toAdd.add(frontier);
-                    }
+            for (FrontierOverlay frontier : MapFrontiersClient.getAllFrontiers(false)) {
+                if (checkFilterOwner(frontier) && checkFilterDimension(frontier)) {
+                    toAdd.add(frontier);
                 }
             }
         }

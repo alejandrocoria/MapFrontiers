@@ -3,18 +3,14 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
-import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
+import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierCommandResult;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -66,49 +62,13 @@ public class PacketRemoveSharedUserPersonalFrontier {
             if (player == null) {
                 return;
             }
-            MinecraftServer server = player.level().getServer();
-            SettingsUser playerUser = new SettingsUser(player);
-
-            message.targetUser.fillMissingInfo(false, server);
-            if (message.targetUser.uuid == null) {
+            if (MapFrontiers.getServerRuntime() == null) {
                 return;
             }
 
-            FrontierData currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontierID);
-
-            if (currentFrontier != null && currentFrontier.getPersonal()) {
-                if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.SharePersonalFrontier, playerUser,
-                        MapFrontiers.isOPorHost(player), currentFrontier.getOwner())) {
-                    SettingsUserShared userShared = currentFrontier.getUserShared(message.targetUser);
-
-                    if (userShared == null || userShared.getUser().equals(playerUser)) {
-                        return;
-                    }
-
-                    if (currentFrontier.checkActionUserShared(playerUser, SettingsUserShared.Action.UpdateSettings)) {
-                        currentFrontier.removeUserShared(message.targetUser);
-                        FrontiersManager.instance.saveFrontierData();
-
-                        if (userShared.isPending()) {
-                            FrontiersManager.instance.removePendingShareFrontier(message.targetUser);
-                        } else {
-                            FrontiersManager.instance.deletePersonalFrontier(message.targetUser, currentFrontier.getDimension(), message.frontierID);
-
-                            ServerPlayer targetPlayer = server.getPlayerList().getPlayer(message.targetUser.uuid);
-                            if (targetPlayer != null) {
-                                PacketHandler.sendTo(new PacketFrontierDeleted(currentFrontier.getDimension(), message.frontierID,
-                                        true, -1), targetPlayer);
-                            }
-                        }
-
-                        PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(currentFrontier, player.getId()), currentFrontier, server);
-
-                        currentFrontier.removeChange(FrontierData.Change.Shared);
-                    }
-                } else {
-                    PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
-                }
-            }
+            ServerFrontierCommandResult result = MapFrontiers.getServerRuntime().getShareService()
+                    .removeSharedUserPersonalFrontier(player, message.frontierID, message.targetUser);
+            result.dispatchNetworkActions();
         }
     }
 }

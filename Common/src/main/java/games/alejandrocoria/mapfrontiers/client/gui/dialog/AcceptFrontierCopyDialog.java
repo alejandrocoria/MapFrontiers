@@ -3,10 +3,8 @@ package games.alejandrocoria.mapfrontiers.client.gui.dialog;
 import games.alejandrocoria.mapfrontiers.client.ChatFrontiers;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
-import net.minecraft.client.Minecraft;
 
 import javax.annotation.Nullable;
 
@@ -45,22 +43,12 @@ public class AcceptFrontierCopyDialog extends ConfirmationDialog {
     }
 
     private static void acceptFrontier(int id, FrontierData receivedFrontier, @Nullable FrontierOverlay currentFrontier) {
-        if (currentFrontier != null) {
-            currentFrontier.removeCopiedFromInfo();
-            ClientEventHandler.postUpdatedFrontierEvent(currentFrontier, Minecraft.getInstance().player.getId());
-        }
-
-        FrontierOverlay frontierOverlay = MapFrontiersClient.getFrontiersOverlayManager(true).addFrontier(receivedFrontier);
-        ClientEventHandler.postNewFrontierEvent(frontierOverlay, Minecraft.getInstance().player.getId());
+        MapFrontiersClient.getCommandService().acceptCopiedFrontier(receivedFrontier, currentFrontier);
         ChatFrontiers.removeReceivedId(id);
     }
 
     private static void acceptFrontierAndReplace(int id, FrontierData receivedFrontier, FrontierOverlay currentFrontier) {
-        MapFrontiersClient.getFrontiersOverlayManager(currentFrontier.getPersonal()).deleteFrontier(currentFrontier.getDimension(), currentFrontier.getId());
-        ClientEventHandler.postDeletedFrontierEvent(currentFrontier.getId());
-
-        FrontierOverlay frontierOverlay = MapFrontiersClient.getFrontiersOverlayManager(true).addFrontier(receivedFrontier);
-        ClientEventHandler.postNewFrontierEvent(frontierOverlay, Minecraft.getInstance().player.getId());
+        MapFrontiersClient.getCommandService().acceptCopiedFrontierAndReplace(receivedFrontier, currentFrontier);
         ChatFrontiers.removeReceivedId(id);
     }
 }

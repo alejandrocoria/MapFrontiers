@@ -4,8 +4,7 @@ import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierCommandResult;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -54,18 +53,11 @@ public class PacketPersonalFrontier {
         if (Side.SERVER.equals(ctx.side())) {
             PacketPersonalFrontier message = ctx.message();
             ServerPlayer player = ctx.sender();
-            if (player == null) {
+            if (player == null || MapFrontiers.getServerRuntime() == null) {
                 return;
             }
-            SettingsUser playerUser = new SettingsUser(player);
-            FrontierData currentFrontier = FrontiersManager.instance.getFrontierFromID(message.frontier.getId());
-
-            if (currentFrontier == null && message.frontier.getPersonal() && message.frontier.getOwner().equals(playerUser)) {
-                message.frontier.removeAllUserShared();
-                message.frontier.removeChange(FrontierData.Change.Shared);
-
-                FrontiersManager.instance.addPersonalFrontier(message.frontier);
-            }
+            ServerFrontierCommandResult result = MapFrontiers.getServerRuntime().getCommandService().importPersonalFrontier(player, message.frontier);
+            result.dispatchNetworkActions();
         }
     }
 }

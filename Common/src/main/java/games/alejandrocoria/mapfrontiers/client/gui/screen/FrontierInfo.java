@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
+import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
@@ -19,9 +19,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.dialog.DeleteConfirmationDia
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.VisibilityDialog;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToGlobal;
-import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToPersonal;
-import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
@@ -110,7 +107,6 @@ public class FrontierInfo extends AutoScaledScreen {
 
     private final IClientAPI jmAPI;
 
-    private final FrontiersOverlayManager frontiersOverlayManager;
     private final FrontierOverlay frontier;
     private int frontierHash;
     private TextBox textName1;
@@ -153,7 +149,6 @@ public class FrontierInfo extends AutoScaledScreen {
     public FrontierInfo(IClientAPI jmAPI, FrontierOverlay frontier) {
         super(titleLabel, 636, 350);
         this.jmAPI = jmAPI;
-        frontiersOverlayManager = MapFrontiersClient.getFrontiersOverlayManager(frontier.getPersonal());
         this.frontier = frontier;
         frontierHash = frontier.getHash();
         undoStack.push(new FrontierData(frontier));
@@ -495,7 +490,7 @@ public class FrontierInfo extends AutoScaledScreen {
         }));
         buttonShareSettings = bottomButtons.addChild(new SimpleButton(font, 144, shareSettingsLabel, (b) -> {
             if (MapFrontiersClient.isModOnServer()) {
-                new ShareSettings(frontiersOverlayManager, frontier).display();
+                new ShareSettings(frontier).display();
             } else {
                 new SendFrontier(frontier).display();
             }
@@ -586,7 +581,7 @@ public class FrontierInfo extends AutoScaledScreen {
     private void deleteFrontier() {
         // Unsubscribing to not receive this same event.
         ClientEventHandler.unsubscribeAllEvents(this);
-        frontiersOverlayManager.clientDeleteFrontier(frontier);
+        MapFrontiersClient.getCommandService().deleteFrontier(frontier);
         onClose();
     }
 
@@ -693,13 +688,13 @@ public class FrontierInfo extends AutoScaledScreen {
     private void changeToGlobal() {
         undoStack.clear();
         redoStack.clear();
-        PacketHandler.sendToServer(new PacketChangeFrontierToGlobal(frontier.getId(), null));
+        MapFrontiersClient.getCommandService().changeToGlobalAction(new FrontierId(frontier.getId()));
     }
 
     private void changeToPersonal() {
         undoStack.clear();
         redoStack.clear();
-        PacketHandler.sendToServer(new PacketChangeFrontierToPersonal(frontier.getId(), null));
+        MapFrontiersClient.getCommandService().changeToPersonalAction(new FrontierId(frontier.getId()));
     }
 
     private void updateButtons() {
@@ -771,7 +766,7 @@ public class FrontierInfo extends AutoScaledScreen {
         if (actions.canUpdate) {
             if (frontier.getHash() != frontierHash) {
                 frontierHash = frontier.getHash();
-                frontiersOverlayManager.clientUpdateFrontier(frontier);
+                MapFrontiersClient.getCommandService().updateFrontier(frontier);
             }
         }
     }
