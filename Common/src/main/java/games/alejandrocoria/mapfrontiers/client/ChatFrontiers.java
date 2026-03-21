@@ -166,8 +166,6 @@ public class ChatFrontiers {
                 text.append(button);
                 player.displayClientMessage(text, false);
 
-//                FrontierOverlay frontierOverlay = personalFrontiersOverlayManager.addFrontier(frontier);
-//                ClientEventHandler.postNewFrontierEvent(frontierOverlay, Minecraft.getInstance().player.getId());
                 receivedId = -1;
             }
 

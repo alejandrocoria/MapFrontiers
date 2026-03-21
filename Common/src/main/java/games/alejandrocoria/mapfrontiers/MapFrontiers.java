@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers;
 
 import games.alejandrocoria.mapfrontiers.api.MapFrontiersAPIBootstrap;
-import games.alejandrocoria.mapfrontiers.common.event.EventHandler;
+import games.alejandrocoria.mapfrontiers.common.event.ServerGlobalEvents;
 import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierRuntime;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
@@ -31,7 +31,7 @@ public class MapFrontiers {
     protected static void init() {
         PacketHandler.init();
 
-        EventHandler.subscribeServerStartingEvent(MapFrontiers.class, server -> {
+        ServerGlobalEvents.subscribeServerStartingEvent(MapFrontiers.class, server -> {
             currentServer = server;
             serverRuntime = new ServerFrontierRuntime(server);
             MapFrontiersAPIBootstrap.setServerAPI(serverRuntime.getServerApi());
@@ -39,7 +39,7 @@ public class MapFrontiers {
             LOGGER.info("ServerStartingEvent done");
         });
 
-        EventHandler.subscribeServerStoppingEvent(MapFrontiers.class, server -> {
+        ServerGlobalEvents.subscribeServerStoppingEvent(MapFrontiers.class, server -> {
             if (serverRuntime != null) {
                 serverRuntime.close();
             }
@@ -50,7 +50,7 @@ public class MapFrontiers {
             LOGGER.info("ServerStoppingEvent done");
         });
 
-        EventHandler.subscribePlayerJoinedEvent(MapFrontiers.class, (server, player) -> {
+        ServerGlobalEvents.subscribePlayerJoinedEvent(MapFrontiers.class, (server, player) -> {
             if (serverRuntime == null) {
                 return;
             }
@@ -60,7 +60,7 @@ public class MapFrontiers {
             LOGGER.info("PlayerJoinedEvent done (" + player.getStringUUID() + ")");
         });
 
-        EventHandler.subscribeServerTickEvent(MapFrontiers.class, server -> {
+        ServerGlobalEvents.subscribeServerTickEvent(MapFrontiers.class, server -> {
             if (serverRuntime != null) {
                 serverRuntime.onServerTick();
             }
@@ -114,3 +114,4 @@ public class MapFrontiers {
         }
     }
 }
+

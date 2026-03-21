@@ -1,6 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.ButtonBase;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
@@ -52,7 +52,7 @@ public class SortToolbar extends LinearLayout {
                 selected.setSelected(true);
             }
 
-            ClientEventHandler.postUpdatedConfigEvent();
+            ClientGlobalEvents.postUpdatedConfigEvent();
         }
 
         onChange.run();
@@ -138,3 +138,4 @@ public class SortToolbar extends LinearLayout {
         }
     }
 }
+

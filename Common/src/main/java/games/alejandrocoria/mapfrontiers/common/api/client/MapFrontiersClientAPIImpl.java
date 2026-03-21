@@ -9,25 +9,25 @@ import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedClientFrontier
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
 import games.alejandrocoria.mapfrontiers.common.api.SimpleEventBus;
-import games.alejandrocoria.mapfrontiers.common.frontier.client.ClientFrontierEventBridge;
+import games.alejandrocoria.mapfrontiers.common.frontier.client.ClientFrontierEvents;
 
 public class MapFrontiersClientAPIImpl implements InternalMapFrontiersClientAPI {
     private final PluginScopedClientFrontierService frontiers;
     private final SimpleEventBus eventBus;
-    private final ClientFrontierEventBridge frontierEventBridge;
+    private final ClientFrontierEvents frontierEvents;
 
-    public MapFrontiersClientAPIImpl(ClientFrontierEventBridge frontierEventBridge) {
-        this.frontierEventBridge = frontierEventBridge;
+    public MapFrontiersClientAPIImpl(ClientFrontierEvents frontierEvents) {
+        this.frontierEvents = frontierEvents;
         this.eventBus = new SimpleEventBus();
         this.frontiers = new ClientFrontierServiceImpl();
 
-        frontierEventBridge.subscribeCreated(this, (frontier, playerId) -> eventBus.post(new FrontierCreatedEvent(ApiConverters.fromFrontier(frontier))));
-        frontierEventBridge.subscribeUpdated(this, (frontier, playerId) -> eventBus.post(new FrontierUpdatedEvent(ApiConverters.fromFrontier(frontier))));
-        frontierEventBridge.subscribeDeleted(this, frontierId -> eventBus.post(new FrontierDeletedEvent(new FrontierId(frontierId))));
+        frontierEvents.subscribeCreated(this, (frontier, playerId) -> eventBus.post(new FrontierCreatedEvent(ApiConverters.fromFrontier(frontier))));
+        frontierEvents.subscribeUpdated(this, (frontier, playerId) -> eventBus.post(new FrontierUpdatedEvent(ApiConverters.fromFrontier(frontier))));
+        frontierEvents.subscribeDeleted(this, frontierId -> eventBus.post(new FrontierDeletedEvent(new FrontierId(frontierId))));
     }
 
     public void close() {
-        frontierEventBridge.unsubscribe(this);
+        frontierEvents.unsubscribe(this);
     }
 
     @Override

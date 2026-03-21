@@ -2,14 +2,16 @@ package games.alejandrocoria.mapfrontiers.client;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.api.MapFrontiersAPIBootstrap;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.hud.HUD;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.ModSettings;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.frontier.client.ClientFrontierCommandService;
+import games.alejandrocoria.mapfrontiers.common.frontier.client.ClientFrontierEvents;
 import games.alejandrocoria.mapfrontiers.common.frontier.client.ClientFrontierRuntime;
+import games.alejandrocoria.mapfrontiers.common.frontier.client.ClientSettingsProfileEvents;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
@@ -79,7 +81,7 @@ public class MapFrontiersClient {
     private static ClientLevel lastClientLevel = null;
 
     protected static void init() {
-        ClientEventHandler.subscribeClientTickEvent(MapFrontiersClient.class, client -> {
+        ClientGlobalEvents.subscribeClientTickEvent(MapFrontiersClient.class, client -> {
             if (client.level == null) {
                 return;
             }
@@ -111,7 +113,7 @@ public class MapFrontiersClient {
             }
         });
 
-        ClientEventHandler.subscribePlayerTickEvent(MapFrontiersClient.class, (client, player) -> {
+        ClientGlobalEvents.subscribePlayerTickEvent(MapFrontiersClient.class, (client, player) -> {
             if (client.level == null) {
                 return;
             }
@@ -172,7 +174,7 @@ public class MapFrontiersClient {
             }
         });
 
-        ClientEventHandler.subscribeHudRenderEvent(MapFrontiersClient.class, (graphics, delta) -> {
+        ClientGlobalEvents.subscribeHudRenderEvent(MapFrontiersClient.class, (graphics, delta) -> {
             if (hud == null) {
                 hud = new HUD();
             } else {
@@ -180,14 +182,14 @@ public class MapFrontiersClient {
             }
         });
 
-        ClientEventHandler.subscribeClientConnectedEvent(MapFrontiersClient.class, () -> {
+        ClientGlobalEvents.subscribeClientConnectedEvent(MapFrontiersClient.class, () -> {
             ensureFrontierRuntime();
             restartHandshake();
 
             MapFrontiers.LOGGER.info("ClientConnectedEvent done");
         });
 
-        ClientEventHandler.subscribeClientDisconnectedEvent(MapFrontiersClient.class, () -> {
+        ClientGlobalEvents.subscribeClientDisconnectedEvent(MapFrontiersClient.class, () -> {
             if (frontierRuntime != null) {
                 frontierRuntime.close();
                 frontierRuntime = null;
@@ -247,7 +249,7 @@ public class MapFrontiersClient {
     private static ClientFrontierRuntime ensureFrontierRuntime() {
         if (frontierRuntime == null) {
             frontierRuntime = new ClientFrontierRuntime(jmAPI);
-            frontierRuntime.getSettingsProfileBridge().subscribeUpdated(MapFrontiersClient.class, profile -> {
+            frontierRuntime.getSettingsProfileEvents().subscribeUpdated(MapFrontiersClient.class, profile -> {
                 settingsProfile = profile;
                 initialSettingsProfileReceived = true;
                 MapFrontiers.LOGGER.debug("Received settings profile from server.");
@@ -344,6 +346,16 @@ public class MapFrontiersClient {
         return runtime.getCommandService();
     }
 
+    public static ClientFrontierEvents getFrontierEvents() {
+        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        return runtime.getFrontierEvents();
+    }
+
+    public static ClientSettingsProfileEvents getSettingsProfileEvents() {
+        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        return runtime.getSettingsProfileEvents();
+    }
+
     public static SettingsProfile getSettingsProfile() {
         return settingsProfile;
     }
@@ -378,7 +390,7 @@ public class MapFrontiersClient {
             return;
         }
 
-        ensureFrontierRuntime().getSettingsProfileBridge().postUpdated(profile);
+        ensureFrontierRuntime().getSettingsProfileEvents().postUpdated(profile);
     }
 
     public static void receiveHandshakeAck(long nonce) {
@@ -493,3 +505,4 @@ public class MapFrontiersClient {
         return clipboard;
     }
 }
+

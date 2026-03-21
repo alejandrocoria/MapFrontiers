@@ -4,7 +4,7 @@ import fuzs.forgeconfigapiport.neoforge.api.v5.ForgeConfigRegistry;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClientNeoForge;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.command.CommandAccept;
-import games.alejandrocoria.mapfrontiers.common.event.EventHandler;
+import games.alejandrocoria.mapfrontiers.common.event.ServerGlobalEvents;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -39,19 +39,20 @@ public class MapFrontiersNeoForge extends MapFrontiers {
     }
 
     public static void serverStarting(ServerStartingEvent event) {
-        EventHandler.postServerStartingEvent(event.getServer());
+        ServerGlobalEvents.postServerStartingEvent(event.getServer());
     }
 
     public static void serverStopping(ServerStoppingEvent event) {
-        EventHandler.postServerStoppingEvent(event.getServer());
+        ServerGlobalEvents.postServerStoppingEvent(event.getServer());
     }
 
     public static void playerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         ServerPlayer player = (ServerPlayer) event.getEntity();
-        EventHandler.postPlayerJoinedEvent(player.level().getServer(), player);
+        ServerGlobalEvents.postPlayerJoinedEvent(player.level().getServer(), player);
     }
 
     public static void onServerTick(ServerTickEvent.Post event) {
-        EventHandler.postServerTickEvent(event.getServer());
+        ServerGlobalEvents.postServerTickEvent(event.getServer());
     }
 }
+

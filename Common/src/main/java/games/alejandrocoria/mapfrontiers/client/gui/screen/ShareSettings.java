@@ -2,7 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
@@ -56,13 +56,13 @@ public class ShareSettings extends AutoScaledScreen {
         super(titleLabel, 470, 120);
         this.frontier = frontier;
 
-        ClientEventHandler.subscribeDeletedFrontierEvent(this, frontierID -> {
+        MapFrontiersClient.getFrontierEvents().subscribeDeleted(this, frontierID -> {
             if (frontierID.equals(this.frontier.getId())) {
                 onClose();
             }
         });
 
-        ClientEventHandler.subscribeUpdatedFrontierEvent(this, (frontierOverlay, playerID) -> {
+        MapFrontiersClient.getFrontierEvents().subscribeUpdated(this, (frontierOverlay, playerID) -> {
             if (frontierOverlay.getId().equals(this.frontier.getId())) {
                 this.frontier = frontierOverlay;
                 updateCanUpdate();
@@ -98,7 +98,7 @@ public class ShareSettings extends AutoScaledScreen {
                         response -> {
                             if (response == ConfirmationDialog.Response.ConfirmAlternative) {
                                 Config.askConfirmationUserDelete = false;
-                                ClientEventHandler.postUpdatedConfigEvent();
+                                ClientGlobalEvents.postUpdatedConfigEvent();
                             }
                             deleteUserPressed(element);
                         }
@@ -282,7 +282,8 @@ public class ShareSettings extends AutoScaledScreen {
 
     @Override
     public void onClose() {
-        ClientEventHandler.unsubscribeAllEvents(this);
+        MapFrontiersClient.getFrontierEvents().unsubscribe(this);
+        ClientGlobalEvents.unsubscribeAllEvents(this);
         super.onClose();
     }
 
@@ -349,3 +350,4 @@ public class ShareSettings extends AutoScaledScreen {
         canUpdate = frontier.checkActionUserShared(new SettingsUser(minecraft.player), SettingsUserShared.Action.UpdateSettings);
     }
 }
+

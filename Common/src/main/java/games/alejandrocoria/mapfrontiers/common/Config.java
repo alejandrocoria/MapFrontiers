@@ -2,7 +2,7 @@ package games.alejandrocoria.mapfrontiers.common;
 
 import com.electronwill.nightconfig.core.UnmodifiableConfig;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Tooltip;
@@ -37,7 +37,7 @@ public class Config {
         final Pair<ClientConfig, ForgeConfigSpec> specPair = new Builder().configure(ClientConfig::new);
         CLIENT_SPEC = specPair.getRight();
         CLIENT = specPair.getLeft();
-        ClientEventHandler.subscribeUpdatedConfigEvent(Config.class, Config::save);
+        ClientGlobalEvents.subscribeUpdatedConfigEvent(Config.class, Config::save);
     }
 
     public enum AfterCreatingFrontier {
@@ -990,3 +990,4 @@ public class Config {
         public int y = 0;
     }
 }
+

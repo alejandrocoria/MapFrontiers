@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin;
 import games.alejandrocoria.mapfrontiers.common.Config;
@@ -44,7 +44,7 @@ public class FrontiersOverlayManager {
                 .setAnchorY(markerDotSelected.getDisplayHeight() / 2.0);
         markerDotSelected.setRotation(0);
 
-        ClientEventHandler.subscribeClientTickEvent(FrontiersOverlayManager.class, client -> {
+        ClientGlobalEvents.subscribeClientTickEvent(FrontiersOverlayManager.class, client -> {
             if (MapFrontiersPlugin.isEditing()) {
                 float opacity = markerDotSelected.getOpacity();
                 if (opacity < targetDotSelectedOpacity) {
@@ -74,11 +74,11 @@ public class FrontiersOverlayManager {
         markersSelected = new HashMap<>();
         this.personal = personal;
 
-        ClientEventHandler.subscribeUpdatedConfigEvent(this, () -> updateAllOverlays(true));
+        ClientGlobalEvents.subscribeUpdatedConfigEvent(this, () -> updateAllOverlays(true));
     }
 
     public void close() {
-        ClientEventHandler.unsubscribeAllEvents(this);
+        ClientGlobalEvents.unsubscribeAllEvents(this);
 
         for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
             for (FrontierOverlay frontier : frontiers) {
@@ -265,3 +265,4 @@ public class FrontiersOverlayManager {
     }
 
 }
+

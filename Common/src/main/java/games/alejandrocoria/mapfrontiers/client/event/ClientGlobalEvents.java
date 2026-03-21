@@ -1,7 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client.event;
 
-import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import journeymap.api.v2.client.fullscreen.ModPopupMenu;
 import journeymap.api.v2.client.fullscreen.ThemeButtonDisplay;
 import net.minecraft.client.DeltaTracker;
@@ -13,12 +11,11 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
-public class ClientEventHandler {
+public class ClientGlobalEvents {
     // Minecraft/Loader events
     private static final Map<Object, Consumer<Minecraft>> clientTickEventMap = new HashMap<>();
     private static final Map<Object, BiConsumer<Minecraft, Player>> playerTickEventMap = new HashMap<>();
@@ -32,10 +29,6 @@ public class ClientEventHandler {
     private static final Map<Object, Consumer<ModPopupMenu>> fullscreenPopupMenuEventMap = new HashMap<>();
 
     // Our events
-    private static final Map<Object, Consumer<UUID>> deletedFrontierEventMap = new HashMap<>();
-    private static final Map<Object, BiConsumer<FrontierOverlay, Integer>> newFrontierEventMap = new HashMap<>();
-    private static final Map<Object, BiConsumer<FrontierOverlay, Integer>> updatedFrontierEventMap = new HashMap<>();
-    private static final Map<Object, Consumer<SettingsProfile>> updatedSettingsProfileEventMap = new HashMap<>();
     private static final Map<Object, Runnable> updatedConfigEventMap = new HashMap<>();
 
     // Minecraft/Loader events
@@ -73,24 +66,6 @@ public class ClientEventHandler {
         fullscreenPopupMenuEventMap.put(object, callback);
     }
 
-
-    // Our events
-    public static void subscribeDeletedFrontierEvent(Object object, Consumer<UUID> callback) {
-        deletedFrontierEventMap.put(object, callback);
-    }
-
-    public static void subscribeNewFrontierEvent(Object object, BiConsumer<FrontierOverlay, Integer> callback) {
-        newFrontierEventMap.put(object, callback);
-    }
-
-    public static void subscribeUpdatedFrontierEvent(Object object, BiConsumer<FrontierOverlay, Integer> callback) {
-        updatedFrontierEventMap.put(object, callback);
-    }
-
-    public static void subscribeUpdatedSettingsProfileEvent(Object object, Consumer<SettingsProfile> callback) {
-        updatedSettingsProfileEventMap.put(object, callback);
-    }
-
     public static void subscribeUpdatedConfigEvent(Object object, Runnable callback) {
         updatedConfigEventMap.put(object, callback);
     }
@@ -110,10 +85,6 @@ public class ClientEventHandler {
         fullscreenPopupMenuEventMap.remove(object);
 
         // Our events
-        deletedFrontierEventMap.remove(object);
-        newFrontierEventMap.remove(object);
-        updatedFrontierEventMap.remove(object);
-        updatedSettingsProfileEventMap.remove(object);
         updatedConfigEventMap.remove(object);
     }
 
@@ -165,32 +136,6 @@ public class ClientEventHandler {
     public static void postFullscreenPopupMenuEvent(ModPopupMenu popupMenu) {
         for (Consumer<ModPopupMenu> callback : fullscreenPopupMenuEventMap.values()) {
             callback.accept(popupMenu);
-        }
-    }
-
-
-    // Our events
-    public static void postDeletedFrontierEvent(UUID frontierID) {
-        for (Consumer<UUID> callback : deletedFrontierEventMap.values()) {
-            callback.accept(frontierID);
-        }
-    }
-
-    public static void postNewFrontierEvent(FrontierOverlay frontierOverlay, int playerID) {
-        for (BiConsumer<FrontierOverlay, Integer> callback : newFrontierEventMap.values()) {
-            callback.accept(frontierOverlay, playerID);
-        }
-    }
-
-    public static void postUpdatedFrontierEvent(FrontierOverlay frontierOverlay, int playerID) {
-        for (BiConsumer<FrontierOverlay, Integer> callback : updatedFrontierEventMap.values()) {
-            callback.accept(frontierOverlay, playerID);
-        }
-    }
-
-    public static void postUpdatedSettingsProfileEvent(SettingsProfile profile) {
-        for (Consumer<SettingsProfile> callback : updatedSettingsProfileEventMap.values()) {
-            callback.accept(profile);
         }
     }
 

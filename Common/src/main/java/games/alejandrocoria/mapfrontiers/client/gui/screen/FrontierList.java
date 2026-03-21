@@ -2,7 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.FullscreenMap;
 import games.alejandrocoria.mapfrontiers.client.gui.component.SortToolbar;
@@ -77,22 +77,22 @@ public class FrontierList extends AutoScaledScreen {
         this.jmAPI = jmAPI;
         this.fullscreenMap = fullscreenMap;
 
-        ClientEventHandler.subscribeDeletedFrontierEvent(this, frontierID -> {
+        MapFrontiersClient.getFrontierEvents().subscribeDeleted(this, frontierID -> {
             updateFrontiers();
             updateButtons();
         });
 
-        ClientEventHandler.subscribeNewFrontierEvent(this, (frontierOverlay, playerID) -> {
+        MapFrontiersClient.getFrontierEvents().subscribeCreated(this, (frontierOverlay, playerID) -> {
             updateFrontiers();
             updateButtons();
         });
 
-        ClientEventHandler.subscribeUpdatedFrontierEvent(this, (frontierOverlay, playerID) -> {
+        MapFrontiersClient.getFrontierEvents().subscribeUpdated(this, (frontierOverlay, playerID) -> {
             updateFrontiers();
             updateButtons();
         });
 
-        ClientEventHandler.subscribeUpdatedSettingsProfileEvent(this, profile -> {
+        MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> {
             updateButtons();
         });
     }
@@ -159,7 +159,7 @@ public class FrontierList extends AutoScaledScreen {
             int selected = ((RadioListElement) element).getId();
             Config.filterFrontierType = Config.FilterFrontierType.values()[selected];
             updateFrontiers();
-            ClientEventHandler.postUpdatedConfigEvent();
+            ClientGlobalEvents.postUpdatedConfigEvent();
             updateButtons();
         });
         rightColumn.addChild(filterType);
@@ -175,7 +175,7 @@ public class FrontierList extends AutoScaledScreen {
             int selected = ((RadioListElement) element).getId();
             Config.filterFrontierOwner = Config.FilterFrontierOwner.values()[selected];
             updateFrontiers();
-            ClientEventHandler.postUpdatedConfigEvent();
+            ClientGlobalEvents.postUpdatedConfigEvent();
             updateButtons();
         });
         rightColumn.addChild(filterOwner);
@@ -200,7 +200,7 @@ public class FrontierList extends AutoScaledScreen {
                 Config.filterFrontierDimension = getDimensionFromHash(selected);
             }
             updateFrontiers();
-            ClientEventHandler.postUpdatedConfigEvent();
+            ClientGlobalEvents.postUpdatedConfigEvent();
             updateButtons();
         });
         if (filterDimension.getSelectedElement() == null) {
@@ -221,7 +221,7 @@ public class FrontierList extends AutoScaledScreen {
                         response -> {
                             if (response == ConfirmationDialog.Response.ConfirmAlternative) {
                                 Config.askConfirmationFrontierDelete = false;
-                                ClientEventHandler.postUpdatedConfigEvent();
+                                ClientGlobalEvents.postUpdatedConfigEvent();
                             }
                             deleteSelectedFrontier();
                         }
@@ -275,7 +275,9 @@ public class FrontierList extends AutoScaledScreen {
 
     @Override
     public void onClose() {
-        ClientEventHandler.unsubscribeAllEvents(this);
+        MapFrontiersClient.getFrontierEvents().unsubscribe(this);
+        MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
+        ClientGlobalEvents.unsubscribeAllEvents(this);
         super.onClose();
     }
 
@@ -450,3 +452,4 @@ public class FrontierList extends AutoScaledScreen {
         }
     }
 }
+

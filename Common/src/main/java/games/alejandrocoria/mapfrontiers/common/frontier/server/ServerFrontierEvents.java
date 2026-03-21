@@ -9,7 +9,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
-public class ServerFrontierEventHub {
+public class ServerFrontierEvents {
     private final Map<Object, Consumer<FrontierData>> createdSubscribers = new HashMap<>();
     private final Map<Object, Consumer<FrontierData>> updatedSubscribers = new HashMap<>();
     private final Map<Object, Consumer<UUID>> deletedSubscribers = new HashMap<>();

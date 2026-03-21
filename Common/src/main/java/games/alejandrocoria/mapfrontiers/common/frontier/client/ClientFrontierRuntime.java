@@ -14,8 +14,8 @@ public class ClientFrontierRuntime {
     private @Nullable FrontiersOverlayManager globalFrontiersOverlayManager;
     private @Nullable FrontiersOverlayManager personalFrontiersOverlayManager;
     private @Nullable ClientLocalPersonalFrontierStore localPersonalFrontierStore;
-    private @Nullable ClientFrontierEventBridge frontierEventBridge;
-    private @Nullable ClientSettingsProfileBridge settingsProfileBridge;
+    private @Nullable ClientFrontierEvents frontierEvents;
+    private @Nullable ClientSettingsProfileEvents settingsProfileEvents;
     private @Nullable ClientFrontierCommandService commandService;
     private @Nullable ClientFrontierSyncService syncService;
     private @Nullable FrontierLocalOverrides localOverrides;
@@ -46,17 +46,17 @@ public class ClientFrontierRuntime {
             localPersonalFrontierStore = new ClientLocalPersonalFrontierStore();
         }
 
-        if (frontierEventBridge == null) {
-            frontierEventBridge = new ClientFrontierEventBridge();
+        if (frontierEvents == null) {
+            frontierEvents = new ClientFrontierEvents();
         }
 
-        if (settingsProfileBridge == null) {
-            settingsProfileBridge = new ClientSettingsProfileBridge();
+        if (settingsProfileEvents == null) {
+            settingsProfileEvents = new ClientSettingsProfileEvents();
         }
 
         if (commandService == null) {
             commandService = new ClientFrontierCommandService(globalFrontiersOverlayManager, personalFrontiersOverlayManager,
-                    localPersonalFrontierStore, frontierEventBridge);
+                    localPersonalFrontierStore, frontierEvents);
         }
 
         if (syncService == null) {
@@ -96,14 +96,14 @@ public class ClientFrontierRuntime {
         return commandService;
     }
 
-    public ClientFrontierEventBridge getFrontierEventBridge() {
+    public ClientFrontierEvents getFrontierEvents() {
         ensureInitialized();
-        return frontierEventBridge;
+        return frontierEvents;
     }
 
-    public ClientSettingsProfileBridge getSettingsProfileBridge() {
+    public ClientSettingsProfileEvents getSettingsProfileEvents() {
         ensureInitialized();
-        return settingsProfileBridge;
+        return settingsProfileEvents;
     }
 
     public ClientFrontierSyncService getSyncService() {
@@ -114,7 +114,7 @@ public class ClientFrontierRuntime {
     public MapFrontiersClientAPIImpl getOrCreateClientApi() {
         ensureInitialized();
         if (clientApi == null) {
-            clientApi = new MapFrontiersClientAPIImpl(frontierEventBridge);
+            clientApi = new MapFrontiersClientAPIImpl(frontierEvents);
         }
 
         return clientApi;
@@ -141,14 +141,14 @@ public class ClientFrontierRuntime {
             clientApi = null;
         }
 
-        if (frontierEventBridge != null) {
-            frontierEventBridge.close();
-            frontierEventBridge = null;
+        if (frontierEvents != null) {
+            frontierEvents.close();
+            frontierEvents = null;
         }
 
-        if (settingsProfileBridge != null) {
-            settingsProfileBridge.close();
-            settingsProfileBridge = null;
+        if (settingsProfileEvents != null) {
+            settingsProfileEvents.close();
+            settingsProfileEvents = null;
         }
 
         commandService = null;

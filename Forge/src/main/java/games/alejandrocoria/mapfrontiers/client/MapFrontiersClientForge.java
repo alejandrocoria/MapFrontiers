@@ -4,7 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.MapFrontiersForge;
 import games.alejandrocoria.mapfrontiers.client.command.ClientCommandAccept;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -36,29 +36,29 @@ public class MapFrontiersClientForge extends MapFrontiersClient {
         Minecraft client = Minecraft.getInstance();
         if (event.getEntity() == client.player) {
             Player player = (Player) event.getEntity();
-            ClientEventHandler.postPlayerTickEvent(client, player);
+            ClientGlobalEvents.postPlayerTickEvent(client, player);
         }
     }
 
     public static void onRenderTick(TickEvent.ClientTickEvent.Pre event) {
-        ClientEventHandler.postClientTickEvent(Minecraft.getInstance());
+        ClientGlobalEvents.postClientTickEvent(Minecraft.getInstance());
     }
 
     public static void addGuiOverlayLayersEvent(AddGuiOverlayLayersEvent event) {
-        event.getLayeredDraw().add(Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "hud"), ClientEventHandler::postHudRenderEvent);
+        event.getLayeredDraw().add(Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "hud"), ClientGlobalEvents::postHudRenderEvent);
     }
 
     public static void clientConnectedToServer(ClientPlayerNetworkEvent.LoggingIn event) {
-        ClientEventHandler.postClientConnectedEvent();
+        ClientGlobalEvents.postClientConnectedEvent();
     }
 
     public static void clientDisconnectionFromServer(ClientPlayerNetworkEvent.LoggingOut event) {
-        ClientEventHandler.postClientDisconnectedEvent();
+        ClientGlobalEvents.postClientDisconnectedEvent();
     }
 
     public static void mouseEvent(InputEvent.MouseButton.Pre event) {
         if (event.getAction() == GLFW.GLFW_RELEASE) {
-            ClientEventHandler.postMouseReleaseEvent(event.getButton());
+            ClientGlobalEvents.postMouseReleaseEvent(event.getButton());
         }
     }
 
@@ -80,3 +80,4 @@ public class MapFrontiersClientForge extends MapFrontiersClient {
         }
     }
 }
+

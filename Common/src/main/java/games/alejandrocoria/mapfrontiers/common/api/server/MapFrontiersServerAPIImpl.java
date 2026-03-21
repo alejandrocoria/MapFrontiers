@@ -10,25 +10,25 @@ import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
 import games.alejandrocoria.mapfrontiers.common.api.SimpleEventBus;
 import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierCommandService;
-import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierEventHub;
+import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierEvents;
 
 public class MapFrontiersServerAPIImpl implements InternalMapFrontiersServerAPI {
     private final PluginScopedServerFrontierService frontiers;
     private final SimpleEventBus eventBus;
-    private final ServerFrontierEventHub eventHub;
+    private final ServerFrontierEvents frontierEvents;
 
-    public MapFrontiersServerAPIImpl(ServerFrontierCommandService commandService, ServerFrontierEventHub eventHub) {
-        this.eventHub = eventHub;
+    public MapFrontiersServerAPIImpl(ServerFrontierCommandService commandService, ServerFrontierEvents frontierEvents) {
+        this.frontierEvents = frontierEvents;
         this.eventBus = new SimpleEventBus();
-        this.frontiers = new ServerFrontierServiceImpl(commandService, eventHub);
+        this.frontiers = new ServerFrontierServiceImpl(commandService, frontierEvents);
 
-        eventHub.subscribeCreated(this, frontier -> eventBus.post(new FrontierCreatedEvent(ApiConverters.fromFrontier(frontier))));
-        eventHub.subscribeUpdated(this, frontier -> eventBus.post(new FrontierUpdatedEvent(ApiConverters.fromFrontier(frontier))));
-        eventHub.subscribeDeleted(this, frontierId -> eventBus.post(new FrontierDeletedEvent(new FrontierId(frontierId))));
+        frontierEvents.subscribeCreated(this, frontier -> eventBus.post(new FrontierCreatedEvent(ApiConverters.fromFrontier(frontier))));
+        frontierEvents.subscribeUpdated(this, frontier -> eventBus.post(new FrontierUpdatedEvent(ApiConverters.fromFrontier(frontier))));
+        frontierEvents.subscribeDeleted(this, frontierId -> eventBus.post(new FrontierDeletedEvent(new FrontierId(frontierId))));
     }
 
     public void close() {
-        eventHub.unsubscribe(this);
+        frontierEvents.unsubscribe(this);
     }
 
     @Override

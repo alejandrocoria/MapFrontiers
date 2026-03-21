@@ -18,7 +18,7 @@ public class ServerFrontierRuntime {
     private final FrontiersManager frontiersManager;
     private final FrontierPermissionEvaluator permissionEvaluator;
     private final ServerFrontierCommandService commandService;
-    private final ServerFrontierEventHub frontierEventHub;
+    private final ServerFrontierEvents frontierEvents;
     private final ServerFrontierShareService shareService;
     private final ServerSettingsService settingsService;
     private final MapFrontiersServerAPIImpl serverApi;
@@ -29,10 +29,10 @@ public class ServerFrontierRuntime {
         this.frontiersManager.loadOrCreateData(server);
         this.permissionEvaluator = new FrontierPermissionEvaluator(frontiersManager);
         this.commandService = new ServerFrontierCommandService(server, frontiersManager, permissionEvaluator);
-        this.frontierEventHub = new ServerFrontierEventHub();
+        this.frontierEvents = new ServerFrontierEvents();
         this.shareService = new ServerFrontierShareService(server, frontiersManager, permissionEvaluator);
         this.settingsService = new ServerSettingsService(server, frontiersManager, permissionEvaluator);
-        this.serverApi = new MapFrontiersServerAPIImpl(commandService, frontierEventHub);
+        this.serverApi = new MapFrontiersServerAPIImpl(commandService, frontierEvents);
     }
 
     public ServerFrontierCommandService getCommandService() {
@@ -79,7 +79,7 @@ public class ServerFrontierRuntime {
 
     public void close() {
         serverApi.close();
-        frontierEventHub.close();
+        frontierEvents.close();
         frontiersManager.close();
     }
 }

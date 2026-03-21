@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
@@ -62,7 +62,7 @@ public class NewFrontier extends AutoScaledScreen {
         this.jmAPI = jmAPI;
         this.centerPos = centerPos;
 
-        ClientEventHandler.subscribeUpdatedSettingsProfileEvent(this, profile -> {
+        MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> {
             onClose();
             new NewFrontier(jmAPI, centerPos).display();
         });
@@ -176,8 +176,9 @@ public class NewFrontier extends AutoScaledScreen {
 
     @Override
     public void onClose() {
-        ClientEventHandler.unsubscribeAllEvents(this);
-        ClientEventHandler.postUpdatedConfigEvent();
+        MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
+        ClientGlobalEvents.unsubscribeAllEvents(this);
+        ClientGlobalEvents.postUpdatedConfigEvent();
         super.onClose();
     }
 
@@ -386,3 +387,4 @@ public class NewFrontier extends AutoScaledScreen {
         return chunks;
     }
 }
+

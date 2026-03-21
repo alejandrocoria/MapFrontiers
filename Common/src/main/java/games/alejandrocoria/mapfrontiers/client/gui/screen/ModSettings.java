@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.TabbedBox;
@@ -173,7 +173,7 @@ public class ModSettings extends AutoScaledScreen {
         super(titleLabel, 696, 366);
         this.showKeyHint = showKeyHint;
 
-        ClientEventHandler.subscribeUpdatedSettingsProfileEvent(this, profile -> {
+        MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> {
             if ((profile.updateSettings == SettingsProfile.State.Enabled) == canEditGroups) {
                 return;
             }
@@ -399,7 +399,7 @@ public class ModSettings extends AutoScaledScreen {
                             if (response == ConfirmationDialog.Response.ConfirmAlternative) {
                                 Config.askConfirmationGroupDelete = false;
                                 buttonAskConfirmationGroupDelete.setSelected(1);
-                                ClientEventHandler.postUpdatedConfigEvent();
+                                ClientGlobalEvents.postUpdatedConfigEvent();
                             }
                             groups.removeElement(element);
                             settings.removeCustomGroup(((GroupElement) element).getGroup());
@@ -450,7 +450,7 @@ public class ModSettings extends AutoScaledScreen {
                             if (response == ConfirmationDialog.Response.ConfirmAlternative) {
                                 Config.askConfirmationUserDelete = false;
                                 buttonAskConfirmationUserDelete.setSelected(1);
-                                ClientEventHandler.postUpdatedConfigEvent();
+                                ClientGlobalEvents.postUpdatedConfigEvent();
                             }
                             users.removeElement(element);
                             group.removeUser(((UserElement) element).getUser());
@@ -780,9 +780,10 @@ public class ModSettings extends AutoScaledScreen {
 
     @Override
     public void onClose() {
-        ClientEventHandler.postUpdatedConfigEvent();
+        ClientGlobalEvents.postUpdatedConfigEvent();
         MapFrontiersClient.setLastSettingsTab(tabSelected);
-        ClientEventHandler.unsubscribeAllEvents(this);
+        MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
+        ClientGlobalEvents.unsubscribeAllEvents(this);
         super.onClose();
     }
 
@@ -898,3 +899,4 @@ public class ModSettings extends AutoScaledScreen {
         return false;
     }
 }
+

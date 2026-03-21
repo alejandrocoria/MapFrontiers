@@ -2,7 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.hud;
 
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
@@ -82,10 +82,10 @@ public class HUD {
         frontierName2 = new StringWidget(Component.empty(), mc.font, StringWidget.Align.Center);
         frontierOwner = new StringWidget(Component.empty(), mc.font, StringWidget.Align.Center);
 
-        ClientEventHandler.subscribeDeletedFrontierEvent(this, frontierID -> frontierChanged());
-        ClientEventHandler.subscribeNewFrontierEvent(this, (frontierOverlay, playerID) -> frontierChanged());
-        ClientEventHandler.subscribeUpdatedFrontierEvent(this, (frontierOverlay, playerID) -> frontierChanged());
-        ClientEventHandler.subscribeUpdatedConfigEvent(this, this::configUpdated);
+        MapFrontiersClient.getFrontierEvents().subscribeDeleted(this, frontierID -> frontierChanged());
+        MapFrontiersClient.getFrontierEvents().subscribeCreated(this, (frontierOverlay, playerID) -> frontierChanged());
+        MapFrontiersClient.getFrontierEvents().subscribeUpdated(this, (frontierOverlay, playerID) -> frontierChanged());
+        ClientGlobalEvents.subscribeUpdatedConfigEvent(this, this::configUpdated);
     }
 
     public int getWidth() {
@@ -415,3 +415,4 @@ public class HUD {
         }
     }
 }
+

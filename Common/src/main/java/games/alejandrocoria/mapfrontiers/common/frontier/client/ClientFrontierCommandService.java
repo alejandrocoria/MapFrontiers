@@ -50,7 +50,7 @@ public class ClientFrontierCommandService {
     private final FrontiersOverlayManager globalManager;
     private final FrontiersOverlayManager personalManager;
     private final ClientLocalPersonalFrontierStore localPersonalStore;
-    private final ClientFrontierEventBridge frontierEventBridge;
+    private final ClientFrontierEvents frontierEvents;
 
     private static class SharingActionContext {
         private final @Nullable FrontierOverlay frontier;
@@ -65,11 +65,11 @@ public class ClientFrontierCommandService {
     public ClientFrontierCommandService(FrontiersOverlayManager globalManager,
                                         FrontiersOverlayManager personalManager,
                                         ClientLocalPersonalFrontierStore localPersonalStore,
-                                        ClientFrontierEventBridge frontierEventBridge) {
+                                        ClientFrontierEvents frontierEvents) {
         this.globalManager = globalManager;
         this.personalManager = personalManager;
         this.localPersonalStore = localPersonalStore;
-        this.frontierEventBridge = frontierEventBridge;
+        this.frontierEvents = frontierEvents;
     }
 
     public void createNewFrontier(boolean personal, ResourceKey<Level> dimension,
@@ -106,7 +106,7 @@ public class ClientFrontierCommandService {
                 true, sourcePluginId, vertices, chunks);
         FrontierOverlay frontierOverlay = personalManager.addFrontier(frontier);
         persistLocalPersonalFrontiers();
-        frontierEventBridge.postCreated(frontierOverlay, minecraft.player.getId());
+        frontierEvents.postCreated(frontierOverlay, minecraft.player.getId());
         return frontierOverlay;
     }
 
@@ -122,7 +122,7 @@ public class ClientFrontierCommandService {
 
         personalManager.deleteFrontier(frontier.getDimension(), frontier.getId());
         persistLocalPersonalFrontiers();
-        frontierEventBridge.postDeleted(frontier.getId());
+        frontierEvents.postDeleted(frontier.getId());
     }
 
     public void updateFrontier(FrontierOverlay frontier) {
@@ -139,7 +139,7 @@ public class ClientFrontierCommandService {
         FrontierOverlay frontierOverlay = personalManager.updateFrontier(frontier);
         if (frontierOverlay != null) {
             persistLocalPersonalFrontiers();
-            frontierEventBridge.postUpdated(frontierOverlay, minecraft.player.getId());
+            frontierEvents.postUpdated(frontierOverlay, minecraft.player.getId());
         }
     }
 
@@ -316,45 +316,45 @@ public class ClientFrontierCommandService {
     public FrontierOverlay acceptCopiedFrontier(FrontierData receivedFrontier, @Nullable FrontierOverlay currentFrontier) {
         if (currentFrontier != null && minecraft.player != null) {
             currentFrontier.removeCopiedFromInfo();
-            frontierEventBridge.postUpdated(currentFrontier, minecraft.player.getId());
+            frontierEvents.postUpdated(currentFrontier, minecraft.player.getId());
         }
 
         FrontierOverlay frontierOverlay = personalManager.addFrontier(receivedFrontier);
         persistLocalPersonalFrontiers();
         if (minecraft.player != null) {
-            frontierEventBridge.postCreated(frontierOverlay, minecraft.player.getId());
+            frontierEvents.postCreated(frontierOverlay, minecraft.player.getId());
         }
         return frontierOverlay;
     }
 
     public FrontierOverlay acceptCopiedFrontierAndReplace(FrontierData receivedFrontier, FrontierOverlay currentFrontier) {
         personalManager.deleteFrontier(currentFrontier.getDimension(), currentFrontier.getId());
-        frontierEventBridge.postDeleted(currentFrontier.getId());
+        frontierEvents.postDeleted(currentFrontier.getId());
 
         FrontierOverlay frontierOverlay = personalManager.addFrontier(receivedFrontier);
         persistLocalPersonalFrontiers();
         if (minecraft.player != null) {
-            frontierEventBridge.postCreated(frontierOverlay, minecraft.player.getId());
+            frontierEvents.postCreated(frontierOverlay, minecraft.player.getId());
         }
         return frontierOverlay;
     }
 
     public void applyFrontierCreated(FrontierData frontier, int playerId) {
         FrontierOverlay frontierOverlay = getManager(frontier.getPersonal()).addFrontier(frontier);
-        frontierEventBridge.postCreated(frontierOverlay, playerId);
+        frontierEvents.postCreated(frontierOverlay, playerId);
     }
 
     public void applyFrontierUpdated(FrontierData frontier, int playerId) {
         FrontierOverlay frontierOverlay = getManager(frontier.getPersonal()).updateFrontier(frontier);
         if (frontierOverlay != null) {
-            frontierEventBridge.postUpdated(frontierOverlay, playerId);
+            frontierEvents.postUpdated(frontierOverlay, playerId);
         }
     }
 
     public void applyFrontierDeleted(ResourceKey<Level> dimension, UUID frontierId, boolean personal) {
         boolean deleted = getManager(personal).deleteFrontier(dimension, frontierId) != null;
         if (deleted) {
-            frontierEventBridge.postDeleted(frontierId);
+            frontierEvents.postDeleted(frontierId);
         }
     }
 
@@ -371,7 +371,7 @@ public class ClientFrontierCommandService {
         frontierOverlay.removeChanges();
         frontierOverlay.recreateBannerRenderer();
         globalManager.addFrontier(frontierOverlay);
-        frontierEventBridge.postUpdated(frontierOverlay, -1);
+        frontierEvents.postUpdated(frontierOverlay, -1);
         frontierOverlay.updateOverlay();
     }
 
@@ -387,12 +387,12 @@ public class ClientFrontierCommandService {
         frontierOverlay.setCurrentPlayerAsOwner();
         frontierOverlay.recreateBannerRenderer();
         personalManager.addFrontier(frontierOverlay);
-        frontierEventBridge.postUpdated(frontierOverlay, -1);
+        frontierEvents.postUpdated(frontierOverlay, -1);
         frontierOverlay.updateOverlay();
     }
 
     public void notifyLocalFrontierUpdated(FrontierOverlay frontierOverlay) {
-        frontierEventBridge.postUpdated(frontierOverlay, -1);
+        frontierEvents.postUpdated(frontierOverlay, -1);
     }
 
     private void persistLocalPersonalFrontiers() {

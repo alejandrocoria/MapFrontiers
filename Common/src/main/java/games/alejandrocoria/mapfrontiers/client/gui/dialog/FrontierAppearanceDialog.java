@@ -1,6 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.dialog;
 
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.PreviewFrontiersWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
@@ -191,7 +191,8 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
     @Override
     public void onClose() {
-        ClientEventHandler.postUpdatedConfigEvent();
+        ClientGlobalEvents.postUpdatedConfigEvent();
         super.onClose();
     }
 }
+

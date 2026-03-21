@@ -13,7 +13,7 @@ import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreationFactory;
 import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierCommandResult;
 import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierCommandService;
-import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierEventHub;
+import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierEvents;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
@@ -24,11 +24,11 @@ import java.util.UUID;
 
 public class ServerFrontierServiceImpl implements PluginScopedServerFrontierService {
     private final ServerFrontierCommandService commandService;
-    private final ServerFrontierEventHub eventHub;
+    private final ServerFrontierEvents frontierEvents;
 
-    public ServerFrontierServiceImpl(ServerFrontierCommandService commandService, ServerFrontierEventHub eventHub) {
+    public ServerFrontierServiceImpl(ServerFrontierCommandService commandService, ServerFrontierEvents frontierEvents) {
         this.commandService = commandService;
-        this.eventHub = eventHub;
+        this.frontierEvents = frontierEvents;
     }
 
     @Override
@@ -45,7 +45,7 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
                 pluginModId, frontier.getId(), frontierOwner.username, level.identifier());
 
         FrontierDataView view = ApiConverters.fromFrontier(frontier);
-        eventHub.postCreated(frontier);
+        frontierEvents.postCreated(frontier);
         return view;
     }
 
@@ -64,7 +64,7 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
         result.dispatchNetworkActions();
 
         FrontierDataView view = ApiConverters.fromFrontier(frontier);
-        eventHub.postUpdated(frontier);
+        frontierEvents.postUpdated(frontier);
         return Optional.of(view);
     }
 
@@ -73,7 +73,7 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
         ServerFrontierCommandResult result = commandService.deleteGlobalFrontier(frontierId.value());
         if (result.isSuccess()) {
             result.dispatchNetworkActions();
-            eventHub.postDeleted(frontierId.value());
+            frontierEvents.postDeleted(frontierId.value());
         }
 
         return result.isSuccess();

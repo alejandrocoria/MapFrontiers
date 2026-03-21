@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.screen;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPaletteWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPicker;
@@ -153,13 +153,13 @@ public class FrontierInfo extends AutoScaledScreen {
         frontierHash = frontier.getHash();
         undoStack.push(new FrontierData(frontier));
 
-        ClientEventHandler.subscribeDeletedFrontierEvent(this, frontierID -> {
+        MapFrontiersClient.getFrontierEvents().subscribeDeleted(this, frontierID -> {
             if (frontier.getId().equals(frontierID)) {
                 onClose();
             }
         });
 
-        ClientEventHandler.subscribeUpdatedFrontierEvent(this, (frontierOverlay, playerID) -> {
+        MapFrontiersClient.getFrontierEvents().subscribeUpdated(this, (frontierOverlay, playerID) -> {
             if (minecraft.player != null && frontier.getId().equals(frontierOverlay.getId())) {
                 addToUndo(new FrontierData(frontierOverlay));
                 if (playerID != minecraft.player.getId()) {
@@ -174,7 +174,7 @@ public class FrontierInfo extends AutoScaledScreen {
             }
         });
 
-        ClientEventHandler.subscribeUpdatedSettingsProfileEvent(this, profile -> {
+        MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> {
             updateButtons();
             updateBannerButton();
         });
@@ -474,7 +474,7 @@ public class FrontierInfo extends AutoScaledScreen {
         buttonPasteOptions = pasteButtons.addChild(new IconButton(IconButton.Type.ArrowUp, (b) -> {
             Config.pasteOptionsVisible = !Config.pasteOptionsVisible;
             updatePasteOptionsVisibility();
-            ClientEventHandler.postUpdatedConfigEvent();
+            ClientGlobalEvents.postUpdatedConfigEvent();
         }));
         buttonPasteOptions.setTooltip(openPasteTooltip);
 
@@ -502,7 +502,7 @@ public class FrontierInfo extends AutoScaledScreen {
                         response -> {
                             if (response == ConfirmationDialog.Response.ConfirmAlternative) {
                                 Config.askConfirmationFrontierDelete = false;
-                                ClientEventHandler.postUpdatedConfigEvent();
+                                ClientGlobalEvents.postUpdatedConfigEvent();
                             }
                             deleteFrontier();
                         }
@@ -574,13 +574,17 @@ public class FrontierInfo extends AutoScaledScreen {
     @Override
     public void onClose() {
         sendChangesToServer();
-        ClientEventHandler.unsubscribeAllEvents(this);
+        MapFrontiersClient.getFrontierEvents().unsubscribe(this);
+        MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
+        ClientGlobalEvents.unsubscribeAllEvents(this);
         super.onClose();
     }
 
     private void deleteFrontier() {
         // Unsubscribing to not receive this same event.
-        ClientEventHandler.unsubscribeAllEvents(this);
+        MapFrontiersClient.getFrontierEvents().unsubscribe(this);
+        MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
+        ClientGlobalEvents.unsubscribeAllEvents(this);
         MapFrontiersClient.getCommandService().deleteFrontier(frontier);
         onClose();
     }
@@ -795,3 +799,4 @@ public class FrontierInfo extends AutoScaledScreen {
         }
     }
 }
+

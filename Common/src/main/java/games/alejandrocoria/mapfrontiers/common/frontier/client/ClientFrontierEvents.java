@@ -1,7 +1,6 @@
 package games.alejandrocoria.mapfrontiers.common.frontier.client;
 
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.HashMap;
@@ -11,7 +10,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
-public class ClientFrontierEventBridge {
+public class ClientFrontierEvents {
     private final Map<Object, BiConsumer<FrontierOverlay, Integer>> createdSubscribers = new HashMap<>();
     private final Map<Object, BiConsumer<FrontierOverlay, Integer>> updatedSubscribers = new HashMap<>();
     private final Map<Object, Consumer<UUID>> deletedSubscribers = new HashMap<>();
@@ -38,21 +37,18 @@ public class ClientFrontierEventBridge {
         for (BiConsumer<FrontierOverlay, Integer> callback : createdSubscribers.values()) {
             callback.accept(frontierOverlay, playerId);
         }
-        ClientEventHandler.postNewFrontierEvent(frontierOverlay, playerId);
     }
 
     public void postUpdated(FrontierOverlay frontierOverlay, int playerId) {
         for (BiConsumer<FrontierOverlay, Integer> callback : updatedSubscribers.values()) {
             callback.accept(frontierOverlay, playerId);
         }
-        ClientEventHandler.postUpdatedFrontierEvent(frontierOverlay, playerId);
     }
 
     public void postDeleted(UUID frontierId) {
         for (Consumer<UUID> callback : deletedSubscribers.values()) {
             callback.accept(frontierId);
         }
-        ClientEventHandler.postDeletedFrontierEvent(frontierId);
     }
 
     public void close() {

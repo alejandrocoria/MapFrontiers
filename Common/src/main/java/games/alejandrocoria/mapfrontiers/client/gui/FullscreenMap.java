@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.FrontierInfo;
@@ -59,7 +59,7 @@ public class FullscreenMap {
     public FullscreenMap(IClientAPI jmAPI) {
         this.jmAPI = jmAPI;
 
-        ClientEventHandler.subscribeDeletedFrontierEvent(this, frontierID -> {
+        MapFrontiersClient.getFrontierEvents().subscribeDeleted(this, frontierID -> {
             if (frontierHighlighted != null && frontierHighlighted.getId().equals(frontierID)) {
                 frontierHighlighted = null;
                 editing = false;
@@ -68,7 +68,7 @@ public class FullscreenMap {
             }
         });
 
-        ClientEventHandler.subscribeNewFrontierEvent(this, (frontierOverlay, playerID) -> {
+        MapFrontiersClient.getFrontierEvents().subscribeCreated(this, (frontierOverlay, playerID) -> {
             UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
             if (uiState == null || frontierOverlay.getDimension() != uiState.dimension) {
                 return;
@@ -94,7 +94,7 @@ public class FullscreenMap {
             }
         });
 
-        ClientEventHandler.subscribeUpdatedFrontierEvent(this, (frontierOverlay, playerID) -> {
+        MapFrontiersClient.getFrontierEvents().subscribeUpdated(this, (frontierOverlay, playerID) -> {
             if (frontierHighlighted != null && frontierHighlighted.getId().equals(frontierOverlay.getId())) {
                 frontierHighlighted = frontierOverlay;
                 frontierHighlighted.setHighlighted(true);
@@ -104,13 +104,13 @@ public class FullscreenMap {
             }
         });
 
-        ClientEventHandler.subscribeUpdatedSettingsProfileEvent(this, profile -> {
+        MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> {
             updateButtons();
         });
 
-        ClientEventHandler.subscribeUpdatedConfigEvent(this, this::updateButtons);
+        ClientGlobalEvents.subscribeUpdatedConfigEvent(this, this::updateButtons);
 
-        ClientEventHandler.subscribeMouseReleaseEvent(this, button -> {
+        ClientGlobalEvents.subscribeMouseReleaseEvent(this, button -> {
             if (button != 1) {
                 return;
             }
@@ -129,7 +129,9 @@ public class FullscreenMap {
         if (frontierHighlighted != null) {
             frontierHighlighted.setHighlighted(false);
         }
-        ClientEventHandler.unsubscribeAllEvents(this);
+        MapFrontiersClient.getFrontierEvents().unsubscribe(this);
+        MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
+        ClientGlobalEvents.unsubscribeAllEvents(this);
     }
 
     public void addButtons(ThemeButtonDisplay buttonDisplay) {
@@ -285,7 +287,7 @@ public class FullscreenMap {
                     response -> {
                         if (response == ConfirmationDialog.Response.ConfirmAlternative) {
                             Config.askConfirmationFrontierDelete = false;
-                            ClientEventHandler.postUpdatedConfigEvent();
+                            ClientGlobalEvents.postUpdatedConfigEvent();
                         }
                         deleteFrontier();
                     }
@@ -482,3 +484,4 @@ public class FullscreenMap {
         }
     }
 }
+
