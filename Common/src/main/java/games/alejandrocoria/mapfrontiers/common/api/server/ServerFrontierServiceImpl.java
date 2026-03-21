@@ -11,8 +11,8 @@ import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreationFactory;
-import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierCommandResult;
-import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierCommandService;
+import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierOperationResult;
+import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierOperationService;
 import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierEvents;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.resources.ResourceKey;
@@ -23,11 +23,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class ServerFrontierServiceImpl implements PluginScopedServerFrontierService {
-    private final ServerFrontierCommandService commandService;
+    private final ServerFrontierOperationService operationService;
     private final ServerFrontierEvents frontierEvents;
 
-    public ServerFrontierServiceImpl(ServerFrontierCommandService commandService, ServerFrontierEvents frontierEvents) {
-        this.commandService = commandService;
+    public ServerFrontierServiceImpl(ServerFrontierOperationService operationService, ServerFrontierEvents frontierEvents) {
+        this.operationService = operationService;
         this.frontierEvents = frontierEvents;
     }
 
@@ -39,7 +39,7 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
         FrontierData frontier = FrontierCreationFactory.createFrontier(UUID.randomUUID(), frontierOwner, level, false, pluginModId, null, null);
         ApiConverters.applyShape(frontier, shape);
 
-        ServerFrontierCommandResult result = commandService.createGlobalFrontier(frontier);
+        ServerFrontierOperationResult result = operationService.createGlobalFrontier(frontier);
         result.dispatchNetworkActions();
         MapFrontiers.LOGGER.info("Created global frontier via server API. pluginModId={}, frontierId={}, owner={}, dimension={}",
                 pluginModId, frontier.getId(), frontierOwner.username, level.identifier());
@@ -51,13 +51,13 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
 
     @Override
     public Optional<FrontierDataView> updateGlobalFrontier(String pluginModId, FrontierId frontierId, FrontierMutation mutation) {
-        FrontierData frontier = commandService.getFrontier(frontierId.value());
+        FrontierData frontier = operationService.getFrontier(frontierId.value());
         if (frontier == null || frontier.getPersonal()) {
             return Optional.empty();
         }
 
         ApiConverters.applyMutation(frontier, mutation);
-        ServerFrontierCommandResult result = commandService.updateGlobalFrontier(frontier);
+        ServerFrontierOperationResult result = operationService.updateGlobalFrontier(frontier);
         if (!result.isSuccess()) {
             return Optional.empty();
         }
@@ -70,7 +70,7 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
 
     @Override
     public boolean deleteGlobalFrontier(String pluginModId, FrontierId frontierId) {
-        ServerFrontierCommandResult result = commandService.deleteGlobalFrontier(frontierId.value());
+        ServerFrontierOperationResult result = operationService.deleteGlobalFrontier(frontierId.value());
         if (result.isSuccess()) {
             result.dispatchNetworkActions();
             frontierEvents.postDeleted(frontierId.value());
@@ -81,7 +81,7 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
 
     @Override
     public Optional<FrontierDataView> getFrontier(String pluginModId, FrontierId frontierId) {
-        FrontierData frontier = commandService.getFrontier(frontierId.value());
+        FrontierData frontier = operationService.getFrontier(frontierId.value());
         if (frontier == null || frontier.getPersonal()) {
             return Optional.empty();
         }
@@ -91,7 +91,7 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
     @Override
     public List<FrontierDataView> listGlobalFrontiers(String pluginModId, DimensionId dimension) {
         ResourceKey<Level> level = ApiConverters.toDimension(dimension);
-        return commandService.getAllGlobalFrontiers(level).stream().map(ApiConverters::fromFrontier).toList();
+        return operationService.getAllGlobalFrontiers(level).stream().map(ApiConverters::fromFrontier).toList();
     }
 
 }

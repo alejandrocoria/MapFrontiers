@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierCommandResult;
+import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierOperationResult;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -59,7 +59,7 @@ public class PacketDeleteFrontier {
                 return;
             }
 
-            ServerFrontierCommandResult result = MapFrontiers.getServerRuntime().getCommandService().deleteFrontier(player, message.frontierID);
+            ServerFrontierOperationResult result = MapFrontiers.getServerRuntime().getOperationService().deleteFrontier(player, message.frontierID);
             result.dispatchNetworkActions();
         }
     }

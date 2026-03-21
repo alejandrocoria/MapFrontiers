@@ -64,7 +64,7 @@ public class PacketFrontierUpdated {
     public static void handle(PacketContext<PacketFrontierUpdated> ctx) {
         if (Side.CLIENT.equals(ctx.side())) {
             PacketFrontierUpdated message = ctx.message();
-            MapFrontiersClient.getCommandService().applyFrontierUpdated(message.frontier, message.playerID);
+            MapFrontiersClient.getOperationService().applyFrontierUpdated(message.frontier, message.playerID);
         }
     }
 }

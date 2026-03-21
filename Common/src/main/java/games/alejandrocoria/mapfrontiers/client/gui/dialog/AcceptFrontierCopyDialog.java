@@ -43,12 +43,12 @@ public class AcceptFrontierCopyDialog extends ConfirmationDialog {
     }
 
     private static void acceptFrontier(int id, FrontierData receivedFrontier, @Nullable FrontierOverlay currentFrontier) {
-        MapFrontiersClient.getCommandService().acceptCopiedFrontier(receivedFrontier, currentFrontier);
+        MapFrontiersClient.getOperationService().acceptCopiedFrontier(receivedFrontier, currentFrontier);
         ChatFrontiers.removeReceivedId(id);
     }
 
     private static void acceptFrontierAndReplace(int id, FrontierData receivedFrontier, FrontierOverlay currentFrontier) {
-        MapFrontiersClient.getCommandService().acceptCopiedFrontierAndReplace(receivedFrontier, currentFrontier);
+        MapFrontiersClient.getOperationService().acceptCopiedFrontierAndReplace(receivedFrontier, currentFrontier);
         ChatFrontiers.removeReceivedId(id);
     }
 }

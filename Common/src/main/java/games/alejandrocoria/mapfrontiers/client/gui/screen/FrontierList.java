@@ -234,7 +234,7 @@ public class FrontierList extends AutoScaledScreen {
         buttonVisible = bottomButtons.addChild(new SimpleButton(font, 110, hideLabel, (b) -> {
             FrontierOverlay frontier = ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
             frontier.toggleVisibility(FrontierData.VisibilityData.Visibility.Frontier);
-            MapFrontiersClient.getCommandService().updateFrontier(frontier);
+            MapFrontiersClient.getOperationService().updateFrontier(frontier);
             updateButtons();
         }));
         buttonSettings = bottomButtons.addChild(new SimpleButton(font, 110, settingsLabel, (b) -> new ModSettings(true).display()));
@@ -283,7 +283,7 @@ public class FrontierList extends AutoScaledScreen {
 
     private void deleteSelectedFrontier() {
         FrontierOverlay frontier = ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
-        MapFrontiersClient.getCommandService().deleteFrontier(frontier);
+        MapFrontiersClient.getOperationService().deleteFrontier(frontier);
         frontiers.removeElement(frontiers.getSelectedElement());
         updateButtons();
     }
@@ -452,4 +452,3 @@ public class FrontierList extends AutoScaledScreen {
         }
     }
 }
-

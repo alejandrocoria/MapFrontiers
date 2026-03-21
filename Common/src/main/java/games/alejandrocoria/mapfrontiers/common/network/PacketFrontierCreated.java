@@ -59,7 +59,7 @@ public class PacketFrontierCreated {
     public static void handle(PacketContext<PacketFrontierCreated> ctx) {
         if (Side.CLIENT.equals(ctx.side())) {
             PacketFrontierCreated message = ctx.message();
-            MapFrontiersClient.getCommandService().applyFrontierCreated(message.frontier, message.playerID);
+            MapFrontiersClient.getOperationService().applyFrontierCreated(message.frontier, message.playerID);
         }
     }
 }

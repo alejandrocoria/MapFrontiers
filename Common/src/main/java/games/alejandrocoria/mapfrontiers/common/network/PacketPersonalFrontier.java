@@ -4,7 +4,7 @@ import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierCommandResult;
+import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierOperationResult;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -56,7 +56,7 @@ public class PacketPersonalFrontier {
             if (player == null || MapFrontiers.getServerRuntime() == null) {
                 return;
             }
-            ServerFrontierCommandResult result = MapFrontiers.getServerRuntime().getCommandService().importPersonalFrontier(player, message.frontier);
+            ServerFrontierOperationResult result = MapFrontiers.getServerRuntime().getOperationService().importPersonalFrontier(player, message.frontier);
             result.dispatchNetworkActions();
         }
     }

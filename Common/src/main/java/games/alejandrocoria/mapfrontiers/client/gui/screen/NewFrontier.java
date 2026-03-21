@@ -161,7 +161,7 @@ public class NewFrontier extends AutoScaledScreen {
             closeAndReturnToFullscreenMap();
             UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
             if (uiState != null) {
-                MapFrontiersClient.getCommandService().createNewFrontier(personal, uiState.dimension, calculateVertices(), calculateChunks());
+                MapFrontiersClient.getOperationService().createNewFrontier(personal, uiState.dimension, calculateVertices(), calculateChunks());
             }
         }));
         bottomButtons.addChild(new SimpleButton(font, 100, cancelLabel, b -> onClose()));
@@ -387,4 +387,3 @@ public class NewFrontier extends AutoScaledScreen {
         return chunks;
     }
 }
-

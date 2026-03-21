@@ -206,7 +206,7 @@ public class FullscreenMap {
         if (editing) {
             editing = false;
             relocating = false;
-            MapFrontiersClient.getCommandService().updateFrontier(frontierHighlighted);
+            MapFrontiersClient.getOperationService().updateFrontier(frontierHighlighted);
         }
     }
 
@@ -275,7 +275,7 @@ public class FullscreenMap {
 
     private void buttonVisibleToggled() {
         frontierHighlighted.setVisibility(FrontierData.VisibilityData.Visibility.Frontier, !frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Frontier));
-        MapFrontiersClient.getCommandService().updateFrontier(frontierHighlighted);
+        MapFrontiersClient.getOperationService().updateFrontier(frontierHighlighted);
 
         updateButtons();
     }
@@ -301,7 +301,7 @@ public class FullscreenMap {
         if (editing) {
             stopEditing();
         }
-        MapFrontiersClient.getCommandService().deleteFrontier(frontierHighlighted);
+        MapFrontiersClient.getOperationService().deleteFrontier(frontierHighlighted);
         frontierHighlighted = null;
         updateButtons();
     }
@@ -484,4 +484,3 @@ public class FullscreenMap {
         }
     }
 }
-

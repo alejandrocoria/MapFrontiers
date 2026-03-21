@@ -585,7 +585,7 @@ public class FrontierInfo extends AutoScaledScreen {
         MapFrontiersClient.getFrontierEvents().unsubscribe(this);
         MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
         ClientGlobalEvents.unsubscribeAllEvents(this);
-        MapFrontiersClient.getCommandService().deleteFrontier(frontier);
+        MapFrontiersClient.getOperationService().deleteFrontier(frontier);
         onClose();
     }
 
@@ -692,13 +692,13 @@ public class FrontierInfo extends AutoScaledScreen {
     private void changeToGlobal() {
         undoStack.clear();
         redoStack.clear();
-        MapFrontiersClient.getCommandService().changeToGlobalAction(new FrontierId(frontier.getId()));
+        MapFrontiersClient.getOperationService().changeToGlobalAction(new FrontierId(frontier.getId()));
     }
 
     private void changeToPersonal() {
         undoStack.clear();
         redoStack.clear();
-        MapFrontiersClient.getCommandService().changeToPersonalAction(new FrontierId(frontier.getId()));
+        MapFrontiersClient.getOperationService().changeToPersonalAction(new FrontierId(frontier.getId()));
     }
 
     private void updateButtons() {
@@ -770,7 +770,7 @@ public class FrontierInfo extends AutoScaledScreen {
         if (actions.canUpdate) {
             if (frontier.getHash() != frontierHash) {
                 frontierHash = frontier.getHash();
-                MapFrontiersClient.getCommandService().updateFrontier(frontier);
+                MapFrontiersClient.getOperationService().updateFrontier(frontier);
             }
         }
     }
@@ -799,4 +799,3 @@ public class FrontierInfo extends AutoScaledScreen {
         }
     }
 }
-

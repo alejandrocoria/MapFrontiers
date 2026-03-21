@@ -5,7 +5,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierCommandResult;
+import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierOperationResult;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -33,7 +33,7 @@ public class CommandAccept {
                 return messageID;
             }
 
-            ServerFrontierCommandResult result = MapFrontiers.getServerRuntime().getShareService()
+            ServerFrontierOperationResult result = MapFrontiers.getServerRuntime().getShareService()
                     .acceptShareInvitation(source.getPlayerOrException(), messageID);
             if (result.isSuccess()) {
                 result.dispatchNetworkActions();
@@ -43,15 +43,15 @@ public class CommandAccept {
                 return messageID;
             }
 
-            if (result.getReason() == ServerFrontierCommandResult.Reason.InvitationExpired) {
+            if (result.getReason() == ServerFrontierOperationResult.Reason.InvitationExpired) {
                 source.sendFailure(Component.literal("Invitation expired"));
-            } else if (result.getReason() == ServerFrontierCommandResult.Reason.FrontierMissing) {
+            } else if (result.getReason() == ServerFrontierOperationResult.Reason.FrontierMissing) {
                 source.sendFailure(Component.literal("The frontier no longer exists"));
-            } else if (result.getReason() == ServerFrontierCommandResult.Reason.SharedUserMissing) {
+            } else if (result.getReason() == ServerFrontierOperationResult.Reason.SharedUserMissing) {
                 source.sendFailure(Component.literal(""));
-            } else if (result.getReason() == ServerFrontierCommandResult.Reason.AlreadyAccepted) {
+            } else if (result.getReason() == ServerFrontierOperationResult.Reason.AlreadyAccepted) {
                 source.sendFailure(Component.literal("You already have the frontier"));
-            } else if (result.getReason() == ServerFrontierCommandResult.Reason.WrongTarget) {
+            } else if (result.getReason() == ServerFrontierOperationResult.Reason.WrongTarget) {
                 source.sendFailure(Component.literal("The invitation is for another player"));
             } else {
                 source.sendFailure(Component.literal("The frontier cannot be accepted"));

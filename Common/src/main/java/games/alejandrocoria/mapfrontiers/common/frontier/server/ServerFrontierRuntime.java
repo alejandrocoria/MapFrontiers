@@ -17,7 +17,7 @@ public class ServerFrontierRuntime {
     private final MinecraftServer server;
     private final FrontiersManager frontiersManager;
     private final FrontierPermissionEvaluator permissionEvaluator;
-    private final ServerFrontierCommandService commandService;
+    private final ServerFrontierOperationService operationService;
     private final ServerFrontierEvents frontierEvents;
     private final ServerFrontierShareService shareService;
     private final ServerSettingsService settingsService;
@@ -28,15 +28,15 @@ public class ServerFrontierRuntime {
         this.frontiersManager = new FrontiersManager();
         this.frontiersManager.loadOrCreateData(server);
         this.permissionEvaluator = new FrontierPermissionEvaluator(frontiersManager);
-        this.commandService = new ServerFrontierCommandService(server, frontiersManager, permissionEvaluator);
+        this.operationService = new ServerFrontierOperationService(server, frontiersManager, permissionEvaluator);
         this.frontierEvents = new ServerFrontierEvents();
         this.shareService = new ServerFrontierShareService(server, frontiersManager, permissionEvaluator);
         this.settingsService = new ServerSettingsService(server, frontiersManager, permissionEvaluator);
-        this.serverApi = new MapFrontiersServerAPIImpl(commandService, frontierEvents);
+        this.serverApi = new MapFrontiersServerAPIImpl(operationService, frontierEvents);
     }
 
-    public ServerFrontierCommandService getCommandService() {
-        return commandService;
+    public ServerFrontierOperationService getOperationService() {
+        return operationService;
     }
 
     public ServerFrontierShareService getShareService() {

@@ -9,7 +9,7 @@ import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedServerFrontier
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
 import games.alejandrocoria.mapfrontiers.common.api.SimpleEventBus;
-import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierCommandService;
+import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierOperationService;
 import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierEvents;
 
 public class MapFrontiersServerAPIImpl implements InternalMapFrontiersServerAPI {
@@ -17,10 +17,10 @@ public class MapFrontiersServerAPIImpl implements InternalMapFrontiersServerAPI 
     private final SimpleEventBus eventBus;
     private final ServerFrontierEvents frontierEvents;
 
-    public MapFrontiersServerAPIImpl(ServerFrontierCommandService commandService, ServerFrontierEvents frontierEvents) {
+    public MapFrontiersServerAPIImpl(ServerFrontierOperationService operationService, ServerFrontierEvents frontierEvents) {
         this.frontierEvents = frontierEvents;
         this.eventBus = new SimpleEventBus();
-        this.frontiers = new ServerFrontierServiceImpl(commandService, frontierEvents);
+        this.frontiers = new ServerFrontierServiceImpl(operationService, frontierEvents);
 
         frontierEvents.subscribeCreated(this, frontier -> eventBus.post(new FrontierCreatedEvent(ApiConverters.fromFrontier(frontier))));
         frontierEvents.subscribeUpdated(this, frontier -> eventBus.post(new FrontierUpdatedEvent(ApiConverters.fromFrontier(frontier))));

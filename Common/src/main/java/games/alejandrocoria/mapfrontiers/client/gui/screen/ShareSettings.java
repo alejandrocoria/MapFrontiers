@@ -201,7 +201,7 @@ public class ShareSettings extends AutoScaledScreen {
         users.removeElement(element);
         SettingsUser user = ((UserSharedElement) element).getUser();
         frontier.removeUserShared(user);
-        MapFrontiersClient.getCommandService().removeSharedUser(frontier.getId(), user);
+        MapFrontiersClient.getOperationService().removeSharedUser(frontier.getId(), user);
         resetLabels();
     }
 
@@ -270,7 +270,7 @@ public class ShareSettings extends AutoScaledScreen {
         SettingsUserShared userShared = new SettingsUserShared(user, true);
 
         frontier.addUserShared(userShared);
-        MapFrontiersClient.getCommandService().shareFrontier(frontier.getId(), user);
+        MapFrontiersClient.getOperationService().shareFrontier(frontier.getId(), user);
 
         UserSharedElement element = new UserSharedElement(font, userShared, canUpdate, true, this::actionChanged);
         users.addElement(element);
@@ -321,10 +321,10 @@ public class ShareSettings extends AutoScaledScreen {
             }
 
             frontier.setModified(new Date());
-            MapFrontiersClient.getCommandService().notifyLocalFrontierUpdated(frontier);
+            MapFrontiersClient.getOperationService().notifyLocalFrontierUpdated(frontier);
         }
 
-        MapFrontiersClient.getCommandService().updateSharedUser(frontier.getId(), user);
+        MapFrontiersClient.getOperationService().updateSharedUser(frontier.getId(), user);
     }
 
     private void updateUsers() {
@@ -350,4 +350,3 @@ public class ShareSettings extends AutoScaledScreen {
         canUpdate = frontier.checkActionUserShared(new SettingsUser(minecraft.player), SettingsUserShared.Action.UpdateSettings);
     }
 }
-

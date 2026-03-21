@@ -8,7 +8,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.hud.HUD;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.ModSettings;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.frontier.client.ClientFrontierCommandService;
+import games.alejandrocoria.mapfrontiers.common.frontier.client.ClientFrontierOperationService;
 import games.alejandrocoria.mapfrontiers.common.frontier.client.ClientFrontierEvents;
 import games.alejandrocoria.mapfrontiers.common.frontier.client.ClientFrontierRuntime;
 import games.alejandrocoria.mapfrontiers.common.frontier.client.ClientSettingsProfileEvents;
@@ -341,9 +341,9 @@ public class MapFrontiersClient {
         return runtime.getLocalOverrides();
     }
 
-    public static ClientFrontierCommandService getCommandService() {
+    public static ClientFrontierOperationService getOperationService() {
         ClientFrontierRuntime runtime = ensureFrontierRuntime();
-        return runtime.getCommandService();
+        return runtime.getOperationService();
     }
 
     public static ClientFrontierEvents getFrontierEvents() {
@@ -505,4 +505,3 @@ public class MapFrontiersClient {
         return clipboard;
     }
 }
-

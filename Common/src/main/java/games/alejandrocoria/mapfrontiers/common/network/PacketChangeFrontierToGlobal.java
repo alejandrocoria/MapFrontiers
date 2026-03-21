@@ -4,7 +4,7 @@ import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
-import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierCommandResult;
+import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierOperationResult;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -73,10 +73,10 @@ public class PacketChangeFrontierToGlobal {
             if (MapFrontiers.getServerRuntime() == null) {
                 return;
             }
-            ServerFrontierCommandResult result = MapFrontiers.getServerRuntime().getCommandService().changeFrontierToGlobal(player, message.frontierID);
+            ServerFrontierOperationResult result = MapFrontiers.getServerRuntime().getOperationService().changeFrontierToGlobal(player, message.frontierID);
             result.dispatchNetworkActions();
         } else {
-            MapFrontiersClient.getCommandService().applyFrontierChangeToGlobal(message.frontierID, message.modified);
+            MapFrontiersClient.getOperationService().applyFrontierChangeToGlobal(message.frontierID, message.modified);
         }
     }
 }

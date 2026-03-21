@@ -16,7 +16,7 @@ public class ClientFrontierRuntime {
     private @Nullable ClientLocalPersonalFrontierStore localPersonalFrontierStore;
     private @Nullable ClientFrontierEvents frontierEvents;
     private @Nullable ClientSettingsProfileEvents settingsProfileEvents;
-    private @Nullable ClientFrontierCommandService commandService;
+    private @Nullable ClientFrontierOperationService operationService;
     private @Nullable ClientFrontierSyncService syncService;
     private @Nullable FrontierLocalOverrides localOverrides;
     private @Nullable MapFrontiersClientAPIImpl clientApi;
@@ -54,8 +54,8 @@ public class ClientFrontierRuntime {
             settingsProfileEvents = new ClientSettingsProfileEvents();
         }
 
-        if (commandService == null) {
-            commandService = new ClientFrontierCommandService(globalFrontiersOverlayManager, personalFrontiersOverlayManager,
+        if (operationService == null) {
+            operationService = new ClientFrontierOperationService(globalFrontiersOverlayManager, personalFrontiersOverlayManager,
                     localPersonalFrontierStore, frontierEvents);
         }
 
@@ -91,9 +91,9 @@ public class ClientFrontierRuntime {
         return localOverrides;
     }
 
-    public ClientFrontierCommandService getCommandService() {
+    public ClientFrontierOperationService getOperationService() {
         ensureInitialized();
-        return commandService;
+        return operationService;
     }
 
     public ClientFrontierEvents getFrontierEvents() {
@@ -151,7 +151,7 @@ public class ClientFrontierRuntime {
             settingsProfileEvents = null;
         }
 
-        commandService = null;
+        operationService = null;
         localPersonalFrontierStore = null;
         localOverrides = null;
     }

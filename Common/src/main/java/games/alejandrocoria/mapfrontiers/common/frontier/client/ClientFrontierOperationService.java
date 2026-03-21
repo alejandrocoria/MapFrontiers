@@ -44,7 +44,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class ClientFrontierCommandService {
+public class ClientFrontierOperationService {
     private static final Minecraft minecraft = Minecraft.getInstance();
 
     private final FrontiersOverlayManager globalManager;
@@ -62,10 +62,10 @@ public class ClientFrontierCommandService {
         }
     }
 
-    public ClientFrontierCommandService(FrontiersOverlayManager globalManager,
-                                        FrontiersOverlayManager personalManager,
-                                        ClientLocalPersonalFrontierStore localPersonalStore,
-                                        ClientFrontierEvents frontierEvents) {
+    public ClientFrontierOperationService(FrontiersOverlayManager globalManager,
+                                          FrontiersOverlayManager personalManager,
+                                          ClientLocalPersonalFrontierStore localPersonalStore,
+                                          ClientFrontierEvents frontierEvents) {
         this.globalManager = globalManager;
         this.personalManager = personalManager;
         this.localPersonalStore = localPersonalStore;

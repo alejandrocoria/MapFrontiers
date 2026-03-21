@@ -41,24 +41,24 @@ public class ServerFrontierShareService {
         return permissionEvaluator.canSendCommandAcceptFrontier(player);
     }
 
-    public ServerFrontierCommandResult sharePersonalFrontier(ServerPlayer player, UUID frontierId, SettingsUserShared userShared) {
+    public ServerFrontierOperationResult sharePersonalFrontier(ServerPlayer player, UUID frontierId, SettingsUserShared userShared) {
         userShared.getUser().fillMissingInfo(false, server);
         if (userShared.getUser().uuid == null) {
-            return ServerFrontierCommandResult.ignored(null);
+            return ServerFrontierOperationResult.ignored(null);
         }
 
         ServerPlayer targetPlayer = server.getPlayerList().getPlayer(userShared.getUser().uuid);
         if (targetPlayer == null) {
-            return ServerFrontierCommandResult.ignored(null);
+            return ServerFrontierOperationResult.ignored(null);
         }
 
         FrontierData frontier = frontiersManager.getFrontierFromID(frontierId);
         if (frontier == null || !frontier.getPersonal()) {
-            return ServerFrontierCommandResult.ignored(frontier);
+            return ServerFrontierOperationResult.ignored(frontier);
         }
 
         if (frontier.getOwner().equals(userShared.getUser()) || frontier.hasUserShared(userShared.getUser())) {
-            return ServerFrontierCommandResult.ignored(frontier);
+            return ServerFrontierOperationResult.ignored(frontier);
         }
 
         if (!permissionEvaluator.canSharePersonalFrontier(player, frontier)) {
@@ -66,7 +66,7 @@ public class ServerFrontierShareService {
         }
 
         if (!permissionEvaluator.canManagePersonalShareSettings(player, frontier)) {
-            return ServerFrontierCommandResult.ignored(frontier);
+            return ServerFrontierOperationResult.ignored(frontier);
         }
 
         SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
@@ -76,18 +76,18 @@ public class ServerFrontierShareService {
         frontier.addUserShared(userShared);
         frontiersManager.saveFrontierData();
 
-        ServerFrontierCommandResult result = ServerFrontierCommandResult.success(frontier);
+        ServerFrontierOperationResult result = ServerFrontierOperationResult.success(frontier);
         result.addNetworkAction(() -> PacketHandler.sendTo(new PacketPersonalFrontierShared(shareMessageId, playerUser,
                 frontier.getOwner(), frontier.getName1(), frontier.getName2()), targetPlayer));
         frontier.removeChange(FrontierData.Change.Shared);
         return result;
     }
 
-    public ServerFrontierCommandResult updateSharedUserPersonalFrontier(ServerPlayer player, UUID frontierId,
+    public ServerFrontierOperationResult updateSharedUserPersonalFrontier(ServerPlayer player, UUID frontierId,
                                                                         SettingsUserShared userShared) {
         FrontierData frontier = frontiersManager.getFrontierFromID(frontierId);
         if (frontier == null || !frontier.getPersonal()) {
-            return ServerFrontierCommandResult.ignored(frontier);
+            return ServerFrontierOperationResult.ignored(frontier);
         }
 
         if (!permissionEvaluator.canSharePersonalFrontier(player, frontier)) {
@@ -96,27 +96,27 @@ public class ServerFrontierShareService {
 
         SettingsUserShared currentUserShared = frontier.getUserShared(userShared.getUser());
         if (currentUserShared == null) {
-            return ServerFrontierCommandResult.ignored(frontier);
+            return ServerFrontierOperationResult.ignored(frontier);
         }
 
         currentUserShared.setActions(userShared.getActions());
         frontier.addChange(FrontierData.Change.Shared);
         frontiersManager.saveFrontierData();
 
-        ServerFrontierCommandResult result = ServerFrontierCommandResult.success(frontier);
+        ServerFrontierOperationResult result = ServerFrontierOperationResult.success(frontier);
         result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier, player.getId()), frontier, server));
         return result;
     }
 
-    public ServerFrontierCommandResult removeSharedUserPersonalFrontier(ServerPlayer player, UUID frontierId, SettingsUser targetUser) {
+    public ServerFrontierOperationResult removeSharedUserPersonalFrontier(ServerPlayer player, UUID frontierId, SettingsUser targetUser) {
         targetUser.fillMissingInfo(false, server);
         if (targetUser.uuid == null) {
-            return ServerFrontierCommandResult.ignored(null);
+            return ServerFrontierOperationResult.ignored(null);
         }
 
         FrontierData frontier = frontiersManager.getFrontierFromID(frontierId);
         if (frontier == null || !frontier.getPersonal()) {
-            return ServerFrontierCommandResult.ignored(frontier);
+            return ServerFrontierOperationResult.ignored(frontier);
         }
 
         if (!permissionEvaluator.canSharePersonalFrontier(player, frontier)) {
@@ -126,17 +126,17 @@ public class ServerFrontierShareService {
         SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
         SettingsUserShared userShared = frontier.getUserShared(targetUser);
         if (userShared == null || userShared.getUser().equals(playerUser)) {
-            return ServerFrontierCommandResult.ignored(frontier);
+            return ServerFrontierOperationResult.ignored(frontier);
         }
 
         if (!permissionEvaluator.canManagePersonalShareSettings(player, frontier)) {
-            return ServerFrontierCommandResult.ignored(frontier);
+            return ServerFrontierOperationResult.ignored(frontier);
         }
 
         frontier.removeUserShared(targetUser);
         frontiersManager.saveFrontierData();
 
-        ServerFrontierCommandResult result = ServerFrontierCommandResult.success(frontier);
+        ServerFrontierOperationResult result = ServerFrontierOperationResult.success(frontier);
         if (userShared.isPending()) {
             frontiersManager.removePendingShareFrontier(targetUser);
         } else {
@@ -153,31 +153,31 @@ public class ServerFrontierShareService {
         return result;
     }
 
-    public ServerFrontierCommandResult acceptShareInvitation(ServerPlayer player, int messageId) {
+    public ServerFrontierOperationResult acceptShareInvitation(ServerPlayer player, int messageId) {
         PendingShareFrontier pending = frontiersManager.getPendingShareFrontier(messageId);
         if (pending == null) {
-            return ServerFrontierCommandResult.notFound(ServerFrontierCommandResult.Reason.InvitationExpired);
+            return ServerFrontierOperationResult.notFound(ServerFrontierOperationResult.Reason.InvitationExpired);
         }
 
         SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
         if (!pending.targetUser.equals(playerUser)) {
-            return ServerFrontierCommandResult.rejected(ServerFrontierCommandResult.Reason.WrongTarget, null);
+            return ServerFrontierOperationResult.rejected(ServerFrontierOperationResult.Reason.WrongTarget, null);
         }
 
         FrontierData frontier = frontiersManager.getFrontierFromID(pending.frontierID);
         if (frontier == null || !frontier.getPersonal()) {
             frontiersManager.removePendingShareFrontier(messageId);
-            return ServerFrontierCommandResult.notFound(ServerFrontierCommandResult.Reason.FrontierMissing);
+            return ServerFrontierOperationResult.notFound(ServerFrontierOperationResult.Reason.FrontierMissing);
         }
 
         SettingsUserShared userShared = frontier.getUserShared(pending.targetUser);
         if (userShared == null) {
-            return ServerFrontierCommandResult.ignored(ServerFrontierCommandResult.Reason.SharedUserMissing, frontier);
+            return ServerFrontierOperationResult.ignored(ServerFrontierOperationResult.Reason.SharedUserMissing, frontier);
         }
 
         if (frontiersManager.hasPersonalFrontier(pending.targetUser, frontier.getId())) {
             frontiersManager.removePendingShareFrontier(messageId);
-            return ServerFrontierCommandResult.ignored(ServerFrontierCommandResult.Reason.AlreadyAccepted, frontier);
+            return ServerFrontierOperationResult.ignored(ServerFrontierOperationResult.Reason.AlreadyAccepted, frontier);
         }
 
         frontiersManager.addPersonalFrontier(pending.targetUser, frontier);
@@ -186,7 +186,7 @@ public class ServerFrontierShareService {
         frontiersManager.saveFrontierData();
         frontiersManager.removePendingShareFrontier(messageId);
 
-        ServerFrontierCommandResult result = ServerFrontierCommandResult.success(frontier);
+        ServerFrontierOperationResult result = ServerFrontierOperationResult.success(frontier);
         result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierCreated(frontier), player));
         result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier), frontier, server));
         frontier.removeChange(FrontierData.Change.Shared);
@@ -227,8 +227,8 @@ public class ServerFrontierShareService {
         }
     }
 
-    private ServerFrontierCommandResult rejectedWithProfileRefresh(ServerPlayer player, @Nullable FrontierData frontier) {
-        ServerFrontierCommandResult result = ServerFrontierCommandResult.rejected(frontier);
+    private ServerFrontierOperationResult rejectedWithProfileRefresh(ServerPlayer player, @Nullable FrontierData frontier) {
+        ServerFrontierOperationResult result = ServerFrontierOperationResult.rejected(frontier);
         result.addNetworkAction(() -> PacketHandler.sendTo(permissionEvaluator.createProfilePacket(player), player));
         return result;
     }

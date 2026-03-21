@@ -65,7 +65,7 @@ public class PacketFrontierDeleted {
     public static void handle(PacketContext<PacketFrontierDeleted> ctx) {
         if (Side.CLIENT.equals(ctx.side())) {
             PacketFrontierDeleted message = ctx.message();
-            MapFrontiersClient.getCommandService().applyFrontierDeleted(message.dimension, message.frontierID, message.personal);
+            MapFrontiersClient.getOperationService().applyFrontierDeleted(message.dimension, message.frontierID, message.personal);
         }
     }
 }
