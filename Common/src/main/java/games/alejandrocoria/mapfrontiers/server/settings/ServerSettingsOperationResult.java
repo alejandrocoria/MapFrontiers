@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @ParametersAreNonnullByDefault
-public class ServerSettingsCommandResult {
+public class ServerSettingsOperationResult {
     public enum Status {
         Success,
         Rejected,
@@ -15,20 +15,20 @@ public class ServerSettingsCommandResult {
     private final Status status;
     private final List<Runnable> networkActions = new ArrayList<>();
 
-    private ServerSettingsCommandResult(Status status) {
+    private ServerSettingsOperationResult(Status status) {
         this.status = status;
     }
 
-    public static ServerSettingsCommandResult success() {
-        return new ServerSettingsCommandResult(Status.Success);
+    public static ServerSettingsOperationResult success() {
+        return new ServerSettingsOperationResult(Status.Success);
     }
 
-    public static ServerSettingsCommandResult rejected() {
-        return new ServerSettingsCommandResult(Status.Rejected);
+    public static ServerSettingsOperationResult rejected() {
+        return new ServerSettingsOperationResult(Status.Rejected);
     }
 
-    public static ServerSettingsCommandResult ignored() {
-        return new ServerSettingsCommandResult(Status.Ignored);
+    public static ServerSettingsOperationResult ignored() {
+        return new ServerSettingsOperationResult(Status.Ignored);
     }
 
     public Status getStatus() {

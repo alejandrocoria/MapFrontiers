@@ -5,7 +5,7 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketFrontiers;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.server.api.MapFrontiersServerAPIImpl;
-import games.alejandrocoria.mapfrontiers.server.settings.ServerSettingsService;
+import games.alejandrocoria.mapfrontiers.server.settings.ServerSettingsOperationService;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -20,7 +20,7 @@ public class ServerFrontierRuntime {
     private final ServerFrontierOperationService operationService;
     private final ServerFrontierEvents frontierEvents;
     private final ServerFrontierShareService shareService;
-    private final ServerSettingsService settingsService;
+    private final ServerSettingsOperationService settingsOperationService;
     private final MapFrontiersServerAPIImpl serverApi;
 
     public ServerFrontierRuntime(MinecraftServer server) {
@@ -31,7 +31,7 @@ public class ServerFrontierRuntime {
         this.operationService = new ServerFrontierOperationService(server, frontiersManager, permissionEvaluator);
         this.frontierEvents = new ServerFrontierEvents();
         this.shareService = new ServerFrontierShareService(server, frontiersManager, permissionEvaluator);
-        this.settingsService = new ServerSettingsService(server, frontiersManager, permissionEvaluator);
+        this.settingsOperationService = new ServerSettingsOperationService(server, frontiersManager, permissionEvaluator);
         this.serverApi = new MapFrontiersServerAPIImpl(operationService, frontierEvents);
     }
 
@@ -43,8 +43,8 @@ public class ServerFrontierRuntime {
         return shareService;
     }
 
-    public ServerSettingsService getSettingsService() {
-        return settingsService;
+    public ServerSettingsOperationService getSettingsOperationService() {
+        return settingsOperationService;
     }
 
     public MapFrontiersServerAPIImpl getServerApi() {
@@ -83,3 +83,4 @@ public class ServerFrontierRuntime {
         frontiersManager.close();
     }
 }
+

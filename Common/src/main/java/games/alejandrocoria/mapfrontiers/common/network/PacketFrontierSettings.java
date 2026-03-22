@@ -5,7 +5,7 @@ import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.ModSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
-import games.alejandrocoria.mapfrontiers.server.settings.ServerSettingsCommandResult;
+import games.alejandrocoria.mapfrontiers.server.settings.ServerSettingsOperationResult;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -61,7 +61,7 @@ public class PacketFrontierSettings {
                 return;
             }
 
-            ServerSettingsCommandResult result = MapFrontiers.getServerRuntime().getSettingsService()
+            ServerSettingsOperationResult result = MapFrontiers.getServerRuntime().getSettingsOperationService()
                     .updateSettings(player, message.settings);
             result.dispatchNetworkActions();
         } else if (Side.CLIENT.equals(ctx.side())) {
@@ -71,3 +71,4 @@ public class PacketFrontierSettings {
         }
     }
 }
+
