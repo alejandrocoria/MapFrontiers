@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.frontier;
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -34,19 +35,19 @@ public class ClientFrontierEvents {
     }
 
     public void postCreated(FrontierOverlay frontierOverlay, int playerId) {
-        for (BiConsumer<FrontierOverlay, Integer> callback : createdSubscribers.values()) {
+        for (BiConsumer<FrontierOverlay, Integer> callback : new ArrayList<>(createdSubscribers.values())) {
             callback.accept(frontierOverlay, playerId);
         }
     }
 
     public void postUpdated(FrontierOverlay frontierOverlay, int playerId) {
-        for (BiConsumer<FrontierOverlay, Integer> callback : updatedSubscribers.values()) {
+        for (BiConsumer<FrontierOverlay, Integer> callback : new ArrayList<>(updatedSubscribers.values())) {
             callback.accept(frontierOverlay, playerId);
         }
     }
 
     public void postDeleted(UUID frontierId) {
-        for (Consumer<UUID> callback : deletedSubscribers.values()) {
+        for (Consumer<UUID> callback : new ArrayList<>(deletedSubscribers.values())) {
             callback.accept(frontierId);
         }
     }

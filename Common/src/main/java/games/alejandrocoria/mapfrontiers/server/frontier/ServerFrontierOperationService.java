@@ -170,11 +170,12 @@ public class ServerFrontierOperationService {
             frontier.removeUserShared(playerUser);
             frontiersManager.deletePersonalFrontier(playerUser, frontier.getDimension(), frontier.getId());
 
+            PacketFrontierUpdated frontierUpdatedPacket = new PacketFrontierUpdated(frontier, player.getId());
+
             ServerFrontierOperationResult result = ServerFrontierOperationResult.success(frontier);
             result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(),
                     frontier.getPersonal(), player.getId()), player));
-            result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier, player.getId()),
-                    frontier, server));
+            result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(frontierUpdatedPacket, frontier, server));
             frontier.removeChange(FrontierData.Change.Shared);
             return result;
         }
@@ -297,4 +298,3 @@ public class ServerFrontierOperationService {
         return result;
     }
 }
-

@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.settings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -20,7 +21,7 @@ public class ClientSettingsProfileEvents {
     }
 
     public void postUpdated(SettingsProfile profile) {
-        for (Consumer<SettingsProfile> callback : updatedSubscribers.values()) {
+        for (Consumer<SettingsProfile> callback : new ArrayList<>(updatedSubscribers.values())) {
             callback.accept(profile);
         }
     }

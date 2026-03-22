@@ -1,5 +1,4 @@
 package games.alejandrocoria.mapfrontiers.server.frontier;
-
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierCreated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierDeleted;
@@ -134,6 +133,8 @@ public class ServerFrontierShareService {
         frontier.removeUserShared(targetUser);
         frontiersManager.saveFrontierData();
 
+        PacketFrontierUpdated frontierUpdatedPacket = new PacketFrontierUpdated(frontier, player.getId());
+
         ServerFrontierOperationResult result = ServerFrontierOperationResult.success(frontier);
         if (userShared.isPending()) {
             frontiersManager.removePendingShareFrontier(targetUser);
@@ -146,7 +147,7 @@ public class ServerFrontierShareService {
             }
         }
 
-        result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier, player.getId()), frontier, server));
+        result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(frontierUpdatedPacket, frontier, server));
         frontier.removeChange(FrontierData.Change.Shared);
         return result;
     }
@@ -184,9 +185,11 @@ public class ServerFrontierShareService {
         frontiersManager.saveFrontierData();
         frontiersManager.removePendingShareFrontier(messageId);
 
+        PacketFrontierUpdated frontierUpdatedPacket = new PacketFrontierUpdated(frontier);
+
         ServerFrontierOperationResult result = ServerFrontierOperationResult.success(frontier);
         result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierCreated(frontier), player));
-        result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier), frontier, server));
+        result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(frontierUpdatedPacket, frontier, server));
         frontier.removeChange(FrontierData.Change.Shared);
         return result;
     }
