@@ -4,7 +4,7 @@ import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierOperationResult;
+import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationResult;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;

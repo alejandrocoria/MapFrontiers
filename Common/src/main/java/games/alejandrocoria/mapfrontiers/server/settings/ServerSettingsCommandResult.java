@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.common.frontier.server;
+package games.alejandrocoria.mapfrontiers.server.settings;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;

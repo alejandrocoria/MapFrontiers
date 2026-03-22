@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.common.frontier.client;
+package games.alejandrocoria.mapfrontiers.client.frontier;
 
 import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 

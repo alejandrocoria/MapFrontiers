@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.common.api.client;
+package games.alejandrocoria.mapfrontiers.client.api;
 
 import games.alejandrocoria.mapfrontiers.api.client.FrontierActionResult;
 import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedClientFrontierService;

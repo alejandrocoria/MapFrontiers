@@ -2,8 +2,8 @@ package games.alejandrocoria.mapfrontiers;
 
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClientForge;
 import games.alejandrocoria.mapfrontiers.common.Config;
-import games.alejandrocoria.mapfrontiers.common.command.CommandAccept;
-import games.alejandrocoria.mapfrontiers.common.event.ServerGlobalEvents;
+import games.alejandrocoria.mapfrontiers.server.command.CommandAccept;
+import games.alejandrocoria.mapfrontiers.server.event.ServerGlobalEvents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.client.event.AddGuiOverlayLayersEvent;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;

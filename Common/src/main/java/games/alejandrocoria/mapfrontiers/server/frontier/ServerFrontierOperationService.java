@@ -1,7 +1,6 @@
-package games.alejandrocoria.mapfrontiers.common.frontier.server;
+package games.alejandrocoria.mapfrontiers.server.frontier;
 
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToGlobal;
 import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToPersonal;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierCreated;

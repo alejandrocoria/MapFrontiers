@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.common.api.server;
+package games.alejandrocoria.mapfrontiers.server.api;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedServerFrontierService;
@@ -11,10 +11,10 @@ import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreationFactory;
-import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierOperationResult;
-import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierOperationService;
-import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierEvents;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierEvents;
+import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationResult;
+import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationService;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 

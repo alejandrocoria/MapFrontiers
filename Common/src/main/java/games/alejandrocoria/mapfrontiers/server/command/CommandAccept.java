@@ -1,11 +1,11 @@
-package games.alejandrocoria.mapfrontiers.common.command;
+package games.alejandrocoria.mapfrontiers.server.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierOperationResult;
+import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationResult;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;

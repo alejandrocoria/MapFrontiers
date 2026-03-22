@@ -1,6 +1,7 @@
-package games.alejandrocoria.mapfrontiers.common;
+package games.alejandrocoria.mapfrontiers.server.frontier;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreationFactory;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -160,7 +161,7 @@ public class FrontiersManager {
             return false;
         }
 
-        boolean deleted = frontiers.removeIf(x -> x.id.equals(id));
+        boolean deleted = frontiers.removeIf(x -> x.getId().equals(id));
         deleted |= allFrontiers.remove(id) != null;
 
         if (deleted) {
@@ -185,7 +186,7 @@ public class FrontiersManager {
             allFrontiers.remove(id);
         }
 
-        boolean deleted = frontiers.removeIf(x -> x.id.equals(id));
+        boolean deleted = frontiers.removeIf(x -> x.getId().equals(id));
 
         if (deleted) {
             saveFrontierData();
@@ -254,7 +255,7 @@ public class FrontiersManager {
             return false;
         }
 
-        boolean deleted = frontiers.removeIf(x -> x.id.equals(id));
+        boolean deleted = frontiers.removeIf(x -> x.getId().equals(id));
         if (deleted) {
             FrontierData frontier = allFrontiers.get(id);
             if (frontier.getOwner().equals(user)) {
@@ -282,7 +283,7 @@ public class FrontiersManager {
             return false;
         }
 
-        boolean deleted = frontiers.removeIf(x -> x.id.equals(id));
+        boolean deleted = frontiers.removeIf(x -> x.getId().equals(id));
         if (deleted) {
             FrontierData frontier = allFrontiers.get(id);
             frontier.setPersonal(true);

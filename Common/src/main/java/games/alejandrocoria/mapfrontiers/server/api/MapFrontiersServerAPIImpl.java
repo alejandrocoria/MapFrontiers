@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.common.api.server;
+package games.alejandrocoria.mapfrontiers.server.api;
 
 import games.alejandrocoria.mapfrontiers.api.event.EventBus;
 import games.alejandrocoria.mapfrontiers.api.event.FrontierCreatedEvent;
@@ -9,8 +9,8 @@ import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedServerFrontier
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
 import games.alejandrocoria.mapfrontiers.common.api.SimpleEventBus;
-import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierOperationService;
-import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierEvents;
+import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierEvents;
+import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationService;
 
 public class MapFrontiersServerAPIImpl implements InternalMapFrontiersServerAPI {
     private final PluginScopedServerFrontierService frontiers;

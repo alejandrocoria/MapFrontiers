@@ -1,10 +1,10 @@
 package games.alejandrocoria.mapfrontiers;
 
 import games.alejandrocoria.mapfrontiers.api.MapFrontiersAPIBootstrap;
-import games.alejandrocoria.mapfrontiers.common.event.ServerGlobalEvents;
-import games.alejandrocoria.mapfrontiers.common.frontier.server.ServerFrontierRuntime;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
+import games.alejandrocoria.mapfrontiers.server.event.ServerGlobalEvents;
+import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierRuntime;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.apache.logging.log4j.LogManager;

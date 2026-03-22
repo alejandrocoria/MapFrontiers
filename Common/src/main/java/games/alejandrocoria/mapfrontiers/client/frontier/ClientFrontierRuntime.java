@@ -1,8 +1,9 @@
-package games.alejandrocoria.mapfrontiers.common.frontier.client;
+package games.alejandrocoria.mapfrontiers.client.frontier;
 
 import games.alejandrocoria.mapfrontiers.client.FrontierLocalOverrides;
 import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
-import games.alejandrocoria.mapfrontiers.common.api.client.MapFrontiersClientAPIImpl;
+import games.alejandrocoria.mapfrontiers.client.api.MapFrontiersClientAPIImpl;
+import games.alejandrocoria.mapfrontiers.client.settings.ClientSettingsProfileEvents;
 import journeymap.api.v2.client.IClientAPI;
 
 import javax.annotation.Nullable;

@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.common.frontier.server;
+package games.alejandrocoria.mapfrontiers.server.frontier;
 
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 

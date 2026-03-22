@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.common.event;
+package games.alejandrocoria.mapfrontiers.server.event;
 
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;

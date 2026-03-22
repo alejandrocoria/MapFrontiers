@@ -1,9 +1,10 @@
-package games.alejandrocoria.mapfrontiers.common.frontier.server;
+package games.alejandrocoria.mapfrontiers.server.settings;
 
-import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
+import games.alejandrocoria.mapfrontiers.server.frontier.FrontierPermissionEvaluator;
+import games.alejandrocoria.mapfrontiers.server.frontier.FrontiersManager;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
