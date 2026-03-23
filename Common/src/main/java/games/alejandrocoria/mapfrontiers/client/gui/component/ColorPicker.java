@@ -91,6 +91,16 @@ public class ColorPicker extends AbstractWidgetNoNarration {
 
     }
 
+    public void finishSelection() {
+        if (!hsGrabbed && !vGrabbed) {
+            return;
+        }
+
+        callbackColorUpdated.accept(color, false);
+        hsGrabbed = false;
+        vGrabbed = false;
+    }
+
     @Override
     public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         int texX = active ? 0 : 137;

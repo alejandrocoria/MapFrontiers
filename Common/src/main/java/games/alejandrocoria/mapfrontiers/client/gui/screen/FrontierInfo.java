@@ -550,8 +550,8 @@ public class FrontierInfo extends AutoScaledScreen {
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
         for (GuiEventListener w : children()) {
-            if (w instanceof ColorPicker) {
-                w.mouseReleased(event);
+            if (w instanceof ColorPicker cp) {
+                cp.finishSelection();
             }
         }
 
