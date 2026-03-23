@@ -36,11 +36,11 @@ public class ClientFrontierRuntime {
         }
 
         if (globalFrontiersOverlayManager == null) {
-            globalFrontiersOverlayManager = new FrontiersOverlayManager(journeyMapApi, false);
+            globalFrontiersOverlayManager = new FrontiersOverlayManager(journeyMapApi);
         }
 
         if (personalFrontiersOverlayManager == null) {
-            personalFrontiersOverlayManager = new FrontiersOverlayManager(journeyMapApi, true);
+            personalFrontiersOverlayManager = new FrontiersOverlayManager(journeyMapApi);
         }
 
         if (localPersonalFrontierStore == null) {

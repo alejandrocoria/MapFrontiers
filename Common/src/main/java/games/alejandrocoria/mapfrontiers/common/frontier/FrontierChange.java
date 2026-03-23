@@ -8,7 +8,6 @@ import net.minecraft.world.level.ChunkPos;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -234,45 +233,6 @@ public class FrontierChange {
 
     public void setModifiedTime(long modifiedTime) {
         this.modifiedTime = modifiedTime;
-    }
-
-    public void applyTo(FrontierData frontier) {
-        if (name != null) {
-            frontier.setName1(name.name1);
-            frontier.setName2(name.name2);
-        }
-
-        if (visibility != null) {
-            frontier.setVisibilityData(new FrontierData.VisibilityData(visibility.visibilityData));
-        }
-
-        if (color != null) {
-            frontier.setColor(color.color);
-        }
-
-        if (banner != null) {
-            frontier.setBannerData(banner.banner == null ? null : new FrontierData.BannerData(banner.banner));
-        }
-
-        if (shape != null) {
-            frontier.clearVertices();
-            frontier.clearChunks();
-            frontier.setMode(shape.mode);
-
-            if (shape.mode == FrontierData.Mode.Vertex) {
-                for (BlockPos vertex : shape.vertices) {
-                    frontier.addVertex(vertex);
-                }
-            } else {
-                for (ChunkPos chunk : shape.chunks) {
-                    frontier.addChunk(chunk);
-                }
-            }
-        }
-
-        if (modifiedTime != null) {
-            frontier.setModified(new Date(modifiedTime));
-        }
     }
 
     public static class NameChange {

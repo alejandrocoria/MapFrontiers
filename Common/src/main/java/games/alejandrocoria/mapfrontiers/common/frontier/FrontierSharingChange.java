@@ -58,19 +58,6 @@ public class FrontierSharingChange {
         this.usersShared = copyUsersShared(usersShared);
     }
 
-    public boolean isEmpty() {
-        return usersShared == null || usersShared.isEmpty();
-    }
-
-    public void applyTo(FrontierData frontier) {
-        if (usersShared == null) {
-            frontier.removeAllUserShared();
-            return;
-        }
-
-        frontier.setUsersShared(copyUsersShared(usersShared));
-    }
-
     private static @Nullable List<SettingsUserShared> copyUsersShared(@Nullable List<SettingsUserShared> usersShared) {
         if (usersShared == null || usersShared.isEmpty()) {
             return null;

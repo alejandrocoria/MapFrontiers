@@ -51,7 +51,7 @@ public class ServerFrontierRuntime {
         return serverApi;
     }
 
-    public void onPlayerJoined(ServerPlayer player) {
+    public void onPlayerJoined() {
         frontiersManager.ensureOwners(server);
     }
 

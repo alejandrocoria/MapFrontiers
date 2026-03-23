@@ -12,7 +12,6 @@ import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.MarkerOverlay;
 import journeymap.api.v2.client.model.MapImage;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -33,8 +32,6 @@ public class FrontiersOverlayManager {
     private final IClientAPI jmAPI;
     private final HashMap<ResourceKey<Level>, ArrayList<FrontierOverlay>> dimensionsFrontiers;
     private final HashMap<ResourceKey<Level>, MarkerOverlay> markersSelected;
-    private final boolean personal;
-    private static final Minecraft minecraft = Minecraft.getInstance();
 
     private static final MapImage markerDotSelected = new MapImage(
             Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/marker.png"), 20, 0, 10, 10, ColorConstants.WHITE, 1.f);
@@ -69,11 +66,10 @@ public class FrontiersOverlayManager {
         });
     }
 
-    public FrontiersOverlayManager(IClientAPI jmAPI, boolean personal) {
+    public FrontiersOverlayManager(IClientAPI jmAPI) {
         this.jmAPI = jmAPI;
         dimensionsFrontiers = new HashMap<>();
         markersSelected = new HashMap<>();
-        this.personal = personal;
 
         ClientGlobalEvents.subscribeUpdatedConfigEvent(this, () -> updateAllOverlays(true));
     }

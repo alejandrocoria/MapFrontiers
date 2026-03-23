@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+@SuppressWarnings("unused")
 public interface PluginScopedClientFrontierService {
     Optional<FrontierDataView> getFrontier(String pluginModId, FrontierId frontierId);
     FrontierActionResult createGlobalFrontier(String pluginModId, DimensionId dimension, FrontierShape shape);

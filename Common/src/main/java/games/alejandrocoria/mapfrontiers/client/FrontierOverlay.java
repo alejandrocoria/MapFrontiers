@@ -690,18 +690,6 @@ public class FrontierOverlay extends FrontierData {
         hashDirty = true;
     }
 
-    @Override
-    public void removeUserShared(int index) {
-        super.removeUserShared(index);
-        hashDirty = true;
-    }
-
-    @Override
-    public void setUsersShared(List<SettingsUserShared> usersShared) {
-        super.setUsersShared(usersShared);
-        hashDirty = true;
-    }
-
     public BlockPos getClosestVertex(BlockPos vertex, double belowDistance) {
         BlockPos closest = null;
         double closestDistance = belowDistance;

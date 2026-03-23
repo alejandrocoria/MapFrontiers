@@ -44,8 +44,4 @@ public class SimpleEventBus implements EventBus {
             handler.accept(event);
         }
     }
-
-    public synchronized void unsubscribeAll() {
-        listeners.clear();
-    }
 }

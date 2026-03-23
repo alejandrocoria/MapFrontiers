@@ -22,7 +22,6 @@ public class MapFrontiers {
     public static final int SETTINGS_DATA_VERSION = 4;
 
     private static ServerFrontierRuntime serverRuntime;
-    private static MinecraftServer currentServer;
 
     public MapFrontiers() {
 
@@ -32,7 +31,6 @@ public class MapFrontiers {
         PacketHandler.init();
 
         ServerGlobalEvents.subscribeServerStartingEvent(MapFrontiers.class, server -> {
-            currentServer = server;
             serverRuntime = new ServerFrontierRuntime(server);
             MapFrontiersAPIBootstrap.setServerAPI(serverRuntime.getServerApi());
 
@@ -45,7 +43,6 @@ public class MapFrontiers {
             }
             MapFrontiersAPIBootstrap.clearServerAPI();
             serverRuntime = null;
-            currentServer = null;
 
             LOGGER.info("ServerStoppingEvent done");
         });
@@ -55,7 +52,7 @@ public class MapFrontiers {
                 return;
             }
 
-            serverRuntime.onPlayerJoined(player);
+            serverRuntime.onPlayerJoined();
 
             LOGGER.info("PlayerJoinedEvent done (" + player.getStringUUID() + ")");
         });
@@ -80,10 +77,6 @@ public class MapFrontiers {
     public static boolean isOPorHost(ServerPlayer player) {
         MinecraftServer server = player.level().getServer();
         return server.getPlayerList().isOp(player.nameAndId());
-    }
-
-    public static MinecraftServer getCurrentServer() {
-        return currentServer;
     }
 
     public static ServerFrontierRuntime getServerRuntime() {

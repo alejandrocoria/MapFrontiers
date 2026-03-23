@@ -60,10 +60,6 @@ public final class ApiConverters {
         return FrontierMutationApplier.fromVisibility(visibilityData);
     }
 
-    public static FrontierData.VisibilityData toVisibility(Set<FrontierVisibilityFlag> visibilityFlags) {
-        return FrontierMutationApplier.toVisibility(visibilityFlags);
-    }
-
     public static FrontierBanner fromBanner(FrontierData.BannerData bannerData) {
         if (bannerData == null) {
             return null;
@@ -76,10 +72,6 @@ public final class ApiConverters {
                 patterns == null ? "[]" : patterns.toString(),
                 bannerData.rotation
         );
-    }
-
-    public static FrontierData.BannerData toBanner(FrontierBanner banner) {
-        return FrontierMutationApplier.toBanner(banner);
     }
 
     public static SharedUserAccess fromSharedUser(SettingsUserShared userShared) {

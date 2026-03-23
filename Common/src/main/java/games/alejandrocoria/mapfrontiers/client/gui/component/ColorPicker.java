@@ -47,10 +47,6 @@ public class ColorPicker extends AbstractWidgetNoNarration {
         colorFullBrightness = Color.HSBtoRGB(hsv[0], hsv[1], 1.f);
     }
 
-    public int getColor() {
-        return color;
-    }
-
     @Nullable
     public ComponentPath nextFocusPath(FocusNavigationEvent navigationEvent) {
         return null;

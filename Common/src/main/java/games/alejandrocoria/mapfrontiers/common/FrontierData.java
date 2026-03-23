@@ -318,14 +318,6 @@ public class FrontierData {
         return mode;
     }
 
-    public boolean isEmpty() {
-        if (mode == Mode.Vertex) {
-            return vertices.isEmpty();
-        } else {
-            return chunks.isEmpty();
-        }
-    }
-
     public void setName1(String name) {
         name1 = name;
     }
@@ -437,18 +429,6 @@ public class FrontierData {
         usersShared.add(userShared);
     }
 
-    public void removeUserShared(int index) {
-        if (usersShared == null) {
-            return;
-        }
-
-        usersShared.remove(index);
-
-        if (usersShared.isEmpty()) {
-            usersShared = null;
-        }
-    }
-
     public void removeUserShared(SettingsUser user) {
         if (usersShared == null) {
             return;
@@ -463,10 +443,6 @@ public class FrontierData {
         }
 
         usersShared = null;
-    }
-
-    public void setUsersShared(List<SettingsUserShared> usersShared) {
-        this.usersShared = usersShared;
     }
 
     public void removePendingUsersShared() {
