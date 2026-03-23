@@ -1,10 +1,13 @@
 package games.alejandrocoria.mapfrontiers.server.frontier;
 
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierSharingChange;
 import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToGlobal;
 import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToPersonal;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierCreated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierDeleted;
+import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSharingUpdated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierUpdated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -74,7 +77,6 @@ public class ServerFrontierOperationService {
         }
 
         frontier.removeAllUserShared();
-        frontier.removeChange(FrontierData.Change.Shared);
         frontiersManager.addPersonalFrontier(frontier);
         return ServerFrontierOperationResult.success(frontier);
     }
@@ -84,61 +86,59 @@ public class ServerFrontierOperationService {
         return createdGlobalFrontier(frontier, SYSTEM_ACTOR_ID);
     }
 
-    public ServerFrontierOperationResult updateFrontier(ServerPlayer player, FrontierData requestedFrontier) {
-        FrontierData currentFrontier = frontiersManager.getFrontierFromID(requestedFrontier.getId());
+    public ServerFrontierOperationResult updateFrontier(ServerPlayer player, UUID frontierId, FrontierChange change) {
+        FrontierData currentFrontier = frontiersManager.getFrontierFromID(frontierId);
         if (currentFrontier == null) {
             return ServerFrontierOperationResult.notFound();
         }
 
-        requestedFrontier.setPersonal(currentFrontier.getPersonal());
-        if (!currentFrontier.getOwner().isEmpty()) {
-            requestedFrontier.setOwner(currentFrontier.getOwner());
-        }
-
-        requestedFrontier.setUsersShared(currentFrontier.getUsersShared());
-        requestedFrontier.removeChange(FrontierData.Change.Shared);
-
-        if (requestedFrontier.getPersonal()) {
+        if (currentFrontier.getPersonal()) {
             if (!permissionEvaluator.canUpdatePersonalFrontier(player, currentFrontier)) {
                 return ServerFrontierOperationResult.ignored(currentFrontier);
             }
 
-            boolean updated = frontiersManager.updatePersonalFrontier(requestedFrontier.getOwner(), requestedFrontier);
+            boolean updated = frontiersManager.applyPersonalFrontierChange(currentFrontier.getOwner(), frontierId, change);
             if (!updated) {
                 return ServerFrontierOperationResult.notFound();
             }
 
-            if (requestedFrontier.getUsersShared() != null) {
-                for (SettingsUserShared userShared : requestedFrontier.getUsersShared()) {
-                    frontiersManager.updatePersonalFrontier(userShared.getUser(), requestedFrontier);
+            if (currentFrontier.getUsersShared() != null) {
+                for (SettingsUserShared userShared : currentFrontier.getUsersShared()) {
+                    frontiersManager.applyPersonalFrontierChange(userShared.getUser(), frontierId, new FrontierChange(change));
                 }
             }
 
-            ServerFrontierOperationResult result = ServerFrontierOperationResult.success(requestedFrontier);
-            result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(requestedFrontier, player.getId()),
-                    requestedFrontier, server));
+            PacketFrontierUpdated frontierUpdatedPacket = new PacketFrontierUpdated(frontierId, currentFrontier.getDimension(),
+                    true, new FrontierChange(change), player.getId());
+            ServerFrontierOperationResult result = ServerFrontierOperationResult.success(currentFrontier);
+            result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(frontierUpdatedPacket, currentFrontier, server));
             return result;
         }
 
-        if (!permissionEvaluator.canUpdateGlobalFrontier(player, requestedFrontier)) {
+        if (!permissionEvaluator.canUpdateGlobalFrontier(player, currentFrontier)) {
             return rejectedWithProfileRefresh(player, currentFrontier);
         }
 
-        boolean updated = frontiersManager.updateGlobalFrontier(requestedFrontier);
+        boolean updated = frontiersManager.applyGlobalFrontierChange(frontierId, change);
         if (!updated) {
             return ServerFrontierOperationResult.notFound();
         }
 
-        return updatedGlobalFrontier(requestedFrontier, player.getId());
+        return updatedGlobalFrontier(currentFrontier, new FrontierChange(change), player.getId());
     }
 
-    public ServerFrontierOperationResult updateGlobalFrontier(FrontierData frontier) {
-        boolean updated = frontiersManager.updateGlobalFrontier(frontier);
+    public ServerFrontierOperationResult updateGlobalFrontier(UUID frontierId, FrontierChange change) {
+        FrontierData frontier = frontiersManager.getFrontierFromID(frontierId);
+        if (frontier == null || frontier.getPersonal()) {
+            return ServerFrontierOperationResult.notFound();
+        }
+
+        boolean updated = frontiersManager.applyGlobalFrontierChange(frontierId, change);
         if (!updated) {
             return ServerFrontierOperationResult.notFound();
         }
 
-        return updatedGlobalFrontier(frontier, SYSTEM_ACTOR_ID);
+        return updatedGlobalFrontier(frontier, new FrontierChange(change), SYSTEM_ACTOR_ID);
     }
 
     public ServerFrontierOperationResult deleteFrontier(ServerPlayer player, UUID frontierId) {
@@ -170,13 +170,13 @@ public class ServerFrontierOperationService {
             frontier.removeUserShared(playerUser);
             frontiersManager.deletePersonalFrontier(playerUser, frontier.getDimension(), frontier.getId());
 
-            PacketFrontierUpdated frontierUpdatedPacket = new PacketFrontierUpdated(frontier, player.getId());
+            PacketFrontierSharingUpdated frontierSharingUpdatedPacket = new PacketFrontierSharingUpdated(frontier.getId(), frontier.getDimension(),
+                    FrontierSharingChange.fromFrontierData(frontier), player.getId());
 
             ServerFrontierOperationResult result = ServerFrontierOperationResult.success(frontier);
             result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(),
                     frontier.getPersonal(), player.getId()), player));
-            result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(frontierUpdatedPacket, frontier, server));
-            frontier.removeChange(FrontierData.Change.Shared);
+            result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(frontierSharingUpdatedPacket, frontier, server));
             return result;
         }
 
@@ -279,9 +279,10 @@ public class ServerFrontierOperationService {
         return result;
     }
 
-    private ServerFrontierOperationResult updatedGlobalFrontier(FrontierData frontier, int actorId) {
+    private ServerFrontierOperationResult updatedGlobalFrontier(FrontierData frontier, FrontierChange change, int actorId) {
         ServerFrontierOperationResult result = ServerFrontierOperationResult.success(frontier);
-        result.addNetworkAction(() -> PacketHandler.sendToAll(new PacketFrontierUpdated(frontier, actorId), server));
+        result.addNetworkAction(() -> PacketHandler.sendToAll(new PacketFrontierUpdated(frontier.getId(), frontier.getDimension(),
+                false, change, actorId), server));
         return result;
     }
 

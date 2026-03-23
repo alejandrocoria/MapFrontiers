@@ -12,6 +12,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.NewFrontier;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import journeymap.api.v2.client.IClientAPI;
@@ -51,6 +52,7 @@ public class FullscreenMap {
     private IThemeButton buttonDelete;
 
     private boolean editing = false;
+    private boolean shapeDirty = false;
     private boolean relocating = false;
     private BlockPos relocatingPrevPos;
     private ChunkDrawing drawingChunk = ChunkDrawing.Nothing;
@@ -63,6 +65,7 @@ public class FullscreenMap {
             if (frontierHighlighted != null && frontierHighlighted.getId().equals(frontierID)) {
                 frontierHighlighted = null;
                 editing = false;
+                shapeDirty = false;
                 relocating = false;
                 updateButtons();
             }
@@ -99,6 +102,7 @@ public class FullscreenMap {
                 frontierHighlighted = frontierOverlay;
                 frontierHighlighted.setHighlighted(true);
                 editing = false;
+                shapeDirty = false;
                 relocating = false;
                 updateButtons();
             }
@@ -206,7 +210,12 @@ public class FullscreenMap {
         if (editing) {
             editing = false;
             relocating = false;
-            MapFrontiersClient.getOperationService().updateFrontier(frontierHighlighted);
+            if (shapeDirty) {
+                FrontierChange change = new FrontierChange();
+                change.setShape(frontierHighlighted.getVertices(), frontierHighlighted.getChunks(), frontierHighlighted.getMode());
+                MapFrontiersClient.getOperationService().updateFrontier(frontierHighlighted, change);
+                shapeDirty = false;
+            }
         }
     }
 
@@ -265,6 +274,7 @@ public class FullscreenMap {
         buttonEdit.toggle();
         if (!editing) {
             editing = true;
+            shapeDirty = false;
             drawingChunk = ChunkDrawing.Nothing;
         } else {
             stopEditing();
@@ -309,12 +319,17 @@ public class FullscreenMap {
     private void buttonAddVertex(BlockPos pos) {
         frontierHighlighted.selectClosestEdge(pos);
         frontierHighlighted.addVertex(pos);
+        shapeDirty = true;
 
         updateButtons();
     }
 
     private void buttonRemoveVertex() {
+        int vertexCount = frontierHighlighted.getVertexCount();
         frontierHighlighted.removeSelectedVertex();
+        if (frontierHighlighted.getVertexCount() != vertexCount) {
+            shapeDirty = true;
+        }
 
         updateButtons();
     }
@@ -323,11 +338,17 @@ public class FullscreenMap {
         for (ChunkPos chunk : chunks) {
             frontierHighlighted.removeChunk(chunk);
         }
+        if (!chunks.isEmpty()) {
+            shapeDirty = true;
+        }
     }
 
     private void buttonFillRegion(List<ChunkPos> chunks) {
         for (ChunkPos chunk : chunks) {
             frontierHighlighted.addChunk(chunk);
+        }
+        if (!chunks.isEmpty()) {
+            shapeDirty = true;
         }
     }
 
@@ -388,6 +409,7 @@ public class FullscreenMap {
                     } else {
                         drawingChunk = ChunkDrawing.Removing;
                     }
+                    shapeDirty = true;
                 }
                 return true;
             }
@@ -433,6 +455,7 @@ public class FullscreenMap {
 
         float snapDistance = 512.f / uiState.zoom * Config.snapDistance;
         frontierHighlighted.moveSelectedVertex(position, snapDistance);
+        shapeDirty = true;
         return true;
     }
 
@@ -446,6 +469,7 @@ public class FullscreenMap {
                 if (!position.equals(relocatingPrevPos)) {
                     frontierHighlighted.moveAllVertices(position.subtract(relocatingPrevPos));
                     relocatingPrevPos = position;
+                    shapeDirty = true;
                 }
             } else {
                 ChunkPos chunkPos = new ChunkPos(position);
@@ -453,6 +477,7 @@ public class FullscreenMap {
                 if (!chunkPos.equals(prevChunkPos)) {
                     frontierHighlighted.moveAllChunks(new ChunkPos(chunkPos.x - prevChunkPos.x, chunkPos.z - prevChunkPos.z));
                     relocatingPrevPos = position;
+                    shapeDirty = true;
                 }
             }
             return;
@@ -482,5 +507,6 @@ public class FullscreenMap {
         } else {
             frontierHighlighted.removeChunk(chunk);
         }
+        shapeDirty = true;
     }
 }

@@ -11,6 +11,8 @@ import games.alejandrocoria.mapfrontiers.client.mixin.GuiGraphicsAccessor;
 import games.alejandrocoria.mapfrontiers.client.mixin.SpriteContentsInvoker;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierSharingChange;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import it.unimi.dsi.fastutil.Pair;
@@ -96,7 +98,7 @@ public class FrontierOverlay extends FrontierData {
     private final BannerRenderer bannerRenderer = new BannerRenderer();
 
     private int hash;
-    private boolean dirtyhash = true;
+    private boolean hashDirty = true;
 
     private boolean needUpdateOverlay = true;
 
@@ -119,23 +121,46 @@ public class FrontierOverlay extends FrontierData {
             vertexSelected = vertices.size() - 1;
         }
 
-        if (other.hasChange(Change.Name) || other.hasChange(Change.Vertices) || other.hasChange(Change.Color) || other.hasChange(Change.Visibility)) {
+        if (banner == null) {
+            bannerRenderer.releaseTexture();
+        } else {
+            bannerRenderer.createTexture(id, banner);
+        }
+
+        updateOverlay();
+        hashDirty = true;
+    }
+
+    public void applyChange(FrontierChange change) {
+        super.applyChange(change);
+        setVisibilityOverride(MapFrontiersClient.getLocalOverrides().getVisibility(id));
+
+        if (vertexSelected >= vertices.size()) {
+            vertexSelected = vertices.size() - 1;
+        }
+
+        if (change.hasNameChange() || change.hasShapeChange() || change.hasColorChange() || change.hasVisibilityChange()) {
             updateOverlay();
         }
 
-        if (other.hasChange(Change.Banner)) {
+        if (change.hasBannerChange()) {
             if (banner == null) {
                 bannerRenderer.releaseTexture();
             } else {
                 bannerRenderer.createTexture(id, banner);
             }
-            dirtyhash = true;
+            hashDirty = true;
         }
     }
 
+    public void applySharingChange(FrontierSharingChange sharingChange) {
+        super.applySharingChange(sharingChange);
+        hashDirty = true;
+    }
+
     public int getHash() {
-        if (dirtyhash) {
-            dirtyhash = false;
+        if (hashDirty) {
+            hashDirty = false;
             hash = Objects.hash(id, color, dimension, name1, name2, visibilityData, vertices, chunks, mode, banner, usersShared, copiedFrom, sourcePluginId);
         }
 
@@ -158,7 +183,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void updateOverlay() {
-        dirtyhash = true;
+        hashDirty = true;
 
         if (jmAPI == null) {
             return;
@@ -351,6 +376,7 @@ public class FrontierOverlay extends FrontierData {
     @Override
     public void setId(UUID id) {
         super.setId(id);
+        hashDirty = true;
         needUpdateOverlay = true;
     }
 
@@ -366,24 +392,28 @@ public class FrontierOverlay extends FrontierData {
         }
 
         super.addVertex(pos, index);
+        hashDirty = true;
         needUpdateOverlay = true;
     }
 
     @Override
     public void removeVertex(int index) {
         super.removeVertex(index);
+        hashDirty = true;
         needUpdateOverlay = true;
     }
 
     @Override
     public void moveAllVertices(BlockPos delta) {
         super.moveAllVertices(delta);
+        hashDirty = true;
         needUpdateOverlay = true;
     }
 
     @Override
     public boolean toggleChunk(ChunkPos chunk) {
         boolean added = super.toggleChunk(chunk);
+        hashDirty = true;
         needUpdateOverlay = true;
         return added;
     }
@@ -391,6 +421,7 @@ public class FrontierOverlay extends FrontierData {
     @Override
     public boolean addChunk(ChunkPos chunk) {
         if (super.addChunk(chunk)) {
+            hashDirty = true;
             needUpdateOverlay = true;
             return true;
         }
@@ -401,6 +432,7 @@ public class FrontierOverlay extends FrontierData {
     @Override
     public boolean removeChunk(ChunkPos chunk) {
         if (super.removeChunk(chunk)) {
+            hashDirty = true;
             needUpdateOverlay = true;
             return true;
         }
@@ -411,6 +443,7 @@ public class FrontierOverlay extends FrontierData {
     @Override
     public void moveAllChunks(ChunkPos delta) {
         super.moveAllChunks(delta);
+        hashDirty = true;
         needUpdateOverlay = true;
     }
 
@@ -537,6 +570,7 @@ public class FrontierOverlay extends FrontierData {
         }
 
         super.moveVertex(pos, vertexSelected);
+        hashDirty = true;
         needUpdateOverlay = true;
         MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
     }
@@ -544,12 +578,14 @@ public class FrontierOverlay extends FrontierData {
     @Override
     public void setName1(String name) {
         super.setName1(name);
+        hashDirty = true;
         needUpdateOverlay = true;
     }
 
     @Override
     public void setName2(String name) {
         super.setName2(name);
+        hashDirty = true;
         needUpdateOverlay = true;
     }
 
@@ -557,6 +593,7 @@ public class FrontierOverlay extends FrontierData {
     public void setVisibility(VisibilityData.Visibility visibility, boolean enable) {
         super.setVisibility(visibility, enable);
         setVisibilityOverride(MapFrontiersClient.getLocalOverrides().getVisibility(id));
+        hashDirty = true;
         needUpdateOverlay = true;
     }
 
@@ -564,6 +601,7 @@ public class FrontierOverlay extends FrontierData {
     public void toggleVisibility(VisibilityData.Visibility visibility) {
         super.toggleVisibility(visibility);
         setVisibilityOverride(MapFrontiersClient.getLocalOverrides().getVisibility(id));
+        hashDirty = true;
         needUpdateOverlay = true;
     }
 
@@ -585,24 +623,27 @@ public class FrontierOverlay extends FrontierData {
     public void setVisibilityData(VisibilityData visibilityData) {
         super.setVisibilityData(visibilityData);
         setVisibilityOverride(MapFrontiersClient.getLocalOverrides().getVisibility(id));
+        hashDirty = true;
         needUpdateOverlay = true;
     }
 
     @Override
     public void setColor(int color) {
         super.setColor(color);
+        hashDirty = true;
         needUpdateOverlay = true;
     }
 
     @Override
     public void setDimension(ResourceKey<Level> dimension) {
         super.setDimension(dimension);
-        dirtyhash = true;
+        hashDirty = true;
     }
 
     @Override
     public void setBanner(@Nullable ItemStack itemBanner) {
         super.setBanner(itemBanner);
+        hashDirty = true;
         needUpdateOverlay = true;
 
         if (itemBanner == null) {
@@ -616,12 +657,14 @@ public class FrontierOverlay extends FrontierData {
     public void setBanner(DyeColor base, BannerPatternLayers bannerPatterns) {
         super.setBanner(base, bannerPatterns);
         bannerRenderer.createTexture(id, banner);
+        hashDirty = true;
         needUpdateOverlay = true;
     }
 
     @Override
     public void setBannerData(@Nullable BannerData bannerData) {
         super.setBannerData(bannerData);
+        hashDirty = true;
         needUpdateOverlay = true;
 
         if (bannerData == null) {
@@ -637,26 +680,26 @@ public class FrontierOverlay extends FrontierData {
             super.setBannerRotation(rotation);
             bannerRenderer.setRotation(rotation);
             needUpdateOverlay = true;
-            dirtyhash = true;
+            hashDirty = true;
         }
     }
 
     @Override
     public void addUserShared(SettingsUserShared userShared) {
         super.addUserShared(userShared);
-        dirtyhash = true;
+        hashDirty = true;
     }
 
     @Override
     public void removeUserShared(int index) {
         super.removeUserShared(index);
-        dirtyhash = true;
+        hashDirty = true;
     }
 
     @Override
     public void setUsersShared(List<SettingsUserShared> usersShared) {
         super.setUsersShared(usersShared);
-        dirtyhash = true;
+        hashDirty = true;
     }
 
     public BlockPos getClosestVertex(BlockPos vertex, double belowDistance) {
@@ -736,6 +779,7 @@ public class FrontierOverlay extends FrontierData {
 
         MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
 
+        hashDirty = true;
         needUpdateOverlay = true;
     }
 

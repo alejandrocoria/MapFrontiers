@@ -1,8 +1,9 @@
 package games.alejandrocoria.mapfrontiers.server.frontier;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierSharingChange;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierCreated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierDeleted;
-import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierUpdated;
+import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSharingUpdated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketPersonalFrontierShared;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -76,7 +77,6 @@ public class ServerFrontierShareService {
         ServerFrontierOperationResult result = ServerFrontierOperationResult.success(frontier);
         result.addNetworkAction(() -> PacketHandler.sendTo(new PacketPersonalFrontierShared(shareMessageId, playerUser,
                 frontier.getOwner(), frontier.getName1(), frontier.getName2()), targetPlayer));
-        frontier.removeChange(FrontierData.Change.Shared);
         return result;
     }
 
@@ -97,11 +97,12 @@ public class ServerFrontierShareService {
         }
 
         currentUserShared.setActions(userShared.getActions());
-        frontier.addChange(FrontierData.Change.Shared);
         frontiersManager.saveFrontierData();
 
+        PacketFrontierSharingUpdated frontierSharingUpdatedPacket = createSharingUpdatedPacket(frontier, player.getId());
+
         ServerFrontierOperationResult result = ServerFrontierOperationResult.success(frontier);
-        result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier, player.getId()), frontier, server));
+        result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(frontierSharingUpdatedPacket, frontier, server));
         return result;
     }
 
@@ -133,7 +134,7 @@ public class ServerFrontierShareService {
         frontier.removeUserShared(targetUser);
         frontiersManager.saveFrontierData();
 
-        PacketFrontierUpdated frontierUpdatedPacket = new PacketFrontierUpdated(frontier, player.getId());
+        PacketFrontierSharingUpdated frontierSharingUpdatedPacket = createSharingUpdatedPacket(frontier, player.getId());
 
         ServerFrontierOperationResult result = ServerFrontierOperationResult.success(frontier);
         if (userShared.isPending()) {
@@ -147,8 +148,7 @@ public class ServerFrontierShareService {
             }
         }
 
-        result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(frontierUpdatedPacket, frontier, server));
-        frontier.removeChange(FrontierData.Change.Shared);
+        result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(frontierSharingUpdatedPacket, frontier, server));
         return result;
     }
 
@@ -181,16 +181,14 @@ public class ServerFrontierShareService {
 
         frontiersManager.addPersonalFrontier(pending.targetUser, frontier);
         userShared.setPending(false);
-        frontier.addChange(FrontierData.Change.Shared);
         frontiersManager.saveFrontierData();
         frontiersManager.removePendingShareFrontier(messageId);
 
-        PacketFrontierUpdated frontierUpdatedPacket = new PacketFrontierUpdated(frontier);
+        PacketFrontierSharingUpdated frontierSharingUpdatedPacket = createSharingUpdatedPacket(frontier);
 
         ServerFrontierOperationResult result = ServerFrontierOperationResult.success(frontier);
         result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierCreated(frontier), player));
-        result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(frontierUpdatedPacket, frontier, server));
-        frontier.removeChange(FrontierData.Change.Shared);
+        result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(frontierSharingUpdatedPacket, frontier, server));
         return result;
     }
 
@@ -216,7 +214,7 @@ public class ServerFrontierShareService {
                 boolean removed = frontier.getUsersShared().removeIf(x -> x.getUser().equals(pending.targetUser));
                 if (removed) {
                     frontiersManager.saveFrontierData();
-                    PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier), frontier, server);
+                    PacketHandler.sendToUsersWithAccess(createSharingUpdatedPacket(frontier), frontier, server);
                 }
             }
 
@@ -232,5 +230,13 @@ public class ServerFrontierShareService {
         ServerFrontierOperationResult result = ServerFrontierOperationResult.rejected(frontier);
         result.addNetworkAction(() -> PacketHandler.sendTo(permissionEvaluator.createProfilePacket(player), player));
         return result;
+    }
+
+    private static PacketFrontierSharingUpdated createSharingUpdatedPacket(FrontierData frontier) {
+        return createSharingUpdatedPacket(frontier, -1);
+    }
+
+    private static PacketFrontierSharingUpdated createSharingUpdatedPacket(FrontierData frontier, int playerId) {
+        return new PacketFrontierSharingUpdated(frontier.getId(), frontier.getDimension(), FrontierSharingChange.fromFrontierData(frontier), playerId);
     }
 }

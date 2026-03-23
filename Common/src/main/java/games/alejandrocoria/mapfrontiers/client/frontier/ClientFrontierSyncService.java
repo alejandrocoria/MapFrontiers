@@ -77,7 +77,6 @@ public class ClientFrontierSyncService {
         for (FrontierOverlay frontier : localOnlyOwnedFrontiers) {
             frontier.removeAllUserShared();
             PacketHandler.sendToServer(new PacketPersonalFrontier(frontier));
-            frontier.removeChanges();
         }
 
         localPersonalStore.clear();

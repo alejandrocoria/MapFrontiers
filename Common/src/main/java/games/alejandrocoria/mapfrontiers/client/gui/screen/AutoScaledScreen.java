@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.client.mixin.GuiRenderStateAccessor;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import journeymap.api.v2.client.ui.component.LayeredScreen;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.LinearLayout;
@@ -139,6 +140,13 @@ public abstract class AutoScaledScreen extends LayeredScreen {
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         MouseButtonEvent scaledEvent = new MouseButtonEvent(event.x() * scaleFactor, event.y() * scaleFactor, event.buttonInfo());
+        GuiEventListener focused = getFocused();
+
+        if (focused instanceof EditBox editBox && editBox.isFocused() && !editBox.isMouseOver(scaledEvent.x(), scaledEvent.y())) {
+            // Text fields apply pending edits when they lose focus, so clear focus before the newly clicked widget processes the event.
+            setFocused(null);
+        }
+
         return super.mouseClicked(scaledEvent, doubleClick);
     }
 

@@ -2,11 +2,11 @@ package games.alejandrocoria.mapfrontiers.server.frontier;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreationFactory;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
-import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -195,52 +195,39 @@ public class FrontiersManager {
         return deleted;
     }
 
-    public boolean updateGlobalFrontier(FrontierData updatedFrontier) {
-        List<FrontierData> frontiers = dimensionsGlobalFrontiers.get(updatedFrontier.getDimension());
-        if (frontiers == null) {
+    public boolean applyGlobalFrontierChange(UUID frontierId, FrontierChange change) {
+        FrontierData frontier = allFrontiers.get(frontierId);
+        if (frontier == null || frontier.getPersonal()) {
             return false;
         }
 
-        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId().equals(updatedFrontier.getId()));
-
-        if (index < 0) {
-            return false;
-        }
-
-        updatedFrontier.setModified(new Date());
-
-        FrontierData frontier = frontiers.get(index);
-        frontier.updateFromData(updatedFrontier);
-
+        frontier.setModified(new Date());
+        change.setModifiedTime(frontier.getModified().getTime());
+        frontier.applyChange(change);
         saveFrontierData();
-
         return true;
     }
 
-    public boolean updatePersonalFrontier(SettingsUser user, FrontierData updatedFrontier) {
+    public boolean applyPersonalFrontierChange(SettingsUser user, UUID frontierId, FrontierChange change) {
         Map<ResourceKey<Level>, ArrayList<FrontierData>> dimensionsPersonalFrontiers = usersDimensionsPersonalFrontiers.get(user);
         if (dimensionsPersonalFrontiers == null) {
             return false;
         }
 
-        List<FrontierData> frontiers = dimensionsPersonalFrontiers.get(updatedFrontier.getDimension());
-        if (frontiers == null) {
+        FrontierData frontier = allFrontiers.get(frontierId);
+        if (frontier == null || !frontier.getPersonal()) {
             return false;
         }
 
-        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId().equals(updatedFrontier.getId()));
-
-        if (index < 0) {
+        List<FrontierData> frontiers = dimensionsPersonalFrontiers.get(frontier.getDimension());
+        if (frontiers == null || frontiers.stream().noneMatch(existing -> existing.getId().equals(frontierId))) {
             return false;
         }
 
-        updatedFrontier.setModified(new Date());
-
-        FrontierData frontier = frontiers.get(index);
-        frontier.updateFromData(updatedFrontier);
-
+        frontier.setModified(new Date());
+        change.setModifiedTime(frontier.getModified().getTime());
+        frontier.applyChange(change);
         saveFrontierData();
-
         return true;
     }
 
@@ -267,7 +254,6 @@ public class FrontiersManager {
                 frontier.setPersonal(false);
                 frontier.setModified(new Date());
                 frontier.removeAllUserShared();
-                frontier.removeChanges();
                 getAllGlobalFrontiers(dimension).add(frontier);
                 saveFrontierData();
             }

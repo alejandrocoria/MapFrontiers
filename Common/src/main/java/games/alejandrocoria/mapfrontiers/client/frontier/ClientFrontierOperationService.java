@@ -16,7 +16,9 @@ import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreationFactory;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierSharingChange;
 import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToGlobal;
 import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToPersonal;
 import games.alejandrocoria.mapfrontiers.common.network.PacketCreateFrontier;
@@ -126,9 +128,16 @@ public class ClientFrontierOperationService {
     }
 
     public void updateFrontier(FrontierOverlay frontier) {
+        updateFrontier(frontier, FrontierChange.fromFrontierData(frontier));
+    }
+
+    public void updateFrontier(FrontierOverlay frontier, FrontierChange change) {
+        if (change.isEmpty()) {
+            return;
+        }
+
         if (MapFrontiersClient.isModOnServer()) {
-            PacketHandler.sendToServer(new PacketUpdateFrontier(frontier));
-            frontier.removeChanges();
+            PacketHandler.sendToServer(new PacketUpdateFrontier(frontier.getId(), change));
             return;
         }
 
@@ -136,11 +145,8 @@ public class ClientFrontierOperationService {
             return;
         }
 
-        FrontierOverlay frontierOverlay = personalManager.updateFrontier(frontier);
-        if (frontierOverlay != null) {
-            persistLocalPersonalFrontiers();
-            frontierEvents.postUpdated(frontierOverlay, minecraft.player.getId());
-        }
+        persistLocalPersonalFrontiers();
+        frontierEvents.postUpdated(frontier, minecraft.player.getId());
     }
 
     public void shareFrontier(UUID frontierId, SettingsUser targetUser) {
@@ -187,7 +193,7 @@ public class ClientFrontierOperationService {
         if (MapFrontiersClient.isModOnServer()) {
             FrontierData payload = new FrontierData(frontier);
             ApiConverters.applyMutation(payload, mutation);
-            PacketHandler.sendToServer(new PacketUpdateFrontier(payload));
+            PacketHandler.sendToServer(new PacketUpdateFrontier(frontierId.value(), FrontierChange.fromFrontierData(payload)));
             return FrontierActionResult.acceptedAsync(frontierId);
         }
 
@@ -344,10 +350,24 @@ public class ClientFrontierOperationService {
         frontierEvents.postCreated(frontierOverlay, playerId);
     }
 
-    public void applyFrontierUpdated(FrontierData frontier, int playerId) {
-        FrontierOverlay frontierOverlay = getManager(frontier.getPersonal()).updateFrontier(frontier);
+    public void applyFrontierUpdated(ResourceKey<Level> dimension,
+                                     UUID frontierId,
+                                     boolean personal,
+                                     FrontierChange change,
+                                     int playerId) {
+        FrontierOverlay frontierOverlay = getManager(personal).applyFrontierChange(dimension, frontierId, change);
         if (frontierOverlay != null) {
             frontierEvents.postUpdated(frontierOverlay, playerId);
+        }
+    }
+
+    public void applyFrontierSharingUpdated(ResourceKey<Level> dimension,
+                                            UUID frontierId,
+                                            FrontierSharingChange sharingChange,
+                                            int playerId) {
+        FrontierOverlay updatedFrontier = personalManager.applyFrontierSharingChange(dimension, frontierId, sharingChange);
+        if (updatedFrontier != null) {
+            frontierEvents.postUpdated(updatedFrontier, playerId);
         }
     }
 
@@ -368,7 +388,6 @@ public class ClientFrontierOperationService {
             frontierOverlay.setModified(modified);
         }
         frontierOverlay.removeAllUserShared();
-        frontierOverlay.removeChanges();
         frontierOverlay.recreateBannerRenderer();
         globalManager.addFrontier(frontierOverlay);
         frontierEvents.postUpdated(frontierOverlay, -1);

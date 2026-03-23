@@ -1,6 +1,8 @@
 package games.alejandrocoria.mapfrontiers.common;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierSharingChange;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
@@ -43,12 +45,6 @@ import java.util.stream.Collectors;
 
 @ParametersAreNonnullByDefault
 public class FrontierData {
-    public enum Change {
-        Name, Vertices, Banner, Shared, Visibility, Color;
-
-        public final static Change[] valuesArray = values();
-    }
-
     public enum Mode {
         Vertex, Chunk
     }
@@ -70,8 +66,6 @@ public class FrontierData {
     protected @Nullable String sourcePluginId;
     protected Date created;
     protected Date modified;
-
-    protected Set<Change> changes = EnumSet.noneOf(Change.class);
 
     public FrontierData() {
         id = new UUID(0, 0);
@@ -109,13 +103,10 @@ public class FrontierData {
 
         created = other.created;
         modified = other.modified;
-
-        changes = EnumSet.noneOf(Change.class);
     }
 
     public void updateFromData(FrontierData other) {
         if (other == this) {
-            changes = EnumSet.noneOf(Change.class);
             return;
         }
 
@@ -123,46 +114,60 @@ public class FrontierData {
         dimension = other.dimension;
         owner = other.owner;
         personal = other.personal;
-
-        if (other.changes.contains(Change.Visibility)) {
-            visibilityData = other.visibilityData;
-        }
-
-        if (other.changes.contains(Change.Color)) {
-            color = other.color;
-        }
-
-        if (other.changes.contains(Change.Name)) {
-            name1 = other.name1;
-            name2 = other.name2;
-        }
-
-        if (other.changes.contains(Change.Banner)) {
-            if (other.banner == null) {
-                banner = null;
-            } else {
-                banner = new BannerData(other.banner);
-            }
-        }
-
-        if (other.changes.contains(Change.Shared)) {
-            usersShared = other.usersShared;
-        }
-
-        if (other.changes.contains(Change.Vertices)) {
-            vertices.clear();
-            vertices.addAll(other.vertices);
-            chunks.clear();
-            chunks.addAll(other.chunks);
-            mode = other.mode;
-        }
+        visibilityData = new VisibilityData(other.visibilityData);
+        color = other.color;
+        name1 = other.name1;
+        name2 = other.name2;
+        banner = other.banner == null ? null : new BannerData(other.banner);
+        usersShared = other.usersShared;
+        vertices.clear();
+        vertices.addAll(other.vertices);
+        chunks.clear();
+        chunks.addAll(other.chunks);
+        mode = other.mode;
 
         copiedFrom = other.copiedFrom;
         sourcePluginId = other.sourcePluginId;
+        created = other.created;
 
         modified = other.modified;
+    }
 
-        changes = EnumSet.noneOf(Change.class);
+    public void applyChange(FrontierChange change) {
+        if (change.hasVisibilityChange()) {
+            visibilityData = change.getVisibility().getVisibilityData();
+        }
+
+        if (change.hasColorChange()) {
+            color = change.getColor().getColor();
+        }
+
+        if (change.hasNameChange()) {
+            name1 = change.getName().getName1();
+            name2 = change.getName().getName2();
+        }
+
+        if (change.hasBannerChange()) {
+            FrontierData.BannerData bannerData = change.getBanner().getBanner();
+            banner = bannerData == null ? null : new BannerData(bannerData);
+        }
+
+        if (change.hasShapeChange()) {
+            FrontierChange.ShapeChange shapeChange = change.getShape();
+            vertices.clear();
+            vertices.addAll(shapeChange.getVertices());
+            chunks.clear();
+            chunks.addAll(shapeChange.getChunks());
+            mode = shapeChange.getMode();
+        }
+
+        if (change.hasModifiedTime()) {
+            modified = new Date(change.getModifiedTime());
+        }
+    }
+
+    public void applySharingChange(FrontierSharingChange sharingChange) {
+        usersShared = sharingChange.getUsersShared();
     }
 
     public void setOwner(SettingsUser owner) {
@@ -212,14 +217,12 @@ public class FrontierData {
         synchronized (vertices) {
             vertices.clear();
         }
-        changes.add(Change.Vertices);
     }
 
     protected void addVertex(BlockPos pos, int index) {
         synchronized (vertices) {
             vertices.add(index, pos.atY(70));
         }
-        changes.add(Change.Vertices);
     }
 
     public void addVertex(BlockPos pos) {
@@ -236,7 +239,6 @@ public class FrontierData {
         synchronized (vertices) {
             vertices.remove(index);
         }
-        changes.add(Change.Vertices);
     }
 
     protected void moveVertex(BlockPos pos, int index) {
@@ -247,14 +249,12 @@ public class FrontierData {
         synchronized (vertices) {
             vertices.set(index, pos);
         }
-        changes.add(Change.Vertices);
     }
 
     public void moveAllVertices(BlockPos delta) {
         synchronized (vertices) {
             vertices.replaceAll(blockPos -> blockPos.offset(delta));
         }
-        changes.add(Change.Vertices);
     }
 
     public boolean toggleChunk(ChunkPos chunk) {
@@ -265,15 +265,12 @@ public class FrontierData {
                 added = true;
             }
         }
-
-        changes.add(Change.Vertices);
         return added;
     }
 
     public boolean addChunk(ChunkPos chunk) {
         synchronized (chunks) {
             if (chunks.add(chunk)) {
-                changes.add(Change.Vertices);
                 return true;
             }
         }
@@ -284,7 +281,6 @@ public class FrontierData {
     public boolean removeChunk(ChunkPos chunk) {
         synchronized (chunks) {
             if (chunks.remove(chunk)) {
-                changes.add(Change.Vertices);
                 return true;
             }
         }
@@ -306,19 +302,16 @@ public class FrontierData {
         synchronized (chunks) {
             chunks.clear();
         }
-        changes.add(Change.Vertices);
     }
 
     public void moveAllChunks(ChunkPos delta) {
         synchronized (chunks) {
             chunks = chunks.stream().map(chunk -> new ChunkPos(chunk.x + delta.x, chunk.z + delta.z)).collect(Collectors.toSet());
         }
-        changes.add(Change.Vertices);
     }
 
     public void setMode(Mode mode) {
         this.mode = mode;
-        changes.add(Change.Vertices);
     }
 
     public Mode getMode() {
@@ -335,7 +328,6 @@ public class FrontierData {
 
     public void setName1(String name) {
         name1 = name;
-        changes.add(Change.Name);
     }
 
     public String getName1() {
@@ -344,7 +336,6 @@ public class FrontierData {
 
     public void setName2(String name) {
         name2 = name;
-        changes.add(Change.Name);
     }
 
     public String getName2() {
@@ -357,12 +348,10 @@ public class FrontierData {
 
     public void setVisibility(VisibilityData.Visibility visibility, boolean enable) {
         this.visibilityData.setValue(visibility, enable);
-        changes.add(Change.Visibility);
     }
 
     public void toggleVisibility(VisibilityData.Visibility visibility) {
         this.visibilityData.setValue(visibility, !this.visibilityData.getValue(visibility));
-        changes.add(Change.Visibility);
     }
 
     public boolean getVisibility(VisibilityData.Visibility visibility) {
@@ -371,7 +360,6 @@ public class FrontierData {
 
     public void setVisibilityData(VisibilityData visibilityData) {
         this.visibilityData = visibilityData;
-        changes.add(Change.Visibility);
     }
 
     public VisibilityData getVisibilityData() {
@@ -380,7 +368,6 @@ public class FrontierData {
 
     public void setColor(int color) {
         this.color = color;
-        changes.add(Change.Color);
     }
 
     public int getColor() {
@@ -396,8 +383,6 @@ public class FrontierData {
     }
 
     public void setBanner(@Nullable ItemStack itemBanner) {
-        changes.add(Change.Banner);
-
         if (itemBanner == null) {
             banner = null;
         } else {
@@ -407,7 +392,6 @@ public class FrontierData {
 
     public void setBanner(DyeColor base, BannerPatternLayers bannerPatterns) {
         banner = new BannerData(base, bannerPatterns);
-        changes.add(Change.Banner);
     }
 
     public boolean hasBanner() {
@@ -415,8 +399,6 @@ public class FrontierData {
     }
 
     public void setBannerData(@Nullable BannerData bannerData) {
-        changes.add(Change.Banner);
-
         if (bannerData == null) {
             banner = null;
         } else {
@@ -429,7 +411,6 @@ public class FrontierData {
     }
 
     public void setBannerRotation(int rotation) {
-        changes.add(Change.Banner);
         banner.rotation = rotation;
     }
 
@@ -454,7 +435,6 @@ public class FrontierData {
         }
 
         usersShared.add(userShared);
-        changes.add(Change.Shared);
     }
 
     public void removeUserShared(int index) {
@@ -467,8 +447,6 @@ public class FrontierData {
         if (usersShared.isEmpty()) {
             usersShared = null;
         }
-
-        changes.add(Change.Shared);
     }
 
     public void removeUserShared(SettingsUser user) {
@@ -477,7 +455,6 @@ public class FrontierData {
         }
 
         usersShared.removeIf(x -> x.getUser().equals(user));
-        changes.add(Change.Shared);
     }
 
     public void removeAllUserShared() {
@@ -486,12 +463,10 @@ public class FrontierData {
         }
 
         usersShared = null;
-        changes.add(Change.Shared);
     }
 
     public void setUsersShared(List<SettingsUserShared> usersShared) {
         this.usersShared = usersShared;
-        changes.add(Change.Shared);
     }
 
     public void removePendingUsersShared() {
@@ -500,7 +475,6 @@ public class FrontierData {
         }
 
         usersShared.removeIf(SettingsUserShared::isPending);
-        changes.add(Change.Shared);
     }
 
     public List<SettingsUserShared> getUsersShared() {
@@ -601,28 +575,6 @@ public class FrontierData {
 
     public @Nullable String getSourcePluginId() {
         return sourcePluginId;
-    }
-
-    // @Note: To record changes if done outside this class.
-    // It would be better to change that.
-    public void addChange(Change change) {
-        changes.add(change);
-    }
-
-    public void removeChange(Change change) {
-        changes.remove(change);
-    }
-
-    public void removeChanges() {
-        changes.clear();
-    }
-
-    public boolean hasChange(Change change) {
-        return changes.contains(change);
-    }
-
-    public Set<Change> getChanges() {
-        return EnumSet.copyOf(changes);
     }
 
     public void readFromNBT(CompoundTag nbt, int version) {
@@ -776,13 +728,6 @@ public class FrontierData {
     }
 
     public void fromBytes(FriendlyByteBuf buf) {
-        changes.clear();
-        for (Change change : Change.valuesArray) {
-            if (buf.readBoolean()) {
-                changes.add(change);
-            }
-        }
-
         id = UUIDHelper.fromBytes(buf);
         dimension = ResourceKey.create(Registries.DIMENSION, buf.readIdentifier());
         personal = buf.readBoolean();
@@ -793,69 +738,55 @@ public class FrontierData {
         }
         owner = new SettingsUser();
         owner.fromBytes(buf);
+        visibilityData.fromBytes(buf);
+        color = buf.readInt();
 
-        if (changes.contains(Change.Visibility)) {
-            visibilityData.fromBytes(buf);
+        int maxCharacters = 17;
+        int maxBytes = maxCharacters * 4;
+        name1 = buf.readUtf(maxBytes);
+        name2 = buf.readUtf(maxBytes);
+
+        if (name1.length() > maxCharacters) {
+            name1 = name1.substring(0, maxCharacters);
+        }
+        if (name2.length() > maxCharacters) {
+            name2 = name2.substring(0, maxCharacters);
         }
 
-        if (changes.contains(Change.Color)) {
-            color = buf.readInt();
+        if (buf.readBoolean()) {
+            banner = new BannerData();
+            banner.fromBytes(buf);
+        } else {
+            banner = null;
         }
 
-        if (changes.contains(Change.Name)) {
-            int maxCharacters = 17;
-            int maxBytes = maxCharacters * 4;
-            name1 = buf.readUtf(maxBytes);
-            name2 = buf.readUtf(maxBytes);
-
-            if (name1.length() > maxCharacters) {
-                name1 = name1.substring(0, maxCharacters);
+        if (buf.readBoolean()) {
+            usersShared = new ArrayList<>();
+            int usersCount = buf.readInt();
+            for (int i = 0; i < usersCount; ++i) {
+                SettingsUserShared userShared = new SettingsUserShared();
+                userShared.fromBytes(buf);
+                usersShared.add(userShared);
             }
-            if (name2.length() > maxCharacters) {
-                name2 = name2.substring(0, maxCharacters);
-            }
+        } else {
+            usersShared = null;
         }
 
-        if (changes.contains(Change.Banner)) {
-            if (buf.readBoolean()) {
-                banner = new BannerData();
-                banner.fromBytes(buf);
-            } else {
-                banner = null;
-            }
+        vertices.clear();
+        int vertexCount = buf.readInt();
+        for (int i = 0; i < vertexCount; ++i) {
+            BlockPos vertex = BlockPos.of(buf.readLong());
+            vertices.add(vertex);
         }
 
-        if (changes.contains(Change.Shared)) {
-            if (buf.readBoolean()) {
-                usersShared = new ArrayList<>();
-                int usersCount = buf.readInt();
-                for (int i = 0; i < usersCount; ++i) {
-                    SettingsUserShared userShared = new SettingsUserShared();
-                    userShared.fromBytes(buf);
-                    usersShared.add(userShared);
-                }
-            } else {
-                usersShared = null;
-            }
+        chunks.clear();
+        int chunkCount = buf.readInt();
+        for (int i = 0; i < chunkCount; ++i) {
+            ChunkPos chunk = new ChunkPos(buf.readLong());
+            chunks.add(chunk);
         }
 
-        if (changes.contains(Change.Vertices)) {
-            vertices.clear();
-            int vertexCount = buf.readInt();
-            for (int i = 0; i < vertexCount; ++i) {
-                BlockPos vertex = BlockPos.of(buf.readLong());
-                vertices.add(vertex);
-            }
-
-            chunks.clear();
-            int chunkCount = buf.readInt();
-            for (int i = 0; i < chunkCount; ++i) {
-                ChunkPos chunk = new ChunkPos(buf.readLong());
-                chunks.add(chunk);
-            }
-
-            mode = Mode.values()[buf.readInt()];
-        }
+        mode = Mode.values()[buf.readInt()];
 
         if (buf.readBoolean()) {
             copiedFrom = new CopiedFrom();
@@ -878,22 +809,6 @@ public class FrontierData {
     }
 
     public void toBytes(FriendlyByteBuf buf) {
-        toBytes(buf, true);
-    }
-
-    public void toBytes(FriendlyByteBuf buf, boolean onlyChanges) {
-        toBytes(buf, onlyChanges ? changes : null);
-    }
-
-    public void toBytes(FriendlyByteBuf buf, @Nullable Set<FrontierData.Change> withChanges) {
-        for (Change change : Change.valuesArray) {
-            if (withChanges != null) {
-                buf.writeBoolean(withChanges.contains(change));
-            } else {
-                buf.writeBoolean(true);
-            }
-        }
-
         UUIDHelper.toBytes(buf, id);
         buf.writeIdentifier(dimension.identifier());
         buf.writeBoolean(personal);
@@ -904,57 +819,43 @@ public class FrontierData {
             buf.writeUtf(sourcePluginId);
         }
         owner.toBytes(buf);
+        visibilityData.toBytes(buf);
+        buf.writeInt(color);
 
-        if (withChanges == null || withChanges.contains(Change.Visibility)) {
-            visibilityData.toBytes(buf);
+        int maxCharacters = 17;
+        int maxBytes = maxCharacters * 4;
+        buf.writeUtf(name1, maxBytes);
+        buf.writeUtf(name2, maxBytes);
+
+        if (banner == null) {
+            buf.writeBoolean(false);
+        } else {
+            buf.writeBoolean(true);
+            banner.toBytes(buf);
         }
 
-        if (withChanges == null || withChanges.contains(Change.Color)) {
-            buf.writeInt(color);
-        }
+        if (personal && usersShared != null) {
+            buf.writeBoolean(true);
 
-        if (withChanges == null || withChanges.contains(Change.Name)) {
-            int maxCharacters = 17;
-            int maxBytes = maxCharacters * 4;
-            buf.writeUtf(name1, maxBytes);
-            buf.writeUtf(name2, maxBytes);
-        }
-
-        if (withChanges == null || withChanges.contains(Change.Banner)) {
-            if (banner == null) {
-                buf.writeBoolean(false);
-            } else {
-                buf.writeBoolean(true);
-                banner.toBytes(buf);
+            buf.writeInt(usersShared.size());
+            for (SettingsUserShared userShared : usersShared) {
+                userShared.toBytes(buf);
             }
+        } else {
+            buf.writeBoolean(false);
         }
 
-        if (withChanges == null || withChanges.contains(Change.Shared)) {
-            if (personal && usersShared != null) {
-                buf.writeBoolean(true);
-
-                buf.writeInt(usersShared.size());
-                for (SettingsUserShared userShared : usersShared) {
-                    userShared.toBytes(buf);
-                }
-            } else {
-                buf.writeBoolean(false);
-            }
+        buf.writeInt(vertices.size());
+        for (BlockPos pos : vertices) {
+            buf.writeLong(pos.asLong());
         }
 
-        if (withChanges == null || withChanges.contains(Change.Vertices)) {
-            buf.writeInt(vertices.size());
-            for (BlockPos pos : vertices) {
-                buf.writeLong(pos.asLong());
-            }
-
-            buf.writeInt(chunks.size());
-            for (ChunkPos pos : chunks) {
-                buf.writeLong(pos.toLong());
-            }
-
-            buf.writeInt(mode.ordinal());
+        buf.writeInt(chunks.size());
+        for (ChunkPos pos : chunks) {
+            buf.writeLong(pos.toLong());
         }
+
+        buf.writeInt(mode.ordinal());
 
         if (wasCopied()) {
             buf.writeBoolean(true);

@@ -49,7 +49,7 @@ public class PacketFrontierCreated {
 
     public void encode(FriendlyByteBuf buf) {
         try {
-            frontier.toBytes(buf, false);
+            frontier.toBytes(buf);
             buf.writeInt(playerID);
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketFrontierCreated: %s", t));

@@ -77,12 +77,12 @@ public class PacketFrontiers {
         try {
             buf.writeInt(globalFrontiers.size());
             for (FrontierData frontier : globalFrontiers) {
-                frontier.toBytes(buf, false);
+                frontier.toBytes(buf);
             }
 
             buf.writeInt(personalFrontiers.size());
             for (FrontierData frontier : personalFrontiers) {
-                frontier.toBytes(buf, false);
+                frontier.toBytes(buf);
             }
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketFrontiers: %s", t));

@@ -10,6 +10,7 @@ import games.alejandrocoria.mapfrontiers.api.model.FrontierShape;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreationFactory;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierEvents;
@@ -56,8 +57,9 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
             return Optional.empty();
         }
 
-        ApiConverters.applyMutation(frontier, mutation);
-        ServerFrontierOperationResult result = operationService.updateGlobalFrontier(frontier);
+        FrontierData payload = new FrontierData(frontier);
+        ApiConverters.applyMutation(payload, mutation);
+        ServerFrontierOperationResult result = operationService.updateGlobalFrontier(frontierId.value(), FrontierChange.fromFrontierData(payload));
         if (!result.isSuccess()) {
             return Optional.empty();
         }

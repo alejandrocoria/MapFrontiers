@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationResult;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -13,19 +13,19 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.Set;
+import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class PacketUpdateFrontier {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_update_frontier");
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketUpdateFrontier> STREAM_CODEC = StreamCodec.ofMember(PacketUpdateFrontier::encode, PacketUpdateFrontier::new);
 
-    private final FrontierData frontier;
-    private final Set<FrontierData.Change> changes;
+    private UUID frontierId = new UUID(0, 0);
+    private FrontierChange change = new FrontierChange();
 
-    public PacketUpdateFrontier(FrontierData frontier) {
-        this.frontier = frontier;
-        changes = frontier.getChanges();
+    public PacketUpdateFrontier(UUID frontierId, FrontierChange change) {
+        this.frontierId = frontierId;
+        this.change = change;
     }
 
     public static CustomPacketPayload.Type<CustomPacketPayload> type() {
@@ -33,12 +33,10 @@ public class PacketUpdateFrontier {
     }
 
     public PacketUpdateFrontier(FriendlyByteBuf buf) {
-        this.frontier = new FrontierData();
-        this.changes = null;
-
         try {
             if (buf.readableBytes() > 1) {
-                this.frontier.fromBytes(buf);
+                this.frontierId = buf.readUUID();
+                this.change = new FrontierChange(buf);
             }
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketUpdateFrontier: %s", t));
@@ -47,7 +45,8 @@ public class PacketUpdateFrontier {
 
     public void encode(FriendlyByteBuf buf) {
         try {
-            frontier.toBytes(buf, changes);
+            buf.writeUUID(frontierId);
+            change.toBytes(buf);
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketUpdateFrontier: %s", t));
         }
@@ -64,7 +63,8 @@ public class PacketUpdateFrontier {
                 return;
             }
 
-            ServerFrontierOperationResult result = MapFrontiers.getServerRuntime().getOperationService().updateFrontier(player, message.frontier);
+            ServerFrontierOperationResult result = MapFrontiers.getServerRuntime().getOperationService()
+                    .updateFrontier(player, message.frontierId, message.change);
             result.dispatchNetworkActions();
         }
     }

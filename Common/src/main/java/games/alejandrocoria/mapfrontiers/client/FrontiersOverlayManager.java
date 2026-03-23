@@ -6,6 +6,8 @@ import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierSharingChange;
 import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.MarkerOverlay;
@@ -19,7 +21,6 @@ import net.minecraft.world.level.Level;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -129,20 +130,32 @@ public class FrontiersOverlayManager {
         return frontier;
     }
 
-    public FrontierOverlay updateFrontier(FrontierData data) {
-        List<FrontierOverlay> frontiers = getAllFrontiers(data.getDimension());
+    @Nullable
+    public FrontierOverlay applyFrontierChange(ResourceKey<Level> dimension, UUID id, FrontierChange change) {
+        List<FrontierOverlay> frontiers = getAllFrontiers(dimension);
 
-        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId().equals(data.getId()));
-
+        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId().equals(id));
         if (index < 0) {
             return null;
-        } else {
-            FrontierOverlay frontierOverlay = frontiers.get(index);
-            frontierOverlay.updateFromData(data);
-            frontierOverlay.setModified(new Date());
-
-            return frontierOverlay;
         }
+
+        FrontierOverlay frontierOverlay = frontiers.get(index);
+        frontierOverlay.applyChange(change);
+        return frontierOverlay;
+    }
+
+    @Nullable
+    public FrontierOverlay applyFrontierSharingChange(ResourceKey<Level> dimension, UUID id, FrontierSharingChange sharingChange) {
+        List<FrontierOverlay> frontiers = getAllFrontiers(dimension);
+
+        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId().equals(id));
+        if (index < 0) {
+            return null;
+        }
+
+        FrontierOverlay frontierOverlay = frontiers.get(index);
+        frontierOverlay.applySharingChange(sharingChange);
+        return frontierOverlay;
     }
 
     public Map<ResourceKey<Level>, ArrayList<FrontierOverlay>> getAllFrontiers() {
