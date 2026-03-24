@@ -12,10 +12,6 @@ plugins {
 base.archivesName = "${project.mod_name}-${project.minecraft_version}"
 jar.archiveClassifier = 'forge'
 
-java {
-    sourcesJar.enabled = false
-}
-
 repositories {
     maven minecraft.mavenizer
     maven fg.forgeMaven
@@ -28,8 +24,10 @@ dependencies {
     implementation minecraft.dependency("net.minecraftforge:forge:${forge_version}")
     annotationProcessor 'net.minecraftforge:eventbus-validator:7.0-beta.10'
 
-    implementation group: 'mysticdrew', name: 'common-networking-forge', version: project.common_networking_version
-    api group: 'info.journeymap', name: 'journeymap-api-forge', version: project.journeymap_api_version, changing: true
+    implementation "mysticdrew:common-networking-forge:${project.common_networking_version}"
+    api("info.journeymap:journeymap-api-forge:${project.journeymap_api_version}") {
+        changing = true
+    }
     implementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_forge_file_id}"
 }
 
@@ -93,13 +91,6 @@ tasks.processResources {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
-if (!project.hasProperty("curseForgeApiKey")) {
-    ext.curseForgeApiKey = project.findProperty("curseforge_api_key") ?: "notset"
-}
-if (!project.hasProperty("modrinthApiKey")) {
-    ext.modrinthApiKey = project.findProperty("modrinth_api_key") ?: "notset"
-}
-
 tasks.register('publishCurseForge', TaskPublishCurseForge) {
     apiToken = "${curseForgeApiKey}"
     def mainFile = upload(curseforge_project_id, jar)
@@ -113,8 +104,6 @@ tasks.register('publishCurseForge', TaskPublishCurseForge) {
     mainFile.changelogType = "markdown"
     mainFile.changelog = file("$project.buildDir/doc/changelog.md")
 }
-
-tasks.modrinth.dependsOn(tasks.build)
 
 modrinth {
 //    debugMode.set(true)
@@ -130,11 +119,4 @@ modrinth {
             new VersionDependency("journeymap", "${journeymap_doc_version}+forge", "required")
     ]
     changelog = file("$project.buildDir/doc/changelog.md").exists() ? file("$project.buildDir/doc/changelog.md").text : null
-}
-
-project.afterEvaluate {
-    project.tasks.findAll { task -> (task.name.startsWith('curseforge') || task.name.startsWith('modrinth'))
-    }.each {
-        projectTask -> projectTask.dependsOn build
-    }
 }

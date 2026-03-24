@@ -10,10 +10,6 @@ plugins {
 
 base.archivesName = "${project.mod_name}-${project.minecraft_version}"
 
-java {
-    sourcesJar.enabled = false
-}
-
 neoForge {
     version = neoforge_version
     // Automatically enable neoforge AccessTransformers if the file exists
@@ -46,9 +42,11 @@ neoForge {
 
     dependencies {
         implementation project(':Api')
-        implementation group: "mysticdrew", name: "common-networking-neoforge", version: project.common_networking_version
+        implementation "mysticdrew:common-networking-neoforge:${project.common_networking_version}"
         api "fuzs.forgeconfigapiport:forgeconfigapiport-neoforge:${forge_config_api_port_version}"
-        api group: 'info.journeymap', name: 'journeymap-api-neoforge', version: project.journeymap_api_version, changing: true
+        api("info.journeymap:journeymap-api-neoforge:${project.journeymap_api_version}") {
+            changing = true
+        }
         implementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_neoforge_file_id}"
     }
 }
@@ -65,19 +63,12 @@ tasks.register('processDocs', Copy) {
     // update docs
     from(file("../doc/")) {
         include '*.md'
-        expand 'loaderversion': fabric_version,
+        expand 'loaderversion': neoforge_version,
                 'loadername': "NeoForge",
                 'journeymap_doc_version': journeymap_doc_version,
                 'extra_doc_requirements': "* Forge Config API Port: ${forge_config_api_port_version}"
     }
     into 'build/doc'
-}
-
-if (!project.hasProperty("curseForgeApiKey")) {
-    ext.curseForgeApiKey = project.findProperty("curseforge_api_key") ?: "notset"
-}
-if (!project.hasProperty("modrinthApiKey")) {
-    ext.modrinthApiKey = project.findProperty("modrinth_api_key") ?: "notset"
 }
 
 tasks.register('publishCurseForge', TaskPublishCurseForge) {
@@ -95,8 +86,6 @@ tasks.register('publishCurseForge', TaskPublishCurseForge) {
     mainFile.changelog = file("$project.buildDir/doc/changelog.md")
 }
 
-tasks.modrinth.dependsOn(tasks.build)
-
 modrinth {
 //    debugMode.set(true)
     token = "${modrinthApiKey}"
@@ -112,11 +101,4 @@ modrinth {
             new VersionDependency("forge-config-api-port", "${forge_config_api_port_version}", "required"),
     ]
     changelog = file("$project.buildDir/doc/changelog.md").exists() ? file("$project.buildDir/doc/changelog.md").text : null
-}
-
-project.afterEvaluate {
-    project.tasks.findAll { task -> (task.name.startsWith('curseforge') || task.name.startsWith('modrinth'))
-    }.each {
-        projectTask -> projectTask.dependsOn build
-    }
 }

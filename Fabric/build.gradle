@@ -22,12 +22,16 @@ dependencies {
     }
     modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
-    implementation group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.1'
+    implementation 'com.google.code.findbugs:jsr305:3.0.1'
 
-    modImplementation group: 'mysticdrew', name: 'common-networking-fabric', version: project.common_networking_version, changing: true
+    modImplementation("mysticdrew:common-networking-fabric:${project.common_networking_version}") {
+        changing = true
+    }
     modApi "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${forge_config_api_port_version}"
     modApi "com.terraformersmc:modmenu:${project.modmenu_version}"
-    modApi group: 'info.journeymap', name: 'journeymap-api-fabric', version: project.journeymap_api_version, changing: true
+    modApi("info.journeymap:journeymap-api-fabric:${project.journeymap_api_version}") {
+        changing = true
+    }
     modImplementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_fabric_file_id}"
 }
 
@@ -77,13 +81,6 @@ tasks.register('processDocs', Copy) {
     into 'build/doc'
 }
 
-if (!project.hasProperty("curseForgeApiKey")) {
-    ext.curseForgeApiKey = project.findProperty("curseforge_api_key") ?: "notset"
-}
-if (!project.hasProperty("modrinthApiKey")) {
-    ext.modrinthApiKey = project.findProperty("modrinth_api_key") ?: "notset"
-}
-
 tasks.register('publishCurseForge', TaskPublishCurseForge) {
     apiToken = "${curseForgeApiKey}"
     def mainFile = upload(curseforge_project_id, remapJar)
@@ -98,8 +95,6 @@ tasks.register('publishCurseForge', TaskPublishCurseForge) {
     mainFile.changelogType = "markdown"
     mainFile.changelog = file("$project.buildDir/doc/changelog.md")
 }
-
-tasks.modrinth.dependsOn(tasks.build)
 
 modrinth {
 //    debugMode.set(true)
@@ -118,11 +113,4 @@ modrinth {
             new VersionDependency("modmenu", "${modmenu_version}", "optional")
     ]
     changelog = file("$project.buildDir/doc/changelog.md").exists() ? file("$project.buildDir/doc/changelog.md").text : null
-}
-
-project.afterEvaluate {
-    project.tasks.findAll { task -> (task.name.startsWith('curseforge') || task.name.startsWith('modrinth'))
-    }.each {
-        projectTask -> projectTask.dependsOn build
-    }
 }

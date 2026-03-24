@@ -6,8 +6,8 @@ plugins {
 }
 
 configurations.configureEach {
-    // Check for snapshots more frequently than Gradle's default of 1 day. 0 = every build.
-    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    // Check changing modules more often than Gradle's default of 1 day without forcing a refresh on every build.
+    resolutionStrategy.cacheChangingModulesFor 1, 'hours'
 }
 
 tasks.configureEach { task ->

@@ -9,8 +9,6 @@ base {
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(java_version)
-    withSourcesJar()
-//    withJavadocJar()
 }
 
 repositories {
@@ -95,7 +93,11 @@ repositories {
 // Declare capabilities on the outgoing configurations.
 // Read more about capabilities here: https://docs.gradle.org/current/userguide/component_capabilities.html#sec:declaring-additional-capabilities-for-a-local-component
 ['apiElements', 'runtimeElements', 'sourcesElements'/*, 'javadocElements'*/].each { variant ->
-    configurations."$variant".outgoing {
+    def configuration = configurations.findByName(variant)
+    if (configuration == null) {
+        return
+    }
+    configuration.outgoing {
         capability("$group:${base.archivesName.get()}:$version")
         capability("$group:$mod_id-${project.name}-${minecraft_version}:$version")
         capability("$group:$mod_id:$version")
@@ -156,17 +158,3 @@ processResources {
     }
     inputs.properties(expandProps)
 }
-
-//publishing {
-//    publications {
-//        register('mavenJava', MavenPublication) {
-//            artifactId base.archivesName.get()
-//            from components.java
-//        }
-//    }
-//    repositories {
-//        maven {
-//            url System.getenv("local_maven_url")
-//        }
-//    }
-//}
