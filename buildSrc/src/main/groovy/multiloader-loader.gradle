@@ -21,6 +21,21 @@ dependencies {
     commonResources project(path: ':Common', configuration: 'commonResources')
 }
 
+ext.registerProcessDocsTask = { String loaderName, String loaderVersion, String extraDocRequirements ->
+    tasks.register('processDocs', Copy) {
+        from(rootProject.file('doc')) {
+            include '*.md'
+            expand(
+                    loaderversion: loaderVersion,
+                    loadername: loaderName,
+                    journeymap_doc_version: journeymap_doc_version,
+                    extra_doc_requirements: extraDocRequirements
+            )
+        }
+        into(layout.buildDirectory.dir('doc'))
+    }
+}
+
 if (!project.hasProperty("curseForgeApiKey")) {
     ext.curseForgeApiKey = project.findProperty("curseforge_api_key") ?: "notset"
 }

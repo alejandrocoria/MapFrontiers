@@ -59,17 +59,11 @@ jar {
     from project(':Api').sourceSets.main.output
 }
 
-tasks.register('processDocs', Copy) {
-    // update docs
-    from(file("../doc/")) {
-        include '*.md'
-        expand 'loaderversion': neoforge_version,
-                'loadername': "NeoForge",
-                'journeymap_doc_version': journeymap_doc_version,
-                'extra_doc_requirements': "* Forge Config API Port: ${forge_config_api_port_version}"
-    }
-    into 'build/doc'
-}
+registerProcessDocsTask(
+        "NeoForge",
+        neoforge_version,
+        "* Forge Config API Port: ${forge_config_api_port_version}"
+)
 
 tasks.register('publishCurseForge', TaskPublishCurseForge) {
     apiToken = "${curseForgeApiKey}"

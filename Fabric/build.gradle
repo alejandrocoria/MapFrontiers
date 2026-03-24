@@ -69,17 +69,11 @@ jar {
     from project(':Api').sourceSets.main.output
 }
 
-tasks.register('processDocs', Copy) {
-    // update docs
-    from(file("../doc/")) {
-        include '*.md'
-        expand 'loaderversion': fabric_version,
-                'loadername': "Fabric API",
-                'journeymap_doc_version': journeymap_doc_version,
-                'extra_doc_requirements': "* Forge Config API Port: ${forge_config_api_port_version}\n* Mod Menu (Optional): ${modmenu_version}"
-    }
-    into 'build/doc'
-}
+registerProcessDocsTask(
+        "Fabric API",
+        fabric_version,
+        "* Forge Config API Port: ${forge_config_api_port_version}\n* Mod Menu (Optional): ${modmenu_version}"
+)
 
 tasks.register('publishCurseForge', TaskPublishCurseForge) {
     apiToken = "${curseForgeApiKey}"

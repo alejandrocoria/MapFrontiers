@@ -75,17 +75,11 @@ jar {
     }
 }
 
-tasks.register('processDocs', Copy) {
-    // update docs
-    from(file("../doc/")) {
-        include '*.md'
-        expand 'loaderversion': forge_version,
-                'loadername': "Forge",
-                'journeymap_doc_version': journeymap_doc_version,
-                'extra_doc_requirements': ""
-    }
-    into 'build/doc'
-}
+registerProcessDocsTask(
+        "Forge",
+        forge_version,
+        ""
+)
 
 tasks.processResources {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
