@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.platform;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
+import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.ReflectionHelper;
 import games.alejandrocoria.mapfrontiers.platform.services.IJourneyMapHelper;
 import journeymap.api.v2.client.display.Context;

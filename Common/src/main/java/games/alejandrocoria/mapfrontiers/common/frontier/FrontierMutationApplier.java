@@ -7,7 +7,6 @@ import games.alejandrocoria.mapfrontiers.api.model.FrontierShape;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierShapeType;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierVisibilityFlag;
 import games.alejandrocoria.mapfrontiers.api.model.Point2i;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;

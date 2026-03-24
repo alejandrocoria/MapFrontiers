@@ -1,9 +1,9 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.scroll;
 
 import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
-import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
+import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;

@@ -1,7 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client.frontier;
 
-import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
-
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.HashMap;

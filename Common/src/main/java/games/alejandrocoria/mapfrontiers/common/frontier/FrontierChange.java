@@ -1,6 +1,5 @@
 package games.alejandrocoria.mapfrontiers.common.frontier;
 
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.ChunkPos;

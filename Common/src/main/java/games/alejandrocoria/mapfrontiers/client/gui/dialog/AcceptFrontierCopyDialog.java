@@ -1,10 +1,10 @@
 package games.alejandrocoria.mapfrontiers.client.gui.dialog;
 
 import games.alejandrocoria.mapfrontiers.client.ChatFrontiers;
-import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
+import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 
 import javax.annotation.Nullable;
 

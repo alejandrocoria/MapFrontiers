@@ -1,6 +1,5 @@
 package games.alejandrocoria.mapfrontiers.common.frontier;
 
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import net.minecraft.core.BlockPos;
