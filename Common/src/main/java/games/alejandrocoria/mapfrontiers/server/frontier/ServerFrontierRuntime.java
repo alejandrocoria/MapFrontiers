@@ -57,6 +57,7 @@ public class ServerFrontierRuntime {
 
     public void onServerTick() {
         shareService.tickPendingInvitations();
+        frontiersManager.flushPendingFrontierUpdates();
     }
 
     public PacketSettingsProfile createSettingsProfilePacket(ServerPlayer player) {
@@ -83,4 +84,3 @@ public class ServerFrontierRuntime {
         frontiersManager.close();
     }
 }
-

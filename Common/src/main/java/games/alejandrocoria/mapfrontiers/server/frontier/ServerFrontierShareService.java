@@ -72,7 +72,7 @@ public class ServerFrontierShareService {
 
         userShared.setPending(true);
         frontier.addUserShared(userShared);
-        frontiersManager.saveFrontierData();
+        frontiersManager.saveFrontiersNow();
 
         ServerFrontierOperationResult result = ServerFrontierOperationResult.success(frontier);
         result.addNetworkAction(() -> PacketHandler.sendTo(new PacketPersonalFrontierShared(shareMessageId, playerUser,
@@ -97,7 +97,7 @@ public class ServerFrontierShareService {
         }
 
         currentUserShared.setActions(userShared.getActions());
-        frontiersManager.saveFrontierData();
+        frontiersManager.saveFrontiersNow();
 
         PacketFrontierSharingUpdated frontierSharingUpdatedPacket = createSharingUpdatedPacket(frontier, player.getId());
 
@@ -132,7 +132,7 @@ public class ServerFrontierShareService {
         }
 
         frontier.removeUserShared(targetUser);
-        frontiersManager.saveFrontierData();
+        frontiersManager.saveFrontiersNow();
 
         PacketFrontierSharingUpdated frontierSharingUpdatedPacket = createSharingUpdatedPacket(frontier, player.getId());
 
@@ -181,7 +181,7 @@ public class ServerFrontierShareService {
 
         frontiersManager.addPersonalFrontier(pending.targetUser, frontier);
         userShared.setPending(false);
-        frontiersManager.saveFrontierData();
+        frontiersManager.saveFrontiersNow();
         frontiersManager.removePendingShareFrontier(messageId);
 
         PacketFrontierSharingUpdated frontierSharingUpdatedPacket = createSharingUpdatedPacket(frontier);
@@ -213,7 +213,7 @@ public class ServerFrontierShareService {
             if (frontier != null && frontier.getUsersShared() != null) {
                 boolean removed = frontier.getUsersShared().removeIf(x -> x.getUser().equals(pending.targetUser));
                 if (removed) {
-                    frontiersManager.saveFrontierData();
+                    frontiersManager.saveFrontiersNow();
                     PacketHandler.sendToUsersWithAccess(createSharingUpdatedPacket(frontier), frontier, server);
                 }
             }

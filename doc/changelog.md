@@ -1,6 +1,7 @@
 **Beta 21:**
 * Added: API available soon.
 * Change: The copy button puts the frontier ID on the clipboard.
+* Change: Reduced the number of times frontier changes are written to the file.
 * Fixed: HUD continues to display with F1.
 
 **Beta 20:**

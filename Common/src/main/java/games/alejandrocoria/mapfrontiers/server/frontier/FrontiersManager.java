@@ -34,6 +34,9 @@ import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class FrontiersManager {
+    private static final long FRONTIERS_UPDATE_SAVE_DEBOUNCE_MS = 10_000L;
+    private static final long FRONTIERS_UPDATE_SAVE_MAX_DELAY_MS = 60_000L;
+
     private final HashMap<UUID, FrontierData> allFrontiers;
     private final HashMap<ResourceKey<Level>, ArrayList<FrontierData>> dimensionsGlobalFrontiers;
     private final HashMap<SettingsUser, HashMap<ResourceKey<Level>, ArrayList<FrontierData>>> usersDimensionsPersonalFrontiers;
@@ -41,6 +44,9 @@ public class FrontiersManager {
     private FrontierSettings frontierSettings;
     private File ModDir;
     private boolean frontierOwnersChecked = false;
+    private boolean frontiersDirty = false;
+    private long lastFrontiersUpdateAt = 0L;
+    private long lastFrontiersSaveAt = 0L;
 
     private static int pendingShareFrontierID = 0;
 
@@ -53,6 +59,9 @@ public class FrontiersManager {
     }
 
     public void close() {
+        if (frontiersDirty) {
+            saveFrontiersNow();
+        }
     }
 
     public void setSettings(FrontierSettings frontierSettings) {
@@ -120,7 +129,7 @@ public class FrontiersManager {
 
         frontiers.add(frontier);
         allFrontiers.put(frontier.getId(), frontier);
-        saveFrontierData();
+        saveFrontiersNow();
 
         return frontier;
     }
@@ -134,7 +143,7 @@ public class FrontiersManager {
         frontiers.add(frontier);
         allFrontiers.put(frontier.getId(), frontier);
 
-        saveFrontierData();
+        saveFrontiersNow();
     }
 
     public void addGlobalFrontier(FrontierData frontier) {
@@ -146,13 +155,13 @@ public class FrontiersManager {
         frontiers.add(frontier);
         allFrontiers.put(frontier.getId(), frontier);
 
-        saveFrontierData();
+        saveFrontiersNow();
     }
 
     public void addPersonalFrontier(SettingsUser user, FrontierData frontier) {
         List<FrontierData> frontiers = this.getAllPersonalFrontiers(user, frontier.getDimension());
         frontiers.add(frontier);
-        saveFrontierData();
+        saveFrontiersNow();
     }
 
     public boolean deleteGlobalFrontier(ResourceKey<Level> dimension, UUID id) {
@@ -165,7 +174,7 @@ public class FrontiersManager {
         deleted |= allFrontiers.remove(id) != null;
 
         if (deleted) {
-            saveFrontierData();
+            saveFrontiersNow();
         }
 
         return deleted;
@@ -189,7 +198,7 @@ public class FrontiersManager {
         boolean deleted = frontiers.removeIf(x -> x.getId().equals(id));
 
         if (deleted) {
-            saveFrontierData();
+            saveFrontiersNow();
         }
 
         return deleted;
@@ -204,7 +213,7 @@ public class FrontiersManager {
         frontier.setModified(new Date());
         change.setModifiedTime(frontier.getModified().getTime());
         frontier.applyChange(change);
-        saveFrontierData();
+        markFrontiersUpdated();
         return true;
     }
 
@@ -227,7 +236,7 @@ public class FrontiersManager {
         frontier.setModified(new Date());
         change.setModifiedTime(frontier.getModified().getTime());
         frontier.applyChange(change);
-        saveFrontierData();
+        markFrontiersUpdated();
         return true;
     }
 
@@ -255,7 +264,7 @@ public class FrontiersManager {
                 frontier.setModified(new Date());
                 frontier.removeAllUserShared();
                 getAllGlobalFrontiers(dimension).add(frontier);
-                saveFrontierData();
+                saveFrontiersNow();
             }
         }
 
@@ -276,7 +285,7 @@ public class FrontiersManager {
             frontier.setModified(new Date());
             frontier.setOwner(newOwner);
             getAllPersonalFrontiers(newOwner, dimension).add(frontier);
-            saveFrontierData();
+            saveFrontiersNow();
         }
 
         return deleted;
@@ -408,10 +417,13 @@ public class FrontiersManager {
             if (nbtFrontiers.isEmpty()) {
                 writeToNBT(nbtFrontiers);
                 saveFile("frontiers.dat", nbtFrontiers);
+                lastFrontiersSaveAt = System.currentTimeMillis();
             } else {
                 if (readFromNBT(nbtFrontiers)) {
                     MapFrontiers.createBackup(ModDir, "frontiers.dat");
-                    saveFrontierData();
+                    saveFrontiersNow();
+                } else {
+                    lastFrontiersSaveAt = System.currentTimeMillis();
                 }
             }
 
@@ -431,10 +443,32 @@ public class FrontiersManager {
         }
     }
 
-    public void saveFrontierData() {
+    public void markFrontiersUpdated() {
+        frontiersDirty = true;
+        lastFrontiersUpdateAt = System.currentTimeMillis();
+    }
+
+    public void flushPendingFrontierUpdates() {
+        if (!frontiersDirty) {
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        boolean debounceElapsed = now - lastFrontiersUpdateAt >= FRONTIERS_UPDATE_SAVE_DEBOUNCE_MS;
+        boolean maxDelayElapsed = lastFrontiersSaveAt == 0L
+                || now - lastFrontiersSaveAt >= FRONTIERS_UPDATE_SAVE_MAX_DELAY_MS;
+
+        if (debounceElapsed || maxDelayElapsed) {
+            saveFrontiersNow();
+        }
+    }
+
+    public void saveFrontiersNow() {
         CompoundTag nbtFrontiers = new CompoundTag();
         writeToNBT(nbtFrontiers);
         saveFile("frontiers.dat", nbtFrontiers);
+        frontiersDirty = false;
+        lastFrontiersSaveAt = System.currentTimeMillis();
     }
 
     private void saveSettingsData() {
