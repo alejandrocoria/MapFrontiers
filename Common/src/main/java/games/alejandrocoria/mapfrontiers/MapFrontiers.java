@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers;
 
 import games.alejandrocoria.mapfrontiers.api.MapFrontiersAPIBootstrap;
+import games.alejandrocoria.mapfrontiers.common.api.MapFrontiersApiLogAdapter;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
 import games.alejandrocoria.mapfrontiers.server.event.ServerGlobalEvents;
@@ -29,6 +30,7 @@ public class MapFrontiers {
 
     protected static void init() {
         PacketHandler.init();
+        MapFrontiersAPIBootstrap.setLogger(new MapFrontiersApiLogAdapter());
 
         ServerGlobalEvents.subscribeServerStartingEvent(MapFrontiers.class, server -> {
             serverRuntime = new ServerFrontierRuntime(server);
@@ -107,4 +109,3 @@ public class MapFrontiers {
         }
     }
 }
-

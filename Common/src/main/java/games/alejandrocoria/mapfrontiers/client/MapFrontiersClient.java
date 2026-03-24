@@ -14,6 +14,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.hud.HUD;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.ModSettings;
 import games.alejandrocoria.mapfrontiers.client.settings.ClientSettingsProfileEvents;
 import games.alejandrocoria.mapfrontiers.common.Config;
+import games.alejandrocoria.mapfrontiers.common.api.MapFrontiersApiLogAdapter;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
@@ -84,6 +85,8 @@ public class MapFrontiersClient {
     private static ClientLevel lastClientLevel = null;
 
     protected static void init() {
+        MapFrontiersAPIBootstrap.setLogger(new MapFrontiersApiLogAdapter());
+
         ClientGlobalEvents.subscribeClientTickEvent(MapFrontiersClient.class, client -> {
             if (client.level == null) {
                 return;

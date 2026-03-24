@@ -20,10 +20,6 @@ java {
     withJavadocJar()
 }
 
-dependencies {
-    implementation 'org.apache.logging.log4j:log4j-api:2.24.1'
-}
-
 tasks.processResources {
     from(rootProject.file('LICENSE'))
 }

@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.api;
 
+import games.alejandrocoria.mapfrontiers.api.internal.ApiLogger;
 import games.alejandrocoria.mapfrontiers.api.internal.InternalMapFrontiersClientAPI;
 import games.alejandrocoria.mapfrontiers.api.internal.InternalMapFrontiersServerAPI;
 
@@ -35,6 +36,11 @@ public final class MapFrontiersAPIBootstrap {
     public static void clearServerAPI() {
         assertTrustedCaller();
         MapFrontiersAPI.clearServerAPI();
+    }
+
+    public static void setLogger(ApiLogger logger) {
+        assertTrustedCaller();
+        MapFrontiersAPI.setLogger(logger);
     }
 
     private static void assertTrustedCaller() {
