@@ -9,8 +9,7 @@ plugins {
     id "com.modrinth.minotaur" version "2.+"
 }
 
-base.archivesName = "${project.mod_name}-${project.minecraft_version}"
-jar.archiveClassifier = 'forge'
+base.archivesName = "${project.mod_name}-${project.minecraft_version}-forge"
 
 repositories {
     maven minecraft.mavenizer
