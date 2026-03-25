@@ -4,9 +4,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 
 public final class NbtReadHelper {
-    private NbtReadHelper() {
-    }
-
     public static String requireString(CompoundTag nbt, String key) {
         return nbt.getString(key)
                 .orElseThrow(() -> new InvalidNbtFormatException("Missing string field '" + key + "'."));
@@ -48,5 +45,8 @@ public final class NbtReadHelper {
     public static String requireString(ListTag list, int index, String listName) {
         return list.getString(index)
                 .orElseThrow(() -> new InvalidNbtFormatException("Missing string entry at " + listName + "[" + index + "]."));
+    }
+
+    private NbtReadHelper() {
     }
 }

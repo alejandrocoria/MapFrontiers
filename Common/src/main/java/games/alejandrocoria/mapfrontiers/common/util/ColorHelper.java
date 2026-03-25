@@ -5,7 +5,7 @@ import java.awt.Color;
 import java.util.Random;
 
 @ParametersAreNonnullByDefault
-public class ColorHelper {
+public final class ColorHelper {
     private static final Random rand = new Random();
 
     public static int getRandomColor() {
@@ -16,6 +16,5 @@ public class ColorHelper {
     }
 
     private ColorHelper() {
-
     }
 }
