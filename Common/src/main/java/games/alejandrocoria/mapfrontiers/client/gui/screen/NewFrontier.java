@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
+import games.alejandrocoria.mapfrontiers.client.Config;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
@@ -9,7 +10,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.ShapeChunkB
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.ShapeVertexButtons;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
-import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import journeymap.api.v2.client.IClientAPI;

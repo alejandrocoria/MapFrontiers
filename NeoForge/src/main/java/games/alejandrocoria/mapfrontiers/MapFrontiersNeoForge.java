@@ -1,8 +1,8 @@
 package games.alejandrocoria.mapfrontiers;
 
 import fuzs.forgeconfigapiport.neoforge.api.v5.ForgeConfigRegistry;
+import games.alejandrocoria.mapfrontiers.client.Config;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClientNeoForge;
-import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.server.command.CommandAccept;
 import games.alejandrocoria.mapfrontiers.server.event.ServerGlobalEvents;
 import net.minecraft.server.level.ServerPlayer;

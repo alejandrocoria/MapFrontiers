@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.common;
+package games.alejandrocoria.mapfrontiers.client;
 
 import com.electronwill.nightconfig.core.UnmodifiableConfig;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;

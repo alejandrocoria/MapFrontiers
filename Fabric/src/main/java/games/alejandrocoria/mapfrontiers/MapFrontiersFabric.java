@@ -2,7 +2,7 @@ package games.alejandrocoria.mapfrontiers;
 
 import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;
 import fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents;
-import games.alejandrocoria.mapfrontiers.common.Config;
+import games.alejandrocoria.mapfrontiers.client.Config;
 import games.alejandrocoria.mapfrontiers.server.command.CommandAccept;
 import games.alejandrocoria.mapfrontiers.server.event.ServerGlobalEvents;
 import net.fabricmc.api.ModInitializer;

@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers;
 
+import games.alejandrocoria.mapfrontiers.client.Config;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClientForge;
-import games.alejandrocoria.mapfrontiers.common.Config;
 import games.alejandrocoria.mapfrontiers.server.command.CommandAccept;
 import games.alejandrocoria.mapfrontiers.server.event.ServerGlobalEvents;
 import net.minecraft.server.level.ServerPlayer;

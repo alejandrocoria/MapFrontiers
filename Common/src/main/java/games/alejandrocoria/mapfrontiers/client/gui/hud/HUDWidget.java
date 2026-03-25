@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.hud;
 
+import games.alejandrocoria.mapfrontiers.client.Config;
 import games.alejandrocoria.mapfrontiers.client.gui.component.AbstractWidgetNoNarration;
-import games.alejandrocoria.mapfrontiers.common.Config;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphics;
