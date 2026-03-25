@@ -49,7 +49,7 @@ public class FrontierData {
 
     protected UUID id;
     protected final List<BlockPos> vertices = new ArrayList<>();
-    protected Set<ChunkPos> chunks = new HashSet<>();
+    protected final Set<ChunkPos> chunks = new HashSet<>();
     protected Mode mode = Mode.Vertex;
     protected String name1 = "New";
     protected String name2 = "Frontier";
@@ -304,7 +304,11 @@ public class FrontierData {
 
     public void moveAllChunks(ChunkPos delta) {
         synchronized (chunks) {
-            chunks = chunks.stream().map(chunk -> new ChunkPos(chunk.x + delta.x, chunk.z + delta.z)).collect(Collectors.toSet());
+            Set<ChunkPos> movedChunks = chunks.stream()
+                    .map(chunk -> new ChunkPos(chunk.x + delta.x, chunk.z + delta.z))
+                    .collect(Collectors.toSet());
+            chunks.clear();
+            chunks.addAll(movedChunks);
         }
     }
 
