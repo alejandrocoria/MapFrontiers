@@ -3,6 +3,7 @@
 * Change: The copy button puts the frontier ID on the clipboard.
 * Change: Reduced the number of times frontier changes are written to the file.
 * Fixed: HUD continues to display with F1.
+* Fixed: owned personal frontiers disappear when reconnecting after the server no longer has the mod.
 
 **Beta 20:**
 * Fixed: New shapes are the wrong size when using an odd width.
