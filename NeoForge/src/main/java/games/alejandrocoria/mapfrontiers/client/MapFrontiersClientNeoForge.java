@@ -4,7 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.MapFrontiersNeoForge;
 import games.alejandrocoria.mapfrontiers.client.command.ClientCommandAccept;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.common.Config;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -54,31 +54,31 @@ public class MapFrontiersClientNeoForge extends MapFrontiersClient {
         Minecraft client = Minecraft.getInstance();
         if (client.level != null) {
             Player player = client.player;
-            ClientEventHandler.postPlayerTickEvent(client, player);
+            ClientGlobalEvents.postPlayerTickEvent(client, player);
         }
     }
 
     public static void onRenderTick(RenderFrameEvent.Post event) {
-        ClientEventHandler.postClientTickEvent(Minecraft.getInstance());
+        ClientGlobalEvents.postClientTickEvent(Minecraft.getInstance());
     }
 
     public static void RenderGameOverlayEvent(RenderGuiLayerEvent.Pre event) {
         if (EFFECTS.equals(event.getName())) {
-            ClientEventHandler.postHudRenderEvent(event.getGuiGraphics(), event.getPartialTick());
+            ClientGlobalEvents.postHudRenderEvent(event.getGuiGraphics(), event.getPartialTick());
         }
     }
 
     public static void clientConnectedToServer(LoggingIn event) {
-        ClientEventHandler.postClientConnectedEvent();
+        ClientGlobalEvents.postClientConnectedEvent();
     }
 
     public static void clientDisconnectionFromServer(LoggingOut event) {
-        ClientEventHandler.postClientDisconnectedEvent();
+        ClientGlobalEvents.postClientDisconnectedEvent();
     }
 
     public static void mouseEvent(InputEvent.MouseButton.Pre event) {
         if (event.getAction() == GLFW.GLFW_RELEASE) {
-            ClientEventHandler.postMouseReleaseEvent(event.getButton());
+            ClientGlobalEvents.postMouseReleaseEvent(event.getButton());
         }
     }
 
@@ -107,3 +107,4 @@ public class MapFrontiersClientNeoForge extends MapFrontiersClient {
         }
     }
 }
+

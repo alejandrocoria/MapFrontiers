@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
@@ -10,7 +10,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.ShapeVertex
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.common.Config;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.Context;
@@ -62,7 +62,7 @@ public class NewFrontier extends AutoScaledScreen {
         this.jmAPI = jmAPI;
         this.centerPos = centerPos;
 
-        ClientEventHandler.subscribeUpdatedSettingsProfileEvent(this, profile -> {
+        MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> {
             onClose();
             new NewFrontier(jmAPI, centerPos).display();
         });
@@ -82,8 +82,9 @@ public class NewFrontier extends AutoScaledScreen {
         buttonFrontierType.addOption(Config.getTranslatedEnum(Config.FilterFrontierType.Personal));
         buttonFrontierType.setSelected(0);
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
-        boolean canCreateGlobal = !MapFrontiersClient.isModOnServer()
-                || (profile != null && profile.createFrontier == SettingsProfile.State.Enabled);
+        boolean canCreateGlobal = MapFrontiersClient.isModOnServer()
+                && profile != null
+                && profile.createFrontier == SettingsProfile.State.Enabled;
         if (!canCreateGlobal) {
             buttonFrontierType.setSelected(1);
             buttonFrontierType.active = false;
@@ -161,7 +162,7 @@ public class NewFrontier extends AutoScaledScreen {
             closeAndReturnToFullscreenMap();
             UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
             if (uiState != null) {
-                MapFrontiersClient.getFrontiersOverlayManager(personal).clientCreateNewFrontier(uiState.dimension, calculateVertices(), calculateChunks());
+                MapFrontiersClient.getOperationService().createNewFrontier(personal, uiState.dimension, calculateVertices(), calculateChunks());
             }
         }));
         bottomButtons.addChild(new SimpleButton(font, 100, cancelLabel, b -> onClose()));
@@ -176,8 +177,9 @@ public class NewFrontier extends AutoScaledScreen {
 
     @Override
     public void onClose() {
-        ClientEventHandler.unsubscribeAllEvents(this);
-        ClientEventHandler.postUpdatedConfigEvent();
+        MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
+        ClientGlobalEvents.unsubscribeAllEvents(this);
+        ClientGlobalEvents.postUpdatedConfigEvent();
         super.onClose();
     }
 

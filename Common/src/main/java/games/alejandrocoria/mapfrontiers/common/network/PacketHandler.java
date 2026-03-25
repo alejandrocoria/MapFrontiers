@@ -4,7 +4,7 @@ import commonnetwork.CommonNetworkMod;
 import commonnetwork.api.Dispatcher;
 import commonnetwork.api.Network;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,6 +20,7 @@ public class PacketHandler {
         CommonNetworkMod.registerPacket(PacketFrontierCreated.type(), PacketFrontierCreated.class, PacketFrontierCreated.STREAM_CODEC, PacketFrontierCreated::handle);
         CommonNetworkMod.registerPacket(PacketFrontierDeleted.type(), PacketFrontierDeleted.class, PacketFrontierDeleted.STREAM_CODEC, PacketFrontierDeleted::handle);
         CommonNetworkMod.registerPacket(PacketFrontierUpdated.type(), PacketFrontierUpdated.class, PacketFrontierUpdated.STREAM_CODEC, PacketFrontierUpdated::handle);
+        CommonNetworkMod.registerPacket(PacketFrontierSharingUpdated.type(), PacketFrontierSharingUpdated.class, PacketFrontierSharingUpdated.STREAM_CODEC, PacketFrontierSharingUpdated::handle);
         CommonNetworkMod.registerPacket(PacketSettingsProfile.type(), PacketSettingsProfile.class, PacketSettingsProfile.STREAM_CODEC, PacketSettingsProfile::handle);
         CommonNetworkMod.registerPacket(PacketPersonalFrontierShared.type(), PacketPersonalFrontierShared.class, PacketPersonalFrontierShared.STREAM_CODEC, PacketPersonalFrontierShared::handle);
 

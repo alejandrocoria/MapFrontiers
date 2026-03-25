@@ -2,7 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.plugin;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.FullscreenMap;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.IClientPlugin;
@@ -83,15 +83,15 @@ public class MapFrontiersPlugin implements IClientPlugin {
 
         FullscreenEventRegistry.ADDON_BUTTON_DISPLAY_EVENT.subscribe(MapFrontiers.MODID, (addonButtonDisplayEvent) -> {
             ThemeButtonDisplay buttonDisplay = addonButtonDisplayEvent.getThemeButtonDisplay();
-            ClientEventHandler.postAddonButtonDisplayEvent(buttonDisplay);
+            ClientGlobalEvents.postAddonButtonDisplayEvent(buttonDisplay);
         });
 
         FullscreenEventRegistry.FULLSCREEN_POPUP_MENU_EVENT.subscribe(MapFrontiers.MODID, (fullscreenPopupMenuEvent) -> {
             ModPopupMenu popupMenu = fullscreenPopupMenuEvent.getPopupMenu();
-            ClientEventHandler.postFullscreenPopupMenuEvent(popupMenu);
+            ClientGlobalEvents.postFullscreenPopupMenuEvent(popupMenu);
         });
 
-        ClientEventHandler.subscribeAddonButtonDisplayEvent(MapFrontiersPlugin.class, (buttonDisplay) -> {
+        ClientGlobalEvents.subscribeAddonButtonDisplayEvent(MapFrontiersPlugin.class, (buttonDisplay) -> {
             if (fullscreenMap == null) {
                 fullscreenMap = new FullscreenMap(jmAPI);
             }
@@ -99,7 +99,7 @@ public class MapFrontiersPlugin implements IClientPlugin {
             fullscreenMap.addButtons(buttonDisplay);
         });
 
-        ClientEventHandler.subscribeFullscreenPopupMenuEvent(MapFrontiersPlugin.class, popupMenu -> {
+        ClientGlobalEvents.subscribeFullscreenPopupMenuEvent(MapFrontiersPlugin.class, popupMenu -> {
             if (fullscreenMap != null) {
                 fullscreenMap.addPopupMenu(popupMenu);
             }
@@ -115,3 +115,4 @@ public class MapFrontiersPlugin implements IClientPlugin {
         return fullscreenMap != null && (fullscreenMap.isEditingVertices() || fullscreenMap.isEditingChunks());
     }
 }
+

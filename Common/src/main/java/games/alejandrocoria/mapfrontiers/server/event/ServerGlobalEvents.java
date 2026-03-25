@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.common.event;
+package games.alejandrocoria.mapfrontiers.server.event;
 
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -10,7 +10,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
-public class EventHandler {
+public class ServerGlobalEvents {
     private static final Map<Object, Consumer<MinecraftServer>> serverStartingEventMap = new HashMap<>();
     private static final Map<Object, Consumer<MinecraftServer>> serverStoppingEventMap = new HashMap<>();
     private static final Map<Object, BiConsumer<MinecraftServer, ServerPlayer>> playerJoinedEventMap = new HashMap<>();

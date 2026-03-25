@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 /**
  * Event stream for API-level frontier events.
  */
+@SuppressWarnings("unused")
 public interface EventBus {
     /**
      * Handle returned by {@link #subscribe(Class, Consumer)}.

@@ -6,7 +6,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 
 @ParametersAreNonnullByDefault
-public class StringHelper {
+public final class StringHelper {
     public static int getMaxWidth(Font font, String... strings) {
         int maxWidth = 0;
 
@@ -41,6 +41,5 @@ public class StringHelper {
     }
 
     private StringHelper() {
-
     }
 }

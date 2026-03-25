@@ -1,9 +1,9 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
-import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
+import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPaletteWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPicker;
@@ -18,10 +18,8 @@ import games.alejandrocoria.mapfrontiers.client.gui.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.VisibilityDialog;
 import games.alejandrocoria.mapfrontiers.common.Config;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToGlobal;
-import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToPersonal;
-import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
@@ -110,7 +108,6 @@ public class FrontierInfo extends AutoScaledScreen {
 
     private final IClientAPI jmAPI;
 
-    private final FrontiersOverlayManager frontiersOverlayManager;
     private final FrontierOverlay frontier;
     private int frontierHash;
     private TextBox textName1;
@@ -153,18 +150,17 @@ public class FrontierInfo extends AutoScaledScreen {
     public FrontierInfo(IClientAPI jmAPI, FrontierOverlay frontier) {
         super(titleLabel, 636, 350);
         this.jmAPI = jmAPI;
-        frontiersOverlayManager = MapFrontiersClient.getFrontiersOverlayManager(frontier.getPersonal());
         this.frontier = frontier;
         frontierHash = frontier.getHash();
         undoStack.push(new FrontierData(frontier));
 
-        ClientEventHandler.subscribeDeletedFrontierEvent(this, frontierID -> {
+        MapFrontiersClient.getFrontierEvents().subscribeDeleted(this, frontierID -> {
             if (frontier.getId().equals(frontierID)) {
                 onClose();
             }
         });
 
-        ClientEventHandler.subscribeUpdatedFrontierEvent(this, (frontierOverlay, playerID) -> {
+        MapFrontiersClient.getFrontierEvents().subscribeUpdated(this, (frontierOverlay, playerID) -> {
             if (minecraft.player != null && frontier.getId().equals(frontierOverlay.getId())) {
                 addToUndo(new FrontierData(frontierOverlay));
                 if (playerID != minecraft.player.getId()) {
@@ -176,10 +172,11 @@ public class FrontierInfo extends AutoScaledScreen {
                         modifiedLabel.setMessage(modified);
                     }
                 }
+                frontierHash = frontier.getHash();
             }
         });
 
-        ClientEventHandler.subscribeUpdatedSettingsProfileEvent(this, profile -> {
+        MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> {
             updateButtons();
             updateBannerButton();
         });
@@ -204,14 +201,14 @@ public class FrontierInfo extends AutoScaledScreen {
                 frontier.setBanner(null);
             }
             updateBannerButton();
-            sendChangesToServer();
+            sendBannerChangeToServer();
         });
         bannerColumn.addChild(buttonBanner);
 
         sliderBannerRotation = new SimpleSlider(font, 144, bannerRotationKey, 0, 360, frontier.getBannerRotation(), (angle, dragging) -> {
             frontier.setBannerRotation(angle);
             if (!dragging) {
-                sendChangesToServer();
+                sendBannerChangeToServer();
             }
         });
         bannerColumn.addChild(sliderBannerRotation);
@@ -225,7 +222,7 @@ public class FrontierInfo extends AutoScaledScreen {
         textName1.setMaxLength(17);
         textName1.setHeight(20);
         textName1.setValue(frontier.getName1());
-        textName1.setLostFocusCallback(value -> sendChangesToServer());
+        textName1.setLostFocusCallback(value -> sendNameChangeToServer());
         textName1.setValueChangedCallback(value -> {
             if (!frontier.getName1().equals(value)) {
                 frontier.setName1(value);
@@ -236,7 +233,7 @@ public class FrontierInfo extends AutoScaledScreen {
         textName2.setMaxLength(17);
         textName2.setHeight(20);
         textName2.setValue(frontier.getName2());
-        textName2.setLostFocusCallback(value -> sendChangesToServer());
+        textName2.setLostFocusCallback(value -> sendNameChangeToServer());
         textName2.setValueChangedCallback(value -> {
             if (!frontier.getName2().equals(value)) {
                 frontier.setName2(value);
@@ -328,7 +325,7 @@ public class FrontierInfo extends AutoScaledScreen {
             new VisibilityDialog(frontier.getVisibilityData(), (newVisibilityData, newVisibilityMask) -> {
                 if (!newVisibilityData.equals(frontier.getVisibilityData())) {
                     frontier.setVisibilityData(newVisibilityData);
-                    sendChangesToServer();
+                    sendVisibilityChangeToServer();
                 }
             }).display();
         });
@@ -374,7 +371,7 @@ public class FrontierInfo extends AutoScaledScreen {
                 frontier.setColor(newColor);
                 colorPicker.setColor(newColor);
                 colorPalette.setColor(newColor);
-                sendChangesToServer();
+                sendColorChangeToServer();
             }
         });
         rgbRow.addChild(textRed);
@@ -390,7 +387,7 @@ public class FrontierInfo extends AutoScaledScreen {
                 frontier.setColor(newColor);
                 colorPicker.setColor(newColor);
                 colorPalette.setColor(newColor);
-                sendChangesToServer();
+                sendColorChangeToServer();
             }
         });
         rgbRow.addChild(textGreen);
@@ -406,7 +403,7 @@ public class FrontierInfo extends AutoScaledScreen {
                 frontier.setColor(newColor);
                 colorPicker.setColor(newColor);
                 colorPalette.setColor(newColor);
-                sendChangesToServer();
+                sendColorChangeToServer();
             }
         });
         rgbRow.addChild(textBlue);
@@ -422,7 +419,7 @@ public class FrontierInfo extends AutoScaledScreen {
             textRed.setValue((newColor & 0xff0000) >> 16);
             textGreen.setValue((newColor & 0x00ff00) >> 8);
             textBlue.setValue(newColor & 0x0000ff);
-            sendChangesToServer();
+            sendColorChangeToServer();
         });
         colorCol.addChild(buttonRandomColor);
 
@@ -466,7 +463,7 @@ public class FrontierInfo extends AutoScaledScreen {
             FrontierData clipboard = MapFrontiersClient.getClipboard();
             if (clipboard != null && (Config.pasteName || Config.pasteVisibility || Config.pasteColor || Config.pasteBanner)) {
                 setFrontier(clipboard, Config.pasteName, Config.pasteVisibility, Config.pasteColor, Config.pasteBanner);
-                sendChangesToServer();
+                sendCurrentInfoChangesToServer();
                 rebuildWidgets();
                 repositionElements();
                 if (minecraft.getLastInputType().isKeyboard()) {
@@ -479,7 +476,7 @@ public class FrontierInfo extends AutoScaledScreen {
         buttonPasteOptions = pasteButtons.addChild(new IconButton(IconButton.Type.ArrowUp, (b) -> {
             Config.pasteOptionsVisible = !Config.pasteOptionsVisible;
             updatePasteOptionsVisibility();
-            ClientEventHandler.postUpdatedConfigEvent();
+            ClientGlobalEvents.postUpdatedConfigEvent();
         }));
         buttonPasteOptions.setTooltip(openPasteTooltip);
 
@@ -495,7 +492,7 @@ public class FrontierInfo extends AutoScaledScreen {
         }));
         buttonShareSettings = bottomButtons.addChild(new SimpleButton(font, 144, shareSettingsLabel, (b) -> {
             if (MapFrontiersClient.isModOnServer()) {
-                new ShareSettings(frontiersOverlayManager, frontier).display();
+                new ShareSettings(frontier).display();
             } else {
                 new SendFrontier(frontier).display();
             }
@@ -507,7 +504,7 @@ public class FrontierInfo extends AutoScaledScreen {
                         response -> {
                             if (response == ConfirmationDialog.Response.ConfirmAlternative) {
                                 Config.askConfirmationFrontierDelete = false;
-                                ClientEventHandler.postUpdatedConfigEvent();
+                                ClientGlobalEvents.postUpdatedConfigEvent();
                             }
                             deleteFrontier();
                         }
@@ -530,7 +527,7 @@ public class FrontierInfo extends AutoScaledScreen {
     private OptionButton createVisibilityOptionButton(boolean defaultValue, Consumer<Boolean> consumer) {
         OptionButton button = new OptionButton(font, 28, (b) -> {
             consumer.accept(b.getSelected() == 0);
-            sendChangesToServer();
+            sendCurrentInfoChangesToServer();
         });
         button.addOption(onLabel);
         button.addOption(offLabel);
@@ -553,8 +550,8 @@ public class FrontierInfo extends AutoScaledScreen {
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
         for (GuiEventListener w : children()) {
-            if (w instanceof ColorPicker) {
-                w.mouseReleased(event);
+            if (w instanceof ColorPicker cp) {
+                cp.finishSelection();
             }
         }
 
@@ -578,15 +575,19 @@ public class FrontierInfo extends AutoScaledScreen {
 
     @Override
     public void onClose() {
-        sendChangesToServer();
-        ClientEventHandler.unsubscribeAllEvents(this);
+        sendCurrentInfoChangesToServer();
+        MapFrontiersClient.getFrontierEvents().unsubscribe(this);
+        MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
+        ClientGlobalEvents.unsubscribeAllEvents(this);
         super.onClose();
     }
 
     private void deleteFrontier() {
         // Unsubscribing to not receive this same event.
-        ClientEventHandler.unsubscribeAllEvents(this);
-        frontiersOverlayManager.clientDeleteFrontier(frontier);
+        MapFrontiersClient.getFrontierEvents().unsubscribe(this);
+        MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
+        ClientGlobalEvents.unsubscribeAllEvents(this);
+        MapFrontiersClient.getOperationService().deleteFrontier(frontier);
         onClose();
     }
 
@@ -597,7 +598,7 @@ public class FrontierInfo extends AutoScaledScreen {
         textBlue.setValue(frontier.getColor() & 0x0000ff);
 
         if (!dragging) {
-            sendChangesToServer();
+            sendColorChangeToServer();
         }
     }
 
@@ -608,7 +609,7 @@ public class FrontierInfo extends AutoScaledScreen {
 
         redoStack.push(undoStack.pop());
         setFrontier(undoStack.peek(), true, true, true, true);
-        sendChangesToServer();
+        sendCurrentInfoChangesToServer();
         rebuildWidgets();
         repositionElements();
         if (minecraft.getLastInputType().isKeyboard()) {
@@ -627,7 +628,7 @@ public class FrontierInfo extends AutoScaledScreen {
 
         setFrontier(redoStack.peek(), true, true, true, true);
         undoStack.push(redoStack.pop());
-        sendChangesToServer();
+        sendCurrentInfoChangesToServer();
         rebuildWidgets();
         repositionElements();
         if (minecraft.getLastInputType().isKeyboard()) {
@@ -693,13 +694,13 @@ public class FrontierInfo extends AutoScaledScreen {
     private void changeToGlobal() {
         undoStack.clear();
         redoStack.clear();
-        PacketHandler.sendToServer(new PacketChangeFrontierToGlobal(frontier.getId(), null));
+        MapFrontiersClient.getOperationService().changeToGlobalAction(new FrontierId(frontier.getId()));
     }
 
     private void changeToPersonal() {
         undoStack.clear();
         redoStack.clear();
-        PacketHandler.sendToServer(new PacketChangeFrontierToPersonal(frontier.getId(), null));
+        MapFrontiersClient.getOperationService().changeToPersonalAction(new FrontierId(frontier.getId()));
     }
 
     private void updateButtons() {
@@ -763,7 +764,44 @@ public class FrontierInfo extends AutoScaledScreen {
         buttonRedo.visible = buttonPaste.active && redoStack.size() > 0;
     }
 
-    private void sendChangesToServer() {
+    private void sendNameChangeToServer() {
+        FrontierChange change = new FrontierChange();
+        change.setName(frontier.getName1(), frontier.getName2());
+        sendChangeToServer(change);
+    }
+
+    private void sendVisibilityChangeToServer() {
+        FrontierChange change = new FrontierChange();
+        change.setVisibility(frontier.getVisibilityData());
+        sendChangeToServer(change);
+    }
+
+    private void sendColorChangeToServer() {
+        FrontierChange change = new FrontierChange();
+        change.setColor(frontier.getColor());
+        sendChangeToServer(change);
+    }
+
+    private void sendBannerChangeToServer() {
+        FrontierChange change = new FrontierChange();
+        change.setBanner(frontier.getbannerData());
+        sendChangeToServer(change);
+    }
+
+    private void sendCurrentInfoChangesToServer() {
+        FrontierChange change = new FrontierChange();
+        change.setName(frontier.getName1(), frontier.getName2());
+        change.setVisibility(frontier.getVisibilityData());
+        change.setColor(frontier.getColor());
+        change.setBanner(frontier.getbannerData());
+        sendChangeToServer(change);
+    }
+
+    private void sendChangeToServer(FrontierChange change) {
+        if (change.isEmpty()) {
+            return;
+        }
+
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
         SettingsUser playerUser = new SettingsUser(minecraft.player);
         SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontier, playerUser);
@@ -771,7 +809,7 @@ public class FrontierInfo extends AutoScaledScreen {
         if (actions.canUpdate) {
             if (frontier.getHash() != frontierHash) {
                 frontierHash = frontier.getHash();
-                frontiersOverlayManager.clientUpdateFrontier(frontier);
+                MapFrontiersClient.getOperationService().updateFrontier(frontier, change);
             }
         }
     }

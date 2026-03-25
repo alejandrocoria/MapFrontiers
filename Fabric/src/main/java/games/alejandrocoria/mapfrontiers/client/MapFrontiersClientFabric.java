@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.MapFrontiersFabric;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -27,13 +27,13 @@ public class MapFrontiersClientFabric extends MapFrontiersClient implements Clie
                 "mapfrontiers.key.open_settings", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, MapFrontiersClient.registerKeyMappingCategory()
         ));
 
-        ClientTickEvents.START_CLIENT_TICK.register(ClientEventHandler::postClientTickEvent);
-        ClientTickEvents.END_CLIENT_TICK.register(client -> ClientEventHandler.postPlayerTickEvent(client, client.player));
-        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "hud"), ClientEventHandler::postHudRenderEvent);
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> ClientEventHandler.postClientConnectedEvent());
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ClientEventHandler.postClientDisconnectedEvent());
+        ClientTickEvents.START_CLIENT_TICK.register(ClientGlobalEvents::postClientTickEvent);
+        ClientTickEvents.END_CLIENT_TICK.register(client -> ClientGlobalEvents.postPlayerTickEvent(client, client.player));
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "hud"), ClientGlobalEvents::postHudRenderEvent);
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> ClientGlobalEvents.postClientConnectedEvent());
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ClientGlobalEvents.postClientDisconnectedEvent());
         ScreenEvents.BEFORE_INIT.register((client, theScreen, scaledWidth, scaledHeight) -> {
-            ScreenMouseEvents.beforeMouseRelease(theScreen).register((screen, event) -> ClientEventHandler.postMouseReleaseEvent(event.button()));
+            ScreenMouseEvents.beforeMouseRelease(theScreen).register((screen, event) -> ClientGlobalEvents.postMouseReleaseEvent(event.button()));
         });
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> FabricClientCommandAccept.register(dispatcher));
@@ -48,3 +48,4 @@ public class MapFrontiersClientFabric extends MapFrontiersClient implements Clie
         MapFrontiersFabric.LOGGER.info("Fabric onInitializeClient done");
     }
 }
+

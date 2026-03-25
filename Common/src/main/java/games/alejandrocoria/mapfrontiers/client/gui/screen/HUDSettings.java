@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
 import com.mojang.blaze3d.platform.Window;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
@@ -90,7 +90,7 @@ public class HUDSettings extends AutoScaledScreen {
 
     @Override
     public void initScreen() {
-        ClientEventHandler.postUpdatedConfigEvent();
+        ClientGlobalEvents.postUpdatedConfigEvent();
 
         HUDWidget = addRenderableWidget(new HUDWidget(hud, Services.JOURNEYMAP.isMinimapEnabled(), (widget) -> HUDUpdated()));
 
@@ -134,7 +134,7 @@ public class HUDSettings extends AutoScaledScreen {
         textTextSize.setMaxLength(1);
         textTextSize.setValueChangedCallback(value -> {
             Config.hudTextSize = value;
-            ClientEventHandler.postUpdatedConfigEvent();
+            ClientGlobalEvents.postUpdatedConfigEvent();
             updatePosition();
         });
         mainLayout.addChild(textTextSize, 3, 1);
@@ -146,7 +146,7 @@ public class HUDSettings extends AutoScaledScreen {
         textBannerSize.setMaxLength(1);
         textBannerSize.setValueChangedCallback(value -> {
             Config.hudBannerSize = value;
-            ClientEventHandler.postUpdatedConfigEvent();
+            ClientGlobalEvents.postUpdatedConfigEvent();
             updatePosition();
         });
         mainLayout.addChild(textBannerSize, 4, 1);
@@ -155,7 +155,7 @@ public class HUDSettings extends AutoScaledScreen {
         labelAnchorLabel.setTooltip(anchorTooltip);
         buttonAnchor = new OptionButton(font, 134, (b) -> {
             Config.hudAnchor = Config.HUDAnchor.values()[b.getSelected()];
-            ClientEventHandler.postUpdatedConfigEvent();
+            ClientGlobalEvents.postUpdatedConfigEvent();
             updatePosition();
         });
         buttonAnchor.addOption(Config.getTranslatedEnum(Config.HUDAnchor.ScreenTop));
@@ -182,7 +182,7 @@ public class HUDSettings extends AutoScaledScreen {
         textPositionX.setMaxLength(5);
         textPositionX.setValueChangedCallback(value -> {
             Config.hudXPosition = value;
-            ClientEventHandler.postUpdatedConfigEvent();
+            ClientGlobalEvents.postUpdatedConfigEvent();
         });
         positionLayout.addChild(textPositionX);
 
@@ -195,7 +195,7 @@ public class HUDSettings extends AutoScaledScreen {
         textPositionY.setMaxLength(5);
         textPositionY.setValueChangedCallback(value -> {
             Config.hudYPosition = value;
-            ClientEventHandler.postUpdatedConfigEvent();
+            ClientGlobalEvents.postUpdatedConfigEvent();
         });
         positionLayout.addChild(textPositionY);
 
@@ -203,7 +203,7 @@ public class HUDSettings extends AutoScaledScreen {
         labelAutoAdjustAnchor.setTooltip(autoAdjustAnchorTooltip);
         buttonAutoAdjustAnchor = new OptionButton(font, 134, (b) -> {
             Config.hudAutoAdjustAnchor = b.getSelected() == 0;
-            ClientEventHandler.postUpdatedConfigEvent();
+            ClientGlobalEvents.postUpdatedConfigEvent();
         });
         buttonAutoAdjustAnchor.addOption(onLabel);
         buttonAutoAdjustAnchor.addOption(offLabel);
@@ -214,7 +214,7 @@ public class HUDSettings extends AutoScaledScreen {
         labelSnapToBorder.setTooltip(snapToBorderTooltip);
         buttonSnapToBorder = new OptionButton(font, 134, (b) -> {
             Config.hudSnapToBorder = b.getSelected() == 0;
-            ClientEventHandler.postUpdatedConfigEvent();
+            ClientGlobalEvents.postUpdatedConfigEvent();
         });
         buttonSnapToBorder.addOption(onLabel);
         buttonSnapToBorder.addOption(offLabel);
@@ -334,7 +334,7 @@ public class HUDSettings extends AutoScaledScreen {
         }
 
         if (updated) {
-            ClientEventHandler.postUpdatedConfigEvent();
+            ClientGlobalEvents.postUpdatedConfigEvent();
             updatePosition();
         }
     }
@@ -372,7 +372,7 @@ public class HUDSettings extends AutoScaledScreen {
 
     @Override
     public void removed() {
-        ClientEventHandler.postUpdatedConfigEvent();
+        ClientGlobalEvents.postUpdatedConfigEvent();
     }
 
     private void updatePosition() {
@@ -390,3 +390,4 @@ public class HUDSettings extends AutoScaledScreen {
         textPositionY.setValue(String.valueOf(Config.hudYPosition));
     }
 }
+

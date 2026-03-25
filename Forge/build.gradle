@@ -12,10 +12,6 @@ plugins {
 base.archivesName = "${project.mod_name}-${project.minecraft_version}"
 jar.archiveClassifier = 'forge'
 
-java {
-    sourcesJar.enabled = false
-}
-
 repositories {
     maven minecraft.mavenizer
     maven fg.forgeMaven
@@ -28,8 +24,10 @@ dependencies {
     implementation minecraft.dependency("net.minecraftforge:forge:${forge_version}")
     annotationProcessor 'net.minecraftforge:eventbus-validator:7.0-beta.10'
 
-    implementation group: 'mysticdrew', name: 'common-networking-forge', version: project.common_networking_version
-    api group: 'info.journeymap', name: 'journeymap-api-forge', version: project.journeymap_api_version, changing: true
+    implementation "mysticdrew:common-networking-forge:${project.common_networking_version}"
+    api("info.journeymap:journeymap-api-forge:${project.journeymap_api_version}") {
+        changing = true
+    }
     implementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_forge_file_id}"
 }
 
@@ -77,27 +75,14 @@ jar {
     }
 }
 
-tasks.register('processDocs', Copy) {
-    // update docs
-    from(file("../doc/")) {
-        include '*.md'
-        expand 'loaderversion': forge_version,
-                'loadername': "Forge",
-                'journeymap_doc_version': journeymap_doc_version,
-                'extra_doc_requirements': ""
-    }
-    into 'build/doc'
-}
+registerProcessDocsTask(
+        "Forge",
+        forge_version,
+        ""
+)
 
 tasks.processResources {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
-}
-
-if (!project.hasProperty("curseForgeApiKey")) {
-    ext.curseForgeApiKey = project.findProperty("curseforge_api_key") ?: "notset"
-}
-if (!project.hasProperty("modrinthApiKey")) {
-    ext.modrinthApiKey = project.findProperty("modrinth_api_key") ?: "notset"
 }
 
 tasks.register('publishCurseForge', TaskPublishCurseForge) {
@@ -114,8 +99,6 @@ tasks.register('publishCurseForge', TaskPublishCurseForge) {
     mainFile.changelog = file("$project.buildDir/doc/changelog.md")
 }
 
-tasks.modrinth.dependsOn(tasks.build)
-
 modrinth {
 //    debugMode.set(true)
     token = "${modrinthApiKey}"
@@ -130,11 +113,4 @@ modrinth {
             new VersionDependency("journeymap", "${journeymap_doc_version}+forge", "required")
     ]
     changelog = file("$project.buildDir/doc/changelog.md").exists() ? file("$project.buildDir/doc/changelog.md").text : null
-}
-
-project.afterEvaluate {
-    project.tasks.findAll { task -> (task.name.startsWith('curseforge') || task.name.startsWith('modrinth'))
-    }.each {
-        projectTask -> projectTask.dependsOn build
-    }
 }

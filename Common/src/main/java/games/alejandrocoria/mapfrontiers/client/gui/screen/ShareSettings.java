@@ -1,9 +1,8 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
-import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
+import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
@@ -14,9 +13,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUse
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.common.Config;
-import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
-import games.alejandrocoria.mapfrontiers.common.network.PacketRemoveSharedUserPersonalFrontier;
-import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateSharedUserPersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.client.gui.GuiGraphics;
@@ -46,7 +42,6 @@ public class ShareSettings extends AutoScaledScreen {
     private static final Component errorRepeatedLabel = Component.translatable("mapfrontiers.new_user_shared_error_user_repeated");
     private static final Component doneLabel = Component.translatable("gui.done");
 
-    private final FrontiersOverlayManager frontiersOverlayManager;
     private FrontierOverlay frontier;
     private MultiLineTextWidget updateFrontier;
     private MultiLineTextWidget updateSettings;
@@ -57,18 +52,17 @@ public class ShareSettings extends AutoScaledScreen {
     private boolean canUpdate;
     private int ticksSinceLastUpdate = 0;
 
-    public ShareSettings(FrontiersOverlayManager frontiersOverlayManager, FrontierOverlay frontier) {
+    public ShareSettings(FrontierOverlay frontier) {
         super(titleLabel, 470, 120);
-        this.frontiersOverlayManager = frontiersOverlayManager;
         this.frontier = frontier;
 
-        ClientEventHandler.subscribeDeletedFrontierEvent(this, frontierID -> {
+        MapFrontiersClient.getFrontierEvents().subscribeDeleted(this, frontierID -> {
             if (frontierID.equals(this.frontier.getId())) {
                 onClose();
             }
         });
 
-        ClientEventHandler.subscribeUpdatedFrontierEvent(this, (frontierOverlay, playerID) -> {
+        MapFrontiersClient.getFrontierEvents().subscribeUpdated(this, (frontierOverlay, playerID) -> {
             if (frontierOverlay.getId().equals(this.frontier.getId())) {
                 this.frontier = frontierOverlay;
                 updateCanUpdate();
@@ -104,7 +98,7 @@ public class ShareSettings extends AutoScaledScreen {
                         response -> {
                             if (response == ConfirmationDialog.Response.ConfirmAlternative) {
                                 Config.askConfirmationUserDelete = false;
-                                ClientEventHandler.postUpdatedConfigEvent();
+                                ClientGlobalEvents.postUpdatedConfigEvent();
                             }
                             deleteUserPressed(element);
                         }
@@ -207,7 +201,7 @@ public class ShareSettings extends AutoScaledScreen {
         users.removeElement(element);
         SettingsUser user = ((UserSharedElement) element).getUser();
         frontier.removeUserShared(user);
-        PacketHandler.sendToServer(new PacketRemoveSharedUserPersonalFrontier(frontier.getId(), user));
+        MapFrontiersClient.getOperationService().removeSharedUser(frontier.getId(), user);
         resetLabels();
     }
 
@@ -276,7 +270,7 @@ public class ShareSettings extends AutoScaledScreen {
         SettingsUserShared userShared = new SettingsUserShared(user, true);
 
         frontier.addUserShared(userShared);
-        frontiersOverlayManager.clientShareFrontier(frontier.getId(), user);
+        MapFrontiersClient.getOperationService().shareFrontier(frontier.getId(), user);
 
         UserSharedElement element = new UserSharedElement(font, userShared, canUpdate, true, this::actionChanged);
         users.addElement(element);
@@ -288,7 +282,8 @@ public class ShareSettings extends AutoScaledScreen {
 
     @Override
     public void onClose() {
-        ClientEventHandler.unsubscribeAllEvents(this);
+        MapFrontiersClient.getFrontierEvents().unsubscribe(this);
+        ClientGlobalEvents.unsubscribeAllEvents(this);
         super.onClose();
     }
 
@@ -326,10 +321,10 @@ public class ShareSettings extends AutoScaledScreen {
             }
 
             frontier.setModified(new Date());
-            ClientEventHandler.postUpdatedFrontierEvent(frontier, -1);
+            MapFrontiersClient.getOperationService().notifyLocalFrontierUpdated(frontier);
         }
 
-        PacketHandler.sendToServer(new PacketUpdateSharedUserPersonalFrontier(frontier.getId(), user));
+        MapFrontiersClient.getOperationService().updateSharedUser(frontier.getId(), user);
     }
 
     private void updateUsers() {

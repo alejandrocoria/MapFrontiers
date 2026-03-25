@@ -1,9 +1,9 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
 import games.alejandrocoria.mapfrontiers.client.ChatFrontiers;
-import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
+import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
@@ -39,13 +39,13 @@ public class SendFrontier extends AutoScaledScreen {
         super(titleLabel, 470, 120);
         this.frontier = frontier;
 
-        ClientEventHandler.subscribeDeletedFrontierEvent(this, frontierID -> {
+        MapFrontiersClient.getFrontierEvents().subscribeDeleted(this, frontierID -> {
             if (frontierID.equals(this.frontier.getId())) {
                 onClose();
             }
         });
 
-        ClientEventHandler.subscribeUpdatedFrontierEvent(this, (frontierOverlay, playerID) -> {
+        MapFrontiersClient.getFrontierEvents().subscribeUpdated(this, (frontierOverlay, playerID) -> {
             if (frontierOverlay.getId().equals(this.frontier.getId())) {
                 this.frontier = frontierOverlay;
             }
@@ -151,7 +151,9 @@ public class SendFrontier extends AutoScaledScreen {
 
     @Override
     public void onClose() {
-        ClientEventHandler.unsubscribeAllEvents(this);
+        MapFrontiersClient.getFrontierEvents().unsubscribe(this);
+        ClientGlobalEvents.unsubscribeAllEvents(this);
         super.onClose();
     }
 }
+

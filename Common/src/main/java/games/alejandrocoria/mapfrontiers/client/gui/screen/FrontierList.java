@@ -1,9 +1,8 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
-import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
+import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.FullscreenMap;
 import games.alejandrocoria.mapfrontiers.client.gui.component.SortToolbar;
@@ -16,7 +15,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.common.Config;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.platform.Services;
@@ -78,22 +77,22 @@ public class FrontierList extends AutoScaledScreen {
         this.jmAPI = jmAPI;
         this.fullscreenMap = fullscreenMap;
 
-        ClientEventHandler.subscribeDeletedFrontierEvent(this, frontierID -> {
+        MapFrontiersClient.getFrontierEvents().subscribeDeleted(this, frontierID -> {
             updateFrontiers();
             updateButtons();
         });
 
-        ClientEventHandler.subscribeNewFrontierEvent(this, (frontierOverlay, playerID) -> {
+        MapFrontiersClient.getFrontierEvents().subscribeCreated(this, (frontierOverlay, playerID) -> {
             updateFrontiers();
             updateButtons();
         });
 
-        ClientEventHandler.subscribeUpdatedFrontierEvent(this, (frontierOverlay, playerID) -> {
+        MapFrontiersClient.getFrontierEvents().subscribeUpdated(this, (frontierOverlay, playerID) -> {
             updateFrontiers();
             updateButtons();
         });
 
-        ClientEventHandler.subscribeUpdatedSettingsProfileEvent(this, profile -> {
+        MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> {
             updateButtons();
         });
     }
@@ -160,7 +159,7 @@ public class FrontierList extends AutoScaledScreen {
             int selected = ((RadioListElement) element).getId();
             Config.filterFrontierType = Config.FilterFrontierType.values()[selected];
             updateFrontiers();
-            ClientEventHandler.postUpdatedConfigEvent();
+            ClientGlobalEvents.postUpdatedConfigEvent();
             updateButtons();
         });
         rightColumn.addChild(filterType);
@@ -176,7 +175,7 @@ public class FrontierList extends AutoScaledScreen {
             int selected = ((RadioListElement) element).getId();
             Config.filterFrontierOwner = Config.FilterFrontierOwner.values()[selected];
             updateFrontiers();
-            ClientEventHandler.postUpdatedConfigEvent();
+            ClientGlobalEvents.postUpdatedConfigEvent();
             updateButtons();
         });
         rightColumn.addChild(filterOwner);
@@ -201,7 +200,7 @@ public class FrontierList extends AutoScaledScreen {
                 Config.filterFrontierDimension = getDimensionFromHash(selected);
             }
             updateFrontiers();
-            ClientEventHandler.postUpdatedConfigEvent();
+            ClientGlobalEvents.postUpdatedConfigEvent();
             updateButtons();
         });
         if (filterDimension.getSelectedElement() == null) {
@@ -222,7 +221,7 @@ public class FrontierList extends AutoScaledScreen {
                         response -> {
                             if (response == ConfirmationDialog.Response.ConfirmAlternative) {
                                 Config.askConfirmationFrontierDelete = false;
-                                ClientEventHandler.postUpdatedConfigEvent();
+                                ClientGlobalEvents.postUpdatedConfigEvent();
                             }
                             deleteSelectedFrontier();
                         }
@@ -235,8 +234,7 @@ public class FrontierList extends AutoScaledScreen {
         buttonVisible = bottomButtons.addChild(new SimpleButton(font, 110, hideLabel, (b) -> {
             FrontierOverlay frontier = ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
             frontier.toggleVisibility(FrontierData.VisibilityData.Visibility.Frontier);
-            FrontiersOverlayManager frontierManager = MapFrontiersClient.getFrontiersOverlayManager(frontier.getPersonal());
-            frontierManager.clientUpdateFrontier(frontier);
+            MapFrontiersClient.getOperationService().updateFrontier(frontier);
             updateButtons();
         }));
         buttonSettings = bottomButtons.addChild(new SimpleButton(font, 110, settingsLabel, (b) -> new ModSettings(true).display()));
@@ -277,14 +275,15 @@ public class FrontierList extends AutoScaledScreen {
 
     @Override
     public void onClose() {
-        ClientEventHandler.unsubscribeAllEvents(this);
+        MapFrontiersClient.getFrontierEvents().unsubscribe(this);
+        MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
+        ClientGlobalEvents.unsubscribeAllEvents(this);
         super.onClose();
     }
 
     private void deleteSelectedFrontier() {
         FrontierOverlay frontier = ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
-        FrontiersOverlayManager frontierManager = MapFrontiersClient.getFrontiersOverlayManager(frontier.getPersonal());
-        frontierManager.clientDeleteFrontier(frontier);
+        MapFrontiersClient.getOperationService().deleteFrontier(frontier);
         frontiers.removeElement(frontiers.getSelectedElement());
         updateButtons();
     }
@@ -316,21 +315,17 @@ public class FrontierList extends AutoScaledScreen {
         List<FrontierOverlay> toAdd = new ArrayList<>();
 
         if (Config.filterFrontierType == Config.FilterFrontierType.All || Config.filterFrontierType == Config.FilterFrontierType.Personal) {
-            for (ArrayList<FrontierOverlay> dimension : MapFrontiersClient.getFrontiersOverlayManager(true).getAllFrontiers().values()) {
-                for (FrontierOverlay frontier : dimension) {
-                    if (checkFilterOwner(frontier) && checkFilterDimension(frontier)) {
-                        toAdd.add(frontier);
-                    }
+            for (FrontierOverlay frontier : MapFrontiersClient.getAllFrontiers(true)) {
+                if (checkFilterOwner(frontier) && checkFilterDimension(frontier)) {
+                    toAdd.add(frontier);
                 }
             }
         }
 
         if (Config.filterFrontierType == Config.FilterFrontierType.All || Config.filterFrontierType == Config.FilterFrontierType.Global) {
-            for (ArrayList<FrontierOverlay> dimension : MapFrontiersClient.getFrontiersOverlayManager(false).getAllFrontiers().values()) {
-                for (FrontierOverlay frontier : dimension) {
-                    if (checkFilterOwner(frontier) && checkFilterDimension(frontier)) {
-                        toAdd.add(frontier);
-                    }
+            for (FrontierOverlay frontier : MapFrontiersClient.getAllFrontiers(false)) {
+                if (checkFilterOwner(frontier) && checkFilterDimension(frontier)) {
+                    toAdd.add(frontier);
                 }
             }
         }

@@ -4,7 +4,7 @@ import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -77,12 +77,12 @@ public class PacketFrontiers {
         try {
             buf.writeInt(globalFrontiers.size());
             for (FrontierData frontier : globalFrontiers) {
-                frontier.toBytes(buf, false);
+                frontier.toBytes(buf);
             }
 
             buf.writeInt(personalFrontiers.size());
             for (FrontierData frontier : personalFrontiers) {
-                frontier.toBytes(buf, false);
+                frontier.toBytes(buf);
             }
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketFrontiers: %s", t));

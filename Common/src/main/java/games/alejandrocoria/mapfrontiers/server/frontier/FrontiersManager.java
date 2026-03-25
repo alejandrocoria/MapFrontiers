@@ -1,14 +1,14 @@
-package games.alejandrocoria.mapfrontiers.common;
+package games.alejandrocoria.mapfrontiers.server.frontier;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.common.event.EventHandler;
-import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierUpdated;
-import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreationFactory;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
-import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
-import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
+import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
+import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -36,60 +36,34 @@ import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class FrontiersManager {
-    public static FrontiersManager instance;
+    private static final long FRONTIERS_UPDATE_SAVE_DEBOUNCE_MS = 10_000L;
+    private static final long FRONTIERS_UPDATE_SAVE_MAX_DELAY_MS = 60_000L;
 
     private final HashMap<UUID, FrontierData> allFrontiers;
     private final HashMap<ResourceKey<Level>, ArrayList<FrontierData>> dimensionsGlobalFrontiers;
     private final HashMap<SettingsUser, HashMap<ResourceKey<Level>, ArrayList<FrontierData>>> usersDimensionsPersonalFrontiers;
     private final HashMap<Integer, PendingShareFrontier> pendingShareFrontiers;
-    private int pendingShareFrontiersTick = 0;
     private FrontierSettings frontierSettings;
     private File ModDir;
     private boolean frontierOwnersChecked = false;
+    private boolean frontiersDirty = false;
+    private long lastFrontiersUpdateAt = 0L;
+    private long lastFrontiersSaveAt = 0L;
 
     private static int pendingShareFrontierID = 0;
-    private static final int pendingShareFrontierTickDuration = 1200;
 
     public FrontiersManager() {
-        instance = this;
         allFrontiers = new HashMap<>();
         dimensionsGlobalFrontiers = new HashMap<>();
         usersDimensionsPersonalFrontiers = new HashMap<>();
         pendingShareFrontiers = new HashMap<>();
         frontierSettings = new FrontierSettings();
-
-        EventHandler.subscribeServerTickEvent(this, server -> {
-            ++pendingShareFrontiersTick;
-
-            if (pendingShareFrontiersTick >= 100) {
-                pendingShareFrontiersTick -= 100;
-
-                for (PendingShareFrontier pending : pendingShareFrontiers.values()) {
-                    pending.tickCount += 100;
-
-                    if (pending.tickCount >= pendingShareFrontierTickDuration) {
-                        FrontierData frontier = getFrontierFromID(pending.frontierID);
-                        if (frontier == null) {
-                            continue;
-                        }
-
-                        if (frontier.getUsersShared() != null) {
-                            boolean removed = frontier.getUsersShared().removeIf(x -> x.getUser().equals(pending.targetUser));
-                            if (removed) {
-                                saveFrontierData();
-                                PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier), frontier, server);
-                            }
-                        }
-                    }
-                }
-
-                pendingShareFrontiers.entrySet().removeIf(x -> x.getValue().tickCount >= pendingShareFrontierTickDuration);
-            }
-        });
     }
 
     public void close() {
-        EventHandler.unsubscribeAllEvents(this);
+        if (frontiersDirty) {
+            saveFrontiersNow();
+        }
     }
 
     public void setSettings(FrontierSettings frontierSettings) {
@@ -152,32 +126,12 @@ public class FrontiersManager {
                                            @Nullable String sourcePluginId,
                                            @Nullable List<BlockPos> vertices,
                                            @Nullable List<ChunkPos> chunks) {
-        FrontierData frontier = new FrontierData();
-        frontier.setId(frontierId);
-        frontier.setOwner(new SettingsUser(player));
-        frontier.setDimension(dimension);
-        frontier.setPersonal(personal);
-        frontier.setSourcePluginId(sourcePluginId);
-        frontier.setColor(ColorHelper.getRandomColor());
-        frontier.setCreated(new Date());
-
-        if (vertices != null) {
-            frontier.setMode(FrontierData.Mode.Vertex);
-            for (BlockPos vertex : vertices) {
-                frontier.addVertex(vertex);
-            }
-        }
-
-        if (chunks != null) {
-            frontier.setMode(FrontierData.Mode.Chunk);
-            for (ChunkPos chunk : chunks) {
-                frontier.toggleChunk(chunk);
-            }
-        }
+        FrontierData frontier = FrontierCreationFactory.createFrontier(frontierId, new SettingsUser(player), dimension, personal, sourcePluginId,
+                vertices, chunks);
 
         frontiers.add(frontier);
         allFrontiers.put(frontier.getId(), frontier);
-        saveFrontierData();
+        saveFrontiersNow();
 
         return frontier;
     }
@@ -191,7 +145,7 @@ public class FrontiersManager {
         frontiers.add(frontier);
         allFrontiers.put(frontier.getId(), frontier);
 
-        saveFrontierData();
+        saveFrontiersNow();
     }
 
     public void addGlobalFrontier(FrontierData frontier) {
@@ -203,13 +157,13 @@ public class FrontiersManager {
         frontiers.add(frontier);
         allFrontiers.put(frontier.getId(), frontier);
 
-        saveFrontierData();
+        saveFrontiersNow();
     }
 
     public void addPersonalFrontier(SettingsUser user, FrontierData frontier) {
         List<FrontierData> frontiers = this.getAllPersonalFrontiers(user, frontier.getDimension());
         frontiers.add(frontier);
-        saveFrontierData();
+        saveFrontiersNow();
     }
 
     public boolean deleteGlobalFrontier(ResourceKey<Level> dimension, UUID id) {
@@ -218,11 +172,11 @@ public class FrontiersManager {
             return false;
         }
 
-        boolean deleted = frontiers.removeIf(x -> x.id.equals(id));
+        boolean deleted = frontiers.removeIf(x -> x.getId().equals(id));
         deleted |= allFrontiers.remove(id) != null;
 
         if (deleted) {
-            saveFrontierData();
+            saveFrontiersNow();
         }
 
         return deleted;
@@ -243,61 +197,48 @@ public class FrontiersManager {
             allFrontiers.remove(id);
         }
 
-        boolean deleted = frontiers.removeIf(x -> x.id.equals(id));
+        boolean deleted = frontiers.removeIf(x -> x.getId().equals(id));
 
         if (deleted) {
-            saveFrontierData();
+            saveFrontiersNow();
         }
 
         return deleted;
     }
 
-    public boolean updateGlobalFrontier(FrontierData updatedFrontier) {
-        List<FrontierData> frontiers = dimensionsGlobalFrontiers.get(updatedFrontier.getDimension());
-        if (frontiers == null) {
+    public boolean applyGlobalFrontierChange(UUID frontierId, FrontierChange change) {
+        FrontierData frontier = allFrontiers.get(frontierId);
+        if (frontier == null || frontier.getPersonal()) {
             return false;
         }
 
-        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId().equals(updatedFrontier.getId()));
-
-        if (index < 0) {
-            return false;
-        }
-
-        updatedFrontier.setModified(new Date());
-
-        FrontierData frontier = frontiers.get(index);
-        frontier.updateFromData(updatedFrontier);
-
-        saveFrontierData();
-
+        frontier.setModified(new Date());
+        change.setModifiedTime(frontier.getModified().getTime());
+        frontier.applyChange(change);
+        markFrontiersUpdated();
         return true;
     }
 
-    public boolean updatePersonalFrontier(SettingsUser user, FrontierData updatedFrontier) {
+    public boolean applyPersonalFrontierChange(SettingsUser user, UUID frontierId, FrontierChange change) {
         Map<ResourceKey<Level>, ArrayList<FrontierData>> dimensionsPersonalFrontiers = usersDimensionsPersonalFrontiers.get(user);
         if (dimensionsPersonalFrontiers == null) {
             return false;
         }
 
-        List<FrontierData> frontiers = dimensionsPersonalFrontiers.get(updatedFrontier.getDimension());
-        if (frontiers == null) {
+        FrontierData frontier = allFrontiers.get(frontierId);
+        if (frontier == null || !frontier.getPersonal()) {
             return false;
         }
 
-        int index = ContainerHelper.getIndexFromLambda(frontiers, i -> frontiers.get(i).getId().equals(updatedFrontier.getId()));
-
-        if (index < 0) {
+        List<FrontierData> frontiers = dimensionsPersonalFrontiers.get(frontier.getDimension());
+        if (frontiers == null || frontiers.stream().noneMatch(existing -> existing.getId().equals(frontierId))) {
             return false;
         }
 
-        updatedFrontier.setModified(new Date());
-
-        FrontierData frontier = frontiers.get(index);
-        frontier.updateFromData(updatedFrontier);
-
-        saveFrontierData();
-
+        frontier.setModified(new Date());
+        change.setModifiedTime(frontier.getModified().getTime());
+        frontier.applyChange(change);
+        markFrontiersUpdated();
         return true;
     }
 
@@ -312,7 +253,7 @@ public class FrontiersManager {
             return false;
         }
 
-        boolean deleted = frontiers.removeIf(x -> x.id.equals(id));
+        boolean deleted = frontiers.removeIf(x -> x.getId().equals(id));
         if (deleted) {
             FrontierData frontier = allFrontiers.get(id);
             if (frontier.getOwner().equals(user)) {
@@ -324,9 +265,8 @@ public class FrontiersManager {
                 frontier.setPersonal(false);
                 frontier.setModified(new Date());
                 frontier.removeAllUserShared();
-                frontier.removeChanges();
                 getAllGlobalFrontiers(dimension).add(frontier);
-                saveFrontierData();
+                saveFrontiersNow();
             }
         }
 
@@ -340,14 +280,14 @@ public class FrontiersManager {
             return false;
         }
 
-        boolean deleted = frontiers.removeIf(x -> x.id.equals(id));
+        boolean deleted = frontiers.removeIf(x -> x.getId().equals(id));
         if (deleted) {
             FrontierData frontier = allFrontiers.get(id);
             frontier.setPersonal(true);
             frontier.setModified(new Date());
             frontier.setOwner(newOwner);
             getAllPersonalFrontiers(newOwner, dimension).add(frontier);
-            saveFrontierData();
+            saveFrontiersNow();
         }
 
         return deleted;
@@ -379,17 +319,16 @@ public class FrontiersManager {
         return pendingShareFrontiers.get(messageID);
     }
 
+    public Map<Integer, PendingShareFrontier> getPendingShareFrontiers() {
+        return pendingShareFrontiers;
+    }
+
     public void removePendingShareFrontier(int messageID) {
         pendingShareFrontiers.remove(messageID);
     }
 
     public void removePendingShareFrontier(SettingsUser user) {
         pendingShareFrontiers.entrySet().removeIf(x -> x.getValue().targetUser.equals(user));
-    }
-
-    public boolean canSendCommandAcceptFrontier(ServerPlayer player) {
-        return frontierSettings.checkAction(FrontierSettings.Action.SharePersonalFrontier, new SettingsUser(player),
-                MapFrontiers.isOPorHost(player), null);
     }
 
     public void ensureOwners(MinecraftServer server) {
@@ -421,25 +360,31 @@ public class FrontiersManager {
 
             ListTag allFrontiersTagList = nbt.getListOrEmpty("frontiers");
             for (int i = 0; i < allFrontiersTagList.size(); ++i) {
-                FrontierData frontier = new FrontierData();
-                CompoundTag frontierTag = allFrontiersTagList.getCompound(i).get();
-                frontier.readFromNBT(frontierTag, version);
-                frontier.removePendingUsersShared();
-                allFrontiers.put(frontier.getId(), frontier);
+                try {
+                    FrontierData frontier = new FrontierData();
+                    CompoundTag frontierTag = NbtReadHelper.requireCompound(allFrontiersTagList, i, "frontiers");
+                    frontier.readFromNBT(frontierTag, version);
+                    frontier.removePendingUsersShared();
+                    allFrontiers.put(frontier.getId(), frontier);
 
-                if (frontier.getPersonal()) {
-                    getAllPersonalFrontiers(frontier.getOwner(), frontier.getDimension()).add(frontier);
+                    if (frontier.getPersonal()) {
+                        getAllPersonalFrontiers(frontier.getOwner(), frontier.getDimension()).add(frontier);
 
-                    if (frontier.getUsersShared() != null) {
-                        for (SettingsUserShared sharedUser : frontier.getUsersShared()) {
-                            getAllPersonalFrontiers(sharedUser.getUser(), frontier.getDimension()).add(frontier);
+                        if (frontier.getUsersShared() != null) {
+                            for (SettingsUserShared sharedUser : frontier.getUsersShared()) {
+                                getAllPersonalFrontiers(sharedUser.getUser(), frontier.getDimension()).add(frontier);
+                            }
                         }
+                    } else {
+                        getAllGlobalFrontiers(frontier.getDimension()).add(frontier);
                     }
-                } else {
-                    getAllGlobalFrontiers(frontier.getDimension()).add(frontier);
+                } catch (InvalidNbtFormatException e) {
+                    MapFrontiers.LOGGER.warn("Skipping invalid frontier at frontiers[{}]: {}", i, e.getMessage());
+                    needBackup = true;
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            MapFrontiers.LOGGER.warn("Failed to read frontiers.dat: {}", e.getMessage());
             return true;
         }
 
@@ -480,10 +425,13 @@ public class FrontiersManager {
             if (nbtFrontiers.isEmpty()) {
                 writeToNBT(nbtFrontiers);
                 saveFile("frontiers.dat", nbtFrontiers);
+                lastFrontiersSaveAt = System.currentTimeMillis();
             } else {
                 if (readFromNBT(nbtFrontiers)) {
                     MapFrontiers.createBackup(ModDir, "frontiers.dat");
-                    saveFrontierData();
+                    saveFrontiersNow();
+                } else {
+                    lastFrontiersSaveAt = System.currentTimeMillis();
                 }
             }
 
@@ -503,10 +451,32 @@ public class FrontiersManager {
         }
     }
 
-    public void saveFrontierData() {
+    public void markFrontiersUpdated() {
+        frontiersDirty = true;
+        lastFrontiersUpdateAt = System.currentTimeMillis();
+    }
+
+    public void flushPendingFrontierUpdates() {
+        if (!frontiersDirty) {
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        boolean debounceElapsed = now - lastFrontiersUpdateAt >= FRONTIERS_UPDATE_SAVE_DEBOUNCE_MS;
+        boolean maxDelayElapsed = lastFrontiersSaveAt == 0L
+                || now - lastFrontiersSaveAt >= FRONTIERS_UPDATE_SAVE_MAX_DELAY_MS;
+
+        if (debounceElapsed || maxDelayElapsed) {
+            saveFrontiersNow();
+        }
+    }
+
+    public void saveFrontiersNow() {
         CompoundTag nbtFrontiers = new CompoundTag();
         writeToNBT(nbtFrontiers);
         saveFile("frontiers.dat", nbtFrontiers);
+        frontiersDirty = false;
+        lastFrontiersSaveAt = System.currentTimeMillis();
     }
 
     private void saveSettingsData() {

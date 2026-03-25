@@ -1,10 +1,9 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
+import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.FrontierInfo;
@@ -12,7 +11,8 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.FrontierList;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.NewFrontier;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.Config;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import journeymap.api.v2.client.IClientAPI;
@@ -52,6 +52,7 @@ public class FullscreenMap {
     private IThemeButton buttonDelete;
 
     private boolean editing = false;
+    private boolean shapeDirty = false;
     private boolean relocating = false;
     private BlockPos relocatingPrevPos;
     private ChunkDrawing drawingChunk = ChunkDrawing.Nothing;
@@ -60,16 +61,17 @@ public class FullscreenMap {
     public FullscreenMap(IClientAPI jmAPI) {
         this.jmAPI = jmAPI;
 
-        ClientEventHandler.subscribeDeletedFrontierEvent(this, frontierID -> {
+        MapFrontiersClient.getFrontierEvents().subscribeDeleted(this, frontierID -> {
             if (frontierHighlighted != null && frontierHighlighted.getId().equals(frontierID)) {
                 frontierHighlighted = null;
                 editing = false;
+                shapeDirty = false;
                 relocating = false;
                 updateButtons();
             }
         });
 
-        ClientEventHandler.subscribeNewFrontierEvent(this, (frontierOverlay, playerID) -> {
+        MapFrontiersClient.getFrontierEvents().subscribeCreated(this, (frontierOverlay, playerID) -> {
             UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
             if (uiState == null || frontierOverlay.getDimension() != uiState.dimension) {
                 return;
@@ -95,23 +97,24 @@ public class FullscreenMap {
             }
         });
 
-        ClientEventHandler.subscribeUpdatedFrontierEvent(this, (frontierOverlay, playerID) -> {
+        MapFrontiersClient.getFrontierEvents().subscribeUpdated(this, (frontierOverlay, playerID) -> {
             if (frontierHighlighted != null && frontierHighlighted.getId().equals(frontierOverlay.getId())) {
                 frontierHighlighted = frontierOverlay;
                 frontierHighlighted.setHighlighted(true);
                 editing = false;
+                shapeDirty = false;
                 relocating = false;
                 updateButtons();
             }
         });
 
-        ClientEventHandler.subscribeUpdatedSettingsProfileEvent(this, profile -> {
+        MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> {
             updateButtons();
         });
 
-        ClientEventHandler.subscribeUpdatedConfigEvent(this, this::updateButtons);
+        ClientGlobalEvents.subscribeUpdatedConfigEvent(this, this::updateButtons);
 
-        ClientEventHandler.subscribeMouseReleaseEvent(this, button -> {
+        ClientGlobalEvents.subscribeMouseReleaseEvent(this, button -> {
             if (button != 1) {
                 return;
             }
@@ -130,7 +133,9 @@ public class FullscreenMap {
         if (frontierHighlighted != null) {
             frontierHighlighted.setHighlighted(false);
         }
-        ClientEventHandler.unsubscribeAllEvents(this);
+        MapFrontiersClient.getFrontierEvents().unsubscribe(this);
+        MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
+        ClientGlobalEvents.unsubscribeAllEvents(this);
     }
 
     public void addButtons(ThemeButtonDisplay buttonDisplay) {
@@ -205,9 +210,12 @@ public class FullscreenMap {
         if (editing) {
             editing = false;
             relocating = false;
-            boolean personalFrontier = frontierHighlighted.getPersonal();
-            FrontiersOverlayManager frontierManager = MapFrontiersClient.getFrontiersOverlayManager(personalFrontier);
-            frontierManager.clientUpdateFrontier(frontierHighlighted);
+            if (shapeDirty) {
+                FrontierChange change = new FrontierChange();
+                change.setShape(frontierHighlighted.getVertices(), frontierHighlighted.getChunks(), frontierHighlighted.getMode());
+                MapFrontiersClient.getOperationService().updateFrontier(frontierHighlighted, change);
+                shapeDirty = false;
+            }
         }
     }
 
@@ -266,6 +274,7 @@ public class FullscreenMap {
         buttonEdit.toggle();
         if (!editing) {
             editing = true;
+            shapeDirty = false;
             drawingChunk = ChunkDrawing.Nothing;
         } else {
             stopEditing();
@@ -276,10 +285,7 @@ public class FullscreenMap {
 
     private void buttonVisibleToggled() {
         frontierHighlighted.setVisibility(FrontierData.VisibilityData.Visibility.Frontier, !frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Frontier));
-
-        boolean personalFrontier = frontierHighlighted.getPersonal();
-        FrontiersOverlayManager frontierManager = MapFrontiersClient.getFrontiersOverlayManager(personalFrontier);
-        frontierManager.clientUpdateFrontier(frontierHighlighted);
+        MapFrontiersClient.getOperationService().updateFrontier(frontierHighlighted);
 
         updateButtons();
     }
@@ -291,7 +297,7 @@ public class FullscreenMap {
                     response -> {
                         if (response == ConfirmationDialog.Response.ConfirmAlternative) {
                             Config.askConfirmationFrontierDelete = false;
-                            ClientEventHandler.postUpdatedConfigEvent();
+                            ClientGlobalEvents.postUpdatedConfigEvent();
                         }
                         deleteFrontier();
                     }
@@ -305,10 +311,7 @@ public class FullscreenMap {
         if (editing) {
             stopEditing();
         }
-
-        boolean personalFrontier = frontierHighlighted.getPersonal();
-        FrontiersOverlayManager frontierManager = MapFrontiersClient.getFrontiersOverlayManager(personalFrontier);
-        frontierManager.clientDeleteFrontier(frontierHighlighted);
+        MapFrontiersClient.getOperationService().deleteFrontier(frontierHighlighted);
         frontierHighlighted = null;
         updateButtons();
     }
@@ -316,12 +319,17 @@ public class FullscreenMap {
     private void buttonAddVertex(BlockPos pos) {
         frontierHighlighted.selectClosestEdge(pos);
         frontierHighlighted.addVertex(pos);
+        shapeDirty = true;
 
         updateButtons();
     }
 
     private void buttonRemoveVertex() {
+        int vertexCount = frontierHighlighted.getVertexCount();
         frontierHighlighted.removeSelectedVertex();
+        if (frontierHighlighted.getVertexCount() != vertexCount) {
+            shapeDirty = true;
+        }
 
         updateButtons();
     }
@@ -330,11 +338,17 @@ public class FullscreenMap {
         for (ChunkPos chunk : chunks) {
             frontierHighlighted.removeChunk(chunk);
         }
+        if (!chunks.isEmpty()) {
+            shapeDirty = true;
+        }
     }
 
     private void buttonFillRegion(List<ChunkPos> chunks) {
         for (ChunkPos chunk : chunks) {
             frontierHighlighted.addChunk(chunk);
+        }
+        if (!chunks.isEmpty()) {
+            shapeDirty = true;
         }
     }
 
@@ -395,6 +409,7 @@ public class FullscreenMap {
                     } else {
                         drawingChunk = ChunkDrawing.Removing;
                     }
+                    shapeDirty = true;
                 }
                 return true;
             }
@@ -440,6 +455,7 @@ public class FullscreenMap {
 
         float snapDistance = 512.f / uiState.zoom * Config.snapDistance;
         frontierHighlighted.moveSelectedVertex(position, snapDistance);
+        shapeDirty = true;
         return true;
     }
 
@@ -453,6 +469,7 @@ public class FullscreenMap {
                 if (!position.equals(relocatingPrevPos)) {
                     frontierHighlighted.moveAllVertices(position.subtract(relocatingPrevPos));
                     relocatingPrevPos = position;
+                    shapeDirty = true;
                 }
             } else {
                 ChunkPos chunkPos = new ChunkPos(position);
@@ -460,6 +477,7 @@ public class FullscreenMap {
                 if (!chunkPos.equals(prevChunkPos)) {
                     frontierHighlighted.moveAllChunks(new ChunkPos(chunkPos.x - prevChunkPos.x, chunkPos.z - prevChunkPos.z));
                     relocatingPrevPos = position;
+                    shapeDirty = true;
                 }
             }
             return;
@@ -489,5 +507,6 @@ public class FullscreenMap {
         } else {
             frontierHighlighted.removeChunk(chunk);
         }
+        shapeDirty = true;
     }
 }

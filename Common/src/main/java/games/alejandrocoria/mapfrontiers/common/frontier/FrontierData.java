@@ -1,8 +1,10 @@
-package games.alejandrocoria.mapfrontiers.common;
+package games.alejandrocoria.mapfrontiers.common.frontier;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
+import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.client.Minecraft;
@@ -43,19 +45,13 @@ import java.util.stream.Collectors;
 
 @ParametersAreNonnullByDefault
 public class FrontierData {
-    public enum Change {
-        Name, Vertices, Banner, Shared, Visibility, Color;
-
-        public final static Change[] valuesArray = values();
-    }
-
     public enum Mode {
         Vertex, Chunk
     }
 
     protected UUID id;
     protected final List<BlockPos> vertices = new ArrayList<>();
-    protected Set<ChunkPos> chunks = new HashSet<>();
+    protected final Set<ChunkPos> chunks = new HashSet<>();
     protected Mode mode = Mode.Vertex;
     protected String name1 = "New";
     protected String name2 = "Frontier";
@@ -70,8 +66,6 @@ public class FrontierData {
     protected @Nullable String sourcePluginId;
     protected Date created;
     protected Date modified;
-
-    protected Set<Change> changes = EnumSet.noneOf(Change.class);
 
     public FrontierData() {
         id = new UUID(0, 0);
@@ -109,13 +103,10 @@ public class FrontierData {
 
         created = other.created;
         modified = other.modified;
-
-        changes = EnumSet.noneOf(Change.class);
     }
 
     public void updateFromData(FrontierData other) {
         if (other == this) {
-            changes = EnumSet.noneOf(Change.class);
             return;
         }
 
@@ -123,46 +114,60 @@ public class FrontierData {
         dimension = other.dimension;
         owner = other.owner;
         personal = other.personal;
-
-        if (other.changes.contains(Change.Visibility)) {
-            visibilityData = other.visibilityData;
-        }
-
-        if (other.changes.contains(Change.Color)) {
-            color = other.color;
-        }
-
-        if (other.changes.contains(Change.Name)) {
-            name1 = other.name1;
-            name2 = other.name2;
-        }
-
-        if (other.changes.contains(Change.Banner)) {
-            if (other.banner == null) {
-                banner = null;
-            } else {
-                banner = new BannerData(other.banner);
-            }
-        }
-
-        if (other.changes.contains(Change.Shared)) {
-            usersShared = other.usersShared;
-        }
-
-        if (other.changes.contains(Change.Vertices)) {
-            vertices.clear();
-            vertices.addAll(other.vertices);
-            chunks.clear();
-            chunks.addAll(other.chunks);
-            mode = other.mode;
-        }
+        visibilityData = new VisibilityData(other.visibilityData);
+        color = other.color;
+        name1 = other.name1;
+        name2 = other.name2;
+        banner = other.banner == null ? null : new BannerData(other.banner);
+        usersShared = other.usersShared;
+        vertices.clear();
+        vertices.addAll(other.vertices);
+        chunks.clear();
+        chunks.addAll(other.chunks);
+        mode = other.mode;
 
         copiedFrom = other.copiedFrom;
         sourcePluginId = other.sourcePluginId;
+        created = other.created;
 
         modified = other.modified;
+    }
 
-        changes = EnumSet.noneOf(Change.class);
+    public void applyChange(FrontierChange change) {
+        if (change.hasVisibilityChange()) {
+            visibilityData = change.getVisibility().getVisibilityData();
+        }
+
+        if (change.hasColorChange()) {
+            color = change.getColor().getColor();
+        }
+
+        if (change.hasNameChange()) {
+            name1 = change.getName().getName1();
+            name2 = change.getName().getName2();
+        }
+
+        if (change.hasBannerChange()) {
+            FrontierData.BannerData bannerData = change.getBanner().getBanner();
+            banner = bannerData == null ? null : new BannerData(bannerData);
+        }
+
+        if (change.hasShapeChange()) {
+            FrontierChange.ShapeChange shapeChange = change.getShape();
+            vertices.clear();
+            vertices.addAll(shapeChange.getVertices());
+            chunks.clear();
+            chunks.addAll(shapeChange.getChunks());
+            mode = shapeChange.getMode();
+        }
+
+        if (change.hasModifiedTime()) {
+            modified = new Date(change.getModifiedTime());
+        }
+    }
+
+    public void applySharingChange(FrontierSharingChange sharingChange) {
+        usersShared = sharingChange.getUsersShared();
     }
 
     public void setOwner(SettingsUser owner) {
@@ -212,14 +217,12 @@ public class FrontierData {
         synchronized (vertices) {
             vertices.clear();
         }
-        changes.add(Change.Vertices);
     }
 
     protected void addVertex(BlockPos pos, int index) {
         synchronized (vertices) {
             vertices.add(index, pos.atY(70));
         }
-        changes.add(Change.Vertices);
     }
 
     public void addVertex(BlockPos pos) {
@@ -236,7 +239,6 @@ public class FrontierData {
         synchronized (vertices) {
             vertices.remove(index);
         }
-        changes.add(Change.Vertices);
     }
 
     protected void moveVertex(BlockPos pos, int index) {
@@ -247,14 +249,12 @@ public class FrontierData {
         synchronized (vertices) {
             vertices.set(index, pos);
         }
-        changes.add(Change.Vertices);
     }
 
     public void moveAllVertices(BlockPos delta) {
         synchronized (vertices) {
             vertices.replaceAll(blockPos -> blockPos.offset(delta));
         }
-        changes.add(Change.Vertices);
     }
 
     public boolean toggleChunk(ChunkPos chunk) {
@@ -265,15 +265,12 @@ public class FrontierData {
                 added = true;
             }
         }
-
-        changes.add(Change.Vertices);
         return added;
     }
 
     public boolean addChunk(ChunkPos chunk) {
         synchronized (chunks) {
             if (chunks.add(chunk)) {
-                changes.add(Change.Vertices);
                 return true;
             }
         }
@@ -284,7 +281,6 @@ public class FrontierData {
     public boolean removeChunk(ChunkPos chunk) {
         synchronized (chunks) {
             if (chunks.remove(chunk)) {
-                changes.add(Change.Vertices);
                 return true;
             }
         }
@@ -306,36 +302,28 @@ public class FrontierData {
         synchronized (chunks) {
             chunks.clear();
         }
-        changes.add(Change.Vertices);
     }
 
     public void moveAllChunks(ChunkPos delta) {
         synchronized (chunks) {
-            chunks = chunks.stream().map(chunk -> new ChunkPos(chunk.x + delta.x, chunk.z + delta.z)).collect(Collectors.toSet());
+            Set<ChunkPos> movedChunks = chunks.stream()
+                    .map(chunk -> new ChunkPos(chunk.x + delta.x, chunk.z + delta.z))
+                    .collect(Collectors.toSet());
+            chunks.clear();
+            chunks.addAll(movedChunks);
         }
-        changes.add(Change.Vertices);
     }
 
     public void setMode(Mode mode) {
         this.mode = mode;
-        changes.add(Change.Vertices);
     }
 
     public Mode getMode() {
         return mode;
     }
 
-    public boolean isEmpty() {
-        if (mode == Mode.Vertex) {
-            return vertices.isEmpty();
-        } else {
-            return chunks.isEmpty();
-        }
-    }
-
     public void setName1(String name) {
         name1 = name;
-        changes.add(Change.Name);
     }
 
     public String getName1() {
@@ -344,7 +332,6 @@ public class FrontierData {
 
     public void setName2(String name) {
         name2 = name;
-        changes.add(Change.Name);
     }
 
     public String getName2() {
@@ -357,12 +344,10 @@ public class FrontierData {
 
     public void setVisibility(VisibilityData.Visibility visibility, boolean enable) {
         this.visibilityData.setValue(visibility, enable);
-        changes.add(Change.Visibility);
     }
 
     public void toggleVisibility(VisibilityData.Visibility visibility) {
         this.visibilityData.setValue(visibility, !this.visibilityData.getValue(visibility));
-        changes.add(Change.Visibility);
     }
 
     public boolean getVisibility(VisibilityData.Visibility visibility) {
@@ -371,7 +356,6 @@ public class FrontierData {
 
     public void setVisibilityData(VisibilityData visibilityData) {
         this.visibilityData = visibilityData;
-        changes.add(Change.Visibility);
     }
 
     public VisibilityData getVisibilityData() {
@@ -380,7 +364,6 @@ public class FrontierData {
 
     public void setColor(int color) {
         this.color = color;
-        changes.add(Change.Color);
     }
 
     public int getColor() {
@@ -396,8 +379,6 @@ public class FrontierData {
     }
 
     public void setBanner(@Nullable ItemStack itemBanner) {
-        changes.add(Change.Banner);
-
         if (itemBanner == null) {
             banner = null;
         } else {
@@ -407,7 +388,6 @@ public class FrontierData {
 
     public void setBanner(DyeColor base, BannerPatternLayers bannerPatterns) {
         banner = new BannerData(base, bannerPatterns);
-        changes.add(Change.Banner);
     }
 
     public boolean hasBanner() {
@@ -415,8 +395,6 @@ public class FrontierData {
     }
 
     public void setBannerData(@Nullable BannerData bannerData) {
-        changes.add(Change.Banner);
-
         if (bannerData == null) {
             banner = null;
         } else {
@@ -429,7 +407,6 @@ public class FrontierData {
     }
 
     public void setBannerRotation(int rotation) {
-        changes.add(Change.Banner);
         banner.rotation = rotation;
     }
 
@@ -454,21 +431,6 @@ public class FrontierData {
         }
 
         usersShared.add(userShared);
-        changes.add(Change.Shared);
-    }
-
-    public void removeUserShared(int index) {
-        if (usersShared == null) {
-            return;
-        }
-
-        usersShared.remove(index);
-
-        if (usersShared.isEmpty()) {
-            usersShared = null;
-        }
-
-        changes.add(Change.Shared);
     }
 
     public void removeUserShared(SettingsUser user) {
@@ -477,7 +439,6 @@ public class FrontierData {
         }
 
         usersShared.removeIf(x -> x.getUser().equals(user));
-        changes.add(Change.Shared);
     }
 
     public void removeAllUserShared() {
@@ -486,12 +447,6 @@ public class FrontierData {
         }
 
         usersShared = null;
-        changes.add(Change.Shared);
-    }
-
-    public void setUsersShared(List<SettingsUserShared> usersShared) {
-        this.usersShared = usersShared;
-        changes.add(Change.Shared);
     }
 
     public void removePendingUsersShared() {
@@ -500,7 +455,6 @@ public class FrontierData {
         }
 
         usersShared.removeIf(SettingsUserShared::isPending);
-        changes.add(Change.Shared);
     }
 
     public List<SettingsUserShared> getUsersShared() {
@@ -603,32 +557,10 @@ public class FrontierData {
         return sourcePluginId;
     }
 
-    // @Note: To record changes if done outside this class.
-    // It would be better to change that.
-    public void addChange(Change change) {
-        changes.add(change);
-    }
-
-    public void removeChange(Change change) {
-        changes.remove(change);
-    }
-
-    public void removeChanges() {
-        changes.clear();
-    }
-
-    public boolean hasChange(Change change) {
-        return changes.contains(change);
-    }
-
-    public Set<Change> getChanges() {
-        return EnumSet.copyOf(changes);
-    }
-
     public void readFromNBT(CompoundTag nbt, int version) {
-        id = UUID.fromString(nbt.getString("id").get());
-        color = nbt.getInt("color").get();
-        dimension = ResourceKey.create(Registries.DIMENSION, Identifier.parse(nbt.getString("dimension").get()));
+        id = UUID.fromString(NbtReadHelper.requireString(nbt, "id"));
+        color = NbtReadHelper.requireInt(nbt, "color");
+        dimension = ResourceKey.create(Registries.DIMENSION, Identifier.parse(NbtReadHelper.requireString(nbt, "dimension")));
         name1 = nbt.getStringOr("name1", "");
         name2 = nbt.getStringOr("name2", "");
 
@@ -642,7 +574,7 @@ public class FrontierData {
 
         if (nbt.contains("banner")) {
             banner = new BannerData();
-            banner.readFromNBT(nbt.getCompound("banner").get());
+            banner.readFromNBT(NbtReadHelper.requireCompound(nbt, "banner"));
         }
 
         if (personal) {
@@ -651,23 +583,36 @@ public class FrontierData {
                 usersShared = new ArrayList<>();
 
                 for (int i = 0; i < usersSharedTagList.size(); ++i) {
-                    SettingsUserShared userShared = new SettingsUserShared();
-                    userShared.readFromNBT(usersSharedTagList.getCompound(i).get());
-                    usersShared.add(userShared);
+                    try {
+                        SettingsUserShared userShared = new SettingsUserShared();
+                        userShared.readFromNBT(NbtReadHelper.requireCompound(usersSharedTagList, i, "usersShared"));
+                        usersShared.add(userShared);
+                    } catch (InvalidNbtFormatException e) {
+                        throw new InvalidNbtFormatException("Invalid shared user at usersShared[" + i + "] for frontier " + id + ": "
+                                + e.getMessage(), e);
+                    }
                 }
             }
         }
 
         ListTag verticesTagList = nbt.getListOrEmpty("vertices");
         for (int i = 0; i < verticesTagList.size(); ++i) {
-            CompoundTag posTag = verticesTagList.getCompound(i).get();
-            vertices.add(new BlockPos(posTag.getInt("X").get(), 70, posTag.getInt("Z").get()));
+            try {
+                CompoundTag posTag = NbtReadHelper.requireCompound(verticesTagList, i, "vertices");
+                vertices.add(new BlockPos(NbtReadHelper.requireInt(posTag, "X"), 70, NbtReadHelper.requireInt(posTag, "Z")));
+            } catch (InvalidNbtFormatException e) {
+                throw new InvalidNbtFormatException("Invalid vertex at vertices[" + i + "] for frontier " + id + ": " + e.getMessage(), e);
+            }
         }
 
         ListTag chunksTagList = nbt.getListOrEmpty("chunks");
         for (int i = 0; i < chunksTagList.size(); ++i) {
-            CompoundTag posTag = chunksTagList.getCompound(i).get();
-            chunks.add(new ChunkPos(posTag.getInt("X").get(), posTag.getInt("Z").get()));
+            try {
+                CompoundTag posTag = NbtReadHelper.requireCompound(chunksTagList, i, "chunks");
+                chunks.add(new ChunkPos(NbtReadHelper.requireInt(posTag, "X"), NbtReadHelper.requireInt(posTag, "Z")));
+            } catch (InvalidNbtFormatException e) {
+                throw new InvalidNbtFormatException("Invalid chunk at chunks[" + i + "] for frontier " + id + ": " + e.getMessage(), e);
+            }
         }
 
         String modeTag = nbt.getStringOr("mode", "");
@@ -692,15 +637,15 @@ public class FrontierData {
 
         if (nbt.contains("copiedFrom")) {
             copiedFrom = new CopiedFrom();
-            copiedFrom.readFromNBT(nbt.getCompound("copiedFrom").get(), version);
+            copiedFrom.readFromNBT(NbtReadHelper.requireCompound(nbt, "copiedFrom"), version);
         }
 
         if (nbt.contains("created")) {
-            created = new Date(nbt.getLong("created").get());
+            created = new Date(NbtReadHelper.requireLong(nbt, "created"));
         }
 
         if (nbt.contains("modified")) {
-            modified = new Date(nbt.getLong("modified").get());
+            modified = new Date(NbtReadHelper.requireLong(nbt, "modified"));
         }
     }
 
@@ -776,13 +721,6 @@ public class FrontierData {
     }
 
     public void fromBytes(FriendlyByteBuf buf) {
-        changes.clear();
-        for (Change change : Change.valuesArray) {
-            if (buf.readBoolean()) {
-                changes.add(change);
-            }
-        }
-
         id = UUIDHelper.fromBytes(buf);
         dimension = ResourceKey.create(Registries.DIMENSION, buf.readIdentifier());
         personal = buf.readBoolean();
@@ -793,69 +731,55 @@ public class FrontierData {
         }
         owner = new SettingsUser();
         owner.fromBytes(buf);
+        visibilityData.fromBytes(buf);
+        color = buf.readInt();
 
-        if (changes.contains(Change.Visibility)) {
-            visibilityData.fromBytes(buf);
+        int maxCharacters = 17;
+        int maxBytes = maxCharacters * 4;
+        name1 = buf.readUtf(maxBytes);
+        name2 = buf.readUtf(maxBytes);
+
+        if (name1.length() > maxCharacters) {
+            name1 = name1.substring(0, maxCharacters);
+        }
+        if (name2.length() > maxCharacters) {
+            name2 = name2.substring(0, maxCharacters);
         }
 
-        if (changes.contains(Change.Color)) {
-            color = buf.readInt();
+        if (buf.readBoolean()) {
+            banner = new BannerData();
+            banner.fromBytes(buf);
+        } else {
+            banner = null;
         }
 
-        if (changes.contains(Change.Name)) {
-            int maxCharacters = 17;
-            int maxBytes = maxCharacters * 4;
-            name1 = buf.readUtf(maxBytes);
-            name2 = buf.readUtf(maxBytes);
-
-            if (name1.length() > maxCharacters) {
-                name1 = name1.substring(0, maxCharacters);
+        if (buf.readBoolean()) {
+            usersShared = new ArrayList<>();
+            int usersCount = buf.readInt();
+            for (int i = 0; i < usersCount; ++i) {
+                SettingsUserShared userShared = new SettingsUserShared();
+                userShared.fromBytes(buf);
+                usersShared.add(userShared);
             }
-            if (name2.length() > maxCharacters) {
-                name2 = name2.substring(0, maxCharacters);
-            }
+        } else {
+            usersShared = null;
         }
 
-        if (changes.contains(Change.Banner)) {
-            if (buf.readBoolean()) {
-                banner = new BannerData();
-                banner.fromBytes(buf);
-            } else {
-                banner = null;
-            }
+        vertices.clear();
+        int vertexCount = buf.readInt();
+        for (int i = 0; i < vertexCount; ++i) {
+            BlockPos vertex = BlockPos.of(buf.readLong());
+            vertices.add(vertex);
         }
 
-        if (changes.contains(Change.Shared)) {
-            if (buf.readBoolean()) {
-                usersShared = new ArrayList<>();
-                int usersCount = buf.readInt();
-                for (int i = 0; i < usersCount; ++i) {
-                    SettingsUserShared userShared = new SettingsUserShared();
-                    userShared.fromBytes(buf);
-                    usersShared.add(userShared);
-                }
-            } else {
-                usersShared = null;
-            }
+        chunks.clear();
+        int chunkCount = buf.readInt();
+        for (int i = 0; i < chunkCount; ++i) {
+            ChunkPos chunk = new ChunkPos(buf.readLong());
+            chunks.add(chunk);
         }
 
-        if (changes.contains(Change.Vertices)) {
-            vertices.clear();
-            int vertexCount = buf.readInt();
-            for (int i = 0; i < vertexCount; ++i) {
-                BlockPos vertex = BlockPos.of(buf.readLong());
-                vertices.add(vertex);
-            }
-
-            chunks.clear();
-            int chunkCount = buf.readInt();
-            for (int i = 0; i < chunkCount; ++i) {
-                ChunkPos chunk = new ChunkPos(buf.readLong());
-                chunks.add(chunk);
-            }
-
-            mode = Mode.values()[buf.readInt()];
-        }
+        mode = Mode.values()[buf.readInt()];
 
         if (buf.readBoolean()) {
             copiedFrom = new CopiedFrom();
@@ -878,22 +802,6 @@ public class FrontierData {
     }
 
     public void toBytes(FriendlyByteBuf buf) {
-        toBytes(buf, true);
-    }
-
-    public void toBytes(FriendlyByteBuf buf, boolean onlyChanges) {
-        toBytes(buf, onlyChanges ? changes : null);
-    }
-
-    public void toBytes(FriendlyByteBuf buf, @Nullable Set<FrontierData.Change> withChanges) {
-        for (Change change : Change.valuesArray) {
-            if (withChanges != null) {
-                buf.writeBoolean(withChanges.contains(change));
-            } else {
-                buf.writeBoolean(true);
-            }
-        }
-
         UUIDHelper.toBytes(buf, id);
         buf.writeIdentifier(dimension.identifier());
         buf.writeBoolean(personal);
@@ -904,57 +812,43 @@ public class FrontierData {
             buf.writeUtf(sourcePluginId);
         }
         owner.toBytes(buf);
+        visibilityData.toBytes(buf);
+        buf.writeInt(color);
 
-        if (withChanges == null || withChanges.contains(Change.Visibility)) {
-            visibilityData.toBytes(buf);
+        int maxCharacters = 17;
+        int maxBytes = maxCharacters * 4;
+        buf.writeUtf(name1, maxBytes);
+        buf.writeUtf(name2, maxBytes);
+
+        if (banner == null) {
+            buf.writeBoolean(false);
+        } else {
+            buf.writeBoolean(true);
+            banner.toBytes(buf);
         }
 
-        if (withChanges == null || withChanges.contains(Change.Color)) {
-            buf.writeInt(color);
-        }
+        if (personal && usersShared != null) {
+            buf.writeBoolean(true);
 
-        if (withChanges == null || withChanges.contains(Change.Name)) {
-            int maxCharacters = 17;
-            int maxBytes = maxCharacters * 4;
-            buf.writeUtf(name1, maxBytes);
-            buf.writeUtf(name2, maxBytes);
-        }
-
-        if (withChanges == null || withChanges.contains(Change.Banner)) {
-            if (banner == null) {
-                buf.writeBoolean(false);
-            } else {
-                buf.writeBoolean(true);
-                banner.toBytes(buf);
+            buf.writeInt(usersShared.size());
+            for (SettingsUserShared userShared : usersShared) {
+                userShared.toBytes(buf);
             }
+        } else {
+            buf.writeBoolean(false);
         }
 
-        if (withChanges == null || withChanges.contains(Change.Shared)) {
-            if (personal && usersShared != null) {
-                buf.writeBoolean(true);
-
-                buf.writeInt(usersShared.size());
-                for (SettingsUserShared userShared : usersShared) {
-                    userShared.toBytes(buf);
-                }
-            } else {
-                buf.writeBoolean(false);
-            }
+        buf.writeInt(vertices.size());
+        for (BlockPos pos : vertices) {
+            buf.writeLong(pos.asLong());
         }
 
-        if (withChanges == null || withChanges.contains(Change.Vertices)) {
-            buf.writeInt(vertices.size());
-            for (BlockPos pos : vertices) {
-                buf.writeLong(pos.asLong());
-            }
-
-            buf.writeInt(chunks.size());
-            for (ChunkPos pos : chunks) {
-                buf.writeLong(pos.toLong());
-            }
-
-            buf.writeInt(mode.ordinal());
+        buf.writeInt(chunks.size());
+        for (ChunkPos pos : chunks) {
+            buf.writeLong(pos.toLong());
         }
+
+        buf.writeInt(mode.ordinal());
 
         if (wasCopied()) {
             buf.writeBoolean(true);
@@ -1034,7 +928,7 @@ public class FrontierData {
         }
 
         public void readFromNBT(CompoundTag nbt) {
-            baseColor = DyeColor.byId(nbt.getInt("Base").get());
+            baseColor = DyeColor.byId(NbtReadHelper.requireInt(nbt, "Base"));
             patterns = normalizePatterns(nbt.getListOrEmpty("Patterns"));
             rotation = nbt.getIntOr("Rotation", 0);
         }
@@ -1200,74 +1094,70 @@ public class FrontierData {
         public void readFromNBT(CompoundTag nbt, int version) {
             boolean splitVisibility = version >= 10;
 
-            setValue(Visibility.Frontier, nbt.getBoolean("visible").get());
+            setValue(Visibility.Frontier, NbtReadHelper.requireBoolean(nbt, "visible"));
             if (splitVisibility)
             {
-                setValue(Visibility.Fullscreen, nbt.contains("fullscreenVisible") ? nbt.getBoolean("fullscreenVisible").get() : true);
-                setValue(Visibility.FullscreenName, nbt.contains("fullscreenNameVisible") ? nbt.getBoolean("fullscreenNameVisible").get() : true);
-                setValue(Visibility.FullscreenOwner, nbt.contains("fullscreenOwnerVisible") ? nbt.getBoolean("fullscreenOwnerVisible").get() : false);
-                setValue(Visibility.FullscreenBanner, nbt.contains("fullscreenBannerVisible") ? nbt.getBoolean("fullscreenBannerVisible").get() : false);
-                setValue(Visibility.FullscreenDay, nbt.contains("fullscreenDay") ? nbt.getBoolean("fullscreenDay").get() : true);
-                setValue(Visibility.FullscreenNight, nbt.contains("fullscreenNight") ? nbt.getBoolean("fullscreenNight").get() : true);
-                setValue(Visibility.FullscreenUnderground, nbt.contains("fullscreenUnderground") ? nbt.getBoolean("fullscreenUnderground").get() : true);
-                setValue(Visibility.FullscreenTopo, nbt.contains("fullscreenTopo") ? nbt.getBoolean("fullscreenTopo").get() : true);
-                setValue(Visibility.FullscreenBiome, nbt.contains("fullscreenBiome") ? nbt.getBoolean("fullscreenBiome").get() : true);
-                setValue(Visibility.Minimap, nbt.contains("minimapVisible") ? nbt.getBoolean("minimapVisible").get() : true);
-                setValue(Visibility.MinimapName, nbt.contains("minimapNameVisible") ? nbt.getBoolean("minimapNameVisible").get() : true);
-                setValue(Visibility.MinimapOwner, nbt.contains("minimapOwnerVisible") ? nbt.getBoolean("minimapOwnerVisible").get() : false);
-                setValue(Visibility.MinimapBanner, nbt.contains("minimapBannerVisible") ? nbt.getBoolean("minimapBannerVisible").get() : false);
-                setValue(Visibility.MinimapDay, nbt.contains("minimapDay") ? nbt.getBoolean("minimapDay").get() : true);
-                setValue(Visibility.MinimapNight, nbt.contains("minimapNight") ? nbt.getBoolean("minimapNight").get() : true);
-                setValue(Visibility.MinimapUnderground, nbt.contains("minimapUnderground") ? nbt.getBoolean("minimapUnderground").get() : true);
-                setValue(Visibility.MinimapTopo, nbt.contains("minimapTopo") ? nbt.getBoolean("minimapTopo").get() : true);
-                setValue(Visibility.MinimapBiome, nbt.contains("minimapBiome") ? nbt.getBoolean("minimapBiome").get() : true);
-                setValue(Visibility.Webmap, nbt.contains("webmapVisible") ? nbt.getBoolean("webmapVisible") .get(): getValue(Visibility.Minimap));
-                setValue(Visibility.WebmapName, nbt.contains("webmapNameVisible") ? nbt.getBoolean("webmapNameVisible").get() : getValue(Visibility.MinimapName));
-                setValue(Visibility.WebmapOwner, nbt.contains("webmapOwnerVisible") ? nbt.getBoolean("webmapOwnerVisible").get() : getValue(Visibility.MinimapOwner));
-                setValue(Visibility.WebmapBanner, nbt.contains("webmapBannerVisible") ? nbt.getBoolean("webmapBannerVisible").get() : getValue(Visibility.MinimapBanner));
-                setValue(Visibility.WebmapDay, nbt.contains("webmapDay") ? nbt.getBoolean("webmapDay").get() : getValue(Visibility.MinimapDay));
-                setValue(Visibility.WebmapNight, nbt.contains("webmapNight") ? nbt.getBoolean("webmapNight").get() : getValue(Visibility.MinimapNight));
-                setValue(Visibility.WebmapUnderground, nbt.contains("webmapUnderground") ? nbt.getBoolean("webmapUnderground").get() : getValue(Visibility.MinimapUnderground));
-                setValue(Visibility.WebmapTopo, nbt.contains("webmapTopo") ? nbt.getBoolean("webmapTopo").get() : getValue(Visibility.MinimapTopo));
-                setValue(Visibility.WebmapBiome, nbt.contains("webmapBiome") ? nbt.getBoolean("webmapBiome").get() : getValue(Visibility.MinimapBiome));
+                setValue(Visibility.Fullscreen, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenVisible", true));
+                setValue(Visibility.FullscreenName, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenNameVisible", true));
+                setValue(Visibility.FullscreenOwner, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenOwnerVisible", false));
+                setValue(Visibility.FullscreenBanner, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenBannerVisible", false));
+                setValue(Visibility.FullscreenDay, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenDay", true));
+                setValue(Visibility.FullscreenNight, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenNight", true));
+                setValue(Visibility.FullscreenUnderground, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenUnderground", true));
+                setValue(Visibility.FullscreenTopo, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenTopo", true));
+                setValue(Visibility.FullscreenBiome, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenBiome", true));
+                setValue(Visibility.Minimap, NbtReadHelper.getBooleanOrDefault(nbt, "minimapVisible", true));
+                setValue(Visibility.MinimapName, NbtReadHelper.getBooleanOrDefault(nbt, "minimapNameVisible", true));
+                setValue(Visibility.MinimapOwner, NbtReadHelper.getBooleanOrDefault(nbt, "minimapOwnerVisible", false));
+                setValue(Visibility.MinimapBanner, NbtReadHelper.getBooleanOrDefault(nbt, "minimapBannerVisible", false));
+                setValue(Visibility.MinimapDay, NbtReadHelper.getBooleanOrDefault(nbt, "minimapDay", true));
+                setValue(Visibility.MinimapNight, NbtReadHelper.getBooleanOrDefault(nbt, "minimapNight", true));
+                setValue(Visibility.MinimapUnderground, NbtReadHelper.getBooleanOrDefault(nbt, "minimapUnderground", true));
+                setValue(Visibility.MinimapTopo, NbtReadHelper.getBooleanOrDefault(nbt, "minimapTopo", true));
+                setValue(Visibility.MinimapBiome, NbtReadHelper.getBooleanOrDefault(nbt, "minimapBiome", true));
+                setValue(Visibility.Webmap, NbtReadHelper.getBooleanOrDefault(nbt, "webmapVisible", getValue(Visibility.Minimap)));
+                setValue(Visibility.WebmapName, NbtReadHelper.getBooleanOrDefault(nbt, "webmapNameVisible", getValue(Visibility.MinimapName)));
+                setValue(Visibility.WebmapOwner, NbtReadHelper.getBooleanOrDefault(nbt, "webmapOwnerVisible", getValue(Visibility.MinimapOwner)));
+                setValue(Visibility.WebmapBanner, NbtReadHelper.getBooleanOrDefault(nbt, "webmapBannerVisible", getValue(Visibility.MinimapBanner)));
+                setValue(Visibility.WebmapDay, NbtReadHelper.getBooleanOrDefault(nbt, "webmapDay", getValue(Visibility.MinimapDay)));
+                setValue(Visibility.WebmapNight, NbtReadHelper.getBooleanOrDefault(nbt, "webmapNight", getValue(Visibility.MinimapNight)));
+                setValue(Visibility.WebmapUnderground, NbtReadHelper.getBooleanOrDefault(nbt, "webmapUnderground", getValue(Visibility.MinimapUnderground)));
+                setValue(Visibility.WebmapTopo, NbtReadHelper.getBooleanOrDefault(nbt, "webmapTopo", getValue(Visibility.MinimapTopo)));
+                setValue(Visibility.WebmapBiome, NbtReadHelper.getBooleanOrDefault(nbt, "webmapBiome", getValue(Visibility.MinimapBiome)));
             }
             else
             {
-                setValue(Visibility.Fullscreen, nbt.getBoolean("visible").get());
-                setValue(Visibility.FullscreenName, nbt.getBoolean("visible").get());
-                setValue(Visibility.FullscreenOwner, nbt.getBoolean("nameVisible").get());
+                setValue(Visibility.Fullscreen, NbtReadHelper.requireBoolean(nbt, "visible"));
+                setValue(Visibility.FullscreenName, NbtReadHelper.requireBoolean(nbt, "visible"));
+                setValue(Visibility.FullscreenOwner, NbtReadHelper.requireBoolean(nbt, "nameVisible"));
                 setValue(Visibility.FullscreenBanner, false);
-                setValue(Visibility.FullscreenDay, nbt.getBoolean("visible").get());
-                setValue(Visibility.FullscreenNight, nbt.getBoolean("visible").get());
-                setValue(Visibility.FullscreenUnderground, nbt.getBoolean("visible").get());
-                setValue(Visibility.FullscreenTopo, nbt.getBoolean("visible").get());
-                setValue(Visibility.FullscreenBiome, nbt.getBoolean("visible").get());
-                setValue(Visibility.Minimap, nbt.getBoolean("visible").get());
-                setValue(Visibility.MinimapName, nbt.getBoolean("nameVisible").get());
-                setValue(Visibility.MinimapOwner, nbt.getBoolean("ownerVisible").get());
+                setValue(Visibility.FullscreenDay, NbtReadHelper.requireBoolean(nbt, "visible"));
+                setValue(Visibility.FullscreenNight, NbtReadHelper.requireBoolean(nbt, "visible"));
+                setValue(Visibility.FullscreenUnderground, NbtReadHelper.requireBoolean(nbt, "visible"));
+                setValue(Visibility.FullscreenTopo, NbtReadHelper.requireBoolean(nbt, "visible"));
+                setValue(Visibility.FullscreenBiome, NbtReadHelper.requireBoolean(nbt, "visible"));
+                setValue(Visibility.Minimap, NbtReadHelper.requireBoolean(nbt, "visible"));
+                setValue(Visibility.MinimapName, NbtReadHelper.requireBoolean(nbt, "nameVisible"));
+                setValue(Visibility.MinimapOwner, NbtReadHelper.requireBoolean(nbt, "ownerVisible"));
                 setValue(Visibility.MinimapBanner, false);
-                setValue(Visibility.MinimapDay, nbt.getBoolean("visible").get());
-                setValue(Visibility.MinimapNight, nbt.getBoolean("visible").get());
-                setValue(Visibility.MinimapUnderground, nbt.getBoolean("visible").get());
-                setValue(Visibility.MinimapTopo, nbt.getBoolean("visible").get());
-                setValue(Visibility.MinimapBiome, nbt.getBoolean("visible").get());
-                setValue(Visibility.Webmap, nbt.getBoolean("visible").get());
-                setValue(Visibility.WebmapName, nbt.getBoolean("nameVisible").get());
-                setValue(Visibility.WebmapOwner, nbt.getBoolean("ownerVisible").get());
+                setValue(Visibility.MinimapDay, NbtReadHelper.requireBoolean(nbt, "visible"));
+                setValue(Visibility.MinimapNight, NbtReadHelper.requireBoolean(nbt, "visible"));
+                setValue(Visibility.MinimapUnderground, NbtReadHelper.requireBoolean(nbt, "visible"));
+                setValue(Visibility.MinimapTopo, NbtReadHelper.requireBoolean(nbt, "visible"));
+                setValue(Visibility.MinimapBiome, NbtReadHelper.requireBoolean(nbt, "visible"));
+                setValue(Visibility.Webmap, NbtReadHelper.requireBoolean(nbt, "visible"));
+                setValue(Visibility.WebmapName, NbtReadHelper.requireBoolean(nbt, "nameVisible"));
+                setValue(Visibility.WebmapOwner, NbtReadHelper.requireBoolean(nbt, "ownerVisible"));
                 setValue(Visibility.WebmapBanner, false);
-                setValue(Visibility.WebmapDay, nbt.getBoolean("visible").get());
-                setValue(Visibility.WebmapNight, nbt.getBoolean("visible").get());
-                setValue(Visibility.WebmapUnderground, nbt.getBoolean("visible").get());
-                setValue(Visibility.WebmapTopo, nbt.getBoolean("visible").get());
-                setValue(Visibility.WebmapBiome, nbt.getBoolean("visible").get());
+                setValue(Visibility.WebmapDay, NbtReadHelper.requireBoolean(nbt, "visible"));
+                setValue(Visibility.WebmapNight, NbtReadHelper.requireBoolean(nbt, "visible"));
+                setValue(Visibility.WebmapUnderground, NbtReadHelper.requireBoolean(nbt, "visible"));
+                setValue(Visibility.WebmapTopo, NbtReadHelper.requireBoolean(nbt, "visible"));
+                setValue(Visibility.WebmapBiome, NbtReadHelper.requireBoolean(nbt, "visible"));
             }
 
-            if (nbt.contains("announceInChat")) {
-                setValue(Visibility.AnnounceInChat, nbt.getBoolean("announceInChat").get());
-            }
-            if (nbt.contains("announceInTitle")) {
-                setValue(Visibility.AnnounceInTitle, nbt.getBoolean("announceInTitle").get());
-            }
+            setValue(Visibility.AnnounceInChat, NbtReadHelper.getBooleanOrDefault(nbt, "announceInChat", false));
+            setValue(Visibility.AnnounceInTitle, NbtReadHelper.getBooleanOrDefault(nbt, "announceInTitle", false));
         }
 
         public void writeToNBT(CompoundTag nbt) {
@@ -1375,7 +1265,7 @@ public class FrontierData {
         protected SettingsUser user = new SettingsUser();
 
         public void readFromNBT(CompoundTag nbt, int version) {
-            id = UUID.fromString(nbt.getString("id").get());
+            id = UUID.fromString(NbtReadHelper.requireString(nbt, "id"));
 
             user = new SettingsUser();
             user.readFromNBT(nbt.getCompoundOrEmpty("user"));

@@ -9,7 +9,7 @@ import org.lwjgl.glfw.GLFW;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-public class ScreenHelper {
+public final class ScreenHelper {
     public static float getScaleFactorThatFit(Minecraft minecraft, Screen screen, int minWidth, int minHeight) {
         int windowScale = (int) minecraft.getWindow().getGuiScale();
 
@@ -41,6 +41,5 @@ public class ScreenHelper {
     }
 
     private ScreenHelper() {
-
     }
 }

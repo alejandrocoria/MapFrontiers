@@ -3,8 +3,9 @@ package games.alejandrocoria.mapfrontiers.client;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.AcceptFrontierCopyDialog;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.Minecraft;
@@ -32,8 +33,7 @@ public class FabricClientCommandAccept {
             return messageID;
         }
 
-        FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(true);
-        FrontierOverlay currentFrontier = manager.getFrontierCopiedFrom(receivedFrontier.getCopiedFromId());
+        FrontierOverlay currentFrontier = MapFrontiersClient.getCopiedPersonalFrontier(receivedFrontier.getCopiedFromId());
         Minecraft.getInstance().setScreen(null);
         Minecraft.getInstance().schedule(() -> new AcceptFrontierCopyDialog(messageID, receivedFrontier, currentFrontier).display());
 

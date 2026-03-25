@@ -11,6 +11,7 @@ import java.util.Set;
  * <p>
  * For now, MapFrontiers limits each frontier name field to 17 characters.
  */
+@SuppressWarnings("unused")
 public final class FrontierMutation {
     private static final int MAX_NAME_LENGTH = 17;
 

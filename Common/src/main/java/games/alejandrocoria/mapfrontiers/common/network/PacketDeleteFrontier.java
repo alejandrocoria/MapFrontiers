@@ -3,18 +3,13 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
-import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
+import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationResult;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -60,55 +55,12 @@ public class PacketDeleteFrontier {
             if (player == null) {
                 return;
             }
-            MinecraftServer server = player.level().getServer();
-            SettingsUser playerUser = new SettingsUser(player);
-            FrontierData frontier = FrontiersManager.instance.getFrontierFromID(message.frontierID);
-
-            if (frontier != null) {
-                if (frontier.getPersonal()) {
-                    if (frontier.getOwner().equals(playerUser)) {
-                        boolean deleted = FrontiersManager.instance.deletePersonalFrontier(frontier.getOwner(),
-                                frontier.getDimension(), frontier.getId());
-                        if (deleted) {
-                            if (frontier.getUsersShared() != null) {
-                                for (SettingsUserShared userShared : frontier.getUsersShared()) {
-                                    FrontiersManager.instance.deletePersonalFrontier(userShared.getUser(),
-                                            frontier.getDimension(), frontier.getId());
-                                }
-                            }
-                            PacketHandler.sendToUsersWithAccess(new PacketFrontierDeleted(frontier.getDimension(),
-                                    frontier.getId(), frontier.getPersonal(), player.getId()), frontier, server);
-                        }
-                    } else {
-                        frontier.removeUserShared(playerUser);
-                        FrontiersManager.instance.deletePersonalFrontier(playerUser, frontier.getDimension(),
-                                frontier.getId());
-
-                        PacketHandler.sendTo(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(),
-                                frontier.getPersonal(), player.getId()), player);
-                        PacketHandler.sendToUsersWithAccess(new PacketFrontierUpdated(frontier, player.getId()),
-                                frontier, server);
-
-                        frontier.removeChange(FrontierData.Change.Shared);
-                    }
-
-                    return;
-                } else {
-                    if (FrontiersManager.instance.getSettings().checkAction(FrontierSettings.Action.DeleteGlobalFrontier, playerUser,
-                            MapFrontiers.isOPorHost(player), frontier.getOwner())) {
-                        boolean deleted = FrontiersManager.instance.deleteGlobalFrontier(frontier.getDimension(),
-                                frontier.getId());
-                        if (deleted) {
-                            PacketHandler.sendToAll(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(),
-                                    frontier.getPersonal(), player.getId()), server);
-                        }
-
-                        return;
-                    }
-                }
-
-                PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
+            if (MapFrontiers.getServerRuntime() == null) {
+                return;
             }
+
+            ServerFrontierOperationResult result = MapFrontiers.getServerRuntime().getOperationService().deleteFrontier(player, message.frontierID);
+            result.dispatchNetworkActions();
         }
     }
 }

@@ -2,8 +2,8 @@ package games.alejandrocoria.mapfrontiers;
 
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClientForge;
 import games.alejandrocoria.mapfrontiers.common.Config;
-import games.alejandrocoria.mapfrontiers.common.command.CommandAccept;
-import games.alejandrocoria.mapfrontiers.common.event.EventHandler;
+import games.alejandrocoria.mapfrontiers.server.command.CommandAccept;
+import games.alejandrocoria.mapfrontiers.server.event.ServerGlobalEvents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.client.event.AddGuiOverlayLayersEvent;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
@@ -73,19 +73,20 @@ public class MapFrontiersForge extends MapFrontiers {
     }
 
     public static void serverStarting(ServerStartingEvent event) {
-        EventHandler.postServerStartingEvent(event.getServer());
+        ServerGlobalEvents.postServerStartingEvent(event.getServer());
     }
 
     public static void serverStopping(ServerStoppingEvent event) {
-        EventHandler.postServerStoppingEvent(event.getServer());
+        ServerGlobalEvents.postServerStoppingEvent(event.getServer());
     }
 
     public static void playerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         ServerPlayer player = (ServerPlayer) event.getEntity();
-        EventHandler.postPlayerJoinedEvent(player.level().getServer(), player);
+        ServerGlobalEvents.postPlayerJoinedEvent(player.level().getServer(), player);
     }
 
     public static void onServerTick(TickEvent.ServerTickEvent.Post event) {
-        EventHandler.postServerTickEvent(event.server());
+        ServerGlobalEvents.postServerTickEvent(event.server());
     }
 }
+

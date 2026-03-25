@@ -1,10 +1,10 @@
-package games.alejandrocoria.mapfrontiers.common.util;
+package games.alejandrocoria.mapfrontiers.client.util;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.lang.reflect.Field;
 
 @ParametersAreNonnullByDefault
-public class ReflectionHelper {
+public final class ReflectionHelper {
     @SuppressWarnings("unchecked")
     public static <T> T getPrivateField(Object obj, String fieldName)
             throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
@@ -14,6 +14,5 @@ public class ReflectionHelper {
     }
 
     private ReflectionHelper() {
-
     }
 }

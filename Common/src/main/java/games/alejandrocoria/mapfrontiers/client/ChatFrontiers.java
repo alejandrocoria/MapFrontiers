@@ -1,8 +1,9 @@
 package games.alejandrocoria.mapfrontiers.client;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.Config;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -51,6 +52,11 @@ public class ChatFrontiers {
 
     public static void sendFrontier(FrontierOverlay frontier, SettingsUser user) {
         try {
+            LocalPlayer player = Minecraft.getInstance().player;
+            if (player == null) {
+                return;
+            }
+
             CompoundTag nbt = new CompoundTag();
             frontier.writeToNBT(nbt);
             String encodedData = encodeNBT(nbt);
@@ -69,7 +75,7 @@ public class ChatFrontiers {
 
             for (int i = 0; i < dataList.size(); ++i) {
                 String message = command + String.format(format, MapFrontiers.FRONTIER_DATA_VERSION, RandomId, i + 1, dataList.size(), dataList.get(i));
-                Minecraft.getInstance().player.connection.sendCommand(message);
+                player.connection.sendCommand(message);
             }
 
         } catch (Throwable t) {
@@ -166,8 +172,6 @@ public class ChatFrontiers {
                 text.append(button);
                 player.displayClientMessage(text, false);
 
-//                FrontierOverlay frontierOverlay = personalFrontiersOverlayManager.addFrontier(frontier);
-//                ClientEventHandler.postNewFrontierEvent(frontierOverlay, Minecraft.getInstance().player.getId());
                 receivedId = -1;
             }
 

@@ -3,10 +3,8 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -51,7 +49,7 @@ public class PacketFrontierCreated {
 
     public void encode(FriendlyByteBuf buf) {
         try {
-            frontier.toBytes(buf, false);
+            frontier.toBytes(buf);
             buf.writeInt(playerID);
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketFrontierCreated: %s", t));
@@ -61,11 +59,7 @@ public class PacketFrontierCreated {
     public static void handle(PacketContext<PacketFrontierCreated> ctx) {
         if (Side.CLIENT.equals(ctx.side())) {
             PacketFrontierCreated message = ctx.message();
-            FrontierOverlay frontierOverlay = MapFrontiersClient.getFrontiersOverlayManager(message.frontier.getPersonal()).addFrontier(message.frontier);
-
-            if (frontierOverlay != null) {
-                ClientEventHandler.postNewFrontierEvent(frontierOverlay, message.playerID);
-            }
+            MapFrontiersClient.getOperationService().applyFrontierCreated(message.frontier, message.playerID);
         }
     }
 }

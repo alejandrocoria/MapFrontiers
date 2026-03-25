@@ -3,9 +3,7 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
-import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.server.settings.ServerSettingsOperationResult;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -56,17 +54,14 @@ public class PacketRequestFrontierSettings {
         if (Side.SERVER.equals(ctx.side())) {
             PacketRequestFrontierSettings message = ctx.message();
             ServerPlayer player = ctx.sender();
-            if (player == null) {
+            if (player == null || MapFrontiers.getServerRuntime() == null) {
                 return;
             }
-            FrontierSettings settings = FrontiersManager.instance.getSettings();
 
-            if (settings.checkAction(FrontierSettings.Action.UpdateSettings, new SettingsUser(player),
-                    MapFrontiers.isOPorHost(player), null) && settings.getChangeCounter() > message.changeCounter) {
-                PacketHandler.sendTo(new PacketFrontierSettings(settings), player);
-            } else {
-                PacketHandler.sendTo(new PacketSettingsProfile(FrontiersManager.instance.getSettings().getProfile(player)), player);
-            }
+            ServerSettingsOperationResult result = MapFrontiers.getServerRuntime().getSettingsOperationService()
+                    .requestSettings(player, message.changeCounter);
+            result.dispatchNetworkActions();
         }
     }
 }
+
