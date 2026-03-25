@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.frontier;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
+import games.alejandrocoria.mapfrontiers.common.util.NbtFileHelper;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.Minecraft;
@@ -14,7 +15,6 @@ import net.minecraft.nbt.NbtIo;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -33,7 +33,7 @@ public class ClientLocalPersonalFrontierStore {
         CompoundTag nbtFrontiers = loadFile("personal_frontiers.dat");
         if (!nbtFrontiers.isEmpty()) {
             if (readFromNBT(nbtFrontiers, frontiers)) {
-                MapFrontiers.createBackup(modDir, "personal_frontiers.dat");
+                NbtFileHelper.createBackup(modDir, "personal_frontiers.dat");
                 saveFrontiers(frontiers);
             }
         }
@@ -128,15 +128,6 @@ public class ClientLocalPersonalFrontierStore {
     }
 
     private void saveFile(String filename, CompoundTag nbt) {
-        try {
-            File file = new File(modDir, filename);
-            try (FileOutputStream outputStream = new FileOutputStream(file)) {
-                NbtIo.writeCompressed(nbt, outputStream);
-            } catch (Exception e) {
-                MapFrontiers.LOGGER.error(e.getMessage(), e);
-            }
-        } catch (Exception e) {
-            MapFrontiers.LOGGER.error(e.getMessage(), e);
-        }
+        NbtFileHelper.saveCompressedNbtSafely(modDir, filename, nbt);
     }
 }

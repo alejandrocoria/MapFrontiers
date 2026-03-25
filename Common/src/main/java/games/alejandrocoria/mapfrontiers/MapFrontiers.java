@@ -11,11 +11,6 @@ import net.minecraft.server.level.ServerPlayer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 public class MapFrontiers {
     public static final String MODID = "mapfrontiers";
     public static final Logger LOGGER = LogManager.getLogger("MapFrontiers");
@@ -83,29 +78,5 @@ public class MapFrontiers {
 
     public static ServerFrontierRuntime getServerRuntime() {
         return serverRuntime;
-    }
-
-    public static void createBackup(File folder, String filename) {
-        File file = new File(folder, filename);
-        if (!file.exists()) {
-            return;
-        }
-
-        Path folderPath = folder.toPath();
-        Path bakFile = folderPath.resolve(filename + ".bak1");
-        try {
-            for (int i = 10; i > 0; i--) {
-                Path oldBak = folderPath.resolve(filename + ".bak" + i);
-                if (Files.exists(oldBak)) {
-                    if (i >= 10)
-                        Files.delete(oldBak);
-                    else
-                        Files.move(oldBak, folderPath.resolve(filename + ".bak" + (i + 1)));
-                }
-            }
-            Files.copy(file.toPath(), bakFile);
-        } catch (IOException exception) {
-            LOGGER.warn("Failed to back up file {}", file.toPath(), exception);
-        }
     }
 }

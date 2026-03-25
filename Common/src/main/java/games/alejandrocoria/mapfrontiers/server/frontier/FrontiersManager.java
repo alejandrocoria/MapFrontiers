@@ -8,6 +8,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
+import games.alejandrocoria.mapfrontiers.common.util.NbtFileHelper;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -26,7 +27,6 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -428,7 +428,7 @@ public class FrontiersManager {
                 lastFrontiersSaveAt = System.currentTimeMillis();
             } else {
                 if (readFromNBT(nbtFrontiers)) {
-                    MapFrontiers.createBackup(ModDir, "frontiers.dat");
+                    NbtFileHelper.createBackup(ModDir, "frontiers.dat");
                     saveFrontiersNow();
                 } else {
                     lastFrontiersSaveAt = System.currentTimeMillis();
@@ -442,7 +442,7 @@ public class FrontiersManager {
                 saveFile("settings.dat", nbtSettings);
             } else {
                 if (frontierSettings.readFromNBT(nbtSettings)) {
-                    MapFrontiers.createBackup(ModDir, "settings.dat");
+                    NbtFileHelper.createBackup(ModDir, "settings.dat");
                     saveSettingsData();
                 }
             }
@@ -499,15 +499,6 @@ public class FrontiersManager {
     }
 
     private void saveFile(String filename, CompoundTag nbt) {
-        try {
-            File f = new File(ModDir, filename);
-            try (FileOutputStream outputStream = new FileOutputStream(f)) {
-                NbtIo.writeCompressed(nbt, outputStream);
-            } catch (Exception e) {
-                MapFrontiers.LOGGER.error(e.getMessage(), e);
-            }
-        } catch (Exception e) {
-            MapFrontiers.LOGGER.error(e.getMessage(), e);
-        }
+        NbtFileHelper.saveCompressedNbtSafely(ModDir, filename, nbt);
     }
 }

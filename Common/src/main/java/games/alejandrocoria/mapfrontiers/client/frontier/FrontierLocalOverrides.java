@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.frontier;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
+import games.alejandrocoria.mapfrontiers.common.util.NbtFileHelper;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import it.unimi.dsi.fastutil.Pair;
@@ -14,7 +15,6 @@ import net.minecraft.nbt.NbtIo;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -117,7 +117,7 @@ public class FrontierLocalOverrides {
             CompoundTag nbtFrontiers = loadFile("frontier_overrides.dat");
             if (!nbtFrontiers.isEmpty()) {
                 if (readFromNBT(nbtFrontiers)) {
-                    MapFrontiers.createBackup(ModDir, "frontier_overrides.dat");
+                    NbtFileHelper.createBackup(ModDir, "frontier_overrides.dat");
                     saveData();
                 }
             }
@@ -135,16 +135,7 @@ public class FrontierLocalOverrides {
     }
 
     private void saveFile(String filename, CompoundTag nbt) {
-        try {
-            File f = new File(ModDir, filename);
-            try (FileOutputStream outputStream = new FileOutputStream(f)) {
-                NbtIo.writeCompressed(nbt, outputStream);
-            } catch (Exception e) {
-                MapFrontiers.LOGGER.error(e.getMessage(), e);
-            }
-        } catch (Exception e) {
-            MapFrontiers.LOGGER.error(e.getMessage(), e);
-        }
+        NbtFileHelper.saveCompressedNbtSafely(ModDir, filename, nbt);
     }
 
     private CompoundTag loadFile(String filename) {
