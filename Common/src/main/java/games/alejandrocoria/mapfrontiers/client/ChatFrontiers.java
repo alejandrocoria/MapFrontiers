@@ -52,6 +52,11 @@ public class ChatFrontiers {
 
     public static void sendFrontier(FrontierOverlay frontier, SettingsUser user) {
         try {
+            LocalPlayer player = Minecraft.getInstance().player;
+            if (player == null) {
+                return;
+            }
+
             CompoundTag nbt = new CompoundTag();
             frontier.writeToNBT(nbt);
             String encodedData = encodeNBT(nbt);
@@ -70,7 +75,7 @@ public class ChatFrontiers {
 
             for (int i = 0; i < dataList.size(); ++i) {
                 String message = command + String.format(format, MapFrontiers.FRONTIER_DATA_VERSION, RandomId, i + 1, dataList.size(), dataList.get(i));
-                Minecraft.getInstance().player.connection.sendCommand(message);
+                player.connection.sendCommand(message);
             }
 
         } catch (Throwable t) {
