@@ -47,7 +47,7 @@ public final class NbtFileHelper {
                 try {
                     outputStream.getFD().sync();
                 } catch (IOException e) {
-                    MapFrontiers.LOGGER.warn("Failed to sync temp file {}", tempPath);
+                    MapFrontiers.LOGGER.debug("Failed to sync temp file {}", tempPath);
                 }
             }
 
