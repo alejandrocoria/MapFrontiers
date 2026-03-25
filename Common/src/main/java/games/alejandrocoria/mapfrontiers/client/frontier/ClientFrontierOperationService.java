@@ -36,6 +36,7 @@ import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.Collection;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
@@ -345,6 +346,9 @@ public class ClientFrontierOperationService {
 
     public void applyFrontierCreated(FrontierData frontier, int playerId) {
         FrontierOverlay frontierOverlay = getManager(frontier.getPersonal()).addFrontier(frontier);
+        if (frontier.getPersonal()) {
+            persistLocalPersonalFrontiers();
+        }
         frontierEvents.postCreated(frontierOverlay, playerId);
     }
 
@@ -355,6 +359,9 @@ public class ClientFrontierOperationService {
                                      int playerId) {
         FrontierOverlay frontierOverlay = getManager(personal).applyFrontierChange(dimension, frontierId, change);
         if (frontierOverlay != null) {
+            if (personal) {
+                persistLocalPersonalFrontiers();
+            }
             frontierEvents.postUpdated(frontierOverlay, playerId);
         }
     }
@@ -365,6 +372,7 @@ public class ClientFrontierOperationService {
                                             int playerId) {
         FrontierOverlay updatedFrontier = personalManager.applyFrontierSharingChange(dimension, frontierId, sharingChange);
         if (updatedFrontier != null) {
+            persistLocalPersonalFrontiers();
             frontierEvents.postUpdated(updatedFrontier, playerId);
         }
     }
@@ -372,6 +380,9 @@ public class ClientFrontierOperationService {
     public void applyFrontierDeleted(ResourceKey<Level> dimension, UUID frontierId, boolean personal) {
         boolean deleted = getManager(personal).deleteFrontier(dimension, frontierId) != null;
         if (deleted) {
+            if (personal) {
+                persistLocalPersonalFrontiers();
+            }
             frontierEvents.postDeleted(frontierId);
         }
     }
@@ -388,6 +399,7 @@ public class ClientFrontierOperationService {
         frontierOverlay.removeAllUserShared();
         frontierOverlay.recreateBannerRenderer();
         globalManager.addFrontier(frontierOverlay);
+        persistLocalPersonalFrontiers();
         frontierEvents.postUpdated(frontierOverlay, -1);
         frontierOverlay.updateOverlay();
     }
@@ -404,6 +416,7 @@ public class ClientFrontierOperationService {
         frontierOverlay.setCurrentPlayerAsOwner();
         frontierOverlay.recreateBannerRenderer();
         personalManager.addFrontier(frontierOverlay);
+        persistLocalPersonalFrontiers();
         frontierEvents.postUpdated(frontierOverlay, -1);
         frontierOverlay.updateOverlay();
     }
@@ -417,12 +430,13 @@ public class ClientFrontierOperationService {
             return;
         }
 
-        SettingsUser playerUser = new SettingsUser(minecraft.player);
-        localPersonalStore.saveFrontiers(personalManager.getAllFrontiers().values().stream()
+        localPersonalStore.saveOwnedFrontierMirror(getAllPersonalFrontiers(), new SettingsUser(minecraft.player));
+    }
+
+    private Collection<FrontierOverlay> getAllPersonalFrontiers() {
+        return personalManager.getAllFrontiers().values().stream()
                 .flatMap(List::stream)
-                .filter(FrontierData::getPersonal)
-                .filter(frontier -> frontier.getOwner().equals(playerUser))
-                .toList());
+                .toList();
     }
 
     private FrontiersOverlayManager getManager(boolean personal) {

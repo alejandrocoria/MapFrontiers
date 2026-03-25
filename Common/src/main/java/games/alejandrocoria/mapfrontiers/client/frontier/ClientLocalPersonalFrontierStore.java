@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.frontier;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtFileHelper;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
@@ -50,6 +51,13 @@ public class ClientLocalPersonalFrontierStore {
         CompoundTag nbtFrontiers = new CompoundTag();
         writeToNBT(nbtFrontiers, frontiers);
         saveFile("personal_frontiers.dat", nbtFrontiers);
+    }
+
+    public void saveOwnedFrontierMirror(Collection<? extends FrontierData> frontiers, SettingsUser currentPlayer) {
+        saveFrontiers(frontiers.stream()
+                .filter(FrontierData::getPersonal)
+                .filter(frontier -> frontier.getOwner().equals(currentPlayer))
+                .toList());
     }
 
     public void clear() {

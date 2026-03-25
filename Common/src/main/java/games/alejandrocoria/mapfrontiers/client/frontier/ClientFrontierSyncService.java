@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -76,11 +77,24 @@ public class ClientFrontierSyncService {
             frontier.removeAllUserShared();
             PacketHandler.sendToServer(new PacketPersonalFrontier(frontier));
         }
-
-        localPersonalStore.clear();
+        persistOwnedPersonalFrontiers();
     }
 
     public void close() {
         localPersonalFrontiersLoaded = false;
+    }
+
+    private void persistOwnedPersonalFrontiers() {
+        if (minecraft.isLocalServer() || minecraft.player == null) {
+            return;
+        }
+
+        localPersonalStore.saveOwnedFrontierMirror(getAllPersonalFrontiers(), new SettingsUser(minecraft.player));
+    }
+
+    private Collection<FrontierOverlay> getAllPersonalFrontiers() {
+        return personalManager.getAllFrontiers().values().stream()
+                .flatMap(List::stream)
+                .toList();
     }
 }
