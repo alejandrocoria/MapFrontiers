@@ -7,6 +7,8 @@ import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
+import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -358,25 +360,31 @@ public class FrontiersManager {
 
             ListTag allFrontiersTagList = nbt.getListOrEmpty("frontiers");
             for (int i = 0; i < allFrontiersTagList.size(); ++i) {
-                FrontierData frontier = new FrontierData();
-                CompoundTag frontierTag = allFrontiersTagList.getCompound(i).get();
-                frontier.readFromNBT(frontierTag, version);
-                frontier.removePendingUsersShared();
-                allFrontiers.put(frontier.getId(), frontier);
+                try {
+                    FrontierData frontier = new FrontierData();
+                    CompoundTag frontierTag = NbtReadHelper.requireCompound(allFrontiersTagList, i, "frontiers");
+                    frontier.readFromNBT(frontierTag, version);
+                    frontier.removePendingUsersShared();
+                    allFrontiers.put(frontier.getId(), frontier);
 
-                if (frontier.getPersonal()) {
-                    getAllPersonalFrontiers(frontier.getOwner(), frontier.getDimension()).add(frontier);
+                    if (frontier.getPersonal()) {
+                        getAllPersonalFrontiers(frontier.getOwner(), frontier.getDimension()).add(frontier);
 
-                    if (frontier.getUsersShared() != null) {
-                        for (SettingsUserShared sharedUser : frontier.getUsersShared()) {
-                            getAllPersonalFrontiers(sharedUser.getUser(), frontier.getDimension()).add(frontier);
+                        if (frontier.getUsersShared() != null) {
+                            for (SettingsUserShared sharedUser : frontier.getUsersShared()) {
+                                getAllPersonalFrontiers(sharedUser.getUser(), frontier.getDimension()).add(frontier);
+                            }
                         }
+                    } else {
+                        getAllGlobalFrontiers(frontier.getDimension()).add(frontier);
                     }
-                } else {
-                    getAllGlobalFrontiers(frontier.getDimension()).add(frontier);
+                } catch (InvalidNbtFormatException e) {
+                    MapFrontiers.LOGGER.warn("Skipping invalid frontier at frontiers[{}]: {}", i, e.getMessage());
+                    needBackup = true;
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            MapFrontiers.LOGGER.warn("Failed to read frontiers.dat: {}", e.getMessage());
             return true;
         }
 

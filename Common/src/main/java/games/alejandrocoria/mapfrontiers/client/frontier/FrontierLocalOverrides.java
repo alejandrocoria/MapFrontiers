@@ -2,6 +2,8 @@ package games.alejandrocoria.mapfrontiers.client.frontier;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
+import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import it.unimi.dsi.fastutil.Pair;
 import net.minecraft.client.Minecraft;
@@ -56,22 +58,28 @@ public class FrontierLocalOverrides {
 
             ListTag overridesTagList = nbt.getListOrEmpty("overrides");
             for (int i = 0; i < overridesTagList.size(); ++i) {
-                CompoundTag overrideTag = overridesTagList.getCompound(i).get();
-                UUID id = UUID.fromString(overrideTag.getString("id").get());
+                try {
+                    CompoundTag overrideTag = NbtReadHelper.requireCompound(overridesTagList, i, "overrides");
+                    UUID id = UUID.fromString(NbtReadHelper.requireString(overrideTag, "id"));
 
-                CompoundTag dataTag = overrideTag.getCompound("data").get();
-                FrontierData.VisibilityData data = new FrontierData.VisibilityData();
-                data.readFromNBT(dataTag, version);
+                    CompoundTag dataTag = NbtReadHelper.requireCompound(overrideTag, "data");
+                    FrontierData.VisibilityData data = new FrontierData.VisibilityData();
+                    data.readFromNBT(dataTag, version);
 
-                CompoundTag maskTag = overrideTag.getCompound("mask").get();
-                FrontierData.VisibilityData mask = new FrontierData.VisibilityData(false);
-                mask.readFromNBT(maskTag, version);
+                    CompoundTag maskTag = NbtReadHelper.requireCompound(overrideTag, "mask");
+                    FrontierData.VisibilityData mask = new FrontierData.VisibilityData(false);
+                    mask.readFromNBT(maskTag, version);
 
-                if (mask.hasSome()) {
-                    overrides.put(id, Pair.of(data, mask));
+                    if (mask.hasSome()) {
+                        overrides.put(id, Pair.of(data, mask));
+                    }
+                } catch (InvalidNbtFormatException e) {
+                    MapFrontiers.LOGGER.warn("Skipping invalid frontier override at overrides[{}]: {}", i, e.getMessage());
+                    needBackup = true;
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            MapFrontiers.LOGGER.warn("Failed to read frontier_overrides.dat: {}", e.getMessage());
             return true;
         }
 

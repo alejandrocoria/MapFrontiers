@@ -2,6 +2,8 @@ package games.alejandrocoria.mapfrontiers.client.frontier;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
+import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
@@ -68,12 +70,18 @@ public class ClientLocalPersonalFrontierStore {
 
             ListTag frontiersTagList = nbt.getListOrEmpty("frontiers");
             for (int i = 0; i < frontiersTagList.size(); ++i) {
-                FrontierData frontier = new FrontierData();
-                CompoundTag frontierTag = frontiersTagList.getCompound(i).get();
-                frontier.readFromNBT(frontierTag, version);
-                frontiers.add(frontier);
+                try {
+                    FrontierData frontier = new FrontierData();
+                    CompoundTag frontierTag = NbtReadHelper.requireCompound(frontiersTagList, i, "frontiers");
+                    frontier.readFromNBT(frontierTag, version);
+                    frontiers.add(frontier);
+                } catch (InvalidNbtFormatException e) {
+                    MapFrontiers.LOGGER.warn("Skipping invalid personal frontier at frontiers[{}]: {}", i, e.getMessage());
+                    needBackup = true;
+                }
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            MapFrontiers.LOGGER.warn("Failed to read personal_frontiers.dat: {}", e.getMessage());
             return true;
         }
 

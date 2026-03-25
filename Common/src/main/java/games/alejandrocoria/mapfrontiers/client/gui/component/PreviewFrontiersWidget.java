@@ -11,6 +11,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -40,14 +41,7 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
     public PreviewFrontiersWidget() {
         super(0, 0, SIZE, SIZE, Component.empty());
 
-        HolderLookup<BannerPattern> patternRegistry = Minecraft.getInstance().level.registryAccess().lookup(Registries.BANNER_PATTERN).get();
-        BannerPatternLayers patterns = (new BannerPatternLayers.Builder())
-                .add(patternRegistry.get(BannerPatterns.FLOWER).get(), DyeColor.GREEN)
-                .add(patternRegistry.get(BannerPatterns.BRICKS).get(), DyeColor.LIGHT_GRAY)
-                .add(patternRegistry.get(BannerPatterns.BORDER).get(), DyeColor.LIGHT_BLUE)
-                .add(patternRegistry.get(BannerPatterns.TRIANGLE_TOP).get(), DyeColor.LIGHT_BLUE)
-                .add(patternRegistry.get(BannerPatterns.TRIANGLE_BOTTOM).get(), DyeColor.BLACK)
-                .add(patternRegistry.get(BannerPatterns.STRIPE_BOTTOM).get(), DyeColor.GREEN).build();
+        BannerPatternLayers patterns = createPreviewPatterns();
 
         SettingsUser owner = new SettingsUser();
         owner.username = "Player";
@@ -56,7 +50,9 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
         frontierData.setName1("Preview");
         frontierData.setName2("Frontier");
         frontierData.setColor(0xFFAACC60);
-        frontierData.setBanner(DyeColor.BLACK, patterns);
+        if (patterns != null) {
+            frontierData.setBanner(DyeColor.BLACK, patterns);
+        }
         frontierData.setDimension(ResourceKey.create(Registries.DIMENSION, Identifier.withDefaultNamespace("overworld")));
         frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenDay, true);
         frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenName, true);
@@ -88,6 +84,27 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
 
         customPreviewRenderer = Services.JOURNEYMAP.createCustomPreviewRenderer();
         configUpdated();
+    }
+
+    private static @Nullable BannerPatternLayers createPreviewPatterns() {
+        try {
+            ClientLevel level = Minecraft.getInstance().level;
+            if (level == null) {
+                return null;
+            }
+
+            HolderLookup<BannerPattern> patternRegistry = level.registryAccess().lookup(Registries.BANNER_PATTERN).orElseThrow();
+            return (new BannerPatternLayers.Builder())
+                    .add(patternRegistry.get(BannerPatterns.FLOWER).orElseThrow(), DyeColor.GREEN)
+                    .add(patternRegistry.get(BannerPatterns.BRICKS).orElseThrow(), DyeColor.LIGHT_GRAY)
+                    .add(patternRegistry.get(BannerPatterns.BORDER).orElseThrow(), DyeColor.LIGHT_BLUE)
+                    .add(patternRegistry.get(BannerPatterns.TRIANGLE_TOP).orElseThrow(), DyeColor.LIGHT_BLUE)
+                    .add(patternRegistry.get(BannerPatterns.TRIANGLE_BOTTOM).orElseThrow(), DyeColor.BLACK)
+                    .add(patternRegistry.get(BannerPatterns.STRIPE_BOTTOM).orElseThrow(), DyeColor.GREEN)
+                    .build();
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     public void configUpdated() {

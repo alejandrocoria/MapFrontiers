@@ -1,6 +1,8 @@
 package games.alejandrocoria.mapfrontiers.common.settings;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
+import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -84,17 +86,27 @@ public class SettingsGroup {
             users.clear();
             ListTag usersTagList = nbt.getListOrEmpty("users");
             for (int i = 0; i < usersTagList.size(); ++i) {
-                SettingsUser user = new SettingsUser();
-                CompoundTag userTag = usersTagList.getCompound(i).get();
-                user.readFromNBT(userTag);
-                users.add(user);
+                try {
+                    SettingsUser user = new SettingsUser();
+                    user.readFromNBT(NbtReadHelper.requireCompound(usersTagList, i, "users"));
+                    users.add(user);
+                } catch (InvalidNbtFormatException e) {
+                    MapFrontiers.LOGGER.warn("Skipping invalid user in group {} at users[{}]: {}", name, i, e.getMessage());
+                }
             }
         }
 
         actions.clear();
         ListTag actionsTagList = nbt.getListOrEmpty("actions");
         for (int i = 0; i < actionsTagList.size(); ++i) {
-            String actionTag = actionsTagList.getString(i).get();
+            String actionTag;
+            try {
+                actionTag = NbtReadHelper.requireString(actionsTagList, i, "actions");
+            } catch (InvalidNbtFormatException e) {
+                MapFrontiers.LOGGER.warn("Skipping invalid action in group {} at actions[{}]: {}", name, i, e.getMessage());
+                continue;
+            }
+
             List<FrontierSettings.Action> availableActions = FrontierSettings.getAvailableActions(name);
 
             try {

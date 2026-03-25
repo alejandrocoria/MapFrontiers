@@ -12,6 +12,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
@@ -22,6 +23,7 @@ import net.minecraft.world.level.block.entity.BannerPatternLayers;
 import net.minecraft.world.level.block.entity.BannerPatterns;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,24 +58,47 @@ public class HUD {
         HUD hud = new HUD();
         hud.previewMode = true;
 
-        HolderLookup<BannerPattern> patternRegistry = mc.level.registryAccess().lookup(Registries.BANNER_PATTERN).get();
-        BannerPatternLayers patterns = (new BannerPatternLayers.Builder())
-                .add(patternRegistry.get(BannerPatterns.FLOWER).get(), DyeColor.GREEN)
-                .add(patternRegistry.get(BannerPatterns.BRICKS).get(), DyeColor.LIGHT_GRAY)
-                .add(patternRegistry.get(BannerPatterns.BORDER).get(), DyeColor.LIGHT_BLUE)
-                .add(patternRegistry.get(BannerPatterns.TRIANGLE_TOP).get(), DyeColor.LIGHT_BLUE)
-                .add(patternRegistry.get(BannerPatterns.TRIANGLE_BOTTOM).get(), DyeColor.BLACK)
-                .add(patternRegistry.get(BannerPatterns.STRIPE_BOTTOM).get(), DyeColor.GREEN).build();
+        BannerPatternLayers patterns = createPreviewPatterns();
 
         FrontierData frontierData = new FrontierData();
-        frontierData.setOwner(new SettingsUser(mc.player));
+        SettingsUser owner = new SettingsUser();
+        if (mc.player != null) {
+            owner.username = mc.player.getName().getString();
+            owner.uuid = mc.player.getUUID();
+        } else {
+            owner.username = "Player";
+        }
+        frontierData.setOwner(owner);
         frontierData.setName1("Preview Frontier");
         frontierData.setName2("-----------------");
-        frontierData.setBanner(DyeColor.BLACK, patterns);
+        if (patterns != null) {
+            frontierData.setBanner(DyeColor.BLACK, patterns);
+        }
 
         hud.frontier = new FrontierOverlay(frontierData, null);
 
         return hud;
+    }
+
+    private static @Nullable BannerPatternLayers createPreviewPatterns() {
+        try {
+            ClientLevel level = mc.level;
+            if (level == null) {
+                return null;
+            }
+
+            HolderLookup<BannerPattern> patternRegistry = level.registryAccess().lookup(Registries.BANNER_PATTERN).orElseThrow();
+            return (new BannerPatternLayers.Builder())
+                    .add(patternRegistry.get(BannerPatterns.FLOWER).orElseThrow(), DyeColor.GREEN)
+                    .add(patternRegistry.get(BannerPatterns.BRICKS).orElseThrow(), DyeColor.LIGHT_GRAY)
+                    .add(patternRegistry.get(BannerPatterns.BORDER).orElseThrow(), DyeColor.LIGHT_BLUE)
+                    .add(patternRegistry.get(BannerPatterns.TRIANGLE_TOP).orElseThrow(), DyeColor.LIGHT_BLUE)
+                    .add(patternRegistry.get(BannerPatterns.TRIANGLE_BOTTOM).orElseThrow(), DyeColor.BLACK)
+                    .add(patternRegistry.get(BannerPatterns.STRIPE_BOTTOM).orElseThrow(), DyeColor.GREEN)
+                    .build();
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     public HUD() {
@@ -415,4 +440,3 @@ public class HUD {
         }
     }
 }
-

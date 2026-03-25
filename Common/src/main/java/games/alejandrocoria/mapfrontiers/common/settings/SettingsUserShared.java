@@ -1,6 +1,8 @@
 package games.alejandrocoria.mapfrontiers.common.settings;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
+import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -75,7 +77,13 @@ public class SettingsUserShared {
         actions.clear();
         ListTag actionsTagList = nbt.getListOrEmpty("actions");
         for (int i = 0; i < actionsTagList.size(); ++i) {
-            String actionTag = actionsTagList.getString(i).get();
+            String actionTag;
+            try {
+                actionTag = NbtReadHelper.requireString(actionsTagList, i, "actions");
+            } catch (InvalidNbtFormatException e) {
+                MapFrontiers.LOGGER.warn("Skipping invalid shared-user action at actions[{}]: {}", i, e.getMessage());
+                continue;
+            }
 
             try {
                 Action action = Action.valueOf(actionTag);
