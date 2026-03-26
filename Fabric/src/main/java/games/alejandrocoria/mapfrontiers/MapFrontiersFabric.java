@@ -1,8 +1,5 @@
 package games.alejandrocoria.mapfrontiers;
 
-import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;
-import fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents;
-import games.alejandrocoria.mapfrontiers.client.Config;
 import games.alejandrocoria.mapfrontiers.server.command.CommandAccept;
 import games.alejandrocoria.mapfrontiers.server.event.ServerGlobalEvents;
 import net.fabricmc.api.ModInitializer;
@@ -10,7 +7,6 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.neoforged.fml.config.ModConfig;
 
 public class MapFrontiersFabric extends MapFrontiers implements ModInitializer {
     public MapFrontiersFabric() {
@@ -18,9 +14,6 @@ public class MapFrontiersFabric extends MapFrontiers implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        ModConfigEvents.loading(MapFrontiers.MODID).register(config -> Config.bakeConfig());
-        ConfigRegistry.INSTANCE.register(MapFrontiersFabric.MODID, ModConfig.Type.CLIENT, Config.CLIENT_SPEC);
-
         init();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> CommandAccept.register(dispatcher));
@@ -32,4 +25,3 @@ public class MapFrontiersFabric extends MapFrontiers implements ModInitializer {
         LOGGER.info("Fabric onInitialize done");
     }
 }
-

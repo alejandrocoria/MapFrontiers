@@ -4,7 +4,9 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.platform.services.IPlatformHelper;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
+import net.neoforged.fml.loading.FMLPaths;
 
+import java.nio.file.Path;
 import java.util.Optional;
 
 public class NeoForgePlatformHelper implements IPlatformHelper {
@@ -20,5 +22,10 @@ public class NeoForgePlatformHelper implements IPlatformHelper {
             return modContainer.get().getModInfo().getVersion().toString();
         }
         return "";
+    }
+
+    @Override
+    public Path getConfigDirectory() {
+        return FMLPaths.CONFIGDIR.get();
     }
 }

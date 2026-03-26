@@ -1,6 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
-import games.alejandrocoria.mapfrontiers.client.Config;
+import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
@@ -78,8 +78,8 @@ public class NewFrontier extends AutoScaledScreen {
 
         mainLayout.addChild(new StringWidget(frontierTypeLabel, font).setColor(ColorConstants.TEXT), 0, 0, leftColumnSettings);
         buttonFrontierType = new OptionButton(font, 130, OptionButton.DO_NOTHING);
-        buttonFrontierType.addOption(Config.getTranslatedEnum(Config.FilterFrontierType.Global));
-        buttonFrontierType.addOption(Config.getTranslatedEnum(Config.FilterFrontierType.Personal));
+        buttonFrontierType.addOption(ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierType.Global));
+        buttonFrontierType.addOption(ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierType.Personal));
         buttonFrontierType.setSelected(0);
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
         boolean canCreateGlobal = MapFrontiersClient.isModOnServer()
@@ -93,33 +93,33 @@ public class NewFrontier extends AutoScaledScreen {
 
         mainLayout.addChild(new StringWidget(frontierModeLabel, font).setColor(ColorConstants.TEXT), 1, 0, leftColumnSettings);
         buttonFrontierMode = new OptionButton(font, 130, (b) -> {
-                    Config.newFrontierMode = FrontierData.Mode.values()[b.getSelected()];
+                    ClientConfig.NEW_FRONTIER_MODE.set(FrontierData.Mode.values()[b.getSelected()]);
                     shapeButtonsUpdated();
         });
-        buttonFrontierMode.addOption(Config.getTranslatedEnum(FrontierData.Mode.Vertex));
-        buttonFrontierMode.addOption(Config.getTranslatedEnum(FrontierData.Mode.Chunk));
-        buttonFrontierMode.setSelected(Config.newFrontierMode.ordinal());
+        buttonFrontierMode.addOption(ClientConfig.getTranslatedEnum(FrontierData.Mode.Vertex));
+        buttonFrontierMode.addOption(ClientConfig.getTranslatedEnum(FrontierData.Mode.Chunk));
+        buttonFrontierMode.setSelected(ClientConfig.NEW_FRONTIER_MODE.get().ordinal());
         mainLayout.addChild(buttonFrontierMode, 1, 1, rightColumnSettings);
 
         mainLayout.addChild(new StringWidget(afterCreatingLabel, font).setColor(ColorConstants.TEXT), 2, 0, leftColumnSettings);
         buttonAfterCreate = new OptionButton(font, 130,
-                (b) -> Config.afterCreatingFrontier = Config.AfterCreatingFrontier.values()[b.getSelected()]);
-        buttonAfterCreate.addOption(Config.getTranslatedEnum(Config.AfterCreatingFrontier.Info));
-        buttonAfterCreate.addOption(Config.getTranslatedEnum(Config.AfterCreatingFrontier.Edit));
-        buttonAfterCreate.addOption(Config.getTranslatedEnum(Config.AfterCreatingFrontier.Nothing));
-        buttonAfterCreate.setSelected(Config.afterCreatingFrontier.ordinal());
+                (b) -> ClientConfig.AFTER_CREATING_FRONTIER.set(ClientConfig.AfterCreatingFrontier.values()[b.getSelected()]));
+        buttonAfterCreate.addOption(ClientConfig.getTranslatedEnum(ClientConfig.AfterCreatingFrontier.Info));
+        buttonAfterCreate.addOption(ClientConfig.getTranslatedEnum(ClientConfig.AfterCreatingFrontier.Edit));
+        buttonAfterCreate.addOption(ClientConfig.getTranslatedEnum(ClientConfig.AfterCreatingFrontier.Nothing));
+        buttonAfterCreate.setSelected(ClientConfig.AFTER_CREATING_FRONTIER.get().ordinal());
         mainLayout.addChild(buttonAfterCreate, 2, 1, rightColumnSettings);
 
-        shapeVertexButtons = new ShapeVertexButtons(font, Config.newFrontierShape, (s) -> shapeButtonsUpdated());
+        shapeVertexButtons = new ShapeVertexButtons(font, ClientConfig.NEW_FRONTIER_SHAPE.get(), (s) -> shapeButtonsUpdated());
         mainLayout.addChild(shapeVertexButtons, 3, 0, 1, 2, centerColumnSettings);
-        shapeChunkButtons = new ShapeChunkButtons(font, Config.newFrontierChunkShape, (s) -> shapeButtonsUpdated());
+        shapeChunkButtons = new ShapeChunkButtons(font, ClientConfig.NEW_FRONTIER_CHUNK_SHAPE.get(), (s) -> shapeButtonsUpdated());
         mainLayout.addChild(shapeChunkButtons, 3, 0, 1, 2, centerColumnSettings);
 
         labelCount = mainLayout.addChild(new StringWidget(vertexCountLabel, font).setColor(ColorConstants.WHITE), 4, 0, leftColumnSettings);
-        textCount = new TextBoxInt(Config.newFrontierCount, 1, 999, font, 64);
+        textCount = new TextBoxInt(ClientConfig.NEW_FRONTIER_COUNT.get(), 1, 999, font, 64);
         textCount.setValueChangedCallback(value -> {
-            if (Config.isInRange("newFrontierVertexCount", value)) {
-                Config.newFrontierCount = value;
+            if (ClientConfig.NEW_FRONTIER_COUNT.isInRange(value)) {
+                ClientConfig.NEW_FRONTIER_COUNT.set(value);
             }
         });
         mainLayout.addChild(textCount, 4, 1, rightColumnSettings);
@@ -129,25 +129,25 @@ public class NewFrontier extends AutoScaledScreen {
         labelSize = mainLayout.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.WHITE), 5, 0, leftColumnSettings);
         textSize = new TextBoxInt(1, 1, 999, font, 64);
         textSize.setValueChangedCallback(value -> {
-            if (Config.newFrontierMode == FrontierData.Mode.Vertex) {
+            if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Vertex) {
                 if (shapeVertexButtons.getShapeMeasure() == ShapeVertexButtons.ShapeMeasure.Width) {
-                    if (Config.isInRange("newFrontierShapeWidth", value)) {
-                        Config.newFrontierShapeWidth = value;
+                    if (ClientConfig.NEW_FRONTIER_SHAPE_WIDTH.isInRange(value)) {
+                        ClientConfig.NEW_FRONTIER_SHAPE_WIDTH.set(value);
                     }
                 } else if (shapeVertexButtons.getShapeMeasure() == ShapeVertexButtons.ShapeMeasure.Radius) {
-                    if (Config.isInRange("newFrontierShapeRadius", value)) {
-                        Config.newFrontierShapeRadius = value;
+                    if (ClientConfig.NEW_FRONTIER_SHAPE_RADIUS.isInRange(value)) {
+                        ClientConfig.NEW_FRONTIER_SHAPE_RADIUS.set(value);
                     }
                 }
             } else {
                 if (shapeChunkButtons.getShapeMeasure() == ShapeChunkButtons.ShapeMeasure.Width) {
-                    if (Config.isInRange("newFrontierChunkShapeWidth", value)) {
-                        Config.newFrontierChunkShapeWidth = value;
+                    if (ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_WIDTH.isInRange(value)) {
+                        ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_WIDTH.set(value);
                         shapeChunkButtons.setSize(value);
                     }
                 } else if (shapeChunkButtons.getShapeMeasure() == ShapeChunkButtons.ShapeMeasure.Length) {
-                    if (Config.isInRange("newFrontierChunkShapeLength", value)) {
-                        Config.newFrontierChunkShapeLength = value;
+                    if (ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_LENGTH.isInRange(value)) {
+                        ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_LENGTH.set(value);
                         shapeChunkButtons.setSize(value);
                     }
                 }
@@ -184,12 +184,12 @@ public class NewFrontier extends AutoScaledScreen {
     }
 
     private void shapeButtonsUpdated() {
-        if (Config.newFrontierMode == FrontierData.Mode.Vertex) {
+        if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Vertex) {
             shapeVertexButtons.visible = true;
             shapeChunkButtons.visible = false;
 
             int selected = shapeVertexButtons.getSelected();
-            Config.newFrontierShape = selected;
+            ClientConfig.NEW_FRONTIER_SHAPE.set(selected);
 
             if (selected == 11) {
                 labelCount.visible = true;
@@ -216,17 +216,17 @@ public class NewFrontier extends AutoScaledScreen {
 
             if (shapeVertexButtons.getShapeMeasure() == ShapeVertexButtons.ShapeMeasure.Width) {
                 setLabelSizeMessage("mapfrontiers.shape_width");
-                textSize.setValue(String.valueOf(Config.newFrontierShapeWidth));
+                textSize.setValue(String.valueOf(ClientConfig.NEW_FRONTIER_SHAPE_WIDTH.get()));
             } else if (shapeVertexButtons.getShapeMeasure() == ShapeVertexButtons.ShapeMeasure.Radius) {
                 setLabelSizeMessage("mapfrontiers.shape_radius");
-                textSize.setValue(String.valueOf(Config.newFrontierShapeRadius));
+                textSize.setValue(String.valueOf(ClientConfig.NEW_FRONTIER_SHAPE_RADIUS.get()));
             }
         } else {
             shapeVertexButtons.visible = false;
             shapeChunkButtons.visible = true;
 
             int selected = shapeChunkButtons.getSelected();
-            Config.newFrontierChunkShape = selected;
+            ClientConfig.NEW_FRONTIER_CHUNK_SHAPE.set(selected);
 
             labelCount.visible = false;
             textCount.visible = false;
@@ -247,12 +247,12 @@ public class NewFrontier extends AutoScaledScreen {
 
             if (shapeChunkButtons.getShapeMeasure() == ShapeChunkButtons.ShapeMeasure.Width) {
                 setLabelSizeMessage("mapfrontiers.shape_width");
-                textSize.setValue(String.valueOf(Config.newFrontierChunkShapeWidth));
-                shapeChunkButtons.setSize(Config.newFrontierChunkShapeWidth);
+                textSize.setValue(String.valueOf(ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_WIDTH.get()));
+                shapeChunkButtons.setSize(ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_WIDTH.get());
             } else if (shapeChunkButtons.getShapeMeasure() == ShapeChunkButtons.ShapeMeasure.Length) {
                 setLabelSizeMessage("mapfrontiers.shape_length");
-                textSize.setValue(String.valueOf(Config.newFrontierChunkShapeLength));
-                shapeChunkButtons.setSize(Config.newFrontierChunkShapeLength);
+                textSize.setValue(String.valueOf(ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_LENGTH.get()));
+                shapeChunkButtons.setSize(ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_LENGTH.get());
             }
         }
 
@@ -270,13 +270,13 @@ public class NewFrontier extends AutoScaledScreen {
     }
 
     private List<BlockPos> calculateVertices() {
-        if (Config.newFrontierMode != FrontierData.Mode.Vertex) {
+        if (ClientConfig.NEW_FRONTIER_MODE.get() != FrontierData.Mode.Vertex) {
             return null;
         }
 
         List<Vec2> shapeVertices;
         if (shapeVertexButtons.getSelected() == 11) {
-            shapeVertices = shapeVertexButtons.getVertices(Config.newFrontierCount);
+            shapeVertices = shapeVertexButtons.getVertices(ClientConfig.NEW_FRONTIER_COUNT.get());
         } else {
             shapeVertices = shapeVertexButtons.getVertices();
         }
@@ -288,7 +288,7 @@ public class NewFrontier extends AutoScaledScreen {
         double radius = 0.0;
 
         if (shapeVertexButtons.getShapeMeasure() == ShapeVertexButtons.ShapeMeasure.Width) {
-            radius = Config.newFrontierShapeWidth;
+            radius = ClientConfig.NEW_FRONTIER_SHAPE_WIDTH.get();
             if (radius < 2) {
                 radius = 2;
             }
@@ -298,7 +298,7 @@ public class NewFrontier extends AutoScaledScreen {
                 radius = Math.sqrt(radius * radius * 2.0) / 2.0;
             }
         } else if (shapeVertexButtons.getShapeMeasure() == ShapeVertexButtons.ShapeMeasure.Radius) {
-            radius = Config.newFrontierShapeRadius;
+            radius = ClientConfig.NEW_FRONTIER_SHAPE_RADIUS.get();
             if (radius < 1) {
                 radius = 1;
             }
@@ -324,7 +324,7 @@ public class NewFrontier extends AutoScaledScreen {
     }
 
     private List<ChunkPos> calculateChunks() {
-        if (Config.newFrontierMode != FrontierData.Mode.Chunk) {
+        if (ClientConfig.NEW_FRONTIER_MODE.get() != FrontierData.Mode.Chunk) {
             return null;
         }
 
@@ -335,13 +335,13 @@ public class NewFrontier extends AutoScaledScreen {
         if (selected == 1) {
             chunks.add(playerChunk);
         } else if (selected == 2) {
-            int shapeWidth = Config.newFrontierChunkShapeWidth;
+            int shapeWidth = ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_WIDTH.get();
             ChunkPos start = new ChunkPos(playerChunk.x - shapeWidth / 2, playerChunk.z - shapeWidth / 2);
             for (int i = 0; i < shapeWidth * shapeWidth; ++i) {
                 chunks.add(new ChunkPos(start.x + (i % shapeWidth), start.z + i / shapeWidth));
             }
         } else if (selected == 3) {
-            int shapeWidth = Config.newFrontierChunkShapeWidth;
+            int shapeWidth = ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_WIDTH.get();
             ChunkPos start = new ChunkPos(playerChunk.x - shapeWidth / 2, playerChunk.z - shapeWidth / 2);
             for (int i = 0; i < shapeWidth * shapeWidth; ++i) {
                 if (i < shapeWidth || i >= shapeWidth * (shapeWidth - 1) || (i % shapeWidth) == 0 || (i % shapeWidth) == shapeWidth - 1) {
@@ -349,7 +349,7 @@ public class NewFrontier extends AutoScaledScreen {
                 }
             }
         } else if (selected == 4) {
-            int shapeWidth = Config.newFrontierChunkShapeWidth;
+            int shapeWidth = ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_WIDTH.get();
             ChunkPos start = new ChunkPos(playerChunk.x - shapeWidth / 2, playerChunk.z - shapeWidth / 2);
             for (int z = start.z; z < start.z + shapeWidth; ++z) {
                 for (int x = start.x; x < start.x + shapeWidth; ++x) {
@@ -365,13 +365,13 @@ public class NewFrontier extends AutoScaledScreen {
                 }
             }
         } else if (selected == 5) {
-            int shapeLength = Config.newFrontierChunkShapeLength;
+            int shapeLength = ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_LENGTH.get();
             int start = playerChunk.x - shapeLength / 2;
             for (int i = 0; i < shapeLength; ++i) {
                 chunks.add(new ChunkPos(start + i, playerChunk.z));
             }
         } else if (selected == 6) {
-            int shapeLength = Config.newFrontierChunkShapeLength;
+            int shapeLength = ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_LENGTH.get();
             int start = playerChunk.z - shapeLength / 2;
             for (int i = 0; i < shapeLength; ++i) {
                 chunks.add(new ChunkPos(playerChunk.x, start + i));

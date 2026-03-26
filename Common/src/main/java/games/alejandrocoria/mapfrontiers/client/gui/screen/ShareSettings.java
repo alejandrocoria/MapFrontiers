@@ -1,6 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
-import games.alejandrocoria.mapfrontiers.client.Config;
+import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
@@ -92,12 +92,12 @@ public class ShareSettings extends AutoScaledScreen {
 
         users = new ScrollBox(actualHeight - 128, 430, 16);
         users.setElementDeletePressedCallback(element -> {
-            if (Config.askConfirmationUserDelete) {
+            if (ClientConfig.ASK_CONFIRMATION_USER_DELETE.get()) {
                 new DeleteConfirmationDialog(
                         "mapfrontiers.delete_user_dialog",
                         response -> {
                             if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                                Config.askConfirmationUserDelete = false;
+                                ClientConfig.ASK_CONFIRMATION_USER_DELETE.set(false);
                                 ClientGlobalEvents.postUpdatedConfigEvent();
                             }
                             deleteUserPressed(element);

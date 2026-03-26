@@ -1,6 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
-import games.alejandrocoria.mapfrontiers.client.Config;
+import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.ButtonBase;
@@ -23,12 +23,12 @@ public class SortToolbar extends LinearLayout {
 
         this.onChange = onChange;
 
-        for (Config.Sorting sort : Config.Sorting.values()) {
-            int index = Config.frontierSorting.indexOf(sort);
+        for (ClientConfig.Sorting sort : ClientConfig.Sorting.values()) {
+            int index = ClientConfig.getFrontierSortingValues().indexOf(sort);
             if (index == -1) {
                 continue;
             }
-            SortButton button = addChild(new SortButton(font, sort, Config.frontierSortingDirection.get(index), this::buttonPressed));
+            SortButton button = addChild(new SortButton(font, sort, ClientConfig.getFrontierSortingDirectionValues().get(index), this::buttonPressed));
             if (index == 0) {
                 selected = button;
                 selected.setSelected(true);
@@ -38,20 +38,24 @@ public class SortToolbar extends LinearLayout {
 
     private void buttonPressed(Button button) {
         if (button instanceof SortButton sortButton) {
+            java.util.List<ClientConfig.Sorting> sorting = new java.util.ArrayList<>(ClientConfig.getFrontierSortingValues());
+            java.util.List<Boolean> direction = new java.util.ArrayList<>(ClientConfig.getFrontierSortingDirectionValues());
             if (sortButton == selected) {
                 sortButton.changeDirection();
-                Config.frontierSortingDirection.set(0, !Config.frontierSortingDirection.getFirst());
+                direction.set(0, !direction.getFirst());
             } else {
                 selected.setSelected(false);
 
-                int index = Config.frontierSorting.indexOf(sortButton.getSorting());
-                Config.frontierSorting.addFirst(Config.frontierSorting.remove(index));
-                Config.frontierSortingDirection.addFirst(Config.frontierSortingDirection.remove(index));
+                int index = sorting.indexOf(sortButton.getSorting());
+                sorting.addFirst(sorting.remove(index));
+                direction.addFirst(direction.remove(index));
 
                 selected = sortButton;
                 selected.setSelected(true);
             }
 
+            ClientConfig.setFrontierSortingValues(sorting);
+            ClientConfig.setFrontierSortingDirectionValues(direction);
             ClientGlobalEvents.postUpdatedConfigEvent();
         }
 
@@ -63,19 +67,19 @@ public class SortToolbar extends LinearLayout {
     public static class SortButton extends ButtonBase {
         private final LinearLayout layout = LinearLayout.horizontal();
         private boolean selected = false;
-        private final Config.Sorting sorting;
+        private final ClientConfig.Sorting sorting;
         private boolean direction;
         private final StringWidget label;
         private final IconButton iconButton;
 
-        public SortButton(Font font, Config.Sorting sorting, boolean direction, OnPress onPress) {
+        public SortButton(Font font, ClientConfig.Sorting sorting, boolean direction, OnPress onPress) {
             super(0, 0, 0, 0, Component.empty(), onPress, DEFAULT_NARRATION);
             this.sorting = sorting;
             this.direction = direction;
 
             layout.defaultCellSetting().alignVerticallyMiddle();
 
-            Component text = Config.getTranslatedEnum(sorting);
+            Component text = ClientConfig.getTranslatedEnum(sorting);
             this.label = layout.addChild(new StringWidget(text, font, 16));
             iconButton = layout.addChild(new IconButton(direction ? IconButton.Type.SortUp : IconButton.Type.SortDown, (b) -> {}));
 
@@ -93,7 +97,7 @@ public class SortToolbar extends LinearLayout {
             iconButton.setType(direction ? IconButton.Type.SortUp : IconButton.Type.SortDown);
         }
 
-        public Config.Sorting getSorting() {
+        public ClientConfig.Sorting getSorting() {
             return sorting;
         }
 
@@ -138,4 +142,3 @@ public class SortToolbar extends LinearLayout {
         }
     }
 }
-

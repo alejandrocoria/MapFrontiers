@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -59,7 +60,7 @@ public class ChatFrontiers {
             CompoundTag nbt = new CompoundTag();
             frontier.writeToNBT(nbt);
             String encodedData = encodeNBT(nbt);
-            String command = Config.sendCommand + " " + user.username + " #MapFrontiers:";
+            String command = ClientConfig.SEND_COMMAND.get() + " " + user.username + " #MapFrontiers:";
             String format = "%d:%d:%d:%d:%s";
 
             List<String> dataList = new ArrayList<>();

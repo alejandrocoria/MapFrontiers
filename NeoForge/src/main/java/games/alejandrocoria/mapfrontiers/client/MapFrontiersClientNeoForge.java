@@ -12,8 +12,6 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.config.ModConfig;
-import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingIn;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut;
@@ -95,15 +93,4 @@ public class MapFrontiersClientNeoForge extends MapFrontiersClient {
             event.register(openSettingsKey);
         }
     }
-
-    @EventBusSubscriber(modid = MapFrontiers.MODID)
-    public static class ConfigEventHandler {
-        @SubscribeEvent
-        public static void onModConfigEvent(ModConfigEvent.Loading configEvent) {
-            if (configEvent.getConfig().getModId().equals(MapFrontiersNeoForge.MODID) && configEvent.getConfig().getType() == ModConfig.Type.CLIENT) {
-                Config.bakeConfig();
-            }
-        }
-    }
 }
-

@@ -5,8 +5,8 @@ plugins {
     id 'multiloader-loader'
     id 'net.minecraftforge.accesstransformers' version '5.0.2'
     id 'net.minecraftforge.gradle' version '7.0.0-beta.55'
-    id 'net.darkhax.curseforgegradle' version '1.+'
-    id "com.modrinth.minotaur" version "2.+"
+    id 'net.darkhax.curseforgegradle' version '1.1.28'
+    id "com.modrinth.minotaur" version "2.9.0"
 }
 
 base.archivesName = "${project.mod_name}-${project.minecraft_version}-forge"

@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.client.Config;
+import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
@@ -89,9 +89,9 @@ public class FullscreenMap {
 
                 updateButtons();
 
-                if (Config.afterCreatingFrontier == Config.AfterCreatingFrontier.Edit) {
+                if (ClientConfig.AFTER_CREATING_FRONTIER.get() == ClientConfig.AfterCreatingFrontier.Edit) {
                     buttonEditToggled();
-                } else if (Config.afterCreatingFrontier == Config.AfterCreatingFrontier.Info) {
+                } else if (ClientConfig.AFTER_CREATING_FRONTIER.get() == ClientConfig.AfterCreatingFrontier.Info) {
                     buttonInfoPressed();
                 }
             }
@@ -226,12 +226,12 @@ public class FullscreenMap {
             return;
         }
 
-        buttonFrontiers.setDrawButton(Config.fullscreenButtons);
-        buttonNew.setDrawButton(Config.fullscreenButtons);
-        buttonInfo.setDrawButton(Config.fullscreenButtons);
-        buttonEdit.setDrawButton(Config.fullscreenButtons);
-        buttonVisible.setDrawButton(Config.fullscreenButtons);
-        buttonDelete.setDrawButton(Config.fullscreenButtons);
+        buttonFrontiers.setDrawButton(ClientConfig.FULLSCREEN_BUTTONS.get());
+        buttonNew.setDrawButton(ClientConfig.FULLSCREEN_BUTTONS.get());
+        buttonInfo.setDrawButton(ClientConfig.FULLSCREEN_BUTTONS.get());
+        buttonEdit.setDrawButton(ClientConfig.FULLSCREEN_BUTTONS.get());
+        buttonVisible.setDrawButton(ClientConfig.FULLSCREEN_BUTTONS.get());
+        buttonDelete.setDrawButton(ClientConfig.FULLSCREEN_BUTTONS.get());
 
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
         SettingsUser playerUser = new SettingsUser(player);
@@ -291,12 +291,12 @@ public class FullscreenMap {
     }
 
     private void buttonDelete() {
-        if (Config.askConfirmationFrontierDelete) {
+        if (ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.get()) {
             new DeleteConfirmationDialog(
                     "mapfrontiers.delete_frontier_dialog",
                     response -> {
                         if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                            Config.askConfirmationFrontierDelete = false;
+                            ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.set(false);
                             ClientGlobalEvents.postUpdatedConfigEvent();
                         }
                         deleteFrontier();
@@ -416,7 +416,7 @@ public class FullscreenMap {
             return false;
         }
 
-        if (Config.frontierVisibility == Config.Visibility.Never) {
+        if (ClientConfig.FRONTIER_VISIBILITY.get() == ClientConfig.Visibility.Never) {
             return false;
         }
 
@@ -453,7 +453,7 @@ public class FullscreenMap {
             return false;
         }
 
-        float snapDistance = 512.f / uiState.zoom * Config.snapDistance;
+        float snapDistance = 512.f / uiState.zoom * ClientConfig.SNAP_DISTANCE.get();
         frontierHighlighted.moveSelectedVertex(position, snapDistance);
         shapeDirty = true;
         return true;

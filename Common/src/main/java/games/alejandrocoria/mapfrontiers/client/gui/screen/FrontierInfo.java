@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
-import games.alejandrocoria.mapfrontiers.client.Config;
+import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
@@ -435,16 +435,16 @@ public class FrontierInfo extends AutoScaledScreen {
         mainLayout.addChild(editCol, 3, 3, LayoutSettings.defaults().alignVerticallyBottom());
 
         labelPasteName = editCol.addChild(new StringWidget(pasteNameLabel, font).setColor(ColorConstants.TEXT), 0, 0);
-        buttonPasteName = editCol.addChild(createVisibilityOptionButton(Config.pasteName, (value) -> Config.pasteName = value), 0, 1);
+        buttonPasteName = editCol.addChild(createVisibilityOptionButton(ClientConfig.PASTE_NAME.get(), (value) -> ClientConfig.PASTE_NAME.set(value)), 0, 1);
 
         labelPasteVisibility = editCol.addChild(new StringWidget(pasteVisibilityLabel, font).setColor(ColorConstants.TEXT), 1, 0);
-        buttonPasteVisibility = editCol.addChild(createVisibilityOptionButton(Config.pasteVisibility, (value) -> Config.pasteVisibility = value), 1, 1);
+        buttonPasteVisibility = editCol.addChild(createVisibilityOptionButton(ClientConfig.PASTE_VISIBILITY.get(), (value) -> ClientConfig.PASTE_VISIBILITY.set(value)), 1, 1);
 
         labelPasteColor = editCol.addChild(new StringWidget(pasteColorLabel, font).setColor(ColorConstants.TEXT), 2, 0);
-        buttonPasteColor = editCol.addChild(createVisibilityOptionButton(Config.pasteColor, (value) -> Config.pasteColor = value), 2, 1);
+        buttonPasteColor = editCol.addChild(createVisibilityOptionButton(ClientConfig.PASTE_COLOR.get(), (value) -> ClientConfig.PASTE_COLOR.set(value)), 2, 1);
 
         labelPasteBanner = editCol.addChild(new StringWidget(pasteBannerLabel, font).setColor(ColorConstants.TEXT), 3, 0);
-        buttonPasteBanner = editCol.addChild(createVisibilityOptionButton(Config.pasteBanner, (value) -> Config.pasteBanner = value), 3, 1);
+        buttonPasteBanner = editCol.addChild(createVisibilityOptionButton(ClientConfig.PASTE_BANNER.get(), (value) -> ClientConfig.PASTE_BANNER.set(value)), 3, 1);
 
         LinearLayout editButtons = LinearLayout.horizontal().spacing(3);
         editCol.addChild(editButtons, 4, 0);
@@ -461,8 +461,8 @@ public class FrontierInfo extends AutoScaledScreen {
 
         buttonPaste = pasteButtons.addChild(new IconButton(IconButton.Type.Paste, (b) -> {
             FrontierData clipboard = MapFrontiersClient.getClipboard();
-            if (clipboard != null && (Config.pasteName || Config.pasteVisibility || Config.pasteColor || Config.pasteBanner)) {
-                setFrontier(clipboard, Config.pasteName, Config.pasteVisibility, Config.pasteColor, Config.pasteBanner);
+            if (clipboard != null && (ClientConfig.PASTE_NAME.get() || ClientConfig.PASTE_VISIBILITY.get() || ClientConfig.PASTE_COLOR.get() || ClientConfig.PASTE_BANNER.get())) {
+                setFrontier(clipboard, ClientConfig.PASTE_NAME.get(), ClientConfig.PASTE_VISIBILITY.get(), ClientConfig.PASTE_COLOR.get(), ClientConfig.PASTE_BANNER.get());
                 sendCurrentInfoChangesToServer();
                 rebuildWidgets();
                 repositionElements();
@@ -474,7 +474,7 @@ public class FrontierInfo extends AutoScaledScreen {
         buttonPaste.setTooltip(pasteTooltip);
 
         buttonPasteOptions = pasteButtons.addChild(new IconButton(IconButton.Type.ArrowUp, (b) -> {
-            Config.pasteOptionsVisible = !Config.pasteOptionsVisible;
+            ClientConfig.PASTE_OPTIONS_VISIBLE.set(!ClientConfig.PASTE_OPTIONS_VISIBLE.get());
             updatePasteOptionsVisibility();
             ClientGlobalEvents.postUpdatedConfigEvent();
         }));
@@ -498,12 +498,12 @@ public class FrontierInfo extends AutoScaledScreen {
             }
         }));
         buttonDelete = bottomButtons.addChild(new SimpleButton(font, 144, deleteLabel, (b) -> {
-            if (Config.askConfirmationFrontierDelete) {
+            if (ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.get()) {
                 new DeleteConfirmationDialog(
                         "mapfrontiers.delete_frontier_dialog",
                         response -> {
                             if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                                Config.askConfirmationFrontierDelete = false;
+                                ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.set(false);
                                 ClientGlobalEvents.postUpdatedConfigEvent();
                             }
                             deleteFrontier();
@@ -747,16 +747,16 @@ public class FrontierInfo extends AutoScaledScreen {
     private void updatePasteOptionsVisibility() {
         buttonPaste.visible = buttonPaste.active && MapFrontiersClient.getClipboard() != null;
         buttonPasteOptions.visible = buttonPaste.visible;
-        buttonPasteOptions.setType(Config.pasteOptionsVisible ? IconButton.Type.ArrowDown : IconButton.Type.ArrowUp);
-        buttonPasteOptions.setTooltip(Config.pasteOptionsVisible ? closePasteTooltip : openPasteTooltip);
-        buttonPasteName.visible = buttonPaste.visible && Config.pasteOptionsVisible;
-        buttonPasteVisibility.visible = buttonPaste.visible && Config.pasteOptionsVisible;
-        buttonPasteColor.visible = buttonPaste.visible && Config.pasteOptionsVisible;
-        buttonPasteBanner.visible = buttonPaste.visible && Config.pasteOptionsVisible;
-        labelPasteName.visible = buttonPaste.visible && Config.pasteOptionsVisible;
-        labelPasteVisibility.visible = buttonPaste.visible && Config.pasteOptionsVisible;
-        labelPasteColor.visible = buttonPaste.visible && Config.pasteOptionsVisible;
-        labelPasteBanner.visible = buttonPaste.visible && Config.pasteOptionsVisible;
+        buttonPasteOptions.setType(ClientConfig.PASTE_OPTIONS_VISIBLE.get() ? IconButton.Type.ArrowDown : IconButton.Type.ArrowUp);
+        buttonPasteOptions.setTooltip(ClientConfig.PASTE_OPTIONS_VISIBLE.get() ? closePasteTooltip : openPasteTooltip);
+        buttonPasteName.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
+        buttonPasteVisibility.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
+        buttonPasteColor.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
+        buttonPasteBanner.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
+        labelPasteName.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
+        labelPasteVisibility.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
+        labelPasteColor.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
+        labelPasteBanner.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
     }
 
     private void updateUndoRedoVisibility() {

@@ -5,6 +5,7 @@ import games.alejandrocoria.mapfrontiers.platform.services.IPlatformHelper;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 
+import java.nio.file.Path;
 import java.util.Optional;
 
 public class FabricPlatformHelper implements IPlatformHelper {
@@ -20,5 +21,10 @@ public class FabricPlatformHelper implements IPlatformHelper {
             return modContainer.get().getMetadata().getVersion().getFriendlyString();
         }
         return "";
+    }
+
+    @Override
+    public Path getConfigDirectory() {
+        return FabricLoader.getInstance().getConfigDir();
     }
 }

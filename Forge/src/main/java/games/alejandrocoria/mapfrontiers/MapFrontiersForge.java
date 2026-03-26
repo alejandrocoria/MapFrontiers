@@ -1,6 +1,5 @@
 package games.alejandrocoria.mapfrontiers;
 
-import games.alejandrocoria.mapfrontiers.client.Config;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClientForge;
 import games.alejandrocoria.mapfrontiers.server.command.CommandAccept;
 import games.alejandrocoria.mapfrontiers.server.event.ServerGlobalEvents;
@@ -17,10 +16,7 @@ import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
-import net.minecraftforge.eventbus.api.listener.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -30,10 +26,7 @@ import net.minecraftforge.fml.loading.FMLEnvironment;
 @Mod(MapFrontiersForge.MODID)
 public class MapFrontiersForge extends MapFrontiers {
     public MapFrontiersForge(FMLJavaModLoadingContext context) {
-        context.registerConfig(ModConfig.Type.CLIENT, Config.CLIENT_SPEC);
-
         FMLCommonSetupEvent.getBus(context.getModBusGroup()).addListener(MapFrontiersForge::commonSetup);
-        ModConfigEvent.Loading.getBus(context.getModBusGroup()).addListener(MapFrontiersForge::onModConfigEvent);
 
         RegisterCommandsEvent.BUS.addListener(MapFrontiersForge::registerCommands);
         ServerStartingEvent.BUS.addListener(MapFrontiersForge::serverStarting);
@@ -61,13 +54,6 @@ public class MapFrontiersForge extends MapFrontiers {
         LOGGER.info("Forge commonSetup done");
     }
 
-    @SubscribeEvent
-    public static void onModConfigEvent(ModConfigEvent.Loading configEvent) {
-        if (configEvent.getConfig().getModId().equals(MapFrontiersForge.MODID) && configEvent.getConfig().getType() == ModConfig.Type.CLIENT) {
-            Config.bakeConfig();
-        }
-    }
-
     public static void registerCommands(RegisterCommandsEvent event) {
         CommandAccept.register(event.getDispatcher());
     }
@@ -89,4 +75,3 @@ public class MapFrontiersForge extends MapFrontiers {
         ServerGlobalEvents.postServerTickEvent(event.server());
     }
 }
-

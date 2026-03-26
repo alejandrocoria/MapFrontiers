@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers.client;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.api.MapFrontiersAPIBootstrap;
+import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.frontier.ClientFrontierEvents;
 import games.alejandrocoria.mapfrontiers.client.frontier.ClientFrontierOperationService;
@@ -85,6 +86,7 @@ public class MapFrontiersClient {
 
     protected static void init() {
         MapFrontiersAPIBootstrap.setLogger(new MapFrontiersApiLogAdapter());
+        ClientConfig.initialize();
 
         ClientGlobalEvents.subscribeClientTickEvent(MapFrontiersClient.class, client -> {
             if (client.level == null) {
@@ -133,7 +135,7 @@ public class MapFrontiersClient {
                 new ModSettings(false).display();
             }
 
-            if (player == null || Config.frontierVisibility == Config.Visibility.Never) {
+            if (player == null || ClientConfig.FRONTIER_VISIBILITY.get() == ClientConfig.Visibility.Never) {
                 return;
             }
 
@@ -148,7 +150,7 @@ public class MapFrontiersClient {
                     FrontierOverlay inside = i.next();
                     if (frontiers.stream().noneMatch(f -> f.getId().equals(inside.getId()))) {
                         boolean frontierAnnounceInChat = inside.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat);
-                        if (Config.getVisibilityValue(Config.announceInChat, frontierAnnounceInChat) && (inside.isNamed() || Config.announceUnnamedFrontiers)) {
+                        if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), frontierAnnounceInChat) && (inside.isNamed() || ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS.get())) {
                             player.displayClientMessage(Component.translatable("mapfrontiers.chat.leaving", createAnnounceTextWithName(inside)), false);
                         }
                         i.remove();
@@ -156,21 +158,21 @@ public class MapFrontiersClient {
                 }
 
                 for (FrontierOverlay frontier : frontiers) {
-                    if (insideFrontiers.add(frontier) && (frontier.isNamed() || Config.announceUnnamedFrontiers)) {
+                    if (insideFrontiers.add(frontier) && (frontier.isNamed() || ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS.get())) {
                         Component text = createAnnounceTextWithName(frontier);
 
                         boolean frontierAnnounceInChat = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat);
-                        if (Config.getVisibilityValue(Config.announceInChat, frontierAnnounceInChat)) {
+                        if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), frontierAnnounceInChat)) {
                             player.displayClientMessage(Component.translatable("mapfrontiers.chat.entering", text), false);
                         }
 
                         boolean frontierAnnounceInTitle = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInTitle);
-                        if (Config.getVisibilityValue(Config.announceInTitle, frontierAnnounceInTitle)) {
-                            if (Config.titleAnnouncementAboveHotbar) {
+                        if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_TITLE.get(), frontierAnnounceInTitle)) {
+                            if (ClientConfig.TITLE_ANNOUNCEMENT_ABOVE_HOTBAR.get()) {
                                 client.gui.setOverlayMessage(text, false);
-                            } else if (System.currentTimeMillis() >= lastTitleTime + Config.titleAnnouncementTimeout / 20 * 1000L) {
+                            } else if (System.currentTimeMillis() >= lastTitleTime + ClientConfig.TITLE_ANNOUNCEMENT_TIMEOUT.get() / 20 * 1000L) {
                                 lastTitleTime = System.currentTimeMillis();
-                                client.gui.setTimes(10, Config.titleAnnouncementDuration, 20);
+                                client.gui.setTimes(10, ClientConfig.TITLE_ANNOUNCEMENT_DURATION.get(), 20);
                                 client.gui.setTitle(text);
                             }
                         }

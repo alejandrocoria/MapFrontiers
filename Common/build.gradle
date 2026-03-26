@@ -28,7 +28,8 @@ dependencies {
     annotationProcessor 'io.github.llamalad7:mixinextras-common:0.3.5'
 
     compileOnly "mysticdrew:common-networking-common:${project.common_networking_version}"
-    api "fuzs.forgeconfigapiport:forgeconfigapiport-common-forgeapi:${forge_config_api_port_version}"
+    api "com.electronwill.night-config:core:${project.nightconfig_version}"
+    api "com.electronwill.night-config:toml:${project.nightconfig_version}"
     compileOnly("info.journeymap:journeymap-api-common:${project.journeymap_api_version}") {
         changing = true
     }

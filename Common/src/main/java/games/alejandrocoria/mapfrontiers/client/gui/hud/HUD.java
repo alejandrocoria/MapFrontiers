@@ -1,6 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.hud;
 
-import games.alejandrocoria.mapfrontiers.client.Config;
+import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
@@ -38,7 +38,7 @@ public class HUD {
     private final StringWidget frontierName1;
     private final StringWidget frontierName2;
     private final StringWidget frontierOwner;
-    private final List<Config.HUDSlot> slots;
+    private final List<ClientConfig.HUDSlot> slots;
     private int posX = 0;
     private int posY = 0;
     private int nameOffsetY = 0;
@@ -134,7 +134,7 @@ public class HUD {
     }
 
     public void tick() {
-        if (previewMode || mc.player == null || Config.frontierVisibility == Config.Visibility.Never) {
+        if (previewMode || mc.player == null || ClientConfig.FRONTIER_VISIBILITY.get() == ClientConfig.Visibility.Never) {
             return;
         }
 
@@ -210,7 +210,7 @@ public class HUD {
             return;
         }
 
-        if (!Config.hudEnabled) {
+        if (!ClientConfig.HUD_ENABLED.get()) {
             return;
         }
 
@@ -222,8 +222,8 @@ public class HUD {
             needUpdate = true;
         }
 
-        if (Config.hudAnchor == Config.HUDAnchor.Minimap || Config.hudAnchor == Config.HUDAnchor.MinimapHorizontal
-                || Config.hudAnchor == Config.HUDAnchor.MinimapVertical) {
+        if (ClientConfig.HUD_ANCHOR.get() == ClientConfig.HUDAnchor.Minimap || ClientConfig.HUD_ANCHOR.get() == ClientConfig.HUDAnchor.MinimapHorizontal
+                || ClientConfig.HUD_ANCHOR.get() == ClientConfig.HUDAnchor.MinimapVertical) {
             if (Services.JOURNEYMAP.minimapPropertiesChanged()) {
                 needUpdate = true;
             }
@@ -247,7 +247,7 @@ public class HUD {
         graphics.pose().pushMatrix();
         graphics.pose().scale(1.0f / factor, 1.0f / factor);
 
-        for (Config.HUDSlot slot : slots) {
+        for (ClientConfig.HUDSlot slot : slots) {
             switch (slot) {
             case Name:
                 drawName(graphics, frameColor, textNameColor, partialTicks);
@@ -304,9 +304,9 @@ public class HUD {
             return;
         }
 
-        addSlot(Config.hudSlot1);
-        addSlot(Config.hudSlot2);
-        addSlot(Config.hudSlot3);
+        addSlot(ClientConfig.HUD_SLOT_1.get());
+        addSlot(ClientConfig.HUD_SLOT_2.get());
+        addSlot(ClientConfig.HUD_SLOT_3.get());
 
         if (slots.isEmpty()) {
             return;
@@ -314,12 +314,12 @@ public class HUD {
 
         hudWidth = 0;
         hudHeight = 0;
-        bannerScale = Config.hudBannerSize;
+        bannerScale = ClientConfig.HUD_BANNER_SIZE.get();
         nameLinesCount = 0;
 
-        textScale = Config.hudTextSize;
+        textScale = ClientConfig.HUD_TEXT_SIZE.get();
 
-        for (Config.HUDSlot slot : slots) {
+        for (ClientConfig.HUDSlot slot : slots) {
             switch (slot) {
                 case Name:
                     if (!StringUtils.isBlank(frontier.getName1())) {
@@ -352,17 +352,17 @@ public class HUD {
             }
         }
 
-        Config.Point anchorPos = Config.getHUDAnchor(Config.hudAnchor);
-        Config.Point originPos = Config.getHUDOrigin(Config.hudAnchor, hudWidth, hudHeight);
-        posX = anchorPos.x - originPos.x + Config.hudXPosition;
-        posY = anchorPos.y - originPos.y + Config.hudYPosition;
+        HUDPlacementHelper.Point anchorPos = HUDPlacementHelper.getHUDAnchor(ClientConfig.HUD_ANCHOR.get());
+        HUDPlacementHelper.Point originPos = HUDPlacementHelper.getHUDOrigin(ClientConfig.HUD_ANCHOR.get(), hudWidth, hudHeight);
+        posX = anchorPos.x - originPos.x + ClientConfig.HUD_X_POSITION.get();
+        posY = anchorPos.y - originPos.y + ClientConfig.HUD_Y_POSITION.get();
 
         int offsetY = 0;
         nameOffsetY = 0;
         ownerOffsetY = 0;
         bannerOffsetY = 0;
 
-        for (Config.HUDSlot slot : slots) {
+        for (ClientConfig.HUDSlot slot : slots) {
             switch (slot) {
                 case Name:
                     nameOffsetY = offsetY;
@@ -424,16 +424,16 @@ public class HUD {
         return ownerString;
     }
 
-    private void addSlot(Config.HUDSlot slot) {
-        if (slot == Config.HUDSlot.Name) {
+    private void addSlot(ClientConfig.HUDSlot slot) {
+        if (slot == ClientConfig.HUDSlot.Name) {
             if (frontier.isNamed()) {
                 slots.add(slot);
             }
-        } else if (slot == Config.HUDSlot.Owner) {
+        } else if (slot == ClientConfig.HUDSlot.Owner) {
             if (!frontier.getOwner().isEmpty()) {
                 slots.add(slot);
             }
-        } else if (slot == Config.HUDSlot.Banner) {
+        } else if (slot == ClientConfig.HUDSlot.Banner) {
             if (frontier.getBannerRenderer().hasBanner()) {
                 slots.add(slot);
             }

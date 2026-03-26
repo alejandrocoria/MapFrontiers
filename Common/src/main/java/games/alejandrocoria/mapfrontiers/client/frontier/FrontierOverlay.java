@@ -5,7 +5,7 @@ import com.google.common.collect.Multimap;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.vertex.PoseStack;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.client.Config;
+import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.mixin.CubeInvoker;
@@ -193,7 +193,7 @@ public class FrontierOverlay extends FrontierData {
         removeOverlay();
         recalculateOverlays();
 
-        if (Config.getVisibilityValue(Config.frontierVisibility, getVisibility(VisibilityData.Visibility.Frontier))) {
+        if (ClientConfig.getVisibilityValue(ClientConfig.FRONTIER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Frontier))) {
             try {
                 for (PolygonOverlay polygon : polygonOverlays) {
                     jmAPI.show(polygon);
@@ -383,7 +383,7 @@ public class FrontierOverlay extends FrontierData {
 
     @Override
     public void addVertex(BlockPos pos) {
-        addVertex(pos, vertexSelected + 1, Config.snapDistance);
+        addVertex(pos, vertexSelected + 1, ClientConfig.SNAP_DISTANCE.get());
         selectNextVertex();
     }
 
@@ -851,12 +851,12 @@ public class FrontierOverlay extends FrontierData {
         polygonArea = null;
 
         ShapeProperties shapeProps = new ShapeProperties()
-                .setStrokeWidth(Config.borderWidth)
+                .setStrokeWidth(ClientConfig.BORDER_WIDTH.get())
                 .setStrokeColor(color)
-                .setStrokeOpacity((float) Config.borderOpacity)
+                .setStrokeOpacity(ClientConfig.BORDER_OPACITY.get().floatValue())
                 .setStrokePosition(ShapeProperties.StrokePosition.INSIDE)
                 .setFillColor(color)
-                .setFillOpacity((float) Config.polygonsOpacity);
+                .setFillOpacity(ClientConfig.POLYGONS_OPACITY.get().floatValue());
 
         if (mode == Mode.Vertex) {
             recalculateVertices(shapeProps);
@@ -880,33 +880,33 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private void addPolygonOverlays(ShapeProperties shapeProps, MapPolygon polygon, @Nullable List<MapPolygon> polygonHoles) {
-        boolean fullscreenV = Config.getVisibilityValue(Config.fullscreenVisibility, getVisibility(VisibilityData.Visibility.Fullscreen));
-        boolean fullscreenNameV = Config.getVisibilityValue(Config.fullscreenNameVisibility, getVisibility(VisibilityData.Visibility.FullscreenName));
-        boolean fullscreenOwnerV = Config.getVisibilityValue(Config.fullscreenOwnerVisibility, getVisibility(VisibilityData.Visibility.FullscreenOwner));
-        boolean fullscreenBannerV = Config.getVisibilityValue(Config.fullscreenBannerVisibility, getVisibility(VisibilityData.Visibility.FullscreenBanner));
-        boolean fullscreenDayV = Config.getVisibilityValue(Config.fullscreenDayVisibility, getVisibility(VisibilityData.Visibility.FullscreenDay));
-        boolean fullscreenNightV = Config.getVisibilityValue(Config.fullscreenNightVisibility, getVisibility(VisibilityData.Visibility.FullscreenNight));
-        boolean fullscreenUndergroundV = Config.getVisibilityValue(Config.fullscreenUndergroundVisibility, getVisibility(VisibilityData.Visibility.FullscreenUnderground));
-        boolean fullscreenTopoV = Config.getVisibilityValue(Config.fullscreenTopoVisibility, getVisibility(VisibilityData.Visibility.FullscreenTopo));
-        boolean fullscreenBiomeV = Config.getVisibilityValue(Config.fullscreenBiomeVisibility, getVisibility(VisibilityData.Visibility.FullscreenBiome));
-        boolean minimapV = Config.getVisibilityValue(Config.minimapVisibility, getVisibility(VisibilityData.Visibility.Minimap));
-        boolean minimapNameV = Config.getVisibilityValue(Config.minimapNameVisibility, getVisibility(VisibilityData.Visibility.MinimapName));
-        boolean minimapOwnerV = Config.getVisibilityValue(Config.minimapOwnerVisibility, getVisibility(VisibilityData.Visibility.MinimapOwner));
-        boolean minimapBannerV = Config.getVisibilityValue(Config.minimapBannerVisibility, getVisibility(VisibilityData.Visibility.MinimapBanner));
-        boolean minimapDayV = Config.getVisibilityValue(Config.minimapDayVisibility, getVisibility(VisibilityData.Visibility.MinimapDay));
-        boolean minimapNightV = Config.getVisibilityValue(Config.minimapNightVisibility, getVisibility(VisibilityData.Visibility.MinimapNight));
-        boolean minimapUndergroundV = Config.getVisibilityValue(Config.minimapUndergroundVisibility, getVisibility(VisibilityData.Visibility.MinimapUnderground));
-        boolean minimapTopoV = Config.getVisibilityValue(Config.minimapTopoVisibility, getVisibility(VisibilityData.Visibility.MinimapTopo));
-        boolean minimapBiomeV = Config.getVisibilityValue(Config.minimapBiomeVisibility, getVisibility(VisibilityData.Visibility.MinimapBiome));
-        boolean webmapV = Config.getVisibilityValue(Config.webmapVisibility, getVisibility(VisibilityData.Visibility.Webmap));
-        boolean webmapNameV = Config.getVisibilityValue(Config.webmapNameVisibility, getVisibility(VisibilityData.Visibility.WebmapName));
-        boolean webmapOwnerV = Config.getVisibilityValue(Config.webmapOwnerVisibility, getVisibility(VisibilityData.Visibility.WebmapOwner));
-        boolean webmapBannerV = Config.getVisibilityValue(Config.webmapBannerVisibility, getVisibility(VisibilityData.Visibility.WebmapBanner));
-        boolean webmapDayV = Config.getVisibilityValue(Config.webmapDayVisibility, getVisibility(VisibilityData.Visibility.WebmapDay));
-        boolean webmapNightV = Config.getVisibilityValue(Config.webmapNightVisibility, getVisibility(VisibilityData.Visibility.WebmapNight));
-        boolean webmapUndergroundV = Config.getVisibilityValue(Config.webmapUndergroundVisibility, getVisibility(VisibilityData.Visibility.WebmapUnderground));
-        boolean webmapTopoV = Config.getVisibilityValue(Config.webmapTopoVisibility, getVisibility(VisibilityData.Visibility.WebmapTopo));
-        boolean webmapBiomeV = Config.getVisibilityValue(Config.webmapBiomeVisibility, getVisibility(VisibilityData.Visibility.WebmapBiome));
+        boolean fullscreenV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Fullscreen));
+        boolean fullscreenNameV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_NAME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenName));
+        boolean fullscreenOwnerV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_OWNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenOwner));
+        boolean fullscreenBannerV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_BANNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenBanner));
+        boolean fullscreenDayV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenDay));
+        boolean fullscreenNightV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_NIGHT_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenNight));
+        boolean fullscreenUndergroundV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_UNDERGROUND_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenUnderground));
+        boolean fullscreenTopoV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_TOPO_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenTopo));
+        boolean fullscreenBiomeV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenBiome));
+        boolean minimapV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Minimap));
+        boolean minimapNameV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_NAME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapName));
+        boolean minimapOwnerV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_OWNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapOwner));
+        boolean minimapBannerV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_BANNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapBanner));
+        boolean minimapDayV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapDay));
+        boolean minimapNightV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_NIGHT_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapNight));
+        boolean minimapUndergroundV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_UNDERGROUND_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapUnderground));
+        boolean minimapTopoV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_TOPO_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapTopo));
+        boolean minimapBiomeV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapBiome));
+        boolean webmapV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Webmap));
+        boolean webmapNameV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_NAME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapName));
+        boolean webmapOwnerV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_OWNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapOwner));
+        boolean webmapBannerV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_BANNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapBanner));
+        boolean webmapDayV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapDay));
+        boolean webmapNightV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_NIGHT_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapNight));
+        boolean webmapUndergroundV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_UNDERGROUND_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapUnderground));
+        boolean webmapTopoV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_TOPO_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapTopo));
+        boolean webmapBiomeV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapBiome));
 
 
         BlockPos firstpoint = polygon.getPoints().getFirst();
@@ -952,24 +952,24 @@ public class FrontierOverlay extends FrontierData {
                 }
                 area = abs(area / 2.f);
             } else {
-                boolean fullscreenV = Config.getVisibilityValue(Config.fullscreenVisibility, getVisibility(VisibilityData.Visibility.Fullscreen));
-                boolean fullscreenDayV = Config.getVisibilityValue(Config.fullscreenDayVisibility, getVisibility(VisibilityData.Visibility.FullscreenDay));
-                boolean fullscreenNightV = Config.getVisibilityValue(Config.fullscreenNightVisibility, getVisibility(VisibilityData.Visibility.FullscreenNight));
-                boolean fullscreenUndergroundV = Config.getVisibilityValue(Config.fullscreenUndergroundVisibility, getVisibility(VisibilityData.Visibility.FullscreenUnderground));
-                boolean fullscreenTopoV = Config.getVisibilityValue(Config.fullscreenTopoVisibility, getVisibility(VisibilityData.Visibility.FullscreenTopo));
-                boolean fullscreenBiomeV = Config.getVisibilityValue(Config.fullscreenBiomeVisibility, getVisibility(VisibilityData.Visibility.FullscreenBiome));
-                boolean minimapV = Config.getVisibilityValue(Config.minimapVisibility, getVisibility(VisibilityData.Visibility.Minimap));
-                boolean minimapDayV = Config.getVisibilityValue(Config.minimapDayVisibility, getVisibility(VisibilityData.Visibility.MinimapDay));
-                boolean minimapNightV = Config.getVisibilityValue(Config.minimapNightVisibility, getVisibility(VisibilityData.Visibility.MinimapNight));
-                boolean minimapUndergroundV = Config.getVisibilityValue(Config.minimapUndergroundVisibility, getVisibility(VisibilityData.Visibility.MinimapUnderground));
-                boolean minimapTopoV = Config.getVisibilityValue(Config.minimapTopoVisibility, getVisibility(VisibilityData.Visibility.MinimapTopo));
-                boolean minimapBiomeV = Config.getVisibilityValue(Config.minimapBiomeVisibility, getVisibility(VisibilityData.Visibility.MinimapBiome));
-                boolean webmapV = Config.getVisibilityValue(Config.webmapVisibility, getVisibility(VisibilityData.Visibility.Webmap));
-                boolean webmapDayV = Config.getVisibilityValue(Config.webmapDayVisibility, getVisibility(VisibilityData.Visibility.WebmapDay));
-                boolean webmapNightV = Config.getVisibilityValue(Config.webmapNightVisibility, getVisibility(VisibilityData.Visibility.WebmapNight));
-                boolean webmapUndergroundV = Config.getVisibilityValue(Config.webmapUndergroundVisibility, getVisibility(VisibilityData.Visibility.WebmapUnderground));
-                boolean webmapTopoV = Config.getVisibilityValue(Config.webmapTopoVisibility, getVisibility(VisibilityData.Visibility.WebmapTopo));
-                boolean webmapBiomeV = Config.getVisibilityValue(Config.webmapBiomeVisibility, getVisibility(VisibilityData.Visibility.WebmapBiome));
+                boolean fullscreenV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Fullscreen));
+                boolean fullscreenDayV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenDay));
+                boolean fullscreenNightV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_NIGHT_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenNight));
+                boolean fullscreenUndergroundV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_UNDERGROUND_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenUnderground));
+                boolean fullscreenTopoV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_TOPO_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenTopo));
+                boolean fullscreenBiomeV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenBiome));
+                boolean minimapV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Minimap));
+                boolean minimapDayV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapDay));
+                boolean minimapNightV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_NIGHT_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapNight));
+                boolean minimapUndergroundV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_UNDERGROUND_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapUnderground));
+                boolean minimapTopoV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_TOPO_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapTopo));
+                boolean minimapBiomeV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapBiome));
+                boolean webmapV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Webmap));
+                boolean webmapDayV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapDay));
+                boolean webmapNightV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_NIGHT_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapNight));
+                boolean webmapUndergroundV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_UNDERGROUND_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapUnderground));
+                boolean webmapTopoV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_TOPO_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapTopo));
+                boolean webmapBiomeV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapBiome));
 
                 if (fullscreenV) {
                     createMarkersFromVertices(Context.UI.Fullscreen,
@@ -1165,11 +1165,11 @@ public class FrontierOverlay extends FrontierData {
             return;
         }
 
-        TextProperties textProps = new TextProperties().setOpacity((float) Config.textOpacity).setScale(Config.textSize).setBackgroundOpacity(0.f);
-        switch (Config.textColor) {
-            case Config.TextColor.Frontier -> textProps.setColor(color);
-            case Config.TextColor.Bright -> textProps.setColor(colorMaxBrightness(color));
-            case Config.TextColor.White -> textProps.setColor(ColorConstants.WHITE);
+        TextProperties textProps = new TextProperties().setOpacity(ClientConfig.TEXT_OPACITY.get().floatValue()).setScale(ClientConfig.TEXT_SIZE.get()).setBackgroundOpacity(0.f);
+        switch (ClientConfig.TEXT_COLOR.get()) {
+            case ClientConfig.TextColor.Frontier -> textProps.setColor(color);
+            case ClientConfig.TextColor.Bright -> textProps.setColor(colorMaxBrightness(color));
+            case ClientConfig.TextColor.White -> textProps.setColor(ColorConstants.WHITE);
         }
 
         int lines = 0;
@@ -1201,16 +1201,16 @@ public class FrontierOverlay extends FrontierData {
             label += ChatFormatting.ITALIC + owner.username;
         }
 
-        totalWidth *= Config.textSize;
+        totalWidth *= ClientConfig.TEXT_SIZE.get();
 
-        int totalHeight = lines * 9 * Config.textSize;
+        int totalHeight = lines * 9 * ClientConfig.TEXT_SIZE.get();
         if (bannerVisible) {
-            totalHeight += 40 * Config.bannerSize;
+            totalHeight += 40 * ClientConfig.BANNER_SIZE.get();
         }
 
         int topOffset = totalHeight / 2;
-        int textOffset = topOffset - lines * 9 * Config.textSize / 2;
-        int bannerOffset = topOffset - lines * 9 * Config.textSize;
+        int textOffset = topOffset - lines * 9 * ClientConfig.TEXT_SIZE.get() / 2;
+        int bannerOffset = topOffset - lines * 9 * ClientConfig.TEXT_SIZE.get();
         if (lines > 1) {
             if (bannerVisible) {
                 textOffset -= 6;
@@ -1226,9 +1226,9 @@ public class FrontierOverlay extends FrontierData {
         }
         textProps.setOffsetY(textOffset);
 
-        if (Config.hideNamesThatDontFit) {
+        if (ClientConfig.HIDE_NAMES_THAT_DONT_FIT.get()) {
             if (bannerVisible) {
-                totalWidth = Math.max(totalWidth, 20 * Config.bannerSize);
+                totalWidth = Math.max(totalWidth, 20 * ClientConfig.BANNER_SIZE.get());
             }
             setMinSizeTextProperties(textProps, polygonBound, totalWidth + 6, totalHeight + 6);
         }
@@ -1236,11 +1236,11 @@ public class FrontierOverlay extends FrontierData {
         if (bannerVisible) {
             MapImage bannerIcon = new MapImage(bannerRenderer.getImage());
             bannerIcon.setBlur(false);
-            bannerIcon.setAnchorX(10 * Config.bannerSize);
+            bannerIcon.setAnchorX(10 * ClientConfig.BANNER_SIZE.get());
             bannerIcon.setAnchorY(bannerOffset);
-            bannerIcon.setDisplayWidth(20 * Config.bannerSize);
-            bannerIcon.setDisplayHeight(40 * Config.bannerSize);
-            bannerIcon.setOpacity((float) Config.bannerOpacity);
+            bannerIcon.setDisplayWidth(20 * ClientConfig.BANNER_SIZE.get());
+            bannerIcon.setDisplayHeight(40 * ClientConfig.BANNER_SIZE.get());
+            bannerIcon.setOpacity(ClientConfig.BANNER_OPACITY.get().floatValue());
             bannerIcon.setRotation(-bannerRenderer.getRotation());
             BlockPos polygonCenter = BlockPos.containing(polygonBound.getCenterX(), 70, polygonBound.getCenterY());
 

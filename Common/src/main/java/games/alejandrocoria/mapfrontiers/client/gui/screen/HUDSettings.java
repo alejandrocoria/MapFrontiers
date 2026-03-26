@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
 import com.mojang.blaze3d.platform.Window;
-import games.alejandrocoria.mapfrontiers.client.Config;
+import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
@@ -9,7 +9,9 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButto
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.client.gui.hud.HUD;
+import games.alejandrocoria.mapfrontiers.client.gui.hud.HUDPlacementHelper;
 import games.alejandrocoria.mapfrontiers.client.gui.hud.HUDWidget;
+import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
@@ -27,25 +29,25 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class HUDSettings extends AutoScaledScreen {
-    private static final Component slot1Label = Config.getTranslatedName("hud.slot1");
-    private static final Tooltip slot1Tooltip = Config.getTooltip("hud.slot1");
-    private static final Component slot2Label = Config.getTranslatedName("hud.slot2");
-    private static final Tooltip slot2Tooltip = Config.getTooltip("hud.slot2");
-    private static final Component slot3Label = Config.getTranslatedName("hud.slot3");
-    private static final Tooltip slot3Tooltip = Config.getTooltip("hud.slot3");
-    private static final Component textSizeLabel = Config.getTranslatedName("hud.textSize");
-    private static final Tooltip textSizeTooltip = Config.getTooltip("hud.textSize");
-    private static final Component bannerSizeLabel = Config.getTranslatedName("hud.bannerSize");
-    private static final Tooltip bannerSizeTooltip = Config.getTooltip("hud.bannerSize");
-    private static final Component anchorLabel = Config.getTranslatedName("hud.anchor");
-    private static final Tooltip anchorTooltip = Config.getTooltip("hud.anchor");
+    private static final Component slot1Label = ClientConfig.HUD_SLOT_1.translatedName();
+    private static final Tooltip slot1Tooltip = tooltip(ClientConfig.HUD_SLOT_1);
+    private static final Component slot2Label = ClientConfig.HUD_SLOT_2.translatedName();
+    private static final Tooltip slot2Tooltip = tooltip(ClientConfig.HUD_SLOT_2);
+    private static final Component slot3Label = ClientConfig.HUD_SLOT_3.translatedName();
+    private static final Tooltip slot3Tooltip = tooltip(ClientConfig.HUD_SLOT_3);
+    private static final Component textSizeLabel = ClientConfig.HUD_TEXT_SIZE.translatedName();
+    private static final Tooltip textSizeTooltip = tooltip(ClientConfig.HUD_TEXT_SIZE);
+    private static final Component bannerSizeLabel = ClientConfig.HUD_BANNER_SIZE.translatedName();
+    private static final Tooltip bannerSizeTooltip = tooltip(ClientConfig.HUD_BANNER_SIZE);
+    private static final Component anchorLabel = ClientConfig.HUD_ANCHOR.translatedName();
+    private static final Tooltip anchorTooltip = tooltip(ClientConfig.HUD_ANCHOR);
     private static final Component positionLabel = Component.translatable("mapfrontiers.config.hud.position");
     private static final Tooltip positionTooltip = Tooltip.create(Component.literal("HUD position relative to anchor."));
     private static final Component positionSeparatorLabel = Component.literal("x");
-    private static final Component autoAdjustAnchorLabel = Config.getTranslatedName("hud.autoAdjustAnchor");
-    private static final Tooltip autoAdjustAnchorTooltip = Config.getTooltip("hud.autoAdjustAnchor");
-    private static final Component snapToBorderLabel = Config.getTranslatedName("hud.snapToBorder");
-    private static final Tooltip snapToBorderTooltip = Config.getTooltip("hud.snapToBorder");
+    private static final Component autoAdjustAnchorLabel = ClientConfig.HUD_AUTO_ADJUST_ANCHOR.translatedName();
+    private static final Tooltip autoAdjustAnchorTooltip = tooltip(ClientConfig.HUD_AUTO_ADJUST_ANCHOR);
+    private static final Component snapToBorderLabel = ClientConfig.HUD_SNAP_TO_BORDER.translatedName();
+    private static final Tooltip snapToBorderTooltip = tooltip(ClientConfig.HUD_SNAP_TO_BORDER);
     private static final Component doneLabel = Component.translatable("gui.done");
     private static final Component onLabel = Component.translatable("options.on");
     private static final Component offLabel = Component.translatable("options.off");
@@ -100,40 +102,40 @@ public class HUDSettings extends AutoScaledScreen {
         StringWidget labelSlot1 = mainLayout.addChild(new StringWidget(slot1Label, font).setColor(ColorConstants.TEXT), 0, 0);
         labelSlot1.setTooltip(slot1Tooltip);
         buttonSlot1 = new OptionButton(font, 64, (b) -> updateSlots());
-        buttonSlot1.addOption(Config.getTranslatedEnum(Config.HUDSlot.None));
-        buttonSlot1.addOption(Config.getTranslatedEnum(Config.HUDSlot.Name));
-        buttonSlot1.addOption(Config.getTranslatedEnum(Config.HUDSlot.Owner));
-        buttonSlot1.addOption(Config.getTranslatedEnum(Config.HUDSlot.Banner));
-        buttonSlot1.setSelected(Config.hudSlot1.ordinal());
+        buttonSlot1.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.None));
+        buttonSlot1.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Name));
+        buttonSlot1.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Owner));
+        buttonSlot1.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Banner));
+        buttonSlot1.setSelected(ClientConfig.HUD_SLOT_1.get().ordinal());
         mainLayout.addChild(buttonSlot1, 0, 1);
 
         StringWidget labelSlot2 = mainLayout.addChild(new StringWidget(slot2Label, font).setColor(ColorConstants.TEXT), 1, 0);
         labelSlot2.setTooltip(slot2Tooltip);
         buttonSlot2 = new OptionButton(font, 64, (b) -> updateSlots());
-        buttonSlot2.addOption(Config.getTranslatedEnum(Config.HUDSlot.None));
-        buttonSlot2.addOption(Config.getTranslatedEnum(Config.HUDSlot.Name));
-        buttonSlot2.addOption(Config.getTranslatedEnum(Config.HUDSlot.Owner));
-        buttonSlot2.addOption(Config.getTranslatedEnum(Config.HUDSlot.Banner));
-        buttonSlot2.setSelected(Config.hudSlot2.ordinal());
+        buttonSlot2.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.None));
+        buttonSlot2.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Name));
+        buttonSlot2.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Owner));
+        buttonSlot2.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Banner));
+        buttonSlot2.setSelected(ClientConfig.HUD_SLOT_2.get().ordinal());
         mainLayout.addChild(buttonSlot2, 1, 1);
 
         StringWidget labelSlot3 = mainLayout.addChild(new StringWidget(slot3Label, font).setColor(ColorConstants.TEXT), 2, 0);
         labelSlot3.setTooltip(slot3Tooltip);
         buttonSlot3 = new OptionButton(font, 64, (b) -> updateSlots());
-        buttonSlot3.addOption(Config.getTranslatedEnum(Config.HUDSlot.None));
-        buttonSlot3.addOption(Config.getTranslatedEnum(Config.HUDSlot.Name));
-        buttonSlot3.addOption(Config.getTranslatedEnum(Config.HUDSlot.Owner));
-        buttonSlot3.addOption(Config.getTranslatedEnum(Config.HUDSlot.Banner));
-        buttonSlot3.setSelected(Config.hudSlot3.ordinal());
+        buttonSlot3.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.None));
+        buttonSlot3.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Name));
+        buttonSlot3.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Owner));
+        buttonSlot3.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Banner));
+        buttonSlot3.setSelected(ClientConfig.HUD_SLOT_3.get().ordinal());
         mainLayout.addChild(buttonSlot3, 2, 1);
 
         StringWidget labelTextSize = mainLayout.addChild(new StringWidget(textSizeLabel, font).setColor(ColorConstants.TEXT), 3, 0);
         labelTextSize.setTooltip(textSizeTooltip);
         textTextSize = new TextBoxInt(1, 1, 8, font, 64);
-        textTextSize.setValue(String.valueOf(Config.hudTextSize));
+        textTextSize.setValue(String.valueOf(ClientConfig.HUD_TEXT_SIZE.get()));
         textTextSize.setMaxLength(1);
         textTextSize.setValueChangedCallback(value -> {
-            Config.hudTextSize = value;
+            ClientConfig.HUD_TEXT_SIZE.set(value);
             ClientGlobalEvents.postUpdatedConfigEvent();
             updatePosition();
         });
@@ -142,10 +144,10 @@ public class HUDSettings extends AutoScaledScreen {
         StringWidget labelBannerSize = mainLayout.addChild(new StringWidget(bannerSizeLabel, font).setColor(ColorConstants.TEXT), 4, 0);
         labelBannerSize.setTooltip(bannerSizeTooltip);
         textBannerSize = new TextBoxInt(3, 1, 8, font, 64);
-        textBannerSize.setValue(String.valueOf(Config.hudBannerSize));
+        textBannerSize.setValue(String.valueOf(ClientConfig.HUD_BANNER_SIZE.get()));
         textBannerSize.setMaxLength(1);
         textBannerSize.setValueChangedCallback(value -> {
-            Config.hudBannerSize = value;
+            ClientConfig.HUD_BANNER_SIZE.set(value);
             ClientGlobalEvents.postUpdatedConfigEvent();
             updatePosition();
         });
@@ -154,22 +156,22 @@ public class HUDSettings extends AutoScaledScreen {
         StringWidget labelAnchorLabel = mainLayout.addChild(new StringWidget(anchorLabel, font).setColor(ColorConstants.TEXT), 0, 3);
         labelAnchorLabel.setTooltip(anchorTooltip);
         buttonAnchor = new OptionButton(font, 134, (b) -> {
-            Config.hudAnchor = Config.HUDAnchor.values()[b.getSelected()];
+            ClientConfig.HUD_ANCHOR.set(ClientConfig.HUDAnchor.values()[b.getSelected()]);
             ClientGlobalEvents.postUpdatedConfigEvent();
             updatePosition();
         });
-        buttonAnchor.addOption(Config.getTranslatedEnum(Config.HUDAnchor.ScreenTop));
-        buttonAnchor.addOption(Config.getTranslatedEnum(Config.HUDAnchor.ScreenTopRight));
-        buttonAnchor.addOption(Config.getTranslatedEnum(Config.HUDAnchor.ScreenRight));
-        buttonAnchor.addOption(Config.getTranslatedEnum(Config.HUDAnchor.ScreenBottomRight));
-        buttonAnchor.addOption(Config.getTranslatedEnum(Config.HUDAnchor.ScreenBottom));
-        buttonAnchor.addOption(Config.getTranslatedEnum(Config.HUDAnchor.ScreenBottomLeft));
-        buttonAnchor.addOption(Config.getTranslatedEnum(Config.HUDAnchor.ScreenLeft));
-        buttonAnchor.addOption(Config.getTranslatedEnum(Config.HUDAnchor.ScreenTopLeft));
-        buttonAnchor.addOption(Config.getTranslatedEnum(Config.HUDAnchor.Minimap));
-        buttonAnchor.addOption(Config.getTranslatedEnum(Config.HUDAnchor.MinimapHorizontal));
-        buttonAnchor.addOption(Config.getTranslatedEnum(Config.HUDAnchor.MinimapVertical));
-        buttonAnchor.setSelected(Config.hudAnchor.ordinal());
+        buttonAnchor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenTop));
+        buttonAnchor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenTopRight));
+        buttonAnchor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenRight));
+        buttonAnchor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenBottomRight));
+        buttonAnchor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenBottom));
+        buttonAnchor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenBottomLeft));
+        buttonAnchor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenLeft));
+        buttonAnchor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenTopLeft));
+        buttonAnchor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.Minimap));
+        buttonAnchor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.MinimapHorizontal));
+        buttonAnchor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.MinimapVertical));
+        buttonAnchor.setSelected(ClientConfig.HUD_ANCHOR.get().ordinal());
         mainLayout.addChild(buttonAnchor, 0, 4);
 
         StringWidget labelPosition = mainLayout.addChild(new StringWidget(positionLabel, font).setColor(ColorConstants.TEXT), 1, 3);
@@ -178,10 +180,10 @@ public class HUDSettings extends AutoScaledScreen {
         mainLayout.addChild(positionLayout, 1, 4);
 
         textPositionX = new TextBoxInt(0, Integer.MIN_VALUE, Integer.MAX_VALUE, font, 61);
-        textPositionX.setValue(String.valueOf(Config.hudXPosition));
+        textPositionX.setValue(String.valueOf(ClientConfig.HUD_X_POSITION.get()));
         textPositionX.setMaxLength(5);
         textPositionX.setValueChangedCallback(value -> {
-            Config.hudXPosition = value;
+            ClientConfig.HUD_X_POSITION.set(value);
             ClientGlobalEvents.postUpdatedConfigEvent();
         });
         positionLayout.addChild(textPositionX);
@@ -191,10 +193,10 @@ public class HUDSettings extends AutoScaledScreen {
         positionLayout.addChild(SpacerElement.width(2));
 
         textPositionY = new TextBoxInt(0, Integer.MIN_VALUE, Integer.MAX_VALUE, font, 62);
-        textPositionY.setValue(String.valueOf(Config.hudYPosition));
+        textPositionY.setValue(String.valueOf(ClientConfig.HUD_Y_POSITION.get()));
         textPositionY.setMaxLength(5);
         textPositionY.setValueChangedCallback(value -> {
-            Config.hudYPosition = value;
+            ClientConfig.HUD_Y_POSITION.set(value);
             ClientGlobalEvents.postUpdatedConfigEvent();
         });
         positionLayout.addChild(textPositionY);
@@ -202,23 +204,23 @@ public class HUDSettings extends AutoScaledScreen {
         StringWidget labelAutoAdjustAnchor = mainLayout.addChild(new StringWidget(autoAdjustAnchorLabel, font).setColor(ColorConstants.TEXT), 2, 3);
         labelAutoAdjustAnchor.setTooltip(autoAdjustAnchorTooltip);
         buttonAutoAdjustAnchor = new OptionButton(font, 134, (b) -> {
-            Config.hudAutoAdjustAnchor = b.getSelected() == 0;
+            ClientConfig.HUD_AUTO_ADJUST_ANCHOR.set(b.getSelected() == 0);
             ClientGlobalEvents.postUpdatedConfigEvent();
         });
         buttonAutoAdjustAnchor.addOption(onLabel);
         buttonAutoAdjustAnchor.addOption(offLabel);
-        buttonAutoAdjustAnchor.setSelected(Config.hudAutoAdjustAnchor ? 0 : 1);
+        buttonAutoAdjustAnchor.setSelected(ClientConfig.HUD_AUTO_ADJUST_ANCHOR.get() ? 0 : 1);
         mainLayout.addChild(buttonAutoAdjustAnchor, 2, 4);
 
         StringWidget labelSnapToBorder = mainLayout.addChild(new StringWidget(snapToBorderLabel, font).setColor(ColorConstants.TEXT), 3, 3);
         labelSnapToBorder.setTooltip(snapToBorderTooltip);
         buttonSnapToBorder = new OptionButton(font, 134, (b) -> {
-            Config.hudSnapToBorder = b.getSelected() == 0;
+            ClientConfig.HUD_SNAP_TO_BORDER.set(b.getSelected() == 0);
             ClientGlobalEvents.postUpdatedConfigEvent();
         });
         buttonSnapToBorder.addOption(onLabel);
         buttonSnapToBorder.addOption(offLabel);
-        buttonSnapToBorder.setSelected(Config.hudSnapToBorder ? 0 : 1);
+        buttonSnapToBorder.setSelected(ClientConfig.HUD_SNAP_TO_BORDER.get() ? 0 : 1);
         mainLayout.addChild(buttonSnapToBorder, 3, 4);
 
         buttonDone = new SimpleButton(font, 100, doneLabel, (b) -> onClose());
@@ -269,7 +271,7 @@ public class HUDSettings extends AutoScaledScreen {
         int directionX = 0;
         int directionY = 0;
         int length = 25;
-        Config.Point anchor = Config.getHUDAnchor(Config.hudAnchor);
+        HUDPlacementHelper.Point anchor = HUDPlacementHelper.getHUDAnchor(ClientConfig.HUD_ANCHOR.get());
 
         int displayWidth = mainWindow.getWidth();
         int displayHeight = mainWindow.getHeight();
@@ -288,7 +290,7 @@ public class HUDSettings extends AutoScaledScreen {
             --anchor.y;
         }
 
-        if (Config.hudAnchor == Config.HUDAnchor.Minimap) {
+        if (ClientConfig.HUD_ANCHOR.get() == ClientConfig.HUDAnchor.Minimap) {
             directionX = -directionX;
             directionY = -directionY;
 
@@ -319,17 +321,17 @@ public class HUDSettings extends AutoScaledScreen {
         updateSlotsValidity();
         boolean updated = false;
         if (buttonSlot1.getColor() == ColorConstants.TEXT || buttonSlot1.getColor() == ColorConstants.TEXT_HIGHLIGHT) {
-            Config.hudSlot1 = Config.HUDSlot.values()[buttonSlot1.getSelected()];
+            ClientConfig.HUD_SLOT_1.set(ClientConfig.HUDSlot.values()[buttonSlot1.getSelected()]);
             updated = true;
         }
 
         if (buttonSlot2.getColor() == ColorConstants.TEXT || buttonSlot2.getColor() == ColorConstants.TEXT_HIGHLIGHT) {
-            Config.hudSlot2 = Config.HUDSlot.values()[buttonSlot2.getSelected()];
+            ClientConfig.HUD_SLOT_2.set(ClientConfig.HUDSlot.values()[buttonSlot2.getSelected()]);
             updated = true;
         }
 
         if (buttonSlot3.getColor() == ColorConstants.TEXT || buttonSlot3.getColor() == ColorConstants.TEXT_HIGHLIGHT) {
-            Config.hudSlot3 = Config.HUDSlot.values()[buttonSlot3.getSelected()];
+            ClientConfig.HUD_SLOT_3.set(ClientConfig.HUDSlot.values()[buttonSlot3.getSelected()]);
             updated = true;
         }
 
@@ -340,25 +342,25 @@ public class HUDSettings extends AutoScaledScreen {
     }
 
     private void updateSlotsValidity() {
-        Config.HUDSlot slot1 = Config.HUDSlot.values()[buttonSlot1.getSelected()];
-        Config.HUDSlot slot2 = Config.HUDSlot.values()[buttonSlot2.getSelected()];
-        Config.HUDSlot slot3 = Config.HUDSlot.values()[buttonSlot3.getSelected()];
+        ClientConfig.HUDSlot slot1 = ClientConfig.HUDSlot.values()[buttonSlot1.getSelected()];
+        ClientConfig.HUDSlot slot2 = ClientConfig.HUDSlot.values()[buttonSlot2.getSelected()];
+        ClientConfig.HUDSlot slot3 = ClientConfig.HUDSlot.values()[buttonSlot3.getSelected()];
 
         buttonSlot1.setColor(ColorConstants.TEXT, ColorConstants.TEXT_HIGHLIGHT);
         buttonSlot2.setColor(ColorConstants.TEXT, ColorConstants.TEXT_HIGHLIGHT);
         buttonSlot3.setColor(ColorConstants.TEXT, ColorConstants.TEXT_HIGHLIGHT);
 
-        if (slot1 != Config.HUDSlot.None && slot1 == slot2) {
+        if (slot1 != ClientConfig.HUDSlot.None && slot1 == slot2) {
             buttonSlot1.setColor(ColorConstants.TEXT_ERROR, ColorConstants.TEXT_ERROR_HIGHLIGHT);
             buttonSlot2.setColor(ColorConstants.TEXT_ERROR, ColorConstants.TEXT_ERROR_HIGHLIGHT);
         }
 
-        if (slot1 != Config.HUDSlot.None && slot1 == slot3) {
+        if (slot1 != ClientConfig.HUDSlot.None && slot1 == slot3) {
             buttonSlot1.setColor(ColorConstants.TEXT_ERROR, ColorConstants.TEXT_ERROR_HIGHLIGHT);
             buttonSlot3.setColor(ColorConstants.TEXT_ERROR, ColorConstants.TEXT_ERROR_HIGHLIGHT);
         }
 
-        if (slot2 != Config.HUDSlot.None && slot2 == slot3) {
+        if (slot2 != ClientConfig.HUDSlot.None && slot2 == slot3) {
             buttonSlot2.setColor(ColorConstants.TEXT_ERROR, ColorConstants.TEXT_ERROR_HIGHLIGHT);
             buttonSlot3.setColor(ColorConstants.TEXT_ERROR, ColorConstants.TEXT_ERROR_HIGHLIGHT);
         }
@@ -376,18 +378,22 @@ public class HUDSettings extends AutoScaledScreen {
     }
 
     private void updatePosition() {
-        Config.Point anchorPoint = Config.getHUDAnchor(Config.hudAnchor);
-        Config.Point originPoint = Config.getHUDOrigin(Config.hudAnchor, hud.getWidth(), hud.getHeight());
-        Config.Point positionPoint = new Config.Point();
-        positionPoint.x = Config.hudXPosition + anchorPoint.x - originPoint.x;
-        positionPoint.y = Config.hudYPosition + anchorPoint.y - originPoint.y;
+        HUDPlacementHelper.Point anchorPoint = HUDPlacementHelper.getHUDAnchor(ClientConfig.HUD_ANCHOR.get());
+        HUDPlacementHelper.Point originPoint = HUDPlacementHelper.getHUDOrigin(ClientConfig.HUD_ANCHOR.get(), hud.getWidth(), hud.getHeight());
+        HUDPlacementHelper.Point positionPoint = new HUDPlacementHelper.Point();
+        positionPoint.x = ClientConfig.HUD_X_POSITION.get() + anchorPoint.x - originPoint.x;
+        positionPoint.y = ClientConfig.HUD_Y_POSITION.get() + anchorPoint.y - originPoint.y;
         HUDWidget.setPositionHUD(positionPoint);
     }
 
     private void HUDUpdated() {
-        buttonAnchor.setSelected(Config.hudAnchor.ordinal());
-        textPositionX.setValue(String.valueOf(Config.hudXPosition));
-        textPositionY.setValue(String.valueOf(Config.hudYPosition));
+        buttonAnchor.setSelected(ClientConfig.HUD_ANCHOR.get().ordinal());
+        textPositionX.setValue(String.valueOf(ClientConfig.HUD_X_POSITION.get()));
+        textPositionY.setValue(String.valueOf(ClientConfig.HUD_Y_POSITION.get()));
+    }
+
+    private static Tooltip tooltip(ConfigEntry<?, ?> entry) {
+        Component component = entry.tooltip();
+        return component == null ? null : Tooltip.create(component);
     }
 }
-

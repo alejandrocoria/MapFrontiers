@@ -1,6 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
-import games.alejandrocoria.mapfrontiers.client.Config;
+import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
@@ -133,12 +133,12 @@ public class FrontierList extends AutoScaledScreen {
 
 
         buttonResetFilters = new SimpleButton(font, 110, resetFiltersLabel, (b) -> {
-            Config.filterFrontierType = Config.FilterFrontierType.All;
-            filterType.selectElementIf((element) -> ((RadioListElement) element).getId() == Config.filterFrontierType.ordinal());
-            Config.filterFrontierOwner = Config.FilterFrontierOwner.All;
-            filterOwner.selectElementIf((element) -> ((RadioListElement) element).getId() == Config.filterFrontierOwner.ordinal());
-            Config.filterFrontierDimension = "all";
-            filterDimension.selectElementIf((element) -> ((RadioListElement) element).getId() == Config.filterFrontierDimension.hashCode());
+            ClientConfig.FILTER_FRONTIER_TYPE.set(ClientConfig.FilterFrontierType.All);
+            filterType.selectElementIf((element) -> ((RadioListElement) element).getId() == ClientConfig.FILTER_FRONTIER_TYPE.get().ordinal());
+            ClientConfig.FILTER_FRONTIER_OWNER.set(ClientConfig.FilterFrontierOwner.All);
+            filterOwner.selectElementIf((element) -> ((RadioListElement) element).getId() == ClientConfig.FILTER_FRONTIER_OWNER.get().ordinal());
+            ClientConfig.FILTER_FRONTIER_DIMENSION.set("all");
+            filterDimension.selectElementIf((element) -> ((RadioListElement) element).getId() == ClientConfig.FILTER_FRONTIER_DIMENSION.get().hashCode());
             updateFrontiers();
             updateButtons();
         });
@@ -151,13 +151,13 @@ public class FrontierList extends AutoScaledScreen {
 
         rightColumn.addChild(new StringWidget(filterTypeLabel, font).setColor(ColorConstants.TEXT));
         filterType = new ScrollBox(52, 200, 16);
-        filterType.addElement(new RadioListElement(font, Config.getTranslatedEnum(Config.FilterFrontierType.All), Config.FilterFrontierType.All.ordinal()));
-        filterType.addElement(new RadioListElement(font, Config.getTranslatedEnum(Config.FilterFrontierType.Global), Config.FilterFrontierType.Global.ordinal()));
-        filterType.addElement(new RadioListElement(font, Config.getTranslatedEnum(Config.FilterFrontierType.Personal), Config.FilterFrontierType.Personal.ordinal()));
-        filterType.selectElementIf((element) -> ((RadioListElement) element).getId() == Config.filterFrontierType.ordinal());
+        filterType.addElement(new RadioListElement(font, ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierType.All), ClientConfig.FilterFrontierType.All.ordinal()));
+        filterType.addElement(new RadioListElement(font, ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierType.Global), ClientConfig.FilterFrontierType.Global.ordinal()));
+        filterType.addElement(new RadioListElement(font, ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierType.Personal), ClientConfig.FilterFrontierType.Personal.ordinal()));
+        filterType.selectElementIf((element) -> ((RadioListElement) element).getId() == ClientConfig.FILTER_FRONTIER_TYPE.get().ordinal());
         filterType.setElementClickedCallback(element -> {
             int selected = ((RadioListElement) element).getId();
-            Config.filterFrontierType = Config.FilterFrontierType.values()[selected];
+            ClientConfig.FILTER_FRONTIER_TYPE.set(ClientConfig.FilterFrontierType.values()[selected]);
             updateFrontiers();
             ClientGlobalEvents.postUpdatedConfigEvent();
             updateButtons();
@@ -167,13 +167,13 @@ public class FrontierList extends AutoScaledScreen {
         rightColumn.addChild(SpacerElement.height(4));
         rightColumn.addChild(new StringWidget(filterOwnerLabel, font).setColor(ColorConstants.TEXT));
         filterOwner = new ScrollBox(52, 200, 16);
-        filterOwner.addElement(new RadioListElement(font, Config.getTranslatedEnum(Config.FilterFrontierOwner.All), Config.FilterFrontierOwner.All.ordinal()));
-        filterOwner.addElement(new RadioListElement(font, Config.getTranslatedEnum(Config.FilterFrontierOwner.You), Config.FilterFrontierOwner.You.ordinal()));
-        filterOwner.addElement(new RadioListElement(font, Config.getTranslatedEnum(Config.FilterFrontierOwner.Others), Config.FilterFrontierOwner.Others.ordinal()));
-        filterOwner.selectElementIf((element) -> ((RadioListElement) element).getId() == Config.filterFrontierOwner.ordinal());
+        filterOwner.addElement(new RadioListElement(font, ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierOwner.All), ClientConfig.FilterFrontierOwner.All.ordinal()));
+        filterOwner.addElement(new RadioListElement(font, ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierOwner.You), ClientConfig.FilterFrontierOwner.You.ordinal()));
+        filterOwner.addElement(new RadioListElement(font, ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierOwner.Others), ClientConfig.FilterFrontierOwner.Others.ordinal()));
+        filterOwner.selectElementIf((element) -> ((RadioListElement) element).getId() == ClientConfig.FILTER_FRONTIER_OWNER.get().ordinal());
         filterOwner.setElementClickedCallback(element -> {
             int selected = ((RadioListElement) element).getId();
-            Config.filterFrontierOwner = Config.FilterFrontierOwner.values()[selected];
+            ClientConfig.FILTER_FRONTIER_OWNER.set(ClientConfig.FilterFrontierOwner.values()[selected]);
             updateFrontiers();
             ClientGlobalEvents.postUpdatedConfigEvent();
             updateButtons();
@@ -189,23 +189,23 @@ public class FrontierList extends AutoScaledScreen {
         filterDimension.addElement(new RadioListElement(font, theNetherLabel, "minecraft:the_nether".hashCode()));
         filterDimension.addElement(new RadioListElement(font, theEndLabel, "minecraft:the_end".hashCode()));
         addDimensionsToFilter();
-        filterDimension.selectElementIf((element) -> ((RadioListElement) element).getId() == Config.filterFrontierDimension.hashCode());
+        filterDimension.selectElementIf((element) -> ((RadioListElement) element).getId() == ClientConfig.FILTER_FRONTIER_DIMENSION.get().hashCode());
         filterDimension.setElementClickedCallback(element -> {
             int selected = ((RadioListElement) element).getId();
             if (selected == "all".hashCode()) {
-                Config.filterFrontierDimension = "all";
+                ClientConfig.FILTER_FRONTIER_DIMENSION.set("all");
             } else if (selected == "current".hashCode()) {
-                Config.filterFrontierDimension = "current";
+                ClientConfig.FILTER_FRONTIER_DIMENSION.set("current");
             } else {
-                Config.filterFrontierDimension = getDimensionFromHash(selected);
+                ClientConfig.FILTER_FRONTIER_DIMENSION.set(getDimensionFromHash(selected));
             }
             updateFrontiers();
             ClientGlobalEvents.postUpdatedConfigEvent();
             updateButtons();
         });
         if (filterDimension.getSelectedElement() == null) {
-            Config.filterFrontierDimension = "all";
-            filterDimension.selectElementIf((element) -> ((RadioListElement) element).getId() == Config.filterFrontierDimension.hashCode());
+            ClientConfig.FILTER_FRONTIER_DIMENSION.set("all");
+            filterDimension.selectElementIf((element) -> ((RadioListElement) element).getId() == ClientConfig.FILTER_FRONTIER_DIMENSION.get().hashCode());
         }
         rightColumn.addChild(filterDimension);
 
@@ -215,12 +215,12 @@ public class FrontierList extends AutoScaledScreen {
             new FrontierInfo(jmAPI, frontier).display();
         }));
         buttonDelete = bottomButtons.addChild(new SimpleButton(font, 110, deleteLabel, (b) -> {
-            if (Config.askConfirmationFrontierDelete) {
+            if (ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.get()) {
                 new DeleteConfirmationDialog(
                         "mapfrontiers.delete_frontier_dialog",
                         response -> {
                             if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                                Config.askConfirmationFrontierDelete = false;
+                                ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.set(false);
                                 ClientGlobalEvents.postUpdatedConfigEvent();
                             }
                             deleteSelectedFrontier();
@@ -314,7 +314,7 @@ public class FrontierList extends AutoScaledScreen {
 
         List<FrontierOverlay> toAdd = new ArrayList<>();
 
-        if (Config.filterFrontierType == Config.FilterFrontierType.All || Config.filterFrontierType == Config.FilterFrontierType.Personal) {
+        if (ClientConfig.FILTER_FRONTIER_TYPE.get() == ClientConfig.FilterFrontierType.All || ClientConfig.FILTER_FRONTIER_TYPE.get() == ClientConfig.FilterFrontierType.Personal) {
             for (FrontierOverlay frontier : MapFrontiersClient.getAllFrontiers(true)) {
                 if (checkFilterOwner(frontier) && checkFilterDimension(frontier)) {
                     toAdd.add(frontier);
@@ -322,7 +322,7 @@ public class FrontierList extends AutoScaledScreen {
             }
         }
 
-        if (Config.filterFrontierType == Config.FilterFrontierType.All || Config.filterFrontierType == Config.FilterFrontierType.Global) {
+        if (ClientConfig.FILTER_FRONTIER_TYPE.get() == ClientConfig.FilterFrontierType.All || ClientConfig.FILTER_FRONTIER_TYPE.get() == ClientConfig.FilterFrontierType.Global) {
             for (FrontierOverlay frontier : MapFrontiersClient.getAllFrontiers(false)) {
                 if (checkFilterOwner(frontier) && checkFilterDimension(frontier)) {
                     toAdd.add(frontier);
@@ -352,16 +352,18 @@ public class FrontierList extends AutoScaledScreen {
         }
 
         toAdd.sort((a, b) -> {
-            for (Config.Sorting sort : Config.frontierSorting) {
+            java.util.List<ClientConfig.Sorting> sorting = ClientConfig.getFrontierSortingValues();
+            java.util.List<Boolean> direction = ClientConfig.getFrontierSortingDirectionValues();
+            for (ClientConfig.Sorting sort : sorting) {
                 int order = switch (sort) {
-                    case Config.Sorting.Name -> {
+                    case ClientConfig.Sorting.Name -> {
                         int c = a.getName1().compareToIgnoreCase(b.getName1());
                         yield c == 0 ? a.getName2().compareToIgnoreCase(b.getName2()) : c;
                     }
-                    case Config.Sorting.Owner -> a.getOwner().compareTo(b.getOwner());
-                    case Config.Sorting.VertexChunk -> Integer.compare(Math.max(a.getChunkCount(), a.getVertexCount()), Math.max(b.getChunkCount(), b.getVertexCount()));
-                    case Config.Sorting.Area -> Float.compare(a.area, b.area);
-                    case Config.Sorting.Modified -> {
+                    case ClientConfig.Sorting.Owner -> a.getOwner().compareTo(b.getOwner());
+                    case ClientConfig.Sorting.VertexChunk -> Integer.compare(Math.max(a.getChunkCount(), a.getVertexCount()), Math.max(b.getChunkCount(), b.getVertexCount()));
+                    case ClientConfig.Sorting.Area -> Float.compare(a.area, b.area);
+                    case ClientConfig.Sorting.Modified -> {
                         if (a.getModified() == null && b.getModified() == null) {
                             yield 0;
                         } else if (a.getModified() == null) {
@@ -372,7 +374,7 @@ public class FrontierList extends AutoScaledScreen {
                             yield a.getModified().compareTo(b.getModified());
                         }
                     }
-                    case Config.Sorting.Created -> {
+                    case ClientConfig.Sorting.Created -> {
                         if (a.getCreated() == null && b.getCreated() == null) {
                             yield 0;
                         } else if (a.getCreated() == null) {
@@ -386,7 +388,7 @@ public class FrontierList extends AutoScaledScreen {
                 };
 
                 if (order != 0) {
-                    boolean ascending = Config.frontierSortingDirection.get(Config.frontierSorting.indexOf(sort));
+                    boolean ascending = direction.get(sorting.indexOf(sort));
                     return ascending ? order : -order;
                 }
             }
@@ -405,13 +407,13 @@ public class FrontierList extends AutoScaledScreen {
     }
 
     private boolean checkFilterOwner(FrontierOverlay frontier) {
-        if (Config.filterFrontierOwner == Config.FilterFrontierOwner.All) {
+        if (ClientConfig.FILTER_FRONTIER_OWNER.get() == ClientConfig.FilterFrontierOwner.All) {
             return true;
         }
 
         boolean ownerIsPlayer = minecraft.player != null && frontier.getOwner().equals(new SettingsUser(minecraft.player));
 
-        if (Config.filterFrontierOwner == Config.FilterFrontierOwner.You) {
+        if (ClientConfig.FILTER_FRONTIER_OWNER.get() == ClientConfig.FilterFrontierOwner.You) {
             return ownerIsPlayer;
         } else {
             return !ownerIsPlayer;
@@ -419,11 +421,11 @@ public class FrontierList extends AutoScaledScreen {
     }
 
     private boolean checkFilterDimension(FrontierOverlay frontier) {
-        if (Config.filterFrontierDimension.equals("all")) {
+        if (ClientConfig.FILTER_FRONTIER_DIMENSION.get().equals("all")) {
             return true;
         }
 
-        String dimension = Config.filterFrontierDimension;
+        String dimension = ClientConfig.FILTER_FRONTIER_DIMENSION.get();
         if (dimension.equals("current") && minecraft.level != null) {
             dimension = minecraft.level.dimension().identifier().toString();
         }
