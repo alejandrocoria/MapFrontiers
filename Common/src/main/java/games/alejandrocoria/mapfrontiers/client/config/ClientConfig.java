@@ -67,82 +67,96 @@ public final class ClientConfig {
     private static final ConfigFile FILE = new ConfigFile(CONFIG_PATH);
     private static boolean initialized = false;
 
-    public static final IntConfigEntry NEW_FRONTIER_SHAPE = register(intEntry(0, 0, 11, "newFrontierShape"));
-    public static final IntConfigEntry NEW_FRONTIER_COUNT = register(intEntry(16, 3, 999, "newFrontierVertexCount"));
-    public static final IntConfigEntry NEW_FRONTIER_SHAPE_WIDTH = register(intEntry(10, 0, 999, "newFrontierShapeWidth"));
-    public static final IntConfigEntry NEW_FRONTIER_SHAPE_RADIUS = register(intEntry(20, 0, 999, "newFrontierShapeRadius"));
-    public static final IntConfigEntry NEW_FRONTIER_CHUNK_SHAPE = register(intEntry(0, 0, 7, "newFrontierChunkShape"));
-    public static final IntConfigEntry NEW_FRONTIER_CHUNK_SHAPE_WIDTH = register(intEntry(5, 0, 32, "newFrontierChunkShapeWidth"));
-    public static final IntConfigEntry NEW_FRONTIER_CHUNK_SHAPE_LENGTH = register(intEntry(5, 0, 32, "newFrontierChunkShapeLength"));
-    public static final EnumConfigEntry<FrontierData.Mode> NEW_FRONTIER_MODE = register(enumEntry(FrontierData.Mode.class, FrontierData.Mode.Vertex, "newFrontierMode"));
-    public static final EnumConfigEntry<AfterCreatingFrontier> AFTER_CREATING_FRONTIER = register(enumEntry(AfterCreatingFrontier.class, AfterCreatingFrontier.Info, "afterCreatingFrontier"));
+    public static final IntConfigEntry NEW_FRONTIER_SHAPE = register(intEntry(0, 0, 11, "newFrontierShape")
+            .comment("Shape preset used when creating a new vertex frontier."));
+    public static final IntConfigEntry NEW_FRONTIER_COUNT = register(intEntry(16, 3, 999, "newFrontierVertexCount")
+            .comment("Number of vertices used by the selected vertex shape preset."));
+    public static final IntConfigEntry NEW_FRONTIER_SHAPE_WIDTH = register(intEntry(10, 0, 999, "newFrontierShapeWidth")
+            .comment("Width used by the selected vertex shape preset."));
+    public static final IntConfigEntry NEW_FRONTIER_SHAPE_RADIUS = register(intEntry(20, 0, 999, "newFrontierShapeRadius")
+            .comment("Radius used by the selected vertex shape preset."));
+    public static final IntConfigEntry NEW_FRONTIER_CHUNK_SHAPE = register(intEntry(0, 0, 7, "newFrontierChunkShape")
+            .comment("Shape preset used when creating a new chunk frontier."));
+    public static final IntConfigEntry NEW_FRONTIER_CHUNK_SHAPE_WIDTH = register(intEntry(5, 0, 32, "newFrontierChunkShapeWidth")
+            .comment("Width used by the selected chunk shape preset."));
+    public static final IntConfigEntry NEW_FRONTIER_CHUNK_SHAPE_LENGTH = register(intEntry(5, 0, 32, "newFrontierChunkShapeLength")
+            .comment("Length used by the selected chunk shape preset."));
+    public static final EnumConfigEntry<FrontierData.Mode> NEW_FRONTIER_MODE = register(enumEntry(FrontierData.Mode.class, FrontierData.Mode.Vertex, "newFrontierMode")
+            .comment("Mode used when creating a new frontier."));
+    public static final EnumConfigEntry<AfterCreatingFrontier> AFTER_CREATING_FRONTIER = register(enumEntry(AfterCreatingFrontier.class, AfterCreatingFrontier.Info, "afterCreatingFrontier")
+            .comment("Action to perform after creating a new frontier."));
 
-    public static final BooleanConfigEntry PASTE_NAME = register(boolEntry(false, "pasteName"));
-    public static final BooleanConfigEntry PASTE_VISIBILITY = register(boolEntry(true, "pasteVisibility"));
-    public static final BooleanConfigEntry PASTE_COLOR = register(boolEntry(true, "pasteColor"));
-    public static final BooleanConfigEntry PASTE_BANNER = register(boolEntry(true, "pasteBanner"));
-    public static final BooleanConfigEntry PASTE_OPTIONS_VISIBLE = register(boolEntry(false, "pasteOptionsVisible"));
+    public static final BooleanConfigEntry PASTE_NAME = register(boolEntry(false, "pasteName")
+            .comment("Paste the frontier name when pasting info."));
+    public static final BooleanConfigEntry PASTE_VISIBILITY = register(boolEntry(true, "pasteVisibility")
+            .comment("Paste visibility settings when pasting info."));
+    public static final BooleanConfigEntry PASTE_COLOR = register(boolEntry(true, "pasteColor")
+            .comment("Paste the frontier color when pasting info."));
+    public static final BooleanConfigEntry PASTE_BANNER = register(boolEntry(true, "pasteBanner")
+            .comment("Paste the frontier banner when pasting info."));
+    public static final BooleanConfigEntry PASTE_OPTIONS_VISIBLE = register(boolEntry(false, "pasteOptionsVisible")
+            .comment("Whether paste options are currently expanded."));
 
     public static final EnumConfigEntry<Visibility> FRONTIER_VISIBILITY = visibilityEntry("frontierVisibility",
-            "Force all frontier to be shown or hidden. In Custom you can decide for each frontier.");
+            "Force all frontiers to be shown or hidden. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> ANNOUNCE_IN_CHAT = visibilityEntry("announceInChat",
-            "Force all frontier to be announced in chat. In Custom you can decide for each frontier.");
+            "Force all frontiers to be announced in chat. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> ANNOUNCE_IN_TITLE = visibilityEntry("announceInTitle",
-            "Force all frontier to be announced as a title. In Custom you can decide for each frontier.");
+            "Force all frontiers to be announced as titles. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> FULLSCREEN_VISIBILITY = visibilityEntry("fullscreenVisibility",
-            "Force all frontier to be shown or hidden on the fullscreen map. In Custom you can decide for each frontier.");
+            "Force all frontiers to be shown or hidden on the fullscreen map. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> FULLSCREEN_NAME_VISIBILITY = visibilityEntry("fullscreenNameVisibility",
-            "Force all frontier names to be shown or hidden on the fullscreen map. In Custom you can decide for each frontier.");
+            "Force all frontier names to be shown or hidden on the fullscreen map. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> FULLSCREEN_OWNER_VISIBILITY = visibilityEntry("fullscreenOwnerVisibility",
-            "Force all frontier owners to be shown or hidden on the fullscreen map. In Custom you can decide for each frontier.");
+            "Force all frontier owners to be shown or hidden on the fullscreen map. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> FULLSCREEN_BANNER_VISIBILITY = visibilityEntry("fullscreenBannerVisibility",
-            "Force all frontier banners to be shown or hidden on the fullscreen map. In Custom you can decide for each frontier.");
+            "Force all frontier banners to be shown or hidden on the fullscreen map. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> FULLSCREEN_DAY_VISIBILITY = visibilityEntry("fullscreenDayVisibility",
-            "Force all frontier to be shown or hidden on the day fullscreen map. In Custom you can decide for each frontier.");
+            "Force all frontiers to be shown or hidden on the day fullscreen map. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> FULLSCREEN_NIGHT_VISIBILITY = visibilityEntry("fullscreenNightVisibility",
-            "Force all frontier to be shown or hidden on the night fullscreen map. In Custom you can decide for each frontier.");
+            "Force all frontiers to be shown or hidden on the night fullscreen map. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> FULLSCREEN_UNDERGROUND_VISIBILITY = visibilityEntry("fullscreenUndergroundVisibility",
-            "Force all frontier to be shown or hidden on the underground fullscreen map. In Custom you can decide for each frontier.");
+            "Force all frontiers to be shown or hidden on the underground fullscreen map. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> FULLSCREEN_TOPO_VISIBILITY = visibilityEntry("fullscreenTopoVisibility",
-            "Force all frontier to be shown or hidden on the topo fullscreen map. In Custom you can decide for each frontier.");
+            "Force all frontiers to be shown or hidden on the topo fullscreen map. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> FULLSCREEN_BIOME_VISIBILITY = visibilityEntry("fullscreenBiomeVisibility",
-            "Force all frontier to be shown or hidden on the biome fullscreen map. In Custom you can decide for each frontier.");
+            "Force all frontiers to be shown or hidden on the biome fullscreen map. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> MINIMAP_VISIBILITY = visibilityEntry("minimapVisibility",
-            "Force all frontier to be shown or hidden on the minimap. In Custom you can decide for each frontier.");
+            "Force all frontiers to be shown or hidden on the minimap. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> MINIMAP_NAME_VISIBILITY = visibilityEntry("minimapNameVisibility",
-            "Force all frontier names to be shown or hidden on the minimap. In Custom you can decide for each frontier.");
+            "Force all frontier names to be shown or hidden on the minimap. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> MINIMAP_OWNER_VISIBILITY = visibilityEntry("minimapOwnerVisibility",
-            "Force all frontier owners to be shown or hidden on the minimap. In Custom you can decide for each frontier.");
+            "Force all frontier owners to be shown or hidden on the minimap. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> MINIMAP_BANNER_VISIBILITY = visibilityEntry("minimapBannerVisibility",
-            "Force all frontier banners to be shown or hidden on the minimap. In Custom you can decide for each frontier.");
+            "Force all frontier banners to be shown or hidden on the minimap. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> MINIMAP_DAY_VISIBILITY = visibilityEntry("minimapDayVisibility",
-            "Force all frontier to be shown or hidden on the day minimap. In Custom you can decide for each frontier.");
+            "Force all frontiers to be shown or hidden on the day minimap. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> MINIMAP_NIGHT_VISIBILITY = visibilityEntry("minimapNightVisibility",
-            "Force all frontier to be shown or hidden on the night minimap. In Custom you can decide for each frontier.");
+            "Force all frontiers to be shown or hidden on the night minimap. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> MINIMAP_UNDERGROUND_VISIBILITY = visibilityEntry("minimapUndergroundVisibility",
-            "Force all frontier to be shown or hidden on the underground minimap. In Custom you can decide for each frontier.");
+            "Force all frontiers to be shown or hidden on the underground minimap. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> MINIMAP_TOPO_VISIBILITY = visibilityEntry("minimapTopoVisibility",
-            "Force all frontier to be shown or hidden on the topo minimap. In Custom you can decide for each frontier.");
+            "Force all frontiers to be shown or hidden on the topo minimap. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> MINIMAP_BIOME_VISIBILITY = visibilityEntry("minimapBiomeVisibility",
-            "Force all frontier to be shown or hidden on the biome minimap. In Custom you can decide for each frontier.");
+            "Force all frontiers to be shown or hidden on the biome minimap. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> WEBMAP_VISIBILITY = visibilityEntry("webmapVisibility",
-            "Force all frontier to be shown or hidden on the webmap. In Custom you can decide for each frontier.");
+            "Force all frontiers to be shown or hidden on the webmap. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> WEBMAP_NAME_VISIBILITY = visibilityEntry("webmapNameVisibility",
-            "Force all frontier names to be shown or hidden on the webmap. In Custom you can decide for each frontier.");
+            "Force all frontier names to be shown or hidden on the webmap. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> WEBMAP_OWNER_VISIBILITY = visibilityEntry("webmapOwnerVisibility",
-            "Force all frontier owners to be shown or hidden on the webmap. In Custom you can decide for each frontier.");
+            "Force all frontier owners to be shown or hidden on the webmap. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> WEBMAP_BANNER_VISIBILITY = visibilityEntry("webmapBannerVisibility",
-            "Force all frontier banners to be shown or hidden on the webmap. In Custom you can decide for each frontier.");
+            "Force all frontier banners to be shown or hidden on the webmap. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> WEBMAP_DAY_VISIBILITY = visibilityEntry("webmapDayVisibility",
-            "Force all frontier to be shown or hidden on the day webmap. In Custom you can decide for each frontier.");
+            "Force all frontiers to be shown or hidden on the day webmap. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> WEBMAP_NIGHT_VISIBILITY = visibilityEntry("webmapNightVisibility",
-            "Force all frontier to be shown or hidden on the night webmap. In Custom you can decide for each frontier.");
+            "Force all frontiers to be shown or hidden on the night webmap. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> WEBMAP_UNDERGROUND_VISIBILITY = visibilityEntry("webmapUndergroundVisibility",
-            "Force all frontier to be shown or hidden on the underground webmap. In Custom you can decide for each frontier.");
+            "Force all frontiers to be shown or hidden on the underground webmap. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> WEBMAP_TOPO_VISIBILITY = visibilityEntry("webmapTopoVisibility",
-            "Force all frontier to be shown or hidden on the topo webmap. In Custom you can decide for each frontier.");
+            "Force all frontiers to be shown or hidden on the topo webmap. In Custom, you can decide for each frontier.");
     public static final EnumConfigEntry<Visibility> WEBMAP_BIOME_VISIBILITY = visibilityEntry("webmapBiomeVisibility",
-            "Force all frontier to be shown or hidden on the biome webmap. In Custom you can decide for each frontier.");
+            "Force all frontiers to be shown or hidden on the biome webmap. In Custom, you can decide for each frontier.");
 
     public static final IntConfigEntry TITLE_ANNOUNCEMENT_DURATION = register(intEntry(70, 0, 1200, "titleAnnouncementDuration")
             .comment("Duration of title announcement, in game ticks.")
@@ -157,13 +171,14 @@ public final class ClientConfig {
             .comment("Announce unnamed frontiers in chat/title.")
             .translation(translation("announceUnnamedFrontiers")));
     public static final IntConfigEntry SNAP_DISTANCE = register(intEntry(8, 0, 16, "snapDistance")
-            .comment("Distance at which vertices are attached to nearby vertices.")
+            .comment("Distance at which vertices snap to nearby vertices.")
             .translation(translation("snapDistance")));
 
-    public static final StringConfigEntry SEND_COMMAND = register(stringEntry("msg", "sendCommand"));
+    public static final StringConfigEntry SEND_COMMAND = register(stringEntry("msg", "sendCommand")
+            .comment("Chat command used to send shared frontiers to another player."));
 
     public static final BooleanConfigEntry HIDE_NAMES_THAT_DONT_FIT = register(boolEntry(false, "hideNamesThatDontFit")
-            .comment("Hides the name if it is wider than the frontier at the zoom level it is being viewed.")
+            .comment("Hide frontier names when they do not fit at the current zoom level.")
             .translation(translation("hideNamesThatDontFit")));
     public static final DoubleConfigEntry POLYGONS_OPACITY = register(doubleEntry(0.4, 0.0, 1.0, "polygonsOpacity")
             .comment("Transparency of the frontier polygons. 0.0 is fully transparent and 1.0 is opaque.")
@@ -181,7 +196,7 @@ public final class ClientConfig {
             .comment("Transparency of the frontier text. 0.0 is fully transparent and 1.0 is opaque.")
             .translation(translation("textOpacity")));
     public static final EnumConfigEntry<TextColor> TEXT_COLOR = register(enumEntry(TextColor.class, TextColor.Frontier, "textColor")
-            .comment("Color of the frontier text. Frontier will use the frontier color. Bright will also use the same color but with maximum brightness.")
+            .comment("Color of the frontier text. Frontier uses the frontier color. Bright uses the same color at maximum brightness.")
             .translation(translation("textColor")));
     public static final IntConfigEntry BANNER_SIZE = register(intEntry(1, 1, 5, "bannerSize")
             .comment("Size of the frontier banner.")
@@ -191,7 +206,7 @@ public final class ClientConfig {
             .translation(translation("bannerOpacity")));
 
     public static final BooleanConfigEntry FULLSCREEN_BUTTONS = register(boolEntry(true, "fullscreenButtons")
-            .comment("Show buttons on fullscreen map.")
+            .comment("Show buttons on the fullscreen map.")
             .translation(translation("fullscreenButtons")));
     public static final BooleanConfigEntry ASK_CONFIRMATION_FRONTIER_DELETE = register(boolEntry(true, "askConfirmationFrontierDelete")
             .comment("Show a confirmation dialog before deleting a frontier.")
@@ -200,16 +215,19 @@ public final class ClientConfig {
             .comment("Show a confirmation dialog before deleting a group.")
             .translation(translation("askConfirmationGroupDelete")));
     public static final BooleanConfigEntry ASK_CONFIRMATION_USER_DELETE = register(boolEntry(true, "askConfirmationUserDelete")
-            .comment("Show a confirmation dialog before deleting an user.")
+            .comment("Show a confirmation dialog before deleting a user.")
             .translation(translation("askConfirmationUserDelete")));
 
     public static final StringListConfigEntry FRONTIER_SORTING = register(stringListEntry(DEFAULT_SORTING, ClientConfig::isValidSorting, "frontierSorting")
             .comment("Order of the frontier list sorting modes."));
     public static final BooleanListConfigEntry FRONTIER_SORTING_DIRECTION = register(booleanListEntry(DEFAULT_SORTING_DIRECTION, "frontierSortingDirection")
             .comment("Direction of the frontier list sorting modes. True means ascending and false means descending."));
-    public static final EnumConfigEntry<FilterFrontierType> FILTER_FRONTIER_TYPE = register(enumEntry(FilterFrontierType.class, FilterFrontierType.All, "filterFrontierType"));
-    public static final EnumConfigEntry<FilterFrontierOwner> FILTER_FRONTIER_OWNER = register(enumEntry(FilterFrontierOwner.class, FilterFrontierOwner.All, "filterFrontierOwner"));
-    public static final StringConfigEntry FILTER_FRONTIER_DIMENSION = register(stringEntry("all", "filterFrontierDimension"));
+    public static final EnumConfigEntry<FilterFrontierType> FILTER_FRONTIER_TYPE = register(enumEntry(FilterFrontierType.class, FilterFrontierType.All, "filterFrontierType")
+            .comment("Selected frontier type filter in the frontier list."));
+    public static final EnumConfigEntry<FilterFrontierOwner> FILTER_FRONTIER_OWNER = register(enumEntry(FilterFrontierOwner.class, FilterFrontierOwner.All, "filterFrontierOwner")
+            .comment("Selected frontier owner filter in the frontier list."));
+    public static final StringConfigEntry FILTER_FRONTIER_DIMENSION = register(stringEntry("all", "filterFrontierDimension")
+            .comment("Selected dimension filter in the frontier list. Use \"all\" to show every dimension or \"current\" to show only the current one."));
 
     public static final BooleanConfigEntry HUD_ENABLED = register(boolEntry(true, "hud", "enabled")
             .comment("Show the HUD on screen.")
@@ -236,10 +254,12 @@ public final class ClientConfig {
             .comment("HUD element on slot 3.")
             .translation(translation("hud", "slot3")));
     public static final EnumConfigEntry<HUDAnchor> HUD_ANCHOR = register(enumEntry(HUDAnchor.class, HUDAnchor.MinimapHorizontal, "hud", "anchor")
-            .comment("Anchor point of the HUD. In the case of choosing the minimap as an anchor, its default position will be used as a reference in the coordinates.")
+            .comment("Anchor point of the HUD. When anchored to the minimap, coordinates are relative to the minimap's default position.")
             .translation(translation("hud", "anchor")));
-    public static final IntConfigEntry HUD_X_POSITION = register(intEntry(0, Integer.MIN_VALUE, Integer.MAX_VALUE, "hud", "xPosition"));
-    public static final IntConfigEntry HUD_Y_POSITION = register(intEntry(0, Integer.MIN_VALUE, Integer.MAX_VALUE, "hud", "yPosition"));
+    public static final IntConfigEntry HUD_X_POSITION = register(intEntry(0, Integer.MIN_VALUE, Integer.MAX_VALUE, "hud", "xPosition")
+            .comment("Horizontal HUD offset relative to the selected anchor."));
+    public static final IntConfigEntry HUD_Y_POSITION = register(intEntry(0, Integer.MIN_VALUE, Integer.MAX_VALUE, "hud", "yPosition")
+            .comment("Vertical HUD offset relative to the selected anchor."));
 
     public static boolean load() {
         boolean dirty = FILE.load();

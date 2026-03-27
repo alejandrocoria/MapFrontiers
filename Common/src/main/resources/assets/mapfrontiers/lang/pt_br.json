@@ -211,7 +211,7 @@
     "mapfrontiers.config.borderOpacity.tooltip": "Transparency of the frontier border. 0.0 is fully transparent and 1.0 is opaque.",
     "mapfrontiers.config.textSize.tooltip": "Size of the frontier text.",
     "mapfrontiers.config.textOpacity.tooltip": "Transparency of the frontier text. 0.0 is fully transparent and 1.0 is opaque.",
-    "mapfrontiers.config.textColor.tooltip": "Color of the frontier text. Frontier will use the frontier color. Bright will also use the same color but with maximum brightness.",
+    "mapfrontiers.config.textColor.tooltip": "Color of the frontier text. Frontier uses the frontier color. Bright uses the same color at maximum brightness.",
     "mapfrontiers.config.bannerSize.tooltip": "Size of the frontier banner.",
     "mapfrontiers.config.bannerOpacity.tooltip": "Transparency of the frontier banner. 0.0 is fully transparent and 1.0 is opaque.",
     "mapfrontiers.config.fullscreenButtons.tooltip": "Mostrar botões mod no mapa em tela cheia.",
