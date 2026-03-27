@@ -6,6 +6,7 @@
 * Change: The copy button puts the frontier ID on the clipboard.
 * Fixed: HUD continues to display with F1.
 * Fixed: owned personal frontiers disappear when reconnecting after the server no longer has the mod.
+* Fixed: MapFrontiers now fails gracefully when JourneyMap does not initialize its plugin. In-world features are disabled, but the mod no longer breaks.
 
 **Beta 20:**
 * Fixed: New shapes are the wrong size when using an odd width.
