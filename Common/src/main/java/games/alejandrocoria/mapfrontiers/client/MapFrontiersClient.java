@@ -22,12 +22,15 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import journeymap.api.v2.client.IClientAPI;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.apache.commons.lang3.StringUtils;
 
@@ -88,160 +91,177 @@ public class MapFrontiersClient {
         MapFrontiersAPIBootstrap.setLogger(new MapFrontiersApiLogAdapter());
         ClientConfig.initialize();
 
-        ClientGlobalEvents.subscribeClientTickEvent(MapFrontiersClient.class, client -> {
-            if (client.level == null) {
-                return;
+        ClientGlobalEvents.subscribeClientTickEvent(MapFrontiersClient.class, MapFrontiersClient::handleClientTick);
+        ClientGlobalEvents.subscribePlayerTickEvent(MapFrontiersClient.class, MapFrontiersClient::handlePlayerTick);
+        ClientGlobalEvents.subscribeHudRenderEvent(MapFrontiersClient.class, MapFrontiersClient::handleHudRender);
+        ClientGlobalEvents.subscribeClientConnectedEvent(MapFrontiersClient.class, MapFrontiersClient::handleClientConnected);
+        ClientGlobalEvents.subscribeClientDisconnectedEvent(MapFrontiersClient.class, MapFrontiersClient::handleClientDisconnected);
+    }
+
+    private static void handleClientTick(Minecraft client) {
+        if (client.level == null) {
+            return;
+        }
+
+        if (!isJourneyMapPluginAvailable()) {
+            return;
+        }
+
+        handleWorldChange(client);
+        processHandshake();
+        updateOverlayManagers();
+        tickHud();
+    }
+
+    private static void handlePlayerTick(Minecraft client, @Nullable Player player) {
+        if (client.level == null) {
+            return;
+        }
+
+        handleOpenSettingsKey();
+
+        if (!isJourneyMapPluginAvailable()) {
+            return;
+        }
+
+        if (player == null || ClientConfig.FRONTIER_VISIBILITY.get() == ClientConfig.Visibility.Never) {
+            return;
+        }
+
+        handleFrontierAnnouncements(client, player);
+    }
+
+    private static void handleWorldChange(Minecraft client) {
+        if (client.level != lastClientLevel) {
+            if (!handshakeResolved) {
+                restartHandshake();
+                if (lastClientLevel != null) {
+                    MapFrontiers.LOGGER.info("World changed before handshake resolution, restarting handshake.");
+                }
+            }
+            lastClientLevel = client.level;
+        }
+    }
+
+    private static void updateOverlayManagers() {
+        ClientFrontierRuntime runtime = requireFrontierRuntime();
+        FrontiersOverlayManager frontiersOverlayManager = runtime.getGlobalFrontiersOverlayManager();
+        FrontiersOverlayManager personalFrontiersOverlayManager = runtime.getPersonalFrontiersOverlayManager();
+        frontiersOverlayManager.updateAllOverlays(false);
+        personalFrontiersOverlayManager.updateAllOverlays(false);
+    }
+
+    private static void tickHud() {
+        if (hud != null) {
+            hud.tick();
+        }
+    }
+
+    private static void handleOpenSettingsKey() {
+        while (openSettingsKey != null && openSettingsKey.consumeClick()) {
+            new ModSettings(false).display();
+        }
+    }
+
+    private static void handleFrontierAnnouncements(Minecraft client, Player player) {
+        ClientFrontierRuntime runtime = requireFrontierRuntime();
+        FrontiersOverlayManager frontiersOverlayManager = runtime.getGlobalFrontiersOverlayManager();
+        FrontiersOverlayManager personalFrontiersOverlayManager = runtime.getPersonalFrontiersOverlayManager();
+
+        BlockPos currentPlayerPosition = player.blockPosition();
+        if (currentPlayerPosition.getX() != lastPlayerPosition.getX() || currentPlayerPosition.getZ() != lastPlayerPosition.getZ()) {
+            lastPlayerPosition = currentPlayerPosition;
+
+            Set<FrontierOverlay> frontiers = personalFrontiersOverlayManager.getFrontiersForAnnounce(player.level().dimension(), lastPlayerPosition);
+            frontiers.addAll(frontiersOverlayManager.getFrontiersForAnnounce(player.level().dimension(), lastPlayerPosition));
+
+            for (Iterator<FrontierOverlay> i = insideFrontiers.iterator(); i.hasNext();) {
+                FrontierOverlay inside = i.next();
+                if (frontiers.stream().noneMatch(f -> f.getId().equals(inside.getId()))) {
+                    boolean frontierAnnounceInChat = inside.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat);
+                    if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), frontierAnnounceInChat) && (inside.isNamed() || ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS.get())) {
+                        player.displayClientMessage(Component.translatable("mapfrontiers.chat.leaving", createAnnounceTextWithName(inside)), false);
+                    }
+                    i.remove();
+                }
             }
 
-            if (!isJourneyMapPluginAvailable()) {
-                return;
-            }
+            for (FrontierOverlay frontier : frontiers) {
+                if (insideFrontiers.add(frontier) && (frontier.isNamed() || ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS.get())) {
+                    Component text = createAnnounceTextWithName(frontier);
 
-            if (client.level != lastClientLevel) {
-                if (!handshakeResolved) {
-                    restartHandshake();
-                    if (lastClientLevel != null) {
-                        MapFrontiers.LOGGER.info("World changed before handshake resolution, restarting handshake.");
+                    boolean frontierAnnounceInChat = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat);
+                    if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), frontierAnnounceInChat)) {
+                        player.displayClientMessage(Component.translatable("mapfrontiers.chat.entering", text), false);
+                    }
+
+                    boolean frontierAnnounceInTitle = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInTitle);
+                    if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_TITLE.get(), frontierAnnounceInTitle)) {
+                        if (ClientConfig.TITLE_ANNOUNCEMENT_ABOVE_HOTBAR.get()) {
+                            client.gui.setOverlayMessage(text, false);
+                        } else if (System.currentTimeMillis() >= lastTitleTime + ClientConfig.TITLE_ANNOUNCEMENT_TIMEOUT.get() / 20 * 1000L) {
+                            lastTitleTime = System.currentTimeMillis();
+                            client.gui.setTimes(10, ClientConfig.TITLE_ANNOUNCEMENT_DURATION.get(), 20);
+                            client.gui.setTitle(text);
+                        }
                     }
                 }
-                lastClientLevel = client.level;
             }
+        }
+    }
 
-            processHandshake();
+    private static void handleHudRender(GuiGraphics graphics, float delta) {
+        if (!isJourneyMapPluginAvailable()) {
+            return;
+        }
 
-            ClientFrontierRuntime runtime = frontierRuntime;
-            if (runtime != null && runtime.hasInitializedManagers()) {
-                FrontiersOverlayManager frontiersOverlayManager = runtime.getGlobalFrontiersOverlayManager();
-                FrontiersOverlayManager personalFrontiersOverlayManager = runtime.getPersonalFrontiersOverlayManager();
-                if (frontiersOverlayManager != null && personalFrontiersOverlayManager != null) {
-                    frontiersOverlayManager.updateAllOverlays(false);
-                    personalFrontiersOverlayManager.updateAllOverlays(false);
-                }
-            }
+        if (hud == null) {
+            hud = new HUD();
+        } else {
+            hud.drawInGameHUD(graphics, delta);
+        }
+    }
 
-            if (hud != null) {
-                hud.tick();
-            }
-        });
+    private static void handleClientConnected() {
+        if (!isJourneyMapPluginAvailable()) {
+            MapFrontiers.LOGGER.warn(
+                    "JourneyMap did not initialize the MapFrontiers client plugin. World features are disabled for this session. Check mod version compatibility."
+            );
+            return;
+        }
 
-        ClientGlobalEvents.subscribePlayerTickEvent(MapFrontiersClient.class, (client, player) -> {
-            if (client.level == null) {
-                return;
-            }
+        ensureFrontierRuntime();
+        restartHandshake();
 
-            while (openSettingsKey != null && openSettingsKey.consumeClick()) {
-                new ModSettings(false).display();
-            }
+        MapFrontiers.LOGGER.info("ClientConnectedEvent done");
+    }
 
-            if (!isJourneyMapPluginAvailable()) {
-                return;
-            }
+    private static void handleClientDisconnected() {
+        if (frontierRuntime != null) {
+            frontierRuntime.close();
+            frontierRuntime = null;
+        }
 
-            FrontiersOverlayManager frontiersOverlayManager = getFrontiersOverlayManagerOrNull(false);
-            FrontiersOverlayManager personalFrontiersOverlayManager = getFrontiersOverlayManagerOrNull(true);
-            if (frontiersOverlayManager == null || personalFrontiersOverlayManager == null) {
-                return;
-            }
+        if (hud != null) {
+            hud = null;
+        }
 
-            if (player == null || ClientConfig.FRONTIER_VISIBILITY.get() == ClientConfig.Visibility.Never) {
-                return;
-            }
+        settingsProfile = null;
+        handshakeSent = false;
+        handshakeResolved = false;
+        modOnServer = false;
+        initialSettingsProfileReceived = false;
+        initialFrontiersReceived = false;
+        clientApiPublished = false;
+        handshakeNonce = 0L;
+        handshakeStartedAtMs = 0L;
+        lastHandshakeSentAtMs = 0L;
+        lastClientLevel = null;
+        MapFrontiersAPIBootstrap.clearClientAPI();
 
-            BlockPos currentPlayerPosition = player.blockPosition();
-            if (currentPlayerPosition.getX() != lastPlayerPosition.getX() || currentPlayerPosition.getZ() != lastPlayerPosition.getZ()) {
-                lastPlayerPosition = currentPlayerPosition;
+        ChatFrontiers.clear();
 
-                Set<FrontierOverlay> frontiers = personalFrontiersOverlayManager.getFrontiersForAnnounce(player.level().dimension(), lastPlayerPosition);
-                frontiers.addAll(frontiersOverlayManager.getFrontiersForAnnounce(player.level().dimension(), lastPlayerPosition));
-
-                for (Iterator<FrontierOverlay> i = insideFrontiers.iterator(); i.hasNext();) {
-                    FrontierOverlay inside = i.next();
-                    if (frontiers.stream().noneMatch(f -> f.getId().equals(inside.getId()))) {
-                        boolean frontierAnnounceInChat = inside.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat);
-                        if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), frontierAnnounceInChat) && (inside.isNamed() || ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS.get())) {
-                            player.displayClientMessage(Component.translatable("mapfrontiers.chat.leaving", createAnnounceTextWithName(inside)), false);
-                        }
-                        i.remove();
-                    }
-                }
-
-                for (FrontierOverlay frontier : frontiers) {
-                    if (insideFrontiers.add(frontier) && (frontier.isNamed() || ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS.get())) {
-                        Component text = createAnnounceTextWithName(frontier);
-
-                        boolean frontierAnnounceInChat = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat);
-                        if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), frontierAnnounceInChat)) {
-                            player.displayClientMessage(Component.translatable("mapfrontiers.chat.entering", text), false);
-                        }
-
-                        boolean frontierAnnounceInTitle = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInTitle);
-                        if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_TITLE.get(), frontierAnnounceInTitle)) {
-                            if (ClientConfig.TITLE_ANNOUNCEMENT_ABOVE_HOTBAR.get()) {
-                                client.gui.setOverlayMessage(text, false);
-                            } else if (System.currentTimeMillis() >= lastTitleTime + ClientConfig.TITLE_ANNOUNCEMENT_TIMEOUT.get() / 20 * 1000L) {
-                                lastTitleTime = System.currentTimeMillis();
-                                client.gui.setTimes(10, ClientConfig.TITLE_ANNOUNCEMENT_DURATION.get(), 20);
-                                client.gui.setTitle(text);
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        ClientGlobalEvents.subscribeHudRenderEvent(MapFrontiersClient.class, (graphics, delta) -> {
-            if (!isJourneyMapPluginAvailable()) {
-                return;
-            }
-
-            if (hud == null) {
-                hud = new HUD();
-            } else {
-                hud.drawInGameHUD(graphics, delta);
-            }
-        });
-
-        ClientGlobalEvents.subscribeClientConnectedEvent(MapFrontiersClient.class, () -> {
-            if (!isJourneyMapPluginAvailable()) {
-                MapFrontiers.LOGGER.warn(
-                        "JourneyMap did not initialize the MapFrontiers client plugin. World features are disabled for this session. Check mod version compatibility."
-                );
-                return;
-            }
-
-            ensureFrontierRuntime();
-            restartHandshake();
-
-            MapFrontiers.LOGGER.info("ClientConnectedEvent done");
-        });
-
-        ClientGlobalEvents.subscribeClientDisconnectedEvent(MapFrontiersClient.class, () -> {
-            if (frontierRuntime != null) {
-                frontierRuntime.close();
-                frontierRuntime = null;
-            }
-
-            if (hud != null) {
-                hud = null;
-            }
-
-            settingsProfile = null;
-            handshakeSent = false;
-            handshakeResolved = false;
-            modOnServer = false;
-            initialSettingsProfileReceived = false;
-            initialFrontiersReceived = false;
-            clientApiPublished = false;
-            handshakeNonce = 0L;
-            handshakeStartedAtMs = 0L;
-            lastHandshakeSentAtMs = 0L;
-            lastClientLevel = null;
-            MapFrontiersAPIBootstrap.clearClientAPI();
-
-            ChatFrontiers.clear();
-
-            MapFrontiers.LOGGER.info("ClientDisconnectedEvent done");
-        });
+        MapFrontiers.LOGGER.info("ClientDisconnectedEvent done");
     }
 
     private static Component createAnnounceTextWithName(FrontierOverlay frontier) {
