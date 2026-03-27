@@ -58,6 +58,9 @@ public class PacketFrontierCreated {
 
     public static void handle(PacketContext<PacketFrontierCreated> ctx) {
         if (Side.CLIENT.equals(ctx.side())) {
+            if (!MapFrontiersClient.isJourneyMapPluginAvailable()) {
+                return;
+            }
             PacketFrontierCreated message = ctx.message();
             MapFrontiersClient.getOperationService().applyFrontierCreated(message.frontier, message.playerID);
         }

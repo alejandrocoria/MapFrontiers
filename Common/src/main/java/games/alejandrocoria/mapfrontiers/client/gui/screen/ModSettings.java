@@ -169,23 +169,27 @@ public class ModSettings extends AutoScaledScreen {
     private boolean canEditGroups;
     private Tab tabSelected;
     private int ticksSinceLastUpdate = 0;
+    private final boolean subscribeToSettingsProfileEvents;
 
     public ModSettings(boolean showKeyHint) {
         super(titleLabel, 696, 366);
         this.showKeyHint = showKeyHint;
+        subscribeToSettingsProfileEvents = MapFrontiersClient.isJourneyMapPluginAvailable();
 
-        MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> {
-            if ((profile.updateSettings == SettingsProfile.State.Enabled) == canEditGroups) {
-                return;
-            }
+        if (subscribeToSettingsProfileEvents) {
+            MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> {
+                if ((profile.updateSettings == SettingsProfile.State.Enabled) == canEditGroups) {
+                    return;
+                }
 
-            if (tabSelected != null) {
-                MapFrontiersClient.setLastSettingsTab(tabSelected);
-            }
+                if (tabSelected != null) {
+                    MapFrontiersClient.setLastSettingsTab(tabSelected);
+                }
 
-            onClose();
-            new ModSettings(showKeyHint).display();
-        });
+                onClose();
+                new ModSettings(showKeyHint).display();
+            });
+        }
     }
 
     @Override
@@ -783,7 +787,9 @@ public class ModSettings extends AutoScaledScreen {
     public void onClose() {
         ClientGlobalEvents.postUpdatedConfigEvent();
         MapFrontiersClient.setLastSettingsTab(tabSelected);
-        MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
+        if (subscribeToSettingsProfileEvents) {
+            MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
+        }
         ClientGlobalEvents.unsubscribeAllEvents(this);
         super.onClose();
     }
@@ -820,8 +826,8 @@ public class ModSettings extends AutoScaledScreen {
     }
 
     private void updateButtonsVisibility() {
-        buttonEditHUD.visible = tabSelected == Tab.General && ClientConfig.HUD_ENABLED.get() && minecraft.player != null;
-        buttonFrontierAppearance.visible = tabSelected == Tab.General && minecraft.player != null;
+        buttonEditHUD.visible = tabSelected == Tab.General && ClientConfig.HUD_ENABLED.get() && minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
+        buttonFrontierAppearance.visible = tabSelected == Tab.General && minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
         textNewUser.visible = canAddNewUser();
         buttonNewUser.visible = canAddNewUser();
     }

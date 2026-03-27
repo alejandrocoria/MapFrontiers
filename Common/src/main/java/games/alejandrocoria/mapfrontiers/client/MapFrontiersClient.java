@@ -93,6 +93,10 @@ public class MapFrontiersClient {
                 return;
             }
 
+            if (!isJourneyMapPluginAvailable()) {
+                return;
+            }
+
             if (client.level != lastClientLevel) {
                 if (!handshakeResolved) {
                     restartHandshake();
@@ -125,14 +129,18 @@ public class MapFrontiersClient {
                 return;
             }
 
+            while (openSettingsKey != null && openSettingsKey.consumeClick()) {
+                new ModSettings(false).display();
+            }
+
+            if (!isJourneyMapPluginAvailable()) {
+                return;
+            }
+
             FrontiersOverlayManager frontiersOverlayManager = getFrontiersOverlayManagerOrNull(false);
             FrontiersOverlayManager personalFrontiersOverlayManager = getFrontiersOverlayManagerOrNull(true);
             if (frontiersOverlayManager == null || personalFrontiersOverlayManager == null) {
                 return;
-            }
-
-            while (openSettingsKey != null && openSettingsKey.consumeClick()) {
-                new ModSettings(false).display();
             }
 
             if (player == null || ClientConfig.FRONTIER_VISIBILITY.get() == ClientConfig.Visibility.Never) {
@@ -182,6 +190,10 @@ public class MapFrontiersClient {
         });
 
         ClientGlobalEvents.subscribeHudRenderEvent(MapFrontiersClient.class, (graphics, delta) -> {
+            if (!isJourneyMapPluginAvailable()) {
+                return;
+            }
+
             if (hud == null) {
                 hud = new HUD();
             } else {
@@ -190,6 +202,13 @@ public class MapFrontiersClient {
         });
 
         ClientGlobalEvents.subscribeClientConnectedEvent(MapFrontiersClient.class, () -> {
+            if (!isJourneyMapPluginAvailable()) {
+                MapFrontiers.LOGGER.warn(
+                        "JourneyMap did not initialize the MapFrontiers client plugin. World features are disabled for this session. Check mod version compatibility."
+                );
+                return;
+            }
+
             ensureFrontierRuntime();
             restartHandshake();
 
@@ -246,14 +265,19 @@ public class MapFrontiersClient {
         return text;
     }
 
-    public static void setjmAPI(IClientAPI newJmAPI) {
+    public static void setJmAPI(IClientAPI newJmAPI) {
         jmAPI = newJmAPI;
-        if (frontierRuntime != null) {
-            frontierRuntime.setJourneyMapApi(newJmAPI);
-        }
     }
 
-    private static ClientFrontierRuntime ensureFrontierRuntime() {
+    public static boolean isJourneyMapPluginAvailable() {
+        return jmAPI != null;
+    }
+
+    private static @Nullable ClientFrontierRuntime ensureFrontierRuntime() {
+        if (jmAPI == null) {
+            return null;
+        }
+
         if (frontierRuntime == null) {
             frontierRuntime = new ClientFrontierRuntime(jmAPI);
             frontierRuntime.getSettingsProfileEvents().subscribeUpdated(MapFrontiersClient.class, profile -> {
@@ -263,16 +287,27 @@ public class MapFrontiersClient {
                 resolveHandshake(true, HandshakeSignal.SETTINGS_PROFILE);
                 tryPublishClientApi();
             });
-        } else {
-            frontierRuntime.setJourneyMapApi(jmAPI);
         }
 
         frontierRuntime.ensureInitialized();
         return frontierRuntime;
     }
 
+    private static ClientFrontierRuntime requireFrontierRuntime() {
+        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        if (runtime == null) {
+            throw new IllegalStateException("JourneyMap plugin is not available.");
+        }
+
+        return runtime;
+    }
+
     private static FrontiersOverlayManager getFrontiersOverlayManagerOrNull(boolean personal) {
         ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        if (runtime == null) {
+            return null;
+        }
+
         if (personal) {
             return runtime.getPersonalFrontiersOverlayManager();
         }
@@ -282,6 +317,10 @@ public class MapFrontiersClient {
 
     public static void setFrontiersFromServer(List<FrontierData> globalFrontiers, List<FrontierData> personalFrontiers) {
         ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        if (runtime == null) {
+            return;
+        }
+
         if (!runtime.hasInitializedManagers()) {
             return;
         }
@@ -344,22 +383,22 @@ public class MapFrontiersClient {
     }
 
     public static FrontierLocalOverrides getLocalOverrides() {
-        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        ClientFrontierRuntime runtime = requireFrontierRuntime();
         return runtime.getLocalOverrides();
     }
 
     public static ClientFrontierOperationService getOperationService() {
-        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        ClientFrontierRuntime runtime = requireFrontierRuntime();
         return runtime.getOperationService();
     }
 
     public static ClientFrontierEvents getFrontierEvents() {
-        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        ClientFrontierRuntime runtime = requireFrontierRuntime();
         return runtime.getFrontierEvents();
     }
 
     public static ClientSettingsProfileEvents getSettingsProfileEvents() {
-        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        ClientFrontierRuntime runtime = requireFrontierRuntime();
         return runtime.getSettingsProfileEvents();
     }
 
@@ -392,12 +431,17 @@ public class MapFrontiersClient {
     }
 
     public static void receiveSettingsProfile(SettingsProfile profile) {
+        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        if (runtime == null) {
+            return;
+        }
+
         SettingsProfile currentProfile = settingsProfile;
         if (currentProfile != null && currentProfile.equals(profile)) {
             return;
         }
 
-        ensureFrontierRuntime().getSettingsProfileEvents().postUpdated(profile);
+        runtime.getSettingsProfileEvents().postUpdated(profile);
     }
 
     public static void receiveHandshakeAck(long nonce) {
@@ -414,6 +458,10 @@ public class MapFrontiersClient {
     }
 
     private static void processHandshake() {
+        if (!isJourneyMapPluginAvailable()) {
+            return;
+        }
+
         if (handshakeResolved) {
             return;
         }
@@ -482,11 +530,12 @@ public class MapFrontiersClient {
         }
     }
 
-    private static void ensureClientApiInitialized() {
-        ensureFrontierRuntime();
-    }
-
     private static void tryPublishClientApi() {
+        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        if (runtime == null) {
+            return;
+        }
+
         if (!handshakeResolved || clientApiPublished) {
             return;
         }
@@ -495,8 +544,7 @@ public class MapFrontiersClient {
             return;
         }
 
-        ensureClientApiInitialized();
-        MapFrontiersAPIBootstrap.setClientAPI(frontierRuntime.getOrCreateClientApi());
+        MapFrontiersAPIBootstrap.setClientAPI(runtime.getOrCreateClientApi());
         clientApiPublished = true;
         MapFrontiers.LOGGER.info(
                 "Published client API. modOnServer={}, initialSettingsProfileReceived={}, initialFrontiersReceived={}",

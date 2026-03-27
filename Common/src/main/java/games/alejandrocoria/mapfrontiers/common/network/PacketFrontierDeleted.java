@@ -64,6 +64,9 @@ public class PacketFrontierDeleted {
 
     public static void handle(PacketContext<PacketFrontierDeleted> ctx) {
         if (Side.CLIENT.equals(ctx.side())) {
+            if (!MapFrontiersClient.isJourneyMapPluginAvailable()) {
+                return;
+            }
             PacketFrontierDeleted message = ctx.message();
             MapFrontiersClient.getOperationService().applyFrontierDeleted(message.dimension, message.frontierID, message.personal);
         }

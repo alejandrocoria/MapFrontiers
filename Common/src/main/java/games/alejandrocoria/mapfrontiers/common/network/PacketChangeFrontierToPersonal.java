@@ -76,6 +76,9 @@ public class PacketChangeFrontierToPersonal {
             ServerFrontierOperationResult result = MapFrontiers.getServerRuntime().getOperationService().changeFrontierToPersonal(player, message.frontierID);
             result.dispatchNetworkActions();
         } else {
+            if (!MapFrontiersClient.isJourneyMapPluginAvailable()) {
+                return;
+            }
             MapFrontiersClient.getOperationService().applyFrontierChangeToPersonal(message.frontierID, message.modified);
         }
     }

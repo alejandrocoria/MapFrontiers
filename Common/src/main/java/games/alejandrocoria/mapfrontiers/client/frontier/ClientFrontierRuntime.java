@@ -4,35 +4,26 @@ import games.alejandrocoria.mapfrontiers.client.api.MapFrontiersClientAPIImpl;
 import games.alejandrocoria.mapfrontiers.client.settings.ClientSettingsProfileEvents;
 import journeymap.api.v2.client.IClientAPI;
 
-import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class ClientFrontierRuntime {
-    private @Nullable IClientAPI journeyMapApi;
-    private @Nullable FrontiersOverlayManager globalFrontiersOverlayManager;
-    private @Nullable FrontiersOverlayManager personalFrontiersOverlayManager;
-    private @Nullable ClientLocalPersonalFrontierStore localPersonalFrontierStore;
-    private @Nullable ClientFrontierEvents frontierEvents;
-    private @Nullable ClientSettingsProfileEvents settingsProfileEvents;
-    private @Nullable ClientFrontierOperationService operationService;
-    private @Nullable ClientFrontierSyncService syncService;
-    private @Nullable FrontierLocalOverrides localOverrides;
-    private @Nullable MapFrontiersClientAPIImpl clientApi;
+    private final IClientAPI journeyMapApi;
+    private FrontiersOverlayManager globalFrontiersOverlayManager;
+    private FrontiersOverlayManager personalFrontiersOverlayManager;
+    private ClientLocalPersonalFrontierStore localPersonalFrontierStore;
+    private ClientFrontierEvents frontierEvents;
+    private ClientSettingsProfileEvents settingsProfileEvents;
+    private ClientFrontierOperationService operationService;
+    private ClientFrontierSyncService syncService;
+    private FrontierLocalOverrides localOverrides;
+    private MapFrontiersClientAPIImpl clientApi;
 
-    public ClientFrontierRuntime(@Nullable IClientAPI journeyMapApi) {
-        this.journeyMapApi = journeyMapApi;
-    }
-
-    public void setJourneyMapApi(@Nullable IClientAPI journeyMapApi) {
+    public ClientFrontierRuntime(IClientAPI journeyMapApi) {
         this.journeyMapApi = journeyMapApi;
     }
 
     public void ensureInitialized() {
-        if (journeyMapApi == null) {
-            return;
-        }
-
         if (globalFrontiersOverlayManager == null) {
             globalFrontiersOverlayManager = new FrontiersOverlayManager(journeyMapApi);
         }
@@ -72,19 +63,16 @@ public class ClientFrontierRuntime {
         return globalFrontiersOverlayManager != null && personalFrontiersOverlayManager != null;
     }
 
-    @Nullable
     public FrontiersOverlayManager getGlobalFrontiersOverlayManager() {
         ensureInitialized();
         return globalFrontiersOverlayManager;
     }
 
-    @Nullable
     public FrontiersOverlayManager getPersonalFrontiersOverlayManager() {
         ensureInitialized();
         return personalFrontiersOverlayManager;
     }
 
-    @Nullable
     public FrontierLocalOverrides getLocalOverrides() {
         ensureInitialized();
         return localOverrides;

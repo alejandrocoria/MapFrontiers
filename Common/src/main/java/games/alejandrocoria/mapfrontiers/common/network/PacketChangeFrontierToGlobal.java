@@ -76,6 +76,9 @@ public class PacketChangeFrontierToGlobal {
             ServerFrontierOperationResult result = MapFrontiers.getServerRuntime().getOperationService().changeFrontierToGlobal(player, message.frontierID);
             result.dispatchNetworkActions();
         } else {
+            if (!MapFrontiersClient.isJourneyMapPluginAvailable()) {
+                return;
+            }
             MapFrontiersClient.getOperationService().applyFrontierChangeToGlobal(message.frontierID, message.modified);
         }
     }

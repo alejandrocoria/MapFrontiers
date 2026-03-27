@@ -85,6 +85,9 @@ public class PacketFrontierUpdated {
 
     public static void handle(PacketContext<PacketFrontierUpdated> ctx) {
         if (Side.CLIENT.equals(ctx.side())) {
+            if (!MapFrontiersClient.isJourneyMapPluginAvailable()) {
+                return;
+            }
             PacketFrontierUpdated message = ctx.message();
             MapFrontiersClient.getOperationService().applyFrontierUpdated(message.dimension, message.frontierId, message.personal, message.change,
                     message.playerID);

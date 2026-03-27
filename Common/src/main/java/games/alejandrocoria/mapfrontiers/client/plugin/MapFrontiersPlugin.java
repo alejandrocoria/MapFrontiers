@@ -23,7 +23,7 @@ public class MapFrontiersPlugin implements IClientPlugin {
 
     @Override
     public void initialize(final IClientAPI jmAPI) {
-        MapFrontiersClient.setjmAPI(jmAPI);
+        MapFrontiersClient.setJmAPI(jmAPI);
 
         FullscreenEventRegistry.FULLSCREEN_MAP_CLICK_EVENT.subscribe(MapFrontiers.MODID, (clickEvent) -> {
             if (fullscreenMap == null) {
