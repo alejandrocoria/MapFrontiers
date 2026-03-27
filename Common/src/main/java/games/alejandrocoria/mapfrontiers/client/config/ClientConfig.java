@@ -64,11 +64,12 @@ public final class ClientConfig {
     );
     private static final List<Boolean> DEFAULT_SORTING_DIRECTION = List.of(false, true, true, true, true, false);
 
+    public static final int CURRENT_VERSION = 1;
     public static final String DIMENSION_FILTER_ALL = "mapfrontiers:all";
     public static final String DIMENSION_FILTER_CURRENT = "mapfrontiers:current";
 
     private static final Path CONFIG_PATH = Services.PLATFORM.getConfigDirectory().resolve(MapFrontiers.MODID + "-client.toml");
-    private static final ConfigFile FILE = new ConfigFile(CONFIG_PATH, ClientConfigMigrations.INSTANCE);
+    private static final ConfigFile FILE = new ConfigFile(CONFIG_PATH, CURRENT_VERSION, ClientConfigMigrations.INSTANCE);
     private static boolean initialized = false;
 
     public static final IntConfigEntry TITLE_ANNOUNCEMENT_DURATION = register(intEntry(70, 0, 1200, "announcement", "title", "duration")
@@ -281,6 +282,10 @@ public final class ClientConfig {
             .comment("Paste the frontier banner when pasting info."));
     public static final BooleanConfigEntry PASTE_OPTIONS_VISIBLE = register(boolEntry(false, "paste", "optionsVisible")
             .comment("Whether paste options are currently expanded."));
+
+    static {
+        FILE.registerSectionComment("list", "Frontier list settings.");
+    }
 
     public static final StringListConfigEntry FRONTIER_SORTING = register(stringListEntry(DEFAULT_SORTING, ClientConfig::isValidSorting, "list", "sorting", "priority")
             .comment("Order of the frontier list sorting modes."));

@@ -19,16 +19,19 @@ public final class ConfigFile {
     private static final DateTimeFormatter BACKUP_TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd--HH-mm-ss");
 
     private final Path path;
+    private final int currentVersion;
     @Nullable
     private final ConfigMigrations migrations;
     private final List<ConfigEntry<?, ?>> entries = new ArrayList<>();
+    private final List<SectionComment> sectionComments = new ArrayList<>();
 
-    public ConfigFile(Path path) {
-        this(path, null);
+    public ConfigFile(Path path, int currentVersion) {
+        this(path, currentVersion, null);
     }
 
-    public ConfigFile(Path path, @Nullable ConfigMigrations migrations) {
+    public ConfigFile(Path path, int currentVersion, @Nullable ConfigMigrations migrations) {
         this.path = path;
+        this.currentVersion = currentVersion;
         this.migrations = migrations;
     }
 
@@ -37,36 +40,12 @@ public final class ConfigFile {
         return entry;
     }
 
-    public boolean load() {
-        if (migrations == null) {
-            return loadWithoutMigrations();
-        }
-
-        return loadWithMigrations();
+    public void registerSectionComment(String path, String comment) {
+        sectionComments.add(new SectionComment(path, comment));
     }
 
-    private boolean loadWithoutMigrations() {
-        boolean dirty = false;
-
-        try (CommentedFileConfig config = TomlConfigIO.open(path)) {
-            if (Files.exists(path)) {
-                config.load();
-            } else {
-                dirty = true;
-            }
-
-            for (ConfigEntry<?, ?> entry : entries) {
-                dirty |= entry.load(config);
-            }
-        } catch (Exception e) {
-            MapFrontiers.LOGGER.error("Failed to load config file {}", path, e);
-            for (ConfigEntry<?, ?> entry : entries) {
-                entry.reset();
-            }
-            return true;
-        }
-
-        return dirty;
+    public boolean load() {
+        return loadWithMigrations();
     }
 
     private boolean loadWithMigrations() {
@@ -124,8 +103,9 @@ public final class ConfigFile {
     public void save() {
         try (CommentedFileConfig config = TomlConfigIO.open(path)) {
             config.clear();
-            if (migrations != null) {
-                migrations.writeCurrentVersion(config);
+            config.set(VERSION_KEY, currentVersion);
+            for (SectionComment sectionComment : sectionComments) {
+                config.setComment(sectionComment.path(), sectionComment.comment());
             }
             for (ConfigEntry<?, ?> entry : entries) {
                 entry.save(config);
@@ -154,11 +134,11 @@ public final class ConfigFile {
             return new ConfigVersionStatus(ConfigVersionState.INVALID, -1, rawValue);
         }
 
-        if (parsedVersion > migrations.currentVersion()) {
+        if (parsedVersion > currentVersion) {
             return new ConfigVersionStatus(ConfigVersionState.FUTURE, parsedVersion, rawValue);
         }
 
-        if (parsedVersion == migrations.currentVersion()) {
+        if (parsedVersion == currentVersion) {
             return new ConfigVersionStatus(ConfigVersionState.CURRENT, parsedVersion, rawValue);
         }
 
@@ -201,7 +181,7 @@ public final class ConfigFile {
                     path, versionStatus.rawValue());
         } else if (versionStatus.state() == ConfigVersionState.FUTURE) {
             MapFrontiers.LOGGER.warn("Config file {} uses unsupported future configVersion {}. Latest supported version is {}. Resetting to defaults.",
-                    path, versionStatus.effectiveVersion(), migrations.currentVersion());
+                    path, versionStatus.effectiveVersion(), currentVersion);
         }
 
         return createBackup(backupMode);
@@ -215,11 +195,11 @@ public final class ConfigFile {
         int version = versionStatus.effectiveVersion();
         if (versionStatus.state() == ConfigVersionState.MISSING) {
             MapFrontiers.LOGGER.warn("Config file {} has no configVersion. Treating it as legacy version 0 and applying migrations up to {}.",
-                    path, migrations.currentVersion());
+                    path, currentVersion);
         }
 
-        while (version < migrations.currentVersion()) {
-            ConfigMigrationStep step = migrations.step(version);
+        while (version < currentVersion) {
+            ConfigMigrationStep step = migrations == null ? null : migrations.step(version);
             if (step == null) {
                 throw new ConfigMigrationException("Missing migration step from version " + version + " to " + (version + 1));
             }
@@ -323,5 +303,8 @@ public final class ConfigFile {
     }
 
     private record ConfigVersionStatus(ConfigVersionState state, int effectiveVersion, @Nullable Object rawValue) {
+    }
+
+    private record SectionComment(String path, String comment) {
     }
 }

@@ -9,7 +9,6 @@ import javax.annotation.Nullable;
 import java.util.function.UnaryOperator;
 
 public final class ClientConfigMigrations implements ConfigMigrations {
-    private static final String VERSION_KEY = "configVersion";
     private static final String[][] MIGRATION_0_TO_1_MOVES = {
             // announcement
             {"titleAnnouncementDuration", "announcement.title.duration"},
@@ -99,14 +98,8 @@ public final class ClientConfigMigrations implements ConfigMigrations {
     };
 
     public static final ClientConfigMigrations INSTANCE = new ClientConfigMigrations();
-    public static final int CURRENT_VERSION = 1;
 
     private ClientConfigMigrations() {
-    }
-
-    @Override
-    public int currentVersion() {
-        return CURRENT_VERSION;
     }
 
     @Nullable
@@ -116,11 +109,6 @@ public final class ClientConfigMigrations implements ConfigMigrations {
             case 0 -> this::migrateFrom0To1;
             default -> null;
         };
-    }
-
-    @Override
-    public void writeCurrentVersion(CommentedConfig config) {
-        setVersion(config, CURRENT_VERSION);
     }
 
     private void migrateFrom0To1(CommentedConfig config) throws ConfigMigrationException {
@@ -175,9 +163,5 @@ public final class ClientConfigMigrations implements ConfigMigrations {
         }
 
         config.set(path, rewrite.apply(stringValue));
-    }
-
-    private static void setVersion(CommentedConfig config, int version) {
-        config.set(VERSION_KEY, version);
     }
 }
