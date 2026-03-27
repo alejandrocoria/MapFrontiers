@@ -4,6 +4,7 @@ import net.darkhax.curseforgegradle.TaskPublishCurseForge
 plugins {
     id 'multiloader-loader'
     id 'net.neoforged.moddev'
+    id 'idea'
     id 'net.darkhax.curseforgegradle' version '1.1.28'
     id "com.modrinth.minotaur" version "2.9.0"
 }
@@ -51,6 +52,12 @@ neoForge {
             changing = true
         }
         implementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_neoforge_file_id}"
+    }
+}
+
+idea {
+    module {
+        excludeDirs += file('runs')
     }
 }
 

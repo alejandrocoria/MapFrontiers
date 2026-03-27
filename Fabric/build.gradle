@@ -63,6 +63,12 @@ loom {
     }
 }
 
+idea {
+    module {
+        excludeDirs += file('runs')
+    }
+}
+
 jar {
     dependsOn "processDocs"
     dependsOn project(':Api').tasks.named('classes')

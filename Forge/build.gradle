@@ -3,6 +3,7 @@ import net.darkhax.curseforgegradle.TaskPublishCurseForge
 
 plugins {
     id 'multiloader-loader'
+    id 'idea'
     id 'net.minecraftforge.accesstransformers' version '5.0.2'
     id 'net.minecraftforge.gradle' version '7.0.0-beta.55'
     id 'net.darkhax.curseforgegradle' version '1.1.28'
@@ -54,6 +55,12 @@ minecraft {
         register('server') {
             workingDir.convention layout.projectDirectory.dir("runs/server")
         }
+    }
+}
+
+idea {
+    module {
+        excludeDirs += file('runs')
     }
 }
 
