@@ -1,9 +1,9 @@
 **Beta 21:**
 * Added: API available soon.
-* Change: The copy button puts the frontier ID on the clipboard.
-* Change: Reduced the number of times frontier changes are written to the file.
 * Changed: Reorganized the client config file into grouped sections and removed the dependency on ForgeConfigApiPort, so it no longer needs to be installed just for this mod.
-* Fixed: Existing client configs are now migrated automatically to the new layout, with backup/recovery when the client config file is invalid or unreadable.
+* Changed: Existing client configs are now migrated automatically to the new layout, with backup/recovery when the client config file is invalid or unreadable.
+* Change: Reduced the number of times frontier changes are written to the file.
+* Change: The copy button puts the frontier ID on the clipboard.
 * Fixed: HUD continues to display with F1.
 * Fixed: owned personal frontiers disappear when reconnecting after the server no longer has the mod.
 
