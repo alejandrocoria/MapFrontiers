@@ -1167,8 +1167,8 @@ public class FrontierOverlay extends FrontierData {
 
         TextProperties textProps = new TextProperties().setOpacity(ClientConfig.TEXT_OPACITY.get().floatValue()).setScale(ClientConfig.TEXT_SIZE.get()).setBackgroundOpacity(0.f);
         switch (ClientConfig.TEXT_COLOR.get()) {
-            case ClientConfig.TextColor.Frontier -> textProps.setColor(color);
-            case ClientConfig.TextColor.Bright -> textProps.setColor(colorMaxBrightness(color));
+            case ClientConfig.TextColor.FrontierColor -> textProps.setColor(color);
+            case ClientConfig.TextColor.FrontierColorBright -> textProps.setColor(colorMaxBrightness(color));
             case ClientConfig.TextColor.White -> textProps.setColor(ColorConstants.WHITE);
         }
 

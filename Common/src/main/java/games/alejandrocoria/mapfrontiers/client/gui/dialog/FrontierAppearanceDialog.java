@@ -149,8 +149,8 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
             ClientConfig.TEXT_COLOR.set(ClientConfig.TextColor.values()[b.getSelected()]);
             previewFrontiers.configUpdated();
         }), row++, 1);
-        buttonTextUsesCustomColor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.TextColor.Frontier));
-        buttonTextUsesCustomColor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.TextColor.Bright));
+        buttonTextUsesCustomColor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.TextColor.FrontierColor));
+        buttonTextUsesCustomColor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.TextColor.FrontierColorBright));
         buttonTextUsesCustomColor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.TextColor.White));
         buttonTextUsesCustomColor.setSelected(ClientConfig.TEXT_COLOR.get().ordinal());
 
