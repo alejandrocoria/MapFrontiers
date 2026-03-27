@@ -78,7 +78,7 @@ registerProcessDocsTask(
 tasks.register('publishCurseForge', TaskPublishCurseForge) {
     apiToken = "${curseForgeApiKey}"
     def mainFile = upload(curseforge_project_id, jar)
-    mainFile.displayName = "${mod_name}-${minecraft_version}-${version}-neoforge"
+    mainFile.displayName = "${minecraft_version}-${version}-neoforge"
     mainFile.releaseType = release_type
     mainFile.addModLoader("NeoForge")
     mainFile.addJavaVersion("Java 21")
