@@ -223,7 +223,7 @@ public class MapFrontiersClient {
         ensureFrontierRuntime();
         connectionState.restartHandshake();
 
-        MapFrontiers.LOGGER.info("ClientConnectedEvent done");
+        MapFrontiers.LOGGER.info("Client world session started");
     }
 
     private static void handleClientDisconnected() {
@@ -242,7 +242,7 @@ public class MapFrontiersClient {
 
         ChatFrontiers.clear();
 
-        MapFrontiers.LOGGER.info("ClientDisconnectedEvent done");
+        MapFrontiers.LOGGER.info("Client world session ended");
     }
 
     private static Component createAnnounceTextWithName(FrontierOverlay frontier) {

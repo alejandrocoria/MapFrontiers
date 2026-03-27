@@ -39,8 +39,6 @@ public class PacketHandler {
         CommonNetworkMod.registerPacket(PacketFrontierSettings.type(), PacketFrontierSettings.class, PacketFrontierSettings.STREAM_CODEC, PacketFrontierSettings::handle);
         CommonNetworkMod.registerPacket(PacketChangeFrontierToGlobal.type(), PacketChangeFrontierToGlobal.class, PacketChangeFrontierToGlobal.STREAM_CODEC, PacketChangeFrontierToGlobal::handle);
         CommonNetworkMod.registerPacket(PacketChangeFrontierToPersonal.type(), PacketChangeFrontierToPersonal.class, PacketChangeFrontierToPersonal.STREAM_CODEC, PacketChangeFrontierToPersonal::handle);
-
-        MapFrontiers.LOGGER.info("PacketHandler init done");
     }
 
     public static <MSG> void sendToUsersWithAccess(MSG message, FrontierData frontier, MinecraftServer server) {

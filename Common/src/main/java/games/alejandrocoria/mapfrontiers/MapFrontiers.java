@@ -31,7 +31,7 @@ public class MapFrontiers {
             serverRuntime = new ServerFrontierRuntime(server);
             MapFrontiersAPIBootstrap.setServerAPI(serverRuntime.getServerApi());
 
-            LOGGER.info("ServerStartingEvent done");
+            LOGGER.info("MapFrontiers server runtime initialized");
         });
 
         ServerGlobalEvents.subscribeServerStoppingEvent(MapFrontiers.class, server -> {
@@ -41,7 +41,7 @@ public class MapFrontiers {
             MapFrontiersAPIBootstrap.clearServerAPI();
             serverRuntime = null;
 
-            LOGGER.info("ServerStoppingEvent done");
+            LOGGER.info("MapFrontiers server runtime stopped");
         });
 
         ServerGlobalEvents.subscribePlayerJoinedEvent(MapFrontiers.class, (server, player) -> {
@@ -51,7 +51,6 @@ public class MapFrontiers {
 
             serverRuntime.onPlayerJoined();
 
-            LOGGER.info("PlayerJoinedEvent done (" + player.getStringUUID() + ")");
         });
 
         ServerGlobalEvents.subscribeServerTickEvent(MapFrontiers.class, server -> {

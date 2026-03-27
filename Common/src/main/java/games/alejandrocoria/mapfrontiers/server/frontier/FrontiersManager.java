@@ -418,7 +418,7 @@ public class FrontiersManager {
             }
             ModDir = new File(mcDir, "mapfrontiers");
             if (ModDir.mkdirs()) {
-                MapFrontiers.LOGGER.info("Created folder: " + ModDir.toString());
+                MapFrontiers.LOGGER.info("Created MapFrontiers data directory at {}", ModDir);
             }
 
             CompoundTag nbtFrontiers = loadFile("frontiers.dat");
