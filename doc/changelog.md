@@ -4,6 +4,7 @@
 * Changed: Existing client configs are now migrated automatically to the new layout, with backup/recovery when the client config file is invalid or unreadable.
 * Change: Reduced the number of times frontier changes are written to the file.
 * Change: The copy button puts the frontier ID on the clipboard.
+* Change: Improved several translations across existing languages. If you notice anything that sounds off, feedback and corrections from native speakers are very welcome.
 * Fixed: HUD continues to display with F1.
 * Fixed: owned personal frontiers disappear when reconnecting after the server no longer has the mod.
 * Fixed: MapFrontiers now fails gracefully when JourneyMap does not initialize its plugin. In-world features are disabled, but the mod no longer breaks.

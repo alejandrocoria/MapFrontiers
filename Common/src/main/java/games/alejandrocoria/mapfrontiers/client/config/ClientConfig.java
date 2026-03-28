@@ -438,8 +438,7 @@ public final class ClientConfig {
 
     private static EnumConfigEntry<Visibility> visibilityEntry(String comment, String... path) {
         return register(enumEntry(Visibility.class, Visibility.Custom, path)
-                .comment(comment)
-                .translation(translation(path)));
+                .comment(comment));
     }
 
     private ClientConfig() {
