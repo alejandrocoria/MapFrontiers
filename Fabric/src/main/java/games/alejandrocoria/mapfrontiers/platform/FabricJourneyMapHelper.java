@@ -1,6 +1,5 @@
 package games.alejandrocoria.mapfrontiers.platform;
 
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.ReflectionHelper;
 import games.alejandrocoria.mapfrontiers.platform.services.IJourneyMapHelper;
@@ -13,21 +12,17 @@ import journeymap.client.io.ThemeLoader;
 import journeymap.client.model.map.MapState;
 import journeymap.client.model.map.MapType;
 import journeymap.client.properties.MiniMapProperties;
-import journeymap.client.render.JMRenderTypes;
+import journeymap.client.render.GuiRenderToTexture;
 import journeymap.client.render.draw.DrawMarkerStep;
 import journeymap.client.render.draw.DrawPolygonStep;
 import journeymap.client.render.draw.DrawStep;
-import journeymap.client.render.draw.DrawUtil;
 import journeymap.client.render.map.MapRenderer;
-import journeymap.client.render.pip.PolygonPipRenderState;
 import journeymap.client.ui.UIManager;
 import journeymap.client.ui.minimap.DisplayVars;
 import journeymap.client.ui.minimap.MiniMap;
 import journeymap.client.ui.minimap.Position;
 import journeymap.client.ui.minimap.Shape;
 import journeymap.client.ui.theme.Theme;
-import journeymap.common.accessors.GuiRenderStateMixinAccess;
-import journeymap.common.mixin.client.GuiGraphicsAccessor;
 import journeymap.common.waypoint.WaypointStore;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -212,10 +207,13 @@ public class FabricJourneyMapHelper implements IJourneyMapHelper {
 
     private static class CustomPreviewRenderer implements ICustomPreviewRenderer {
         private final MapRenderer mapRenderer;
-        private final List<DrawStep> drawSteps = new ArrayList<>();
+        private final GuiRenderToTexture polygonSurface;
+        private final List<DrawPolygonStep> polygonDrawSteps = new ArrayList<>();
+        private final List<DrawStep> overlayDrawSteps = new ArrayList<>();
 
         public CustomPreviewRenderer() {
             mapRenderer = new MapRenderer(Context.UI.Fullscreen);
+            polygonSurface = new GuiRenderToTexture("MapFrontiers JourneyMap Polygon Preview");
             mapRenderer.setZoom(512);
             mapRenderer.setViewPortBounds(null);
             MapState mapState = new MapState();
@@ -226,61 +224,64 @@ public class FabricJourneyMapHelper implements IJourneyMapHelper {
 
         @Override
         public void setFrontiers(List<FrontierOverlay> frontierOverlays) {
-            drawSteps.clear();
+            polygonDrawSteps.clear();
+            overlayDrawSteps.clear();
 
             for (FrontierOverlay frontierOverlay : frontierOverlays) {
                 for (PolygonOverlay polygon : frontierOverlay.getPolygonOverlays()) {
-                    drawSteps.add(new DrawPolygonStep(polygon));
+                    polygonDrawSteps.add(new DrawPolygonStep(polygon));
                 }
                 for (MarkerOverlay banner : frontierOverlay.getBannerOverlays()) {
-                    drawSteps.add(new DrawMarkerStep(banner));
+                    overlayDrawSteps.add(new DrawMarkerStep(banner));
                 }
             }
         }
 
         @Override
         public void draw(GuiGraphics graphics, MultiBufferSource.BufferSource buffers, int x, int y, int size, float scaleFactor) {
-            if (drawSteps.isEmpty()) {
+            if (polygonDrawSteps.isEmpty() && overlayDrawSteps.isEmpty()) {
                 return;
             }
 
             int width = Minecraft.getInstance().getWindow().getScreenWidth();
             int height = Minecraft.getInstance().getWindow().getScreenHeight();
             double guiScale = Minecraft.getInstance().getWindow().getGuiScale();
+            int previewSize = Math.max(1, Math.round(size * scaleFactor / (float) guiScale));
 
+            graphics.enableScissor(x, y, x + previewSize, y + previewSize);
             graphics.pose().pushMatrix();
             graphics.pose().translate((float) (-width / guiScale / 2 * scaleFactor) + x, (float) (-height / guiScale / 2 * scaleFactor) + y);
             graphics.pose().scale((float) (1 / guiScale) * scaleFactor, (float) (1 / guiScale) * scaleFactor);
 
             mapRenderer.setViewPortBounds(new Rectangle2D.Double(0, 0, width * scaleFactor, height * scaleFactor));
 
-
-            for (DrawStep drawStep : drawSteps) {
-                if (drawStep instanceof DrawPolygonStep) {
-                    continue;
-                }
-                drawStep.draw(graphics, 0, 0, mapRenderer, 1, 0);
-            }
-
-            graphics.pose().popMatrix();
-            graphics.nextStratum();
-
-            ((GuiRenderStateMixinAccess) ((GuiGraphicsAccessor) graphics).jm$GuiRenderStateAccessor()).jm$submitPicturesInPictureStateCurrentLayer(
-                    new PolygonPipRenderState(
-                            graphics,
-                            Context.UI.Fullscreen,
-                            0, (buf, poseStack) -> {
-                        VertexConsumer maskBuffer = buffers.getBuffer(JMRenderTypes.MINIMAP_RECTANGLE_MASK_RENDER_TYPE);
-                        DrawUtil.drawQuad(poseStack, maskBuffer, 0xFFFFFF, 1, x * guiScale / scaleFactor + 1, y * guiScale / scaleFactor + 1, size - 1, size - 1, 0, false);
-                        drawSteps.forEach(drawStep -> {
-                            if (drawStep instanceof DrawPolygonStep drawPolygonStep) {
-                                poseStack.pushPose();
-                                drawPolygonStep.draw(graphics, poseStack, buf, (-width / 2 + x * guiScale / scaleFactor), (-height / 2 + y * guiScale / scaleFactor), mapRenderer, 1, 0);
-                                poseStack.popPose();
-                            }
-                        });
+            try {
+                polygonSurface.render(graphics, context -> {
+                    var pose = context.pose();
+                    pose.pushMatrix();
+                    pose.translate((float) (-width / 2 * scaleFactor + x * guiScale), (float) (-height / 2 * scaleFactor + y * guiScale));
+                    pose.scale(scaleFactor);
+                    try {
+                        for (DrawPolygonStep drawPolygonStep : polygonDrawSteps) {
+                            drawPolygonStep.drawGeometry(graphics, pose, context.buffers(), 0, 0, mapRenderer, 1, 0);
+                        }
+                    } finally {
+                        pose.popMatrix();
                     }
-                    ));
+                });
+
+                for (DrawPolygonStep drawPolygonStep : polygonDrawSteps) {
+                    drawPolygonStep.drawTextLayer(graphics, 0, 0, mapRenderer, 1, 0);
+                }
+
+                for (DrawStep drawStep : overlayDrawSteps) {
+                    drawStep.draw(graphics, 0, 0, mapRenderer, 1, 0);
+                }
+                buffers.endBatch();
+            } finally {
+                graphics.pose().popMatrix();
+                graphics.disableScissor();
+            }
         }
     }
 }
