@@ -33,6 +33,7 @@ neoForge {
         server {
             server()
             gameDirectory = project.file('runs/server')
+            programArgument('--nogui')
         }
     }
     mods {

@@ -54,7 +54,6 @@ loom {
         }
         server {
             server()
-            serverWithGui()
             setConfigName("Fabric Server")
             property("mixin.debug.export", "true")
             ideConfigGenerated(true)

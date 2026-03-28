@@ -54,6 +54,7 @@ minecraft {
 
         register('server') {
             workingDir.convention layout.projectDirectory.dir("runs/server")
+            args '--nogui'
         }
     }
 }
