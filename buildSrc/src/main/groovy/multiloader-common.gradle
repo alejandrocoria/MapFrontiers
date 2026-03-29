@@ -146,7 +146,6 @@ processResources {
             "mod_homepage":                         mod_homepage,
             "mod_issues":                           mod_issues,
             "mod_sources":                          mod_sources,
-            "mod_update_json":                      mod_update_json,
             "mod_credits":                          mod_credits,
             "mod_license":                          mod_license,
             "mod_logo":                             mod_logo,
