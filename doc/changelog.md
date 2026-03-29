@@ -1,4 +1,4 @@
-**Beta 21:**
+**Beta 1:**
 * Added: API available soon.
 * Changed: Reorganized the client config file into grouped sections and removed the dependency on ForgeConfigApiPort, so it no longer needs to be installed just for this mod.
 * Changed: Existing client configs are now migrated automatically to the new layout, with backup/recovery when the client config file is invalid or unreadable.
@@ -9,89 +9,7 @@
 * Fixed: owned personal frontiers disappear when reconnecting after the server no longer has the mod.
 * Fixed: MapFrontiers now fails gracefully when JourneyMap does not initialize its plugin. In-world features are disabled, but the mod no longer breaks.
 
-**Beta 20:**
-* Fixed: New shapes are the wrong size when using an odd width.
- 
-**Beta 19:**
-* Fixed: Crash occurs when opening the settings screen from the mod menu.
- 
-**Beta 17:**
-* Fixed: Server connection on Velocity servers (Thanks to Stikulzon for the fix).
-
-**Beta 16:**
-* Fixed: Snapping acting weird.
- 
-**Beta 15:**
-* Fixed: [Forge] HUD not drawing.
- 
-**Beta 14:**
-* Added: banner rotation.
- 
-**Beta 13:**
-* Fixed: the banner disappears when a frontier is changed from personal to global or the other way around.
- 
-**Beta 12:**
-* Added: screen to send a copy of a frontier to another player via chat for when the server doesn't have the mod.
-* Added: setting to change HUD text size.
-* Changed: stopping drawing an empty line on the HUD with blank frontier names.
-* Changed: better handling of decimals when scrolling in a decimal text box.
-* Fixed: packets are sent to the server when nothing is changed in Frontier Info upon closing the screen.
-* Fixed: modifying personal frontiers when the server doesn't have the mod doesn't update the modification date.
- 
-**Beta 11:**
-* Fixed: crash when using JourneyMap's "Vault" theme or any theme that does not have the circle shape.
- 
-**Beta 10:**
-* Added: sort buttons to frontier list.
-* Added: search field to frontier list.
-* Added: setting to change the color of the frontier text.
-* Fixed: global forced announce in chat and title settings do not work.
- 
-**Beta 9:**
-* Fixed: bug when reading chunk frontiers from file.
- 
-**Beta 8:**
-* Fixed: error when opening frontiers from previous versions that are missing certain visibility parameters.
- 
-**Beta 7:**
-* Changed: optimized the frontier preview screen (caching JM drawsteps).
- 
-**Beta 6:**
-* Added: frontier banners to maps.
-* Added: frontier appearance dialog with a preview example.
-* Added: settings button to frontier list screen.
-* Added: settings to change the duration and timeout of title announcements.
-* Added: tooltips to visibility buttons in Info screen.
-* Added: all mod buttons on the fullscreen map are now also available in the context menu.
-* Changed: Improved click selection of frontiers and prioritizing frontiers with smaller area.
-* Fixed: frontier area calculation.
- 
-**Beta 5:**
-* Fixed: server side crash due to use of LocalPlayer.
- 
-**Beta 4:**
-* Added: button to toggle frontier between Personal and Global type.
-* Added: frontiers can now be moved in edit mode by holding Ctrl and right click.
- 
-**Beta 3:**
-* Fixed: incorrect mixin configuration causes the game to crash.
- 
-**Beta 2:**
-* Added: menu for editing chunks by holding shift with buttons to remove connected chunks and to fill inner chunk region.
-* Added: webmap visibility options.
-* Fixed: incompatibility with Banner Text.
- 
-**Beta 1:**
-* Added: frontier visibility override options, which allow you to have different options just for you from those set on the frontier.
-* Added: visibility options for map types.
-* Added: confirmation dialog when deleting.
-* Added: option to change the number of vertices of a new frontier.
-* Added: default value to settings tooltips.
-* Added: automatic backups when something goes wrong when opening a file.
-* Changed: text boxes now submit with enter.
-* Changed: improved keyboard accessibility.
-* Fixed: HUD not showing the frontier you are on when logging in.
-* Fixed: snap option not having effect.
+**To see previous changes, go to the changelog for version 2.7.0-beta.21**
  
 **Requirements:**
 * ${loadername}: ${loaderversion}
