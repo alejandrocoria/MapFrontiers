@@ -28,6 +28,7 @@ ext.registerProcessDocsTask = { String loaderName, String loaderVersion, String 
             expand(
                     loaderversion: loaderVersion,
                     loadername: loaderName,
+                    api_version: api_version,
                     journeymap_doc_version: journeymap_doc_version,
                     extra_doc_requirements: extraDocRequirements
             )

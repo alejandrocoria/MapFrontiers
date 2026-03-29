@@ -28,9 +28,3 @@ tasks.register("publishMod") {
             ":NeoForge:modrinth"
     )
 }
-
-tasks.register("publishApi") {
-    group = "release"
-    description = "Publishes the API artifact to Modrinth."
-    dependsOn(":Api:modrinth")
-}

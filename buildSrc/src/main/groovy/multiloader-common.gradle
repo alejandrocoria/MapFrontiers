@@ -18,6 +18,15 @@ repositories {
     }
 
     mavenLocal()
+    if (api_version.endsWith('-SNAPSHOT')) {
+        maven {
+            name = 'Central Portal Snapshots'
+            url = 'https://central.sonatype.com/repository/maven-snapshots/'
+            content {
+                includeModule('games.alejandrocoria', 'mapfrontiers-api')
+            }
+        }
+    }
     mavenCentral()
     // https://docs.gradle.org/current/userguide/declaring_repositories.html#declaring_content_exclusively_found_in_one_repository
     exclusiveContent {

@@ -12,8 +12,18 @@ plugins {
 
 base.archivesName = "${project.mod_name}-${project.minecraft_version}-fabric"
 
+configurations {
+    embeddedApi {
+        canBeConsumed = false
+        canBeResolved = true
+        transitive = false
+    }
+}
+
 dependencies {
-    implementation project(':Api')
+    implementation "${project.api_group}:${project.api_artifact_id}:${project.api_version}"
+    embeddedApi "${project.api_group}:${project.api_artifact_id}:${project.api_version}"
+
     minecraft "com.mojang:minecraft:${minecraft_version}"
     mappings loom.layered {
         officialMojangMappings()
@@ -70,9 +80,16 @@ idea {
 
 jar {
     dependsOn "processDocs"
-    dependsOn project(':Api').tasks.named('classes')
-    from project(':Api').sourceSets.main.output
+    from({
+        configurations.embeddedApi.collect { zipTree(it) }
+    }) {
+        exclude 'META-INF/MANIFEST.MF'
+        exclude 'META-INF/*.SF'
+        exclude 'META-INF/*.DSA'
+        exclude 'META-INF/*.RSA'
+    }
 }
+
 
 registerProcessDocsTask(
         "Fabric API",

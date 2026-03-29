@@ -6,4 +6,4 @@ Download from [www.curseforge.com](https://www.curseforge.com/minecraft/mc-mods/
 
 ## API
 
-MapFrontiers includes a public API for client and server plugins that want to create, update or observe frontiers. See the [API quickstart](doc/api/QUICKSTART.md).
+MapFrontiers includes a public API for client and server plugins that want to create, update or observe frontiers. See the [MapFrontiers API quickstart](https://github.com/alejandrocoria/MapFrontiers-API#readme).

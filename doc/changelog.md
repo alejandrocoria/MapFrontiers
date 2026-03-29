@@ -11,6 +11,9 @@
 
 **To see previous changes, go to the changelog for version 2.7.0-beta.21**
  
+**Includes:**
+* MapFrontiers API: ${api_version}
+
 **Requirements:**
 * ${loadername}: ${loaderversion}
 * JourneyMap: ${journeymap_doc_version}
