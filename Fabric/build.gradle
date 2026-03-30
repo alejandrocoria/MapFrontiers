@@ -40,6 +40,7 @@ dependencies {
         changing = true
         transitive = false
     }
+    compileOnly "curse.maven:journeymap-${project.jm_project_id}:${project.jm_fabric_file_id}"
     runtimeOnly "curse.maven:journeymap-${project.jm_project_id}:${project.jm_fabric_file_id}"
 }
 

@@ -7,7 +7,7 @@ import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
@@ -23,7 +23,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 public class MapFrontiersClientFabric extends MapFrontiersClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
-        openSettingsKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        openSettingsKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "mapfrontiers.key.open_settings", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, MapFrontiersClient.registerKeyMappingCategory()
         ));
 
@@ -48,4 +48,3 @@ public class MapFrontiersClientFabric extends MapFrontiersClient implements Clie
         MapFrontiersFabric.LOGGER.info("Fabric onInitializeClient done");
     }
 }
-

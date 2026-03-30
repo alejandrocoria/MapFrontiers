@@ -17,7 +17,7 @@ public class ForgePlatformHelper implements IPlatformHelper {
 
     @Override
     public String getModVersion() {
-        Optional<? extends ModContainer> modContainer = ModList.get().getModContainerById(MapFrontiers.MODID);
+        Optional<? extends ModContainer> modContainer = ModList.getModContainerById(MapFrontiers.MODID);
         if (modContainer.isPresent()) {
             return modContainer.get().getModInfo().getVersion().toString();
         }

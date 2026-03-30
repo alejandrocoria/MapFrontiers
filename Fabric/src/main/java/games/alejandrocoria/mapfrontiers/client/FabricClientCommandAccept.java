@@ -6,7 +6,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.AcceptFrontierCopyDialog;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -15,14 +15,14 @@ import net.minecraft.network.chat.Component;
 public class FabricClientCommandAccept {
     public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher) {
         LiteralCommandNode<FabricClientCommandSource> literalcommandnode = dispatcher
-                .register(ClientCommandManager.literal("mapfrontiersacceptcopy")
-                        .then(ClientCommandManager.argument("invitation id", IntegerArgumentType.integer(0, 999)).executes(
+                .register(ClientCommands.literal("mapfrontiersacceptcopy")
+                        .then(ClientCommands.argument("invitation id", IntegerArgumentType.integer(0, 999)).executes(
                                 (commandSource) -> acceptInvitation(commandSource.getSource(),
                                         IntegerArgumentType.getInteger(commandSource, "invitation id")))
                         )
                 );
 
-        dispatcher.register(ClientCommandManager.literal("mfacceptcopy").redirect(literalcommandnode)
+        dispatcher.register(ClientCommands.literal("mfacceptcopy").redirect(literalcommandnode)
         );
     }
 

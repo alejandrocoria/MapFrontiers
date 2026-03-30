@@ -25,7 +25,7 @@ import journeymap.client.ui.minimap.Shape;
 import journeymap.client.ui.theme.Theme;
 import journeymap.common.waypoint.WaypointStore;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -53,7 +53,7 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
     }
 
     @Override
-    public void drawMinimapPreview(GuiGraphics graphics) {
+    public void drawMinimapPreview(GuiGraphicsExtractor graphics) {
         UIManager.INSTANCE.getMiniMap().drawMap(graphics, true);
     }
 
@@ -238,7 +238,7 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
         }
 
         @Override
-        public void draw(GuiGraphics graphics, MultiBufferSource.BufferSource buffers, int x, int y, int size, float scaleFactor) {
+        public void draw(GuiGraphicsExtractor graphics, MultiBufferSource.BufferSource buffers, int x, int y, int size, float scaleFactor) {
             if (polygonDrawSteps.isEmpty() && overlayDrawSteps.isEmpty()) {
                 return;
             }
