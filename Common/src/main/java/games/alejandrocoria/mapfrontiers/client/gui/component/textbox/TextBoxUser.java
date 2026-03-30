@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component.textbox;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
@@ -113,14 +113,14 @@ public class TextBoxUser extends TextBox {
     }
 
     @Override
-    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         if (error == null) {
             setTextColor(ColorConstants.TEXTBOX_TEXT);
         } else {
             setTextColor(ColorConstants.TEXT_ERROR);
         }
 
-        super.renderWidget(graphics, mouseX, mouseY, partialTicks);
+        super.extractWidgetRenderState(graphics, mouseX, mouseY, partialTicks);
 
         if (error != null) {
             List<FormattedCharSequence> errorList = font.split(error, width - 8);
@@ -134,7 +134,7 @@ public class TextBoxUser extends TextBox {
             int posX = getX() + 4;
             int posY = getY() - errorList.size() * 12;
             for (FormattedCharSequence e : errorList) {
-                graphics.drawString(font, e, posX, posY, ColorConstants.TEXT_HIGHLIGHT);
+                graphics.text(font, e, posX, posY, ColorConstants.TEXT_HIGHLIGHT);
                 posY += 12;
             }
         } else if (!suggestionsToDraw.isEmpty()) {
@@ -151,12 +151,12 @@ public class TextBoxUser extends TextBox {
                 // that are added to suggestions and suggestionsToDraw
                 //noinspection StringEquality
                 if (suggestionsToDraw.get(i) == suggestions.get(suggestionIndex)) {
-                    graphics.drawString(font, t, posX, posY, ColorConstants.TEXT_HIGHLIGHT);
+                    graphics.text(font, t, posX, posY, ColorConstants.TEXT_HIGHLIGHT);
                 } else {
                     String suffix = t.substring(0, partialText.length());
                     String rest = t.substring(partialText.length());
-                    graphics.drawString(font, suffix, posX, posY, ColorConstants.TEXT_HIGHLIGHT);
-                    graphics.drawString(font, rest, posX + font.width(suffix), posY,
+                    graphics.text(font, suffix, posX, posY, ColorConstants.TEXT_HIGHLIGHT);
+                    graphics.text(font, rest, posX + font.width(suffix), posY,
                             ColorConstants.TEXT_MEDIUM);
                 }
 

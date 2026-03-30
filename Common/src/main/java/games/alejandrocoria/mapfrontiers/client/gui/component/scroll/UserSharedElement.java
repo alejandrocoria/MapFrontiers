@@ -8,7 +8,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.language.I18n;
@@ -83,24 +83,24 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
     }
 
     @Override
-    protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks, boolean selected, boolean focused) {
+    protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks, boolean selected, boolean focused) {
         if (isHovered) {
             graphics.fill(x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
         }
 
         if (isHovered || focused) {
             if (buttonDelete != null) {
-                buttonDelete.render(graphics, mouseX, mouseY, partialTicks);
+                buttonDelete.extractRenderState(graphics, mouseX, mouseY, partialTicks);
             }
         }
 
-        graphics.drawString(font, user.getUser().toString(), x + 16, y + 4, ColorConstants.TEXT_HIGHLIGHT);
+        graphics.text(font, user.getUser().toString(), x + 16, y + 4, ColorConstants.TEXT_HIGHLIGHT);
 
-        updateFrontier.render(graphics, mouseX, mouseY, partialTicks);
-        updateSettings.render(graphics, mouseX, mouseY, partialTicks);
+        updateFrontier.extractRenderState(graphics, mouseX, mouseY, partialTicks);
+        updateSettings.extractRenderState(graphics, mouseX, mouseY, partialTicks);
 
         if (user.isPending()) {
-            graphics.drawString(font, I18n.get("mapfrontiers.pending", ChatFormatting.ITALIC), x + 350, y + 4, ColorConstants.TEXT_PENDING);
+            graphics.text(font, I18n.get("mapfrontiers.pending", ChatFormatting.ITALIC), x + 350, y + 4, ColorConstants.TEXT_PENDING);
         }
 
         if (pingBar > 0) {
@@ -120,7 +120,7 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
         }
     }
 
-    private void drawPingLine(GuiGraphics graphics, int posX, int posY, int height) {
+    private void drawPingLine(GuiGraphicsExtractor graphics, int posX, int posY, int height) {
         graphics.fill(posX, posY - height, posX + 1, posY, ColorConstants.PING_BAR);
     }
 

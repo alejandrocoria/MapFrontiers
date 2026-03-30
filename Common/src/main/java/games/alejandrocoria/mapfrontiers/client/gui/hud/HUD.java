@@ -10,7 +10,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
@@ -193,7 +193,7 @@ public class HUD {
         }
     }
 
-    public void drawInGameHUD(GuiGraphics graphics, float partialTicks) {
+    public void drawInGameHUD(GuiGraphicsExtractor graphics, float partialTicks) {
         if (previewMode) {
             return;
         }
@@ -217,7 +217,7 @@ public class HUD {
         draw(graphics, partialTicks);
     }
 
-    public void draw(GuiGraphics graphics, float partialTicks) {
+    public void draw(GuiGraphicsExtractor graphics, float partialTicks) {
         if (displayWidth != mc.getWindow().getWidth() || displayHeight != mc.getWindow().getHeight()) {
             needUpdate = true;
         }
@@ -266,25 +266,25 @@ public class HUD {
         graphics.pose().popMatrix();
     }
 
-    private void drawName(GuiGraphics graphics, int frameColor, int textColor, float partialTicks) {
+    private void drawName(GuiGraphicsExtractor graphics, int frameColor, int textColor, float partialTicks) {
         graphics.fill(posX, posY + nameOffsetY, posX + hudWidth, posY + nameOffsetY + 12 * nameLinesCount * textScale, frameColor);
 
         frontierName1.setColor(textColor);
         frontierName2.setColor(textColor);
 
-        frontierName1.render(graphics, 0, 0, partialTicks);
-        frontierName2.render(graphics, 0, 0, partialTicks);
+        frontierName1.extractRenderState(graphics, 0, 0, partialTicks);
+        frontierName2.extractRenderState(graphics, 0, 0, partialTicks);
     }
 
-    private void drawOwner(GuiGraphics graphics, int frameColor, int textColor, float partialTicks) {
+    private void drawOwner(GuiGraphicsExtractor graphics, int frameColor, int textColor, float partialTicks) {
         graphics.fill(posX, posY + ownerOffsetY, posX + hudWidth, posY + ownerOffsetY + 12 * textScale,
                 frameColor);
 
         frontierOwner.setColor(textColor);
-        frontierOwner.render(graphics, 0, 0, partialTicks);
+        frontierOwner.extractRenderState(graphics, 0, 0, partialTicks);
     }
 
-    private void drawBanner(GuiGraphics graphics, int frameColor) {
+    private void drawBanner(GuiGraphicsExtractor graphics, int frameColor) {
         int bannerX = posX + hudWidth / 2;
         int bannerY = posY + bannerOffsetY + 2;
 

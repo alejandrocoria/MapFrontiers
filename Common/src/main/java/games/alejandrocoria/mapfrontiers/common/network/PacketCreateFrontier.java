@@ -80,7 +80,7 @@ public class PacketCreateFrontier {
                     this.chunks = new ArrayList<>();
                     int chunksCount = buf.readInt();
                     for (int i = 0; i < chunksCount; ++i) {
-                        ChunkPos chunk = new ChunkPos(buf.readLong());
+                        ChunkPos chunk = ChunkPos.unpack(buf.readLong());
                         this.chunks.add(chunk);
                     }
                 }
@@ -109,7 +109,7 @@ public class PacketCreateFrontier {
             if (chunks != null) {
                 buf.writeInt(chunks.size());
                 for (ChunkPos pos : chunks) {
-                    buf.writeLong(pos.toLong());
+                    buf.writeLong(pos.pack());
                 }
             }
         } catch (Throwable t) {

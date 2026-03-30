@@ -2,7 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component;
 
 import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 
@@ -50,7 +50,7 @@ public class StringWidget extends net.minecraft.client.gui.components.StringWidg
     }
 
     @Override
-    public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void extractWidgetRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         if (scale != 1.f) {
             guiGraphics.pose().pushMatrix();
             guiGraphics.pose().scale(scale, scale);
@@ -60,11 +60,11 @@ public class StringWidget extends net.minecraft.client.gui.components.StringWidg
         int y = Mth.floor((this.getY() + (this.getHeight() - 10) / 2.f) / scale);
 
         if (align == Align.Left) {
-            guiGraphics.drawString(getFont(), this.getMessage(), x, y, this.getColor());
+            guiGraphics.text(getFont(), this.getMessage(), x, y, this.getColor());
         } else if (align == Align.Center) {
-            guiGraphics.drawString(getFont(), this.getMessage(), x - getFont().width(getMessage()) / 2, y, this.getColor());
+            guiGraphics.text(getFont(), this.getMessage(), x - getFont().width(getMessage()) / 2, y, this.getColor());
         } else {
-            guiGraphics.drawString(getFont(), this.getMessage(), x - getFont().width(getMessage()), y, this.getColor());
+            guiGraphics.text(getFont(), this.getMessage(), x - getFont().width(getMessage()), y, this.getColor());
         }
 
         if (scale != 1.f) {

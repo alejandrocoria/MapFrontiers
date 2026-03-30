@@ -14,10 +14,6 @@ neoForge {
     if (at.exists()) {
         accessTransformers.from(at.absolutePath)
     }
-    parchment {
-        minecraftVersion = mappings_mc_version
-        mappingsVersion = mappings_date
-    }
 }
 
 dependencies {
@@ -27,10 +23,10 @@ dependencies {
     compileOnly 'io.github.llamalad7:mixinextras-common:0.3.5'
     annotationProcessor 'io.github.llamalad7:mixinextras-common:0.3.5'
 
-    compileOnly "mysticdrew:common-networking-common:${project.common_networking_version}"
+    compileOnly "mysticdrew:common-networking-common:${project.common_networking_version}-${project.journeymap_api_mc_version}"
     api "com.electronwill.night-config:core:${project.nightconfig_version}"
     api "com.electronwill.night-config:toml:${project.nightconfig_version}"
-    compileOnly("info.journeymap:journeymap-api-common:${project.journeymap_api_version}") {
+    compileOnly("info.journeymap:journeymap-api-common:${project.journeymap_api_version}-${project.journeymap_api_mc_version}-SNAPSHOT") {
         changing = true
     }
 }

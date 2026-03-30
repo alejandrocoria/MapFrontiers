@@ -15,7 +15,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.util.UIState;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.core.BlockPos;
@@ -171,7 +171,7 @@ public class NewFrontier extends AutoScaledScreen {
     }
 
     @Override
-    public void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         drawCenteredBoxBackground(graphics, 344, 234);
     }
 
@@ -329,32 +329,32 @@ public class NewFrontier extends AutoScaledScreen {
         }
 
         List<ChunkPos> chunks = new ArrayList<>();
-        ChunkPos playerChunk = new ChunkPos(centerPos);
+        ChunkPos playerChunk = ChunkPos.containing(centerPos);
         int selected = shapeChunkButtons.getSelected();
 
         if (selected == 1) {
             chunks.add(playerChunk);
         } else if (selected == 2) {
             int shapeWidth = ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_WIDTH.get();
-            ChunkPos start = new ChunkPos(playerChunk.x - shapeWidth / 2, playerChunk.z - shapeWidth / 2);
+            ChunkPos start = new ChunkPos(playerChunk.x() - shapeWidth / 2, playerChunk.z() - shapeWidth / 2);
             for (int i = 0; i < shapeWidth * shapeWidth; ++i) {
-                chunks.add(new ChunkPos(start.x + (i % shapeWidth), start.z + i / shapeWidth));
+                chunks.add(new ChunkPos(start.x() + (i % shapeWidth), start.z() + i / shapeWidth));
             }
         } else if (selected == 3) {
             int shapeWidth = ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_WIDTH.get();
-            ChunkPos start = new ChunkPos(playerChunk.x - shapeWidth / 2, playerChunk.z - shapeWidth / 2);
+            ChunkPos start = new ChunkPos(playerChunk.x() - shapeWidth / 2, playerChunk.z() - shapeWidth / 2);
             for (int i = 0; i < shapeWidth * shapeWidth; ++i) {
                 if (i < shapeWidth || i >= shapeWidth * (shapeWidth - 1) || (i % shapeWidth) == 0 || (i % shapeWidth) == shapeWidth - 1) {
-                    chunks.add(new ChunkPos(start.x + (i % shapeWidth), start.z + i / shapeWidth));
+                    chunks.add(new ChunkPos(start.x() + (i % shapeWidth), start.z() + i / shapeWidth));
                 }
             }
         } else if (selected == 4) {
             int shapeWidth = ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_WIDTH.get();
-            ChunkPos start = new ChunkPos(playerChunk.x - shapeWidth / 2, playerChunk.z - shapeWidth / 2);
-            for (int z = start.z; z < start.z + shapeWidth; ++z) {
-                for (int x = start.x; x < start.x + shapeWidth; ++x) {
-                    int deltaX = x - playerChunk.x;
-                    int deltaZ = z - playerChunk.z;
+            ChunkPos start = new ChunkPos(playerChunk.x() - shapeWidth / 2, playerChunk.z() - shapeWidth / 2);
+            for (int z = start.z(); z < start.z() + shapeWidth; ++z) {
+                for (int x = start.x(); x < start.x() + shapeWidth; ++x) {
+                    int deltaX = x - playerChunk.x();
+                    int deltaZ = z - playerChunk.z();
                     if (shapeWidth % 2 == 0) {
                         deltaX += deltaX < 0 ? 1 : 0;
                         deltaZ += deltaZ < 0 ? 1 : 0;
@@ -366,21 +366,21 @@ public class NewFrontier extends AutoScaledScreen {
             }
         } else if (selected == 5) {
             int shapeLength = ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_LENGTH.get();
-            int start = playerChunk.x - shapeLength / 2;
+            int start = playerChunk.x() - shapeLength / 2;
             for (int i = 0; i < shapeLength; ++i) {
-                chunks.add(new ChunkPos(start + i, playerChunk.z));
+                chunks.add(new ChunkPos(start + i, playerChunk.z()));
             }
         } else if (selected == 6) {
             int shapeLength = ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_LENGTH.get();
-            int start = playerChunk.z - shapeLength / 2;
+            int start = playerChunk.z() - shapeLength / 2;
             for (int i = 0; i < shapeLength; ++i) {
-                chunks.add(new ChunkPos(playerChunk.x, start + i));
+                chunks.add(new ChunkPos(playerChunk.x(), start + i));
             }
         } else if (selected == 7) {
-            ChunkPos start = new ChunkPos(Math.floorDiv(playerChunk.x, 32) * 32, Math.floorDiv(playerChunk.z, 32) * 32);
+            ChunkPos start = new ChunkPos(Math.floorDiv(playerChunk.x(), 32) * 32, Math.floorDiv(playerChunk.z(), 32) * 32);
             for (int z = 0; z < 32; ++z) {
                 for (int x = 0; x < 32; ++x) {
-                    chunks.add(new ChunkPos(start.x + x, start.z + z));
+                    chunks.add(new ChunkPos(start.x() + x, start.z() + z));
                 }
             }
         }

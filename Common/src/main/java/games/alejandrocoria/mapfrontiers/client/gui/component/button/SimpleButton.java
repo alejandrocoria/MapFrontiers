@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component.button;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 
@@ -40,7 +40,7 @@ public class SimpleButton extends ButtonBase {
     }
 
     @Override
-    public void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         if (!active) {
             label.setColor(textColorInactive);
         } else if (isHoveredOrKeyboardFocused()) {
@@ -50,13 +50,13 @@ public class SimpleButton extends ButtonBase {
         }
 
         int borderColor = isKeyboardFocused() ? ColorConstants.SIMPLE_BUTTON_BORDER_FOCUSED : active ? ColorConstants.SIMPLE_BUTTON_BORDER : ColorConstants.SIMPLE_BUTTON_BORDER_DISABLED;
-        graphics.hLine(getX(), getX() + width - 1, getY(), borderColor);
-        graphics.hLine(getX(), getX() + width - 1, getY() + 15, borderColor);
-        graphics.vLine(getX(), getY(), getY() + 15, borderColor);
-        graphics.vLine(getX() + width - 1, getY(), getY() + 15, borderColor);
+        graphics.horizontalLine(getX(), getX() + width - 1, getY(), borderColor);
+        graphics.horizontalLine(getX(), getX() + width - 1, getY() + 15, borderColor);
+        graphics.verticalLine(getX(), getY(), getY() + 15, borderColor);
+        graphics.verticalLine(getX() + width - 1, getY(), getY() + 15, borderColor);
         graphics.fill(getX() + 1, getY() + 1, getX() + width - 1, getY() + 15, ColorConstants.SIMPLE_BUTTON_BG);
 
-        label.render(graphics, mouseX, mouseY, partialTicks);
+        label.extractRenderState(graphics, mouseX, mouseY, partialTicks);
     }
 
     public void setTextColors(int color, int highlight) {

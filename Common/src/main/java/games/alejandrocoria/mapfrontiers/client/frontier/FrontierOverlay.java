@@ -28,7 +28,7 @@ import journeymap.api.v2.client.model.TextProperties;
 import journeymap.api.v2.client.util.PolygonHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -251,7 +251,7 @@ public class FrontierOverlay extends FrontierData {
                 }
             }
         } else if (pos.getX() >= topLeft.getX() && pos.getX() <= bottomRight.getX() && pos.getZ() >= topLeft.getZ() && pos.getZ() <= bottomRight.getZ()) {
-            return chunks.contains(new ChunkPos(pos));
+            return chunks.contains(ChunkPos.containing(pos));
         }
 
         return false;
@@ -469,25 +469,25 @@ public class FrontierOverlay extends FrontierData {
             toCheck.remove(pos);
             connected.add(pos);
 
-            ChunkPos posUp = new ChunkPos(pos.x, pos.z - 1);
+            ChunkPos posUp = new ChunkPos(pos.x(), pos.z() - 1);
             if (!visited.contains(posUp) && hasChunk(posUp)) {
                 toCheck.add(posUp);
             }
             visited.add(posUp);
 
-            ChunkPos posDown = new ChunkPos(pos.x, pos.z + 1);
+            ChunkPos posDown = new ChunkPos(pos.x(), pos.z() + 1);
             if (!visited.contains(posDown) && hasChunk(posDown)) {
                 toCheck.add(posDown);
             }
             visited.add(posDown);
 
-            ChunkPos posRight = new ChunkPos(pos.x + 1, pos.z);
+            ChunkPos posRight = new ChunkPos(pos.x() + 1, pos.z());
             if (!visited.contains(posRight) && hasChunk(posRight)) {
                 toCheck.add(posRight);
             }
             visited.add(posRight);
 
-            ChunkPos posLeft = new ChunkPos(pos.x - 1, pos.z);
+            ChunkPos posLeft = new ChunkPos(pos.x() - 1, pos.z());
             if (!visited.contains(posLeft) && hasChunk(posLeft)) {
                 toCheck.add(posLeft);
             }
@@ -504,10 +504,10 @@ public class FrontierOverlay extends FrontierData {
             return region;
         }
 
-        ChunkPos topLeft = new ChunkPos(this.topLeft);
-        ChunkPos bottomRight = new ChunkPos(this.bottomRight);
+        ChunkPos topLeft = ChunkPos.containing(this.topLeft);
+        ChunkPos bottomRight = ChunkPos.containing(this.bottomRight);
 
-        if (chunk.x <= topLeft.x || chunk.x >= bottomRight.x || chunk.z <= topLeft.z || chunk.z >= bottomRight.z) {
+        if (chunk.x() <= topLeft.x() || chunk.x() >= bottomRight.x() || chunk.z() <= topLeft.z() || chunk.z() >= bottomRight.z()) {
             return region;
         }
 
@@ -521,36 +521,36 @@ public class FrontierOverlay extends FrontierData {
             toCheck.remove(pos);
             region.add(pos);
 
-            ChunkPos posUp = new ChunkPos(pos.x, pos.z - 1);
+            ChunkPos posUp = new ChunkPos(pos.x(), pos.z() - 1);
             if (!visited.contains(posUp) && !hasChunk(posUp)) {
-                if (posUp.z == topLeft.z) {
+                if (posUp.z() == topLeft.z()) {
                     return new ArrayList<>();
                 }
                 toCheck.add(posUp);
             }
             visited.add(posUp);
 
-            ChunkPos posDown = new ChunkPos(pos.x, pos.z + 1);
+            ChunkPos posDown = new ChunkPos(pos.x(), pos.z() + 1);
             if (!visited.contains(posDown) && !hasChunk(posDown)) {
-                if (posUp.z == bottomRight.z) {
+                if (posUp.z() == bottomRight.z()) {
                     return new ArrayList<>();
                 }
                 toCheck.add(posDown);
             }
             visited.add(posDown);
 
-            ChunkPos posRight = new ChunkPos(pos.x + 1, pos.z);
+            ChunkPos posRight = new ChunkPos(pos.x() + 1, pos.z());
             if (!visited.contains(posRight) && !hasChunk(posRight)) {
-                if (posUp.x == bottomRight.x) {
+                if (posUp.x() == bottomRight.x()) {
                     return new ArrayList<>();
                 }
                 toCheck.add(posRight);
             }
             visited.add(posRight);
 
-            ChunkPos posLeft = new ChunkPos(pos.x - 1, pos.z);
+            ChunkPos posLeft = new ChunkPos(pos.x() - 1, pos.z());
             if (!visited.contains(posLeft) && !hasChunk(posLeft)) {
-                if (posUp.x == topLeft.x) {
+                if (posUp.x() == topLeft.x()) {
                     return new ArrayList<>();
                 }
                 toCheck.add(posLeft);
@@ -1039,10 +1039,10 @@ public class FrontierOverlay extends FrontierData {
         Multimap<ChunkPos, ChunkPos> edges = HashMultimap.create();
         synchronized (chunks) {
             for (ChunkPos chunk : chunks) {
-                addNewEdge(edges, new ChunkPos(chunk.x, chunk.z), new ChunkPos(chunk.x + 1, chunk.z));
-                addNewEdge(edges, new ChunkPos(chunk.x + 1, chunk.z), new ChunkPos(chunk.x + 1, chunk.z + 1));
-                addNewEdge(edges, new ChunkPos(chunk.x + 1, chunk.z + 1), new ChunkPos(chunk.x, chunk.z + 1));
-                addNewEdge(edges, new ChunkPos(chunk.x, chunk.z + 1), new ChunkPos(chunk.x, chunk.z));
+                addNewEdge(edges, new ChunkPos(chunk.x(), chunk.z()), new ChunkPos(chunk.x() + 1, chunk.z()));
+                addNewEdge(edges, new ChunkPos(chunk.x() + 1, chunk.z()), new ChunkPos(chunk.x() + 1, chunk.z() + 1));
+                addNewEdge(edges, new ChunkPos(chunk.x() + 1, chunk.z() + 1), new ChunkPos(chunk.x(), chunk.z() + 1));
+                addNewEdge(edges, new ChunkPos(chunk.x(), chunk.z() + 1), new ChunkPos(chunk.x(), chunk.z()));
             }
         }
 
@@ -1050,7 +1050,7 @@ public class FrontierOverlay extends FrontierData {
         Multimap<ChunkPos, List<ChunkPos>> holesPolygons = HashMultimap.create();
 
         while (!edges.isEmpty()) {
-            ChunkPos starting = Collections.min(edges.keySet(), (e1, e2) -> e1.x == e2.x ? e1.z - e2.z : e1.x - e2.x);
+            ChunkPos starting = Collections.min(edges.keySet(), (e1, e2) -> e1.x() == e2.x() ? e1.z() - e2.z() : e1.x() - e2.x());
             List<ChunkPos> polygon = new ArrayList<>();
             ChunkPos edge = starting;
             int direction = 1;
@@ -1059,17 +1059,17 @@ public class FrontierOverlay extends FrontierData {
                 polygon.add(edge);
                 Iterator<ChunkPos> it = edges.get(edge).iterator();
                 ChunkPos edge2 = it.next();
-                while (it.hasNext() && Integer.signum(direction) == Integer.signum(edge2.x - edge.x + edge.z - edge2.z)) {
+                while (it.hasNext() && Integer.signum(direction) == Integer.signum(edge2.x() - edge.x() + edge.z() - edge2.z())) {
                     edge2 = it.next();
                 }
                 edges.remove(edge, edge2);
-                direction = edge2.x - edge.x + edge2.z - edge.z;
+                direction = edge2.x() - edge.x() + edge2.z() - edge.z();
                 edge = edge2;
             } while (!edge.equals(starting));
 
             perimeter += polygon.size() * 16;
 
-            boolean clockwise = polygon.get(0).x != polygon.get(1).x;
+            boolean clockwise = polygon.get(0).x() != polygon.get(1).x();
             if (clockwise) {
                 outerPolygons.add(polygon);
             } else {
@@ -1099,7 +1099,7 @@ public class FrontierOverlay extends FrontierData {
                         break;
                     }
 
-                    ray = new ChunkPos(ray.x - 1, ray.z);
+                    ray = new ChunkPos(ray.x() - 1, ray.z());
                 }
 
                 if (outerFound != null) {
@@ -1149,7 +1149,7 @@ public class FrontierOverlay extends FrontierData {
         for (int i = chunks.size() - 1; i > 0; --i) {
             ChunkPos next = chunks.get(i - 1);
 
-            if (prev.x == next.x || prev.z == next.z) {
+            if (prev.x() == next.x() || prev.z() == next.z()) {
                 chunks.remove(i);
             }
 
@@ -1319,14 +1319,14 @@ public class FrontierOverlay extends FrontierData {
 
                 synchronized (chunks) {
                     for (ChunkPos chunk : chunks) {
-                        if (chunk.x < minX)
-                            minX = chunk.x;
-                        if (chunk.z < minZ)
-                            minZ = chunk.z;
-                        if (chunk.x > maxX)
-                            maxX = chunk.x;
-                        if (chunk.z > maxZ)
-                            maxZ = chunk.z;
+                        if (chunk.x() < minX)
+                            minX = chunk.x();
+                        if (chunk.z() < minZ)
+                            minZ = chunk.z();
+                        if (chunk.x() > maxX)
+                            maxX = chunk.x();
+                        if (chunk.z() > maxZ)
+                            maxZ = chunk.z();
                     }
                 }
 
@@ -1526,7 +1526,7 @@ public class FrontierOverlay extends FrontierData {
             image.setPixel(x, y, ARGB.color(j, k, l, i1));
         }
 
-        public void renderBanner(GuiGraphics graphics, int centerX, int y, int scale) {
+        public void renderBanner(GuiGraphicsExtractor graphics, int centerX, int y, int scale) {
             if (textureLocation == null) {
                 return;
             }

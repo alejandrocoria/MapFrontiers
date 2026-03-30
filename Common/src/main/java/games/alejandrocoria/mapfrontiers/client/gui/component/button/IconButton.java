@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.button;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.sounds.SoundManager;
@@ -65,7 +65,7 @@ public class IconButton extends ButtonBase {
     }
 
     @Override
-    public void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         if (isHoveredOrKeyboardFocused()) {
             graphics.blit(RenderPipelines.GUI_TEXTURED, texture, getX(), getY(), type.texHoverX, type.texHoverY, width, height, textureSizeX, textureSizeY);
         } else {

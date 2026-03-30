@@ -170,7 +170,7 @@ public class ChatFrontiers {
                 }
 
                 text.append(button);
-                player.displayClientMessage(text, false);
+                player.sendSystemMessage(text);
 
                 receivedId = -1;
             }

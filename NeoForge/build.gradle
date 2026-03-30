@@ -26,10 +26,6 @@ neoForge {
     if (at.exists()) {
         accessTransformers.from(at.absolutePath)
     }
-    parchment {
-        minecraftVersion = mappings_mc_version
-        mappingsVersion = mappings_date
-    }
     runs {
         configureEach {
             ideName = "NeoForge ${it.name.capitalize()} (${project.path})" // Unify the run config names with fabric
@@ -54,12 +50,12 @@ neoForge {
         implementation "${project.api_group}:${project.api_artifact_id}:${project.api_version}"
         embeddedApi "${project.api_group}:${project.api_artifact_id}:${project.api_version}"
 
-        implementation "mysticdrew:common-networking-neoforge:${project.common_networking_version}"
+        implementation "mysticdrew:common-networking-neoforge:${project.common_networking_version}-${project.journeymap_api_mc_version}"
         implementation "com.electronwill.night-config:core:${project.nightconfig_version}"
         implementation "com.electronwill.night-config:toml:${project.nightconfig_version}"
         jarJar "com.electronwill.night-config:core:${project.nightconfig_version}"
         jarJar "com.electronwill.night-config:toml:${project.nightconfig_version}"
-        api("info.journeymap:journeymap-api-neoforge:${project.journeymap_api_version}") {
+        api("info.journeymap:journeymap-api-neoforge:${project.journeymap_api_version}-${project.journeymap_api_mc_version}-SNAPSHOT") {
             changing = true
         }
         implementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_neoforge_file_id}"
@@ -99,7 +95,7 @@ tasks.register('publishCurseForge', TaskPublishCurseForge) {
     mainFile.displayName = "${minecraft_version}-${version}-neoforge"
     mainFile.releaseType = release_type
     mainFile.addModLoader("NeoForge")
-    mainFile.addJavaVersion("Java 21")
+    mainFile.addJavaVersion("Java 25")
     mainFile.addGameVersion("${minecraft_version}")
     mainFile.addEnvironment("Server", "Client")
     mainFile.addRelations("requiredDependency", "journeymap")

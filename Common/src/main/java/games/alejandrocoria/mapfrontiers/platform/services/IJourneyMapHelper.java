@@ -2,7 +2,7 @@ package games.alejandrocoria.mapfrontiers.platform.services;
 
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.MultiBufferSource;
 
 import java.io.File;
@@ -12,7 +12,7 @@ public interface IJourneyMapHelper {
     File getJMWorldDir(Minecraft client);
     void fullscreenMapCenterOn(int x, int z);
     boolean isMinimapEnabled();
-    void drawMinimapPreview(GuiGraphics graphics);
+    void drawMinimapPreview(GuiGraphicsExtractor graphics);
     double getMinimapWidth() throws NoSuchFieldException, IllegalAccessException;
     double getMinimapHeight() throws NoSuchFieldException, IllegalAccessException;
     double getMinimapTranslateX() throws NoSuchFieldException, IllegalAccessException;
@@ -38,6 +38,6 @@ public interface IJourneyMapHelper {
 
     interface ICustomPreviewRenderer {
         void setFrontiers(List<FrontierOverlay> frontierOverlays);
-        void draw(GuiGraphics graphics, MultiBufferSource.BufferSource buffers, int x, int y, int size, float scaleFactor);
+        void draw(GuiGraphicsExtractor graphics, MultiBufferSource.BufferSource buffers, int x, int y, int size, float scaleFactor);
     }
 }

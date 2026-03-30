@@ -149,7 +149,7 @@ processResources {
             "mod_credits":                          mod_credits,
             "mod_license":                          mod_license,
             "mod_logo":                             mod_logo,
-            "fabric_version":                       fabric_version,
+            "fabric_api_version":                   fabric_api_version,
             "fabric_loader_version":                fabric_loader_version,
             "forge_version":                        forge_version,
             "forge_loader_version_range":           forge_loader_version_range,

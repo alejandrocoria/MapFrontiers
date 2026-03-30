@@ -6,7 +6,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.ButtonBase;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.network.chat.Component;
@@ -103,7 +103,7 @@ public class SortToolbar extends LinearLayout {
 
 
         @Override
-        public void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
             if (isHoveredOrKeyboardFocused()) {
                 label.setColor(ColorConstants.SIMPLE_BUTTON_TEXT_HIGHLIGHT);
                 iconButton.setFocused(true);
@@ -112,9 +112,9 @@ public class SortToolbar extends LinearLayout {
                 iconButton.setFocused(false);
             }
 
-            label.render(graphics, mouseX, mouseY, partialTicks);
+            label.extractRenderState(graphics, mouseX, mouseY, partialTicks);
             if (selected) {
-                iconButton.render(graphics, mouseX, mouseY, partialTicks);
+                iconButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
             }
         }
 

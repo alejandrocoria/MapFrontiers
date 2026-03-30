@@ -5,7 +5,7 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
@@ -46,14 +46,14 @@ public class RadioListElement extends ScrollBox.ScrollElement {
     }
 
     @Override
-    protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks, boolean selected, boolean focused) {
+    protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks, boolean selected, boolean focused) {
         if (isHovered) {
             graphics.fill(x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
         }
 
         drawRadio(graphics, x + 2, y + 2, selected);
 
-        label.render(graphics, mouseX, mouseY, partialTicks);
+        label.extractRenderState(graphics, mouseX, mouseY, partialTicks);
     }
 
     @Override
@@ -65,7 +65,7 @@ public class RadioListElement extends ScrollBox.ScrollElement {
         return Action.None;
     }
 
-    private void drawRadio(GuiGraphics graphics, int x, int y, boolean checked) {
+    private void drawRadio(GuiGraphicsExtractor graphics, int x, int y, boolean checked) {
         graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x, y, checked ? 12 : 0, 0, 12, 12, textureSizeX, textureSizeY);
     }
 }

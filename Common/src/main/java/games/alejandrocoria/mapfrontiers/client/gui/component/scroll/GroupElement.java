@@ -6,7 +6,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.language.I18n;
 
@@ -50,7 +50,7 @@ public class GroupElement extends ScrollBox.ScrollElement {
     }
 
     @Override
-    protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks, boolean selected, boolean focused) {
+    protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks, boolean selected, boolean focused) {
         int color = ColorConstants.TEXT;
         if (selected) {
             color = ColorConstants.TEXT_HIGHLIGHT;
@@ -61,7 +61,7 @@ public class GroupElement extends ScrollBox.ScrollElement {
         }
 
         if (buttonDelete != null && (isHovered || focused)) {
-            buttonDelete.render(graphics, mouseX, mouseY, partialTicks);
+            buttonDelete.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         }
 
         String text = group.getName();
@@ -69,7 +69,7 @@ public class GroupElement extends ScrollBox.ScrollElement {
             text = I18n.get("mapfrontiers.unnamed", ChatFormatting.ITALIC);
         }
 
-        graphics.drawString(font, text, x + 4, y + 4, color);
+        graphics.text(font, text, x + 4, y + 4, color);
     }
 
     @Override

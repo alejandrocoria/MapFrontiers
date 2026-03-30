@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.ButtonBase;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.layouts.FrameLayout;
 import net.minecraft.client.gui.layouts.Layout;
@@ -133,20 +133,20 @@ public class TabbedBox implements Layout {
         return mainLayout.getY();
     }
 
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void renderBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         graphics.fill(getX(), getY() + 16, getX() + width, getY() + height, ColorConstants.SCREEN_BG);
 
         if (selected == -1) {
-            graphics.hLine(getX(), getX() + width, getY() + 16, ColorConstants.TAB_BORDER);
+            graphics.horizontalLine(getX(), getX() + width, getY() + 16, ColorConstants.TAB_BORDER);
         } else {
             Tab tab = tabs.get(selected);
-            graphics.hLine(getX(), tab.getX(), getY() + 16, ColorConstants.TAB_BORDER);
-            graphics.hLine(tab.getX() + tab.getWidth(), getX() + width, getY() + 16, ColorConstants.TAB_BORDER);
+            graphics.horizontalLine(getX(), tab.getX(), getY() + 16, ColorConstants.TAB_BORDER);
+            graphics.horizontalLine(tab.getX() + tab.getWidth(), getX() + width, getY() + 16, ColorConstants.TAB_BORDER);
         }
 
-        graphics.hLine(getX(), getX() + width, getY() + height, ColorConstants.TAB_BORDER);
-        graphics.vLine(getX(), getY() + 16, getY() + height, ColorConstants.TAB_BORDER);
-        graphics.vLine(getX() + width, getY() + 16, getY() + height, ColorConstants.TAB_BORDER);
+        graphics.horizontalLine(getX(), getX() + width, getY() + height, ColorConstants.TAB_BORDER);
+        graphics.verticalLine(getX(), getY() + 16, getY() + height, ColorConstants.TAB_BORDER);
+        graphics.verticalLine(getX() + width, getY() + 16, getY() + height, ColorConstants.TAB_BORDER);
     }
 
     private static class Tab extends ButtonBase {
@@ -164,12 +164,12 @@ public class TabbedBox implements Layout {
         }
 
         @Override
-        public void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
             graphics.fill(getX(), getY(), getX() + getWidth(), getY() + getHeight(), ColorConstants.SCREEN_BG);
 
-            graphics.hLine(getX(), getX() + getWidth(), getY(), isKeyboardFocused() ? ColorConstants.TAB_BORDER_FOCUSED : ColorConstants.TAB_BORDER);
-            graphics.vLine(getX(), getY(), getY() + getHeight(), ColorConstants.TAB_BORDER);
-            graphics.vLine(getX() + getWidth(), getY(), getY() + getHeight(), ColorConstants.TAB_BORDER);
+            graphics.horizontalLine(getX(), getX() + getWidth(), getY(), isKeyboardFocused() ? ColorConstants.TAB_BORDER_FOCUSED : ColorConstants.TAB_BORDER);
+            graphics.verticalLine(getX(), getY(), getY() + getHeight(), ColorConstants.TAB_BORDER);
+            graphics.verticalLine(getX() + getWidth(), getY(), getY() + getHeight(), ColorConstants.TAB_BORDER);
 
             int labelColor = ColorConstants.TAB_TEXT;
             if (!active) {
@@ -178,7 +178,7 @@ public class TabbedBox implements Layout {
                 labelColor = ColorConstants.TAB_TEXT_HIGHLIGHT;
             }
 
-            graphics.drawCenteredString(font, getMessage(), getX() + getWidth() / 2, getY() + 5, labelColor);
+            graphics.centeredText(font, getMessage(), getX() + getWidth() / 2, getY() + 5, labelColor);
         }
     }
 }

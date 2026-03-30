@@ -9,7 +9,7 @@ import games.alejandrocoria.mapfrontiers.platform.Services;
 import games.alejandrocoria.mapfrontiers.platform.services.IJourneyMapHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -125,12 +125,12 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
     }
 
     @Override
-    protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         graphics.blit(RenderPipelines.GUI_TEXTURED, backgroundTexture, getX(), getY(), 0, 0, getWidth(), getHeight(), SIZE, SIZE, SIZE, SIZE);
-        graphics.hLine(getX(), getX() + getWidth() - 1, getY(), ColorConstants.OPTION_BORDER);
-        graphics.hLine(getX(), getX() + getWidth() - 1, getY() + getHeight() - 1, ColorConstants.OPTION_BORDER);
-        graphics.vLine(getX(), getY(), getY() + getHeight() - 1, ColorConstants.OPTION_BORDER);
-        graphics.vLine(getX() + getWidth() - 1, getY(), getY() + getHeight() - 1, ColorConstants.OPTION_BORDER);
+        graphics.horizontalLine(getX(), getX() + getWidth() - 1, getY(), ColorConstants.OPTION_BORDER);
+        graphics.horizontalLine(getX(), getX() + getWidth() - 1, getY() + getHeight() - 1, ColorConstants.OPTION_BORDER);
+        graphics.verticalLine(getX(), getY(), getY() + getHeight() - 1, ColorConstants.OPTION_BORDER);
+        graphics.verticalLine(getX() + getWidth() - 1, getY(), getY() + getHeight() - 1, ColorConstants.OPTION_BORDER);
 
         customPreviewRenderer.draw(graphics, Minecraft.getInstance().renderBuffers().bufferSource(), getX(), getY(), SIZE, scaleFactor);
     }

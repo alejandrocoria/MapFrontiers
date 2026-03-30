@@ -4,7 +4,8 @@ import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.AbstractScrollArea;
 import net.minecraft.client.gui.components.AbstractContainerWidget;
 import net.minecraft.client.gui.components.events.ContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -44,7 +45,7 @@ public class ScrollBox extends AbstractContainerWidget {
     private Consumer<ScrollElement> elementDeletePressedCallback;
 
     public ScrollBox(int height, int elementWidth, int elementHeight) {
-        super(0, 0, elementWidth + 15, Math.max(height, elementHeight + 1), Component.empty());
+        super(0, 0, elementWidth + 15, Math.max(height, elementHeight + 1), Component.empty(), AbstractScrollArea.defaultSettings(10));
         elements = new ArrayList<>();
         selected = -1;
         focused = -1;
@@ -325,7 +326,7 @@ public class ScrollBox extends AbstractContainerWidget {
     }
 
     @Override
-    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         for (int i = 0; i < elements.size(); ++i) {
             boolean isFocused = focused == i && isKeyboardFocused();
             elements.get(i).render(graphics, mouseX, mouseY, partialTicks, selected == i, isFocused);
@@ -532,22 +533,22 @@ public class ScrollBox extends AbstractContainerWidget {
             this.y = y;
         }
 
-        protected void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks, boolean selected, boolean focused) {
+        protected void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks, boolean selected, boolean focused) {
             if (visible) {
                 isHovered = mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height;
-                renderWidget(graphics, mouseX, mouseY, partialTicks, selected, focused);
+                extractWidgetRenderState(graphics, mouseX, mouseY, partialTicks, selected, focused);
                 if (focused) {
-                    graphics.hLine(x - 1, x + width, y - 1, ColorConstants.WHITE);
-                    graphics.hLine(x - 1, x + width, y + height, ColorConstants.WHITE);
-                    graphics.vLine(x - 1, y - 1, y + height, ColorConstants.WHITE);
-                    graphics.vLine(x + width, y - 1, y + height, ColorConstants.WHITE);
+                    graphics.horizontalLine(x - 1, x + width, y - 1, ColorConstants.WHITE);
+                    graphics.horizontalLine(x - 1, x + width, y + height, ColorConstants.WHITE);
+                    graphics.verticalLine(x - 1, y - 1, y + height, ColorConstants.WHITE);
+                    graphics.verticalLine(x + width, y - 1, y + height, ColorConstants.WHITE);
                 }
             } else {
                 isHovered = false;
             }
         }
 
-        protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks, boolean selected, boolean focused) {
+        protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks, boolean selected, boolean focused) {
         }
 
         protected Action mousePressed(MouseButtonEvent event, boolean doubleClick) {

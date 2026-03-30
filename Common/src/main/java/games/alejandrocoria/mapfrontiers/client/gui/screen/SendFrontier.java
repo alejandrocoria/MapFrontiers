@@ -9,7 +9,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.multiplayer.ClientPacketListener;
@@ -83,7 +83,7 @@ public class SendFrontier extends AutoScaledScreen {
     }
 
     @Override
-    public void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         drawCenteredBoxBackground(graphics, content.getWidth() + 20, content.getHeight() + 20);
     }
 

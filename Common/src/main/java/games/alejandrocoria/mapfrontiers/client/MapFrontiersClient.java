@@ -23,7 +23,7 @@ import journeymap.api.v2.client.IClientAPI;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -170,7 +170,7 @@ public class MapFrontiersClient {
                 if (frontiers.stream().noneMatch(f -> f.getId().equals(inside.getId()))) {
                     boolean frontierAnnounceInChat = inside.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat);
                     if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), frontierAnnounceInChat) && (inside.isNamed() || ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS.get())) {
-                        player.displayClientMessage(Component.translatable("mapfrontiers.chat.leaving", createAnnounceTextWithName(inside)), false);
+                        player.sendSystemMessage(Component.translatable("mapfrontiers.chat.leaving", createAnnounceTextWithName(inside)));
                     }
                     i.remove();
                 }
@@ -182,7 +182,7 @@ public class MapFrontiersClient {
 
                     boolean frontierAnnounceInChat = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat);
                     if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), frontierAnnounceInChat)) {
-                        player.displayClientMessage(Component.translatable("mapfrontiers.chat.entering", text), false);
+                        player.sendSystemMessage(Component.translatable("mapfrontiers.chat.entering", text));
                     }
 
                     boolean frontierAnnounceInTitle = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInTitle);
@@ -200,7 +200,7 @@ public class MapFrontiersClient {
         }
     }
 
-    private static void handleHudRender(GuiGraphics graphics, float delta) {
+    private static void handleHudRender(GuiGraphicsExtractor graphics, float delta) {
         if (!isJourneyMapPluginAvailable()) {
             return;
         }

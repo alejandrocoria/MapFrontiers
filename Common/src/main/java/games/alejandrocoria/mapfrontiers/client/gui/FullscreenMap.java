@@ -400,7 +400,7 @@ public class FullscreenMap {
             else if (frontierHighlighted.getMode() == FrontierData.Mode.Vertex) {
                 frontierHighlighted.selectClosestVertex(position, maxDistanceToClosest);
             } else if (button == 1) {
-                lastEditedChunk = new ChunkPos(position);
+                lastEditedChunk = ChunkPos.containing(position);
                 if (ScreenHelper.hasShiftDown()) {
                     return false;
                 }else {
@@ -472,10 +472,10 @@ public class FullscreenMap {
                     shapeDirty = true;
                 }
             } else {
-                ChunkPos chunkPos = new ChunkPos(position);
-                ChunkPos prevChunkPos = new ChunkPos(relocatingPrevPos);
+                ChunkPos chunkPos = ChunkPos.containing(position);
+                ChunkPos prevChunkPos = ChunkPos.containing(relocatingPrevPos);
                 if (!chunkPos.equals(prevChunkPos)) {
-                    frontierHighlighted.moveAllChunks(new ChunkPos(chunkPos.x - prevChunkPos.x, chunkPos.z - prevChunkPos.z));
+                    frontierHighlighted.moveAllChunks(new ChunkPos(chunkPos.x() - prevChunkPos.x(), chunkPos.z() - prevChunkPos.z()));
                     relocatingPrevPos = position;
                     shapeDirty = true;
                 }
@@ -495,7 +495,7 @@ public class FullscreenMap {
             return;
         }
 
-        ChunkPos chunk = new ChunkPos(position);
+        ChunkPos chunk = ChunkPos.containing(position);
         if (chunk.equals(lastEditedChunk)) {
             return;
         }

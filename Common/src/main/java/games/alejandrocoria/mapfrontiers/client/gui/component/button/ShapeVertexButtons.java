@@ -6,7 +6,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.AbstractWidgetNoNa
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -131,7 +131,7 @@ public class ShapeVertexButtons extends AbstractWidgetNoNarration {
     }
 
     @Override
-    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         int col = 0;
         int row = 0;
         for (int i = 0; i < 12; ++i) {
@@ -150,6 +150,6 @@ public class ShapeVertexButtons extends AbstractWidgetNoNarration {
             }
         }
 
-        labelShapes.render(graphics, mouseX, mouseY, partialTicks);
+        labelShapes.extractRenderState(graphics, mouseX, mouseY, partialTicks);
     }
 }

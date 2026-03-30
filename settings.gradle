@@ -2,6 +2,7 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         mavenCentral()
+        mavenLocal()
         exclusiveContent {
             forRepository {
                 maven {
@@ -12,7 +13,7 @@ pluginManagement {
             filter {
                 includeGroup('net.fabricmc')
                 includeGroup('net.fabricmc.unpick')
-                includeGroup('fabric-loom')
+                includeGroup('net.fabricmc.fabric-loom')
             }
         }
         exclusiveContent {

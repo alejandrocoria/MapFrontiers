@@ -7,7 +7,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButto
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.AutoScaledScreen;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
@@ -166,7 +166,7 @@ public class VisibilityDialog extends AutoScaledScreen {
     }
 
     @Override
-    public void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         drawCenteredBoxBackground(graphics, content.getWidth() + 20, content.getHeight() + 20);
     }
 

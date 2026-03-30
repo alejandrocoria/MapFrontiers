@@ -5,7 +5,7 @@ import games.alejandrocoria.mapfrontiers.client.mixin.GuiGraphicsAccessor;
 import games.alejandrocoria.mapfrontiers.client.mixin.GuiRenderStateAccessor;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import journeymap.api.v2.client.ui.component.LayeredScreen;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -79,12 +79,12 @@ public abstract class AutoScaledScreen extends LayeredScreen {
 
     protected abstract void initScreen();
 
-    protected void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {}
+    protected void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {}
 
-    protected void renderScaledScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {}
+    protected void renderScaledScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {}
 
     @Override
-    protected final void renderPopupScreenBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    protected final void renderPopupScreenBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         if (minecraft.screen == this) {
             // Do not draw blur if it has already been drawn because Minecraft throws an exception for some reason.
             if (((GuiRenderStateAccessor) ((GuiGraphicsAccessor) graphics).mapfrontiers$getGuiRenderState()).mapfrontiers$setFirstStratumAfterBlur() == Integer.MAX_VALUE) {
@@ -96,7 +96,7 @@ public abstract class AutoScaledScreen extends LayeredScreen {
     }
 
     @Override
-    protected final void renderPopupScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    protected final void renderPopupScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         mouseX = (int) (mouseX * scaleFactor);
         mouseY = (int) (mouseY * scaleFactor);
 
@@ -106,21 +106,21 @@ public abstract class AutoScaledScreen extends LayeredScreen {
         }
 
         if (title.getContents() != PlainTextContents.EMPTY) {
-            graphics.drawCenteredString(font, title, this.actualWidth / 2, 11, ColorConstants.WHITE);
+            graphics.centeredText(font, title, this.actualWidth / 2, 11, ColorConstants.WHITE);
         }
 
         renderScaledBackgroundScreen(graphics, mouseX, mouseY, partialTicks);
 
         for (GuiEventListener child : children()) {
             if (child instanceof Renderable renderable) {
-                renderable.render(graphics, mouseX, mouseY, partialTicks);
+                renderable.extractRenderState(graphics, mouseX, mouseY, partialTicks);
             }
         }
 
         renderScaledScreen(graphics, mouseX, mouseY, partialTicks);
 
         if (minecraft.screen == this) {
-            graphics.renderDeferredElements();
+            graphics.extractDeferredElements(mouseX, mouseY, partialTicks);
         }
 
         if (scaleFactor != 1.f) {
@@ -178,15 +178,15 @@ public abstract class AutoScaledScreen extends LayeredScreen {
         }
     }
 
-    protected void drawCenteredBoxBackground(GuiGraphics graphics, int width, int height) {
+    protected void drawCenteredBoxBackground(GuiGraphicsExtractor graphics, int width, int height) {
         int x1 = (actualWidth - width) / 2;
         int x2 = (actualWidth + width) / 2;
         int y1 = (actualHeight - height) / 2;
         int y2 = (actualHeight + height) / 2;
         graphics.fill(x1, y1, x2, y2, ColorConstants.SCREEN_BG);
-        graphics.hLine(x1, x2, y1, ColorConstants.TAB_BORDER);
-        graphics.hLine(x1, x2, y2, ColorConstants.TAB_BORDER);
-        graphics.vLine(x1, y1, y2, ColorConstants.TAB_BORDER);
-        graphics.vLine(x2, y1, y2, ColorConstants.TAB_BORDER);
+        graphics.horizontalLine(x1, x2, y1, ColorConstants.TAB_BORDER);
+        graphics.horizontalLine(x1, x2, y2, ColorConstants.TAB_BORDER);
+        graphics.verticalLine(x1, y1, y2, ColorConstants.TAB_BORDER);
+        graphics.verticalLine(x2, y1, y2, ColorConstants.TAB_BORDER);
     }
 }

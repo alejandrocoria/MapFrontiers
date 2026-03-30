@@ -5,7 +5,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.MouseButtonEvent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -53,7 +53,7 @@ public class UserElement extends ScrollBox.ScrollElement {
     }
 
     @Override
-    protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks, boolean selected, boolean focused) {
+    protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks, boolean selected, boolean focused) {
         int color = ColorConstants.TEXT;
         if (selected) {
             color = ColorConstants.TEXT_HIGHLIGHT;
@@ -64,10 +64,10 @@ public class UserElement extends ScrollBox.ScrollElement {
         }
 
         if (isHovered || focused) {
-            buttonDelete.render(graphics, mouseX, mouseY, partialTicks);
+            buttonDelete.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         }
 
-        graphics.drawString(font, user.toString(), x + 16, y + 4, color);
+        graphics.text(font, user.toString(), x + 16, y + 4, color);
 
         if (pingBar > 0) {
             drawPingLine(graphics, x + 3, y + 11, 2);
@@ -86,7 +86,7 @@ public class UserElement extends ScrollBox.ScrollElement {
         }
     }
 
-    private void drawPingLine(GuiGraphics graphics, int posX, int posY, int height) {
+    private void drawPingLine(GuiGraphicsExtractor graphics, int posX, int posY, int height) {
         graphics.fill(posX, posY - height, posX + 1, posY, ColorConstants.PING_BAR);
     }
 

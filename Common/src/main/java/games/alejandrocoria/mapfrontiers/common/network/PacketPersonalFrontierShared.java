@@ -103,7 +103,7 @@ public class PacketPersonalFrontierShared {
             }
 
             text.append(button);
-            player.displayClientMessage(text, false);
+            player.sendSystemMessage(text);
         }
     }
 }

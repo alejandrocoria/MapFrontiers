@@ -2,7 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component.button;
 
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 
@@ -18,7 +18,7 @@ public class LinkButton extends ButtonBase {
     }
 
     @Override
-    public void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        graphics.drawString(font, getMessage(), getX(), getY() + 2, isHoveredOrKeyboardFocused() ? ColorConstants.LINK_HIGHLIGHT : ColorConstants.LINK);
+    public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        graphics.text(font, getMessage(), getX(), getY() + 2, isHoveredOrKeyboardFocused() ? ColorConstants.LINK_HIGHLIGHT : ColorConstants.LINK);
     }
 }

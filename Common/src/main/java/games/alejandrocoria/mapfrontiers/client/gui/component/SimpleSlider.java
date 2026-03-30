@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.mixin.AbstractSliderButtonAccessor;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
@@ -94,16 +94,16 @@ public class SimpleSlider extends AbstractSliderButton
     }
 
     @Override
-    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         int lineColor = ((AbstractSliderButtonAccessor) this).getCanChangeValue() ? ColorConstants.SIMPLE_BUTTON_BORDER_FOCUSED : ColorConstants.SIMPLE_BUTTON_BORDER;
-        graphics.hLine(getX(), getX() + width - 1, getY(), lineColor);
-        graphics.hLine(getX(), getX() + width - 1, getY() + height - 1, lineColor);
-        graphics.vLine(getX(), getY(), getY() + height - 1, lineColor);
-        graphics.vLine(getX() + width - 1, getY(), getY() + height - 1, lineColor);
+        graphics.horizontalLine(getX(), getX() + width - 1, getY(), lineColor);
+        graphics.horizontalLine(getX(), getX() + width - 1, getY() + height - 1, lineColor);
+        graphics.verticalLine(getX(), getY(), getY() + height - 1, lineColor);
+        graphics.verticalLine(getX() + width - 1, getY(), getY() + height - 1, lineColor);
 
         int handleX = getX() + (int)(value * (width - 6)) + 1;
         graphics.fill(handleX, getY() + 1, handleX + 4, getY() + height - 1, isHoveredOrFocused() ? 0xFFFFFFFF : 0xFFAAAAAA);
 
-        graphics.drawCenteredString(font, getMessage(), getX() + width / 2, getY() + 5, isHovered ? ColorConstants.SIMPLE_BUTTON_TEXT_HIGHLIGHT : ColorConstants.SIMPLE_BUTTON_TEXT);
+        graphics.centeredText(font, getMessage(), getX() + width / 2, getY() + 5, isHovered ? ColorConstants.SIMPLE_BUTTON_TEXT_HIGHLIGHT : ColorConstants.SIMPLE_BUTTON_TEXT);
     }
 }

@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component.button;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.network.chat.Component;
@@ -79,7 +79,7 @@ public class OptionButton extends ButtonBase {
     }
 
     @Override
-    public void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         int c = color;
         if (!active) {
             c = ColorConstants.TEXT_DARK;
@@ -91,7 +91,7 @@ public class OptionButton extends ButtonBase {
         graphics.fill(getX(), getY(), getX() + width, getY() + height, borderColor);
         graphics.fill(getX() + 1, getY() + 1, getX() + width - 1, getY() + height - 1, ColorConstants.OPTION_BG);
 
-        graphics.drawString(font, options.get(selected), getX() + 4, getY() + 2, c);
+        graphics.text(font, options.get(selected), getX() + 4, getY() + 2, c);
     }
 
     @Override

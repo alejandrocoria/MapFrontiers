@@ -307,7 +307,7 @@ public class FrontierData {
     public void moveAllChunks(ChunkPos delta) {
         synchronized (chunks) {
             Set<ChunkPos> movedChunks = chunks.stream()
-                    .map(chunk -> new ChunkPos(chunk.x + delta.x, chunk.z + delta.z))
+                    .map(chunk -> new ChunkPos(chunk.x() + delta.x(), chunk.z() + delta.z()))
                     .collect(Collectors.toSet());
             chunks.clear();
             chunks.addAll(movedChunks);
@@ -696,8 +696,8 @@ public class FrontierData {
         ListTag chunksTagList = new ListTag();
         for (ChunkPos pos : chunks) {
             CompoundTag compoundtag = new CompoundTag();
-            compoundtag.putInt("X", pos.x);
-            compoundtag.putInt("Z", pos.z);
+            compoundtag.putInt("X", pos.x());
+            compoundtag.putInt("Z", pos.z());
             chunksTagList.add(compoundtag);
         }
 
@@ -775,7 +775,7 @@ public class FrontierData {
         chunks.clear();
         int chunkCount = buf.readInt();
         for (int i = 0; i < chunkCount; ++i) {
-            ChunkPos chunk = new ChunkPos(buf.readLong());
+            ChunkPos chunk = ChunkPos.unpack(buf.readLong());
             chunks.add(chunk);
         }
 
@@ -845,7 +845,7 @@ public class FrontierData {
 
         buf.writeInt(chunks.size());
         for (ChunkPos pos : chunks) {
-            buf.writeLong(pos.toLong());
+            buf.writeLong(pos.pack());
         }
 
         buf.writeInt(mode.ordinal());

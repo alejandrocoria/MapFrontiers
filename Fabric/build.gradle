@@ -4,7 +4,7 @@ import net.darkhax.curseforgegradle.TaskPublishCurseForge
 
 plugins {
     id 'multiloader-loader'
-    id 'fabric-loom'
+    id 'net.fabricmc.fabric-loom'
     id 'idea'
     id 'net.darkhax.curseforgegradle' version '1.1.28'
     id "com.modrinth.minotaur" version "2.9.0"
@@ -25,24 +25,22 @@ dependencies {
     embeddedApi "${project.api_group}:${project.api_artifact_id}:${project.api_version}"
 
     minecraft "com.mojang:minecraft:${minecraft_version}"
-    mappings loom.layered {
-        officialMojangMappings()
-        parchment("org.parchmentmc.data:parchment-${project.mappings_mc_version}:${project.mappings_date}@zip")
-    }
-    modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
+    implementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
     implementation 'com.google.code.findbugs:jsr305:3.0.1'
 
-    modImplementation("mysticdrew:common-networking-fabric:${project.common_networking_version}") {
+    api(include("mysticdrew:common-networking-fabric:${project.common_networking_version}-${project.journeymap_api_mc_version}")) {
         changing = true
+        transitive = false
     }
     include(implementation("com.electronwill.night-config:core:${project.nightconfig_version}"))
     include(implementation("com.electronwill.night-config:toml:${project.nightconfig_version}"))
-    modApi "com.terraformersmc:modmenu:${project.modmenu_version}"
-    modApi("info.journeymap:journeymap-api-fabric:${project.journeymap_api_version}") {
+    compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+    compileOnly("info.journeymap:journeymap-api-fabric:${project.journeymap_api_version}-${project.journeymap_api_mc_version}-SNAPSHOT") {
         changing = true
+        transitive = false
     }
-    modImplementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_fabric_file_id}"
+    runtimeOnly "curse.maven:journeymap-${project.jm_project_id}:${project.jm_fabric_file_id}"
 }
 
 loom {
@@ -93,17 +91,17 @@ jar {
 
 registerProcessDocsTask(
         "Fabric API",
-        fabric_version,
+        fabric_api_version,
         "* Mod Menu (Optional): ${modmenu_version}"
 )
 
 tasks.register('publishCurseForge', TaskPublishCurseForge) {
     apiToken = "${curseForgeApiKey}"
-    def mainFile = upload(curseforge_project_id, remapJar)
+    def mainFile = upload(curseforge_project_id, jar)
     mainFile.displayName = "${minecraft_version}-${version}-fabric"
     mainFile.releaseType = release_type
     mainFile.addModLoader("Fabric", "Quilt")
-    mainFile.addJavaVersion("Java 21")
+    mainFile.addJavaVersion("Java 25")
     mainFile.addGameVersion("${minecraft_version}")
     mainFile.addEnvironment("Server", "Client")
     mainFile.addRelations("requiredDependency", "fabric-api", "journeymap")
@@ -119,7 +117,7 @@ modrinth {
     versionNumber = "${minecraft_version}-${version}-fabric"
     versionName = "${mod_name}-${minecraft_version}-${version}-fabric"
     versionType = release_type
-    uploadFile = remapJar
+    uploadFile = jar
     gameVersions = ["${minecraft_version}"]
     loaders = ["fabric", "quilt"]
     dependencies = [

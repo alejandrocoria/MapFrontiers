@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.button;
 
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.network.chat.Component;
@@ -26,7 +26,7 @@ public class CheckBoxButton extends ButtonBase {
     }
 
     @Override
-    public void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         if (!visible || !active) {
             return;
         }

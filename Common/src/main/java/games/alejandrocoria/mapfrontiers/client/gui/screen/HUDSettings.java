@@ -13,7 +13,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.hud.HUDPlacementHelper;
 import games.alejandrocoria.mapfrontiers.client.gui.hud.HUDWidget;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
 import games.alejandrocoria.mapfrontiers.platform.Services;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.layouts.GridLayout;
@@ -244,7 +244,7 @@ public class HUDSettings extends AutoScaledScreen {
     }
 
     @Override
-    public void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         if (Services.JOURNEYMAP.isMinimapEnabled()) {
             Services.JOURNEYMAP.drawMinimapPreview(graphics);
         }
@@ -263,7 +263,7 @@ public class HUDSettings extends AutoScaledScreen {
         }
     }
 
-    private void drawAnchor(GuiGraphics graphics, Window mainWindow) {
+    private void drawAnchor(GuiGraphicsExtractor graphics, Window mainWindow) {
         float factor = (float) mainWindow.getGuiScale();
         graphics.pose().pushMatrix();
         graphics.pose().scale(1.f / factor, 1.f / factor);
@@ -303,15 +303,15 @@ public class HUDSettings extends AutoScaledScreen {
         }
 
         if (directionX == 0) {
-            graphics.hLine(anchor.x - length, anchor.x + length, anchor.y, anchorLineColor);
+            graphics.horizontalLine(anchor.x - length, anchor.x + length, anchor.y, anchorLineColor);
         } else {
-            graphics.hLine(anchor.x, anchor.x + length * directionX, anchor.y, anchorLineColor);
+            graphics.horizontalLine(anchor.x, anchor.x + length * directionX, anchor.y, anchorLineColor);
         }
 
         if (directionY == 0) {
-            graphics.vLine(anchor.x, anchor.y - length, anchor.y + length, anchorLineColor);
+            graphics.verticalLine(anchor.x, anchor.y - length, anchor.y + length, anchorLineColor);
         } else {
-            graphics.vLine(anchor.x, anchor.y, anchor.y + length * directionY, anchorLineColor);
+            graphics.verticalLine(anchor.x, anchor.y, anchor.y + length * directionY, anchorLineColor);
         }
 
         graphics.pose().popMatrix();

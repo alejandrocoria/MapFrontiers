@@ -2,7 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import net.minecraft.client.gui.ComponentPath;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -98,7 +98,7 @@ public class ColorPicker extends AbstractWidgetNoNarration {
     }
 
     @Override
-    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         int texX = active ? 0 : 137;
 
         graphics.blit(RenderPipelines.GUI_TEXTURED, texture, getX(), getY(), texX, 0, 128, 128, textureSizeX, textureSizeY);

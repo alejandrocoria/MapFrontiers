@@ -20,7 +20,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import journeymap.api.v2.client.IClientAPI;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
@@ -258,7 +258,7 @@ public class FrontierList extends AutoScaledScreen {
     }
 
     @Override
-    public void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         drawCenteredBoxBackground(graphics, actualWidth - 60, actualHeight - 60);
     }
 

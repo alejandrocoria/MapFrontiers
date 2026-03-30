@@ -4,7 +4,7 @@ import journeymap.api.v2.client.fullscreen.ModPopupMenu;
 import journeymap.api.v2.client.fullscreen.ThemeButtonDisplay;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.entity.player.Player;
 
 import javax.annotation.Nullable;
@@ -19,7 +19,7 @@ public class ClientGlobalEvents {
     // Minecraft/Loader events
     private static final Map<Object, Consumer<Minecraft>> clientTickEventMap = new HashMap<>();
     private static final Map<Object, BiConsumer<Minecraft, Player>> playerTickEventMap = new HashMap<>();
-    private static final Map<Object, BiConsumer<GuiGraphics, Float>> hudRenderEventMap = new HashMap<>();
+    private static final Map<Object, BiConsumer<GuiGraphicsExtractor, Float>> hudRenderEventMap = new HashMap<>();
     private static final Map<Object, Runnable> clientConnectedEventMap = new HashMap<>();
     private static final Map<Object, Runnable> clientDisconnectedEventMap = new HashMap<>();
     private static final Map<Object, Consumer<Integer>> mouseReleaseEventMap = new HashMap<>();
@@ -40,7 +40,7 @@ public class ClientGlobalEvents {
         playerTickEventMap.put(object, callback);
     }
 
-    public static void subscribeHudRenderEvent(Object object, BiConsumer<GuiGraphics, Float> callback) {
+    public static void subscribeHudRenderEvent(Object object, BiConsumer<GuiGraphicsExtractor, Float> callback) {
         hudRenderEventMap.put(object, callback);
     }
 
@@ -101,8 +101,8 @@ public class ClientGlobalEvents {
         }
     }
 
-    public static void postHudRenderEvent(GuiGraphics graphics, DeltaTracker timer) {
-        for (BiConsumer<GuiGraphics, Float> callback : hudRenderEventMap.values()) {
+    public static void postHudRenderEvent(GuiGraphicsExtractor graphics, DeltaTracker timer) {
+        for (BiConsumer<GuiGraphicsExtractor, Float> callback : hudRenderEventMap.values()) {
             callback.accept(graphics, timer.getGameTimeDeltaTicks());
         }
     }

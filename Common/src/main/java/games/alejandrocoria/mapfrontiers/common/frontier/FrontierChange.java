@@ -79,7 +79,7 @@ public class FrontierChange {
             int chunksCount = buf.readInt();
             Set<ChunkPos> chunks = new HashSet<>(chunksCount);
             for (int i = 0; i < chunksCount; ++i) {
-                chunks.add(new ChunkPos(buf.readLong()));
+                chunks.add(ChunkPos.unpack(buf.readLong()));
             }
 
             FrontierData.Mode mode = FrontierData.Mode.values()[buf.readInt()];
@@ -146,7 +146,7 @@ public class FrontierChange {
 
             buf.writeInt(shape.chunks.size());
             for (ChunkPos chunk : shape.chunks) {
-                buf.writeLong(chunk.toLong());
+                buf.writeLong(chunk.pack());
             }
 
             buf.writeInt(shape.mode.ordinal());

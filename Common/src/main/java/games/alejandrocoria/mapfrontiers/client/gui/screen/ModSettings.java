@@ -33,7 +33,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.platform.Services;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.components.Tooltip;
@@ -577,17 +577,17 @@ public class ModSettings extends AutoScaledScreen {
     }
 
     @Override
-    public void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         tabbedBox.renderBackground(graphics, mouseX, mouseY, partialTicks);
 
         if (tabSelected == Tab.Credits || tabSelected == Tab.General) {
             int y = tabbedBox.getY() + tabbedBox.getHeight() - 19;
-            graphics.drawString(font, creditsTranslationLabel, tabbedBox.getX() + 10, y, ColorConstants.TEXT_HIGHLIGHT);
-            graphics.drawString(font, versionLabel, tabbedBox.getX() + tabbedBox.getWidth() - font.width(versionLabel) - 10, y, ColorConstants.TEXT_HIGHLIGHT);
+            graphics.text(font, creditsTranslationLabel, tabbedBox.getX() + 10, y, ColorConstants.TEXT_HIGHLIGHT);
+            graphics.text(font, versionLabel, tabbedBox.getX() + tabbedBox.getWidth() - font.width(versionLabel) - 10, y, ColorConstants.TEXT_HIGHLIGHT);
             if (showKeyHint) {
                 Component key = MapFrontiersClient.getOpenSettingsKey();
                 if (key != null) {
-                    graphics.drawCenteredString(font, Component.translatable(keyHintkey, key), tabbedBox.getX() + tabbedBox.getWidth() / 2, y, ColorConstants.TEXT_HIGHLIGHT);
+                    graphics.centeredText(font, Component.translatable(keyHintkey, key), tabbedBox.getX() + tabbedBox.getWidth() / 2, y, ColorConstants.TEXT_HIGHLIGHT);
                 }
             }
         }

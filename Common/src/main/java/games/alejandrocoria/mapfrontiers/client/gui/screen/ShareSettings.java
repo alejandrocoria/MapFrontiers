@@ -15,7 +15,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.LinearLayout;
@@ -182,7 +182,7 @@ public class ShareSettings extends AutoScaledScreen {
     }
 
     @Override
-    public void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         drawCenteredBoxBackground(graphics, content.getWidth() + 20, content.getHeight() + 20);
     }
 

@@ -11,7 +11,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxDou
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.AutoScaledScreen;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
@@ -186,7 +186,7 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
     }
 
     @Override
-    public void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         drawCenteredBoxBackground(graphics, content.getWidth() + 20, content.getHeight() + 20);
     }
 

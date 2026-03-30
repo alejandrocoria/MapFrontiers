@@ -43,7 +43,7 @@ public final class ApiConverters {
 
     public static FrontierShape toShape(FrontierData frontier) {
         List<Point2i> vertices = frontier.getVertices().stream().map(pos -> new Point2i(pos.getX(), pos.getZ())).toList();
-        List<ChunkCoord> chunks = frontier.getChunks().stream().map(chunk -> new ChunkCoord(chunk.x, chunk.z)).toList();
+        List<ChunkCoord> chunks = frontier.getChunks().stream().map(chunk -> new ChunkCoord(chunk.x(), chunk.z())).toList();
 
         if (frontier.getMode() == FrontierData.Mode.Vertex) {
             return FrontierShape.vertex(vertices);

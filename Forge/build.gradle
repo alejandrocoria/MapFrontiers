@@ -4,8 +4,7 @@ import net.darkhax.curseforgegradle.TaskPublishCurseForge
 plugins {
     id 'multiloader-loader'
     id 'idea'
-    id 'net.minecraftforge.accesstransformers' version '5.0.2'
-    id 'net.minecraftforge.gradle' version '7.0.0-beta.55'
+    id 'net.minecraftforge.gradle' version '[7.0.11,8.0)'
     id 'net.darkhax.curseforgegradle' version '1.1.28'
     id "com.modrinth.minotaur" version "2.9.0"
 }
@@ -31,20 +30,21 @@ dependencies {
     implementation "${project.api_group}:${project.api_artifact_id}:${project.api_version}"
     embeddedApi "${project.api_group}:${project.api_artifact_id}:${project.api_version}"
 
-    implementation minecraft.dependency("net.minecraftforge:forge:${forge_version}")
+    implementation minecraft.dependency("net.minecraftforge:forge:${minecraft_version}-${forge_version}")
     annotationProcessor 'net.minecraftforge:eventbus-validator:7.0-beta.10'
 
-    implementation "mysticdrew:common-networking-forge:${project.common_networking_version}"
-    api("info.journeymap:journeymap-api-forge:${project.journeymap_api_version}") {
+    implementation "mysticdrew:common-networking-forge:${project.common_networking_version}-${project.journeymap_api_mc_version}"
+    api("info.journeymap:journeymap-api-forge:${project.journeymap_api_version}-${project.journeymap_api_mc_version}-SNAPSHOT") {
         changing = true
     }
     implementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_forge_file_id}"
 }
 
 minecraft {
-    mappings channel: "parchment", version: "${project.mappings_mc_version}-${project.mappings_date}"
-
-    accessTransformers = true
+    accessTransformers = files(
+            project(':Common').file('src/main/resources/META-INF/accesstransformer.cfg'),
+            file('src/main/resources/META-INF/accesstransformer.cfg')
+    )
 
     runs {
         configureEach {
@@ -115,7 +115,7 @@ tasks.register('publishCurseForge', TaskPublishCurseForge) {
     mainFile.displayName = "${minecraft_version}-${version}-forge"
     mainFile.releaseType = release_type
     mainFile.addModLoader("Forge")
-    mainFile.addJavaVersion("Java 21")
+    mainFile.addJavaVersion("Java 25")
     mainFile.addGameVersion("${minecraft_version}")
     mainFile.addEnvironment("Server", "Client")
     mainFile.addRelations("requiredDependency", "journeymap")

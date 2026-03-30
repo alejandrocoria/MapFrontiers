@@ -30,7 +30,7 @@ import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.util.UIState;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.GridLayout;
@@ -536,12 +536,12 @@ public class FrontierInfo extends AutoScaledScreen {
     }
 
     @Override
-    public void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         drawCenteredBoxBackground(graphics, content.getWidth() + 20, content.getHeight() + 20);
     }
 
     @Override
-    public void renderScaledScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void renderScaledScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         if (frontier.getBannerRenderer().hasBanner()) {
             frontier.getBannerRenderer().renderBanner(graphics, buttonBanner.getX() + buttonBanner.getWidth() / 2, sliderBannerRotation.getY() + 25, 3);
         }

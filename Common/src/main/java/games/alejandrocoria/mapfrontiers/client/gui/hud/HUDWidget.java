@@ -4,7 +4,7 @@ import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.gui.component.AbstractWidgetNoNarration;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.sounds.SoundManager;
@@ -173,7 +173,7 @@ public class HUDWidget extends AbstractWidgetNoNarration {
     }
 
     @Override
-    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         hud.draw(graphics, partialTicks);
         if (!grabbed) {
             positionHUD.x = hud.getPosX();

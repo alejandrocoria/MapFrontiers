@@ -7,7 +7,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.language.I18n;
@@ -73,7 +73,7 @@ public class GroupActionElement extends ScrollBox.ScrollElement {
     }
 
     @Override
-    protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks, boolean selected, boolean focused) {
+    protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks, boolean selected, boolean focused) {
         if (isHovered) {
             graphics.fill(x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
         }
@@ -83,13 +83,13 @@ public class GroupActionElement extends ScrollBox.ScrollElement {
             text = I18n.get("mapfrontiers.unnamed", ChatFormatting.ITALIC);
         }
 
-        graphics.drawString(font, text, x + 4, y + 4, ColorConstants.TEXT_HIGHLIGHT);
+        graphics.text(font, text, x + 4, y + 4, ColorConstants.TEXT_HIGHLIGHT);
 
-        createFrontier.render(graphics, mouseX, mouseY, partialTicks);
-        deleteFrontier.render(graphics, mouseX, mouseY, partialTicks);
-        updateFrontier.render(graphics, mouseX, mouseY, partialTicks);
-        updateSettings.render(graphics, mouseX, mouseY, partialTicks);
-        personalFrontier.render(graphics, mouseX, mouseY, partialTicks);
+        createFrontier.extractRenderState(graphics, mouseX, mouseY, partialTicks);
+        deleteFrontier.extractRenderState(graphics, mouseX, mouseY, partialTicks);
+        updateFrontier.extractRenderState(graphics, mouseX, mouseY, partialTicks);
+        updateSettings.extractRenderState(graphics, mouseX, mouseY, partialTicks);
+        personalFrontier.extractRenderState(graphics, mouseX, mouseY, partialTicks);
     }
 
     @Override
