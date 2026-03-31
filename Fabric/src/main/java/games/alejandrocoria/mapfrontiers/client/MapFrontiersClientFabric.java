@@ -14,6 +14,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 
@@ -30,8 +31,8 @@ public class MapFrontiersClientFabric extends MapFrontiersClient implements Clie
         ClientTickEvents.START_CLIENT_TICK.register(ClientGlobalEvents::postClientTickEvent);
         ClientTickEvents.END_CLIENT_TICK.register(client -> ClientGlobalEvents.postPlayerTickEvent(client, client.player));
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "hud"), ClientGlobalEvents::postHudRenderEvent);
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> ClientGlobalEvents.postClientConnectedEvent());
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ClientGlobalEvents.postClientDisconnectedEvent());
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> runOnClientThread(client, ClientGlobalEvents::postClientConnectedEvent));
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> runOnClientThread(client, ClientGlobalEvents::postClientDisconnectedEvent));
         ScreenEvents.BEFORE_INIT.register((client, theScreen, scaledWidth, scaledHeight) -> {
             ScreenMouseEvents.beforeMouseRelease(theScreen).register((screen, event) -> ClientGlobalEvents.postMouseReleaseEvent(event.button()));
         });
@@ -46,5 +47,13 @@ public class MapFrontiersClientFabric extends MapFrontiersClient implements Clie
         init();
 
         MapFrontiersFabric.LOGGER.info("Fabric onInitializeClient done");
+    }
+
+    private static void runOnClientThread(Minecraft client, Runnable action) {
+        if (client.isSameThread()) {
+            action.run();
+        } else {
+            client.execute(action);
+        }
     }
 }
