@@ -29,7 +29,7 @@ dependencies {
     implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
     implementation 'com.google.code.findbugs:jsr305:3.0.1'
 
-    api(include("mysticdrew:common-networking-fabric:${project.common_networking_version}-${project.journeymap_api_mc_version}")) {
+    compileOnly("mysticdrew:common-networking-fabric:${project.common_networking_version}-${project.journeymap_api_mc_version}") {
         changing = true
         transitive = false
     }
