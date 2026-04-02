@@ -127,5 +127,7 @@ modrinth {
             new VersionDependency("journeymap", "${journeymap_doc_version}+fabric", "required"),
             new VersionDependency("modmenu", "${modmenu_version}", "optional")
     ]
-    changelog = file("$project.buildDir/doc/changelog.md").exists() ? file("$project.buildDir/doc/changelog.md").text : null
+    changelog.set(providers.provider {
+        file("$project.buildDir/doc/changelog.md").text
+    })
 }

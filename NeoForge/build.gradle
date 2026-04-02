@@ -121,5 +121,7 @@ modrinth {
     dependencies = [
             new VersionDependency("journeymap", "${journeymap_doc_version}+neoforge", "required"),
     ]
-    changelog = file("$project.buildDir/doc/changelog.md").exists() ? file("$project.buildDir/doc/changelog.md").text : null
+    changelog.set(providers.provider {
+        file("$project.buildDir/doc/changelog.md").text
+    })
 }
