@@ -49,6 +49,10 @@ public class FrontierData {
         Vertex, Chunk
     }
 
+    public enum FrontierLifetime {
+        PERSISTENT, SESSION_ONLY
+    }
+
     protected UUID id;
     protected final List<BlockPos> vertices = new ArrayList<>();
     protected final Set<ChunkPos> chunks = new HashSet<>();
@@ -61,6 +65,7 @@ public class FrontierData {
     protected SettingsUser owner = new SettingsUser();
     protected BannerData banner;
     protected boolean personal = false;
+    protected FrontierLifetime lifetime = FrontierLifetime.PERSISTENT;
     protected List<SettingsUserShared> usersShared;
     protected CopiedFrom copiedFrom;
     protected @Nullable String sourcePluginId;
@@ -77,6 +82,7 @@ public class FrontierData {
         dimension = other.dimension;
         owner = other.owner;
         personal = other.personal;
+        lifetime = other.lifetime;
 
         visibilityData = new VisibilityData(other.visibilityData);
         color = other.color;
@@ -103,6 +109,9 @@ public class FrontierData {
 
         created = other.created;
         modified = other.modified;
+
+        validateTypeAndLifetime(personal, lifetime);
+        sanitizeSharedUsers();
     }
 
     public void updateFromData(FrontierData other) {
@@ -114,6 +123,7 @@ public class FrontierData {
         dimension = other.dimension;
         owner = other.owner;
         personal = other.personal;
+        lifetime = other.lifetime;
         visibilityData = new VisibilityData(other.visibilityData);
         color = other.color;
         name1 = other.name1;
@@ -131,6 +141,9 @@ public class FrontierData {
         created = other.created;
 
         modified = other.modified;
+
+        validateTypeAndLifetime(personal, lifetime);
+        sanitizeSharedUsers();
     }
 
     public void applyChange(FrontierChange change) {
@@ -168,6 +181,7 @@ public class FrontierData {
 
     public void applySharingChange(FrontierSharingChange sharingChange) {
         usersShared = sharingChange.getUsersShared();
+        sanitizeSharedUsers();
     }
 
     public void setOwner(SettingsUser owner) {
@@ -418,14 +432,39 @@ public class FrontierData {
     }
 
     public void setPersonal(boolean personal) {
+        validateTypeAndLifetime(personal, lifetime);
         this.personal = personal;
+        sanitizeSharedUsers();
     }
 
     public boolean getPersonal() {
         return personal;
     }
 
+    public void setLifetime(FrontierLifetime lifetime) {
+        FrontierLifetime checkedLifetime = Objects.requireNonNull(lifetime, "lifetime");
+        validateTypeAndLifetime(personal, checkedLifetime);
+        this.lifetime = checkedLifetime;
+        sanitizeSharedUsers();
+    }
+
+    public FrontierLifetime getLifetime() {
+        return lifetime;
+    }
+
+    public boolean isPersistent() {
+        return lifetime == FrontierLifetime.PERSISTENT;
+    }
+
+    public boolean isSessionOnly() {
+        return lifetime == FrontierLifetime.SESSION_ONLY;
+    }
+
     public void addUserShared(SettingsUserShared userShared) {
+        if (!canHaveSharedUsers()) {
+            return;
+        }
+
         if (usersShared == null) {
             usersShared = new ArrayList<>();
         }
@@ -455,9 +494,13 @@ public class FrontierData {
         }
 
         usersShared.removeIf(SettingsUserShared::isPending);
+        sanitizeSharedUsers();
     }
 
     public List<SettingsUserShared> getUsersShared() {
+        if (!canHaveSharedUsers()) {
+            return null;
+        }
         return usersShared;
     }
 
@@ -567,6 +610,12 @@ public class FrontierData {
         visibilityData.readFromNBT(nbt, version);
 
         personal = nbt.getBooleanOr("personal", true);
+        lifetime = readLifetimeFromNbt(nbt);
+        try {
+            validateTypeAndLifetime(personal, lifetime);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidNbtFormatException("Invalid lifetime for frontier " + id + ": " + e.getMessage(), e);
+        }
         sourcePluginId = nbt.getStringOr("sourcePluginId", null);
 
         owner = new SettingsUser();
@@ -647,6 +696,8 @@ public class FrontierData {
         if (nbt.contains("modified")) {
             modified = new Date(NbtReadHelper.requireLong(nbt, "modified"));
         }
+
+        sanitizeSharedUsers();
     }
 
     public void writeToNBT(CompoundTag nbt) {
@@ -657,6 +708,7 @@ public class FrontierData {
         nbt.putString("name2", name2);
         visibilityData.writeToNBT(nbt);
         nbt.putBoolean("personal", personal);
+        nbt.putString("lifetime", lifetime.name());
         if (sourcePluginId != null) {
             nbt.putString("sourcePluginId", sourcePluginId);
         }
@@ -724,6 +776,8 @@ public class FrontierData {
         id = UUIDHelper.fromBytes(buf);
         dimension = ResourceKey.create(Registries.DIMENSION, buf.readIdentifier());
         personal = buf.readBoolean();
+        lifetime = readLifetimeFromBytes(buf);
+        validateTypeAndLifetime(personal, lifetime);
         if (buf.readBoolean()) {
             sourcePluginId = buf.readUtf();
         } else {
@@ -799,12 +853,15 @@ public class FrontierData {
         } else {
             modified = null;
         }
+
+        sanitizeSharedUsers();
     }
 
     public void toBytes(FriendlyByteBuf buf) {
         UUIDHelper.toBytes(buf, id);
         buf.writeIdentifier(dimension.identifier());
         buf.writeBoolean(personal);
+        buf.writeInt(lifetime.ordinal());
         if (sourcePluginId == null) {
             buf.writeBoolean(false);
         } else {
@@ -870,6 +927,53 @@ public class FrontierData {
             buf.writeBoolean(true);
             buf.writeLong(modified.getTime());
         }
+    }
+
+    private static void validateTypeAndLifetime(boolean personal, FrontierLifetime lifetime) {
+        if (!personal && lifetime == FrontierLifetime.SESSION_ONLY) {
+            throw new IllegalArgumentException("SESSION_ONLY frontiers must be personal");
+        }
+    }
+
+    private boolean canHaveSharedUsers() {
+        return personal && isPersistent();
+    }
+
+    private void sanitizeSharedUsers() {
+        if (!canHaveSharedUsers()) {
+            usersShared = null;
+        }
+    }
+
+    private static FrontierLifetime readLifetimeFromNbt(CompoundTag nbt) {
+        String lifetimeTag = nbt.getStringOr("lifetime", "");
+        if (lifetimeTag.isEmpty()) {
+            return FrontierLifetime.PERSISTENT;
+        }
+
+        try {
+            return FrontierLifetime.valueOf(lifetimeTag);
+        } catch (IllegalArgumentException e) {
+            String availableLifetimes = StringHelper.enumValuesToString(Arrays.asList(FrontierLifetime.values()));
+            MapFrontiers.LOGGER.warn("Unknown lifetime in frontier {}. Found: \"{}\". Expected: {}", idFromTag(nbt), lifetimeTag, availableLifetimes);
+            return FrontierLifetime.PERSISTENT;
+        }
+    }
+
+    private static FrontierLifetime readLifetimeFromBytes(FriendlyByteBuf buf) {
+        int lifetimeOrdinal = buf.readInt();
+        FrontierLifetime[] values = FrontierLifetime.values();
+        if (lifetimeOrdinal < 0 || lifetimeOrdinal >= values.length) {
+            MapFrontiers.LOGGER.warn("Unknown lifetime ordinal in frontier packet. Found: {}. Defaulting to {}", lifetimeOrdinal,
+                    FrontierLifetime.PERSISTENT);
+            return FrontierLifetime.PERSISTENT;
+        }
+
+        return values[lifetimeOrdinal];
+    }
+
+    private static String idFromTag(CompoundTag nbt) {
+        return nbt.getStringOr("id", "<unknown>");
     }
 
 

@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.api.model.ChunkCoord;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
+import games.alejandrocoria.mapfrontiers.api.model.FrontierLifetime;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierShape;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierSharePermission;
@@ -75,26 +76,39 @@ public class ClientFrontierOperationService {
 
     public void createNewFrontier(boolean personal, ResourceKey<Level> dimension,
                                   @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
-        createNewFrontierAndReturn(personal, UUID.randomUUID(), dimension, null, vertices, chunks);
+        createNewFrontierAndReturn(personal, UUID.randomUUID(), dimension, FrontierData.FrontierLifetime.PERSISTENT, null, vertices, chunks);
     }
 
     @Nullable
     public FrontierOverlay createNewFrontierAndReturn(boolean personal, UUID frontierId, ResourceKey<Level> dimension,
                                                       @Nullable String sourcePluginId, FrontierShape shape) {
+        return createNewFrontierAndReturn(personal, frontierId, dimension, FrontierData.FrontierLifetime.PERSISTENT, sourcePluginId, shape);
+    }
+
+    @Nullable
+    public FrontierOverlay createNewFrontierAndReturn(boolean personal, UUID frontierId, ResourceKey<Level> dimension,
+                                                      FrontierData.FrontierLifetime lifetime, @Nullable String sourcePluginId, FrontierShape shape) {
         List<Point2i> shapeVertices = shape.vertices();
         List<ChunkCoord> shapeChunks = shape.chunks();
         List<BlockPos> vertices = shapeVertices == null || shapeVertices.isEmpty() ? null : shapeVertices.stream()
                 .map(vertex -> new BlockPos(vertex.x(), 0, vertex.z())).toList();
         List<ChunkPos> chunks = shapeChunks == null || shapeChunks.isEmpty() ? null : shapeChunks.stream()
                 .map(chunk -> new ChunkPos(chunk.x(), chunk.z())).toList();
-        return createNewFrontierAndReturn(personal, frontierId, dimension, sourcePluginId, vertices, chunks);
+        return createNewFrontierAndReturn(personal, frontierId, dimension, lifetime, sourcePluginId, vertices, chunks);
     }
 
     @Nullable
     public FrontierOverlay createNewFrontierAndReturn(boolean personal, UUID frontierId, ResourceKey<Level> dimension,
                                                       @Nullable String sourcePluginId, @Nullable List<BlockPos> vertices,
                                                       @Nullable List<ChunkPos> chunks) {
-        if (MapFrontiersClient.isModOnServer()) {
+        return createNewFrontierAndReturn(personal, frontierId, dimension, FrontierData.FrontierLifetime.PERSISTENT, sourcePluginId, vertices, chunks);
+    }
+
+    @Nullable
+    public FrontierOverlay createNewFrontierAndReturn(boolean personal, UUID frontierId, ResourceKey<Level> dimension,
+                                                      FrontierData.FrontierLifetime lifetime, @Nullable String sourcePluginId,
+                                                      @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
+        if (usesAuthoritativeCreateFlow(lifetime)) {
             PacketHandler.sendToServer(new PacketCreateFrontier(frontierId, dimension, personal, sourcePluginId, vertices, chunks));
             return null;
         }
@@ -104,15 +118,15 @@ public class ClientFrontierOperationService {
         }
 
         FrontierData frontier = FrontierCreationFactory.createFrontier(frontierId, new SettingsUser(minecraft.player), dimension,
-                true, sourcePluginId, vertices, chunks);
+                true, lifetime, sourcePluginId, vertices, chunks);
         FrontierOverlay frontierOverlay = personalManager.addFrontier(frontier);
-        persistLocalPersonalFrontiers();
+        persistLocalPersonalFrontiersIfPersistent(frontierOverlay);
         frontierEvents.postCreated(frontierOverlay, minecraft.player.getId());
         return frontierOverlay;
     }
 
     public void deleteFrontier(FrontierOverlay frontier) {
-        if (MapFrontiersClient.isModOnServer()) {
+        if (usesAuthoritativeMutationFlow(frontier)) {
             PacketHandler.sendToServer(new PacketDeleteFrontier(frontier.getId()));
             return;
         }
@@ -122,7 +136,7 @@ public class ClientFrontierOperationService {
         }
 
         personalManager.deleteFrontier(frontier.getDimension(), frontier.getId());
-        persistLocalPersonalFrontiers();
+        persistLocalPersonalFrontiersIfPersistent(frontier);
         frontierEvents.postDeleted(frontier.getId());
     }
 
@@ -135,7 +149,7 @@ public class ClientFrontierOperationService {
             return;
         }
 
-        if (MapFrontiersClient.isModOnServer()) {
+        if (usesAuthoritativeMutationFlow(frontier)) {
             PacketHandler.sendToServer(new PacketUpdateFrontier(frontier.getId(), change));
             return;
         }
@@ -144,7 +158,7 @@ public class ClientFrontierOperationService {
             return;
         }
 
-        persistLocalPersonalFrontiers();
+        persistLocalPersonalFrontiersIfPersistent(frontier);
         frontierEvents.postUpdated(frontier, minecraft.player.getId());
     }
 
@@ -159,11 +173,23 @@ public class ClientFrontierOperationService {
     }
 
     public FrontierActionResult createFrontierAction(boolean personal, String pluginModId, DimensionId dimension, FrontierShape shape) {
+        return createFrontierAction(personal, pluginModId, dimension, shape, FrontierLifetime.PERSISTENT);
+    }
+
+    public FrontierActionResult createFrontierAction(boolean personal, String pluginModId, DimensionId dimension, FrontierShape shape,
+                                                     @Nullable FrontierLifetime lifetime) {
+        FrontierData.FrontierLifetime internalLifetime = ApiConverters.toLifetime(lifetime);
+        if (!personal && internalLifetime == FrontierData.FrontierLifetime.SESSION_ONLY) {
+            MapFrontiers.LOGGER.debug("Rejected frontier creation because SESSION_ONLY frontiers must be personal. pluginModId={}, dimension={}",
+                    pluginModId, dimension.value());
+            return FrontierActionResult.rejected();
+        }
+
         ResourceKey<Level> resourceKey = ApiConverters.toDimension(dimension);
         FrontierId frontierId = new FrontierId(UUID.randomUUID());
-        FrontierOverlay frontier = createNewFrontierAndReturn(personal, frontierId.value(), resourceKey, pluginModId, shape);
+        FrontierOverlay frontier = createNewFrontierAndReturn(personal, frontierId.value(), resourceKey, internalLifetime, pluginModId, shape);
         if (frontier == null) {
-            return MapFrontiersClient.isModOnServer() ? FrontierActionResult.acceptedAsync(frontierId) : FrontierActionResult.rejected();
+            return usesAuthoritativeCreateFlow(internalLifetime) ? FrontierActionResult.acceptedAsync(frontierId) : FrontierActionResult.rejected();
         }
 
         return FrontierActionResult.applied(ApiConverters.fromFrontier(frontier));
@@ -189,7 +215,7 @@ public class ClientFrontierOperationService {
             return FrontierActionResult.notFound(frontierId);
         }
 
-        if (MapFrontiersClient.isModOnServer()) {
+        if (usesAuthoritativeMutationFlow(frontier)) {
             FrontierData payload = new FrontierData(frontier);
             ApiConverters.applyMutation(payload, mutation);
             PacketHandler.sendToServer(new PacketUpdateFrontier(frontierId.value(), FrontierChange.fromFrontierData(payload)));
@@ -207,8 +233,9 @@ public class ClientFrontierOperationService {
             return FrontierActionResult.notFound(frontierId);
         }
 
+        boolean authoritativeDelete = usesAuthoritativeMutationFlow(frontier);
         deleteFrontier(frontier);
-        if (MapFrontiersClient.isModOnServer()) {
+        if (authoritativeDelete) {
             return FrontierActionResult.acceptedAsync(frontierId);
         }
 
@@ -219,6 +246,9 @@ public class ClientFrontierOperationService {
         FrontierOverlay frontier = personalManager.getFrontier(frontierId.value());
         if (frontier == null) {
             return FrontierActionResult.notFound(frontierId);
+        }
+        if (frontier.isSessionOnly()) {
+            return rejectSessionOnlyFrontierAction("changeToGlobal", frontierId, null, null);
         }
         if (!MapFrontiersClient.isModOnServer()) {
             return FrontierActionResult.rejected();
@@ -325,7 +355,7 @@ public class ClientFrontierOperationService {
         }
 
         FrontierOverlay frontierOverlay = personalManager.addFrontier(receivedFrontier);
-        persistLocalPersonalFrontiers();
+        persistLocalPersonalFrontiersIfPersistent(frontierOverlay);
         if (minecraft.player != null) {
             frontierEvents.postCreated(frontierOverlay, minecraft.player.getId());
         }
@@ -337,7 +367,9 @@ public class ClientFrontierOperationService {
         frontierEvents.postDeleted(currentFrontier.getId());
 
         FrontierOverlay frontierOverlay = personalManager.addFrontier(receivedFrontier);
-        persistLocalPersonalFrontiers();
+        if (currentFrontier.isPersistent() || frontierOverlay.isPersistent()) {
+            persistLocalPersonalFrontiers();
+        }
         if (minecraft.player != null) {
             frontierEvents.postCreated(frontierOverlay, minecraft.player.getId());
         }
@@ -346,7 +378,7 @@ public class ClientFrontierOperationService {
 
     public void applyFrontierCreated(FrontierData frontier, int playerId) {
         FrontierOverlay frontierOverlay = getManager(frontier.getPersonal()).addFrontier(frontier);
-        if (frontier.getPersonal()) {
+        if (frontier.getPersonal() && frontier.isPersistent()) {
             persistLocalPersonalFrontiers();
         }
         frontierEvents.postCreated(frontierOverlay, playerId);
@@ -359,7 +391,7 @@ public class ClientFrontierOperationService {
                                      int playerId) {
         FrontierOverlay frontierOverlay = getManager(personal).applyFrontierChange(dimension, frontierId, change);
         if (frontierOverlay != null) {
-            if (personal) {
+            if (personal && frontierOverlay.isPersistent()) {
                 persistLocalPersonalFrontiers();
             }
             frontierEvents.postUpdated(frontierOverlay, playerId);
@@ -372,15 +404,17 @@ public class ClientFrontierOperationService {
                                             int playerId) {
         FrontierOverlay updatedFrontier = personalManager.applyFrontierSharingChange(dimension, frontierId, sharingChange);
         if (updatedFrontier != null) {
-            persistLocalPersonalFrontiers();
+            if (updatedFrontier.isPersistent()) {
+                persistLocalPersonalFrontiers();
+            }
             frontierEvents.postUpdated(updatedFrontier, playerId);
         }
     }
 
     public void applyFrontierDeleted(ResourceKey<Level> dimension, UUID frontierId, boolean personal) {
-        boolean deleted = getManager(personal).deleteFrontier(dimension, frontierId) != null;
-        if (deleted) {
-            if (personal) {
+        FrontierOverlay deletedFrontier = getManager(personal).deleteFrontier(dimension, frontierId);
+        if (deletedFrontier != null) {
+            if (personal && deletedFrontier.isPersistent()) {
                 persistLocalPersonalFrontiers();
             }
             frontierEvents.postDeleted(frontierId);
@@ -433,6 +467,12 @@ public class ClientFrontierOperationService {
         localPersonalStore.saveOwnedFrontierMirror(getAllPersonalFrontiers(), new SettingsUser(minecraft.player));
     }
 
+    private void persistLocalPersonalFrontiersIfPersistent(FrontierData frontier) {
+        if (frontier.isPersistent()) {
+            persistLocalPersonalFrontiers();
+        }
+    }
+
     private Collection<FrontierOverlay> getAllPersonalFrontiers() {
         return personalManager.getAllFrontiers().values().stream()
                 .flatMap(List::stream)
@@ -441,6 +481,14 @@ public class ClientFrontierOperationService {
 
     private FrontiersOverlayManager getManager(boolean personal) {
         return personal ? personalManager : globalManager;
+    }
+
+    private static boolean usesAuthoritativeCreateFlow(FrontierData.FrontierLifetime lifetime) {
+        return lifetime != FrontierData.FrontierLifetime.SESSION_ONLY && MapFrontiersClient.isModOnServer();
+    }
+
+    private static boolean usesAuthoritativeMutationFlow(FrontierData frontier) {
+        return frontier.isPersistent() && MapFrontiersClient.isModOnServer();
     }
 
     private SharingActionContext resolveSharingActionContext(String operationName,
@@ -460,8 +508,25 @@ public class ClientFrontierOperationService {
                     missingFrontierMessage, pluginModId, frontierId.value(), user.name());
             return new SharingActionContext(null, FrontierActionResult.notFound(frontierId));
         }
+        if (frontier.isSessionOnly()) {
+            return new SharingActionContext(null, rejectSessionOnlyFrontierAction(operationName, frontierId, pluginModId, user));
+        }
 
         return new SharingActionContext(frontier, null);
+    }
+
+    private FrontierActionResult rejectSessionOnlyFrontierAction(String operationName,
+                                                                 FrontierId frontierId,
+                                                                 @Nullable String pluginModId,
+                                                                 @Nullable UserRef user) {
+        if (pluginModId == null) {
+            MapFrontiers.LOGGER.debug("Rejected {} because SESSION_ONLY personal frontiers are not shareable and cannot be converted. frontierId={}",
+                    operationName, frontierId.value());
+        } else {
+            MapFrontiers.LOGGER.debug("Rejected {} because SESSION_ONLY personal frontiers are not shareable and cannot be converted. pluginModId={}, frontierId={}, targetUser={}",
+                    operationName, pluginModId, frontierId.value(), user == null ? null : user.name());
+        }
+        return FrontierActionResult.rejected();
     }
 
     private static SettingsUserShared createSharedUser(UserRef user, @Nullable Set<FrontierSharePermission> permissions) {

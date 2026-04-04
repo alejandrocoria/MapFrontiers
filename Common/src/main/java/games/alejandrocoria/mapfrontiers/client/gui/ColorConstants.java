@@ -50,6 +50,7 @@ public final class ColorConstants {
     public static final int TEXTBOX_TEXT = 0xffe0e0e0;
     public static final int TEXT_DARK = 0xff777777;
     public static final int TEXT_DIMENSION = 0xff999999;
+    public static final int TEXT_SOURCE_PLUGIN = 0xffffff00;
     public static final int TEXT_ERROR = 0xffdd1111;
     public static final int TEXT_ERROR_HIGHLIGHT = 0xffff4444;
     public static final int TEXT_HIGHLIGHT = 0xffffffff;

@@ -37,6 +37,9 @@ public class ClientFrontierSyncService {
         }
 
         for (FrontierData frontier : localPersonalStore.loadFrontiers()) {
+            if (!frontier.isPersistent()) {
+                continue;
+            }
             personalManager.addFrontier(frontier);
         }
 
@@ -67,7 +70,8 @@ public class ClientFrontierSyncService {
         if (minecraft.player != null) {
             SettingsUser currentPlayer = new SettingsUser(minecraft.player);
             for (FrontierOverlay localFrontier : existingLocalPersonal) {
-                if (!serverFrontierIds.contains(localFrontier.getId()) && localFrontier.getOwner().equals(currentPlayer)) {
+                if (!serverFrontierIds.contains(localFrontier.getId()) && localFrontier.getOwner().equals(currentPlayer)
+                        && localFrontier.isPersistent()) {
                     localOnlyOwnedFrontiers.add(localFrontier);
                 }
             }

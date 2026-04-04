@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.server.frontier;
 
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierSharingChange;
@@ -52,9 +53,16 @@ public class ServerFrontierOperationService {
                                                       UUID frontierId,
                                                       ResourceKey<Level> dimension,
                                                       boolean personal,
+                                                      FrontierData.FrontierLifetime lifetime,
                                                       @Nullable String sourcePluginId,
                                                       @Nullable List<BlockPos> vertices,
                                                       @Nullable List<ChunkPos> chunks) {
+        if (lifetime != FrontierData.FrontierLifetime.PERSISTENT) {
+            return rejectInvalidAuthoritativeFrontier(player, null,
+                    "Rejected authoritative frontier creation because only PERSISTENT lifetime is supported on the server. frontierId={}, personal={}, lifetime={}",
+                    frontierId, personal, lifetime);
+        }
+
         if (personal) {
             FrontierData frontier = frontiersManager.createNewPersonalFrontier(frontierId, dimension, player, sourcePluginId, vertices, chunks);
             return createdPersonalFrontier(frontier, player.getId());
@@ -72,7 +80,13 @@ public class ServerFrontierOperationService {
         SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
         FrontierData currentFrontier = frontiersManager.getFrontierFromID(frontier.getId());
 
-        if (currentFrontier != null || !frontier.getPersonal() || !frontier.getOwner().equals(playerUser)) {
+        if (!isAuthoritativePersonalFrontier(frontier)) {
+            return rejectInvalidAuthoritativeFrontier(player, frontier,
+                    "Rejected personal frontier import because only persistent personal frontiers can exist on the server. frontierId={}, personal={}, lifetime={}",
+                    frontier.getId(), frontier.getPersonal(), frontier.getLifetime());
+        }
+
+        if (currentFrontier != null || !frontier.getOwner().equals(playerUser)) {
             return ServerFrontierOperationResult.ignored(frontier);
         }
 
@@ -82,6 +96,14 @@ public class ServerFrontierOperationService {
     }
 
     public ServerFrontierOperationResult createGlobalFrontier(FrontierData frontier) {
+        if (!isAuthoritativeGlobalFrontier(frontier)) {
+            MapFrontiers.LOGGER.warn(
+                    "Rejected global frontier creation because only persistent global frontiers can exist on the server. frontierId={}, personal={}, lifetime={}",
+                    frontier.getId(), frontier.getPersonal(), frontier.getLifetime()
+            );
+            return ServerFrontierOperationResult.rejected(frontier);
+        }
+
         frontiersManager.addGlobalFrontier(frontier);
         return createdGlobalFrontier(frontier, SYSTEM_ACTOR_ID);
     }
@@ -129,8 +151,15 @@ public class ServerFrontierOperationService {
 
     public ServerFrontierOperationResult updateGlobalFrontier(UUID frontierId, FrontierChange change) {
         FrontierData frontier = frontiersManager.getFrontierFromID(frontierId);
-        if (frontier == null || frontier.getPersonal()) {
+        if (frontier == null) {
             return ServerFrontierOperationResult.notFound();
+        }
+        if (!isAuthoritativeGlobalFrontier(frontier)) {
+            MapFrontiers.LOGGER.warn(
+                    "Rejected global frontier update because only persistent global frontiers can exist on the server. frontierId={}, personal={}, lifetime={}",
+                    frontierId, frontier.getPersonal(), frontier.getLifetime()
+            );
+            return ServerFrontierOperationResult.rejected(frontier);
         }
 
         boolean updated = frontiersManager.applyGlobalFrontierChange(frontierId, change);
@@ -194,8 +223,15 @@ public class ServerFrontierOperationService {
 
     public ServerFrontierOperationResult deleteGlobalFrontier(UUID frontierId) {
         FrontierData frontier = frontiersManager.getFrontierFromID(frontierId);
-        if (frontier == null || frontier.getPersonal()) {
+        if (frontier == null) {
             return ServerFrontierOperationResult.notFound();
+        }
+        if (!isAuthoritativeGlobalFrontier(frontier)) {
+            MapFrontiers.LOGGER.warn(
+                    "Rejected global frontier deletion because only persistent global frontiers can exist on the server. frontierId={}, personal={}, lifetime={}",
+                    frontierId, frontier.getPersonal(), frontier.getLifetime()
+            );
+            return ServerFrontierOperationResult.rejected(frontier);
         }
 
         boolean deleted = frontiersManager.deleteGlobalFrontier(frontier.getDimension(), frontier.getId());
@@ -215,6 +251,11 @@ public class ServerFrontierOperationService {
         SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
         if (!frontier.getPersonal() || !frontier.getOwner().equals(playerUser)) {
             return rejectedWithProfileRefresh(player, frontier);
+        }
+        if (frontier.isSessionOnly()) {
+            return rejectInvalidAuthoritativeFrontier(player, frontier,
+                    "Rejected changeFrontierToGlobal because session-only frontiers cannot exist on the server. frontierId={}, lifetime={}",
+                    frontierId, frontier.getLifetime());
         }
 
         List<ServerPlayer> relevantPlayers = new ArrayList<>();
@@ -249,6 +290,11 @@ public class ServerFrontierOperationService {
 
         if (frontier.getPersonal()) {
             return rejectedWithProfileRefresh(player, frontier);
+        }
+        if (!frontier.isPersistent()) {
+            return rejectInvalidAuthoritativeFrontier(player, frontier,
+                    "Rejected changeFrontierToPersonal because only persistent global frontiers can exist on the server. frontierId={}, lifetime={}",
+                    frontierId, frontier.getLifetime());
         }
 
         if (!permissionEvaluator.canDeleteGlobalFrontier(player, frontier)) {
@@ -297,5 +343,21 @@ public class ServerFrontierOperationService {
         ServerFrontierOperationResult result = ServerFrontierOperationResult.rejected(frontier);
         result.addNetworkAction(() -> PacketHandler.sendTo(permissionEvaluator.createProfilePacket(player), player));
         return result;
+    }
+
+    private boolean isAuthoritativePersonalFrontier(FrontierData frontier) {
+        return frontier.getPersonal() && frontier.isPersistent();
+    }
+
+    private boolean isAuthoritativeGlobalFrontier(FrontierData frontier) {
+        return !frontier.getPersonal() && frontier.isPersistent();
+    }
+
+    private ServerFrontierOperationResult rejectInvalidAuthoritativeFrontier(ServerPlayer player,
+                                                                             @Nullable FrontierData frontier,
+                                                                             String message,
+                                                                             Object... args) {
+        MapFrontiers.LOGGER.warn(message, args);
+        return rejectedWithProfileRefresh(player, frontier);
     }
 }

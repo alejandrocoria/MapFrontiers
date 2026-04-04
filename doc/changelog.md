@@ -1,3 +1,6 @@
+**Beta 2:**
+* API - Added: Temporary personal frontiers that exist only for the current session and are not saved, synchronized, or shareable.
+
 **Beta 1:**
 * Added: API available soon.
 * Changed: Reorganized the client config file into grouped sections and removed the dependency on ForgeConfigApiPort, so it no longer needs to be installed just for this mod.

@@ -126,8 +126,8 @@ public class FrontiersManager {
                                            @Nullable String sourcePluginId,
                                            @Nullable List<BlockPos> vertices,
                                            @Nullable List<ChunkPos> chunks) {
-        FrontierData frontier = FrontierCreationFactory.createFrontier(frontierId, new SettingsUser(player), dimension, personal, sourcePluginId,
-                vertices, chunks);
+        FrontierData frontier = FrontierCreationFactory.createFrontier(frontierId, new SettingsUser(player), dimension, personal,
+                FrontierData.FrontierLifetime.PERSISTENT, sourcePluginId, vertices, chunks);
 
         frontiers.add(frontier);
         allFrontiers.put(frontier.getId(), frontier);

@@ -71,6 +71,9 @@ public class FrontierInfo extends AutoScaledScreen {
     private static final String ownerKey = "mapfrontiers.owner";
     private static final String originalOwnerKey = "mapfrontiers.original_owner";
     private static final String dimensionKey = "mapfrontiers.dimension";
+    private static final String sourcePluginKey = "mapfrontiers.source_plugin";
+    private static final String temporarySourcePluginKey = "mapfrontiers.temporary_source_plugin";
+    private static final String temporaryKey = "mapfrontiers.temporary";
     private static final String areaKey = "mapfrontiers.area";
     private static final String perimeterKey = "mapfrontiers.perimeter";
     private static final String createdKey = "mapfrontiers.created";
@@ -298,6 +301,19 @@ public class FrontierInfo extends AutoScaledScreen {
 
         Component dimension = Component.translatable(dimensionKey, frontier.getDimension().identifier().toString());
         dataRow1.addChild(new StringWidget(dimension, font).setColor(ColorConstants.TEXT_DIMENSION));
+
+        if (frontier.getSourcePluginId() != null) {
+            if (frontier.isSessionOnly()) {
+                Component temporarySourcePluginId = Component.translatable(temporarySourcePluginKey, frontier.getSourcePluginId());
+                dataRow1.addChild(new StringWidget(temporarySourcePluginId, font).setColor(ColorConstants.TEXT_SOURCE_PLUGIN));
+            } else {
+                Component sourcePluginId = Component.translatable(sourcePluginKey, frontier.getSourcePluginId());
+                dataRow1.addChild(new StringWidget(sourcePluginId, font).setColor(ColorConstants.TEXT_SOURCE_PLUGIN));
+            }
+        } else if (frontier.isSessionOnly()) {
+            Component temporary = Component.translatable(temporaryKey);
+            dataRow1.addChild(new StringWidget(temporary, font).setColor(ColorConstants.TEXT_SOURCE_PLUGIN));
+        }
 
         LinearLayout dataRow2Col1 = LinearLayout.vertical();
         mainLayout.addChild(dataRow2Col1, 1, 2, LayoutSettings.defaults().alignHorizontallyLeft());

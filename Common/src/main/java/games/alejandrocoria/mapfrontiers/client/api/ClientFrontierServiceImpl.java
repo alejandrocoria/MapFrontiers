@@ -5,6 +5,7 @@ import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedClientFrontier
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
+import games.alejandrocoria.mapfrontiers.api.model.FrontierLifetime;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierShape;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierSharePermission;
@@ -18,7 +19,12 @@ import java.util.Set;
 public class ClientFrontierServiceImpl implements PluginScopedClientFrontierService {
     @Override
     public FrontierActionResult createPersonalFrontier(String pluginModId, DimensionId dimension, FrontierShape shape) {
-        return MapFrontiersClient.getOperationService().createFrontierAction(true, pluginModId, dimension, shape);
+        return createPersonalFrontier(pluginModId, dimension, shape, FrontierLifetime.PERSISTENT);
+    }
+
+    @Override
+    public FrontierActionResult createPersonalFrontier(String pluginModId, DimensionId dimension, FrontierShape shape, FrontierLifetime lifetime) {
+        return MapFrontiersClient.getOperationService().createFrontierAction(true, pluginModId, dimension, shape, lifetime);
     }
 
     @Override
