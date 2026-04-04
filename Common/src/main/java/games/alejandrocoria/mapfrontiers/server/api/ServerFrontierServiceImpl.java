@@ -37,7 +37,8 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
         ResourceKey<Level> level = ApiConverters.toDimension(dimension);
         SettingsUser frontierOwner = ApiConverters.toUser(owner);
 
-        FrontierData frontier = FrontierCreationFactory.createFrontier(UUID.randomUUID(), frontierOwner, level, false, pluginModId, null, null);
+        FrontierData frontier = FrontierCreationFactory.createFrontier(UUID.randomUUID(), frontierOwner, level, false,
+                FrontierData.FrontierLifetime.PERSISTENT, pluginModId, null, null);
         ApiConverters.applyShape(frontier, shape);
 
         ServerFrontierOperationResult result = operationService.createGlobalFrontier(frontier);
@@ -53,7 +54,7 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
     @Override
     public Optional<FrontierDataView> updateGlobalFrontier(String pluginModId, FrontierId frontierId, FrontierMutation mutation) {
         FrontierData frontier = operationService.getFrontier(frontierId.value());
-        if (frontier == null || frontier.getPersonal()) {
+        if (frontier == null || frontier.getPersonal() || !frontier.isPersistent()) {
             return Optional.empty();
         }
 
@@ -72,6 +73,11 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
 
     @Override
     public boolean deleteGlobalFrontier(String pluginModId, FrontierId frontierId) {
+        FrontierData frontier = operationService.getFrontier(frontierId.value());
+        if (frontier == null || frontier.getPersonal() || !frontier.isPersistent()) {
+            return false;
+        }
+
         ServerFrontierOperationResult result = operationService.deleteGlobalFrontier(frontierId.value());
         if (result.isSuccess()) {
             result.dispatchNetworkActions();
@@ -84,7 +90,7 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
     @Override
     public Optional<FrontierDataView> getFrontier(String pluginModId, FrontierId frontierId) {
         FrontierData frontier = operationService.getFrontier(frontierId.value());
-        if (frontier == null || frontier.getPersonal()) {
+        if (frontier == null || frontier.getPersonal() || !frontier.isPersistent()) {
             return Optional.empty();
         }
         return Optional.of(ApiConverters.fromFrontier(frontier));
@@ -93,7 +99,10 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
     @Override
     public List<FrontierDataView> listGlobalFrontiers(String pluginModId, DimensionId dimension) {
         ResourceKey<Level> level = ApiConverters.toDimension(dimension);
-        return operationService.getAllGlobalFrontiers(level).stream().map(ApiConverters::fromFrontier).toList();
+        return operationService.getAllGlobalFrontiers(level).stream()
+                .filter(FrontierData::isPersistent)
+                .map(ApiConverters::fromFrontier)
+                .toList();
     }
 
 }

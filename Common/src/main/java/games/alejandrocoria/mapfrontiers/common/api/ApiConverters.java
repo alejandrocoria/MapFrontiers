@@ -5,6 +5,7 @@ import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierBanner;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
+import games.alejandrocoria.mapfrontiers.api.model.FrontierLifetime;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierShape;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierSharePermission;
@@ -95,6 +96,7 @@ public final class ApiConverters {
         return new FrontierDataView(
                 new FrontierId(frontier.getId()),
                 frontier.getPersonal() ? FrontierType.PERSONAL : FrontierType.GLOBAL,
+                fromLifetime(frontier.getLifetime()),
                 fromDimension(frontier.getDimension()),
                 frontier.getColor(),
                 frontier.getName1(),
@@ -106,6 +108,21 @@ public final class ApiConverters {
                 owner,
                 sharedUsers
         );
+    }
+
+    public static FrontierLifetime fromLifetime(FrontierData.FrontierLifetime lifetime) {
+        return switch (lifetime) {
+            case PERSISTENT -> FrontierLifetime.PERSISTENT;
+            case SESSION_ONLY -> FrontierLifetime.SESSION_ONLY;
+        };
+    }
+
+    public static FrontierData.FrontierLifetime toLifetime(FrontierLifetime lifetime) {
+        FrontierLifetime checkedLifetime = lifetime == null ? FrontierLifetime.PERSISTENT : lifetime;
+        return switch (checkedLifetime) {
+            case PERSISTENT -> FrontierData.FrontierLifetime.PERSISTENT;
+            case SESSION_ONLY -> FrontierData.FrontierLifetime.SESSION_ONLY;
+        };
     }
 
     public static UserRef fromUser(SettingsUser user) {

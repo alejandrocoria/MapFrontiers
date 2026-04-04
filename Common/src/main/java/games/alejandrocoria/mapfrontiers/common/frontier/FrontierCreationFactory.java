@@ -22,6 +22,7 @@ public final class FrontierCreationFactory {
                                               SettingsUser owner,
                                               ResourceKey<Level> dimension,
                                               boolean personal,
+                                              FrontierData.FrontierLifetime lifetime,
                                               @Nullable String sourcePluginId,
                                               @Nullable List<BlockPos> vertices,
                                               @Nullable List<ChunkPos> chunks) {
@@ -30,6 +31,7 @@ public final class FrontierCreationFactory {
         frontier.setOwner(owner);
         frontier.setDimension(dimension);
         frontier.setPersonal(personal);
+        frontier.setLifetime(lifetime);
         frontier.setSourcePluginId(sourcePluginId);
         frontier.setColor(ColorHelper.getRandomColor());
         frontier.setCreated(new Date());

@@ -48,14 +48,18 @@ public class ClientLocalPersonalFrontierStore {
             return;
         }
 
+        List<? extends FrontierData> persistentPersonalFrontiers = frontiers.stream()
+                .filter(ClientLocalPersonalFrontierStore::shouldPersist)
+                .toList();
+
         CompoundTag nbtFrontiers = new CompoundTag();
-        writeToNBT(nbtFrontiers, frontiers);
+        writeToNBT(nbtFrontiers, persistentPersonalFrontiers);
         saveFile("personal_frontiers.dat", nbtFrontiers);
     }
 
     public void saveOwnedFrontierMirror(Collection<? extends FrontierData> frontiers, SettingsUser currentPlayer) {
         saveFrontiers(frontiers.stream()
-                .filter(FrontierData::getPersonal)
+                .filter(ClientLocalPersonalFrontierStore::shouldPersist)
                 .filter(frontier -> frontier.getOwner().equals(currentPlayer))
                 .toList());
     }
@@ -82,6 +86,10 @@ public class ClientLocalPersonalFrontierStore {
                     FrontierData frontier = new FrontierData();
                     CompoundTag frontierTag = NbtReadHelper.requireCompound(frontiersTagList, i, "frontiers");
                     frontier.readFromNBT(frontierTag, version);
+                    if (!shouldPersist(frontier)) {
+                        needBackup = true;
+                        continue;
+                    }
                     frontiers.add(frontier);
                 } catch (InvalidNbtFormatException e) {
                     MapFrontiers.LOGGER.warn("Skipping invalid personal frontier at frontiers[{}]: {}", i, e.getMessage());
@@ -137,5 +145,9 @@ public class ClientLocalPersonalFrontierStore {
 
     private void saveFile(String filename, CompoundTag nbt) {
         NbtFileHelper.saveCompressedNbtSafely(modDir, filename, nbt);
+    }
+
+    private static boolean shouldPersist(FrontierData frontier) {
+        return frontier.getPersonal() && frontier.isPersistent();
     }
 }

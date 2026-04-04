@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationResult;
 import net.minecraft.core.BlockPos;
@@ -135,7 +136,8 @@ public class PacketCreateFrontier {
             );
 
             ServerFrontierOperationResult result = MapFrontiers.getServerRuntime().getOperationService().createFrontier(player, message.frontierId,
-                    message.dimension, message.personal, message.sourcePluginId, message.vertices, message.chunks);
+                    message.dimension, message.personal, FrontierData.FrontierLifetime.PERSISTENT, message.sourcePluginId,
+                    message.vertices, message.chunks);
             if (!result.isSuccess()) {
                 MapFrontiers.LOGGER.warn(
                         "Rejected PacketCreateFrontier from player={} frontierId={} personal={} sourcePluginId={}",
