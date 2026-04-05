@@ -26,28 +26,13 @@ import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.function.IntConsumer;
 
 @ParametersAreNonnullByDefault
 public class HUDSettings extends AutoScaledScreen {
-    private static final Component slot1Label = ClientConfig.HUD_SLOT_1.translatedName();
-    private static final Tooltip slot1Tooltip = tooltip(ClientConfig.HUD_SLOT_1);
-    private static final Component slot2Label = ClientConfig.HUD_SLOT_2.translatedName();
-    private static final Tooltip slot2Tooltip = tooltip(ClientConfig.HUD_SLOT_2);
-    private static final Component slot3Label = ClientConfig.HUD_SLOT_3.translatedName();
-    private static final Tooltip slot3Tooltip = tooltip(ClientConfig.HUD_SLOT_3);
-    private static final Component textSizeLabel = ClientConfig.HUD_TEXT_SIZE.translatedName();
-    private static final Tooltip textSizeTooltip = tooltip(ClientConfig.HUD_TEXT_SIZE);
-    private static final Component bannerSizeLabel = ClientConfig.HUD_BANNER_SIZE.translatedName();
-    private static final Tooltip bannerSizeTooltip = tooltip(ClientConfig.HUD_BANNER_SIZE);
-    private static final Component anchorLabel = ClientConfig.HUD_ANCHOR.translatedName();
-    private static final Tooltip anchorTooltip = tooltip(ClientConfig.HUD_ANCHOR);
     private static final Component positionLabel = Component.translatable("mapfrontiers.config.hud.position");
     private static final Tooltip positionTooltip = Tooltip.create(Component.literal("HUD position relative to anchor."));
     private static final Component positionSeparatorLabel = Component.literal("x");
-    private static final Component autoAdjustAnchorLabel = ClientConfig.HUD_AUTO_ADJUST_ANCHOR.translatedName();
-    private static final Tooltip autoAdjustAnchorTooltip = tooltip(ClientConfig.HUD_AUTO_ADJUST_ANCHOR);
-    private static final Component snapToBorderLabel = ClientConfig.HUD_SNAP_TO_BORDER.translatedName();
-    private static final Tooltip snapToBorderTooltip = tooltip(ClientConfig.HUD_SNAP_TO_BORDER);
     private static final Component doneLabel = Component.translatable("gui.done");
     private static final Component onLabel = Component.translatable("options.on");
     private static final Component offLabel = Component.translatable("options.off");
@@ -56,14 +41,11 @@ public class HUDSettings extends AutoScaledScreen {
     private OptionButton buttonSlot1;
     private OptionButton buttonSlot2;
     private OptionButton buttonSlot3;
-    private TextBoxInt textTextSize;
-    private TextBoxInt textBannerSize;
     private OptionButton buttonAnchor;
     private TextBoxInt textPositionX;
     private TextBoxInt textPositionY;
     private OptionButton buttonAutoAdjustAnchor;
     private OptionButton buttonSnapToBorder;
-    private SimpleButton buttonDone;
     private final HUD hud;
     private int anchorLineColor = ColorConstants.HUD_ANCHOR_LIGHT;
     private int anchorLineColorTick = 0;
@@ -92,141 +74,17 @@ public class HUDSettings extends AutoScaledScreen {
 
     @Override
     public void initScreen() {
-        ClientGlobalEvents.postUpdatedConfigEvent();
+        postInitialConfigUpdate();
+        createHUDPreview();
 
-        HUDWidget = addRenderableWidget(new HUDWidget(hud, Services.JOURNEYMAP.isMinimapEnabled(), (widget) -> HUDUpdated()));
+        GridLayout mainLayout = createMainLayout();
 
-        GridLayout mainLayout = new GridLayout().spacing(4);
-        content.addChild(mainLayout);
+        buildSlotsSection(mainLayout);
+        buildAppearanceSection(mainLayout);
+        buildPlacementSection(mainLayout);
+        buildDoneButton(mainLayout);
 
-        StringWidget labelSlot1 = mainLayout.addChild(new StringWidget(slot1Label, font).setColor(ColorConstants.TEXT), 0, 0);
-        labelSlot1.setTooltip(slot1Tooltip);
-        buttonSlot1 = new OptionButton(font, 64, (b) -> updateSlots());
-        buttonSlot1.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.None));
-        buttonSlot1.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Name));
-        buttonSlot1.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Owner));
-        buttonSlot1.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Banner));
-        buttonSlot1.setSelected(ClientConfig.HUD_SLOT_1.get().ordinal());
-        mainLayout.addChild(buttonSlot1, 0, 1);
-
-        StringWidget labelSlot2 = mainLayout.addChild(new StringWidget(slot2Label, font).setColor(ColorConstants.TEXT), 1, 0);
-        labelSlot2.setTooltip(slot2Tooltip);
-        buttonSlot2 = new OptionButton(font, 64, (b) -> updateSlots());
-        buttonSlot2.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.None));
-        buttonSlot2.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Name));
-        buttonSlot2.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Owner));
-        buttonSlot2.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Banner));
-        buttonSlot2.setSelected(ClientConfig.HUD_SLOT_2.get().ordinal());
-        mainLayout.addChild(buttonSlot2, 1, 1);
-
-        StringWidget labelSlot3 = mainLayout.addChild(new StringWidget(slot3Label, font).setColor(ColorConstants.TEXT), 2, 0);
-        labelSlot3.setTooltip(slot3Tooltip);
-        buttonSlot3 = new OptionButton(font, 64, (b) -> updateSlots());
-        buttonSlot3.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.None));
-        buttonSlot3.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Name));
-        buttonSlot3.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Owner));
-        buttonSlot3.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Banner));
-        buttonSlot3.setSelected(ClientConfig.HUD_SLOT_3.get().ordinal());
-        mainLayout.addChild(buttonSlot3, 2, 1);
-
-        StringWidget labelTextSize = mainLayout.addChild(new StringWidget(textSizeLabel, font).setColor(ColorConstants.TEXT), 3, 0);
-        labelTextSize.setTooltip(textSizeTooltip);
-        textTextSize = new TextBoxInt(1, 1, 8, font, 64);
-        textTextSize.setValue(String.valueOf(ClientConfig.HUD_TEXT_SIZE.get()));
-        textTextSize.setMaxLength(1);
-        textTextSize.setValueChangedCallback(value -> {
-            ClientConfig.HUD_TEXT_SIZE.set(value);
-            ClientGlobalEvents.postUpdatedConfigEvent();
-            updatePosition();
-        });
-        mainLayout.addChild(textTextSize, 3, 1);
-
-        StringWidget labelBannerSize = mainLayout.addChild(new StringWidget(bannerSizeLabel, font).setColor(ColorConstants.TEXT), 4, 0);
-        labelBannerSize.setTooltip(bannerSizeTooltip);
-        textBannerSize = new TextBoxInt(3, 1, 8, font, 64);
-        textBannerSize.setValue(String.valueOf(ClientConfig.HUD_BANNER_SIZE.get()));
-        textBannerSize.setMaxLength(1);
-        textBannerSize.setValueChangedCallback(value -> {
-            ClientConfig.HUD_BANNER_SIZE.set(value);
-            ClientGlobalEvents.postUpdatedConfigEvent();
-            updatePosition();
-        });
-        mainLayout.addChild(textBannerSize, 4, 1);
-
-        StringWidget labelAnchorLabel = mainLayout.addChild(new StringWidget(anchorLabel, font).setColor(ColorConstants.TEXT), 0, 3);
-        labelAnchorLabel.setTooltip(anchorTooltip);
-        buttonAnchor = new OptionButton(font, 134, (b) -> {
-            ClientConfig.HUD_ANCHOR.set(ClientConfig.HUDAnchor.values()[b.getSelected()]);
-            ClientGlobalEvents.postUpdatedConfigEvent();
-            updatePosition();
-        });
-        buttonAnchor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenTop));
-        buttonAnchor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenTopRight));
-        buttonAnchor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenRight));
-        buttonAnchor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenBottomRight));
-        buttonAnchor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenBottom));
-        buttonAnchor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenBottomLeft));
-        buttonAnchor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenLeft));
-        buttonAnchor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenTopLeft));
-        buttonAnchor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.Minimap));
-        buttonAnchor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.MinimapHorizontal));
-        buttonAnchor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.MinimapVertical));
-        buttonAnchor.setSelected(ClientConfig.HUD_ANCHOR.get().ordinal());
-        mainLayout.addChild(buttonAnchor, 0, 4);
-
-        StringWidget labelPosition = mainLayout.addChild(new StringWidget(positionLabel, font).setColor(ColorConstants.TEXT), 1, 3);
-        labelPosition.setTooltip(positionTooltip);
-        LinearLayout positionLayout = LinearLayout.horizontal();
-        mainLayout.addChild(positionLayout, 1, 4);
-
-        textPositionX = new TextBoxInt(0, Integer.MIN_VALUE, Integer.MAX_VALUE, font, 61);
-        textPositionX.setValue(String.valueOf(ClientConfig.HUD_X_POSITION.get()));
-        textPositionX.setMaxLength(5);
-        textPositionX.setValueChangedCallback(value -> {
-            ClientConfig.HUD_X_POSITION.set(value);
-            ClientGlobalEvents.postUpdatedConfigEvent();
-        });
-        positionLayout.addChild(textPositionX);
-
-        positionLayout.addChild(SpacerElement.width(3));
-        positionLayout.addChild(new StringWidget(positionSeparatorLabel, font).setColor(ColorConstants.TEXT_DARK));
-        positionLayout.addChild(SpacerElement.width(2));
-
-        textPositionY = new TextBoxInt(0, Integer.MIN_VALUE, Integer.MAX_VALUE, font, 62);
-        textPositionY.setValue(String.valueOf(ClientConfig.HUD_Y_POSITION.get()));
-        textPositionY.setMaxLength(5);
-        textPositionY.setValueChangedCallback(value -> {
-            ClientConfig.HUD_Y_POSITION.set(value);
-            ClientGlobalEvents.postUpdatedConfigEvent();
-        });
-        positionLayout.addChild(textPositionY);
-
-        StringWidget labelAutoAdjustAnchor = mainLayout.addChild(new StringWidget(autoAdjustAnchorLabel, font).setColor(ColorConstants.TEXT), 2, 3);
-        labelAutoAdjustAnchor.setTooltip(autoAdjustAnchorTooltip);
-        buttonAutoAdjustAnchor = new OptionButton(font, 134, (b) -> {
-            ClientConfig.HUD_AUTO_ADJUST_ANCHOR.set(b.getSelected() == 0);
-            ClientGlobalEvents.postUpdatedConfigEvent();
-        });
-        buttonAutoAdjustAnchor.addOption(onLabel);
-        buttonAutoAdjustAnchor.addOption(offLabel);
-        buttonAutoAdjustAnchor.setSelected(ClientConfig.HUD_AUTO_ADJUST_ANCHOR.get() ? 0 : 1);
-        mainLayout.addChild(buttonAutoAdjustAnchor, 2, 4);
-
-        StringWidget labelSnapToBorder = mainLayout.addChild(new StringWidget(snapToBorderLabel, font).setColor(ColorConstants.TEXT), 3, 3);
-        labelSnapToBorder.setTooltip(snapToBorderTooltip);
-        buttonSnapToBorder = new OptionButton(font, 134, (b) -> {
-            ClientConfig.HUD_SNAP_TO_BORDER.set(b.getSelected() == 0);
-            ClientGlobalEvents.postUpdatedConfigEvent();
-        });
-        buttonSnapToBorder.addOption(onLabel);
-        buttonSnapToBorder.addOption(offLabel);
-        buttonSnapToBorder.setSelected(ClientConfig.HUD_SNAP_TO_BORDER.get() ? 0 : 1);
-        mainLayout.addChild(buttonSnapToBorder, 3, 4);
-
-        buttonDone = new SimpleButton(font, 100, doneLabel, (b) -> onClose());
-        mainLayout.addChild(buttonDone, 5, 0, 1, 5, LayoutSettings.defaults().alignHorizontallyCenter());
-
-        updatePosition();
+        refreshViewState();
     }
 
     @Override
@@ -261,6 +119,172 @@ public class HUDSettings extends AutoScaledScreen {
         } else {
             return super.keyPressed(event);
         }
+    }
+
+    private void postInitialConfigUpdate() {
+        ClientGlobalEvents.postUpdatedConfigEvent();
+    }
+
+    private void createHUDPreview() {
+        HUDWidget = addRenderableWidget(new HUDWidget(hud, Services.JOURNEYMAP.isMinimapEnabled(), widget -> HUDUpdated()));
+    }
+
+    private GridLayout createMainLayout() {
+        GridLayout mainLayout = new GridLayout().spacing(4);
+        content.addChild(mainLayout);
+        return mainLayout;
+    }
+
+    private void buildSlotsSection(GridLayout mainLayout) {
+        buttonSlot1 = addHUDSlotRow(mainLayout, 0, ClientConfig.HUD_SLOT_1, ClientConfig.HUD_SLOT_1.get().ordinal());
+        buttonSlot2 = addHUDSlotRow(mainLayout, 1, ClientConfig.HUD_SLOT_2, ClientConfig.HUD_SLOT_2.get().ordinal());
+        buttonSlot3 = addHUDSlotRow(mainLayout, 2, ClientConfig.HUD_SLOT_3, ClientConfig.HUD_SLOT_3.get().ordinal());
+    }
+
+    private void buildAppearanceSection(GridLayout mainLayout) {
+        addIntSettingRow(mainLayout, 3, ClientConfig.HUD_TEXT_SIZE, ClientConfig.HUD_TEXT_SIZE.get(), 1, 8, 64, 1,
+                ClientConfig.HUD_TEXT_SIZE::set, this::postConfigUpdatedAndRefreshPosition);
+        addIntSettingRow(mainLayout, 4, ClientConfig.HUD_BANNER_SIZE, ClientConfig.HUD_BANNER_SIZE.get(), 3, 8, 64, 1,
+                ClientConfig.HUD_BANNER_SIZE::set, this::postConfigUpdatedAndRefreshPosition);
+    }
+
+    private void buildPlacementSection(GridLayout mainLayout) {
+        mainLayout.addChild(createConfigLabel(ClientConfig.HUD_ANCHOR), 0, 3);
+        buttonAnchor = createAnchorButton();
+        mainLayout.addChild(buttonAnchor, 0, 4);
+
+        mainLayout.addChild(createConfigLabel(positionLabel, positionTooltip), 1, 3);
+        mainLayout.addChild(createPositionLayout(), 1, 4);
+
+        mainLayout.addChild(createConfigLabel(ClientConfig.HUD_AUTO_ADJUST_ANCHOR), 2, 3);
+        buttonAutoAdjustAnchor = createOnOffOptionButton(ClientConfig.HUD_AUTO_ADJUST_ANCHOR.get(), () -> {
+            ClientConfig.HUD_AUTO_ADJUST_ANCHOR.set(buttonAutoAdjustAnchor.getSelected() == 0);
+            postConfigUpdatedOnly();
+        });
+        mainLayout.addChild(buttonAutoAdjustAnchor, 2, 4);
+
+        mainLayout.addChild(createConfigLabel(ClientConfig.HUD_SNAP_TO_BORDER), 3, 3);
+        buttonSnapToBorder = createOnOffOptionButton(ClientConfig.HUD_SNAP_TO_BORDER.get(), () -> {
+            ClientConfig.HUD_SNAP_TO_BORDER.set(buttonSnapToBorder.getSelected() == 0);
+            postConfigUpdatedOnly();
+        });
+        mainLayout.addChild(buttonSnapToBorder, 3, 4);
+    }
+
+    private void buildDoneButton(GridLayout mainLayout) {
+        SimpleButton buttonDone = new SimpleButton(font, 100, doneLabel, button -> onClose());
+        mainLayout.addChild(buttonDone, 5, 0, 1, 5, LayoutSettings.defaults().alignHorizontallyCenter());
+    }
+
+    private OptionButton addHUDSlotRow(GridLayout mainLayout, int column, ConfigEntry<?, ?> entry, int selectedValue) {
+        mainLayout.addChild(createConfigLabel(entry), column, 0);
+        OptionButton button = createHUDSlotButton(selectedValue);
+        mainLayout.addChild(button, column, 1);
+        return button;
+    }
+
+    private void addIntSettingRow(GridLayout mainLayout, int row, ConfigEntry<?, ?> entry, int value, int min, int max, int width, int maxLength,
+                                        IntConsumer setter, Runnable onChanged) {
+        mainLayout.addChild(createConfigLabel(entry), row, 0);
+        TextBoxInt textBox = createIntConfigTextBox(value, min, max, width, maxLength, setter, onChanged);
+        mainLayout.addChild(textBox, row, 1);
+    }
+
+    private StringWidget createConfigLabel(Component label, Tooltip tooltip) {
+        StringWidget stringWidget = new StringWidget(label, font).setColor(ColorConstants.TEXT);
+        stringWidget.setTooltip(tooltip);
+        return stringWidget;
+    }
+
+    private StringWidget createConfigLabel(ConfigEntry<?, ?> entry) {
+        return createConfigLabel(entry.translatedName(), tooltip(entry));
+    }
+
+    private OptionButton createHUDSlotButton(int selectedValue) {
+        OptionButton button = new OptionButton(font, 64, pressedButton -> updateSlots());
+        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.None));
+        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Name));
+        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Owner));
+        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Banner));
+        button.setSelected(selectedValue);
+        return button;
+    }
+
+    private OptionButton createAnchorButton() {
+        OptionButton button = new OptionButton(font, 134, pressedButton -> {
+            ClientConfig.HUD_ANCHOR.set(ClientConfig.HUDAnchor.values()[pressedButton.getSelected()]);
+            postConfigUpdatedAndRefreshPosition();
+        });
+        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenTop));
+        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenTopRight));
+        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenRight));
+        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenBottomRight));
+        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenBottom));
+        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenBottomLeft));
+        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenLeft));
+        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenTopLeft));
+        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.Minimap));
+        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.MinimapHorizontal));
+        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.MinimapVertical));
+        button.setSelected(ClientConfig.HUD_ANCHOR.get().ordinal());
+        return button;
+    }
+
+    private LinearLayout createPositionLayout() {
+        LinearLayout positionLayout = LinearLayout.horizontal();
+
+        textPositionX = createPositionTextBox(ClientConfig.HUD_X_POSITION.get(), ClientConfig.HUD_X_POSITION::set, 61);
+        positionLayout.addChild(textPositionX);
+
+        positionLayout.addChild(SpacerElement.width(3));
+        positionLayout.addChild(new StringWidget(positionSeparatorLabel, font).setColor(ColorConstants.TEXT_DARK));
+        positionLayout.addChild(SpacerElement.width(2));
+
+        textPositionY = createPositionTextBox(ClientConfig.HUD_Y_POSITION.get(), ClientConfig.HUD_Y_POSITION::set, 62);
+        positionLayout.addChild(textPositionY);
+
+        return positionLayout;
+    }
+
+    private TextBoxInt createPositionTextBox(int value, IntConsumer setter, int width) {
+        return createIntConfigTextBox(value, Integer.MIN_VALUE, Integer.MAX_VALUE, width, 5, setter, this::postConfigUpdatedOnly);
+    }
+
+    private TextBoxInt createIntConfigTextBox(int value, int min, int max, int width, int maxLength, IntConsumer setter, Runnable onChanged) {
+        TextBoxInt textBox = new TextBoxInt(value, min, max, font, width);
+        textBox.setValue(String.valueOf(value));
+        textBox.setMaxLength(maxLength);
+        textBox.setValueChangedCallback(newValue -> {
+            setter.accept(newValue);
+            onChanged.run();
+        });
+        return textBox;
+    }
+
+    private OptionButton createOnOffOptionButton(boolean value, Runnable onChanged) {
+        OptionButton button = new OptionButton(font, 134, pressedButton -> onChanged.run());
+        addOnOffOptions(button);
+        button.setSelected(value ? 0 : 1);
+        return button;
+    }
+
+    private void addOnOffOptions(OptionButton button) {
+        button.addOption(onLabel);
+        button.addOption(offLabel);
+    }
+
+    private void postConfigUpdatedAndRefreshPosition() {
+        ClientGlobalEvents.postUpdatedConfigEvent();
+        updatePosition();
+    }
+
+    private void postConfigUpdatedOnly() {
+        ClientGlobalEvents.postUpdatedConfigEvent();
+    }
+
+    private void refreshViewState() {
+        updateSlotsValidity();
+        updatePosition();
     }
 
     private void drawAnchor(GuiGraphics graphics, Window mainWindow) {

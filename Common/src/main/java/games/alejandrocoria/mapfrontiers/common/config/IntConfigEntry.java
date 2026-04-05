@@ -12,6 +12,14 @@ public final class IntConfigEntry extends ConfigEntry<Integer, IntConfigEntry> {
         this.maxValue = maxValue;
     }
 
+    public int minValue() {
+        return minValue;
+    }
+
+    public int maxValue() {
+        return maxValue;
+    }
+
     @Override
     protected IntConfigEntry self() {
         return this;

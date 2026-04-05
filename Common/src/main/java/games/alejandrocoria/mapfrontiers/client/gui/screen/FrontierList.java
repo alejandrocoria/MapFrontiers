@@ -12,6 +12,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButto
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.FrontierListElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.RadioListElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox;
+import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox.ScrollElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.DeleteConfirmationDialog;
@@ -58,19 +59,16 @@ public class FrontierList extends AutoScaledScreen {
     private final IClientAPI jmAPI;
     private final FullscreenMap fullscreenMap;
 
-    private SortToolbar sortToolbar;
     private TextBox searchBox;
     private ScrollBox frontiers;
     private ScrollBox filterType;
     private ScrollBox filterOwner;
     private ScrollBox filterDimension;
-    private SimpleButton buttonResetFilters;
     private SimpleButton buttonCreate;
     private SimpleButton buttonInfo;
     private SimpleButton buttonDelete;
     private SimpleButton buttonVisible;
     private SimpleButton buttonSettings;
-    private SimpleButton buttonDone;
 
     public FrontierList(IClientAPI jmAPI, FullscreenMap fullscreenMap) {
         super(titleLabel, 778, 302);
@@ -99,154 +97,17 @@ public class FrontierList extends AutoScaledScreen {
 
     @Override
     public void initScreen() {
-        GridLayout mainLayout = new GridLayout().columnSpacing(8).rowSpacing(4);
-        content.addChild(mainLayout);
-        LayoutSettings alignRightSettings = LayoutSettings.defaults().alignHorizontallyRight();
-        LayoutSettings alignLeftSettings = LayoutSettings.defaults().alignHorizontallyLeft();
+        GridLayout mainLayout = createMainLayout();
 
+        buildToolbar(mainLayout);
+        buildFrontiersList(mainLayout);
+        buildFiltersColumn(mainLayout);
 
-        LinearLayout toolbar = LinearLayout.horizontal();
-        toolbar.defaultCellSetting().alignVerticallyMiddle();
-        mainLayout.addChild(toolbar, 0, 0, alignLeftSettings);
-
-        sortToolbar = new SortToolbar(font, this::updateFrontiers);
-        toolbar.addChild(sortToolbar);
-        toolbar.addChild(SpacerElement.width(16));
-
-        searchBox = new TextBox(font, 100, I18n.get("mapfrontiers.search"));
-        searchBox.setMaxLength(40);
-        searchBox.setHeight(16);
-        searchBox.setValueChangedCallback(value -> updateFrontiers());
-        toolbar.addChild(searchBox);
-
-
-
-        frontiers = new ScrollBox(actualHeight - 120, 450, 24);
-        frontiers.setElementDeletedCallback(element -> updateButtons());
-        frontiers.setElementClickedCallback(element -> {
-            FrontierOverlay frontier = ((FrontierListElement) element).getFrontier();
-            fullscreenMap.selectFrontier(frontier);
-            updateButtons();
-        });
-        mainLayout.addChild(frontiers, 1, 0, alignRightSettings);
-
-
-
-        buttonResetFilters = new SimpleButton(font, 110, resetFiltersLabel, (b) -> {
-            ClientConfig.FILTER_FRONTIER_TYPE.set(ClientConfig.FilterFrontierType.All);
-            filterType.selectElementIf((element) -> ((RadioListElement) element).getId() == ClientConfig.FILTER_FRONTIER_TYPE.get().ordinal());
-            ClientConfig.FILTER_FRONTIER_OWNER.set(ClientConfig.FilterFrontierOwner.All);
-            filterOwner.selectElementIf((element) -> ((RadioListElement) element).getId() == ClientConfig.FILTER_FRONTIER_OWNER.get().ordinal());
-            ClientConfig.FILTER_FRONTIER_DIMENSION.set(ClientConfig.DIMENSION_FILTER_ALL);
-            filterDimension.selectElementIf((element) -> ((RadioListElement) element).getId() == ClientConfig.FILTER_FRONTIER_DIMENSION.get().hashCode());
-            updateFrontiers();
-            updateButtons();
-        });
-        mainLayout.addChild(buttonResetFilters, 0, 1, alignLeftSettings);
-
-
-        LinearLayout rightColumn = LinearLayout.vertical().spacing(2);
-        rightColumn.defaultCellSetting().alignHorizontallyLeft();
-        mainLayout.addChild(rightColumn, 1, 1, alignLeftSettings);
-
-        rightColumn.addChild(new StringWidget(filterTypeLabel, font).setColor(ColorConstants.TEXT));
-        filterType = new ScrollBox(52, 200, 16);
-        filterType.addElement(new RadioListElement(font, ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierType.All), ClientConfig.FilterFrontierType.All.ordinal()));
-        filterType.addElement(new RadioListElement(font, ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierType.Global), ClientConfig.FilterFrontierType.Global.ordinal()));
-        filterType.addElement(new RadioListElement(font, ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierType.Personal), ClientConfig.FilterFrontierType.Personal.ordinal()));
-        filterType.selectElementIf((element) -> ((RadioListElement) element).getId() == ClientConfig.FILTER_FRONTIER_TYPE.get().ordinal());
-        filterType.setElementClickedCallback(element -> {
-            int selected = ((RadioListElement) element).getId();
-            ClientConfig.FILTER_FRONTIER_TYPE.set(ClientConfig.FilterFrontierType.values()[selected]);
-            updateFrontiers();
-            ClientGlobalEvents.postUpdatedConfigEvent();
-            updateButtons();
-        });
-        rightColumn.addChild(filterType);
-
-        rightColumn.addChild(SpacerElement.height(4));
-        rightColumn.addChild(new StringWidget(filterOwnerLabel, font).setColor(ColorConstants.TEXT));
-        filterOwner = new ScrollBox(52, 200, 16);
-        filterOwner.addElement(new RadioListElement(font, ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierOwner.All), ClientConfig.FilterFrontierOwner.All.ordinal()));
-        filterOwner.addElement(new RadioListElement(font, ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierOwner.Self), ClientConfig.FilterFrontierOwner.Self.ordinal()));
-        filterOwner.addElement(new RadioListElement(font, ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierOwner.Others), ClientConfig.FilterFrontierOwner.Others.ordinal()));
-        filterOwner.selectElementIf((element) -> ((RadioListElement) element).getId() == ClientConfig.FILTER_FRONTIER_OWNER.get().ordinal());
-        filterOwner.setElementClickedCallback(element -> {
-            int selected = ((RadioListElement) element).getId();
-            ClientConfig.FILTER_FRONTIER_OWNER.set(ClientConfig.FilterFrontierOwner.values()[selected]);
-            updateFrontiers();
-            ClientGlobalEvents.postUpdatedConfigEvent();
-            updateButtons();
-        });
-        rightColumn.addChild(filterOwner);
-
-        rightColumn.addChild(SpacerElement.height(4));
-        rightColumn.addChild(new StringWidget(filterDimensionLabel, font).setColor(ColorConstants.TEXT));
-        filterDimension = new ScrollBox(actualHeight - 274, 200, 16);
-        filterDimension.addElement(new RadioListElement(font, configAllLabel, ClientConfig.DIMENSION_FILTER_ALL.hashCode()));
-        filterDimension.addElement(new RadioListElement(font, configCurrentLabel, ClientConfig.DIMENSION_FILTER_CURRENT.hashCode()));
-        filterDimension.addElement(new RadioListElement(font, overworldLabel, "minecraft:overworld".hashCode()));
-        filterDimension.addElement(new RadioListElement(font, theNetherLabel, "minecraft:the_nether".hashCode()));
-        filterDimension.addElement(new RadioListElement(font, theEndLabel, "minecraft:the_end".hashCode()));
-        addDimensionsToFilter();
-        filterDimension.selectElementIf((element) -> ((RadioListElement) element).getId() == ClientConfig.FILTER_FRONTIER_DIMENSION.get().hashCode());
-        filterDimension.setElementClickedCallback(element -> {
-            int selected = ((RadioListElement) element).getId();
-            if (selected == ClientConfig.DIMENSION_FILTER_ALL.hashCode()) {
-                ClientConfig.FILTER_FRONTIER_DIMENSION.set(ClientConfig.DIMENSION_FILTER_ALL);
-            } else if (selected == ClientConfig.DIMENSION_FILTER_CURRENT.hashCode()) {
-                ClientConfig.FILTER_FRONTIER_DIMENSION.set(ClientConfig.DIMENSION_FILTER_CURRENT);
-            } else {
-                ClientConfig.FILTER_FRONTIER_DIMENSION.set(getDimensionFromHash(selected));
-            }
-            updateFrontiers();
-            ClientGlobalEvents.postUpdatedConfigEvent();
-            updateButtons();
-        });
-        if (filterDimension.getSelectedElement() == null) {
-            ClientConfig.FILTER_FRONTIER_DIMENSION.set(ClientConfig.DIMENSION_FILTER_ALL);
-            filterDimension.selectElementIf((element) -> ((RadioListElement) element).getId() == ClientConfig.FILTER_FRONTIER_DIMENSION.get().hashCode());
-        }
-        rightColumn.addChild(filterDimension);
-
-        buttonCreate = bottomButtons.addChild(new SimpleButton(font, 110, createLabel, (b) -> new NewFrontier(jmAPI, minecraft.player.blockPosition()).display()));
-        buttonInfo = bottomButtons.addChild(new SimpleButton(font, 110, infoLabel, (b) -> {
-            FrontierOverlay frontier = ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
-            new FrontierInfo(jmAPI, frontier).display();
-        }));
-        buttonDelete = bottomButtons.addChild(new SimpleButton(font, 110, deleteLabel, (b) -> {
-            if (ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.get()) {
-                new DeleteConfirmationDialog(
-                        "mapfrontiers.delete_frontier_dialog",
-                        response -> {
-                            if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                                ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.set(false);
-                                ClientGlobalEvents.postUpdatedConfigEvent();
-                            }
-                            deleteSelectedFrontier();
-                        }
-                ).display();
-            } else {
-                deleteSelectedFrontier();
-            }
-        }));
-        buttonDelete.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
-        buttonVisible = bottomButtons.addChild(new SimpleButton(font, 110, hideLabel, (b) -> {
-            FrontierOverlay frontier = ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
-            frontier.toggleVisibility(FrontierData.VisibilityData.Visibility.Frontier);
-            MapFrontiersClient.getOperationService().updateFrontier(frontier);
-            updateButtons();
-        }));
-        buttonSettings = bottomButtons.addChild(new SimpleButton(font, 110, settingsLabel, (b) -> new ModSettings(true).display()));
-        buttonDone = bottomButtons.addChild(new SimpleButton(font, 110, doneLabel, (b) -> onClose()));
+        buildBottomButtons();
 
         updateFrontiers();
-
-        if (fullscreenMap.getSelected() != null) {
-            frontiers.selectElementIf((element) -> ((FrontierListElement) element).getFrontier().getId().equals(fullscreenMap.getSelected().getId()));
-        }
-
-        updateButtons();
+        refreshInitialSelection();
+        refreshViewState();
     }
 
     @Override
@@ -279,6 +140,269 @@ public class FrontierList extends AutoScaledScreen {
         MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
         ClientGlobalEvents.unsubscribeAllEvents(this);
         super.onClose();
+    }
+
+    private GridLayout createMainLayout() {
+        GridLayout mainLayout = new GridLayout().columnSpacing(8).rowSpacing(4);
+        content.addChild(mainLayout);
+        return mainLayout;
+    }
+
+    private void buildToolbar(GridLayout mainLayout) {
+        LinearLayout toolbar = LinearLayout.horizontal();
+        toolbar.defaultCellSetting().alignVerticallyMiddle();
+        mainLayout.addChild(toolbar, 0, 0, LayoutSettings.defaults().alignHorizontallyLeft());
+
+        toolbar.addChild(new SortToolbar(font, this::updateFrontiers));
+        toolbar.addChild(SpacerElement.width(16));
+
+        searchBox = new TextBox(font, 100, I18n.get("mapfrontiers.search"));
+        searchBox.setMaxLength(40);
+        searchBox.setHeight(16);
+        searchBox.setValueChangedCallback(this::onSearchValueChanged);
+        toolbar.addChild(searchBox);
+    }
+
+    private void buildFrontiersList(GridLayout mainLayout) {
+        frontiers = new ScrollBox(actualHeight - 120, 450, 24);
+        frontiers.setElementDeletedCallback(element -> onFrontierElementDeleted());
+        frontiers.setElementClickedCallback(this::onFrontierElementClicked);
+        mainLayout.addChild(frontiers, 1, 0, LayoutSettings.defaults().alignHorizontallyRight());
+    }
+
+    private void buildFiltersColumn(GridLayout mainLayout) {
+        mainLayout.addChild(createResetFiltersButton(), 0, 1, LayoutSettings.defaults().alignHorizontallyLeft());
+
+        LinearLayout filtersColumn = LinearLayout.vertical().spacing(2);
+        filtersColumn.defaultCellSetting().alignHorizontallyLeft();
+        mainLayout.addChild(filtersColumn, 1, 1, LayoutSettings.defaults().alignHorizontallyLeft());
+
+        buildTypeFilter(filtersColumn);
+        filtersColumn.addChild(SpacerElement.height(4));
+        buildOwnerFilter(filtersColumn);
+        filtersColumn.addChild(SpacerElement.height(4));
+        buildDimensionFilter(filtersColumn);
+    }
+
+    private void buildTypeFilter(LinearLayout column) {
+        column.addChild(createSectionLabel(filterTypeLabel));
+
+        filterType = createFilterScrollBox(52);
+        filterType.addElement(createRadioFilterOption(ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierType.All), ClientConfig.FilterFrontierType.All.ordinal()));
+        filterType.addElement(createRadioFilterOption(ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierType.Global), ClientConfig.FilterFrontierType.Global.ordinal()));
+        filterType.addElement(createRadioFilterOption(ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierType.Personal), ClientConfig.FilterFrontierType.Personal.ordinal()));
+        selectRadioById(filterType, ClientConfig.FILTER_FRONTIER_TYPE.get().ordinal());
+        filterType.setElementClickedCallback(this::onTypeFilterSelected);
+        column.addChild(filterType);
+    }
+
+    private void buildOwnerFilter(LinearLayout column) {
+        column.addChild(createSectionLabel(filterOwnerLabel));
+
+        filterOwner = createFilterScrollBox(52);
+        filterOwner.addElement(createRadioFilterOption(ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierOwner.All), ClientConfig.FilterFrontierOwner.All.ordinal()));
+        filterOwner.addElement(createRadioFilterOption(ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierOwner.Self), ClientConfig.FilterFrontierOwner.Self.ordinal()));
+        filterOwner.addElement(createRadioFilterOption(ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierOwner.Others), ClientConfig.FilterFrontierOwner.Others.ordinal()));
+        selectRadioById(filterOwner, ClientConfig.FILTER_FRONTIER_OWNER.get().ordinal());
+        filterOwner.setElementClickedCallback(this::onOwnerFilterSelected);
+        column.addChild(filterOwner);
+    }
+
+    private void buildDimensionFilter(LinearLayout column) {
+        column.addChild(createSectionLabel(filterDimensionLabel));
+
+        filterDimension = createFilterScrollBox(actualHeight - 274);
+        filterDimension.addElement(createRadioFilterOption(configAllLabel, ClientConfig.DIMENSION_FILTER_ALL.hashCode()));
+        filterDimension.addElement(createRadioFilterOption(configCurrentLabel, ClientConfig.DIMENSION_FILTER_CURRENT.hashCode()));
+        filterDimension.addElement(createRadioFilterOption(overworldLabel, "minecraft:overworld".hashCode()));
+        filterDimension.addElement(createRadioFilterOption(theNetherLabel, "minecraft:the_nether".hashCode()));
+        filterDimension.addElement(createRadioFilterOption(theEndLabel, "minecraft:the_end".hashCode()));
+        addDimensionsToFilter();
+        syncFilterSelectionsFromConfig();
+        filterDimension.setElementClickedCallback(this::onDimensionFilterSelected);
+
+        if (filterDimension.getSelectedElement() == null) {
+            ClientConfig.FILTER_FRONTIER_DIMENSION.set(ClientConfig.DIMENSION_FILTER_ALL);
+            selectRadioById(filterDimension, ClientConfig.FILTER_FRONTIER_DIMENSION.get().hashCode());
+        }
+
+        column.addChild(filterDimension);
+    }
+
+    private void buildBottomButtons() {
+        buttonCreate = bottomButtons.addChild(createCreateButton());
+        buttonInfo = bottomButtons.addChild(createInfoButton());
+        buttonDelete = bottomButtons.addChild(createDeleteButton());
+        buttonVisible = bottomButtons.addChild(createVisibleButton());
+        buttonSettings = bottomButtons.addChild(createSettingsButton());
+        bottomButtons.addChild(createDoneButton());
+    }
+
+    private SimpleButton createResetFiltersButton() {
+        return new SimpleButton(font, 110, resetFiltersLabel, button -> onResetFiltersPressed());
+    }
+
+    private SimpleButton createCreateButton() {
+        return new SimpleButton(font, 110, createLabel, button -> onCreatePressed());
+    }
+
+    private SimpleButton createInfoButton() {
+        return new SimpleButton(font, 110, infoLabel, button -> onInfoPressed());
+    }
+
+    private SimpleButton createDeleteButton() {
+        SimpleButton button = new SimpleButton(font, 110, deleteLabel, pressedButton -> onDeletePressed());
+        button.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
+        return button;
+    }
+
+    private SimpleButton createVisibleButton() {
+        return new SimpleButton(font, 110, hideLabel, button -> onVisiblePressed());
+    }
+
+    private SimpleButton createSettingsButton() {
+        return new SimpleButton(font, 110, settingsLabel, button -> onSettingsPressed());
+    }
+
+    private SimpleButton createDoneButton() {
+        return new SimpleButton(font, 110, doneLabel, button -> onDonePressed());
+    }
+
+    private StringWidget createSectionLabel(Component label) {
+        return new StringWidget(label, font).setColor(ColorConstants.TEXT);
+    }
+
+    private RadioListElement createRadioFilterOption(Component label, int id) {
+        return new RadioListElement(font, label, id);
+    }
+
+    private ScrollBox createFilterScrollBox(int height) {
+        return new ScrollBox(height, 200, 16);
+    }
+
+    private void selectRadioById(ScrollBox scrollBox, int id) {
+        scrollBox.selectElementIf(element -> ((RadioListElement) element).getId() == id);
+    }
+
+    private void onSearchValueChanged(String value) {
+        updateFrontiers();
+    }
+
+    private void onFrontierElementClicked(ScrollElement element) {
+        FrontierOverlay frontier = ((FrontierListElement) element).getFrontier();
+        fullscreenMap.selectFrontier(frontier);
+        refreshViewState();
+    }
+
+    private void onFrontierElementDeleted() {
+        refreshViewState();
+    }
+
+    private void onResetFiltersPressed() {
+        resetFiltersToDefaults();
+        syncFilterSelectionsFromConfig();
+        updateFrontiers();
+        refreshViewState();
+    }
+
+    private void onTypeFilterSelected(ScrollElement element) {
+        int selected = ((RadioListElement) element).getId();
+        ClientConfig.FILTER_FRONTIER_TYPE.set(ClientConfig.FilterFrontierType.values()[selected]);
+        notifyFiltersChanged();
+    }
+
+    private void onOwnerFilterSelected(ScrollElement element) {
+        int selected = ((RadioListElement) element).getId();
+        ClientConfig.FILTER_FRONTIER_OWNER.set(ClientConfig.FilterFrontierOwner.values()[selected]);
+        notifyFiltersChanged();
+    }
+
+    private void onDimensionFilterSelected(ScrollElement element) {
+        int selected = ((RadioListElement) element).getId();
+        if (selected == ClientConfig.DIMENSION_FILTER_ALL.hashCode()) {
+            ClientConfig.FILTER_FRONTIER_DIMENSION.set(ClientConfig.DIMENSION_FILTER_ALL);
+        } else if (selected == ClientConfig.DIMENSION_FILTER_CURRENT.hashCode()) {
+            ClientConfig.FILTER_FRONTIER_DIMENSION.set(ClientConfig.DIMENSION_FILTER_CURRENT);
+        } else {
+            ClientConfig.FILTER_FRONTIER_DIMENSION.set(getDimensionFromHash(selected));
+        }
+
+        notifyFiltersChanged();
+    }
+
+    private void onCreatePressed() {
+        if (minecraft.player != null) {
+            new NewFrontier(jmAPI, minecraft.player.blockPosition()).display();
+        }
+    }
+
+    private void onInfoPressed() {
+        FrontierOverlay frontier = ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
+        new FrontierInfo(jmAPI, frontier).display();
+    }
+
+    private void onDeletePressed() {
+        if (ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.get()) {
+            showDeleteConfirmation();
+        } else {
+            deleteSelectedFrontier();
+        }
+    }
+
+    private void showDeleteConfirmation() {
+        new DeleteConfirmationDialog(
+                "mapfrontiers.delete_frontier_dialog",
+                response -> {
+                    if (response == ConfirmationDialog.Response.ConfirmAlternative) {
+                        ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.set(false);
+                        ClientGlobalEvents.postUpdatedConfigEvent();
+                    }
+                    deleteSelectedFrontier();
+                }
+        ).display();
+    }
+
+    private void onVisiblePressed() {
+        FrontierOverlay frontier = ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
+        frontier.toggleVisibility(FrontierData.VisibilityData.Visibility.Frontier);
+        MapFrontiersClient.getOperationService().updateFrontier(frontier);
+        refreshViewState();
+    }
+
+    private void onSettingsPressed() {
+        new ModSettings(true).display();
+    }
+
+    private void onDonePressed() {
+        onClose();
+    }
+
+    private void resetFiltersToDefaults() {
+        ClientConfig.FILTER_FRONTIER_TYPE.set(ClientConfig.FilterFrontierType.All);
+        ClientConfig.FILTER_FRONTIER_OWNER.set(ClientConfig.FilterFrontierOwner.All);
+        ClientConfig.FILTER_FRONTIER_DIMENSION.set(ClientConfig.DIMENSION_FILTER_ALL);
+    }
+
+    private void syncFilterSelectionsFromConfig() {
+        selectRadioById(filterType, ClientConfig.FILTER_FRONTIER_TYPE.get().ordinal());
+        selectRadioById(filterOwner, ClientConfig.FILTER_FRONTIER_OWNER.get().ordinal());
+        selectRadioById(filterDimension, ClientConfig.FILTER_FRONTIER_DIMENSION.get().hashCode());
+    }
+
+    private void notifyFiltersChanged() {
+        updateFrontiers();
+        ClientGlobalEvents.postUpdatedConfigEvent();
+        refreshViewState();
+    }
+
+    private void refreshInitialSelection() {
+        if (fullscreenMap.getSelected() != null) {
+            frontiers.selectElementIf(element -> ((FrontierListElement) element).getFrontier().getId().equals(fullscreenMap.getSelected().getId()));
+        }
+    }
+
+    private void refreshViewState() {
+        updateButtons();
     }
 
     private void deleteSelectedFrontier() {
