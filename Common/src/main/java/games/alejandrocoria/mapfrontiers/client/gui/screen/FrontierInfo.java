@@ -54,6 +54,7 @@ import java.text.SimpleDateFormat;
 import java.util.Objects;
 import java.util.Stack;
 import java.util.function.Consumer;
+import java.util.function.IntUnaryOperator;
 
 @ParametersAreNonnullByDefault
 public class FrontierInfo extends AutoScaledScreen {
@@ -108,6 +109,20 @@ public class FrontierInfo extends AutoScaledScreen {
     private static final Tooltip changeToPersonalTooltip = Tooltip.create(Component.translatable("mapfrontiers.change_to_personal"));
     private static final Tooltip changeToGlobalTooltip = Tooltip.create(Component.translatable("mapfrontiers.change_to_global"));
     private static final Tooltip assignBannerWarnTooltip = Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET).append(Component.translatable("mapfrontiers.assign_banner_warn")));
+    private static final int MAIN_LAYOUT_SPACING = 10;
+    private static final int SECTION_WIDTH = 144;
+    private static final int NAME_MAX_LENGTH = 17;
+    private static final int DEFAULT_TEXTBOX_HEIGHT = 20;
+    private static final int SECTION_SPACING_SMALL = 2;
+    private static final int SECTION_SPACING_MEDIUM = 4;
+    private static final int INLINE_SPACING = 3;
+    private static final int METADATA_SPACING = 12;
+    private static final int OPTION_BUTTON_WIDTH = 28;
+    private static final int RGB_LABEL_HEIGHT = 8;
+    private static final int RGB_TEXTBOX_INPUT_WIDTH = 29;
+    private static final int RGB_TEXTBOX_WIDTH = 34;
+    private static final int RGB_ROW_SPACER_WIDTH = 1;
+    private static final int CLIPBOARD_SPACER_WIDTH = 116;
 
     private final IClientAPI jmAPI;
 
@@ -187,361 +202,239 @@ public class FrontierInfo extends AutoScaledScreen {
 
     @Override
     public void initScreen() {
-        GridLayout mainLayout = new GridLayout().spacing(10);
-        content.addChild(mainLayout);
+        GridLayout mainLayout = createMainLayout();
 
-        LinearLayout bannerColumn = LinearLayout.vertical().spacing(2);
+        buildBannerSection(mainLayout);
+        buildNameSection(mainLayout);
+        buildMetadataSection(mainLayout);
+        buildVisibilitySection(mainLayout);
+        buildColorSection(mainLayout);
+        buildClipboardSection(mainLayout);
+
+        buildBottomButtons();
+
+        refreshViewState();
+        setInitialFocus(buttonDone);
+    }
+
+    private GridLayout createMainLayout() {
+        GridLayout mainLayout = new GridLayout().spacing(MAIN_LAYOUT_SPACING);
+        content.addChild(mainLayout);
+        return mainLayout;
+    }
+
+    private void buildBannerSection(GridLayout mainLayout) {
+        LinearLayout bannerColumn = LinearLayout.vertical().spacing(SECTION_SPACING_SMALL);
         bannerColumn.defaultCellSetting().alignHorizontallyCenter();
         mainLayout.addChild(bannerColumn, 0, 0);
 
-        buttonBanner = new SimpleButton(font, 144, assignBannerLabel, (b) -> {
-            if (!frontier.hasBanner()) {
-                ItemStack heldBanner = getHeldBanner(minecraft);
-                if (heldBanner != null) {
-                    frontier.setBanner(heldBanner);
-                }
-            } else {
-                frontier.setBanner(null);
-            }
-            updateBannerButton();
-            sendBannerChangeToServer();
-        });
+        buttonBanner = new SimpleButton(font, SECTION_WIDTH, assignBannerLabel, b -> onBannerButtonPressed());
         bannerColumn.addChild(buttonBanner);
 
-        sliderBannerRotation = new SimpleSlider(font, 144, bannerRotationKey, 0, 360, frontier.getBannerRotation(), (angle, dragging) -> {
-            frontier.setBannerRotation(angle);
-            if (!dragging) {
-                sendBannerChangeToServer();
-            }
-        });
+        sliderBannerRotation = new SimpleSlider(font, SECTION_WIDTH, bannerRotationKey, 0, 360, frontier.getBannerRotation(), this::onBannerRotationChanged);
         bannerColumn.addChild(sliderBannerRotation);
+    }
 
-        LinearLayout nameColumn = LinearLayout.vertical().spacing(2);
+    private void buildNameSection(GridLayout mainLayout) {
+        LinearLayout nameColumn = LinearLayout.vertical().spacing(SECTION_SPACING_SMALL);
         nameColumn.defaultCellSetting().alignHorizontallyLeft();
         mainLayout.addChild(nameColumn, 0, 1, 2, 1);
 
         nameColumn.addChild(new StringWidget(nameLabel, font).setColor(ColorConstants.INFO_LABEL_TEXT));
-        textName1 = new TextBox(font, 144);
-        textName1.setMaxLength(17);
-        textName1.setHeight(20);
-        textName1.setValue(frontier.getName1());
-        textName1.setLostFocusCallback(value -> sendNameChangeToServer());
-        textName1.setValueChangedCallback(value -> {
+
+        textName1 = createNameTextBox(frontier.getName1(), value -> {
             if (!frontier.getName1().equals(value)) {
                 frontier.setName1(value);
             }
         });
         nameColumn.addChild(textName1);
-        textName2 = new TextBox(font, 144);
-        textName2.setMaxLength(17);
-        textName2.setHeight(20);
-        textName2.setValue(frontier.getName2());
-        textName2.setLostFocusCallback(value -> sendNameChangeToServer());
-        textName2.setValueChangedCallback(value -> {
+
+        textName2 = createNameTextBox(frontier.getName2(), value -> {
             if (!frontier.getName2().equals(value)) {
                 frontier.setName2(value);
             }
         });
         nameColumn.addChild(textName2);
+    }
 
-        LinearLayout dataRow1 = LinearLayout.vertical();
-        mainLayout.addChild(dataRow1, 0, 2, 1, 2, LayoutSettings.defaults().alignHorizontallyLeft());
-        LinearLayout dataRow1sub = LinearLayout.horizontal().spacing(12);
-        dataRow1.addChild(dataRow1sub);
+    private TextBox createNameTextBox(String initialValue, Consumer<String> setter) {
+        TextBox textBox = new TextBox(font, SECTION_WIDTH);
+        textBox.setMaxLength(NAME_MAX_LENGTH);
+        textBox.setHeight(DEFAULT_TEXTBOX_HEIGHT);
+        textBox.setValue(initialValue);
+        textBox.setLostFocusCallback(value -> sendNameChangeToServer());
+        textBox.setValueChangedCallback(setter);
+        return textBox;
+    }
 
-        LinearLayout dataRow1subPersonalGlobal = LinearLayout.horizontal().spacing(4);
-        dataRow1sub.addChild(dataRow1subPersonalGlobal);
+    private void buildMetadataSection(GridLayout mainLayout) {
+        LinearLayout metadataColumn = LinearLayout.vertical();
+        mainLayout.addChild(metadataColumn, 0, 2, 1, 2, LayoutSettings.defaults().alignHorizontallyLeft());
 
-        dataRow1subPersonalGlobal.addChild(new StringWidget(frontier.getPersonal() ? personalLabel : globalLabel, font).setColor(ColorConstants.WHITE));
+        LinearLayout summaryRow = LinearLayout.horizontal().spacing(METADATA_SPACING);
+        metadataColumn.addChild(summaryRow);
 
-        buttonChangeToPersonalGlobal = dataRow1subPersonalGlobal.addChild(new IconButton(IconButton.Type.Swap, (b) -> {
-            if (frontier.getPersonal()) {
-                new ConfirmationDialog(
-                        "mapfrontiers.change_to_global_frontier_dialog",
-                        "mapfrontiers.change_to_global_frontier_dialog_desc",
-                        "mapfrontiers.change_to_global",
-                        "gui.cancel",
-                        null,
-                        response -> {
-                            changeToGlobal();
-                        }
-                ).display();
-            } else {
-                new ConfirmationDialog(
-                        "mapfrontiers.change_to_personal_frontier_dialog",
-                        "mapfrontiers.change_to_personal_frontier_dialog_desc",
-                        "mapfrontiers.change_to_personal",
-                        "gui.cancel",
-                        null,
-                        response -> {
-                            changeToPersonal();
-                        }
-                ).display();
-            }
-        }));
+        LinearLayout identityRow = LinearLayout.horizontal().spacing(SECTION_SPACING_MEDIUM);
+        summaryRow.addChild(identityRow);
+
+        identityRow.addChild(new StringWidget(frontier.getPersonal() ? personalLabel : globalLabel, font).setColor(ColorConstants.WHITE));
+        buttonChangeToPersonalGlobal = identityRow.addChild(new IconButton(IconButton.Type.Swap, b -> onChangePersonalGlobalPressed()));
         buttonChangeToPersonalGlobal.setTooltip(frontier.getPersonal() ? changeToGlobalTooltip : changeToPersonalTooltip);
 
-        if (frontier.getMode() == FrontierData.Mode.Vertex) {
-            Component vertices = Component.translatable(verticesKey, frontier.getVertexCount());
-            dataRow1sub.addChild(new StringWidget(vertices, font).setColor(ColorConstants.WHITE));
-        } else {
-            Component chunks = Component.translatable(chunksKey, frontier.getChunkCount());
-            dataRow1sub.addChild(new StringWidget(chunks, font).setColor(ColorConstants.WHITE));
-        }
+        Component shapeSummary = frontier.getMode() == FrontierData.Mode.Vertex
+                ? Component.translatable(verticesKey, frontier.getVertexCount())
+                : Component.translatable(chunksKey, frontier.getChunkCount());
+        summaryRow.addChild(new StringWidget(shapeSummary, font).setColor(ColorConstants.WHITE));
 
         MutableComponent owner = Component.translatable(ownerKey, frontier.getOwner().toString());
         if (frontier.wasCopied()) {
             owner.append(Component.literal(ColorConstants.WARNING + " !"));
         }
-        StringWidget ownerWidget = dataRow1sub.addChild(new StringWidget(owner, font).setColor(ColorConstants.WHITE));
+        StringWidget ownerWidget = summaryRow.addChild(new StringWidget(owner, font).setColor(ColorConstants.WHITE));
         if (frontier.wasCopied()) {
-            Tooltip ownerTooltip = Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET).append(Component.translatable(originalOwnerKey, frontier.getCopiedFromUser().toString())));
+            Tooltip ownerTooltip = Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET)
+                    .append(Component.translatable(originalOwnerKey, frontier.getCopiedFromUser().toString())));
             ownerWidget.setTooltip(ownerTooltip);
         }
 
-        Component dimension = Component.translatable(dimensionKey, frontier.getDimension().identifier().toString());
-        dataRow1.addChild(new StringWidget(dimension, font).setColor(ColorConstants.TEXT_DIMENSION));
+        metadataColumn.addChild(new StringWidget(Component.translatable(dimensionKey, frontier.getDimension().identifier().toString()), font)
+                .setColor(ColorConstants.TEXT_DIMENSION));
 
         if (frontier.getSourcePluginId() != null) {
-            if (frontier.isSessionOnly()) {
-                Component temporarySourcePluginId = Component.translatable(temporarySourcePluginKey, frontier.getSourcePluginId());
-                dataRow1.addChild(new StringWidget(temporarySourcePluginId, font).setColor(ColorConstants.TEXT_SOURCE_PLUGIN));
-            } else {
-                Component sourcePluginId = Component.translatable(sourcePluginKey, frontier.getSourcePluginId());
-                dataRow1.addChild(new StringWidget(sourcePluginId, font).setColor(ColorConstants.TEXT_SOURCE_PLUGIN));
-            }
+            Component sourcePlugin = frontier.isSessionOnly()
+                    ? Component.translatable(temporarySourcePluginKey, frontier.getSourcePluginId())
+                    : Component.translatable(sourcePluginKey, frontier.getSourcePluginId());
+            metadataColumn.addChild(new StringWidget(sourcePlugin, font).setColor(ColorConstants.TEXT_SOURCE_PLUGIN));
         } else if (frontier.isSessionOnly()) {
-            Component temporary = Component.translatable(temporaryKey);
-            dataRow1.addChild(new StringWidget(temporary, font).setColor(ColorConstants.TEXT_SOURCE_PLUGIN));
+            metadataColumn.addChild(new StringWidget(Component.translatable(temporaryKey), font).setColor(ColorConstants.TEXT_SOURCE_PLUGIN));
         }
 
-        LinearLayout dataRow2Col1 = LinearLayout.vertical();
-        mainLayout.addChild(dataRow2Col1, 1, 2, LayoutSettings.defaults().alignHorizontallyLeft());
+        LinearLayout areaColumn = LinearLayout.vertical();
+        mainLayout.addChild(areaColumn, 1, 2, LayoutSettings.defaults().alignHorizontallyLeft());
+        areaColumn.addChild(new StringWidget(Component.translatable(areaKey, frontier.area), font).setColor(ColorConstants.WHITE));
+        areaColumn.addChild(new StringWidget(Component.translatable(perimeterKey, frontier.perimeter), font).setColor(ColorConstants.WHITE));
 
-        Component area = Component.translatable(areaKey, frontier.area);
-        dataRow2Col1.addChild(new StringWidget(area, font).setColor(ColorConstants.WHITE));
-
-        Component perimeter = Component.translatable(perimeterKey, frontier.perimeter);
-        dataRow2Col1.addChild(new StringWidget(perimeter, font).setColor(ColorConstants.WHITE));
-
-        LinearLayout dataRow2Col2 = LinearLayout.vertical();
-        mainLayout.addChild(dataRow2Col2, 1, 3, LayoutSettings.defaults().alignHorizontallyLeft());
+        LinearLayout dateColumn = LinearLayout.vertical();
+        mainLayout.addChild(dateColumn, 1, 3, LayoutSettings.defaults().alignHorizontallyLeft());
 
         if (frontier.getCreated() != null) {
-            Component created = Component.translatable(createdKey, dateFormat.format(frontier.getCreated()));
-            dataRow2Col2.addChild(new StringWidget(created, font).setColor(ColorConstants.WHITE));
+            dateColumn.addChild(new StringWidget(Component.translatable(createdKey, dateFormat.format(frontier.getCreated())), font).setColor(ColorConstants.WHITE));
         }
 
         if (frontier.getModified() != null) {
-            Component modified = Component.translatable(modifiedKey, dateFormat.format(frontier.getModified()));
-            modifiedLabel = dataRow2Col2.addChild(new StringWidget(modified, font).setColor(ColorConstants.WHITE));
+            modifiedLabel = dateColumn.addChild(new StringWidget(Component.translatable(modifiedKey, dateFormat.format(frontier.getModified())), font)
+                    .setColor(ColorConstants.WHITE));
         }
+    }
 
-        buttonVisibility = new SimpleButton(font, 144, visibilityLabel, (b) -> {
-            new VisibilityDialog(frontier.getVisibilityData(), (newVisibilityData, newVisibilityMask) -> {
-                if (!newVisibilityData.equals(frontier.getVisibilityData())) {
-                    frontier.setVisibilityData(newVisibilityData);
-                    sendVisibilityChangeToServer();
-                }
-            }).display();
-        });
+    private void buildVisibilitySection(GridLayout mainLayout) {
+        buttonVisibility = new SimpleButton(font, SECTION_WIDTH, visibilityLabel, b -> onVisibilityButtonPressed());
         buttonVisibility.setTooltip(visibilityTooltip);
         mainLayout.addChild(buttonVisibility, 2, 1);
 
-        buttonVisibilityOverride = new SimpleButton(font, 144, visibilityOverrideLabel, (b) -> {
-            Pair<FrontierData.VisibilityData, FrontierData.VisibilityData> override = MapFrontiersClient.getLocalOverrides().getVisibility(frontier.getId());
-            new VisibilityDialog(override.first(), override.second(), (newVisibilityData, newVisibilityMask) -> {
-                if (!newVisibilityData.equals(override.first()) || !newVisibilityMask.equals(override.second())) {
-                    Pair<FrontierData.VisibilityData, FrontierData.VisibilityData> newOverride = Pair.of(newVisibilityData, newVisibilityMask);
-                    MapFrontiersClient.getLocalOverrides().setVisibility(frontier.getId(), newOverride);
-                    frontier.setVisibilityOverride(newOverride);
-                }
-            }).display();
-        });
+        buttonVisibilityOverride = new SimpleButton(font, SECTION_WIDTH, visibilityOverrideLabel, b -> onVisibilityOverrideButtonPressed());
         buttonVisibilityOverride.setTooltip(visibilityOverrideTooltip);
         mainLayout.addChild(buttonVisibilityOverride, 2, 2);
+    }
 
-        colorPicker = new ColorPicker(frontier.getColor(), (color, dragging) -> {
-            colorPalette.setColor(color);
-            colorPickerUpdated(color, dragging);
-        });
+    private void buildColorSection(GridLayout mainLayout) {
+        colorPicker = new ColorPicker(frontier.getColor(), this::onColorPicked);
         mainLayout.addChild(colorPicker, 3, 1, LayoutSettings.defaults().alignVerticallyBottom());
 
-        LinearLayout colorCol = LinearLayout.vertical().spacing(4);
-        colorCol.defaultCellSetting().alignHorizontallyCenter();
-        mainLayout.addChild(colorCol, 3, 2);
+        LinearLayout colorColumn = LinearLayout.vertical().spacing(SECTION_SPACING_MEDIUM);
+        colorColumn.defaultCellSetting().alignHorizontallyCenter();
+        mainLayout.addChild(colorColumn, 3, 2);
 
-        colorCol.addChild(new StringWidget(colorLabel, font).setColor(ColorConstants.INFO_LABEL_TEXT), LayoutSettings.defaults().alignHorizontallyLeft());
+        colorColumn.addChild(new StringWidget(colorLabel, font).setColor(ColorConstants.INFO_LABEL_TEXT), LayoutSettings.defaults().alignHorizontallyLeft());
 
-        LinearLayout rgbRow = LinearLayout.horizontal().spacing(3);
+        LinearLayout rgbRow = LinearLayout.horizontal().spacing(INLINE_SPACING);
         rgbRow.defaultCellSetting().alignVerticallyMiddle();
-        colorCol.addChild(rgbRow);
+        colorColumn.addChild(rgbRow);
 
-        rgbRow.addChild(new StringWidget(rLabel, font, 8).setColor(ColorConstants.INFO_LABEL_TEXT));
-        textRed = new TextBoxInt(0, 0, 255, font, 29);
-        textRed.setHeight(20);
-        textRed.setWidth(34);
-        textRed.setValueChangedCallback(value -> {
-            int newColor = (frontier.getColor() & 0xff00ffff) | (value << 16);
-            if (newColor != frontier.getColor()) {
-                frontier.setColor(newColor);
-                colorPicker.setColor(newColor);
-                colorPalette.setColor(newColor);
-                sendColorChangeToServer();
-            }
-        });
+        rgbRow.addChild(new StringWidget(rLabel, font, RGB_LABEL_HEIGHT).setColor(ColorConstants.INFO_LABEL_TEXT));
+        textRed = createRgbTextBox(value -> (frontier.getColor() & 0xff00ffff) | (value << 16));
         rgbRow.addChild(textRed);
-        rgbRow.addChild(SpacerElement.width(1));
+        rgbRow.addChild(SpacerElement.width(RGB_ROW_SPACER_WIDTH));
 
-        rgbRow.addChild(new StringWidget(gLabel, font, 8).setColor(ColorConstants.INFO_LABEL_TEXT));
-        textGreen = new TextBoxInt(0, 0, 255, font, 29);
-        textGreen.setHeight(20);
-        textGreen.setWidth(34);
-        textGreen.setValueChangedCallback(value -> {
-            int newColor = (frontier.getColor() & 0xffff00ff) | (value << 8);
-            if (newColor != frontier.getColor()) {
-                frontier.setColor(newColor);
-                colorPicker.setColor(newColor);
-                colorPalette.setColor(newColor);
-                sendColorChangeToServer();
-            }
-        });
+        rgbRow.addChild(new StringWidget(gLabel, font, RGB_LABEL_HEIGHT).setColor(ColorConstants.INFO_LABEL_TEXT));
+        textGreen = createRgbTextBox(value -> (frontier.getColor() & 0xffff00ff) | (value << 8));
         rgbRow.addChild(textGreen);
-        rgbRow.addChild(SpacerElement.width(1));
+        rgbRow.addChild(SpacerElement.width(RGB_ROW_SPACER_WIDTH));
 
-        rgbRow.addChild(new StringWidget(bLabel, font, 8).setColor(ColorConstants.INFO_LABEL_TEXT));
-        textBlue = new TextBoxInt(0, 0, 255, font, 29);
-        textBlue.setHeight(20);
-        textBlue.setWidth(34);
-        textBlue.setValueChangedCallback(value -> {
-            int newColor = (frontier.getColor() & 0xffffff00) | value;
-            if (newColor != frontier.getColor()) {
-                frontier.setColor(newColor);
-                colorPicker.setColor(newColor);
-                colorPalette.setColor(newColor);
-                sendColorChangeToServer();
-            }
-        });
+        rgbRow.addChild(new StringWidget(bLabel, font, RGB_LABEL_HEIGHT).setColor(ColorConstants.INFO_LABEL_TEXT));
+        textBlue = createRgbTextBox(value -> (frontier.getColor() & 0xffffff00) | value);
         rgbRow.addChild(textBlue);
 
-        textRed.setValue((frontier.getColor() & 0xff0000) >> 16);
-        textGreen.setValue((frontier.getColor() & 0x00ff00) >> 8);
-        textBlue.setValue(frontier.getColor() & 0x0000ff);
+        buttonRandomColor = new SimpleButton(font, SECTION_WIDTH, randomColorLabel, b -> onRandomColorPressed());
+        colorColumn.addChild(buttonRandomColor);
 
-        buttonRandomColor = new SimpleButton(font, 144, randomColorLabel, (b) -> {
-            int newColor = ColorHelper.getRandomColor();
-            frontier.setColor(newColor);
-            colorPicker.setColor(newColor);
-            textRed.setValue((newColor & 0xff0000) >> 16);
-            textGreen.setValue((newColor & 0x00ff00) >> 8);
-            textBlue.setValue(newColor & 0x0000ff);
-            sendColorChangeToServer();
-        });
-        colorCol.addChild(buttonRandomColor);
-
-        colorPalette = new ColorPaletteWidget(frontier.getColor(), (color) -> {
+        colorPalette = new ColorPaletteWidget(frontier.getColor(), color -> {
             colorPicker.setColor(color);
-            colorPickerUpdated(color, false);
+            onColorPicked(color, false);
         });
-        colorCol.addChild(colorPalette);
+        colorColumn.addChild(colorPalette);
 
-        GridLayout editCol = new GridLayout().rowSpacing(4);
-        editCol.defaultCellSetting().alignHorizontallyLeft();
-        editCol.addChild(SpacerElement.width(116), 0, 0);
-        mainLayout.addChild(editCol, 3, 3, LayoutSettings.defaults().alignVerticallyBottom());
+        syncColorWidgets(frontier.getColor());
+    }
 
-        labelPasteName = editCol.addChild(new StringWidget(pasteNameLabel, font).setColor(ColorConstants.TEXT), 0, 0);
-        buttonPasteName = editCol.addChild(createVisibilityOptionButton(ClientConfig.PASTE_NAME.get(), (value) -> ClientConfig.PASTE_NAME.set(value)), 0, 1);
+    private void buildClipboardSection(GridLayout mainLayout) {
+        GridLayout editColumn = new GridLayout().rowSpacing(SECTION_SPACING_MEDIUM);
+        editColumn.defaultCellSetting().alignHorizontallyLeft();
+        editColumn.addChild(SpacerElement.width(CLIPBOARD_SPACER_WIDTH), 0, 0);
+        mainLayout.addChild(editColumn, 3, 3, LayoutSettings.defaults().alignVerticallyBottom());
 
-        labelPasteVisibility = editCol.addChild(new StringWidget(pasteVisibilityLabel, font).setColor(ColorConstants.TEXT), 1, 0);
-        buttonPasteVisibility = editCol.addChild(createVisibilityOptionButton(ClientConfig.PASTE_VISIBILITY.get(), (value) -> ClientConfig.PASTE_VISIBILITY.set(value)), 1, 1);
+        labelPasteName = editColumn.addChild(new StringWidget(pasteNameLabel, font).setColor(ColorConstants.TEXT), 0, 0);
+        buttonPasteName = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_NAME.get(), ClientConfig.PASTE_NAME::set), 0, 1);
 
-        labelPasteColor = editCol.addChild(new StringWidget(pasteColorLabel, font).setColor(ColorConstants.TEXT), 2, 0);
-        buttonPasteColor = editCol.addChild(createVisibilityOptionButton(ClientConfig.PASTE_COLOR.get(), (value) -> ClientConfig.PASTE_COLOR.set(value)), 2, 1);
+        labelPasteVisibility = editColumn.addChild(new StringWidget(pasteVisibilityLabel, font).setColor(ColorConstants.TEXT), 1, 0);
+        buttonPasteVisibility = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_VISIBILITY.get(), ClientConfig.PASTE_VISIBILITY::set), 1, 1);
 
-        labelPasteBanner = editCol.addChild(new StringWidget(pasteBannerLabel, font).setColor(ColorConstants.TEXT), 3, 0);
-        buttonPasteBanner = editCol.addChild(createVisibilityOptionButton(ClientConfig.PASTE_BANNER.get(), (value) -> ClientConfig.PASTE_BANNER.set(value)), 3, 1);
+        labelPasteColor = editColumn.addChild(new StringWidget(pasteColorLabel, font).setColor(ColorConstants.TEXT), 2, 0);
+        buttonPasteColor = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_COLOR.get(), ClientConfig.PASTE_COLOR::set), 2, 1);
 
-        LinearLayout editButtons = LinearLayout.horizontal().spacing(3);
-        editCol.addChild(editButtons, 4, 0);
+        labelPasteBanner = editColumn.addChild(new StringWidget(pasteBannerLabel, font).setColor(ColorConstants.TEXT), 3, 0);
+        buttonPasteBanner = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_BANNER.get(), ClientConfig.PASTE_BANNER::set), 3, 1);
 
-        buttonCopy = editButtons.addChild(new IconButton(IconButton.Type.Copy, (b) -> {
-            MapFrontiersClient.setClipboard(frontier);
-            Minecraft.getInstance().keyboardHandler.setClipboard(frontier.getId().toString());
-            updatePasteOptionsVisibility();
-        }));
+        LinearLayout editButtons = LinearLayout.horizontal().spacing(INLINE_SPACING);
+        editColumn.addChild(editButtons, 4, 0);
+
+        buttonCopy = editButtons.addChild(new IconButton(IconButton.Type.Copy, b -> onCopyPressed()));
         buttonCopy.setTooltip(copyTooltip);
 
         LinearLayout pasteButtons = LinearLayout.horizontal();
         editButtons.addChild(pasteButtons);
 
-        buttonPaste = pasteButtons.addChild(new IconButton(IconButton.Type.Paste, (b) -> {
-            FrontierData clipboard = MapFrontiersClient.getClipboard();
-            if (clipboard != null && (ClientConfig.PASTE_NAME.get() || ClientConfig.PASTE_VISIBILITY.get() || ClientConfig.PASTE_COLOR.get() || ClientConfig.PASTE_BANNER.get())) {
-                setFrontier(clipboard, ClientConfig.PASTE_NAME.get(), ClientConfig.PASTE_VISIBILITY.get(), ClientConfig.PASTE_COLOR.get(), ClientConfig.PASTE_BANNER.get());
-                sendCurrentInfoChangesToServer();
-                rebuildWidgets();
-                repositionElements();
-                if (minecraft.getLastInputType().isKeyboard()) {
-                    setInitialFocus(buttonPaste);
-                }
-            }
-        }));
+        buttonPaste = pasteButtons.addChild(new IconButton(IconButton.Type.Paste, b -> onPastePressed()));
         buttonPaste.setTooltip(pasteTooltip);
 
-        buttonPasteOptions = pasteButtons.addChild(new IconButton(IconButton.Type.ArrowUp, (b) -> {
-            ClientConfig.PASTE_OPTIONS_VISIBLE.set(!ClientConfig.PASTE_OPTIONS_VISIBLE.get());
-            updatePasteOptionsVisibility();
-            ClientGlobalEvents.postUpdatedConfigEvent();
-        }));
+        buttonPasteOptions = pasteButtons.addChild(new IconButton(IconButton.Type.ArrowUp, b -> onPasteOptionsPressed()));
         buttonPasteOptions.setTooltip(openPasteTooltip);
 
-        buttonUndo = editButtons.addChild(new IconButton(IconButton.Type.Undo, (b) -> undo()));
+        buttonUndo = editButtons.addChild(new IconButton(IconButton.Type.Undo, b -> undo()));
         buttonUndo.setTooltip(undoTooltip);
-        buttonRedo = editButtons.addChild(new IconButton(IconButton.Type.Redo, (b) -> redo()));
+
+        buttonRedo = editButtons.addChild(new IconButton(IconButton.Type.Redo, b -> redo()));
         buttonRedo.setTooltip(redoTooltip);
-
-        buttonSelect = bottomButtons.addChild(new SimpleButton(font, 144, selectInMapLabel, (b) -> {
-            BlockPos center = frontier.getCenter();
-            closeAndReturnToFullscreenMap();
-            Services.JOURNEYMAP.fullscreenMapCenterOn(center.getX(), center.getZ());
-        }));
-        buttonShareSettings = bottomButtons.addChild(new SimpleButton(font, 144, shareSettingsLabel, (b) -> {
-            if (MapFrontiersClient.isModOnServer()) {
-                new ShareSettings(frontier).display();
-            } else {
-                new SendFrontier(frontier).display();
-            }
-        }));
-        buttonDelete = bottomButtons.addChild(new SimpleButton(font, 144, deleteLabel, (b) -> {
-            if (ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.get()) {
-                new DeleteConfirmationDialog(
-                        "mapfrontiers.delete_frontier_dialog",
-                        response -> {
-                            if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                                ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.set(false);
-                                ClientGlobalEvents.postUpdatedConfigEvent();
-                            }
-                            deleteFrontier();
-                        }
-                ).display();
-            } else {
-                deleteFrontier();
-            }
-        }));
-        buttonDelete.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
-        buttonDone = bottomButtons.addChild(new SimpleButton(font, 144, doneLabel, (b) -> onClose()));
-
-        updateBannerButton();
-        updateButtons();
-        updatePasteOptionsVisibility();
-        updateUndoRedoVisibility();
-
-        setInitialFocus(buttonDone);
     }
 
-    private OptionButton createVisibilityOptionButton(boolean defaultValue, Consumer<Boolean> consumer) {
-        OptionButton button = new OptionButton(font, 28, (b) -> {
+    private void buildBottomButtons() {
+        buttonSelect = bottomButtons.addChild(new SimpleButton(font, SECTION_WIDTH, selectInMapLabel, b -> onSelectInMapPressed()));
+        buttonShareSettings = bottomButtons.addChild(new SimpleButton(font, SECTION_WIDTH, shareSettingsLabel, b -> onSharePressed()));
+        buttonDelete = bottomButtons.addChild(new SimpleButton(font, SECTION_WIDTH, deleteLabel, b -> onDeletePressed()));
+        buttonDelete.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
+        buttonDone = bottomButtons.addChild(new SimpleButton(font, SECTION_WIDTH, doneLabel, b -> onClose()));
+    }
+
+    private TextBoxInt createRgbTextBox(IntUnaryOperator colorComposer) {
+        TextBoxInt textBox = new TextBoxInt(0, 0, 255, font, RGB_TEXTBOX_INPUT_WIDTH);
+        textBox.setHeight(DEFAULT_TEXTBOX_HEIGHT);
+        textBox.setWidth(RGB_TEXTBOX_WIDTH);
+        textBox.setValueChangedCallback(value -> applyColorChange(colorComposer.applyAsInt(value), true));
+        return textBox;
+    }
+
+    private OptionButton createBinaryOptionButton(boolean defaultValue, Consumer<Boolean> consumer) {
+        OptionButton button = new OptionButton(font, OPTION_BUTTON_WIDTH, b -> {
             consumer.accept(b.getSelected() == 0);
             sendCurrentInfoChangesToServer();
         });
@@ -549,6 +442,155 @@ public class FrontierInfo extends AutoScaledScreen {
         button.addOption(offLabel);
         button.setSelected(defaultValue ? 0 : 1);
         return button;
+    }
+
+    private void onBannerButtonPressed() {
+        if (!frontier.hasBanner()) {
+            ItemStack heldBanner = getHeldBanner(minecraft);
+            if (heldBanner != null) {
+                frontier.setBanner(heldBanner);
+            }
+        } else {
+            frontier.setBanner(null);
+        }
+
+        updateBannerButton();
+        sendBannerChangeToServer();
+    }
+
+    private void onBannerRotationChanged(int angle, boolean dragging) {
+        frontier.setBannerRotation(angle);
+        if (!dragging) {
+            sendBannerChangeToServer();
+        }
+    }
+
+    private void onChangePersonalGlobalPressed() {
+        if (frontier.getPersonal()) {
+            showChangeToGlobalConfirmation();
+        } else {
+            showChangeToPersonalConfirmation();
+        }
+    }
+
+    private void showChangeToGlobalConfirmation() {
+        new ConfirmationDialog(
+                "mapfrontiers.change_to_global_frontier_dialog",
+                "mapfrontiers.change_to_global_frontier_dialog_desc",
+                "mapfrontiers.change_to_global",
+                "gui.cancel",
+                null,
+                response -> changeToGlobal()
+        ).display();
+    }
+
+    private void showChangeToPersonalConfirmation() {
+        new ConfirmationDialog(
+                "mapfrontiers.change_to_personal_frontier_dialog",
+                "mapfrontiers.change_to_personal_frontier_dialog_desc",
+                "mapfrontiers.change_to_personal",
+                "gui.cancel",
+                null,
+                response -> changeToPersonal()
+        ).display();
+    }
+
+    private void onVisibilityButtonPressed() {
+        new VisibilityDialog(frontier.getVisibilityData(), (newVisibilityData, newVisibilityMask) -> {
+            if (!newVisibilityData.equals(frontier.getVisibilityData())) {
+                frontier.setVisibilityData(newVisibilityData);
+                sendVisibilityChangeToServer();
+            }
+        }).display();
+    }
+
+    private void onVisibilityOverrideButtonPressed() {
+        Pair<FrontierData.VisibilityData, FrontierData.VisibilityData> override = MapFrontiersClient.getLocalOverrides().getVisibility(frontier.getId());
+        new VisibilityDialog(override.first(), override.second(), (newVisibilityData, newVisibilityMask) -> {
+            if (!newVisibilityData.equals(override.first()) || !newVisibilityMask.equals(override.second())) {
+                Pair<FrontierData.VisibilityData, FrontierData.VisibilityData> newOverride = Pair.of(newVisibilityData, newVisibilityMask);
+                MapFrontiersClient.getLocalOverrides().setVisibility(frontier.getId(), newOverride);
+                frontier.setVisibilityOverride(newOverride);
+            }
+        }).display();
+    }
+
+    private void onColorPicked(int color, boolean dragging) {
+        frontier.setColor(color);
+        syncColorWidgets(color);
+
+        if (!dragging) {
+            sendColorChangeToServer();
+        }
+    }
+
+    private void onRandomColorPressed() {
+        applyColorChange(ColorHelper.getRandomColor(), true);
+    }
+
+    private void onCopyPressed() {
+        MapFrontiersClient.setClipboard(frontier);
+        Minecraft.getInstance().keyboardHandler.setClipboard(frontier.getId().toString());
+        updatePasteOptionsVisibility();
+    }
+
+    private void onPastePressed() {
+        FrontierData clipboard = MapFrontiersClient.getClipboard();
+        if (clipboard != null && (ClientConfig.PASTE_NAME.get() || ClientConfig.PASTE_VISIBILITY.get()
+                || ClientConfig.PASTE_COLOR.get() || ClientConfig.PASTE_BANNER.get())) {
+            setFrontier(clipboard, ClientConfig.PASTE_NAME.get(), ClientConfig.PASTE_VISIBILITY.get(),
+                    ClientConfig.PASTE_COLOR.get(), ClientConfig.PASTE_BANNER.get());
+            sendCurrentInfoChangesToServer();
+            rebuildWidgets();
+            repositionElements();
+            if (minecraft.getLastInputType().isKeyboard()) {
+                setInitialFocus(buttonPaste);
+            }
+        }
+    }
+
+    private void onPasteOptionsPressed() {
+        ClientConfig.PASTE_OPTIONS_VISIBLE.set(!ClientConfig.PASTE_OPTIONS_VISIBLE.get());
+        updatePasteOptionsVisibility();
+        ClientGlobalEvents.postUpdatedConfigEvent();
+    }
+
+    private void onSelectInMapPressed() {
+        BlockPos center = frontier.getCenter();
+        closeAndReturnToFullscreenMap();
+        Services.JOURNEYMAP.fullscreenMapCenterOn(center.getX(), center.getZ());
+    }
+
+    private void onSharePressed() {
+        if (MapFrontiersClient.isModOnServer()) {
+            new ShareSettings(frontier).display();
+        } else {
+            new SendFrontier(frontier).display();
+        }
+    }
+
+    private void onDeletePressed() {
+        if (ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.get()) {
+            new DeleteConfirmationDialog(
+                    "mapfrontiers.delete_frontier_dialog",
+                    response -> {
+                        if (response == ConfirmationDialog.Response.ConfirmAlternative) {
+                            ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.set(false);
+                            ClientGlobalEvents.postUpdatedConfigEvent();
+                        }
+                        deleteFrontier();
+                    }
+            ).display();
+        } else {
+            deleteFrontier();
+        }
+    }
+
+    private void refreshViewState() {
+        updateBannerButton();
+        updateButtons();
+        updatePasteOptionsVisibility();
+        updateUndoRedoVisibility();
     }
 
     @Override
@@ -607,14 +649,26 @@ public class FrontierInfo extends AutoScaledScreen {
         onClose();
     }
 
-    private void colorPickerUpdated(int color, boolean dragging) {
-        frontier.setColor(color);
-        textRed.setValue((frontier.getColor() & 0xff0000) >> 16);
-        textGreen.setValue((frontier.getColor() & 0x00ff00) >> 8);
-        textBlue.setValue(frontier.getColor() & 0x0000ff);
+    private void applyColorChange(int color, boolean sendToServer) {
+        if (color == frontier.getColor()) {
+            return;
+        }
 
-        if (!dragging) {
+        frontier.setColor(color);
+        colorPicker.setColor(color);
+        syncColorWidgets(color);
+
+        if (sendToServer) {
             sendColorChangeToServer();
+        }
+    }
+
+    private void syncColorWidgets(int color) {
+        textRed.setValue((color & 0xff0000) >> 16);
+        textGreen.setValue((color & 0x00ff00) >> 8);
+        textBlue.setValue(color & 0x0000ff);
+        if (colorPalette != null) {
+            colorPalette.setColor(color);
         }
     }
 

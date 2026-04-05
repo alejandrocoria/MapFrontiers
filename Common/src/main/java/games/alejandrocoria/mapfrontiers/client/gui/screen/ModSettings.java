@@ -22,7 +22,9 @@ import games.alejandrocoria.mapfrontiers.client.gui.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.FrontierAppearanceDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.VisibilityDialog;
+import games.alejandrocoria.mapfrontiers.common.config.BooleanConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
+import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
@@ -56,6 +58,7 @@ import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
 public class ModSettings extends AutoScaledScreen {
@@ -86,28 +89,8 @@ public class ModSettings extends AutoScaledScreen {
     private static final Component frontiersLabel = Component.translatable("mapfrontiers.frontiers");
     private static final Component frontierAppearanceLabel = Component.translatable("mapfrontiers.frontier_appearance");
     private static final Component forcedVisibilityLabel = Component.translatable("mapfrontiers.forced_visibility");
-    private static final Component titleAnnouncementDurationLabel = ClientConfig.TITLE_ANNOUNCEMENT_DURATION.translatedName();
-    private static final Tooltip titleAnnouncementDurationTooltip = tooltip(ClientConfig.TITLE_ANNOUNCEMENT_DURATION);
-    private static final Component titleAnnouncementTimeoutLabel = ClientConfig.TITLE_ANNOUNCEMENT_TIMEOUT.translatedName();
-    private static final Tooltip titleAnnouncementTimeoutTooltip = tooltip(ClientConfig.TITLE_ANNOUNCEMENT_TIMEOUT);
-    private static final Component titleAnnouncementAboveHotbarLabel = ClientConfig.TITLE_ANNOUNCEMENT_ABOVE_HOTBAR.translatedName();
-    private static final Tooltip titleAnnouncementAboveHotbarTooltip = tooltip(ClientConfig.TITLE_ANNOUNCEMENT_ABOVE_HOTBAR);
-    private static final Component announceUnnamedFrontiersLabel = ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS.translatedName();
-    private static final Tooltip announceUnnamedFrontiersTooltip = tooltip(ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS);
-    private static final Component snapDistanceLabel = ClientConfig.SNAP_DISTANCE.translatedName();
-    private static final Tooltip snapDistanceTooltip = tooltip(ClientConfig.SNAP_DISTANCE);
     private static final Component guiLabel = Component.translatable("mapfrontiers.gui");
-    private static final Component fullscreenButtonsLabel = ClientConfig.FULLSCREEN_BUTTONS.translatedName();
-    private static final Tooltip fullscreenButtonsTooltip = tooltip(ClientConfig.FULLSCREEN_BUTTONS);
-    private static final Component askConfirmationFrontierDeleteLabel = ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.translatedName();
-    private static final Tooltip askConfirmationFrontierDeleteTooltip = tooltip(ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE);
-    private static final Component askConfirmationGroupDeleteLabel = ClientConfig.ASK_CONFIRMATION_GROUP_DELETE.translatedName();
-    private static final Tooltip askConfirmationGroupDeleteTooltip = tooltip(ClientConfig.ASK_CONFIRMATION_GROUP_DELETE);
-    private static final Component askConfirmationUserDeleteLabel = ClientConfig.ASK_CONFIRMATION_USER_DELETE.translatedName();
-    private static final Tooltip askConfirmationUserDeleteTooltip = tooltip(ClientConfig.ASK_CONFIRMATION_USER_DELETE);
     private static final Component hudLabel = Component.translatable("mapfrontiers.hud");
-    private static final Component hudEnabledLabel = ClientConfig.HUD_ENABLED.translatedName();
-    private static final Tooltip hudEnabledTooltip = tooltip(ClientConfig.HUD_ENABLED);
     private static final Component onLabel = Component.translatable("options.on");
     private static final Component offLabel = Component.translatable("options.off");
     private static final Component editHudLabel = Component.translatable("mapfrontiers.edit_hud");
@@ -120,35 +103,30 @@ public class ModSettings extends AutoScaledScreen {
     private static final Component updateSettingsLabel = Component.translatable("mapfrontiers.update_settings");
     private static final Component sharePersonalFrontierLabel = Component.translatable("mapfrontiers.share_personal_frontier");
     private static final Component doneLabel = Component.translatable("gui.done");
+    private static final int TABBED_BOX_MARGIN_X = 80;
+    private static final int TABBED_BOX_MARGIN_Y = 64;
+    private static final int SECTION_SPACING_SMALL = 4;
+    private static final int SECTION_SPACING_MEDIUM = 8;
+    private static final int DEFAULT_OPTION_WIDTH = 40;
+    private static final int DEFAULT_TEXTBOX_WIDTH = 40;
+    private static final int FRONTIER_BUTTON_WIDTH = 144;
+    private static final int WIDE_BUTTON_EXTRA_WIDTH = 100;
+    private static final int WIDE_TEXTBOX_EXTRA_WIDTH = 300;
+    private static final int WIDE_LINK_EXTRA_WIDTH = 200;
+    private static final int GROUPS_SCROLL_WIDTH = 160;
+    private static final int USERS_SCROLL_WIDTH = 258;
+    private static final int ACTIONS_SCROLL_WIDTH = 430;
+    private static final int DONE_BUTTON_WIDTH = 140;
+    private static final int GROUP_NAME_WIDTH = 140;
+    private static final int NEW_USER_WIDTH = 238;
 
     private final boolean showKeyHint;
 
     private FrontierSettings settings;
     private TabbedBox tabbedBox;
-    private LinkButton buttonWeb;
-    private LinkButton buttonCurseForge;
-    private LinkButton buttonModrinth;
-    private StringWidget labelTitleAnnouncementDuration;
-    private StringWidget labelTitleAnnouncementTimeout;
-    private StringWidget labelTitleAnnouncementAboveHotbar;
-    private StringWidget labelAnnounceUnnamedFrontiers;
-    private StringWidget labelSnapDistance;
-    private StringWidget labelFullscreenButtons;
-    private StringWidget labelAskConfirmationFrontierDelete;
-    private StringWidget labelAskConfirmationGroupDelete;
-    private StringWidget labelAskConfirmationUserDelete;
-    private StringWidget labelHUDEnabled;
-    private TextBoxInt textTitleAnnouncementDuration;
-    private TextBoxInt textTitleAnnouncementTimeout;
-    private OptionButton buttonTitleAnnouncementAboveHotbar;
-    private OptionButton buttonAnnounceUnnamedFrontiers;
-    private TextBoxInt textSnapDistance;
     private SimpleButton buttonFrontierAppearance;
-    private OptionButton buttonFullscreenButtons;
-    private OptionButton buttonAskConfirmationFrontierDelete;
     private OptionButton buttonAskConfirmationGroupDelete;
     private OptionButton buttonAskConfirmationUserDelete;
-    private OptionButton buttonHUDEnabled;
     private SimpleButton buttonEditHUD;
     private ScrollBox groups;
     private MultiLineTextWidget labelGroupDesc;
@@ -164,7 +142,6 @@ public class ModSettings extends AutoScaledScreen {
     private MultiLineTextWidget labelUpdateSettings;
     private MultiLineTextWidget labelSharePersonalFrontier;
     private ScrollBox groupsActions;
-    private SimpleButton buttonDone;
 
     private boolean canEditGroups;
     private Tab tabSelected;
@@ -194,6 +171,21 @@ public class ModSettings extends AutoScaledScreen {
 
     @Override
     public void initScreen() {
+        resolveInitialState();
+        tabbedBox = createTabbedBox();
+
+        buildCreditsTab();
+        buildGeneralTab();
+        buildGroupsTab();
+        buildActionsTab();
+
+        buildBottomButtons();
+
+        refreshViewState();
+        requestInitialDataIfNeeded();
+    }
+
+    private void resolveInitialState() {
         if (tabSelected == null) {
             tabSelected = MapFrontiersClient.getLastSettingsTab();
         }
@@ -202,307 +194,411 @@ public class ModSettings extends AutoScaledScreen {
         canEditGroups = MapFrontiersClient.isModOnServer()
                 && profile != null
                 && profile.updateSettings == SettingsProfile.State.Enabled;
-        if (!canEditGroups) {
-            if (tabSelected == Tab.Groups || tabSelected == Tab.Actions) {
-                tabSelected = Tab.Credits;
-            }
+
+        if (!canEditGroups && (tabSelected == Tab.Groups || tabSelected == Tab.Actions)) {
+            tabSelected = Tab.Credits;
+        }
+    }
+
+    private TabbedBox createTabbedBox() {
+        TabbedBox tabs = content.addChild(new TabbedBox(font, actualWidth - TABBED_BOX_MARGIN_X,
+                actualHeight - TABBED_BOX_MARGIN_Y, this::onTabChanged));
+        tabs.addTab(tabCreditsLabel, true);
+        tabs.addTab(tabGeneralLabel, true);
+        tabs.addTab(tabGroupsLabel, canEditGroups);
+        tabs.addTab(tabActionsLabel, canEditGroups);
+        return tabs;
+    }
+
+    private void onTabChanged(int tab) {
+        tabSelected = Tab.values()[tab];
+
+        if (tabSelected == Tab.Actions) {
+            updateGroupsActions();
         }
 
-        tabbedBox = content.addChild(new TabbedBox(font, actualWidth - 80, actualHeight - 64, (tab) -> {
-            tabSelected = Tab.values()[tab];
+        updateButtonsVisibility();
+    }
 
-            if (tabSelected == Tab.Actions) {
-                updateGroupsActions();
-            }
-
-            updateButtonsVisibility();
-        }));
-        tabbedBox.addTab(tabCreditsLabel, true);
-        tabbedBox.addTab(tabGeneralLabel, true);
-        tabbedBox.addTab(tabGroupsLabel, canEditGroups);
-        tabbedBox.addTab(tabActionsLabel, canEditGroups);
-
-        LinearLayout creditsLayout = LinearLayout.vertical().spacing(4);
+    private void buildCreditsTab() {
+        LinearLayout creditsLayout = LinearLayout.vertical().spacing(SECTION_SPACING_SMALL);
         creditsLayout.defaultCellSetting().alignHorizontallyCenter();
-        tabbedBox.addChild(creditsLayout, Tab.Credits.ordinal(), LayoutSettings.defaults().alignHorizontallyCenter().alignVerticallyTop());
+        tabbedBox.addChild(creditsLayout, Tab.Credits.ordinal(),
+                LayoutSettings.defaults().alignHorizontallyCenter().alignVerticallyTop());
 
         creditsLayout.addChild(SpacerElement.height(16));
         creditsLayout.addChild(new StringWidget(createdByLabel, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
-        buttonWeb = creditsLayout.addChild(new LinkButton(font, webLinkLabel, (b) -> {
-            MapFrontiersClient.setLastSettingsTab(tabSelected);
-            ConfirmLinkScreen.confirmLinkNow(this, webURL, false);
-        }) {
-            public @NotNull ScreenRectangle getRectangle() {
-                return new ScreenRectangle(this.getX() - 100, this.getY(), this.getWidth() + 200, this.getHeight());
-            }
-        });
+        creditsLayout.addChild(createWideExternalLinkButton(webLinkLabel, webURL));
         creditsLayout.addChild(SpacerElement.height(16));
 
         creditsLayout.addChild(new StringWidget(manyThanksLabel, font).setColor(ColorConstants.TEXT_MEDIUM));
         creditsLayout.addChild(SpacerElement.height(16));
 
         creditsLayout.addChild(new StringWidget(projectLabel, font).setColor(ColorConstants.TEXT_MEDIUM));
-        buttonCurseForge = creditsLayout.addChild(new LinkButton(font, curseForgeLinkLabel, (b) -> {
-            MapFrontiersClient.setLastSettingsTab(tabSelected);
-            ConfirmLinkScreen.confirmLinkNow(this, curseForgeURL, false);
-        }));
-        buttonModrinth = creditsLayout.addChild(new LinkButton(font, modrinthLinkLabel, (b) -> {
-            MapFrontiersClient.setLastSettingsTab(tabSelected);
-            ConfirmLinkScreen.confirmLinkNow(this, modrinthURL, false);
-        }));
+        creditsLayout.addChild(createExternalLinkButton(curseForgeLinkLabel, curseForgeURL));
+        creditsLayout.addChild(createExternalLinkButton(modrinthLinkLabel, modrinthURL));
         creditsLayout.addChild(SpacerElement.height(16));
 
         creditsLayout.addChild(new StringWidget(patreonLabel, font).setColor(ColorConstants.TEXT_MEDIUM));
-        buttonModrinth = creditsLayout.addChild(new LinkButton(font, patreonLinkLabel, (b) -> {
-            MapFrontiersClient.setLastSettingsTab(tabSelected);
-            ConfirmLinkScreen.confirmLinkNow(this, patreonURL, false);
-        }));
+        creditsLayout.addChild(createExternalLinkButton(patreonLinkLabel, patreonURL));
+    }
 
-        LinearLayout generalLayout = LinearLayout.vertical().spacing(4);
+    private void buildGeneralTab() {
+        LinearLayout generalLayout = LinearLayout.vertical().spacing(SECTION_SPACING_SMALL);
         generalLayout.defaultCellSetting().alignHorizontallyCenter();
-        tabbedBox.addChild(generalLayout, Tab.General.ordinal(), LayoutSettings.defaults().alignHorizontallyCenter().alignVerticallyTop());
+        tabbedBox.addChild(generalLayout, Tab.General.ordinal(),
+                LayoutSettings.defaults().alignHorizontallyCenter().alignVerticallyTop());
 
         generalLayout.addChild(SpacerElement.height(16));
         generalLayout.addChild(new StringWidget(frontiersLabel, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
 
-        GridLayout miscLayout = new GridLayout().spacing(4);
-        miscLayout.defaultCellSetting().alignHorizontallyLeft();
-        generalLayout.addChild(miscLayout);
+        GridLayout settingsGrid = new GridLayout().spacing(SECTION_SPACING_SMALL);
+        settingsGrid.defaultCellSetting().alignHorizontallyLeft();
+        generalLayout.addChild(settingsGrid);
+
         int row = 0;
+        row = buildFrontiersSection(settingsGrid, row);
+        row = buildGuiSection(settingsGrid, row);
+        buildHudSection(generalLayout, settingsGrid, row);
+    }
 
-        labelTitleAnnouncementDuration = miscLayout.addChild(new StringWidget(titleAnnouncementDurationLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelTitleAnnouncementDuration.setTooltip(titleAnnouncementDurationTooltip);
-        textTitleAnnouncementDuration = miscLayout.addChild(new TextBoxInt(70, 0, 1200, font, 40), row++, 1);
-        textTitleAnnouncementDuration.setValue(String.valueOf(ClientConfig.TITLE_ANNOUNCEMENT_DURATION.get()));
-        textTitleAnnouncementDuration.setMaxLength(4);
-        textTitleAnnouncementDuration.setValueChangedCallback(value -> ClientConfig.TITLE_ANNOUNCEMENT_DURATION.set(value));
+    private int buildFrontiersSection(GridLayout settingsGrid, int row) {
+        row = addIntSettingRow(settingsGrid, row, ClientConfig.TITLE_ANNOUNCEMENT_DURATION,
+                createWideIntConfigTextBox(ClientConfig.TITLE_ANNOUNCEMENT_DURATION, DEFAULT_TEXTBOX_WIDTH, 4));
+        row = addIntSettingRow(settingsGrid, row, ClientConfig.TITLE_ANNOUNCEMENT_TIMEOUT, DEFAULT_TEXTBOX_WIDTH, 4);
+        row = addOptionSettingRow(settingsGrid, row, ClientConfig.TITLE_ANNOUNCEMENT_ABOVE_HOTBAR);
+        row = addOptionSettingRow(settingsGrid, row, ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS);
+        row = addIntSettingRow(settingsGrid, row, ClientConfig.SNAP_DISTANCE, DEFAULT_TEXTBOX_WIDTH, 2);
 
-        labelTitleAnnouncementTimeout = miscLayout.addChild(new StringWidget(titleAnnouncementTimeoutLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelTitleAnnouncementTimeout.setTooltip(titleAnnouncementTimeoutTooltip);
-        textTitleAnnouncementTimeout = miscLayout.addChild(new TextBoxInt(0, 0, 1200, font, 40), row++, 1);
-        textTitleAnnouncementTimeout.setValue(String.valueOf(ClientConfig.TITLE_ANNOUNCEMENT_TIMEOUT.get()));
-        textTitleAnnouncementTimeout.setMaxLength(4);
-        textTitleAnnouncementTimeout.setValueChangedCallback(value -> ClientConfig.TITLE_ANNOUNCEMENT_TIMEOUT.set(value));
+        buttonFrontierAppearance = createWideSimpleButton(FRONTIER_BUTTON_WIDTH, frontierAppearanceLabel,
+                b -> onFrontierAppearancePressed());
+        settingsGrid.addChild(buttonFrontierAppearance, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
 
-        labelTitleAnnouncementAboveHotbar = miscLayout.addChild(new StringWidget(titleAnnouncementAboveHotbarLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelTitleAnnouncementAboveHotbar.setTooltip(titleAnnouncementAboveHotbarTooltip);
-        buttonTitleAnnouncementAboveHotbar = miscLayout.addChild(new OptionButton(font, 40, (b) -> ClientConfig.TITLE_ANNOUNCEMENT_ABOVE_HOTBAR.set(b.getSelected() == 0)) {
-            public @NotNull ScreenRectangle getRectangle() {
-                return new ScreenRectangle(this.getX() - 300, this.getY(), this.getWidth() + 300, this.getHeight());
-            }
-        }, row++, 1);
-        buttonTitleAnnouncementAboveHotbar.addOption(onLabel);
-        buttonTitleAnnouncementAboveHotbar.addOption(offLabel);
-        buttonTitleAnnouncementAboveHotbar.setSelected(ClientConfig.TITLE_ANNOUNCEMENT_ABOVE_HOTBAR.get() ? 0 : 1);
+        settingsGrid.addChild(createWideSimpleButton(FRONTIER_BUTTON_WIDTH, forcedVisibilityLabel,
+                b -> onForcedVisibilityPressed()), row++, 0, 1, 2,
+                LayoutSettings.defaults().alignHorizontallyCenter());
 
-        labelAnnounceUnnamedFrontiers = miscLayout.addChild(new StringWidget(announceUnnamedFrontiersLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelAnnounceUnnamedFrontiers.setTooltip(announceUnnamedFrontiersTooltip);
-        buttonAnnounceUnnamedFrontiers = miscLayout.addChild(new OptionButton(font, 40, (b) -> ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS.set(b.getSelected() == 0)), row++, 1);
-        buttonAnnounceUnnamedFrontiers.addOption(onLabel);
-        buttonAnnounceUnnamedFrontiers.addOption(offLabel);
-        buttonAnnounceUnnamedFrontiers.setSelected(ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS.get() ? 0 : 1);
+        return row;
+    }
 
-        labelSnapDistance = miscLayout.addChild(new StringWidget(snapDistanceLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelSnapDistance.setTooltip(snapDistanceTooltip);
-        textSnapDistance = miscLayout.addChild(new TextBoxInt(8, 0, 16, font, 40), row++, 1);
-        textSnapDistance.setValue(String.valueOf(ClientConfig.SNAP_DISTANCE.get()));
-        textSnapDistance.setMaxLength(2);
-        textSnapDistance.setValueChangedCallback(value -> ClientConfig.SNAP_DISTANCE.set(value));
+    private int buildGuiSection(GridLayout settingsGrid, int row) {
+        settingsGrid.addChild(SpacerElement.height(SECTION_SPACING_SMALL), row++, 0);
+        settingsGrid.addChild(new StringWidget(guiLabel, font).setColor(ColorConstants.TEXT_HIGHLIGHT), row++, 0, 1, 2,
+                LayoutSettings.defaults().alignHorizontallyCenter());
 
-        buttonFrontierAppearance = new SimpleButton(font, 144, frontierAppearanceLabel, (b) -> {
-            new FrontierAppearanceDialog().display();
-        }) {
-            public @NotNull ScreenRectangle getRectangle() {
-                return new ScreenRectangle(this.getX(), this.getY(), getWidth() + 100, this.getHeight());
-            }
-        };
-        miscLayout.addChild(buttonFrontierAppearance, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
+        row = addOptionSettingRow(settingsGrid, row, ClientConfig.FULLSCREEN_BUTTONS);
+        row = addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE);
+        buttonAskConfirmationGroupDelete = createOnOffOptionButton(ClientConfig.ASK_CONFIRMATION_GROUP_DELETE);
+        row = addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_GROUP_DELETE,
+                buttonAskConfirmationGroupDelete);
+        buttonAskConfirmationUserDelete = createOnOffOptionButton(ClientConfig.ASK_CONFIRMATION_USER_DELETE);
+        return addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_USER_DELETE,
+                buttonAskConfirmationUserDelete);
+    }
 
-        SimpleButton buttonVisibility = new SimpleButton(font, 144, forcedVisibilityLabel, (b) -> {
-            new VisibilityDialog(createForcedVisibility(), createForcedVisibilityMask(), this::setForcedVisibility).display();
-        }) {
-            public @NotNull ScreenRectangle getRectangle() {
-                return new ScreenRectangle(this.getX(), this.getY(), getWidth() + 100, this.getHeight());
-            }
-        };
-        miscLayout.addChild(buttonVisibility, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
+    private void buildHudSection(LinearLayout generalLayout, GridLayout settingsGrid, int row) {
+        settingsGrid.addChild(SpacerElement.height(SECTION_SPACING_SMALL), row++, 0);
+        settingsGrid.addChild(new StringWidget(hudLabel, font).setColor(ColorConstants.TEXT_HIGHLIGHT), row++, 0, 1, 2,
+                LayoutSettings.defaults().alignHorizontallyCenter());
 
-        miscLayout.addChild(SpacerElement.height(4), row++, 0);
-        miscLayout.addChild(new StringWidget(guiLabel, font).setColor(ColorConstants.TEXT_HIGHLIGHT), row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
+        addOptionSettingRow(settingsGrid, row, ClientConfig.HUD_ENABLED, createOnOffOptionButton(ClientConfig.HUD_ENABLED,
+                this::onHudEnabledChanged));
 
-        labelFullscreenButtons = miscLayout.addChild(new StringWidget(fullscreenButtonsLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelFullscreenButtons.setTooltip(fullscreenButtonsTooltip);
-        buttonFullscreenButtons = miscLayout.addChild(new OptionButton(font, 40, (b) -> ClientConfig.FULLSCREEN_BUTTONS.set(b.getSelected() == 0)), row++, 1);
-        buttonFullscreenButtons.addOption(onLabel);
-        buttonFullscreenButtons.addOption(offLabel);
-        buttonFullscreenButtons.setSelected(ClientConfig.FULLSCREEN_BUTTONS.get() ? 0 : 1);
+        buttonEditHUD = generalLayout.addChild(createWideSimpleButton(100, editHudLabel, b -> onEditHUDPressed()));
+    }
 
-        labelAskConfirmationFrontierDelete = miscLayout.addChild(new StringWidget(askConfirmationFrontierDeleteLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelAskConfirmationFrontierDelete.setTooltip(askConfirmationFrontierDeleteTooltip);
-        buttonAskConfirmationFrontierDelete = miscLayout.addChild(new OptionButton(font, 40, (b) -> ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.set(b.getSelected() == 0)), row++, 1);
-        buttonAskConfirmationFrontierDelete.addOption(onLabel);
-        buttonAskConfirmationFrontierDelete.addOption(offLabel);
-        buttonAskConfirmationFrontierDelete.setSelected(ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.get() ? 0 : 1);
-
-        labelAskConfirmationGroupDelete = miscLayout.addChild(new StringWidget(askConfirmationGroupDeleteLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelAskConfirmationGroupDelete.setTooltip(askConfirmationGroupDeleteTooltip);
-        buttonAskConfirmationGroupDelete = miscLayout.addChild(new OptionButton(font, 40, (b) -> ClientConfig.ASK_CONFIRMATION_GROUP_DELETE.set(b.getSelected() == 0)), row++, 1);
-        buttonAskConfirmationGroupDelete.addOption(onLabel);
-        buttonAskConfirmationGroupDelete.addOption(offLabel);
-        buttonAskConfirmationGroupDelete.setSelected(ClientConfig.ASK_CONFIRMATION_GROUP_DELETE.get() ? 0 : 1);
-
-        labelAskConfirmationUserDelete = miscLayout.addChild(new StringWidget(askConfirmationUserDeleteLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelAskConfirmationUserDelete.setTooltip(askConfirmationUserDeleteTooltip);
-        buttonAskConfirmationUserDelete = miscLayout.addChild(new OptionButton(font, 40, (b) -> ClientConfig.ASK_CONFIRMATION_USER_DELETE.set(b.getSelected() == 0)), row++, 1);
-        buttonAskConfirmationUserDelete.addOption(onLabel);
-        buttonAskConfirmationUserDelete.addOption(offLabel);
-        buttonAskConfirmationUserDelete.setSelected(ClientConfig.ASK_CONFIRMATION_USER_DELETE.get() ? 0 : 1);
-
-        miscLayout.addChild(SpacerElement.height(4), row++, 0);
-        miscLayout.addChild(new StringWidget(hudLabel, font).setColor(ColorConstants.TEXT_HIGHLIGHT), row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
-
-        labelHUDEnabled = miscLayout.addChild(new StringWidget(hudEnabledLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelHUDEnabled.setTooltip(hudEnabledTooltip);
-        buttonHUDEnabled = miscLayout.addChild(new OptionButton(font, 40, (b) -> {
-            ClientConfig.HUD_ENABLED.set(b.getSelected() == 0);
-            updateButtonsVisibility();
-        }), row++, 1);
-        buttonHUDEnabled.addOption(onLabel);
-        buttonHUDEnabled.addOption(offLabel);
-        buttonHUDEnabled.setSelected(ClientConfig.HUD_ENABLED.get() ? 0 : 1);
-
-        buttonEditHUD = generalLayout.addChild(new SimpleButton(font, 100, editHudLabel, (b) -> {
-            MapFrontiersClient.setLastSettingsTab(tabSelected);
-            new HUDSettings().display();
-        }) {
-            public @NotNull ScreenRectangle getRectangle() {
-                return new ScreenRectangle(this.getX(), this.getY(), getWidth() + 100, this.getHeight());
-            }
-        });
-
-        LinearLayout groupsLayout = LinearLayout.horizontal().spacing(4);
+    private void buildGroupsTab() {
+        LinearLayout groupsLayout = LinearLayout.horizontal().spacing(SECTION_SPACING_SMALL);
         groupsLayout.defaultCellSetting().alignHorizontallyLeft();
         tabbedBox.addChild(groupsLayout, Tab.Groups.ordinal());
 
-        LinearLayout groupsCol = LinearLayout.vertical().spacing(4);
-        groupsCol.defaultCellSetting().alignHorizontallyCenter();
-        groupsLayout.addChild(groupsCol);
+        LinearLayout groupsColumn = LinearLayout.vertical().spacing(SECTION_SPACING_SMALL);
+        groupsColumn.defaultCellSetting().alignHorizontallyCenter();
+        groupsLayout.addChild(groupsColumn);
+        buildGroupsList(groupsColumn);
+        buildNewGroupControls(groupsColumn);
 
-        groups = groupsCol.addChild(new ScrollBox(actualHeight - 120, 160, 16));
+        LinearLayout usersColumn = LinearLayout.vertical().spacing(SECTION_SPACING_SMALL);
+        usersColumn.defaultCellSetting().alignHorizontallyLeft();
+        groupsLayout.addChild(usersColumn);
+        buildUsersPanel(usersColumn);
+        buildNewUserControls(usersColumn);
+    }
+
+    private void buildGroupsList(LinearLayout groupsColumn) {
+        groups = groupsColumn.addChild(new ScrollBox(actualHeight - 120, GROUPS_SCROLL_WIDTH, 16));
         groups.setElementClickedCallback(element -> {
-            groupClicked((GroupElement) element);
+            onGroupElementClicked((GroupElement) element);
             updateButtonsVisibility();
         });
-        groups.setElementDeletePressedCallback(element -> {
-            if (groups.getSelectedElement() != null) {
-                groupClicked((GroupElement) element);
-            }
-            if (ClientConfig.ASK_CONFIRMATION_GROUP_DELETE.get()) {
-                new DeleteConfirmationDialog(
-                        "mapfrontiers.delete_group_dialog",
-                        response -> {
-                            if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                                ClientConfig.ASK_CONFIRMATION_GROUP_DELETE.set(false);
-                                buttonAskConfirmationGroupDelete.setSelected(1);
-                                ClientGlobalEvents.postUpdatedConfigEvent();
-                            }
-                            groups.removeElement(element);
-                            settings.removeCustomGroup(((GroupElement) element).getGroup());
-                            sendChangesToServer();
-                        }
-                ).display();
-            } else {
-                groups.removeElement(element);
-                settings.removeCustomGroup(((GroupElement) element).getGroup());
-                sendChangesToServer();
-            }
-        });
+        groups.setElementDeletePressedCallback(this::onGroupDeletePressed);
+    }
 
-        LinearLayout newGroupLayout = LinearLayout.horizontal().spacing(4);
-        groupsCol.addChild(newGroupLayout);
+    private void buildNewGroupControls(LinearLayout groupsColumn) {
+        LinearLayout newGroupLayout = LinearLayout.horizontal().spacing(SECTION_SPACING_SMALL);
+        groupsColumn.addChild(newGroupLayout);
 
-        textNewGroupName = newGroupLayout.addChild(new TextBox(font, 140, I18n.get("mapfrontiers.new_group_name")));
+        textNewGroupName = newGroupLayout.addChild(new TextBox(font, GROUP_NAME_WIDTH, I18n.get("mapfrontiers.new_group_name")));
         textNewGroupName.setMaxLength(22);
-        textNewGroupName.setSubmitCallback((value) -> newGroupPressed());
+        textNewGroupName.setSubmitCallback(value -> onNewGroupPressed());
 
-        buttonNewGroup = newGroupLayout.addChild(new IconButton(IconButton.Type.Add, (b) -> newGroupPressed()));
+        buttonNewGroup = newGroupLayout.addChild(new IconButton(IconButton.Type.Add, b -> onNewGroupPressed()));
+    }
 
-        LinearLayout usersCol = LinearLayout.vertical().spacing(4);
-        usersCol.defaultCellSetting().alignHorizontallyLeft();
-        groupsLayout.addChild(usersCol);
-
-        textGroupName = usersCol.addChild(new TextBox(font, 140));
+    private void buildUsersPanel(LinearLayout usersColumn) {
+        textGroupName = usersColumn.addChild(new TextBox(font, GROUP_NAME_WIDTH));
         textGroupName.setMaxLength(22);
-        textGroupName.setLostFocusCallback(value -> {
-            if (tabSelected == Tab.Groups) {
-                GroupElement groupElement = (GroupElement) groups.getSelectedElement();
-                if (groupElement != null) {
-                    groupElement.getGroup().setName(value);
-                    sendChangesToServer();
-                }
-            }
-        });
+        textGroupName.setLostFocusCallback(this::onGroupNameLostFocus);
 
-        labelGroupDesc = usersCol.addChild(new MultiLineTextWidget(groupOpsDescLabel.copy().withColor(ColorConstants.TEXT), font));
+        labelGroupDesc = usersColumn.addChild(new MultiLineTextWidget(groupOpsDescLabel.copy().withColor(ColorConstants.TEXT), font));
 
-        users = usersCol.addChild(new ScrollBox(actualHeight - 160, 258, 16));
-        users.setElementDeletePressedCallback(element -> {
-            SettingsGroup group = ((GroupElement) groups.getSelectedElement()).getGroup();
-            if (ClientConfig.ASK_CONFIRMATION_USER_DELETE.get()) {
-                new DeleteConfirmationDialog(
-                        "mapfrontiers.delete_user_dialog",
-                        response -> {
-                            if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                                ClientConfig.ASK_CONFIRMATION_USER_DELETE.set(false);
-                                buttonAskConfirmationUserDelete.setSelected(1);
-                                ClientGlobalEvents.postUpdatedConfigEvent();
-                            }
-                            users.removeElement(element);
-                            group.removeUser(((UserElement) element).getUser());
-                            sendChangesToServer();
-                        }
-                ).display();
-            } else {
-                users.removeElement(element);
-                group.removeUser(((UserElement) element).getUser());
-                sendChangesToServer();
-            }
-        });
+        users = usersColumn.addChild(new ScrollBox(actualHeight - 160, USERS_SCROLL_WIDTH, 16));
+        users.setElementDeletePressedCallback(this::onUserDeletePressed);
+    }
 
-        LinearLayout newUserLayout = LinearLayout.horizontal().spacing(4);
-        usersCol.addChild(newUserLayout);
+    private void buildNewUserControls(LinearLayout usersColumn) {
+        LinearLayout newUserLayout = LinearLayout.horizontal().spacing(SECTION_SPACING_SMALL);
+        usersColumn.addChild(newUserLayout);
 
-        textNewUser = newUserLayout.addChild(new TextBoxUser(minecraft, font, 238, I18n.get("mapfrontiers.new_user")));
+        textNewUser = newUserLayout.addChild(new TextBoxUser(minecraft, font, NEW_USER_WIDTH, I18n.get("mapfrontiers.new_user")));
         textNewUser.setMaxLength(38);
-        textNewUser.setSubmitCallback((value) -> newUserPressed());
+        textNewUser.setSubmitCallback(value -> onNewUserPressed());
 
-        buttonNewUser = newUserLayout.addChild(new IconButton(IconButton.Type.Add, (b) -> newUserPressed()));
+        buttonNewUser = newUserLayout.addChild(new IconButton(IconButton.Type.Add, b -> onNewUserPressed()));
+    }
 
-        LinearLayout actionsLayout = LinearLayout.vertical().spacing(8);
+    private void buildActionsTab() {
+        LinearLayout actionsLayout = LinearLayout.vertical().spacing(SECTION_SPACING_MEDIUM);
         actionsLayout.defaultCellSetting().alignHorizontallyCenter();
         tabbedBox.addChild(actionsLayout, Tab.Actions.ordinal());
 
         LinearLayout actionsHeader = LinearLayout.horizontal();
         actionsLayout.addChild(actionsHeader);
 
-        labelCreateFrontier = actionsHeader.addChild(new MultiLineTextWidget(createGlobalFrontierLabel.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
-        labelCreateFrontier.setCentered(true);
-        labelDeleteFrontier = actionsHeader.addChild(new MultiLineTextWidget(deleteGlobalFrontierLabel.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
-        labelDeleteFrontier.setCentered(true);
-        labelUpdateFrontier = actionsHeader.addChild(new MultiLineTextWidget(updateGlobalFrontierLabel.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
-        labelUpdateFrontier.setCentered(true);
-        labelUpdateSettings = actionsHeader.addChild(new MultiLineTextWidget(updateSettingsLabel.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
-        labelUpdateSettings.setCentered(true);
-        labelSharePersonalFrontier = actionsHeader.addChild(new MultiLineTextWidget(sharePersonalFrontierLabel.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
-        labelSharePersonalFrontier.setCentered(true);
+        labelCreateFrontier = actionsHeader.addChild(createActionsHeaderLabel(createGlobalFrontierLabel));
+        labelDeleteFrontier = actionsHeader.addChild(createActionsHeaderLabel(deleteGlobalFrontierLabel));
+        labelUpdateFrontier = actionsHeader.addChild(createActionsHeaderLabel(updateGlobalFrontierLabel));
+        labelUpdateSettings = actionsHeader.addChild(createActionsHeaderLabel(updateSettingsLabel));
+        labelSharePersonalFrontier = actionsHeader.addChild(createActionsHeaderLabel(sharePersonalFrontierLabel));
 
-        groupsActions = actionsLayout.addChild(new ScrollBox(actualHeight - 128, 430, 16));
+        groupsActions = actionsLayout.addChild(new ScrollBox(actualHeight - 128, ACTIONS_SCROLL_WIDTH, 16));
+    }
 
-        buttonDone = bottomButtons.addChild(new SimpleButton(font, 140, doneLabel, (b) -> onClose()));
+    private void buildBottomButtons() {
+        bottomButtons.addChild(new SimpleButton(font, DONE_BUTTON_WIDTH, doneLabel, b -> onClose()));
+    }
 
-        tabbedBox.setTabSelected(tabSelected.ordinal());
+    private LinkButton createExternalLinkButton(Component label, String url) {
+        return new LinkButton(font, label, b -> openExternalLink(url));
+    }
+
+    private LinkButton createWideExternalLinkButton(Component label, String url) {
+        return new LinkButton(font, label, b -> openExternalLink(url)) {
+            @Override
+            public @NotNull ScreenRectangle getRectangle() {
+                return new ScreenRectangle(this.getX() - WIDE_LINK_EXTRA_WIDTH / 2, this.getY(),
+                        this.getWidth() + WIDE_LINK_EXTRA_WIDTH, this.getHeight());
+            }
+        };
+    }
+
+    private SimpleButton createWideSimpleButton(int width, Component label, SimpleButton.OnPress onPress) {
+        return new SimpleButton(font, width, label, onPress) {
+            @Override
+            public @NotNull ScreenRectangle getRectangle() {
+                return new ScreenRectangle(this.getX(), this.getY(), getWidth() + WIDE_BUTTON_EXTRA_WIDTH,
+                        this.getHeight());
+            }
+        };
+    }
+
+    private OptionButton createOnOffOptionButton(BooleanConfigEntry entry) {
+        return createOnOffOptionButton(entry, entry::set);
+    }
+
+    private OptionButton createOnOffOptionButton(BooleanConfigEntry entry, Consumer<Boolean> consumer) {
+        OptionButton button = new OptionButton(font, DEFAULT_OPTION_WIDTH, b -> consumer.accept(b.getSelected() == 0));
+        button.addOption(onLabel);
+        button.addOption(offLabel);
+        button.setSelected(entry.get() ? 0 : 1);
+        return button;
+    }
+
+    private TextBoxInt createIntConfigTextBox(IntConfigEntry entry, int width, int maxLength) {
+        TextBoxInt textBox = new TextBoxInt(entry.defaultValue(), entry.minValue(), entry.maxValue(), font, width);
+        textBox.setValue(String.valueOf(entry.get()));
+        textBox.setMaxLength(maxLength);
+        textBox.setValueChangedCallback(entry::set);
+        return textBox;
+    }
+
+    private TextBoxInt createWideIntConfigTextBox(IntConfigEntry entry, int width, int maxLength) {
+        TextBoxInt textBox = new TextBoxInt(entry.defaultValue(), entry.minValue(), entry.maxValue(), font, width) {
+            @Override
+            public @NotNull ScreenRectangle getRectangle() {
+                return new ScreenRectangle(this.getX() - WIDE_TEXTBOX_EXTRA_WIDTH, this.getY(),
+                        this.getWidth() + WIDE_TEXTBOX_EXTRA_WIDTH, this.getHeight());
+            }
+        };
+        textBox.setValue(String.valueOf(entry.get()));
+        textBox.setMaxLength(maxLength);
+        textBox.setValueChangedCallback(entry::set);
+        return textBox;
+    }
+
+    private int addIntSettingRow(GridLayout settingsGrid, int row, IntConfigEntry entry, int width, int maxLength) {
+        return addIntSettingRow(settingsGrid, row, entry, createIntConfigTextBox(entry, width, maxLength));
+    }
+
+    private int addIntSettingRow(GridLayout settingsGrid, int row, IntConfigEntry entry, TextBoxInt textBox) {
+        settingsGrid.addChild(createConfigLabel(entry), row, 0);
+        settingsGrid.addChild(textBox, row, 1);
+        return row + 1;
+    }
+
+    private int addOptionSettingRow(GridLayout settingsGrid, int row, BooleanConfigEntry entry) {
+        return addOptionSettingRow(settingsGrid, row, entry, createOnOffOptionButton(entry));
+    }
+
+    private int addOptionSettingRow(GridLayout settingsGrid, int row, BooleanConfigEntry entry, OptionButton button) {
+        settingsGrid.addChild(createConfigLabel(entry), row, 0);
+        settingsGrid.addChild(button, row, 1);
+        return row + 1;
+    }
+
+    private StringWidget createConfigLabel(ConfigEntry<?, ?> entry) {
+        StringWidget label = new StringWidget(entry.translatedName(), font).setColor(ColorConstants.TEXT);
+        label.setTooltip(tooltip(entry));
+        return label;
+    }
+
+    private MultiLineTextWidget createActionsHeaderLabel(Component label) {
+        MultiLineTextWidget widget = new MultiLineTextWidget(label.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font);
+        widget.setCentered(true);
+        return widget;
+    }
+
+    private void openExternalLink(String url) {
+        MapFrontiersClient.setLastSettingsTab(tabSelected);
+        ConfirmLinkScreen.confirmLinkNow(this, url, false);
+    }
+
+    private void onFrontierAppearancePressed() {
+        new FrontierAppearanceDialog().display();
+    }
+
+    private void onForcedVisibilityPressed() {
+        new VisibilityDialog(createForcedVisibility(), createForcedVisibilityMask(), this::setForcedVisibility).display();
+    }
+
+    private void onEditHUDPressed() {
+        MapFrontiersClient.setLastSettingsTab(tabSelected);
+        new HUDSettings().display();
+    }
+
+    private void onHudEnabledChanged(boolean enabled) {
+        ClientConfig.HUD_ENABLED.set(enabled);
         updateButtonsVisibility();
+    }
 
+    private void onGroupElementClicked(GroupElement element) {
+        groupClicked(element);
+    }
+
+    private void onGroupDeletePressed(ScrollElement element) {
+        if (groups.getSelectedElement() != null) {
+            groupClicked((GroupElement) element);
+        }
+
+        if (ClientConfig.ASK_CONFIRMATION_GROUP_DELETE.get()) {
+            showDeleteGroupConfirmation(element);
+        } else {
+            deleteGroup(element);
+        }
+    }
+
+    private void showDeleteGroupConfirmation(ScrollElement element) {
+        new DeleteConfirmationDialog(
+                "mapfrontiers.delete_group_dialog",
+                response -> {
+                    if (response == ConfirmationDialog.Response.ConfirmAlternative) {
+                        ClientConfig.ASK_CONFIRMATION_GROUP_DELETE.set(false);
+                        buttonAskConfirmationGroupDelete.setSelected(1);
+                        ClientGlobalEvents.postUpdatedConfigEvent();
+                    }
+                    deleteGroup(element);
+                }
+        ).display();
+    }
+
+    private void deleteGroup(ScrollElement element) {
+        groups.removeElement(element);
+        settings.removeCustomGroup(((GroupElement) element).getGroup());
+        sendChangesToServer();
+    }
+
+    private void onUserDeletePressed(ScrollElement element) {
+        GroupElement selectedGroup = (GroupElement) groups.getSelectedElement();
+        if (selectedGroup == null) {
+            return;
+        }
+
+        SettingsGroup group = selectedGroup.getGroup();
+        if (ClientConfig.ASK_CONFIRMATION_USER_DELETE.get()) {
+            showDeleteUserConfirmation(group, element);
+        } else {
+            deleteUser(group, element);
+        }
+    }
+
+    private void showDeleteUserConfirmation(SettingsGroup group, ScrollElement element) {
+        new DeleteConfirmationDialog(
+                "mapfrontiers.delete_user_dialog",
+                response -> {
+                    if (response == ConfirmationDialog.Response.ConfirmAlternative) {
+                        ClientConfig.ASK_CONFIRMATION_USER_DELETE.set(false);
+                        buttonAskConfirmationUserDelete.setSelected(1);
+                        ClientGlobalEvents.postUpdatedConfigEvent();
+                    }
+                    deleteUser(group, element);
+                }
+        ).display();
+    }
+
+    private void deleteUser(SettingsGroup group, ScrollElement element) {
+        users.removeElement(element);
+        group.removeUser(((UserElement) element).getUser());
+        sendChangesToServer();
+    }
+
+    private void onGroupNameLostFocus(String value) {
+        if (tabSelected == Tab.Groups) {
+            GroupElement groupElement = (GroupElement) groups.getSelectedElement();
+            if (groupElement != null) {
+                groupElement.getGroup().setName(value);
+                sendChangesToServer();
+            }
+        }
+    }
+
+    private void onNewGroupPressed() {
+        newGroupPressed();
+    }
+
+    private void onNewUserPressed() {
+        newUserPressed();
+    }
+
+    private void refreshViewState() {
+        restoreInitialTabSelection();
+        updateButtonsVisibility();
+    }
+
+    private void restoreInitialTabSelection() {
+        tabbedBox.setTabSelected(tabSelected.ordinal());
+    }
+
+    private void requestInitialDataIfNeeded() {
         if (MapFrontiersClient.isModOnServer()) {
             PacketHandler.sendToServer(new PacketRequestFrontierSettings());
         }
@@ -510,7 +606,7 @@ public class ModSettings extends AutoScaledScreen {
 
     @Override
     public void repositionElements() {
-        tabbedBox.setSize(actualWidth - 80, actualHeight - 64);
+        tabbedBox.setSize(actualWidth - TABBED_BOX_MARGIN_X, actualHeight - TABBED_BOX_MARGIN_Y);
         groups.setHeight(actualHeight - 120);
         users.setHeight(actualHeight - 160);
         groupsActions.setHeight(actualHeight - 128);
