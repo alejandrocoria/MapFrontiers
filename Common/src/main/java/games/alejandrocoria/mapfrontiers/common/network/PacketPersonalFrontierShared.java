@@ -20,6 +20,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class PacketPersonalFrontierShared {
+    private static final int MAX_NAME_CHARACTERS = 48;
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_personal_frontier_shared");
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketPersonalFrontierShared> STREAM_CODEC = StreamCodec.ofMember(PacketPersonalFrontierShared::encode, PacketPersonalFrontierShared::new);
 
@@ -51,8 +52,8 @@ public class PacketPersonalFrontierShared {
                 this.shareMessageID = buf.readInt();
                 this.playerSharing.fromBytes(buf);
                 this.owner.fromBytes(buf);
-                this.name1 = buf.readUtf(17);
-                this.name2 = buf.readUtf(17);
+                this.name1 = buf.readUtf(MAX_NAME_CHARACTERS);
+                this.name2 = buf.readUtf(MAX_NAME_CHARACTERS);
             }
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketPersonalFrontierShared: %s", t));
@@ -64,8 +65,8 @@ public class PacketPersonalFrontierShared {
             buf.writeInt(shareMessageID);
             playerSharing.toBytes(buf);
             owner.toBytes(buf);
-            buf.writeUtf(name1);
-            buf.writeUtf(name2);
+            buf.writeUtf(name1, MAX_NAME_CHARACTERS);
+            buf.writeUtf(name2, MAX_NAME_CHARACTERS);
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketPersonalFrontierShared: %s", t));
         }

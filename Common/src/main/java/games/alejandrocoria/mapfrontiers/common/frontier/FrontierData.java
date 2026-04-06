@@ -788,10 +788,9 @@ public class FrontierData {
         visibilityData.fromBytes(buf);
         color = buf.readInt();
 
-        int maxCharacters = 17;
-        int maxBytes = maxCharacters * 4;
-        name1 = buf.readUtf(maxBytes);
-        name2 = buf.readUtf(maxBytes);
+        int maxCharacters = 48;
+        name1 = buf.readUtf(maxCharacters);
+        name2 = buf.readUtf(maxCharacters);
 
         if (name1.length() > maxCharacters) {
             name1 = name1.substring(0, maxCharacters);
@@ -872,10 +871,9 @@ public class FrontierData {
         visibilityData.toBytes(buf);
         buf.writeInt(color);
 
-        int maxCharacters = 17;
-        int maxBytes = maxCharacters * 4;
-        buf.writeUtf(name1, maxBytes);
-        buf.writeUtf(name2, maxBytes);
+        int maxCharacters = 48;
+        buf.writeUtf(name1, maxCharacters);
+        buf.writeUtf(name2, maxCharacters);
 
         if (banner == null) {
             buf.writeBoolean(false);
