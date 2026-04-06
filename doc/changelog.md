@@ -1,5 +1,6 @@
 **Beta 2:**
 * API - Added: Temporary personal frontiers that exist only for the current session and are not saved, synchronized, or shareable.
+* Fixed: Strange behavior of the maximum limit of int text box.
 
 **Beta 1:**
 * Added: API available soon.

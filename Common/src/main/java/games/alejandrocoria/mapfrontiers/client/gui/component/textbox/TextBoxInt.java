@@ -46,6 +46,7 @@ public class TextBoxInt extends EditBox {
 
         try {
             int current = Integer.parseInt(getValue());
+            current = Math.clamp(current, min, max);
             this.setValue(current);
         } catch (Exception e) {
             this.setValue(currentString);
