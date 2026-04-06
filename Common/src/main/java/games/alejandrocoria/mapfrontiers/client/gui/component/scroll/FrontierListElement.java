@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.scroll;
 
 import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
@@ -9,13 +10,28 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.resources.language.I18n;
+import net.minecraft.resources.Identifier;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class FrontierListElement extends ScrollBox.ScrollElement {
+    private static final Identifier nameFadeTexture = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/frontier_list_name_fade.png");
+    private static final int NAME_HOVER_X = 24;
+    private static final int NAME_X = 26;
+    private static final int METADATA_X = 170;
+    private static final int COUNTS_X_OFFSET = 10;
+    private static final int OWNER_X_OFFSET = 20;
+    private static final int NAME_METADATA_SPACING = 2;
+    private static final int NAME_LINE_1_Y = 4;
+    private static final int NAME_LINE_2_Y = 14;
+    private static final int NAME_LINE_BG_TOP_OFFSET = -1;
+    private static final int NAME_LINE_BG_BOTTOM_OFFSET = 9;
+    private static final int NAME_LINE_BG_FADE_WIDTH = 6;
+    private static final String ELLIPSIS = "...";
     private final Font font;
     private final FrontierOverlay frontier;
     private final String name1;
@@ -87,28 +103,76 @@ public class FrontierListElement extends ScrollBox.ScrollElement {
         }
 
         int hiddenColor = ColorConstants.TEXT_DARK;
+        int maxNameWidth = METADATA_X - NAME_X - NAME_METADATA_SPACING;
+        String visibleName1 = ellipsize(name1, maxNameWidth);
+        String visibleName2 = ellipsize(name2, maxNameWidth);
+        boolean name1Truncated = !visibleName1.equals(name1);
+        boolean name2Truncated = !visibleName2.equals(name2);
+        boolean showExpandedNames = isNameAreaHovered(mouseX, mouseY) && (name1Truncated || name2Truncated);
 
-        if (frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier)) {
-            graphics.text(font, name1, x + 26, y + 4, color);
-            graphics.text(font, name2, x + 26, y + 14, color);
-        } else {
-            graphics.text(font, ChatFormatting.STRIKETHROUGH + name1, x + 26, y + 4, hiddenColor);
-            graphics.text(font, ChatFormatting.STRIKETHROUGH + name2, x + 26, y + 14, hiddenColor);
-        }
-
-        graphics.text(font, type, x + 170, y + 4, color);
-        graphics.text(font, dimension, x + 170, y + 14, ColorConstants.TEXT_DIMENSION);
+        graphics.text(font, type, x + METADATA_X, y + 4, color);
+        graphics.text(font, dimension, x + METADATA_X, y + 14, ColorConstants.TEXT_DIMENSION);
 
         if (frontier.getMode() == FrontierData.Mode.Vertex) {
-            graphics.text(font, vertices, x + 180 + offset1, y + 4, color);
+            graphics.text(font, vertices, x + METADATA_X + COUNTS_X_OFFSET + offset1, y + 4, color);
         } else {
-            graphics.text(font, chunks, x + 180 + offset1, y + 4, color);
+            graphics.text(font, chunks, x + METADATA_X + COUNTS_X_OFFSET + offset1, y + 4, color);
         }
 
-        graphics.text(font, owner, x + 190 + offset1 + offset2, y + 4, color);
+        graphics.text(font, owner, x + METADATA_X + OWNER_X_OFFSET + offset1 + offset2, y + 4, color);
+
+        drawNameLine(graphics, name1, visibleName1, name1Truncated, showExpandedNames, NAME_LINE_1_Y,
+                frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier), color, hiddenColor);
+        drawNameLine(graphics, name2, visibleName2, name2Truncated, showExpandedNames, NAME_LINE_2_Y,
+                frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier), color, hiddenColor);
 
         graphics.fill(x + 1, y + 1, x + 23, y + 23, ColorConstants.COLOR_INDICATOR_BORDER);
         graphics.fill(x + 2, y + 2, x + 22, y + 22, frontier.getColor() | 0xff000000);
+    }
+
+    private void drawNameLine(GuiGraphicsExtractor graphics,
+                              String fullName,
+                              String visibleName,
+                              boolean truncated,
+                              boolean showExpandedNames,
+                              int lineY,
+                              boolean visible,
+                              int visibleColor,
+                              int hiddenColor) {
+        String renderedName = showExpandedNames && truncated ? fullName : visibleName;
+
+        if (showExpandedNames && truncated) {
+            int textWidth = font.width(fullName);
+            int bgLeft = x + NAME_X - 1;
+            int bgOpaqueRight = bgLeft + textWidth + 2;
+            graphics.fill(bgLeft, y + lineY + NAME_LINE_BG_TOP_OFFSET, bgOpaqueRight, y + lineY + NAME_LINE_BG_BOTTOM_OFFSET, ColorConstants.SCROLL_ELEMENT_SELECTED);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, nameFadeTexture, bgOpaqueRight, y + lineY + NAME_LINE_BG_TOP_OFFSET, 0, 0,
+                    NAME_LINE_BG_FADE_WIDTH, NAME_LINE_BG_BOTTOM_OFFSET - NAME_LINE_BG_TOP_OFFSET, NAME_LINE_BG_FADE_WIDTH,
+                    NAME_LINE_BG_BOTTOM_OFFSET - NAME_LINE_BG_TOP_OFFSET, ColorConstants.SCROLL_ELEMENT_SELECTED);
+        }
+
+        if (visible) {
+            graphics.text(font, renderedName, x + NAME_X, y + lineY, visibleColor);
+        } else {
+            graphics.text(font, ChatFormatting.STRIKETHROUGH + renderedName, x + NAME_X, y + lineY, hiddenColor);
+        }
+    }
+
+    private String ellipsize(String text, int maxWidth) {
+        if (font.width(text) <= maxWidth) {
+            return text;
+        }
+
+        int ellipsisWidth = font.width(ELLIPSIS);
+        if (ellipsisWidth >= maxWidth) {
+            return font.plainSubstrByWidth(ELLIPSIS, maxWidth);
+        }
+
+        return font.plainSubstrByWidth(text, maxWidth - ellipsisWidth) + ELLIPSIS;
+    }
+
+    private boolean isNameAreaHovered(int mouseX, int mouseY) {
+        return mouseX >= x + NAME_HOVER_X && mouseY >= y && mouseX < x + METADATA_X && mouseY < y + height;
     }
 
     @Override

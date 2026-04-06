@@ -51,6 +51,7 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Stack;
 import java.util.function.Consumer;
@@ -111,17 +112,16 @@ public class FrontierInfo extends AutoScaledScreen {
     private static final Tooltip assignBannerWarnTooltip = Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET).append(Component.translatable("mapfrontiers.assign_banner_warn")));
     private static final int MAIN_LAYOUT_SPACING = 10;
     private static final int SECTION_WIDTH = 144;
-    private static final int NAME_MAX_LENGTH = 17;
+    private static final int NAME_SECTION_WIDTH = SECTION_WIDTH * 2 + MAIN_LAYOUT_SPACING + 1;
+    private static final int NAME_MAX_LENGTH = 48;
     private static final int DEFAULT_TEXTBOX_HEIGHT = 20;
     private static final int SECTION_SPACING_SMALL = 2;
     private static final int SECTION_SPACING_MEDIUM = 4;
     private static final int INLINE_SPACING = 3;
-    private static final int METADATA_SPACING = 12;
     private static final int OPTION_BUTTON_WIDTH = 28;
     private static final int RGB_LABEL_HEIGHT = 8;
-    private static final int RGB_TEXTBOX_INPUT_WIDTH = 29;
-    private static final int RGB_TEXTBOX_WIDTH = 34;
-    private static final int RGB_ROW_SPACER_WIDTH = 1;
+    private static final int RGB_TEXTBOX_WIDTH = 33;
+    private static final int RGB_ROW_SPACER_WIDTH = 3;
     private static final int CLIPBOARD_SPACER_WIDTH = 116;
 
     private final IClientAPI jmAPI;
@@ -166,7 +166,7 @@ public class FrontierInfo extends AutoScaledScreen {
     private final Stack<FrontierData> redoStack = new Stack<>();
 
     public FrontierInfo(IClientAPI jmAPI, FrontierOverlay frontier) {
-        super(titleLabel, 636, 350);
+        super(titleLabel, 636, 306);
         this.jmAPI = jmAPI;
         this.frontier = frontier;
         frontierHash = frontier.getHash();
@@ -205,9 +205,8 @@ public class FrontierInfo extends AutoScaledScreen {
         GridLayout mainLayout = createMainLayout();
 
         buildBannerSection(mainLayout);
-        buildNameSection(mainLayout);
-        buildMetadataSection(mainLayout);
-        buildVisibilitySection(mainLayout);
+        buildOverviewSection(mainLayout);
+        buildInfoSection(mainLayout);
         buildColorSection(mainLayout);
         buildClipboardSection(mainLayout);
 
@@ -235,12 +234,17 @@ public class FrontierInfo extends AutoScaledScreen {
         bannerColumn.addChild(sliderBannerRotation);
     }
 
-    private void buildNameSection(GridLayout mainLayout) {
+    private void buildOverviewSection(GridLayout mainLayout) {
         LinearLayout nameColumn = LinearLayout.vertical().spacing(SECTION_SPACING_SMALL);
         nameColumn.defaultCellSetting().alignHorizontallyLeft();
-        mainLayout.addChild(nameColumn, 0, 1, 2, 1);
+        mainLayout.addChild(nameColumn, 0, 1, 1, 2);
 
-        nameColumn.addChild(new StringWidget(nameLabel, font).setColor(ColorConstants.INFO_LABEL_TEXT));
+        LinearLayout headerRow = LinearLayout.horizontal().spacing(SECTION_SPACING_SMALL);
+        Component dimension = Component.translatable(dimensionKey, frontier.getDimension().identifier().toString());
+        headerRow.addChild(new StringWidget(nameLabel, font).setColor(ColorConstants.INFO_LABEL_TEXT));
+        headerRow.addChild(SpacerElement.width(Math.max(0, NAME_SECTION_WIDTH - font.width(nameLabel.getVisualOrderText()) - font.width(dimension.getVisualOrderText()) - SECTION_SPACING_SMALL - 1)));
+        headerRow.addChild(new StringWidget(dimension, font).setColor(ColorConstants.TEXT_DIMENSION));
+        nameColumn.addChild(headerRow);
 
         textName1 = createNameTextBox(frontier.getName1(), value -> {
             if (!frontier.getName1().equals(value)) {
@@ -255,10 +259,34 @@ public class FrontierInfo extends AutoScaledScreen {
             }
         });
         nameColumn.addChild(textName2);
+
+        nameColumn.addChild(SpacerElement.height(0));
+
+        Component sourceInfo = Component.empty();
+        if (frontier.getSourcePluginId() != null) {
+            sourceInfo = frontier.isSessionOnly()
+                    ? Component.translatable(temporarySourcePluginKey, frontier.getSourcePluginId())
+                    : Component.translatable(sourcePluginKey, frontier.getSourcePluginId());
+        } else if (frontier.isSessionOnly()) {
+            sourceInfo = Component.translatable(temporaryKey);
+        }
+        nameColumn.addChild(new StringWidget(sourceInfo, font).setColor(ColorConstants.TEXT_SOURCE_PLUGIN));
+
+        LinearLayout visibilityRow = LinearLayout.horizontal().spacing(MAIN_LAYOUT_SPACING + 1);
+        visibilityRow.defaultCellSetting().alignVerticallyMiddle();
+        nameColumn.addChild(visibilityRow);
+
+        buttonVisibility = new SimpleButton(font, SECTION_WIDTH, visibilityLabel, b -> onVisibilityButtonPressed());
+        buttonVisibility.setTooltip(visibilityTooltip);
+        visibilityRow.addChild(buttonVisibility);
+
+        buttonVisibilityOverride = new SimpleButton(font, SECTION_WIDTH, visibilityOverrideLabel, b -> onVisibilityOverrideButtonPressed());
+        buttonVisibilityOverride.setTooltip(visibilityOverrideTooltip);
+        visibilityRow.addChild(buttonVisibilityOverride);
     }
 
     private TextBox createNameTextBox(String initialValue, Consumer<String> setter) {
-        TextBox textBox = new TextBox(font, SECTION_WIDTH);
+        TextBox textBox = new TextBox(font, NAME_SECTION_WIDTH);
         textBox.setMaxLength(NAME_MAX_LENGTH);
         textBox.setHeight(DEFAULT_TEXTBOX_HEIGHT);
         textBox.setValue(initialValue);
@@ -267,15 +295,23 @@ public class FrontierInfo extends AutoScaledScreen {
         return textBox;
     }
 
-    private void buildMetadataSection(GridLayout mainLayout) {
-        LinearLayout metadataColumn = LinearLayout.vertical();
-        mainLayout.addChild(metadataColumn, 0, 2, 1, 2, LayoutSettings.defaults().alignHorizontallyLeft());
+    private void buildInfoSection(GridLayout mainLayout) {
+        LinearLayout infoColumn = LinearLayout.vertical().spacing(SECTION_SPACING_SMALL);
+        mainLayout.addChild(infoColumn, 0, 3, 1, 1, LayoutSettings.defaults().alignHorizontallyLeft());
 
-        LinearLayout summaryRow = LinearLayout.horizontal().spacing(METADATA_SPACING);
-        metadataColumn.addChild(summaryRow);
+        MutableComponent owner = Component.translatable(ownerKey, frontier.getOwner().toString());
+        if (frontier.wasCopied()) {
+            owner.append(Component.literal(ColorConstants.WARNING + " !"));
+        }
+        StringWidget ownerWidget = infoColumn.addChild(new StringWidget(owner, font).setColor(ColorConstants.WHITE));
+        if (frontier.wasCopied()) {
+            Tooltip ownerTooltip = Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET)
+                    .append(Component.translatable(originalOwnerKey, frontier.getCopiedFromUser().toString())));
+            ownerWidget.setTooltip(ownerTooltip);
+        }
 
         LinearLayout identityRow = LinearLayout.horizontal().spacing(SECTION_SPACING_MEDIUM);
-        summaryRow.addChild(identityRow);
+        infoColumn.addChild(identityRow);
 
         identityRow.addChild(new StringWidget(frontier.getPersonal() ? personalLabel : globalLabel, font).setColor(ColorConstants.WHITE));
         buttonChangeToPersonalGlobal = identityRow.addChild(new IconButton(IconButton.Type.Swap, b -> onChangePersonalGlobalPressed()));
@@ -284,66 +320,28 @@ public class FrontierInfo extends AutoScaledScreen {
         Component shapeSummary = frontier.getMode() == FrontierData.Mode.Vertex
                 ? Component.translatable(verticesKey, frontier.getVertexCount())
                 : Component.translatable(chunksKey, frontier.getChunkCount());
-        summaryRow.addChild(new StringWidget(shapeSummary, font).setColor(ColorConstants.WHITE));
+        infoColumn.addChild(new StringWidget(shapeSummary, font).setColor(ColorConstants.WHITE));
 
-        MutableComponent owner = Component.translatable(ownerKey, frontier.getOwner().toString());
-        if (frontier.wasCopied()) {
-            owner.append(Component.literal(ColorConstants.WARNING + " !"));
-        }
-        StringWidget ownerWidget = summaryRow.addChild(new StringWidget(owner, font).setColor(ColorConstants.WHITE));
-        if (frontier.wasCopied()) {
-            Tooltip ownerTooltip = Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET)
-                    .append(Component.translatable(originalOwnerKey, frontier.getCopiedFromUser().toString())));
-            ownerWidget.setTooltip(ownerTooltip);
-        }
-
-        metadataColumn.addChild(new StringWidget(Component.translatable(dimensionKey, frontier.getDimension().identifier().toString()), font)
-                .setColor(ColorConstants.TEXT_DIMENSION));
-
-        if (frontier.getSourcePluginId() != null) {
-            Component sourcePlugin = frontier.isSessionOnly()
-                    ? Component.translatable(temporarySourcePluginKey, frontier.getSourcePluginId())
-                    : Component.translatable(sourcePluginKey, frontier.getSourcePluginId());
-            metadataColumn.addChild(new StringWidget(sourcePlugin, font).setColor(ColorConstants.TEXT_SOURCE_PLUGIN));
-        } else if (frontier.isSessionOnly()) {
-            metadataColumn.addChild(new StringWidget(Component.translatable(temporaryKey), font).setColor(ColorConstants.TEXT_SOURCE_PLUGIN));
-        }
-
-        LinearLayout areaColumn = LinearLayout.vertical();
-        mainLayout.addChild(areaColumn, 1, 2, LayoutSettings.defaults().alignHorizontallyLeft());
-        areaColumn.addChild(new StringWidget(Component.translatable(areaKey, frontier.area), font).setColor(ColorConstants.WHITE));
-        areaColumn.addChild(new StringWidget(Component.translatable(perimeterKey, frontier.perimeter), font).setColor(ColorConstants.WHITE));
-
-        LinearLayout dateColumn = LinearLayout.vertical();
-        mainLayout.addChild(dateColumn, 1, 3, LayoutSettings.defaults().alignHorizontallyLeft());
+        infoColumn.addChild(new StringWidget(Component.translatable(areaKey, formatMeasurement(frontier.area)), font).setColor(ColorConstants.WHITE));
+        infoColumn.addChild(new StringWidget(Component.translatable(perimeterKey, formatMeasurement(frontier.perimeter)), font).setColor(ColorConstants.WHITE));
 
         if (frontier.getCreated() != null) {
-            dateColumn.addChild(new StringWidget(Component.translatable(createdKey, dateFormat.format(frontier.getCreated())), font).setColor(ColorConstants.WHITE));
+            infoColumn.addChild(new StringWidget(Component.translatable(createdKey, dateFormat.format(frontier.getCreated())), font).setColor(ColorConstants.WHITE));
         }
 
         if (frontier.getModified() != null) {
-            modifiedLabel = dateColumn.addChild(new StringWidget(Component.translatable(modifiedKey, dateFormat.format(frontier.getModified())), font)
+            modifiedLabel = infoColumn.addChild(new StringWidget(Component.translatable(modifiedKey, dateFormat.format(frontier.getModified())), font)
                     .setColor(ColorConstants.WHITE));
         }
     }
 
-    private void buildVisibilitySection(GridLayout mainLayout) {
-        buttonVisibility = new SimpleButton(font, SECTION_WIDTH, visibilityLabel, b -> onVisibilityButtonPressed());
-        buttonVisibility.setTooltip(visibilityTooltip);
-        mainLayout.addChild(buttonVisibility, 2, 1);
-
-        buttonVisibilityOverride = new SimpleButton(font, SECTION_WIDTH, visibilityOverrideLabel, b -> onVisibilityOverrideButtonPressed());
-        buttonVisibilityOverride.setTooltip(visibilityOverrideTooltip);
-        mainLayout.addChild(buttonVisibilityOverride, 2, 2);
-    }
-
     private void buildColorSection(GridLayout mainLayout) {
         colorPicker = new ColorPicker(frontier.getColor(), this::onColorPicked);
-        mainLayout.addChild(colorPicker, 3, 1, LayoutSettings.defaults().alignVerticallyBottom());
+        mainLayout.addChild(colorPicker, 1, 1, LayoutSettings.defaults().alignVerticallyBottom());
 
         LinearLayout colorColumn = LinearLayout.vertical().spacing(SECTION_SPACING_MEDIUM);
         colorColumn.defaultCellSetting().alignHorizontallyCenter();
-        mainLayout.addChild(colorColumn, 3, 2);
+        mainLayout.addChild(colorColumn, 1, 2);
 
         colorColumn.addChild(new StringWidget(colorLabel, font).setColor(ColorConstants.INFO_LABEL_TEXT), LayoutSettings.defaults().alignHorizontallyLeft());
 
@@ -381,7 +379,7 @@ public class FrontierInfo extends AutoScaledScreen {
         GridLayout editColumn = new GridLayout().rowSpacing(SECTION_SPACING_MEDIUM);
         editColumn.defaultCellSetting().alignHorizontallyLeft();
         editColumn.addChild(SpacerElement.width(CLIPBOARD_SPACER_WIDTH), 0, 0);
-        mainLayout.addChild(editColumn, 3, 3, LayoutSettings.defaults().alignVerticallyBottom());
+        mainLayout.addChild(editColumn, 1, 3, LayoutSettings.defaults().alignVerticallyBottom());
 
         labelPasteName = editColumn.addChild(new StringWidget(pasteNameLabel, font).setColor(ColorConstants.TEXT), 0, 0);
         buttonPasteName = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_NAME.get(), ClientConfig.PASTE_NAME::set), 0, 1);
@@ -426,11 +424,14 @@ public class FrontierInfo extends AutoScaledScreen {
     }
 
     private TextBoxInt createRgbTextBox(IntUnaryOperator colorComposer) {
-        TextBoxInt textBox = new TextBoxInt(0, 0, 255, font, RGB_TEXTBOX_INPUT_WIDTH);
+        TextBoxInt textBox = new TextBoxInt(0, 0, 255, font, RGB_TEXTBOX_WIDTH);
         textBox.setHeight(DEFAULT_TEXTBOX_HEIGHT);
-        textBox.setWidth(RGB_TEXTBOX_WIDTH);
         textBox.setValueChangedCallback(value -> applyColorChange(colorComposer.applyAsInt(value), true));
         return textBox;
+    }
+
+    private static String formatMeasurement(float value) {
+        return String.format(Locale.ROOT, "%.2f", value);
     }
 
     private OptionButton createBinaryOptionButton(boolean defaultValue, Consumer<Boolean> consumer) {

@@ -1,5 +1,6 @@
 **Beta 2:**
 * API - Added: Temporary personal frontiers that exist only for the current session and are not saved, synchronized, or shareable.
+* Changed: Frontier names now support up to 48 characters per line, and the frontier info and list screens were updated to display longer names more cleanly.
 * Fixed: Strange behavior of the maximum limit of int text box.
 
 **Beta 1:**
