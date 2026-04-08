@@ -57,12 +57,13 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.awt.Color;
 import java.awt.geom.Area;
-import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -72,10 +73,20 @@ import static java.lang.Math.abs;
 
 @ParametersAreNonnullByDefault
 public class FrontierOverlay extends FrontierData {
+    private static final int OVERLAY_Y = 70;
+    private static final int TEXT_LINE_HEIGHT_PX = 9;
+    private static final int BANNER_BASE_WIDTH_PX = 20;
+    private static final int BANNER_BASE_HEIGHT_PX = 40;
+    private static final int LABEL_CONTENT_PADDING_PX = 6;
+    private static final int BANNER_MULTILINE_TEXT_OFFSET_Y = -6;
+    private static final int BANNER_SINGLE_LINE_TEXT_OFFSET_Y = 5;
+    private static final double VERTEX_LABEL_SOLVER_PRECISION = 0.5;
+    private static final double CHUNK_LABEL_SOLVER_PRECISION = 2.0;
     private static final MapImage markerVertex = new MapImage(Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/marker.png"), 0,
             0, 12, 12, ColorConstants.WHITE, 1.f);
     private static final MapImage markerDot = new MapImage(Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/marker.png"), 12, 0,
             8, 8, ColorConstants.WHITE, 1.f);
+    private static final MapImage transparentLabelMarker = createTransparentLabelMarker();
 
     static {
         markerVertex.setAnchorX(markerVertex.getDisplayWidth() / 2.0).setAnchorY(markerVertex.getDisplayHeight() / 2.0);
@@ -95,7 +106,7 @@ public class FrontierOverlay extends FrontierData {
     private final List<PolygonOverlay> polygonOverlays = new ArrayList<>();
     private Area polygonArea;
     private final List<MarkerOverlay> markerOverlays = new ArrayList<>();
-    private final List<MarkerOverlay> bannerOverlays = new ArrayList<>();
+    private final List<MarkerOverlay> labelOverlays = new ArrayList<>();
     private final BannerRenderer bannerRenderer = new BannerRenderer();
 
     private int hash;
@@ -172,8 +183,8 @@ public class FrontierOverlay extends FrontierData {
         return polygonOverlays;
     }
 
-    public List<MarkerOverlay> getBannerOverlays() {
-        return bannerOverlays;
+    public List<MarkerOverlay> getLabelOverlays() {
+        return labelOverlays;
     }
 
     public void updateOverlayIfNeeded() {
@@ -203,8 +214,8 @@ public class FrontierOverlay extends FrontierData {
                     jmAPI.show(marker);
                 }
 
-                for (MarkerOverlay banner : bannerOverlays) {
-                    jmAPI.show(banner);
+                for (MarkerOverlay label : labelOverlays) {
+                    jmAPI.show(label);
                 }
             } catch (Throwable t) {
                 MapFrontiers.LOGGER.error(t.getMessage(), t);
@@ -221,8 +232,8 @@ public class FrontierOverlay extends FrontierData {
             jmAPI.remove(marker);
         }
 
-        for (MarkerOverlay banner : bannerOverlays) {
-            jmAPI.remove(banner);
+        for (MarkerOverlay label : labelOverlays) {
+            jmAPI.remove(label);
         }
     }
 
@@ -842,7 +853,7 @@ public class FrontierOverlay extends FrontierData {
     public void recalculateOverlays() {
         polygonOverlays.clear();
         markerOverlays.clear();
-        bannerOverlays.clear();
+        labelOverlays.clear();
 
         updateBounds();
 
@@ -907,33 +918,41 @@ public class FrontierOverlay extends FrontierData {
         boolean webmapUndergroundV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_UNDERGROUND_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapUnderground));
         boolean webmapTopoV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_TOPO_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapTopo));
         boolean webmapBiomeV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapBiome));
-
-
-        BlockPos firstpoint = polygon.getPoints().getFirst();
-        Rectangle2D.Double polygonBound = new Rectangle2D.Double(firstpoint.getX(), firstpoint.getZ(), 1, 1);
-        for (BlockPos point : polygon.getPoints()) {
-            polygonBound.add(point.getX(), point.getZ());
-        }
+        Area overlayArea = buildOverlayArea(polygon, polygonHoles);
+        double labelSolverPrecision = getLabelSolverPrecision();
+        Map<LabelPlacementKey, FrontierLabelPlacementSolver.LabelPlacement> placementCache = new HashMap<>();
 
         if (fullscreenV) {
             PolygonOverlay overlay = new PolygonOverlay(MapFrontiers.MODID, dimension, shapeProps, polygon, polygonHoles);
             overlay.setActiveUIs(Context.UI.Fullscreen);
             overlay.setActiveMapTypes(getActiveMapTypes(fullscreenDayV, fullscreenNightV, fullscreenUndergroundV, fullscreenTopoV, fullscreenBiomeV));
-            addNameOwnerAndBanner(overlay, polygonBound, fullscreenNameV, fullscreenOwnerV, fullscreenBannerV);
+            addLabelOverlay(overlay,
+                    buildLabelContentMetrics(fullscreenNameV, fullscreenOwnerV, fullscreenBannerV),
+                    overlayArea,
+                    labelSolverPrecision,
+                    placementCache);
             polygonOverlays.add(overlay);
         }
         if (minimapV) {
             PolygonOverlay overlay = new PolygonOverlay(MapFrontiers.MODID, dimension, shapeProps, polygon, polygonHoles);
             overlay.setActiveUIs(Context.UI.Minimap);
             overlay.setActiveMapTypes(getActiveMapTypes(minimapDayV, minimapNightV, minimapUndergroundV, minimapTopoV, minimapBiomeV));
-            addNameOwnerAndBanner(overlay, polygonBound, minimapNameV, minimapOwnerV, minimapBannerV);
+            addLabelOverlay(overlay,
+                    buildLabelContentMetrics(minimapNameV, minimapOwnerV, minimapBannerV),
+                    overlayArea,
+                    labelSolverPrecision,
+                    placementCache);
             polygonOverlays.add(overlay);
         }
         if (webmapV) {
             PolygonOverlay overlay = new PolygonOverlay(MapFrontiers.MODID, dimension, shapeProps, polygon, polygonHoles);
             overlay.setActiveUIs(Context.UI.Webmap);
             overlay.setActiveMapTypes(getActiveMapTypes(webmapDayV, webmapNightV, webmapUndergroundV, webmapTopoV, webmapBiomeV));
-            addNameOwnerAndBanner(overlay, polygonBound, webmapNameV, webmapOwnerV, webmapBannerV);
+            addLabelOverlay(overlay,
+                    buildLabelContentMetrics(webmapNameV, webmapOwnerV, webmapBannerV),
+                    overlayArea,
+                    labelSolverPrecision,
+                    placementCache);
             polygonOverlays.add(overlay);
         }
     }
@@ -942,8 +961,8 @@ public class FrontierOverlay extends FrontierData {
         synchronized (vertices) {
             if (vertices.size() > 2) {
                 MapPolygon polygon = new MapPolygon(vertices);
-                addPolygonOverlays(shapeProps, polygon, null);
                 polygonArea = PolygonHelper.toArea(polygon);
+                addPolygonOverlays(shapeProps, polygon, null);
 
                 BlockPos last = vertices.getLast();
                 for (BlockPos vertex : vertices) {
@@ -1159,32 +1178,77 @@ public class FrontierOverlay extends FrontierData {
         }
     }
 
-    private void addNameOwnerAndBanner(PolygonOverlay polygonOverlay, Rectangle2D.Double polygonBound, boolean nameVisible, boolean ownerVisible, boolean bannerVisible) {
-        bannerVisible = bannerVisible && bannerRenderer.hasBanner();
-        if (!nameVisible && !ownerVisible && !bannerVisible) {
+    private Area buildOverlayArea(MapPolygon polygon, @Nullable List<MapPolygon> holes) {
+        if (mode == Mode.Vertex) {
+            return polygonArea != null ? new Area(polygonArea) : PolygonHelper.toArea(polygon);
+        }
+
+        Area area = PolygonHelper.toArea(polygon);
+        if (holes != null) {
+            for (MapPolygon hole : holes) {
+                area.subtract(PolygonHelper.toArea(hole));
+            }
+        }
+
+        return area;
+    }
+
+    private void addLabelOverlay(PolygonOverlay polygonOverlay,
+                                 LabelContentMetrics metrics,
+                                 Area overlayArea,
+                                 double labelSolverPrecision,
+                                 Map<LabelPlacementKey, FrontierLabelPlacementSolver.LabelPlacement> placementCache) {
+        if (!metrics.hasText() && !metrics.hasBanner()) {
             return;
         }
 
-        TextProperties textProps = new TextProperties().setOpacity(ClientConfig.TEXT_OPACITY.get().floatValue()).setScale(ClientConfig.TEXT_SIZE.get()).setBackgroundOpacity(0.f);
-        switch (ClientConfig.TEXT_COLOR.get()) {
-            case ClientConfig.TextColor.FrontierColor -> textProps.setColor(color);
-            case ClientConfig.TextColor.FrontierColorBright -> textProps.setColor(colorMaxBrightness(color));
-            case ClientConfig.TextColor.White -> textProps.setColor(ColorConstants.WHITE);
+        TextProperties textProps = createBaseTextProperties().setOffsetY(metrics.textOffsetY());
+        LabelPlacementKey placementKey = new LabelPlacementKey(metrics.contentWidthPx(), metrics.contentHeightPx());
+        FrontierLabelPlacementSolver.LabelPlacement placement = placementCache.computeIfAbsent(placementKey,
+                ignored -> FrontierLabelPlacementSolver.solve(overlayArea,
+                        metrics.contentWidthPx(),
+                        metrics.contentHeightPx(),
+                        labelSolverPrecision));
+
+        if (ClientConfig.HIDE_NAMES_THAT_DONT_FIT.get()) {
+            applyMinZoom(textProps, placement);
+        }
+
+        BlockPos anchor = BlockPos.containing(placement.centerX(), OVERLAY_Y, placement.centerZ());
+        MarkerOverlay labelOverlay = new MarkerOverlay(MapFrontiers.MODID, anchor, createLabelAnchorIcon(metrics));
+        labelOverlay.setActiveUIs(polygonOverlay.getActiveUIs().toArray(new Context.UI[0]));
+        labelOverlay.setActiveMapTypes(polygonOverlay.getActiveMapTypes().toArray(new Context.MapType[0]));
+        labelOverlay.setDimension(dimension);
+        labelOverlay.setMinZoom(textProps.getMinZoom());
+        labelOverlay.setMaxZoom(textProps.getMaxZoom());
+        labelOverlay.setOverlayGroupName("frontier");
+
+        if (metrics.hasText()) {
+            labelOverlay.setTextProperties(textProps).setLabel(metrics.label());
+        }
+
+        labelOverlays.add(labelOverlay);
+    }
+
+    private LabelContentMetrics buildLabelContentMetrics(boolean nameVisible, boolean ownerVisible, boolean bannerVisible) {
+        boolean hasBanner = bannerVisible && bannerRenderer.hasBanner();
+        if (!nameVisible && !ownerVisible && !hasBanner) {
+            return new LabelContentMetrics("", false, false, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         }
 
         int lines = 0;
-        int totalWidth = 0;
+        int textWidthPx = 0;
         String label = "";
 
         if (nameVisible) {
             if (!name1.isEmpty()) {
                 ++lines;
-                totalWidth = Math.max(totalWidth, Minecraft.getInstance().font.width(name1));
+                textWidthPx = Math.max(textWidthPx, Minecraft.getInstance().font.width(name1));
                 label += name1;
             }
             if (!name2.isEmpty()) {
                 ++lines;
-                totalWidth = Math.max(totalWidth, Minecraft.getInstance().font.width(name2));
+                textWidthPx = Math.max(textWidthPx, Minecraft.getInstance().font.width(name2));
                 if (!label.isEmpty()) {
                     label += "\n";
                 }
@@ -1194,72 +1258,87 @@ public class FrontierOverlay extends FrontierData {
 
         if (ownerVisible && !owner.username.isEmpty()) {
             ++lines;
-            totalWidth = Math.max(totalWidth, Minecraft.getInstance().font.width(owner.username));
+            textWidthPx = Math.max(textWidthPx, Minecraft.getInstance().font.width(owner.username));
             if (!label.isEmpty()) {
                 label += "\n";
             }
             label += ChatFormatting.ITALIC + owner.username;
         }
 
-        totalWidth *= ClientConfig.TEXT_SIZE.get();
+        textWidthPx *= ClientConfig.TEXT_SIZE.get();
+        int textHeightPx = lines * TEXT_LINE_HEIGHT_PX * ClientConfig.TEXT_SIZE.get();
+        int bannerWidthPx = hasBanner ? BANNER_BASE_WIDTH_PX * ClientConfig.BANNER_SIZE.get() : 0;
+        int bannerHeightPx = hasBanner ? BANNER_BASE_HEIGHT_PX * ClientConfig.BANNER_SIZE.get() : 0;
+        // Treat the banner as a square footprint for placement/min zoom so rotations do not
+        // underestimate the horizontal space without having to compute the rotated bounds.
+        int bannerPlacementWidthPx = hasBanner ? bannerHeightPx : 0;
+        int rawContentWidthPx = Math.max(textWidthPx, bannerPlacementWidthPx);
+        int rawContentHeightPx = textHeightPx + bannerHeightPx;
+        int textOffsetY;
+        int bannerOffsetY = 0;
 
-        int totalHeight = lines * 9 * ClientConfig.TEXT_SIZE.get();
-        if (bannerVisible) {
-            totalHeight += 40 * ClientConfig.BANNER_SIZE.get();
-        }
+        if (hasBanner) {
+            int topOffset = rawContentHeightPx / 2;
+            textOffsetY = topOffset - textHeightPx / 2;
+            bannerOffsetY = topOffset - textHeightPx;
 
-        int topOffset = totalHeight / 2;
-        int textOffset = topOffset - lines * 9 * ClientConfig.TEXT_SIZE.get() / 2;
-        int bannerOffset = topOffset - lines * 9 * ClientConfig.TEXT_SIZE.get();
-        if (lines > 1) {
-            if (bannerVisible) {
-                textOffset -= 6;
-            } else {
-                textOffset += 12;
-            }
-        } else if (lines == 1) {
-            if (bannerVisible) {
-                textOffset += 5;
-            } else {
-                textOffset += 3;
-            }
-        }
-        textProps.setOffsetY(textOffset);
-
-        if (ClientConfig.HIDE_NAMES_THAT_DONT_FIT.get()) {
-            if (bannerVisible) {
-                totalWidth = Math.max(totalWidth, 20 * ClientConfig.BANNER_SIZE.get());
-            }
-            setMinSizeTextProperties(textProps, polygonBound, totalWidth + 6, totalHeight + 6);
-        }
-
-        if (bannerVisible) {
-            MapImage bannerIcon = new MapImage(bannerRenderer.getImage());
-            bannerIcon.setBlur(false);
-            bannerIcon.setAnchorX(10 * ClientConfig.BANNER_SIZE.get());
-            bannerIcon.setAnchorY(bannerOffset);
-            bannerIcon.setDisplayWidth(20 * ClientConfig.BANNER_SIZE.get());
-            bannerIcon.setDisplayHeight(40 * ClientConfig.BANNER_SIZE.get());
-            bannerIcon.setOpacity(ClientConfig.BANNER_OPACITY.get().floatValue());
-            bannerIcon.setRotation(-bannerRenderer.getRotation());
-            BlockPos polygonCenter = BlockPos.containing(polygonBound.getCenterX(), 70, polygonBound.getCenterY());
-
-            MarkerOverlay bannerOverlay = new MarkerOverlay(MapFrontiers.MODID, polygonCenter, bannerIcon);
-            bannerOverlay.setActiveUIs(polygonOverlay.getActiveUIs().toArray(new Context.UI[0]));
-            bannerOverlay.setActiveMapTypes(polygonOverlay.getActiveMapTypes().toArray(new Context.MapType[0]));
-            bannerOverlay.setDimension(dimension);
-            bannerOverlay.setMinZoom(textProps.getMinZoom());
-            bannerOverlay.setMaxZoom(textProps.getMaxZoom());
-            bannerOverlays.add(bannerOverlay);
-
-            if (lines > 0) {
-                bannerOverlay.setTextProperties(textProps).setOverlayGroupName("frontier").setLabel(label);
+            if (lines > 1) {
+                textOffsetY += BANNER_MULTILINE_TEXT_OFFSET_Y;
+            } else if (lines == 1) {
+                textOffsetY += BANNER_SINGLE_LINE_TEXT_OFFSET_Y;
             }
         } else {
-            if (lines > 0) {
-                polygonOverlay.setTextProperties(textProps).setOverlayGroupName("frontier").setLabel(label);
-            }
+            // JourneyMap centers each line again inside drawLabels(..., VAlign.Middle),
+            // so multi-line MarkerOverlay labels end up shifted down by half a line unless
+            // we compensate here. Single-line labels do not need this correction.
+            textOffsetY = lines > 1 ? -(TEXT_LINE_HEIGHT_PX * ClientConfig.TEXT_SIZE.get()) / 2 : 0;
         }
+
+        return new LabelContentMetrics(label,
+                lines > 0,
+                hasBanner,
+                lines,
+                textWidthPx,
+                textHeightPx,
+                bannerWidthPx,
+                bannerHeightPx,
+                rawContentWidthPx + LABEL_CONTENT_PADDING_PX,
+                rawContentHeightPx + LABEL_CONTENT_PADDING_PX,
+                textOffsetY,
+                bannerOffsetY);
+    }
+
+    private double getLabelSolverPrecision() {
+        return mode == Mode.Chunk ? CHUNK_LABEL_SOLVER_PRECISION : VERTEX_LABEL_SOLVER_PRECISION;
+    }
+
+    private TextProperties createBaseTextProperties() {
+        TextProperties textProperties = new TextProperties()
+                .setOpacity(ClientConfig.TEXT_OPACITY.get().floatValue())
+                .setScale(ClientConfig.TEXT_SIZE.get())
+                .setBackgroundOpacity(0.f);
+        switch (ClientConfig.TEXT_COLOR.get()) {
+            case ClientConfig.TextColor.FrontierColor -> textProperties.setColor(color);
+            case ClientConfig.TextColor.FrontierColorBright -> textProperties.setColor(colorMaxBrightness(color));
+            case ClientConfig.TextColor.White -> textProperties.setColor(ColorConstants.WHITE);
+        }
+        return textProperties;
+    }
+
+    private MapImage createLabelAnchorIcon(LabelContentMetrics metrics) {
+        if (!metrics.hasBanner()) {
+            return transparentLabelMarker;
+        }
+
+        MapImage bannerIcon = new MapImage(bannerRenderer.getImage());
+        bannerIcon.setBlur(false);
+        bannerIcon.setAnchorX(metrics.bannerWidthPx() / 2.0);
+        bannerIcon.setAnchorY(metrics.bannerOffsetY());
+        bannerIcon.setDisplayWidth(metrics.bannerWidthPx());
+        bannerIcon.setDisplayHeight(metrics.bannerHeightPx());
+        bannerIcon.setOpacity(ClientConfig.BANNER_OPACITY.get().floatValue());
+        bannerIcon.setRotation(-bannerRenderer.getRotation());
+        return bannerIcon;
     }
 
     private int colorMaxBrightness(int color) {
@@ -1267,11 +1346,11 @@ public class FrontierOverlay extends FrontierData {
         return Color.HSBtoRGB(hsv[0], hsv[1], 1.f);
     }
 
-    private void setMinSizeTextProperties(TextProperties textProperties, Rectangle2D.Double polygonBound, int width, int height) {
-        double polygonWidthScaled = polygonBound.getWidth() / 256.0;
-        double polygonHeightScaled = polygonBound.getHeight() / 256.0;
+    private void applyMinZoom(TextProperties textProperties, FrontierLabelPlacementSolver.LabelPlacement placement) {
+        double polygonWidthScaled = placement.availableWidthBlocks() / 256.0;
+        double polygonHeightScaled = placement.availableHeightBlocks() / 256.0;
         int zoom = 2;
-        while ((width > polygonWidthScaled || height > polygonHeightScaled) && zoom < 8192) {
+        while ((placement.contentWidthPx() > polygonWidthScaled || placement.contentHeightPx() > polygonHeightScaled) && zoom < 8192) {
             zoom *= 2;
             polygonWidthScaled *= 2.0;
             polygonHeightScaled *= 2.0;
@@ -1280,11 +1359,23 @@ public class FrontierOverlay extends FrontierData {
         textProperties.setMinZoom(zoom);
     }
 
+    private static MapImage createTransparentLabelMarker() {
+        NativeImage image = new NativeImage(1, 1, false);
+        image.setPixel(0, 0, 0);
+        MapImage mapImage = new MapImage(image);
+        mapImage.setAnchorX(0.5);
+        mapImage.setAnchorY(0.5);
+        mapImage.setDisplayWidth(1);
+        mapImage.setDisplayHeight(1);
+        mapImage.setOpacity(0.f);
+        return mapImage;
+    }
+
     private void updateBounds() {
         if (mode == Mode.Vertex) {
             if (vertices.isEmpty()) {
-                topLeft = new BlockPos(0, 70, 0);
-                bottomRight = new BlockPos(0, 70, 0);
+                topLeft = new BlockPos(0, OVERLAY_Y, 0);
+                bottomRight = new BlockPos(0, OVERLAY_Y, 0);
             } else {
                 int minX = Integer.MAX_VALUE;
                 int minZ = Integer.MAX_VALUE;
@@ -1304,13 +1395,13 @@ public class FrontierOverlay extends FrontierData {
                     }
                 }
 
-                topLeft = new BlockPos(minX, 70, minZ);
-                bottomRight = new BlockPos(maxX, 70, maxZ);
+                topLeft = new BlockPos(minX, OVERLAY_Y, minZ);
+                bottomRight = new BlockPos(maxX, OVERLAY_Y, maxZ);
             }
         } else {
             if (chunks.isEmpty()) {
-                topLeft = new BlockPos(0, 70, 0);
-                bottomRight = new BlockPos(0, 70, 0);
+                topLeft = new BlockPos(0, OVERLAY_Y, 0);
+                bottomRight = new BlockPos(0, OVERLAY_Y, 0);
             } else {
                 int minX = Integer.MAX_VALUE;
                 int minZ = Integer.MAX_VALUE;
@@ -1330,8 +1421,8 @@ public class FrontierOverlay extends FrontierData {
                     }
                 }
 
-                topLeft = new BlockPos(minX * 16, 70, minZ * 16);
-                bottomRight = new BlockPos(maxX * 16 + 16, 70, maxZ * 16 + 16);
+                topLeft = new BlockPos(minX * 16, OVERLAY_Y, minZ * 16);
+                bottomRight = new BlockPos(maxX * 16 + 16, OVERLAY_Y, maxZ * 16 + 16);
             }
         }
     }
@@ -1382,7 +1473,7 @@ public class FrontierOverlay extends FrontierData {
                 z0 += sz;
             }
 
-            BlockPos pos = new BlockPos(x0, 70, z0);
+            BlockPos pos = new BlockPos(x0, OVERLAY_Y, z0);
             MarkerOverlay dot = new MarkerOverlay(MapFrontiers.MODID, pos, markerDot);
             dot.setDimension(dimension);
             dot.setDisplayOrder(99);
@@ -1401,6 +1492,24 @@ public class FrontierOverlay extends FrontierData {
 
             ++i;
         }
+    }
+
+    private record LabelContentMetrics(String label,
+                                       boolean hasText,
+                                       boolean hasBanner,
+                                       int lines,
+                                       int textWidthPx,
+                                       int textHeightPx,
+                                       int bannerWidthPx,
+                                       int bannerHeightPx,
+                                       int contentWidthPx,
+                                       int contentHeightPx,
+                                       int textOffsetY,
+                                       int bannerOffsetY) {
+    }
+
+    private record LabelPlacementKey(int contentWidthPx,
+                                     int contentHeightPx) {
     }
 
     public static class BannerRenderer {
