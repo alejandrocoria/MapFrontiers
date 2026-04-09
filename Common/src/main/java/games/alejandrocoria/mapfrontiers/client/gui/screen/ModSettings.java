@@ -272,6 +272,8 @@ public class ModSettings extends AutoScaledScreen {
         row = addOptionSettingRow(settingsGrid, row, ClientConfig.TITLE_ANNOUNCEMENT_ABOVE_HOTBAR);
         row = addOptionSettingRow(settingsGrid, row, ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS);
         row = addIntSettingRow(settingsGrid, row, ClientConfig.SNAP_DISTANCE, DEFAULT_TEXTBOX_WIDTH, 2);
+        row = addIntSettingRow(settingsGrid, row, ClientConfig.PATH_PROXIMITY_ENTER_DISTANCE, DEFAULT_TEXTBOX_WIDTH, 3);
+        row = addIntSettingRow(settingsGrid, row, ClientConfig.PATH_PROXIMITY_EXIT_DISTANCE, DEFAULT_TEXTBOX_WIDTH, 3);
 
         buttonFrontierAppearance = createWideSimpleButton(FRONTIER_BUTTON_WIDTH, frontierAppearanceLabel,
                 b -> onFrontierAppearancePressed());

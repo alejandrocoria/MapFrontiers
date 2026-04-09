@@ -131,6 +131,12 @@ public final class ClientConfig {
             .comment("Show path labels and banner at the end by default."));
     public static final BooleanConfigEntry PATH_DEFAULT_STYLE_LABEL_AT_MIDDLE = register(boolEntry(false, "path", "defaultStyle", "labelAtMiddle")
             .comment("Show path labels and banner at the midpoint by default."));
+    public static final IntConfigEntry PATH_PROXIMITY_ENTER_DISTANCE = register(intEntry(8, 0, 128, "path", "activation", "enterDistance")
+            .comment("Distance in blocks used to activate Path frontiers for HUD and announcements.")
+            .translation(translation("path", "activation", "enterDistance")));
+    public static final IntConfigEntry PATH_PROXIMITY_EXIT_DISTANCE = register(intEntry(10, 0, 128, "path", "activation", "exitDistance")
+            .comment("Distance in blocks used to keep Path frontiers active for HUD and announcements.")
+            .translation(translation("path", "activation", "exitDistance")));
 
     public static final EnumConfigEntry<Visibility> FRONTIER_VISIBILITY = visibilityEntry(
             "Force all frontiers to be shown or hidden. In Custom, you can decide for each frontier.",
@@ -304,7 +310,7 @@ public final class ClientConfig {
 
     static {
         FILE.registerSectionComment("list", "Frontier list settings.");
-        FILE.registerSectionComment("path", "Default style settings for new path frontiers.");
+        FILE.registerSectionComment("path", "Path settings.");
     }
 
     public static final StringListConfigEntry FRONTIER_SORTING = register(stringListEntry(DEFAULT_SORTING, ClientConfig::isValidSorting, "list", "sorting", "priority")
@@ -324,11 +330,13 @@ public final class ClientConfig {
     public static boolean load() {
         boolean dirty = FILE.load();
         dirty |= validateDefaultPathStyle();
+        dirty |= validatePathActivationDistances();
         dirty |= validateSorting();
         return dirty;
     }
 
     public static void save() {
+        validatePathActivationDistances();
         validateSorting();
         FILE.save();
     }
@@ -393,6 +401,10 @@ public final class ClientConfig {
         PATH_DEFAULT_STYLE_LABEL_AT_MIDDLE.set(normalized.labelAtMiddle);
     }
 
+    public static double getPathActivationDistance(boolean alreadyActive) {
+        return alreadyActive ? PATH_PROXIMITY_EXIT_DISTANCE.get() : PATH_PROXIMITY_ENTER_DISTANCE.get();
+    }
+
     public static void setFrontierSortingDirectionValues(List<Boolean> direction) {
         FRONTIER_SORTING_DIRECTION.set(direction);
     }
@@ -409,6 +421,20 @@ public final class ClientConfig {
 
         if (dirty) {
             setDefaultPathStyle(normalized);
+        }
+
+        return dirty;
+    }
+
+    private static boolean validatePathActivationDistances() {
+        int enterDistance = Math.max(0, PATH_PROXIMITY_ENTER_DISTANCE.get());
+        int exitDistance = Math.max(enterDistance, PATH_PROXIMITY_EXIT_DISTANCE.get());
+        boolean dirty = PATH_PROXIMITY_ENTER_DISTANCE.get() != enterDistance
+                || PATH_PROXIMITY_EXIT_DISTANCE.get() != exitDistance;
+
+        if (dirty) {
+            PATH_PROXIMITY_ENTER_DISTANCE.set(enterDistance);
+            PATH_PROXIMITY_EXIT_DISTANCE.set(exitDistance);
         }
 
         return dirty;

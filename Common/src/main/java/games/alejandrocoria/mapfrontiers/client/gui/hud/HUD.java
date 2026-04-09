@@ -144,7 +144,7 @@ public class HUD {
                 || currentPlayerPosition.getZ() != lastPlayerPosition.getZ()) {
             lastPlayerPosition = currentPlayerPosition;
 
-            List<FrontierOverlay> frontiers = MapFrontiersClient.getFrontiersInPosition(mc.player.level().dimension(), lastPlayerPosition);
+            List<FrontierOverlay> frontiers = MapFrontiersClient.getFrontiersForHUD();
             if (!frontiers.isEmpty()) {
                 FrontierOverlay newFrontier = frontiers.getFirst();
                 if (frontierHash != newFrontier.getHash()) {
@@ -178,7 +178,7 @@ public class HUD {
             return;
         }
 
-        List<FrontierOverlay> frontiers = MapFrontiersClient.getFrontiersInPosition(mc.player.level().dimension(), lastPlayerPosition);
+        List<FrontierOverlay> frontiers = MapFrontiersClient.getFrontiersForHUD();
         if (!frontiers.isEmpty()) {
             FrontierOverlay newFrontier = frontiers.getFirst();
             if (frontierHash != newFrontier.getHash()) {
