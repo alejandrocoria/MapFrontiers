@@ -82,6 +82,8 @@ public class FrontierOverlay extends FrontierData {
     private static final int BANNER_SINGLE_LINE_TEXT_OFFSET_Y = 5;
     private static final double VERTEX_LABEL_SOLVER_PRECISION = 0.5;
     private static final double CHUNK_LABEL_SOLVER_PRECISION = 2.0;
+    private static final double PATH_ENDPOINT_LABEL_OFFSET_BLOCKS = 10.0;
+    private static final double PATH_SINGLE_POINT_LABEL_OFFSET_BLOCKS = 10.0;
     private static final Identifier legacyMarkerTexture = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/marker.png");
     private static final MapImage markerVertex = createLegacyMarkerImage(0, 0, 12, 12);
     private static final MapImage markerDot = createLegacyMarkerImage(12, 0, 8, 8);
@@ -148,17 +150,17 @@ public class FrontierOverlay extends FrontierData {
 
         clampSelectedEditablePoint();
 
-        if (change.hasNameChange() || change.hasShapeChange() || change.hasColorChange() || change.hasVisibilityChange()) {
-            updateOverlay();
-        }
-
         if (change.hasBannerChange()) {
             if (banner == null) {
                 bannerRenderer.releaseTexture();
             } else {
                 bannerRenderer.createTexture(id, banner);
             }
-            hashDirty = true;
+        }
+
+        if (change.hasNameChange() || change.hasShapeChange() || change.hasColorChange() || change.hasVisibilityChange()
+                || change.hasPathStyleChange() || change.hasBannerChange()) {
+            updateOverlay();
         }
     }
 
@@ -682,6 +684,13 @@ public class FrontierOverlay extends FrontierData {
     @Override
     public void setColor(int color) {
         super.setColor(color);
+        hashDirty = true;
+        needUpdateOverlay = true;
+    }
+
+    @Override
+    public void setPathStyle(PathStyle pathStyle) {
+        super.setPathStyle(pathStyle);
         hashDirty = true;
         needUpdateOverlay = true;
     }
@@ -1272,18 +1281,27 @@ public class FrontierOverlay extends FrontierData {
     private void recalculatePath() {
         synchronized (points) {
             boolean fullscreenV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Fullscreen));
+            boolean fullscreenNameV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_NAME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenName));
+            boolean fullscreenOwnerV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_OWNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenOwner));
+            boolean fullscreenBannerV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_BANNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenBanner));
             boolean fullscreenDayV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenDay));
             boolean fullscreenNightV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_NIGHT_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenNight));
             boolean fullscreenUndergroundV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_UNDERGROUND_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenUnderground));
             boolean fullscreenTopoV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_TOPO_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenTopo));
             boolean fullscreenBiomeV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenBiome));
             boolean minimapV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Minimap));
+            boolean minimapNameV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_NAME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapName));
+            boolean minimapOwnerV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_OWNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapOwner));
+            boolean minimapBannerV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_BANNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapBanner));
             boolean minimapDayV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapDay));
             boolean minimapNightV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_NIGHT_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapNight));
             boolean minimapUndergroundV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_UNDERGROUND_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapUnderground));
             boolean minimapTopoV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_TOPO_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapTopo));
             boolean minimapBiomeV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapBiome));
             boolean webmapV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Webmap));
+            boolean webmapNameV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_NAME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapName));
+            boolean webmapOwnerV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_OWNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapOwner));
+            boolean webmapBannerV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_BANNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapBanner));
             boolean webmapDayV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapDay));
             boolean webmapNightV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_NIGHT_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapNight));
             boolean webmapUndergroundV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_UNDERGROUND_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapUnderground));
@@ -1291,16 +1309,19 @@ public class FrontierOverlay extends FrontierData {
             boolean webmapBiomeV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapBiome));
 
             if (fullscreenV) {
-                createPathMarkers(Context.UI.Fullscreen,
-                        getActiveMapTypes(fullscreenDayV, fullscreenNightV, fullscreenUndergroundV, fullscreenTopoV, fullscreenBiomeV));
+                Context.MapType[] mapTypes = getActiveMapTypes(fullscreenDayV, fullscreenNightV, fullscreenUndergroundV, fullscreenTopoV, fullscreenBiomeV);
+                createPathMarkers(Context.UI.Fullscreen, mapTypes);
+                createPathLabels(Context.UI.Fullscreen, mapTypes, fullscreenNameV, fullscreenOwnerV, fullscreenBannerV);
             }
             if (minimapV) {
-                createPathMarkers(Context.UI.Minimap,
-                        getActiveMapTypes(minimapDayV, minimapNightV, minimapUndergroundV, minimapTopoV, minimapBiomeV));
+                Context.MapType[] mapTypes = getActiveMapTypes(minimapDayV, minimapNightV, minimapUndergroundV, minimapTopoV, minimapBiomeV);
+                createPathMarkers(Context.UI.Minimap, mapTypes);
+                createPathLabels(Context.UI.Minimap, mapTypes, minimapNameV, minimapOwnerV, minimapBannerV);
             }
             if (webmapV) {
-                createPathMarkers(Context.UI.Webmap,
-                        getActiveMapTypes(webmapDayV, webmapNightV, webmapUndergroundV, webmapTopoV, webmapBiomeV));
+                Context.MapType[] mapTypes = getActiveMapTypes(webmapDayV, webmapNightV, webmapUndergroundV, webmapTopoV, webmapBiomeV);
+                createPathMarkers(Context.UI.Webmap, mapTypes);
+                createPathLabels(Context.UI.Webmap, mapTypes, webmapNameV, webmapOwnerV, webmapBannerV);
             }
 
             if (points.size() > 1) {
@@ -1387,6 +1408,17 @@ public class FrontierOverlay extends FrontierData {
             }
 
             addSingleMarker(point, resolvePathMarkerImage(markerId, rotation), 100, uiArray, mapTypesArray);
+        }
+    }
+
+    private void createPathLabels(Context.UI uiArray, Context.MapType[] mapTypesArray, boolean nameVisible, boolean ownerVisible, boolean bannerVisible) {
+        LabelContentMetrics metrics = buildLabelContentMetrics(nameVisible, ownerVisible, bannerVisible);
+        if (!metrics.hasText() && !metrics.hasBanner()) {
+            return;
+        }
+
+        for (PathLabelAnchor anchor : getPathLabelAnchors()) {
+            addPathLabelOverlay(uiArray, mapTypesArray, metrics, anchor);
         }
     }
 
@@ -1569,6 +1601,25 @@ public class FrontierOverlay extends FrontierData {
         labelOverlays.add(labelOverlay);
     }
 
+    private void addPathLabelOverlay(Context.UI uiArray, Context.MapType[] mapTypesArray, LabelContentMetrics metrics, PathLabelAnchor anchor) {
+        TextProperties textProps = createBaseTextProperties().setOffsetY(metrics.textOffsetY());
+        MarkerOverlay labelOverlay = new MarkerOverlay(MapFrontiers.MODID,
+                BlockPos.containing(anchor.x(), OVERLAY_Y, anchor.z()),
+                createLabelAnchorIcon(metrics));
+        labelOverlay.setActiveUIs(uiArray);
+        labelOverlay.setActiveMapTypes(mapTypesArray);
+        labelOverlay.setDimension(dimension);
+        labelOverlay.setMaxZoom(textProps.getMaxZoom());
+        labelOverlay.setMinZoom(textProps.getMinZoom());
+        labelOverlay.setOverlayGroupName("frontier");
+
+        if (metrics.hasText()) {
+            labelOverlay.setTextProperties(textProps).setLabel(metrics.label());
+        }
+
+        labelOverlays.add(labelOverlay);
+    }
+
     private LabelContentMetrics buildLabelContentMetrics(boolean nameVisible, boolean ownerVisible, boolean bannerVisible) {
         boolean hasBanner = bannerVisible && bannerRenderer.hasBanner();
         if (!nameVisible && !ownerVisible && !hasBanner) {
@@ -1696,6 +1747,85 @@ public class FrontierOverlay extends FrontierData {
         }
 
         textProperties.setMinZoom(zoom);
+    }
+
+    private List<PathLabelAnchor> getPathLabelAnchors() {
+        List<PathLabelAnchor> anchors = new ArrayList<>();
+
+        if (points.isEmpty()) {
+            return anchors;
+        }
+
+        if (points.size() == 1) {
+            if (pathStyle.labelAtStart || pathStyle.labelAtEnd || pathStyle.labelAtMiddle) {
+                BlockPos point = points.getFirst();
+                anchors.add(new PathLabelAnchor(point.getX(), point.getZ() + PATH_SINGLE_POINT_LABEL_OFFSET_BLOCKS));
+            }
+            return anchors;
+        }
+
+        if (pathStyle.labelAtStart) {
+            anchors.add(getPathEndpointLabelAnchor(points.getFirst(), points.get(1)));
+        }
+        if (pathStyle.labelAtMiddle) {
+            anchors.add(getPathMidpointLabelAnchor());
+        }
+        if (pathStyle.labelAtEnd) {
+            anchors.add(getPathEndpointLabelAnchor(points.getLast(), points.get(points.size() - 2)));
+        }
+
+        return anchors;
+    }
+
+    private PathLabelAnchor getPathEndpointLabelAnchor(BlockPos endpoint, BlockPos connectedPoint) {
+        double dx = endpoint.getX() - connectedPoint.getX();
+        double dz = endpoint.getZ() - connectedPoint.getZ();
+        double length = Math.sqrt(dx * dx + dz * dz);
+        if (length < 0.0001) {
+            return new PathLabelAnchor(endpoint.getX(), endpoint.getZ() + PATH_ENDPOINT_LABEL_OFFSET_BLOCKS);
+        }
+
+        return new PathLabelAnchor(endpoint.getX() + dx / length * PATH_ENDPOINT_LABEL_OFFSET_BLOCKS,
+                endpoint.getZ() + dz / length * PATH_ENDPOINT_LABEL_OFFSET_BLOCKS);
+    }
+
+    private PathLabelAnchor getPathMidpointLabelAnchor() {
+        if (points.isEmpty()) {
+            return new PathLabelAnchor(0, 0);
+        }
+
+        if (points.size() == 1) {
+            BlockPos point = points.getFirst();
+            return new PathLabelAnchor(point.getX(), point.getZ());
+        }
+
+        double totalLength = 0.0;
+        for (int i = 1; i < points.size(); ++i) {
+            totalLength += Math.sqrt(points.get(i).distSqr(points.get(i - 1)));
+        }
+
+        if (totalLength < 0.0001) {
+            BlockPos point = points.getFirst();
+            return new PathLabelAnchor(point.getX(), point.getZ());
+        }
+
+        double halfLength = totalLength / 2.0;
+        double traversed = 0.0;
+        for (int i = 1; i < points.size(); ++i) {
+            BlockPos from = points.get(i - 1);
+            BlockPos to = points.get(i);
+            double segmentLength = Math.sqrt(to.distSqr(from));
+            if (traversed + segmentLength >= halfLength) {
+                double t = (halfLength - traversed) / segmentLength;
+                double x = from.getX() + (to.getX() - from.getX()) * t;
+                double z = from.getZ() + (to.getZ() - from.getZ()) * t;
+                return new PathLabelAnchor(x, z);
+            }
+            traversed += segmentLength;
+        }
+
+        BlockPos point = points.getLast();
+        return new PathLabelAnchor(point.getX(), point.getZ());
     }
 
     private static MapImage createTransparentLabelMarker() {
@@ -1994,6 +2124,10 @@ public class FrontierOverlay extends FrontierData {
 
     private record LabelPlacementKey(int contentWidthPx,
                                      int contentHeightPx) {
+    }
+
+    private record PathLabelAnchor(double x,
+                                   double z) {
     }
 
     public static class BannerRenderer {
