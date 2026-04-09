@@ -89,9 +89,12 @@ public class FullscreenMap {
 
                 updateButtons();
 
-                if (ClientConfig.AFTER_CREATING_FRONTIER.get() == ClientConfig.AfterCreatingFrontier.EditShape) {
+                if (ClientConfig.AFTER_CREATING_FRONTIER.get() == ClientConfig.AfterCreatingFrontier.EditShape
+                        && frontierHighlighted.getMode() != FrontierData.Mode.Path) {
                     buttonEditToggled();
                 } else if (ClientConfig.AFTER_CREATING_FRONTIER.get() == ClientConfig.AfterCreatingFrontier.InfoScreen) {
+                    buttonInfoPressed();
+                } else if (ClientConfig.AFTER_CREATING_FRONTIER.get() == ClientConfig.AfterCreatingFrontier.EditShape) {
                     buttonInfoPressed();
                 }
             }
@@ -194,7 +197,9 @@ public class FullscreenMap {
             if (frontierHighlighted != null) {
                 subMenu.addMenuItem(I18n.get("mapfrontiers.button_frontier_info"), p -> buttonInfoPressed());
             }
-            if (actions.canUpdate && frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Frontier) && frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Fullscreen)) {
+            if (actions.canUpdate && frontierHighlighted.getMode() != FrontierData.Mode.Path
+                    && frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Frontier)
+                    && frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Fullscreen)) {
                 subMenu.addMenuItem(I18n.get("mapfrontiers.button_edit_frontier"), p -> buttonEditToggled());
             }
             if (actions.canUpdate) {
@@ -240,7 +245,10 @@ public class FullscreenMap {
         buttonFrontiers.setEnabled(!editing);
         buttonNew.setEnabled(!editing);
         buttonInfo.setEnabled(frontierHighlighted != null && !editing);
-        buttonEdit.setEnabled(actions.canUpdate && frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Frontier) && frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Fullscreen));
+        buttonEdit.setEnabled(actions.canUpdate
+                && frontierHighlighted.getMode() != FrontierData.Mode.Path
+                && frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Frontier)
+                && frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Fullscreen));
         buttonVisible.setEnabled(actions.canUpdate && !editing);
         buttonDelete.setEnabled(actions.canDelete && !editing);
 

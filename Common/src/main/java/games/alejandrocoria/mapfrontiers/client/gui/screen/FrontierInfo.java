@@ -70,6 +70,7 @@ public class FrontierInfo extends AutoScaledScreen {
     private static final Component globalLabel = Component.translatable("mapfrontiers.config.Global");
     private static final String verticesKey = "mapfrontiers.vertices";
     private static final String chunksKey = "mapfrontiers.chunks";
+    private static final String pointsKey = "mapfrontiers.points";
     private static final String ownerKey = "mapfrontiers.owner";
     private static final String originalOwnerKey = "mapfrontiers.original_owner";
     private static final String dimensionKey = "mapfrontiers.dimension";
@@ -77,6 +78,7 @@ public class FrontierInfo extends AutoScaledScreen {
     private static final String temporarySourcePluginKey = "mapfrontiers.temporary_source_plugin";
     private static final String temporaryKey = "mapfrontiers.temporary";
     private static final String areaKey = "mapfrontiers.area";
+    private static final String lengthKey = "mapfrontiers.length";
     private static final String perimeterKey = "mapfrontiers.perimeter";
     private static final String createdKey = "mapfrontiers.created";
     private static final String modifiedKey = "mapfrontiers.modified";
@@ -317,13 +319,19 @@ public class FrontierInfo extends AutoScaledScreen {
         buttonChangeToPersonalGlobal = identityRow.addChild(new IconButton(IconButton.Type.Swap, b -> onChangePersonalGlobalPressed()));
         buttonChangeToPersonalGlobal.setTooltip(frontier.getPersonal() ? changeToGlobalTooltip : changeToPersonalTooltip);
 
-        Component shapeSummary = frontier.getMode() == FrontierData.Mode.Vertex
-                ? Component.translatable(verticesKey, frontier.getVertexCount())
-                : Component.translatable(chunksKey, frontier.getChunkCount());
+        Component shapeSummary = switch (frontier.getMode()) {
+            case Vertex -> Component.translatable(verticesKey, frontier.getVertexCount());
+            case Chunk -> Component.translatable(chunksKey, frontier.getChunkCount());
+            case Path -> Component.translatable(pointsKey, frontier.getPointCount());
+        };
         infoColumn.addChild(new StringWidget(shapeSummary, font).setColor(ColorConstants.WHITE));
 
-        infoColumn.addChild(new StringWidget(Component.translatable(areaKey, formatMeasurement(frontier.area)), font).setColor(ColorConstants.WHITE));
-        infoColumn.addChild(new StringWidget(Component.translatable(perimeterKey, formatMeasurement(frontier.perimeter)), font).setColor(ColorConstants.WHITE));
+        if (frontier.getMode() != FrontierData.Mode.Path) {
+            infoColumn.addChild(new StringWidget(Component.translatable(areaKey, formatMeasurement(frontier.area)), font).setColor(ColorConstants.WHITE));
+            infoColumn.addChild(new StringWidget(Component.translatable(perimeterKey, formatMeasurement(frontier.perimeter)), font).setColor(ColorConstants.WHITE));
+        } else {
+            infoColumn.addChild(new StringWidget(Component.translatable(lengthKey, formatMeasurement(frontier.perimeter)), font).setColor(ColorConstants.WHITE));
+        }
 
         if (frontier.getCreated() != null) {
             infoColumn.addChild(new StringWidget(Component.translatable(createdKey, dateFormat.format(frontier.getCreated())), font).setColor(ColorConstants.WHITE));

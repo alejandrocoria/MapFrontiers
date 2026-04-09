@@ -7,6 +7,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.ShapeChunkButtons;
+import games.alejandrocoria.mapfrontiers.client.gui.component.button.ShapePathButtons;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.ShapeVertexButtons;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
@@ -36,8 +37,10 @@ public class NewFrontier extends AutoScaledScreen {
     private static final Component frontierModeLabel = Component.translatable("mapfrontiers.frontier_mode");
     private static final Component afterCreatingLabel = Component.translatable("mapfrontiers.after_creating");
     private static final Component vertexCountLabel = Component.translatable("mapfrontiers.shape_vertex_count");
+    private static final Component pointCountLabel = Component.translatable("mapfrontiers.shape_point_count");
     private static final Component sizeInfoLabel = Component.translatable("mapfrontiers.shape_size_info");
     private static final String verticesKey = "mapfrontiers.vertices";
+    private static final String pointsKey = "mapfrontiers.points";
     private static final String chunksKey = "mapfrontiers.chunks";
     private static final Component createLabel = Component.translatable("mapfrontiers.create");
     private static final Component cancelLabel = Component.translatable("gui.cancel");
@@ -49,6 +52,7 @@ public class NewFrontier extends AutoScaledScreen {
     private OptionButton buttonAfterCreate;
     private ShapeVertexButtons shapeVertexButtons;
     private ShapeChunkButtons shapeChunkButtons;
+    private ShapePathButtons shapePathButtons;
     private StringWidget labelCount;
     private StringWidget labelCountInfo;
     private TextBoxInt textCount;
@@ -98,6 +102,7 @@ public class NewFrontier extends AutoScaledScreen {
         });
         buttonFrontierMode.addOption(ClientConfig.getTranslatedEnum(FrontierData.Mode.Vertex));
         buttonFrontierMode.addOption(ClientConfig.getTranslatedEnum(FrontierData.Mode.Chunk));
+        buttonFrontierMode.addOption(ClientConfig.getTranslatedEnum(FrontierData.Mode.Path));
         buttonFrontierMode.setSelected(ClientConfig.NEW_FRONTIER_MODE.get().ordinal());
         mainLayout.addChild(buttonFrontierMode, 1, 1, rightColumnSettings);
 
@@ -114,6 +119,8 @@ public class NewFrontier extends AutoScaledScreen {
         mainLayout.addChild(shapeVertexButtons, 3, 0, 1, 2, centerColumnSettings);
         shapeChunkButtons = new ShapeChunkButtons(font, ClientConfig.NEW_FRONTIER_CHUNK_SHAPE.get(), (s) -> shapeButtonsUpdated());
         mainLayout.addChild(shapeChunkButtons, 3, 0, 1, 2, centerColumnSettings);
+        shapePathButtons = new ShapePathButtons(font, ClientConfig.NEW_FRONTIER_PATH_SHAPE.get(), (s) -> shapeButtonsUpdated());
+        mainLayout.addChild(shapePathButtons, 3, 0, 1, 2, centerColumnSettings);
 
         labelCount = mainLayout.addChild(new StringWidget(vertexCountLabel, font).setColor(ColorConstants.WHITE), 4, 0, leftColumnSettings);
         textCount = new TextBoxInt(ClientConfig.NEW_FRONTIER_COUNT.get(), 1, 999, font, 64);
@@ -139,7 +146,7 @@ public class NewFrontier extends AutoScaledScreen {
                         ClientConfig.NEW_FRONTIER_SHAPE_RADIUS.set(value);
                     }
                 }
-            } else {
+            } else if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Chunk) {
                 if (shapeChunkButtons.getShapeMeasure() == ShapeChunkButtons.ShapeMeasure.Width) {
                     if (ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_WIDTH.isInRange(value)) {
                         ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_WIDTH.set(value);
@@ -151,6 +158,9 @@ public class NewFrontier extends AutoScaledScreen {
                         shapeChunkButtons.setSize(value);
                     }
                 }
+            } else if (shapePathButtons.getShapeMeasure() == ShapePathButtons.ShapeMeasure.Length
+                    && ClientConfig.NEW_FRONTIER_PATH_LENGTH.isInRange(value)) {
+                ClientConfig.NEW_FRONTIER_PATH_LENGTH.set(value);
             }
         });
         mainLayout.addChild(textSize, 5, 1, rightColumnSettings);
@@ -162,7 +172,10 @@ public class NewFrontier extends AutoScaledScreen {
             closeAndReturnToFullscreenMap();
             UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
             if (uiState != null) {
-                MapFrontiersClient.getOperationService().createNewFrontier(personal, uiState.dimension, calculateVertices(), calculateChunks());
+                FrontierData.Mode mode = ClientConfig.NEW_FRONTIER_MODE.get();
+                FrontierData.PathStyle pathStyle = mode == FrontierData.Mode.Path ? ClientConfig.getDefaultPathStyle() : null;
+                MapFrontiersClient.getOperationService().createNewFrontier(personal, uiState.dimension,
+                        calculateVertices(), calculateChunks(), calculatePoints(), pathStyle);
             }
         }));
         bottomButtons.addChild(new SimpleButton(font, 100, cancelLabel, b -> onClose()));
@@ -187,9 +200,11 @@ public class NewFrontier extends AutoScaledScreen {
         if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Vertex) {
             shapeVertexButtons.visible = true;
             shapeChunkButtons.visible = false;
+            shapePathButtons.visible = false;
 
             int selected = shapeVertexButtons.getSelected();
             ClientConfig.NEW_FRONTIER_SHAPE.set(selected);
+            setLabelCountMessage(vertexCountLabel);
 
             if (selected == 11) {
                 labelCount.visible = true;
@@ -221,9 +236,10 @@ public class NewFrontier extends AutoScaledScreen {
                 setLabelSizeMessage("mapfrontiers.shape_radius");
                 textSize.setValue(String.valueOf(ClientConfig.NEW_FRONTIER_SHAPE_RADIUS.get()));
             }
-        } else {
+        } else if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Chunk) {
             shapeVertexButtons.visible = false;
             shapeChunkButtons.visible = true;
+            shapePathButtons.visible = false;
 
             int selected = shapeChunkButtons.getSelected();
             ClientConfig.NEW_FRONTIER_CHUNK_SHAPE.set(selected);
@@ -254,9 +270,41 @@ public class NewFrontier extends AutoScaledScreen {
                 textSize.setValue(String.valueOf(ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_LENGTH.get()));
                 shapeChunkButtons.setSize(ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_LENGTH.get());
             }
+        } else {
+            shapeVertexButtons.visible = false;
+            shapeChunkButtons.visible = false;
+            shapePathButtons.visible = true;
+
+            int selected = shapePathButtons.getSelected();
+            ClientConfig.NEW_FRONTIER_PATH_SHAPE.set(selected);
+            setLabelCountMessage(pointCountLabel);
+
+            labelCount.visible = false;
+            textCount.visible = false;
+            labelCountInfo.visible = true;
+            setLabelCountInfoMessage(pointsKey, shapePathButtons.getPointCount());
+
+            labelSizeInfo.visible = false;
+
+            if (shapePathButtons.getShapeMeasure() == ShapePathButtons.ShapeMeasure.None) {
+                labelSize.visible = false;
+                textSize.visible = false;
+                repositionElements();
+                return;
+            }
+
+            labelSize.visible = true;
+            textSize.visible = true;
+            setLabelSizeMessage("mapfrontiers.shape_length");
+            textSize.setValue(String.valueOf(ClientConfig.NEW_FRONTIER_PATH_LENGTH.get()));
         }
 
         repositionElements();
+    }
+
+    private void setLabelCountMessage(Component message) {
+        labelCount.setMessage(message);
+        labelCount.setWidth(font.width(message));
     }
 
     private void setLabelSizeMessage(String key) {
@@ -386,5 +434,37 @@ public class NewFrontier extends AutoScaledScreen {
         }
 
         return chunks;
+    }
+
+    private List<BlockPos> calculatePoints() {
+        if (ClientConfig.NEW_FRONTIER_MODE.get() != FrontierData.Mode.Path) {
+            return null;
+        }
+
+        int selected = shapePathButtons.getSelected();
+        int length = Math.max(1, ClientConfig.NEW_FRONTIER_PATH_LENGTH.get());
+        List<BlockPos> points = new ArrayList<>();
+        BlockPos start = centerPos.atY(70);
+
+        points.add(start);
+
+        if (selected == 0) {
+            points.clear();
+            return points;
+        }
+
+        if (selected == 1) {
+            return points;
+        }
+
+        BlockPos end = switch (selected) {
+            case 2 -> start.offset(length, 0, 0);
+            case 3 -> start.offset(-length, 0, 0);
+            case 4 -> start.offset(0, 0, -length);
+            case 5 -> start.offset(0, 0, length);
+            default -> start;
+        };
+        points.add(end);
+        return points;
     }
 }

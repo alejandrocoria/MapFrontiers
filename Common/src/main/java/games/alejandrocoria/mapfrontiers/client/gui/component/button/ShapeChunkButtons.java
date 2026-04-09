@@ -25,7 +25,7 @@ public class ShapeChunkButtons extends AbstractWidgetNoNarration {
     }
 
     private static final Identifier texture = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/shape_buttons.png");
-    private static final int textureSizeX = 980;
+    private static final int textureSizeX = 1274;
     private static final int textureSizeY = 98;
 
     private int selected;
