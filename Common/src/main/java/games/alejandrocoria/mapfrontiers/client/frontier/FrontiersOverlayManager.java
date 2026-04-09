@@ -34,7 +34,7 @@ public class FrontiersOverlayManager {
     private final HashMap<ResourceKey<Level>, MarkerOverlay> markersSelected;
 
     private static final MapImage markerDotSelected = new MapImage(
-            Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/marker.png"), 20, 0, 10, 10, ColorConstants.WHITE, 1.f);
+            Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/markers/selected.png"), 0, 0, 10, 10, ColorConstants.WHITE, 1.f);
     private static float targetDotSelectedOpacity = 0.3f;
 
     static {
@@ -258,7 +258,7 @@ public class FrontiersOverlayManager {
         }
 
         if (frontier != null) {
-            BlockPos pos = frontier.getSelectedVertex();
+            BlockPos pos = frontier.getSelectedEditablePoint();
             if (pos != null) {
                 marker = new MarkerOverlay(MapFrontiers.MODID, pos, markerDotSelected);
                 marker.setDimension(dimension);

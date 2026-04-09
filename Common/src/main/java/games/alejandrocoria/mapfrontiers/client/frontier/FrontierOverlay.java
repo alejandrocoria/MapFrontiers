@@ -98,7 +98,7 @@ public class FrontierOverlay extends FrontierData {
     public BlockPos bottomRight;
     public float perimeter = 0.f;
     public float area = 0.f;
-    private int vertexSelected = -1;
+    private int selectedPointIndex = -1;
     protected VisibilityData effectiveVisibilityData;
 
     private boolean highlighted = false;
@@ -130,9 +130,7 @@ public class FrontierOverlay extends FrontierData {
         super.updateFromData(other);
         setVisibilityOverride(MapFrontiersClient.getLocalOverrides().getVisibility(id));
 
-        if (vertexSelected >= vertices.size()) {
-            vertexSelected = vertices.size() - 1;
-        }
+        clampSelectedEditablePoint();
 
         if (banner == null) {
             bannerRenderer.releaseTexture();
@@ -148,9 +146,7 @@ public class FrontierOverlay extends FrontierData {
         super.applyChange(change);
         setVisibilityOverride(MapFrontiersClient.getLocalOverrides().getVisibility(id));
 
-        if (vertexSelected >= vertices.size()) {
-            vertexSelected = vertices.size() - 1;
-        }
+        clampSelectedEditablePoint();
 
         if (change.hasNameChange() || change.hasShapeChange() || change.hasColorChange() || change.hasVisibilityChange()) {
             updateOverlay();
@@ -271,7 +267,7 @@ public class FrontierOverlay extends FrontierData {
 
     public void selectClosestVertex(BlockPos pos, double limit) {
         if (mode != Mode.Vertex) {
-            vertexSelected = -1;
+            selectedPointIndex = -1;
             return;
         }
 
@@ -292,13 +288,13 @@ public class FrontierOverlay extends FrontierData {
             }
         }
 
-        vertexSelected = closest;
+        selectedPointIndex = closest;
         MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
     }
 
     public void selectClosestEdge(BlockPos pos) {
         if (mode != Mode.Vertex) {
-            vertexSelected = -1;
+            selectedPointIndex = -1;
             return;
         }
 
@@ -358,7 +354,34 @@ public class FrontierOverlay extends FrontierData {
             }
         }
 
-        vertexSelected = closest;
+        selectedPointIndex = closest;
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
+    }
+
+    public void selectClosestPoint(BlockPos pos, double limit) {
+        if (mode != Mode.Path) {
+            selectedPointIndex = -1;
+            return;
+        }
+
+        double distance = limit * limit;
+        int closest = -1;
+
+        if (!points.isEmpty()) {
+            synchronized (points) {
+                for (int i = 0; i < points.size(); ++i) {
+                    BlockPos point = points.get(i);
+                    int y = point.getY();
+                    double dist = point.distSqr(pos.atY(y));
+                    if (dist <= distance) {
+                        distance = dist;
+                        closest = i;
+                    }
+                }
+            }
+        }
+
+        selectedPointIndex = closest;
         MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
     }
 
@@ -395,7 +418,7 @@ public class FrontierOverlay extends FrontierData {
 
     @Override
     public void addVertex(BlockPos pos) {
-        addVertex(pos, vertexSelected + 1, ClientConfig.SNAP_DISTANCE.get());
+        addVertex(pos, selectedPointIndex + 1, ClientConfig.SNAP_DISTANCE.get());
         selectNextVertex();
     }
 
@@ -421,6 +444,7 @@ public class FrontierOverlay extends FrontierData {
         super.moveAllVertices(delta);
         hashDirty = true;
         needUpdateOverlay = true;
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
     }
 
     @Override
@@ -574,7 +598,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void moveSelectedVertex(BlockPos pos, float snapDistance) {
-        if (vertexSelected < 0 || vertexSelected >= vertices.size()) {
+        if (selectedPointIndex < 0 || selectedPointIndex >= vertices.size()) {
             return;
         }
 
@@ -582,7 +606,22 @@ public class FrontierOverlay extends FrontierData {
             pos = snapVertex(pos, snapDistance);
         }
 
-        super.moveVertex(pos, vertexSelected);
+        super.moveVertex(pos, selectedPointIndex);
+        hashDirty = true;
+        needUpdateOverlay = true;
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
+    }
+
+    public void moveSelectedPoint(BlockPos pos, float snapDistance) {
+        if (selectedPointIndex < 0 || selectedPointIndex >= points.size()) {
+            return;
+        }
+
+        if (snapDistance != 0) {
+            pos = snapVertex(pos, snapDistance);
+        }
+
+        super.movePoint(pos, selectedPointIndex);
         hashDirty = true;
         needUpdateOverlay = true;
         MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
@@ -777,17 +816,37 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void removeSelectedVertex() {
-        if (vertexSelected < 0) {
+        if (selectedPointIndex < 0) {
             return;
         }
 
-        super.removeVertex(vertexSelected);
+        super.removeVertex(selectedPointIndex);
         if (vertices.isEmpty()) {
-            vertexSelected = -1;
-        } else if (vertexSelected > 0) {
-            --vertexSelected;
+            selectedPointIndex = -1;
+        } else if (selectedPointIndex > 0) {
+            --selectedPointIndex;
         } else {
-            vertexSelected = vertices.size() - 1;
+            selectedPointIndex = vertices.size() - 1;
+        }
+
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
+
+        hashDirty = true;
+        needUpdateOverlay = true;
+    }
+
+    public void removeSelectedPoint() {
+        if (selectedPointIndex < 0) {
+            return;
+        }
+
+        super.removePoint(selectedPointIndex);
+        if (points.isEmpty()) {
+            selectedPointIndex = -1;
+        } else if (selectedPointIndex > 0) {
+            --selectedPointIndex;
+        } else {
+            selectedPointIndex = 0;
         }
 
         MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
@@ -797,23 +856,197 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void selectNextVertex() {
-        ++vertexSelected;
-        if (vertexSelected >= vertices.size()) {
-            vertexSelected = -1;
+        ++selectedPointIndex;
+        if (selectedPointIndex >= vertices.size()) {
+            selectedPointIndex = -1;
         }
         MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
     }
 
     public int getSelectedVertexIndex() {
-        return vertexSelected;
+        return mode == Mode.Vertex ? selectedPointIndex : -1;
     }
 
     public BlockPos getSelectedVertex() {
-        if (vertexSelected >= 0 && vertexSelected < vertices.size()) {
-            return vertices.get(vertexSelected);
+        if (mode == Mode.Vertex && selectedPointIndex >= 0 && selectedPointIndex < vertices.size()) {
+            return vertices.get(selectedPointIndex);
         }
 
         return null;
+    }
+
+    public int getSelectedPointIndex() {
+        return mode == Mode.Path ? selectedPointIndex : -1;
+    }
+
+    public BlockPos getSelectedPoint() {
+        if (mode == Mode.Path && selectedPointIndex >= 0 && selectedPointIndex < points.size()) {
+            return points.get(selectedPointIndex);
+        }
+
+        return null;
+    }
+
+    public int getSelectedEditablePointIndex() {
+        return switch (mode) {
+            case Vertex, Path -> selectedPointIndex;
+            case Chunk -> -1;
+        };
+    }
+
+    public @Nullable BlockPos getSelectedEditablePoint() {
+        if (mode == Mode.Path && selectedPointIndex >= 0 && selectedPointIndex < points.size()) {
+            return points.get(selectedPointIndex);
+        }
+        if (mode == Mode.Vertex && selectedPointIndex >= 0 && selectedPointIndex < vertices.size()) {
+            return vertices.get(selectedPointIndex);
+        }
+
+        return null;
+    }
+
+    public void moveSelectedEditablePoint(BlockPos pos, float snapDistance) {
+        if (mode == Mode.Path) {
+            moveSelectedPoint(pos, snapDistance);
+        } else if (mode == Mode.Vertex) {
+            moveSelectedVertex(pos, snapDistance);
+        }
+    }
+
+    public void moveAllPathPoints(BlockPos delta) {
+        super.moveAllPoints(delta);
+        hashDirty = true;
+        needUpdateOverlay = true;
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
+    }
+
+    public void addPathPointBeforeStart(BlockPos pos) {
+        if (mode != Mode.Path) {
+            return;
+        }
+
+        pos = snapVertex(pos, ClientConfig.SNAP_DISTANCE.get());
+        super.addPoint(pos, 0);
+        selectedPointIndex = 0;
+        hashDirty = true;
+        needUpdateOverlay = true;
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
+    }
+
+    public void addPathPointAfterEnd(BlockPos pos) {
+        if (mode != Mode.Path) {
+            return;
+        }
+
+        pos = snapVertex(pos, ClientConfig.SNAP_DISTANCE.get());
+        int index = points.size();
+        super.addPoint(pos, index);
+        selectedPointIndex = index;
+        hashDirty = true;
+        needUpdateOverlay = true;
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
+    }
+
+    public void insertPathPoint(BlockPos pos) {
+        if (mode != Mode.Path) {
+            return;
+        }
+
+        pos = snapVertex(pos, ClientConfig.SNAP_DISTANCE.get());
+        int insertIndex = getSmartInsertIndex(pos);
+        if (insertIndex < 0) {
+            addPathPointAfterEnd(pos);
+            return;
+        }
+
+        super.addPoint(pos, insertIndex);
+        selectedPointIndex = insertIndex;
+        hashDirty = true;
+        needUpdateOverlay = true;
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
+    }
+
+    public void invertPathDirection() {
+        if (mode != Mode.Path || points.size() < 2) {
+            return;
+        }
+
+        synchronized (points) {
+            Collections.reverse(points);
+        }
+        if (selectedPointIndex >= 0 && selectedPointIndex < points.size()) {
+            selectedPointIndex = points.size() - 1 - selectedPointIndex;
+        }
+
+        hashDirty = true;
+        needUpdateOverlay = true;
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
+    }
+
+    private int getSmartInsertIndex(BlockPos pos) {
+        if (points.isEmpty()) {
+            return 0;
+        }
+
+        if (points.size() == 1) {
+            return 1;
+        }
+
+        Vec3 point = Vec3.atLowerCornerOf(pos);
+        int y = pos.getY();
+        double bestSegmentDistance = Double.POSITIVE_INFINITY;
+        int bestSegmentInsertIndex = -1;
+
+        synchronized (points) {
+            for (int i = 0; i < points.size() - 1; ++i) {
+                Vec3 edge1 = Vec3.atLowerCornerOf(points.get(i).atY(y));
+                Vec3 edge2 = Vec3.atLowerCornerOf(points.get(i + 1).atY(y));
+                Vec3 closestPoint = closestPointToEdge(point, edge1, edge2);
+                if (closestPoint.equals(edge1) || closestPoint.equals(edge2)) {
+                    continue;
+                }
+
+                double distance = closestPoint.distanceToSqr(point);
+                if (distance < bestSegmentDistance) {
+                    bestSegmentDistance = distance;
+                    bestSegmentInsertIndex = i + 1;
+                }
+            }
+
+            double startDistance = point.distanceToSqr(Vec3.atLowerCornerOf(points.getFirst().atY(y)));
+            double endDistance = point.distanceToSqr(Vec3.atLowerCornerOf(points.getLast().atY(y)));
+            if (bestSegmentInsertIndex != -1 && bestSegmentDistance < Math.min(startDistance, endDistance)) {
+                return bestSegmentInsertIndex;
+            }
+
+            if (startDistance < endDistance) {
+                return 0;
+            }
+
+            if (endDistance < startDistance) {
+                return points.size();
+            }
+        }
+
+        if (selectedPointIndex == 0) {
+            return 0;
+        }
+
+        return points.size();
+    }
+
+    private void clampSelectedEditablePoint() {
+        int size = switch (mode) {
+            case Vertex -> vertices.size();
+            case Path -> points.size();
+            case Chunk -> 0;
+        };
+
+        if (size == 0) {
+            selectedPointIndex = -1;
+        } else if (selectedPointIndex >= size) {
+            selectedPointIndex = size - 1;
+        }
     }
 
     public void setHighlighted(boolean highlighted) {

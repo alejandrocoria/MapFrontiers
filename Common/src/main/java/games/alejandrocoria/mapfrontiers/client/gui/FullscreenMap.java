@@ -89,12 +89,9 @@ public class FullscreenMap {
 
                 updateButtons();
 
-                if (ClientConfig.AFTER_CREATING_FRONTIER.get() == ClientConfig.AfterCreatingFrontier.EditShape
-                        && frontierHighlighted.getMode() != FrontierData.Mode.Path) {
+                if (ClientConfig.AFTER_CREATING_FRONTIER.get() == ClientConfig.AfterCreatingFrontier.EditShape) {
                     buttonEditToggled();
                 } else if (ClientConfig.AFTER_CREATING_FRONTIER.get() == ClientConfig.AfterCreatingFrontier.InfoScreen) {
-                    buttonInfoPressed();
-                } else if (ClientConfig.AFTER_CREATING_FRONTIER.get() == ClientConfig.AfterCreatingFrontier.EditShape) {
                     buttonInfoPressed();
                 }
             }
@@ -167,6 +164,16 @@ public class FullscreenMap {
                 if (frontierHighlighted.getSelectedVertexIndex() != -1) {
                     popupMenu.addMenuItem(I18n.get("mapfrontiers.remove_vertex"), p -> buttonRemoveVertex());
                 }
+            } else if (frontierHighlighted.getMode() == FrontierData.Mode.Path) {
+                popupMenu.addMenuItem(I18n.get("mapfrontiers.add_point"), this::buttonAddPoint);
+                popupMenu.addMenuItem(I18n.get("mapfrontiers.add_point_before_start"), this::buttonAddPointBeforeStart);
+                popupMenu.addMenuItem(I18n.get("mapfrontiers.add_point_after_end"), this::buttonAddPointAfterEnd);
+                if (frontierHighlighted.getSelectedPointIndex() != -1) {
+                    popupMenu.addMenuItem(I18n.get("mapfrontiers.remove_point"), p -> buttonRemovePoint());
+                }
+                if (frontierHighlighted.getPointCount() > 1) {
+                    popupMenu.addMenuItem(I18n.get("mapfrontiers.invert_direction"), p -> buttonInvertPathDirection());
+                }
             } else {
                 if (frontierHighlighted.hasChunk(lastEditedChunk)) {
                     List<ChunkPos> chunksToRemove = frontierHighlighted.getConnectedChunks(lastEditedChunk);
@@ -197,8 +204,7 @@ public class FullscreenMap {
             if (frontierHighlighted != null) {
                 subMenu.addMenuItem(I18n.get("mapfrontiers.button_frontier_info"), p -> buttonInfoPressed());
             }
-            if (actions.canUpdate && frontierHighlighted.getMode() != FrontierData.Mode.Path
-                    && frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Frontier)
+            if (actions.canUpdate && frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Frontier)
                     && frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Fullscreen)) {
                 subMenu.addMenuItem(I18n.get("mapfrontiers.button_edit_frontier"), p -> buttonEditToggled());
             }
@@ -217,7 +223,8 @@ public class FullscreenMap {
             relocating = false;
             if (shapeDirty) {
                 FrontierChange change = new FrontierChange();
-                change.setShape(frontierHighlighted.getVertices(), frontierHighlighted.getChunks(), frontierHighlighted.getMode());
+                change.setShape(frontierHighlighted.getVertices(), frontierHighlighted.getChunks(), frontierHighlighted.getPoints(),
+                        frontierHighlighted.getMode());
                 MapFrontiersClient.getOperationService().updateFrontier(frontierHighlighted, change);
                 shapeDirty = false;
             }
@@ -246,7 +253,6 @@ public class FullscreenMap {
         buttonNew.setEnabled(!editing);
         buttonInfo.setEnabled(frontierHighlighted != null && !editing);
         buttonEdit.setEnabled(actions.canUpdate
-                && frontierHighlighted.getMode() != FrontierData.Mode.Path
                 && frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Frontier)
                 && frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Fullscreen));
         buttonVisible.setEnabled(actions.canUpdate && !editing);
@@ -342,6 +348,52 @@ public class FullscreenMap {
         updateButtons();
     }
 
+    private void buttonAddPoint(BlockPos pos) {
+        int pointCount = frontierHighlighted.getPointCount();
+        frontierHighlighted.insertPathPoint(pos);
+        if (frontierHighlighted.getPointCount() != pointCount) {
+            shapeDirty = true;
+        }
+
+        updateButtons();
+    }
+
+    private void buttonAddPointBeforeStart(BlockPos pos) {
+        int pointCount = frontierHighlighted.getPointCount();
+        frontierHighlighted.addPathPointBeforeStart(pos);
+        if (frontierHighlighted.getPointCount() != pointCount) {
+            shapeDirty = true;
+        }
+
+        updateButtons();
+    }
+
+    private void buttonAddPointAfterEnd(BlockPos pos) {
+        int pointCount = frontierHighlighted.getPointCount();
+        frontierHighlighted.addPathPointAfterEnd(pos);
+        if (frontierHighlighted.getPointCount() != pointCount) {
+            shapeDirty = true;
+        }
+
+        updateButtons();
+    }
+
+    private void buttonRemovePoint() {
+        int pointCount = frontierHighlighted.getPointCount();
+        frontierHighlighted.removeSelectedPoint();
+        if (frontierHighlighted.getPointCount() != pointCount) {
+            shapeDirty = true;
+        }
+
+        updateButtons();
+    }
+
+    private void buttonInvertPathDirection() {
+        frontierHighlighted.invertPathDirection();
+        shapeDirty = true;
+        updateButtons();
+    }
+
     private void buttonRemoveConnected(List<ChunkPos> chunks) {
         for (ChunkPos chunk : chunks) {
             frontierHighlighted.removeChunk(chunk);
@@ -362,6 +414,10 @@ public class FullscreenMap {
 
     public boolean isEditingVertices() {
         return editing && frontierHighlighted.getMode() == FrontierData.Mode.Vertex;
+    }
+
+    public boolean isEditingPaths() {
+        return editing && frontierHighlighted.getMode() == FrontierData.Mode.Path;
     }
 
     public boolean isEditingChunks() {
@@ -407,6 +463,8 @@ public class FullscreenMap {
             }
             else if (frontierHighlighted.getMode() == FrontierData.Mode.Vertex) {
                 frontierHighlighted.selectClosestVertex(position, maxDistanceToClosest);
+            } else if (frontierHighlighted.getMode() == FrontierData.Mode.Path) {
+                frontierHighlighted.selectClosestPoint(position, maxDistanceToClosest);
             } else if (button == 1) {
                 lastEditedChunk = ChunkPos.containing(position);
                 if (ScreenHelper.hasShiftDown()) {
@@ -457,12 +515,12 @@ public class FullscreenMap {
             return false;
         }
 
-        if (frontierHighlighted.getSelectedVertexIndex() == -1) {
+        if (frontierHighlighted.getSelectedEditablePointIndex() == -1) {
             return false;
         }
 
         float snapDistance = 512.f / uiState.zoom * ClientConfig.SNAP_DISTANCE.get();
-        frontierHighlighted.moveSelectedVertex(position, snapDistance);
+        frontierHighlighted.moveSelectedEditablePoint(position, snapDistance);
         shapeDirty = true;
         return true;
     }
@@ -476,6 +534,12 @@ public class FullscreenMap {
             if (frontierHighlighted.getMode() == FrontierData.Mode.Vertex) {
                 if (!position.equals(relocatingPrevPos)) {
                     frontierHighlighted.moveAllVertices(position.subtract(relocatingPrevPos));
+                    relocatingPrevPos = position;
+                    shapeDirty = true;
+                }
+            } else if (frontierHighlighted.getMode() == FrontierData.Mode.Path) {
+                if (!position.equals(relocatingPrevPos)) {
+                    frontierHighlighted.moveAllPathPoints(position.subtract(relocatingPrevPos));
                     relocatingPrevPos = position;
                     shapeDirty = true;
                 }
