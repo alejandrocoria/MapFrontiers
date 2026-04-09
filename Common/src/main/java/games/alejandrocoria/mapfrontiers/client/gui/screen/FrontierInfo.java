@@ -17,6 +17,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.DeleteConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.dialog.PathStyleDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.VisibilityDialog;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
@@ -84,6 +85,7 @@ public class FrontierInfo extends AutoScaledScreen {
     private static final String modifiedKey = "mapfrontiers.modified";
     private static final Component visibilityLabel = Component.translatable("mapfrontiers.visibility");
     private static final Component visibilityOverrideLabel = Component.translatable("mapfrontiers.visibility_override");
+    private static final Component pathStyleLabel = Component.translatable("mapfrontiers.path_style");
     private static final Component colorLabel = Component.translatable("mapfrontiers.color");
     private static final Component rLabel = Component.literal("R");
     private static final Component gLabel = Component.literal("G");
@@ -134,6 +136,7 @@ public class FrontierInfo extends AutoScaledScreen {
     private TextBox textName2;
     private SimpleButton buttonVisibility;
     private SimpleButton buttonVisibilityOverride;
+    private SimpleButton buttonPathStyle;
     private TextBoxInt textRed;
     private TextBoxInt textGreen;
     private TextBoxInt textBlue;
@@ -285,6 +288,15 @@ public class FrontierInfo extends AutoScaledScreen {
         buttonVisibilityOverride = new SimpleButton(font, SECTION_WIDTH, visibilityOverrideLabel, b -> onVisibilityOverrideButtonPressed());
         buttonVisibilityOverride.setTooltip(visibilityOverrideTooltip);
         visibilityRow.addChild(buttonVisibilityOverride);
+
+        LinearLayout pathStyleRow = LinearLayout.horizontal().spacing(MAIN_LAYOUT_SPACING + 1);
+        pathStyleRow.defaultCellSetting().alignVerticallyMiddle();
+        nameColumn.addChild(pathStyleRow);
+
+        buttonPathStyle = new SimpleButton(font, SECTION_WIDTH, pathStyleLabel, b -> onPathStyleButtonPressed());
+        buttonPathStyle.visible = frontier.getMode() == FrontierData.Mode.Path;
+        pathStyleRow.addChild(buttonPathStyle);
+        pathStyleRow.addChild(SpacerElement.width(SECTION_WIDTH));
     }
 
     private TextBox createNameTextBox(String initialValue, Consumer<String> setter) {
@@ -524,6 +536,15 @@ public class FrontierInfo extends AutoScaledScreen {
         }).display();
     }
 
+    private void onPathStyleButtonPressed() {
+        new PathStyleDialog(frontier.getPathStyle(), ClientConfig.getDefaultPathStyle(), newPathStyle -> {
+            if (!frontier.getPathStyle().equals(newPathStyle)) {
+                frontier.setPathStyle(newPathStyle);
+                sendPathStyleChangeToServer();
+            }
+        }).display();
+    }
+
     private void onColorPicked(int color, boolean dragging) {
         frontier.setColor(color);
         syncColorWidgets(color);
@@ -548,7 +569,7 @@ public class FrontierInfo extends AutoScaledScreen {
         if (clipboard != null && (ClientConfig.PASTE_NAME.get() || ClientConfig.PASTE_VISIBILITY.get()
                 || ClientConfig.PASTE_COLOR.get() || ClientConfig.PASTE_BANNER.get())) {
             setFrontier(clipboard, ClientConfig.PASTE_NAME.get(), ClientConfig.PASTE_VISIBILITY.get(),
-                    ClientConfig.PASTE_COLOR.get(), ClientConfig.PASTE_BANNER.get());
+                    ClientConfig.PASTE_COLOR.get(), ClientConfig.PASTE_BANNER.get(), false);
             sendCurrentInfoChangesToServer();
             rebuildWidgets();
             repositionElements();
@@ -687,7 +708,7 @@ public class FrontierInfo extends AutoScaledScreen {
         }
 
         redoStack.push(undoStack.pop());
-        setFrontier(undoStack.peek(), true, true, true, true);
+        setFrontier(undoStack.peek(), true, true, true, true, true);
         sendCurrentInfoChangesToServer();
         rebuildWidgets();
         repositionElements();
@@ -705,7 +726,7 @@ public class FrontierInfo extends AutoScaledScreen {
             return;
         }
 
-        setFrontier(redoStack.peek(), true, true, true, true);
+        setFrontier(redoStack.peek(), true, true, true, true, true);
         undoStack.push(redoStack.pop());
         sendCurrentInfoChangesToServer();
         rebuildWidgets();
@@ -719,7 +740,7 @@ public class FrontierInfo extends AutoScaledScreen {
         }
     }
 
-    private void setFrontier(FrontierData other, boolean name, boolean visibility, boolean color, boolean banner) {
+    private void setFrontier(FrontierData other, boolean name, boolean visibility, boolean color, boolean banner, boolean pathStyle) {
         if (name) {
             frontier.setName1(other.getName1());
             frontier.setName2(other.getName2());
@@ -732,6 +753,9 @@ public class FrontierInfo extends AutoScaledScreen {
         }
         if (banner) {
             frontier.setBannerData(other.getbannerData());
+        }
+        if (pathStyle && frontier.getMode() == FrontierData.Mode.Path && other.getMode() == FrontierData.Mode.Path) {
+            frontier.setPathStyle(other.getPathStyle());
         }
     }
 
@@ -794,6 +818,10 @@ public class FrontierInfo extends AutoScaledScreen {
         textName1.setEditable(actions.canUpdate);
         textName2.setEditable(actions.canUpdate);
         buttonVisibility.active = actions.canUpdate;
+        if (buttonPathStyle != null) {
+            buttonPathStyle.visible = frontier.getMode() == FrontierData.Mode.Path;
+            buttonPathStyle.active = actions.canUpdate && frontier.getMode() == FrontierData.Mode.Path;
+        }
         textRed.setEditable(actions.canUpdate);
         textGreen.setEditable(actions.canUpdate);
         textBlue.setEditable(actions.canUpdate);
@@ -867,12 +895,21 @@ public class FrontierInfo extends AutoScaledScreen {
         sendChangeToServer(change);
     }
 
+    private void sendPathStyleChangeToServer() {
+        FrontierChange change = new FrontierChange();
+        change.setPathStyle(frontier.getPathStyle());
+        sendChangeToServer(change);
+    }
+
     private void sendCurrentInfoChangesToServer() {
         FrontierChange change = new FrontierChange();
         change.setName(frontier.getName1(), frontier.getName2());
         change.setVisibility(frontier.getVisibilityData());
         change.setColor(frontier.getColor());
         change.setBanner(frontier.getbannerData());
+        if (frontier.getMode() == FrontierData.Mode.Path) {
+            change.setPathStyle(frontier.getPathStyle());
+        }
         sendChangeToServer(change);
     }
 
@@ -901,7 +938,9 @@ public class FrontierInfo extends AutoScaledScreen {
                     || !Objects.equals(u.getName2(), frontier.getName2())
                     || !Objects.equals(u.getVisibilityData(), frontier.getVisibilityData())
                     || u.getColor() != frontier.getColor()
-                    || !Objects.equals(u.getbannerData(), frontier.getbannerData())) {
+                    || !Objects.equals(u.getbannerData(), frontier.getbannerData())
+                    || (u.getMode() == FrontierData.Mode.Path && frontier.getMode() == FrontierData.Mode.Path
+                    && !Objects.equals(u.getPathStyle(), frontier.getPathStyle()))) {
                 add = true;
             }
         }

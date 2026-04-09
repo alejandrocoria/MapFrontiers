@@ -44,6 +44,8 @@
   "mapfrontiers.biome": "Biome",
   "mapfrontiers.forced_visibility": "Forced visibility",
   "mapfrontiers.frontier_appearance": "Frontier appearance",
+  "mapfrontiers.path_style": "Path style",
+  "mapfrontiers.default_path_style": "Default Path Style",
   "mapfrontiers.random_color": "Random color",
   "mapfrontiers.select_in_map": "Select in map",
 
