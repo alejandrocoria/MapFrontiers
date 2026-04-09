@@ -28,6 +28,13 @@ public final class FrontierMutationApplier {
     public static void applyCreationShape(FrontierData frontier,
                                           @Nullable List<BlockPos> vertices,
                                           @Nullable List<ChunkPos> chunks) {
+        applyCreationShape(frontier, vertices, chunks, null);
+    }
+
+    public static void applyCreationShape(FrontierData frontier,
+                                          @Nullable List<BlockPos> vertices,
+                                          @Nullable List<ChunkPos> chunks,
+                                          @Nullable List<BlockPos> points) {
         if (vertices != null) {
             frontier.setMode(FrontierData.Mode.Vertex);
             for (BlockPos vertex : vertices) {
@@ -41,11 +48,19 @@ public final class FrontierMutationApplier {
                 frontier.toggleChunk(chunk);
             }
         }
+
+        if (points != null) {
+            frontier.setMode(FrontierData.Mode.Path);
+            for (BlockPos point : points) {
+                frontier.addPoint(point);
+            }
+        }
     }
 
     public static void applyShape(FrontierData frontier, FrontierShape shape) {
         frontier.clearVertices();
         frontier.clearChunks();
+        frontier.clearPoints();
 
         if (shape.type() == FrontierShapeType.VERTEX) {
             frontier.setMode(FrontierData.Mode.Vertex);

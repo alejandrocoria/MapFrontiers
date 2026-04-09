@@ -20,6 +20,7 @@ public class FrontierChange {
     private @Nullable ColorChange color;
     private @Nullable BannerChange banner;
     private @Nullable ShapeChange shape;
+    private @Nullable PathStyleChange pathStyle;
     private @Nullable Long modifiedTime;
 
     public FrontierChange() {
@@ -39,7 +40,10 @@ public class FrontierChange {
             banner = new BannerChange(other.banner.banner == null ? null : new FrontierData.BannerData(other.banner.banner));
         }
         if (other.shape != null) {
-            shape = new ShapeChange(other.shape.vertices, other.shape.chunks, other.shape.mode);
+            shape = new ShapeChange(other.shape.vertices, other.shape.chunks, other.shape.points, other.shape.mode);
+        }
+        if (other.pathStyle != null) {
+            pathStyle = new PathStyleChange(other.pathStyle.pathStyle);
         }
         modifiedTime = other.modifiedTime;
     }
@@ -69,20 +73,42 @@ public class FrontierChange {
         }
 
         if (buf.readBoolean()) {
-            int verticesCount = buf.readInt();
-            List<BlockPos> vertices = new ArrayList<>(verticesCount);
-            for (int i = 0; i < verticesCount; ++i) {
-                vertices.add(BlockPos.of(buf.readLong()));
-            }
-
-            int chunksCount = buf.readInt();
-            Set<ChunkPos> chunks = new HashSet<>(chunksCount);
-            for (int i = 0; i < chunksCount; ++i) {
-                chunks.add(ChunkPos.unpack(buf.readLong()));
-            }
-
             FrontierData.Mode mode = FrontierData.Mode.values()[buf.readInt()];
-            shape = new ShapeChange(vertices, chunks, mode);
+            List<BlockPos> vertices = new ArrayList<>();
+            Set<ChunkPos> chunks = new HashSet<>();
+            List<BlockPos> points = new ArrayList<>();
+
+            switch (mode) {
+                case Vertex -> {
+                    int verticesCount = buf.readInt();
+                    vertices = new ArrayList<>(verticesCount);
+                    for (int i = 0; i < verticesCount; ++i) {
+                        vertices.add(BlockPos.of(buf.readLong()));
+                    }
+                }
+                case Chunk -> {
+                    int chunksCount = buf.readInt();
+                    chunks = new HashSet<>(chunksCount);
+                    for (int i = 0; i < chunksCount; ++i) {
+                        chunks.add(ChunkPos.unpack(buf.readLong()));
+                    }
+                }
+                case Path -> {
+                    int pointsCount = buf.readInt();
+                    points = new ArrayList<>(pointsCount);
+                    for (int i = 0; i < pointsCount; ++i) {
+                        points.add(BlockPos.of(buf.readLong()));
+                    }
+                }
+            }
+
+            shape = new ShapeChange(vertices, chunks, points, mode);
+        }
+
+        if (buf.readBoolean()) {
+            FrontierData.PathStyle value = new FrontierData.PathStyle();
+            value.fromBytes(buf);
+            pathStyle = new PathStyleChange(value);
         }
 
         if (buf.readBoolean()) {
@@ -100,7 +126,10 @@ public class FrontierChange {
         change.setVisibility(frontier.getVisibilityData());
         change.setColor(frontier.getColor());
         change.setBanner(frontier.getbannerData());
-        change.setShape(frontier.getVertices(), frontier.getChunks(), frontier.getMode());
+        change.setShape(frontier.getVertices(), frontier.getChunks(), frontier.getPoints(), frontier.getMode());
+        if (frontier.getMode() == FrontierData.Mode.Path) {
+            change.setPathStyle(frontier.getPathStyle());
+        }
 
         if (includeModifiedTime && frontier.getModified() != null) {
             change.setModifiedTime(frontier.getModified().getTime());
@@ -138,17 +167,33 @@ public class FrontierChange {
 
         buf.writeBoolean(shape != null);
         if (shape != null) {
-            buf.writeInt(shape.vertices.size());
-            for (BlockPos vertex : shape.vertices) {
-                buf.writeLong(vertex.asLong());
-            }
-
-            buf.writeInt(shape.chunks.size());
-            for (ChunkPos chunk : shape.chunks) {
-                buf.writeLong(chunk.pack());
-            }
-
             buf.writeInt(shape.mode.ordinal());
+
+            switch (shape.mode) {
+                case Vertex -> {
+                    buf.writeInt(shape.vertices.size());
+                    for (BlockPos vertex : shape.vertices) {
+                        buf.writeLong(vertex.asLong());
+                    }
+                }
+                case Chunk -> {
+                    buf.writeInt(shape.chunks.size());
+                    for (ChunkPos chunk : shape.chunks) {
+                        buf.writeLong(chunk.pack());
+                    }
+                }
+                case Path -> {
+                    buf.writeInt(shape.points.size());
+                    for (BlockPos point : shape.points) {
+                        buf.writeLong(point.asLong());
+                    }
+                }
+            }
+        }
+
+        buf.writeBoolean(pathStyle != null);
+        if (pathStyle != null) {
+            pathStyle.pathStyle.toBytes(buf);
         }
 
         buf.writeBoolean(modifiedTime != null);
@@ -158,7 +203,8 @@ public class FrontierChange {
     }
 
     public boolean isEmpty() {
-        return name == null && visibility == null && color == null && banner == null && shape == null && modifiedTime == null;
+        return name == null && visibility == null && color == null && banner == null && shape == null && pathStyle == null
+                && modifiedTime == null;
     }
 
     public @Nullable NameChange getName() {
@@ -179,6 +225,10 @@ public class FrontierChange {
 
     public @Nullable ShapeChange getShape() {
         return shape;
+    }
+
+    public @Nullable PathStyleChange getPathStyle() {
+        return pathStyle;
     }
 
     public @Nullable Long getModifiedTime() {
@@ -205,6 +255,10 @@ public class FrontierChange {
         return shape != null;
     }
 
+    public boolean hasPathStyleChange() {
+        return pathStyle != null;
+    }
+
     public boolean hasModifiedTime() {
         return modifiedTime != null;
     }
@@ -226,7 +280,15 @@ public class FrontierChange {
     }
 
     public void setShape(List<BlockPos> vertices, Set<ChunkPos> chunks, FrontierData.Mode mode) {
-        shape = new ShapeChange(vertices, chunks, mode);
+        setShape(vertices, chunks, List.of(), mode);
+    }
+
+    public void setShape(List<BlockPos> vertices, Set<ChunkPos> chunks, List<BlockPos> points, FrontierData.Mode mode) {
+        shape = new ShapeChange(vertices, chunks, points, mode);
+    }
+
+    public void setPathStyle(FrontierData.PathStyle pathStyle) {
+        this.pathStyle = new PathStyleChange(pathStyle);
     }
 
     public void setModifiedTime(long modifiedTime) {
@@ -290,11 +352,13 @@ public class FrontierChange {
     public static class ShapeChange {
         private final List<BlockPos> vertices;
         private final Set<ChunkPos> chunks;
+        private final List<BlockPos> points;
         private final FrontierData.Mode mode;
 
-        private ShapeChange(List<BlockPos> vertices, Set<ChunkPos> chunks, FrontierData.Mode mode) {
+        private ShapeChange(List<BlockPos> vertices, Set<ChunkPos> chunks, List<BlockPos> points, FrontierData.Mode mode) {
             this.vertices = new ArrayList<>(vertices);
             this.chunks = new HashSet<>(chunks);
+            this.points = new ArrayList<>(points);
             this.mode = mode;
         }
 
@@ -306,8 +370,24 @@ public class FrontierChange {
             return new HashSet<>(chunks);
         }
 
+        public List<BlockPos> getPoints() {
+            return new ArrayList<>(points);
+        }
+
         public FrontierData.Mode getMode() {
             return mode;
+        }
+    }
+
+    public static class PathStyleChange {
+        private final FrontierData.PathStyle pathStyle;
+
+        private PathStyleChange(FrontierData.PathStyle pathStyle) {
+            this.pathStyle = new FrontierData.PathStyle(pathStyle);
+        }
+
+        public FrontierData.PathStyle getPathStyle() {
+            return new FrontierData.PathStyle(pathStyle);
         }
     }
 }
