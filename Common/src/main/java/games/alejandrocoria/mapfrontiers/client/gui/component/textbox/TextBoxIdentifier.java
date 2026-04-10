@@ -3,46 +3,67 @@ package games.alejandrocoria.mapfrontiers.client.gui.component.textbox;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.network.chat.Component;
-import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.resources.Identifier;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.List;
+import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
 public class TextBoxIdentifier extends TextBox {
-    private final Font textFont;
-    private @Nullable Component error;
+    private @Nullable Identifier parsedValue;
+    private boolean invalid = false;
+    private @Nullable Consumer<String> externalValueChangedCallback;
 
     public TextBoxIdentifier(Font font, int width) {
         super(font, width);
-        textFont = font;
+        super.setValueChangedCallback(this::onValueChanged);
     }
 
-    public void setError(@Nullable Component error) {
-        this.error = error;
+    public void setIdentifier(Identifier identifier) {
+        parsedValue = identifier;
+        invalid = false;
+        setValue(identifier.toString());
+    }
+
+    public @Nullable Identifier getParsedValue() {
+        return parsedValue;
+    }
+
+    public boolean isInvalid() {
+        return invalid;
+    }
+
+    @Override
+    public void setValueChangedCallback(Consumer<String> callback) {
+        externalValueChangedCallback = callback;
+    }
+
+    @Override
+    public void setValue(String value) {
+        super.setValue(value);
+    }
+
+    private void onValueChanged(String value) {
+        validateIdentifier(value);
+        if (externalValueChangedCallback != null) {
+            externalValueChangedCallback.accept(value);
+        }
+    }
+
+    private void validateIdentifier(String value) {
+        try {
+            parsedValue = Identifier.parse(value);
+            invalid = false;
+        } catch (Exception ignored) {
+            parsedValue = null;
+            invalid = true;
+        }
     }
 
     @Override
     public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
-        setTextColor(error == null ? ColorConstants.TEXTBOX_TEXT : ColorConstants.TEXT_ERROR);
+        setTextColor(invalid ? ColorConstants.TEXT_ERROR : ColorConstants.TEXTBOX_TEXT);
         super.extractWidgetRenderState(graphics, mouseX, mouseY, partialTicks);
-
-        if (error != null && !error.getString().isEmpty()) {
-            List<FormattedCharSequence> errorList = textFont.split(error, width - 8);
-            int maxErrorWidth = width - 8;
-            graphics.fill(getX() - 1, getY() - errorList.size() * 12 - 5, getX() + maxErrorWidth + 9, getY() - 1,
-                    ColorConstants.TEXTBOX_EXTRA_BORDER);
-            graphics.fill(getX(), getY() - errorList.size() * 12 - 4, getX() + maxErrorWidth + 8, getY() - 1,
-                    ColorConstants.TEXTBOX_EXTRA_BG);
-
-            int posX = getX() + 4;
-            int posY = getY() - errorList.size() * 12;
-            for (FormattedCharSequence sequence : errorList) {
-                graphics.text(textFont, sequence, posX, posY, ColorConstants.TEXT_HIGHLIGHT);
-                posY += 12;
-            }
-        }
     }
 }

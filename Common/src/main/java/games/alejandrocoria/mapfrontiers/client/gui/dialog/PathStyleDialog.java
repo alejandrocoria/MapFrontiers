@@ -132,17 +132,13 @@ public class PathStyleDialog extends AutoScaledScreen {
         TextBoxIdentifier textBox = new TextBoxIdentifier(font, 190);
         textBox.setHeight(selector.getHeight());
         textBox.setMaxLength(100);
-        textBox.setValue(initialValue.toString());
+        textBox.setIdentifier(initialValue);
         MarkerRow markerRow = new MarkerRow(selector, textBox, setter, initialValue);
         selector.setOnPress(markerRow::onSelectorChanged);
         textBox.setValueChangedCallback(markerRow::onTextChanged);
         layout.addChild(selector, row, 1);
         layout.addChild(textBox, row, 2, LayoutSettings.defaults().alignHorizontallyLeft());
         return markerRow;
-    }
-
-    private void selectorValueChanged() {
-        updateWarningAndPreview();
     }
 
     private CheckBoxButton createLocationCheckBox(LinearLayout parent, Component label, boolean value, Consumer<Boolean> setter) {
@@ -241,15 +237,16 @@ public class PathStyleDialog extends AutoScaledScreen {
                 return;
             }
 
-            try {
-                Identifier parsed = Identifier.parse(value);
+            if (!textBox.isInvalid()) {
+                Identifier parsed = textBox.getParsedValue();
+                if (parsed == null) {
+                    return;
+                }
+
                 appliedValue = parsed;
                 setter.accept(parsed);
                 selector.setSelectedId(parsed);
-                textBox.setError(null);
                 updateWarningAndPreview();
-            } catch (Exception ignored) {
-                textBox.setError(Component.empty());
             }
         }
 
@@ -261,16 +258,14 @@ public class PathStyleDialog extends AutoScaledScreen {
             appliedValue = value;
             setter.accept(value);
             selector.setSelectedId(value);
-            textBox.setError(null);
-            textBox.setValue(value.toString());
+            textBox.setIdentifier(value);
             updateWarningAndPreview();
         }
 
         private void applyValue(Identifier value) {
             appliedValue = value;
             selector.setSelectedId(value);
-            textBox.setError(null);
-            textBox.setValue(value.toString());
+            textBox.setIdentifier(value);
             setter.accept(value);
         }
     }
