@@ -34,7 +34,6 @@ public class PathStyleDialog extends AutoScaledScreen {
     private static final Component segmentsLabel = Component.translatable("mapfrontiers.segments");
     private static final Component labelsAndBannerLabel = Component.translatable("mapfrontiers.labels_and_banner");
     private static final Component previewLabel = Component.translatable("mapfrontiers.preview");
-    private static final Component invalidIdentifierLabel = Component.translatable("mapfrontiers.path_style_invalid_identifier");
     private static final Component labelsRequiredLabel = Component.translatable("mapfrontiers.path_style_labels_required");
     private static final Component replaceDefaultLabel = Component.translatable("mapfrontiers.replace_with_default_path_style");
     private static final Component doneLabel = Component.translatable("gui.done");
@@ -49,8 +48,8 @@ public class PathStyleDialog extends AutoScaledScreen {
     private CheckBoxButton checkLabelAtEnd;
     private CheckBoxButton checkLabelAtMiddle;
     private MarkerRow startRow;
-    private MarkerRow endRow;
     private MarkerRow middleRow;
+    private MarkerRow endRow;
     private MarkerRow segmentRow;
     private boolean syncingWidgets = false;
 
@@ -90,19 +89,26 @@ public class PathStyleDialog extends AutoScaledScreen {
 
         int row = 0;
         startRow = createMarkerRow(leftGrid, row++, startLabel, workingStyle.startMarker, value -> workingStyle.startMarker = value);
-        endRow = createMarkerRow(leftGrid, row++, endLabel, workingStyle.endMarker, value -> workingStyle.endMarker = value);
         middleRow = createMarkerRow(leftGrid, row++, middlePointsLabel, workingStyle.middleMarker, value -> workingStyle.middleMarker = value);
+        endRow = createMarkerRow(leftGrid, row++, endLabel, workingStyle.endMarker, value -> workingStyle.endMarker = value);
         segmentRow = createMarkerRow(leftGrid, row++, segmentsLabel, workingStyle.segmentMarker, value -> workingStyle.segmentMarker = value);
 
         leftGrid.addChild(SpacerElement.height(8), row++, 0);
         leftGrid.addChild(new StringWidget(labelsAndBannerLabel, font).setColor(ColorConstants.TEXT_HIGHLIGHT), row++, 0, 1, 3);
 
-        LinearLayout labelsRow = LinearLayout.horizontal().spacing(10);
+        LinearLayout labelsRow = LinearLayout.horizontal().spacing(12);
+        labelsRow.defaultCellSetting().alignVerticallyMiddle();
         leftGrid.addChild(labelsRow, row++, 0, 1, 3);
 
-        checkLabelAtStart = createLocationCheckBox(labelsRow, startLabel, workingStyle.labelAtStart, value -> workingStyle.labelAtStart = value);
-        checkLabelAtEnd = createLocationCheckBox(labelsRow, endLabel, workingStyle.labelAtEnd, value -> workingStyle.labelAtEnd = value);
-        checkLabelAtMiddle = createLocationCheckBox(labelsRow, middleLabel, workingStyle.labelAtMiddle, value -> workingStyle.labelAtMiddle = value);
+        LinearLayout labelsColumn = LinearLayout.vertical().spacing(4);
+        labelsRow.addChild(labelsColumn);
+
+        checkLabelAtStart = createLocationCheckBox(labelsColumn, startLabel, workingStyle.labelAtStart, value -> workingStyle.labelAtStart = value);
+        checkLabelAtMiddle = createLocationCheckBox(labelsColumn, middleLabel, workingStyle.labelAtMiddle, value -> workingStyle.labelAtMiddle = value);
+        checkLabelAtEnd = createLocationCheckBox(labelsColumn, endLabel, workingStyle.labelAtEnd, value -> workingStyle.labelAtEnd = value);
+
+        warningWidget = labelsRow.addChild(new MultiLineTextWidget(Component.empty(), font));
+        warningWidget.setMaxWidth(220);
 
         LinearLayout rightColumn = LinearLayout.vertical().spacing(6);
         rightColumn.defaultCellSetting().alignHorizontallyCenter();
@@ -110,9 +116,6 @@ public class PathStyleDialog extends AutoScaledScreen {
 
         rightColumn.addChild(new StringWidget(previewLabel, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
         previewWidget = rightColumn.addChild(new PathStylePreviewWidget());
-
-        warningWidget = rightColumn.addChild(new MultiLineTextWidget(Component.empty(), font));
-        warningWidget.setMaxWidth(220);
 
         if (defaultStyle != null) {
             rightColumn.addChild(new SimpleButton(font, 170, replaceDefaultLabel, b -> replaceWithDefaultStyle()));
@@ -125,21 +128,15 @@ public class PathStyleDialog extends AutoScaledScreen {
     private MarkerRow createMarkerRow(GridLayout layout, int row, Component label, Identifier initialValue, Consumer<Identifier> setter) {
         layout.addChild(new StringWidget(label, font).setColor(ColorConstants.TEXT), row, 0);
 
-        PathMarkerSelectorWidget selector = new PathMarkerSelectorWidget(initialValue, value -> {
-            if (syncingWidgets) {
-                return;
-            }
-
-            setter.accept(value);
-            selectorValueChanged();
-        });
-        layout.addChild(selector, row, 1);
-
+        PathMarkerSelectorWidget selector = new PathMarkerSelectorWidget(initialValue, value -> { });
         TextBoxIdentifier textBox = new TextBoxIdentifier(font, 190);
+        textBox.setHeight(selector.getHeight());
         textBox.setMaxLength(100);
-        MarkerRow markerRow = new MarkerRow(selector, textBox, setter, initialValue);
-        textBox.setValueChangedCallback(markerRow::onTextChanged);
         textBox.setValue(initialValue.toString());
+        MarkerRow markerRow = new MarkerRow(selector, textBox, setter, initialValue);
+        selector.setOnPress(markerRow::onSelectorChanged);
+        textBox.setValueChangedCallback(markerRow::onTextChanged);
+        layout.addChild(selector, row, 1);
         layout.addChild(textBox, row, 2, LayoutSettings.defaults().alignHorizontallyLeft());
         return markerRow;
     }
@@ -176,12 +173,12 @@ public class PathStyleDialog extends AutoScaledScreen {
     private void syncWidgetsFromStyle() {
         syncingWidgets = true;
         startRow.applyValue(workingStyle.startMarker);
-        endRow.applyValue(workingStyle.endMarker);
         middleRow.applyValue(workingStyle.middleMarker);
+        endRow.applyValue(workingStyle.endMarker);
         segmentRow.applyValue(workingStyle.segmentMarker);
         setCheckBoxValue(checkLabelAtStart, workingStyle.labelAtStart);
-        setCheckBoxValue(checkLabelAtEnd, workingStyle.labelAtEnd);
         setCheckBoxValue(checkLabelAtMiddle, workingStyle.labelAtMiddle);
+        setCheckBoxValue(checkLabelAtEnd, workingStyle.labelAtEnd);
         syncingWidgets = false;
         updateWarningAndPreview();
     }
@@ -194,15 +191,15 @@ public class PathStyleDialog extends AutoScaledScreen {
     }
 
     private boolean hasAnyLabelLocation() {
-        return workingStyle.labelAtStart || workingStyle.labelAtEnd || workingStyle.labelAtMiddle;
+        return workingStyle.labelAtStart || workingStyle.labelAtMiddle || workingStyle.labelAtEnd;
     }
 
     private FrontierData.PathStyle getPersistedStyle() {
         FrontierData.PathStyle persisted = new FrontierData.PathStyle(workingStyle);
-        if (!persisted.labelAtStart && !persisted.labelAtEnd && !persisted.labelAtMiddle) {
+        if (!persisted.labelAtStart && !persisted.labelAtMiddle && !persisted.labelAtEnd) {
             persisted.labelAtStart = true;
-            persisted.labelAtEnd = false;
             persisted.labelAtMiddle = false;
+            persisted.labelAtEnd = false;
         }
 
         return persisted;
@@ -252,8 +249,21 @@ public class PathStyleDialog extends AutoScaledScreen {
                 textBox.setError(null);
                 updateWarningAndPreview();
             } catch (Exception ignored) {
-                textBox.setError(invalidIdentifierLabel);
+                textBox.setError(Component.empty());
             }
+        }
+
+        private void onSelectorChanged(Identifier value) {
+            if (syncingWidgets) {
+                return;
+            }
+
+            appliedValue = value;
+            setter.accept(value);
+            selector.setSelectedId(value);
+            textBox.setError(null);
+            textBox.setValue(value.toString());
+            updateWarningAndPreview();
         }
 
         private void applyValue(Identifier value) {

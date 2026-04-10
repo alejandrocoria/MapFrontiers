@@ -29,7 +29,7 @@ public class TextBoxIdentifier extends TextBox {
         setTextColor(error == null ? ColorConstants.TEXTBOX_TEXT : ColorConstants.TEXT_ERROR);
         super.extractWidgetRenderState(graphics, mouseX, mouseY, partialTicks);
 
-        if (error != null) {
+        if (error != null && !error.getString().isEmpty()) {
             List<FormattedCharSequence> errorList = textFont.split(error, width - 8);
             int maxErrorWidth = width - 8;
             graphics.fill(getX() - 1, getY() - errorList.size() * 12 - 5, getX() + maxErrorWidth + 9, getY() - 1,

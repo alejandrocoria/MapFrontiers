@@ -19,12 +19,16 @@ public class PathMarkerSelectorWidget extends AbstractWidgetNoNarration {
     private static final int CELL_SIZE = 18;
     private static final int CELL_SPACING = 2;
 
-    private final Consumer<Identifier> onPress;
+    private Consumer<Identifier> onPress;
     private Identifier selectedId;
 
     public PathMarkerSelectorWidget(Identifier selectedId, Consumer<Identifier> onPress) {
         super(0, 0, getSelectorWidth(), CELL_SIZE, Component.empty());
         this.selectedId = selectedId;
+        this.onPress = onPress;
+    }
+
+    public void setOnPress(Consumer<Identifier> onPress) {
         this.onPress = onPress;
     }
 

@@ -119,18 +119,18 @@ public final class ClientConfig {
             .translation(translation("appearance", "banner", "opacity")));
     public static final StringConfigEntry PATH_DEFAULT_STYLE_START = register(stringEntry(FrontierData.PathStyle.BIG_DOT.toString(), "path", "defaultStyle", "start")
             .comment("Marker identifier used by default for the start of new path frontiers."));
-    public static final StringConfigEntry PATH_DEFAULT_STYLE_END = register(stringEntry(FrontierData.PathStyle.BIG_DOT.toString(), "path", "defaultStyle", "end")
-            .comment("Marker identifier used by default for the end of new path frontiers."));
     public static final StringConfigEntry PATH_DEFAULT_STYLE_MIDDLE = register(stringEntry(FrontierData.PathStyle.NONE.toString(), "path", "defaultStyle", "middle")
             .comment("Marker identifier used by default for intermediate points of new path frontiers."));
+    public static final StringConfigEntry PATH_DEFAULT_STYLE_END = register(stringEntry(FrontierData.PathStyle.BIG_DOT.toString(), "path", "defaultStyle", "end")
+            .comment("Marker identifier used by default for the end of new path frontiers."));
     public static final StringConfigEntry PATH_DEFAULT_STYLE_SEGMENT = register(stringEntry(FrontierData.PathStyle.SMALL_DOT.toString(), "path", "defaultStyle", "segment")
             .comment("Marker identifier used by default for segments of new path frontiers."));
     public static final BooleanConfigEntry PATH_DEFAULT_STYLE_LABEL_AT_START = register(boolEntry(true, "path", "defaultStyle", "labelAtStart")
             .comment("Show path labels and banner at the start by default."));
-    public static final BooleanConfigEntry PATH_DEFAULT_STYLE_LABEL_AT_END = register(boolEntry(false, "path", "defaultStyle", "labelAtEnd")
-            .comment("Show path labels and banner at the end by default."));
     public static final BooleanConfigEntry PATH_DEFAULT_STYLE_LABEL_AT_MIDDLE = register(boolEntry(false, "path", "defaultStyle", "labelAtMiddle")
             .comment("Show path labels and banner at the midpoint by default."));
+    public static final BooleanConfigEntry PATH_DEFAULT_STYLE_LABEL_AT_END = register(boolEntry(false, "path", "defaultStyle", "labelAtEnd")
+            .comment("Show path labels and banner at the end by default."));
     public static final IntConfigEntry PATH_PROXIMITY_ENTER_DISTANCE = register(intEntry(8, 0, 128, "path", "activation", "enterDistance")
             .comment("Distance in blocks used to activate Path frontiers for HUD and announcements.")
             .translation(translation("path", "activation", "enterDistance")));
@@ -380,12 +380,12 @@ public final class ClientConfig {
     public static FrontierData.PathStyle getDefaultPathStyle() {
         FrontierData.PathStyle pathStyle = new FrontierData.PathStyle();
         pathStyle.startMarker = parsePathMarker(PATH_DEFAULT_STYLE_START.get(), FrontierData.PathStyle.BIG_DOT);
-        pathStyle.endMarker = parsePathMarker(PATH_DEFAULT_STYLE_END.get(), FrontierData.PathStyle.BIG_DOT);
         pathStyle.middleMarker = parsePathMarker(PATH_DEFAULT_STYLE_MIDDLE.get(), FrontierData.PathStyle.NONE);
+        pathStyle.endMarker = parsePathMarker(PATH_DEFAULT_STYLE_END.get(), FrontierData.PathStyle.BIG_DOT);
         pathStyle.segmentMarker = parsePathMarker(PATH_DEFAULT_STYLE_SEGMENT.get(), FrontierData.PathStyle.SMALL_DOT);
         pathStyle.labelAtStart = PATH_DEFAULT_STYLE_LABEL_AT_START.get();
-        pathStyle.labelAtEnd = PATH_DEFAULT_STYLE_LABEL_AT_END.get();
         pathStyle.labelAtMiddle = PATH_DEFAULT_STYLE_LABEL_AT_MIDDLE.get();
+        pathStyle.labelAtEnd = PATH_DEFAULT_STYLE_LABEL_AT_END.get();
         pathStyle.normalizeForPersistence();
         return pathStyle;
     }
@@ -393,12 +393,12 @@ public final class ClientConfig {
     public static void setDefaultPathStyle(FrontierData.PathStyle pathStyle) {
         FrontierData.PathStyle normalized = normalizeDefaultPathStyle(pathStyle);
         PATH_DEFAULT_STYLE_START.set(normalized.startMarker.toString());
-        PATH_DEFAULT_STYLE_END.set(normalized.endMarker.toString());
         PATH_DEFAULT_STYLE_MIDDLE.set(normalized.middleMarker.toString());
+        PATH_DEFAULT_STYLE_END.set(normalized.endMarker.toString());
         PATH_DEFAULT_STYLE_SEGMENT.set(normalized.segmentMarker.toString());
         PATH_DEFAULT_STYLE_LABEL_AT_START.set(normalized.labelAtStart);
-        PATH_DEFAULT_STYLE_LABEL_AT_END.set(normalized.labelAtEnd);
         PATH_DEFAULT_STYLE_LABEL_AT_MIDDLE.set(normalized.labelAtMiddle);
+        PATH_DEFAULT_STYLE_LABEL_AT_END.set(normalized.labelAtEnd);
     }
 
     public static double getPathActivationDistance(boolean alreadyActive) {
@@ -412,12 +412,12 @@ public final class ClientConfig {
     private static boolean validateDefaultPathStyle() {
         FrontierData.PathStyle normalized = getDefaultPathStyle();
         boolean dirty = !PATH_DEFAULT_STYLE_START.get().equals(normalized.startMarker.toString())
-                || !PATH_DEFAULT_STYLE_END.get().equals(normalized.endMarker.toString())
                 || !PATH_DEFAULT_STYLE_MIDDLE.get().equals(normalized.middleMarker.toString())
+                || !PATH_DEFAULT_STYLE_END.get().equals(normalized.endMarker.toString())
                 || !PATH_DEFAULT_STYLE_SEGMENT.get().equals(normalized.segmentMarker.toString())
                 || PATH_DEFAULT_STYLE_LABEL_AT_START.get() != normalized.labelAtStart
-                || PATH_DEFAULT_STYLE_LABEL_AT_END.get() != normalized.labelAtEnd
-                || PATH_DEFAULT_STYLE_LABEL_AT_MIDDLE.get() != normalized.labelAtMiddle;
+                || PATH_DEFAULT_STYLE_LABEL_AT_MIDDLE.get() != normalized.labelAtMiddle
+                || PATH_DEFAULT_STYLE_LABEL_AT_END.get() != normalized.labelAtEnd;
 
         if (dirty) {
             setDefaultPathStyle(normalized);
@@ -499,8 +499,8 @@ public final class ClientConfig {
     private static FrontierData.PathStyle normalizeDefaultPathStyle(FrontierData.PathStyle pathStyle) {
         FrontierData.PathStyle normalized = new FrontierData.PathStyle(pathStyle);
         normalized.startMarker = normalized.startMarker == null ? FrontierData.PathStyle.BIG_DOT : normalized.startMarker;
-        normalized.endMarker = normalized.endMarker == null ? FrontierData.PathStyle.BIG_DOT : normalized.endMarker;
         normalized.middleMarker = normalized.middleMarker == null ? FrontierData.PathStyle.NONE : normalized.middleMarker;
+        normalized.endMarker = normalized.endMarker == null ? FrontierData.PathStyle.BIG_DOT : normalized.endMarker;
         normalized.segmentMarker = normalized.segmentMarker == null ? FrontierData.PathStyle.SMALL_DOT : normalized.segmentMarker;
         normalized.normalizeForPersistence();
         return normalized;

@@ -1277,84 +1277,84 @@ public class FrontierData {
         public static final Identifier CHEVRON = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "chevron");
 
         public Identifier startMarker;
-        public Identifier endMarker;
         public Identifier middleMarker;
+        public Identifier endMarker;
         public Identifier segmentMarker;
         public boolean labelAtStart;
-        public boolean labelAtEnd;
         public boolean labelAtMiddle;
+        public boolean labelAtEnd;
 
         public PathStyle() {
             startMarker = BIG_DOT;
-            endMarker = BIG_DOT;
             middleMarker = NONE;
+            endMarker = BIG_DOT;
             segmentMarker = SMALL_DOT;
             labelAtStart = true;
-            labelAtEnd = false;
             labelAtMiddle = false;
+            labelAtEnd = false;
         }
 
         public PathStyle(PathStyle other) {
             startMarker = other.startMarker;
-            endMarker = other.endMarker;
             middleMarker = other.middleMarker;
+            endMarker = other.endMarker;
             segmentMarker = other.segmentMarker;
             labelAtStart = other.labelAtStart;
-            labelAtEnd = other.labelAtEnd;
             labelAtMiddle = other.labelAtMiddle;
+            labelAtEnd = other.labelAtEnd;
         }
 
         public void readFromNBT(CompoundTag nbt) {
             startMarker = readMarkerFromNBT(nbt, "start", BIG_DOT);
-            endMarker = readMarkerFromNBT(nbt, "end", BIG_DOT);
             middleMarker = readMarkerFromNBT(nbt, "middle", NONE);
+            endMarker = readMarkerFromNBT(nbt, "end", BIG_DOT);
             segmentMarker = readMarkerFromNBT(nbt, "segment", SMALL_DOT);
             labelAtStart = nbt.getBooleanOr("labelAtStart", true);
-            labelAtEnd = nbt.getBooleanOr("labelAtEnd", false);
             labelAtMiddle = nbt.getBooleanOr("labelAtMiddle", false);
+            labelAtEnd = nbt.getBooleanOr("labelAtEnd", false);
             normalizeForPersistence();
         }
 
         public void writeToNBT(CompoundTag nbt) {
             normalizeForPersistence();
             nbt.putString("start", startMarker.toString());
-            nbt.putString("end", endMarker.toString());
             nbt.putString("middle", middleMarker.toString());
+            nbt.putString("end", endMarker.toString());
             nbt.putString("segment", segmentMarker.toString());
             nbt.putBoolean("labelAtStart", labelAtStart);
-            nbt.putBoolean("labelAtEnd", labelAtEnd);
             nbt.putBoolean("labelAtMiddle", labelAtMiddle);
+            nbt.putBoolean("labelAtEnd", labelAtEnd);
         }
 
         public void fromBytes(FriendlyByteBuf buf) {
             startMarker = normalizeMarkerId(buf.readIdentifier(), BIG_DOT);
-            endMarker = normalizeMarkerId(buf.readIdentifier(), BIG_DOT);
             middleMarker = normalizeMarkerId(buf.readIdentifier(), NONE);
+            endMarker = normalizeMarkerId(buf.readIdentifier(), BIG_DOT);
             segmentMarker = normalizeMarkerId(buf.readIdentifier(), SMALL_DOT);
             labelAtStart = buf.readBoolean();
-            labelAtEnd = buf.readBoolean();
             labelAtMiddle = buf.readBoolean();
+            labelAtEnd = buf.readBoolean();
             normalizeForPersistence();
         }
 
         public void toBytes(FriendlyByteBuf buf) {
             normalizeForPersistence();
             buf.writeIdentifier(startMarker);
-            buf.writeIdentifier(endMarker);
             buf.writeIdentifier(middleMarker);
+            buf.writeIdentifier(endMarker);
             buf.writeIdentifier(segmentMarker);
             buf.writeBoolean(labelAtStart);
-            buf.writeBoolean(labelAtEnd);
             buf.writeBoolean(labelAtMiddle);
+            buf.writeBoolean(labelAtEnd);
         }
 
         public void normalizeForPersistence() {
             startMarker = normalizeMarkerId(startMarker, BIG_DOT);
-            endMarker = normalizeMarkerId(endMarker, BIG_DOT);
             middleMarker = normalizeMarkerId(middleMarker, NONE);
+            endMarker = normalizeMarkerId(endMarker, BIG_DOT);
             segmentMarker = normalizeMarkerId(segmentMarker, SMALL_DOT);
 
-            if (!labelAtStart && !labelAtEnd && !labelAtMiddle) {
+            if (!labelAtStart && !labelAtMiddle && !labelAtEnd) {
                 labelAtStart = true;
             }
         }
@@ -1383,17 +1383,17 @@ public class FrontierData {
             }
 
             return labelAtStart == otherPathStyle.labelAtStart
-                    && labelAtEnd == otherPathStyle.labelAtEnd
                     && labelAtMiddle == otherPathStyle.labelAtMiddle
+                    && labelAtEnd == otherPathStyle.labelAtEnd
                     && startMarker.equals(otherPathStyle.startMarker)
-                    && endMarker.equals(otherPathStyle.endMarker)
                     && middleMarker.equals(otherPathStyle.middleMarker)
+                    && endMarker.equals(otherPathStyle.endMarker)
                     && segmentMarker.equals(otherPathStyle.segmentMarker);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(startMarker, endMarker, middleMarker, segmentMarker, labelAtStart, labelAtEnd, labelAtMiddle);
+            return Objects.hash(startMarker, middleMarker, endMarker, segmentMarker, labelAtStart, labelAtMiddle, labelAtEnd);
         }
     }
 
