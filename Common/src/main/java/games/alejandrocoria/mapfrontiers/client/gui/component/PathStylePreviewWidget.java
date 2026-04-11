@@ -1,17 +1,12 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
-import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.platform.Services;
-import games.alejandrocoria.mapfrontiers.platform.services.IJourneyMapHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -25,21 +20,20 @@ import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
-    private static final Identifier backgroundTexture = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/frontier_preview_bg.png");
     private static final int WIDTH = 220;
     private static final int HEIGHT = 150;
     private static final int MAP_SIZE = 150;
     private static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, Identifier.withDefaultNamespace("overworld"));
 
-    private final IJourneyMapHelper.ICustomPreviewRenderer customPreviewRenderer;
+    private final FrontierPreviewPanel previewPanel;
     private final FrontierOverlay previewFrontier;
     private @Nullable FrontierData.PathStyle appliedStyle;
     private float scaleFactor = 1.f;
 
     public PathStylePreviewWidget() {
         super(0, 0, WIDTH, HEIGHT, Component.empty());
+        previewPanel = new FrontierPreviewPanel();
         previewFrontier = new FrontierOverlay(createPreviewFrontierData(), null);
-        customPreviewRenderer = Services.JOURNEYMAP.createCustomPreviewRenderer();
         appliedStyle = createPreviewStyle(previewFrontier.getPathStyle());
         updatePreview();
     }
@@ -61,7 +55,7 @@ public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
         setWidth((int) (WIDTH / guiScale));
         setHeight((int) (HEIGHT / guiScale));
 
-        customPreviewRenderer.setFrontiers(List.of(previewFrontier));
+        previewPanel.refreshRenderer();
     }
 
     @Nullable
@@ -71,28 +65,19 @@ public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
 
     @Override
     public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
-        drawPanel(graphics);
+        previewPanel.drawPanel(graphics, getX(), getY(), getWidth(), getHeight());
         drawPreview(graphics);
-    }
-
-    private void drawPanel(GuiGraphicsExtractor graphics) {
-        graphics.blit(RenderPipelines.GUI_TEXTURED, backgroundTexture, getX(), getY(), 0, 0, getWidth(), getHeight(), 420, 420, 420, 420);
-        graphics.horizontalLine(getX(), getX() + getWidth() - 1, getY(), ColorConstants.OPTION_BORDER);
-        graphics.horizontalLine(getX(), getX() + getWidth() - 1, getY() + getHeight() - 1, ColorConstants.OPTION_BORDER);
-        graphics.verticalLine(getX(), getY(), getY() + getHeight() - 1, ColorConstants.OPTION_BORDER);
-        graphics.verticalLine(getX() + getWidth() - 1, getY(), getY() + getHeight() - 1, ColorConstants.OPTION_BORDER);
     }
 
     private void drawPreview(GuiGraphicsExtractor graphics) {
         int mapSize = getScaledMapSize();
         int mapX = getX() + (getWidth() - mapSize) / 2;
         int mapY = getY() + (getHeight() - mapSize) / 2;
-        customPreviewRenderer.draw(graphics, Minecraft.getInstance().renderBuffers().bufferSource(), mapX, mapY, MAP_SIZE, scaleFactor);
+        previewPanel.drawPreview(graphics, mapX, mapY, MAP_SIZE, scaleFactor);
     }
 
     private void updatePreview() {
-        previewFrontier.recalculateOverlays();
-        customPreviewRenderer.setFrontiers(List.of(previewFrontier));
+        previewPanel.recalculateAndSetFrontiers(List.of(previewFrontier));
     }
 
     private int getScaledMapSize() {
