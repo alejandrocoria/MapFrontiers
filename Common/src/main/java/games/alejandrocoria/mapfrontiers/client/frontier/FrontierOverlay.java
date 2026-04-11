@@ -84,17 +84,9 @@ public class FrontierOverlay extends FrontierData {
     private static final double CHUNK_LABEL_SOLVER_PRECISION = 2.0;
     private static final double PATH_ENDPOINT_LABEL_OFFSET_BLOCKS = 10.0;
     private static final double PATH_SINGLE_POINT_LABEL_OFFSET_BLOCKS = 10.0;
-    private static final Identifier legacyMarkerTexture = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/marker.png");
-    private static final MapImage markerVertex = createLegacyMarkerImage(0, 0, 12, 12);
-    private static final MapImage markerDot = createLegacyMarkerImage(12, 0, 8, 8);
     private static final MapImage incompleteVertexMarker = createFilledSquareMarker(12, 2);
     private static final MapImage incompleteVertexDot = createFilledSquareMarker(8, 1);
     private static final MapImage transparentLabelMarker = createTransparentLabelMarker();
-
-    static {
-        markerVertex.setAnchorX(markerVertex.getDisplayWidth() / 2.0).setAnchorY(markerVertex.getDisplayHeight() / 2.0);
-        markerDot.setAnchorX(markerDot.getDisplayWidth() / 2.0).setAnchorY(markerDot.getDisplayHeight() / 2.0);
-    }
 
     public BlockPos topLeft;
     public BlockPos bottomRight;
@@ -2064,23 +2056,15 @@ public class FrontierOverlay extends FrontierData {
             return null;
         }
 
-        MapImage markerImage;
-        if (FrontierData.PathStyle.BIG_DOT.equals(markerId)) {
-            markerImage = createLegacyMarkerImage(0, 0, 12, 12);
-        } else if (FrontierData.PathStyle.SMALL_DOT.equals(markerId)) {
-            markerImage = createLegacyMarkerImage(12, 0, 8, 8);
-        } else if (FrontierData.PathStyle.SQUARE.equals(markerId)) {
-            markerImage = createFilledSquareMarker(12, 2);
-        } else if (FrontierData.PathStyle.ARROW.equals(markerId) || FrontierData.PathStyle.DOUBLE_ARROW.equals(markerId)
-                || FrontierData.PathStyle.CHEVRON.equals(markerId)) {
-            markerImage = createLegacyMarkerImage(12, 0, 8, 8);
-        } else if (FrontierData.PathStyle.RING.equals(markerId) || FrontierData.PathStyle.DIAMOND.equals(markerId)) {
-            markerImage = createLegacyMarkerImage(0, 0, 12, 12);
-        } else {
+        PathMarkerCatalog.Entry entry = PathMarkerCatalog.get(markerId);
+        if (entry == null || entry.texture() == null) {
             return null;
         }
 
-        markerImage.setRotation(Math.round(rotation));
+        MapImage markerImage = createPathMarkerImage(entry.texture(), entry.width(), entry.height());
+        if (entry.directional()) {
+            markerImage.setRotation(Math.round(rotation));
+        }
         return markerImage;
     }
 
@@ -2088,8 +2072,8 @@ public class FrontierOverlay extends FrontierData {
         return (float) Math.toDegrees(Math.atan2(to.getZ() - from.getZ(), to.getX() - from.getX()));
     }
 
-    private static MapImage createLegacyMarkerImage(int x, int y, int width, int height) {
-        MapImage mapImage = new MapImage(legacyMarkerTexture, x, y, width, height, ColorConstants.WHITE, 1.f);
+    private static MapImage createPathMarkerImage(Identifier texture, int width, int height) {
+        MapImage mapImage = new MapImage(texture, 0, 0, width, height, ColorConstants.WHITE, 1.f);
         mapImage.setAnchorX(mapImage.getDisplayWidth() / 2.0).setAnchorY(mapImage.getDisplayHeight() / 2.0);
         return mapImage;
     }
