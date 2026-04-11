@@ -13,6 +13,11 @@ import net.minecraft.resources.Identifier;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 
+/**
+ * Shared panel for previews that render real frontier overlays through JourneyMap.
+ * Widgets are responsible for building the example frontiers; this class owns the
+ * common preview pipeline and panel decoration.
+ */
 @ParametersAreNonnullByDefault
 public class FrontierPreviewPanel {
     private static final Identifier BACKGROUND_TEXTURE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/frontier_preview_bg.png");
@@ -33,11 +38,6 @@ public class FrontierPreviewPanel {
         setFrontiers(frontiers);
     }
 
-    public void setFrontiers(List<FrontierOverlay> frontiers) {
-        this.frontiers = List.copyOf(frontiers);
-        customPreviewRenderer.setFrontiers(this.frontiers);
-    }
-
     public void refreshRenderer() {
         customPreviewRenderer.setFrontiers(frontiers);
     }
@@ -53,5 +53,10 @@ public class FrontierPreviewPanel {
 
     public void drawPreview(GuiGraphicsExtractor graphics, int x, int y, int size, float scaleFactor) {
         customPreviewRenderer.draw(graphics, Minecraft.getInstance().renderBuffers().bufferSource(), x, y, size, scaleFactor);
+    }
+
+    private void setFrontiers(List<FrontierOverlay> frontiers) {
+        this.frontiers = List.copyOf(frontiers);
+        customPreviewRenderer.setFrontiers(this.frontiers);
     }
 }
