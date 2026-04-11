@@ -13,6 +13,7 @@ import java.util.function.Consumer;
 public class TextBoxIdentifier extends TextBox {
     private @Nullable Identifier parsedValue;
     private boolean invalid = false;
+    private boolean settingIdentifier = false;
     private @Nullable Consumer<String> externalValueChangedCallback;
 
     public TextBoxIdentifier(Font font, int width) {
@@ -23,7 +24,12 @@ public class TextBoxIdentifier extends TextBox {
     public void setIdentifier(Identifier identifier) {
         parsedValue = identifier;
         invalid = false;
-        setValue(identifier.toString());
+        settingIdentifier = true;
+        try {
+            setValue(identifier.toString());
+        } finally {
+            settingIdentifier = false;
+        }
     }
 
     public @Nullable Identifier getParsedValue() {
@@ -46,7 +52,7 @@ public class TextBoxIdentifier extends TextBox {
 
     private void onValueChanged(String value) {
         validateIdentifier(value);
-        if (externalValueChangedCallback != null) {
+        if (!settingIdentifier && externalValueChangedCallback != null) {
             externalValueChangedCallback.accept(value);
         }
     }

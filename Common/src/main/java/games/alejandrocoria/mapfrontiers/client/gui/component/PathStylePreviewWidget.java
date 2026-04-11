@@ -33,17 +33,25 @@ public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
 
     private final IJourneyMapHelper.ICustomPreviewRenderer customPreviewRenderer;
     private final FrontierOverlay previewFrontier;
+    private @Nullable FrontierData.PathStyle appliedStyle;
     private float scaleFactor = 1.f;
 
     public PathStylePreviewWidget() {
         super(0, 0, WIDTH, HEIGHT, Component.empty());
         previewFrontier = new FrontierOverlay(createPreviewFrontierData(), null);
         customPreviewRenderer = Services.JOURNEYMAP.createCustomPreviewRenderer();
+        appliedStyle = createPreviewStyle(previewFrontier.getPathStyle());
         updatePreview();
     }
 
     public void setPathStyle(FrontierData.PathStyle style) {
-        previewFrontier.setPathStyle(createPreviewStyle(style));
+        FrontierData.PathStyle previewStyle = createPreviewStyle(style);
+        if (previewStyle.equals(appliedStyle)) {
+            return;
+        }
+
+        appliedStyle = new FrontierData.PathStyle(previewStyle);
+        previewFrontier.setPathStyle(previewStyle);
         updatePreview();
     }
 

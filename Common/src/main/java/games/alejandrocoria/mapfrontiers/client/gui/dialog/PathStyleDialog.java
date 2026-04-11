@@ -230,13 +230,11 @@ public class PathStyleDialog extends AutoScaledScreen {
         private final PathMarkerSelectorWidget selector;
         private final TextBoxIdentifier textBox;
         private final Consumer<Identifier> setter;
-        private Identifier appliedValue;
 
         private MarkerRow(PathMarkerSelectorWidget selector, TextBoxIdentifier textBox, Consumer<Identifier> setter, Identifier initialValue) {
             this.selector = selector;
             this.textBox = textBox;
             this.setter = setter;
-            appliedValue = initialValue;
             selector.setSelectedId(initialValue);
         }
 
@@ -251,7 +249,6 @@ public class PathStyleDialog extends AutoScaledScreen {
                     return;
                 }
 
-                appliedValue = parsed;
                 setter.accept(parsed);
                 selector.setSelectedId(parsed);
                 updateWarningAndPreview();
@@ -263,7 +260,6 @@ public class PathStyleDialog extends AutoScaledScreen {
                 return;
             }
 
-            appliedValue = value;
             setter.accept(value);
             selector.setSelectedId(value);
             textBox.setIdentifier(value);
@@ -271,7 +267,6 @@ public class PathStyleDialog extends AutoScaledScreen {
         }
 
         private void applyValue(Identifier value) {
-            appliedValue = value;
             selector.setSelectedId(value);
             textBox.setIdentifier(value);
             setter.accept(value);
