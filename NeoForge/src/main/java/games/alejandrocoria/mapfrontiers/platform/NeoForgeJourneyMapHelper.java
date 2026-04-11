@@ -231,6 +231,9 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
                 for (PolygonOverlay polygon : frontierOverlay.getPolygonOverlays()) {
                     polygonDrawSteps.add(new DrawPolygonStep(polygon));
                 }
+                for (MarkerOverlay marker : frontierOverlay.getMarkerOverlays()) {
+                    overlayDrawSteps.add(new DrawMarkerStep(marker));
+                }
                 for (MarkerOverlay label : frontierOverlay.getLabelOverlays()) {
                     overlayDrawSteps.add(new DrawMarkerStep(label));
                 }

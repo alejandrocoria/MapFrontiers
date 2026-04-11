@@ -183,6 +183,10 @@ public class FrontierOverlay extends FrontierData {
         return polygonOverlays;
     }
 
+    public List<MarkerOverlay> getMarkerOverlays() {
+        return markerOverlays;
+    }
+
     public List<MarkerOverlay> getLabelOverlays() {
         return labelOverlays;
     }

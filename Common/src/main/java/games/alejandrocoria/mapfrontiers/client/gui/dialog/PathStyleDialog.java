@@ -213,6 +213,14 @@ public class PathStyleDialog extends AutoScaledScreen {
     }
 
     @Override
+    public void repositionElements() {
+        if (previewWidget != null) {
+            previewWidget.setScaleFactor(scaleFactor);
+        }
+        super.repositionElements();
+    }
+
+    @Override
     public void onClose() {
         super.onClose();
         afterDoneCallback.accept(getPersistedStyle());
