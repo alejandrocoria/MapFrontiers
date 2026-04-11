@@ -71,12 +71,19 @@ public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
 
     @Override
     public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        drawPanel(graphics);
+        drawPreview(graphics);
+    }
+
+    private void drawPanel(GuiGraphicsExtractor graphics) {
         graphics.blit(RenderPipelines.GUI_TEXTURED, backgroundTexture, getX(), getY(), 0, 0, getWidth(), getHeight(), 420, 420, 420, 420);
         graphics.horizontalLine(getX(), getX() + getWidth() - 1, getY(), ColorConstants.OPTION_BORDER);
         graphics.horizontalLine(getX(), getX() + getWidth() - 1, getY() + getHeight() - 1, ColorConstants.OPTION_BORDER);
         graphics.verticalLine(getX(), getY(), getY() + getHeight() - 1, ColorConstants.OPTION_BORDER);
         graphics.verticalLine(getX() + getWidth() - 1, getY(), getY() + getHeight() - 1, ColorConstants.OPTION_BORDER);
+    }
 
+    private void drawPreview(GuiGraphicsExtractor graphics) {
         int mapSize = getScaledMapSize();
         int mapX = getX() + (getWidth() - mapSize) / 2;
         int mapY = getY() + (getHeight() - mapSize) / 2;
