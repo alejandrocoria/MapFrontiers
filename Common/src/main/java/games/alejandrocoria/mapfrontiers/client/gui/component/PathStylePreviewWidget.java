@@ -98,14 +98,14 @@ public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
         frontierData.setMode(FrontierData.Mode.Path);
         frontierData.setOwner(owner);
         frontierData.setName1("Preview");
-        frontierData.setName2("Path");
+        frontierData.setName2("");
         frontierData.setColor(0xFFAACC60);
         frontierData.setDimension(OVERWORLD);
         PreviewFrontierHelper.setPreviewBanner(frontierData);
         setPreviewVisibility(frontierData);
         frontierData.addPoint(new BlockPos(55, 70, 165));
         frontierData.addPoint(new BlockPos(120, 70, 70));
-        frontierData.addPoint(new BlockPos(185, 70, 150));
+        frontierData.addPoint(new BlockPos(185, 70, 165));
         return frontierData;
     }
 
@@ -113,8 +113,6 @@ public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
         frontierData.setVisibility(FrontierData.VisibilityData.Visibility.Frontier, true);
         frontierData.setVisibility(FrontierData.VisibilityData.Visibility.Fullscreen, true);
         frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenName, true);
-        frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenOwner, true);
-        frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenBanner, true);
         frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenDay, true);
     }
 
