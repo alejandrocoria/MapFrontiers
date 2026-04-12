@@ -103,6 +103,8 @@ public class FrontierOverlay extends FrontierData {
     private final List<MarkerOverlay> markerOverlays = new ArrayList<>();
     private final List<MarkerOverlay> labelOverlays = new ArrayList<>();
     private final BannerRenderer bannerRenderer = new BannerRenderer();
+    private int previewTextSize = -1;
+    private int previewBannerSize = -1;
 
     private int hash;
     private boolean hashDirty = true;
@@ -181,6 +183,11 @@ public class FrontierOverlay extends FrontierData {
 
     public List<MarkerOverlay> getLabelOverlays() {
         return labelOverlays;
+    }
+
+    public void setPreviewLabelSizes(int textSize, int bannerSize) {
+        previewTextSize = Math.max(1, textSize);
+        previewBannerSize = Math.max(1, bannerSize);
     }
 
     public void updateOverlayIfNeeded() {
@@ -1651,10 +1658,12 @@ public class FrontierOverlay extends FrontierData {
             label += ChatFormatting.ITALIC + owner.username;
         }
 
-        textWidthPx *= ClientConfig.TEXT_SIZE.get();
-        int textHeightPx = lines * TEXT_LINE_HEIGHT_PX * ClientConfig.TEXT_SIZE.get();
-        int bannerWidthPx = hasBanner ? BANNER_BASE_WIDTH_PX * ClientConfig.BANNER_SIZE.get() : 0;
-        int bannerHeightPx = hasBanner ? BANNER_BASE_HEIGHT_PX * ClientConfig.BANNER_SIZE.get() : 0;
+        int textSize = getTextSize();
+        int bannerSize = getBannerSize();
+        textWidthPx *= textSize;
+        int textHeightPx = lines * TEXT_LINE_HEIGHT_PX * textSize;
+        int bannerWidthPx = hasBanner ? BANNER_BASE_WIDTH_PX * bannerSize : 0;
+        int bannerHeightPx = hasBanner ? BANNER_BASE_HEIGHT_PX * bannerSize : 0;
         // Treat the banner as a square footprint for placement/min zoom so rotations do not
         // underestimate the horizontal space without having to compute the rotated bounds.
         int bannerPlacementWidthPx = hasBanner ? bannerHeightPx : 0;
@@ -1677,7 +1686,7 @@ public class FrontierOverlay extends FrontierData {
             // JourneyMap centers each line again inside drawLabels(..., VAlign.Middle),
             // so multi-line MarkerOverlay labels end up shifted down by half a line unless
             // we compensate here. Single-line labels do not need this correction.
-            textOffsetY = lines > 1 ? -(TEXT_LINE_HEIGHT_PX * ClientConfig.TEXT_SIZE.get()) / 2 : 0;
+            textOffsetY = lines > 1 ? -(TEXT_LINE_HEIGHT_PX * textSize) / 2 : 0;
         }
 
         return new LabelContentMetrics(label,
@@ -1701,7 +1710,7 @@ public class FrontierOverlay extends FrontierData {
     private TextProperties createBaseTextProperties() {
         TextProperties textProperties = new TextProperties()
                 .setOpacity(ClientConfig.TEXT_OPACITY.get().floatValue())
-                .setScale(ClientConfig.TEXT_SIZE.get())
+                .setScale(getTextSize())
                 .setBackgroundOpacity(0.f);
         switch (ClientConfig.TEXT_COLOR.get()) {
             case ClientConfig.TextColor.FrontierColor -> textProperties.setColor(color);
@@ -1725,6 +1734,14 @@ public class FrontierOverlay extends FrontierData {
         bannerIcon.setOpacity(ClientConfig.BANNER_OPACITY.get().floatValue());
         bannerIcon.setRotation(-bannerRenderer.getRotation());
         return bannerIcon;
+    }
+
+    private int getTextSize() {
+        return previewTextSize > 0 ? previewTextSize : ClientConfig.TEXT_SIZE.get();
+    }
+
+    private int getBannerSize() {
+        return previewBannerSize > 0 ? previewBannerSize : ClientConfig.BANNER_SIZE.get();
     }
 
     private int colorMaxBrightness(int color) {

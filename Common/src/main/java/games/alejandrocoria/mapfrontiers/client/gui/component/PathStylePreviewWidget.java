@@ -23,6 +23,8 @@ public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
     private static final int WIDTH = 240;
     private static final int HEIGHT = 240;
     private static final int MAP_SIZE = 240;
+    private static final int PREVIEW_TEXT_SIZE = 2;
+    private static final int PREVIEW_BANNER_SIZE = 1;
     private static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, Identifier.withDefaultNamespace("overworld"));
 
     private final FrontierPreviewPanel previewPanel;
@@ -34,6 +36,7 @@ public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
         super(0, 0, WIDTH, HEIGHT, Component.empty());
         previewPanel = new FrontierPreviewPanel();
         previewFrontier = new FrontierOverlay(createPreviewFrontierData(), null);
+        previewFrontier.setPreviewLabelSizes(PREVIEW_TEXT_SIZE, PREVIEW_BANNER_SIZE);
         appliedStyle = createPreviewStyle(previewFrontier.getPathStyle());
         updatePreview();
     }
