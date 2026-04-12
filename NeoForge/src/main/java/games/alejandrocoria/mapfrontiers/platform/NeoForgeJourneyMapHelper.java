@@ -18,6 +18,7 @@ import journeymap.client.render.draw.DrawPolygonStep;
 import journeymap.client.render.draw.DrawStep;
 import journeymap.client.render.map.MapRenderer;
 import journeymap.client.ui.UIManager;
+import journeymap.client.ui.component.screens.JmUI;
 import journeymap.client.ui.minimap.DisplayVars;
 import journeymap.client.ui.minimap.MiniMap;
 import journeymap.client.ui.minimap.Position;
@@ -247,13 +248,18 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
                 return;
             }
 
-            int width = Minecraft.getInstance().getWindow().getWidth();
-            int height = Minecraft.getInstance().getWindow().getHeight();
-            double guiScale = Minecraft.getInstance().getWindow().getGuiScale();
-            float mapScale = (float) (scaleFactor / guiScale);
+            int guiScale = Math.max(1, (int) Math.round(JmUI.calculateScaleFactor()));
+            int width = graphics.guiWidth() * guiScale;
+            int height = graphics.guiHeight() * guiScale;
+            double effectiveGuiScale = guiScale / scaleFactor;
+            float mapScale = (float) (1.0 / effectiveGuiScale);
             int previewSize = Math.max(1, Math.round(size * mapScale));
-            float polygonTranslateX = (float) (guiScale * x / scaleFactor + size / 2.0 - width / 2.0);
-            float polygonTranslateY = (float) (guiScale * y / scaleFactor + size / 2.0 - height / 2.0);
+            double previewPhysicalX = Math.round(x * effectiveGuiScale);
+            double previewPhysicalY = Math.round(y * effectiveGuiScale);
+            float polygonTranslateX = (float) (previewPhysicalX + size / 2.0 - width / 2.0);
+            float polygonTranslateY = (float) (previewPhysicalY + size / 2.0 - height / 2.0);
+            float overlayTranslateX = (float) (polygonTranslateX / effectiveGuiScale);
+            float overlayTranslateY = (float) (polygonTranslateY / effectiveGuiScale);
 
             mapRenderer.setViewPortBounds(new Rectangle2D.Double(0, 0, size, size));
             mapRenderer.center(mapState.getWorldDir(), mapState.getMapType(), size / 2.0, size / 2.0, 512);
@@ -278,8 +284,7 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
 
                 graphics.pose().pushMatrix();
                 try {
-                    graphics.pose().translate(x + previewSize / 2.0f - width * mapScale / 2.0f,
-                            y + previewSize / 2.0f - height * mapScale / 2.0f);
+                    graphics.pose().translate(overlayTranslateX, overlayTranslateY);
                     graphics.pose().scale(mapScale, mapScale);
 
                     for (DrawPolygonStep drawPolygonStep : polygonDrawSteps) {
