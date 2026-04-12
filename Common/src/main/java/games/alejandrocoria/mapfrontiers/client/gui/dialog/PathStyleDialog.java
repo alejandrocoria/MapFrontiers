@@ -37,6 +37,7 @@ public class PathStyleDialog extends AutoScaledScreen {
     private static final Component replaceDefaultLabel = Component.translatable("mapfrontiers.replace_with_default_path_style");
     private static final Component doneLabel = Component.translatable("gui.done");
     private static final int WARNING_WIDTH = 120;
+    private static final int BUTTON_HORIZONTAL_PADDING = 16;
 
     private final @Nullable FrontierData.PathStyle defaultStyle;
     private final Consumer<FrontierData.PathStyle> afterDoneCallback;
@@ -44,6 +45,8 @@ public class PathStyleDialog extends AutoScaledScreen {
 
     private PathStylePreviewWidget previewWidget;
     private MultiLineTextWidget warningWidget;
+    private @Nullable SimpleButton replaceDefaultButton;
+    private SimpleButton doneButton;
     private CheckBoxButton checkLabelAtStart;
     private CheckBoxButton checkLabelAtEnd;
     private CheckBoxButton checkLabelAtMiddle;
@@ -116,9 +119,10 @@ public class PathStyleDialog extends AutoScaledScreen {
 
         LinearLayout buttons = LinearLayout.horizontal().spacing(7);
         if (defaultStyle != null) {
-            buttons.addChild(new SimpleButton(font, 170, replaceDefaultLabel, b -> replaceWithDefaultStyle()));
+            replaceDefaultButton = buttons.addChild(new SimpleButton(font, font.width(replaceDefaultLabel) + BUTTON_HORIZONTAL_PADDING,
+                    replaceDefaultLabel, b -> replaceWithDefaultStyle()));
         }
-        buttons.addChild(new SimpleButton(font, 100, doneLabel, b -> onClose()));
+        doneButton = buttons.addChild(new SimpleButton(font, 100, doneLabel, b -> onClose()));
         mainLayout.addChild(buttons, LayoutSettings.defaults().alignHorizontallyCenter());
         updateWarningAndPreview();
     }
@@ -217,6 +221,10 @@ public class PathStyleDialog extends AutoScaledScreen {
             previewWidget.setScaleFactor(scaleFactor);
         }
         super.repositionElements();
+        if (replaceDefaultButton != null) {
+            replaceDefaultButton.setX(content.getX());
+            doneButton.setX(content.getX() + (content.getWidth() - doneButton.getWidth()) / 2);
+        }
     }
 
     @Override

@@ -125,7 +125,7 @@
   "mapfrontiers.title_default_path_style": "Default Path Style",
   "mapfrontiers.path_style_default_description": "This style is used as the initial value for new Path frontiers on this client.",
   "mapfrontiers.path_style_labels_required": "Select at least one location for labels and banner.\nTo hide them completely, use Visibility.",
-  "mapfrontiers.replace_with_default_path_style": "Replace with default style",
+  "mapfrontiers.replace_with_default_path_style": "Apply default style",
   "mapfrontiers.start": "Start",
   "mapfrontiers.end": "End",
   "mapfrontiers.middle": "Middle",

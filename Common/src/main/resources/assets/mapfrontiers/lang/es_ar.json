@@ -125,7 +125,7 @@
   "mapfrontiers.title_default_path_style": "Estilo por defecto de Path",
   "mapfrontiers.path_style_default_description": "Este estilo se usa como valor inicial para nuevas fronteras Path en este cliente.",
   "mapfrontiers.path_style_labels_required": "Selecciona al menos una ubicación para etiquetas y banner.\nPara ocultarlos por completo, usa Visibilidad.",
-  "mapfrontiers.replace_with_default_path_style": "Reemplazar con estilo por defecto",
+  "mapfrontiers.replace_with_default_path_style": "Aplicar estilo por defecto",
   "mapfrontiers.start": "Inicio",
   "mapfrontiers.end": "Final",
   "mapfrontiers.middle": "Punto medio",
