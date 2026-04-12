@@ -33,10 +33,10 @@ public class PathStyleDialog extends AutoScaledScreen {
     private static final Component middlePointsLabel = Component.translatable("mapfrontiers.middle_points");
     private static final Component segmentsLabel = Component.translatable("mapfrontiers.segments");
     private static final Component labelsAndBannerLabel = Component.translatable("mapfrontiers.labels_and_banner");
-    private static final Component previewLabel = Component.translatable("mapfrontiers.preview");
     private static final Component labelsRequiredLabel = Component.translatable("mapfrontiers.path_style_labels_required");
     private static final Component replaceDefaultLabel = Component.translatable("mapfrontiers.replace_with_default_path_style");
     private static final Component doneLabel = Component.translatable("gui.done");
+    private static final int WARNING_WIDTH = 120;
 
     private final @Nullable FrontierData.PathStyle defaultStyle;
     private final Consumer<FrontierData.PathStyle> afterDoneCallback;
@@ -54,14 +54,14 @@ public class PathStyleDialog extends AutoScaledScreen {
     private boolean syncingWidgets = false;
 
     public PathStyleDialog(FrontierData.PathStyle initialStyle, FrontierData.PathStyle defaultStyle, Consumer<FrontierData.PathStyle> afterDoneCallback) {
-        super(titleLabel, 760, 280);
+        super(titleLabel, 760, 420);
         this.defaultStyle = new FrontierData.PathStyle(defaultStyle);
         this.afterDoneCallback = afterDoneCallback;
         this.workingStyle = new FrontierData.PathStyle(initialStyle);
     }
 
     public PathStyleDialog(FrontierData.PathStyle initialStyle, Consumer<FrontierData.PathStyle> afterDoneCallback) {
-        super(defaultTitleLabel, 760, 280);
+        super(defaultTitleLabel, 760, 420);
         this.defaultStyle = null;
         this.afterDoneCallback = afterDoneCallback;
         this.workingStyle = new FrontierData.PathStyle(initialStyle);
@@ -70,58 +70,56 @@ public class PathStyleDialog extends AutoScaledScreen {
     @Override
     protected void initScreen() {
         LinearLayout mainLayout = LinearLayout.vertical().spacing(8);
-        mainLayout.defaultCellSetting().alignHorizontallyCenter();
         content.addChild(mainLayout);
 
         if (defaultStyle == null) {
-            MultiLineTextWidget description = mainLayout.addChild(new MultiLineTextWidget(defaultDescriptionLabel.copy().withColor(ColorConstants.TEXT), font));
+            MultiLineTextWidget description = mainLayout.addChild(
+                    new MultiLineTextWidget(defaultDescriptionLabel.copy().withColor(ColorConstants.TEXT), font),
+                    LayoutSettings.defaults().alignHorizontallyCenter());
             description.setMaxWidth(700);
             description.setCentered(true);
         }
 
-        LinearLayout columns = LinearLayout.horizontal().spacing(12);
-        columns.defaultCellSetting().alignVerticallyTop();
-        mainLayout.addChild(columns);
-
-        GridLayout leftGrid = new GridLayout().spacing(4);
-        leftGrid.defaultCellSetting().alignVerticallyMiddle();
-        columns.addChild(leftGrid);
+        GridLayout markerGrid = new GridLayout().spacing(4);
+        markerGrid.defaultCellSetting().alignVerticallyMiddle();
+        mainLayout.addChild(markerGrid);
 
         int row = 0;
-        startRow = createMarkerRow(leftGrid, row++, startLabel, workingStyle.startMarker, value -> workingStyle.startMarker = value);
-        middleRow = createMarkerRow(leftGrid, row++, middlePointsLabel, workingStyle.middleMarker, value -> workingStyle.middleMarker = value);
-        endRow = createMarkerRow(leftGrid, row++, endLabel, workingStyle.endMarker, value -> workingStyle.endMarker = value);
-        segmentRow = createMarkerRow(leftGrid, row++, segmentsLabel, workingStyle.segmentMarker, value -> workingStyle.segmentMarker = value);
+        startRow = createMarkerRow(markerGrid, row++, startLabel, workingStyle.startMarker, value -> workingStyle.startMarker = value);
+        middleRow = createMarkerRow(markerGrid, row++, middlePointsLabel, workingStyle.middleMarker, value -> workingStyle.middleMarker = value);
+        endRow = createMarkerRow(markerGrid, row++, endLabel, workingStyle.endMarker, value -> workingStyle.endMarker = value);
+        segmentRow = createMarkerRow(markerGrid, row, segmentsLabel, workingStyle.segmentMarker, value -> workingStyle.segmentMarker = value);
 
-        leftGrid.addChild(SpacerElement.height(8), row++, 0);
-        leftGrid.addChild(new StringWidget(labelsAndBannerLabel, font).setColor(ColorConstants.TEXT_HIGHLIGHT), row++, 0, 1, 3);
+        LinearLayout lowerSection = LinearLayout.horizontal().spacing(12);
+        lowerSection.defaultCellSetting().alignVerticallyTop();
+        mainLayout.addChild(lowerSection);
 
-        LinearLayout labelsRow = LinearLayout.horizontal().spacing(12);
-        labelsRow.defaultCellSetting().alignVerticallyMiddle();
-        leftGrid.addChild(labelsRow, row++, 0, 1, 3);
+        LinearLayout labelLocationsColumn = LinearLayout.vertical().spacing(4);
+        lowerSection.addChild(labelLocationsColumn);
+        labelLocationsColumn.addChild(new StringWidget(labelsAndBannerLabel, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
 
         LinearLayout labelsColumn = LinearLayout.vertical().spacing(4);
-        labelsRow.addChild(labelsColumn);
+        labelLocationsColumn.addChild(labelsColumn);
 
-        checkLabelAtStart = createLocationCheckBox(labelsColumn, startLabel, workingStyle.labelAtStart, value -> workingStyle.labelAtStart = value);
-        checkLabelAtMiddle = createLocationCheckBox(labelsColumn, middleLabel, workingStyle.labelAtMiddle, value -> workingStyle.labelAtMiddle = value);
-        checkLabelAtEnd = createLocationCheckBox(labelsColumn, endLabel, workingStyle.labelAtEnd, value -> workingStyle.labelAtEnd = value);
+        checkLabelAtStart = createLocationCheckBox(labelsColumn, startLabel, workingStyle.labelAtStart,
+                value -> workingStyle.labelAtStart = value);
+        checkLabelAtMiddle = createLocationCheckBox(labelsColumn, middleLabel, workingStyle.labelAtMiddle,
+                value -> workingStyle.labelAtMiddle = value);
+        checkLabelAtEnd = createLocationCheckBox(labelsColumn, endLabel, workingStyle.labelAtEnd,
+                value -> workingStyle.labelAtEnd = value);
 
-        warningWidget = labelsRow.addChild(new MultiLineTextWidget(Component.empty(), font));
-        warningWidget.setMaxWidth(220);
+        labelLocationsColumn.addChild(SpacerElement.width(WARNING_WIDTH));
+        warningWidget = labelLocationsColumn.addChild(new MultiLineTextWidget(Component.empty(), font));
+        warningWidget.setMaxWidth(WARNING_WIDTH);
 
-        LinearLayout rightColumn = LinearLayout.vertical().spacing(6);
-        rightColumn.defaultCellSetting().alignHorizontallyCenter();
-        columns.addChild(rightColumn);
+        previewWidget = lowerSection.addChild(new PathStylePreviewWidget());
 
-        rightColumn.addChild(new StringWidget(previewLabel, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
-        previewWidget = rightColumn.addChild(new PathStylePreviewWidget());
-
+        LinearLayout buttons = LinearLayout.horizontal().spacing(7);
         if (defaultStyle != null) {
-            rightColumn.addChild(new SimpleButton(font, 170, replaceDefaultLabel, b -> replaceWithDefaultStyle()));
+            buttons.addChild(new SimpleButton(font, 170, replaceDefaultLabel, b -> replaceWithDefaultStyle()));
         }
-
-        mainLayout.addChild(new SimpleButton(font, 100, doneLabel, b -> onClose()));
+        buttons.addChild(new SimpleButton(font, 100, doneLabel, b -> onClose()));
+        mainLayout.addChild(buttons, LayoutSettings.defaults().alignHorizontallyCenter());
         updateWarningAndPreview();
     }
 
@@ -143,6 +141,7 @@ public class PathStyleDialog extends AutoScaledScreen {
 
     private CheckBoxButton createLocationCheckBox(LinearLayout parent, Component label, boolean value, Consumer<Boolean> setter) {
         LinearLayout row = LinearLayout.horizontal().spacing(4);
+        row.defaultCellSetting().alignVerticallyMiddle();
         parent.addChild(row);
 
         CheckBoxButton checkBox = row.addChild(new CheckBoxButton(value, b -> {

@@ -20,9 +20,9 @@ import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
-    private static final int WIDTH = 220;
-    private static final int HEIGHT = 150;
-    private static final int MAP_SIZE = 150;
+    private static final int WIDTH = 240;
+    private static final int HEIGHT = 240;
+    private static final int MAP_SIZE = 240;
     private static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, Identifier.withDefaultNamespace("overworld"));
 
     private final FrontierPreviewPanel previewPanel;
@@ -98,9 +98,9 @@ public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
         frontierData.setDimension(OVERWORLD);
         PreviewFrontierHelper.setPreviewBanner(frontierData);
         setPreviewVisibility(frontierData);
-        frontierData.addPoint(new BlockPos(20, 70, 105));
-        frontierData.addPoint(new BlockPos(75, 70, 45));
-        frontierData.addPoint(new BlockPos(130, 70, 95));
+        frontierData.addPoint(new BlockPos(55, 70, 165));
+        frontierData.addPoint(new BlockPos(120, 70, 70));
+        frontierData.addPoint(new BlockPos(185, 70, 150));
         return frontierData;
     }
 
