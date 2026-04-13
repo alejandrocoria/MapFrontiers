@@ -1394,24 +1394,36 @@ public class FrontierOverlay extends FrontierData {
                 addRepeatedMarkers(point, nextPoint, uiArray, mapTypesArray, segmentMarker, 99);
             }
 
-            Identifier markerId;
-            if (i == 0) {
-                markerId = pathStyle.startMarker;
-            } else if (i == points.size() - 1) {
-                markerId = pathStyle.endMarker;
-            } else {
-                markerId = pathStyle.middleMarker;
-            }
-
-            float rotation = 0.f;
-            if (i == 0) {
-                rotation = getSegmentRotation(point, points.get(1));
-            } else if (i == points.size() - 1) {
-                rotation = getSegmentRotation(points.get(i - 1), point);
-            }
+            Identifier markerId = getPathPointMarkerId(i);
+            float rotation = getPathPointMarkerRotation(i);
 
             addSingleMarker(point, resolvePathMarkerImage(markerId, rotation), 100, uiArray, mapTypesArray);
         }
+    }
+
+    private Identifier getPathPointMarkerId(int pointIndex) {
+        Identifier markerId;
+        if (pointIndex == 0) {
+            markerId = pathStyle.startMarker;
+        } else if (pointIndex == points.size() - 1) {
+            markerId = pathStyle.endMarker;
+        } else {
+            markerId = pathStyle.middleMarker;
+        }
+
+        if (FrontierData.PathStyle.NONE.equals(markerId) && !FrontierData.PathStyle.NONE.equals(pathStyle.segmentMarker)) {
+            return pathStyle.segmentMarker;
+        }
+
+        return markerId;
+    }
+
+    private float getPathPointMarkerRotation(int pointIndex) {
+        if (pointIndex < points.size() - 1) {
+            return getSegmentRotation(points.get(pointIndex), points.get(pointIndex + 1));
+        }
+
+        return getSegmentRotation(points.get(pointIndex - 1), points.get(pointIndex));
     }
 
     private void createPathLabels(Context.UI uiArray, Context.MapType[] mapTypesArray, boolean nameVisible, boolean ownerVisible, boolean bannerVisible) {
