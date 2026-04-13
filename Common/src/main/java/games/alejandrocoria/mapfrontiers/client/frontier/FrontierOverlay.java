@@ -2098,7 +2098,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private static float getSegmentRotation(BlockPos from, BlockPos to) {
-        return (float) Math.toDegrees(Math.atan2(to.getZ() - from.getZ(), to.getX() - from.getX()));
+        return (float) -Math.toDegrees(Math.atan2(to.getZ() - from.getZ(), to.getX() - from.getX()));
     }
 
     private static MapImage createPathMarkerImage(Identifier texture, int width, int height) {
