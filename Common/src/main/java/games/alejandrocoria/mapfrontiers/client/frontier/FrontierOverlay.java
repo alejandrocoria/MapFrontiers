@@ -82,8 +82,7 @@ public class FrontierOverlay extends FrontierData {
     private static final int BANNER_SINGLE_LINE_TEXT_OFFSET_Y = 5;
     private static final double VERTEX_LABEL_SOLVER_PRECISION = 0.5;
     private static final double CHUNK_LABEL_SOLVER_PRECISION = 2.0;
-    private static final double PATH_ENDPOINT_LABEL_OFFSET_BLOCKS = 10.0;
-    private static final double PATH_SINGLE_POINT_LABEL_OFFSET_BLOCKS = 10.0;
+    private static final int PATH_LABEL_OFFSET_PADDING_PX = 4;
     private static final double PATH_REPEATED_MARKER_BASE_SPACING_BLOCKS = 8.0;
     private static final int[] PATH_REPEATED_MARKER_MIN_ZOOMS = {2, 4096, 8192, 16384};
     private static final MapImage incompleteVertexMarker = createFilledSquareMarker(12, 2);
@@ -1619,10 +1618,14 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private void addPathLabelOverlay(Context.UI uiArray, Context.MapType[] mapTypesArray, LabelContentMetrics metrics, PathLabelAnchor anchor) {
-        TextProperties textProps = createBaseTextProperties().setOffsetY(metrics.textOffsetY());
+        PathLabelVisualOffset offset = getPathLabelVisualOffset(metrics, anchor);
+        // MarkerOverlay applies TextProperties offsets with inverted signs; MapImage anchors use the same visual direction directly.
+        TextProperties textProps = createBaseTextProperties()
+                .setOffsetX(-offset.x())
+                .setOffsetY(metrics.textOffsetY() - offset.y());
         MarkerOverlay labelOverlay = new MarkerOverlay(MapFrontiers.MODID,
                 BlockPos.containing(anchor.x(), OVERLAY_Y, anchor.z()),
-                createLabelAnchorIcon(metrics));
+                createLabelAnchorIcon(metrics, offset.x(), offset.y()));
         labelOverlay.setActiveUIs(uiArray);
         labelOverlay.setActiveMapTypes(mapTypesArray);
         labelOverlay.setDimension(dimension);
@@ -1735,14 +1738,18 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private MapImage createLabelAnchorIcon(LabelContentMetrics metrics) {
+        return createLabelAnchorIcon(metrics, 0, 0);
+    }
+
+    private MapImage createLabelAnchorIcon(LabelContentMetrics metrics, int offsetX, int offsetY) {
         if (!metrics.hasBanner()) {
             return transparentLabelMarker;
         }
 
         MapImage bannerIcon = new MapImage(bannerRenderer.getImage());
         bannerIcon.setBlur(false);
-        bannerIcon.setAnchorX(metrics.bannerWidthPx() / 2.0);
-        bannerIcon.setAnchorY(metrics.bannerOffsetY());
+        bannerIcon.setAnchorX(metrics.bannerWidthPx() / 2.0 - offsetX);
+        bannerIcon.setAnchorY(metrics.bannerOffsetY() - offsetY);
         bannerIcon.setDisplayWidth(metrics.bannerWidthPx());
         bannerIcon.setDisplayHeight(metrics.bannerHeightPx());
         bannerIcon.setOpacity(ClientConfig.BANNER_OPACITY.get().floatValue());
@@ -1786,7 +1793,7 @@ public class FrontierOverlay extends FrontierData {
         if (points.size() == 1) {
             if (pathStyle.labelAtStart || pathStyle.labelAtEnd || pathStyle.labelAtMiddle) {
                 BlockPos point = points.getFirst();
-                anchors.add(new PathLabelAnchor(point.getX(), point.getZ() + PATH_SINGLE_POINT_LABEL_OFFSET_BLOCKS));
+                anchors.add(new PathLabelAnchor(point.getX(), point.getZ(), 0.0, 1.0));
             }
             return anchors;
         }
@@ -1809,21 +1816,20 @@ public class FrontierOverlay extends FrontierData {
         double dz = endpoint.getZ() - connectedPoint.getZ();
         double length = Math.sqrt(dx * dx + dz * dz);
         if (length < 0.0001) {
-            return new PathLabelAnchor(endpoint.getX(), endpoint.getZ() + PATH_ENDPOINT_LABEL_OFFSET_BLOCKS);
+            return new PathLabelAnchor(endpoint.getX(), endpoint.getZ(), 0.0, 1.0);
         }
 
-        return new PathLabelAnchor(endpoint.getX() + dx / length * PATH_ENDPOINT_LABEL_OFFSET_BLOCKS,
-                endpoint.getZ() + dz / length * PATH_ENDPOINT_LABEL_OFFSET_BLOCKS);
+        return new PathLabelAnchor(endpoint.getX(), endpoint.getZ(), dx / length, dz / length);
     }
 
     private PathLabelAnchor getPathMidpointLabelAnchor() {
         if (points.isEmpty()) {
-            return new PathLabelAnchor(0, 0);
+            return new PathLabelAnchor(0, 0, 0.0, 0.0);
         }
 
         if (points.size() == 1) {
             BlockPos point = points.getFirst();
-            return new PathLabelAnchor(point.getX(), point.getZ());
+            return new PathLabelAnchor(point.getX(), point.getZ(), 0.0, 0.0);
         }
 
         double totalLength = 0.0;
@@ -1833,7 +1839,7 @@ public class FrontierOverlay extends FrontierData {
 
         if (totalLength < 0.0001) {
             BlockPos point = points.getFirst();
-            return new PathLabelAnchor(point.getX(), point.getZ());
+            return new PathLabelAnchor(point.getX(), point.getZ(), 0.0, 0.0);
         }
 
         double halfLength = totalLength / 2.0;
@@ -1846,13 +1852,30 @@ public class FrontierOverlay extends FrontierData {
                 double t = (halfLength - traversed) / segmentLength;
                 double x = from.getX() + (to.getX() - from.getX()) * t;
                 double z = from.getZ() + (to.getZ() - from.getZ()) * t;
-                return new PathLabelAnchor(x, z);
+                return new PathLabelAnchor(x, z, 0.0, 0.0);
             }
             traversed += segmentLength;
         }
 
         BlockPos point = points.getLast();
-        return new PathLabelAnchor(point.getX(), point.getZ());
+        return new PathLabelAnchor(point.getX(), point.getZ(), 0.0, 0.0);
+    }
+
+    private PathLabelVisualOffset getPathLabelVisualOffset(LabelContentMetrics metrics, PathLabelAnchor anchor) {
+        if (anchor.screenOffsetDirectionX() == 0.0 && anchor.screenOffsetDirectionY() == 0.0) {
+            return new PathLabelVisualOffset(0, 0);
+        }
+
+        double halfWidth = metrics.contentWidthPx() / 2.0;
+        double halfHeight = metrics.contentHeightPx() / 2.0;
+        double distanceX = anchor.screenOffsetDirectionX() == 0.0 ? Double.POSITIVE_INFINITY
+                : halfWidth / Math.abs(anchor.screenOffsetDirectionX());
+        double distanceY = anchor.screenOffsetDirectionY() == 0.0 ? Double.POSITIVE_INFINITY
+                : halfHeight / Math.abs(anchor.screenOffsetDirectionY());
+        double distance = Math.min(distanceX, distanceY) + PATH_LABEL_OFFSET_PADDING_PX;
+        int offsetX = (int) Math.round(anchor.screenOffsetDirectionX() * distance);
+        int offsetY = (int) Math.round(anchor.screenOffsetDirectionY() * distance);
+        return new PathLabelVisualOffset(offsetX, offsetY);
     }
 
     private static MapImage createTransparentLabelMarker() {
@@ -2119,7 +2142,13 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private record PathLabelAnchor(double x,
-                                   double z) {
+                                   double z,
+                                   double screenOffsetDirectionX,
+                                   double screenOffsetDirectionY) {
+    }
+
+    private record PathLabelVisualOffset(int x,
+                                         int y) {
     }
 
     public static class BannerRenderer {
