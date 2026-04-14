@@ -1273,6 +1273,7 @@ public class FrontierData {
         public static final Identifier BIG_SQUARE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "big_square");
         public static final Identifier SMALL_SQUARE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "small_square");
         public static final Identifier DIAMOND = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "diamond");
+        public static final Identifier TRIANGLE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "triangle");
         public static final Identifier ARROW = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "arrow");
         public static final Identifier CHEVRON = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "chevron");
         public static final Identifier X_CROSS = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "x_cross");

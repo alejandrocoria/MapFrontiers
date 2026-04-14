@@ -22,6 +22,7 @@ public final class PathMarkerCatalog {
             entry(FrontierData.PathStyle.SMALL_SQUARE, "small_square", false),
             entry(FrontierData.PathStyle.DIAMOND, "diamond", false),
             entry(FrontierData.PathStyle.X_CROSS, "x_cross", false),
+            entry(FrontierData.PathStyle.TRIANGLE, "triangle", true),
             entry(FrontierData.PathStyle.ARROW, "arrow", true),
             entry(FrontierData.PathStyle.CHEVRON, "chevron", true)
     );

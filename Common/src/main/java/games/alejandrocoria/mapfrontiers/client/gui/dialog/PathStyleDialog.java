@@ -57,14 +57,14 @@ public class PathStyleDialog extends AutoScaledScreen {
     private boolean syncingWidgets = false;
 
     public PathStyleDialog(FrontierData.PathStyle initialStyle, FrontierData.PathStyle defaultStyle, Consumer<FrontierData.PathStyle> afterDoneCallback) {
-        super(titleLabel, 480, 320);
+        super(titleLabel, 500, 320);
         this.defaultStyle = new FrontierData.PathStyle(defaultStyle);
         this.afterDoneCallback = afterDoneCallback;
         this.workingStyle = new FrontierData.PathStyle(initialStyle);
     }
 
     public PathStyleDialog(FrontierData.PathStyle initialStyle, Consumer<FrontierData.PathStyle> afterDoneCallback) {
-        super(defaultTitleLabel, 480, 320);
+        super(defaultTitleLabel, 500, 320);
         this.defaultStyle = null;
         this.afterDoneCallback = afterDoneCallback;
         this.workingStyle = new FrontierData.PathStyle(initialStyle);
