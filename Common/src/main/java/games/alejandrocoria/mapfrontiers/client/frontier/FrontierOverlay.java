@@ -84,6 +84,8 @@ public class FrontierOverlay extends FrontierData {
     private static final double CHUNK_LABEL_SOLVER_PRECISION = 2.0;
     private static final double PATH_ENDPOINT_LABEL_OFFSET_BLOCKS = 10.0;
     private static final double PATH_SINGLE_POINT_LABEL_OFFSET_BLOCKS = 10.0;
+    private static final double PATH_REPEATED_MARKER_BASE_SPACING_BLOCKS = 8.0;
+    private static final int[] PATH_REPEATED_MARKER_MIN_ZOOMS = {2, 4096, 8192, 16384};
     private static final MapImage incompleteVertexMarker = createFilledSquareMarker(12, 2);
     private static final MapImage incompleteVertexDot = createFilledSquareMarker(8, 1);
     private static final MapImage transparentLabelMarker = createTransparentLabelMarker();
@@ -1947,81 +1949,54 @@ public class FrontierOverlay extends FrontierData {
         }
     }
 
-    //
-    // Functions adapted from https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
-    //
-    private void addRepeatedMarkers(BlockPos from, BlockPos to, Context.UI uiArray, Context.MapType[] mapTypesArray, @Nullable MapImage markerImage,
-                                    int displayOrder) {
+    private void addRepeatedMarkers(BlockPos from, BlockPos to, Context.UI uiArray, Context.MapType[] mapTypesArray, @Nullable MapImage markerImage, int displayOrder) {
         if (markerImage == null) {
             return;
         }
 
-        if (abs(to.getZ() - from.getZ()) < abs(to.getX() - from.getX())) {
-            if (from.getX() > to.getX()) {
-                addLineRepeatedMarkers(to.getX(), to.getZ(), from.getX(), from.getZ(), uiArray, mapTypesArray, markerImage, displayOrder);
-            } else{
-                addLineRepeatedMarkers(from.getX(), from.getZ(), to.getX(), to.getZ(), uiArray, mapTypesArray, markerImage, displayOrder);
-            }
-        } else {
-            if (from.getZ() > to.getZ()) {
-                addLineRepeatedMarkers(to.getX(), to.getZ(), from.getX(), from.getZ(), uiArray, mapTypesArray, markerImage, displayOrder);
-            } else{
-                addLineRepeatedMarkers(from.getX(), from.getZ(), to.getX(), to.getZ(), uiArray, mapTypesArray, markerImage, displayOrder);
+        int dx = to.getX() - from.getX();
+        int dz = to.getZ() - from.getZ();
+        double length = Math.hypot(dx, dz);
+        if (length <= 1.0) {
+            return;
+        }
+
+        int baseIntervals = Math.max(1, (int) Math.ceil(length / PATH_REPEATED_MARKER_BASE_SPACING_BLOCKS));
+        Set<Long> addedPositions = new HashSet<>();
+        for (int level = 0; level < PATH_REPEATED_MARKER_MIN_ZOOMS.length; ++level) {
+            int intervals = baseIntervals << level;
+            // Level 0 adds all interval points; closer zoom levels add only odd subdivisions.
+            int step = level == 0 ? 1 : 2;
+            for (int marker = 1; marker < intervals; marker += step) {
+                double t = marker / (double) intervals;
+                int x = (int) Math.round(from.getX() + dx * t);
+                int z = (int) Math.round(from.getZ() + dz * t);
+                if ((x == from.getX() && z == from.getZ()) || (x == to.getX() && z == to.getZ())) {
+                    continue;
+                }
+
+                long positionKey = getBlockPos2DKey(x, z);
+                if (!addedPositions.add(positionKey)) {
+                    continue;
+                }
+
+                addRepeatedMarker(new BlockPos(x, OVERLAY_Y, z), uiArray, mapTypesArray, markerImage, displayOrder, PATH_REPEATED_MARKER_MIN_ZOOMS[level]);
             }
         }
     }
 
-    private void addLineRepeatedMarkers(int x0, int z0, int x1, int z1, Context.UI uiArray, Context.MapType[] mapTypesArray, MapImage markerImage,
-                                        int displayOrder) {
-        int dx = abs(x1 - x0);
-        int sx = x0 < x1 ? 1 : -1;
-        int dz = -abs(z1 - z0);
-        int sz = z0 < z1 ? 1 : -1;
-        int err = dx + dz;
-        int i = 0;
-        while (true) {
-            if (x0 == x1 && z0 == z1) {
-                break;
-            }
-            int e2 = 2 * err;
-            if (e2 >= dz) {
-                if (x0 == x1) {
-                    break;
-                }
-                err += dz;
-                x0 += sx;
-            }
-            if (e2 <= dx) {
-                if (z0 == z1) {
-                    break;
-                }
-                err += dx;
-                z0 += sz;
-            }
+    private void addRepeatedMarker(BlockPos pos, Context.UI uiArray, Context.MapType[] mapTypesArray, MapImage markerImage, int displayOrder, int minZoom) {
+        MarkerOverlay dot = new MarkerOverlay(MapFrontiers.MODID, pos, markerImage);
+        dot.setDimension(dimension);
+        dot.setDisplayOrder(displayOrder);
+        dot.setActiveUIs(uiArray);
+        dot.setActiveMapTypes(mapTypesArray);
+        dot.setMinZoom(minZoom);
+        markerOverlays.add(dot);
+    }
 
-            if (x0 == x1 && z0 == z1) {
-                break;
-            }
-
-            BlockPos pos = new BlockPos(x0, OVERLAY_Y, z0);
-            MarkerOverlay dot = new MarkerOverlay(MapFrontiers.MODID, pos, markerImage);
-            dot.setDimension(dimension);
-            dot.setDisplayOrder(displayOrder);
-            dot.setActiveUIs(uiArray);
-            dot.setActiveMapTypes(mapTypesArray);
-            int minZoom = 2;
-            if (i % 2 == 0) {
-                minZoom = 16384;
-            } else if (i % 4 == 1) {
-                minZoom = 8192;
-            } else if (i % 8 == 3) {
-                minZoom = 4096;
-            }
-            dot.setMinZoom(minZoom);
-            markerOverlays.add(dot);
-
-            ++i;
-        }
+    private static long getBlockPos2DKey(int x, int z) {
+        return ((long) x << 32) ^ (z & 0xFFFFFFFFL);
     }
 
     private void addSingleMarker(BlockPos pos, @Nullable MapImage markerImage, int displayOrder, Context.UI uiArray, Context.MapType[] mapTypesArray) {
