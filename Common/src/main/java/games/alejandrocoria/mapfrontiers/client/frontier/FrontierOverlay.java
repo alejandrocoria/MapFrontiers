@@ -83,8 +83,8 @@ public class FrontierOverlay extends FrontierData {
     private static final double VERTEX_LABEL_SOLVER_PRECISION = 0.5;
     private static final double CHUNK_LABEL_SOLVER_PRECISION = 2.0;
     private static final int PATH_LABEL_OFFSET_PADDING_PX = 4;
-    private static final double PATH_REPEATED_MARKER_BASE_SPACING_BLOCKS = 8.0;
-    private static final int[] PATH_REPEATED_MARKER_MIN_ZOOMS = {2, 4096, 8192, 16384};
+    private static final int[] PATH_REPEATED_MARKER_MIN_ZOOMS = {2, 16, 64, 256, 1024, 4096, 16384};
+    private static final double[] PATH_REPEATED_MARKER_SPACING_BLOCKS = {64.0, 32.0, 16.0, 8.0, 4.0, 2.0, 1.0};
     private static final Identifier VERTEX_SINGLE_MARKER_TEXTURE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/markers/vertex/single.png");
     private static final Identifier VERTEX_SEGMENT_MARKER_TEXTURE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/markers/vertex/segment.png");
     private static final MapImage incompleteVertexMarker = createMarkerImage(VERTEX_SINGLE_MARKER_TEXTURE);
@@ -1986,13 +1986,15 @@ public class FrontierOverlay extends FrontierData {
             return;
         }
 
-        int baseIntervals = Math.max(1, (int) Math.ceil(length / PATH_REPEATED_MARKER_BASE_SPACING_BLOCKS));
         Set<Long> addedPositions = new HashSet<>();
         for (int level = 0; level < PATH_REPEATED_MARKER_MIN_ZOOMS.length; ++level) {
-            int intervals = baseIntervals << level;
-            // Level 0 adds all interval points; closer zoom levels add only odd subdivisions.
-            int step = level == 0 ? 1 : 2;
-            for (int marker = 1; marker < intervals; marker += step) {
+            int desiredIntervals = (int) Math.floor(length / PATH_REPEATED_MARKER_SPACING_BLOCKS[level]);
+            int intervals = getHighestPowerOfTwoAtMost(desiredIntervals);
+            if (intervals < 2) {
+                continue;
+            }
+
+            for (int marker = 1; marker < intervals; marker += 2) {
                 double t = marker / (double) intervals;
                 int x = (int) Math.round(from.getX() + dx * t);
                 int z = (int) Math.round(from.getZ() + dz * t);
@@ -2008,6 +2010,14 @@ public class FrontierOverlay extends FrontierData {
                 addRepeatedMarker(new BlockPos(x, OVERLAY_Y, z), uiArray, mapTypesArray, markerImage, displayOrder, PATH_REPEATED_MARKER_MIN_ZOOMS[level]);
             }
         }
+    }
+
+    private static int getHighestPowerOfTwoAtMost(int value) {
+        if (value < 1) {
+            return 0;
+        }
+
+        return Integer.highestOneBit(value);
     }
 
     private void addRepeatedMarker(BlockPos pos, Context.UI uiArray, Context.MapType[] mapTypesArray, MapImage markerImage, int displayOrder, int minZoom) {
