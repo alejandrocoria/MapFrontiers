@@ -42,9 +42,9 @@ public class FrontierPreviewPanel {
         customPreviewRenderer.setFrontiers(frontiers);
     }
 
-    public void drawPanelBackground(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
-        graphics.blit(RenderPipelines.GUI_TEXTURED, BACKGROUND_TEXTURE, x, y, 0, 0, width, height, BACKGROUND_TEXTURE_SIZE,
-                BACKGROUND_TEXTURE_SIZE, BACKGROUND_TEXTURE_SIZE, BACKGROUND_TEXTURE_SIZE);
+    public void drawPanelBackground(GuiGraphicsExtractor graphics, int x, int y, int width, int height, int sourceSize) {
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BACKGROUND_TEXTURE, x, y, 0, 0, width, height, sourceSize,
+                sourceSize, BACKGROUND_TEXTURE_SIZE, BACKGROUND_TEXTURE_SIZE);
     }
 
     public void drawPanelBorder(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {

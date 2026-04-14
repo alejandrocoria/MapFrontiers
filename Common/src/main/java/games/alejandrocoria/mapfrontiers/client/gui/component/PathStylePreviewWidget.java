@@ -68,7 +68,7 @@ public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
 
     @Override
     public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
-        previewPanel.drawPanelBackground(graphics, getX(), getY(), getWidth(), getHeight());
+        previewPanel.drawPanelBackground(graphics, getX(), getY(), getWidth(), getHeight(), MAP_SIZE);
         drawPreview(graphics);
         graphics.nextStratum();
         previewPanel.drawPanelBorder(graphics, getX(), getY(), getWidth(), getHeight());

@@ -56,7 +56,7 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
 
     @Override
     protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
-        previewPanel.drawPanelBackground(graphics, getX(), getY(), getWidth(), getHeight());
+        previewPanel.drawPanelBackground(graphics, getX(), getY(), getWidth(), getHeight(), SIZE);
         previewPanel.drawPreview(graphics, getX(), getY(), SIZE, scaleFactor);
         graphics.nextStratum();
         previewPanel.drawPanelBorder(graphics, getX(), getY(), getWidth(), getHeight());
