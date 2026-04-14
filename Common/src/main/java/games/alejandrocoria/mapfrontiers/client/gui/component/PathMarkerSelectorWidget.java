@@ -1,10 +1,10 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.frontier.MarkerImageConstants;
 import games.alejandrocoria.mapfrontiers.client.frontier.PathMarkerCatalog;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -57,9 +57,6 @@ public class PathMarkerSelectorWidget extends AbstractWidgetNoNarration {
     @Override
     public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         int hoveredIndex = getHoveredIndex(mouseX, mouseY);
-        setTooltip(hoveredIndex >= 0 && hoveredIndex < PathMarkerCatalog.BUILT_INS.size()
-                ? Tooltip.create(Component.literal(PathMarkerCatalog.BUILT_INS.get(hoveredIndex).id().toString()))
-                : null);
 
         int x = getX();
         for (PathMarkerCatalog.Entry entry : PathMarkerCatalog.BUILT_INS) {
@@ -68,16 +65,15 @@ public class PathMarkerSelectorWidget extends AbstractWidgetNoNarration {
 
             int borderColor = selected ? ColorConstants.OPTION_BORDER_FOCUSED : hovered ? ColorConstants.OPTION_BORDER : ColorConstants.CHECKBOX_BORDER;
             graphics.fill(x, getY(), x + CELL_SIZE, getY() + CELL_SIZE, borderColor);
-            graphics.fill(x + 1, getY() + 1, x + CELL_SIZE - 1, getY() + CELL_SIZE - 1, ColorConstants.OPTION_BG);
+            graphics.fill(x + 1, getY() + 1, x + CELL_SIZE - 1, getY() + CELL_SIZE - 1, ColorConstants.PATH_MARKER_SELECTOR_BG);
 
-            if (entry.texture() == null) {
-                int centerY = getY() + CELL_SIZE / 2;
-                graphics.horizontalLine(x + 4, x + CELL_SIZE - 5, centerY, active ? ColorConstants.TEXT_DARK : ColorConstants.TEXTBOX_EXTRA_BORDER);
-            } else {
-                int markerX = x + (CELL_SIZE - entry.width()) / 2;
-                int markerY = getY() + (CELL_SIZE - entry.height()) / 2;
-                graphics.blit(RenderPipelines.GUI_TEXTURED, entry.texture(), markerX, markerY, 0, 0, entry.width(), entry.height(),
-                        entry.width(), entry.height(), entry.width(), entry.height());
+            if (entry.texture() != null) {
+                int markerX = x + (CELL_SIZE - MarkerImageConstants.DISPLAY_SIZE) / 2;
+                int markerY = getY() + (CELL_SIZE - MarkerImageConstants.DISPLAY_SIZE) / 2;
+                graphics.blit(RenderPipelines.GUI_TEXTURED, entry.texture(), markerX, markerY, 0, 0,
+                        MarkerImageConstants.DISPLAY_SIZE, MarkerImageConstants.DISPLAY_SIZE,
+                        MarkerImageConstants.TEXTURE_SIZE, MarkerImageConstants.TEXTURE_SIZE,
+                        MarkerImageConstants.TEXTURE_SIZE, MarkerImageConstants.TEXTURE_SIZE);
             }
 
             x += CELL_SIZE + CELL_SPACING;

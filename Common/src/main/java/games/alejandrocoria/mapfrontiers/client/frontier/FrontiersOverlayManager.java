@@ -31,10 +31,13 @@ public class FrontiersOverlayManager {
     private final HashMap<ResourceKey<Level>, MarkerOverlay> markersSelected;
 
     private static final MapImage markerDotSelected = new MapImage(
-            Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/markers/selected.png"), 0, 0, 10, 10, ColorConstants.WHITE, 1.f);
+            Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/markers/selected.png"), 0, 0,
+            MarkerImageConstants.TEXTURE_SIZE, MarkerImageConstants.TEXTURE_SIZE, ColorConstants.WHITE, 1.f);
     private static float targetDotSelectedOpacity = 0.3f;
 
     static {
+        markerDotSelected.setDisplayWidth(MarkerImageConstants.DISPLAY_SIZE);
+        markerDotSelected.setDisplayHeight(MarkerImageConstants.DISPLAY_SIZE);
         markerDotSelected.setAnchorX(markerDotSelected.getDisplayWidth() / 2.0)
                 .setAnchorY(markerDotSelected.getDisplayHeight() / 2.0);
         markerDotSelected.setRotation(0);

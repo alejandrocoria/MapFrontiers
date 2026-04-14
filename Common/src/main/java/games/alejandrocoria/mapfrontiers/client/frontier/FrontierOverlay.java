@@ -85,8 +85,10 @@ public class FrontierOverlay extends FrontierData {
     private static final int PATH_LABEL_OFFSET_PADDING_PX = 4;
     private static final double PATH_REPEATED_MARKER_BASE_SPACING_BLOCKS = 8.0;
     private static final int[] PATH_REPEATED_MARKER_MIN_ZOOMS = {2, 4096, 8192, 16384};
-    private static final MapImage incompleteVertexMarker = createFilledSquareMarker(12, 2);
-    private static final MapImage incompleteVertexDot = createFilledSquareMarker(8, 1);
+    private static final Identifier VERTEX_SINGLE_MARKER_TEXTURE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/markers/vertex/single.png");
+    private static final Identifier VERTEX_SEGMENT_MARKER_TEXTURE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/markers/vertex/segment.png");
+    private static final MapImage incompleteVertexMarker = createMarkerImage(VERTEX_SINGLE_MARKER_TEXTURE);
+    private static final MapImage incompleteVertexDot = createMarkerImage(VERTEX_SEGMENT_MARKER_TEXTURE);
     private static final MapImage transparentLabelMarker = createTransparentLabelMarker();
 
     public BlockPos topLeft;
@@ -2088,7 +2090,7 @@ public class FrontierOverlay extends FrontierData {
             return null;
         }
 
-        MapImage markerImage = createPathMarkerImage(entry.texture(), entry.width(), entry.height());
+        MapImage markerImage = createMarkerImage(entry.texture());
         if (entry.directional()) {
             markerImage.setRotation(Math.round(rotation));
         }
@@ -2099,27 +2101,12 @@ public class FrontierOverlay extends FrontierData {
         return (float) -Math.toDegrees(Math.atan2(to.getZ() - from.getZ(), to.getX() - from.getX()));
     }
 
-    private static MapImage createPathMarkerImage(Identifier texture, int width, int height) {
-        MapImage mapImage = new MapImage(texture, 0, 0, width, height, ColorConstants.WHITE, 1.f);
-        mapImage.setAnchorX(mapImage.getDisplayWidth() / 2.0).setAnchorY(mapImage.getDisplayHeight() / 2.0);
-        return mapImage;
-    }
-
-    private static MapImage createFilledSquareMarker(int size, int inset) {
-        NativeImage image = new NativeImage(size, size, false);
-        for (int y = 0; y < size; ++y) {
-            for (int x = 0; x < size; ++x) {
-                boolean border = x < inset || x >= size - inset || y < inset || y >= size - inset;
-                int color = border ? 0xFFFFFFFF : 0x88FFFFFF;
-                image.setPixel(x, y, color);
-            }
-        }
-
-        MapImage mapImage = new MapImage(image);
-        mapImage.setAnchorX(size / 2.0);
-        mapImage.setAnchorY(size / 2.0);
-        mapImage.setDisplayWidth(size);
-        mapImage.setDisplayHeight(size);
+    private static MapImage createMarkerImage(Identifier texture) {
+        MapImage mapImage = new MapImage(texture, 0, 0, MarkerImageConstants.TEXTURE_SIZE, MarkerImageConstants.TEXTURE_SIZE,
+                ColorConstants.WHITE, 1.f);
+        mapImage.setDisplayWidth(MarkerImageConstants.DISPLAY_SIZE);
+        mapImage.setDisplayHeight(MarkerImageConstants.DISPLAY_SIZE);
+        mapImage.setAnchorX(MarkerImageConstants.DISPLAY_SIZE / 2.0).setAnchorY(MarkerImageConstants.DISPLAY_SIZE / 2.0);
         return mapImage;
     }
 
