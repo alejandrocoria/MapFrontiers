@@ -1,18 +1,13 @@
 package games.alejandrocoria.mapfrontiers.client.frontier;
 
-import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
-import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierSharingChange;
 import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import journeymap.api.v2.client.IClientAPI;
-import journeymap.api.v2.client.display.MarkerOverlay;
-import journeymap.api.v2.client.model.MapImage;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 
@@ -28,54 +23,21 @@ import java.util.UUID;
 public class FrontiersOverlayManager {
     private final IClientAPI jmAPI;
     private final HashMap<ResourceKey<Level>, ArrayList<FrontierOverlay>> dimensionsFrontiers;
-    private final HashMap<ResourceKey<Level>, MarkerOverlay> markersSelected;
-
-    private static final MapImage markerDotSelected = new MapImage(
-            Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/markers/selected.png"), 0, 0,
-            MarkerImageConstants.TEXTURE_SIZE, MarkerImageConstants.TEXTURE_SIZE, ColorConstants.WHITE, 1.f);
-    private static float targetDotSelectedOpacity = 0.3f;
-
-    static {
-        markerDotSelected.setDisplayWidth(MarkerImageConstants.DISPLAY_SIZE);
-        markerDotSelected.setDisplayHeight(MarkerImageConstants.DISPLAY_SIZE);
-        markerDotSelected.setAnchorX(markerDotSelected.getDisplayWidth() / 2.0)
-                .setAnchorY(markerDotSelected.getDisplayHeight() / 2.0);
-        markerDotSelected.setRotation(0);
-
-        ClientGlobalEvents.subscribeClientTickEvent(FrontiersOverlayManager.class, client -> {
-            if (MapFrontiersPlugin.isEditing()) {
-                float opacity = markerDotSelected.getOpacity();
-                if (opacity < targetDotSelectedOpacity) {
-                    opacity += client.getDeltaTracker().getGameTimeDeltaTicks() * 0.5f;
-                    if (opacity >= targetDotSelectedOpacity) {
-                        opacity = targetDotSelectedOpacity;
-                        targetDotSelectedOpacity = 0.f;
-                    }
-                } else {
-                    opacity -= client.getDeltaTracker().getGameTimeDeltaTicks() * 0.07f;
-                    if (opacity <= targetDotSelectedOpacity) {
-                        opacity = targetDotSelectedOpacity;
-                        targetDotSelectedOpacity = 1.f;
-                    }
-                }
-                markerDotSelected.setOpacity(opacity);
-            } else {
-                markerDotSelected.setOpacity(0.f);
-                targetDotSelectedOpacity = 1.f;
-            }
-        });
-    }
+    private final SelectedEditablePointMarker selectedEditablePointMarker;
 
     public FrontiersOverlayManager(IClientAPI jmAPI) {
         this.jmAPI = jmAPI;
         dimensionsFrontiers = new HashMap<>();
-        markersSelected = new HashMap<>();
+        selectedEditablePointMarker = new SelectedEditablePointMarker(jmAPI);
 
+        ClientGlobalEvents.subscribeClientTickEvent(this, client -> selectedEditablePointMarker.tick(
+                client.getDeltaTracker().getGameTimeDeltaTicks(), MapFrontiersPlugin.isEditing()));
         ClientGlobalEvents.subscribeUpdatedConfigEvent(this, () -> updateAllOverlays(true));
     }
 
     public void close() {
         ClientGlobalEvents.unsubscribeAllEvents(this);
+        selectedEditablePointMarker.clear();
 
         for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
             for (FrontierOverlay frontier : frontiers) {
@@ -231,26 +193,8 @@ public class FrontiersOverlayManager {
     }
 
     public void updateSelectedMarker(ResourceKey<Level> dimension, @Nullable FrontierOverlay frontier) {
-        MarkerOverlay marker = markersSelected.get(dimension);
-        if (marker != null) {
-            jmAPI.remove(marker);
-        }
-
-        if (frontier != null) {
-            BlockPos pos = frontier.getSelectedEditablePoint();
-            if (pos != null) {
-                marker = new MarkerOverlay(MapFrontiers.MODID, pos, markerDotSelected);
-                marker.setDimension(dimension);
-                marker.setDisplayOrder(101);
-
-                try {
-                    jmAPI.show(marker);
-                    markersSelected.put(dimension, marker);
-                } catch (Throwable t) {
-                    MapFrontiers.LOGGER.error(t.getMessage(), t);
-                }
-            }
-        }
+        BlockPos pos = frontier != null ? frontier.getSelectedEditablePoint() : null;
+        selectedEditablePointMarker.update(dimension, pos);
     }
 
 }
