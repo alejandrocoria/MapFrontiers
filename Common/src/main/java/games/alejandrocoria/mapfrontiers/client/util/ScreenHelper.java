@@ -2,7 +2,9 @@ package games.alejandrocoria.mapfrontiers.client.util;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
 import org.lwjgl.glfw.GLFW;
 
@@ -38,6 +40,15 @@ public final class ScreenHelper {
 
     public static boolean hasShiftDown() {
         return InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT) || InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_SHIFT);
+    }
+
+    public static int getPaddedMaxTextWidth(Font font, int minWidth, int padding, Component... labels) {
+        int width = minWidth;
+        for (Component label : labels) {
+            width = Math.max(width, font.width(label) + padding);
+        }
+
+        return width;
     }
 
     private ScreenHelper() {

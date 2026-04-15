@@ -23,6 +23,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.dialog.DeleteConfirmationDia
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.FrontierAppearanceDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.PathStyleDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.VisibilityDialog;
+import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.config.BooleanConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
@@ -111,7 +112,8 @@ public class ModSettings extends AutoScaledScreen {
     private static final int SECTION_SPACING_MEDIUM = 8;
     private static final int DEFAULT_OPTION_WIDTH = 40;
     private static final int DEFAULT_TEXTBOX_WIDTH = 40;
-    private static final int FRONTIER_BUTTON_WIDTH = 144;
+    private static final int FRONTIER_BUTTON_MIN_WIDTH = 144;
+    private static final int FRONTIER_BUTTON_HORIZONTAL_PADDING = 8;
     private static final int WIDE_BUTTON_EXTRA_WIDTH = 100;
     private static final int WIDE_TEXTBOX_EXTRA_WIDTH = 300;
     private static final int WIDE_LINK_EXTRA_WIDTH = 200;
@@ -152,7 +154,7 @@ public class ModSettings extends AutoScaledScreen {
     private final boolean subscribeToSettingsProfileEvents;
 
     public ModSettings(boolean showKeyHint) {
-        super(titleLabel, 696, 366);
+        super(titleLabel, 696, 450);
         this.showKeyHint = showKeyHint;
         subscribeToSettingsProfileEvents = MapFrontiersClient.isJourneyMapPluginAvailable();
 
@@ -275,15 +277,19 @@ public class ModSettings extends AutoScaledScreen {
         row = addIntSettingRow(settingsGrid, row, ClientConfig.PATH_PROXIMITY_ENTER_DISTANCE, DEFAULT_TEXTBOX_WIDTH, 3);
         row = addIntSettingRow(settingsGrid, row, ClientConfig.PATH_PROXIMITY_EXIT_DISTANCE, DEFAULT_TEXTBOX_WIDTH, 3);
 
-        buttonFrontierAppearance = createWideSimpleButton(FRONTIER_BUTTON_WIDTH, frontierAppearanceLabel,
+        int frontierButtonWidth = ScreenHelper.getPaddedMaxTextWidth(font, FRONTIER_BUTTON_MIN_WIDTH,
+                FRONTIER_BUTTON_HORIZONTAL_PADDING, frontierAppearanceLabel, defaultPathStyleLabel,
+                forcedVisibilityLabel);
+
+        buttonFrontierAppearance = createWideSimpleButton(frontierButtonWidth, frontierAppearanceLabel,
                 b -> onFrontierAppearancePressed());
         settingsGrid.addChild(buttonFrontierAppearance, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
 
-        buttonDefaultPathStyle = createWideSimpleButton(FRONTIER_BUTTON_WIDTH, defaultPathStyleLabel,
+        buttonDefaultPathStyle = createWideSimpleButton(frontierButtonWidth, defaultPathStyleLabel,
                 b -> onDefaultPathStylePressed());
         settingsGrid.addChild(buttonDefaultPathStyle, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
 
-        settingsGrid.addChild(createWideSimpleButton(FRONTIER_BUTTON_WIDTH, forcedVisibilityLabel,
+        settingsGrid.addChild(createWideSimpleButton(frontierButtonWidth, forcedVisibilityLabel,
                 b -> onForcedVisibilityPressed()), row++, 0, 1, 2,
                 LayoutSettings.defaults().alignHorizontallyCenter());
 
