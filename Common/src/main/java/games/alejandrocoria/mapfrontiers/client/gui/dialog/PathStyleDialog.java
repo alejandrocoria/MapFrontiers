@@ -24,8 +24,6 @@ import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
 public class PathStyleDialog extends AutoScaledScreen {
-    private static final Component titleLabel = Component.translatable("mapfrontiers.title_path_style");
-    private static final Component defaultTitleLabel = Component.translatable("mapfrontiers.title_default_path_style");
     private static final Component defaultDescriptionLabel = Component.translatable("mapfrontiers.path_style_default_description");
     private static final Component startLabel = Component.translatable("mapfrontiers.start");
     private static final Component endLabel = Component.translatable("mapfrontiers.end");
@@ -57,14 +55,14 @@ public class PathStyleDialog extends AutoScaledScreen {
     private boolean syncingWidgets = false;
 
     public PathStyleDialog(FrontierData.PathStyle initialStyle, FrontierData.PathStyle defaultStyle, Consumer<FrontierData.PathStyle> afterDoneCallback) {
-        super(titleLabel, 500, 320);
+        super(Component.empty(), 530, 260);
         this.defaultStyle = new FrontierData.PathStyle(defaultStyle);
         this.afterDoneCallback = afterDoneCallback;
         this.workingStyle = new FrontierData.PathStyle(initialStyle);
     }
 
     public PathStyleDialog(FrontierData.PathStyle initialStyle, Consumer<FrontierData.PathStyle> afterDoneCallback) {
-        super(defaultTitleLabel, 500, 320);
+        super(Component.empty(), 530, 260);
         this.defaultStyle = null;
         this.afterDoneCallback = afterDoneCallback;
         this.workingStyle = new FrontierData.PathStyle(initialStyle);
