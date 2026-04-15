@@ -119,8 +119,8 @@ public final class ClientConfig {
             .translation(translation("appearance", "banner", "opacity")));
     public static final StringConfigEntry PATH_DEFAULT_STYLE_START = register(stringEntry(FrontierData.PathStyle.BIG_DOT.toString(), "path", "defaultStyle", "start")
             .comment("Marker identifier used by default for the start of new path frontiers."));
-    public static final StringConfigEntry PATH_DEFAULT_STYLE_MIDDLE = register(stringEntry(FrontierData.PathStyle.NONE.toString(), "path", "defaultStyle", "middle")
-            .comment("Marker identifier used by default for intermediate points of new path frontiers."));
+    public static final StringConfigEntry PATH_DEFAULT_STYLE_INNER = register(stringEntry(FrontierData.PathStyle.NONE.toString(), "path", "defaultStyle", "inner")
+            .comment("Marker identifier used by default for inner points of new path frontiers."));
     public static final StringConfigEntry PATH_DEFAULT_STYLE_END = register(stringEntry(FrontierData.PathStyle.BIG_DOT.toString(), "path", "defaultStyle", "end")
             .comment("Marker identifier used by default for the end of new path frontiers."));
     public static final StringConfigEntry PATH_DEFAULT_STYLE_SEGMENT = register(stringEntry(FrontierData.PathStyle.SMALL_DOT.toString(), "path", "defaultStyle", "segment")
@@ -131,12 +131,12 @@ public final class ClientConfig {
             .comment("Show path labels and banner at the midpoint by default."));
     public static final BooleanConfigEntry PATH_DEFAULT_STYLE_LABEL_AT_END = register(boolEntry(false, "path", "defaultStyle", "labelAtEnd")
             .comment("Show path labels and banner at the end by default."));
-    public static final IntConfigEntry PATH_PROXIMITY_ENTER_DISTANCE = register(intEntry(8, 0, 128, "path", "activation", "enterDistance")
+    public static final IntConfigEntry PATH_PROXIMITY_ENTER_DISTANCE = register(intEntry(8, 0, 128, "path", "proximity", "enterDistance")
             .comment("Distance in blocks used to activate Path frontiers for HUD and announcements.")
-            .translation(translation("path", "activation", "enterDistance")));
-    public static final IntConfigEntry PATH_PROXIMITY_EXIT_DISTANCE = register(intEntry(10, 0, 128, "path", "activation", "exitDistance")
+            .translation(translation("path", "proximity", "enterDistance")));
+    public static final IntConfigEntry PATH_PROXIMITY_EXIT_DISTANCE = register(intEntry(10, 0, 128, "path", "proximity", "exitDistance")
             .comment("Distance in blocks used to keep Path frontiers active for HUD and announcements.")
-            .translation(translation("path", "activation", "exitDistance")));
+            .translation(translation("path", "proximity", "exitDistance")));
 
     public static final EnumConfigEntry<Visibility> FRONTIER_VISIBILITY = visibilityEntry(
             "Force all frontiers to be shown or hidden. In Custom, you can decide for each frontier.",
@@ -278,7 +278,7 @@ public final class ClientConfig {
             .comment("Mode used when creating a new frontier."));
     public static final EnumConfigEntry<AfterCreatingFrontier> AFTER_CREATING_FRONTIER = register(enumEntry(AfterCreatingFrontier.class, AfterCreatingFrontier.InfoScreen, "newFrontier", "afterCreation")
             .comment("Action to perform after creating a new frontier."));
-    public static final IntConfigEntry NEW_FRONTIER_SHAPE = register(intEntry(0, 0, 11, "newFrontier", "shape")
+    public static final IntConfigEntry NEW_FRONTIER_SHAPE = register(intEntry(6, 0, 11, "newFrontier", "shape")
             .comment("Shape preset used when creating a new vertex frontier."));
     public static final IntConfigEntry NEW_FRONTIER_COUNT = register(intEntry(16, 3, 999, "newFrontier", "vertexCount")
             .comment("Number of vertices used by the selected vertex shape preset."));
@@ -286,16 +286,16 @@ public final class ClientConfig {
             .comment("Width used by the selected vertex shape preset."));
     public static final IntConfigEntry NEW_FRONTIER_SHAPE_RADIUS = register(intEntry(20, 0, 999, "newFrontier", "shapeRadius")
             .comment("Radius used by the selected vertex shape preset."));
-    public static final IntConfigEntry NEW_FRONTIER_CHUNK_SHAPE = register(intEntry(0, 0, 7, "newFrontier", "chunkShape")
+    public static final IntConfigEntry NEW_FRONTIER_CHUNK_SHAPE = register(intEntry(2, 0, 7, "newFrontier", "chunkShape")
             .comment("Shape preset used when creating a new chunk frontier."));
     public static final IntConfigEntry NEW_FRONTIER_CHUNK_SHAPE_WIDTH = register(intEntry(5, 0, 32, "newFrontier", "chunkShapeWidth")
             .comment("Width used by the selected chunk shape preset."));
     public static final IntConfigEntry NEW_FRONTIER_CHUNK_SHAPE_LENGTH = register(intEntry(5, 0, 32, "newFrontier", "chunkShapeLength")
             .comment("Length used by the selected chunk shape preset."));
-    public static final IntConfigEntry NEW_FRONTIER_PATH_SHAPE = register(intEntry(2, 0, 5, "newFrontier", "pathShape")
+    public static final IntConfigEntry NEW_FRONTIER_PATH_SHAPE = register(intEntry(1, 0, 7, "newFrontier", "pathShape")
             .comment("Shape preset used when creating a new path frontier."));
-    public static final IntConfigEntry NEW_FRONTIER_PATH_LENGTH = register(intEntry(10, 1, 999, "newFrontier", "pathLength")
-            .comment("Length used by the selected path shape preset."));
+    public static final IntConfigEntry NEW_FRONTIER_PATH_SEGMENT_LENGTH = register(intEntry(10, 1, 999, "newFrontier", "pathSegmentLength")
+            .comment("Segment length used by the selected path shape preset."));
 
     public static final BooleanConfigEntry PASTE_NAME = register(boolEntry(false, "paste", "name")
             .comment("Paste the frontier name when pasting info."));
@@ -380,7 +380,7 @@ public final class ClientConfig {
     public static FrontierData.PathStyle getDefaultPathStyle() {
         FrontierData.PathStyle pathStyle = new FrontierData.PathStyle();
         pathStyle.startMarker = parsePathMarker(PATH_DEFAULT_STYLE_START.get(), FrontierData.PathStyle.BIG_DOT);
-        pathStyle.middleMarker = parsePathMarker(PATH_DEFAULT_STYLE_MIDDLE.get(), FrontierData.PathStyle.NONE);
+        pathStyle.middleMarker = parsePathMarker(PATH_DEFAULT_STYLE_INNER.get(), FrontierData.PathStyle.NONE);
         pathStyle.endMarker = parsePathMarker(PATH_DEFAULT_STYLE_END.get(), FrontierData.PathStyle.BIG_DOT);
         pathStyle.segmentMarker = parsePathMarker(PATH_DEFAULT_STYLE_SEGMENT.get(), FrontierData.PathStyle.SMALL_DOT);
         pathStyle.labelAtStart = PATH_DEFAULT_STYLE_LABEL_AT_START.get();
@@ -393,7 +393,7 @@ public final class ClientConfig {
     public static void setDefaultPathStyle(FrontierData.PathStyle pathStyle) {
         FrontierData.PathStyle normalized = normalizeDefaultPathStyle(pathStyle);
         PATH_DEFAULT_STYLE_START.set(normalized.startMarker.toString());
-        PATH_DEFAULT_STYLE_MIDDLE.set(normalized.middleMarker.toString());
+        PATH_DEFAULT_STYLE_INNER.set(normalized.middleMarker.toString());
         PATH_DEFAULT_STYLE_END.set(normalized.endMarker.toString());
         PATH_DEFAULT_STYLE_SEGMENT.set(normalized.segmentMarker.toString());
         PATH_DEFAULT_STYLE_LABEL_AT_START.set(normalized.labelAtStart);
@@ -412,7 +412,7 @@ public final class ClientConfig {
     private static boolean validateDefaultPathStyle() {
         FrontierData.PathStyle normalized = getDefaultPathStyle();
         boolean dirty = !PATH_DEFAULT_STYLE_START.get().equals(normalized.startMarker.toString())
-                || !PATH_DEFAULT_STYLE_MIDDLE.get().equals(normalized.middleMarker.toString())
+                || !PATH_DEFAULT_STYLE_INNER.get().equals(normalized.middleMarker.toString())
                 || !PATH_DEFAULT_STYLE_END.get().equals(normalized.endMarker.toString())
                 || !PATH_DEFAULT_STYLE_SEGMENT.get().equals(normalized.segmentMarker.toString())
                 || PATH_DEFAULT_STYLE_LABEL_AT_START.get() != normalized.labelAtStart

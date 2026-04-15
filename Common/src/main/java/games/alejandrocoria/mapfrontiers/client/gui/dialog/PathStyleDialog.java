@@ -28,7 +28,7 @@ public class PathStyleDialog extends AutoScaledScreen {
     private static final Component startLabel = Component.translatable("mapfrontiers.start");
     private static final Component endLabel = Component.translatable("mapfrontiers.end");
     private static final Component middleLabel = Component.translatable("mapfrontiers.middle");
-    private static final Component middlePointsLabel = Component.translatable("mapfrontiers.middle_points");
+    private static final Component innerPointsLabel = Component.translatable("mapfrontiers.inner_points");
     private static final Component segmentsLabel = Component.translatable("mapfrontiers.segments");
     private static final Component labelsAndBannerLabel = Component.translatable("mapfrontiers.labels_and_banner");
     private static final Component labelsRequiredLabel = Component.translatable("mapfrontiers.path_style_labels_required");
@@ -87,7 +87,7 @@ public class PathStyleDialog extends AutoScaledScreen {
 
         int row = 0;
         startRow = createMarkerRow(markerGrid, row++, startLabel, workingStyle.startMarker, value -> workingStyle.startMarker = value);
-        middleRow = createMarkerRow(markerGrid, row++, middlePointsLabel, workingStyle.middleMarker, value -> workingStyle.middleMarker = value);
+        middleRow = createMarkerRow(markerGrid, row++, innerPointsLabel, workingStyle.middleMarker, value -> workingStyle.middleMarker = value);
         endRow = createMarkerRow(markerGrid, row++, endLabel, workingStyle.endMarker, value -> workingStyle.endMarker = value);
         segmentRow = createMarkerRow(markerGrid, row, segmentsLabel, workingStyle.segmentMarker, value -> workingStyle.segmentMarker = value);
 
