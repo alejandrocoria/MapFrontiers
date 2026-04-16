@@ -83,6 +83,7 @@ public class FrontierOverlay extends FrontierData {
     private static final double VERTEX_LABEL_SOLVER_PRECISION = 0.5;
     private static final double CHUNK_LABEL_SOLVER_PRECISION = 2.0;
     private static final int PATH_LABEL_OFFSET_PADDING_PX = 4;
+    private static final int INCOMPLETE_VERTEX_FRONTIER_MIN_ZOOM = 512;
     private static final int PATH_REPEATED_MARKER_BASE_MARKER_SIZE = 2;
     private static final PathRepeatedMarkerZoomBand[] PATH_REPEATED_MARKER_ZOOM_BANDS = {
             new PathRepeatedMarkerZoomBand(2, 31, 1024.0),
@@ -1144,10 +1145,19 @@ public class FrontierOverlay extends FrontierData {
                     .setFillOpacity(0);
             List<PolygonOverlay> highlightedOverlays = new ArrayList<>();
             for (PolygonOverlay polygonOverlay : polygonOverlays) {
-                highlightedOverlays.add(new PolygonOverlay(MapFrontiers.MODID, dimension, highlightShapeProps, polygonOverlay.getOuterArea(), polygonOverlay.getHoles()));
+                highlightedOverlays.add(createHighlightOverlay(polygonOverlay, highlightShapeProps));
             }
             polygonOverlays.addAll(highlightedOverlays);
         }
+    }
+
+    private PolygonOverlay createHighlightOverlay(PolygonOverlay source, ShapeProperties highlightShapeProps) {
+        PolygonOverlay highlight = new PolygonOverlay(MapFrontiers.MODID, dimension, highlightShapeProps, source.getOuterArea(), source.getHoles());
+        highlight.setActiveUIs(source.getActiveUIs().toArray(Context.UI[]::new));
+        highlight.setActiveMapTypes(source.getActiveMapTypes().toArray(Context.MapType[]::new));
+        highlight.setMinZoom(source.getMinZoom());
+        highlight.setMaxZoom(source.getMaxZoom());
+        return highlight;
     }
 
     private void addPolygonOverlays(ShapeProperties shapeProps, MapPolygon polygon, @Nullable List<MapPolygon> polygonHoles) {
@@ -1367,6 +1377,7 @@ public class FrontierOverlay extends FrontierData {
         PolygonOverlay overlay = new PolygonOverlay(MapFrontiers.MODID, dimension, shapeProps, createIncompleteVertexPolygon(), null);
         overlay.setActiveUIs(uiArray);
         overlay.setActiveMapTypes(mapTypesArray);
+        overlay.setMinZoom(INCOMPLETE_VERTEX_FRONTIER_MIN_ZOOM);
         polygonOverlays.add(overlay);
     }
 
@@ -1388,10 +1399,19 @@ public class FrontierOverlay extends FrontierData {
         startCorners.sort((a, b) -> Float.compare(getCornerProjection(a, direction), getCornerProjection(b, direction)));
         endCorners.sort((a, b) -> Float.compare(getCornerProjection(b, direction), getCornerProjection(a, direction)));
 
-        List<BlockPos> polygonPoints = new ArrayList<>(startCorners.subList(0, 3));
-        polygonPoints.addAll(endCorners.subList(0, 3));
+        List<BlockPos> polygonPoints = new ArrayList<>();
+        addUniquePoints(polygonPoints, startCorners.subList(0, 3));
+        addUniquePoints(polygonPoints, endCorners.subList(0, 3));
         sortPointsAroundCenter(polygonPoints);
         return new MapPolygon(polygonPoints);
+    }
+
+    private static void addUniquePoints(List<BlockPos> target, List<BlockPos> points) {
+        for (BlockPos point : points) {
+            if (!target.contains(point)) {
+                target.add(point);
+            }
+        }
     }
 
     private static List<BlockPos> getBlockCorners(BlockPos pos) {
