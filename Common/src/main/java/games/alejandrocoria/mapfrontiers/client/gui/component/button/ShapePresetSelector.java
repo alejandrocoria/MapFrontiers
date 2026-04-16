@@ -4,10 +4,13 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.AbstractWidgetNoNarration;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
+import net.minecraft.client.gui.navigation.ScreenDirection;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.sounds.SoundManager;
@@ -35,6 +38,7 @@ abstract class ShapePresetSelector extends AbstractWidgetNoNarration {
     private final int textureOffsetX;
     private final StringWidget labelShapes;
     protected int selected;
+    private int focusedIndex;
 
     protected ShapePresetSelector(Font font, int selected, int columns, int buttonCount, int textureOffsetX) {
         super(0, 0, columns * BUTTON_SPACING - 6, 122, Component.empty());
@@ -42,6 +46,7 @@ abstract class ShapePresetSelector extends AbstractWidgetNoNarration {
         this.buttonCount = buttonCount;
         this.textureOffsetX = textureOffsetX;
         this.selected = clampSelected(selected);
+        this.focusedIndex = this.selected;
         labelShapes = new StringWidget(Component.translatable("mapfrontiers.initial_shape"), font, StringWidget.Align.Center)
                 .setColor(ColorConstants.WHITE);
     }
@@ -64,7 +69,43 @@ abstract class ShapePresetSelector extends AbstractWidgetNoNarration {
 
     @Override
     public @Nullable ComponentPath nextFocusPath(FocusNavigationEvent navigationEvent) {
-        return null;
+        if (!visible || !active) {
+            return null;
+        }
+
+        if (!isFocused()) {
+            focusedIndex = selected;
+            return ComponentPath.leaf(this);
+        }
+
+        if (navigationEvent instanceof FocusNavigationEvent.TabNavigation) {
+            return null;
+        }
+
+        if (navigationEvent instanceof FocusNavigationEvent.ArrowNavigation arrowNavigation) {
+            int nextIndex = getNextFocusedIndex(arrowNavigation.direction());
+            if (nextIndex == -1) {
+                return null;
+            }
+
+            focusedIndex = nextIndex;
+            return ComponentPath.leaf(this);
+        }
+
+        return ComponentPath.leaf(this);
+    }
+
+    @Override
+    public boolean keyPressed(KeyEvent event) {
+        if (!isFocused() || !visible || !active || !event.isSelection()) {
+            return false;
+        }
+
+        if (selected != focusedIndex) {
+            selected = focusedIndex;
+            onSelectionChanged();
+        }
+        return true;
     }
 
     @Override
@@ -75,6 +116,7 @@ abstract class ShapePresetSelector extends AbstractWidgetNoNarration {
         }
 
         selected = hovered;
+        focusedIndex = hovered;
         onSelectionChanged();
         return true;
     }
@@ -90,9 +132,27 @@ abstract class ShapePresetSelector extends AbstractWidgetNoNarration {
             int row = i / columns;
             int texX = textureOffsetX + i * BUTTON_SIZE;
             int texY = i == selected ? BUTTON_SIZE : 0;
-            graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, getX() + col * BUTTON_SPACING,
-                    getY() + row * BUTTON_SPACING + BUTTON_Y_OFFSET, texX, texY, BUTTON_SIZE, BUTTON_SIZE,
+            int x = getX() + col * BUTTON_SPACING;
+            int y = getY() + row * BUTTON_SPACING + BUTTON_Y_OFFSET;
+            graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x, y, texX, texY, BUTTON_SIZE, BUTTON_SIZE,
                     TEXTURE_WIDTH, TEXTURE_HEIGHT);
+            if (i == selected) {
+                graphics.fill(x, y, x + BUTTON_SIZE, y + 1, ColorConstants.WHITE);
+                graphics.fill(x, y + BUTTON_SIZE - 1, x + BUTTON_SIZE, y + BUTTON_SIZE, ColorConstants.WHITE);
+                graphics.fill(x, y, x + 1, y + BUTTON_SIZE, ColorConstants.WHITE);
+                graphics.fill(x + BUTTON_SIZE - 1, y, x + BUTTON_SIZE, y + BUTTON_SIZE, ColorConstants.WHITE);
+            }
+        }
+
+        if (isKeyboardFocused()) {
+            int col = focusedIndex % columns;
+            int row = focusedIndex / columns;
+            int x = getX() + col * BUTTON_SPACING;
+            int y = getY() + row * BUTTON_SPACING + BUTTON_Y_OFFSET;
+            graphics.horizontalLine(x - 1, x + BUTTON_SIZE, y - 1, ColorConstants.WHITE);
+            graphics.horizontalLine(x - 1, x + BUTTON_SIZE, y + BUTTON_SIZE, ColorConstants.WHITE);
+            graphics.verticalLine(x - 1, y - 1, y + BUTTON_SIZE, ColorConstants.WHITE);
+            graphics.verticalLine(x + BUTTON_SIZE, y - 1, y + BUTTON_SIZE, ColorConstants.WHITE);
         }
 
         labelShapes.extractRenderState(graphics, mouseX, mouseY, partialTicks);
@@ -123,5 +183,20 @@ abstract class ShapePresetSelector extends AbstractWidgetNoNarration {
 
     private int clampSelected(int selected) {
         return Mth.clamp(selected, 0, buttonCount - 1);
+    }
+
+    private int getNextFocusedIndex(ScreenDirection direction) {
+        int nextIndex = switch (direction) {
+            case LEFT -> focusedIndex % columns == 0 ? -1 : focusedIndex - 1;
+            case RIGHT -> focusedIndex % columns == columns - 1 ? -1 : focusedIndex + 1;
+            case UP -> focusedIndex - columns;
+            case DOWN -> focusedIndex + columns;
+        };
+
+        return nextIndex >= 0 && nextIndex < buttonCount ? nextIndex : -1;
+    }
+
+    private boolean isKeyboardFocused() {
+        return isFocused() && Minecraft.getInstance().getLastInputType().isKeyboard();
     }
 }
