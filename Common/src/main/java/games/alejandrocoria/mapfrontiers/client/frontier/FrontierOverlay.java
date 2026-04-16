@@ -93,8 +93,6 @@ public class FrontierOverlay extends FrontierData {
             new PathRepeatedMarkerZoomBand(2048, 8191, 4.0),
             new PathRepeatedMarkerZoomBand(8192, 16383, 2.0),
             new PathRepeatedMarkerZoomBand(16384, 0, 1.0)};
-    private static final Identifier VERTEX_SINGLE_MARKER_TEXTURE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/markers/vertex/single.png");
-    private static final Identifier VERTEX_SEGMENT_MARKER_TEXTURE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/markers/vertex/segment.png");
     private static final MapImage transparentLabelMarker = createTransparentLabelMarker();
 
     public BlockPos topLeft;
@@ -1232,7 +1230,7 @@ public class FrontierOverlay extends FrontierData {
                     last = vertex;
                 }
                 area = abs(area / 2.f);
-            } else {
+            } else if (!vertices.isEmpty()) {
                 boolean fullscreenV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Fullscreen));
                 boolean fullscreenDayV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenDay));
                 boolean fullscreenNightV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_NIGHT_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenNight));
@@ -1253,17 +1251,17 @@ public class FrontierOverlay extends FrontierData {
                 boolean webmapBiomeV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapBiome));
 
                 if (fullscreenV) {
-                    createIncompleteVertexMarkers(Context.UI.Fullscreen,
+                    addIncompleteVertexPolygon(Context.UI.Fullscreen,
                             getActiveMapTypes(fullscreenDayV, fullscreenNightV, fullscreenUndergroundV, fullscreenTopoV, fullscreenBiomeV)
                     );
                 }
                 if (minimapV){
-                    createIncompleteVertexMarkers(Context.UI.Minimap,
+                    addIncompleteVertexPolygon(Context.UI.Minimap,
                             getActiveMapTypes(minimapDayV, minimapNightV, minimapUndergroundV, minimapTopoV, minimapBiomeV)
                     );
                 }
                 if (webmapV){
-                    createIncompleteVertexMarkers(Context.UI.Webmap,
+                    addIncompleteVertexPolygon(Context.UI.Webmap,
                             getActiveMapTypes(webmapDayV, webmapNightV, webmapUndergroundV, webmapTopoV, webmapBiomeV)
                     );
                 }
@@ -1358,18 +1356,71 @@ public class FrontierOverlay extends FrontierData {
         return mapTypes.toArray(new Context.MapType[0]);
     }
 
-    private void createIncompleteVertexMarkers(Context.UI uiArray, Context.MapType[] mapTypesArray) {
-        for (int i = 0; i < vertices.size(); ++i) {
-            MarkerOverlay marker = new MarkerOverlay(MapFrontiers.MODID, vertices.get(i), createMarkerImage(VERTEX_SINGLE_MARKER_TEXTURE));
-            marker.setDimension(dimension);
-            marker.setDisplayOrder(100);
-            marker.setActiveUIs(uiArray);
-            marker.setActiveMapTypes(mapTypesArray);
-            markerOverlays.add(marker);
-            if (i == 0 && vertices.size() == 2) {
-                addRepeatedMarkers(vertices.get(0), vertices.get(1), uiArray, mapTypesArray, createMarkerImage(VERTEX_SEGMENT_MARKER_TEXTURE), 99);
-            }
+    private void addIncompleteVertexPolygon(Context.UI uiArray, Context.MapType[] mapTypesArray) {
+        ShapeProperties shapeProps = new ShapeProperties()
+                .setStrokeWidth(ClientConfig.BORDER_WIDTH.get())
+                .setStrokeColor(color)
+                .setStrokeOpacity(ClientConfig.BORDER_OPACITY.get().floatValue())
+                .setStrokePosition(ShapeProperties.StrokePosition.INSIDE)
+                .setFillColor(color)
+                .setFillOpacity(ClientConfig.POLYGONS_OPACITY.get().floatValue());
+        PolygonOverlay overlay = new PolygonOverlay(MapFrontiers.MODID, dimension, shapeProps, createIncompleteVertexPolygon(), null);
+        overlay.setActiveUIs(uiArray);
+        overlay.setActiveMapTypes(mapTypesArray);
+        polygonOverlays.add(overlay);
+    }
+
+    private MapPolygon createIncompleteVertexPolygon() {
+        if (vertices.size() == 1) {
+            return new MapPolygon(getBlockCorners(vertices.getFirst()));
         }
+
+        BlockPos start = vertices.get(0);
+        BlockPos end = vertices.get(1);
+        if (start.equals(end)) {
+            return new MapPolygon(getBlockCorners(start));
+        }
+
+        Vec2 direction = new Vec2(end.getX() - start.getX(), end.getZ() - start.getZ()).normalized();
+        List<BlockPos> startCorners = getBlockCorners(start);
+        List<BlockPos> endCorners = getBlockCorners(end);
+
+        startCorners.sort((a, b) -> Float.compare(getCornerProjection(a, direction), getCornerProjection(b, direction)));
+        endCorners.sort((a, b) -> Float.compare(getCornerProjection(b, direction), getCornerProjection(a, direction)));
+
+        List<BlockPos> polygonPoints = new ArrayList<>(startCorners.subList(0, 3));
+        polygonPoints.addAll(endCorners.subList(0, 3));
+        sortPointsAroundCenter(polygonPoints);
+        return new MapPolygon(polygonPoints);
+    }
+
+    private static List<BlockPos> getBlockCorners(BlockPos pos) {
+        return new ArrayList<>(List.of(
+                pos,
+                pos.offset(1, 0, 0),
+                pos.offset(1, 0, 1),
+                pos.offset(0, 0, 1)));
+    }
+
+    private static float getCornerProjection(BlockPos point, Vec2 direction) {
+        return point.getX() * direction.x + point.getZ() * direction.y;
+    }
+
+    private static void sortPointsAroundCenter(List<BlockPos> points) {
+        double centerX = 0.0;
+        double centerZ = 0.0;
+        for (BlockPos point : points) {
+            centerX += point.getX();
+            centerZ += point.getZ();
+        }
+
+        centerX /= points.size();
+        centerZ /= points.size();
+        double finalCenterX = centerX;
+        double finalCenterZ = centerZ;
+        points.sort((a, b) -> Double.compare(
+                Math.atan2(a.getZ() - finalCenterZ, a.getX() - finalCenterX),
+                Math.atan2(b.getZ() - finalCenterZ, b.getX() - finalCenterX)));
     }
 
     private void createPathMarkers(Context.UI uiArray, Context.MapType[] mapTypesArray) {
