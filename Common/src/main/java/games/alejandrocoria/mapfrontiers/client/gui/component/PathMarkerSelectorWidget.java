@@ -68,10 +68,10 @@ public class PathMarkerSelectorWidget extends AbstractWidgetNoNarration {
             graphics.fill(x + 1, getY() + 1, x + CELL_SIZE - 1, getY() + CELL_SIZE - 1, ColorConstants.PATH_MARKER_SELECTOR_BG);
 
             if (entry.texture() != null) {
-                int markerX = x + (CELL_SIZE - MarkerImageConstants.DISPLAY_SIZE) / 2;
-                int markerY = getY() + (CELL_SIZE - MarkerImageConstants.DISPLAY_SIZE) / 2;
+                int markerX = x + (CELL_SIZE - MarkerImageConstants.SELECTOR_DISPLAY_SIZE) / 2;
+                int markerY = getY() + (CELL_SIZE - MarkerImageConstants.SELECTOR_DISPLAY_SIZE) / 2;
                 graphics.blit(RenderPipelines.GUI_TEXTURED, entry.texture(), markerX, markerY, 0, 0,
-                        MarkerImageConstants.DISPLAY_SIZE, MarkerImageConstants.DISPLAY_SIZE,
+                        MarkerImageConstants.SELECTOR_DISPLAY_SIZE, MarkerImageConstants.SELECTOR_DISPLAY_SIZE,
                         MarkerImageConstants.TEXTURE_SIZE, MarkerImageConstants.TEXTURE_SIZE,
                         MarkerImageConstants.TEXTURE_SIZE, MarkerImageConstants.TEXTURE_SIZE);
             }

@@ -83,6 +83,7 @@ public class FrontierOverlay extends FrontierData {
     private static final double VERTEX_LABEL_SOLVER_PRECISION = 0.5;
     private static final double CHUNK_LABEL_SOLVER_PRECISION = 2.0;
     private static final int PATH_LABEL_OFFSET_PADDING_PX = 4;
+    private static final int PATH_REPEATED_MARKER_BASE_MARKER_SIZE = 2;
     private static final PathRepeatedMarkerZoomLevel[] PATH_REPEATED_MARKER_ZOOM_LEVELS = {
             new PathRepeatedMarkerZoomLevel(2, 1024.0),
             new PathRepeatedMarkerZoomLevel(32, 128.0),
@@ -94,8 +95,6 @@ public class FrontierOverlay extends FrontierData {
             new PathRepeatedMarkerZoomLevel(16384, 1.0)};
     private static final Identifier VERTEX_SINGLE_MARKER_TEXTURE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/markers/vertex/single.png");
     private static final Identifier VERTEX_SEGMENT_MARKER_TEXTURE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/markers/vertex/segment.png");
-    private static final MapImage incompleteVertexMarker = createMarkerImage(VERTEX_SINGLE_MARKER_TEXTURE);
-    private static final MapImage incompleteVertexDot = createMarkerImage(VERTEX_SEGMENT_MARKER_TEXTURE);
     private static final MapImage transparentLabelMarker = createTransparentLabelMarker();
 
     public BlockPos topLeft;
@@ -1372,14 +1371,14 @@ public class FrontierOverlay extends FrontierData {
 
     private void createIncompleteVertexMarkers(Context.UI uiArray, Context.MapType[] mapTypesArray) {
         for (int i = 0; i < vertices.size(); ++i) {
-            MarkerOverlay marker = new MarkerOverlay(MapFrontiers.MODID, vertices.get(i), incompleteVertexMarker);
+            MarkerOverlay marker = new MarkerOverlay(MapFrontiers.MODID, vertices.get(i), createMarkerImage(VERTEX_SINGLE_MARKER_TEXTURE));
             marker.setDimension(dimension);
             marker.setDisplayOrder(100);
             marker.setActiveUIs(uiArray);
             marker.setActiveMapTypes(mapTypesArray);
             markerOverlays.add(marker);
             if (i == 0 && vertices.size() == 2) {
-                addRepeatedMarkers(vertices.get(0), vertices.get(1), uiArray, mapTypesArray, incompleteVertexDot, 99);
+                addRepeatedMarkers(vertices.get(0), vertices.get(1), uiArray, mapTypesArray, createMarkerImage(VERTEX_SEGMENT_MARKER_TEXTURE), 99);
             }
         }
     }
@@ -2001,7 +2000,7 @@ public class FrontierOverlay extends FrontierData {
         double averageStepLength = length / (repeatedMarkerPositions.size() + 1);
         Set<Long> addedPositions = new HashSet<>();
         for (PathRepeatedMarkerZoomLevel zoomLevel : PATH_REPEATED_MARKER_ZOOM_LEVELS) {
-            int stride = getRepeatedMarkerStride(zoomLevel.spacingBlocks(), averageStepLength);
+            int stride = getRepeatedMarkerStride(zoomLevel.scaledSpacingBlocks(), averageStepLength);
 
             for (int markerIndex = stride - 1; markerIndex < repeatedMarkerPositions.size(); markerIndex += stride) {
                 BlockPos pos = repeatedMarkerPositions.get(markerIndex);
@@ -2081,7 +2080,10 @@ public class FrontierOverlay extends FrontierData {
         return ((long) x << 32) ^ (z & 0xFFFFFFFFL);
     }
 
-    private record PathRepeatedMarkerZoomLevel(int minZoom, double spacingBlocks) {
+    private record PathRepeatedMarkerZoomLevel(int minZoom, double baseSpacingBlocks) {
+        private double scaledSpacingBlocks() {
+            return baseSpacingBlocks * ClientConfig.MARKER_SIZE.get() / PATH_REPEATED_MARKER_BASE_MARKER_SIZE;
+        }
     }
 
     private void addSingleMarker(BlockPos pos, @Nullable MapImage markerImage, int displayOrder, Context.UI uiArray, Context.MapType[] mapTypesArray) {
@@ -2164,9 +2166,7 @@ public class FrontierOverlay extends FrontierData {
     private static MapImage createMarkerImage(Identifier texture) {
         MapImage mapImage = new MapImage(texture, 0, 0, MarkerImageConstants.TEXTURE_SIZE, MarkerImageConstants.TEXTURE_SIZE,
                 ColorConstants.WHITE, 1.f);
-        mapImage.setDisplayWidth(MarkerImageConstants.DISPLAY_SIZE);
-        mapImage.setDisplayHeight(MarkerImageConstants.DISPLAY_SIZE);
-        mapImage.setAnchorX(MarkerImageConstants.DISPLAY_SIZE / 2.0).setAnchorY(MarkerImageConstants.DISPLAY_SIZE / 2.0);
+        MarkerImageConstants.applyMapDisplaySize(mapImage);
         return mapImage;
     }
 

@@ -29,6 +29,8 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
     private static final Tooltip borderWidthTooltip = tooltip(ClientConfig.BORDER_WIDTH);
     private static final Component borderOpacityLabel = ClientConfig.BORDER_OPACITY.translatedName();
     private static final Tooltip borderOpacityTooltip = tooltip(ClientConfig.BORDER_OPACITY);
+    private static final Component markerSizeLabel = ClientConfig.MARKER_SIZE.translatedName();
+    private static final Tooltip markerSizeTooltip = tooltip(ClientConfig.MARKER_SIZE);
     private static final Component textSizeLabel = ClientConfig.TEXT_SIZE.translatedName();
     private static final Tooltip textSizeTooltip = tooltip(ClientConfig.TEXT_SIZE);
     private static final Component textOpacityLabel = ClientConfig.TEXT_OPACITY.translatedName();
@@ -47,6 +49,7 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
     private StringWidget labelPolygonsOpacity;
     private StringWidget labelBorderWidth;
     private StringWidget labelBorderOpacity;
+    private StringWidget labelMarkerSize;
     private StringWidget labelTextSize;
     private StringWidget labelTextOpacity;
     private StringWidget labelTextUsesCustomColor;
@@ -56,6 +59,7 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
     private TextBoxDouble textPolygonsOpacity;
     private TextBoxInt textBorderWidth;
     private TextBoxDouble textBorderOpacity;
+    private TextBoxInt textMarkerSize;
     private TextBoxInt textTextSize;
     private TextBoxDouble textTextOpacity;
     private OptionButton buttonTextUsesCustomColor;
@@ -120,6 +124,16 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
         textBorderOpacity.setMaxLength(6);
         textBorderOpacity.setValueChangedCallback(value -> {
             ClientConfig.BORDER_OPACITY.set(value);
+            previewFrontiers.configUpdated();
+        });
+
+        labelMarkerSize = settingsLayout.addChild(new StringWidget(markerSizeLabel, font).setColor(ColorConstants.TEXT), row, 0);
+        labelMarkerSize.setTooltip(markerSizeTooltip);
+        textMarkerSize = settingsLayout.addChild(new TextBoxInt(1, 1, 5, font, 60), row++, 1);
+        textMarkerSize.setValue(String.valueOf(ClientConfig.MARKER_SIZE.get()));
+        textMarkerSize.setMaxLength(1);
+        textMarkerSize.setValueChangedCallback(value -> {
+            ClientConfig.MARKER_SIZE.set(value);
             previewFrontiers.configUpdated();
         });
 

@@ -82,6 +82,12 @@ public class SelectedEditablePointMarker {
         overlaysByDimension.clear();
     }
 
+    public void configUpdated() {
+        for (MapImage frameImage : frameImages) {
+            MarkerImageConstants.applyMapDisplaySize(frameImage);
+        }
+    }
+
     private void remove(ResourceKey<Level> dimension) {
         MarkerOverlay[] overlays = overlaysByDimension.remove(dimension);
         if (overlays != null) {
@@ -101,10 +107,7 @@ public class SelectedEditablePointMarker {
         MapImage marker = new MapImage(
                 Identifier.fromNamespaceAndPath(MapFrontiers.MODID, texturePath), 0, 0,
                 MarkerImageConstants.TEXTURE_SIZE, MarkerImageConstants.TEXTURE_SIZE, ColorConstants.WHITE, 0.f);
-        marker.setDisplayWidth(MarkerImageConstants.DISPLAY_SIZE);
-        marker.setDisplayHeight(MarkerImageConstants.DISPLAY_SIZE);
-        marker.setAnchorX(marker.getDisplayWidth() / 2.0)
-                .setAnchorY(marker.getDisplayHeight() / 2.0);
+        MarkerImageConstants.applyMapDisplaySize(marker);
         marker.setRotation(0);
         return marker;
     }

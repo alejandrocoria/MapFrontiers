@@ -32,7 +32,10 @@ public class FrontiersOverlayManager {
 
         ClientGlobalEvents.subscribeClientTickEvent(this, client -> selectedEditablePointMarker.tick(
                 client.getDeltaTracker().getGameTimeDeltaTicks(), MapFrontiersPlugin.isEditing()));
-        ClientGlobalEvents.subscribeUpdatedConfigEvent(this, () -> updateAllOverlays(true));
+        ClientGlobalEvents.subscribeUpdatedConfigEvent(this, () -> {
+            selectedEditablePointMarker.configUpdated();
+            updateAllOverlays(true);
+        });
     }
 
     public void close() {

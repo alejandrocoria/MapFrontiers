@@ -198,6 +198,8 @@
   "mapfrontiers.config.appearance.border.width.tooltip": "Width of the frontier border.",
   "mapfrontiers.config.appearance.border.opacity": "Border opacity",
   "mapfrontiers.config.appearance.border.opacity.tooltip": "Transparency of the frontier border. 0.0 is fully transparent and 1.0 is opaque.",
+  "mapfrontiers.config.appearance.markers.size": "Marker size",
+  "mapfrontiers.config.appearance.markers.size.tooltip": "Size of path and incomplete frontier markers.",
   "mapfrontiers.config.appearance.text.size": "Text size",
   "mapfrontiers.config.appearance.text.size.tooltip": "Size of the frontier text.",
   "mapfrontiers.config.appearance.text.opacity": "Text opacity",

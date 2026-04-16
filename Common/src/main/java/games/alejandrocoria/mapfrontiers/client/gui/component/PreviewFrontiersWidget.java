@@ -119,8 +119,9 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
         frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenOwner, false);
         frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenBanner, false);
         frontierData.addPoint(new BlockPos(305, 70, 40));
-        frontierData.addPoint(new BlockPos(390, 70, 95));
-        frontierData.addPoint(new BlockPos(320, 70, 170));
+        frontierData.addPoint(new BlockPos(375, 70, 95));
+        frontierData.addPoint(new BlockPos(325, 70, 150));
+        frontierData.addPoint(new BlockPos(390, 70, 185));
         return frontierData;
     }
 }
