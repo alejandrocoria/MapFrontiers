@@ -1429,7 +1429,11 @@ public class FrontierOverlay extends FrontierData {
         }
 
         if (points.size() == 1) {
-            addSingleMarker(points.getFirst(), createPathSinglePointMarker(), 100, uiArray, mapTypesArray);
+            Identifier markerId = getPathSinglePointMarkerId();
+            addSingleMarker(points.getFirst(), resolvePathMarkerImage(markerId, 0.f), 100, uiArray, mapTypesArray);
+            if (highlighted) {
+                addSingleMarker(points.getFirst(), resolvePathMarkerHighlightImage(markerId, 0.f), 101, uiArray, mapTypesArray);
+            }
             return;
         }
 
@@ -1441,12 +1445,19 @@ public class FrontierOverlay extends FrontierData {
                 float rotation = getSegmentRotation(point, nextPoint);
                 MapImage segmentMarker = resolvePathMarkerImage(pathStyle.segmentMarker, rotation);
                 addRepeatedMarkers(point, nextPoint, uiArray, mapTypesArray, segmentMarker, 99);
+                if (highlighted) {
+                    MapImage segmentHighlight = resolvePathMarkerHighlightImage(pathStyle.segmentMarker, rotation);
+                    addRepeatedMarkers(point, nextPoint, uiArray, mapTypesArray, segmentHighlight, 100);
+                }
             }
 
             Identifier markerId = getPathPointMarkerId(i);
             float rotation = getPathPointMarkerRotation(i);
 
             addSingleMarker(point, resolvePathMarkerImage(markerId, rotation), 100, uiArray, mapTypesArray);
+            if (highlighted) {
+                addSingleMarker(point, resolvePathMarkerHighlightImage(markerId, rotation), 101, uiArray, mapTypesArray);
+            }
         }
     }
 
@@ -2134,22 +2145,26 @@ public class FrontierOverlay extends FrontierData {
         markerOverlays.add(marker);
     }
 
-    private @Nullable MapImage createPathSinglePointMarker() {
-        MapImage marker = resolvePathMarkerImage(pathStyle.startMarker, 0.f);
-        if (marker == null) {
-            marker = resolvePathMarkerImage(pathStyle.endMarker, 0.f);
+    private Identifier getPathSinglePointMarkerId() {
+        if (isPathMarkerVisible(pathStyle.startMarker)) {
+            return pathStyle.startMarker;
         }
-        if (marker == null) {
-            marker = resolvePathMarkerImage(pathStyle.middleMarker, 0.f);
+        if (isPathMarkerVisible(pathStyle.endMarker)) {
+            return pathStyle.endMarker;
         }
-        if (marker == null) {
-            marker = resolvePathMarkerImage(pathStyle.segmentMarker, 0.f);
+        if (isPathMarkerVisible(pathStyle.middleMarker)) {
+            return pathStyle.middleMarker;
         }
-        if (marker == null) {
-            marker = resolvePathMarkerImage(FrontierData.PathStyle.BIG_DOT, 0.f);
+        if (isPathMarkerVisible(pathStyle.segmentMarker)) {
+            return pathStyle.segmentMarker;
         }
 
-        return marker;
+        return FrontierData.PathStyle.BIG_DOT;
+    }
+
+    private static boolean isPathMarkerVisible(Identifier markerId) {
+        PathMarkerCatalog.Entry entry = PathMarkerCatalog.get(markerId);
+        return entry != null && entry.texture() != null;
     }
 
     private static double distanceToPolylineSq(BlockPos pos, List<BlockPos> polyline, boolean closed) {
@@ -2189,6 +2204,24 @@ public class FrontierOverlay extends FrontierData {
 
         MapImage markerImage = createMarkerImage(entry.texture(), color);
         if (entry.directional()) {
+            markerImage.setRotation(Math.round(rotation));
+        }
+        return markerImage;
+    }
+
+    private @Nullable MapImage resolvePathMarkerHighlightImage(Identifier markerId, float rotation) {
+        if (FrontierData.PathStyle.NONE.equals(markerId)) {
+            return null;
+        }
+
+        Identifier texture = PathMarkerCatalog.getHighlightTexture(markerId);
+        if (texture == null) {
+            return null;
+        }
+
+        MapImage markerImage = createMarkerImage(texture, ColorConstants.WHITE);
+        PathMarkerCatalog.Entry entry = PathMarkerCatalog.get(markerId);
+        if (entry != null && entry.directional()) {
             markerImage.setRotation(Math.round(rotation));
         }
         return markerImage;
