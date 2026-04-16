@@ -99,7 +99,7 @@ public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
         frontierData.setOwner(owner);
         frontierData.setName1("Preview");
         frontierData.setName2("");
-        frontierData.setColor(0xFFAACC60);
+        frontierData.setColor(0xFF60DDCC);
         frontierData.setDimension(OVERWORLD);
         PreviewFrontierHelper.setPreviewBanner(frontierData);
         setPreviewVisibility(frontierData);

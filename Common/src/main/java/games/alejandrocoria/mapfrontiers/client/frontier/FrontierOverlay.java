@@ -2187,7 +2187,7 @@ public class FrontierOverlay extends FrontierData {
             return null;
         }
 
-        MapImage markerImage = createMarkerImage(entry.texture());
+        MapImage markerImage = createMarkerImage(entry.texture(), color);
         if (entry.directional()) {
             markerImage.setRotation(Math.round(rotation));
         }
@@ -2198,9 +2198,8 @@ public class FrontierOverlay extends FrontierData {
         return (float) -Math.toDegrees(Math.atan2(to.getZ() - from.getZ(), to.getX() - from.getX()));
     }
 
-    private static MapImage createMarkerImage(Identifier texture) {
-        MapImage mapImage = new MapImage(texture, 0, 0, MarkerImageConstants.TEXTURE_SIZE, MarkerImageConstants.TEXTURE_SIZE,
-                ColorConstants.WHITE, 1.f);
+    private static MapImage createMarkerImage(Identifier texture, int color) {
+        MapImage mapImage = new MapImage(texture, 0, 0, MarkerImageConstants.TEXTURE_SIZE, MarkerImageConstants.TEXTURE_SIZE, color, 1.f);
         MarkerImageConstants.applyMapDisplaySize(mapImage);
         return mapImage;
     }
