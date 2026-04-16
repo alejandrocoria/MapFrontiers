@@ -888,24 +888,8 @@ public class FrontierOverlay extends FrontierData {
         return mode == Mode.Vertex ? selectedPointIndex : -1;
     }
 
-    public BlockPos getSelectedVertex() {
-        if (mode == Mode.Vertex && selectedPointIndex >= 0 && selectedPointIndex < vertices.size()) {
-            return vertices.get(selectedPointIndex);
-        }
-
-        return null;
-    }
-
     public int getSelectedPointIndex() {
         return mode == Mode.Path ? selectedPointIndex : -1;
-    }
-
-    public BlockPos getSelectedPoint() {
-        if (mode == Mode.Path && selectedPointIndex >= 0 && selectedPointIndex < points.size()) {
-            return points.get(selectedPointIndex);
-        }
-
-        return null;
     }
 
     public int getSelectedEditablePointIndex() {
@@ -913,6 +897,11 @@ public class FrontierOverlay extends FrontierData {
             case Vertex, Path -> selectedPointIndex;
             case Chunk -> -1;
         };
+    }
+
+    public void clearSelectedEditablePoint() {
+        selectedPointIndex = -1;
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
     }
 
     public @Nullable BlockPos getSelectedEditablePoint() {

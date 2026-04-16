@@ -221,6 +221,7 @@ public class FullscreenMap {
         if (editing) {
             editing = false;
             relocating = false;
+            frontierHighlighted.clearSelectedEditablePoint();
             if (shapeDirty) {
                 FrontierChange change = new FrontierChange();
                 change.setShape(frontierHighlighted.getVertices(), frontierHighlighted.getChunks(), frontierHighlighted.getPoints(),
@@ -290,6 +291,7 @@ public class FullscreenMap {
             editing = true;
             shapeDirty = false;
             drawingChunk = ChunkDrawing.Nothing;
+            frontierHighlighted.clearSelectedEditablePoint();
         } else {
             stopEditing();
         }

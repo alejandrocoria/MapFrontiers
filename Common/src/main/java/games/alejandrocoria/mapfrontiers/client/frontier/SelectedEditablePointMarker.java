@@ -21,8 +21,13 @@ public class SelectedEditablePointMarker {
             "textures/markers/selected/0.png",
             "textures/markers/selected/1.png",
             "textures/markers/selected/2.png",
-            "textures/markers/selected/3.png"};
-    private static final float FRAME_TICKS = 0.75f;
+            "textures/markers/selected/3.png",
+            "textures/markers/selected/4.png",
+            "textures/markers/selected/5.png",
+            "textures/markers/selected/6.png",
+            "textures/markers/selected/7.png",
+            "textures/markers/selected/8.png"};
+    private static final float FRAME_TICKS = 0.25f;
     private static final int DISPLAY_ORDER = 101;
 
     private final IClientAPI jmAPI;
