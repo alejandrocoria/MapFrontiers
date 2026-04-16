@@ -2128,7 +2128,7 @@ public class FrontierOverlay extends FrontierData {
 
     private record PathRepeatedMarkerZoomBand(int minZoom, int maxZoom, double baseTargetSpacingBlocks) {
         private double scaledTargetSpacingBlocks() {
-            return baseTargetSpacingBlocks * ClientConfig.MARKER_SIZE.get() / PATH_REPEATED_MARKER_BASE_MARKER_SIZE;
+            return baseTargetSpacingBlocks * ClientConfig.PATH_MARKER_SIZE.get() / PATH_REPEATED_MARKER_BASE_MARKER_SIZE;
         }
     }
 
@@ -2202,7 +2202,7 @@ public class FrontierOverlay extends FrontierData {
             return null;
         }
 
-        MapImage markerImage = createMarkerImage(entry.texture(), color);
+        MapImage markerImage = createMarkerImage(entry.texture(), color, ClientConfig.PATH_MARKER_OPACITY.get().floatValue());
         if (entry.directional()) {
             markerImage.setRotation(Math.round(rotation));
         }
@@ -2219,7 +2219,7 @@ public class FrontierOverlay extends FrontierData {
             return null;
         }
 
-        MapImage markerImage = createMarkerImage(texture, ColorConstants.WHITE);
+        MapImage markerImage = createMarkerImage(texture, ColorConstants.WHITE, 1.f);
         PathMarkerCatalog.Entry entry = PathMarkerCatalog.get(markerId);
         if (entry != null && entry.directional()) {
             markerImage.setRotation(Math.round(rotation));
@@ -2231,8 +2231,8 @@ public class FrontierOverlay extends FrontierData {
         return (float) -Math.toDegrees(Math.atan2(to.getZ() - from.getZ(), to.getX() - from.getX()));
     }
 
-    private static MapImage createMarkerImage(Identifier texture, int color) {
-        MapImage mapImage = new MapImage(texture, 0, 0, MarkerImageConstants.TEXTURE_SIZE, MarkerImageConstants.TEXTURE_SIZE, color, 1.f);
+    private static MapImage createMarkerImage(Identifier texture, int color, float opacity) {
+        MapImage mapImage = new MapImage(texture, 0, 0, MarkerImageConstants.TEXTURE_SIZE, MarkerImageConstants.TEXTURE_SIZE, color, opacity);
         MarkerImageConstants.applyMapDisplaySize(mapImage);
         return mapImage;
     }

@@ -15,6 +15,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
+import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.network.chat.Component;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -29,8 +30,10 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
     private static final Tooltip borderWidthTooltip = tooltip(ClientConfig.BORDER_WIDTH);
     private static final Component borderOpacityLabel = ClientConfig.BORDER_OPACITY.translatedName();
     private static final Tooltip borderOpacityTooltip = tooltip(ClientConfig.BORDER_OPACITY);
-    private static final Component markerSizeLabel = ClientConfig.MARKER_SIZE.translatedName();
-    private static final Tooltip markerSizeTooltip = tooltip(ClientConfig.MARKER_SIZE);
+    private static final Component pathMarkerSizeLabel = ClientConfig.PATH_MARKER_SIZE.translatedName();
+    private static final Tooltip pathMarkerSizeTooltip = tooltip(ClientConfig.PATH_MARKER_SIZE);
+    private static final Component pathMarkerOpacityLabel = ClientConfig.PATH_MARKER_OPACITY.translatedName();
+    private static final Tooltip pathMarkerOpacityTooltip = tooltip(ClientConfig.PATH_MARKER_OPACITY);
     private static final Component textSizeLabel = ClientConfig.TEXT_SIZE.translatedName();
     private static final Tooltip textSizeTooltip = tooltip(ClientConfig.TEXT_SIZE);
     private static final Component textOpacityLabel = ClientConfig.TEXT_OPACITY.translatedName();
@@ -49,7 +52,8 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
     private StringWidget labelPolygonsOpacity;
     private StringWidget labelBorderWidth;
     private StringWidget labelBorderOpacity;
-    private StringWidget labelMarkerSize;
+    private StringWidget labelPathMarkerSize;
+    private StringWidget labelPathMarkerOpacity;
     private StringWidget labelTextSize;
     private StringWidget labelTextOpacity;
     private StringWidget labelTextUsesCustomColor;
@@ -59,7 +63,8 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
     private TextBoxDouble textPolygonsOpacity;
     private TextBoxInt textBorderWidth;
     private TextBoxDouble textBorderOpacity;
-    private TextBoxInt textMarkerSize;
+    private TextBoxInt textPathMarkerSize;
+    private TextBoxDouble textPathMarkerOpacity;
     private TextBoxInt textTextSize;
     private TextBoxDouble textTextOpacity;
     private OptionButton buttonTextUsesCustomColor;
@@ -97,6 +102,8 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
         buttonHideNamesThatDontFit.addOption(offLabel);
         buttonHideNamesThatDontFit.setSelected(ClientConfig.HIDE_NAMES_THAT_DONT_FIT.get() ? 0 : 1);
 
+        addSectionSpacing(settingsLayout, row++);
+
         labelPolygonsOpacity = settingsLayout.addChild(new StringWidget(polygonsOpacityLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelPolygonsOpacity.setTooltip(polygonsOpacityTooltip);
         textPolygonsOpacity = settingsLayout.addChild(new TextBoxDouble(0.4, 0.0, 1.0, font, 60), row++, 1);
@@ -127,15 +134,29 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
             previewFrontiers.configUpdated();
         });
 
-        labelMarkerSize = settingsLayout.addChild(new StringWidget(markerSizeLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelMarkerSize.setTooltip(markerSizeTooltip);
-        textMarkerSize = settingsLayout.addChild(new TextBoxInt(1, 1, 5, font, 60), row++, 1);
-        textMarkerSize.setValue(String.valueOf(ClientConfig.MARKER_SIZE.get()));
-        textMarkerSize.setMaxLength(1);
-        textMarkerSize.setValueChangedCallback(value -> {
-            ClientConfig.MARKER_SIZE.set(value);
+        addSectionSpacing(settingsLayout, row++);
+
+        labelPathMarkerSize = settingsLayout.addChild(new StringWidget(pathMarkerSizeLabel, font).setColor(ColorConstants.TEXT), row, 0);
+        labelPathMarkerSize.setTooltip(pathMarkerSizeTooltip);
+        textPathMarkerSize = settingsLayout.addChild(new TextBoxInt(1, 1, 5, font, 60), row++, 1);
+        textPathMarkerSize.setValue(String.valueOf(ClientConfig.PATH_MARKER_SIZE.get()));
+        textPathMarkerSize.setMaxLength(1);
+        textPathMarkerSize.setValueChangedCallback(value -> {
+            ClientConfig.PATH_MARKER_SIZE.set(value);
             previewFrontiers.configUpdated();
         });
+
+        labelPathMarkerOpacity = settingsLayout.addChild(new StringWidget(pathMarkerOpacityLabel, font).setColor(ColorConstants.TEXT), row, 0);
+        labelPathMarkerOpacity.setTooltip(pathMarkerOpacityTooltip);
+        textPathMarkerOpacity = settingsLayout.addChild(new TextBoxDouble(1.0, 0.0, 1.0, font, 60), row++, 1);
+        textPathMarkerOpacity.setValue(String.valueOf(ClientConfig.PATH_MARKER_OPACITY.get()));
+        textPathMarkerOpacity.setMaxLength(6);
+        textPathMarkerOpacity.setValueChangedCallback(value -> {
+            ClientConfig.PATH_MARKER_OPACITY.set(value);
+            previewFrontiers.configUpdated();
+        });
+
+        addSectionSpacing(settingsLayout, row++);
 
         labelTextSize = settingsLayout.addChild(new StringWidget(textSizeLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelTextSize.setTooltip(textSizeTooltip);
@@ -167,6 +188,8 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
         buttonTextUsesCustomColor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.TextColor.FrontierColorBright));
         buttonTextUsesCustomColor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.TextColor.White));
         buttonTextUsesCustomColor.setSelected(ClientConfig.TEXT_COLOR.get().ordinal());
+
+        addSectionSpacing(settingsLayout, row++);
 
         labelBannerSize = settingsLayout.addChild(new StringWidget(bannerSizeLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelBannerSize.setTooltip(bannerSizeTooltip);
@@ -213,5 +236,9 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
     private static Tooltip tooltip(ConfigEntry<?, ?> entry) {
         Component component = entry.tooltip();
         return component == null ? null : Tooltip.create(component);
+    }
+
+    private static void addSectionSpacing(GridLayout layout, int row) {
+        layout.addChild(SpacerElement.height(4), row, 0, 1, 2);
     }
 }

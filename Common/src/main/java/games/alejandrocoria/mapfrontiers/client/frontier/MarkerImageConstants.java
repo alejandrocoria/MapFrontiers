@@ -9,7 +9,7 @@ public final class MarkerImageConstants {
     public static final int SELECTOR_DISPLAY_SIZE = 12;
 
     public static int getMapDisplaySize() {
-        return BASE_DISPLAY_SIZE * ClientConfig.MARKER_SIZE.get();
+        return BASE_DISPLAY_SIZE * ClientConfig.PATH_MARKER_SIZE.get();
     }
 
     public static void applyMapDisplaySize(MapImage marker) {

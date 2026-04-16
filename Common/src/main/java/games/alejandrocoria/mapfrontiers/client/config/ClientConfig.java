@@ -102,9 +102,12 @@ public final class ClientConfig {
     public static final DoubleConfigEntry BORDER_OPACITY = register(doubleEntry(1.0, 0.0, 1.0, "appearance", "border", "opacity")
             .comment("Transparency of the frontier border. 0.0 is fully transparent and 1.0 is opaque.")
             .translation(translation("appearance", "border", "opacity")));
-    public static final IntConfigEntry MARKER_SIZE = register(intEntry(2, 1, 5, "appearance", "markers", "size")
-            .comment("Size of path and incomplete frontier markers.")
-            .translation(translation("appearance", "markers", "size")));
+    public static final IntConfigEntry PATH_MARKER_SIZE = register(intEntry(2, 1, 5, "appearance", "pathMarkers", "size")
+            .comment("Size of path markers.")
+            .translation(translation("appearance", "pathMarkers", "size")));
+    public static final DoubleConfigEntry PATH_MARKER_OPACITY = register(doubleEntry(1.0, 0.0, 1.0, "appearance", "pathMarkers", "opacity")
+            .comment("Transparency of path markers. 0.0 is fully transparent and 1.0 is opaque.")
+            .translation(translation("appearance", "pathMarkers", "opacity")));
     public static final IntConfigEntry TEXT_SIZE = register(intEntry(2, 1, 5, "appearance", "text", "size")
             .comment("Size of the frontier text.")
             .translation(translation("appearance", "text", "size")));
