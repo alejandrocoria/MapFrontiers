@@ -14,6 +14,7 @@ import games.alejandrocoria.mapfrontiers.common.config.StringListConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -101,6 +102,12 @@ public final class ClientConfig {
     public static final DoubleConfigEntry BORDER_OPACITY = register(doubleEntry(1.0, 0.0, 1.0, "appearance", "border", "opacity")
             .comment("Transparency of the frontier border. 0.0 is fully transparent and 1.0 is opaque.")
             .translation(translation("appearance", "border", "opacity")));
+    public static final IntConfigEntry PATH_MARKER_SIZE = register(intEntry(2, 1, 5, "appearance", "pathMarkers", "size")
+            .comment("Size of path markers.")
+            .translation(translation("appearance", "pathMarkers", "size")));
+    public static final DoubleConfigEntry PATH_MARKER_OPACITY = register(doubleEntry(1.0, 0.0, 1.0, "appearance", "pathMarkers", "opacity")
+            .comment("Transparency of path markers. 0.0 is fully transparent and 1.0 is opaque.")
+            .translation(translation("appearance", "pathMarkers", "opacity")));
     public static final IntConfigEntry TEXT_SIZE = register(intEntry(2, 1, 5, "appearance", "text", "size")
             .comment("Size of the frontier text.")
             .translation(translation("appearance", "text", "size")));
@@ -116,6 +123,26 @@ public final class ClientConfig {
     public static final DoubleConfigEntry BANNER_OPACITY = register(doubleEntry(1.0, 0.0, 1.0, "appearance", "banner", "opacity")
             .comment("Transparency of the frontier banner. 0.0 is fully transparent and 1.0 is opaque.")
             .translation(translation("appearance", "banner", "opacity")));
+    public static final StringConfigEntry PATH_DEFAULT_STYLE_START = register(stringEntry(FrontierData.PathStyle.BIG_DOT.toString(), "path", "defaultStyle", "start")
+            .comment("Marker identifier used by default for the start of new path frontiers."));
+    public static final StringConfigEntry PATH_DEFAULT_STYLE_INNER = register(stringEntry(FrontierData.PathStyle.NONE.toString(), "path", "defaultStyle", "inner")
+            .comment("Marker identifier used by default for inner points of new path frontiers."));
+    public static final StringConfigEntry PATH_DEFAULT_STYLE_END = register(stringEntry(FrontierData.PathStyle.BIG_DOT.toString(), "path", "defaultStyle", "end")
+            .comment("Marker identifier used by default for the end of new path frontiers."));
+    public static final StringConfigEntry PATH_DEFAULT_STYLE_SEGMENT = register(stringEntry(FrontierData.PathStyle.SMALL_DOT.toString(), "path", "defaultStyle", "segment")
+            .comment("Marker identifier used by default for segments of new path frontiers."));
+    public static final BooleanConfigEntry PATH_DEFAULT_STYLE_LABEL_AT_START = register(boolEntry(true, "path", "defaultStyle", "labelAtStart")
+            .comment("Show path labels and banner at the start by default."));
+    public static final BooleanConfigEntry PATH_DEFAULT_STYLE_LABEL_AT_MIDDLE = register(boolEntry(false, "path", "defaultStyle", "labelAtMiddle")
+            .comment("Show path labels and banner at the midpoint by default."));
+    public static final BooleanConfigEntry PATH_DEFAULT_STYLE_LABEL_AT_END = register(boolEntry(false, "path", "defaultStyle", "labelAtEnd")
+            .comment("Show path labels and banner at the end by default."));
+    public static final IntConfigEntry PATH_PROXIMITY_ENTER_DISTANCE = register(intEntry(8, 0, 128, "path", "proximity", "enterDistance")
+            .comment("Distance in blocks used to activate Path frontiers for HUD and announcements.")
+            .translation(translation("path", "proximity", "enterDistance")));
+    public static final IntConfigEntry PATH_PROXIMITY_EXIT_DISTANCE = register(intEntry(10, 0, 128, "path", "proximity", "exitDistance")
+            .comment("Distance in blocks used to keep Path frontiers active for HUD and announcements.")
+            .translation(translation("path", "proximity", "exitDistance")));
 
     public static final EnumConfigEntry<Visibility> FRONTIER_VISIBILITY = visibilityEntry(
             "Force all frontiers to be shown or hidden. In Custom, you can decide for each frontier.",
@@ -257,7 +284,7 @@ public final class ClientConfig {
             .comment("Mode used when creating a new frontier."));
     public static final EnumConfigEntry<AfterCreatingFrontier> AFTER_CREATING_FRONTIER = register(enumEntry(AfterCreatingFrontier.class, AfterCreatingFrontier.InfoScreen, "newFrontier", "afterCreation")
             .comment("Action to perform after creating a new frontier."));
-    public static final IntConfigEntry NEW_FRONTIER_SHAPE = register(intEntry(0, 0, 11, "newFrontier", "shape")
+    public static final IntConfigEntry NEW_FRONTIER_SHAPE = register(intEntry(6, 0, 11, "newFrontier", "shape")
             .comment("Shape preset used when creating a new vertex frontier."));
     public static final IntConfigEntry NEW_FRONTIER_COUNT = register(intEntry(16, 3, 999, "newFrontier", "vertexCount")
             .comment("Number of vertices used by the selected vertex shape preset."));
@@ -265,12 +292,16 @@ public final class ClientConfig {
             .comment("Width used by the selected vertex shape preset."));
     public static final IntConfigEntry NEW_FRONTIER_SHAPE_RADIUS = register(intEntry(20, 0, 999, "newFrontier", "shapeRadius")
             .comment("Radius used by the selected vertex shape preset."));
-    public static final IntConfigEntry NEW_FRONTIER_CHUNK_SHAPE = register(intEntry(0, 0, 7, "newFrontier", "chunkShape")
+    public static final IntConfigEntry NEW_FRONTIER_CHUNK_SHAPE = register(intEntry(2, 0, 7, "newFrontier", "chunkShape")
             .comment("Shape preset used when creating a new chunk frontier."));
     public static final IntConfigEntry NEW_FRONTIER_CHUNK_SHAPE_WIDTH = register(intEntry(5, 0, 32, "newFrontier", "chunkShapeWidth")
             .comment("Width used by the selected chunk shape preset."));
     public static final IntConfigEntry NEW_FRONTIER_CHUNK_SHAPE_LENGTH = register(intEntry(5, 0, 32, "newFrontier", "chunkShapeLength")
             .comment("Length used by the selected chunk shape preset."));
+    public static final IntConfigEntry NEW_FRONTIER_PATH_SHAPE = register(intEntry(1, 0, 7, "newFrontier", "pathShape")
+            .comment("Shape preset used when creating a new path frontier."));
+    public static final IntConfigEntry NEW_FRONTIER_PATH_SEGMENT_LENGTH = register(intEntry(10, 1, 999, "newFrontier", "pathSegmentLength")
+            .comment("Segment length used by the selected path shape preset."));
 
     public static final BooleanConfigEntry PASTE_NAME = register(boolEntry(false, "paste", "name")
             .comment("Paste the frontier name when pasting info."));
@@ -285,6 +316,7 @@ public final class ClientConfig {
 
     static {
         FILE.registerSectionComment("list", "Frontier list settings.");
+        FILE.registerSectionComment("path", "Path settings.");
     }
 
     public static final StringListConfigEntry FRONTIER_SORTING = register(stringListEntry(DEFAULT_SORTING, ClientConfig::isValidSorting, "list", "sorting", "priority")
@@ -303,11 +335,14 @@ public final class ClientConfig {
 
     public static boolean load() {
         boolean dirty = FILE.load();
+        dirty |= validateDefaultPathStyle();
+        dirty |= validatePathActivationDistances();
         dirty |= validateSorting();
         return dirty;
     }
 
     public static void save() {
+        validatePathActivationDistances();
         validateSorting();
         FILE.save();
     }
@@ -348,8 +383,67 @@ public final class ClientConfig {
         return FRONTIER_SORTING_DIRECTION.get();
     }
 
+    public static FrontierData.PathStyle getDefaultPathStyle() {
+        FrontierData.PathStyle pathStyle = new FrontierData.PathStyle();
+        pathStyle.startMarker = parsePathMarker(PATH_DEFAULT_STYLE_START.get(), FrontierData.PathStyle.BIG_DOT);
+        pathStyle.innerMarker = parsePathMarker(PATH_DEFAULT_STYLE_INNER.get(), FrontierData.PathStyle.NONE);
+        pathStyle.endMarker = parsePathMarker(PATH_DEFAULT_STYLE_END.get(), FrontierData.PathStyle.BIG_DOT);
+        pathStyle.segmentMarker = parsePathMarker(PATH_DEFAULT_STYLE_SEGMENT.get(), FrontierData.PathStyle.SMALL_DOT);
+        pathStyle.labelAtStart = PATH_DEFAULT_STYLE_LABEL_AT_START.get();
+        pathStyle.labelAtMiddle = PATH_DEFAULT_STYLE_LABEL_AT_MIDDLE.get();
+        pathStyle.labelAtEnd = PATH_DEFAULT_STYLE_LABEL_AT_END.get();
+        pathStyle.normalizeForPersistence();
+        return pathStyle;
+    }
+
+    public static void setDefaultPathStyle(FrontierData.PathStyle pathStyle) {
+        FrontierData.PathStyle normalized = normalizeDefaultPathStyle(pathStyle);
+        PATH_DEFAULT_STYLE_START.set(normalized.startMarker.toString());
+        PATH_DEFAULT_STYLE_INNER.set(normalized.innerMarker.toString());
+        PATH_DEFAULT_STYLE_END.set(normalized.endMarker.toString());
+        PATH_DEFAULT_STYLE_SEGMENT.set(normalized.segmentMarker.toString());
+        PATH_DEFAULT_STYLE_LABEL_AT_START.set(normalized.labelAtStart);
+        PATH_DEFAULT_STYLE_LABEL_AT_MIDDLE.set(normalized.labelAtMiddle);
+        PATH_DEFAULT_STYLE_LABEL_AT_END.set(normalized.labelAtEnd);
+    }
+
+    public static double getPathActivationDistance(boolean alreadyActive) {
+        return alreadyActive ? PATH_PROXIMITY_EXIT_DISTANCE.get() : PATH_PROXIMITY_ENTER_DISTANCE.get();
+    }
+
     public static void setFrontierSortingDirectionValues(List<Boolean> direction) {
         FRONTIER_SORTING_DIRECTION.set(direction);
+    }
+
+    private static boolean validateDefaultPathStyle() {
+        FrontierData.PathStyle normalized = getDefaultPathStyle();
+        boolean dirty = !PATH_DEFAULT_STYLE_START.get().equals(normalized.startMarker.toString())
+                || !PATH_DEFAULT_STYLE_INNER.get().equals(normalized.innerMarker.toString())
+                || !PATH_DEFAULT_STYLE_END.get().equals(normalized.endMarker.toString())
+                || !PATH_DEFAULT_STYLE_SEGMENT.get().equals(normalized.segmentMarker.toString())
+                || PATH_DEFAULT_STYLE_LABEL_AT_START.get() != normalized.labelAtStart
+                || PATH_DEFAULT_STYLE_LABEL_AT_MIDDLE.get() != normalized.labelAtMiddle
+                || PATH_DEFAULT_STYLE_LABEL_AT_END.get() != normalized.labelAtEnd;
+
+        if (dirty) {
+            setDefaultPathStyle(normalized);
+        }
+
+        return dirty;
+    }
+
+    private static boolean validatePathActivationDistances() {
+        int enterDistance = Math.max(0, PATH_PROXIMITY_ENTER_DISTANCE.get());
+        int exitDistance = Math.max(enterDistance, PATH_PROXIMITY_EXIT_DISTANCE.get());
+        boolean dirty = PATH_PROXIMITY_ENTER_DISTANCE.get() != enterDistance
+                || PATH_PROXIMITY_EXIT_DISTANCE.get() != exitDistance;
+
+        if (dirty) {
+            PATH_PROXIMITY_ENTER_DISTANCE.set(enterDistance);
+            PATH_PROXIMITY_EXIT_DISTANCE.set(exitDistance);
+        }
+
+        return dirty;
     }
 
     private static boolean validateSorting() {
@@ -406,6 +500,24 @@ public final class ClientConfig {
 
     private static String translation(String... path) {
         return MapFrontiers.MODID + ".config." + String.join(".", path);
+    }
+
+    private static FrontierData.PathStyle normalizeDefaultPathStyle(FrontierData.PathStyle pathStyle) {
+        FrontierData.PathStyle normalized = new FrontierData.PathStyle(pathStyle);
+        normalized.startMarker = normalized.startMarker == null ? FrontierData.PathStyle.BIG_DOT : normalized.startMarker;
+        normalized.innerMarker = normalized.innerMarker == null ? FrontierData.PathStyle.NONE : normalized.innerMarker;
+        normalized.endMarker = normalized.endMarker == null ? FrontierData.PathStyle.BIG_DOT : normalized.endMarker;
+        normalized.segmentMarker = normalized.segmentMarker == null ? FrontierData.PathStyle.SMALL_DOT : normalized.segmentMarker;
+        normalized.normalizeForPersistence();
+        return normalized;
+    }
+
+    private static Identifier parsePathMarker(String value, Identifier fallback) {
+        try {
+            return Identifier.parse(value);
+        } catch (Exception ignored) {
+            return fallback;
+        }
     }
 
     private static BooleanConfigEntry boolEntry(boolean defaultValue, String... path) {

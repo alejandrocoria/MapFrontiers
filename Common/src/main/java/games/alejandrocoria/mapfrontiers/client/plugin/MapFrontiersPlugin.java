@@ -112,7 +112,6 @@ public class MapFrontiersPlugin implements IClientPlugin {
     }
 
     public static boolean isEditing() {
-        return fullscreenMap != null && (fullscreenMap.isEditingVertices() || fullscreenMap.isEditingChunks());
+        return fullscreenMap != null && (fullscreenMap.isEditingVertices() || fullscreenMap.isEditingPaths() || fullscreenMap.isEditingChunks());
     }
 }
-

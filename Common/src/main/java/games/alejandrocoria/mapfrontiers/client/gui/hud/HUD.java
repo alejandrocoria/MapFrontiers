@@ -4,6 +4,7 @@ import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
+import games.alejandrocoria.mapfrontiers.client.gui.component.PreviewFrontierHelper;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -12,18 +13,10 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.ChatScreen;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.level.block.entity.BannerPattern;
-import net.minecraft.world.level.block.entity.BannerPatternLayers;
-import net.minecraft.world.level.block.entity.BannerPatterns;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,8 +51,6 @@ public class HUD {
         HUD hud = new HUD();
         hud.previewMode = true;
 
-        BannerPatternLayers patterns = createPreviewPatterns();
-
         FrontierData frontierData = new FrontierData();
         SettingsUser owner = new SettingsUser();
         if (mc.player != null) {
@@ -71,34 +62,11 @@ public class HUD {
         frontierData.setOwner(owner);
         frontierData.setName1("Preview Frontier");
         frontierData.setName2("-----------------");
-        if (patterns != null) {
-            frontierData.setBanner(DyeColor.BLACK, patterns);
-        }
+        PreviewFrontierHelper.setPreviewBanner(frontierData);
 
         hud.frontier = new FrontierOverlay(frontierData, null);
 
         return hud;
-    }
-
-    private static @Nullable BannerPatternLayers createPreviewPatterns() {
-        try {
-            ClientLevel level = mc.level;
-            if (level == null) {
-                return null;
-            }
-
-            HolderLookup<BannerPattern> patternRegistry = level.registryAccess().lookup(Registries.BANNER_PATTERN).orElseThrow();
-            return (new BannerPatternLayers.Builder())
-                    .add(patternRegistry.get(BannerPatterns.FLOWER).orElseThrow(), DyeColor.GREEN)
-                    .add(patternRegistry.get(BannerPatterns.BRICKS).orElseThrow(), DyeColor.LIGHT_GRAY)
-                    .add(patternRegistry.get(BannerPatterns.BORDER).orElseThrow(), DyeColor.LIGHT_BLUE)
-                    .add(patternRegistry.get(BannerPatterns.TRIANGLE_TOP).orElseThrow(), DyeColor.LIGHT_BLUE)
-                    .add(patternRegistry.get(BannerPatterns.TRIANGLE_BOTTOM).orElseThrow(), DyeColor.BLACK)
-                    .add(patternRegistry.get(BannerPatterns.STRIPE_BOTTOM).orElseThrow(), DyeColor.GREEN)
-                    .build();
-        } catch (Exception ignored) {
-            return null;
-        }
     }
 
     public HUD() {
@@ -144,7 +112,7 @@ public class HUD {
                 || currentPlayerPosition.getZ() != lastPlayerPosition.getZ()) {
             lastPlayerPosition = currentPlayerPosition;
 
-            List<FrontierOverlay> frontiers = MapFrontiersClient.getFrontiersInPosition(mc.player.level().dimension(), lastPlayerPosition);
+            List<FrontierOverlay> frontiers = MapFrontiersClient.getFrontiersForHUD();
             if (!frontiers.isEmpty()) {
                 FrontierOverlay newFrontier = frontiers.getFirst();
                 if (frontierHash != newFrontier.getHash()) {
@@ -178,7 +146,7 @@ public class HUD {
             return;
         }
 
-        List<FrontierOverlay> frontiers = MapFrontiersClient.getFrontiersInPosition(mc.player.level().dimension(), lastPlayerPosition);
+        List<FrontierOverlay> frontiers = MapFrontiersClient.getFrontiersForHUD();
         if (!frontiers.isEmpty()) {
             FrontierOverlay newFrontier = frontiers.getFirst();
             if (frontierHash != newFrontier.getHash()) {

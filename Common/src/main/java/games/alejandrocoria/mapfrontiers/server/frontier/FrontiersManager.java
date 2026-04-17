@@ -103,9 +103,11 @@ public class FrontiersManager {
                                                 ServerPlayer player,
                                                 @Nullable String sourcePluginId,
                                                 @Nullable List<BlockPos> vertices,
-                                                @Nullable List<ChunkPos> chunks) {
+                                                @Nullable List<ChunkPos> chunks,
+                                                @Nullable List<BlockPos> points,
+                                                @Nullable FrontierData.PathStyle pathStyle) {
         List<FrontierData> frontiers = getAllGlobalFrontiers(dimension);
-        return createNewFrontier(frontierId, frontiers, dimension, false, player, sourcePluginId, vertices, chunks);
+        return createNewFrontier(frontierId, frontiers, dimension, false, player, sourcePluginId, vertices, chunks, points, pathStyle);
     }
 
     public FrontierData createNewPersonalFrontier(UUID frontierId,
@@ -113,9 +115,11 @@ public class FrontiersManager {
                                                   ServerPlayer player,
                                                   @Nullable String sourcePluginId,
                                                   @Nullable List<BlockPos> vertices,
-                                                  @Nullable List<ChunkPos> chunks) {
+                                                  @Nullable List<ChunkPos> chunks,
+                                                  @Nullable List<BlockPos> points,
+                                                  @Nullable FrontierData.PathStyle pathStyle) {
         List<FrontierData> frontiers = getAllPersonalFrontiers(new SettingsUser(player), dimension);
-        return createNewFrontier(frontierId, frontiers, dimension, true, player, sourcePluginId, vertices, chunks);
+        return createNewFrontier(frontierId, frontiers, dimension, true, player, sourcePluginId, vertices, chunks, points, pathStyle);
     }
 
     private FrontierData createNewFrontier(UUID frontierId,
@@ -125,9 +129,11 @@ public class FrontiersManager {
                                            ServerPlayer player,
                                            @Nullable String sourcePluginId,
                                            @Nullable List<BlockPos> vertices,
-                                           @Nullable List<ChunkPos> chunks) {
+                                           @Nullable List<ChunkPos> chunks,
+                                           @Nullable List<BlockPos> points,
+                                           @Nullable FrontierData.PathStyle pathStyle) {
         FrontierData frontier = FrontierCreationFactory.createFrontier(frontierId, new SettingsUser(player), dimension, personal,
-                FrontierData.FrontierLifetime.PERSISTENT, sourcePluginId, vertices, chunks);
+                FrontierData.FrontierLifetime.PERSISTENT, sourcePluginId, vertices, chunks, points, pathStyle);
 
         frontiers.add(frontier);
         allFrontiers.put(frontier.getId(), frontier);

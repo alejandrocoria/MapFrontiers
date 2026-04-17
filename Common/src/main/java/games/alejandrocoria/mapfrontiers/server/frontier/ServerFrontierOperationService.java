@@ -56,7 +56,9 @@ public class ServerFrontierOperationService {
                                                       FrontierData.FrontierLifetime lifetime,
                                                       @Nullable String sourcePluginId,
                                                       @Nullable List<BlockPos> vertices,
-                                                      @Nullable List<ChunkPos> chunks) {
+                                                      @Nullable List<ChunkPos> chunks,
+                                                      @Nullable List<BlockPos> points,
+                                                      @Nullable FrontierData.PathStyle pathStyle) {
         if (lifetime != FrontierData.FrontierLifetime.PERSISTENT) {
             return rejectInvalidAuthoritativeFrontier(player, null,
                     "Rejected authoritative frontier creation because only PERSISTENT lifetime is supported on the server. frontierId={}, personal={}, lifetime={}",
@@ -64,7 +66,8 @@ public class ServerFrontierOperationService {
         }
 
         if (personal) {
-            FrontierData frontier = frontiersManager.createNewPersonalFrontier(frontierId, dimension, player, sourcePluginId, vertices, chunks);
+            FrontierData frontier = frontiersManager.createNewPersonalFrontier(frontierId, dimension, player, sourcePluginId,
+                    vertices, chunks, points, pathStyle);
             return createdPersonalFrontier(frontier, player.getId());
         }
 
@@ -72,7 +75,8 @@ public class ServerFrontierOperationService {
             return rejectedWithProfileRefresh(player, null);
         }
 
-        FrontierData frontier = frontiersManager.createNewGlobalFrontier(frontierId, dimension, player, sourcePluginId, vertices, chunks);
+        FrontierData frontier = frontiersManager.createNewGlobalFrontier(frontierId, dimension, player, sourcePluginId,
+                vertices, chunks, points, pathStyle);
         return createdGlobalFrontier(frontier, player.getId());
     }
 

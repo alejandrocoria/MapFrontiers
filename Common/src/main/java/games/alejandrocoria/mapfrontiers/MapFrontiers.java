@@ -14,7 +14,7 @@ import org.apache.logging.log4j.Logger;
 public class MapFrontiers {
     public static final String MODID = "mapfrontiers";
     public static final Logger LOGGER = LogManager.getLogger("MapFrontiers");
-    public static final int FRONTIER_DATA_VERSION = 10;
+    public static final int FRONTIER_DATA_VERSION = 11;
     public static final int SETTINGS_DATA_VERSION = 4;
 
     private static ServerFrontierRuntime serverRuntime;

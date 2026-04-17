@@ -1,0 +1,48 @@
+package games.alejandrocoria.mapfrontiers.client.gui.component;
+
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.level.block.entity.BannerPattern;
+import net.minecraft.world.level.block.entity.BannerPatternLayers;
+import net.minecraft.world.level.block.entity.BannerPatterns;
+
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
+
+@ParametersAreNonnullByDefault
+public final class PreviewFrontierHelper {
+    private PreviewFrontierHelper() {
+    }
+
+    public static void setPreviewBanner(FrontierData frontierData) {
+        BannerPatternLayers patterns = createPreviewPatterns();
+        if (patterns != null) {
+            frontierData.setBanner(DyeColor.BLACK, patterns);
+        }
+    }
+
+    private static @Nullable BannerPatternLayers createPreviewPatterns() {
+        try {
+            ClientLevel level = Minecraft.getInstance().level;
+            if (level == null) {
+                return null;
+            }
+
+            HolderLookup<BannerPattern> patternRegistry = level.registryAccess().lookup(Registries.BANNER_PATTERN).orElseThrow();
+            return (new BannerPatternLayers.Builder())
+                    .add(patternRegistry.get(BannerPatterns.FLOWER).orElseThrow(), DyeColor.GREEN)
+                    .add(patternRegistry.get(BannerPatterns.BRICKS).orElseThrow(), DyeColor.LIGHT_GRAY)
+                    .add(patternRegistry.get(BannerPatterns.BORDER).orElseThrow(), DyeColor.LIGHT_BLUE)
+                    .add(patternRegistry.get(BannerPatterns.TRIANGLE_TOP).orElseThrow(), DyeColor.LIGHT_BLUE)
+                    .add(patternRegistry.get(BannerPatterns.TRIANGLE_BOTTOM).orElseThrow(), DyeColor.BLACK)
+                    .add(patternRegistry.get(BannerPatterns.STRIPE_BOTTOM).orElseThrow(), DyeColor.GREEN)
+                    .build();
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+}

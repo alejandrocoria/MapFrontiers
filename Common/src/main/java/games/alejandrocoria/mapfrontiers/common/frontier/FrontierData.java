@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 @ParametersAreNonnullByDefault
 public class FrontierData {
     public enum Mode {
-        Vertex, Chunk
+        Vertex, Chunk, Path
     }
 
     public enum FrontierLifetime {
@@ -56,6 +56,7 @@ public class FrontierData {
     protected UUID id;
     protected final List<BlockPos> vertices = new ArrayList<>();
     protected final Set<ChunkPos> chunks = new HashSet<>();
+    protected final List<BlockPos> points = new ArrayList<>();
     protected Mode mode = Mode.Vertex;
     protected String name1 = "New";
     protected String name2 = "Frontier";
@@ -69,12 +70,14 @@ public class FrontierData {
     protected List<SettingsUserShared> usersShared;
     protected CopiedFrom copiedFrom;
     protected @Nullable String sourcePluginId;
+    protected PathStyle pathStyle;
     protected Date created;
     protected Date modified;
 
     public FrontierData() {
         id = new UUID(0, 0);
         visibilityData = new VisibilityData();
+        pathStyle = new PathStyle();
     }
 
     public FrontierData(FrontierData other) {
@@ -102,7 +105,10 @@ public class FrontierData {
         vertices.addAll(other.vertices);
         chunks.clear();
         chunks.addAll(other.chunks);
+        points.clear();
+        points.addAll(other.points);
         mode = other.mode;
+        pathStyle = other.pathStyle == null ? new PathStyle() : new PathStyle(other.pathStyle);
 
         copiedFrom = other.copiedFrom;
         sourcePluginId = other.sourcePluginId;
@@ -134,7 +140,10 @@ public class FrontierData {
         vertices.addAll(other.vertices);
         chunks.clear();
         chunks.addAll(other.chunks);
+        points.clear();
+        points.addAll(other.points);
         mode = other.mode;
+        pathStyle = other.pathStyle == null ? new PathStyle() : new PathStyle(other.pathStyle);
 
         copiedFrom = other.copiedFrom;
         sourcePluginId = other.sourcePluginId;
@@ -167,11 +176,11 @@ public class FrontierData {
 
         if (change.hasShapeChange()) {
             FrontierChange.ShapeChange shapeChange = change.getShape();
-            vertices.clear();
-            vertices.addAll(shapeChange.getVertices());
-            chunks.clear();
-            chunks.addAll(shapeChange.getChunks());
-            mode = shapeChange.getMode();
+            applyShapeData(shapeChange.getMode(), shapeChange.getVertices(), shapeChange.getChunks(), shapeChange.getPoints());
+        }
+
+        if (change.hasPathStyleChange()) {
+            pathStyle = change.getPathStyle().getPathStyle();
         }
 
         if (change.hasModifiedTime()) {
@@ -271,6 +280,60 @@ public class FrontierData {
         }
     }
 
+    public int getPointCount() {
+        return points.size();
+    }
+
+    public List<BlockPos> getPoints() {
+        synchronized (points) {
+            return new ArrayList<>(points);
+        }
+    }
+
+    public void clearPoints() {
+        synchronized (points) {
+            points.clear();
+        }
+    }
+
+    protected void addPoint(BlockPos pos, int index) {
+        synchronized (points) {
+            points.add(index, pos.atY(70));
+        }
+    }
+
+    public void addPoint(BlockPos pos) {
+        synchronized (points) {
+            addPoint(pos, points.size());
+        }
+    }
+
+    public void removePoint(int index) {
+        if (index < 0 || index >= points.size()) {
+            return;
+        }
+
+        synchronized (points) {
+            points.remove(index);
+        }
+    }
+
+    protected void movePoint(BlockPos pos, int index) {
+        if (index < 0 || index >= points.size()) {
+            return;
+        }
+
+        synchronized (points) {
+            points.set(index, pos);
+        }
+    }
+
+    public void moveAllPoints(BlockPos delta) {
+        synchronized (points) {
+            points.replaceAll(blockPos -> blockPos.offset(delta));
+        }
+    }
+
     public boolean toggleChunk(ChunkPos chunk) {
         boolean added = false;
         synchronized (chunks) {
@@ -334,6 +397,14 @@ public class FrontierData {
 
     public Mode getMode() {
         return mode;
+    }
+
+    public void setPathStyle(PathStyle pathStyle) {
+        this.pathStyle = new PathStyle(pathStyle);
+    }
+
+    public PathStyle getPathStyle() {
+        return new PathStyle(pathStyle);
     }
 
     public void setName1(String name) {
@@ -601,6 +672,14 @@ public class FrontierData {
     }
 
     public void readFromNBT(CompoundTag nbt, int version) {
+        vertices.clear();
+        chunks.clear();
+        points.clear();
+        pathStyle = new PathStyle();
+        copiedFrom = null;
+        usersShared = null;
+        banner = null;
+
         id = UUID.fromString(NbtReadHelper.requireString(nbt, "id"));
         color = NbtReadHelper.requireInt(nbt, "color");
         dimension = ResourceKey.create(Registries.DIMENSION, Identifier.parse(NbtReadHelper.requireString(nbt, "dimension")));
@@ -664,6 +743,16 @@ public class FrontierData {
             }
         }
 
+        ListTag pointsTagList = nbt.getListOrEmpty("points");
+        for (int i = 0; i < pointsTagList.size(); ++i) {
+            try {
+                CompoundTag posTag = NbtReadHelper.requireCompound(pointsTagList, i, "points");
+                points.add(new BlockPos(NbtReadHelper.requireInt(posTag, "X"), 70, NbtReadHelper.requireInt(posTag, "Z")));
+            } catch (InvalidNbtFormatException e) {
+                throw new InvalidNbtFormatException("Invalid point at points[" + i + "] for frontier " + id + ": " + e.getMessage(), e);
+            }
+        }
+
         String modeTag = nbt.getStringOr("mode", "");
         if (modeTag.isEmpty()) {
             mode = Mode.Vertex;
@@ -684,6 +773,10 @@ public class FrontierData {
             }
         }
 
+        if (mode == Mode.Path && nbt.contains("pathStyle")) {
+            pathStyle.readFromNBT(NbtReadHelper.requireCompound(nbt, "pathStyle"));
+        }
+
         if (nbt.contains("copiedFrom")) {
             copiedFrom = new CopiedFrom();
             copiedFrom.readFromNBT(NbtReadHelper.requireCompound(nbt, "copiedFrom"), version);
@@ -697,6 +790,7 @@ public class FrontierData {
             modified = new Date(NbtReadHelper.requireLong(nbt, "modified"));
         }
 
+        normalizeDataForMode();
         sanitizeSharedUsers();
     }
 
@@ -734,28 +828,46 @@ public class FrontierData {
             nbt.put("usersShared", usersSharedTagList);
         }
 
-        ListTag verticesTagList = new ListTag();
-        for (BlockPos pos : vertices) {
-            CompoundTag compoundtag = new CompoundTag();
-            compoundtag.putInt("X", pos.getX());
-            compoundtag.putInt("Y", pos.getY());
-            compoundtag.putInt("Z", pos.getZ());
-            verticesTagList.add(compoundtag);
-        }
-
-        nbt.put("vertices", verticesTagList);
-
-        ListTag chunksTagList = new ListTag();
-        for (ChunkPos pos : chunks) {
-            CompoundTag compoundtag = new CompoundTag();
-            compoundtag.putInt("X", pos.x());
-            compoundtag.putInt("Z", pos.z());
-            chunksTagList.add(compoundtag);
-        }
-
-        nbt.put("chunks", chunksTagList);
-
         nbt.putString("mode", mode.name());
+
+        switch (mode) {
+            case Vertex -> {
+                ListTag verticesTagList = new ListTag();
+                for (BlockPos pos : vertices) {
+                    CompoundTag compoundtag = new CompoundTag();
+                    compoundtag.putInt("X", pos.getX());
+                    compoundtag.putInt("Y", pos.getY());
+                    compoundtag.putInt("Z", pos.getZ());
+                    verticesTagList.add(compoundtag);
+                }
+                nbt.put("vertices", verticesTagList);
+            }
+            case Chunk -> {
+                ListTag chunksTagList = new ListTag();
+                for (ChunkPos pos : chunks) {
+                    CompoundTag compoundtag = new CompoundTag();
+                    compoundtag.putInt("X", pos.x());
+                    compoundtag.putInt("Z", pos.z());
+                    chunksTagList.add(compoundtag);
+                }
+                nbt.put("chunks", chunksTagList);
+            }
+            case Path -> {
+                ListTag pointsTagList = new ListTag();
+                for (BlockPos pos : points) {
+                    CompoundTag compoundtag = new CompoundTag();
+                    compoundtag.putInt("X", pos.getX());
+                    compoundtag.putInt("Y", pos.getY());
+                    compoundtag.putInt("Z", pos.getZ());
+                    pointsTagList.add(compoundtag);
+                }
+                nbt.put("points", pointsTagList);
+
+                CompoundTag pathStyleTag = new CompoundTag();
+                pathStyle.writeToNBT(pathStyleTag);
+                nbt.put("pathStyle", pathStyleTag);
+            }
+        }
 
         if (wasCopied()) {
             CompoundTag nbtCopiedFrom = new CompoundTag();
@@ -773,6 +885,11 @@ public class FrontierData {
     }
 
     public void fromBytes(FriendlyByteBuf buf) {
+        vertices.clear();
+        chunks.clear();
+        points.clear();
+        pathStyle = new PathStyle();
+
         id = UUIDHelper.fromBytes(buf);
         dimension = ResourceKey.create(Registries.DIMENSION, buf.readIdentifier());
         personal = buf.readBoolean();
@@ -818,21 +935,29 @@ public class FrontierData {
             usersShared = null;
         }
 
-        vertices.clear();
-        int vertexCount = buf.readInt();
-        for (int i = 0; i < vertexCount; ++i) {
-            BlockPos vertex = BlockPos.of(buf.readLong());
-            vertices.add(vertex);
-        }
-
-        chunks.clear();
-        int chunkCount = buf.readInt();
-        for (int i = 0; i < chunkCount; ++i) {
-            ChunkPos chunk = ChunkPos.unpack(buf.readLong());
-            chunks.add(chunk);
-        }
-
         mode = Mode.values()[buf.readInt()];
+
+        switch (mode) {
+            case Vertex -> {
+                int vertexCount = buf.readInt();
+                for (int i = 0; i < vertexCount; ++i) {
+                    vertices.add(BlockPos.of(buf.readLong()));
+                }
+            }
+            case Chunk -> {
+                int chunkCount = buf.readInt();
+                for (int i = 0; i < chunkCount; ++i) {
+                    chunks.add(ChunkPos.unpack(buf.readLong()));
+                }
+            }
+            case Path -> {
+                int pointCount = buf.readInt();
+                for (int i = 0; i < pointCount; ++i) {
+                    points.add(BlockPos.of(buf.readLong()));
+                }
+                pathStyle.fromBytes(buf);
+            }
+        }
 
         if (buf.readBoolean()) {
             copiedFrom = new CopiedFrom();
@@ -853,6 +978,7 @@ public class FrontierData {
             modified = null;
         }
 
+        normalizeDataForMode();
         sanitizeSharedUsers();
     }
 
@@ -893,17 +1019,29 @@ public class FrontierData {
             buf.writeBoolean(false);
         }
 
-        buf.writeInt(vertices.size());
-        for (BlockPos pos : vertices) {
-            buf.writeLong(pos.asLong());
-        }
-
-        buf.writeInt(chunks.size());
-        for (ChunkPos pos : chunks) {
-            buf.writeLong(pos.pack());
-        }
-
         buf.writeInt(mode.ordinal());
+
+        switch (mode) {
+            case Vertex -> {
+                buf.writeInt(vertices.size());
+                for (BlockPos pos : vertices) {
+                    buf.writeLong(pos.asLong());
+                }
+            }
+            case Chunk -> {
+                buf.writeInt(chunks.size());
+                for (ChunkPos pos : chunks) {
+                    buf.writeLong(pos.pack());
+                }
+            }
+            case Path -> {
+                buf.writeInt(points.size());
+                for (BlockPos pos : points) {
+                    buf.writeLong(pos.asLong());
+                }
+                pathStyle.toBytes(buf);
+            }
+        }
 
         if (wasCopied()) {
             buf.writeBoolean(true);
@@ -924,6 +1062,49 @@ public class FrontierData {
         } else {
             buf.writeBoolean(true);
             buf.writeLong(modified.getTime());
+        }
+    }
+
+    private void applyShapeData(Mode mode, List<BlockPos> vertices, Set<ChunkPos> chunks, List<BlockPos> points) {
+        this.mode = mode;
+
+        clearVertices();
+        clearChunks();
+        clearPoints();
+
+        switch (mode) {
+            case Vertex -> {
+                synchronized (this.vertices) {
+                    this.vertices.addAll(vertices);
+                }
+            }
+            case Chunk -> {
+                synchronized (this.chunks) {
+                    this.chunks.addAll(chunks);
+                }
+            }
+            case Path -> {
+                synchronized (this.points) {
+                    this.points.addAll(points);
+                }
+            }
+        }
+    }
+
+    private void normalizeDataForMode() {
+        switch (mode) {
+            case Vertex -> {
+                clearChunks();
+                clearPoints();
+            }
+            case Chunk -> {
+                clearVertices();
+                clearPoints();
+            }
+            case Path -> {
+                clearVertices();
+                clearChunks();
+            }
         }
     }
 
@@ -1081,6 +1262,140 @@ public class FrontierData {
         @Override
         public int hashCode() {
             return Objects.hash(baseColor, patterns, rotation);
+        }
+    }
+
+    public static class PathStyle {
+        public static final Identifier NONE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "none");
+        public static final Identifier BIG_DOT = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "big_dot");
+        public static final Identifier SMALL_DOT = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "small_dot");
+        public static final Identifier RING = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "ring");
+        public static final Identifier BIG_SQUARE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "big_square");
+        public static final Identifier SMALL_SQUARE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "small_square");
+        public static final Identifier DIAMOND = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "diamond");
+        public static final Identifier TRIANGLE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "triangle");
+        public static final Identifier ARROW = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "arrow");
+        public static final Identifier CHEVRON = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "chevron");
+        public static final Identifier X_CROSS = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "x_cross");
+
+        public Identifier startMarker;
+        public Identifier innerMarker;
+        public Identifier endMarker;
+        public Identifier segmentMarker;
+        public boolean labelAtStart;
+        public boolean labelAtMiddle;
+        public boolean labelAtEnd;
+
+        public PathStyle() {
+            startMarker = BIG_DOT;
+            innerMarker = NONE;
+            endMarker = BIG_DOT;
+            segmentMarker = SMALL_DOT;
+            labelAtStart = true;
+            labelAtMiddle = false;
+            labelAtEnd = false;
+        }
+
+        public PathStyle(PathStyle other) {
+            startMarker = other.startMarker;
+            innerMarker = other.innerMarker;
+            endMarker = other.endMarker;
+            segmentMarker = other.segmentMarker;
+            labelAtStart = other.labelAtStart;
+            labelAtMiddle = other.labelAtMiddle;
+            labelAtEnd = other.labelAtEnd;
+        }
+
+        public void readFromNBT(CompoundTag nbt) {
+            startMarker = readMarkerFromNBT(nbt, "start", BIG_DOT);
+            innerMarker = readMarkerFromNBT(nbt, "inner", NONE);
+            endMarker = readMarkerFromNBT(nbt, "end", BIG_DOT);
+            segmentMarker = readMarkerFromNBT(nbt, "segment", SMALL_DOT);
+            labelAtStart = nbt.getBooleanOr("labelAtStart", true);
+            labelAtMiddle = nbt.getBooleanOr("labelAtMiddle", false);
+            labelAtEnd = nbt.getBooleanOr("labelAtEnd", false);
+            normalizeForPersistence();
+        }
+
+        public void writeToNBT(CompoundTag nbt) {
+            normalizeForPersistence();
+            nbt.putString("start", startMarker.toString());
+            nbt.putString("inner", innerMarker.toString());
+            nbt.putString("end", endMarker.toString());
+            nbt.putString("segment", segmentMarker.toString());
+            nbt.putBoolean("labelAtStart", labelAtStart);
+            nbt.putBoolean("labelAtMiddle", labelAtMiddle);
+            nbt.putBoolean("labelAtEnd", labelAtEnd);
+        }
+
+        public void fromBytes(FriendlyByteBuf buf) {
+            startMarker = normalizeMarkerId(buf.readIdentifier(), BIG_DOT);
+            innerMarker = normalizeMarkerId(buf.readIdentifier(), NONE);
+            endMarker = normalizeMarkerId(buf.readIdentifier(), BIG_DOT);
+            segmentMarker = normalizeMarkerId(buf.readIdentifier(), SMALL_DOT);
+            labelAtStart = buf.readBoolean();
+            labelAtMiddle = buf.readBoolean();
+            labelAtEnd = buf.readBoolean();
+            normalizeForPersistence();
+        }
+
+        public void toBytes(FriendlyByteBuf buf) {
+            normalizeForPersistence();
+            buf.writeIdentifier(startMarker);
+            buf.writeIdentifier(innerMarker);
+            buf.writeIdentifier(endMarker);
+            buf.writeIdentifier(segmentMarker);
+            buf.writeBoolean(labelAtStart);
+            buf.writeBoolean(labelAtMiddle);
+            buf.writeBoolean(labelAtEnd);
+        }
+
+        public void normalizeForPersistence() {
+            startMarker = normalizeMarkerId(startMarker, BIG_DOT);
+            innerMarker = normalizeMarkerId(innerMarker, NONE);
+            endMarker = normalizeMarkerId(endMarker, BIG_DOT);
+            segmentMarker = normalizeMarkerId(segmentMarker, SMALL_DOT);
+
+            if (!labelAtStart && !labelAtMiddle && !labelAtEnd) {
+                labelAtStart = true;
+            }
+        }
+
+        private static Identifier readMarkerFromNBT(CompoundTag nbt, String key, Identifier fallback) {
+            String markerId = nbt.getStringOr(key, fallback.toString());
+            try {
+                return normalizeMarkerId(Identifier.parse(markerId), fallback);
+            } catch (Exception ignored) {
+                return fallback;
+            }
+        }
+
+        private static Identifier normalizeMarkerId(@Nullable Identifier value, Identifier fallback) {
+            return value == null ? fallback : value;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (this == other) {
+                return true;
+            }
+
+            if (!(other instanceof PathStyle otherPathStyle)) {
+                return false;
+            }
+
+            return labelAtStart == otherPathStyle.labelAtStart
+                    && labelAtMiddle == otherPathStyle.labelAtMiddle
+                    && labelAtEnd == otherPathStyle.labelAtEnd
+                    && startMarker.equals(otherPathStyle.startMarker)
+                    && innerMarker.equals(otherPathStyle.innerMarker)
+                    && endMarker.equals(otherPathStyle.endMarker)
+                    && segmentMarker.equals(otherPathStyle.segmentMarker);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(startMarker, innerMarker, endMarker, segmentMarker, labelAtStart, labelAtMiddle, labelAtEnd);
         }
     }
 

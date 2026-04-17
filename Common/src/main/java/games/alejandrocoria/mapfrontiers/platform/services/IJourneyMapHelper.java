@@ -37,7 +37,15 @@ public interface IJourneyMapHelper {
     }
 
     interface ICustomPreviewRenderer {
+        /**
+         * Receives frontiers whose overlays were already recalculated by the preview widget.
+         * Implementations should render the normal map overlays: polygons, path/incomplete markers, and labels.
+         */
         void setFrontiers(List<FrontierOverlay> frontierOverlays);
+
+        /**
+         * Draws a JourneyMap-based preview. The size is expressed in map pixels; scaleFactor compensates GUI scaling.
+         */
         void draw(GuiGraphicsExtractor graphics, MultiBufferSource.BufferSource buffers, int x, int y, int size, float scaleFactor);
     }
 }
