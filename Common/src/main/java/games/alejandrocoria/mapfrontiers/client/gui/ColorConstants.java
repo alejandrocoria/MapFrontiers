@@ -22,6 +22,7 @@ public final class ColorConstants {
     public static final int OPTION_BORDER = 0xffa0a0a0;
     public static final int OPTION_BORDER_DISABLED = 0xff444444;
     public static final int OPTION_BORDER_FOCUSED = 0xffffffff;
+    public static final int PATH_MARKER_SELECTOR_BG = 0xff666666;
     public static final int PING_BAR = 0xffffffff;
     public static final int SCREEN_BG = 0xc7101010;
     public static final int SCROLLBAR = 0xff777777;
@@ -54,7 +55,7 @@ public final class ColorConstants {
     public static final int TEXT_ERROR = 0xffdd1111;
     public static final int TEXT_ERROR_HIGHLIGHT = 0xffff4444;
     public static final int TEXT_HIGHLIGHT = 0xffffffff;
-    public static final int TEXT_MEDIUM = 0xaaaaaa;
+    public static final int TEXT_MEDIUM = 0xffaaaaaa;
     public static final int TEXT_PENDING = 0xff00dd00;
 
     public static final ChatFormatting WARNING = ChatFormatting.YELLOW;

@@ -76,7 +76,17 @@ public class ClientFrontierOperationService {
 
     public void createNewFrontier(boolean personal, ResourceKey<Level> dimension,
                                   @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
-        createNewFrontierAndReturn(personal, UUID.randomUUID(), dimension, FrontierData.FrontierLifetime.PERSISTENT, null, vertices, chunks);
+        createNewFrontier(personal, dimension, vertices, chunks, null, null);
+    }
+
+    public void createNewFrontier(boolean personal,
+                                  ResourceKey<Level> dimension,
+                                  @Nullable List<BlockPos> vertices,
+                                  @Nullable List<ChunkPos> chunks,
+                                  @Nullable List<BlockPos> points,
+                                  @Nullable FrontierData.PathStyle pathStyle) {
+        createNewFrontierAndReturn(personal, UUID.randomUUID(), dimension, FrontierData.FrontierLifetime.PERSISTENT, null,
+                vertices, chunks, points, pathStyle);
     }
 
     @Nullable
@@ -88,28 +98,54 @@ public class ClientFrontierOperationService {
     @Nullable
     public FrontierOverlay createNewFrontierAndReturn(boolean personal, UUID frontierId, ResourceKey<Level> dimension,
                                                       FrontierData.FrontierLifetime lifetime, @Nullable String sourcePluginId, FrontierShape shape) {
-        List<Point2i> shapeVertices = shape.vertices();
-        List<ChunkCoord> shapeChunks = shape.chunks();
-        List<BlockPos> vertices = shapeVertices == null || shapeVertices.isEmpty() ? null : shapeVertices.stream()
-                .map(vertex -> new BlockPos(vertex.x(), 0, vertex.z())).toList();
-        List<ChunkPos> chunks = shapeChunks == null || shapeChunks.isEmpty() ? null : shapeChunks.stream()
-                .map(chunk -> new ChunkPos(chunk.x(), chunk.z())).toList();
-        return createNewFrontierAndReturn(personal, frontierId, dimension, lifetime, sourcePluginId, vertices, chunks);
+        List<BlockPos> vertices = null;
+        List<ChunkPos> chunks = null;
+        List<BlockPos> points = null;
+
+        switch (shape.type()) {
+            case VERTEX -> {
+                List<Point2i> shapeVertices = shape.vertices();
+                vertices = shapeVertices == null ? List.of() : shapeVertices.stream()
+                        .map(vertex -> new BlockPos(vertex.x(), 0, vertex.z())).toList();
+            }
+            case CHUNK -> {
+                List<ChunkCoord> shapeChunks = shape.chunks();
+                chunks = shapeChunks == null ? List.of() : shapeChunks.stream()
+                        .map(chunk -> new ChunkPos(chunk.x(), chunk.z())).toList();
+            }
+            case PATH -> {
+                List<Point2i> shapePoints = shape.points();
+                points = shapePoints == null ? List.of() : shapePoints.stream()
+                        .map(point -> new BlockPos(point.x(), 0, point.z())).toList();
+            }
+        }
+
+        return createNewFrontierAndReturn(personal, frontierId, dimension, lifetime, sourcePluginId, vertices, chunks, points, null);
     }
 
     @Nullable
     public FrontierOverlay createNewFrontierAndReturn(boolean personal, UUID frontierId, ResourceKey<Level> dimension,
                                                       @Nullable String sourcePluginId, @Nullable List<BlockPos> vertices,
                                                       @Nullable List<ChunkPos> chunks) {
-        return createNewFrontierAndReturn(personal, frontierId, dimension, FrontierData.FrontierLifetime.PERSISTENT, sourcePluginId, vertices, chunks);
+        return createNewFrontierAndReturn(personal, frontierId, dimension, FrontierData.FrontierLifetime.PERSISTENT, sourcePluginId,
+                vertices, chunks, null, null);
     }
 
     @Nullable
     public FrontierOverlay createNewFrontierAndReturn(boolean personal, UUID frontierId, ResourceKey<Level> dimension,
                                                       FrontierData.FrontierLifetime lifetime, @Nullable String sourcePluginId,
                                                       @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
+        return createNewFrontierAndReturn(personal, frontierId, dimension, lifetime, sourcePluginId, vertices, chunks, null, null);
+    }
+
+    @Nullable
+    public FrontierOverlay createNewFrontierAndReturn(boolean personal, UUID frontierId, ResourceKey<Level> dimension,
+                                                      FrontierData.FrontierLifetime lifetime, @Nullable String sourcePluginId,
+                                                      @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks,
+                                                      @Nullable List<BlockPos> points, @Nullable FrontierData.PathStyle pathStyle) {
         if (usesAuthoritativeCreateFlow(lifetime)) {
-            PacketHandler.sendToServer(new PacketCreateFrontier(frontierId, dimension, personal, sourcePluginId, vertices, chunks));
+            PacketHandler.sendToServer(new PacketCreateFrontier(frontierId, dimension, personal, sourcePluginId,
+                    vertices, chunks, points, pathStyle));
             return null;
         }
 
@@ -118,7 +154,7 @@ public class ClientFrontierOperationService {
         }
 
         FrontierData frontier = FrontierCreationFactory.createFrontier(frontierId, new SettingsUser(minecraft.player), dimension,
-                true, lifetime, sourcePluginId, vertices, chunks);
+                true, lifetime, sourcePluginId, vertices, chunks, points, pathStyle);
         FrontierOverlay frontierOverlay = personalManager.addFrontier(frontier);
         persistLocalPersonalFrontiersIfPersistent(frontierOverlay);
         frontierEvents.postCreated(frontierOverlay, minecraft.player.getId());

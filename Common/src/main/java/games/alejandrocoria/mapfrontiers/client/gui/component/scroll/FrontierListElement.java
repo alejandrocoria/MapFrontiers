@@ -40,6 +40,7 @@ public class FrontierListElement extends ScrollBox.ScrollElement {
     private final String owner;
     private final String dimension;
     private final String vertices;
+    private final String points;
     private final String chunks;
     private final int offset1;
     private final int offset2;
@@ -63,9 +64,15 @@ public class FrontierListElement extends ScrollBox.ScrollElement {
 
         if (frontier.getMode() == FrontierData.Mode.Vertex) {
             vertices = I18n.get("mapfrontiers.vertices", frontier.getVertexCount());
+            points = null;
+            chunks = null;
+        } else if (frontier.getMode() == FrontierData.Mode.Path) {
+            vertices = null;
+            points = I18n.get("mapfrontiers.points", frontier.getPointCount());
             chunks = null;
         } else {
             vertices = null;
+            points = null;
             chunks = I18n.get("mapfrontiers.chunks", frontier.getChunkCount());
         }
 
@@ -75,6 +82,7 @@ public class FrontierListElement extends ScrollBox.ScrollElement {
 
         offset2 = StringHelper.getMaxWidth(font,
                 I18n.get("mapfrontiers.vertices", 9999),
+                I18n.get("mapfrontiers.points", 9999),
                 I18n.get("mapfrontiers.chunks", 9999));
     }
 
@@ -115,6 +123,8 @@ public class FrontierListElement extends ScrollBox.ScrollElement {
 
         if (frontier.getMode() == FrontierData.Mode.Vertex) {
             graphics.drawString(font, vertices, x + METADATA_X + COUNTS_X_OFFSET + offset1, y + 4, color);
+        } else if (frontier.getMode() == FrontierData.Mode.Path) {
+            graphics.drawString(font, points, x + METADATA_X + COUNTS_X_OFFSET + offset1, y + 4, color);
         } else {
             graphics.drawString(font, chunks, x + METADATA_X + COUNTS_X_OFFSET + offset1, y + 4, color);
         }

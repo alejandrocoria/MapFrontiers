@@ -82,22 +82,19 @@ public class FrontierOverlay extends FrontierData {
     private static final int BANNER_SINGLE_LINE_TEXT_OFFSET_Y = 5;
     private static final double VERTEX_LABEL_SOLVER_PRECISION = 0.5;
     private static final double CHUNK_LABEL_SOLVER_PRECISION = 2.0;
-    private static final MapImage markerVertex = new MapImage(Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/marker.png"), 0,
-            0, 12, 12, ColorConstants.WHITE, 1.f);
-    private static final MapImage markerDot = new MapImage(Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/marker.png"), 12, 0,
-            8, 8, ColorConstants.WHITE, 1.f);
+    private static final int PATH_LABEL_OFFSET_PADDING_PX = 4;
+    private static final int INCOMPLETE_VERTEX_FRONTIER_MIN_ZOOM = 512;
+    private static final int PATH_REPEATED_MARKER_BASE_MARKER_SIZE = 2;
+    private static final int PATH_REPEATED_MARKER_MIN_ZOOM = 2;
+    private static final int PATH_REPEATED_MARKER_MAX_ZOOM = 16384;
+    private static final double PATH_REPEATED_MARKER_SPACING_ZOOM_REFERENCE = 8192.0;
     private static final MapImage transparentLabelMarker = createTransparentLabelMarker();
-
-    static {
-        markerVertex.setAnchorX(markerVertex.getDisplayWidth() / 2.0).setAnchorY(markerVertex.getDisplayHeight() / 2.0);
-        markerDot.setAnchorX(markerDot.getDisplayWidth() / 2.0).setAnchorY(markerDot.getDisplayHeight() / 2.0);
-    }
 
     public BlockPos topLeft;
     public BlockPos bottomRight;
     public float perimeter = 0.f;
     public float area = 0.f;
-    private int vertexSelected = -1;
+    private int selectedPointIndex = -1;
     protected VisibilityData effectiveVisibilityData;
 
     private boolean highlighted = false;
@@ -108,6 +105,8 @@ public class FrontierOverlay extends FrontierData {
     private final List<MarkerOverlay> markerOverlays = new ArrayList<>();
     private final List<MarkerOverlay> labelOverlays = new ArrayList<>();
     private final BannerRenderer bannerRenderer = new BannerRenderer();
+    private int previewTextSize = -1;
+    private int previewBannerSize = -1;
 
     private int hash;
     private boolean hashDirty = true;
@@ -129,9 +128,7 @@ public class FrontierOverlay extends FrontierData {
         super.updateFromData(other);
         setVisibilityOverride(MapFrontiersClient.getLocalOverrides().getVisibility(id));
 
-        if (vertexSelected >= vertices.size()) {
-            vertexSelected = vertices.size() - 1;
-        }
+        clampSelectedEditablePoint();
 
         if (banner == null) {
             bannerRenderer.releaseTexture();
@@ -147,13 +144,7 @@ public class FrontierOverlay extends FrontierData {
         super.applyChange(change);
         setVisibilityOverride(MapFrontiersClient.getLocalOverrides().getVisibility(id));
 
-        if (vertexSelected >= vertices.size()) {
-            vertexSelected = vertices.size() - 1;
-        }
-
-        if (change.hasNameChange() || change.hasShapeChange() || change.hasColorChange() || change.hasVisibilityChange()) {
-            updateOverlay();
-        }
+        clampSelectedEditablePoint();
 
         if (change.hasBannerChange()) {
             if (banner == null) {
@@ -161,7 +152,11 @@ public class FrontierOverlay extends FrontierData {
             } else {
                 bannerRenderer.createTexture(id, banner);
             }
-            hashDirty = true;
+        }
+
+        if (change.hasNameChange() || change.hasShapeChange() || change.hasColorChange() || change.hasVisibilityChange()
+                || change.hasPathStyleChange() || change.hasBannerChange()) {
+            updateOverlay();
         }
     }
 
@@ -173,7 +168,8 @@ public class FrontierOverlay extends FrontierData {
     public int getHash() {
         if (hashDirty) {
             hashDirty = false;
-            hash = Objects.hash(id, color, dimension, name1, name2, visibilityData, vertices, chunks, mode, banner, usersShared, copiedFrom, sourcePluginId);
+            hash = Objects.hash(id, color, dimension, name1, name2, visibilityData, vertices, chunks, points, mode, pathStyle, banner, usersShared,
+                    copiedFrom, sourcePluginId);
         }
 
         return hash;
@@ -183,8 +179,17 @@ public class FrontierOverlay extends FrontierData {
         return polygonOverlays;
     }
 
+    public List<MarkerOverlay> getMarkerOverlays() {
+        return markerOverlays;
+    }
+
     public List<MarkerOverlay> getLabelOverlays() {
         return labelOverlays;
+    }
+
+    public void setPreviewLabelSizes(int textSize, int bannerSize) {
+        previewTextSize = Math.max(1, textSize);
+        previewBannerSize = Math.max(1, bannerSize);
     }
 
     public void updateOverlayIfNeeded() {
@@ -247,20 +252,19 @@ public class FrontierOverlay extends FrontierData {
             if (vertices.size() > 2) {
                 return polygonArea != null && polygonArea.contains(pos.getX() + 0.5, pos.getZ() + 0.5);
             } else if (maxDistanceToOpen > 0.0) {
-                synchronized (vertices) {
-                    for (int i = 0; i < vertices.size(); ++i) {
-                        Vec3 point = Vec3.atLowerCornerOf(pos);
-                        int y1 = pos.getY();
-                        Vec3 edge1 = Vec3.atLowerCornerOf(vertices.get(i).atY(y1));
-                        int y = pos.getY();
-                        Vec3 edge2 = Vec3.atLowerCornerOf(vertices.get((i + 1) % vertices.size()).atY(y));
-                        double distance = closestPointToEdge(point, edge1, edge2).distanceToSqr(point);
-                        if (distance <= maxDistanceToOpen * maxDistanceToOpen) {
-                            return true;
-                        }
-                    }
-                }
+                return distanceToPolylineSq(pos, vertices, true) <= maxDistanceToOpen * maxDistanceToOpen;
             }
+        } else if (mode == Mode.Path) {
+            if (points.isEmpty()) {
+                return false;
+            }
+
+            double maxDistanceSq = maxDistanceToOpen * maxDistanceToOpen;
+            if (maxDistanceToOpen == 0.0) {
+                maxDistanceSq = 0.0;
+            }
+
+            return distanceToPolylineSq(pos, points, false) <= maxDistanceSq;
         } else if (pos.getX() >= topLeft.getX() && pos.getX() <= bottomRight.getX() && pos.getZ() >= topLeft.getZ() && pos.getZ() <= bottomRight.getZ()) {
             return chunks.contains(new ChunkPos(pos));
         }
@@ -270,7 +274,7 @@ public class FrontierOverlay extends FrontierData {
 
     public void selectClosestVertex(BlockPos pos, double limit) {
         if (mode != Mode.Vertex) {
-            vertexSelected = -1;
+            selectedPointIndex = -1;
             return;
         }
 
@@ -291,13 +295,13 @@ public class FrontierOverlay extends FrontierData {
             }
         }
 
-        vertexSelected = closest;
+        selectedPointIndex = closest;
         MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
     }
 
     public void selectClosestEdge(BlockPos pos) {
         if (mode != Mode.Vertex) {
-            vertexSelected = -1;
+            selectedPointIndex = -1;
             return;
         }
 
@@ -357,7 +361,34 @@ public class FrontierOverlay extends FrontierData {
             }
         }
 
-        vertexSelected = closest;
+        selectedPointIndex = closest;
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
+    }
+
+    public void selectClosestPoint(BlockPos pos, double limit) {
+        if (mode != Mode.Path) {
+            selectedPointIndex = -1;
+            return;
+        }
+
+        double distance = limit * limit;
+        int closest = -1;
+
+        if (!points.isEmpty()) {
+            synchronized (points) {
+                for (int i = 0; i < points.size(); ++i) {
+                    BlockPos point = points.get(i);
+                    int y = point.getY();
+                    double dist = point.distSqr(pos.atY(y));
+                    if (dist <= distance) {
+                        distance = dist;
+                        closest = i;
+                    }
+                }
+            }
+        }
+
+        selectedPointIndex = closest;
         MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
     }
 
@@ -394,7 +425,7 @@ public class FrontierOverlay extends FrontierData {
 
     @Override
     public void addVertex(BlockPos pos) {
-        addVertex(pos, vertexSelected + 1, ClientConfig.SNAP_DISTANCE.get());
+        addVertex(pos, selectedPointIndex + 1, ClientConfig.SNAP_DISTANCE.get());
         selectNextVertex();
     }
 
@@ -420,6 +451,7 @@ public class FrontierOverlay extends FrontierData {
         super.moveAllVertices(delta);
         hashDirty = true;
         needUpdateOverlay = true;
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
     }
 
     @Override
@@ -573,7 +605,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void moveSelectedVertex(BlockPos pos, float snapDistance) {
-        if (vertexSelected < 0 || vertexSelected >= vertices.size()) {
+        if (selectedPointIndex < 0 || selectedPointIndex >= vertices.size()) {
             return;
         }
 
@@ -581,7 +613,22 @@ public class FrontierOverlay extends FrontierData {
             pos = snapVertex(pos, snapDistance);
         }
 
-        super.moveVertex(pos, vertexSelected);
+        super.moveVertex(pos, selectedPointIndex);
+        hashDirty = true;
+        needUpdateOverlay = true;
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
+    }
+
+    public void moveSelectedPoint(BlockPos pos, float snapDistance) {
+        if (selectedPointIndex < 0 || selectedPointIndex >= points.size()) {
+            return;
+        }
+
+        if (snapDistance != 0) {
+            pos = snapVertex(pos, snapDistance);
+        }
+
+        super.movePoint(pos, selectedPointIndex);
         hashDirty = true;
         needUpdateOverlay = true;
         MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
@@ -647,6 +694,13 @@ public class FrontierOverlay extends FrontierData {
     }
 
     @Override
+    public void setPathStyle(PathStyle pathStyle) {
+        super.setPathStyle(pathStyle);
+        hashDirty = true;
+        needUpdateOverlay = true;
+    }
+
+    @Override
     public void setDimension(ResourceKey<Level> dimension) {
         super.setDimension(dimension);
         hashDirty = true;
@@ -706,22 +760,34 @@ public class FrontierOverlay extends FrontierData {
         BlockPos closest = null;
         double closestDistance = belowDistance;
 
-        for (PolygonOverlay overlay : polygonOverlays) {
-            for (BlockPos v : overlay.getOuterArea().getPoints()) {
-                double distance = v.distSqr(vertex);
-                if (distance <= closestDistance) {
-                    closestDistance = distance;
-                    closest = v;
+        if (mode == Mode.Path) {
+            synchronized (points) {
+                for (BlockPos point : points) {
+                    double distance = point.distSqr(vertex);
+                    if (distance <= closestDistance) {
+                        closestDistance = distance;
+                        closest = point;
+                    }
                 }
             }
+        } else {
+            for (PolygonOverlay overlay : polygonOverlays) {
+                for (BlockPos v : overlay.getOuterArea().getPoints()) {
+                    double distance = v.distSqr(vertex);
+                    if (distance <= closestDistance) {
+                        closestDistance = distance;
+                        closest = v;
+                    }
+                }
 
-            if (overlay.getHoles() != null) {
-                for (MapPolygon hole : overlay.getHoles()) {
-                    for (BlockPos v : hole.getPoints()) {
-                        double distance = v.distSqr(vertex);
-                        if (distance <= closestDistance) {
-                            closestDistance = distance;
-                            closest = v;
+                if (overlay.getHoles() != null) {
+                    for (MapPolygon hole : overlay.getHoles()) {
+                        for (BlockPos v : hole.getPoints()) {
+                            double distance = v.distSqr(vertex);
+                            if (distance <= closestDistance) {
+                                closestDistance = distance;
+                                closest = v;
+                            }
                         }
                     }
                 }
@@ -764,17 +830,37 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void removeSelectedVertex() {
-        if (vertexSelected < 0) {
+        if (selectedPointIndex < 0) {
             return;
         }
 
-        super.removeVertex(vertexSelected);
+        super.removeVertex(selectedPointIndex);
         if (vertices.isEmpty()) {
-            vertexSelected = -1;
-        } else if (vertexSelected > 0) {
-            --vertexSelected;
+            selectedPointIndex = -1;
+        } else if (selectedPointIndex > 0) {
+            --selectedPointIndex;
         } else {
-            vertexSelected = vertices.size() - 1;
+            selectedPointIndex = vertices.size() - 1;
+        }
+
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
+
+        hashDirty = true;
+        needUpdateOverlay = true;
+    }
+
+    public void removeSelectedPoint() {
+        if (selectedPointIndex < 0) {
+            return;
+        }
+
+        super.removePoint(selectedPointIndex);
+        if (points.isEmpty()) {
+            selectedPointIndex = -1;
+        } else if (selectedPointIndex > 0) {
+            --selectedPointIndex;
+        } else {
+            selectedPointIndex = 0;
         }
 
         MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
@@ -784,23 +870,186 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void selectNextVertex() {
-        ++vertexSelected;
-        if (vertexSelected >= vertices.size()) {
-            vertexSelected = -1;
+        ++selectedPointIndex;
+        if (selectedPointIndex >= vertices.size()) {
+            selectedPointIndex = -1;
         }
         MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
     }
 
     public int getSelectedVertexIndex() {
-        return vertexSelected;
+        return mode == Mode.Vertex ? selectedPointIndex : -1;
     }
 
-    public BlockPos getSelectedVertex() {
-        if (vertexSelected >= 0 && vertexSelected < vertices.size()) {
-            return vertices.get(vertexSelected);
+    public int getSelectedPointIndex() {
+        return mode == Mode.Path ? selectedPointIndex : -1;
+    }
+
+    public int getSelectedEditablePointIndex() {
+        return switch (mode) {
+            case Vertex, Path -> selectedPointIndex;
+            case Chunk -> -1;
+        };
+    }
+
+    public void clearSelectedEditablePoint() {
+        selectedPointIndex = -1;
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
+    }
+
+    public @Nullable BlockPos getSelectedEditablePoint() {
+        if (mode == Mode.Path && selectedPointIndex >= 0 && selectedPointIndex < points.size()) {
+            return points.get(selectedPointIndex);
+        }
+        if (mode == Mode.Vertex && selectedPointIndex >= 0 && selectedPointIndex < vertices.size()) {
+            return vertices.get(selectedPointIndex);
         }
 
         return null;
+    }
+
+    public void moveSelectedEditablePoint(BlockPos pos, float snapDistance) {
+        if (mode == Mode.Path) {
+            moveSelectedPoint(pos, snapDistance);
+        } else if (mode == Mode.Vertex) {
+            moveSelectedVertex(pos, snapDistance);
+        }
+    }
+
+    public void moveAllPathPoints(BlockPos delta) {
+        super.moveAllPoints(delta);
+        hashDirty = true;
+        needUpdateOverlay = true;
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
+    }
+
+    public void addPathPointBeforeStart(BlockPos pos) {
+        if (mode != Mode.Path) {
+            return;
+        }
+
+        pos = snapVertex(pos, ClientConfig.SNAP_DISTANCE.get());
+        super.addPoint(pos, 0);
+        selectedPointIndex = 0;
+        hashDirty = true;
+        needUpdateOverlay = true;
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
+    }
+
+    public void addPathPointAfterEnd(BlockPos pos) {
+        if (mode != Mode.Path) {
+            return;
+        }
+
+        pos = snapVertex(pos, ClientConfig.SNAP_DISTANCE.get());
+        int index = points.size();
+        super.addPoint(pos, index);
+        selectedPointIndex = index;
+        hashDirty = true;
+        needUpdateOverlay = true;
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
+    }
+
+    public void insertPathPoint(BlockPos pos) {
+        if (mode != Mode.Path) {
+            return;
+        }
+
+        pos = snapVertex(pos, ClientConfig.SNAP_DISTANCE.get());
+        int insertIndex = getSmartInsertIndex(pos);
+        if (insertIndex < 0) {
+            addPathPointAfterEnd(pos);
+            return;
+        }
+
+        super.addPoint(pos, insertIndex);
+        selectedPointIndex = insertIndex;
+        hashDirty = true;
+        needUpdateOverlay = true;
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
+    }
+
+    public void invertPathDirection() {
+        if (mode != Mode.Path || points.size() < 2) {
+            return;
+        }
+
+        synchronized (points) {
+            Collections.reverse(points);
+        }
+        if (selectedPointIndex >= 0 && selectedPointIndex < points.size()) {
+            selectedPointIndex = points.size() - 1 - selectedPointIndex;
+        }
+
+        hashDirty = true;
+        needUpdateOverlay = true;
+        MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
+    }
+
+    private int getSmartInsertIndex(BlockPos pos) {
+        if (points.isEmpty()) {
+            return 0;
+        }
+
+        if (points.size() == 1) {
+            return 1;
+        }
+
+        Vec3 point = Vec3.atLowerCornerOf(pos);
+        int y = pos.getY();
+        double bestSegmentDistance = Double.POSITIVE_INFINITY;
+        int bestSegmentInsertIndex = -1;
+
+        synchronized (points) {
+            for (int i = 0; i < points.size() - 1; ++i) {
+                Vec3 edge1 = Vec3.atLowerCornerOf(points.get(i).atY(y));
+                Vec3 edge2 = Vec3.atLowerCornerOf(points.get(i + 1).atY(y));
+                Vec3 closestPoint = closestPointToEdge(point, edge1, edge2);
+                if (closestPoint.equals(edge1) || closestPoint.equals(edge2)) {
+                    continue;
+                }
+
+                double distance = closestPoint.distanceToSqr(point);
+                if (distance < bestSegmentDistance) {
+                    bestSegmentDistance = distance;
+                    bestSegmentInsertIndex = i + 1;
+                }
+            }
+
+            double startDistance = point.distanceToSqr(Vec3.atLowerCornerOf(points.getFirst().atY(y)));
+            double endDistance = point.distanceToSqr(Vec3.atLowerCornerOf(points.getLast().atY(y)));
+            if (bestSegmentInsertIndex != -1 && bestSegmentDistance < Math.min(startDistance, endDistance)) {
+                return bestSegmentInsertIndex;
+            }
+
+            if (startDistance < endDistance) {
+                return 0;
+            }
+
+            if (endDistance < startDistance) {
+                return points.size();
+            }
+        }
+
+        if (selectedPointIndex == 0) {
+            return 0;
+        }
+
+        return points.size();
+    }
+
+    private void clampSelectedEditablePoint() {
+        int size = switch (mode) {
+            case Vertex -> vertices.size();
+            case Path -> points.size();
+            case Chunk -> 0;
+        };
+
+        if (size == 0) {
+            selectedPointIndex = -1;
+        } else if (selectedPointIndex >= size) {
+            selectedPointIndex = size - 1;
+        }
     }
 
     public void setHighlighted(boolean highlighted) {
@@ -809,6 +1058,10 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public BlockPos getCenter() {
+        if (mode == Mode.Path && points.size() == 1) {
+            return points.getFirst();
+        }
+
         return new BlockPos((topLeft.getX() + bottomRight.getX()) / 2, 70, (topLeft.getZ() + bottomRight.getZ()) / 2);
     }
 
@@ -871,6 +1124,8 @@ public class FrontierOverlay extends FrontierData {
 
         if (mode == Mode.Vertex) {
             recalculateVertices(shapeProps);
+        } else if (mode == Mode.Path) {
+            recalculatePath();
         } else {
             recalculateChunks(shapeProps);
         }
@@ -884,10 +1139,19 @@ public class FrontierOverlay extends FrontierData {
                     .setFillOpacity(0);
             List<PolygonOverlay> highlightedOverlays = new ArrayList<>();
             for (PolygonOverlay polygonOverlay : polygonOverlays) {
-                highlightedOverlays.add(new PolygonOverlay(MapFrontiers.MODID, dimension, highlightShapeProps, polygonOverlay.getOuterArea(), polygonOverlay.getHoles()));
+                highlightedOverlays.add(createHighlightOverlay(polygonOverlay, highlightShapeProps));
             }
             polygonOverlays.addAll(highlightedOverlays);
         }
+    }
+
+    private PolygonOverlay createHighlightOverlay(PolygonOverlay source, ShapeProperties highlightShapeProps) {
+        PolygonOverlay highlight = new PolygonOverlay(MapFrontiers.MODID, dimension, highlightShapeProps, source.getOuterArea(), source.getHoles());
+        highlight.setActiveUIs(source.getActiveUIs().toArray(Context.UI[]::new));
+        highlight.setActiveMapTypes(source.getActiveMapTypes().toArray(Context.MapType[]::new));
+        highlight.setMinZoom(source.getMinZoom());
+        highlight.setMaxZoom(source.getMaxZoom());
+        return highlight;
     }
 
     private void addPolygonOverlays(ShapeProperties shapeProps, MapPolygon polygon, @Nullable List<MapPolygon> polygonHoles) {
@@ -970,7 +1234,7 @@ public class FrontierOverlay extends FrontierData {
                     last = vertex;
                 }
                 area = abs(area / 2.f);
-            } else {
+            } else if (!vertices.isEmpty()) {
                 boolean fullscreenV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Fullscreen));
                 boolean fullscreenDayV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenDay));
                 boolean fullscreenNightV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_NIGHT_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenNight));
@@ -991,17 +1255,17 @@ public class FrontierOverlay extends FrontierData {
                 boolean webmapBiomeV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapBiome));
 
                 if (fullscreenV) {
-                    createMarkersFromVertices(Context.UI.Fullscreen,
+                    addIncompleteVertexPolygon(Context.UI.Fullscreen,
                             getActiveMapTypes(fullscreenDayV, fullscreenNightV, fullscreenUndergroundV, fullscreenTopoV, fullscreenBiomeV)
                     );
                 }
                 if (minimapV){
-                    createMarkersFromVertices(Context.UI.Minimap,
+                    addIncompleteVertexPolygon(Context.UI.Minimap,
                             getActiveMapTypes(minimapDayV, minimapNightV, minimapUndergroundV, minimapTopoV, minimapBiomeV)
                     );
                 }
                 if (webmapV){
-                    createMarkersFromVertices(Context.UI.Webmap,
+                    addIncompleteVertexPolygon(Context.UI.Webmap,
                             getActiveMapTypes(webmapDayV, webmapNightV, webmapUndergroundV, webmapTopoV, webmapBiomeV)
                     );
                 }
@@ -1014,6 +1278,65 @@ public class FrontierOverlay extends FrontierData {
                     last = vertex;
                 }
             }
+        }
+    }
+
+    private void recalculatePath() {
+        synchronized (points) {
+            boolean fullscreenV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Fullscreen));
+            boolean fullscreenNameV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_NAME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenName));
+            boolean fullscreenOwnerV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_OWNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenOwner));
+            boolean fullscreenBannerV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_BANNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenBanner));
+            boolean fullscreenDayV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenDay));
+            boolean fullscreenNightV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_NIGHT_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenNight));
+            boolean fullscreenUndergroundV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_UNDERGROUND_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenUnderground));
+            boolean fullscreenTopoV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_TOPO_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenTopo));
+            boolean fullscreenBiomeV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenBiome));
+            boolean minimapV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Minimap));
+            boolean minimapNameV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_NAME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapName));
+            boolean minimapOwnerV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_OWNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapOwner));
+            boolean minimapBannerV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_BANNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapBanner));
+            boolean minimapDayV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapDay));
+            boolean minimapNightV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_NIGHT_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapNight));
+            boolean minimapUndergroundV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_UNDERGROUND_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapUnderground));
+            boolean minimapTopoV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_TOPO_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapTopo));
+            boolean minimapBiomeV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapBiome));
+            boolean webmapV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Webmap));
+            boolean webmapNameV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_NAME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapName));
+            boolean webmapOwnerV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_OWNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapOwner));
+            boolean webmapBannerV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_BANNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapBanner));
+            boolean webmapDayV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapDay));
+            boolean webmapNightV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_NIGHT_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapNight));
+            boolean webmapUndergroundV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_UNDERGROUND_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapUnderground));
+            boolean webmapTopoV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_TOPO_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapTopo));
+            boolean webmapBiomeV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapBiome));
+
+            if (fullscreenV) {
+                Context.MapType[] mapTypes = getActiveMapTypes(fullscreenDayV, fullscreenNightV, fullscreenUndergroundV, fullscreenTopoV, fullscreenBiomeV);
+                createPathMarkers(Context.UI.Fullscreen, mapTypes);
+                createPathLabels(Context.UI.Fullscreen, mapTypes, fullscreenNameV, fullscreenOwnerV, fullscreenBannerV);
+            }
+            if (minimapV) {
+                Context.MapType[] mapTypes = getActiveMapTypes(minimapDayV, minimapNightV, minimapUndergroundV, minimapTopoV, minimapBiomeV);
+                createPathMarkers(Context.UI.Minimap, mapTypes);
+                createPathLabels(Context.UI.Minimap, mapTypes, minimapNameV, minimapOwnerV, minimapBannerV);
+            }
+            if (webmapV) {
+                Context.MapType[] mapTypes = getActiveMapTypes(webmapDayV, webmapNightV, webmapUndergroundV, webmapTopoV, webmapBiomeV);
+                createPathMarkers(Context.UI.Webmap, mapTypes);
+                createPathLabels(Context.UI.Webmap, mapTypes, webmapNameV, webmapOwnerV, webmapBannerV);
+            }
+
+            if (points.size() > 1) {
+                BlockPos last = points.getFirst();
+                for (int i = 1; i < points.size(); ++i) {
+                    BlockPos point = points.get(i);
+                    perimeter += (float) Math.sqrt(point.distSqr(last));
+                    last = point;
+                }
+            }
+
+            area = perimeter;
         }
     }
 
@@ -1037,17 +1360,155 @@ public class FrontierOverlay extends FrontierData {
         return mapTypes.toArray(new Context.MapType[0]);
     }
 
-    private void createMarkersFromVertices(Context.UI uiArray, Context.MapType[] mapTypesArray) {
-        for (int i = 0; i < vertices.size(); ++i) {
-            MarkerOverlay marker = new MarkerOverlay(MapFrontiers.MODID, vertices.get(i), markerVertex);
-            marker.setDimension(dimension);
-            marker.setDisplayOrder(100);
-            marker.setActiveUIs(uiArray);
-            marker.setActiveMapTypes(mapTypesArray);
-            markerOverlays.add(marker);
-            if (i == 0 && vertices.size() == 2) {
-                addMarkerDots(vertices.get(0), vertices.get(1), uiArray, mapTypesArray);
+    private void addIncompleteVertexPolygon(Context.UI uiArray, Context.MapType[] mapTypesArray) {
+        ShapeProperties shapeProps = new ShapeProperties()
+                .setStrokeWidth(ClientConfig.BORDER_WIDTH.get())
+                .setStrokeColor(color)
+                .setStrokeOpacity(ClientConfig.BORDER_OPACITY.get().floatValue())
+                .setStrokePosition(ShapeProperties.StrokePosition.INSIDE)
+                .setFillColor(color)
+                .setFillOpacity(ClientConfig.POLYGONS_OPACITY.get().floatValue());
+        PolygonOverlay overlay = new PolygonOverlay(MapFrontiers.MODID, dimension, shapeProps, createIncompleteVertexPolygon(), null);
+        overlay.setActiveUIs(uiArray);
+        overlay.setActiveMapTypes(mapTypesArray);
+        overlay.setMinZoom(INCOMPLETE_VERTEX_FRONTIER_MIN_ZOOM);
+        polygonOverlays.add(overlay);
+    }
+
+    private MapPolygon createIncompleteVertexPolygon() {
+        if (vertices.size() == 1) {
+            return new MapPolygon(getBlockCorners(vertices.getFirst()));
+        }
+
+        BlockPos start = vertices.get(0);
+        BlockPos end = vertices.get(1);
+        if (start.equals(end)) {
+            return new MapPolygon(getBlockCorners(start));
+        }
+
+        Vec2 direction = new Vec2(end.getX() - start.getX(), end.getZ() - start.getZ()).normalized();
+        List<BlockPos> startCorners = getBlockCorners(start);
+        List<BlockPos> endCorners = getBlockCorners(end);
+
+        startCorners.sort((a, b) -> Float.compare(getCornerProjection(a, direction), getCornerProjection(b, direction)));
+        endCorners.sort((a, b) -> Float.compare(getCornerProjection(b, direction), getCornerProjection(a, direction)));
+
+        List<BlockPos> polygonPoints = new ArrayList<>();
+        addUniquePoints(polygonPoints, startCorners.subList(0, 3));
+        addUniquePoints(polygonPoints, endCorners.subList(0, 3));
+        sortPointsAroundCenter(polygonPoints);
+        return new MapPolygon(polygonPoints);
+    }
+
+    private static void addUniquePoints(List<BlockPos> target, List<BlockPos> points) {
+        for (BlockPos point : points) {
+            if (!target.contains(point)) {
+                target.add(point);
             }
+        }
+    }
+
+    private static List<BlockPos> getBlockCorners(BlockPos pos) {
+        return new ArrayList<>(List.of(
+                pos,
+                pos.offset(1, 0, 0),
+                pos.offset(1, 0, 1),
+                pos.offset(0, 0, 1)));
+    }
+
+    private static float getCornerProjection(BlockPos point, Vec2 direction) {
+        return point.getX() * direction.x + point.getZ() * direction.y;
+    }
+
+    private static void sortPointsAroundCenter(List<BlockPos> points) {
+        double centerX = 0.0;
+        double centerZ = 0.0;
+        for (BlockPos point : points) {
+            centerX += point.getX();
+            centerZ += point.getZ();
+        }
+
+        centerX /= points.size();
+        centerZ /= points.size();
+        double finalCenterX = centerX;
+        double finalCenterZ = centerZ;
+        points.sort((a, b) -> Double.compare(
+                Math.atan2(a.getZ() - finalCenterZ, a.getX() - finalCenterX),
+                Math.atan2(b.getZ() - finalCenterZ, b.getX() - finalCenterX)));
+    }
+
+    private void createPathMarkers(Context.UI uiArray, Context.MapType[] mapTypesArray) {
+        if (points.isEmpty()) {
+            return;
+        }
+
+        if (points.size() == 1) {
+            Identifier markerId = getPathSinglePointMarkerId();
+            addSingleMarker(points.getFirst(), resolvePathMarkerImage(markerId, 0.f), 100, uiArray, mapTypesArray);
+            if (highlighted) {
+                addSingleMarker(points.getFirst(), resolvePathMarkerHighlightImage(markerId, 0.f), 101, uiArray, mapTypesArray);
+            }
+            return;
+        }
+
+        for (int i = 0; i < points.size(); ++i) {
+            BlockPos point = points.get(i);
+
+            if (i < points.size() - 1) {
+                BlockPos nextPoint = points.get(i + 1);
+                float rotation = getSegmentRotation(point, nextPoint);
+                MapImage segmentMarker = resolvePathMarkerImage(pathStyle.segmentMarker, rotation);
+                double segmentSpacingMultiplier = getPathSegmentSpacingMultiplier(pathStyle.segmentMarker);
+                addRepeatedMarkers(point, nextPoint, uiArray, mapTypesArray, segmentMarker, 99, segmentSpacingMultiplier);
+                if (highlighted) {
+                    MapImage segmentHighlight = resolvePathMarkerHighlightImage(pathStyle.segmentMarker, rotation);
+                    addRepeatedMarkers(point, nextPoint, uiArray, mapTypesArray, segmentHighlight, 100, segmentSpacingMultiplier);
+                }
+            }
+
+            Identifier markerId = getPathPointMarkerId(i);
+            float rotation = getPathPointMarkerRotation(i);
+
+            addSingleMarker(point, resolvePathMarkerImage(markerId, rotation), 100, uiArray, mapTypesArray);
+            if (highlighted) {
+                addSingleMarker(point, resolvePathMarkerHighlightImage(markerId, rotation), 101, uiArray, mapTypesArray);
+            }
+        }
+    }
+
+    private Identifier getPathPointMarkerId(int pointIndex) {
+        Identifier markerId;
+        if (pointIndex == 0) {
+            markerId = pathStyle.startMarker;
+        } else if (pointIndex == points.size() - 1) {
+            markerId = pathStyle.endMarker;
+        } else {
+            markerId = pathStyle.innerMarker;
+        }
+
+        if (FrontierData.PathStyle.NONE.equals(markerId) && !FrontierData.PathStyle.NONE.equals(pathStyle.segmentMarker)) {
+            return pathStyle.segmentMarker;
+        }
+
+        return markerId;
+    }
+
+    private float getPathPointMarkerRotation(int pointIndex) {
+        if (pointIndex < points.size() - 1) {
+            return getSegmentRotation(points.get(pointIndex), points.get(pointIndex + 1));
+        }
+
+        return getSegmentRotation(points.get(pointIndex - 1), points.get(pointIndex));
+    }
+
+    private void createPathLabels(Context.UI uiArray, Context.MapType[] mapTypesArray, boolean nameVisible, boolean ownerVisible, boolean bannerVisible) {
+        LabelContentMetrics metrics = buildLabelContentMetrics(nameVisible, ownerVisible, bannerVisible);
+        if (!metrics.hasText() && !metrics.hasBanner()) {
+            return;
+        }
+
+        for (PathLabelAnchor anchor : getPathLabelAnchors()) {
+            addPathLabelOverlay(uiArray, mapTypesArray, metrics, anchor);
         }
     }
 
@@ -1230,6 +1691,29 @@ public class FrontierOverlay extends FrontierData {
         labelOverlays.add(labelOverlay);
     }
 
+    private void addPathLabelOverlay(Context.UI uiArray, Context.MapType[] mapTypesArray, LabelContentMetrics metrics, PathLabelAnchor anchor) {
+        PathLabelVisualOffset offset = getPathLabelVisualOffset(metrics, anchor);
+        // MarkerOverlay applies TextProperties offsets with inverted signs; MapImage anchors use the same visual direction directly.
+        TextProperties textProps = createBaseTextProperties()
+                .setOffsetX(-offset.x())
+                .setOffsetY(metrics.textOffsetY() - offset.y());
+        MarkerOverlay labelOverlay = new MarkerOverlay(MapFrontiers.MODID,
+                BlockPos.containing(anchor.x(), OVERLAY_Y, anchor.z()),
+                createLabelAnchorIcon(metrics, offset.x(), offset.y()));
+        labelOverlay.setActiveUIs(uiArray);
+        labelOverlay.setActiveMapTypes(mapTypesArray);
+        labelOverlay.setDimension(dimension);
+        labelOverlay.setMaxZoom(textProps.getMaxZoom());
+        labelOverlay.setMinZoom(textProps.getMinZoom());
+        labelOverlay.setOverlayGroupName("frontier");
+
+        if (metrics.hasText()) {
+            labelOverlay.setTextProperties(textProps).setLabel(metrics.label());
+        }
+
+        labelOverlays.add(labelOverlay);
+    }
+
     private LabelContentMetrics buildLabelContentMetrics(boolean nameVisible, boolean ownerVisible, boolean bannerVisible) {
         boolean hasBanner = bannerVisible && bannerRenderer.hasBanner();
         if (!nameVisible && !ownerVisible && !hasBanner) {
@@ -1265,10 +1749,12 @@ public class FrontierOverlay extends FrontierData {
             label += ChatFormatting.ITALIC + owner.username;
         }
 
-        textWidthPx *= ClientConfig.TEXT_SIZE.get();
-        int textHeightPx = lines * TEXT_LINE_HEIGHT_PX * ClientConfig.TEXT_SIZE.get();
-        int bannerWidthPx = hasBanner ? BANNER_BASE_WIDTH_PX * ClientConfig.BANNER_SIZE.get() : 0;
-        int bannerHeightPx = hasBanner ? BANNER_BASE_HEIGHT_PX * ClientConfig.BANNER_SIZE.get() : 0;
+        int textSize = getTextSize();
+        int bannerSize = getBannerSize();
+        textWidthPx *= textSize;
+        int textHeightPx = lines * TEXT_LINE_HEIGHT_PX * textSize;
+        int bannerWidthPx = hasBanner ? BANNER_BASE_WIDTH_PX * bannerSize : 0;
+        int bannerHeightPx = hasBanner ? BANNER_BASE_HEIGHT_PX * bannerSize : 0;
         // Treat the banner as a square footprint for placement/min zoom so rotations do not
         // underestimate the horizontal space without having to compute the rotated bounds.
         int bannerPlacementWidthPx = hasBanner ? bannerHeightPx : 0;
@@ -1291,7 +1777,7 @@ public class FrontierOverlay extends FrontierData {
             // JourneyMap centers each line again inside drawLabels(..., VAlign.Middle),
             // so multi-line MarkerOverlay labels end up shifted down by half a line unless
             // we compensate here. Single-line labels do not need this correction.
-            textOffsetY = lines > 1 ? -(TEXT_LINE_HEIGHT_PX * ClientConfig.TEXT_SIZE.get()) / 2 : 0;
+            textOffsetY = lines > 1 ? -(TEXT_LINE_HEIGHT_PX * textSize) / 2 : 0;
         }
 
         return new LabelContentMetrics(label,
@@ -1315,7 +1801,7 @@ public class FrontierOverlay extends FrontierData {
     private TextProperties createBaseTextProperties() {
         TextProperties textProperties = new TextProperties()
                 .setOpacity(ClientConfig.TEXT_OPACITY.get().floatValue())
-                .setScale(ClientConfig.TEXT_SIZE.get())
+                .setScale(getTextSize())
                 .setBackgroundOpacity(0.f);
         switch (ClientConfig.TEXT_COLOR.get()) {
             case ClientConfig.TextColor.FrontierColor -> textProperties.setColor(color);
@@ -1326,19 +1812,31 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private MapImage createLabelAnchorIcon(LabelContentMetrics metrics) {
+        return createLabelAnchorIcon(metrics, 0, 0);
+    }
+
+    private MapImage createLabelAnchorIcon(LabelContentMetrics metrics, int offsetX, int offsetY) {
         if (!metrics.hasBanner()) {
             return transparentLabelMarker;
         }
 
         MapImage bannerIcon = new MapImage(bannerRenderer.getImage());
         bannerIcon.setBlur(false);
-        bannerIcon.setAnchorX(metrics.bannerWidthPx() / 2.0);
-        bannerIcon.setAnchorY(metrics.bannerOffsetY());
+        bannerIcon.setAnchorX(metrics.bannerWidthPx() / 2.0 - offsetX);
+        bannerIcon.setAnchorY(metrics.bannerOffsetY() - offsetY);
         bannerIcon.setDisplayWidth(metrics.bannerWidthPx());
         bannerIcon.setDisplayHeight(metrics.bannerHeightPx());
         bannerIcon.setOpacity(ClientConfig.BANNER_OPACITY.get().floatValue());
         bannerIcon.setRotation(-bannerRenderer.getRotation());
         return bannerIcon;
+    }
+
+    private int getTextSize() {
+        return previewTextSize > 0 ? previewTextSize : ClientConfig.TEXT_SIZE.get();
+    }
+
+    private int getBannerSize() {
+        return previewBannerSize > 0 ? previewBannerSize : ClientConfig.BANNER_SIZE.get();
     }
 
     private int colorMaxBrightness(int color) {
@@ -1357,6 +1855,101 @@ public class FrontierOverlay extends FrontierData {
         }
 
         textProperties.setMinZoom(zoom);
+    }
+
+    private List<PathLabelAnchor> getPathLabelAnchors() {
+        List<PathLabelAnchor> anchors = new ArrayList<>();
+
+        if (points.isEmpty()) {
+            return anchors;
+        }
+
+        if (points.size() == 1) {
+            if (pathStyle.labelAtStart || pathStyle.labelAtEnd || pathStyle.labelAtMiddle) {
+                BlockPos point = points.getFirst();
+                anchors.add(new PathLabelAnchor(point.getX(), point.getZ(), 0.0, 1.0));
+            }
+            return anchors;
+        }
+
+        if (pathStyle.labelAtStart) {
+            anchors.add(getPathEndpointLabelAnchor(points.getFirst(), points.get(1)));
+        }
+        if (pathStyle.labelAtMiddle) {
+            anchors.add(getPathMidpointLabelAnchor());
+        }
+        if (pathStyle.labelAtEnd) {
+            anchors.add(getPathEndpointLabelAnchor(points.getLast(), points.get(points.size() - 2)));
+        }
+
+        return anchors;
+    }
+
+    private PathLabelAnchor getPathEndpointLabelAnchor(BlockPos endpoint, BlockPos connectedPoint) {
+        double dx = endpoint.getX() - connectedPoint.getX();
+        double dz = endpoint.getZ() - connectedPoint.getZ();
+        double length = Math.sqrt(dx * dx + dz * dz);
+        if (length < 0.0001) {
+            return new PathLabelAnchor(endpoint.getX(), endpoint.getZ(), 0.0, 1.0);
+        }
+
+        return new PathLabelAnchor(endpoint.getX(), endpoint.getZ(), dx / length, dz / length);
+    }
+
+    private PathLabelAnchor getPathMidpointLabelAnchor() {
+        if (points.isEmpty()) {
+            return new PathLabelAnchor(0, 0, 0.0, 0.0);
+        }
+
+        if (points.size() == 1) {
+            BlockPos point = points.getFirst();
+            return new PathLabelAnchor(point.getX(), point.getZ(), 0.0, 0.0);
+        }
+
+        double totalLength = 0.0;
+        for (int i = 1; i < points.size(); ++i) {
+            totalLength += Math.sqrt(points.get(i).distSqr(points.get(i - 1)));
+        }
+
+        if (totalLength < 0.0001) {
+            BlockPos point = points.getFirst();
+            return new PathLabelAnchor(point.getX(), point.getZ(), 0.0, 0.0);
+        }
+
+        double halfLength = totalLength / 2.0;
+        double traversed = 0.0;
+        for (int i = 1; i < points.size(); ++i) {
+            BlockPos from = points.get(i - 1);
+            BlockPos to = points.get(i);
+            double segmentLength = Math.sqrt(to.distSqr(from));
+            if (traversed + segmentLength >= halfLength) {
+                double t = (halfLength - traversed) / segmentLength;
+                double x = from.getX() + (to.getX() - from.getX()) * t;
+                double z = from.getZ() + (to.getZ() - from.getZ()) * t;
+                return new PathLabelAnchor(x, z, 0.0, 0.0);
+            }
+            traversed += segmentLength;
+        }
+
+        BlockPos point = points.getLast();
+        return new PathLabelAnchor(point.getX(), point.getZ(), 0.0, 0.0);
+    }
+
+    private PathLabelVisualOffset getPathLabelVisualOffset(LabelContentMetrics metrics, PathLabelAnchor anchor) {
+        if (anchor.screenOffsetDirectionX() == 0.0 && anchor.screenOffsetDirectionY() == 0.0) {
+            return new PathLabelVisualOffset(0, 0);
+        }
+
+        double halfWidth = metrics.contentWidthPx() / 2.0;
+        double halfHeight = metrics.contentHeightPx() / 2.0;
+        double distanceX = anchor.screenOffsetDirectionX() == 0.0 ? Double.POSITIVE_INFINITY
+                : halfWidth / Math.abs(anchor.screenOffsetDirectionX());
+        double distanceY = anchor.screenOffsetDirectionY() == 0.0 ? Double.POSITIVE_INFINITY
+                : halfHeight / Math.abs(anchor.screenOffsetDirectionY());
+        double distance = Math.min(distanceX, distanceY) + PATH_LABEL_OFFSET_PADDING_PX;
+        int offsetX = (int) Math.round(anchor.screenOffsetDirectionX() * distance);
+        int offsetY = (int) Math.round(anchor.screenOffsetDirectionY() * distance);
+        return new PathLabelVisualOffset(offsetX, offsetY);
     }
 
     private static MapImage createTransparentLabelMarker() {
@@ -1398,6 +1991,32 @@ public class FrontierOverlay extends FrontierData {
                 topLeft = new BlockPos(minX, OVERLAY_Y, minZ);
                 bottomRight = new BlockPos(maxX, OVERLAY_Y, maxZ);
             }
+        } else if (mode == Mode.Path) {
+            if (points.isEmpty()) {
+                topLeft = new BlockPos(0, OVERLAY_Y, 0);
+                bottomRight = new BlockPos(0, OVERLAY_Y, 0);
+            } else {
+                int minX = Integer.MAX_VALUE;
+                int minZ = Integer.MAX_VALUE;
+                int maxX = Integer.MIN_VALUE;
+                int maxZ = Integer.MIN_VALUE;
+
+                synchronized (points) {
+                    for (BlockPos point : points) {
+                        if (point.getX() < minX)
+                            minX = point.getX();
+                        if (point.getZ() < minZ)
+                            minZ = point.getZ();
+                        if (point.getX() > maxX)
+                            maxX = point.getX();
+                        if (point.getZ() > maxZ)
+                            maxZ = point.getZ();
+                    }
+                }
+
+                topLeft = new BlockPos(minX, OVERLAY_Y, minZ);
+                bottomRight = new BlockPos(maxX, OVERLAY_Y, maxZ);
+            }
         } else {
             if (chunks.isEmpty()) {
                 topLeft = new BlockPos(0, OVERLAY_Y, 0);
@@ -1427,71 +2046,218 @@ public class FrontierOverlay extends FrontierData {
         }
     }
 
-    //
-    // Functions adapted from https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
-    //
-    private void addMarkerDots(BlockPos from, BlockPos to, Context.UI uiArray, Context.MapType[] mapTypesArray) {
-        if (abs(to.getZ() - from.getZ()) < abs(to.getX() - from.getX())) {
-            if (from.getX() > to.getX()) {
-                addLineMarkerDots(to.getX(), to.getZ(), from.getX(), from.getZ(), uiArray, mapTypesArray);
-            } else{
-                addLineMarkerDots(from.getX(), from.getZ(), to.getX(), to.getZ(), uiArray, mapTypesArray);
-            }
-        } else {
-            if (from.getZ() > to.getZ()) {
-                addLineMarkerDots(to.getX(), to.getZ(), from.getX(), from.getZ(), uiArray, mapTypesArray);
-            } else{
-                addLineMarkerDots(from.getX(), from.getZ(), to.getX(), to.getZ(), uiArray, mapTypesArray);
+    private void addRepeatedMarkers(BlockPos from, BlockPos to, Context.UI uiArray, Context.MapType[] mapTypesArray,
+                                    @Nullable MapImage markerImage, int displayOrder, double spacingMultiplier) {
+        if (markerImage == null) {
+            return;
+        }
+
+        int dx = to.getX() - from.getX();
+        int dz = to.getZ() - from.getZ();
+        double length = Math.hypot(dx, dz);
+        if (length <= 1.0) {
+            return;
+        }
+
+        List<BlockPos> repeatedMarkerPositions = getDiscreteInteriorLinePositions(from, to);
+        if (repeatedMarkerPositions.isEmpty()) {
+            return;
+        }
+
+        for (int minZoom = PATH_REPEATED_MARKER_MIN_ZOOM; minZoom <= PATH_REPEATED_MARKER_MAX_ZOOM; minZoom *= 2) {
+            int maxZoom = minZoom == PATH_REPEATED_MARKER_MAX_ZOOM ? 0 : minZoom * 2 - 1;
+            int markerCount = getRepeatedMarkerCount(getRepeatedMarkerTargetSpacing(minZoom) * spacingMultiplier, length,
+                    repeatedMarkerPositions.size());
+            double step = (repeatedMarkerPositions.size() + 1) / (double) (markerCount + 1);
+            Set<Long> addedPositions = new HashSet<>();
+
+            for (int marker = 1; marker <= markerCount; ++marker) {
+                int markerIndex = Mth.clamp(Math.round((float) (marker * step)) - 1, 0, repeatedMarkerPositions.size() - 1);
+                BlockPos pos = repeatedMarkerPositions.get(markerIndex);
+                long positionKey = getBlockPos2DKey(pos.getX(), pos.getZ());
+                if (!addedPositions.add(positionKey)) {
+                    continue;
+                }
+
+                addRepeatedMarker(pos, uiArray, mapTypesArray, markerImage, displayOrder, minZoom, maxZoom);
             }
         }
     }
 
-    private void addLineMarkerDots(int x0, int z0, int x1, int z1, Context.UI uiArray, Context.MapType[] mapTypesArray) {
-        int dx = abs(x1 - x0);
+    private static List<BlockPos> getDiscreteInteriorLinePositions(BlockPos from, BlockPos to) {
+        List<BlockPos> positions = new ArrayList<>();
+
+        int x0 = from.getX();
+        int z0 = from.getZ();
+        int x1 = to.getX();
+        int z1 = to.getZ();
+        int dx = Math.abs(x1 - x0);
+        int dz = Math.abs(z1 - z0);
         int sx = x0 < x1 ? 1 : -1;
-        int dz = -abs(z1 - z0);
         int sz = z0 < z1 ? 1 : -1;
-        int err = dx + dz;
-        int i = 0;
-        while (true) {
-            if (x0 == x1 && z0 == z1) {
-                break;
+        int error = dx - dz;
+
+        int x = x0;
+        int z = z0;
+        while (x != x1 || z != z1) {
+            int doubleError = error * 2;
+            if (doubleError > -dz) {
+                error -= dz;
+                x += sx;
             }
-            int e2 = 2 * err;
-            if (e2 >= dz) {
-                if (x0 == x1) {
-                    break;
-                }
-                err += dz;
-                x0 += sx;
-            }
-            if (e2 <= dx) {
-                if (z0 == z1) {
-                    break;
-                }
-                err += dx;
-                z0 += sz;
+            if (doubleError < dx) {
+                error += dx;
+                z += sz;
             }
 
-            BlockPos pos = new BlockPos(x0, OVERLAY_Y, z0);
-            MarkerOverlay dot = new MarkerOverlay(MapFrontiers.MODID, pos, markerDot);
-            dot.setDimension(dimension);
-            dot.setDisplayOrder(99);
-            dot.setActiveUIs(uiArray);
-            dot.setActiveMapTypes(mapTypesArray);
-            int minZoom = 2;
-            if (i % 2 == 0) {
-                minZoom = 16384;
-            } else if (i % 4 == 1) {
-                minZoom = 8192;
-            } else if (i % 8 == 3) {
-                minZoom = 4096;
+            if (x != x1 || z != z1) {
+                positions.add(new BlockPos(x, OVERLAY_Y, z));
             }
-            dot.setMinZoom(minZoom);
-            markerOverlays.add(dot);
-
-            ++i;
         }
+
+        return positions;
+    }
+
+    private static int getRepeatedMarkerCount(double targetSpacing, double length, int availableMarkerPositions) {
+        if (targetSpacing <= 0.0 || availableMarkerPositions <= 0) {
+            return 0;
+        }
+
+        int intervalCount = (int) Math.round(length / targetSpacing);
+        return Mth.clamp(intervalCount - 1, 0, availableMarkerPositions);
+    }
+
+    private void addRepeatedMarker(BlockPos pos, Context.UI uiArray, Context.MapType[] mapTypesArray, MapImage markerImage, int displayOrder, int minZoom, int maxZoom) {
+        MarkerOverlay dot = new MarkerOverlay(MapFrontiers.MODID, pos, markerImage);
+        dot.setDimension(dimension);
+        dot.setDisplayOrder(displayOrder);
+        dot.setActiveUIs(uiArray);
+        dot.setActiveMapTypes(mapTypesArray);
+        dot.setMinZoom(minZoom);
+        if (maxZoom > 0) {
+            dot.setMaxZoom(maxZoom);
+        }
+        markerOverlays.add(dot);
+    }
+
+    private static long getBlockPos2DKey(int x, int z) {
+        return ((long) x << 32) ^ (z & 0xFFFFFFFFL);
+    }
+
+    private static double getRepeatedMarkerTargetSpacing(int minZoom) {
+        return PATH_REPEATED_MARKER_SPACING_ZOOM_REFERENCE / minZoom
+                * ClientConfig.PATH_MARKER_SIZE.get()
+                / PATH_REPEATED_MARKER_BASE_MARKER_SIZE;
+    }
+
+    private void addSingleMarker(BlockPos pos, @Nullable MapImage markerImage, int displayOrder, Context.UI uiArray, Context.MapType[] mapTypesArray) {
+        if (markerImage == null) {
+            return;
+        }
+
+        MarkerOverlay marker = new MarkerOverlay(MapFrontiers.MODID, pos, markerImage);
+        marker.setDimension(dimension);
+        marker.setDisplayOrder(displayOrder);
+        marker.setActiveUIs(uiArray);
+        marker.setActiveMapTypes(mapTypesArray);
+        markerOverlays.add(marker);
+    }
+
+    private Identifier getPathSinglePointMarkerId() {
+        if (isPathMarkerVisible(pathStyle.startMarker)) {
+            return pathStyle.startMarker;
+        }
+        if (isPathMarkerVisible(pathStyle.endMarker)) {
+            return pathStyle.endMarker;
+        }
+        if (isPathMarkerVisible(pathStyle.innerMarker)) {
+            return pathStyle.innerMarker;
+        }
+        if (isPathMarkerVisible(pathStyle.segmentMarker)) {
+            return pathStyle.segmentMarker;
+        }
+
+        return FrontierData.PathStyle.BIG_DOT;
+    }
+
+    private static boolean isPathMarkerVisible(Identifier markerId) {
+        PathMarkerCatalog.Entry entry = PathMarkerCatalog.get(markerId);
+        return entry != null && entry.texture() != null;
+    }
+
+    private static double getPathSegmentSpacingMultiplier(Identifier markerId) {
+        PathMarkerCatalog.Entry entry = PathMarkerCatalog.get(markerId);
+        return entry == null ? 1.0 : entry.segmentSpacingMultiplier();
+    }
+
+    private static double distanceToPolylineSq(BlockPos pos, List<BlockPos> polyline, boolean closed) {
+        synchronized (polyline) {
+            if (polyline.isEmpty()) {
+                return Double.POSITIVE_INFINITY;
+            }
+
+            Vec3 point = Vec3.atLowerCornerOf(pos);
+            int y = pos.getY();
+
+            if (polyline.size() == 1) {
+                return point.distanceToSqr(Vec3.atLowerCornerOf(polyline.getFirst().atY(y)));
+            }
+
+            double distance = Double.POSITIVE_INFINITY;
+            int edgeCount = closed ? polyline.size() : polyline.size() - 1;
+            for (int i = 0; i < edgeCount; ++i) {
+                Vec3 edge1 = Vec3.atLowerCornerOf(polyline.get(i).atY(y));
+                Vec3 edge2 = Vec3.atLowerCornerOf(polyline.get((i + 1) % polyline.size()).atY(y));
+                distance = Math.min(distance, closestPointToEdge(point, edge1, edge2).distanceToSqr(point));
+            }
+
+            return distance;
+        }
+    }
+
+    private @Nullable MapImage resolvePathMarkerImage(Identifier markerId, float rotation) {
+        if (FrontierData.PathStyle.NONE.equals(markerId)) {
+            return null;
+        }
+
+        PathMarkerCatalog.Entry entry = PathMarkerCatalog.get(markerId);
+        if (entry == null || entry.texture() == null) {
+            return null;
+        }
+
+        MapImage markerImage = createMarkerImage(entry.texture(), color, ClientConfig.PATH_MARKER_OPACITY.get().floatValue());
+        if (entry.directional()) {
+            markerImage.setRotation(Math.round(rotation));
+        }
+        return markerImage;
+    }
+
+    private @Nullable MapImage resolvePathMarkerHighlightImage(Identifier markerId, float rotation) {
+        if (FrontierData.PathStyle.NONE.equals(markerId)) {
+            return null;
+        }
+
+        Identifier texture = PathMarkerCatalog.getHighlightTexture(markerId);
+        if (texture == null) {
+            return null;
+        }
+
+        MapImage markerImage = createMarkerImage(texture, ColorConstants.WHITE, 1.f);
+        PathMarkerCatalog.Entry entry = PathMarkerCatalog.get(markerId);
+        if (entry != null && entry.directional()) {
+            markerImage.setRotation(Math.round(rotation));
+        }
+        return markerImage;
+    }
+
+    private static float getSegmentRotation(BlockPos from, BlockPos to) {
+        return (float) -Math.toDegrees(Math.atan2(to.getZ() - from.getZ(), to.getX() - from.getX()));
+    }
+
+    private static MapImage createMarkerImage(Identifier texture, int color, float opacity) {
+        MapImage mapImage = new MapImage(texture, 0, 0, MarkerImageConstants.TEXTURE_SIZE, MarkerImageConstants.TEXTURE_SIZE, color, opacity);
+        MarkerImageConstants.applyMapDisplaySize(mapImage);
+        return mapImage;
     }
 
     private record LabelContentMetrics(String label,
@@ -1510,6 +2276,16 @@ public class FrontierOverlay extends FrontierData {
 
     private record LabelPlacementKey(int contentWidthPx,
                                      int contentHeightPx) {
+    }
+
+    private record PathLabelAnchor(double x,
+                                   double z,
+                                   double screenOffsetDirectionX,
+                                   double screenOffsetDirectionY) {
+    }
+
+    private record PathLabelVisualOffset(int x,
+                                         int y) {
     }
 
     public static class BannerRenderer {

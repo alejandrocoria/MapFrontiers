@@ -26,6 +26,19 @@ public final class FrontierCreationFactory {
                                               @Nullable String sourcePluginId,
                                               @Nullable List<BlockPos> vertices,
                                               @Nullable List<ChunkPos> chunks) {
+        return createFrontier(frontierId, owner, dimension, personal, lifetime, sourcePluginId, vertices, chunks, null, null);
+    }
+
+    public static FrontierData createFrontier(UUID frontierId,
+                                              SettingsUser owner,
+                                              ResourceKey<Level> dimension,
+                                              boolean personal,
+                                              FrontierData.FrontierLifetime lifetime,
+                                              @Nullable String sourcePluginId,
+                                              @Nullable List<BlockPos> vertices,
+                                              @Nullable List<ChunkPos> chunks,
+                                              @Nullable List<BlockPos> points,
+                                              @Nullable FrontierData.PathStyle pathStyle) {
         FrontierData frontier = new FrontierData();
         frontier.setId(frontierId);
         frontier.setOwner(owner);
@@ -35,7 +48,10 @@ public final class FrontierCreationFactory {
         frontier.setSourcePluginId(sourcePluginId);
         frontier.setColor(ColorHelper.getRandomColor());
         frontier.setCreated(new Date());
-        FrontierMutationApplier.applyCreationShape(frontier, vertices, chunks);
+        FrontierMutationApplier.applyCreationShape(frontier, vertices, chunks, points);
+        if (pathStyle != null) {
+            frontier.setPathStyle(pathStyle);
+        }
         return frontier;
     }
 }

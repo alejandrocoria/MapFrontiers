@@ -11,6 +11,8 @@ import games.alejandrocoria.mapfrontiers.api.model.FrontierShape;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierSharePermission;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierType;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierVisibilityFlag;
+import games.alejandrocoria.mapfrontiers.api.model.PathMarkerId;
+import games.alejandrocoria.mapfrontiers.api.model.PathStyle;
 import games.alejandrocoria.mapfrontiers.api.model.Point2i;
 import games.alejandrocoria.mapfrontiers.api.model.SharedUserAccess;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
@@ -45,12 +47,13 @@ public final class ApiConverters {
     public static FrontierShape toShape(FrontierData frontier) {
         List<Point2i> vertices = frontier.getVertices().stream().map(pos -> new Point2i(pos.getX(), pos.getZ())).toList();
         List<ChunkCoord> chunks = frontier.getChunks().stream().map(chunk -> new ChunkCoord(chunk.x, chunk.z)).toList();
+        List<Point2i> points = frontier.getPoints().stream().map(pos -> new Point2i(pos.getX(), pos.getZ())).toList();
 
-        if (frontier.getMode() == FrontierData.Mode.Vertex) {
-            return FrontierShape.vertex(vertices);
-        }
-
-        return FrontierShape.chunk(chunks);
+        return switch (frontier.getMode()) {
+            case Vertex -> FrontierShape.vertex(vertices);
+            case Chunk -> FrontierShape.chunk(chunks);
+            case Path -> FrontierShape.path(points);
+        };
     }
 
     public static void applyShape(FrontierData frontier, FrontierShape shape) {
@@ -73,6 +76,34 @@ public final class ApiConverters {
                 patterns == null ? "[]" : patterns.toString(),
                 bannerData.rotation
         );
+    }
+
+    public static PathStyle fromPathStyle(FrontierData.PathStyle pathStyle) {
+        FrontierData.PathStyle normalized = new FrontierData.PathStyle(pathStyle);
+        normalized.normalizeForPersistence();
+
+        return new PathStyle(
+                new PathMarkerId(normalized.startMarker.toString()),
+                new PathMarkerId(normalized.innerMarker.toString()),
+                new PathMarkerId(normalized.endMarker.toString()),
+                new PathMarkerId(normalized.segmentMarker.toString()),
+                normalized.labelAtStart,
+                normalized.labelAtMiddle,
+                normalized.labelAtEnd
+        );
+    }
+
+    public static FrontierData.PathStyle toPathStyle(PathStyle pathStyle) {
+        FrontierData.PathStyle result = new FrontierData.PathStyle();
+        result.startMarker = Identifier.parse(pathStyle.startMarker().value());
+        result.innerMarker = Identifier.parse(pathStyle.innerMarker().value());
+        result.endMarker = Identifier.parse(pathStyle.endMarker().value());
+        result.segmentMarker = Identifier.parse(pathStyle.segmentMarker().value());
+        result.labelAtStart = pathStyle.labelAtStart();
+        result.labelAtMiddle = pathStyle.labelAtMiddle();
+        result.labelAtEnd = pathStyle.labelAtEnd();
+        result.normalizeForPersistence();
+        return result;
     }
 
     public static SharedUserAccess fromSharedUser(SettingsUserShared userShared) {
@@ -104,6 +135,7 @@ public final class ApiConverters {
                 toShape(frontier),
                 fromVisibility(frontier.getVisibilityData()),
                 fromBanner(frontier.getbannerData()),
+                frontier.getMode() == FrontierData.Mode.Path ? Optional.of(fromPathStyle(frontier.getPathStyle())) : Optional.empty(),
                 Optional.ofNullable(frontier.getSourcePluginId()),
                 owner,
                 sharedUsers

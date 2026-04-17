@@ -36,9 +36,12 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -72,7 +75,9 @@ public class MapFrontiersClient {
     private static HUD hud;
 
     private static BlockPos lastPlayerPosition = new BlockPos(0, 0, 0);
-    private static final Set<FrontierOverlay> insideFrontiers = new HashSet<>();
+    private static final List<FrontierOverlay> hudActiveFrontiers = new ArrayList<>();
+    private static final Set<UUID> hudActiveFrontierIds = new HashSet<>();
+    private static final Map<UUID, FrontierOverlay> announcementActiveFrontiers = new HashMap<>();
     private static long lastTitleTime;
 
     private static FrontierData clipboard = null;
@@ -116,14 +121,17 @@ public class MapFrontiersClient {
         }
 
         if (player == null || ClientConfig.FRONTIER_VISIBILITY.get() == ClientConfig.Visibility.Never) {
+            clearFrontierActivationState();
             return;
         }
 
+        updateHudActiveFrontiers(player);
         handleFrontierAnnouncements(client, player);
     }
 
     private static void handleWorldChange(Minecraft client) {
         if (client.level != lastClientLevel) {
+            clearFrontierActivationState();
             if (connectionState.restartHandshakeIfUnresolved()) {
                 if (lastClientLevel != null) {
                     MapFrontiers.LOGGER.info("World changed before handshake resolution, restarting handshake.");
@@ -154,50 +162,46 @@ public class MapFrontiersClient {
     }
 
     private static void handleFrontierAnnouncements(Minecraft client, Player player) {
-        ClientFrontierRuntime runtime = requireFrontierRuntime();
-        FrontiersOverlayManager frontiersOverlayManager = runtime.getGlobalFrontiersOverlayManager();
-        FrontiersOverlayManager personalFrontiersOverlayManager = runtime.getPersonalFrontiersOverlayManager();
-
         BlockPos currentPlayerPosition = player.blockPosition();
-        if (currentPlayerPosition.getX() != lastPlayerPosition.getX() || currentPlayerPosition.getZ() != lastPlayerPosition.getZ()) {
-            lastPlayerPosition = currentPlayerPosition;
+        lastPlayerPosition = currentPlayerPosition;
 
-            Set<FrontierOverlay> frontiers = personalFrontiersOverlayManager.getFrontiersForAnnounce(player.level().dimension(), lastPlayerPosition);
-            frontiers.addAll(frontiersOverlayManager.getFrontiersForAnnounce(player.level().dimension(), lastPlayerPosition));
+        Map<UUID, FrontierOverlay> currentlyActiveFrontiers = collectAnnouncementActiveFrontiers(player.level().dimension(), currentPlayerPosition);
 
-            for (Iterator<FrontierOverlay> i = insideFrontiers.iterator(); i.hasNext();) {
-                FrontierOverlay inside = i.next();
-                if (frontiers.stream().noneMatch(f -> f.getId().equals(inside.getId()))) {
-                    boolean frontierAnnounceInChat = inside.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat);
-                    if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), frontierAnnounceInChat) && (inside.isNamed() || ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS.get())) {
-                        player.displayClientMessage(Component.translatable("mapfrontiers.chat.leaving", createAnnounceTextWithName(inside)), false);
-                    }
-                    i.remove();
+        for (FrontierOverlay frontier : announcementActiveFrontiers.values()) {
+            if (!currentlyActiveFrontiers.containsKey(frontier.getId())) {
+                boolean frontierAnnounceInChat = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat);
+                if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), frontierAnnounceInChat)
+                        && (frontier.isNamed() || ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS.get())) {
+                    player.displayClientMessage(Component.translatable("mapfrontiers.chat.leaving", createAnnounceTextWithName(frontier)), false);
                 }
             }
+        }
 
-            for (FrontierOverlay frontier : frontiers) {
-                if (insideFrontiers.add(frontier) && (frontier.isNamed() || ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS.get())) {
-                    Component text = createAnnounceTextWithName(frontier);
+        for (FrontierOverlay frontier : currentlyActiveFrontiers.values()) {
+            if (!announcementActiveFrontiers.containsKey(frontier.getId())
+                    && (frontier.isNamed() || ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS.get())) {
+                Component text = createAnnounceTextWithName(frontier);
 
-                    boolean frontierAnnounceInChat = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat);
-                    if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), frontierAnnounceInChat)) {
-                        player.displayClientMessage(Component.translatable("mapfrontiers.chat.entering", text), false);
-                    }
+                boolean frontierAnnounceInChat = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat);
+                if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), frontierAnnounceInChat)) {
+                    player.displayClientMessage(Component.translatable("mapfrontiers.chat.entering", text), false);
+                }
 
-                    boolean frontierAnnounceInTitle = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInTitle);
-                    if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_TITLE.get(), frontierAnnounceInTitle)) {
-                        if (ClientConfig.TITLE_ANNOUNCEMENT_ABOVE_HOTBAR.get()) {
-                            client.gui.setOverlayMessage(text, false);
-                        } else if (System.currentTimeMillis() >= lastTitleTime + ClientConfig.TITLE_ANNOUNCEMENT_TIMEOUT.get() / 20 * 1000L) {
-                            lastTitleTime = System.currentTimeMillis();
-                            client.gui.setTimes(10, ClientConfig.TITLE_ANNOUNCEMENT_DURATION.get(), 20);
-                            client.gui.setTitle(text);
-                        }
+                boolean frontierAnnounceInTitle = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInTitle);
+                if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_TITLE.get(), frontierAnnounceInTitle)) {
+                    if (ClientConfig.TITLE_ANNOUNCEMENT_ABOVE_HOTBAR.get()) {
+                        client.gui.setOverlayMessage(text, false);
+                    } else if (System.currentTimeMillis() >= lastTitleTime + ClientConfig.TITLE_ANNOUNCEMENT_TIMEOUT.get() / 20 * 1000L) {
+                        lastTitleTime = System.currentTimeMillis();
+                        client.gui.setTimes(10, ClientConfig.TITLE_ANNOUNCEMENT_DURATION.get(), 20);
+                        client.gui.setTitle(text);
                     }
                 }
             }
         }
+
+        announcementActiveFrontiers.clear();
+        announcementActiveFrontiers.putAll(currentlyActiveFrontiers);
     }
 
     private static void handleHudRender(GuiGraphics graphics, float delta) {
@@ -238,6 +242,7 @@ public class MapFrontiersClient {
 
         connectionState.restartHandshake();
         lastClientLevel = null;
+        clearFrontierActivationState();
         MapFrontiersAPIBootstrap.clearClientAPI();
 
         ChatFrontiers.clear();
@@ -374,6 +379,10 @@ public class MapFrontiersClient {
         frontiers.addAll(frontiersOverlayManager.getFrontiersInPosition(dimension, pos, maxDistanceToOpen));
         frontiers.sort((f1, f2) -> Float.compare(f1.area, f2.area));
         return frontiers;
+    }
+
+    public static List<FrontierOverlay> getFrontiersForHUD() {
+        return List.copyOf(hudActiveFrontiers);
     }
 
     public static FrontierLocalOverrides getLocalOverrides() {
@@ -537,5 +546,95 @@ public class MapFrontiersClient {
 
     public static FrontierData getClipboard() {
         return clipboard;
+    }
+
+    private static void updateHudActiveFrontiers(Player player) {
+        List<FrontierOverlay> currentlyActiveFrontiers = collectHudActiveFrontiers(player.level().dimension(), player.blockPosition());
+        hudActiveFrontiers.clear();
+        hudActiveFrontiers.addAll(currentlyActiveFrontiers);
+        hudActiveFrontierIds.clear();
+        for (FrontierOverlay frontier : currentlyActiveFrontiers) {
+            hudActiveFrontierIds.add(frontier.getId());
+        }
+    }
+
+    private static List<FrontierOverlay> collectHudActiveFrontiers(ResourceKey<Level> dimension, BlockPos pos) {
+        List<FrontierOverlay> frontiers = new ArrayList<>();
+        appendQualifiedFrontiers(frontiers, getFrontiersOverlayManagerOrNull(true), dimension, pos, hudActiveFrontierIds, false);
+        appendQualifiedFrontiers(frontiers, getFrontiersOverlayManagerOrNull(false), dimension, pos, hudActiveFrontierIds, false);
+        prioritizeActiveFrontiers(frontiers);
+        return frontiers;
+    }
+
+    private static Map<UUID, FrontierOverlay> collectAnnouncementActiveFrontiers(ResourceKey<Level> dimension, BlockPos pos) {
+        List<FrontierOverlay> frontiers = new ArrayList<>();
+        appendQualifiedFrontiers(frontiers, getFrontiersOverlayManagerOrNull(true), dimension, pos, announcementActiveFrontiers.keySet(), true);
+        appendQualifiedFrontiers(frontiers, getFrontiersOverlayManagerOrNull(false), dimension, pos, announcementActiveFrontiers.keySet(), true);
+        prioritizeActiveFrontiers(frontiers);
+
+        Map<UUID, FrontierOverlay> activeFrontiers = new HashMap<>();
+        for (FrontierOverlay frontier : frontiers) {
+            activeFrontiers.put(frontier.getId(), frontier);
+        }
+        return activeFrontiers;
+    }
+
+    private static void appendQualifiedFrontiers(List<FrontierOverlay> target, @Nullable FrontiersOverlayManager manager,
+                                                 ResourceKey<Level> dimension, BlockPos pos, Set<UUID> currentlyActiveFrontierIds,
+                                                 boolean requireAnnouncementVisibility) {
+        if (manager == null) {
+            return;
+        }
+
+        for (FrontierOverlay frontier : manager.getAllFrontiers(dimension)) {
+            boolean alreadyActive = currentlyActiveFrontierIds.contains(frontier.getId());
+            if (qualifiesForHudOrAnnouncement(frontier, pos, alreadyActive, requireAnnouncementVisibility)) {
+                target.add(frontier);
+            }
+        }
+    }
+
+    private static boolean qualifiesForHudOrAnnouncement(FrontierOverlay frontier, BlockPos pos, boolean alreadyActive,
+                                                         boolean requireAnnouncementVisibility) {
+        if (requireAnnouncementVisibility) {
+            boolean announceInChat = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat);
+            boolean announceInTitle = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInTitle);
+            if (!ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), announceInChat)
+                    && !ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_TITLE.get(), announceInTitle)) {
+                return false;
+            }
+        } else if (!ClientConfig.getVisibilityValue(ClientConfig.FRONTIER_VISIBILITY.get(),
+                frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier))) {
+            return false;
+        }
+
+        if (frontier.getMode() == FrontierData.Mode.Path) {
+            if (frontier.getPoints().isEmpty()) {
+                return false;
+            }
+            return frontier.pointIsInside(pos, ClientConfig.getPathActivationDistance(alreadyActive));
+        }
+
+        if (frontier.getMode() == FrontierData.Mode.Vertex && frontier.getVertices().size() < 3) {
+            return false;
+        }
+
+        return frontier.pointIsInside(pos, 0.0);
+    }
+
+    private static void prioritizeActiveFrontiers(List<FrontierOverlay> frontiers) {
+        boolean hasAreaFrontier = frontiers.stream().anyMatch(frontier -> frontier.getMode() != FrontierData.Mode.Path);
+        if (hasAreaFrontier) {
+            frontiers.removeIf(frontier -> frontier.getMode() == FrontierData.Mode.Path);
+        }
+
+        frontiers.sort(Comparator.comparingDouble(frontier -> frontier.area));
+    }
+
+    private static void clearFrontierActivationState() {
+        lastPlayerPosition = new BlockPos(0, 0, 0);
+        hudActiveFrontiers.clear();
+        hudActiveFrontierIds.clear();
+        announcementActiveFrontiers.clear();
     }
 }

@@ -18,6 +18,7 @@ import journeymap.client.render.draw.DrawPolygonStep;
 import journeymap.client.render.draw.DrawStep;
 import journeymap.client.render.map.MapRenderer;
 import journeymap.client.ui.UIManager;
+import journeymap.client.ui.component.screens.JmUI;
 import journeymap.client.ui.minimap.DisplayVars;
 import journeymap.client.ui.minimap.MiniMap;
 import journeymap.client.ui.minimap.Position;
@@ -208,6 +209,7 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
     private static class CustomPreviewRenderer implements ICustomPreviewRenderer {
         private final MapRenderer mapRenderer;
         private final GuiRenderToTexture polygonSurface;
+        private final MapState mapState;
         private final List<DrawPolygonStep> polygonDrawSteps = new ArrayList<>();
         private final List<DrawStep> overlayDrawSteps = new ArrayList<>();
 
@@ -216,7 +218,7 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
             polygonSurface = new GuiRenderToTexture("MapFrontiers JourneyMap Polygon Preview");
             mapRenderer.setZoom(512);
             mapRenderer.setViewPortBounds(null);
-            MapState mapState = new MapState();
+            mapState = new MapState();
             mapState.setMapType(MapType.day(ResourceKey.create(Registries.DIMENSION, Identifier.withDefaultNamespace("overworld"))));
             mapRenderer.setContext(mapState);
             mapRenderer.center(mapState.getWorldDir(), mapState.getMapType(), 0, 0, 512);
@@ -231,6 +233,9 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
                 for (PolygonOverlay polygon : frontierOverlay.getPolygonOverlays()) {
                     polygonDrawSteps.add(new DrawPolygonStep(polygon));
                 }
+                for (MarkerOverlay marker : frontierOverlay.getMarkerOverlays()) {
+                    overlayDrawSteps.add(new DrawMarkerStep(marker));
+                }
                 for (MarkerOverlay label : frontierOverlay.getLabelOverlays()) {
                     overlayDrawSteps.add(new DrawMarkerStep(label));
                 }
@@ -243,43 +248,57 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
                 return;
             }
 
-            int width = Minecraft.getInstance().getWindow().getScreenWidth();
-            int height = Minecraft.getInstance().getWindow().getScreenHeight();
-            double guiScale = Minecraft.getInstance().getWindow().getGuiScale();
-            int previewSize = Math.max(1, Math.round(size * scaleFactor / (float) guiScale));
+            int guiScale = Math.max(1, (int) Math.round(JmUI.calculateScaleFactor()));
+            int width = graphics.guiWidth() * guiScale;
+            int height = graphics.guiHeight() * guiScale;
+            double effectiveGuiScale = guiScale / scaleFactor;
+            float mapScale = (float) (1.0 / effectiveGuiScale);
+            int previewSize = Math.max(1, Math.round(size * mapScale));
+            double previewPhysicalX = Math.round(x * effectiveGuiScale);
+            double previewPhysicalY = Math.round(y * effectiveGuiScale);
+            float polygonTranslateX = (float) (previewPhysicalX + size / 2.0 - width / 2.0);
+            float polygonTranslateY = (float) (previewPhysicalY + size / 2.0 - height / 2.0);
+            float overlayTranslateX = (float) (polygonTranslateX / effectiveGuiScale);
+            float overlayTranslateY = (float) (polygonTranslateY / effectiveGuiScale);
+
+            mapRenderer.setViewPortBounds(new Rectangle2D.Double(0, 0, size, size));
+            mapRenderer.center(mapState.getWorldDir(), mapState.getMapType(), size / 2.0, size / 2.0, 512);
+            mapRenderer.updateUIState(true);
 
             graphics.enableScissor(x, y, x + previewSize, y + previewSize);
-            graphics.pose().pushMatrix();
-            graphics.pose().translate((float) (-width / guiScale / 2 * scaleFactor) + x, (float) (-height / guiScale / 2 * scaleFactor) + y);
-            graphics.pose().scale((float) (1 / guiScale) * scaleFactor, (float) (1 / guiScale) * scaleFactor);
-
-            mapRenderer.setViewPortBounds(new Rectangle2D.Double(0, 0, width * scaleFactor, height * scaleFactor));
-
             try {
-                polygonSurface.render(graphics, context -> {
-                    var pose = context.pose();
-                    pose.pushMatrix();
-                    pose.translate((float) (-width / 2 * scaleFactor + x * guiScale), (float) (-height / 2 * scaleFactor + y * guiScale));
-                    pose.scale(scaleFactor);
-                    try {
-                        for (DrawPolygonStep drawPolygonStep : polygonDrawSteps) {
-                            drawPolygonStep.drawGeometry(graphics, pose, context.buffers(), 0, 0, mapRenderer, 1, 0);
+                if (!polygonDrawSteps.isEmpty()) {
+                    polygonSurface.render(graphics, context -> {
+                        var pose = context.pose();
+                        pose.pushMatrix();
+                        pose.translate(polygonTranslateX, polygonTranslateY);
+                        try {
+                            for (DrawPolygonStep drawPolygonStep : polygonDrawSteps) {
+                                drawPolygonStep.drawGeometry(graphics, pose, context.buffers(), 0, 0, mapRenderer, 1, 0);
+                            }
+                        } finally {
+                            pose.popMatrix();
                         }
-                    } finally {
-                        pose.popMatrix();
+                    });
+                }
+
+                graphics.pose().pushMatrix();
+                try {
+                    graphics.pose().translate(overlayTranslateX, overlayTranslateY);
+                    graphics.pose().scale(mapScale, mapScale);
+
+                    for (DrawPolygonStep drawPolygonStep : polygonDrawSteps) {
+                        drawPolygonStep.drawTextLayer(graphics, 0, 0, mapRenderer, 1, 0);
                     }
-                });
 
-                for (DrawPolygonStep drawPolygonStep : polygonDrawSteps) {
-                    drawPolygonStep.drawTextLayer(graphics, 0, 0, mapRenderer, 1, 0);
+                    for (DrawStep drawStep : overlayDrawSteps) {
+                        drawStep.draw(graphics, 0, 0, mapRenderer, 1, 0);
+                    }
+                    buffers.endBatch();
+                } finally {
+                    graphics.pose().popMatrix();
                 }
-
-                for (DrawStep drawStep : overlayDrawSteps) {
-                    drawStep.draw(graphics, 0, 0, mapRenderer, 1, 0);
-                }
-                buffers.endBatch();
             } finally {
-                graphics.pose().popMatrix();
                 graphics.disableScissor();
             }
         }

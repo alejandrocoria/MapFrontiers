@@ -35,9 +35,11 @@ public class PacketCreateFrontier {
     private @Nullable String sourcePluginId;
     private List<BlockPos> vertices;
     private List<ChunkPos> chunks;
+    private List<BlockPos> points;
+    private @Nullable FrontierData.PathStyle pathStyle;
 
     public PacketCreateFrontier(UUID frontierId, ResourceKey<Level> dimension, boolean personal, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
-        this(frontierId, dimension, personal, null, vertices, chunks);
+        this(frontierId, dimension, personal, null, vertices, chunks, null, null);
     }
 
     public PacketCreateFrontier(UUID frontierId,
@@ -45,13 +47,17 @@ public class PacketCreateFrontier {
                                 boolean personal,
                                 @Nullable String sourcePluginId,
                                 @Nullable List<BlockPos> vertices,
-                                @Nullable List<ChunkPos> chunks) {
+                                @Nullable List<ChunkPos> chunks,
+                                @Nullable List<BlockPos> points,
+                                @Nullable FrontierData.PathStyle pathStyle) {
         this.frontierId = frontierId;
         this.dimension = dimension;
         this.personal = personal;
         this.sourcePluginId = sourcePluginId;
         this.vertices = vertices;
         this.chunks = chunks;
+        this.points = points;
+        this.pathStyle = pathStyle == null ? null : new FrontierData.PathStyle(pathStyle);
     }
 
     public static CustomPacketPayload.Type<CustomPacketPayload> type() {
@@ -85,6 +91,22 @@ public class PacketCreateFrontier {
                         this.chunks.add(chunk);
                     }
                 }
+
+                boolean hasPoints = buf.readBoolean();
+                if (hasPoints) {
+                    this.points = new ArrayList<>();
+                    int pointCount = buf.readInt();
+                    for (int i = 0; i < pointCount; ++i) {
+                        BlockPos point = BlockPos.of(buf.readLong());
+                        this.points.add(point);
+                    }
+                }
+
+                boolean hasPathStyle = buf.readBoolean();
+                if (hasPathStyle) {
+                    this.pathStyle = new FrontierData.PathStyle();
+                    this.pathStyle.fromBytes(buf);
+                }
             }
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketCreateFrontier: %s", t));
@@ -113,6 +135,19 @@ public class PacketCreateFrontier {
                     buf.writeLong(pos.toLong());
                 }
             }
+
+            buf.writeBoolean(points != null);
+            if (points != null) {
+                buf.writeInt(points.size());
+                for (BlockPos pos : points) {
+                    buf.writeLong(pos.asLong());
+                }
+            }
+
+            buf.writeBoolean(pathStyle != null);
+            if (pathStyle != null) {
+                pathStyle.toBytes(buf);
+            }
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketCreateFrontier: %s", t));
         }
@@ -137,7 +172,7 @@ public class PacketCreateFrontier {
 
             ServerFrontierOperationResult result = MapFrontiers.getServerRuntime().getOperationService().createFrontier(player, message.frontierId,
                     message.dimension, message.personal, FrontierData.FrontierLifetime.PERSISTENT, message.sourcePluginId,
-                    message.vertices, message.chunks);
+                    message.vertices, message.chunks, message.points, message.pathStyle);
             if (!result.isSuccess()) {
                 MapFrontiers.LOGGER.warn(
                         "Rejected PacketCreateFrontier from player={} frontierId={} personal={} sourcePluginId={}",

@@ -21,7 +21,9 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUse
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.FrontierAppearanceDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.dialog.PathStyleDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.dialog.VisibilityDialog;
+import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.config.BooleanConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
@@ -88,6 +90,7 @@ public class ModSettings extends AutoScaledScreen {
     private static final String keyHintkey = "mapfrontiers.key.open_settings.hint";
     private static final Component frontiersLabel = Component.translatable("mapfrontiers.frontiers");
     private static final Component frontierAppearanceLabel = Component.translatable("mapfrontiers.frontier_appearance");
+    private static final Component defaultPathStyleLabel = Component.translatable("mapfrontiers.default_path_style");
     private static final Component forcedVisibilityLabel = Component.translatable("mapfrontiers.forced_visibility");
     private static final Component guiLabel = Component.translatable("mapfrontiers.gui");
     private static final Component hudLabel = Component.translatable("mapfrontiers.hud");
@@ -109,7 +112,8 @@ public class ModSettings extends AutoScaledScreen {
     private static final int SECTION_SPACING_MEDIUM = 8;
     private static final int DEFAULT_OPTION_WIDTH = 40;
     private static final int DEFAULT_TEXTBOX_WIDTH = 40;
-    private static final int FRONTIER_BUTTON_WIDTH = 144;
+    private static final int FRONTIER_BUTTON_MIN_WIDTH = 144;
+    private static final int FRONTIER_BUTTON_HORIZONTAL_PADDING = 8;
     private static final int WIDE_BUTTON_EXTRA_WIDTH = 100;
     private static final int WIDE_TEXTBOX_EXTRA_WIDTH = 300;
     private static final int WIDE_LINK_EXTRA_WIDTH = 200;
@@ -125,6 +129,7 @@ public class ModSettings extends AutoScaledScreen {
     private FrontierSettings settings;
     private TabbedBox tabbedBox;
     private SimpleButton buttonFrontierAppearance;
+    private SimpleButton buttonDefaultPathStyle;
     private OptionButton buttonAskConfirmationGroupDelete;
     private OptionButton buttonAskConfirmationUserDelete;
     private SimpleButton buttonEditHUD;
@@ -149,7 +154,7 @@ public class ModSettings extends AutoScaledScreen {
     private final boolean subscribeToSettingsProfileEvents;
 
     public ModSettings(boolean showKeyHint) {
-        super(titleLabel, 696, 366);
+        super(titleLabel, 696, 450);
         this.showKeyHint = showKeyHint;
         subscribeToSettingsProfileEvents = MapFrontiersClient.isJourneyMapPluginAvailable();
 
@@ -269,12 +274,22 @@ public class ModSettings extends AutoScaledScreen {
         row = addOptionSettingRow(settingsGrid, row, ClientConfig.TITLE_ANNOUNCEMENT_ABOVE_HOTBAR);
         row = addOptionSettingRow(settingsGrid, row, ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS);
         row = addIntSettingRow(settingsGrid, row, ClientConfig.SNAP_DISTANCE, DEFAULT_TEXTBOX_WIDTH, 2);
+        row = addIntSettingRow(settingsGrid, row, ClientConfig.PATH_PROXIMITY_ENTER_DISTANCE, DEFAULT_TEXTBOX_WIDTH, 3);
+        row = addIntSettingRow(settingsGrid, row, ClientConfig.PATH_PROXIMITY_EXIT_DISTANCE, DEFAULT_TEXTBOX_WIDTH, 3);
 
-        buttonFrontierAppearance = createWideSimpleButton(FRONTIER_BUTTON_WIDTH, frontierAppearanceLabel,
+        int frontierButtonWidth = ScreenHelper.getPaddedMaxTextWidth(font, FRONTIER_BUTTON_MIN_WIDTH,
+                FRONTIER_BUTTON_HORIZONTAL_PADDING, frontierAppearanceLabel, defaultPathStyleLabel,
+                forcedVisibilityLabel);
+
+        buttonFrontierAppearance = createWideSimpleButton(frontierButtonWidth, frontierAppearanceLabel,
                 b -> onFrontierAppearancePressed());
         settingsGrid.addChild(buttonFrontierAppearance, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
 
-        settingsGrid.addChild(createWideSimpleButton(FRONTIER_BUTTON_WIDTH, forcedVisibilityLabel,
+        buttonDefaultPathStyle = createWideSimpleButton(frontierButtonWidth, defaultPathStyleLabel,
+                b -> onDefaultPathStylePressed());
+        settingsGrid.addChild(buttonDefaultPathStyle, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
+
+        settingsGrid.addChild(createWideSimpleButton(frontierButtonWidth, forcedVisibilityLabel,
                 b -> onForcedVisibilityPressed()), row++, 0, 1, 2,
                 LayoutSettings.defaults().alignHorizontallyCenter());
 
@@ -485,6 +500,16 @@ public class ModSettings extends AutoScaledScreen {
 
     private void onFrontierAppearancePressed() {
         new FrontierAppearanceDialog().display();
+    }
+
+    private void onDefaultPathStylePressed() {
+        new PathStyleDialog(ClientConfig.getDefaultPathStyle(), newPathStyle -> {
+            FrontierData.PathStyle currentStyle = ClientConfig.getDefaultPathStyle();
+            if (!currentStyle.equals(newPathStyle)) {
+                ClientConfig.setDefaultPathStyle(newPathStyle);
+                ClientGlobalEvents.postUpdatedConfigEvent();
+            }
+        }).display();
     }
 
     private void onForcedVisibilityPressed() {
@@ -924,6 +949,7 @@ public class ModSettings extends AutoScaledScreen {
     private void updateButtonsVisibility() {
         buttonEditHUD.visible = tabSelected == Tab.General && ClientConfig.HUD_ENABLED.get() && minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
         buttonFrontierAppearance.visible = tabSelected == Tab.General && minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
+        buttonDefaultPathStyle.visible = tabSelected == Tab.General && minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
         textNewUser.visible = canAddNewUser();
         buttonNewUser.visible = canAddNewUser();
     }
