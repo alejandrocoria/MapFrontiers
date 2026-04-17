@@ -98,13 +98,29 @@ public class ClientFrontierOperationService {
     @Nullable
     public FrontierOverlay createNewFrontierAndReturn(boolean personal, UUID frontierId, ResourceKey<Level> dimension,
                                                       FrontierData.FrontierLifetime lifetime, @Nullable String sourcePluginId, FrontierShape shape) {
-        List<Point2i> shapeVertices = shape.vertices();
-        List<ChunkCoord> shapeChunks = shape.chunks();
-        List<BlockPos> vertices = shapeVertices == null || shapeVertices.isEmpty() ? null : shapeVertices.stream()
-                .map(vertex -> new BlockPos(vertex.x(), 0, vertex.z())).toList();
-        List<ChunkPos> chunks = shapeChunks == null || shapeChunks.isEmpty() ? null : shapeChunks.stream()
-                .map(chunk -> new ChunkPos(chunk.x(), chunk.z())).toList();
-        return createNewFrontierAndReturn(personal, frontierId, dimension, lifetime, sourcePluginId, vertices, chunks, null, null);
+        List<BlockPos> vertices = null;
+        List<ChunkPos> chunks = null;
+        List<BlockPos> points = null;
+
+        switch (shape.type()) {
+            case VERTEX -> {
+                List<Point2i> shapeVertices = shape.vertices();
+                vertices = shapeVertices == null ? List.of() : shapeVertices.stream()
+                        .map(vertex -> new BlockPos(vertex.x(), 0, vertex.z())).toList();
+            }
+            case CHUNK -> {
+                List<ChunkCoord> shapeChunks = shape.chunks();
+                chunks = shapeChunks == null ? List.of() : shapeChunks.stream()
+                        .map(chunk -> new ChunkPos(chunk.x(), chunk.z())).toList();
+            }
+            case PATH -> {
+                List<Point2i> shapePoints = shape.points();
+                points = shapePoints == null ? List.of() : shapePoints.stream()
+                        .map(point -> new BlockPos(point.x(), 0, point.z())).toList();
+            }
+        }
+
+        return createNewFrontierAndReturn(personal, frontierId, dimension, lifetime, sourcePluginId, vertices, chunks, points, null);
     }
 
     @Nullable
