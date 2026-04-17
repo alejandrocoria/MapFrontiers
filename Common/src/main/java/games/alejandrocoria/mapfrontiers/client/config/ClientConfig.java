@@ -386,7 +386,7 @@ public final class ClientConfig {
     public static FrontierData.PathStyle getDefaultPathStyle() {
         FrontierData.PathStyle pathStyle = new FrontierData.PathStyle();
         pathStyle.startMarker = parsePathMarker(PATH_DEFAULT_STYLE_START.get(), FrontierData.PathStyle.BIG_DOT);
-        pathStyle.middleMarker = parsePathMarker(PATH_DEFAULT_STYLE_INNER.get(), FrontierData.PathStyle.NONE);
+        pathStyle.innerMarker = parsePathMarker(PATH_DEFAULT_STYLE_INNER.get(), FrontierData.PathStyle.NONE);
         pathStyle.endMarker = parsePathMarker(PATH_DEFAULT_STYLE_END.get(), FrontierData.PathStyle.BIG_DOT);
         pathStyle.segmentMarker = parsePathMarker(PATH_DEFAULT_STYLE_SEGMENT.get(), FrontierData.PathStyle.SMALL_DOT);
         pathStyle.labelAtStart = PATH_DEFAULT_STYLE_LABEL_AT_START.get();
@@ -399,7 +399,7 @@ public final class ClientConfig {
     public static void setDefaultPathStyle(FrontierData.PathStyle pathStyle) {
         FrontierData.PathStyle normalized = normalizeDefaultPathStyle(pathStyle);
         PATH_DEFAULT_STYLE_START.set(normalized.startMarker.toString());
-        PATH_DEFAULT_STYLE_INNER.set(normalized.middleMarker.toString());
+        PATH_DEFAULT_STYLE_INNER.set(normalized.innerMarker.toString());
         PATH_DEFAULT_STYLE_END.set(normalized.endMarker.toString());
         PATH_DEFAULT_STYLE_SEGMENT.set(normalized.segmentMarker.toString());
         PATH_DEFAULT_STYLE_LABEL_AT_START.set(normalized.labelAtStart);
@@ -418,7 +418,7 @@ public final class ClientConfig {
     private static boolean validateDefaultPathStyle() {
         FrontierData.PathStyle normalized = getDefaultPathStyle();
         boolean dirty = !PATH_DEFAULT_STYLE_START.get().equals(normalized.startMarker.toString())
-                || !PATH_DEFAULT_STYLE_INNER.get().equals(normalized.middleMarker.toString())
+                || !PATH_DEFAULT_STYLE_INNER.get().equals(normalized.innerMarker.toString())
                 || !PATH_DEFAULT_STYLE_END.get().equals(normalized.endMarker.toString())
                 || !PATH_DEFAULT_STYLE_SEGMENT.get().equals(normalized.segmentMarker.toString())
                 || PATH_DEFAULT_STYLE_LABEL_AT_START.get() != normalized.labelAtStart
@@ -505,7 +505,7 @@ public final class ClientConfig {
     private static FrontierData.PathStyle normalizeDefaultPathStyle(FrontierData.PathStyle pathStyle) {
         FrontierData.PathStyle normalized = new FrontierData.PathStyle(pathStyle);
         normalized.startMarker = normalized.startMarker == null ? FrontierData.PathStyle.BIG_DOT : normalized.startMarker;
-        normalized.middleMarker = normalized.middleMarker == null ? FrontierData.PathStyle.NONE : normalized.middleMarker;
+        normalized.innerMarker = normalized.innerMarker == null ? FrontierData.PathStyle.NONE : normalized.innerMarker;
         normalized.endMarker = normalized.endMarker == null ? FrontierData.PathStyle.BIG_DOT : normalized.endMarker;
         normalized.segmentMarker = normalized.segmentMarker == null ? FrontierData.PathStyle.SMALL_DOT : normalized.segmentMarker;
         normalized.normalizeForPersistence();

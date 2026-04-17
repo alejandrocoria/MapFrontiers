@@ -1279,7 +1279,7 @@ public class FrontierData {
         public static final Identifier X_CROSS = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "x_cross");
 
         public Identifier startMarker;
-        public Identifier middleMarker;
+        public Identifier innerMarker;
         public Identifier endMarker;
         public Identifier segmentMarker;
         public boolean labelAtStart;
@@ -1288,7 +1288,7 @@ public class FrontierData {
 
         public PathStyle() {
             startMarker = BIG_DOT;
-            middleMarker = NONE;
+            innerMarker = NONE;
             endMarker = BIG_DOT;
             segmentMarker = SMALL_DOT;
             labelAtStart = true;
@@ -1298,7 +1298,7 @@ public class FrontierData {
 
         public PathStyle(PathStyle other) {
             startMarker = other.startMarker;
-            middleMarker = other.middleMarker;
+            innerMarker = other.innerMarker;
             endMarker = other.endMarker;
             segmentMarker = other.segmentMarker;
             labelAtStart = other.labelAtStart;
@@ -1308,7 +1308,7 @@ public class FrontierData {
 
         public void readFromNBT(CompoundTag nbt) {
             startMarker = readMarkerFromNBT(nbt, "start", BIG_DOT);
-            middleMarker = readMarkerFromNBT(nbt, "middle", NONE);
+            innerMarker = readMarkerFromNBT(nbt, "inner", NONE);
             endMarker = readMarkerFromNBT(nbt, "end", BIG_DOT);
             segmentMarker = readMarkerFromNBT(nbt, "segment", SMALL_DOT);
             labelAtStart = nbt.getBooleanOr("labelAtStart", true);
@@ -1320,7 +1320,7 @@ public class FrontierData {
         public void writeToNBT(CompoundTag nbt) {
             normalizeForPersistence();
             nbt.putString("start", startMarker.toString());
-            nbt.putString("middle", middleMarker.toString());
+            nbt.putString("inner", innerMarker.toString());
             nbt.putString("end", endMarker.toString());
             nbt.putString("segment", segmentMarker.toString());
             nbt.putBoolean("labelAtStart", labelAtStart);
@@ -1330,7 +1330,7 @@ public class FrontierData {
 
         public void fromBytes(FriendlyByteBuf buf) {
             startMarker = normalizeMarkerId(buf.readIdentifier(), BIG_DOT);
-            middleMarker = normalizeMarkerId(buf.readIdentifier(), NONE);
+            innerMarker = normalizeMarkerId(buf.readIdentifier(), NONE);
             endMarker = normalizeMarkerId(buf.readIdentifier(), BIG_DOT);
             segmentMarker = normalizeMarkerId(buf.readIdentifier(), SMALL_DOT);
             labelAtStart = buf.readBoolean();
@@ -1342,7 +1342,7 @@ public class FrontierData {
         public void toBytes(FriendlyByteBuf buf) {
             normalizeForPersistence();
             buf.writeIdentifier(startMarker);
-            buf.writeIdentifier(middleMarker);
+            buf.writeIdentifier(innerMarker);
             buf.writeIdentifier(endMarker);
             buf.writeIdentifier(segmentMarker);
             buf.writeBoolean(labelAtStart);
@@ -1352,7 +1352,7 @@ public class FrontierData {
 
         public void normalizeForPersistence() {
             startMarker = normalizeMarkerId(startMarker, BIG_DOT);
-            middleMarker = normalizeMarkerId(middleMarker, NONE);
+            innerMarker = normalizeMarkerId(innerMarker, NONE);
             endMarker = normalizeMarkerId(endMarker, BIG_DOT);
             segmentMarker = normalizeMarkerId(segmentMarker, SMALL_DOT);
 
@@ -1388,14 +1388,14 @@ public class FrontierData {
                     && labelAtMiddle == otherPathStyle.labelAtMiddle
                     && labelAtEnd == otherPathStyle.labelAtEnd
                     && startMarker.equals(otherPathStyle.startMarker)
-                    && middleMarker.equals(otherPathStyle.middleMarker)
+                    && innerMarker.equals(otherPathStyle.innerMarker)
                     && endMarker.equals(otherPathStyle.endMarker)
                     && segmentMarker.equals(otherPathStyle.segmentMarker);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(startMarker, middleMarker, endMarker, segmentMarker, labelAtStart, labelAtMiddle, labelAtEnd);
+            return Objects.hash(startMarker, innerMarker, endMarker, segmentMarker, labelAtStart, labelAtMiddle, labelAtEnd);
         }
     }
 

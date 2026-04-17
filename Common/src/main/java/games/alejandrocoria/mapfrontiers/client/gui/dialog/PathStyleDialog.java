@@ -49,7 +49,7 @@ public class PathStyleDialog extends AutoScaledScreen {
     private CheckBoxButton checkLabelAtEnd;
     private CheckBoxButton checkLabelAtMiddle;
     private MarkerRow startRow;
-    private MarkerRow middleRow;
+    private MarkerRow innerRow;
     private MarkerRow endRow;
     private MarkerRow segmentRow;
     private boolean syncingWidgets = false;
@@ -87,7 +87,7 @@ public class PathStyleDialog extends AutoScaledScreen {
 
         int row = 0;
         startRow = createMarkerRow(markerGrid, row++, startLabel, workingStyle.startMarker, value -> workingStyle.startMarker = value);
-        middleRow = createMarkerRow(markerGrid, row++, innerPointsLabel, workingStyle.middleMarker, value -> workingStyle.middleMarker = value);
+        innerRow = createMarkerRow(markerGrid, row++, innerPointsLabel, workingStyle.innerMarker, value -> workingStyle.innerMarker = value);
         endRow = createMarkerRow(markerGrid, row++, endLabel, workingStyle.endMarker, value -> workingStyle.endMarker = value);
         segmentRow = createMarkerRow(markerGrid, row, segmentsLabel, workingStyle.segmentMarker, value -> workingStyle.segmentMarker = value);
 
@@ -170,7 +170,7 @@ public class PathStyleDialog extends AutoScaledScreen {
     private void syncWidgetsFromStyle() {
         syncingWidgets = true;
         startRow.applyValue(workingStyle.startMarker);
-        middleRow.applyValue(workingStyle.middleMarker);
+        innerRow.applyValue(workingStyle.innerMarker);
         endRow.applyValue(workingStyle.endMarker);
         segmentRow.applyValue(workingStyle.segmentMarker);
         setCheckBoxValue(checkLabelAtStart, workingStyle.labelAtStart);

@@ -1483,7 +1483,7 @@ public class FrontierOverlay extends FrontierData {
         } else if (pointIndex == points.size() - 1) {
             markerId = pathStyle.endMarker;
         } else {
-            markerId = pathStyle.middleMarker;
+            markerId = pathStyle.innerMarker;
         }
 
         if (FrontierData.PathStyle.NONE.equals(markerId) && !FrontierData.PathStyle.NONE.equals(pathStyle.segmentMarker)) {
@@ -2170,8 +2170,8 @@ public class FrontierOverlay extends FrontierData {
         if (isPathMarkerVisible(pathStyle.endMarker)) {
             return pathStyle.endMarker;
         }
-        if (isPathMarkerVisible(pathStyle.middleMarker)) {
-            return pathStyle.middleMarker;
+        if (isPathMarkerVisible(pathStyle.innerMarker)) {
+            return pathStyle.innerMarker;
         }
         if (isPathMarkerVisible(pathStyle.segmentMarker)) {
             return pathStyle.segmentMarker;
