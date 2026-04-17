@@ -85,15 +85,9 @@ public class FrontierOverlay extends FrontierData {
     private static final int PATH_LABEL_OFFSET_PADDING_PX = 4;
     private static final int INCOMPLETE_VERTEX_FRONTIER_MIN_ZOOM = 512;
     private static final int PATH_REPEATED_MARKER_BASE_MARKER_SIZE = 2;
-    private static final PathRepeatedMarkerZoomBand[] PATH_REPEATED_MARKER_ZOOM_BANDS = {
-            new PathRepeatedMarkerZoomBand(2, 31, 1024.0),
-            new PathRepeatedMarkerZoomBand(32, 63, 128.0),
-            new PathRepeatedMarkerZoomBand(64, 255, 64.0),
-            new PathRepeatedMarkerZoomBand(256, 511, 16.0),
-            new PathRepeatedMarkerZoomBand(512, 2047, 8.0),
-            new PathRepeatedMarkerZoomBand(2048, 8191, 4.0),
-            new PathRepeatedMarkerZoomBand(8192, 16383, 2.0),
-            new PathRepeatedMarkerZoomBand(16384, 0, 1.0)};
+    private static final int PATH_REPEATED_MARKER_MIN_ZOOM = 2;
+    private static final int PATH_REPEATED_MARKER_MAX_ZOOM = 16384;
+    private static final double PATH_REPEATED_MARKER_SPACING_ZOOM_REFERENCE = 8192.0;
     private static final MapImage transparentLabelMarker = createTransparentLabelMarker();
 
     public BlockPos topLeft;
@@ -1464,10 +1458,11 @@ public class FrontierOverlay extends FrontierData {
                 BlockPos nextPoint = points.get(i + 1);
                 float rotation = getSegmentRotation(point, nextPoint);
                 MapImage segmentMarker = resolvePathMarkerImage(pathStyle.segmentMarker, rotation);
-                addRepeatedMarkers(point, nextPoint, uiArray, mapTypesArray, segmentMarker, 99);
+                double segmentSpacingMultiplier = getPathSegmentSpacingMultiplier(pathStyle.segmentMarker);
+                addRepeatedMarkers(point, nextPoint, uiArray, mapTypesArray, segmentMarker, 99, segmentSpacingMultiplier);
                 if (highlighted) {
                     MapImage segmentHighlight = resolvePathMarkerHighlightImage(pathStyle.segmentMarker, rotation);
-                    addRepeatedMarkers(point, nextPoint, uiArray, mapTypesArray, segmentHighlight, 100);
+                    addRepeatedMarkers(point, nextPoint, uiArray, mapTypesArray, segmentHighlight, 100, segmentSpacingMultiplier);
                 }
             }
 
@@ -2051,7 +2046,8 @@ public class FrontierOverlay extends FrontierData {
         }
     }
 
-    private void addRepeatedMarkers(BlockPos from, BlockPos to, Context.UI uiArray, Context.MapType[] mapTypesArray, @Nullable MapImage markerImage, int displayOrder) {
+    private void addRepeatedMarkers(BlockPos from, BlockPos to, Context.UI uiArray, Context.MapType[] mapTypesArray,
+                                    @Nullable MapImage markerImage, int displayOrder, double spacingMultiplier) {
         if (markerImage == null) {
             return;
         }
@@ -2068,8 +2064,10 @@ public class FrontierOverlay extends FrontierData {
             return;
         }
 
-        for (PathRepeatedMarkerZoomBand zoomBand : PATH_REPEATED_MARKER_ZOOM_BANDS) {
-            int markerCount = getRepeatedMarkerCount(zoomBand.scaledTargetSpacingBlocks(), length, repeatedMarkerPositions.size());
+        for (int minZoom = PATH_REPEATED_MARKER_MIN_ZOOM; minZoom <= PATH_REPEATED_MARKER_MAX_ZOOM; minZoom *= 2) {
+            int maxZoom = minZoom == PATH_REPEATED_MARKER_MAX_ZOOM ? 0 : minZoom * 2 - 1;
+            int markerCount = getRepeatedMarkerCount(getRepeatedMarkerTargetSpacing(minZoom) * spacingMultiplier, length,
+                    repeatedMarkerPositions.size());
             double step = (repeatedMarkerPositions.size() + 1) / (double) (markerCount + 1);
             Set<Long> addedPositions = new HashSet<>();
 
@@ -2081,7 +2079,7 @@ public class FrontierOverlay extends FrontierData {
                     continue;
                 }
 
-                addRepeatedMarker(pos, uiArray, mapTypesArray, markerImage, displayOrder, zoomBand.minZoom(), zoomBand.maxZoom());
+                addRepeatedMarker(pos, uiArray, mapTypesArray, markerImage, displayOrder, minZoom, maxZoom);
             }
         }
     }
@@ -2146,10 +2144,10 @@ public class FrontierOverlay extends FrontierData {
         return ((long) x << 32) ^ (z & 0xFFFFFFFFL);
     }
 
-    private record PathRepeatedMarkerZoomBand(int minZoom, int maxZoom, double baseTargetSpacingBlocks) {
-        private double scaledTargetSpacingBlocks() {
-            return baseTargetSpacingBlocks * ClientConfig.PATH_MARKER_SIZE.get() / PATH_REPEATED_MARKER_BASE_MARKER_SIZE;
-        }
+    private static double getRepeatedMarkerTargetSpacing(int minZoom) {
+        return PATH_REPEATED_MARKER_SPACING_ZOOM_REFERENCE / minZoom
+                * ClientConfig.PATH_MARKER_SIZE.get()
+                / PATH_REPEATED_MARKER_BASE_MARKER_SIZE;
     }
 
     private void addSingleMarker(BlockPos pos, @Nullable MapImage markerImage, int displayOrder, Context.UI uiArray, Context.MapType[] mapTypesArray) {
@@ -2185,6 +2183,11 @@ public class FrontierOverlay extends FrontierData {
     private static boolean isPathMarkerVisible(Identifier markerId) {
         PathMarkerCatalog.Entry entry = PathMarkerCatalog.get(markerId);
         return entry != null && entry.texture() != null;
+    }
+
+    private static double getPathSegmentSpacingMultiplier(Identifier markerId) {
+        PathMarkerCatalog.Entry entry = PathMarkerCatalog.get(markerId);
+        return entry == null ? 1.0 : entry.segmentSpacingMultiplier();
     }
 
     private static double distanceToPolylineSq(BlockPos pos, List<BlockPos> polyline, boolean closed) {

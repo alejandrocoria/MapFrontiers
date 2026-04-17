@@ -19,21 +19,21 @@ import java.util.Optional;
 
 @ParametersAreNonnullByDefault
 public final class PathMarkerCatalog {
-    public record Entry(Identifier id, @Nullable Identifier texture, boolean directional) {
+    public record Entry(Identifier id, @Nullable Identifier texture, boolean directional, double segmentSpacingMultiplier) {
     }
 
     public static final List<Entry> BUILT_INS = List.of(
-            entry(FrontierData.PathStyle.NONE, null, false),
-            entry(FrontierData.PathStyle.BIG_DOT, "big_dot", false),
-            entry(FrontierData.PathStyle.SMALL_DOT, "small_dot", false),
-            entry(FrontierData.PathStyle.RING, "ring", false),
-            entry(FrontierData.PathStyle.BIG_SQUARE, "big_square", false),
-            entry(FrontierData.PathStyle.SMALL_SQUARE, "small_square", false),
-            entry(FrontierData.PathStyle.DIAMOND, "diamond", false),
-            entry(FrontierData.PathStyle.X_CROSS, "x_cross", false),
-            entry(FrontierData.PathStyle.TRIANGLE, "triangle", true),
-            entry(FrontierData.PathStyle.ARROW, "arrow", true),
-            entry(FrontierData.PathStyle.CHEVRON, "chevron", true)
+            entry(FrontierData.PathStyle.NONE, null, false, 1.0),
+            entry(FrontierData.PathStyle.BIG_DOT, "big_dot", false, 2.0),
+            entry(FrontierData.PathStyle.SMALL_DOT, "small_dot", false, 1.0),
+            entry(FrontierData.PathStyle.RING, "ring", false, 1.5),
+            entry(FrontierData.PathStyle.BIG_SQUARE, "big_square", false, 2.0),
+            entry(FrontierData.PathStyle.SMALL_SQUARE, "small_square", false, 1.0),
+            entry(FrontierData.PathStyle.DIAMOND, "diamond", false, 1.5),
+            entry(FrontierData.PathStyle.X_CROSS, "x_cross", false, 1.5),
+            entry(FrontierData.PathStyle.TRIANGLE, "triangle", true, 1.5),
+            entry(FrontierData.PathStyle.ARROW, "arrow", true, 1.5),
+            entry(FrontierData.PathStyle.CHEVRON, "chevron", true, 1.5)
     );
     private static final HighlightTextureCache HIGHLIGHT_TEXTURE_CACHE = new HighlightTextureCache();
 
@@ -55,10 +55,10 @@ public final class PathMarkerCatalog {
         return entry == null ? null : HIGHLIGHT_TEXTURE_CACHE.get(entry.texture());
     }
 
-    private static Entry entry(Identifier id, @Nullable String textureName, boolean directional) {
+    private static Entry entry(Identifier id, @Nullable String textureName, boolean directional, double segmentSpacingMultiplier) {
         Identifier texture = textureName == null ? null
                 : Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/markers/path/" + textureName + ".png");
-        return new Entry(id, texture, directional);
+        return new Entry(id, texture, directional, segmentSpacingMultiplier);
     }
 
     private static class HighlightTextureCache {
