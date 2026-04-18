@@ -365,14 +365,6 @@ public class MapFrontiersClient {
         return manager == null ? null : manager.getFrontierCopiedFrom(copiedFromId);
     }
 
-    public static List<FrontierOverlay> getFrontiersInPosition(ResourceKey<Level> dimension, BlockPos pos) {
-        return getFrontiersInPosition(dimension, pos, 0.0);
-    }
-
-    public static List<FrontierOverlay> getFrontiersInPosition(ResourceKey<Level> dimension, BlockPos pos, double maxDistanceToOpen) {
-        return getFrontiersInPosition(dimension, pos, maxDistanceToOpen, null);
-    }
-
     public static List<FrontierOverlay> getFrontiersInPosition(ResourceKey<Level> dimension, BlockPos pos, double maxDistanceToOpen,
                                                               @Nullable Context.MapType fullscreenMapType) {
         FrontiersOverlayManager personalFrontiersOverlayManager = getFrontiersOverlayManagerOrNull(true);

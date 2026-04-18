@@ -93,19 +93,6 @@ public final class ApiConverters {
         );
     }
 
-    public static FrontierData.PathStyle toPathStyle(PathStyle pathStyle) {
-        FrontierData.PathStyle result = new FrontierData.PathStyle();
-        result.startMarker = Identifier.parse(pathStyle.startMarker().value());
-        result.innerMarker = Identifier.parse(pathStyle.innerMarker().value());
-        result.endMarker = Identifier.parse(pathStyle.endMarker().value());
-        result.segmentMarker = Identifier.parse(pathStyle.segmentMarker().value());
-        result.labelAtStart = pathStyle.labelAtStart();
-        result.labelAtMiddle = pathStyle.labelAtMiddle();
-        result.labelAtEnd = pathStyle.labelAtEnd();
-        result.normalizeForPersistence();
-        return result;
-    }
-
     public static SharedUserAccess fromSharedUser(SettingsUserShared userShared) {
         EnumSet<FrontierSharePermission> permissions = EnumSet.noneOf(FrontierSharePermission.class);
         for (SettingsUserShared.Action action : userShared.getActions()) {

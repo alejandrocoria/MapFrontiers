@@ -279,10 +279,6 @@ public class FrontierChange {
         this.banner = new BannerChange(banner == null ? null : new FrontierData.BannerData(banner));
     }
 
-    public void setShape(List<BlockPos> vertices, Set<ChunkPos> chunks, FrontierData.Mode mode) {
-        setShape(vertices, chunks, List.of(), mode);
-    }
-
     public void setShape(List<BlockPos> vertices, Set<ChunkPos> chunks, List<BlockPos> points, FrontierData.Mode mode) {
         shape = new ShapeChange(vertices, chunks, points, mode);
     }

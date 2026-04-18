@@ -28,12 +28,6 @@ public final class FrontierMutationApplier {
 
     public static void applyCreationShape(FrontierData frontier,
                                           @Nullable List<BlockPos> vertices,
-                                          @Nullable List<ChunkPos> chunks) {
-        applyCreationShape(frontier, vertices, chunks, null);
-    }
-
-    public static void applyCreationShape(FrontierData frontier,
-                                          @Nullable List<BlockPos> vertices,
                                           @Nullable List<ChunkPos> chunks,
                                           @Nullable List<BlockPos> points) {
         if (vertices != null) {
