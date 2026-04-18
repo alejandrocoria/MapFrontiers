@@ -75,7 +75,10 @@ public class MapFrontiersClient {
     protected static KeyMapping openSettingsKey;
     private static HUD hud;
 
-    private static BlockPos lastPlayerPosition = new BlockPos(0, 0, 0);
+    private static @Nullable BlockPos lastPlayerPosition = null;
+    private static @Nullable ResourceKey<Level> lastPlayerDimension = null;
+    private static boolean frontierActivationDirty = true;
+    private static long hudActiveFrontiersRevision = 0L;
     private static final List<FrontierOverlay> hudActiveFrontiers = new ArrayList<>();
     private static final Set<UUID> hudActiveFrontierIds = new HashSet<>();
     private static final Map<UUID, FrontierOverlay> announcementActiveFrontiers = new HashMap<>();
@@ -93,6 +96,7 @@ public class MapFrontiersClient {
         ClientGlobalEvents.subscribeHudRenderEvent(MapFrontiersClient.class, MapFrontiersClient::handleHudRender);
         ClientGlobalEvents.subscribeClientConnectedEvent(MapFrontiersClient.class, MapFrontiersClient::handleClientConnected);
         ClientGlobalEvents.subscribeClientDisconnectedEvent(MapFrontiersClient.class, MapFrontiersClient::handleClientDisconnected);
+        ClientGlobalEvents.subscribeUpdatedConfigEvent(MapFrontiersClient.class, MapFrontiersClient::markFrontierActivationDirty);
     }
 
     private static void handleClientTick(Minecraft client) {
@@ -126,8 +130,7 @@ public class MapFrontiersClient {
             return;
         }
 
-        updateHudActiveFrontiers(player);
-        handleFrontierAnnouncements(client, player);
+        updateFrontierActivationState(client, player);
     }
 
     private static void handleWorldChange(Minecraft client) {
@@ -162,11 +165,26 @@ public class MapFrontiersClient {
         }
     }
 
-    private static void handleFrontierAnnouncements(Minecraft client, Player player) {
+    private static void updateFrontierActivationState(Minecraft client, Player player) {
         BlockPos currentPlayerPosition = player.blockPosition();
-        lastPlayerPosition = currentPlayerPosition;
+        ResourceKey<Level> currentPlayerDimension = player.level().dimension();
 
-        Map<UUID, FrontierOverlay> currentlyActiveFrontiers = collectAnnouncementActiveFrontiers(player.level().dimension(), currentPlayerPosition);
+        if (!frontierActivationDirty
+                && currentPlayerPosition.equals(lastPlayerPosition)
+                && currentPlayerDimension.equals(lastPlayerDimension)) {
+            return;
+        }
+
+        lastPlayerPosition = currentPlayerPosition;
+        lastPlayerDimension = currentPlayerDimension;
+        frontierActivationDirty = false;
+
+        updateHudActiveFrontiers(currentPlayerDimension, currentPlayerPosition);
+        handleFrontierAnnouncements(client, player, currentPlayerDimension, currentPlayerPosition);
+    }
+
+    private static void handleFrontierAnnouncements(Minecraft client, Player player, ResourceKey<Level> dimension, BlockPos playerPosition) {
+        Map<UUID, FrontierOverlay> currentlyActiveFrontiers = collectAnnouncementActiveFrontiers(dimension, playerPosition);
 
         for (FrontierOverlay frontier : announcementActiveFrontiers.values()) {
             if (!currentlyActiveFrontiers.containsKey(frontier.getId())) {
@@ -383,6 +401,10 @@ public class MapFrontiersClient {
         return List.copyOf(hudActiveFrontiers);
     }
 
+    public static long getHudActiveFrontiersRevision() {
+        return hudActiveFrontiersRevision;
+    }
+
     public static FrontierLocalOverrides getLocalOverrides() {
         ClientFrontierRuntime runtime = requireFrontierRuntime();
         return runtime.getLocalOverrides();
@@ -546,14 +568,32 @@ public class MapFrontiersClient {
         return clipboard;
     }
 
-    private static void updateHudActiveFrontiers(Player player) {
-        List<FrontierOverlay> currentlyActiveFrontiers = collectHudActiveFrontiers(player.level().dimension(), player.blockPosition());
+    private static void updateHudActiveFrontiers(ResourceKey<Level> dimension, BlockPos playerPosition) {
+        List<FrontierOverlay> currentlyActiveFrontiers = collectHudActiveFrontiers(dimension, playerPosition);
+        boolean changed = hasActiveHudFrontiersChanged(currentlyActiveFrontiers);
         hudActiveFrontiers.clear();
         hudActiveFrontiers.addAll(currentlyActiveFrontiers);
         hudActiveFrontierIds.clear();
         for (FrontierOverlay frontier : currentlyActiveFrontiers) {
             hudActiveFrontierIds.add(frontier.getId());
         }
+        if (changed) {
+            ++hudActiveFrontiersRevision;
+        }
+    }
+
+    private static boolean hasActiveHudFrontiersChanged(List<FrontierOverlay> currentlyActiveFrontiers) {
+        if (hudActiveFrontiers.size() != currentlyActiveFrontiers.size()) {
+            return true;
+        }
+
+        for (int i = 0; i < currentlyActiveFrontiers.size(); ++i) {
+            if (hudActiveFrontiers.get(i) != currentlyActiveFrontiers.get(i)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static List<FrontierOverlay> collectHudActiveFrontiers(ResourceKey<Level> dimension, BlockPos pos) {
@@ -630,9 +670,19 @@ public class MapFrontiersClient {
     }
 
     private static void clearFrontierActivationState() {
-        lastPlayerPosition = new BlockPos(0, 0, 0);
+        boolean hadActiveHudFrontiers = !hudActiveFrontiers.isEmpty();
+        lastPlayerPosition = null;
+        lastPlayerDimension = null;
+        frontierActivationDirty = true;
         hudActiveFrontiers.clear();
         hudActiveFrontierIds.clear();
         announcementActiveFrontiers.clear();
+        if (hadActiveHudFrontiers) {
+            ++hudActiveFrontiersRevision;
+        }
+    }
+
+    public static void markFrontierActivationDirty() {
+        frontierActivationDirty = true;
     }
 }

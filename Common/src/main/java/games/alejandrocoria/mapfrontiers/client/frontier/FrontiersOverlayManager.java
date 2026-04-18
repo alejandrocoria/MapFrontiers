@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.frontier;
 
+import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
@@ -57,6 +58,7 @@ public class FrontiersOverlayManager {
 
         FrontierOverlay frontierOverlay = new FrontierOverlay(data, jmAPI);
         frontiers.add(frontierOverlay);
+        MapFrontiersClient.markFrontierActivationDirty();
 
         return frontierOverlay;
     }
@@ -64,6 +66,7 @@ public class FrontiersOverlayManager {
     public void addFrontier(FrontierOverlay frontierOverlay) {
         List<FrontierOverlay> frontiers = getAllFrontiers(frontierOverlay.getDimension());
         frontiers.add(frontierOverlay);
+        MapFrontiersClient.markFrontierActivationDirty();
     }
 
     public FrontierOverlay deleteFrontier(UUID id) {
@@ -88,6 +91,7 @@ public class FrontiersOverlayManager {
 
         FrontierOverlay frontier = frontiers.remove(index);
         frontier.deleted();
+        MapFrontiersClient.markFrontierActivationDirty();
 
         return frontier;
     }
@@ -103,6 +107,7 @@ public class FrontiersOverlayManager {
 
         FrontierOverlay frontierOverlay = frontiers.get(index);
         frontierOverlay.applyChange(change);
+        MapFrontiersClient.markFrontierActivationDirty();
         return frontierOverlay;
     }
 
@@ -142,6 +147,7 @@ public class FrontiersOverlayManager {
             }
         }
         dimensionsFrontiers.clear();
+        MapFrontiersClient.markFrontierActivationDirty();
     }
 
     public List<FrontierOverlay> getFrontiersInPosition(ResourceKey<Level> dimension, BlockPos pos, double maxDistanceToOpen,
