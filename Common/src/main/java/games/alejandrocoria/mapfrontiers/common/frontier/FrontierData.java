@@ -686,7 +686,12 @@ public class FrontierData {
         name1 = nbt.getStringOr("name1", "");
         name2 = nbt.getStringOr("name2", "");
 
-        visibilityData.readFromNBT(nbt, version);
+        if (version < 10) {
+            visibilityData.readFromLegacyNBT(nbt);
+        } else {
+            CompoundTag visibilityTag = version == 10 ? nbt : nbt.getCompoundOrEmpty("visibility");
+            visibilityData.readFromNBT(visibilityTag);
+        }
 
         personal = nbt.getBooleanOr("personal", true);
         lifetime = readLifetimeFromNbt(nbt);
@@ -800,7 +805,9 @@ public class FrontierData {
         nbt.putString("dimension", dimension.identifier().toString());
         nbt.putString("name1", name1);
         nbt.putString("name2", name2);
-        visibilityData.writeToNBT(nbt);
+        CompoundTag visibilityTag = new CompoundTag();
+        visibilityData.writeToNBT(visibilityTag);
+        nbt.put("visibility", visibilityTag);
         nbt.putBoolean("personal", personal);
         nbt.putString("lifetime", lifetime.name());
         if (sourcePluginId != null) {
@@ -1508,71 +1515,69 @@ public class FrontierData {
             return !values.isEmpty();
         }
 
-        public void readFromNBT(CompoundTag nbt, int version) {
-            boolean splitVisibility = version >= 10;
-
+        public void readFromLegacyNBT(CompoundTag nbt) {
             setValue(Visibility.Frontier, NbtReadHelper.requireBoolean(nbt, "visible"));
-            if (splitVisibility)
-            {
-                setValue(Visibility.Fullscreen, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenVisible", true));
-                setValue(Visibility.FullscreenName, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenNameVisible", true));
-                setValue(Visibility.FullscreenOwner, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenOwnerVisible", false));
-                setValue(Visibility.FullscreenBanner, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenBannerVisible", false));
-                setValue(Visibility.FullscreenDay, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenDay", true));
-                setValue(Visibility.FullscreenNight, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenNight", true));
-                setValue(Visibility.FullscreenUnderground, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenUnderground", true));
-                setValue(Visibility.FullscreenTopo, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenTopo", true));
-                setValue(Visibility.FullscreenBiome, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenBiome", true));
-                setValue(Visibility.Minimap, NbtReadHelper.getBooleanOrDefault(nbt, "minimapVisible", true));
-                setValue(Visibility.MinimapName, NbtReadHelper.getBooleanOrDefault(nbt, "minimapNameVisible", true));
-                setValue(Visibility.MinimapOwner, NbtReadHelper.getBooleanOrDefault(nbt, "minimapOwnerVisible", false));
-                setValue(Visibility.MinimapBanner, NbtReadHelper.getBooleanOrDefault(nbt, "minimapBannerVisible", false));
-                setValue(Visibility.MinimapDay, NbtReadHelper.getBooleanOrDefault(nbt, "minimapDay", true));
-                setValue(Visibility.MinimapNight, NbtReadHelper.getBooleanOrDefault(nbt, "minimapNight", true));
-                setValue(Visibility.MinimapUnderground, NbtReadHelper.getBooleanOrDefault(nbt, "minimapUnderground", true));
-                setValue(Visibility.MinimapTopo, NbtReadHelper.getBooleanOrDefault(nbt, "minimapTopo", true));
-                setValue(Visibility.MinimapBiome, NbtReadHelper.getBooleanOrDefault(nbt, "minimapBiome", true));
-                setValue(Visibility.Webmap, NbtReadHelper.getBooleanOrDefault(nbt, "webmapVisible", getValue(Visibility.Minimap)));
-                setValue(Visibility.WebmapName, NbtReadHelper.getBooleanOrDefault(nbt, "webmapNameVisible", getValue(Visibility.MinimapName)));
-                setValue(Visibility.WebmapOwner, NbtReadHelper.getBooleanOrDefault(nbt, "webmapOwnerVisible", getValue(Visibility.MinimapOwner)));
-                setValue(Visibility.WebmapBanner, NbtReadHelper.getBooleanOrDefault(nbt, "webmapBannerVisible", getValue(Visibility.MinimapBanner)));
-                setValue(Visibility.WebmapDay, NbtReadHelper.getBooleanOrDefault(nbt, "webmapDay", getValue(Visibility.MinimapDay)));
-                setValue(Visibility.WebmapNight, NbtReadHelper.getBooleanOrDefault(nbt, "webmapNight", getValue(Visibility.MinimapNight)));
-                setValue(Visibility.WebmapUnderground, NbtReadHelper.getBooleanOrDefault(nbt, "webmapUnderground", getValue(Visibility.MinimapUnderground)));
-                setValue(Visibility.WebmapTopo, NbtReadHelper.getBooleanOrDefault(nbt, "webmapTopo", getValue(Visibility.MinimapTopo)));
-                setValue(Visibility.WebmapBiome, NbtReadHelper.getBooleanOrDefault(nbt, "webmapBiome", getValue(Visibility.MinimapBiome)));
-            }
-            else
-            {
-                setValue(Visibility.Fullscreen, NbtReadHelper.requireBoolean(nbt, "visible"));
-                setValue(Visibility.FullscreenName, NbtReadHelper.requireBoolean(nbt, "visible"));
-                setValue(Visibility.FullscreenOwner, NbtReadHelper.requireBoolean(nbt, "nameVisible"));
-                setValue(Visibility.FullscreenBanner, false);
-                setValue(Visibility.FullscreenDay, NbtReadHelper.requireBoolean(nbt, "visible"));
-                setValue(Visibility.FullscreenNight, NbtReadHelper.requireBoolean(nbt, "visible"));
-                setValue(Visibility.FullscreenUnderground, NbtReadHelper.requireBoolean(nbt, "visible"));
-                setValue(Visibility.FullscreenTopo, NbtReadHelper.requireBoolean(nbt, "visible"));
-                setValue(Visibility.FullscreenBiome, NbtReadHelper.requireBoolean(nbt, "visible"));
-                setValue(Visibility.Minimap, NbtReadHelper.requireBoolean(nbt, "visible"));
-                setValue(Visibility.MinimapName, NbtReadHelper.requireBoolean(nbt, "nameVisible"));
-                setValue(Visibility.MinimapOwner, NbtReadHelper.requireBoolean(nbt, "ownerVisible"));
-                setValue(Visibility.MinimapBanner, false);
-                setValue(Visibility.MinimapDay, NbtReadHelper.requireBoolean(nbt, "visible"));
-                setValue(Visibility.MinimapNight, NbtReadHelper.requireBoolean(nbt, "visible"));
-                setValue(Visibility.MinimapUnderground, NbtReadHelper.requireBoolean(nbt, "visible"));
-                setValue(Visibility.MinimapTopo, NbtReadHelper.requireBoolean(nbt, "visible"));
-                setValue(Visibility.MinimapBiome, NbtReadHelper.requireBoolean(nbt, "visible"));
-                setValue(Visibility.Webmap, NbtReadHelper.requireBoolean(nbt, "visible"));
-                setValue(Visibility.WebmapName, NbtReadHelper.requireBoolean(nbt, "nameVisible"));
-                setValue(Visibility.WebmapOwner, NbtReadHelper.requireBoolean(nbt, "ownerVisible"));
-                setValue(Visibility.WebmapBanner, false);
-                setValue(Visibility.WebmapDay, NbtReadHelper.requireBoolean(nbt, "visible"));
-                setValue(Visibility.WebmapNight, NbtReadHelper.requireBoolean(nbt, "visible"));
-                setValue(Visibility.WebmapUnderground, NbtReadHelper.requireBoolean(nbt, "visible"));
-                setValue(Visibility.WebmapTopo, NbtReadHelper.requireBoolean(nbt, "visible"));
-                setValue(Visibility.WebmapBiome, NbtReadHelper.requireBoolean(nbt, "visible"));
-            }
+            setValue(Visibility.Fullscreen, NbtReadHelper.requireBoolean(nbt, "visible"));
+            setValue(Visibility.FullscreenName, NbtReadHelper.requireBoolean(nbt, "visible"));
+            setValue(Visibility.FullscreenOwner, NbtReadHelper.requireBoolean(nbt, "nameVisible"));
+            setValue(Visibility.FullscreenBanner, false);
+            setValue(Visibility.FullscreenDay, NbtReadHelper.requireBoolean(nbt, "visible"));
+            setValue(Visibility.FullscreenNight, NbtReadHelper.requireBoolean(nbt, "visible"));
+            setValue(Visibility.FullscreenUnderground, NbtReadHelper.requireBoolean(nbt, "visible"));
+            setValue(Visibility.FullscreenTopo, NbtReadHelper.requireBoolean(nbt, "visible"));
+            setValue(Visibility.FullscreenBiome, NbtReadHelper.requireBoolean(nbt, "visible"));
+            setValue(Visibility.Minimap, NbtReadHelper.requireBoolean(nbt, "visible"));
+            setValue(Visibility.MinimapName, NbtReadHelper.requireBoolean(nbt, "nameVisible"));
+            setValue(Visibility.MinimapOwner, NbtReadHelper.requireBoolean(nbt, "ownerVisible"));
+            setValue(Visibility.MinimapBanner, false);
+            setValue(Visibility.MinimapDay, NbtReadHelper.requireBoolean(nbt, "visible"));
+            setValue(Visibility.MinimapNight, NbtReadHelper.requireBoolean(nbt, "visible"));
+            setValue(Visibility.MinimapUnderground, NbtReadHelper.requireBoolean(nbt, "visible"));
+            setValue(Visibility.MinimapTopo, NbtReadHelper.requireBoolean(nbt, "visible"));
+            setValue(Visibility.MinimapBiome, NbtReadHelper.requireBoolean(nbt, "visible"));
+            setValue(Visibility.Webmap, NbtReadHelper.requireBoolean(nbt, "visible"));
+            setValue(Visibility.WebmapName, NbtReadHelper.requireBoolean(nbt, "nameVisible"));
+            setValue(Visibility.WebmapOwner, NbtReadHelper.requireBoolean(nbt, "ownerVisible"));
+            setValue(Visibility.WebmapBanner, false);
+            setValue(Visibility.WebmapDay, NbtReadHelper.requireBoolean(nbt, "visible"));
+            setValue(Visibility.WebmapNight, NbtReadHelper.requireBoolean(nbt, "visible"));
+            setValue(Visibility.WebmapUnderground, NbtReadHelper.requireBoolean(nbt, "visible"));
+            setValue(Visibility.WebmapTopo, NbtReadHelper.requireBoolean(nbt, "visible"));
+            setValue(Visibility.WebmapBiome, NbtReadHelper.requireBoolean(nbt, "visible"));
 
+            setValue(Visibility.AnnounceInChat, NbtReadHelper.getBooleanOrDefault(nbt, "announceInChat", false));
+            setValue(Visibility.AnnounceInTitle, NbtReadHelper.getBooleanOrDefault(nbt, "announceInTitle", false));
+        }
+
+        public void readFromNBT(CompoundTag nbt) {
+            setValue(Visibility.Frontier, NbtReadHelper.requireBoolean(nbt, "visible"));
+            setValue(Visibility.Fullscreen, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenVisible", true));
+            setValue(Visibility.FullscreenName, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenNameVisible", true));
+            setValue(Visibility.FullscreenOwner, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenOwnerVisible", false));
+            setValue(Visibility.FullscreenBanner, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenBannerVisible", false));
+            setValue(Visibility.FullscreenDay, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenDay", true));
+            setValue(Visibility.FullscreenNight, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenNight", true));
+            setValue(Visibility.FullscreenUnderground, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenUnderground", true));
+            setValue(Visibility.FullscreenTopo, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenTopo", true));
+            setValue(Visibility.FullscreenBiome, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenBiome", true));
+            setValue(Visibility.Minimap, NbtReadHelper.getBooleanOrDefault(nbt, "minimapVisible", true));
+            setValue(Visibility.MinimapName, NbtReadHelper.getBooleanOrDefault(nbt, "minimapNameVisible", true));
+            setValue(Visibility.MinimapOwner, NbtReadHelper.getBooleanOrDefault(nbt, "minimapOwnerVisible", false));
+            setValue(Visibility.MinimapBanner, NbtReadHelper.getBooleanOrDefault(nbt, "minimapBannerVisible", false));
+            setValue(Visibility.MinimapDay, NbtReadHelper.getBooleanOrDefault(nbt, "minimapDay", true));
+            setValue(Visibility.MinimapNight, NbtReadHelper.getBooleanOrDefault(nbt, "minimapNight", true));
+            setValue(Visibility.MinimapUnderground, NbtReadHelper.getBooleanOrDefault(nbt, "minimapUnderground", true));
+            setValue(Visibility.MinimapTopo, NbtReadHelper.getBooleanOrDefault(nbt, "minimapTopo", true));
+            setValue(Visibility.MinimapBiome, NbtReadHelper.getBooleanOrDefault(nbt, "minimapBiome", true));
+            setValue(Visibility.Webmap, NbtReadHelper.getBooleanOrDefault(nbt, "webmapVisible", getValue(Visibility.Minimap)));
+            setValue(Visibility.WebmapName, NbtReadHelper.getBooleanOrDefault(nbt, "webmapNameVisible", getValue(Visibility.MinimapName)));
+            setValue(Visibility.WebmapOwner, NbtReadHelper.getBooleanOrDefault(nbt, "webmapOwnerVisible", getValue(Visibility.MinimapOwner)));
+            setValue(Visibility.WebmapBanner, NbtReadHelper.getBooleanOrDefault(nbt, "webmapBannerVisible", getValue(Visibility.MinimapBanner)));
+            setValue(Visibility.WebmapDay, NbtReadHelper.getBooleanOrDefault(nbt, "webmapDay", getValue(Visibility.MinimapDay)));
+            setValue(Visibility.WebmapNight, NbtReadHelper.getBooleanOrDefault(nbt, "webmapNight", getValue(Visibility.MinimapNight)));
+            setValue(Visibility.WebmapUnderground, NbtReadHelper.getBooleanOrDefault(nbt, "webmapUnderground", getValue(Visibility.MinimapUnderground)));
+            setValue(Visibility.WebmapTopo, NbtReadHelper.getBooleanOrDefault(nbt, "webmapTopo", getValue(Visibility.MinimapTopo)));
+            setValue(Visibility.WebmapBiome, NbtReadHelper.getBooleanOrDefault(nbt, "webmapBiome", getValue(Visibility.MinimapBiome)));
             setValue(Visibility.AnnounceInChat, NbtReadHelper.getBooleanOrDefault(nbt, "announceInChat", false));
             setValue(Visibility.AnnounceInTitle, NbtReadHelper.getBooleanOrDefault(nbt, "announceInTitle", false));
         }
