@@ -4,6 +4,7 @@
 * Changed: Incomplete Vertex frontiers now have a distinct temporary look.
 * Changed: Frontier names now support up to 48 characters per line, and the frontier info and list screens were updated to display longer names more cleanly.
 * Changed: Frontier labels and banners now use improved shape-aware placement, keeping them better inside the frontier.
+* Changed: Selected frontiers now remain highlighted on the fullscreen map even when hidden by visibility settings.
 * Fixed: Strange behavior of the maximum limit of int text box.
 
 **Beta 1:**

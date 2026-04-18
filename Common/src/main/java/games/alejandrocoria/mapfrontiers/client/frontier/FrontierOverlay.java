@@ -88,6 +88,13 @@ public class FrontierOverlay extends FrontierData {
     private static final int PATH_REPEATED_MARKER_MIN_ZOOM = 2;
     private static final int PATH_REPEATED_MARKER_MAX_ZOOM = 16384;
     private static final double PATH_REPEATED_MARKER_SPACING_ZOOM_REFERENCE = 8192.0;
+    private static final Context.MapType[] HIGHLIGHT_MAP_TYPES = {
+            Context.MapType.Day,
+            Context.MapType.Night,
+            Context.MapType.Underground,
+            Context.MapType.Topo,
+            Context.MapType.Biome
+    };
     private static final MapImage transparentLabelMarker = createTransparentLabelMarker();
 
     public BlockPos topLeft;
@@ -101,8 +108,10 @@ public class FrontierOverlay extends FrontierData {
 
     private final IClientAPI jmAPI;
     private final List<PolygonOverlay> polygonOverlays = new ArrayList<>();
+    private final List<PolygonOverlay> highlightPolygonOverlays = new ArrayList<>();
     private Area polygonArea;
     private final List<MarkerOverlay> markerOverlays = new ArrayList<>();
+    private final List<MarkerOverlay> highlightMarkerOverlays = new ArrayList<>();
     private final List<MarkerOverlay> labelOverlays = new ArrayList<>();
     private final BannerRenderer bannerRenderer = new BannerRenderer();
     private int previewTextSize = -1;
@@ -209,22 +218,35 @@ public class FrontierOverlay extends FrontierData {
         removeOverlay();
         recalculateOverlays();
 
-        if (ClientConfig.getVisibilityValue(ClientConfig.FRONTIER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Frontier))) {
-            try {
-                for (PolygonOverlay polygon : polygonOverlays) {
-                    jmAPI.show(polygon);
-                }
-
-                for (MarkerOverlay marker : markerOverlays) {
-                    jmAPI.show(marker);
-                }
-
-                for (MarkerOverlay label : labelOverlays) {
-                    jmAPI.show(label);
-                }
-            } catch (Throwable t) {
-                MapFrontiers.LOGGER.error(t.getMessage(), t);
+        try {
+            if (isFrontierVisible()) {
+                showPolygonOverlays(polygonOverlays);
+                showMarkerOverlays(markerOverlays);
+                showMarkerOverlays(labelOverlays);
             }
+
+            if (highlighted) {
+                showPolygonOverlays(highlightPolygonOverlays);
+                showMarkerOverlays(highlightMarkerOverlays);
+            }
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error(t.getMessage(), t);
+        }
+    }
+
+    private boolean isFrontierVisible() {
+        return ClientConfig.getVisibilityValue(ClientConfig.FRONTIER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Frontier));
+    }
+
+    private void showPolygonOverlays(List<PolygonOverlay> overlays) throws Exception {
+        for (PolygonOverlay polygon : overlays) {
+            jmAPI.show(polygon);
+        }
+    }
+
+    private void showMarkerOverlays(List<MarkerOverlay> overlays) throws Exception {
+        for (MarkerOverlay marker : overlays) {
+            jmAPI.show(marker);
         }
     }
 
@@ -233,7 +255,15 @@ public class FrontierOverlay extends FrontierData {
             jmAPI.remove(polygon);
         }
 
+        for (PolygonOverlay polygon : highlightPolygonOverlays) {
+            jmAPI.remove(polygon);
+        }
+
         for (MarkerOverlay marker : markerOverlays) {
+            jmAPI.remove(marker);
+        }
+
+        for (MarkerOverlay marker : highlightMarkerOverlays) {
             jmAPI.remove(marker);
         }
 
@@ -679,6 +709,25 @@ public class FrontierOverlay extends FrontierData {
         return effectiveVisibilityData.getValue(visibility);
     }
 
+    public boolean isVisibleOnFullscreenMap(Context.MapType mapType) {
+        if (!isFrontierVisible()) {
+            return false;
+        }
+
+        if (!ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Fullscreen))) {
+            return false;
+        }
+
+        return switch (mapType) {
+            case Day -> ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenDay));
+            case Night -> ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_NIGHT_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenNight));
+            case Underground -> ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_UNDERGROUND_VISIBILITY.get(),
+                    getVisibility(VisibilityData.Visibility.FullscreenUnderground));
+            case Topo -> ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_TOPO_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenTopo));
+            case Biome -> ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenBiome));
+        };
+    }
+
     public void setVisibilityData(VisibilityData visibilityData) {
         super.setVisibilityData(visibilityData);
         setVisibilityOverride(MapFrontiersClient.getLocalOverrides().getVisibility(id));
@@ -1105,7 +1154,9 @@ public class FrontierOverlay extends FrontierData {
 
     public void recalculateOverlays() {
         polygonOverlays.clear();
+        highlightPolygonOverlays.clear();
         markerOverlays.clear();
+        highlightMarkerOverlays.clear();
         labelOverlays.clear();
 
         updateBounds();
@@ -1123,110 +1174,137 @@ public class FrontierOverlay extends FrontierData {
                 .setFillOpacity(ClientConfig.POLYGONS_OPACITY.get().floatValue());
 
         if (mode == Mode.Vertex) {
-            recalculateVertices(shapeProps);
+            recalculateVertices(shapeProps, highlighted ? createHighlightShapeProperties() : null);
         } else if (mode == Mode.Path) {
             recalculatePath();
         } else {
-            recalculateChunks(shapeProps);
-        }
-
-        if (highlighted) {
-            ShapeProperties highlightShapeProps = new ShapeProperties()
-                    .setStrokeWidth(2)
-                    .setStrokeColor(0xFFFFFF)
-                    .setStrokeOpacity(1)
-                    .setStrokePosition(ShapeProperties.StrokePosition.OUTSIDE)
-                    .setFillOpacity(0);
-            List<PolygonOverlay> highlightedOverlays = new ArrayList<>();
-            for (PolygonOverlay polygonOverlay : polygonOverlays) {
-                highlightedOverlays.add(createHighlightOverlay(polygonOverlay, highlightShapeProps));
-            }
-            polygonOverlays.addAll(highlightedOverlays);
+            recalculateChunks(shapeProps, highlighted ? createHighlightShapeProperties() : null);
         }
     }
 
-    private PolygonOverlay createHighlightOverlay(PolygonOverlay source, ShapeProperties highlightShapeProps) {
-        PolygonOverlay highlight = new PolygonOverlay(MapFrontiers.MODID, dimension, highlightShapeProps, source.getOuterArea(), source.getHoles());
-        highlight.setActiveUIs(source.getActiveUIs().toArray(Context.UI[]::new));
-        highlight.setActiveMapTypes(source.getActiveMapTypes().toArray(Context.MapType[]::new));
-        highlight.setMinZoom(source.getMinZoom());
-        highlight.setMaxZoom(source.getMaxZoom());
-        return highlight;
+    private static ShapeProperties createHighlightShapeProperties() {
+        return new ShapeProperties()
+                .setStrokeWidth(2)
+                .setStrokeColor(0xFFFFFF)
+                .setStrokeOpacity(1)
+                .setStrokePosition(ShapeProperties.StrokePosition.OUTSIDE)
+                .setFillOpacity(0);
     }
 
-    private void addPolygonOverlays(ShapeProperties shapeProps, MapPolygon polygon, @Nullable List<MapPolygon> polygonHoles) {
+    private void addPolygonOverlays(ShapeProperties shapeProps, PolygonRenderGeometry geometry, boolean addLabels) {
         boolean fullscreenV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Fullscreen));
-        boolean fullscreenNameV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_NAME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenName));
-        boolean fullscreenOwnerV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_OWNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenOwner));
-        boolean fullscreenBannerV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_BANNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenBanner));
         boolean fullscreenDayV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenDay));
         boolean fullscreenNightV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_NIGHT_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenNight));
         boolean fullscreenUndergroundV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_UNDERGROUND_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenUnderground));
         boolean fullscreenTopoV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_TOPO_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenTopo));
         boolean fullscreenBiomeV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenBiome));
         boolean minimapV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Minimap));
-        boolean minimapNameV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_NAME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapName));
-        boolean minimapOwnerV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_OWNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapOwner));
-        boolean minimapBannerV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_BANNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapBanner));
         boolean minimapDayV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapDay));
         boolean minimapNightV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_NIGHT_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapNight));
         boolean minimapUndergroundV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_UNDERGROUND_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapUnderground));
         boolean minimapTopoV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_TOPO_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapTopo));
         boolean minimapBiomeV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapBiome));
         boolean webmapV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Webmap));
-        boolean webmapNameV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_NAME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapName));
-        boolean webmapOwnerV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_OWNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapOwner));
-        boolean webmapBannerV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_BANNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapBanner));
         boolean webmapDayV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapDay));
         boolean webmapNightV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_NIGHT_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapNight));
         boolean webmapUndergroundV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_UNDERGROUND_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapUnderground));
         boolean webmapTopoV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_TOPO_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapTopo));
         boolean webmapBiomeV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapBiome));
-        Area overlayArea = buildOverlayArea(polygon, polygonHoles);
+        Area overlayArea = addLabels ? buildOverlayArea(geometry.polygon(), geometry.holes()) : null;
         double labelSolverPrecision = getLabelSolverPrecision();
         Map<LabelPlacementKey, FrontierLabelPlacementSolver.LabelPlacement> placementCache = new HashMap<>();
 
         if (fullscreenV) {
-            PolygonOverlay overlay = new PolygonOverlay(MapFrontiers.MODID, dimension, shapeProps, polygon, polygonHoles);
-            overlay.setActiveUIs(Context.UI.Fullscreen);
-            overlay.setActiveMapTypes(getActiveMapTypes(fullscreenDayV, fullscreenNightV, fullscreenUndergroundV, fullscreenTopoV, fullscreenBiomeV));
-            addLabelOverlay(overlay,
-                    buildLabelContentMetrics(fullscreenNameV, fullscreenOwnerV, fullscreenBannerV),
-                    overlayArea,
-                    labelSolverPrecision,
-                    placementCache);
+            PolygonOverlay overlay = createPolygonOverlay(shapeProps, geometry, Context.UI.Fullscreen,
+                    getActiveMapTypes(fullscreenDayV, fullscreenNightV, fullscreenUndergroundV, fullscreenTopoV, fullscreenBiomeV));
+            if (addLabels) {
+                boolean fullscreenNameV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_NAME_VISIBILITY.get(),
+                        getVisibility(VisibilityData.Visibility.FullscreenName));
+                boolean fullscreenOwnerV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_OWNER_VISIBILITY.get(),
+                        getVisibility(VisibilityData.Visibility.FullscreenOwner));
+                boolean fullscreenBannerV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_BANNER_VISIBILITY.get(),
+                        getVisibility(VisibilityData.Visibility.FullscreenBanner));
+                addLabelOverlay(overlay,
+                        buildLabelContentMetrics(fullscreenNameV, fullscreenOwnerV, fullscreenBannerV),
+                        overlayArea,
+                        labelSolverPrecision,
+                        placementCache);
+            }
             polygonOverlays.add(overlay);
         }
         if (minimapV) {
-            PolygonOverlay overlay = new PolygonOverlay(MapFrontiers.MODID, dimension, shapeProps, polygon, polygonHoles);
-            overlay.setActiveUIs(Context.UI.Minimap);
-            overlay.setActiveMapTypes(getActiveMapTypes(minimapDayV, minimapNightV, minimapUndergroundV, minimapTopoV, minimapBiomeV));
-            addLabelOverlay(overlay,
-                    buildLabelContentMetrics(minimapNameV, minimapOwnerV, minimapBannerV),
-                    overlayArea,
-                    labelSolverPrecision,
-                    placementCache);
+            PolygonOverlay overlay = createPolygonOverlay(shapeProps, geometry, Context.UI.Minimap,
+                    getActiveMapTypes(minimapDayV, minimapNightV, minimapUndergroundV, minimapTopoV, minimapBiomeV));
+            if (addLabels) {
+                boolean minimapNameV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_NAME_VISIBILITY.get(),
+                        getVisibility(VisibilityData.Visibility.MinimapName));
+                boolean minimapOwnerV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_OWNER_VISIBILITY.get(),
+                        getVisibility(VisibilityData.Visibility.MinimapOwner));
+                boolean minimapBannerV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_BANNER_VISIBILITY.get(),
+                        getVisibility(VisibilityData.Visibility.MinimapBanner));
+                addLabelOverlay(overlay,
+                        buildLabelContentMetrics(minimapNameV, minimapOwnerV, minimapBannerV),
+                        overlayArea,
+                        labelSolverPrecision,
+                        placementCache);
+            }
             polygonOverlays.add(overlay);
         }
         if (webmapV) {
-            PolygonOverlay overlay = new PolygonOverlay(MapFrontiers.MODID, dimension, shapeProps, polygon, polygonHoles);
-            overlay.setActiveUIs(Context.UI.Webmap);
-            overlay.setActiveMapTypes(getActiveMapTypes(webmapDayV, webmapNightV, webmapUndergroundV, webmapTopoV, webmapBiomeV));
-            addLabelOverlay(overlay,
-                    buildLabelContentMetrics(webmapNameV, webmapOwnerV, webmapBannerV),
-                    overlayArea,
-                    labelSolverPrecision,
-                    placementCache);
+            PolygonOverlay overlay = createPolygonOverlay(shapeProps, geometry, Context.UI.Webmap,
+                    getActiveMapTypes(webmapDayV, webmapNightV, webmapUndergroundV, webmapTopoV, webmapBiomeV));
+            if (addLabels) {
+                boolean webmapNameV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_NAME_VISIBILITY.get(),
+                        getVisibility(VisibilityData.Visibility.WebmapName));
+                boolean webmapOwnerV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_OWNER_VISIBILITY.get(),
+                        getVisibility(VisibilityData.Visibility.WebmapOwner));
+                boolean webmapBannerV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_BANNER_VISIBILITY.get(),
+                        getVisibility(VisibilityData.Visibility.WebmapBanner));
+                addLabelOverlay(overlay,
+                        buildLabelContentMetrics(webmapNameV, webmapOwnerV, webmapBannerV),
+                        overlayArea,
+                        labelSolverPrecision,
+                        placementCache);
+            }
             polygonOverlays.add(overlay);
         }
     }
 
-    private void recalculateVertices(ShapeProperties shapeProps) {
+    private PolygonOverlay createPolygonOverlay(ShapeProperties shapeProps, PolygonRenderGeometry geometry,
+                                                Context.UI ui, Context.MapType[] mapTypes) {
+        PolygonOverlay overlay = new PolygonOverlay(MapFrontiers.MODID, dimension, shapeProps, geometry.polygon(), geometry.holes());
+        overlay.setActiveUIs(ui);
+        overlay.setActiveMapTypes(mapTypes);
+        if (geometry.minZoom() > 0) {
+            overlay.setMinZoom(geometry.minZoom());
+        }
+        return overlay;
+    }
+
+    private void addHighlightPolygonOverlay(ShapeProperties highlightShapeProps, PolygonRenderGeometry geometry) {
+        PolygonOverlay overlay = new PolygonOverlay(MapFrontiers.MODID, dimension, highlightShapeProps, geometry.polygon(), geometry.holes());
+        overlay.setActiveUIs(Context.UI.Fullscreen);
+        overlay.setActiveMapTypes(HIGHLIGHT_MAP_TYPES);
+        if (geometry.minZoom() > 0) {
+            overlay.setMinZoom(geometry.minZoom());
+        }
+        highlightPolygonOverlays.add(overlay);
+    }
+
+    private void addPolygonGeometryOverlays(ShapeProperties shapeProps, @Nullable ShapeProperties highlightShapeProps,
+                                            PolygonRenderGeometry geometry, boolean addLabels) {
+        addPolygonOverlays(shapeProps, geometry, addLabels);
+        if (highlightShapeProps != null) {
+            addHighlightPolygonOverlay(highlightShapeProps, geometry);
+        }
+    }
+
+    private void recalculateVertices(ShapeProperties shapeProps, @Nullable ShapeProperties highlightShapeProps) {
         synchronized (vertices) {
             if (vertices.size() > 2) {
                 MapPolygon polygon = new MapPolygon(vertices);
                 polygonArea = PolygonHelper.toArea(polygon);
-                addPolygonOverlays(shapeProps, polygon, null);
+                addPolygonGeometryOverlays(shapeProps, highlightShapeProps, new PolygonRenderGeometry(polygon, null, 0), true);
 
                 BlockPos last = vertices.getLast();
                 for (BlockPos vertex : vertices) {
@@ -1235,40 +1313,8 @@ public class FrontierOverlay extends FrontierData {
                 }
                 area = abs(area / 2.f);
             } else if (!vertices.isEmpty()) {
-                boolean fullscreenV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Fullscreen));
-                boolean fullscreenDayV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenDay));
-                boolean fullscreenNightV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_NIGHT_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenNight));
-                boolean fullscreenUndergroundV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_UNDERGROUND_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenUnderground));
-                boolean fullscreenTopoV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_TOPO_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenTopo));
-                boolean fullscreenBiomeV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenBiome));
-                boolean minimapV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Minimap));
-                boolean minimapDayV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapDay));
-                boolean minimapNightV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_NIGHT_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapNight));
-                boolean minimapUndergroundV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_UNDERGROUND_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapUnderground));
-                boolean minimapTopoV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_TOPO_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapTopo));
-                boolean minimapBiomeV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapBiome));
-                boolean webmapV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Webmap));
-                boolean webmapDayV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapDay));
-                boolean webmapNightV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_NIGHT_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapNight));
-                boolean webmapUndergroundV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_UNDERGROUND_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapUnderground));
-                boolean webmapTopoV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_TOPO_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapTopo));
-                boolean webmapBiomeV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapBiome));
-
-                if (fullscreenV) {
-                    addIncompleteVertexPolygon(Context.UI.Fullscreen,
-                            getActiveMapTypes(fullscreenDayV, fullscreenNightV, fullscreenUndergroundV, fullscreenTopoV, fullscreenBiomeV)
-                    );
-                }
-                if (minimapV){
-                    addIncompleteVertexPolygon(Context.UI.Minimap,
-                            getActiveMapTypes(minimapDayV, minimapNightV, minimapUndergroundV, minimapTopoV, minimapBiomeV)
-                    );
-                }
-                if (webmapV){
-                    addIncompleteVertexPolygon(Context.UI.Webmap,
-                            getActiveMapTypes(webmapDayV, webmapNightV, webmapUndergroundV, webmapTopoV, webmapBiomeV)
-                    );
-                }
+                addPolygonGeometryOverlays(shapeProps, highlightShapeProps,
+                        new PolygonRenderGeometry(createIncompleteVertexPolygon(), null, INCOMPLETE_VERTEX_FRONTIER_MIN_ZOOM), false);
             }
 
             if (vertices.size() > 1) {
@@ -1327,6 +1373,10 @@ public class FrontierOverlay extends FrontierData {
                 createPathLabels(Context.UI.Webmap, mapTypes, webmapNameV, webmapOwnerV, webmapBannerV);
             }
 
+            if (highlighted) {
+                createPathHighlightMarkers();
+            }
+
             if (points.size() > 1) {
                 BlockPos last = points.getFirst();
                 for (int i = 1; i < points.size(); ++i) {
@@ -1358,21 +1408,6 @@ public class FrontierOverlay extends FrontierData {
             mapTypes.add(Context.MapType.Biome);
         }
         return mapTypes.toArray(new Context.MapType[0]);
-    }
-
-    private void addIncompleteVertexPolygon(Context.UI uiArray, Context.MapType[] mapTypesArray) {
-        ShapeProperties shapeProps = new ShapeProperties()
-                .setStrokeWidth(ClientConfig.BORDER_WIDTH.get())
-                .setStrokeColor(color)
-                .setStrokeOpacity(ClientConfig.BORDER_OPACITY.get().floatValue())
-                .setStrokePosition(ShapeProperties.StrokePosition.INSIDE)
-                .setFillColor(color)
-                .setFillOpacity(ClientConfig.POLYGONS_OPACITY.get().floatValue());
-        PolygonOverlay overlay = new PolygonOverlay(MapFrontiers.MODID, dimension, shapeProps, createIncompleteVertexPolygon(), null);
-        overlay.setActiveUIs(uiArray);
-        overlay.setActiveMapTypes(mapTypesArray);
-        overlay.setMinZoom(INCOMPLETE_VERTEX_FRONTIER_MIN_ZOOM);
-        polygonOverlays.add(overlay);
     }
 
     private MapPolygon createIncompleteVertexPolygon() {
@@ -1445,9 +1480,6 @@ public class FrontierOverlay extends FrontierData {
         if (points.size() == 1) {
             Identifier markerId = getPathSinglePointMarkerId();
             addSingleMarker(points.getFirst(), resolvePathMarkerImage(markerId, 0.f), 100, uiArray, mapTypesArray);
-            if (highlighted) {
-                addSingleMarker(points.getFirst(), resolvePathMarkerHighlightImage(markerId, 0.f), 101, uiArray, mapTypesArray);
-            }
             return;
         }
 
@@ -1460,19 +1492,43 @@ public class FrontierOverlay extends FrontierData {
                 MapImage segmentMarker = resolvePathMarkerImage(pathStyle.segmentMarker, rotation);
                 double segmentSpacingMultiplier = getPathSegmentSpacingMultiplier(pathStyle.segmentMarker);
                 addRepeatedMarkers(point, nextPoint, uiArray, mapTypesArray, segmentMarker, 99, segmentSpacingMultiplier);
-                if (highlighted) {
-                    MapImage segmentHighlight = resolvePathMarkerHighlightImage(pathStyle.segmentMarker, rotation);
-                    addRepeatedMarkers(point, nextPoint, uiArray, mapTypesArray, segmentHighlight, 100, segmentSpacingMultiplier);
-                }
             }
 
             Identifier markerId = getPathPointMarkerId(i);
             float rotation = getPathPointMarkerRotation(i);
 
             addSingleMarker(point, resolvePathMarkerImage(markerId, rotation), 100, uiArray, mapTypesArray);
-            if (highlighted) {
-                addSingleMarker(point, resolvePathMarkerHighlightImage(markerId, rotation), 101, uiArray, mapTypesArray);
+        }
+    }
+
+    private void createPathHighlightMarkers() {
+        if (points.isEmpty()) {
+            return;
+        }
+
+        if (points.size() == 1) {
+            Identifier markerId = getPathSinglePointMarkerId();
+            addSingleMarker(highlightMarkerOverlays, points.getFirst(), resolvePathMarkerHighlightImage(markerId, 0.f), 101,
+                    Context.UI.Fullscreen, HIGHLIGHT_MAP_TYPES);
+            return;
+        }
+
+        for (int i = 0; i < points.size(); ++i) {
+            BlockPos point = points.get(i);
+
+            if (i < points.size() - 1) {
+                BlockPos nextPoint = points.get(i + 1);
+                float rotation = getSegmentRotation(point, nextPoint);
+                MapImage segmentHighlight = resolvePathMarkerHighlightImage(pathStyle.segmentMarker, rotation);
+                double segmentSpacingMultiplier = getPathSegmentSpacingMultiplier(pathStyle.segmentMarker);
+                addRepeatedMarkers(highlightMarkerOverlays, point, nextPoint, Context.UI.Fullscreen, HIGHLIGHT_MAP_TYPES,
+                        segmentHighlight, 100, segmentSpacingMultiplier);
             }
+
+            Identifier markerId = getPathPointMarkerId(i);
+            float rotation = getPathPointMarkerRotation(i);
+            addSingleMarker(highlightMarkerOverlays, point, resolvePathMarkerHighlightImage(markerId, rotation), 101,
+                    Context.UI.Fullscreen, HIGHLIGHT_MAP_TYPES);
         }
     }
 
@@ -1515,7 +1571,7 @@ public class FrontierOverlay extends FrontierData {
     //
     // Algorithm adapted from https://stackoverflow.com/a/63888205/2647614
     //
-    private void recalculateChunks(ShapeProperties shapeProps) {
+    private void recalculateChunks(ShapeProperties shapeProps, @Nullable ShapeProperties highlightShapeProps) {
         Multimap<ChunkPos, ChunkPos> edges = HashMultimap.create();
         synchronized (chunks) {
             for (ChunkPos chunk : chunks) {
@@ -1608,7 +1664,7 @@ public class FrontierOverlay extends FrontierData {
                 }
             }
 
-            addPolygonOverlays(shapeProps, polygon, polygonHoles);
+            addPolygonGeometryOverlays(shapeProps, highlightShapeProps, new PolygonRenderGeometry(polygon, polygonHoles, 0), true);
         }
 
         area = chunks.size() * 256;
@@ -2055,6 +2111,11 @@ public class FrontierOverlay extends FrontierData {
 
     private void addRepeatedMarkers(BlockPos from, BlockPos to, Context.UI uiArray, Context.MapType[] mapTypesArray,
                                     @Nullable MapImage markerImage, int displayOrder, double spacingMultiplier) {
+        addRepeatedMarkers(markerOverlays, from, to, uiArray, mapTypesArray, markerImage, displayOrder, spacingMultiplier);
+    }
+
+    private void addRepeatedMarkers(List<MarkerOverlay> overlays, BlockPos from, BlockPos to, Context.UI uiArray, Context.MapType[] mapTypesArray,
+                                    @Nullable MapImage markerImage, int displayOrder, double spacingMultiplier) {
         if (markerImage == null) {
             return;
         }
@@ -2086,7 +2147,7 @@ public class FrontierOverlay extends FrontierData {
                     continue;
                 }
 
-                addRepeatedMarker(pos, uiArray, mapTypesArray, markerImage, displayOrder, minZoom, maxZoom);
+                addRepeatedMarker(overlays, pos, uiArray, mapTypesArray, markerImage, displayOrder, minZoom, maxZoom);
             }
         }
     }
@@ -2134,7 +2195,8 @@ public class FrontierOverlay extends FrontierData {
         return Mth.clamp(intervalCount - 1, 0, availableMarkerPositions);
     }
 
-    private void addRepeatedMarker(BlockPos pos, Context.UI uiArray, Context.MapType[] mapTypesArray, MapImage markerImage, int displayOrder, int minZoom, int maxZoom) {
+    private void addRepeatedMarker(List<MarkerOverlay> overlays, BlockPos pos, Context.UI uiArray, Context.MapType[] mapTypesArray,
+                                   MapImage markerImage, int displayOrder, int minZoom, int maxZoom) {
         MarkerOverlay dot = new MarkerOverlay(MapFrontiers.MODID, pos, markerImage);
         dot.setDimension(dimension);
         dot.setDisplayOrder(displayOrder);
@@ -2144,7 +2206,7 @@ public class FrontierOverlay extends FrontierData {
         if (maxZoom > 0) {
             dot.setMaxZoom(maxZoom);
         }
-        markerOverlays.add(dot);
+        overlays.add(dot);
     }
 
     private static long getBlockPos2DKey(int x, int z) {
@@ -2158,6 +2220,11 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private void addSingleMarker(BlockPos pos, @Nullable MapImage markerImage, int displayOrder, Context.UI uiArray, Context.MapType[] mapTypesArray) {
+        addSingleMarker(markerOverlays, pos, markerImage, displayOrder, uiArray, mapTypesArray);
+    }
+
+    private void addSingleMarker(List<MarkerOverlay> overlays, BlockPos pos, @Nullable MapImage markerImage, int displayOrder,
+                                 Context.UI uiArray, Context.MapType[] mapTypesArray) {
         if (markerImage == null) {
             return;
         }
@@ -2167,7 +2234,7 @@ public class FrontierOverlay extends FrontierData {
         marker.setDisplayOrder(displayOrder);
         marker.setActiveUIs(uiArray);
         marker.setActiveMapTypes(mapTypesArray);
-        markerOverlays.add(marker);
+        overlays.add(marker);
     }
 
     private Identifier getPathSinglePointMarkerId() {
@@ -2283,6 +2350,11 @@ public class FrontierOverlay extends FrontierData {
 
     private record LabelPlacementKey(int contentWidthPx,
                                      int contentHeightPx) {
+    }
+
+    private record PolygonRenderGeometry(MapPolygon polygon,
+                                         @Nullable List<MapPolygon> holes,
+                                         int minZoom) {
     }
 
     private record PathLabelAnchor(double x,
