@@ -159,6 +159,8 @@ public class ClientFrontierOperationService {
             return;
         }
 
+        MapFrontiersClient.markFrontierActivationDirty();
+
         if (usesAuthoritativeMutationFlow(frontier)) {
             PacketHandler.sendToServer(new PacketUpdateFrontier(frontier.getId(), change));
             return;

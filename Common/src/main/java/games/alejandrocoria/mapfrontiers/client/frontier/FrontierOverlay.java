@@ -147,6 +147,7 @@ public class FrontierOverlay extends FrontierData {
 
         updateOverlay();
         hashDirty = true;
+        markFrontierActivationDirty();
     }
 
     public void applyChange(FrontierChange change) {
@@ -166,6 +167,9 @@ public class FrontierOverlay extends FrontierData {
         if (change.hasNameChange() || change.hasShapeChange() || change.hasColorChange() || change.hasVisibilityChange()
                 || change.hasPathStyleChange() || change.hasBannerChange()) {
             updateOverlay();
+        }
+        if (change.hasShapeChange() || change.hasVisibilityChange()) {
+            markFrontierActivationDirty();
         }
     }
 
@@ -231,6 +235,12 @@ public class FrontierOverlay extends FrontierData {
             }
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error(t.getMessage(), t);
+        }
+    }
+
+    private void markFrontierActivationDirty() {
+        if (jmAPI != null) {
+            MapFrontiersClient.markFrontierActivationDirty();
         }
     }
 
@@ -467,6 +477,7 @@ public class FrontierOverlay extends FrontierData {
         super.addVertex(pos, index);
         hashDirty = true;
         needUpdateOverlay = true;
+        markFrontierActivationDirty();
     }
 
     @Override
@@ -474,6 +485,7 @@ public class FrontierOverlay extends FrontierData {
         super.removeVertex(index);
         hashDirty = true;
         needUpdateOverlay = true;
+        markFrontierActivationDirty();
     }
 
     @Override
@@ -481,6 +493,7 @@ public class FrontierOverlay extends FrontierData {
         super.moveAllVertices(delta);
         hashDirty = true;
         needUpdateOverlay = true;
+        markFrontierActivationDirty();
         MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
     }
 
@@ -489,6 +502,7 @@ public class FrontierOverlay extends FrontierData {
         boolean added = super.toggleChunk(chunk);
         hashDirty = true;
         needUpdateOverlay = true;
+        markFrontierActivationDirty();
         return added;
     }
 
@@ -497,6 +511,7 @@ public class FrontierOverlay extends FrontierData {
         if (super.addChunk(chunk)) {
             hashDirty = true;
             needUpdateOverlay = true;
+            markFrontierActivationDirty();
             return true;
         }
 
@@ -508,6 +523,7 @@ public class FrontierOverlay extends FrontierData {
         if (super.removeChunk(chunk)) {
             hashDirty = true;
             needUpdateOverlay = true;
+            markFrontierActivationDirty();
             return true;
         }
 
@@ -519,6 +535,7 @@ public class FrontierOverlay extends FrontierData {
         super.moveAllChunks(delta);
         hashDirty = true;
         needUpdateOverlay = true;
+        markFrontierActivationDirty();
     }
 
     public boolean hasChunk(ChunkPos chunk) {
@@ -646,6 +663,7 @@ public class FrontierOverlay extends FrontierData {
         super.moveVertex(pos, selectedPointIndex);
         hashDirty = true;
         needUpdateOverlay = true;
+        markFrontierActivationDirty();
         MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
     }
 
@@ -661,6 +679,7 @@ public class FrontierOverlay extends FrontierData {
         super.movePoint(pos, selectedPointIndex);
         hashDirty = true;
         needUpdateOverlay = true;
+        markFrontierActivationDirty();
         MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
     }
 
@@ -684,6 +703,7 @@ public class FrontierOverlay extends FrontierData {
         setVisibilityOverride(MapFrontiersClient.getLocalOverrides().getVisibility(id));
         hashDirty = true;
         needUpdateOverlay = true;
+        markFrontierActivationDirty();
     }
 
     @Override
@@ -692,6 +712,7 @@ public class FrontierOverlay extends FrontierData {
         setVisibilityOverride(MapFrontiersClient.getLocalOverrides().getVisibility(id));
         hashDirty = true;
         needUpdateOverlay = true;
+        markFrontierActivationDirty();
     }
 
     public void setVisibilityOverride(Pair<VisibilityData, VisibilityData> visibilityOverride) {
@@ -702,6 +723,7 @@ public class FrontierOverlay extends FrontierData {
             }
         }
         needUpdateOverlay = true;
+        markFrontierActivationDirty();
     }
 
     @Override
@@ -733,6 +755,7 @@ public class FrontierOverlay extends FrontierData {
         setVisibilityOverride(MapFrontiersClient.getLocalOverrides().getVisibility(id));
         hashDirty = true;
         needUpdateOverlay = true;
+        markFrontierActivationDirty();
     }
 
     @Override
@@ -753,6 +776,7 @@ public class FrontierOverlay extends FrontierData {
     public void setDimension(ResourceKey<Level> dimension) {
         super.setDimension(dimension);
         hashDirty = true;
+        markFrontierActivationDirty();
     }
 
     @Override
@@ -896,6 +920,7 @@ public class FrontierOverlay extends FrontierData {
 
         hashDirty = true;
         needUpdateOverlay = true;
+        markFrontierActivationDirty();
     }
 
     public void removeSelectedPoint() {
@@ -916,6 +941,7 @@ public class FrontierOverlay extends FrontierData {
 
         hashDirty = true;
         needUpdateOverlay = true;
+        markFrontierActivationDirty();
     }
 
     public void selectNextVertex() {
@@ -969,6 +995,7 @@ public class FrontierOverlay extends FrontierData {
         super.moveAllPoints(delta);
         hashDirty = true;
         needUpdateOverlay = true;
+        markFrontierActivationDirty();
         MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
     }
 
@@ -982,6 +1009,7 @@ public class FrontierOverlay extends FrontierData {
         selectedPointIndex = 0;
         hashDirty = true;
         needUpdateOverlay = true;
+        markFrontierActivationDirty();
         MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
     }
 
@@ -996,6 +1024,7 @@ public class FrontierOverlay extends FrontierData {
         selectedPointIndex = index;
         hashDirty = true;
         needUpdateOverlay = true;
+        markFrontierActivationDirty();
         MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
     }
 
@@ -1015,6 +1044,7 @@ public class FrontierOverlay extends FrontierData {
         selectedPointIndex = insertIndex;
         hashDirty = true;
         needUpdateOverlay = true;
+        markFrontierActivationDirty();
         MapFrontiersClient.updateSelectedFrontierMarker(personal, getDimension(), this);
     }
 

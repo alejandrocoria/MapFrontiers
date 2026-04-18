@@ -13,7 +13,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.ChatScreen;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import org.apache.commons.lang3.StringUtils;
 
@@ -27,7 +26,7 @@ public class HUD {
 
     private FrontierOverlay frontier;
     private int frontierHash;
-    private BlockPos lastPlayerPosition = new BlockPos(0, 0, 0);
+    private long activeFrontiersRevision = -1L;
     private final StringWidget frontierName1;
     private final StringWidget frontierName2;
     private final StringWidget frontierOwner;
@@ -106,12 +105,9 @@ public class HUD {
             return;
         }
 
-        BlockPos currentPlayerPosition = mc.player.blockPosition();
-
-        if (currentPlayerPosition.getX() != lastPlayerPosition.getX()
-                || currentPlayerPosition.getZ() != lastPlayerPosition.getZ()) {
-            lastPlayerPosition = currentPlayerPosition;
-
+        long currentActiveFrontiersRevision = MapFrontiersClient.getHudActiveFrontiersRevision();
+        if (activeFrontiersRevision != currentActiveFrontiersRevision) {
+            activeFrontiersRevision = currentActiveFrontiersRevision;
             List<FrontierOverlay> frontiers = MapFrontiersClient.getFrontiersForHUD();
             if (!frontiers.isEmpty()) {
                 FrontierOverlay newFrontier = frontiers.getFirst();
