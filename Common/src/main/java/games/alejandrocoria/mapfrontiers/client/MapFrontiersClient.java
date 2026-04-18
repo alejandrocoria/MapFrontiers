@@ -20,6 +20,7 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import journeymap.api.v2.client.IClientAPI;
+import journeymap.api.v2.client.display.Context;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -369,14 +370,19 @@ public class MapFrontiersClient {
     }
 
     public static List<FrontierOverlay> getFrontiersInPosition(ResourceKey<Level> dimension, BlockPos pos, double maxDistanceToOpen) {
+        return getFrontiersInPosition(dimension, pos, maxDistanceToOpen, null);
+    }
+
+    public static List<FrontierOverlay> getFrontiersInPosition(ResourceKey<Level> dimension, BlockPos pos, double maxDistanceToOpen,
+                                                              @Nullable Context.MapType fullscreenMapType) {
         FrontiersOverlayManager personalFrontiersOverlayManager = getFrontiersOverlayManagerOrNull(true);
         FrontiersOverlayManager frontiersOverlayManager = getFrontiersOverlayManagerOrNull(false);
         if (personalFrontiersOverlayManager == null || frontiersOverlayManager == null) {
             return List.of();
         }
 
-        List<FrontierOverlay> frontiers = personalFrontiersOverlayManager.getFrontiersInPosition(dimension, pos, maxDistanceToOpen);
-        frontiers.addAll(frontiersOverlayManager.getFrontiersInPosition(dimension, pos, maxDistanceToOpen));
+        List<FrontierOverlay> frontiers = personalFrontiersOverlayManager.getFrontiersInPosition(dimension, pos, maxDistanceToOpen, fullscreenMapType);
+        frontiers.addAll(frontiersOverlayManager.getFrontiersInPosition(dimension, pos, maxDistanceToOpen, fullscreenMapType));
         frontiers.sort((f1, f2) -> Float.compare(f1.area, f2.area));
         return frontiers;
     }

@@ -249,13 +249,16 @@ public class FullscreenMap {
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
         SettingsUser playerUser = new SettingsUser(player);
         SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerUser);
+        UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
+        boolean selectedFrontierVisible = frontierHighlighted != null
+                && uiState != null
+                && frontierHighlighted.getDimension().equals(uiState.dimension)
+                && frontierHighlighted.isVisibleOnFullscreenMap(uiState.mapType);
 
         buttonFrontiers.setEnabled(!editing);
         buttonNew.setEnabled(!editing);
         buttonInfo.setEnabled(frontierHighlighted != null && !editing);
-        buttonEdit.setEnabled(actions.canUpdate
-                && frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Frontier)
-                && frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Fullscreen));
+        buttonEdit.setEnabled(actions.canUpdate && selectedFrontierVisible);
         buttonVisible.setEnabled(actions.canUpdate && !editing);
         buttonDelete.setEnabled(actions.canDelete && !editing);
 
@@ -485,10 +488,11 @@ public class FullscreenMap {
         }
 
         if (ClientConfig.FRONTIER_VISIBILITY.get() == ClientConfig.Visibility.Never) {
+            selectFrontier(null);
             return false;
         }
 
-        List<FrontierOverlay> frontiers = MapFrontiersClient.getFrontiersInPosition(dimension, position, maxDistanceToClosest);
+        List<FrontierOverlay> frontiers = MapFrontiersClient.getFrontiersInPosition(dimension, position, maxDistanceToClosest, uiState.mapType);
         if (frontiers.isEmpty()) {
             selectFrontier(null);
         } else if (frontiers.size() == 1 || frontierHighlighted == null) {

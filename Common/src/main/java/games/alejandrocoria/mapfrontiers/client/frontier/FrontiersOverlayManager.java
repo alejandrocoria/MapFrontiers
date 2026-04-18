@@ -7,6 +7,7 @@ import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierSharingChange;
 import games.alejandrocoria.mapfrontiers.common.util.ContainerHelper;
 import journeymap.api.v2.client.IClientAPI;
+import journeymap.api.v2.client.display.Context;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
@@ -143,12 +144,16 @@ public class FrontiersOverlayManager {
         dimensionsFrontiers.clear();
     }
 
-    public List<FrontierOverlay> getFrontiersInPosition(ResourceKey<Level> dimension, BlockPos pos, double maxDistanceToOpen) {
+    public List<FrontierOverlay> getFrontiersInPosition(ResourceKey<Level> dimension, BlockPos pos, double maxDistanceToOpen,
+                                                        @Nullable Context.MapType fullscreenMapType) {
         List<FrontierOverlay> frontiersInPosition = new ArrayList<>();
         ArrayList<FrontierOverlay> frontiers = dimensionsFrontiers.get(dimension);
         if (frontiers != null) {
             for (FrontierOverlay frontier : frontiers) {
-                if (frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier) && frontier.pointIsInside(pos, maxDistanceToOpen)) {
+                boolean visible = fullscreenMapType == null
+                        ? frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier)
+                        : frontier.isVisibleOnFullscreenMap(fullscreenMapType);
+                if (visible && frontier.pointIsInside(pos, maxDistanceToOpen)) {
                     frontiersInPosition.add(frontier);
                 }
             }
