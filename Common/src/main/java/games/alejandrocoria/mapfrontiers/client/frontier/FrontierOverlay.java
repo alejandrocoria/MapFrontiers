@@ -1867,43 +1867,46 @@ public class FrontierOverlay extends FrontierData {
         if (points.size() == 1) {
             if (pathStyle.labelAtStart || pathStyle.labelAtEnd || pathStyle.labelAtMiddle) {
                 BlockPos point = points.getFirst();
-                anchors.add(new PathLabelAnchor(point.getX(), point.getZ(), 0.0, 1.0));
+                anchors.add(new PathLabelAnchor(point.getX(), point.getZ(), 0.0, 1.0,
+                        getPathMarkerClearancePx(getPathSinglePointMarkerId())));
             }
             return anchors;
         }
 
         if (pathStyle.labelAtStart) {
-            anchors.add(getPathEndpointLabelAnchor(points.getFirst(), points.get(1)));
+            anchors.add(getPathEndpointLabelAnchor(points.getFirst(), points.get(1), getPathMarkerClearancePx(getPathPointMarkerId(0))));
         }
         if (pathStyle.labelAtMiddle) {
             anchors.add(getPathMidpointLabelAnchor());
         }
         if (pathStyle.labelAtEnd) {
-            anchors.add(getPathEndpointLabelAnchor(points.getLast(), points.get(points.size() - 2)));
+            int lastPointIndex = points.size() - 1;
+            anchors.add(getPathEndpointLabelAnchor(points.getLast(), points.get(points.size() - 2),
+                    getPathMarkerClearancePx(getPathPointMarkerId(lastPointIndex))));
         }
 
         return anchors;
     }
 
-    private PathLabelAnchor getPathEndpointLabelAnchor(BlockPos endpoint, BlockPos connectedPoint) {
+    private PathLabelAnchor getPathEndpointLabelAnchor(BlockPos endpoint, BlockPos connectedPoint, double markerClearancePx) {
         double dx = endpoint.getX() - connectedPoint.getX();
         double dz = endpoint.getZ() - connectedPoint.getZ();
         double length = Math.sqrt(dx * dx + dz * dz);
         if (length < 0.0001) {
-            return new PathLabelAnchor(endpoint.getX(), endpoint.getZ(), 0.0, 1.0);
+            return new PathLabelAnchor(endpoint.getX(), endpoint.getZ(), 0.0, 1.0, markerClearancePx);
         }
 
-        return new PathLabelAnchor(endpoint.getX(), endpoint.getZ(), dx / length, dz / length);
+        return new PathLabelAnchor(endpoint.getX(), endpoint.getZ(), dx / length, dz / length, markerClearancePx);
     }
 
     private PathLabelAnchor getPathMidpointLabelAnchor() {
         if (points.isEmpty()) {
-            return new PathLabelAnchor(0, 0, 0.0, 0.0);
+            return new PathLabelAnchor(0, 0, 0.0, 0.0, 0.0);
         }
 
         if (points.size() == 1) {
             BlockPos point = points.getFirst();
-            return new PathLabelAnchor(point.getX(), point.getZ(), 0.0, 0.0);
+            return new PathLabelAnchor(point.getX(), point.getZ(), 0.0, 0.0, 0.0);
         }
 
         double totalLength = 0.0;
@@ -1913,7 +1916,7 @@ public class FrontierOverlay extends FrontierData {
 
         if (totalLength < 0.0001) {
             BlockPos point = points.getFirst();
-            return new PathLabelAnchor(point.getX(), point.getZ(), 0.0, 0.0);
+            return new PathLabelAnchor(point.getX(), point.getZ(), 0.0, 0.0, 0.0);
         }
 
         double halfLength = totalLength / 2.0;
@@ -1926,13 +1929,17 @@ public class FrontierOverlay extends FrontierData {
                 double t = (halfLength - traversed) / segmentLength;
                 double x = from.getX() + (to.getX() - from.getX()) * t;
                 double z = from.getZ() + (to.getZ() - from.getZ()) * t;
-                return new PathLabelAnchor(x, z, 0.0, 0.0);
+                return new PathLabelAnchor(x, z, 0.0, 0.0, 0.0);
             }
             traversed += segmentLength;
         }
 
         BlockPos point = points.getLast();
-        return new PathLabelAnchor(point.getX(), point.getZ(), 0.0, 0.0);
+        return new PathLabelAnchor(point.getX(), point.getZ(), 0.0, 0.0, 0.0);
+    }
+
+    private static double getPathMarkerClearancePx(Identifier markerId) {
+        return isPathMarkerVisible(markerId) ? MarkerImageConstants.getMapDisplaySize() / 2.0 : 0.0;
     }
 
     private PathLabelVisualOffset getPathLabelVisualOffset(LabelContentMetrics metrics, PathLabelAnchor anchor) {
@@ -1946,7 +1953,7 @@ public class FrontierOverlay extends FrontierData {
                 : halfWidth / Math.abs(anchor.screenOffsetDirectionX());
         double distanceY = anchor.screenOffsetDirectionY() == 0.0 ? Double.POSITIVE_INFINITY
                 : halfHeight / Math.abs(anchor.screenOffsetDirectionY());
-        double distance = Math.min(distanceX, distanceY) + PATH_LABEL_OFFSET_PADDING_PX;
+        double distance = Math.min(distanceX, distanceY) + anchor.markerClearancePx() + PATH_LABEL_OFFSET_PADDING_PX;
         int offsetX = (int) Math.round(anchor.screenOffsetDirectionX() * distance);
         int offsetY = (int) Math.round(anchor.screenOffsetDirectionY() * distance);
         return new PathLabelVisualOffset(offsetX, offsetY);
@@ -2281,7 +2288,8 @@ public class FrontierOverlay extends FrontierData {
     private record PathLabelAnchor(double x,
                                    double z,
                                    double screenOffsetDirectionX,
-                                   double screenOffsetDirectionY) {
+                                   double screenOffsetDirectionY,
+                                   double markerClearancePx) {
     }
 
     private record PathLabelVisualOffset(int x,
