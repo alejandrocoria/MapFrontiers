@@ -74,11 +74,6 @@ public class ClientFrontierOperationService {
         this.frontierEvents = frontierEvents;
     }
 
-    public void createNewFrontier(boolean personal, ResourceKey<Level> dimension,
-                                  @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
-        createNewFrontier(personal, dimension, vertices, chunks, null, null);
-    }
-
     public void createNewFrontier(boolean personal,
                                   ResourceKey<Level> dimension,
                                   @Nullable List<BlockPos> vertices,
@@ -87,12 +82,6 @@ public class ClientFrontierOperationService {
                                   @Nullable FrontierData.PathStyle pathStyle) {
         createNewFrontierAndReturn(personal, UUID.randomUUID(), dimension, FrontierData.FrontierLifetime.PERSISTENT, null,
                 vertices, chunks, points, pathStyle);
-    }
-
-    @Nullable
-    public FrontierOverlay createNewFrontierAndReturn(boolean personal, UUID frontierId, ResourceKey<Level> dimension,
-                                                      @Nullable String sourcePluginId, FrontierShape shape) {
-        return createNewFrontierAndReturn(personal, frontierId, dimension, FrontierData.FrontierLifetime.PERSISTENT, sourcePluginId, shape);
     }
 
     @Nullable
@@ -121,21 +110,6 @@ public class ClientFrontierOperationService {
         }
 
         return createNewFrontierAndReturn(personal, frontierId, dimension, lifetime, sourcePluginId, vertices, chunks, points, null);
-    }
-
-    @Nullable
-    public FrontierOverlay createNewFrontierAndReturn(boolean personal, UUID frontierId, ResourceKey<Level> dimension,
-                                                      @Nullable String sourcePluginId, @Nullable List<BlockPos> vertices,
-                                                      @Nullable List<ChunkPos> chunks) {
-        return createNewFrontierAndReturn(personal, frontierId, dimension, FrontierData.FrontierLifetime.PERSISTENT, sourcePluginId,
-                vertices, chunks, null, null);
-    }
-
-    @Nullable
-    public FrontierOverlay createNewFrontierAndReturn(boolean personal, UUID frontierId, ResourceKey<Level> dimension,
-                                                      FrontierData.FrontierLifetime lifetime, @Nullable String sourcePluginId,
-                                                      @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
-        return createNewFrontierAndReturn(personal, frontierId, dimension, lifetime, sourcePluginId, vertices, chunks, null, null);
     }
 
     @Nullable
