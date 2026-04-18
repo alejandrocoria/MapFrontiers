@@ -64,11 +64,11 @@ public class FrontierLocalOverrides {
 
                     CompoundTag dataTag = NbtReadHelper.requireCompound(overrideTag, "data");
                     FrontierData.VisibilityData data = new FrontierData.VisibilityData();
-                    data.readFromNBT(dataTag, version);
+                    data.readFromNBT(dataTag);
 
                     CompoundTag maskTag = NbtReadHelper.requireCompound(overrideTag, "mask");
                     FrontierData.VisibilityData mask = new FrontierData.VisibilityData(false);
-                    mask.readFromNBT(maskTag, version);
+                    mask.readFromNBT(maskTag);
 
                     if (mask.hasSome()) {
                         overrides.put(id, Pair.of(data, mask));
