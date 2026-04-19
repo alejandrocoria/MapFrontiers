@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component;
 import games.alejandrocoria.mapfrontiers.client.frontier.MarkerImageConstants;
 import games.alejandrocoria.mapfrontiers.client.frontier.PathMarkerCatalog;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphics;
@@ -118,6 +119,7 @@ public class PathMarkerSelectorWidget extends AbstractWidgetNoNarration {
             graphics.fill(x + 1, getY() + 1, x + CELL_SIZE - 1, getY() + CELL_SIZE - 1, ColorConstants.PATH_MARKER_SELECTOR_BG);
 
             if (entry.texture() != null) {
+                Services.JOURNEYMAP.prepareMapTexture(entry.texture());
                 int markerX = x + (CELL_SIZE - MarkerImageConstants.SELECTOR_DISPLAY_SIZE) / 2;
                 int markerY = getY() + (CELL_SIZE - MarkerImageConstants.SELECTOR_DISPLAY_SIZE) / 2;
                 graphics.blit(RenderPipelines.GUI_TEXTURED, entry.texture(), markerX, markerY, 0, 0,

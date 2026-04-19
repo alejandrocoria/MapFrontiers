@@ -4,6 +4,7 @@ import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.resources.Identifier;
 
 import java.io.File;
 import java.util.List;
@@ -24,6 +25,7 @@ public interface IJourneyMapHelper {
     int minimapLabelForegroundColor();
     boolean minimapPropertiesChanged();
     List<String> getDimensionList();
+    void prepareMapTexture(Identifier texture);
     ICustomPreviewRenderer createCustomPreviewRenderer();
 
     enum JMPosition {
