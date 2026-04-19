@@ -17,6 +17,7 @@ import journeymap.client.render.draw.DrawMarkerStep;
 import journeymap.client.render.draw.DrawPolygonStep;
 import journeymap.client.render.draw.DrawStep;
 import journeymap.client.render.map.MapRenderer;
+import journeymap.client.texture.TextureCache;
 import journeymap.client.ui.UIManager;
 import journeymap.client.ui.component.screens.JmUI;
 import journeymap.client.ui.minimap.DisplayVars;
@@ -164,6 +165,11 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
     @Override
     public ICustomPreviewRenderer createCustomPreviewRenderer() {
         return new CustomPreviewRenderer();
+    }
+
+    @Override
+    public void prepareMapTexture(Identifier texture) {
+        TextureCache.getTexture(texture);
     }
 
     private static int colorSpecToInt(Theme.ColorSpec colorSpec) {
