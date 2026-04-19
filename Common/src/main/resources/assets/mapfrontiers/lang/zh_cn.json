@@ -266,7 +266,7 @@
   "mapfrontiers.config.None": "无",
   "mapfrontiers.config.Name": "领域名",
   "mapfrontiers.config.Owner": "所有者",
-  "mapfrontiers.config.VertexChunk": "顶点/区块",
+  "mapfrontiers.config.Shape": "形状",
   "mapfrontiers.config.Area": "面积",
   "mapfrontiers.config.Modified": "最近修改于",
   "mapfrontiers.config.Created": "创建于",

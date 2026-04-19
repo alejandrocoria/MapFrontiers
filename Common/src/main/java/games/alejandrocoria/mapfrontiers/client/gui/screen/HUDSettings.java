@@ -131,6 +131,7 @@ public class HUDSettings extends AutoScaledScreen {
 
     private GridLayout createMainLayout() {
         GridLayout mainLayout = new GridLayout().spacing(4);
+        mainLayout.defaultCellSetting().alignVerticallyMiddle();
         content.addChild(mainLayout);
         return mainLayout;
     }

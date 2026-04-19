@@ -143,7 +143,7 @@ public class PathStyleDialog extends AutoScaledScreen {
 
     private CheckBoxButton createLocationCheckBox(LinearLayout parent, Component label, boolean value, Consumer<Boolean> setter) {
         LinearLayout row = LinearLayout.horizontal().spacing(4);
-        row.defaultCellSetting().alignVerticallyMiddle();
+        row.defaultCellSetting().alignVerticallyBottom();
         parent.addChild(row);
 
         CheckBoxButton checkBox = row.addChild(new CheckBoxButton(value, b -> {
@@ -153,7 +153,7 @@ public class PathStyleDialog extends AutoScaledScreen {
 
             setter.accept(b.isChecked());
             updateWarningAndPreview();
-        }));
+        }), LayoutSettings.defaults());
         row.addChild(new StringWidget(label, font).setColor(ColorConstants.TEXT));
         return checkBox;
     }

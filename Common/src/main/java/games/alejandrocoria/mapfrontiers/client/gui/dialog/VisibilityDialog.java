@@ -87,6 +87,7 @@ public class VisibilityDialog extends AutoScaledScreen {
         fullscreenColumn.addChild(new StringWidget(fullscreenLabel.copy().withStyle(Style.EMPTY.withBold(true)), font).setColor(ColorConstants.TEXT));
 
         GridLayout fullscreenGrid = new GridLayout().spacing(4);
+        fullscreenGrid.defaultCellSetting().alignVerticallyMiddle();
         fullscreenColumn.addChild(fullscreenGrid);
         row = 1;
         createWidgets(fullscreenGrid, row++, showFrontierLabel, FrontierData.VisibilityData.Visibility.Fullscreen);
@@ -107,6 +108,7 @@ public class VisibilityDialog extends AutoScaledScreen {
         minimapColumn.addChild(new StringWidget(minimapLabel.copy().withStyle(Style.EMPTY.withBold(true)), font).setColor(ColorConstants.TEXT));
 
         GridLayout minimapGrid = new GridLayout().spacing(4);
+        minimapGrid.defaultCellSetting().alignVerticallyMiddle();
         minimapColumn.addChild(minimapGrid);
         row = 1;
         createWidgets(minimapGrid, row++, showFrontierLabel, FrontierData.VisibilityData.Visibility.Minimap);
@@ -127,6 +129,7 @@ public class VisibilityDialog extends AutoScaledScreen {
         webmapColumn.addChild(new StringWidget(webmapLabel.copy().withStyle(Style.EMPTY.withBold(true)), font).setColor(ColorConstants.TEXT));
 
         GridLayout webmapGrid = new GridLayout().spacing(4);
+        webmapGrid.defaultCellSetting().alignVerticallyMiddle();
         webmapColumn.addChild(webmapGrid);
         row = 1;
         createWidgets(webmapGrid, row++, showFrontierLabel, FrontierData.VisibilityData.Visibility.Webmap);

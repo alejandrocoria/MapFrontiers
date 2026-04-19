@@ -20,7 +20,7 @@ public class GroupElement extends ScrollBox.ScrollElement {
     private IconButton buttonDelete;
 
     public GroupElement(Font font, SettingsGroup group) {
-        super(160, 16);
+        super(160, 15);
         this.font = font;
         this.group = group;
 

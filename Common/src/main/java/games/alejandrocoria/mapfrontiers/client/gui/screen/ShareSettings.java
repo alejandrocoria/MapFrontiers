@@ -90,7 +90,7 @@ public class ShareSettings extends AutoScaledScreen {
         updateSettings = header.addChild(new MultiLineTextWidget(updateSettingsLabel.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
         updateSettings.setCentered(true);
 
-        users = new ScrollBox(actualHeight - 128, 430, 16);
+        users = new ScrollBox(actualHeight - 128, 430, 15);
         users.setElementDeletePressedCallback(element -> {
             if (ClientConfig.ASK_CONFIRMATION_USER_DELETE.get()) {
                 new DeleteConfirmationDialog(

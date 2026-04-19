@@ -266,7 +266,7 @@
   "mapfrontiers.config.None": "None",
   "mapfrontiers.config.Name": "Name",
   "mapfrontiers.config.Owner": "Owner",
-  "mapfrontiers.config.VertexChunk": "Vertex/Chunk",
+  "mapfrontiers.config.Shape": "Shape",
   "mapfrontiers.config.Area": "Area",
   "mapfrontiers.config.Modified": "Modified",
   "mapfrontiers.config.Created": "Created",

@@ -23,7 +23,7 @@ public class TextBox extends EditBox {
     }
 
     public TextBox(Font font, int width, String defaultText) {
-        super(font, 0, 0, width, 12, Component.empty());
+        super(font, 0, 0, width, 13, Component.empty());
         this.defaultText = defaultText;
         if (!StringUtils.isBlank(defaultText)) {
             setResponder((value) -> updateDefaultText());

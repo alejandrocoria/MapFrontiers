@@ -31,7 +31,7 @@ public final class ClientConfig {
     }
 
     public enum Sorting {
-        Name, Owner, VertexChunk, Area, Modified, Created
+        Name, Owner, Shape, Area, Modified, Created
     }
 
     public enum FilterFrontierType {
@@ -59,7 +59,7 @@ public final class ClientConfig {
             Sorting.Created.name(),
             Sorting.Name.name(),
             Sorting.Owner.name(),
-            Sorting.VertexChunk.name(),
+            Sorting.Shape.name(),
             Sorting.Area.name(),
             Sorting.Modified.name()
     );
@@ -451,6 +451,13 @@ public final class ClientConfig {
         List<Boolean> direction = new ArrayList<>(FRONTIER_SORTING_DIRECTION.get());
         boolean dirty = false;
 
+        for (int i = 0; i < sorting.size(); ++i) {
+            if (sorting.get(i).equals("VertexChunk")) {
+                sorting.set(i, Sorting.Shape.name());
+                dirty = true;
+            }
+        }
+
         if (sorting.size() > Sorting.values().length || direction.size() != sorting.size()) {
             FRONTIER_SORTING.set(DEFAULT_SORTING);
             FRONTIER_SORTING_DIRECTION.set(DEFAULT_SORTING_DIRECTION);
@@ -480,12 +487,18 @@ public final class ClientConfig {
 
             FRONTIER_SORTING.set(sorting);
             FRONTIER_SORTING_DIRECTION.set(direction);
+        } else if (dirty) {
+            FRONTIER_SORTING.set(sorting);
         }
 
         return dirty;
     }
 
     private static boolean isValidSorting(String value) {
+        if (value.equals("VertexChunk")) {
+            return true;
+        }
+
         try {
             Sorting.valueOf(value);
             return true;

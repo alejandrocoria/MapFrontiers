@@ -17,14 +17,14 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @MethodsReturnNonnullByDefault
 public class RadioListElement extends ScrollBox.ScrollElement {
     private static final Identifier texture = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/radio_buttons.png");
-    private static final int textureSizeX = 24;
-    private static final int textureSizeY = 12;
+    private static final int textureSizeX = 22;
+    private static final int textureSizeY = 11;
 
     private final StringWidget label;
     private final int id;
 
     public RadioListElement(Font font, Component text, int id) {
-        super(200, 16);
+        super(200, 15);
         this.label = new StringWidget(text, font).setColor(ColorConstants.SIMPLE_BUTTON_TEXT);
         this.id = id;
     }
@@ -42,7 +42,7 @@ public class RadioListElement extends ScrollBox.ScrollElement {
     @Override
     protected void setY(int y) {
         super.setY(y);
-        label.setY(y + 4);
+        label.setY(y + 2);
     }
 
     @Override
@@ -66,6 +66,6 @@ public class RadioListElement extends ScrollBox.ScrollElement {
     }
 
     private void drawRadio(GuiGraphics graphics, int x, int y, boolean checked) {
-        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x, y, checked ? 12 : 0, 0, 12, 12, textureSizeX, textureSizeY);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x, y, checked ? 11 : 0, 0, 11, 11, textureSizeX, textureSizeY);
     }
 }

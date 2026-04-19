@@ -258,7 +258,7 @@ public class ModSettings extends AutoScaledScreen {
         generalLayout.addChild(new StringWidget(frontiersLabel, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
 
         GridLayout settingsGrid = new GridLayout().spacing(SECTION_SPACING_SMALL);
-        settingsGrid.defaultCellSetting().alignHorizontallyLeft();
+        settingsGrid.defaultCellSetting().alignHorizontallyLeft().alignVerticallyMiddle();
         generalLayout.addChild(settingsGrid);
 
         int row = 0;
@@ -341,7 +341,7 @@ public class ModSettings extends AutoScaledScreen {
     }
 
     private void buildGroupsList(LinearLayout groupsColumn) {
-        groups = groupsColumn.addChild(new ScrollBox(actualHeight - 120, GROUPS_SCROLL_WIDTH, 16));
+        groups = groupsColumn.addChild(new ScrollBox(actualHeight - 120, GROUPS_SCROLL_WIDTH, 15));
         groups.setElementClickedCallback(element -> {
             onGroupElementClicked((GroupElement) element);
             updateButtonsVisibility();
@@ -396,7 +396,7 @@ public class ModSettings extends AutoScaledScreen {
         labelUpdateSettings = actionsHeader.addChild(createActionsHeaderLabel(updateSettingsLabel));
         labelSharePersonalFrontier = actionsHeader.addChild(createActionsHeaderLabel(sharePersonalFrontierLabel));
 
-        groupsActions = actionsLayout.addChild(new ScrollBox(actualHeight - 128, ACTIONS_SCROLL_WIDTH, 16));
+        groupsActions = actionsLayout.addChild(new ScrollBox(actualHeight - 128, ACTIONS_SCROLL_WIDTH, 15));
     }
 
     private void buildBottomButtons() {

@@ -57,7 +57,7 @@ public class StringWidget extends net.minecraft.client.gui.components.StringWidg
         }
 
         int x = Mth.floor(this.getX() / scale);
-        int y = Mth.floor((this.getY() + (this.getHeight() - 10) / 2.f) / scale);
+        int y = Mth.floor((this.getY() + (this.getHeight() - 8) / 2.f) / scale);
 
         if (align == Align.Left) {
             guiGraphics.drawString(getFont(), this.getMessage(), x, y, this.getColor());

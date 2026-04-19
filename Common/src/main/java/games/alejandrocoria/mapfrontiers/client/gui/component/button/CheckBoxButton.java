@@ -13,7 +13,7 @@ public class CheckBoxButton extends ButtonBase {
     private boolean checked;
 
     public CheckBoxButton(boolean initialValue, OnPress pressedAction) {
-        super(0, 0, 12, 12, Component.empty(), (b) -> pressedAction.onPress((CheckBoxButton) b), Button.DEFAULT_NARRATION);
+        super(0, 0, 11, 11, Component.empty(), (b) -> pressedAction.onPress((CheckBoxButton) b), Button.DEFAULT_NARRATION);
         checked = initialValue;
     }
 
@@ -31,10 +31,10 @@ public class CheckBoxButton extends ButtonBase {
             return;
         }
 
-        graphics.fill(getX(), getY(), getX() + 12, getY() + 12, isHoveredOrKeyboardFocused() ? ColorConstants.CHECKBOX_BORDER_FOCUSED : ColorConstants.CHECKBOX_BORDER);
-        graphics.fill(getX() + 1, getY() + 1, getX() + 11, getY() + 11, ColorConstants.CHECKBOX_BG);
+        graphics.fill(getX(), getY(), getX() + width, getY() + height, isHoveredOrKeyboardFocused() ? ColorConstants.CHECKBOX_BORDER_FOCUSED : ColorConstants.CHECKBOX_BORDER);
+        graphics.fill(getX() + 1, getY() + 1, getX() + width - 1, getY() + height - 1, ColorConstants.CHECKBOX_BG);
         if (checked) {
-            graphics.fill(getX() + 2, getY() + 2, getX() + 10, getY() + 10, ColorConstants.CHECKBOX_CHECK);
+            graphics.fill(getX() + 2, getY() + 2, getX() + width - 2, getY() + height - 2, ColorConstants.CHECKBOX_CHECK);
         }
     }
 
