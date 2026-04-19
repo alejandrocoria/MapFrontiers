@@ -1,6 +1,7 @@
 **Beta 2:**
 * API - Added: Temporary personal frontiers that exist only for the current session and are not saved, synchronized, or shareable.
 * Added: New Path frontier mode for open line-shaped frontiers, including editable points, marker styles, creation presets, and API support.
+* Added: Save and cancel buttons to dialogs.
 * Changed: Incomplete Vertex frontiers now have a distinct temporary look.
 * Changed: Frontier names now support up to 48 characters per line, and the frontier info and list screens were updated to display longer names more cleanly.
 * Changed: Frontier labels and banners now use improved shape-aware placement, keeping them better inside the frontier.

@@ -79,6 +79,7 @@
   "mapfrontiers.accept_frontier_desc": "Accepting will give you a copy of the sent frontier.\nYou will own the frontier and be able to edit it.\nChanges made by both players won't be visible to the other.",
   "mapfrontiers.accept_frontier_desc_replace": "You already have this frontier.\nYou can choose whether to replace the current one or create a new one to keep both.",
   "mapfrontiers.accept_frontier": "Accept",
+  "mapfrontiers.save": "Save",
   "mapfrontiers.replace": "Replace",
   "mapfrontiers.accept_frontier_as_new": "Accept frontier as new and keep the current one",
   "mapfrontiers.delete_frontier_dialog": "Are you sure you want to delete the frontier?",
@@ -91,6 +92,9 @@
   "mapfrontiers.change_to_personal_frontier_dialog": "Are you sure you want to change the frontier to Personal?",
   "mapfrontiers.change_to_personal_frontier_dialog_desc": "No player will be able to see the frontier except you.",
   "mapfrontiers.change_to_personal": "Change to Personal",
+  "mapfrontiers.frontier_changed_dialog": "This frontier was changed",
+  "mapfrontiers.frontier_changed_dialog_desc": "Another player changed this frontier while the dialog was open.\nDo you want to apply your changes anyway?",
+  "mapfrontiers.apply_changes": "Apply changes",
 
   "mapfrontiers.filter_type": "Type:",
   "mapfrontiers.filter_owner": "Owner:",

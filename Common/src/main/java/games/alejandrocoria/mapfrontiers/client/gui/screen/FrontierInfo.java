@@ -517,10 +517,23 @@ public class FrontierInfo extends AutoScaledScreen {
     }
 
     private void onVisibilityButtonPressed() {
-        new VisibilityDialog(frontier.getVisibilityData(), (newVisibilityData, newVisibilityMask) -> {
-            if (!newVisibilityData.equals(frontier.getVisibilityData())) {
+        FrontierData.VisibilityData baseVisibilityData = frontier.getVisibilityData();
+        new VisibilityDialog(baseVisibilityData, (newVisibilityData, newVisibilityMask) -> {
+            if (newVisibilityData.equals(baseVisibilityData)) {
+                return;
+            }
+            if (newVisibilityData.equals(frontier.getVisibilityData())) {
+                return;
+            }
+
+            Runnable applyChange = () -> {
                 frontier.setVisibilityData(newVisibilityData);
                 sendVisibilityChangeToServer();
+            };
+            if (!frontier.getVisibilityData().equals(baseVisibilityData)) {
+                showFrontierChangedConfirmation(applyChange);
+            } else {
+                applyChange.run();
             }
         }).display();
     }
@@ -537,12 +550,36 @@ public class FrontierInfo extends AutoScaledScreen {
     }
 
     private void onPathStyleButtonPressed() {
-        new PathStyleDialog(frontier.getPathStyle(), ClientConfig.getDefaultPathStyle(), newPathStyle -> {
-            if (!frontier.getPathStyle().equals(newPathStyle)) {
+        FrontierData.PathStyle basePathStyle = frontier.getPathStyle();
+        new PathStyleDialog(basePathStyle, ClientConfig.getDefaultPathStyle(), newPathStyle -> {
+            if (newPathStyle.equals(basePathStyle)) {
+                return;
+            }
+            if (newPathStyle.equals(frontier.getPathStyle())) {
+                return;
+            }
+
+            Runnable applyChange = () -> {
                 frontier.setPathStyle(newPathStyle);
                 sendPathStyleChangeToServer();
+            };
+            if (!frontier.getPathStyle().equals(basePathStyle)) {
+                showFrontierChangedConfirmation(applyChange);
+            } else {
+                applyChange.run();
             }
         }).display();
+    }
+
+    private void showFrontierChangedConfirmation(Runnable applyChange) {
+        new ConfirmationDialog(
+                "mapfrontiers.frontier_changed_dialog",
+                "mapfrontiers.frontier_changed_dialog_desc",
+                "mapfrontiers.apply_changes",
+                "gui.cancel",
+                null,
+                response -> applyChange.run()
+        ).display();
     }
 
     private void onColorPicked(int color, boolean dragging) {
