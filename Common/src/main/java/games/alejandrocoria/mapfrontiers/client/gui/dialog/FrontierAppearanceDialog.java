@@ -44,10 +44,12 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
     private static final Tooltip bannerSizeTooltip = tooltip(ClientConfig.BANNER_SIZE);
     private static final Component bannerOpacityLabel = ClientConfig.BANNER_OPACITY.translatedName();
     private static final Tooltip bannerOpacityTooltip = tooltip(ClientConfig.BANNER_OPACITY);
-    private static final Component doneLabel = Component.translatable("gui.done");
+    private static final Component saveLabel = Component.translatable("mapfrontiers.save");
+    private static final Component cancelLabel = Component.translatable("gui.cancel");
     private static final Component onLabel = Component.translatable("options.on");
     private static final Component offLabel = Component.translatable("options.off");
 
+    private final AppearanceSnapshot initialSnapshot;
     private StringWidget labelHideNamesThatDontFit;
     private StringWidget labelPolygonsOpacity;
     private StringWidget labelBorderWidth;
@@ -71,11 +73,14 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
     private TextBoxInt textBannerSize;
     private TextBoxDouble textBannerOpacity;
     private PreviewFrontiersWidget previewFrontiers;
+    private boolean saved = false;
 
-    private SimpleButton doneButton;
+    private SimpleButton saveButton;
+    private SimpleButton cancelButton;
 
     public FrontierAppearanceDialog() {
         super(Component.empty(), 455, 255);
+        initialSnapshot = AppearanceSnapshot.capture();
     }
 
     @Override
@@ -213,7 +218,11 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
         previewFrontiers = columnsLayout.addChild(new PreviewFrontiersWidget());
 
-        doneButton = mainLayout.addChild(new SimpleButton(font, 100, doneLabel, (b) -> onClose()));
+        LinearLayout buttons = LinearLayout.horizontal().spacing(7);
+        saveButton = buttons.addChild(new SimpleButton(font, 100, saveLabel, (b) -> saveAndClose()));
+        saveButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM, ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM_HIGHLIGHT);
+        cancelButton = buttons.addChild(new SimpleButton(font, 100, cancelLabel, (b) -> onClose()));
+        mainLayout.addChild(buttons);
     }
 
     @Override
@@ -229,6 +238,15 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
     @Override
     public void onClose() {
+        if (!saved) {
+            initialSnapshot.apply();
+        }
+        ClientGlobalEvents.postUpdatedConfigEvent();
+        super.onClose();
+    }
+
+    private void saveAndClose() {
+        saved = true;
         ClientGlobalEvents.postUpdatedConfigEvent();
         super.onClose();
     }
@@ -240,5 +258,47 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
     private static void addSectionSpacing(GridLayout layout, int row) {
         layout.addChild(SpacerElement.height(4), row, 0, 1, 2);
+    }
+
+    private record AppearanceSnapshot(boolean hideNamesThatDontFit,
+                                      double polygonsOpacity,
+                                      int borderWidth,
+                                      double borderOpacity,
+                                      int pathMarkerSize,
+                                      double pathMarkerOpacity,
+                                      int textSize,
+                                      double textOpacity,
+                                      ClientConfig.TextColor textColor,
+                                      int bannerSize,
+                                      double bannerOpacity) {
+        private static AppearanceSnapshot capture() {
+            return new AppearanceSnapshot(
+                    ClientConfig.HIDE_NAMES_THAT_DONT_FIT.get(),
+                    ClientConfig.POLYGONS_OPACITY.get(),
+                    ClientConfig.BORDER_WIDTH.get(),
+                    ClientConfig.BORDER_OPACITY.get(),
+                    ClientConfig.PATH_MARKER_SIZE.get(),
+                    ClientConfig.PATH_MARKER_OPACITY.get(),
+                    ClientConfig.TEXT_SIZE.get(),
+                    ClientConfig.TEXT_OPACITY.get(),
+                    ClientConfig.TEXT_COLOR.get(),
+                    ClientConfig.BANNER_SIZE.get(),
+                    ClientConfig.BANNER_OPACITY.get()
+            );
+        }
+
+        private void apply() {
+            ClientConfig.HIDE_NAMES_THAT_DONT_FIT.set(hideNamesThatDontFit);
+            ClientConfig.POLYGONS_OPACITY.set(polygonsOpacity);
+            ClientConfig.BORDER_WIDTH.set(borderWidth);
+            ClientConfig.BORDER_OPACITY.set(borderOpacity);
+            ClientConfig.PATH_MARKER_SIZE.set(pathMarkerSize);
+            ClientConfig.PATH_MARKER_OPACITY.set(pathMarkerOpacity);
+            ClientConfig.TEXT_SIZE.set(textSize);
+            ClientConfig.TEXT_OPACITY.set(textOpacity);
+            ClientConfig.TEXT_COLOR.set(textColor);
+            ClientConfig.BANNER_SIZE.set(bannerSize);
+            ClientConfig.BANNER_OPACITY.set(bannerOpacity);
+        }
     }
 }

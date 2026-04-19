@@ -33,18 +33,19 @@ public class PathStyleDialog extends AutoScaledScreen {
     private static final Component labelsAndBannerLabel = Component.translatable("mapfrontiers.labels_and_banner");
     private static final Component labelsRequiredLabel = Component.translatable("mapfrontiers.path_style_labels_required");
     private static final Component replaceDefaultLabel = Component.translatable("mapfrontiers.replace_with_default_path_style");
-    private static final Component doneLabel = Component.translatable("gui.done");
+    private static final Component saveLabel = Component.translatable("mapfrontiers.save");
+    private static final Component cancelLabel = Component.translatable("gui.cancel");
     private static final int WARNING_WIDTH = 120;
     private static final int BUTTON_HORIZONTAL_PADDING = 16;
 
     private final @Nullable FrontierData.PathStyle defaultStyle;
-    private final Consumer<FrontierData.PathStyle> afterDoneCallback;
+    private final Consumer<FrontierData.PathStyle> saveCallback;
     private FrontierData.PathStyle workingStyle;
 
     private PathStylePreviewWidget previewWidget;
     private MultiLineTextWidget warningWidget;
-    private @Nullable SimpleButton replaceDefaultButton;
-    private SimpleButton doneButton;
+    private SimpleButton saveButton;
+    private SimpleButton cancelButton;
     private CheckBoxButton checkLabelAtStart;
     private CheckBoxButton checkLabelAtEnd;
     private CheckBoxButton checkLabelAtMiddle;
@@ -54,17 +55,17 @@ public class PathStyleDialog extends AutoScaledScreen {
     private MarkerRow segmentRow;
     private boolean syncingWidgets = false;
 
-    public PathStyleDialog(FrontierData.PathStyle initialStyle, FrontierData.PathStyle defaultStyle, Consumer<FrontierData.PathStyle> afterDoneCallback) {
+    public PathStyleDialog(FrontierData.PathStyle initialStyle, FrontierData.PathStyle defaultStyle, Consumer<FrontierData.PathStyle> saveCallback) {
         super(Component.empty(), 530, 260);
         this.defaultStyle = new FrontierData.PathStyle(defaultStyle);
-        this.afterDoneCallback = afterDoneCallback;
+        this.saveCallback = saveCallback;
         this.workingStyle = new FrontierData.PathStyle(initialStyle);
     }
 
-    public PathStyleDialog(FrontierData.PathStyle initialStyle, Consumer<FrontierData.PathStyle> afterDoneCallback) {
+    public PathStyleDialog(FrontierData.PathStyle initialStyle, Consumer<FrontierData.PathStyle> saveCallback) {
         super(Component.empty(), 530, 260);
         this.defaultStyle = null;
-        this.afterDoneCallback = afterDoneCallback;
+        this.saveCallback = saveCallback;
         this.workingStyle = new FrontierData.PathStyle(initialStyle);
     }
 
@@ -115,12 +116,17 @@ public class PathStyleDialog extends AutoScaledScreen {
 
         previewWidget = lowerSection.addChild(new PathStylePreviewWidget());
 
-        LinearLayout buttons = LinearLayout.horizontal().spacing(7);
         if (defaultStyle != null) {
-            replaceDefaultButton = buttons.addChild(new SimpleButton(font, font.width(replaceDefaultLabel) + BUTTON_HORIZONTAL_PADDING,
+            LinearLayout defaultActionRow = LinearLayout.horizontal();
+            defaultActionRow.addChild(new SimpleButton(font, font.width(replaceDefaultLabel) + BUTTON_HORIZONTAL_PADDING,
                     replaceDefaultLabel, b -> replaceWithDefaultStyle()));
+            mainLayout.addChild(defaultActionRow, LayoutSettings.defaults().alignHorizontallyCenter());
         }
-        doneButton = buttons.addChild(new SimpleButton(font, 100, doneLabel, b -> onClose()));
+
+        LinearLayout buttons = LinearLayout.horizontal().spacing(7);
+        saveButton = buttons.addChild(new SimpleButton(font, 100, saveLabel, b -> saveAndClose()));
+        saveButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM, ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM_HIGHLIGHT);
+        cancelButton = buttons.addChild(new SimpleButton(font, 100, cancelLabel, b -> onClose()));
         mainLayout.addChild(buttons, LayoutSettings.defaults().alignHorizontallyCenter());
         updateWarningAndPreview();
     }
@@ -219,16 +225,11 @@ public class PathStyleDialog extends AutoScaledScreen {
             previewWidget.setScaleFactor(scaleFactor);
         }
         super.repositionElements();
-        if (replaceDefaultButton != null) {
-            replaceDefaultButton.setX(content.getX());
-            doneButton.setX(content.getX() + (content.getWidth() - doneButton.getWidth()) / 2);
-        }
     }
 
-    @Override
-    public void onClose() {
+    private void saveAndClose() {
         super.onClose();
-        afterDoneCallback.accept(getPersistedStyle());
+        saveCallback.accept(getPersistedStyle());
     }
 
     private final class MarkerRow {

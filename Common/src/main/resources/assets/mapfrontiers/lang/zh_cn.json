@@ -79,6 +79,7 @@
   "mapfrontiers.accept_frontier_desc": "Accepting will give you a copy of the sent frontier.\nYou will own the frontier and be able to edit it.\nChanges made by both players won't be visible to the other.",
   "mapfrontiers.accept_frontier_desc_replace": "You already have this frontier.\nYou can choose whether to replace the current one or create a new one to keep both.",
   "mapfrontiers.accept_frontier": "接受",
+  "mapfrontiers.save": "保存",
   "mapfrontiers.replace": "替换",
   "mapfrontiers.accept_frontier_as_new": "作为新的领地接受，并保留当前领地",
   "mapfrontiers.delete_frontier_dialog": "确定要删除该领地吗？",
@@ -91,6 +92,9 @@
   "mapfrontiers.change_to_personal_frontier_dialog": "确定要将该领地改为个人吗？",
   "mapfrontiers.change_to_personal_frontier_dialog_desc": "No player will be able to see the frontier except you.",
   "mapfrontiers.change_to_personal": "设为个人",
+  "mapfrontiers.frontier_changed_dialog": "该领地已被更改",
+  "mapfrontiers.frontier_changed_dialog_desc": "另一个玩家在对话框打开期间更改了该领地。\n仍要应用你的更改吗？",
+  "mapfrontiers.apply_changes": "应用更改",
 
   "mapfrontiers.filter_type": "类别：",
   "mapfrontiers.filter_owner": "所有者：",

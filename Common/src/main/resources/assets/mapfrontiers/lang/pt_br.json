@@ -79,6 +79,7 @@
   "mapfrontiers.accept_frontier_desc": "Accepting will give you a copy of the sent frontier.\nYou will own the frontier and be able to edit it.\nChanges made by both players won't be visible to the other.",
   "mapfrontiers.accept_frontier_desc_replace": "You already have this frontier.\nYou can choose whether to replace the current one or create a new one to keep both.",
   "mapfrontiers.accept_frontier": "Aceitar",
+  "mapfrontiers.save": "Salvar",
   "mapfrontiers.replace": "Substituir",
   "mapfrontiers.accept_frontier_as_new": "Aceitar fronteira como nova e manter a atual",
   "mapfrontiers.delete_frontier_dialog": "Tem certeza de que deseja excluir a fronteira?",
@@ -91,6 +92,9 @@
   "mapfrontiers.change_to_personal_frontier_dialog": "Tem certeza de que deseja alterar a fronteira para Pessoal?",
   "mapfrontiers.change_to_personal_frontier_dialog_desc": "Nenhum jogador poderá ver a fronteira além de você.",
   "mapfrontiers.change_to_personal": "Alterar para Pessoal",
+  "mapfrontiers.frontier_changed_dialog": "Esta fronteira foi alterada",
+  "mapfrontiers.frontier_changed_dialog_desc": "Outro jogador alterou esta fronteira enquanto a janela estava aberta.\nDeseja aplicar suas alterações mesmo assim?",
+  "mapfrontiers.apply_changes": "Aplicar alterações",
 
   "mapfrontiers.filter_type": "Tipo:",
   "mapfrontiers.filter_owner": "Dono:",

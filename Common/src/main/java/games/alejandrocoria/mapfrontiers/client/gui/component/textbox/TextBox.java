@@ -1,8 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.textbox;
 
-import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;

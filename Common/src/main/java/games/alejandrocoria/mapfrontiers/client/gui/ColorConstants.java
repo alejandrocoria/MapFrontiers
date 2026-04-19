@@ -36,6 +36,8 @@ public final class ColorConstants {
     public static final int SIMPLE_BUTTON_BORDER_FOCUSED = 0xffffffff;
     public static final int SIMPLE_BUTTON_BG = 0xc7101010;
     public static final int SIMPLE_BUTTON_TEXT = 0xff999999;
+    public static final int SIMPLE_BUTTON_TEXT_CONFIRM = 0xff8beb8b;
+    public static final int SIMPLE_BUTTON_TEXT_CONFIRM_HIGHLIGHT = 0xff24ff24;
     public static final int SIMPLE_BUTTON_TEXT_DELETE = 0xffff7777;
     public static final int SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT = 0xffff0000;
     public static final int SIMPLE_BUTTON_TEXT_HIGHLIGHT = 0xffffffff;

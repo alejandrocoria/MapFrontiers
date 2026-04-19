@@ -81,6 +81,7 @@
   "mapfrontiers.accept_frontier_desc": "Accepting will give you a copy of the sent frontier.\nYou will own the frontier and be able to edit it.\nChanges made by both players won't be visible to the other.",
   "mapfrontiers.accept_frontier_desc_replace": "You already have this frontier.\nYou can choose whether to replace the current one or create a new one to keep both.",
   "mapfrontiers.accept_frontier": "Принять",
+  "mapfrontiers.save": "Сохранить",
   "mapfrontiers.replace": "Заменить",
   "mapfrontiers.accept_frontier_as_new": "Принять границу как новую и сохранить текущую",
   "mapfrontiers.delete_frontier_dialog": "Вы уверены, что хотите удалить границу?",
@@ -93,6 +94,9 @@
   "mapfrontiers.change_to_personal_frontier_dialog": "Вы уверены, что хотите сделать границу личной?",
   "mapfrontiers.change_to_personal_frontier_dialog_desc": "No player will be able to see the frontier except you.",
   "mapfrontiers.change_to_personal": "Сделать личной",
+  "mapfrontiers.frontier_changed_dialog": "Эта граница была изменена",
+  "mapfrontiers.frontier_changed_dialog_desc": "Другой игрок изменил эту границу, пока диалог был открыт.\nВсе равно применить ваши изменения?",
+  "mapfrontiers.apply_changes": "Применить изменения",
 
   "mapfrontiers.filter_type": "Тип:",
   "mapfrontiers.filter_owner": "Владелец:",

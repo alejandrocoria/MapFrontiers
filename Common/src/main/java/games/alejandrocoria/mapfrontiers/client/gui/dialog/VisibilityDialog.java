@@ -35,28 +35,30 @@ public class VisibilityDialog extends AutoScaledScreen {
     private static final Component undergroundLabel = Component.translatable("mapfrontiers.underground");
     private static final Component topoLabel = Component.translatable("mapfrontiers.topo");
     private static final Component biomeLabel = Component.translatable("mapfrontiers.biome");
-    private static final Component doneLabel = Component.translatable("gui.done");
+    private static final Component saveLabel = Component.translatable("mapfrontiers.save");
+    private static final Component cancelLabel = Component.translatable("gui.cancel");
     private static final Component onLabel = Component.translatable("options.on");
     private static final Component offLabel = Component.translatable("options.off");
 
     private final FrontierData.VisibilityData visibilityData;
     @Nullable
     private final FrontierData.VisibilityData visibilityMask;
-    private final BiConsumer<FrontierData.VisibilityData, FrontierData.VisibilityData> afterDoneCallback;
-    protected SimpleButton doneButton;
+    private final BiConsumer<FrontierData.VisibilityData, FrontierData.VisibilityData> saveCallback;
+    protected SimpleButton saveButton;
+    protected SimpleButton cancelButton;
 
-    public VisibilityDialog(FrontierData.VisibilityData visibilityData, BiConsumer<FrontierData.VisibilityData, FrontierData.VisibilityData> afterDoneCallback) {
+    public VisibilityDialog(FrontierData.VisibilityData visibilityData, BiConsumer<FrontierData.VisibilityData, FrontierData.VisibilityData> saveCallback) {
         super(Component.empty(), 554, 191);
         this.visibilityData = new FrontierData.VisibilityData(visibilityData);
         this.visibilityMask = null;
-        this.afterDoneCallback = afterDoneCallback;
+        this.saveCallback = saveCallback;
     }
 
-    public VisibilityDialog(FrontierData.VisibilityData visibilityData, FrontierData.VisibilityData visibilityDataMask, BiConsumer<FrontierData.VisibilityData, FrontierData.VisibilityData> afterDoneCallback) {
+    public VisibilityDialog(FrontierData.VisibilityData visibilityData, FrontierData.VisibilityData visibilityDataMask, BiConsumer<FrontierData.VisibilityData, FrontierData.VisibilityData> saveCallback) {
         super(Component.empty(), 554, 191);
         this.visibilityData = new FrontierData.VisibilityData(visibilityData);
         this.visibilityMask = new FrontierData.VisibilityData(visibilityDataMask);
-        this.afterDoneCallback = afterDoneCallback;
+        this.saveCallback = saveCallback;
     }
 
     @Override
@@ -144,7 +146,11 @@ public class VisibilityDialog extends AutoScaledScreen {
         createWidgets(webmapGrid, row++, topoLabel, FrontierData.VisibilityData.Visibility.WebmapTopo);
         createWidgets(webmapGrid, row++, biomeLabel, FrontierData.VisibilityData.Visibility.WebmapBiome);
 
-        doneButton = mainLayout.addChild(new SimpleButton(font, 100, doneLabel, (b) -> onClose()));
+        LinearLayout buttons = LinearLayout.horizontal().spacing(7);
+        saveButton = buttons.addChild(new SimpleButton(font, 100, saveLabel, (b) -> saveAndClose()));
+        saveButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM, ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM_HIGHLIGHT);
+        cancelButton = buttons.addChild(new SimpleButton(font, 100, cancelLabel, (b) -> onClose()));
+        mainLayout.addChild(buttons);
     }
 
     private void createWidgets(GridLayout layout, int row, Component label, FrontierData.VisibilityData.Visibility visibility) {
@@ -173,8 +179,8 @@ public class VisibilityDialog extends AutoScaledScreen {
         drawCenteredBoxBackground(graphics, content.getWidth() + 20, content.getHeight() + 20);
     }
 
-    public void onClose() {
+    private void saveAndClose() {
         super.onClose();
-        afterDoneCallback.accept(visibilityData, visibilityMask);
+        saveCallback.accept(visibilityData, visibilityMask);
     }
 }
