@@ -26,13 +26,13 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class MapFrontiersClientForge extends MapFrontiersClient {
-    public static void clientSetup(FMLClientSetupEvent event) {
+    public static void onClientSetup(FMLClientSetupEvent event) {
         init();
 
         MapFrontiersForge.LOGGER.info("Forge clientSetup done");
     }
 
-    public static void livingUpdateEvent(LivingEvent.LivingTickEvent event) {
+    public static void onLivingTick(LivingEvent.LivingTickEvent event) {
         Minecraft client = Minecraft.getInstance();
         if (event.getEntity() == client.player) {
             Player player = (Player) event.getEntity();
@@ -40,29 +40,29 @@ public class MapFrontiersClientForge extends MapFrontiersClient {
         }
     }
 
-    public static void onRenderTick(TickEvent.ClientTickEvent.Pre event) {
+    public static void onClientTickPre(TickEvent.ClientTickEvent.Pre event) {
         ClientGlobalEvents.postClientTickEvent(Minecraft.getInstance());
     }
 
-    public static void addGuiOverlayLayersEvent(AddGuiOverlayLayersEvent event) {
+    public static void onAddGuiOverlayLayers(AddGuiOverlayLayersEvent event) {
         event.getLayeredDraw().add(Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "hud"), ClientGlobalEvents::postHudRenderEvent);
     }
 
-    public static void clientConnectedToServer(ClientPlayerNetworkEvent.LoggingIn event) {
+    public static void onClientConnectedToServer(ClientPlayerNetworkEvent.LoggingIn event) {
         ClientGlobalEvents.postClientConnectedEvent();
     }
 
-    public static void clientDisconnectionFromServer(ClientPlayerNetworkEvent.LoggingOut event) {
+    public static void onClientDisconnectedFromServer(ClientPlayerNetworkEvent.LoggingOut event) {
         ClientGlobalEvents.postClientDisconnectedEvent();
     }
 
-    public static void mouseEvent(InputEvent.MouseButton.Pre event) {
+    public static void onMouseButtonPre(InputEvent.MouseButton.Pre event) {
         if (event.getAction() == GLFW.GLFW_RELEASE) {
             ClientGlobalEvents.postMouseReleaseEvent(event.getButton());
         }
     }
 
-    public static void registerKeyMappingsEvent(RegisterKeyMappingsEvent event) {
+    public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         openSettingsKey = new KeyMapping("mapfrontiers.key.open_settings", KeyConflictContext.IN_GAME,
                 InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, MapFrontiersClient.registerKeyMappingCategory(), 0);
         event.register(openSettingsKey);
@@ -80,4 +80,3 @@ public class MapFrontiersClientForge extends MapFrontiersClient {
         }
     }
 }
-

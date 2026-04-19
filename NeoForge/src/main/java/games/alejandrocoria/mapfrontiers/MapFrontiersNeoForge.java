@@ -19,29 +19,29 @@ public class MapFrontiersNeoForge extends MapFrontiers {
     public MapFrontiersNeoForge(IEventBus eventBus) {
         init();
 
-        eventBus.addListener((FMLClientSetupEvent event) -> MapFrontiersClientNeoForge.clientSetup(event, eventBus));
-        NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::registerCommands);
-        NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::serverStarting);
-        NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::serverStopping);
-        NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::playerLoggedIn);
+        eventBus.addListener((FMLClientSetupEvent event) -> MapFrontiersClientNeoForge.onClientSetup(event, eventBus));
+        NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::onRegisterCommands);
+        NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::onServerStarting);
+        NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::onServerStopping);
+        NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::onServerTick);
 
         LOGGER.info("NeoForge commonSetup done");
     }
 
-    public static void registerCommands(RegisterCommandsEvent event) {
+    public static void onRegisterCommands(RegisterCommandsEvent event) {
         CommandAccept.register(event.getDispatcher());
     }
 
-    public static void serverStarting(ServerStartingEvent event) {
+    public static void onServerStarting(ServerStartingEvent event) {
         ServerGlobalEvents.postServerStartingEvent(event.getServer());
     }
 
-    public static void serverStopping(ServerStoppingEvent event) {
+    public static void onServerStopping(ServerStoppingEvent event) {
         ServerGlobalEvents.postServerStoppingEvent(event.getServer());
     }
 
-    public static void playerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+    public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         ServerPlayer player = (ServerPlayer) event.getEntity();
         ServerGlobalEvents.postPlayerJoinedEvent(player.level().getServer(), player);
     }
