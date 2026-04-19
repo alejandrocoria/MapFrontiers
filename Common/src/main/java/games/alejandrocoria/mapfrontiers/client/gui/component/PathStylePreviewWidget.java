@@ -103,9 +103,9 @@ public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
         frontierData.setDimension(OVERWORLD);
         PreviewFrontierHelper.setPreviewBanner(frontierData);
         setPreviewVisibility(frontierData);
-        frontierData.addPoint(new BlockPos(55, 70, 165));
+        frontierData.addPoint(new BlockPos(65, 70, 155));
         frontierData.addPoint(new BlockPos(120, 70, 70));
-        frontierData.addPoint(new BlockPos(185, 70, 165));
+        frontierData.addPoint(new BlockPos(175, 70, 155));
         return frontierData;
     }
 
