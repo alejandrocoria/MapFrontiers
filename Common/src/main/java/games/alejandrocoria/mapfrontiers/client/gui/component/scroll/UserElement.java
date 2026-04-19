@@ -19,7 +19,7 @@ public class UserElement extends ScrollBox.ScrollElement {
     private int pingBar = 0;
 
     public UserElement(Font font, SettingsUser user) {
-        super(258, 16);
+        super(258, 15);
         this.font = font;
         this.user = user;
 
@@ -67,7 +67,7 @@ public class UserElement extends ScrollBox.ScrollElement {
             buttonDelete.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         }
 
-        graphics.text(font, user.toString(), x + 16, y + 4, color);
+        graphics.text(font, user.toString(), x + 16, y + 3, color);
 
         if (pingBar > 0) {
             drawPingLine(graphics, x + 3, y + 11, 2);

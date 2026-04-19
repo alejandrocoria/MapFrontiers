@@ -19,13 +19,23 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class FrontierListElement extends ScrollBox.ScrollElement {
-    private static final Identifier nameFadeTexture = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/frontier_list_name_fade.png");
+    private static final Identifier NAME_FADE_TEXTURE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/frontier_list/name_fade.png");
+    private static final Identifier CHUNK_FILL_TEXTURE = frontierListTexture("chunk_fill.png");
+    private static final Identifier CHUNK_OUTLINE_TEXTURE = frontierListTexture("chunk_outline.png");
+    private static final Identifier PATH_FILL_TEXTURE = frontierListTexture("path_fill.png");
+    private static final Identifier PATH_OUTLINE_TEXTURE = frontierListTexture("path_outline.png");
+    private static final Identifier VERTEX_FILL_TEXTURE = frontierListTexture("vertex_fill.png");
+    private static final Identifier VERTEX_OUTLINE_TEXTURE = frontierListTexture("vertex_outline.png");
     private static final int NAME_HOVER_X = 24;
     private static final int NAME_X = 26;
     private static final int METADATA_X = 170;
-    private static final int COUNTS_X_OFFSET = 10;
-    private static final int OWNER_X_OFFSET = 20;
+    private static final int OWNER_X_OFFSET = 12;
     private static final int NAME_METADATA_SPACING = 2;
+    private static final int MODE_BADGE_X = 2;
+    private static final int MODE_BADGE_ICON_Y = 1;
+    private static final int MODE_BADGE_COUNT_Y = 16;
+    private static final int MODE_BADGE_ICON_WIDTH = 21;
+    private static final int MODE_BADGE_ICON_HEIGHT = 14;
     private static final int NAME_LINE_1_Y = 4;
     private static final int NAME_LINE_2_Y = 14;
     private static final int NAME_LINE_BG_TOP_OFFSET = -1;
@@ -39,14 +49,11 @@ public class FrontierListElement extends ScrollBox.ScrollElement {
     private final String type;
     private final String owner;
     private final String dimension;
-    private final String vertices;
-    private final String points;
-    private final String chunks;
+    private final int count;
     private final int offset1;
-    private final int offset2;
 
     public FrontierListElement(Font font, FrontierOverlay frontier) {
-        super(450, 24);
+        super(450, 25);
         this.font = font;
         this.frontier = frontier;
 
@@ -58,32 +65,19 @@ public class FrontierListElement extends ScrollBox.ScrollElement {
             name2 = I18n.get("mapfrontiers.unnamed_2", ChatFormatting.ITALIC);
         }
 
-        type = I18n.get("mapfrontiers.type", I18n.get(frontier.getPersonal() ? "mapfrontiers.config.Personal" : "mapfrontiers.config.Global"));
+        type = I18n.get(frontier.getPersonal() ? "mapfrontiers.config.Personal" : "mapfrontiers.config.Global");
         owner = I18n.get("mapfrontiers.owner", frontier.getOwner());
         dimension = I18n.get("mapfrontiers.dimension", frontier.getDimension().identifier().toString());
 
         if (frontier.getMode() == FrontierData.Mode.Vertex) {
-            vertices = I18n.get("mapfrontiers.vertices", frontier.getVertexCount());
-            points = null;
-            chunks = null;
+            count = frontier.getVertexCount();
         } else if (frontier.getMode() == FrontierData.Mode.Path) {
-            vertices = null;
-            points = I18n.get("mapfrontiers.points", frontier.getPointCount());
-            chunks = null;
+            count = frontier.getPointCount();
         } else {
-            vertices = null;
-            points = null;
-            chunks = I18n.get("mapfrontiers.chunks", frontier.getChunkCount());
+            count = frontier.getChunkCount();
         }
 
-        offset1 = StringHelper.getMaxWidth(font,
-                I18n.get("mapfrontiers.type", I18n.get("mapfrontiers.config.Personal")),
-                I18n.get("mapfrontiers.type", I18n.get("mapfrontiers.config.Global")));
-
-        offset2 = StringHelper.getMaxWidth(font,
-                I18n.get("mapfrontiers.vertices", 9999),
-                I18n.get("mapfrontiers.points", 9999),
-                I18n.get("mapfrontiers.chunks", 9999));
+        offset1 = StringHelper.getMaxWidth(font, I18n.get("mapfrontiers.config.Personal"), I18n.get("mapfrontiers.config.Global"));
     }
 
     public FrontierOverlay getFrontier() {
@@ -120,24 +114,46 @@ public class FrontierListElement extends ScrollBox.ScrollElement {
 
         graphics.text(font, type, x + METADATA_X, y + 4, color);
         graphics.text(font, dimension, x + METADATA_X, y + 14, ColorConstants.TEXT_DIMENSION);
-
-        if (frontier.getMode() == FrontierData.Mode.Vertex) {
-            graphics.text(font, vertices, x + METADATA_X + COUNTS_X_OFFSET + offset1, y + 4, color);
-        } else if (frontier.getMode() == FrontierData.Mode.Path) {
-            graphics.text(font, points, x + METADATA_X + COUNTS_X_OFFSET + offset1, y + 4, color);
-        } else {
-            graphics.text(font, chunks, x + METADATA_X + COUNTS_X_OFFSET + offset1, y + 4, color);
-        }
-
-        graphics.text(font, owner, x + METADATA_X + OWNER_X_OFFSET + offset1 + offset2, y + 4, color);
+        graphics.text(font, owner, x + METADATA_X + OWNER_X_OFFSET + offset1, y + 4, color);
 
         drawNameLine(graphics, name1, visibleName1, name1Truncated, showExpandedNames, NAME_LINE_1_Y,
                 frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier), color, hiddenColor);
         drawNameLine(graphics, name2, visibleName2, name2Truncated, showExpandedNames, NAME_LINE_2_Y,
                 frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier), color, hiddenColor);
 
-        graphics.fill(x + 1, y + 1, x + 23, y + 23, ColorConstants.COLOR_INDICATOR_BORDER);
-        graphics.fill(x + 2, y + 2, x + 22, y + 22, frontier.getColor() | 0xff000000);
+        drawModeBadge(graphics, selected);
+    }
+
+    private void drawModeBadge(GuiGraphicsExtractor graphics, boolean selected) {
+        Identifier fillTexture;
+        Identifier outlineTexture;
+        switch (frontier.getMode()) {
+            case Vertex -> {
+                fillTexture = VERTEX_FILL_TEXTURE;
+                outlineTexture = VERTEX_OUTLINE_TEXTURE;
+            }
+            case Path -> {
+                fillTexture = PATH_FILL_TEXTURE;
+                outlineTexture = PATH_OUTLINE_TEXTURE;
+            }
+            case Chunk -> {
+                fillTexture = CHUNK_FILL_TEXTURE;
+                outlineTexture = CHUNK_OUTLINE_TEXTURE;
+            }
+            default -> throw new IllegalStateException("Unexpected frontier mode: " + frontier.getMode());
+        }
+
+        int iconX = x + MODE_BADGE_X;
+        int iconY = y + MODE_BADGE_ICON_Y;
+        graphics.blit(RenderPipelines.GUI_TEXTURED, fillTexture, iconX, iconY, 0, 0, MODE_BADGE_ICON_WIDTH,
+                MODE_BADGE_ICON_HEIGHT, MODE_BADGE_ICON_WIDTH, MODE_BADGE_ICON_HEIGHT, frontier.getColor() | 0xff000000);
+        int outlineColor = selected ? ColorConstants.WHITE : ColorConstants.TEXT_DARK;
+        graphics.blit(RenderPipelines.GUI_TEXTURED, outlineTexture, iconX, iconY, 0, 0, MODE_BADGE_ICON_WIDTH,
+                MODE_BADGE_ICON_HEIGHT, MODE_BADGE_ICON_WIDTH, MODE_BADGE_ICON_HEIGHT, outlineColor);
+
+        String countText = Integer.toString(count);
+        int countX = iconX + (MODE_BADGE_ICON_WIDTH - font.width(countText)) / 2;
+        graphics.text(font, countText, countX, y + MODE_BADGE_COUNT_Y, ColorConstants.TEXT_DIMENSION);
     }
 
     private void drawNameLine(GuiGraphicsExtractor graphics,
@@ -156,7 +172,7 @@ public class FrontierListElement extends ScrollBox.ScrollElement {
             int bgLeft = x + NAME_X - 1;
             int bgOpaqueRight = bgLeft + textWidth + 2;
             graphics.fill(bgLeft, y + lineY + NAME_LINE_BG_TOP_OFFSET, bgOpaqueRight, y + lineY + NAME_LINE_BG_BOTTOM_OFFSET, ColorConstants.SCROLL_ELEMENT_SELECTED);
-            graphics.blit(RenderPipelines.GUI_TEXTURED, nameFadeTexture, bgOpaqueRight, y + lineY + NAME_LINE_BG_TOP_OFFSET, 0, 0,
+            graphics.blit(RenderPipelines.GUI_TEXTURED, NAME_FADE_TEXTURE, bgOpaqueRight, y + lineY + NAME_LINE_BG_TOP_OFFSET, 0, 0,
                     NAME_LINE_BG_FADE_WIDTH, NAME_LINE_BG_BOTTOM_OFFSET - NAME_LINE_BG_TOP_OFFSET, NAME_LINE_BG_FADE_WIDTH,
                     NAME_LINE_BG_BOTTOM_OFFSET - NAME_LINE_BG_TOP_OFFSET, ColorConstants.SCROLL_ELEMENT_SELECTED);
         }
@@ -183,6 +199,10 @@ public class FrontierListElement extends ScrollBox.ScrollElement {
 
     private boolean isNameAreaHovered(int mouseX, int mouseY) {
         return mouseX >= x + NAME_HOVER_X && mouseY >= y && mouseX < x + METADATA_X && mouseY < y + height;
+    }
+
+    private static Identifier frontierListTexture(String fileName) {
+        return Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/frontier_list/" + fileName);
     }
 
     @Override

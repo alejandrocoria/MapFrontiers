@@ -23,7 +23,7 @@ public class OptionButton extends ButtonBase {
     private int highlightedColor = ColorConstants.TEXT_HIGHLIGHT;
 
     public OptionButton(Font font, int width, OnPress pressedAction) {
-        super(0, 0, width, 12, Component.empty(), (b) -> pressedAction.onPress((OptionButton) b), Button.DEFAULT_NARRATION);
+        super(0, 0, width, 13, Component.empty(), (b) -> pressedAction.onPress((OptionButton) b), Button.DEFAULT_NARRATION);
         this.font = font;
         options = new ArrayList<>();
     }
@@ -91,7 +91,7 @@ public class OptionButton extends ButtonBase {
         graphics.fill(getX(), getY(), getX() + width, getY() + height, borderColor);
         graphics.fill(getX() + 1, getY() + 1, getX() + width - 1, getY() + height - 1, ColorConstants.OPTION_BG);
 
-        graphics.text(font, options.get(selected), getX() + 4, getY() + 2, c);
+        graphics.text(font, options.get(selected), getX() + 4, getY() + 3, c);
     }
 
     @Override

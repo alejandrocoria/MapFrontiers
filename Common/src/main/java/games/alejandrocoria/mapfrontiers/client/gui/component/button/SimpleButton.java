@@ -17,7 +17,7 @@ public class SimpleButton extends ButtonBase {
     private int textColorInactive = ColorConstants.SIMPLE_BUTTON_TEXT_INACTIVE;
 
     public SimpleButton(Font font, int width, Component text, OnPress pressedAction) {
-        super(0, 0, width, 16, text, (b) -> pressedAction.onPress((SimpleButton) b), Button.DEFAULT_NARRATION);
+        super(0, 0, width, 15, text, (b) -> pressedAction.onPress((SimpleButton) b), Button.DEFAULT_NARRATION);
         this.label = new StringWidget(text, font, StringWidget.Align.Center);
     }
 
@@ -30,7 +30,7 @@ public class SimpleButton extends ButtonBase {
     @Override
     public void setY(int y) {
         super.setY(y);
-        this.label.setY(y + 4);
+        this.label.setY(y + 2);
     }
 
     @Override
@@ -51,10 +51,10 @@ public class SimpleButton extends ButtonBase {
 
         int borderColor = isKeyboardFocused() ? ColorConstants.SIMPLE_BUTTON_BORDER_FOCUSED : active ? ColorConstants.SIMPLE_BUTTON_BORDER : ColorConstants.SIMPLE_BUTTON_BORDER_DISABLED;
         graphics.horizontalLine(getX(), getX() + width - 1, getY(), borderColor);
-        graphics.horizontalLine(getX(), getX() + width - 1, getY() + 15, borderColor);
-        graphics.verticalLine(getX(), getY(), getY() + 15, borderColor);
-        graphics.verticalLine(getX() + width - 1, getY(), getY() + 15, borderColor);
-        graphics.fill(getX() + 1, getY() + 1, getX() + width - 1, getY() + 15, ColorConstants.SIMPLE_BUTTON_BG);
+        graphics.horizontalLine(getX(), getX() + width - 1, getY() + height - 1, borderColor);
+        graphics.verticalLine(getX(), getY(), getY() + height - 1, borderColor);
+        graphics.verticalLine(getX() + width - 1, getY(), getY() + height - 1, borderColor);
+        graphics.fill(getX() + 1, getY() + 1, getX() + width - 1, getY() + height - 1, ColorConstants.SIMPLE_BUTTON_BG);
 
         label.extractRenderState(graphics, mouseX, mouseY, partialTicks);
     }

@@ -88,7 +88,7 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
         mainLayout.addChild(columnsLayout);
 
         GridLayout settingsLayout = new GridLayout().spacing(4);
-        settingsLayout.defaultCellSetting().alignHorizontallyLeft();
+        settingsLayout.defaultCellSetting().alignHorizontallyLeft().alignVerticallyMiddle();
         columnsLayout.addChild(settingsLayout);
         int row = 0;
 

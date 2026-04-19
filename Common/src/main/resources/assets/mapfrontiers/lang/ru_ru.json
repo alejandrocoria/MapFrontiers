@@ -268,7 +268,7 @@
   "mapfrontiers.config.None": "Нет",
   "mapfrontiers.config.Name": "Имя",
   "mapfrontiers.config.Owner": "Владелец",
-  "mapfrontiers.config.VertexChunk": "Вершина/Чанк",
+  "mapfrontiers.config.Shape": "Форма",
   "mapfrontiers.config.Area": "Площадь",
   "mapfrontiers.config.Modified": "Изменено",
   "mapfrontiers.config.Created": "Создано",

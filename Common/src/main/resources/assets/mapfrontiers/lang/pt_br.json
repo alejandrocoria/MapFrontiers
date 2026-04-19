@@ -266,7 +266,7 @@
   "mapfrontiers.config.None": "Nenhum",
   "mapfrontiers.config.Name": "Nome",
   "mapfrontiers.config.Owner": "Dono",
-  "mapfrontiers.config.VertexChunk": "Vértice/Chunk",
+  "mapfrontiers.config.Shape": "Forma",
   "mapfrontiers.config.Area": "Area",
   "mapfrontiers.config.Modified": "Modificado",
   "mapfrontiers.config.Created": "Criado",

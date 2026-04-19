@@ -26,7 +26,7 @@ public class SimpleSlider extends AbstractSliderButton
     }
 
     public SimpleSlider(Font font, int width, String translationKey, int minValue, int maxValue, int initialValue, ValueChanged callback) {
-        super(0, 0, width, 16, Component.literal(String.valueOf(initialValue)), normalize(initialValue, minValue, maxValue));
+        super(0, 0, width, 15, Component.literal(String.valueOf(initialValue)), normalize(initialValue, minValue, maxValue));
         this.font = font;
         this.minValue = minValue;
         this.maxValue = maxValue;
@@ -104,6 +104,6 @@ public class SimpleSlider extends AbstractSliderButton
         int handleX = getX() + (int)(value * (width - 6)) + 1;
         graphics.fill(handleX, getY() + 1, handleX + 4, getY() + height - 1, isHoveredOrFocused() ? 0xFFFFFFFF : 0xFFAAAAAA);
 
-        graphics.centeredText(font, getMessage(), getX() + width / 2, getY() + 5, isHovered ? ColorConstants.SIMPLE_BUTTON_TEXT_HIGHLIGHT : ColorConstants.SIMPLE_BUTTON_TEXT);
+        graphics.centeredText(font, getMessage(), getX() + width / 2, getY() + 4, isHovered ? ColorConstants.SIMPLE_BUTTON_TEXT_HIGHLIGHT : ColorConstants.SIMPLE_BUTTON_TEXT);
     }
 }

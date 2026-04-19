@@ -158,13 +158,13 @@ public class FrontierList extends AutoScaledScreen {
 
         searchBox = new TextBox(font, 100, I18n.get("mapfrontiers.search"));
         searchBox.setMaxLength(40);
-        searchBox.setHeight(16);
+        searchBox.setHeight(15);
         searchBox.setValueChangedCallback(this::onSearchValueChanged);
         toolbar.addChild(searchBox);
     }
 
     private void buildFrontiersList(GridLayout mainLayout) {
-        frontiers = new ScrollBox(actualHeight - 120, 450, 24);
+        frontiers = new ScrollBox(actualHeight - 120, 450, 25);
         frontiers.setElementDeletedCallback(element -> onFrontierElementDeleted());
         frontiers.setElementClickedCallback(this::onFrontierElementClicked);
         mainLayout.addChild(frontiers, 1, 0, LayoutSettings.defaults().alignHorizontallyRight());
@@ -277,7 +277,7 @@ public class FrontierList extends AutoScaledScreen {
     }
 
     private ScrollBox createFilterScrollBox(int height) {
-        return new ScrollBox(height, 200, 16);
+        return new ScrollBox(height, 200, 15);
     }
 
     private void selectRadioById(ScrollBox scrollBox, int id) {
@@ -485,7 +485,7 @@ public class FrontierList extends AutoScaledScreen {
                         yield c == 0 ? a.getName2().compareToIgnoreCase(b.getName2()) : c;
                     }
                     case ClientConfig.Sorting.Owner -> a.getOwner().compareTo(b.getOwner());
-                    case ClientConfig.Sorting.VertexChunk -> Integer.compare(Math.max(a.getChunkCount(), a.getVertexCount()), Math.max(b.getChunkCount(), b.getVertexCount()));
+                    case ClientConfig.Sorting.Shape -> Integer.compare(getShapeCount(a), getShapeCount(b));
                     case ClientConfig.Sorting.Area -> Float.compare(a.area, b.area);
                     case ClientConfig.Sorting.Modified -> {
                         if (a.getModified() == null && b.getModified() == null) {
@@ -576,5 +576,13 @@ public class FrontierList extends AutoScaledScreen {
         } else {
             buttonVisible.setMessage(Component.translatable("mapfrontiers.show"));
         }
+    }
+
+    private static int getShapeCount(FrontierOverlay frontier) {
+        return switch (frontier.getMode()) {
+            case Vertex -> frontier.getVertexCount();
+            case Chunk -> frontier.getChunkCount();
+            case Path -> frontier.getPointCount();
+        };
     }
 }

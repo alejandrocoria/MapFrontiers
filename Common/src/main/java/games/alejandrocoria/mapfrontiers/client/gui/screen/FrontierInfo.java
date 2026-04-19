@@ -118,7 +118,7 @@ public class FrontierInfo extends AutoScaledScreen {
     private static final int SECTION_WIDTH = 144;
     private static final int NAME_SECTION_WIDTH = SECTION_WIDTH * 2 + MAIN_LAYOUT_SPACING + 1;
     private static final int NAME_MAX_LENGTH = 48;
-    private static final int DEFAULT_TEXTBOX_HEIGHT = 20;
+    private static final int DEFAULT_TEXTBOX_HEIGHT = 19;
     private static final int SECTION_SPACING_SMALL = 2;
     private static final int SECTION_SPACING_MEDIUM = 4;
     private static final int INLINE_SPACING = 3;

@@ -32,7 +32,7 @@ public class GroupActionElement extends ScrollBox.ScrollElement {
     }
 
     public GroupActionElement(Font font, SettingsGroup group, boolean ownersGroup, ActionChangedConsumer actionChangedCallback) {
-        super(430, 16);
+        super(430, 15);
         this.font = font;
         this.group = group;
         createFrontier = new CheckBoxButton(group.hasAction(FrontierSettings.Action.CreateGlobalFrontier),

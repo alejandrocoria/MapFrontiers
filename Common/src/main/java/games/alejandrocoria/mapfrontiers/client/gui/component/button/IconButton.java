@@ -14,7 +14,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 public class IconButton extends ButtonBase {
     private static final Identifier texture = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/buttons.png");
     private static final int textureSizeX = 34;
-    private static final int textureSizeY = 133;
+    private static final int textureSizeY = 134;
 
     public enum Type {
         Add       ( 0,   0, 13,   0, 13, 13),
@@ -26,9 +26,9 @@ public class IconButton extends ButtonBase {
         ArrowDown (18,  73, 26,  73,  8, 17),
         Undo      ( 0,  90, 17,  90, 17, 17),
         Redo      ( 0, 107, 17, 107, 17, 17),
-        Swap      ( 0, 124,  9, 124,  9,  9),
-        SortUp    (27,   0, 27,   6,  7,  6),
-        SortDown  (27,  12, 27,  18,  7,  6);
+        Swap      ( 0, 124,  9, 124,  9,  10),
+        SortUp    (27,   0, 27,   5,  7,  5),
+        SortDown  (27,  10, 27,  15,  7,  5);
 
         final int texX;
         final int texY;

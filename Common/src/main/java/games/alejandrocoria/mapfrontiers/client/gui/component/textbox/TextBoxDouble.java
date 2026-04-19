@@ -19,7 +19,7 @@ public class TextBoxDouble extends EditBox {
     private DoubleConsumer valueChangedCallback;
 
     public TextBoxDouble(double defaultValue, double min, double max, Font font, int width) {
-        super(font, 0, 0, width, 12, Component.empty());
+        super(font, 0, 0, width, 13, Component.empty());
         this.defaultValue = defaultValue;
         this.min = min;
         this.max = max;

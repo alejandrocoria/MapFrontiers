@@ -29,7 +29,7 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
     private int pingBar = 0;
 
     public UserSharedElement(Font font, SettingsUserShared user, boolean enabled, boolean removable, ActionChangedConsumer actionChangedCallback) {
-        super(430, 16);
+        super(430, 15);
         this.font = font;
         this.user = user;
         updateFrontier = new CheckBoxButton(user.hasAction(SettingsUserShared.Action.UpdateFrontier),
@@ -100,7 +100,7 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
         updateSettings.extractRenderState(graphics, mouseX, mouseY, partialTicks);
 
         if (user.isPending()) {
-            graphics.text(font, I18n.get("mapfrontiers.pending", ChatFormatting.ITALIC), x + 350, y + 4, ColorConstants.TEXT_PENDING);
+            graphics.text(font, I18n.get("mapfrontiers.pending", ChatFormatting.ITALIC), x + 350, y + 3, ColorConstants.TEXT_PENDING);
         }
 
         if (pingBar > 0) {
