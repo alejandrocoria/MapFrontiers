@@ -10,7 +10,9 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 public class SettingsProfile {
     public enum State {
-        Enabled, Owner, Disabled
+        Enabled, Owner, Disabled;
+
+        public static final State[] VALUES = values();
     }
 
     public State createFrontier = State.Disabled;
@@ -35,11 +37,11 @@ public class SettingsProfile {
     }
 
     public void fromBytes(ByteBuf buf) {
-        createFrontier = State.values()[buf.readInt()];
-        deleteFrontier = State.values()[buf.readInt()];
-        updateFrontier = State.values()[buf.readInt()];
-        updateSettings = State.values()[buf.readInt()];
-        personalFrontier = State.values()[buf.readInt()];
+        createFrontier = State.VALUES[buf.readInt()];
+        deleteFrontier = State.VALUES[buf.readInt()];
+        updateFrontier = State.VALUES[buf.readInt()];
+        updateSettings = State.VALUES[buf.readInt()];
+        personalFrontier = State.VALUES[buf.readInt()];
     }
 
     public void toBytes(ByteBuf buf) {

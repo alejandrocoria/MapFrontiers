@@ -717,7 +717,7 @@ public class FrontierOverlay extends FrontierData {
 
     public void setVisibilityOverride(Pair<VisibilityData, VisibilityData> visibilityOverride) {
         effectiveVisibilityData = new VisibilityData(visibilityData);
-        for (VisibilityData.Visibility visibility : VisibilityData.Visibility.values()) {
+        for (VisibilityData.Visibility visibility : VisibilityData.Visibility.VALUES) {
             if (visibilityOverride.second().getValue(visibility)) {
                 effectiveVisibilityData.setValue(visibility, visibilityOverride.first().getValue(visibility));
             }

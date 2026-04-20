@@ -83,7 +83,7 @@ public class HUDWidget extends AbstractWidgetNoNarration {
                 ClientConfig.HUDAnchor closestAnchor = null;
                 int closestDistance = 99999;
 
-                for (ClientConfig.HUDAnchor anchor : ClientConfig.HUDAnchor.values()) {
+                for (ClientConfig.HUDAnchor anchor : ClientConfig.HUDAnchor.VALUES) {
                     if ((anchor == ClientConfig.HUDAnchor.Minimap || anchor == ClientConfig.HUDAnchor.MinimapHorizontal
                             || anchor == ClientConfig.HUDAnchor.MinimapVertical) && !minimapEnabled) {
                         continue;
@@ -111,7 +111,7 @@ public class HUDWidget extends AbstractWidgetNoNarration {
             if (ClientConfig.HUD_SNAP_TO_BORDER.get()) {
                 snapOffset.x = 16;
                 snapOffset.y = 16;
-                for (ClientConfig.HUDAnchor anchor : ClientConfig.HUDAnchor.values()) {
+                for (ClientConfig.HUDAnchor anchor : ClientConfig.HUDAnchor.VALUES) {
                     if (anchor == ClientConfig.HUDAnchor.MinimapHorizontal || anchor == ClientConfig.HUDAnchor.MinimapVertical) {
                         continue;
                     }
