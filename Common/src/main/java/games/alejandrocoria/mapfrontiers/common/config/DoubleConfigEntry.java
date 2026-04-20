@@ -12,6 +12,14 @@ public final class DoubleConfigEntry extends ConfigEntry<Double, DoubleConfigEnt
         this.maxValue = maxValue;
     }
 
+    public double minValue() {
+        return minValue;
+    }
+
+    public double maxValue() {
+        return maxValue;
+    }
+
     @Override
     protected DoubleConfigEntry self() {
         return this;

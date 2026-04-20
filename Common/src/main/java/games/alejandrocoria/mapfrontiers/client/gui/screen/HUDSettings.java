@@ -12,6 +12,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.hud.HUD;
 import games.alejandrocoria.mapfrontiers.client.gui.hud.HUDPlacementHelper;
 import games.alejandrocoria.mapfrontiers.client.gui.hud.HUDWidget;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
+import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
@@ -26,7 +27,6 @@ import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.function.IntConsumer;
 
 @ParametersAreNonnullByDefault
 public class HUDSettings extends AutoScaledScreen {
@@ -143,10 +143,8 @@ public class HUDSettings extends AutoScaledScreen {
     }
 
     private void buildAppearanceSection(GridLayout mainLayout) {
-        addIntSettingRow(mainLayout, 3, ClientConfig.HUD_TEXT_SIZE, ClientConfig.HUD_TEXT_SIZE.get(), 1, 8, 64, 1,
-                ClientConfig.HUD_TEXT_SIZE::set, this::postConfigUpdatedAndRefreshPosition);
-        addIntSettingRow(mainLayout, 4, ClientConfig.HUD_BANNER_SIZE, ClientConfig.HUD_BANNER_SIZE.get(), 3, 8, 64, 1,
-                ClientConfig.HUD_BANNER_SIZE::set, this::postConfigUpdatedAndRefreshPosition);
+        addIntSettingRow(mainLayout, 3, ClientConfig.HUD_TEXT_SIZE, 64, 1, this::postConfigUpdatedAndRefreshPosition);
+        addIntSettingRow(mainLayout, 4, ClientConfig.HUD_BANNER_SIZE, 64, 1, this::postConfigUpdatedAndRefreshPosition);
     }
 
     private void buildPlacementSection(GridLayout mainLayout) {
@@ -184,10 +182,10 @@ public class HUDSettings extends AutoScaledScreen {
         return button;
     }
 
-    private void addIntSettingRow(GridLayout mainLayout, int row, ConfigEntry<?, ?> entry, int value, int min, int max, int width, int maxLength,
-                                        IntConsumer setter, Runnable onChanged) {
+    private void addIntSettingRow(GridLayout mainLayout, int row, IntConfigEntry entry, int width, int maxLength,
+                                  Runnable onChanged) {
         mainLayout.addChild(createConfigLabel(entry), row, 0);
-        TextBoxInt textBox = createIntConfigTextBox(value, min, max, width, maxLength, setter, onChanged);
+        TextBoxInt textBox = createIntConfigTextBox(entry, width, maxLength, onChanged);
         mainLayout.addChild(textBox, row, 1);
     }
 
@@ -234,29 +232,29 @@ public class HUDSettings extends AutoScaledScreen {
     private LinearLayout createPositionLayout() {
         LinearLayout positionLayout = LinearLayout.horizontal();
 
-        textPositionX = createPositionTextBox(ClientConfig.HUD_X_POSITION.get(), ClientConfig.HUD_X_POSITION::set, 61);
+        textPositionX = createPositionTextBox(ClientConfig.HUD_X_POSITION, 61);
         positionLayout.addChild(textPositionX);
 
         positionLayout.addChild(SpacerElement.width(3));
         positionLayout.addChild(new StringWidget(positionSeparatorLabel, font).setColor(ColorConstants.TEXT_DARK));
         positionLayout.addChild(SpacerElement.width(2));
 
-        textPositionY = createPositionTextBox(ClientConfig.HUD_Y_POSITION.get(), ClientConfig.HUD_Y_POSITION::set, 62);
+        textPositionY = createPositionTextBox(ClientConfig.HUD_Y_POSITION, 62);
         positionLayout.addChild(textPositionY);
 
         return positionLayout;
     }
 
-    private TextBoxInt createPositionTextBox(int value, IntConsumer setter, int width) {
-        return createIntConfigTextBox(value, Integer.MIN_VALUE, Integer.MAX_VALUE, width, 5, setter, this::postConfigUpdatedOnly);
+    private TextBoxInt createPositionTextBox(IntConfigEntry entry, int width) {
+        return createIntConfigTextBox(entry, width, 5, this::postConfigUpdatedOnly);
     }
 
-    private TextBoxInt createIntConfigTextBox(int value, int min, int max, int width, int maxLength, IntConsumer setter, Runnable onChanged) {
-        TextBoxInt textBox = new TextBoxInt(value, min, max, font, width);
-        textBox.setValue(String.valueOf(value));
+    private TextBoxInt createIntConfigTextBox(IntConfigEntry entry, int width, int maxLength, Runnable onChanged) {
+        TextBoxInt textBox = new TextBoxInt(entry, font, width);
+        textBox.setValue(String.valueOf(entry.get()));
         textBox.setMaxLength(maxLength);
         textBox.setValueChangedCallback(newValue -> {
-            setter.accept(newValue);
+            entry.set(newValue);
             onChanged.run();
         });
         return textBox;

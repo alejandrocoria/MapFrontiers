@@ -13,6 +13,10 @@ public final class EnumConfigEntry<E extends Enum<E>> extends ConfigEntry<E, Enu
         this.enumClass = enumClass;
     }
 
+    public E[] values() {
+        return enumClass.getEnumConstants();
+    }
+
     @Override
     protected EnumConfigEntry<E> self() {
         return this;

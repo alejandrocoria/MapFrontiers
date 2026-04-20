@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.textbox;
 
+import games.alejandrocoria.mapfrontiers.common.config.DoubleConfigEntry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.EditBox;
@@ -13,17 +14,29 @@ import java.util.function.DoubleConsumer;
 
 @ParametersAreNonnullByDefault
 public class TextBoxDouble extends EditBox {
-    private final double defaultValue;
-    private final double min;
-    private final double max;
+    private double defaultValue;
+    private double min;
+    private double max;
     private DoubleConsumer valueChangedCallback;
 
     public TextBoxDouble(double defaultValue, double min, double max, Font font, int width) {
         super(font, 0, 0, width, 13, Component.empty());
+        setRange(defaultValue, min, max);
+        this.setValue(defaultValue);
+    }
+
+    public TextBoxDouble(DoubleConfigEntry entry, Font font, int width) {
+        this(entry.defaultValue(), entry.minValue(), entry.maxValue(), font, width);
+    }
+
+    public void setRange(DoubleConfigEntry entry) {
+        setRange(entry.defaultValue(), entry.minValue(), entry.maxValue());
+    }
+
+    public void setRange(double defaultValue, double min, double max) {
         this.defaultValue = defaultValue;
         this.min = min;
         this.max = max;
-        this.setValue(defaultValue);
     }
 
     public void setValueChangedCallback(DoubleConsumer callback) {

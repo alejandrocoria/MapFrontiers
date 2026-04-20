@@ -11,6 +11,8 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxDou
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.AutoScaledScreen;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
+import games.alejandrocoria.mapfrontiers.common.config.DoubleConfigEntry;
+import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.layouts.GridLayout;
@@ -111,8 +113,7 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
         labelPolygonsOpacity = settingsLayout.addChild(new StringWidget(polygonsOpacityLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelPolygonsOpacity.setTooltip(polygonsOpacityTooltip);
-        textPolygonsOpacity = settingsLayout.addChild(new TextBoxDouble(0.4, 0.0, 1.0, font, 60), row++, 1);
-        textPolygonsOpacity.setValue(String.valueOf(ClientConfig.POLYGONS_OPACITY.get()));
+        textPolygonsOpacity = settingsLayout.addChild(createDoubleConfigTextBox(ClientConfig.POLYGONS_OPACITY), row++, 1);
         textPolygonsOpacity.setMaxLength(6);
         textPolygonsOpacity.setValueChangedCallback(value -> {
             ClientConfig.POLYGONS_OPACITY.set(value);
@@ -121,8 +122,7 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
         labelBorderWidth = settingsLayout.addChild(new StringWidget(borderWidthLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelBorderWidth.setTooltip(borderWidthTooltip);
-        textBorderWidth = settingsLayout.addChild(new TextBoxInt(0, 0, 64, font, 60), row++, 1);
-        textBorderWidth.setValue(String.valueOf(ClientConfig.BORDER_WIDTH.get()));
+        textBorderWidth = settingsLayout.addChild(createIntConfigTextBox(ClientConfig.BORDER_WIDTH), row++, 1);
         textBorderWidth.setMaxLength(2);
         textBorderWidth.setValueChangedCallback(value -> {
             ClientConfig.BORDER_WIDTH.set(value);
@@ -131,8 +131,7 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
         labelBorderOpacity = settingsLayout.addChild(new StringWidget(borderOpacityLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelBorderOpacity.setTooltip(borderOpacityTooltip);
-        textBorderOpacity = settingsLayout.addChild(new TextBoxDouble(1.0, 0.0, 1.0, font, 60), row++, 1);
-        textBorderOpacity.setValue(String.valueOf(ClientConfig.BORDER_OPACITY.get()));
+        textBorderOpacity = settingsLayout.addChild(createDoubleConfigTextBox(ClientConfig.BORDER_OPACITY), row++, 1);
         textBorderOpacity.setMaxLength(6);
         textBorderOpacity.setValueChangedCallback(value -> {
             ClientConfig.BORDER_OPACITY.set(value);
@@ -143,8 +142,7 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
         labelPathMarkerSize = settingsLayout.addChild(new StringWidget(pathMarkerSizeLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelPathMarkerSize.setTooltip(pathMarkerSizeTooltip);
-        textPathMarkerSize = settingsLayout.addChild(new TextBoxInt(1, 1, 5, font, 60), row++, 1);
-        textPathMarkerSize.setValue(String.valueOf(ClientConfig.PATH_MARKER_SIZE.get()));
+        textPathMarkerSize = settingsLayout.addChild(createIntConfigTextBox(ClientConfig.PATH_MARKER_SIZE), row++, 1);
         textPathMarkerSize.setMaxLength(1);
         textPathMarkerSize.setValueChangedCallback(value -> {
             ClientConfig.PATH_MARKER_SIZE.set(value);
@@ -153,8 +151,7 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
         labelPathMarkerOpacity = settingsLayout.addChild(new StringWidget(pathMarkerOpacityLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelPathMarkerOpacity.setTooltip(pathMarkerOpacityTooltip);
-        textPathMarkerOpacity = settingsLayout.addChild(new TextBoxDouble(1.0, 0.0, 1.0, font, 60), row++, 1);
-        textPathMarkerOpacity.setValue(String.valueOf(ClientConfig.PATH_MARKER_OPACITY.get()));
+        textPathMarkerOpacity = settingsLayout.addChild(createDoubleConfigTextBox(ClientConfig.PATH_MARKER_OPACITY), row++, 1);
         textPathMarkerOpacity.setMaxLength(6);
         textPathMarkerOpacity.setValueChangedCallback(value -> {
             ClientConfig.PATH_MARKER_OPACITY.set(value);
@@ -165,8 +162,7 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
         labelTextSize = settingsLayout.addChild(new StringWidget(textSizeLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelTextSize.setTooltip(textSizeTooltip);
-        textTextSize = settingsLayout.addChild(new TextBoxInt(2, 1, 5, font, 60), row++, 1);
-        textTextSize.setValue(String.valueOf(ClientConfig.TEXT_SIZE.get()));
+        textTextSize = settingsLayout.addChild(createIntConfigTextBox(ClientConfig.TEXT_SIZE), row++, 1);
         textTextSize.setMaxLength(2);
         textTextSize.setValueChangedCallback(value -> {
             ClientConfig.TEXT_SIZE.set(value);
@@ -175,8 +171,7 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
         labelTextOpacity = settingsLayout.addChild(new StringWidget(textOpacityLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelTextOpacity.setTooltip(textOpacityTooltip);
-        textTextOpacity = settingsLayout.addChild(new TextBoxDouble(1.0, 0.0, 1.0, font, 60), row++, 1);
-        textTextOpacity.setValue(String.valueOf(ClientConfig.TEXT_OPACITY.get()));
+        textTextOpacity = settingsLayout.addChild(createDoubleConfigTextBox(ClientConfig.TEXT_OPACITY), row++, 1);
         textTextOpacity.setMaxLength(6);
         textTextOpacity.setValueChangedCallback(value -> {
             ClientConfig.TEXT_OPACITY.set(value);
@@ -198,8 +193,7 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
         labelBannerSize = settingsLayout.addChild(new StringWidget(bannerSizeLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelBannerSize.setTooltip(bannerSizeTooltip);
-        textBannerSize = settingsLayout.addChild(new TextBoxInt(2, 1, 5, font, 60), row++, 1);
-        textBannerSize.setValue(String.valueOf(ClientConfig.BANNER_SIZE.get()));
+        textBannerSize = settingsLayout.addChild(createIntConfigTextBox(ClientConfig.BANNER_SIZE), row++, 1);
         textBannerSize.setMaxLength(2);
         textBannerSize.setValueChangedCallback(value -> {
             ClientConfig.BANNER_SIZE.set(value);
@@ -208,8 +202,7 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
         labelBannerOpacity = settingsLayout.addChild(new StringWidget(bannerOpacityLabel, font).setColor(ColorConstants.TEXT), row, 0);
         labelBannerOpacity.setTooltip(bannerOpacityTooltip);
-        textBannerOpacity = settingsLayout.addChild(new TextBoxDouble(1.0, 0.0, 1.0, font, 60), row++, 1);
-        textBannerOpacity.setValue(String.valueOf(ClientConfig.BANNER_OPACITY.get()));
+        textBannerOpacity = settingsLayout.addChild(createDoubleConfigTextBox(ClientConfig.BANNER_OPACITY), row++, 1);
         textBannerOpacity.setMaxLength(6);
         textBannerOpacity.setValueChangedCallback(value -> {
             ClientConfig.BANNER_OPACITY.set(value);
@@ -258,6 +251,18 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
     private static void addSectionSpacing(GridLayout layout, int row) {
         layout.addChild(SpacerElement.height(4), row, 0, 1, 2);
+    }
+
+    private TextBoxInt createIntConfigTextBox(IntConfigEntry entry) {
+        TextBoxInt textBox = new TextBoxInt(entry, font, 60);
+        textBox.setValue(String.valueOf(entry.get()));
+        return textBox;
+    }
+
+    private TextBoxDouble createDoubleConfigTextBox(DoubleConfigEntry entry) {
+        TextBoxDouble textBox = new TextBoxDouble(entry, font, 60);
+        textBox.setValue(String.valueOf(entry.get()));
+        return textBox;
     }
 
     private record AppearanceSnapshot(boolean hideNamesThatDontFit,
