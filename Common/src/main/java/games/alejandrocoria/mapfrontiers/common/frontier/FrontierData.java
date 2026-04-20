@@ -58,6 +58,8 @@ public class FrontierData {
         public static final FrontierLifetime[] VALUES = values();
     }
 
+    public static final int MAX_NAME_CHARACTERS = 48;
+
     protected UUID id;
     protected final List<BlockPos> vertices = new ArrayList<>();
     protected final Set<ChunkPos> chunks = new HashSet<>();
@@ -916,15 +918,14 @@ public class FrontierData {
         visibilityData.fromBytes(buf);
         color = buf.readInt();
 
-        int maxCharacters = 48;
-        name1 = buf.readUtf(maxCharacters);
-        name2 = buf.readUtf(maxCharacters);
+        name1 = buf.readUtf(MAX_NAME_CHARACTERS);
+        name2 = buf.readUtf(MAX_NAME_CHARACTERS);
 
-        if (name1.length() > maxCharacters) {
-            name1 = name1.substring(0, maxCharacters);
+        if (name1.length() > MAX_NAME_CHARACTERS) {
+            name1 = name1.substring(0, MAX_NAME_CHARACTERS);
         }
-        if (name2.length() > maxCharacters) {
-            name2 = name2.substring(0, maxCharacters);
+        if (name2.length() > MAX_NAME_CHARACTERS) {
+            name2 = name2.substring(0, MAX_NAME_CHARACTERS);
         }
 
         if (buf.readBoolean()) {
@@ -1008,9 +1009,8 @@ public class FrontierData {
         visibilityData.toBytes(buf);
         buf.writeInt(color);
 
-        int maxCharacters = 48;
-        buf.writeUtf(name1, maxCharacters);
-        buf.writeUtf(name2, maxCharacters);
+        buf.writeUtf(name1, MAX_NAME_CHARACTERS);
+        buf.writeUtf(name2, MAX_NAME_CHARACTERS);
 
         if (banner == null) {
             buf.writeBoolean(false);

@@ -13,8 +13,6 @@ import java.util.Set;
 
 @ParametersAreNonnullByDefault
 public class FrontierChange {
-    private static final int MAX_NAME_CHARACTERS = 48;
-
     private @Nullable NameChange name;
     private @Nullable VisibilityChange visibility;
     private @Nullable ColorChange color;
@@ -50,7 +48,7 @@ public class FrontierChange {
 
     public FrontierChange(FriendlyByteBuf buf) {
         if (buf.readBoolean()) {
-            name = new NameChange(buf.readUtf(MAX_NAME_CHARACTERS), buf.readUtf(MAX_NAME_CHARACTERS));
+            name = new NameChange(buf.readUtf(FrontierData.MAX_NAME_CHARACTERS), buf.readUtf(FrontierData.MAX_NAME_CHARACTERS));
         }
 
         if (buf.readBoolean()) {
@@ -141,8 +139,8 @@ public class FrontierChange {
     public void toBytes(FriendlyByteBuf buf) {
         buf.writeBoolean(name != null);
         if (name != null) {
-            buf.writeUtf(name.name1, MAX_NAME_CHARACTERS);
-            buf.writeUtf(name.name2, MAX_NAME_CHARACTERS);
+            buf.writeUtf(name.name1, FrontierData.MAX_NAME_CHARACTERS);
+            buf.writeUtf(name.name2, FrontierData.MAX_NAME_CHARACTERS);
         }
 
         buf.writeBoolean(visibility != null);

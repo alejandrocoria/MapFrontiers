@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -20,7 +21,6 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class PacketPersonalFrontierShared {
-    private static final int MAX_NAME_CHARACTERS = 48;
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_personal_frontier_shared");
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketPersonalFrontierShared> STREAM_CODEC = StreamCodec.ofMember(PacketPersonalFrontierShared::encode, PacketPersonalFrontierShared::new);
 
@@ -52,8 +52,8 @@ public class PacketPersonalFrontierShared {
                 this.shareMessageID = buf.readInt();
                 this.playerSharing.fromBytes(buf);
                 this.owner.fromBytes(buf);
-                this.name1 = buf.readUtf(MAX_NAME_CHARACTERS);
-                this.name2 = buf.readUtf(MAX_NAME_CHARACTERS);
+                this.name1 = buf.readUtf(FrontierData.MAX_NAME_CHARACTERS);
+                this.name2 = buf.readUtf(FrontierData.MAX_NAME_CHARACTERS);
             }
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error("Failed to read message for PacketPersonalFrontierShared", t);
@@ -65,8 +65,8 @@ public class PacketPersonalFrontierShared {
             buf.writeInt(shareMessageID);
             playerSharing.toBytes(buf);
             owner.toBytes(buf);
-            buf.writeUtf(name1, MAX_NAME_CHARACTERS);
-            buf.writeUtf(name2, MAX_NAME_CHARACTERS);
+            buf.writeUtf(name1, FrontierData.MAX_NAME_CHARACTERS);
+            buf.writeUtf(name2, FrontierData.MAX_NAME_CHARACTERS);
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error("Failed to write message for PacketPersonalFrontierShared", t);
         }
