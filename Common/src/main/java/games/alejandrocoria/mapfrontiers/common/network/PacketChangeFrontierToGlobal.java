@@ -44,7 +44,7 @@ public class PacketChangeFrontierToGlobal {
                 }
             }
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketChangeFrontierToGlobal: %s", t));
+            MapFrontiers.LOGGER.error("Failed to read message for PacketChangeFrontierToGlobal", t);
         }
     }
 
@@ -58,7 +58,7 @@ public class PacketChangeFrontierToGlobal {
                 buf.writeLong(modified.getTime());
             }
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketChangeFrontierToGlobal: %s", t));
+            MapFrontiers.LOGGER.error("Failed to write message for PacketChangeFrontierToGlobal", t);
         }
     }
 

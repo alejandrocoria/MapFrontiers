@@ -109,7 +109,7 @@ public class PacketCreateFrontier {
                 }
             }
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketCreateFrontier: %s", t));
+            MapFrontiers.LOGGER.error("Failed to read message for PacketCreateFrontier", t);
         }
     }
 
@@ -149,7 +149,7 @@ public class PacketCreateFrontier {
                 pathStyle.toBytes(buf);
             }
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketCreateFrontier: %s", t));
+            MapFrontiers.LOGGER.error("Failed to write message for PacketCreateFrontier", t);
         }
     }
 

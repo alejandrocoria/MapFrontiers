@@ -42,7 +42,7 @@ public class PacketRemoveSharedUserPersonalFrontier {
                 this.targetUser.fromBytes(buf);
             }
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketRemoveSharedUserPersonalFrontier: %s", t));
+            MapFrontiers.LOGGER.error("Failed to read message for PacketRemoveSharedUserPersonalFrontier", t);
         }
     }
 
@@ -51,7 +51,7 @@ public class PacketRemoveSharedUserPersonalFrontier {
             UUIDHelper.toBytes(buf, frontierID);
             targetUser.toBytes(buf);
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketRemoveSharedUserPersonalFrontier: %s", t));
+            MapFrontiers.LOGGER.error("Failed to write message for PacketRemoveSharedUserPersonalFrontier", t);
         }
     }
 

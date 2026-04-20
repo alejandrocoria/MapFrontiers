@@ -67,7 +67,7 @@ public class PacketFrontierUpdated {
                 this.playerID = buf.readInt();
             }
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketFrontierUpdated: %s", t));
+            MapFrontiers.LOGGER.error("Failed to read message for PacketFrontierUpdated", t);
         }
     }
 
@@ -79,7 +79,7 @@ public class PacketFrontierUpdated {
             change.toBytes(buf);
             buf.writeInt(playerID);
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketFrontierUpdated: %s", t));
+            MapFrontiers.LOGGER.error("Failed to write message for PacketFrontierUpdated", t);
         }
     }
 

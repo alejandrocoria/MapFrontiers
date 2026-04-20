@@ -42,7 +42,7 @@ public class PacketHandshake {
                 this.version = VERSION;
             }
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketHandshake: %s", t));
+            MapFrontiers.LOGGER.error("Failed to read message for PacketHandshake", t);
         }
     }
 
@@ -51,7 +51,7 @@ public class PacketHandshake {
             buf.writeLong(nonce);
             buf.writeUtf(version);
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketHandshake: %s", t));
+            MapFrontiers.LOGGER.error("Failed to write message for PacketHandshake", t);
         }
     }
 

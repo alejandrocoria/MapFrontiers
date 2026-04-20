@@ -69,7 +69,7 @@ public class PacketFrontiers {
                 }
             }
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketFrontiers: %s", t));
+            MapFrontiers.LOGGER.error("Failed to read message for PacketFrontiers", t);
         }
     }
 
@@ -85,7 +85,7 @@ public class PacketFrontiers {
                 frontier.toBytes(buf);
             }
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketFrontiers: %s", t));
+            MapFrontiers.LOGGER.error("Failed to write message for PacketFrontiers", t);
         }
     }
 

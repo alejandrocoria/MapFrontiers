@@ -47,7 +47,7 @@ public class PacketFrontierDeleted {
                 this.playerID = buf.readInt();
             }
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketFrontierDeleted: %s", t));
+            MapFrontiers.LOGGER.error("Failed to read message for PacketFrontierDeleted", t);
         }
     }
 
@@ -58,7 +58,7 @@ public class PacketFrontierDeleted {
             buf.writeBoolean(personal);
             buf.writeInt(playerID);
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketFrontierDeleted: %s", t));
+            MapFrontiers.LOGGER.error("Failed to write message for PacketFrontierDeleted", t);
         }
     }
 

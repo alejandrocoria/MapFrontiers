@@ -37,7 +37,7 @@ public class PacketPersonalFrontier {
                 this.frontier.fromBytes(buf);
             }
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketPersonalFrontier: %s", t));
+            MapFrontiers.LOGGER.error("Failed to read message for PacketPersonalFrontier", t);
         }
     }
 
@@ -45,7 +45,7 @@ public class PacketPersonalFrontier {
         try {
             frontier.toBytes(buf);
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketPersonalFrontier: %s", t));
+            MapFrontiers.LOGGER.error("Failed to write message for PacketPersonalFrontier", t);
         }
     }
 
