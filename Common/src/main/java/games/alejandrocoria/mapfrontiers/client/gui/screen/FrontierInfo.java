@@ -370,17 +370,17 @@ public class FrontierInfo extends AutoScaledScreen {
         colorColumn.addChild(rgbRow);
 
         rgbRow.addChild(new StringWidget(rLabel, font, RGB_LABEL_HEIGHT).setColor(ColorConstants.INFO_LABEL_TEXT));
-        textRed = createRgbTextBox(value -> (frontier.getColor() & 0xff00ffff) | (value << 16));
+        textRed = createRgbTextBox(value -> (frontier.getColor() & 0xFF00FFFF) | (value << 16));
         rgbRow.addChild(textRed);
         rgbRow.addChild(SpacerElement.width(RGB_ROW_SPACER_WIDTH));
 
         rgbRow.addChild(new StringWidget(gLabel, font, RGB_LABEL_HEIGHT).setColor(ColorConstants.INFO_LABEL_TEXT));
-        textGreen = createRgbTextBox(value -> (frontier.getColor() & 0xffff00ff) | (value << 8));
+        textGreen = createRgbTextBox(value -> (frontier.getColor() & 0xFFFF00FF) | (value << 8));
         rgbRow.addChild(textGreen);
         rgbRow.addChild(SpacerElement.width(RGB_ROW_SPACER_WIDTH));
 
         rgbRow.addChild(new StringWidget(bLabel, font, RGB_LABEL_HEIGHT).setColor(ColorConstants.INFO_LABEL_TEXT));
-        textBlue = createRgbTextBox(value -> (frontier.getColor() & 0xffffff00) | value);
+        textBlue = createRgbTextBox(value -> (frontier.getColor() & 0xFFFFFF00) | value);
         rgbRow.addChild(textBlue);
 
         buttonRandomColor = new SimpleButton(font, SECTION_WIDTH, randomColorLabel, b -> onRandomColorPressed());
@@ -731,9 +731,9 @@ public class FrontierInfo extends AutoScaledScreen {
     }
 
     private void syncColorWidgets(int color) {
-        textRed.setValue((color & 0xff0000) >> 16);
-        textGreen.setValue((color & 0x00ff00) >> 8);
-        textBlue.setValue(color & 0x0000ff);
+        textRed.setValue((color & 0xFF0000) >> 16);
+        textGreen.setValue((color & 0x00FF00) >> 8);
+        textBlue.setValue(color & 0x0000FF);
         if (colorPalette != null) {
             colorPalette.setColor(color);
         }

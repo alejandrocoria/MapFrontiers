@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common.frontier;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
@@ -61,7 +62,7 @@ public class FrontierData {
     protected String name1 = "New";
     protected String name2 = "Frontier";
     protected VisibilityData visibilityData;
-    protected int color = 0xffffffff;
+    protected int color = ColorConstants.WHITE;
     protected ResourceKey<Level> dimension;
     protected SettingsUser owner = new SettingsUser();
     protected BannerData banner;

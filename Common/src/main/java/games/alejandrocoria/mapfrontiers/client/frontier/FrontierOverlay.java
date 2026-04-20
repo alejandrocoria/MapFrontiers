@@ -1215,7 +1215,7 @@ public class FrontierOverlay extends FrontierData {
     private static ShapeProperties createHighlightShapeProperties() {
         return new ShapeProperties()
                 .setStrokeWidth(2)
-                .setStrokeColor(0xFFFFFF)
+                .setStrokeColor(ColorConstants.WHITE)
                 .setStrokeOpacity(1)
                 .setStrokePosition(ShapeProperties.StrokePosition.OUTSIDE)
                 .setFillOpacity(0);
@@ -2240,7 +2240,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private static long getBlockPos2DKey(int x, int z) {
-        return ((long) x << 32) ^ (z & 0xFFFFFFFFL);
+        return (long) x & 0xFFFFFFFFL | ((long) z & 0xFFFFFFFFL) << 32;
     }
 
     private static double getRepeatedMarkerTargetSpacing(int minZoom) {
@@ -2537,7 +2537,7 @@ public class FrontierOverlay extends FrontierData {
             graphics.pose().rotate((float) Math.toRadians(rotation));
             graphics.pose().translate(-centerX, -centerY);
 
-            ((GuiGraphicsAccessor) graphics).innerBlitInvoker(RenderPipelines.GUI_TEXTURED, textureLocation, x, x + width, y, y + height, 0, 1, 0, 1, 0xFFFFFFFF);
+            ((GuiGraphicsAccessor) graphics).innerBlitInvoker(RenderPipelines.GUI_TEXTURED, textureLocation, x, x + width, y, y + height, 0, 1, 0, 1, ColorConstants.WHITE);
 
             graphics.pose().popMatrix();
         }
