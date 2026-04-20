@@ -20,8 +20,6 @@ import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
-    private static final int WIDTH = 240;
-    private static final int HEIGHT = 240;
     private static final int MAP_SIZE = 240;
     private static final int PREVIEW_TEXT_SIZE = 2;
     private static final int PREVIEW_BANNER_SIZE = 1;
@@ -33,7 +31,7 @@ public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
     private float scaleFactor = 1.f;
 
     public PathStylePreviewWidget() {
-        super(0, 0, WIDTH, HEIGHT, Component.empty());
+        super(0, 0, MAP_SIZE, MAP_SIZE, Component.empty());
         previewPanel = new FrontierPreviewPanel();
         previewFrontier = new FrontierOverlay(createPreviewFrontierData(), null);
         previewFrontier.setPreviewLabelSizes(PREVIEW_TEXT_SIZE, PREVIEW_BANNER_SIZE);
@@ -55,8 +53,8 @@ public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
     public void setScaleFactor(float scaleFactor) {
         this.scaleFactor = scaleFactor;
         double guiScale = Minecraft.getInstance().getWindow().getGuiScale() / scaleFactor;
-        setWidth((int) (WIDTH / guiScale));
-        setHeight((int) (HEIGHT / guiScale));
+        setWidth((int) (MAP_SIZE / guiScale));
+        setHeight((int) (MAP_SIZE / guiScale));
 
         previewPanel.refreshRenderer();
     }

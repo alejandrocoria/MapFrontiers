@@ -16,7 +16,7 @@ import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class ClientFrontierSyncService {
-    private static final Minecraft minecraft = Minecraft.getInstance();
+    private static final Minecraft mc = Minecraft.getInstance();
 
     private final FrontiersOverlayManager globalManager;
     private final FrontiersOverlayManager personalManager;
@@ -32,7 +32,7 @@ public class ClientFrontierSyncService {
     }
 
     public void loadLocalPersonalFrontiers() {
-        if (localPersonalFrontiersLoaded || minecraft.isLocalServer()) {
+        if (localPersonalFrontiersLoaded || mc.isLocalServer()) {
             return;
         }
 
@@ -67,8 +67,8 @@ public class ClientFrontierSyncService {
         }
 
         List<FrontierOverlay> localOnlyOwnedFrontiers = new ArrayList<>();
-        if (minecraft.player != null) {
-            SettingsUser currentPlayer = new SettingsUser(minecraft.player);
+        if (mc.player != null) {
+            SettingsUser currentPlayer = new SettingsUser(mc.player);
             for (FrontierOverlay localFrontier : existingLocalPersonal) {
                 if (!serverFrontierIds.contains(localFrontier.getId()) && localFrontier.getOwner().equals(currentPlayer)
                         && localFrontier.isPersistent()) {
@@ -89,11 +89,11 @@ public class ClientFrontierSyncService {
     }
 
     private void persistOwnedPersonalFrontiers() {
-        if (minecraft.isLocalServer() || minecraft.player == null) {
+        if (mc.isLocalServer() || mc.player == null) {
             return;
         }
 
-        localPersonalStore.saveOwnedFrontierMirror(getAllPersonalFrontiers(), new SettingsUser(minecraft.player));
+        localPersonalStore.saveOwnedFrontierMirror(getAllPersonalFrontiers(), new SettingsUser(mc.player));
     }
 
     private Collection<FrontierOverlay> getAllPersonalFrontiers() {

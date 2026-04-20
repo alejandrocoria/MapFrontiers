@@ -12,9 +12,9 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class IconButton extends ButtonBase {
-    private static final Identifier texture = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/buttons.png");
-    private static final int textureSizeX = 34;
-    private static final int textureSizeY = 134;
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/buttons.png");
+    private static final int TEXTURE_WIDTH = 34;
+    private static final int TEXTURE_HEIGHT = 134;
 
     public enum Type {
         Add       ( 0,   0, 13,   0, 13, 13),
@@ -67,9 +67,9 @@ public class IconButton extends ButtonBase {
     @Override
     public void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         if (isHoveredOrKeyboardFocused()) {
-            graphics.blit(RenderPipelines.GUI_TEXTURED, texture, getX(), getY(), type.texHoverX, type.texHoverY, width, height, textureSizeX, textureSizeY);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, getX(), getY(), type.texHoverX, type.texHoverY, width, height, TEXTURE_WIDTH, TEXTURE_HEIGHT);
         } else {
-            graphics.blit(RenderPipelines.GUI_TEXTURED, texture, getX(), getY(), type.texX, type.texY, width, height, textureSizeX, textureSizeY);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, getX(), getY(), type.texX, type.texY, width, height, TEXTURE_WIDTH, TEXTURE_HEIGHT);
         }
     }
 }

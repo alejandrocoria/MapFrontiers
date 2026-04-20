@@ -41,22 +41,22 @@ import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class FrontierList extends AutoScaledScreen {
-    private static final Component titleLabel = Component.translatable("mapfrontiers.title_frontiers");
-    private static final Component resetFiltersLabel = Component.translatable("mapfrontiers.reset_filters");
-    private static final Component filterTypeLabel = Component.translatable("mapfrontiers.filter_type");
-    private static final Component filterOwnerLabel = Component.translatable("mapfrontiers.filter_owner");
-    private static final Component filterDimensionLabel = Component.translatable("mapfrontiers.filter_dimension");
-    private static final Component configAllLabel = Component.translatable("mapfrontiers.config.All");
-    private static final Component configCurrentLabel = Component.translatable("mapfrontiers.config.Current");
-    private static final Component overworldLabel = Component.literal("minecraft:overworld");
-    private static final Component theNetherLabel = Component.literal("minecraft:the_nether");
-    private static final Component theEndLabel = Component.literal("minecraft:the_end");
-    private static final Component createLabel = Component.translatable("mapfrontiers.create");
-    private static final Component infoLabel = Component.translatable("mapfrontiers.info");
-    private static final Component deleteLabel = Component.translatable("mapfrontiers.delete");
-    private static final Component hideLabel = Component.translatable("mapfrontiers.hide");
-    private static final Component settingsLabel = Component.translatable("mapfrontiers.settings");
-    private static final Component doneLabel = Component.translatable("gui.done");
+    private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_frontiers");
+    private static final Component RESET_FILTERS_LABEL = Component.translatable("mapfrontiers.reset_filters");
+    private static final Component FILTER_TYPE_LABEL = Component.translatable("mapfrontiers.filter_type");
+    private static final Component FILTER_OWNER_LABEL = Component.translatable("mapfrontiers.filter_owner");
+    private static final Component FILTER_DIMENSION_LABEL = Component.translatable("mapfrontiers.filter_dimension");
+    private static final Component CONFIG_ALL_LABEL = Component.translatable("mapfrontiers.config.All");
+    private static final Component CONFIG_CURRENT_LABEL = Component.translatable("mapfrontiers.config.Current");
+    private static final Component OVERWORLD_LABEL = Component.literal("minecraft:overworld");
+    private static final Component THE_NETHER_LABEL = Component.literal("minecraft:the_nether");
+    private static final Component THE_END_LABEL = Component.literal("minecraft:the_end");
+    private static final Component CREATE_LABEL = Component.translatable("mapfrontiers.create");
+    private static final Component INFO_LABEL = Component.translatable("mapfrontiers.info");
+    private static final Component DELETE_LABEL = Component.translatable("mapfrontiers.delete");
+    private static final Component HIDE_LABEL = Component.translatable("mapfrontiers.hide");
+    private static final Component SETTINGS_LABEL = Component.translatable("mapfrontiers.settings");
+    private static final Component DONE_LABEL = Component.translatable("gui.done");
 
     private final IClientAPI jmAPI;
     private final FullscreenMap fullscreenMap;
@@ -73,7 +73,7 @@ public class FrontierList extends AutoScaledScreen {
     private SimpleButton buttonSettings;
 
     public FrontierList(IClientAPI jmAPI, FullscreenMap fullscreenMap) {
-        super(titleLabel, 778, 302);
+        super(TITLE_LABEL, 778, 302);
         this.jmAPI = jmAPI;
         this.fullscreenMap = fullscreenMap;
 
@@ -187,7 +187,7 @@ public class FrontierList extends AutoScaledScreen {
     }
 
     private void buildTypeFilter(LinearLayout column) {
-        column.addChild(createSectionLabel(filterTypeLabel));
+        column.addChild(createSectionLabel(FILTER_TYPE_LABEL));
 
         filterType = createFilterScrollBox(52);
         addEnumFilterOptions(filterType, ClientConfig.FILTER_FRONTIER_TYPE);
@@ -196,7 +196,7 @@ public class FrontierList extends AutoScaledScreen {
     }
 
     private void buildOwnerFilter(LinearLayout column) {
-        column.addChild(createSectionLabel(filterOwnerLabel));
+        column.addChild(createSectionLabel(FILTER_OWNER_LABEL));
 
         filterOwner = createFilterScrollBox(52);
         addEnumFilterOptions(filterOwner, ClientConfig.FILTER_FRONTIER_OWNER);
@@ -205,14 +205,14 @@ public class FrontierList extends AutoScaledScreen {
     }
 
     private void buildDimensionFilter(LinearLayout column) {
-        column.addChild(createSectionLabel(filterDimensionLabel));
+        column.addChild(createSectionLabel(FILTER_DIMENSION_LABEL));
 
         filterDimension = createFilterScrollBox(actualHeight - 274);
-        filterDimension.addElement(createRadioFilterOption(configAllLabel, ClientConfig.DIMENSION_FILTER_ALL));
-        filterDimension.addElement(createRadioFilterOption(configCurrentLabel, ClientConfig.DIMENSION_FILTER_CURRENT));
-        filterDimension.addElement(createRadioFilterOption(overworldLabel, "minecraft:overworld"));
-        filterDimension.addElement(createRadioFilterOption(theNetherLabel, "minecraft:the_nether"));
-        filterDimension.addElement(createRadioFilterOption(theEndLabel, "minecraft:the_end"));
+        filterDimension.addElement(createRadioFilterOption(CONFIG_ALL_LABEL, ClientConfig.DIMENSION_FILTER_ALL));
+        filterDimension.addElement(createRadioFilterOption(CONFIG_CURRENT_LABEL, ClientConfig.DIMENSION_FILTER_CURRENT));
+        filterDimension.addElement(createRadioFilterOption(OVERWORLD_LABEL, "minecraft:overworld"));
+        filterDimension.addElement(createRadioFilterOption(THE_NETHER_LABEL, "minecraft:the_nether"));
+        filterDimension.addElement(createRadioFilterOption(THE_END_LABEL, "minecraft:the_end"));
         addDimensionsToFilter();
         syncFilterSelectionsFromConfig();
         filterDimension.setElementClickedCallback(this::onDimensionFilterSelected);
@@ -235,33 +235,33 @@ public class FrontierList extends AutoScaledScreen {
     }
 
     private SimpleButton createResetFiltersButton() {
-        return new SimpleButton(font, 110, resetFiltersLabel, button -> onResetFiltersPressed());
+        return new SimpleButton(font, 110, RESET_FILTERS_LABEL, button -> onResetFiltersPressed());
     }
 
     private SimpleButton createCreateButton() {
-        return new SimpleButton(font, 110, createLabel, button -> onCreatePressed());
+        return new SimpleButton(font, 110, CREATE_LABEL, button -> onCreatePressed());
     }
 
     private SimpleButton createInfoButton() {
-        return new SimpleButton(font, 110, infoLabel, button -> onInfoPressed());
+        return new SimpleButton(font, 110, INFO_LABEL, button -> onInfoPressed());
     }
 
     private SimpleButton createDeleteButton() {
-        SimpleButton button = new SimpleButton(font, 110, deleteLabel, pressedButton -> onDeletePressed());
+        SimpleButton button = new SimpleButton(font, 110, DELETE_LABEL, pressedButton -> onDeletePressed());
         button.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
         return button;
     }
 
     private SimpleButton createVisibleButton() {
-        return new SimpleButton(font, 110, hideLabel, button -> onVisiblePressed());
+        return new SimpleButton(font, 110, HIDE_LABEL, button -> onVisiblePressed());
     }
 
     private SimpleButton createSettingsButton() {
-        return new SimpleButton(font, 110, settingsLabel, button -> onSettingsPressed());
+        return new SimpleButton(font, 110, SETTINGS_LABEL, button -> onSettingsPressed());
     }
 
     private SimpleButton createDoneButton() {
-        return new SimpleButton(font, 110, doneLabel, button -> onDonePressed());
+        return new SimpleButton(font, 110, DONE_LABEL, button -> onDonePressed());
     }
 
     private StringWidget createSectionLabel(Component label) {

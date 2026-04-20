@@ -19,7 +19,7 @@ public class SettingsUserShared {
     public enum Action {
         UpdateFrontier, UpdateSettings;
 
-        public final static Action[] valuesArray = values();
+        public static final Action[] VALUES = values();
     }
 
     private final SettingsUser user;
@@ -123,7 +123,7 @@ public class SettingsUserShared {
         pending = buf.readBoolean();
 
         actions.clear();
-        for (Action action : Action.valuesArray) {
+        for (Action action : Action.VALUES) {
             if (buf.readBoolean()) {
                 actions.add(action);
             }
@@ -135,7 +135,7 @@ public class SettingsUserShared {
 
         buf.writeBoolean(pending);
 
-        for (Action action : Action.valuesArray) {
+        for (Action action : Action.VALUES) {
             buf.writeBoolean(actions.contains(action));
         }
     }

@@ -16,9 +16,9 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class RadioListElement<T> extends ScrollBox.ScrollElement {
-    private static final Identifier texture = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/radio_buttons.png");
-    private static final int textureSizeX = 22;
-    private static final int textureSizeY = 11;
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/radio_buttons.png");
+    private static final int TEXTURE_WIDTH = 22;
+    private static final int TEXTURE_HEIGHT = 11;
 
     private final StringWidget label;
     private final T value;
@@ -66,6 +66,6 @@ public class RadioListElement<T> extends ScrollBox.ScrollElement {
     }
 
     private void drawRadio(GuiGraphics graphics, int x, int y, boolean checked) {
-        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x, y, checked ? 11 : 0, 0, 11, 11, textureSizeX, textureSizeY);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x, y, checked ? 11 : 0, 0, 11, 11, TEXTURE_WIDTH, TEXTURE_HEIGHT);
     }
 }

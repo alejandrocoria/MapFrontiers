@@ -30,12 +30,12 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class HUDSettings extends AutoScaledScreen {
-    private static final Component positionLabel = Component.translatable("mapfrontiers.config.hud.position");
-    private static final Tooltip positionTooltip = Tooltip.create(Component.literal("HUD position relative to anchor."));
-    private static final Component positionSeparatorLabel = Component.literal("x");
-    private static final Component doneLabel = Component.translatable("gui.done");
-    private static final Component onLabel = Component.translatable("options.on");
-    private static final Component offLabel = Component.translatable("options.off");
+    private static final Component POSITION_LABEL = Component.translatable("mapfrontiers.config.hud.position");
+    private static final Tooltip POSITION_TOOLTIP = Tooltip.create(Component.literal("HUD position relative to anchor."));
+    private static final Component POSITION_SEPARATOR_LABEL = Component.literal("x");
+    private static final Component DONE_LABEL = Component.translatable("gui.done");
+    private static final Component ON_LABEL = Component.translatable("options.on");
+    private static final Component OFF_LABEL = Component.translatable("options.off");
 
     private HUDWidget HUDWidget;
     private OptionButton buttonSlot1;
@@ -152,7 +152,7 @@ public class HUDSettings extends AutoScaledScreen {
         buttonAnchor = createAnchorButton();
         mainLayout.addChild(buttonAnchor, 0, 4);
 
-        mainLayout.addChild(createConfigLabel(positionLabel, positionTooltip), 1, 3);
+        mainLayout.addChild(createConfigLabel(POSITION_LABEL, POSITION_TOOLTIP), 1, 3);
         mainLayout.addChild(createPositionLayout(), 1, 4);
 
         mainLayout.addChild(createConfigLabel(ClientConfig.HUD_AUTO_ADJUST_ANCHOR), 2, 3);
@@ -171,7 +171,7 @@ public class HUDSettings extends AutoScaledScreen {
     }
 
     private void buildDoneButton(GridLayout mainLayout) {
-        SimpleButton buttonDone = new SimpleButton(font, 100, doneLabel, button -> onClose());
+        SimpleButton buttonDone = new SimpleButton(font, 100, DONE_LABEL, button -> onClose());
         mainLayout.addChild(buttonDone, 5, 0, 1, 5, LayoutSettings.defaults().alignHorizontallyCenter());
     }
 
@@ -236,7 +236,7 @@ public class HUDSettings extends AutoScaledScreen {
         positionLayout.addChild(textPositionX);
 
         positionLayout.addChild(SpacerElement.width(3));
-        positionLayout.addChild(new StringWidget(positionSeparatorLabel, font).setColor(ColorConstants.TEXT_DARK));
+        positionLayout.addChild(new StringWidget(POSITION_SEPARATOR_LABEL, font).setColor(ColorConstants.TEXT_DARK));
         positionLayout.addChild(SpacerElement.width(2));
 
         textPositionY = createPositionTextBox(ClientConfig.HUD_Y_POSITION, 62);
@@ -268,8 +268,8 @@ public class HUDSettings extends AutoScaledScreen {
     }
 
     private void addOnOffOptions(OptionButton button) {
-        button.addOption(onLabel);
-        button.addOption(offLabel);
+        button.addOption(ON_LABEL);
+        button.addOption(OFF_LABEL);
     }
 
     private void postConfigUpdatedAndRefreshPosition() {

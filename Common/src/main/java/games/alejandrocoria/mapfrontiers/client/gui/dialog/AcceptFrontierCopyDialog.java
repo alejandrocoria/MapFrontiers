@@ -9,20 +9,20 @@ import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import javax.annotation.Nullable;
 
 public class AcceptFrontierCopyDialog extends ConfirmationDialog {
-    private static final String titleKey = "mapfrontiers.receive_frontier_copy";
-    private static final String descKey = "mapfrontiers.accept_frontier_desc";
-    private static final String descReplaceKey = "mapfrontiers.accept_frontier_desc_replace";
-    private static final String confirmKey = "mapfrontiers.accept_frontier";
-    private static final String confirmReplaceKey = "mapfrontiers.replace";
-    private static final String confirmNoReplaceKey = "mapfrontiers.accept_frontier_as_new";
-    private static final String cancelKey = "gui.cancel";
+    private static final String TITLE_KEY = "mapfrontiers.receive_frontier_copy";
+    private static final String DESC_KEY = "mapfrontiers.accept_frontier_desc";
+    private static final String DESC_REPLACE_KEY = "mapfrontiers.accept_frontier_desc_replace";
+    private static final String CONFIRM_KEY = "mapfrontiers.accept_frontier";
+    private static final String CONFIRM_REPLACE_KEY = "mapfrontiers.replace";
+    private static final String CONFIRM_NO_REPLACE_KEY = "mapfrontiers.accept_frontier_as_new";
+    private static final String CANCEL_KEY = "gui.cancel";
 
     public AcceptFrontierCopyDialog(int id, FrontierData receivedFrontier, @Nullable FrontierOverlay currentFrontier) {
-        super(titleKey,
-                currentFrontier == null ? descKey : descReplaceKey,
-                currentFrontier == null ? confirmKey : confirmReplaceKey,
-                cancelKey,
-                currentFrontier == null ? null : confirmNoReplaceKey,
+        super(TITLE_KEY,
+                currentFrontier == null ? DESC_KEY : DESC_REPLACE_KEY,
+                currentFrontier == null ? CONFIRM_KEY : CONFIRM_REPLACE_KEY,
+                CANCEL_KEY,
+                currentFrontier == null ? null : CONFIRM_NO_REPLACE_KEY,
                 response -> {
                     if (response == Response.Confirm && currentFrontier == null) {
                         acceptFrontier(id, receivedFrontier, null);

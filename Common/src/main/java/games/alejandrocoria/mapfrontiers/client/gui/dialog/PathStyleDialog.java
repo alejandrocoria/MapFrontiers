@@ -24,17 +24,17 @@ import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
 public class PathStyleDialog extends AutoScaledScreen {
-    private static final Component defaultDescriptionLabel = Component.translatable("mapfrontiers.path_style_default_description");
-    private static final Component startLabel = Component.translatable("mapfrontiers.start");
-    private static final Component endLabel = Component.translatable("mapfrontiers.end");
-    private static final Component middleLabel = Component.translatable("mapfrontiers.middle");
-    private static final Component innerPointsLabel = Component.translatable("mapfrontiers.inner_points");
-    private static final Component segmentsLabel = Component.translatable("mapfrontiers.segments");
-    private static final Component labelsAndBannerLabel = Component.translatable("mapfrontiers.labels_and_banner");
-    private static final Component labelsRequiredLabel = Component.translatable("mapfrontiers.path_style_labels_required");
-    private static final Component replaceDefaultLabel = Component.translatable("mapfrontiers.replace_with_default_path_style");
-    private static final Component saveLabel = Component.translatable("mapfrontiers.save");
-    private static final Component cancelLabel = Component.translatable("gui.cancel");
+    private static final Component DEFAULT_DESCRIPTION_LABEL = Component.translatable("mapfrontiers.path_style_default_description");
+    private static final Component START_LABEL = Component.translatable("mapfrontiers.start");
+    private static final Component END_LABEL = Component.translatable("mapfrontiers.end");
+    private static final Component MIDDLE_LABEL = Component.translatable("mapfrontiers.middle");
+    private static final Component INNER_POINTS_LABEL = Component.translatable("mapfrontiers.inner_points");
+    private static final Component SEGMENTS_LABEL = Component.translatable("mapfrontiers.segments");
+    private static final Component LABELS_AND_BANNER_LABEL = Component.translatable("mapfrontiers.labels_and_banner");
+    private static final Component LABELS_REQUIRED_LABEL = Component.translatable("mapfrontiers.path_style_labels_required");
+    private static final Component REPLACE_DEFAULT_LABEL = Component.translatable("mapfrontiers.replace_with_default_path_style");
+    private static final Component SAVE_LABEL = Component.translatable("mapfrontiers.save");
+    private static final Component CANCEL_LABEL = Component.translatable("gui.cancel");
     private static final int WARNING_WIDTH = 120;
     private static final int BUTTON_HORIZONTAL_PADDING = 16;
 
@@ -76,7 +76,7 @@ public class PathStyleDialog extends AutoScaledScreen {
 
         if (defaultStyle == null) {
             MultiLineTextWidget description = mainLayout.addChild(
-                    new MultiLineTextWidget(defaultDescriptionLabel.copy().withColor(ColorConstants.TEXT), font),
+                    new MultiLineTextWidget(DEFAULT_DESCRIPTION_LABEL.copy().withColor(ColorConstants.TEXT), font),
                     LayoutSettings.defaults().alignHorizontallyCenter());
             description.setMaxWidth(700);
             description.setCentered(true);
@@ -87,10 +87,10 @@ public class PathStyleDialog extends AutoScaledScreen {
         mainLayout.addChild(markerGrid);
 
         int row = 0;
-        startRow = createMarkerRow(markerGrid, row++, startLabel, workingStyle.startMarker, value -> workingStyle.startMarker = value);
-        innerRow = createMarkerRow(markerGrid, row++, innerPointsLabel, workingStyle.innerMarker, value -> workingStyle.innerMarker = value);
-        endRow = createMarkerRow(markerGrid, row++, endLabel, workingStyle.endMarker, value -> workingStyle.endMarker = value);
-        segmentRow = createMarkerRow(markerGrid, row, segmentsLabel, workingStyle.segmentMarker, value -> workingStyle.segmentMarker = value);
+        startRow = createMarkerRow(markerGrid, row++, START_LABEL, workingStyle.startMarker, value -> workingStyle.startMarker = value);
+        innerRow = createMarkerRow(markerGrid, row++, INNER_POINTS_LABEL, workingStyle.innerMarker, value -> workingStyle.innerMarker = value);
+        endRow = createMarkerRow(markerGrid, row++, END_LABEL, workingStyle.endMarker, value -> workingStyle.endMarker = value);
+        segmentRow = createMarkerRow(markerGrid, row, SEGMENTS_LABEL, workingStyle.segmentMarker, value -> workingStyle.segmentMarker = value);
 
         LinearLayout lowerSection = LinearLayout.horizontal().spacing(12);
         lowerSection.defaultCellSetting().alignVerticallyTop();
@@ -98,16 +98,16 @@ public class PathStyleDialog extends AutoScaledScreen {
 
         LinearLayout labelLocationsColumn = LinearLayout.vertical().spacing(4);
         lowerSection.addChild(labelLocationsColumn);
-        labelLocationsColumn.addChild(new StringWidget(labelsAndBannerLabel, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
+        labelLocationsColumn.addChild(new StringWidget(LABELS_AND_BANNER_LABEL, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
 
         LinearLayout labelsColumn = LinearLayout.vertical().spacing(4);
         labelLocationsColumn.addChild(labelsColumn);
 
-        checkLabelAtStart = createLocationCheckBox(labelsColumn, startLabel, workingStyle.labelAtStart,
+        checkLabelAtStart = createLocationCheckBox(labelsColumn, START_LABEL, workingStyle.labelAtStart,
                 value -> workingStyle.labelAtStart = value);
-        checkLabelAtMiddle = createLocationCheckBox(labelsColumn, middleLabel, workingStyle.labelAtMiddle,
+        checkLabelAtMiddle = createLocationCheckBox(labelsColumn, MIDDLE_LABEL, workingStyle.labelAtMiddle,
                 value -> workingStyle.labelAtMiddle = value);
-        checkLabelAtEnd = createLocationCheckBox(labelsColumn, endLabel, workingStyle.labelAtEnd,
+        checkLabelAtEnd = createLocationCheckBox(labelsColumn, END_LABEL, workingStyle.labelAtEnd,
                 value -> workingStyle.labelAtEnd = value);
 
         labelLocationsColumn.addChild(SpacerElement.width(WARNING_WIDTH));
@@ -118,15 +118,15 @@ public class PathStyleDialog extends AutoScaledScreen {
 
         if (defaultStyle != null) {
             LinearLayout defaultActionRow = LinearLayout.horizontal();
-            defaultActionRow.addChild(new SimpleButton(font, font.width(replaceDefaultLabel) + BUTTON_HORIZONTAL_PADDING,
-                    replaceDefaultLabel, b -> replaceWithDefaultStyle()));
+            defaultActionRow.addChild(new SimpleButton(font, font.width(REPLACE_DEFAULT_LABEL) + BUTTON_HORIZONTAL_PADDING,
+                    REPLACE_DEFAULT_LABEL, b -> replaceWithDefaultStyle()));
             mainLayout.addChild(defaultActionRow, LayoutSettings.defaults().alignHorizontallyCenter());
         }
 
         LinearLayout buttons = LinearLayout.horizontal().spacing(7);
-        saveButton = buttons.addChild(new SimpleButton(font, 100, saveLabel, b -> saveAndClose()));
+        saveButton = buttons.addChild(new SimpleButton(font, 100, SAVE_LABEL, b -> saveAndClose()));
         saveButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM, ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM_HIGHLIGHT);
-        cancelButton = buttons.addChild(new SimpleButton(font, 100, cancelLabel, b -> onClose()));
+        cancelButton = buttons.addChild(new SimpleButton(font, 100, CANCEL_LABEL, b -> onClose()));
         mainLayout.addChild(buttons, LayoutSettings.defaults().alignHorizontallyCenter());
         updateWarningAndPreview();
     }
@@ -190,7 +190,7 @@ public class PathStyleDialog extends AutoScaledScreen {
         previewWidget.setPathStyle(workingStyle);
         warningWidget.setMessage(hasAnyLabelLocation()
                 ? Component.empty()
-                : labelsRequiredLabel.copy().withColor(ColorConstants.TEXT_ERROR));
+                : LABELS_REQUIRED_LABEL.copy().withColor(ColorConstants.TEXT_ERROR));
     }
 
     private boolean hasAnyLabelLocation() {

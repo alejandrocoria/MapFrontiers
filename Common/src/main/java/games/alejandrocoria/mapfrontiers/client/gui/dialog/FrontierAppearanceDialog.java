@@ -24,32 +24,32 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class FrontierAppearanceDialog extends AutoScaledScreen {
-    private static final Component hideNamesThatDontFitLabel = ClientConfig.HIDE_NAMES_THAT_DONT_FIT.translatedName();
-    private static final Tooltip hideNamesThatDontFitTooltip = tooltip(ClientConfig.HIDE_NAMES_THAT_DONT_FIT);
-    private static final Component polygonsOpacityLabel = ClientConfig.POLYGONS_OPACITY.translatedName();
-    private static final Tooltip polygonsOpacityTooltip = tooltip(ClientConfig.POLYGONS_OPACITY);
-    private static final Component borderWidthLabel = ClientConfig.BORDER_WIDTH.translatedName();
-    private static final Tooltip borderWidthTooltip = tooltip(ClientConfig.BORDER_WIDTH);
-    private static final Component borderOpacityLabel = ClientConfig.BORDER_OPACITY.translatedName();
-    private static final Tooltip borderOpacityTooltip = tooltip(ClientConfig.BORDER_OPACITY);
-    private static final Component pathMarkerSizeLabel = ClientConfig.PATH_MARKER_SIZE.translatedName();
-    private static final Tooltip pathMarkerSizeTooltip = tooltip(ClientConfig.PATH_MARKER_SIZE);
-    private static final Component pathMarkerOpacityLabel = ClientConfig.PATH_MARKER_OPACITY.translatedName();
-    private static final Tooltip pathMarkerOpacityTooltip = tooltip(ClientConfig.PATH_MARKER_OPACITY);
-    private static final Component textSizeLabel = ClientConfig.TEXT_SIZE.translatedName();
-    private static final Tooltip textSizeTooltip = tooltip(ClientConfig.TEXT_SIZE);
-    private static final Component textOpacityLabel = ClientConfig.TEXT_OPACITY.translatedName();
-    private static final Tooltip textOpacityTooltip = tooltip(ClientConfig.TEXT_OPACITY);
-    private static final Component textColorLabel = ClientConfig.TEXT_COLOR.translatedName();
-    private static final Tooltip textColorTooltip = tooltip(ClientConfig.TEXT_COLOR);
-    private static final Component bannerSizeLabel = ClientConfig.BANNER_SIZE.translatedName();
-    private static final Tooltip bannerSizeTooltip = tooltip(ClientConfig.BANNER_SIZE);
-    private static final Component bannerOpacityLabel = ClientConfig.BANNER_OPACITY.translatedName();
-    private static final Tooltip bannerOpacityTooltip = tooltip(ClientConfig.BANNER_OPACITY);
-    private static final Component saveLabel = Component.translatable("mapfrontiers.save");
-    private static final Component cancelLabel = Component.translatable("gui.cancel");
-    private static final Component onLabel = Component.translatable("options.on");
-    private static final Component offLabel = Component.translatable("options.off");
+    private static final Component HIDE_NAMES_THAT_DONT_FIT_LABEL = ClientConfig.HIDE_NAMES_THAT_DONT_FIT.translatedName();
+    private static final Tooltip HIDE_NAMES_THAT_DONT_FIT_TOOLTIP = tooltip(ClientConfig.HIDE_NAMES_THAT_DONT_FIT);
+    private static final Component POLYGONS_OPACITY_LABEL = ClientConfig.POLYGONS_OPACITY.translatedName();
+    private static final Tooltip POLYGONS_OPACITY_TOOLTIP = tooltip(ClientConfig.POLYGONS_OPACITY);
+    private static final Component BORDER_WIDTH_LABEL = ClientConfig.BORDER_WIDTH.translatedName();
+    private static final Tooltip BORDER_WIDTH_TOOLTIP = tooltip(ClientConfig.BORDER_WIDTH);
+    private static final Component BORDER_OPACITY_LABEL = ClientConfig.BORDER_OPACITY.translatedName();
+    private static final Tooltip BORDER_OPACITY_TOOLTIP = tooltip(ClientConfig.BORDER_OPACITY);
+    private static final Component PATH_MARKER_SIZE_LABEL = ClientConfig.PATH_MARKER_SIZE.translatedName();
+    private static final Tooltip PATH_MARKER_SIZE_TOOLTIP = tooltip(ClientConfig.PATH_MARKER_SIZE);
+    private static final Component PATH_MARKER_OPACITY_LABEL = ClientConfig.PATH_MARKER_OPACITY.translatedName();
+    private static final Tooltip PATH_MARKER_OPACITY_TOOLTIP = tooltip(ClientConfig.PATH_MARKER_OPACITY);
+    private static final Component TEXT_SIZE_LABEL = ClientConfig.TEXT_SIZE.translatedName();
+    private static final Tooltip TEXT_SIZE_TOOLTIP = tooltip(ClientConfig.TEXT_SIZE);
+    private static final Component TEXT_OPACITY_LABEL = ClientConfig.TEXT_OPACITY.translatedName();
+    private static final Tooltip TEXT_OPACITY_TOOLTIP = tooltip(ClientConfig.TEXT_OPACITY);
+    private static final Component TEXT_COLOR_LABEL = ClientConfig.TEXT_COLOR.translatedName();
+    private static final Tooltip TEXT_COLOR_TOOLTIP = tooltip(ClientConfig.TEXT_COLOR);
+    private static final Component BANNER_SIZE_LABEL = ClientConfig.BANNER_SIZE.translatedName();
+    private static final Tooltip BANNER_SIZE_TOOLTIP = tooltip(ClientConfig.BANNER_SIZE);
+    private static final Component BANNER_OPACITY_LABEL = ClientConfig.BANNER_OPACITY.translatedName();
+    private static final Tooltip BANNER_OPACITY_TOOLTIP = tooltip(ClientConfig.BANNER_OPACITY);
+    private static final Component SAVE_LABEL = Component.translatable("mapfrontiers.save");
+    private static final Component CANCEL_LABEL = Component.translatable("gui.cancel");
+    private static final Component ON_LABEL = Component.translatable("options.on");
+    private static final Component OFF_LABEL = Component.translatable("options.off");
 
     private final AppearanceSnapshot initialSnapshot;
     private StringWidget labelHideNamesThatDontFit;
@@ -99,20 +99,20 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
         columnsLayout.addChild(settingsLayout);
         int row = 0;
 
-        labelHideNamesThatDontFit = settingsLayout.addChild(new StringWidget(hideNamesThatDontFitLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelHideNamesThatDontFit.setTooltip(hideNamesThatDontFitTooltip);
+        labelHideNamesThatDontFit = settingsLayout.addChild(new StringWidget(HIDE_NAMES_THAT_DONT_FIT_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        labelHideNamesThatDontFit.setTooltip(HIDE_NAMES_THAT_DONT_FIT_TOOLTIP);
         buttonHideNamesThatDontFit = settingsLayout.addChild(new OptionButton(font, 60, (b) -> {
             ClientConfig.HIDE_NAMES_THAT_DONT_FIT.set(b.getSelected() == 0);
             previewFrontiers.configUpdated();
         }), row++, 1);
-        buttonHideNamesThatDontFit.addOption(onLabel);
-        buttonHideNamesThatDontFit.addOption(offLabel);
+        buttonHideNamesThatDontFit.addOption(ON_LABEL);
+        buttonHideNamesThatDontFit.addOption(OFF_LABEL);
         buttonHideNamesThatDontFit.setSelected(ClientConfig.HIDE_NAMES_THAT_DONT_FIT.get() ? 0 : 1);
 
         addSectionSpacing(settingsLayout, row++);
 
-        labelPolygonsOpacity = settingsLayout.addChild(new StringWidget(polygonsOpacityLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelPolygonsOpacity.setTooltip(polygonsOpacityTooltip);
+        labelPolygonsOpacity = settingsLayout.addChild(new StringWidget(POLYGONS_OPACITY_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        labelPolygonsOpacity.setTooltip(POLYGONS_OPACITY_TOOLTIP);
         textPolygonsOpacity = settingsLayout.addChild(createDoubleConfigTextBox(ClientConfig.POLYGONS_OPACITY), row++, 1);
         textPolygonsOpacity.setMaxLength(6);
         textPolygonsOpacity.setValueChangedCallback(value -> {
@@ -120,8 +120,8 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
             previewFrontiers.configUpdated();
         });
 
-        labelBorderWidth = settingsLayout.addChild(new StringWidget(borderWidthLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelBorderWidth.setTooltip(borderWidthTooltip);
+        labelBorderWidth = settingsLayout.addChild(new StringWidget(BORDER_WIDTH_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        labelBorderWidth.setTooltip(BORDER_WIDTH_TOOLTIP);
         textBorderWidth = settingsLayout.addChild(createIntConfigTextBox(ClientConfig.BORDER_WIDTH), row++, 1);
         textBorderWidth.setMaxLength(2);
         textBorderWidth.setValueChangedCallback(value -> {
@@ -129,8 +129,8 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
             previewFrontiers.configUpdated();
         });
 
-        labelBorderOpacity = settingsLayout.addChild(new StringWidget(borderOpacityLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelBorderOpacity.setTooltip(borderOpacityTooltip);
+        labelBorderOpacity = settingsLayout.addChild(new StringWidget(BORDER_OPACITY_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        labelBorderOpacity.setTooltip(BORDER_OPACITY_TOOLTIP);
         textBorderOpacity = settingsLayout.addChild(createDoubleConfigTextBox(ClientConfig.BORDER_OPACITY), row++, 1);
         textBorderOpacity.setMaxLength(6);
         textBorderOpacity.setValueChangedCallback(value -> {
@@ -140,8 +140,8 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
         addSectionSpacing(settingsLayout, row++);
 
-        labelPathMarkerSize = settingsLayout.addChild(new StringWidget(pathMarkerSizeLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelPathMarkerSize.setTooltip(pathMarkerSizeTooltip);
+        labelPathMarkerSize = settingsLayout.addChild(new StringWidget(PATH_MARKER_SIZE_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        labelPathMarkerSize.setTooltip(PATH_MARKER_SIZE_TOOLTIP);
         textPathMarkerSize = settingsLayout.addChild(createIntConfigTextBox(ClientConfig.PATH_MARKER_SIZE), row++, 1);
         textPathMarkerSize.setMaxLength(1);
         textPathMarkerSize.setValueChangedCallback(value -> {
@@ -149,8 +149,8 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
             previewFrontiers.configUpdated();
         });
 
-        labelPathMarkerOpacity = settingsLayout.addChild(new StringWidget(pathMarkerOpacityLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelPathMarkerOpacity.setTooltip(pathMarkerOpacityTooltip);
+        labelPathMarkerOpacity = settingsLayout.addChild(new StringWidget(PATH_MARKER_OPACITY_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        labelPathMarkerOpacity.setTooltip(PATH_MARKER_OPACITY_TOOLTIP);
         textPathMarkerOpacity = settingsLayout.addChild(createDoubleConfigTextBox(ClientConfig.PATH_MARKER_OPACITY), row++, 1);
         textPathMarkerOpacity.setMaxLength(6);
         textPathMarkerOpacity.setValueChangedCallback(value -> {
@@ -160,8 +160,8 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
         addSectionSpacing(settingsLayout, row++);
 
-        labelTextSize = settingsLayout.addChild(new StringWidget(textSizeLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelTextSize.setTooltip(textSizeTooltip);
+        labelTextSize = settingsLayout.addChild(new StringWidget(TEXT_SIZE_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        labelTextSize.setTooltip(TEXT_SIZE_TOOLTIP);
         textTextSize = settingsLayout.addChild(createIntConfigTextBox(ClientConfig.TEXT_SIZE), row++, 1);
         textTextSize.setMaxLength(2);
         textTextSize.setValueChangedCallback(value -> {
@@ -169,8 +169,8 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
             previewFrontiers.configUpdated();
         });
 
-        labelTextOpacity = settingsLayout.addChild(new StringWidget(textOpacityLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelTextOpacity.setTooltip(textOpacityTooltip);
+        labelTextOpacity = settingsLayout.addChild(new StringWidget(TEXT_OPACITY_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        labelTextOpacity.setTooltip(TEXT_OPACITY_TOOLTIP);
         textTextOpacity = settingsLayout.addChild(createDoubleConfigTextBox(ClientConfig.TEXT_OPACITY), row++, 1);
         textTextOpacity.setMaxLength(6);
         textTextOpacity.setValueChangedCallback(value -> {
@@ -178,8 +178,8 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
             previewFrontiers.configUpdated();
         });
 
-        labelTextUsesCustomColor = settingsLayout.addChild(new StringWidget(textColorLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelTextUsesCustomColor.setTooltip(textColorTooltip);
+        labelTextUsesCustomColor = settingsLayout.addChild(new StringWidget(TEXT_COLOR_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        labelTextUsesCustomColor.setTooltip(TEXT_COLOR_TOOLTIP);
         buttonTextUsesCustomColor = settingsLayout.addChild(new OptionButton(font, 60, (b) -> {
             ClientConfig.TEXT_COLOR.set(ClientConfig.TextColor.values()[b.getSelected()]);
             previewFrontiers.configUpdated();
@@ -191,8 +191,8 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
         addSectionSpacing(settingsLayout, row++);
 
-        labelBannerSize = settingsLayout.addChild(new StringWidget(bannerSizeLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelBannerSize.setTooltip(bannerSizeTooltip);
+        labelBannerSize = settingsLayout.addChild(new StringWidget(BANNER_SIZE_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        labelBannerSize.setTooltip(BANNER_SIZE_TOOLTIP);
         textBannerSize = settingsLayout.addChild(createIntConfigTextBox(ClientConfig.BANNER_SIZE), row++, 1);
         textBannerSize.setMaxLength(2);
         textBannerSize.setValueChangedCallback(value -> {
@@ -200,8 +200,8 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
             previewFrontiers.configUpdated();
         });
 
-        labelBannerOpacity = settingsLayout.addChild(new StringWidget(bannerOpacityLabel, font).setColor(ColorConstants.TEXT), row, 0);
-        labelBannerOpacity.setTooltip(bannerOpacityTooltip);
+        labelBannerOpacity = settingsLayout.addChild(new StringWidget(BANNER_OPACITY_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        labelBannerOpacity.setTooltip(BANNER_OPACITY_TOOLTIP);
         textBannerOpacity = settingsLayout.addChild(createDoubleConfigTextBox(ClientConfig.BANNER_OPACITY), row++, 1);
         textBannerOpacity.setMaxLength(6);
         textBannerOpacity.setValueChangedCallback(value -> {
@@ -212,9 +212,9 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
         previewFrontiers = columnsLayout.addChild(new PreviewFrontiersWidget());
 
         LinearLayout buttons = LinearLayout.horizontal().spacing(7);
-        saveButton = buttons.addChild(new SimpleButton(font, 100, saveLabel, (b) -> saveAndClose()));
+        saveButton = buttons.addChild(new SimpleButton(font, 100, SAVE_LABEL, (b) -> saveAndClose()));
         saveButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM, ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM_HIGHLIGHT);
-        cancelButton = buttons.addChild(new SimpleButton(font, 100, cancelLabel, (b) -> onClose()));
+        cancelButton = buttons.addChild(new SimpleButton(font, 100, CANCEL_LABEL, (b) -> onClose()));
         mainLayout.addChild(buttons);
     }
 
