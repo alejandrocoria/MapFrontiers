@@ -16,7 +16,7 @@ public class FrontierSettings {
     public enum Action {
         CreateGlobalFrontier, DeleteGlobalFrontier, UpdateGlobalFrontier, UpdateSettings, SharePersonalFrontier;
 
-        public final static Action[] valuesArray = values();
+        public static final Action[] VALUES = values();
     }
 
     public enum ActionV3 {

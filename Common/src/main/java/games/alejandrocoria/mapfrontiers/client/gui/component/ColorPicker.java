@@ -18,9 +18,9 @@ import java.util.function.BiConsumer;
 
 @ParametersAreNonnullByDefault
 public class ColorPicker extends AbstractWidgetNoNarration {
-    private static final Identifier texture = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/color_picker.png");
-    private static final int textureSizeX = 274;
-    private static final int textureSizeY = 134;
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/color_picker.png");
+    private static final int TEXTURE_WIDTH = 274;
+    private static final int TEXTURE_HEIGHT = 134;
 
     private double hsX;
     private double hsY;
@@ -102,12 +102,12 @@ public class ColorPicker extends AbstractWidgetNoNarration {
     public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         int texX = active ? 0 : 137;
 
-        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, getX(), getY(), texX, 0, 128, 128, textureSizeX, textureSizeY);
-        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, getX() + 132, getY(), texX + 129, 0, 8, 128, textureSizeX, textureSizeY, active ? colorFullBrightness : ColorConstants.WHITE);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, getX(), getY(), texX, 0, 128, 128, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, getX() + 132, getY(), texX + 129, 0, 8, 128, TEXTURE_WIDTH, TEXTURE_HEIGHT, active ? colorFullBrightness : ColorConstants.WHITE);
         graphics.fill(getX() + (int) hsX + 64, getY() + (int) hsY + 64, getX() + (int) hsX + 65, getY() + (int) hsY + 65, active ? ColorConstants.WHITE : colorFullBrightness);
         graphics.fill(getX() + 131, getY() + (int) v, getX() + 139, getY() + (int) v + 1, color);
-        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, getX() + (int) hsX + 64 - 2, getY() + (int) hsY + 64 - 2, texX, 129, 5, 5, textureSizeX, textureSizeY);
-        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, getX() + 131, getY() + (int) v - 2, texX + 6, 129, 10, 5, textureSizeX, textureSizeY);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, getX() + (int) hsX + 64 - 2, getY() + (int) hsY + 64 - 2, texX, 129, 5, 5, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, getX() + 131, getY() + (int) v - 2, texX + 6, 129, 10, 5, TEXTURE_WIDTH, TEXTURE_HEIGHT);
     }
 
     private void updateMouse(double mouseX, double mouseY, boolean dragging) {

@@ -171,7 +171,7 @@ public class SettingsGroup {
         }
 
         actions.clear();
-        for (FrontierSettings.Action action : FrontierSettings.Action.valuesArray) {
+        for (FrontierSettings.Action action : FrontierSettings.Action.VALUES) {
             if (buf.readBoolean()) {
                 actions.add(action);
             }
@@ -190,7 +190,7 @@ public class SettingsGroup {
             }
         }
 
-        for (FrontierSettings.Action action : FrontierSettings.Action.valuesArray) {
+        for (FrontierSettings.Action action : FrontierSettings.Action.VALUES) {
             buf.writeBoolean(actions.contains(action));
         }
     }

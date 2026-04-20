@@ -31,16 +31,16 @@ import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class ShareSettings extends AutoScaledScreen {
-    private static final Component titleLabel = Component.translatable("mapfrontiers.title_share_settings");
-    private static final Component updateFrontierLabel = Component.translatable("mapfrontiers.update_frontier");
-    private static final Component updateSettingsLabel = Component.translatable("mapfrontiers.update_settings");
-    private static final Component errorUUIDSizeLabel = Component.translatable("mapfrontiers.new_user_error_uuid_size");
-    private static final Component errorUUIDFormatLabel = Component.translatable("mapfrontiers.new_user_error_uuid_format");
-    private static final Component errorUserNotFoundLabel = Component.translatable("mapfrontiers.new_user_shared_error_user_not_found");
-    private static final Component errorSelfLabel = Component.translatable("mapfrontiers.new_user_shared_error_self");
-    private static final Component errorOwnerLabel = Component.translatable("mapfrontiers.new_user_shared_error_owner");
-    private static final Component errorRepeatedLabel = Component.translatable("mapfrontiers.new_user_shared_error_user_repeated");
-    private static final Component doneLabel = Component.translatable("gui.done");
+    private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_share_settings");
+    private static final Component UPDATE_FRONTIER_LABEL = Component.translatable("mapfrontiers.update_frontier");
+    private static final Component UPDATE_SETTINGS_LABEL = Component.translatable("mapfrontiers.update_settings");
+    private static final Component ERROR_UUID_SIZE_LABEL = Component.translatable("mapfrontiers.new_user_error_uuid_size");
+    private static final Component ERROR_UUID_FORMAT_LABEL = Component.translatable("mapfrontiers.new_user_error_uuid_format");
+    private static final Component ERROR_USER_NOT_FOUND_LABEL = Component.translatable("mapfrontiers.new_user_shared_error_user_not_found");
+    private static final Component ERROR_SELF_LABEL = Component.translatable("mapfrontiers.new_user_shared_error_self");
+    private static final Component ERROR_OWNER_LABEL = Component.translatable("mapfrontiers.new_user_shared_error_owner");
+    private static final Component ERROR_REPEATED_LABEL = Component.translatable("mapfrontiers.new_user_shared_error_user_repeated");
+    private static final Component DONE_LABEL = Component.translatable("gui.done");
 
     private FrontierOverlay frontier;
     private MultiLineTextWidget updateFrontier;
@@ -53,7 +53,7 @@ public class ShareSettings extends AutoScaledScreen {
     private int ticksSinceLastUpdate = 0;
 
     public ShareSettings(FrontierOverlay frontier) {
-        super(titleLabel, 470, 120);
+        super(TITLE_LABEL, 470, 120);
         this.frontier = frontier;
 
         MapFrontiersClient.getFrontierEvents().subscribeDeleted(this, frontierID -> {
@@ -85,9 +85,9 @@ public class ShareSettings extends AutoScaledScreen {
         LinearLayout header = LinearLayout.horizontal();
         mainLayout.addChild(header);
 
-        updateFrontier = header.addChild(new MultiLineTextWidget(updateFrontierLabel.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
+        updateFrontier = header.addChild(new MultiLineTextWidget(UPDATE_FRONTIER_LABEL.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
         updateFrontier.setCentered(true);
-        updateSettings = header.addChild(new MultiLineTextWidget(updateSettingsLabel.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
+        updateSettings = header.addChild(new MultiLineTextWidget(UPDATE_SETTINGS_LABEL.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
         updateSettings.setCentered(true);
 
         users = new ScrollBox(actualHeight - 128, 430, 15);
@@ -121,7 +121,7 @@ public class ShareSettings extends AutoScaledScreen {
         buttonNewUser.visible = false;
         newUserLayout.addChild(buttonNewUser);
 
-        bottomButtons.addChild(new SimpleButton(font, 140, doneLabel, (b) -> onClose()));
+        bottomButtons.addChild(new SimpleButton(font, 140, DONE_LABEL, (b) -> onClose()));
 
         updateCanUpdate();
         updateButtonsVisibility();
@@ -222,7 +222,7 @@ public class ShareSettings extends AutoScaledScreen {
         } else {
             usernameOrUUID = usernameOrUUID.replaceAll("[^0-9a-fA-F]", "");
             if (usernameOrUUID.length() != 32) {
-                textNewUser.setError(errorUUIDSizeLabel);
+                textNewUser.setError(ERROR_UUID_SIZE_LABEL);
                 return;
             }
             usernameOrUUID = usernameOrUUID.toLowerCase();
@@ -234,36 +234,36 @@ public class ShareSettings extends AutoScaledScreen {
                 user.uuid = UUID.fromString(uuid);
                 user.fillMissingInfo(true, null);
             } catch (Exception e) {
-                textNewUser.setError(errorUUIDFormatLabel);
+                textNewUser.setError(ERROR_UUID_FORMAT_LABEL);
                 return;
             }
         }
 
         if (user.uuid == null) {
-            textNewUser.setError(errorUserNotFoundLabel);
+            textNewUser.setError(ERROR_USER_NOT_FOUND_LABEL);
             return;
         }
 
         ClientPacketListener handler = minecraft.getConnection();
         if (handler != null) {
             if (handler.getPlayerInfo(user.uuid) == null) {
-                textNewUser.setError(errorUserNotFoundLabel);
+                textNewUser.setError(ERROR_USER_NOT_FOUND_LABEL);
                 return;
             }
         }
 
         if (user.username.equals(minecraft.player.getGameProfile().name())) {
-            textNewUser.setError(errorSelfLabel);
+            textNewUser.setError(ERROR_SELF_LABEL);
             return;
         }
 
         if (frontier.getOwner().equals(user)) {
-            textNewUser.setError(errorOwnerLabel);
+            textNewUser.setError(ERROR_OWNER_LABEL);
             return;
         }
 
         if (frontier.hasUserShared(user)) {
-            textNewUser.setError(errorRepeatedLabel);
+            textNewUser.setError(ERROR_REPEATED_LABEL);
             return;
         }
 

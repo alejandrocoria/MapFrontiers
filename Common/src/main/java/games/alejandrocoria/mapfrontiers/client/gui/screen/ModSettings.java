@@ -68,44 +68,44 @@ public class ModSettings extends AutoScaledScreen {
         Credits, General, Groups, Actions
     }
 
-    private static final Component titleLabel = Component.translatable("mapfrontiers.title_settings");
-    private static final Component tabCreditsLabel = Component.translatable("mapfrontiers.credits");
-    private static final Component tabGeneralLabel = Component.translatable("mapfrontiers.general");
-    private static final Component tabGroupsLabel = Component.translatable("mapfrontiers.groups");
-    private static final Component tabActionsLabel = Component.translatable("mapfrontiers.actions");
-    private static final Component createdByLabel = Component.translatable("mapfrontiers.credits_created_by");
-    private static final Component manyThanksLabel = Component.translatable("mapfrontiers.credits_many_thanks", Services.PLATFORM.getPlatformName());
-    private static final Component projectLabel = Component.translatable("mapfrontiers.credits_project");
-    private static final Component patreonLabel = Component.translatable("mapfrontiers.credits_patreon");
-    private static final Component webLinkLabel = Component.literal("alejandrocoria.games");
-    private static final String webURL = "https://alejandrocoria.games";
-    private static final Component curseForgeLinkLabel = Component.literal("curseforge.com/minecraft/mc-mods/mapfrontiers");
-    private static final String curseForgeURL = "https://www.curseforge.com/minecraft/mc-mods/mapfrontiers";
-    private static final Component modrinthLinkLabel = Component.literal("modrinth.com/mod/mapfrontiers");
-    private static final String modrinthURL = "https://modrinth.com/mod/mapfrontiers";
-    private static final Component patreonLinkLabel = Component.literal("patreon.com/alejandrocoria");
-    private static final String patreonURL = "https://patreon.com/alejandrocoria";
-    private static final Component creditsTranslationLabel = Component.translatable("mapfrontiers.credits_translation");
-    private static final Component versionLabel = Component.literal(Services.PLATFORM.getModVersion());
-    private static final String keyHintkey = "mapfrontiers.key.open_settings.hint";
-    private static final Component frontiersLabel = Component.translatable("mapfrontiers.frontiers");
-    private static final Component frontierAppearanceLabel = Component.translatable("mapfrontiers.frontier_appearance");
-    private static final Component defaultPathStyleLabel = Component.translatable("mapfrontiers.default_path_style");
-    private static final Component forcedVisibilityLabel = Component.translatable("mapfrontiers.forced_visibility");
-    private static final Component guiLabel = Component.translatable("mapfrontiers.gui");
-    private static final Component hudLabel = Component.translatable("mapfrontiers.hud");
-    private static final Component onLabel = Component.translatable("options.on");
-    private static final Component offLabel = Component.translatable("options.off");
-    private static final Component editHudLabel = Component.translatable("mapfrontiers.edit_hud");
-    private static final Component groupOpsDescLabel = Component.translatable("mapfrontiers.group_ops_desc");
-    private static final Component groupOwnersDescLabel = Component.translatable("mapfrontiers.group_owners_desc");
-    private static final Component groupEveryoneDescLabel = Component.translatable("mapfrontiers.group_everyone_desc");
-    private static final Component createGlobalFrontierLabel = Component.translatable("mapfrontiers.create_global_frontier");
-    private static final Component deleteGlobalFrontierLabel = Component.translatable("mapfrontiers.delete_global_frontier");
-    private static final Component updateGlobalFrontierLabel = Component.translatable("mapfrontiers.update_global_frontier");
-    private static final Component updateSettingsLabel = Component.translatable("mapfrontiers.update_settings");
-    private static final Component sharePersonalFrontierLabel = Component.translatable("mapfrontiers.share_personal_frontier");
-    private static final Component doneLabel = Component.translatable("gui.done");
+    private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_settings");
+    private static final Component TAB_CREDITS_LABEL = Component.translatable("mapfrontiers.credits");
+    private static final Component TAB_GENERAL_LABEL = Component.translatable("mapfrontiers.general");
+    private static final Component TAB_GROUPS_LABEL = Component.translatable("mapfrontiers.groups");
+    private static final Component TAB_ACTIONS_LABEL = Component.translatable("mapfrontiers.actions");
+    private static final Component CREATED_BY_LABEL = Component.translatable("mapfrontiers.credits_created_by");
+    private static final Component MANY_THANKS_LABEL = Component.translatable("mapfrontiers.credits_many_thanks", Services.PLATFORM.getPlatformName());
+    private static final Component PROJECT_LABEL = Component.translatable("mapfrontiers.credits_project");
+    private static final Component PATREON_LABEL = Component.translatable("mapfrontiers.credits_patreon");
+    private static final Component WEB_LINK_LABEL = Component.literal("alejandrocoria.games");
+    private static final String WEB_URL = "https://alejandrocoria.games";
+    private static final Component CURSE_FORGE_LINK_LABEL = Component.literal("curseforge.com/minecraft/mc-mods/mapfrontiers");
+    private static final String CURSE_FORGE_URL = "https://www.curseforge.com/minecraft/mc-mods/mapfrontiers";
+    private static final Component MODRINTH_LINK_LABEL = Component.literal("modrinth.com/mod/mapfrontiers");
+    private static final String MODRINTH_URL = "https://modrinth.com/mod/mapfrontiers";
+    private static final Component PATREON_LINK_LABEL = Component.literal("patreon.com/alejandrocoria");
+    private static final String PATREON_URL = "https://patreon.com/alejandrocoria";
+    private static final Component CREDITS_TRANSLATION_LABEL = Component.translatable("mapfrontiers.credits_translation");
+    private static final Component VERSION_LABEL = Component.literal(Services.PLATFORM.getModVersion());
+    private static final String KEY_HINT_KEY = "mapfrontiers.key.open_settings.hint";
+    private static final Component FRONTIERS_LABEL = Component.translatable("mapfrontiers.frontiers");
+    private static final Component FRONTIER_APPEARANCE_LABEL = Component.translatable("mapfrontiers.frontier_appearance");
+    private static final Component DEFAULT_PATH_STYLE_LABEL = Component.translatable("mapfrontiers.default_path_style");
+    private static final Component FORCED_VISIBILITY_LABEL = Component.translatable("mapfrontiers.forced_visibility");
+    private static final Component GUI_LABEL = Component.translatable("mapfrontiers.gui");
+    private static final Component HUD_LABEL = Component.translatable("mapfrontiers.hud");
+    private static final Component ON_LABEL = Component.translatable("options.on");
+    private static final Component OFF_LABEL = Component.translatable("options.off");
+    private static final Component EDIT_HUD_LABEL = Component.translatable("mapfrontiers.edit_hud");
+    private static final Component GROUP_OPS_DESC_LABEL = Component.translatable("mapfrontiers.group_ops_desc");
+    private static final Component GROUP_OWNERS_DESC_LABEL = Component.translatable("mapfrontiers.group_owners_desc");
+    private static final Component GROUP_EVERYONE_DESC_LABEL = Component.translatable("mapfrontiers.group_everyone_desc");
+    private static final Component CREATE_GLOBAL_FRONTIER_LABEL = Component.translatable("mapfrontiers.create_global_frontier");
+    private static final Component DELETE_GLOBAL_FRONTIER_LABEL = Component.translatable("mapfrontiers.delete_global_frontier");
+    private static final Component UPDATE_GLOBAL_FRONTIER_LABEL = Component.translatable("mapfrontiers.update_global_frontier");
+    private static final Component UPDATE_SETTINGS_LABEL = Component.translatable("mapfrontiers.update_settings");
+    private static final Component SHARE_PERSONAL_FRONTIER_LABEL = Component.translatable("mapfrontiers.share_personal_frontier");
+    private static final Component DONE_LABEL = Component.translatable("gui.done");
     private static final int TABBED_BOX_MARGIN_X = 80;
     private static final int TABBED_BOX_MARGIN_Y = 64;
     private static final int SECTION_SPACING_SMALL = 4;
@@ -154,7 +154,7 @@ public class ModSettings extends AutoScaledScreen {
     private final boolean subscribeToSettingsProfileEvents;
 
     public ModSettings(boolean showKeyHint) {
-        super(titleLabel, 696, 450);
+        super(TITLE_LABEL, 696, 450);
         this.showKeyHint = showKeyHint;
         subscribeToSettingsProfileEvents = MapFrontiersClient.isJourneyMapPluginAvailable();
 
@@ -208,10 +208,10 @@ public class ModSettings extends AutoScaledScreen {
     private TabbedBox createTabbedBox() {
         TabbedBox tabs = content.addChild(new TabbedBox(font, actualWidth - TABBED_BOX_MARGIN_X,
                 actualHeight - TABBED_BOX_MARGIN_Y, this::onTabChanged));
-        tabs.addTab(tabCreditsLabel, true);
-        tabs.addTab(tabGeneralLabel, true);
-        tabs.addTab(tabGroupsLabel, canEditGroups);
-        tabs.addTab(tabActionsLabel, canEditGroups);
+        tabs.addTab(TAB_CREDITS_LABEL, true);
+        tabs.addTab(TAB_GENERAL_LABEL, true);
+        tabs.addTab(TAB_GROUPS_LABEL, canEditGroups);
+        tabs.addTab(TAB_ACTIONS_LABEL, canEditGroups);
         return tabs;
     }
 
@@ -232,20 +232,20 @@ public class ModSettings extends AutoScaledScreen {
                 LayoutSettings.defaults().alignHorizontallyCenter().alignVerticallyTop());
 
         creditsLayout.addChild(SpacerElement.height(16));
-        creditsLayout.addChild(new StringWidget(createdByLabel, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
-        creditsLayout.addChild(createWideExternalLinkButton(webLinkLabel, webURL));
+        creditsLayout.addChild(new StringWidget(CREATED_BY_LABEL, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
+        creditsLayout.addChild(createWideExternalLinkButton(WEB_LINK_LABEL, WEB_URL));
         creditsLayout.addChild(SpacerElement.height(16));
 
-        creditsLayout.addChild(new StringWidget(manyThanksLabel, font).setColor(ColorConstants.TEXT_MEDIUM));
+        creditsLayout.addChild(new StringWidget(MANY_THANKS_LABEL, font).setColor(ColorConstants.TEXT_MEDIUM));
         creditsLayout.addChild(SpacerElement.height(16));
 
-        creditsLayout.addChild(new StringWidget(projectLabel, font).setColor(ColorConstants.TEXT_MEDIUM));
-        creditsLayout.addChild(createExternalLinkButton(curseForgeLinkLabel, curseForgeURL));
-        creditsLayout.addChild(createExternalLinkButton(modrinthLinkLabel, modrinthURL));
+        creditsLayout.addChild(new StringWidget(PROJECT_LABEL, font).setColor(ColorConstants.TEXT_MEDIUM));
+        creditsLayout.addChild(createExternalLinkButton(CURSE_FORGE_LINK_LABEL, CURSE_FORGE_URL));
+        creditsLayout.addChild(createExternalLinkButton(MODRINTH_LINK_LABEL, MODRINTH_URL));
         creditsLayout.addChild(SpacerElement.height(16));
 
-        creditsLayout.addChild(new StringWidget(patreonLabel, font).setColor(ColorConstants.TEXT_MEDIUM));
-        creditsLayout.addChild(createExternalLinkButton(patreonLinkLabel, patreonURL));
+        creditsLayout.addChild(new StringWidget(PATREON_LABEL, font).setColor(ColorConstants.TEXT_MEDIUM));
+        creditsLayout.addChild(createExternalLinkButton(PATREON_LINK_LABEL, PATREON_URL));
     }
 
     private void buildGeneralTab() {
@@ -255,7 +255,7 @@ public class ModSettings extends AutoScaledScreen {
                 LayoutSettings.defaults().alignHorizontallyCenter().alignVerticallyTop());
 
         generalLayout.addChild(SpacerElement.height(16));
-        generalLayout.addChild(new StringWidget(frontiersLabel, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
+        generalLayout.addChild(new StringWidget(FRONTIERS_LABEL, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
 
         GridLayout settingsGrid = new GridLayout().spacing(SECTION_SPACING_SMALL);
         settingsGrid.defaultCellSetting().alignHorizontallyLeft().alignVerticallyMiddle();
@@ -278,18 +278,18 @@ public class ModSettings extends AutoScaledScreen {
         row = addIntSettingRow(settingsGrid, row, ClientConfig.PATH_PROXIMITY_EXIT_DISTANCE, DEFAULT_TEXTBOX_WIDTH, 3);
 
         int frontierButtonWidth = ScreenHelper.getPaddedMaxTextWidth(font, FRONTIER_BUTTON_MIN_WIDTH,
-                FRONTIER_BUTTON_HORIZONTAL_PADDING, frontierAppearanceLabel, defaultPathStyleLabel,
-                forcedVisibilityLabel);
+                FRONTIER_BUTTON_HORIZONTAL_PADDING, FRONTIER_APPEARANCE_LABEL, DEFAULT_PATH_STYLE_LABEL,
+                FORCED_VISIBILITY_LABEL);
 
-        buttonFrontierAppearance = createWideSimpleButton(frontierButtonWidth, frontierAppearanceLabel,
+        buttonFrontierAppearance = createWideSimpleButton(frontierButtonWidth, FRONTIER_APPEARANCE_LABEL,
                 b -> onFrontierAppearancePressed());
         settingsGrid.addChild(buttonFrontierAppearance, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
 
-        buttonDefaultPathStyle = createWideSimpleButton(frontierButtonWidth, defaultPathStyleLabel,
+        buttonDefaultPathStyle = createWideSimpleButton(frontierButtonWidth, DEFAULT_PATH_STYLE_LABEL,
                 b -> onDefaultPathStylePressed());
         settingsGrid.addChild(buttonDefaultPathStyle, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
 
-        settingsGrid.addChild(createWideSimpleButton(frontierButtonWidth, forcedVisibilityLabel,
+        settingsGrid.addChild(createWideSimpleButton(frontierButtonWidth, FORCED_VISIBILITY_LABEL,
                 b -> onForcedVisibilityPressed()), row++, 0, 1, 2,
                 LayoutSettings.defaults().alignHorizontallyCenter());
 
@@ -298,7 +298,7 @@ public class ModSettings extends AutoScaledScreen {
 
     private int buildGuiSection(GridLayout settingsGrid, int row) {
         settingsGrid.addChild(SpacerElement.height(SECTION_SPACING_SMALL), row++, 0);
-        settingsGrid.addChild(new StringWidget(guiLabel, font).setColor(ColorConstants.TEXT_HIGHLIGHT), row++, 0, 1, 2,
+        settingsGrid.addChild(new StringWidget(GUI_LABEL, font).setColor(ColorConstants.TEXT_HIGHLIGHT), row++, 0, 1, 2,
                 LayoutSettings.defaults().alignHorizontallyCenter());
 
         row = addOptionSettingRow(settingsGrid, row, ClientConfig.FULLSCREEN_BUTTONS);
@@ -313,13 +313,13 @@ public class ModSettings extends AutoScaledScreen {
 
     private void buildHudSection(LinearLayout generalLayout, GridLayout settingsGrid, int row) {
         settingsGrid.addChild(SpacerElement.height(SECTION_SPACING_SMALL), row++, 0);
-        settingsGrid.addChild(new StringWidget(hudLabel, font).setColor(ColorConstants.TEXT_HIGHLIGHT), row++, 0, 1, 2,
+        settingsGrid.addChild(new StringWidget(HUD_LABEL, font).setColor(ColorConstants.TEXT_HIGHLIGHT), row++, 0, 1, 2,
                 LayoutSettings.defaults().alignHorizontallyCenter());
 
         addOptionSettingRow(settingsGrid, row, ClientConfig.HUD_ENABLED, createOnOffOptionButton(ClientConfig.HUD_ENABLED,
                 this::onHudEnabledChanged));
 
-        buttonEditHUD = generalLayout.addChild(createWideSimpleButton(100, editHudLabel, b -> onEditHUDPressed()));
+        buttonEditHUD = generalLayout.addChild(createWideSimpleButton(100, EDIT_HUD_LABEL, b -> onEditHUDPressed()));
     }
 
     private void buildGroupsTab() {
@@ -365,7 +365,7 @@ public class ModSettings extends AutoScaledScreen {
         textGroupName.setMaxLength(22);
         textGroupName.setLostFocusCallback(this::onGroupNameLostFocus);
 
-        labelGroupDesc = usersColumn.addChild(new MultiLineTextWidget(groupOpsDescLabel.copy().withColor(ColorConstants.TEXT), font));
+        labelGroupDesc = usersColumn.addChild(new MultiLineTextWidget(GROUP_OPS_DESC_LABEL.copy().withColor(ColorConstants.TEXT), font));
 
         users = usersColumn.addChild(new ScrollBox(actualHeight - 160, USERS_SCROLL_WIDTH, 16));
         users.setElementDeletePressedCallback(this::onUserDeletePressed);
@@ -390,17 +390,17 @@ public class ModSettings extends AutoScaledScreen {
         LinearLayout actionsHeader = LinearLayout.horizontal();
         actionsLayout.addChild(actionsHeader);
 
-        labelCreateFrontier = actionsHeader.addChild(createActionsHeaderLabel(createGlobalFrontierLabel));
-        labelDeleteFrontier = actionsHeader.addChild(createActionsHeaderLabel(deleteGlobalFrontierLabel));
-        labelUpdateFrontier = actionsHeader.addChild(createActionsHeaderLabel(updateGlobalFrontierLabel));
-        labelUpdateSettings = actionsHeader.addChild(createActionsHeaderLabel(updateSettingsLabel));
-        labelSharePersonalFrontier = actionsHeader.addChild(createActionsHeaderLabel(sharePersonalFrontierLabel));
+        labelCreateFrontier = actionsHeader.addChild(createActionsHeaderLabel(CREATE_GLOBAL_FRONTIER_LABEL));
+        labelDeleteFrontier = actionsHeader.addChild(createActionsHeaderLabel(DELETE_GLOBAL_FRONTIER_LABEL));
+        labelUpdateFrontier = actionsHeader.addChild(createActionsHeaderLabel(UPDATE_GLOBAL_FRONTIER_LABEL));
+        labelUpdateSettings = actionsHeader.addChild(createActionsHeaderLabel(UPDATE_SETTINGS_LABEL));
+        labelSharePersonalFrontier = actionsHeader.addChild(createActionsHeaderLabel(SHARE_PERSONAL_FRONTIER_LABEL));
 
         groupsActions = actionsLayout.addChild(new ScrollBox(actualHeight - 128, ACTIONS_SCROLL_WIDTH, 15));
     }
 
     private void buildBottomButtons() {
-        bottomButtons.addChild(new SimpleButton(font, DONE_BUTTON_WIDTH, doneLabel, b -> onClose()));
+        bottomButtons.addChild(new SimpleButton(font, DONE_BUTTON_WIDTH, DONE_LABEL, b -> onClose()));
     }
 
     private LinkButton createExternalLinkButton(Component label, String url) {
@@ -433,8 +433,8 @@ public class ModSettings extends AutoScaledScreen {
 
     private OptionButton createOnOffOptionButton(BooleanConfigEntry entry, Consumer<Boolean> consumer) {
         OptionButton button = new OptionButton(font, DEFAULT_OPTION_WIDTH, b -> consumer.accept(b.getSelected() == 0));
-        button.addOption(onLabel);
-        button.addOption(offLabel);
+        button.addOption(ON_LABEL);
+        button.addOption(OFF_LABEL);
         button.setSelected(entry.get() ? 0 : 1);
         return button;
     }
@@ -703,12 +703,12 @@ public class ModSettings extends AutoScaledScreen {
 
         if (tabSelected == Tab.Credits || tabSelected == Tab.General) {
             int y = tabbedBox.getY() + tabbedBox.getHeight() - 19;
-            graphics.text(font, creditsTranslationLabel, tabbedBox.getX() + 10, y, ColorConstants.TEXT_HIGHLIGHT);
-            graphics.text(font, versionLabel, tabbedBox.getX() + tabbedBox.getWidth() - font.width(versionLabel) - 10, y, ColorConstants.TEXT_HIGHLIGHT);
+            graphics.text(font, CREDITS_TRANSLATION_LABEL, tabbedBox.getX() + 10, y, ColorConstants.TEXT_HIGHLIGHT);
+            graphics.text(font, VERSION_LABEL, tabbedBox.getX() + tabbedBox.getWidth() - font.width(VERSION_LABEL) - 10, y, ColorConstants.TEXT_HIGHLIGHT);
             if (showKeyHint) {
                 Component key = MapFrontiersClient.getOpenSettingsKey();
                 if (key != null) {
-                    graphics.centeredText(font, Component.translatable(keyHintkey, key), tabbedBox.getX() + tabbedBox.getWidth() / 2, y, ColorConstants.TEXT_HIGHLIGHT);
+                    graphics.centeredText(font, Component.translatable(KEY_HINT_KEY, key), tabbedBox.getX() + tabbedBox.getWidth() / 2, y, ColorConstants.TEXT_HIGHLIGHT);
                 }
             }
         }
@@ -963,11 +963,11 @@ public class ModSettings extends AutoScaledScreen {
         textGroupName.setFocused(false);
 
         if (group == settings.getOPsGroup()) {
-            labelGroupDesc.setMessage(groupOpsDescLabel);
+            labelGroupDesc.setMessage(GROUP_OPS_DESC_LABEL);
         } else if (group == settings.getOwnersGroup()) {
-            labelGroupDesc.setMessage(groupOwnersDescLabel);
+            labelGroupDesc.setMessage(GROUP_OWNERS_DESC_LABEL);
         } else if (group == settings.getEveryoneGroup()) {
-            labelGroupDesc.setMessage(groupEveryoneDescLabel);
+            labelGroupDesc.setMessage(GROUP_EVERYONE_DESC_LABEL);
         } else {
             labelGroupDesc.setMessage(Component.empty());
         }

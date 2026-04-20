@@ -47,7 +47,7 @@ import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class ClientFrontierOperationService {
-    private static final Minecraft minecraft = Minecraft.getInstance();
+    private static final Minecraft mc = Minecraft.getInstance();
 
     private final FrontiersOverlayManager globalManager;
     private final FrontiersOverlayManager personalManager;
@@ -123,15 +123,15 @@ public class ClientFrontierOperationService {
             return null;
         }
 
-        if (!personal || minecraft.player == null) {
+        if (!personal || mc.player == null) {
             return null;
         }
 
-        FrontierData frontier = FrontierCreationFactory.createFrontier(frontierId, new SettingsUser(minecraft.player), dimension,
+        FrontierData frontier = FrontierCreationFactory.createFrontier(frontierId, new SettingsUser(mc.player), dimension,
                 true, lifetime, sourcePluginId, vertices, chunks, points, pathStyle);
         FrontierOverlay frontierOverlay = personalManager.addFrontier(frontier);
         persistLocalPersonalFrontiersIfPersistent(frontierOverlay);
-        frontierEvents.postCreated(frontierOverlay, minecraft.player.getId());
+        frontierEvents.postCreated(frontierOverlay, mc.player.getId());
         return frontierOverlay;
     }
 
@@ -141,7 +141,7 @@ public class ClientFrontierOperationService {
             return;
         }
 
-        if (!frontier.getPersonal() || minecraft.player == null || !frontier.getOwner().equals(new SettingsUser(minecraft.player))) {
+        if (!frontier.getPersonal() || mc.player == null || !frontier.getOwner().equals(new SettingsUser(mc.player))) {
             return;
         }
 
@@ -166,12 +166,12 @@ public class ClientFrontierOperationService {
             return;
         }
 
-        if (!frontier.getPersonal() || minecraft.player == null || !frontier.getOwner().equals(new SettingsUser(minecraft.player))) {
+        if (!frontier.getPersonal() || mc.player == null || !frontier.getOwner().equals(new SettingsUser(mc.player))) {
             return;
         }
 
         persistLocalPersonalFrontiersIfPersistent(frontier);
-        frontierEvents.postUpdated(frontier, minecraft.player.getId());
+        frontierEvents.postUpdated(frontier, mc.player.getId());
     }
 
     public void shareFrontier(UUID frontierId, SettingsUser targetUser) {
@@ -361,15 +361,15 @@ public class ClientFrontierOperationService {
     }
 
     public FrontierOverlay acceptCopiedFrontier(FrontierData receivedFrontier, @Nullable FrontierOverlay currentFrontier) {
-        if (currentFrontier != null && minecraft.player != null) {
+        if (currentFrontier != null && mc.player != null) {
             currentFrontier.removeCopiedFromInfo();
-            frontierEvents.postUpdated(currentFrontier, minecraft.player.getId());
+            frontierEvents.postUpdated(currentFrontier, mc.player.getId());
         }
 
         FrontierOverlay frontierOverlay = personalManager.addFrontier(receivedFrontier);
         persistLocalPersonalFrontiersIfPersistent(frontierOverlay);
-        if (minecraft.player != null) {
-            frontierEvents.postCreated(frontierOverlay, minecraft.player.getId());
+        if (mc.player != null) {
+            frontierEvents.postCreated(frontierOverlay, mc.player.getId());
         }
         return frontierOverlay;
     }
@@ -382,8 +382,8 @@ public class ClientFrontierOperationService {
         if (currentFrontier.isPersistent() || frontierOverlay.isPersistent()) {
             persistLocalPersonalFrontiers();
         }
-        if (minecraft.player != null) {
-            frontierEvents.postCreated(frontierOverlay, minecraft.player.getId());
+        if (mc.player != null) {
+            frontierEvents.postCreated(frontierOverlay, mc.player.getId());
         }
         return frontierOverlay;
     }
@@ -472,11 +472,11 @@ public class ClientFrontierOperationService {
     }
 
     private void persistLocalPersonalFrontiers() {
-        if (minecraft.isLocalServer() || minecraft.player == null) {
+        if (mc.isLocalServer() || mc.player == null) {
             return;
         }
 
-        localPersonalStore.saveOwnedFrontierMirror(getAllPersonalFrontiers(), new SettingsUser(minecraft.player));
+        localPersonalStore.saveOwnedFrontierMirror(getAllPersonalFrontiers(), new SettingsUser(mc.player));
     }
 
     private void persistLocalPersonalFrontiersIfPersistent(FrontierData frontier) {

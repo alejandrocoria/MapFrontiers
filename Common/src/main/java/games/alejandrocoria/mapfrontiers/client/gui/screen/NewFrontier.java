@@ -33,18 +33,18 @@ import java.util.Set;
 
 @ParametersAreNonnullByDefault
 public class NewFrontier extends AutoScaledScreen {
-    private static final Component titleLabel = Component.translatable("mapfrontiers.title_new_frontier");
-    private static final Component frontierTypeLabel = Component.translatable("mapfrontiers.frontier_type");
-    private static final Component frontierModeLabel = Component.translatable("mapfrontiers.frontier_mode");
-    private static final Component afterCreatingLabel = Component.translatable("mapfrontiers.after_creating");
-    private static final Component vertexCountLabel = Component.translatable("mapfrontiers.shape_vertex_count");
-    private static final Component pointCountLabel = Component.translatable("mapfrontiers.shape_point_count");
-    private static final Component sizeInfoLabel = Component.translatable("mapfrontiers.shape_size_info");
-    private static final String verticesKey = "mapfrontiers.vertices";
-    private static final String pointsKey = "mapfrontiers.points";
-    private static final String chunksKey = "mapfrontiers.chunks";
-    private static final Component createLabel = Component.translatable("mapfrontiers.create");
-    private static final Component cancelLabel = Component.translatable("gui.cancel");
+    private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_new_frontier");
+    private static final Component FRONTIER_TYPE_LABEL = Component.translatable("mapfrontiers.frontier_type");
+    private static final Component FRONTIER_MODE_LABEL = Component.translatable("mapfrontiers.frontier_mode");
+    private static final Component AFTER_CREATING_LABEL = Component.translatable("mapfrontiers.after_creating");
+    private static final Component VERTEX_COUNT_LABEL = Component.translatable("mapfrontiers.shape_vertex_count");
+    private static final Component POINT_COUNT_LABEL = Component.translatable("mapfrontiers.shape_point_count");
+    private static final Component SIZE_INFO_LABEL = Component.translatable("mapfrontiers.shape_size_info");
+    private static final String VERTICES_KEY = "mapfrontiers.vertices";
+    private static final String POINTS_KEY = "mapfrontiers.points";
+    private static final String CHUNKS_KEY = "mapfrontiers.chunks";
+    private static final Component CREATE_LABEL = Component.translatable("mapfrontiers.create");
+    private static final Component CANCEL_LABEL = Component.translatable("gui.cancel");
 
     private final IClientAPI jmAPI;
 
@@ -63,7 +63,7 @@ public class NewFrontier extends AutoScaledScreen {
     private BlockPos centerPos;
 
     public NewFrontier(IClientAPI jmAPI, BlockPos centerPos) {
-        super(titleLabel, 344, 295);
+        super(TITLE_LABEL, 344, 295);
         this.jmAPI = jmAPI;
         this.centerPos = centerPos;
 
@@ -81,7 +81,7 @@ public class NewFrontier extends AutoScaledScreen {
         LayoutSettings rightColumnSettings = LayoutSettings.defaults().alignHorizontallyLeft();
         LayoutSettings centerColumnSettings = LayoutSettings.defaults().alignHorizontallyCenter();
 
-        mainLayout.addChild(new StringWidget(frontierTypeLabel, font).setColor(ColorConstants.TEXT), 0, 0, leftColumnSettings);
+        mainLayout.addChild(new StringWidget(FRONTIER_TYPE_LABEL, font).setColor(ColorConstants.TEXT), 0, 0, leftColumnSettings);
         buttonFrontierType = new OptionButton(font, 130, OptionButton.DO_NOTHING);
         buttonFrontierType.addOption(ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierType.Global));
         buttonFrontierType.addOption(ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierType.Personal));
@@ -96,7 +96,7 @@ public class NewFrontier extends AutoScaledScreen {
         }
         mainLayout.addChild(buttonFrontierType, 0, 1, rightColumnSettings);
 
-        mainLayout.addChild(new StringWidget(frontierModeLabel, font).setColor(ColorConstants.TEXT), 1, 0, leftColumnSettings);
+        mainLayout.addChild(new StringWidget(FRONTIER_MODE_LABEL, font).setColor(ColorConstants.TEXT), 1, 0, leftColumnSettings);
         buttonFrontierMode = new OptionButton(font, 130, (b) -> {
                     ClientConfig.NEW_FRONTIER_MODE.set(FrontierData.Mode.values()[b.getSelected()]);
                     shapePresetUpdated();
@@ -107,7 +107,7 @@ public class NewFrontier extends AutoScaledScreen {
         buttonFrontierMode.setSelected(ClientConfig.NEW_FRONTIER_MODE.get().ordinal());
         mainLayout.addChild(buttonFrontierMode, 1, 1, rightColumnSettings);
 
-        mainLayout.addChild(new StringWidget(afterCreatingLabel, font).setColor(ColorConstants.TEXT), 2, 0, leftColumnSettings);
+        mainLayout.addChild(new StringWidget(AFTER_CREATING_LABEL, font).setColor(ColorConstants.TEXT), 2, 0, leftColumnSettings);
         buttonAfterCreate = new OptionButton(font, 130,
                 (b) -> ClientConfig.AFTER_CREATING_FRONTIER.set(ClientConfig.AfterCreatingFrontier.values()[b.getSelected()]));
         buttonAfterCreate.addOption(ClientConfig.getTranslatedEnum(ClientConfig.AfterCreatingFrontier.InfoScreen));
@@ -123,7 +123,7 @@ public class NewFrontier extends AutoScaledScreen {
         pathShapePresetSelector = new PathShapePresetSelector(font, ClientConfig.NEW_FRONTIER_PATH_SHAPE.get(), (s) -> shapePresetUpdated());
         mainLayout.addChild(pathShapePresetSelector, 3, 0, 1, 2, centerColumnSettings);
 
-        labelCount = mainLayout.addChild(new StringWidget(vertexCountLabel, font).setColor(ColorConstants.WHITE), 4, 0, leftColumnSettings);
+        labelCount = mainLayout.addChild(new StringWidget(VERTEX_COUNT_LABEL, font).setColor(ColorConstants.WHITE), 4, 0, leftColumnSettings);
         textCount = new TextBoxInt(ClientConfig.NEW_FRONTIER_COUNT, font, 64);
         textCount.setValue(String.valueOf(ClientConfig.NEW_FRONTIER_COUNT.get()));
         textCount.setValueChangedCallback(ClientConfig.NEW_FRONTIER_COUNT::set);
@@ -149,9 +149,9 @@ public class NewFrontier extends AutoScaledScreen {
         });
         mainLayout.addChild(textSize, 5, 1, rightColumnSettings);
 
-        labelSizeInfo = mainLayout.addChild(new StringWidget(sizeInfoLabel, font).setColor(ColorConstants.WHITE), 5, 0, 1, 2, centerColumnSettings);
+        labelSizeInfo = mainLayout.addChild(new StringWidget(SIZE_INFO_LABEL, font).setColor(ColorConstants.WHITE), 5, 0, 1, 2, centerColumnSettings);
 
-        SimpleButton createButton = bottomButtons.addChild(new SimpleButton(font, 100, createLabel, (b) -> {
+        SimpleButton createButton = bottomButtons.addChild(new SimpleButton(font, 100, CREATE_LABEL, (b) -> {
             boolean personal = buttonFrontierType.getSelected() == 1;
             closeAndReturnToFullscreenMap();
             UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
@@ -164,7 +164,7 @@ public class NewFrontier extends AutoScaledScreen {
         }));
         createButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM, ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM_HIGHLIGHT);
 
-        bottomButtons.addChild(new SimpleButton(font, 100, cancelLabel, b -> onClose()));
+        bottomButtons.addChild(new SimpleButton(font, 100, CANCEL_LABEL, b -> onClose()));
 
         shapePresetUpdated();
     }
@@ -190,7 +190,7 @@ public class NewFrontier extends AutoScaledScreen {
 
             int selected = vertexShapePresetSelector.getSelected();
             ClientConfig.NEW_FRONTIER_SHAPE.set(selected);
-            setLabelCountMessage(vertexCountLabel);
+            setLabelCountMessage(VERTEX_COUNT_LABEL);
 
             if (selected == 11) {
                 labelCount.visible = true;
@@ -200,7 +200,7 @@ public class NewFrontier extends AutoScaledScreen {
                 labelCount.visible = false;
                 textCount.visible = false;
                 labelCountInfo.visible = true;
-                setLabelCountInfoMessage(verticesKey, vertexShapePresetSelector.getVertexCount());
+                setLabelCountInfoMessage(VERTICES_KEY, vertexShapePresetSelector.getVertexCount());
             }
 
             labelSizeInfo.visible = false;
@@ -233,7 +233,7 @@ public class NewFrontier extends AutoScaledScreen {
             labelCount.visible = false;
             textCount.visible = false;
             labelCountInfo.visible = true;
-            setLabelCountInfoMessage(chunksKey, chunkShapePresetSelector.getChunkCount());
+            setLabelCountInfoMessage(CHUNKS_KEY, chunkShapePresetSelector.getChunkCount());
 
             labelSizeInfo.visible = selected == 7;
 
@@ -263,12 +263,12 @@ public class NewFrontier extends AutoScaledScreen {
 
             int selected = pathShapePresetSelector.getSelected();
             ClientConfig.NEW_FRONTIER_PATH_SHAPE.set(selected);
-            setLabelCountMessage(pointCountLabel);
+            setLabelCountMessage(POINT_COUNT_LABEL);
 
             labelCount.visible = false;
             textCount.visible = false;
             labelCountInfo.visible = true;
-            setLabelCountInfoMessage(pointsKey, pathShapePresetSelector.getPointCount());
+            setLabelCountInfoMessage(POINTS_KEY, pathShapePresetSelector.getPointCount());
 
             labelSizeInfo.visible = false;
 

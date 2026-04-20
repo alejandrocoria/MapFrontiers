@@ -22,13 +22,13 @@ import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class SendFrontier extends AutoScaledScreen {
-    private static final Component titleLabel = Component.translatable("mapfrontiers.title_send");
-    private static final Component descriptionLabel = Component.translatable("mapfrontiers.send_description");
-    private static final Component errorUUIDSizeLabel = Component.translatable("mapfrontiers.new_user_error_uuid_size");
-    private static final Component errorUUIDFormatLabel = Component.translatable("mapfrontiers.new_user_error_uuid_format");
-    private static final Component errorUserNotFoundLabel = Component.translatable("mapfrontiers.new_user_shared_error_user_not_found");
-    private static final Component errorSelfLabel = Component.translatable("mapfrontiers.new_user_shared_error_self");
-    private static final Component doneLabel = Component.translatable("gui.done");
+    private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_send");
+    private static final Component DESCRIPTION_LABEL = Component.translatable("mapfrontiers.send_description");
+    private static final Component ERROR_UUID_SIZE_LABEL = Component.translatable("mapfrontiers.new_user_error_uuid_size");
+    private static final Component ERROR_UUID_FORMAT_LABEL = Component.translatable("mapfrontiers.new_user_error_uuid_format");
+    private static final Component ERROR_USER_NOT_FOUND_LABEL = Component.translatable("mapfrontiers.new_user_shared_error_user_not_found");
+    private static final Component ERROR_SELF_LABEL = Component.translatable("mapfrontiers.new_user_shared_error_self");
+    private static final Component DONE_LABEL = Component.translatable("gui.done");
 
     private FrontierOverlay frontier;
     private MultiLineTextWidget description;
@@ -36,7 +36,7 @@ public class SendFrontier extends AutoScaledScreen {
     private IconButton buttonNewUser;
 
     public SendFrontier(FrontierOverlay frontier) {
-        super(titleLabel, 470, 120);
+        super(TITLE_LABEL, 470, 120);
         this.frontier = frontier;
 
         MapFrontiersClient.getFrontierEvents().subscribeDeleted(this, frontierID -> {
@@ -65,7 +65,7 @@ public class SendFrontier extends AutoScaledScreen {
         LinearLayout header = LinearLayout.horizontal();
         mainLayout.addChild(header);
 
-        description = header.addChild(new MultiLineTextWidget(descriptionLabel.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
+        description = header.addChild(new MultiLineTextWidget(DESCRIPTION_LABEL.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
         description.setCentered(true);
 
         LinearLayout newUserLayout = LinearLayout.horizontal().spacing(4);
@@ -79,7 +79,7 @@ public class SendFrontier extends AutoScaledScreen {
         buttonNewUser = new IconButton(IconButton.Type.Send, (b) -> buttonNewUserPressed());
         newUserLayout.addChild(buttonNewUser);
 
-        bottomButtons.addChild(new SimpleButton(font, 140, doneLabel, (b) -> onClose()));
+        bottomButtons.addChild(new SimpleButton(font, 140, DONE_LABEL, (b) -> onClose()));
     }
 
     @Override
@@ -104,7 +104,7 @@ public class SendFrontier extends AutoScaledScreen {
         } else {
             usernameOrUUID = usernameOrUUID.replaceAll("[^0-9a-fA-F]", "");
             if (usernameOrUUID.length() != 32) {
-                textNewUser.setError(errorUUIDSizeLabel);
+                textNewUser.setError(ERROR_UUID_SIZE_LABEL);
                 return;
             }
             usernameOrUUID = usernameOrUUID.toLowerCase();
@@ -116,31 +116,31 @@ public class SendFrontier extends AutoScaledScreen {
                 user.uuid = UUID.fromString(uuid);
                 user.fillMissingInfo(true, null);
             } catch (Exception e) {
-                textNewUser.setError(errorUUIDFormatLabel);
+                textNewUser.setError(ERROR_UUID_FORMAT_LABEL);
                 return;
             }
         }
 
         if (user.uuid == null) {
-            textNewUser.setError(errorUserNotFoundLabel);
+            textNewUser.setError(ERROR_USER_NOT_FOUND_LABEL);
             return;
         }
 
         ClientPacketListener handler = minecraft.getConnection();
         if (handler != null) {
             if (handler.getPlayerInfo(user.uuid) == null) {
-                textNewUser.setError(errorUserNotFoundLabel);
+                textNewUser.setError(ERROR_USER_NOT_FOUND_LABEL);
                 return;
             }
         }
 
         if (StringUtil.isBlank(user.username)) {
-            textNewUser.setError(errorUserNotFoundLabel);
+            textNewUser.setError(ERROR_USER_NOT_FOUND_LABEL);
             return;
         }
 
         if (user.username.equals(minecraft.player.getGameProfile().name())) {
-            textNewUser.setError(errorSelfLabel);
+            textNewUser.setError(ERROR_SELF_LABEL);
             return;
         }
 

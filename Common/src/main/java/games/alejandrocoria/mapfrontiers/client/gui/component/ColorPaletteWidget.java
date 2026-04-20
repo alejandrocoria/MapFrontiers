@@ -13,12 +13,12 @@ import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
 public class ColorPaletteWidget extends AbstractWidgetNoNarration {
-    private static final int[] palette = {
+    private static final int[] PALETTE_COLORS = {
             0xffff0000, 0xffff8000, 0xffffff00, 0xff80ff00, 0xff00ff00, 0xff00ff80,
             0xff00ffff, 0xff0080ff, 0xff0000ff, 0xff8000ff, 0xffff00ff, 0xffff0080,
             0xff572f07, 0xff000000, 0xff404040, 0xff808080, 0xffbfbfbf, 0xffffffff};
 
-    private static final int[] paletteInactive = {
+    private static final int[] PALETTE_COLORS_INACTIVE = {
             0xff343434, 0xff595959, 0xff7e7e7e, 0xff6b6b6b, 0xff585858, 0xff5f5f5f,
             0xff666666, 0xff424242, 0xff1c1c1c, 0xff2f2f2f, 0xff424242, 0xff3b3b3b,
             0xff292929, 0xff0e0e0e, 0xff2e2e2e, 0xff4d4d4d, 0xff6d6d6d, 0xff8d8d8d};
@@ -46,7 +46,7 @@ public class ColorPaletteWidget extends AbstractWidgetNoNarration {
         double paletteX = (event.x() - getX()) / 23.0;
         double paletteY = (event.y() - getY()) / 23.0;
         if (paletteX >= 0.0 && paletteX < 6.0 && paletteY >= 0.0 && paletteY < 3.0) {
-            color = palette[(int) paletteX + (int) paletteY * 6];
+            color = PALETTE_COLORS[(int) paletteX + (int) paletteY * 6];
             onPress.accept(color);
         }
 
@@ -58,7 +58,7 @@ public class ColorPaletteWidget extends AbstractWidgetNoNarration {
         graphics.fill(getX(), getY(), getX() + getWidth(), getY() + getHeight(), ColorConstants.BLACK);
         int col = 0;
         int row = 0;
-        for (int c : (active ? palette : paletteInactive)) {
+        for (int c : (active ? PALETTE_COLORS : PALETTE_COLORS_INACTIVE)) {
             if (active && c == color) {
                 graphics.fill(getX() + col * 23, getY() + row * 23, getX() + 23 + col * 23, getY() + 23 + row * 23, ColorConstants.WHITE);
             }
