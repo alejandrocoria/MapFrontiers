@@ -11,6 +11,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.PathShapePr
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.VertexShapePresetSelector;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
+import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import journeymap.api.v2.client.IClientAPI;
@@ -123,44 +124,27 @@ public class NewFrontier extends AutoScaledScreen {
         mainLayout.addChild(pathShapePresetSelector, 3, 0, 1, 2, centerColumnSettings);
 
         labelCount = mainLayout.addChild(new StringWidget(vertexCountLabel, font).setColor(ColorConstants.WHITE), 4, 0, leftColumnSettings);
-        textCount = new TextBoxInt(ClientConfig.NEW_FRONTIER_COUNT.get(), 1, 999, font, 64);
-        textCount.setValueChangedCallback(value -> {
-            if (ClientConfig.NEW_FRONTIER_COUNT.isInRange(value)) {
-                ClientConfig.NEW_FRONTIER_COUNT.set(value);
-            }
-        });
+        textCount = new TextBoxInt(ClientConfig.NEW_FRONTIER_COUNT, font, 64);
+        textCount.setValue(String.valueOf(ClientConfig.NEW_FRONTIER_COUNT.get()));
+        textCount.setValueChangedCallback(ClientConfig.NEW_FRONTIER_COUNT::set);
         mainLayout.addChild(textCount, 4, 1, rightColumnSettings);
 
         labelCountInfo = mainLayout.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.WHITE), 4, 0, 1, 2, centerColumnSettings);
 
         labelSize = mainLayout.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.WHITE), 5, 0, leftColumnSettings);
-        textSize = new TextBoxInt(1, 1, 999, font, 64);
+        textSize = new TextBoxInt(ClientConfig.NEW_FRONTIER_PATH_SEGMENT_LENGTH, font, 64);
         textSize.setValueChangedCallback(value -> {
-            if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Vertex) {
-                if (vertexShapePresetSelector.getShapeMeasure() == VertexShapePresetSelector.ShapeMeasure.Width) {
-                    if (ClientConfig.NEW_FRONTIER_SHAPE_WIDTH.isInRange(value)) {
-                        ClientConfig.NEW_FRONTIER_SHAPE_WIDTH.set(value);
-                    }
-                } else if (vertexShapePresetSelector.getShapeMeasure() == VertexShapePresetSelector.ShapeMeasure.Radius) {
-                    if (ClientConfig.NEW_FRONTIER_SHAPE_RADIUS.isInRange(value)) {
-                        ClientConfig.NEW_FRONTIER_SHAPE_RADIUS.set(value);
-                    }
-                }
-            } else if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Chunk) {
+            IntConfigEntry entry = activeSizeConfigEntry();
+            if (entry != null) {
+                entry.set(value);
+            }
+
+            if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Chunk) {
                 if (chunkShapePresetSelector.getShapeMeasure() == ChunkShapePresetSelector.ShapeMeasure.Width) {
-                    if (ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_WIDTH.isInRange(value)) {
-                        ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_WIDTH.set(value);
-                        chunkShapePresetSelector.setSize(value);
-                    }
+                    chunkShapePresetSelector.setSize(value);
                 } else if (chunkShapePresetSelector.getShapeMeasure() == ChunkShapePresetSelector.ShapeMeasure.Length) {
-                    if (ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_LENGTH.isInRange(value)) {
-                        ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_LENGTH.set(value);
-                        chunkShapePresetSelector.setSize(value);
-                    }
+                    chunkShapePresetSelector.setSize(value);
                 }
-            } else if (pathShapePresetSelector.getShapeMeasure() == PathShapePresetSelector.ShapeMeasure.Length
-                    && ClientConfig.NEW_FRONTIER_PATH_SEGMENT_LENGTH.isInRange(value)) {
-                ClientConfig.NEW_FRONTIER_PATH_SEGMENT_LENGTH.set(value);
             }
         });
         mainLayout.addChild(textSize, 5, 1, rightColumnSettings);
@@ -231,10 +215,10 @@ public class NewFrontier extends AutoScaledScreen {
 
             if (vertexShapePresetSelector.getShapeMeasure() == VertexShapePresetSelector.ShapeMeasure.Width) {
                 setLabelSizeMessage("mapfrontiers.shape_width");
-                textSize.setValue(String.valueOf(ClientConfig.NEW_FRONTIER_SHAPE_WIDTH.get()));
+                setSizeTextBoxValue(ClientConfig.NEW_FRONTIER_SHAPE_WIDTH);
             } else if (vertexShapePresetSelector.getShapeMeasure() == VertexShapePresetSelector.ShapeMeasure.Radius) {
                 setLabelSizeMessage("mapfrontiers.shape_radius");
-                textSize.setValue(String.valueOf(ClientConfig.NEW_FRONTIER_SHAPE_RADIUS.get()));
+                setSizeTextBoxValue(ClientConfig.NEW_FRONTIER_SHAPE_RADIUS);
             }
         } else if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Chunk) {
             vertexShapePresetSelector.visible = false;
@@ -263,11 +247,11 @@ public class NewFrontier extends AutoScaledScreen {
 
             if (chunkShapePresetSelector.getShapeMeasure() == ChunkShapePresetSelector.ShapeMeasure.Width) {
                 setLabelSizeMessage("mapfrontiers.shape_width");
-                textSize.setValue(String.valueOf(ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_WIDTH.get()));
+                setSizeTextBoxValue(ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_WIDTH);
                 chunkShapePresetSelector.setSize(ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_WIDTH.get());
             } else if (chunkShapePresetSelector.getShapeMeasure() == ChunkShapePresetSelector.ShapeMeasure.Length) {
                 setLabelSizeMessage("mapfrontiers.shape_length");
-                textSize.setValue(String.valueOf(ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_LENGTH.get()));
+                setSizeTextBoxValue(ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_LENGTH);
                 chunkShapePresetSelector.setSize(ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_LENGTH.get());
             }
         } else {
@@ -296,7 +280,7 @@ public class NewFrontier extends AutoScaledScreen {
             labelSize.visible = true;
             textSize.visible = true;
             setLabelSizeMessage("mapfrontiers.shape_segment_length");
-            textSize.setValue(String.valueOf(ClientConfig.NEW_FRONTIER_PATH_SEGMENT_LENGTH.get()));
+            setSizeTextBoxValue(ClientConfig.NEW_FRONTIER_PATH_SEGMENT_LENGTH);
         }
 
         repositionElements();
@@ -315,6 +299,31 @@ public class NewFrontier extends AutoScaledScreen {
     private void setLabelCountInfoMessage(String key, int count) {
         labelCountInfo.setMessage(Component.translatable(key, count));
         labelCountInfo.setWidth(font.width(labelCountInfo.getMessage()));
+    }
+
+    private IntConfigEntry activeSizeConfigEntry() {
+        if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Vertex) {
+            if (vertexShapePresetSelector.getShapeMeasure() == VertexShapePresetSelector.ShapeMeasure.Width) {
+                return ClientConfig.NEW_FRONTIER_SHAPE_WIDTH;
+            } else if (vertexShapePresetSelector.getShapeMeasure() == VertexShapePresetSelector.ShapeMeasure.Radius) {
+                return ClientConfig.NEW_FRONTIER_SHAPE_RADIUS;
+            }
+        } else if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Chunk) {
+            if (chunkShapePresetSelector.getShapeMeasure() == ChunkShapePresetSelector.ShapeMeasure.Width) {
+                return ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_WIDTH;
+            } else if (chunkShapePresetSelector.getShapeMeasure() == ChunkShapePresetSelector.ShapeMeasure.Length) {
+                return ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_LENGTH;
+            }
+        } else if (pathShapePresetSelector.getShapeMeasure() == PathShapePresetSelector.ShapeMeasure.Length) {
+            return ClientConfig.NEW_FRONTIER_PATH_SEGMENT_LENGTH;
+        }
+
+        return null;
+    }
+
+    private void setSizeTextBoxValue(IntConfigEntry entry) {
+        textSize.setRange(entry);
+        textSize.setValue(String.valueOf(entry.get()));
     }
 
     private List<BlockPos> calculateVertices() {

@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.textbox;
 
+import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.EditBox;
@@ -13,17 +14,29 @@ import java.util.function.IntConsumer;
 
 @ParametersAreNonnullByDefault
 public class TextBoxInt extends EditBox {
-    private final int defaultValue;
-    private final int min;
-    private final int max;
+    private int defaultValue;
+    private int min;
+    private int max;
     private IntConsumer valueChangedCallback;
 
     public TextBoxInt(int defaultValue, int min, int max, Font font, int width) {
         super(font, 0, 0, width, 13, Component.empty());
+        setRange(defaultValue, min, max);
+        this.setValue(defaultValue);
+    }
+
+    public TextBoxInt(IntConfigEntry entry, Font font, int width) {
+        this(entry.defaultValue(), entry.minValue(), entry.maxValue(), font, width);
+    }
+
+    public void setRange(IntConfigEntry entry) {
+        setRange(entry.defaultValue(), entry.minValue(), entry.maxValue());
+    }
+
+    public void setRange(int defaultValue, int min, int max) {
         this.defaultValue = defaultValue;
         this.min = min;
         this.max = max;
-        this.setValue(defaultValue);
     }
 
     public void setValueChangedCallback(IntConsumer callback) {

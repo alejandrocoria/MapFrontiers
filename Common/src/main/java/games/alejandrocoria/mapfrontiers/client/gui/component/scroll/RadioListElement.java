@@ -15,22 +15,22 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public class RadioListElement extends ScrollBox.ScrollElement {
+public class RadioListElement<T> extends ScrollBox.ScrollElement {
     private static final Identifier texture = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/radio_buttons.png");
     private static final int textureSizeX = 22;
     private static final int textureSizeY = 11;
 
     private final StringWidget label;
-    private final int id;
+    private final T value;
 
-    public RadioListElement(Font font, Component text, int id) {
+    public RadioListElement(Font font, Component text, T value) {
         super(200, 15);
         this.label = new StringWidget(text, font).setColor(ColorConstants.SIMPLE_BUTTON_TEXT);
-        this.id = id;
+        this.value = value;
     }
 
-    public int getId() {
-        return id;
+    public T value() {
+        return value;
     }
 
     @Override
