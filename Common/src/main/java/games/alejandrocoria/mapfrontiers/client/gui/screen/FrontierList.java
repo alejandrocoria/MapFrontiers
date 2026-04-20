@@ -308,8 +308,7 @@ public class FrontierList extends AutoScaledScreen {
     private void onResetFiltersPressed() {
         resetFiltersToDefaults();
         syncFilterSelectionsFromConfig();
-        updateFrontiers();
-        refreshViewState();
+        notifyFiltersChanged();
     }
 
     private void onTypeFilterSelected(ScrollElement element) {
