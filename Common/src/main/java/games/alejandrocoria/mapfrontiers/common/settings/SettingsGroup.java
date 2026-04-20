@@ -4,6 +4,7 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
+import net.minecraft.SharedConstants;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -159,7 +160,7 @@ public class SettingsGroup {
 
     public void fromBytes(FriendlyByteBuf buf) {
         if (!buf.readBoolean()) {
-            name = buf.readUtf(17);
+            name = buf.readUtf(SharedConstants.MAX_PLAYER_NAME_LENGTH);
 
             users = new ArrayList<>();
             int usersCount = buf.readInt();
@@ -182,7 +183,7 @@ public class SettingsGroup {
         buf.writeBoolean(special);
 
         if (!special) {
-            buf.writeUtf(name, 17);
+            buf.writeUtf(name, SharedConstants.MAX_PLAYER_NAME_LENGTH);
 
             buf.writeInt(users.size());
             for (SettingsUser user : users) {
