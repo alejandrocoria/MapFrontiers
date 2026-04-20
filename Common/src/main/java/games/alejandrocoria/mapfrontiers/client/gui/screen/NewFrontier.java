@@ -151,7 +151,7 @@ public class NewFrontier extends AutoScaledScreen {
 
         labelSizeInfo = mainLayout.addChild(new StringWidget(sizeInfoLabel, font).setColor(ColorConstants.WHITE), 5, 0, 1, 2, centerColumnSettings);
 
-        bottomButtons.addChild(new SimpleButton(font, 100, createLabel, (b) -> {
+        SimpleButton createButton = bottomButtons.addChild(new SimpleButton(font, 100, createLabel, (b) -> {
             boolean personal = buttonFrontierType.getSelected() == 1;
             closeAndReturnToFullscreenMap();
             UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
@@ -162,6 +162,8 @@ public class NewFrontier extends AutoScaledScreen {
                         calculateVertices(), calculateChunks(), calculatePoints(), pathStyle);
             }
         }));
+        createButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM, ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM_HIGHLIGHT);
+
         bottomButtons.addChild(new SimpleButton(font, 100, cancelLabel, b -> onClose()));
 
         shapePresetUpdated();
