@@ -36,7 +36,7 @@ public class PacketDeleteFrontier {
                 this.frontierID = UUIDHelper.fromBytes(buf);
             }
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketDeleteFrontier: %s", t));
+            MapFrontiers.LOGGER.error("Failed to read message for PacketDeleteFrontier", t);
         }
     }
 
@@ -44,7 +44,7 @@ public class PacketDeleteFrontier {
         try {
             UUIDHelper.toBytes(buf, frontierID);
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketDeleteFrontier: %s", t));
+            MapFrontiers.LOGGER.error("Failed to write message for PacketDeleteFrontier", t);
         }
     }
 

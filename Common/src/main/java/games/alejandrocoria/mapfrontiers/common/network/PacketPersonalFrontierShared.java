@@ -56,7 +56,7 @@ public class PacketPersonalFrontierShared {
                 this.name2 = buf.readUtf(MAX_NAME_CHARACTERS);
             }
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketPersonalFrontierShared: %s", t));
+            MapFrontiers.LOGGER.error("Failed to read message for PacketPersonalFrontierShared", t);
         }
     }
 
@@ -68,7 +68,7 @@ public class PacketPersonalFrontierShared {
             buf.writeUtf(name1, MAX_NAME_CHARACTERS);
             buf.writeUtf(name2, MAX_NAME_CHARACTERS);
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketPersonalFrontierShared: %s", t));
+            MapFrontiers.LOGGER.error("Failed to write message for PacketPersonalFrontierShared", t);
         }
     }
 

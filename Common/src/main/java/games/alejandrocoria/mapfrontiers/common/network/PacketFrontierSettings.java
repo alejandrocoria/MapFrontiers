@@ -40,7 +40,7 @@ public class PacketFrontierSettings {
                 this.settings.setChangeCounter(buf.readInt());
             }
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketFrontierSettings: %s", t));
+            MapFrontiers.LOGGER.error("Failed to read message for PacketFrontierSettings", t);
         }
     }
 
@@ -49,7 +49,7 @@ public class PacketFrontierSettings {
             settings.toBytes(buf);
             buf.writeInt(settings.getChangeCounter());
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketFrontierSettings: %s", t));
+            MapFrontiers.LOGGER.error("Failed to write message for PacketFrontierSettings", t);
         }
     }
 

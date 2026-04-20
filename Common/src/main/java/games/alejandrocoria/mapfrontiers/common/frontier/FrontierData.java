@@ -773,8 +773,7 @@ public class FrontierData {
 
                 String availableModes = StringHelper.enumValuesToString(Arrays.asList(Mode.values()));
 
-                MapFrontiers.LOGGER.warn(String.format("Unknown mode in frontier %1$s. Found: \"%2$s\". Expected: %3$s",
-                        id, modeTag, availableModes));
+                MapFrontiers.LOGGER.warn("Unknown mode in frontier {}. Found: \"{}\". Expected: {}", id, modeTag, availableModes);
             }
         }
 

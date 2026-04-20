@@ -130,8 +130,7 @@ public class SettingsGroup {
                     availableActionsString = StringHelper.enumValuesToString(FrontierSettings.getAvailableActionsV3(name));
                 }
 
-                MapFrontiers.LOGGER.warn(String.format("Unknown action in group %1$s. Found: \"%2$s\". Expected: %3$s", name,
-                        actionTag, availableActionsString));
+                MapFrontiers.LOGGER.warn("Unknown action in group {}. Found: \"{}\". Expected: {}", name, actionTag, availableActionsString);
             }
         }
     }

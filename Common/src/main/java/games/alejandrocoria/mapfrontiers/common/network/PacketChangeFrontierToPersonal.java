@@ -44,7 +44,7 @@ public class PacketChangeFrontierToPersonal {
                 }
             }
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketChangeFrontierToPersonal: %s", t));
+            MapFrontiers.LOGGER.error("Failed to read message for PacketChangeFrontierToPersonal", t);
         }
     }
 
@@ -58,7 +58,7 @@ public class PacketChangeFrontierToPersonal {
                 buf.writeLong(modified.getTime());
             }
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketChangeFrontierToPersonal: %s", t));
+            MapFrontiers.LOGGER.error("Failed to write message for PacketChangeFrontierToPersonal", t);
         }
     }
 

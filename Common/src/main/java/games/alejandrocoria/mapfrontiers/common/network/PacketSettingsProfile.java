@@ -36,7 +36,7 @@ public class PacketSettingsProfile {
                 this.profile.fromBytes(buf);
             }
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketSettingsProfile: %s", t));
+            MapFrontiers.LOGGER.error("Failed to read message for PacketSettingsProfile", t);
         }
     }
 
@@ -44,7 +44,7 @@ public class PacketSettingsProfile {
         try {
             profile.toBytes(buf);
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketSettingsProfile: %s", t));
+            MapFrontiers.LOGGER.error("Failed to write message for PacketSettingsProfile", t);
         }
     }
 

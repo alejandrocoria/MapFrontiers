@@ -39,7 +39,7 @@ public class PacketUpdateFrontier {
                 this.change = new FrontierChange(buf);
             }
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketUpdateFrontier: %s", t));
+            MapFrontiers.LOGGER.error("Failed to read message for PacketUpdateFrontier", t);
         }
     }
 
@@ -48,7 +48,7 @@ public class PacketUpdateFrontier {
             buf.writeUUID(frontierId);
             change.toBytes(buf);
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketUpdateFrontier: %s", t));
+            MapFrontiers.LOGGER.error("Failed to write message for PacketUpdateFrontier", t);
         }
     }
 

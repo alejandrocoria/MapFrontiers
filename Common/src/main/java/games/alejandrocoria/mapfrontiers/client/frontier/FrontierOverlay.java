@@ -1671,7 +1671,7 @@ public class FrontierOverlay extends FrontierData {
                 if (outerFound != null) {
                     holesPolygons.put(outerFound, polygon);
                 } else {
-                    MapFrontiers.LOGGER.warn(String.format("Frontier %1$s is too large and the polygon corresponding to the hole %2$s could not be located", id, polygon.getFirst()));
+                    MapFrontiers.LOGGER.warn("Frontier {} is too large and the polygon corresponding to the hole {} could not be located", id, polygon.getFirst());
                 }
             }
         }

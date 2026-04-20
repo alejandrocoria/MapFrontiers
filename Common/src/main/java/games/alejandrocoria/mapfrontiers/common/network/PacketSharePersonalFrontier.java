@@ -52,7 +52,7 @@ public class PacketSharePersonalFrontier {
                 this.userShared.fromBytes(buf);
             }
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketSharePersonalFrontier: %s", t));
+            MapFrontiers.LOGGER.error("Failed to read message for PacketSharePersonalFrontier", t);
         }
     }
 
@@ -61,7 +61,7 @@ public class PacketSharePersonalFrontier {
             UUIDHelper.toBytes(buf, frontierID);
             userShared.toBytes(buf);
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketSharePersonalFrontier: %s", t));
+            MapFrontiers.LOGGER.error("Failed to write message for PacketSharePersonalFrontier", t);
         }
     }
 
