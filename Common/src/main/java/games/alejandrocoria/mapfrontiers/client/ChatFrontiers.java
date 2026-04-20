@@ -5,6 +5,7 @@ import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import net.minecraft.SharedConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.nbt.CompoundTag;
@@ -64,7 +65,7 @@ public class ChatFrontiers {
             String format = "%d:%d:%d:%d:%s";
 
             List<String> dataList = new ArrayList<>();
-            int maxLength = 255 - command.length() - format.length();
+            int maxLength = SharedConstants.MAX_CHAT_LENGTH - 1 - command.length() - format.length();
             int dataLength = encodedData.length();
             for (int i = 0; i < dataLength; i += maxLength) {
                 int end = Math.min(dataLength, i + maxLength);
