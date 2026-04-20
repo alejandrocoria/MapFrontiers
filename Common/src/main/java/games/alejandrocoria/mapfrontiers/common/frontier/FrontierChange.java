@@ -73,7 +73,7 @@ public class FrontierChange {
         }
 
         if (buf.readBoolean()) {
-            FrontierData.Mode mode = FrontierData.Mode.values()[buf.readInt()];
+            FrontierData.Mode mode = FrontierData.Mode.VALUES[buf.readInt()];
             List<BlockPos> vertices = new ArrayList<>();
             Set<ChunkPos> chunks = new HashSet<>();
             List<BlockPos> points = new ArrayList<>();

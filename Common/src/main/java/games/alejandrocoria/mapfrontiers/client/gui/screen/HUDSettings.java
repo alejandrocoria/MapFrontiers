@@ -211,7 +211,7 @@ public class HUDSettings extends AutoScaledScreen {
 
     private OptionButton createAnchorButton() {
         OptionButton button = new OptionButton(font, 134, pressedButton -> {
-            ClientConfig.HUD_ANCHOR.set(ClientConfig.HUDAnchor.values()[pressedButton.getSelected()]);
+            ClientConfig.HUD_ANCHOR.set(ClientConfig.HUDAnchor.VALUES[pressedButton.getSelected()]);
             postConfigUpdatedAndRefreshPosition();
         });
         button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenTop));

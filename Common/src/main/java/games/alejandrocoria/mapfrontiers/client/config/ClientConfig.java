@@ -31,7 +31,9 @@ public final class ClientConfig {
     }
 
     public enum Sorting {
-        Name, Owner, Shape, Area, Modified, Created
+        Name, Owner, Shape, Area, Modified, Created;
+
+        public static final Sorting[] VALUES = values();
     }
 
     public enum FilterFrontierType {
@@ -44,7 +46,9 @@ public final class ClientConfig {
 
     public enum HUDAnchor {
         ScreenTop, ScreenTopRight, ScreenRight, ScreenBottomRight, ScreenBottom, ScreenBottomLeft, ScreenLeft, ScreenTopLeft,
-        Minimap, MinimapHorizontal, MinimapVertical
+        Minimap, MinimapHorizontal, MinimapVertical;
+
+        public static final HUDAnchor[] VALUES = values();
     }
 
     public enum HUDSlot {
@@ -458,14 +462,14 @@ public final class ClientConfig {
             }
         }
 
-        if (sorting.size() > Sorting.values().length || direction.size() != sorting.size()) {
+        if (sorting.size() > Sorting.VALUES.length || direction.size() != sorting.size()) {
             FRONTIER_SORTING.set(DEFAULT_SORTING);
             FRONTIER_SORTING_DIRECTION.set(DEFAULT_SORTING_DIRECTION);
             return true;
         }
 
         List<Sorting> missing = new ArrayList<>();
-        for (Sorting sort : Sorting.values()) {
+        for (Sorting sort : Sorting.VALUES) {
             int count = Collections.frequency(sorting, sort.name());
             if (count > 1) {
                 FRONTIER_SORTING.set(DEFAULT_SORTING);

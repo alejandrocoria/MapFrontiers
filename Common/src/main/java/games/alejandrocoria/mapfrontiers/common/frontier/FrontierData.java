@@ -47,11 +47,15 @@ import java.util.stream.Collectors;
 @ParametersAreNonnullByDefault
 public class FrontierData {
     public enum Mode {
-        Vertex, Chunk, Path
+        Vertex, Chunk, Path;
+
+        public static final Mode[] VALUES = values();
     }
 
     public enum FrontierLifetime {
-        PERSISTENT, SESSION_ONLY
+        PERSISTENT, SESSION_ONLY;
+
+        public static final FrontierLifetime[] VALUES = values();
     }
 
     protected UUID id;
@@ -772,7 +776,7 @@ public class FrontierData {
                     mode = Mode.Vertex;
                 }
 
-                String availableModes = StringHelper.enumValuesToString(Arrays.asList(Mode.values()));
+                String availableModes = StringHelper.enumValuesToString(Arrays.asList(Mode.VALUES));
 
                 MapFrontiers.LOGGER.warn("Unknown mode in frontier {}. Found: \"{}\". Expected: {}", id, modeTag, availableModes);
             }
@@ -942,7 +946,7 @@ public class FrontierData {
             usersShared = null;
         }
 
-        mode = Mode.values()[buf.readInt()];
+        mode = Mode.VALUES[buf.readInt()];
 
         switch (mode) {
             case Vertex -> {
@@ -1148,14 +1152,13 @@ public class FrontierData {
 
     private static FrontierLifetime readLifetimeFromBytes(FriendlyByteBuf buf) {
         int lifetimeOrdinal = buf.readInt();
-        FrontierLifetime[] values = FrontierLifetime.values();
-        if (lifetimeOrdinal < 0 || lifetimeOrdinal >= values.length) {
+        if (lifetimeOrdinal < 0 || lifetimeOrdinal >= FrontierLifetime.VALUES.length) {
             MapFrontiers.LOGGER.warn("Unknown lifetime ordinal in frontier packet. Found: {}. Defaulting to {}", lifetimeOrdinal,
                     FrontierLifetime.PERSISTENT);
             return FrontierLifetime.PERSISTENT;
         }
 
-        return values[lifetimeOrdinal];
+        return FrontierLifetime.VALUES[lifetimeOrdinal];
     }
 
     private static String idFromTag(CompoundTag nbt) {
@@ -1437,7 +1440,9 @@ public class FrontierData {
             WebmapNight,
             WebmapUnderground,
             WebmapTopo,
-            WebmapBiome,
+            WebmapBiome;
+
+            public static final Visibility[] VALUES = values();
         }
 
         private final EnumSet<Visibility> values;

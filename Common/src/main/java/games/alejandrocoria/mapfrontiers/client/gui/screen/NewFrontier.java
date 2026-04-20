@@ -98,7 +98,7 @@ public class NewFrontier extends AutoScaledScreen {
 
         mainLayout.addChild(new StringWidget(FRONTIER_MODE_LABEL, font).setColor(ColorConstants.TEXT), 1, 0, leftColumnSettings);
         buttonFrontierMode = new OptionButton(font, 130, (b) -> {
-                    ClientConfig.NEW_FRONTIER_MODE.set(FrontierData.Mode.values()[b.getSelected()]);
+                    ClientConfig.NEW_FRONTIER_MODE.set(FrontierData.Mode.VALUES[b.getSelected()]);
                     shapePresetUpdated();
         });
         buttonFrontierMode.addOption(ClientConfig.getTranslatedEnum(FrontierData.Mode.Vertex));

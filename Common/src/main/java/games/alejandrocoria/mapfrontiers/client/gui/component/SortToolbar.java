@@ -23,7 +23,7 @@ public class SortToolbar extends LinearLayout {
 
         this.onChange = onChange;
 
-        for (ClientConfig.Sorting sort : ClientConfig.Sorting.values()) {
+        for (ClientConfig.Sorting sort : ClientConfig.Sorting.VALUES) {
             int index = ClientConfig.getFrontierSortingValues().indexOf(sort);
             if (index == -1) {
                 continue;

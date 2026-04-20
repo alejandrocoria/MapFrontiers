@@ -129,7 +129,7 @@ public final class FrontierMutationApplier {
 
     public static Set<FrontierVisibilityFlag> fromVisibility(FrontierData.VisibilityData visibilityData) {
         EnumSet<FrontierVisibilityFlag> visibility = EnumSet.noneOf(FrontierVisibilityFlag.class);
-        for (FrontierData.VisibilityData.Visibility value : FrontierData.VisibilityData.Visibility.values()) {
+        for (FrontierData.VisibilityData.Visibility value : FrontierData.VisibilityData.Visibility.VALUES) {
             if (visibilityData.getValue(value)) {
                 visibility.add(FrontierVisibilityFlag.valueOf(value.name()));
             }

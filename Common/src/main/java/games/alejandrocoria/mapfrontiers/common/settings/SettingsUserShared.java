@@ -94,7 +94,7 @@ public class SettingsUserShared {
                     userName = user.uuid.toString();
                 }
 
-                String availableActions = StringHelper.enumValuesToString(Arrays.asList(Action.values()));
+                String availableActions = StringHelper.enumValuesToString(Arrays.asList(Action.VALUES));
 
                 MapFrontiers.LOGGER.warn("Unknown action in user shared {}. Found: \"{}\". Expected: {}", userName, actionTag, availableActions);
             }
