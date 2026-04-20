@@ -24,8 +24,6 @@ import java.util.function.Consumer;
 public class PathMarkerSelectorWidget extends AbstractWidgetNoNarration {
     private static final int CELL_SIZE = 18;
     private static final int CELL_SPACING = 2;
-    private static final int SELECTED_MARKER_COLOR = 0xFFFFFFFF;
-    private static final int UNSELECTED_MARKER_COLOR = 0xFFCCCCCC;
 
     private Consumer<Identifier> onPress;
     private Identifier selectedId;
@@ -126,7 +124,7 @@ public class PathMarkerSelectorWidget extends AbstractWidgetNoNarration {
                         MarkerImageConstants.SELECTOR_DISPLAY_SIZE, MarkerImageConstants.SELECTOR_DISPLAY_SIZE,
                         MarkerImageConstants.TEXTURE_SIZE, MarkerImageConstants.TEXTURE_SIZE,
                         MarkerImageConstants.TEXTURE_SIZE, MarkerImageConstants.TEXTURE_SIZE,
-                        selected ? SELECTED_MARKER_COLOR : UNSELECTED_MARKER_COLOR);
+                        selected ? ColorConstants.PATH_MARKER_SELECTED : ColorConstants.PATH_MARKER_UNSELECTED);
             }
 
             if (isKeyboardFocused() && focusedIndex == i) {

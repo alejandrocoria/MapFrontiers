@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
 import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
+import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
@@ -17,7 +18,7 @@ public class StringWidget extends net.minecraft.client.gui.components.StringWidg
 
     private float scale = 1.f;
     private final Align align;
-    private int color = 0xFFFFFFFF;
+    private int color = ColorConstants.WHITE;
 
     public StringWidget(Component message, Font font) {
         this(message, font, 12, Align.Left);

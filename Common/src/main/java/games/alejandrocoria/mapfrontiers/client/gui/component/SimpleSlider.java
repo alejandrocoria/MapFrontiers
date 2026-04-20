@@ -102,7 +102,7 @@ public class SimpleSlider extends AbstractSliderButton
         graphics.vLine(getX() + width - 1, getY(), getY() + height - 1, lineColor);
 
         int handleX = getX() + (int)(value * (width - 6)) + 1;
-        graphics.fill(handleX, getY() + 1, handleX + 4, getY() + height - 1, isHoveredOrFocused() ? 0xFFFFFFFF : 0xFFAAAAAA);
+        graphics.fill(handleX, getY() + 1, handleX + 4, getY() + height - 1, isHoveredOrFocused() ? ColorConstants.SLIDER_HANDLER_FOCUSED : ColorConstants.SLIDER_HANDLER);
 
         graphics.drawCenteredString(font, getMessage(), getX() + width / 2, getY() + 4, isHovered ? ColorConstants.SIMPLE_BUTTON_TEXT_HIGHLIGHT : ColorConstants.SIMPLE_BUTTON_TEXT);
     }

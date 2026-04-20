@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
+import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
@@ -54,12 +55,12 @@ public class ColorPaletteWidget extends AbstractWidgetNoNarration {
 
     @Override
     public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        graphics.fill(getX(), getY(), getX() + getWidth(), getY() + getHeight(), 0xff000000);
+        graphics.fill(getX(), getY(), getX() + getWidth(), getY() + getHeight(), ColorConstants.BLACK);
         int col = 0;
         int row = 0;
         for (int c : (active ? palette : paletteInactive)) {
             if (active && c == color) {
-                graphics.fill(getX() + col * 23, getY() + row * 23, getX() + 23 + col * 23, getY() + 23 + row * 23, 0xffffffff);
+                graphics.fill(getX() + col * 23, getY() + row * 23, getX() + 23 + col * 23, getY() + 23 + row * 23, ColorConstants.WHITE);
             }
             graphics.fill(getX() + 1 + col * 23, getY() + 1 + row * 23, getX() + 22 + col * 23, getY() + 22 + row * 23, c);
             ++col;

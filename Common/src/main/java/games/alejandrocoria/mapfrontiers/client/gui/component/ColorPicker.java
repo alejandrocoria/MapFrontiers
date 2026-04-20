@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
@@ -38,7 +39,7 @@ public class ColorPicker extends AbstractWidgetNoNarration {
 
     public void setColor(int newColor) {
         color = newColor;
-        float[] hsv = Color.RGBtoHSB((newColor & 0xff0000) >> 16, (newColor & 0x00ff00) >> 8, newColor & 0x0000ff, null);
+        float[] hsv = Color.RGBtoHSB((newColor >> 16) & 0xFF, (newColor >> 8) & 0xFF, newColor & 0xFF, null);
         double angle = hsv[0] * Math.PI * 2.0;
         double dist = hsv[1] * 64.0;
         hsX = dist * Math.cos(angle);
@@ -102,8 +103,8 @@ public class ColorPicker extends AbstractWidgetNoNarration {
         int texX = active ? 0 : 137;
 
         graphics.blit(RenderPipelines.GUI_TEXTURED, texture, getX(), getY(), texX, 0, 128, 128, textureSizeX, textureSizeY);
-        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, getX() + 132, getY(), texX + 129, 0, 8, 128, textureSizeX, textureSizeY, active ? colorFullBrightness : 0xFFFFFFFF);
-        graphics.fill(getX() + (int) hsX + 64, getY() + (int) hsY + 64, getX() + (int) hsX + 65, getY() + (int) hsY + 65, active ? 0xFFFFFFFF : colorFullBrightness);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, getX() + 132, getY(), texX + 129, 0, 8, 128, textureSizeX, textureSizeY, active ? colorFullBrightness : ColorConstants.WHITE);
+        graphics.fill(getX() + (int) hsX + 64, getY() + (int) hsY + 64, getX() + (int) hsX + 65, getY() + (int) hsY + 65, active ? ColorConstants.WHITE : colorFullBrightness);
         graphics.fill(getX() + 131, getY() + (int) v, getX() + 139, getY() + (int) v + 1, color);
         graphics.blit(RenderPipelines.GUI_TEXTURED, texture, getX() + (int) hsX + 64 - 2, getY() + (int) hsY + 64 - 2, texX, 129, 5, 5, textureSizeX, textureSizeY);
         graphics.blit(RenderPipelines.GUI_TEXTURED, texture, getX() + 131, getY() + (int) v - 2, texX + 6, 129, 10, 5, textureSizeX, textureSizeY);
