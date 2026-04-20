@@ -1,3 +1,6 @@
+**Beta 3:**
+* Fixed: Filter reset not saving changes.
+
 **Beta 2:**
 * API - Added: Temporary personal frontiers that exist only for the current session and are not saved, synchronized, or shareable.
 * Added: New Path frontier mode for open line-shaped frontiers, including editable points, marker styles, creation presets, and API support.
