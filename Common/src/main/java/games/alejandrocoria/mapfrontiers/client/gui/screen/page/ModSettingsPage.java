@@ -18,7 +18,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.UserElement
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.HUDSettings;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.HUDSettingsScreen;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.FrontierAppearanceDialog;
@@ -63,7 +63,8 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
-public class ModSettings extends PageScreen {
+public class ModSettingsPage extends PageScreen
+{
     public enum Tab {
         Credits, General, Groups, Actions
     }
@@ -153,7 +154,7 @@ public class ModSettings extends PageScreen {
     private int ticksSinceLastUpdate = 0;
     private final boolean subscribeToSettingsProfileEvents;
 
-    public ModSettings(boolean showKeyHint) {
+    public ModSettingsPage(boolean showKeyHint) {
         super(TITLE_LABEL, 696, 450);
         this.showKeyHint = showKeyHint;
         subscribeToSettingsProfileEvents = MapFrontiersClient.isJourneyMapPluginAvailable();
@@ -169,7 +170,7 @@ public class ModSettings extends PageScreen {
                 }
 
                 onClose();
-                new ModSettings(showKeyHint).display();
+                new ModSettingsPage(showKeyHint).display();
             });
         }
     }
@@ -518,7 +519,7 @@ public class ModSettings extends PageScreen {
 
     private void onEditHUDPressed() {
         MapFrontiersClient.setLastSettingsTab(tabSelected);
-        new HUDSettings().display();
+        new HUDSettingsScreen().display();
     }
 
     private void onHudEnabledChanged(boolean enabled) {

@@ -31,7 +31,7 @@ import org.lwjgl.glfw.GLFW;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-public class HUDSettings extends AutoScaledScreen {
+public class HUDSettingsScreen extends AutoScaledScreen {
     private static final Component POSITION_LABEL = Component.translatable("mapfrontiers.config.hud.position");
     private static final Tooltip POSITION_TOOLTIP = Tooltip.create(Component.literal("HUD position relative to anchor."));
     private static final Component POSITION_SEPARATOR_LABEL = Component.literal("x");
@@ -54,7 +54,7 @@ public class HUDSettings extends AutoScaledScreen {
 
     private Screen previousScreen;
 
-    public HUDSettings() {
+    public HUDSettingsScreen() {
         super(Component.empty());
         hud = HUD.asPreview();
     }

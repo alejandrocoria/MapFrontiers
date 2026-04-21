@@ -12,7 +12,7 @@ import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.hud.HUD;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.page.ModSettings;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.page.ModSettingsPage;
 import games.alejandrocoria.mapfrontiers.client.settings.ClientSettingsProfileEvents;
 import games.alejandrocoria.mapfrontiers.common.api.MapFrontiersApiLogAdapter;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
@@ -70,7 +70,7 @@ public class MapFrontiersClient {
     private static IClientAPI jmAPI;
     private static final ClientConnectionState connectionState = new ClientConnectionState();
     private static ClientFrontierRuntime frontierRuntime;
-    private static ModSettings.Tab lastSettingsTab = ModSettings.Tab.Credits;
+    private static ModSettingsPage.Tab lastSettingsTab = ModSettingsPage.Tab.Credits;
 
     protected static KeyMapping openSettingsKey;
     private static HUD hud;
@@ -161,7 +161,7 @@ public class MapFrontiersClient {
 
     private static void handleOpenSettingsKey() {
         while (openSettingsKey != null && openSettingsKey.consumeClick()) {
-            new ModSettings(false).display();
+            new ModSettingsPage(false).display();
         }
     }
 
@@ -429,11 +429,11 @@ public class MapFrontiersClient {
         return connectionState.getSettingsProfile();
     }
 
-    public static void setLastSettingsTab(ModSettings.Tab tab) {
+    public static void setLastSettingsTab(ModSettingsPage.Tab tab) {
         lastSettingsTab = tab;
     }
 
-    public static ModSettings.Tab getLastSettingsTab() {
+    public static ModSettingsPage.Tab getLastSettingsTab() {
         return lastSettingsTab;
     }
 

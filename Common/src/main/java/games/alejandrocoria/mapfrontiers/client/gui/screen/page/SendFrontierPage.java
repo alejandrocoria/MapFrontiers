@@ -9,7 +9,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.multiplayer.ClientPacketListener;
@@ -21,7 +20,8 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class SendFrontier extends PageScreen {
+public class SendFrontierPage extends PageScreen
+{
     private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_send");
     private static final Component DESCRIPTION_LABEL = Component.translatable("mapfrontiers.send_description");
     private static final Component ERROR_UUID_SIZE_LABEL = Component.translatable("mapfrontiers.new_user_error_uuid_size");
@@ -35,7 +35,7 @@ public class SendFrontier extends PageScreen {
     private TextBoxUser textNewUser;
     private IconButton buttonNewUser;
 
-    public SendFrontier(FrontierOverlay frontier) {
+    public SendFrontierPage(FrontierOverlay frontier) {
         super(TITLE_LABEL, 470, 120);
         this.frontier = frontier;
 

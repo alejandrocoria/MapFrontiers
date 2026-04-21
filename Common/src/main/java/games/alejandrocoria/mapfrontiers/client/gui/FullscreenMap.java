@@ -7,8 +7,8 @@ import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.page.FrontierInfo;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.page.FrontierList;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.page.FrontierInfoPage;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.page.FrontierListPage;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.NewFrontierDialog;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
@@ -270,7 +270,7 @@ public class FullscreenMap {
     }
 
     private void buttonFrontiersPressed() {
-        new FrontierList(jmAPI, this).display();
+        new FrontierListPage(jmAPI, this).display();
     }
 
     private void buttonNewPressed(BlockPos centerPos) {
@@ -285,7 +285,7 @@ public class FullscreenMap {
     }
 
     private void buttonInfoPressed() {
-        new FrontierInfo(jmAPI, frontierHighlighted).display();
+        new FrontierInfoPage(jmAPI, frontierHighlighted).display();
     }
 
     private void buttonEditToggled() {

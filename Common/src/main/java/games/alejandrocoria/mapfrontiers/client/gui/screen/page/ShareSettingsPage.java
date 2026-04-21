@@ -15,7 +15,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDi
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.LinearLayout;
@@ -30,7 +29,8 @@ import java.util.Date;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class ShareSettings extends PageScreen {
+public class ShareSettingsPage extends PageScreen
+{
     private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_share_settings");
     private static final Component UPDATE_FRONTIER_LABEL = Component.translatable("mapfrontiers.update_frontier");
     private static final Component UPDATE_SETTINGS_LABEL = Component.translatable("mapfrontiers.update_settings");
@@ -52,7 +52,7 @@ public class ShareSettings extends PageScreen {
     private boolean canUpdate;
     private int ticksSinceLastUpdate = 0;
 
-    public ShareSettings(FrontierOverlay frontier) {
+    public ShareSettingsPage(FrontierOverlay frontier) {
         super(TITLE_LABEL, 470, 120);
         this.frontier = frontier;
 
