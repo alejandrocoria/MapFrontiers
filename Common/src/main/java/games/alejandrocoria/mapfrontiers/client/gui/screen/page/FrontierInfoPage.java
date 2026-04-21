@@ -59,7 +59,8 @@ import java.util.function.Consumer;
 import java.util.function.IntUnaryOperator;
 
 @ParametersAreNonnullByDefault
-public class FrontierInfo extends PageScreen {
+public class FrontierInfoPage extends PageScreen
+{
     static final DateFormat DATE_FORMAT = new SimpleDateFormat();
     private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_info");
     private static final Component ASSIGN_BANNER_LABEL = Component.translatable("mapfrontiers.assign_banner");
@@ -171,7 +172,7 @@ public class FrontierInfo extends PageScreen {
 
     private boolean saveChangesOnClose = true;
 
-    public FrontierInfo(IClientAPI jmAPI, FrontierOverlay frontier) {
+    public FrontierInfoPage(IClientAPI jmAPI, FrontierOverlay frontier) {
         super(TITLE_LABEL, 636, 306);
         this.jmAPI = jmAPI;
         this.frontier = frontier;
@@ -632,9 +633,9 @@ public class FrontierInfo extends PageScreen {
 
     private void onSharePressed() {
         if (MapFrontiersClient.isModOnServer()) {
-            new ShareSettings(frontier).display();
+            new ShareSettingsPage(frontier).display();
         } else {
-            new SendFrontier(frontier).display();
+            new SendFrontierPage(frontier).display();
         }
     }
 

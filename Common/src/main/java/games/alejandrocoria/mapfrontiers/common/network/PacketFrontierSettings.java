@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.page.ModSettings;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.page.ModSettingsPage;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.server.settings.ServerSettingsOperationResult;
 import net.minecraft.client.Minecraft;
@@ -65,8 +65,8 @@ public class PacketFrontierSettings {
                     .updateSettings(player, message.settings);
             result.dispatchNetworkActions();
         } else if (Side.CLIENT.equals(ctx.side())) {
-            if (Minecraft.getInstance().screen instanceof ModSettings) {
-                ((ModSettings) Minecraft.getInstance().screen).setFrontierSettings(message.settings);
+            if (Minecraft.getInstance().screen instanceof ModSettingsPage) {
+                ((ModSettingsPage) Minecraft.getInstance().screen).setFrontierSettings(message.settings);
             }
         }
     }

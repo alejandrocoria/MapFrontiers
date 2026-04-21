@@ -41,7 +41,8 @@ import java.util.Objects;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class FrontierList extends PageScreen {
+public class FrontierListPage extends PageScreen
+{
     private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_frontiers");
     private static final Component RESET_FILTERS_LABEL = Component.translatable("mapfrontiers.reset_filters");
     private static final Component FILTER_TYPE_LABEL = Component.translatable("mapfrontiers.filter_type");
@@ -73,7 +74,7 @@ public class FrontierList extends PageScreen {
     private SimpleButton buttonVisible;
     private SimpleButton buttonSettings;
 
-    public FrontierList(IClientAPI jmAPI, FullscreenMap fullscreenMap) {
+    public FrontierListPage(IClientAPI jmAPI, FullscreenMap fullscreenMap) {
         super(TITLE_LABEL, 778, 302);
         this.jmAPI = jmAPI;
         this.fullscreenMap = fullscreenMap;
@@ -335,7 +336,7 @@ public class FrontierList extends PageScreen {
 
     private void onInfoPressed() {
         FrontierOverlay frontier = ((FrontierListElement) frontiers.getSelectedElement()).getFrontier();
-        new FrontierInfo(jmAPI, frontier).display();
+        new FrontierInfoPage(jmAPI, frontier).display();
     }
 
     private void onDeletePressed() {
@@ -367,7 +368,7 @@ public class FrontierList extends PageScreen {
     }
 
     private void onSettingsPressed() {
-        new ModSettings(true).display();
+        new ModSettingsPage(true).display();
     }
 
     private void onDonePressed() {

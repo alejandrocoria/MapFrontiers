@@ -8,7 +8,7 @@ import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 
 import javax.annotation.Nullable;
 
-public class AcceptFrontierCopyDialog extends ConfirmationDialog {
+public class AcceptFrontierCopyConfirmationDialog extends ConfirmationDialog {
     private static final String TITLE_KEY = "mapfrontiers.receive_frontier_copy";
     private static final String DESC_KEY = "mapfrontiers.accept_frontier_desc";
     private static final String DESC_REPLACE_KEY = "mapfrontiers.accept_frontier_desc_replace";
@@ -17,7 +17,7 @@ public class AcceptFrontierCopyDialog extends ConfirmationDialog {
     private static final String CONFIRM_NO_REPLACE_KEY = "mapfrontiers.accept_frontier_as_new";
     private static final String CANCEL_KEY = "gui.cancel";
 
-    public AcceptFrontierCopyDialog(int id, FrontierData receivedFrontier, @Nullable FrontierOverlay currentFrontier) {
+    public AcceptFrontierCopyConfirmationDialog(int id, FrontierData receivedFrontier, @Nullable FrontierOverlay currentFrontier) {
         super(TITLE_KEY,
                 currentFrontier == null ? DESC_KEY : DESC_REPLACE_KEY,
                 currentFrontier == null ? CONFIRM_KEY : CONFIRM_REPLACE_KEY,
