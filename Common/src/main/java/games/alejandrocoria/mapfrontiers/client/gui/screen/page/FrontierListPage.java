@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.FullscreenMap;
+import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.SortToolbar;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
@@ -116,7 +117,7 @@ public class FrontierListPage extends PageScreen
 
     @Override
     public void repositionElements() {
-        frontiers.setSize(450, actualHeight - 100);
+        frontiers.setSize(450, actualHeight - 120);
         filterDimension.setSize(200, actualHeight - 269);
         super.repositionElements();
         content.setPosition((actualWidth - content.getWidth()) / 2, 60);
@@ -124,7 +125,7 @@ public class FrontierListPage extends PageScreen
 
     @Override
     protected void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        drawCenteredBoxBackground(graphics, actualWidth - 60, actualHeight - 60);
+        drawCenteredBoxBackground(graphics, actualWidth - LayoutConstants.PAGE_MARGIN * 2, actualHeight - LayoutConstants.PAGE_MARGIN * 2);
     }
 
     @Override
@@ -177,7 +178,7 @@ public class FrontierListPage extends PageScreen
     private void buildFiltersColumn(GridLayout mainLayout) {
         mainLayout.addChild(createResetFiltersButton(), 0, 1, LayoutSettings.defaults().alignHorizontallyLeft());
 
-        LinearLayout filtersColumn = LinearLayout.vertical().spacing(2);
+        LinearLayout filtersColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_TINY);
         filtersColumn.defaultCellSetting().alignHorizontallyLeft();
         mainLayout.addChild(filtersColumn, 1, 1, LayoutSettings.defaults().alignHorizontallyLeft());
 

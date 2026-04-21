@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.Window;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
@@ -110,7 +111,7 @@ public class HUDSettingsScreen extends AutoScaledScreen {
         }
 
         drawAnchor(graphics, minecraft.getWindow());
-        drawCenteredBoxBackground(graphics, content.getWidth() + 20, content.getHeight() + 20);
+        drawCenteredBoxBackground(graphics);
     }
 
     @Override
@@ -132,7 +133,7 @@ public class HUDSettingsScreen extends AutoScaledScreen {
     }
 
     private GridLayout createMainLayout() {
-        GridLayout mainLayout = new GridLayout().spacing(4);
+        GridLayout mainLayout = new GridLayout().spacing(LayoutConstants.SPACING_SMALL);
         mainLayout.defaultCellSetting().alignVerticallyMiddle();
         content.addChild(mainLayout);
         return mainLayout;
@@ -173,7 +174,7 @@ public class HUDSettingsScreen extends AutoScaledScreen {
     }
 
     private void buildDoneButton(GridLayout mainLayout) {
-        SimpleButton buttonDone = new SimpleButton(font, 100, DONE_LABEL, button -> onClose());
+        SimpleButton buttonDone = new SimpleButton(font, LayoutConstants.PANEL_BUTTON_WIDTH, DONE_LABEL, button -> onClose());
         mainLayout.addChild(buttonDone, 5, 0, 1, 5, LayoutSettings.defaults().alignHorizontallyCenter());
     }
 

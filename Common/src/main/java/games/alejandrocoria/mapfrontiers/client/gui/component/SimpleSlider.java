@@ -13,6 +13,13 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 public class SimpleSlider extends AbstractSliderButton
 {
+    private static final int DEFAULT_HEIGHT = 15;
+    private static final int HANDLE_WIDTH = 4;
+    private static final int HANDLE_RANGE_PADDING = 6;
+    private static final int HANDLE_X_OFFSET = 1;
+    private static final int HANDLE_VERTICAL_INSET = 1;
+    private static final int LABEL_Y_OFFSET = 4;
+
     private final Font font;
     private final int minValue;
     private final int maxValue;
@@ -26,7 +33,7 @@ public class SimpleSlider extends AbstractSliderButton
     }
 
     public SimpleSlider(Font font, int width, String translationKey, int minValue, int maxValue, int initialValue, ValueChanged callback) {
-        super(0, 0, width, 15, Component.literal(String.valueOf(initialValue)), normalize(initialValue, minValue, maxValue));
+        super(0, 0, width, DEFAULT_HEIGHT, Component.literal(String.valueOf(initialValue)), normalize(initialValue, minValue, maxValue));
         this.font = font;
         this.minValue = minValue;
         this.maxValue = maxValue;
@@ -101,9 +108,12 @@ public class SimpleSlider extends AbstractSliderButton
         graphics.vLine(getX(), getY(), getY() + height - 1, lineColor);
         graphics.vLine(getX() + width - 1, getY(), getY() + height - 1, lineColor);
 
-        int handleX = getX() + (int)(value * (width - 6)) + 1;
-        graphics.fill(handleX, getY() + 1, handleX + 4, getY() + height - 1, isHoveredOrFocused() ? ColorConstants.SLIDER_HANDLER_FOCUSED : ColorConstants.SLIDER_HANDLER);
+        int handleX = getX() + (int)(value * (width - HANDLE_RANGE_PADDING)) + HANDLE_X_OFFSET;
+        graphics.fill(handleX, getY() + HANDLE_VERTICAL_INSET, handleX + HANDLE_WIDTH,
+                getY() + height - HANDLE_VERTICAL_INSET,
+                isHoveredOrFocused() ? ColorConstants.SLIDER_HANDLER_FOCUSED : ColorConstants.SLIDER_HANDLER);
 
-        graphics.drawCenteredString(font, getMessage(), getX() + width / 2, getY() + 4, isHovered ? ColorConstants.SIMPLE_BUTTON_TEXT_HIGHLIGHT : ColorConstants.SIMPLE_BUTTON_TEXT);
+        graphics.drawCenteredString(font, getMessage(), getX() + width / 2, getY() + LABEL_Y_OFFSET,
+                isHovered ? ColorConstants.SIMPLE_BUTTON_TEXT_HIGHLIGHT : ColorConstants.SIMPLE_BUTTON_TEXT);
     }
 }

@@ -14,6 +14,6 @@ public abstract class PageScreen extends AutoScaledScreen {
 
     @Override
     protected void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        drawCenteredBoxBackground(graphics, content.getWidth() + 20, content.getHeight() + 20);
+        drawCenteredBoxBackground(graphics);
     }
 }

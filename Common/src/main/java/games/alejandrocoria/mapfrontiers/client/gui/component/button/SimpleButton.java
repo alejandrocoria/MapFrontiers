@@ -11,13 +11,15 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class SimpleButton extends ButtonBase {
+    private static final int DEFAULT_HEIGHT = 15;
+
     private final StringWidget label;
     private int textColor = ColorConstants.SIMPLE_BUTTON_TEXT;
     private int textColorHighlight = ColorConstants.SIMPLE_BUTTON_TEXT_HIGHLIGHT;
     private int textColorInactive = ColorConstants.SIMPLE_BUTTON_TEXT_INACTIVE;
 
     public SimpleButton(Font font, int width, Component text, OnPress pressedAction) {
-        super(0, 0, width, 15, text, (b) -> pressedAction.onPress((SimpleButton) b), Button.DEFAULT_NARRATION);
+        super(0, 0, width, DEFAULT_HEIGHT, text, (b) -> pressedAction.onPress((SimpleButton) b), Button.DEFAULT_NARRATION);
         this.label = new StringWidget(text, font, StringWidget.Align.Center);
     }
 

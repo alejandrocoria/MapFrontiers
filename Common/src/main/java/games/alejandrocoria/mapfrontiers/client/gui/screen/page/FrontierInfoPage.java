@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPaletteWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPicker;
 import games.alejandrocoria.mapfrontiers.client.gui.component.SimpleSlider;
@@ -115,18 +116,15 @@ public class FrontierInfoPage extends PageScreen
     private static final Tooltip CHANGE_TO_PERSONAL_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.change_to_personal"));
     private static final Tooltip CHANGE_TO_GLOBAL_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.change_to_global"));
     private static final Tooltip ASSIGN_BANNER_WARN_TOOLTIP = Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET).append(Component.translatable("mapfrontiers.assign_banner_warn")));
-    private static final int MAIN_LAYOUT_SPACING = 10;
-    private static final int SECTION_WIDTH = 144;
-    private static final int NAME_SECTION_WIDTH = SECTION_WIDTH * 2 + MAIN_LAYOUT_SPACING + 1;
-    private static final int DEFAULT_TEXTBOX_HEIGHT = 19;
-    private static final int SECTION_SPACING_SMALL = 2;
-    private static final int SECTION_SPACING_MEDIUM = 4;
-    private static final int INLINE_SPACING = 3;
-    private static final int OPTION_BUTTON_WIDTH = 28;
+    private static final int MAIN_LAYOUT_SPACING = LayoutConstants.SPACING_MEDIUM;
+    private static final int SECTION_WIDTH = 146;
+    private static final int NAME_SECTION_WIDTH = SECTION_WIDTH * 2 + MAIN_LAYOUT_SPACING;
+    private static final int DEFAULT_TEXTBOX_HEIGHT = 17;
+    private static final int RGB_INLINE_SPACING = 3;
     private static final int RGB_LABEL_HEIGHT = 8;
     private static final int RGB_TEXTBOX_WIDTH = 33;
-    private static final int RGB_ROW_SPACER_WIDTH = 3;
-    private static final int CLIPBOARD_SPACER_WIDTH = 116;
+    private static final int RGB_ROW_SPACER_WIDTH = 4;
+    private static final int CLIPBOARD_SPACER_WIDTH = SECTION_WIDTH - LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH;
 
     private final IClientAPI jmAPI;
 
@@ -231,7 +229,7 @@ public class FrontierInfoPage extends PageScreen
     }
 
     private void buildBannerSection(GridLayout mainLayout) {
-        LinearLayout bannerColumn = LinearLayout.vertical().spacing(SECTION_SPACING_SMALL);
+        LinearLayout bannerColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         bannerColumn.defaultCellSetting().alignHorizontallyCenter();
         mainLayout.addChild(bannerColumn, 0, 0);
 
@@ -243,14 +241,14 @@ public class FrontierInfoPage extends PageScreen
     }
 
     private void buildOverviewSection(GridLayout mainLayout) {
-        LinearLayout nameColumn = LinearLayout.vertical().spacing(SECTION_SPACING_SMALL);
+        LinearLayout nameColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         nameColumn.defaultCellSetting().alignHorizontallyLeft();
         mainLayout.addChild(nameColumn, 0, 1, 1, 2);
 
-        LinearLayout headerRow = LinearLayout.horizontal().spacing(SECTION_SPACING_SMALL);
+        LinearLayout headerRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
         Component dimension = Component.translatable(DIMENSION_KEY, frontier.getDimension().identifier().toString());
         headerRow.addChild(new StringWidget(NAME_LABEL, font).setColor(ColorConstants.INFO_LABEL_TEXT));
-        headerRow.addChild(SpacerElement.width(Math.max(0, NAME_SECTION_WIDTH - font.width(NAME_LABEL.getVisualOrderText()) - font.width(dimension.getVisualOrderText()) - SECTION_SPACING_SMALL - 1)));
+        headerRow.addChild(SpacerElement.width(Math.max(0, NAME_SECTION_WIDTH - font.width(NAME_LABEL.getVisualOrderText()) - font.width(dimension.getVisualOrderText()) - LayoutConstants.SPACING_TINY - 2)));
         headerRow.addChild(new StringWidget(dimension, font).setColor(ColorConstants.TEXT_DIMENSION));
         nameColumn.addChild(headerRow);
 
@@ -280,7 +278,7 @@ public class FrontierInfoPage extends PageScreen
         }
         nameColumn.addChild(new StringWidget(sourceInfo, font).setColor(ColorConstants.TEXT_SOURCE_PLUGIN));
 
-        LinearLayout visibilityRow = LinearLayout.horizontal().spacing(MAIN_LAYOUT_SPACING + 1);
+        LinearLayout visibilityRow = LinearLayout.horizontal().spacing(MAIN_LAYOUT_SPACING);
         visibilityRow.defaultCellSetting().alignVerticallyMiddle();
         nameColumn.addChild(visibilityRow);
 
@@ -292,7 +290,7 @@ public class FrontierInfoPage extends PageScreen
         buttonVisibilityOverride.setTooltip(VISIBILITY_OVERRIDE_TOOLTIP);
         visibilityRow.addChild(buttonVisibilityOverride);
 
-        LinearLayout pathStyleRow = LinearLayout.horizontal().spacing(MAIN_LAYOUT_SPACING + 1);
+        LinearLayout pathStyleRow = LinearLayout.horizontal().spacing(MAIN_LAYOUT_SPACING);
         pathStyleRow.defaultCellSetting().alignVerticallyMiddle();
         nameColumn.addChild(pathStyleRow);
 
@@ -313,7 +311,7 @@ public class FrontierInfoPage extends PageScreen
     }
 
     private void buildInfoSection(GridLayout mainLayout) {
-        LinearLayout infoColumn = LinearLayout.vertical().spacing(SECTION_SPACING_SMALL);
+        LinearLayout infoColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_TINY);
         mainLayout.addChild(infoColumn, 0, 3, 1, 1, LayoutSettings.defaults().alignHorizontallyLeft());
 
         MutableComponent owner = Component.translatable(OWNER_KEY, frontier.getOwner().toString());
@@ -327,7 +325,7 @@ public class FrontierInfoPage extends PageScreen
             ownerWidget.setTooltip(ownerTooltip);
         }
 
-        LinearLayout identityRow = LinearLayout.horizontal().spacing(SECTION_SPACING_MEDIUM);
+        LinearLayout identityRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         infoColumn.addChild(identityRow);
 
         identityRow.addChild(new StringWidget(frontier.getPersonal() ? PERSONAL_LABEL : GLOBAL_LABEL, font).setColor(ColorConstants.WHITE));
@@ -353,22 +351,21 @@ public class FrontierInfoPage extends PageScreen
         }
 
         if (frontier.getModified() != null) {
-            modifiedLabel = infoColumn.addChild(new StringWidget(Component.translatable(MODIFIED_KEY, DATE_FORMAT.format(frontier.getModified())), font)
-                    .setColor(ColorConstants.WHITE));
+            modifiedLabel = infoColumn.addChild(new StringWidget(Component.translatable(MODIFIED_KEY, DATE_FORMAT.format(frontier.getModified())), font).setColor(ColorConstants.WHITE));
         }
     }
 
     private void buildColorSection(GridLayout mainLayout) {
         colorPicker = new ColorPicker(frontier.getColor(), this::onColorPicked);
-        mainLayout.addChild(colorPicker, 1, 1, LayoutSettings.defaults().alignVerticallyBottom());
+        mainLayout.addChild(colorPicker, 1, 1, LayoutSettings.defaults().alignVerticallyBottom().alignHorizontallyCenter());
 
-        LinearLayout colorColumn = LinearLayout.vertical().spacing(SECTION_SPACING_MEDIUM);
+        LinearLayout colorColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         colorColumn.defaultCellSetting().alignHorizontallyCenter();
         mainLayout.addChild(colorColumn, 1, 2);
 
         colorColumn.addChild(new StringWidget(COLOR_LABEL, font).setColor(ColorConstants.INFO_LABEL_TEXT), LayoutSettings.defaults().alignHorizontallyLeft());
 
-        LinearLayout rgbRow = LinearLayout.horizontal().spacing(INLINE_SPACING);
+        LinearLayout rgbRow = LinearLayout.horizontal().spacing(RGB_INLINE_SPACING);
         rgbRow.defaultCellSetting().alignVerticallyMiddle();
         colorColumn.addChild(rgbRow);
 
@@ -399,7 +396,7 @@ public class FrontierInfoPage extends PageScreen
     }
 
     private void buildClipboardSection(GridLayout mainLayout) {
-        GridLayout editColumn = new GridLayout().rowSpacing(SECTION_SPACING_MEDIUM);
+        GridLayout editColumn = new GridLayout().rowSpacing(LayoutConstants.SPACING_SMALL);
         editColumn.defaultCellSetting().alignHorizontallyLeft();
         editColumn.addChild(SpacerElement.width(CLIPBOARD_SPACER_WIDTH), 0, 0);
         mainLayout.addChild(editColumn, 1, 3, LayoutSettings.defaults().alignVerticallyBottom());
@@ -416,7 +413,7 @@ public class FrontierInfoPage extends PageScreen
         labelPasteBanner = editColumn.addChild(new StringWidget(PASTE_BANNER_LABEL, font).setColor(ColorConstants.TEXT), 3, 0);
         buttonPasteBanner = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_BANNER.get(), ClientConfig.PASTE_BANNER::set), 3, 1);
 
-        LinearLayout editButtons = LinearLayout.horizontal().spacing(INLINE_SPACING);
+        LinearLayout editButtons = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         editColumn.addChild(editButtons, 4, 0);
 
         buttonCopy = editButtons.addChild(new IconButton(IconButton.Type.Copy, b -> onCopyPressed()));
@@ -458,7 +455,7 @@ public class FrontierInfoPage extends PageScreen
     }
 
     private OptionButton createBinaryOptionButton(boolean defaultValue, Consumer<Boolean> consumer) {
-        OptionButton button = new OptionButton(font, OPTION_BUTTON_WIDTH, b -> {
+        OptionButton button = new OptionButton(font, LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH, b -> {
             consumer.accept(b.getSelected() == 0);
             sendCurrentInfoChangesToServer();
         });

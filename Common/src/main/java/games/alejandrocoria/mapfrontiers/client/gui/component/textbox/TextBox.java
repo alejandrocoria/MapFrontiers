@@ -13,6 +13,8 @@ import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
 public class TextBox extends EditBox {
+    private static final int DEFAULT_HEIGHT = 13;
+
     private final String defaultText;
     private Consumer<String> valueChangedCallback;
     private Consumer<String> lostFocusCallback;
@@ -23,7 +25,7 @@ public class TextBox extends EditBox {
     }
 
     public TextBox(Font font, int width, String defaultText) {
-        super(font, 0, 0, width, 13, Component.empty());
+        super(font, 0, 0, width, DEFAULT_HEIGHT, Component.empty());
         this.defaultText = defaultText;
         if (!StringUtils.isBlank(defaultText)) {
             setResponder((value) -> updateDefaultText());

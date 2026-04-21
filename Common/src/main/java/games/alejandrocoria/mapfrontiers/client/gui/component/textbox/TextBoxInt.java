@@ -14,13 +14,15 @@ import java.util.function.IntConsumer;
 
 @ParametersAreNonnullByDefault
 public class TextBoxInt extends EditBox {
+    private static final int DEFAULT_HEIGHT = 13;
+
     private int defaultValue;
     private int min;
     private int max;
     private IntConsumer valueChangedCallback;
 
     public TextBoxInt(int defaultValue, int min, int max, Font font, int width) {
-        super(font, 0, 0, width, 13, Component.empty());
+        super(font, 0, 0, width, DEFAULT_HEIGHT, Component.empty());
         setRange(defaultValue, min, max);
         this.setValue(defaultValue);
     }

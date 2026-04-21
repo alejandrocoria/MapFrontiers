@@ -14,6 +14,7 @@ import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class OptionButton extends ButtonBase {
+    private static final int DEFAULT_HEIGHT = 13;
     public static final OnPress DO_NOTHING = (b) -> {};
 
     protected final Font font;
@@ -23,7 +24,7 @@ public class OptionButton extends ButtonBase {
     private int highlightedColor = ColorConstants.TEXT_HIGHLIGHT;
 
     public OptionButton(Font font, int width, OnPress pressedAction) {
-        super(0, 0, width, 13, Component.empty(), (b) -> pressedAction.onPress((OptionButton) b), Button.DEFAULT_NARRATION);
+        super(0, 0, width, DEFAULT_HEIGHT, Component.empty(), (b) -> pressedAction.onPress((OptionButton) b), Button.DEFAULT_NARRATION);
         this.font = font;
         options = new ArrayList<>();
     }

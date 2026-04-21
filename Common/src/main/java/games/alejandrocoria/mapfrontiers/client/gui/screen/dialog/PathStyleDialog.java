@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen.dialog;
 
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.PathMarkerSelectorWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.PathStylePreviewWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
@@ -66,7 +67,7 @@ public class PathStyleDialog extends PanelDialog {
 
     @Override
     protected void initScreen() {
-        LinearLayout mainLayout = LinearLayout.vertical().spacing(8);
+        LinearLayout mainLayout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
         content.addChild(mainLayout);
 
         if (defaultStyle == null) {
@@ -77,7 +78,7 @@ public class PathStyleDialog extends PanelDialog {
             description.setCentered(true);
         }
 
-        GridLayout markerGrid = new GridLayout().spacing(4);
+        GridLayout markerGrid = new GridLayout().spacing(LayoutConstants.SPACING_SMALL);
         markerGrid.defaultCellSetting().alignVerticallyMiddle();
         mainLayout.addChild(markerGrid);
 
@@ -91,11 +92,11 @@ public class PathStyleDialog extends PanelDialog {
         lowerSection.defaultCellSetting().alignVerticallyTop();
         mainLayout.addChild(lowerSection);
 
-        LinearLayout labelLocationsColumn = LinearLayout.vertical().spacing(4);
+        LinearLayout labelLocationsColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         lowerSection.addChild(labelLocationsColumn);
         labelLocationsColumn.addChild(new StringWidget(LABELS_AND_BANNER_LABEL, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
 
-        LinearLayout labelsColumn = LinearLayout.vertical().spacing(4);
+        LinearLayout labelsColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         labelLocationsColumn.addChild(labelsColumn);
 
         checkLabelAtStart = createLocationCheckBox(labelsColumn, START_LABEL, workingStyle.labelAtStart,
@@ -141,7 +142,7 @@ public class PathStyleDialog extends PanelDialog {
     }
 
     private CheckBoxButton createLocationCheckBox(LinearLayout parent, Component label, boolean value, Consumer<Boolean> setter) {
-        LinearLayout row = LinearLayout.horizontal().spacing(4);
+        LinearLayout row = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         row.defaultCellSetting().alignVerticallyBottom();
         parent.addChild(row);
 

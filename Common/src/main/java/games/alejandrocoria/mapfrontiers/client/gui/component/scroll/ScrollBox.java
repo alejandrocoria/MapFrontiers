@@ -28,6 +28,10 @@ import java.util.function.Predicate;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class ScrollBox extends AbstractContainerWidget {
+    private static final int SCROLLBAR_AREA_WIDTH = 15;
+    private static final int SCROLLBAR_WIDTH = 10;
+    private static final int ELEMENT_GAP = 1;
+
     private final int elementHeight;
     private int scrollStart = 0;
     private int scrollHeight;
@@ -44,11 +48,11 @@ public class ScrollBox extends AbstractContainerWidget {
     private Consumer<ScrollElement> elementDeletePressedCallback;
 
     public ScrollBox(int height, int elementWidth, int elementHeight) {
-        super(0, 0, elementWidth + 15, Math.max(height, elementHeight + 1), Component.empty());
+        super(0, 0, elementWidth + SCROLLBAR_AREA_WIDTH, Math.max(height, elementHeight + ELEMENT_GAP), Component.empty());
         elements = new ArrayList<>();
         selected = -1;
         focused = -1;
-        this.elementHeight = elementHeight + 1;
+        this.elementHeight = elementHeight + ELEMENT_GAP;
         scrollHeight = this.height / this.elementHeight;
         this.height = scrollHeight * this.elementHeight;
     }
@@ -261,13 +265,13 @@ public class ScrollBox extends AbstractContainerWidget {
 
     @Override
     public void setSize(int elementWidth, int height) {
-        super.setSize(elementWidth + 15, height);
+        super.setSize(elementWidth + SCROLLBAR_AREA_WIDTH, height);
         setHeight(height);
     }
 
     @Override
     public void setWidth(int elementWidth) {
-        super.setWidth(elementWidth + 15);
+        super.setWidth(elementWidth + SCROLLBAR_AREA_WIDTH);
     }
 
     @Override
@@ -332,7 +336,7 @@ public class ScrollBox extends AbstractContainerWidget {
         }
 
         if (scrollBarHeight > 0) {
-            scrollBarHovered = mouseX >= getX() + width - 10
+            scrollBarHovered = mouseX >= getX() + width - SCROLLBAR_WIDTH
                             && mouseY >= getY()
                             && mouseX < getX() + width
                             && mouseY < getY() + height;
@@ -344,15 +348,18 @@ public class ScrollBox extends AbstractContainerWidget {
                 barColor = ColorConstants.SCROLLBAR_HOVERED;
             }
 
-            graphics.fill(getX() + width - 10, getY(), getX() + width, getY() + height, ColorConstants.SCROLLBAR_BG);
-            graphics.fill(getX() + width - 10, getY() + scrollBarPos, getX() + width, getY() + scrollBarPos + scrollBarHeight, barColor);
+            graphics.fill(getX() + width - SCROLLBAR_WIDTH, getY(), getX() + width, getY() + height,
+                    ColorConstants.SCROLLBAR_BG);
+            graphics.fill(getX() + width - SCROLLBAR_WIDTH, getY() + scrollBarPos, getX() + width,
+                    getY() + scrollBarPos + scrollBarHeight, barColor);
         }
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         if (active && visible && isValidClickButton(event.buttonInfo())) {
-            if (scrollBarHeight > 0 && event.x() >= getX() + width - 10 && event.y() >= getY() && event.x() < getX() + width && event.y() < getY() + height) {
+            if (scrollBarHeight > 0 && event.x() >= getX() + width - SCROLLBAR_WIDTH && event.y() >= getY()
+                    && event.x() < getX() + width && event.y() < getY() + height) {
                 if (event.y() < getY() + scrollBarPos) {
                     mouseScrolled(event.x(), event.y(), 0, 1);
                 } else if (event.y() > getY() + scrollBarPos + scrollBarHeight) {

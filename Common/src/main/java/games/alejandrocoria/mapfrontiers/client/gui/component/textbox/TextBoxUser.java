@@ -19,6 +19,12 @@ import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class TextBoxUser extends TextBox {
+    private static final int MAX_VISIBLE_SUGGESTIONS = 7;
+    private static final int SUGGESTION_WINDOW_OFFSET = 6;
+    private static final int POPUP_LINE_HEIGHT = 12;
+    private static final int POPUP_PADDING = 4;
+    private static final int POPUP_BORDER = 1;
+
     private final Minecraft mc;
     private final Font font;
     private String partialText;
@@ -85,13 +91,13 @@ public class TextBoxUser extends TextBox {
                     maxSuggestionWidth = 0;
                     int size = suggestions.size();
 
-                    if (size > 7) {
-                        size = 7;
+                    if (size > MAX_VISIBLE_SUGGESTIONS) {
+                        size = MAX_VISIBLE_SUGGESTIONS;
                     }
 
                     int firstIndex = 0;
-                    if (suggestionIndex > 6) {
-                        firstIndex = suggestionIndex - 6;
+                    if (suggestionIndex > SUGGESTION_WINDOW_OFFSET) {
+                        firstIndex = suggestionIndex - SUGGESTION_WINDOW_OFFSET;
                     }
 
                     for (int i = firstIndex; i < firstIndex + size; ++i) {
@@ -123,28 +129,33 @@ public class TextBoxUser extends TextBox {
         super.renderWidget(graphics, mouseX, mouseY, partialTicks);
 
         if (error != null) {
-            List<FormattedCharSequence> errorList = font.split(error, width - 8);
-            int maxErrorWidth = width - 8;
+            List<FormattedCharSequence> errorList = font.split(error, width - POPUP_PADDING * 2);
+            int maxErrorWidth = width - POPUP_PADDING * 2;
+            int popupHeight = errorList.size() * POPUP_LINE_HEIGHT;
 
-            graphics.fill(getX() - 1, getY() - errorList.size() * 12 - 5, getX() + maxErrorWidth + 9, getY() - 1,
+            graphics.fill(getX() - POPUP_BORDER, getY() - popupHeight - POPUP_PADDING - POPUP_BORDER,
+                    getX() + maxErrorWidth + POPUP_PADDING * 2 + POPUP_BORDER, getY() - POPUP_BORDER,
                     ColorConstants.TEXTBOX_EXTRA_BORDER);
-            graphics.fill(getX(), getY() - errorList.size() * 12 - 4, getX() + maxErrorWidth + 8, getY() - 1,
-                    ColorConstants.TEXTBOX_EXTRA_BG);
+            graphics.fill(getX(), getY() - popupHeight - POPUP_PADDING,
+                    getX() + maxErrorWidth + POPUP_PADDING * 2, getY() - POPUP_BORDER, ColorConstants.TEXTBOX_EXTRA_BG);
 
-            int posX = getX() + 4;
-            int posY = getY() - errorList.size() * 12;
+            int posX = getX() + POPUP_PADDING;
+            int posY = getY() - popupHeight;
             for (FormattedCharSequence e : errorList) {
                 graphics.drawString(font, e, posX, posY, ColorConstants.TEXT_HIGHLIGHT);
-                posY += 12;
+                posY += POPUP_LINE_HEIGHT;
             }
         } else if (!suggestionsToDraw.isEmpty()) {
-            graphics.fill(getX() - 1, getY() - suggestionsToDraw.size() * 12 - 5, getX() + maxSuggestionWidth + 9, getY() - 1,
+            int popupHeight = suggestionsToDraw.size() * POPUP_LINE_HEIGHT;
+            graphics.fill(getX() - POPUP_BORDER, getY() - popupHeight - POPUP_PADDING - POPUP_BORDER,
+                    getX() + maxSuggestionWidth + POPUP_PADDING * 2 + POPUP_BORDER, getY() - POPUP_BORDER,
                     ColorConstants.TEXTBOX_EXTRA_BORDER);
-            graphics.fill(getX(), getY() - suggestionsToDraw.size() * 12 - 4, getX() + maxSuggestionWidth + 8, getY() - 1,
+            graphics.fill(getX(), getY() - popupHeight - POPUP_PADDING,
+                    getX() + maxSuggestionWidth + POPUP_PADDING * 2, getY() - POPUP_BORDER,
                     ColorConstants.TEXTBOX_EXTRA_BG);
 
-            int posX = getX() + 4;
-            int posY = getY() - 12;
+            int posX = getX() + POPUP_PADDING;
+            int posY = getY() - POPUP_LINE_HEIGHT;
             for (int i = suggestionsToDraw.size() - 1; i >= 0; --i) {
                 String t = suggestionsToDraw.get(i);
                 // Strings are compared using == because they are the same objects
@@ -160,7 +171,7 @@ public class TextBoxUser extends TextBox {
                             ColorConstants.TEXT_MEDIUM);
                 }
 
-                posY -= 12;
+                posY -= POPUP_LINE_HEIGHT;
             }
         }
     }
