@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen.dialog;
 
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.AutoScaledScreen;
@@ -21,6 +22,9 @@ public class ConfirmationDialog extends AutoScaledScreen {
         Confirm,
         ConfirmAlternative
     }
+
+    private static final int CONFIRM_BUTTON_WIDTH = 150;
+    private static final int CONFIRM_ALTERNATIVE_BUTTON_WIDTH = CONFIRM_BUTTON_WIDTH * 2 + LayoutConstants.SPACING_SMALL;
 
     private final String titleKey;
     @Nullable
@@ -48,7 +52,7 @@ public class ConfirmationDialog extends AutoScaledScreen {
 
     @Override
     protected void initScreen() {
-        LinearLayout mainLayout = LinearLayout.vertical().spacing(8);
+        LinearLayout mainLayout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
         mainLayout.defaultCellSetting().alignHorizontallyCenter();
         content.addChild(mainLayout);
 
@@ -58,17 +62,17 @@ public class ConfirmationDialog extends AutoScaledScreen {
             mainLayout.addChild(new MultiLineTextWidget(Component.translatable(textKey), font).setCentered(true));
         }
 
-        GridLayout buttons = new GridLayout().spacing(4);
+        GridLayout buttons = new GridLayout().spacing(LayoutConstants.SPACING_SMALL);
         mainLayout.addChild(buttons);
 
-        confirmButton = buttons.addChild(new SimpleButton(font, 150, Component.translatable(confirmKey), (b) -> {
+        confirmButton = buttons.addChild(new SimpleButton(font, CONFIRM_BUTTON_WIDTH, Component.translatable(confirmKey), (b) -> {
             onClose();
             callback.accept(Response.Confirm);
         }), 0, 0);
-        cancelButton = buttons.addChild(new SimpleButton(font, 150, Component.translatable(cancelKey), (b) -> onClose()), 0, 1);
+        cancelButton = buttons.addChild(new SimpleButton(font, CONFIRM_BUTTON_WIDTH, Component.translatable(cancelKey), (b) -> onClose()), 0, 1);
 
         if (confirmAlternativeKey != null) {
-            confirmAlternativeButton = buttons.addChild(new SimpleButton(font, 304, Component.translatable(confirmAlternativeKey), (b) -> {
+            confirmAlternativeButton = buttons.addChild(new SimpleButton(font, CONFIRM_ALTERNATIVE_BUTTON_WIDTH, Component.translatable(confirmAlternativeKey), (b) -> {
                 onClose();
                 callback.accept(Response.ConfirmAlternative);
             }), 1, 0, 1, 2);
@@ -84,6 +88,6 @@ public class ConfirmationDialog extends AutoScaledScreen {
 
     @Override
     protected void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
-        drawCenteredBoxBackground(graphics, content.getWidth() + 20, content.getHeight() + 20);
+        drawCenteredBoxBackground(graphics);
     }
 }

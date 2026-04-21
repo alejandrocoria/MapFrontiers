@@ -67,6 +67,5 @@ public final class ColorConstants {
     public static final ChatFormatting WARNING = ChatFormatting.YELLOW;
 
     private ColorConstants() {
-
     }
 }

@@ -5,6 +5,7 @@ import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox;
@@ -79,7 +80,7 @@ public class ShareSettingsPage extends PageScreen
             return;
         }
 
-        LinearLayout mainLayout = LinearLayout.vertical().spacing(8);
+        LinearLayout mainLayout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
         mainLayout.defaultCellSetting().alignHorizontallyCenter();
         content.addChild(mainLayout);
 
@@ -110,10 +111,10 @@ public class ShareSettingsPage extends PageScreen
         });
         mainLayout.addChild(users);
 
-        LinearLayout newUserLayout = LinearLayout.horizontal().spacing(4);
+        LinearLayout newUserLayout = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         mainLayout.addChild(newUserLayout);
 
-        textNewUser = new TextBoxUser(minecraft, font, 238);
+        textNewUser = new TextBoxUser(minecraft, font, LayoutConstants.USER_TEXTBOX_WIDTH);
         textNewUser.setMaxLength(38);
         textNewUser.setSubmitCallback((value) -> buttonNewUserPressed());
         newUserLayout.addChild(textNewUser);
@@ -122,7 +123,7 @@ public class ShareSettingsPage extends PageScreen
         buttonNewUser.visible = false;
         newUserLayout.addChild(buttonNewUser);
 
-        addBottomButton(new SimpleButton(font, 140, DONE_LABEL, (b) -> onClose()));
+        addBottomButton(new SimpleButton(font, LayoutConstants.PAGE_BUTTON_WIDTH, DONE_LABEL, (b) -> onClose()));
 
         updateCanUpdate();
         updateButtonsVisibility();

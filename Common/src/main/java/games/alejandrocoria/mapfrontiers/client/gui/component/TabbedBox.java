@@ -134,19 +134,19 @@ public class TabbedBox implements Layout {
     }
 
     public void renderBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
-        graphics.fill(getX(), getY() + 16, getX() + width, getY() + height, ColorConstants.SCREEN_BG);
+        graphics.fill(getX(), getY() + 16, getX() + width - 1, getY() + height - 1, ColorConstants.SCREEN_BG);
 
         if (selected == -1) {
-            graphics.horizontalLine(getX(), getX() + width, getY() + 16, ColorConstants.TAB_BORDER);
+            graphics.horizontalLine(getX(), getX() + width - 1, getY() + 16, ColorConstants.TAB_BORDER);
         } else {
             Tab tab = tabs.get(selected);
             graphics.horizontalLine(getX(), tab.getX(), getY() + 16, ColorConstants.TAB_BORDER);
-            graphics.horizontalLine(tab.getX() + tab.getWidth(), getX() + width, getY() + 16, ColorConstants.TAB_BORDER);
+            graphics.horizontalLine(tab.getX() + tab.getWidth(), getX() + width - 1, getY() + 16, ColorConstants.TAB_BORDER);
         }
 
-        graphics.horizontalLine(getX(), getX() + width, getY() + height, ColorConstants.TAB_BORDER);
-        graphics.verticalLine(getX(), getY() + 16, getY() + height, ColorConstants.TAB_BORDER);
-        graphics.verticalLine(getX() + width, getY() + 16, getY() + height, ColorConstants.TAB_BORDER);
+        graphics.horizontalLine(getX(), getX() + width - 1, getY() + height - 1, ColorConstants.TAB_BORDER);
+        graphics.verticalLine(getX(), getY() + 16, getY() + height - 1, ColorConstants.TAB_BORDER);
+        graphics.verticalLine(getX() + width - 1, getY() + 16, getY() + height - 1, ColorConstants.TAB_BORDER);
     }
 
     private static class Tab extends ButtonBase {

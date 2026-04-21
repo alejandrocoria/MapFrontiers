@@ -10,10 +10,14 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class CheckBoxButton extends ButtonBase {
+    private static final int SIZE = 11;
+    private static final int BORDER_INSET = 1;
+    private static final int CHECK_INSET = 2;
+
     private boolean checked;
 
     public CheckBoxButton(boolean initialValue, OnPress pressedAction) {
-        super(0, 0, 11, 11, Component.empty(), (b) -> pressedAction.onPress((CheckBoxButton) b), Button.DEFAULT_NARRATION);
+        super(0, 0, SIZE, SIZE, Component.empty(), (b) -> pressedAction.onPress((CheckBoxButton) b), Button.DEFAULT_NARRATION);
         checked = initialValue;
     }
 
@@ -32,9 +36,11 @@ public class CheckBoxButton extends ButtonBase {
         }
 
         graphics.fill(getX(), getY(), getX() + width, getY() + height, isHoveredOrKeyboardFocused() ? ColorConstants.CHECKBOX_BORDER_FOCUSED : ColorConstants.CHECKBOX_BORDER);
-        graphics.fill(getX() + 1, getY() + 1, getX() + width - 1, getY() + height - 1, ColorConstants.CHECKBOX_BG);
+        graphics.fill(getX() + BORDER_INSET, getY() + BORDER_INSET, getX() + width - BORDER_INSET,
+                getY() + height - BORDER_INSET, ColorConstants.CHECKBOX_BG);
         if (checked) {
-            graphics.fill(getX() + 2, getY() + 2, getX() + width - 2, getY() + height - 2, ColorConstants.CHECKBOX_CHECK);
+            graphics.fill(getX() + CHECK_INSET, getY() + CHECK_INSET, getX() + width - CHECK_INSET,
+                    getY() + height - CHECK_INSET, ColorConstants.CHECKBOX_CHECK);
         }
     }
 

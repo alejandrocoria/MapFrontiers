@@ -1,10 +1,10 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen.dialog;
 
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
-import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
@@ -36,6 +36,7 @@ public class VisibilityDialog extends PanelDialog {
     private static final Component SAVE_LABEL = Component.translatable("mapfrontiers.save");
     private static final Component ON_LABEL = Component.translatable("options.on");
     private static final Component OFF_LABEL = Component.translatable("options.off");
+    private static final int COLUMN_SPACING = 6;
 
     private final FrontierData.VisibilityData visibilityData;
     @Nullable
@@ -58,19 +59,19 @@ public class VisibilityDialog extends PanelDialog {
 
     @Override
     protected void initScreen() {
-        LinearLayout mainLayout = LinearLayout.vertical().spacing(8);
+        LinearLayout mainLayout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
         mainLayout.defaultCellSetting().alignHorizontallyCenter();
         content.addChild(mainLayout);
 
-        LinearLayout mainColumns = LinearLayout.horizontal().spacing(16);
+        LinearLayout mainColumns = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_LARGE);
         mainLayout.addChild(mainColumns);
 
-        LinearLayout generalColumn = LinearLayout.vertical().spacing(6);
+        LinearLayout generalColumn = LinearLayout.vertical().spacing(COLUMN_SPACING);
         generalColumn.defaultCellSetting().alignHorizontallyCenter();
         mainColumns.addChild(generalColumn);
         generalColumn.addChild(new StringWidget(GENERAL_LABEL.copy().withStyle(Style.EMPTY.withBold(true)), font).setColor(ColorConstants.TEXT));
 
-        GridLayout generalGrid = new GridLayout().spacing(4);
+        GridLayout generalGrid = new GridLayout().spacing(LayoutConstants.SPACING_SMALL);
         generalColumn.addChild(generalGrid);
         int row = 1;
         createWidgets(generalGrid, row++, SHOW_FRONTIER_LABEL, FrontierData.VisibilityData.Visibility.Frontier);
@@ -78,12 +79,12 @@ public class VisibilityDialog extends PanelDialog {
         createWidgets(generalGrid, row++, ANNOUNCE_IN_CHAT_LABEL, FrontierData.VisibilityData.Visibility.AnnounceInChat);
         createWidgets(generalGrid, row++, ANNOUNCE_IN_TITLE_LABEL, FrontierData.VisibilityData.Visibility.AnnounceInTitle);
 
-        LinearLayout fullscreenColumn = LinearLayout.vertical().spacing(6);
+        LinearLayout fullscreenColumn = LinearLayout.vertical().spacing(COLUMN_SPACING);
         fullscreenColumn.defaultCellSetting().alignHorizontallyCenter();
         mainColumns.addChild(fullscreenColumn);
         fullscreenColumn.addChild(new StringWidget(FULLSCREEN_LABEL.copy().withStyle(Style.EMPTY.withBold(true)), font).setColor(ColorConstants.TEXT));
 
-        GridLayout fullscreenGrid = new GridLayout().spacing(4);
+        GridLayout fullscreenGrid = new GridLayout().spacing(LayoutConstants.SPACING_SMALL);
         fullscreenGrid.defaultCellSetting().alignVerticallyMiddle();
         fullscreenColumn.addChild(fullscreenGrid);
         row = 1;
@@ -99,12 +100,12 @@ public class VisibilityDialog extends PanelDialog {
         createWidgets(fullscreenGrid, row++, TOPO_LABEL, FrontierData.VisibilityData.Visibility.FullscreenTopo);
         createWidgets(fullscreenGrid, row++, BIOME_LABEL, FrontierData.VisibilityData.Visibility.FullscreenBiome);
 
-        LinearLayout minimapColumn = LinearLayout.vertical().spacing(6);
+        LinearLayout minimapColumn = LinearLayout.vertical().spacing(COLUMN_SPACING);
         minimapColumn.defaultCellSetting().alignHorizontallyCenter();
         mainColumns.addChild(minimapColumn);
         minimapColumn.addChild(new StringWidget(MINIMAP_LABEL.copy().withStyle(Style.EMPTY.withBold(true)), font).setColor(ColorConstants.TEXT));
 
-        GridLayout minimapGrid = new GridLayout().spacing(4);
+        GridLayout minimapGrid = new GridLayout().spacing(LayoutConstants.SPACING_SMALL);
         minimapGrid.defaultCellSetting().alignVerticallyMiddle();
         minimapColumn.addChild(minimapGrid);
         row = 1;
@@ -120,12 +121,12 @@ public class VisibilityDialog extends PanelDialog {
         createWidgets(minimapGrid, row++, TOPO_LABEL, FrontierData.VisibilityData.Visibility.MinimapTopo);
         createWidgets(minimapGrid, row++, BIOME_LABEL, FrontierData.VisibilityData.Visibility.MinimapBiome);
 
-        LinearLayout webmapColumn = LinearLayout.vertical().spacing(6);
+        LinearLayout webmapColumn = LinearLayout.vertical().spacing(COLUMN_SPACING);
         webmapColumn.defaultCellSetting().alignHorizontallyCenter();
         mainColumns.addChild(webmapColumn);
         webmapColumn.addChild(new StringWidget(WEBMAP_LABEL.copy().withStyle(Style.EMPTY.withBold(true)), font).setColor(ColorConstants.TEXT));
 
-        GridLayout webmapGrid = new GridLayout().spacing(4);
+        GridLayout webmapGrid = new GridLayout().spacing(LayoutConstants.SPACING_SMALL);
         webmapGrid.defaultCellSetting().alignVerticallyMiddle();
         webmapColumn.addChild(webmapGrid);
         row = 1;
@@ -148,7 +149,7 @@ public class VisibilityDialog extends PanelDialog {
     private void createWidgets(GridLayout layout, int row, Component label, FrontierData.VisibilityData.Visibility visibility) {
         layout.addChild(new StringWidget(label, font).setColor(ColorConstants.TEXT), row, 0);
 
-        OptionButton button = new OptionButton(font, 28, (b) -> {
+        OptionButton button = new OptionButton(font, LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH, (b) -> {
             visibilityData.setValue(visibility, b.getSelected() == 0);
         });
         button.addOption(ON_LABEL);

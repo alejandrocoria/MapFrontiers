@@ -13,6 +13,11 @@ import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
 public class ColorPaletteWidget extends AbstractWidgetNoNarration {
+    private static final int COLUMNS = 6;
+    private static final int ROWS = 3;
+    private static final int CELL_SIZE = 23;
+    private static final int CELL_INSET = 1;
+
     private static final int[] PALETTE_COLORS = {
             0xffff0000, 0xffff8000, 0xffffff00, 0xff80ff00, 0xff00ff00, 0xff00ff80,
             0xff00ffff, 0xff0080ff, 0xff0000ff, 0xff8000ff, 0xffff00ff, 0xffff0080,
@@ -27,7 +32,7 @@ public class ColorPaletteWidget extends AbstractWidgetNoNarration {
     private final Consumer<Integer> onPress;
 
     public ColorPaletteWidget(int color, Consumer<Integer> onPress) {
-        super(0, 0, 139, 70, Component.empty());
+        super(0, 0, COLUMNS * CELL_SIZE, ROWS * CELL_SIZE, Component.empty());
         this.color = color;
         this.onPress = onPress;
     }
@@ -43,10 +48,10 @@ public class ColorPaletteWidget extends AbstractWidgetNoNarration {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        double paletteX = (event.x() - getX()) / 23.0;
-        double paletteY = (event.y() - getY()) / 23.0;
-        if (paletteX >= 0.0 && paletteX < 6.0 && paletteY >= 0.0 && paletteY < 3.0) {
-            color = PALETTE_COLORS[(int) paletteX + (int) paletteY * 6];
+        double paletteX = (event.x() - getX()) / CELL_SIZE;
+        double paletteY = (event.y() - getY()) / CELL_SIZE;
+        if (paletteX >= 0.0 && paletteX < COLUMNS && paletteY >= 0.0 && paletteY < ROWS) {
+            color = PALETTE_COLORS[(int) paletteX + (int) paletteY * COLUMNS];
             onPress.accept(color);
         }
 
@@ -60,11 +65,15 @@ public class ColorPaletteWidget extends AbstractWidgetNoNarration {
         int row = 0;
         for (int c : (active ? PALETTE_COLORS : PALETTE_COLORS_INACTIVE)) {
             if (active && c == color) {
-                graphics.fill(getX() + col * 23, getY() + row * 23, getX() + 23 + col * 23, getY() + 23 + row * 23, ColorConstants.WHITE);
+                graphics.fill(getX() + col * CELL_SIZE, getY() + row * CELL_SIZE,
+                        getX() + CELL_SIZE + col * CELL_SIZE, getY() + CELL_SIZE + row * CELL_SIZE,
+                        ColorConstants.WHITE);
             }
-            graphics.fill(getX() + 1 + col * 23, getY() + 1 + row * 23, getX() + 22 + col * 23, getY() + 22 + row * 23, c);
+            graphics.fill(getX() + CELL_INSET + col * CELL_SIZE, getY() + CELL_INSET + row * CELL_SIZE,
+                    getX() + CELL_SIZE - CELL_INSET + col * CELL_SIZE,
+                    getY() + CELL_SIZE - CELL_INSET + row * CELL_SIZE, c);
             ++col;
-            if (col == 6) {
+            if (col == COLUMNS) {
                 col = 0;
                 ++row;
             }

@@ -4,6 +4,7 @@ import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.ChunkShapePresetSelector;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
@@ -71,7 +72,7 @@ public class NewFrontierDialog extends PanelDialog {
 
     @Override
     protected void initScreen() {
-        GridLayout mainLayout = new GridLayout().spacing(8);
+        GridLayout mainLayout = new GridLayout().spacing(LayoutConstants.SPACING_MEDIUM);
         content.addChild(mainLayout);
         LayoutSettings leftColumnSettings = LayoutSettings.defaults().alignHorizontallyRight();
         LayoutSettings rightColumnSettings = LayoutSettings.defaults().alignHorizontallyLeft();

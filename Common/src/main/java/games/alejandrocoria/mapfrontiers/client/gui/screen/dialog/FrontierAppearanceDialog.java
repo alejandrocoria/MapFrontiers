@@ -3,14 +3,13 @@ package games.alejandrocoria.mapfrontiers.client.gui.screen.dialog;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.PreviewFrontiersWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
-import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxDouble;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
-import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.DoubleConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
 import net.minecraft.client.gui.components.Tooltip;
@@ -82,14 +81,14 @@ public class FrontierAppearanceDialog extends PanelDialog {
 
     @Override
     protected void initScreen() {
-        LinearLayout mainLayout = LinearLayout.vertical().spacing(8);
+        LinearLayout mainLayout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
         mainLayout.defaultCellSetting().alignHorizontallyCenter();
         content.addChild(mainLayout);
 
-        LinearLayout columnsLayout = LinearLayout.horizontal().spacing(8);
+        LinearLayout columnsLayout = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_MEDIUM);
         mainLayout.addChild(columnsLayout);
 
-        GridLayout settingsLayout = new GridLayout().spacing(4);
+        GridLayout settingsLayout = new GridLayout().spacing(LayoutConstants.SPACING_SMALL);
         settingsLayout.defaultCellSetting().alignHorizontallyLeft().alignVerticallyMiddle();
         columnsLayout.addChild(settingsLayout);
         int row = 0;

@@ -14,13 +14,15 @@ import java.util.function.DoubleConsumer;
 
 @ParametersAreNonnullByDefault
 public class TextBoxDouble extends EditBox {
+    private static final int DEFAULT_HEIGHT = 13;
+
     private double defaultValue;
     private double min;
     private double max;
     private DoubleConsumer valueChangedCallback;
 
     public TextBoxDouble(double defaultValue, double min, double max, Font font, int width) {
-        super(font, 0, 0, width, 13, Component.empty());
+        super(font, 0, 0, width, DEFAULT_HEIGHT, Component.empty());
         setRange(defaultValue, min, max);
         this.setValue(defaultValue);
     }

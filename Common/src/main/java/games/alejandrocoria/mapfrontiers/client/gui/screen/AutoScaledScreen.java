@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.mixin.GuiGraphicsAccessor;
 import games.alejandrocoria.mapfrontiers.client.mixin.GuiRenderStateAccessor;
@@ -52,12 +53,12 @@ public abstract class AutoScaledScreen extends LayeredScreen {
     public final void init() {
         updateScale(width, height);
 
-        content = LinearLayout.vertical().spacing(10);
+        content = LinearLayout.vertical().spacing(LayoutConstants.SCREEN_CONTENT_SPACING);
         content.defaultCellSetting().alignHorizontallyCenter();
 
         if (bottomButtonsMode != BottomButtonsMode.None) {
             bottomButtons = LinearLayout.horizontal();
-            bottomButtons.spacing(10);
+            bottomButtons.spacing(LayoutConstants.BOTTOM_BUTTON_SPACING);
         } else {
             bottomButtons = null;
         }
@@ -89,7 +90,7 @@ public abstract class AutoScaledScreen extends LayeredScreen {
         if (bottomButtonsMode != BottomButtonsMode.None) {
             bottomButtons.arrangeElements();
             if (bottomButtonsMode == BottomButtonsMode.Floating) {
-                bottomButtons.setPosition((actualWidth - bottomButtons.getWidth()) / 2, actualHeight - 15 - bottomButtons.getHeight() / 2);
+                bottomButtons.setPosition((actualWidth - bottomButtons.getWidth()) / 2, actualHeight - bottomButtons.getHeight() - LayoutConstants.FLOATING_BUTTON_BOTTOM_MARGIN);
             }
         }
     }
@@ -145,7 +146,7 @@ public abstract class AutoScaledScreen extends LayeredScreen {
         }
 
         if (title.getContents() != PlainTextContents.EMPTY) {
-            graphics.centeredText(font, title, this.actualWidth / 2, 11, ColorConstants.WHITE);
+            graphics.centeredText(font, title, this.actualWidth / 2, 12, ColorConstants.WHITE);
         }
 
         renderScaledBackgroundScreen(graphics, mouseX, mouseY, partialTicks);
@@ -219,13 +220,18 @@ public abstract class AutoScaledScreen extends LayeredScreen {
 
     protected void drawCenteredBoxBackground(GuiGraphicsExtractor graphics, int width, int height) {
         int x1 = (actualWidth - width) / 2;
-        int x2 = (actualWidth + width) / 2;
+        int x2 = (actualWidth + width) / 2 - 1;
         int y1 = (actualHeight - height) / 2;
-        int y2 = (actualHeight + height) / 2;
+        int y2 = (actualHeight + height) / 2 - 1;
         graphics.fill(x1, y1, x2, y2, ColorConstants.SCREEN_BG);
         graphics.horizontalLine(x1, x2, y1, ColorConstants.TAB_BORDER);
         graphics.horizontalLine(x1, x2, y2, ColorConstants.TAB_BORDER);
         graphics.verticalLine(x1, y1, y2, ColorConstants.TAB_BORDER);
         graphics.verticalLine(x2, y1, y2, ColorConstants.TAB_BORDER);
+    }
+
+    protected void drawCenteredBoxBackground(GuiGraphicsExtractor graphics) {
+        int padding = LayoutConstants.BOX_PADDING * 2;
+        drawCenteredBoxBackground(graphics, content.getWidth() + padding, content.getHeight() + padding);
     }
 }

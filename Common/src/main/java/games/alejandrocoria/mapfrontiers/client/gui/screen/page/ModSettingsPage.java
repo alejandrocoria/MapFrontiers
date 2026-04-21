@@ -4,6 +4,7 @@ import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.TabbedBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
@@ -107,23 +108,16 @@ public class ModSettingsPage extends PageScreen
     private static final Component UPDATE_SETTINGS_LABEL = Component.translatable("mapfrontiers.update_settings");
     private static final Component SHARE_PERSONAL_FRONTIER_LABEL = Component.translatable("mapfrontiers.share_personal_frontier");
     private static final Component DONE_LABEL = Component.translatable("gui.done");
-    private static final int TABBED_BOX_MARGIN_X = 80;
-    private static final int TABBED_BOX_MARGIN_Y = 64;
-    private static final int SECTION_SPACING_SMALL = 4;
-    private static final int SECTION_SPACING_MEDIUM = 8;
     private static final int DEFAULT_OPTION_WIDTH = 40;
     private static final int DEFAULT_TEXTBOX_WIDTH = 40;
-    private static final int FRONTIER_BUTTON_MIN_WIDTH = 144;
-    private static final int FRONTIER_BUTTON_HORIZONTAL_PADDING = 8;
+    private static final int BUTTON_HORIZONTAL_PADDING = 8;
     private static final int WIDE_BUTTON_EXTRA_WIDTH = 100;
     private static final int WIDE_TEXTBOX_EXTRA_WIDTH = 300;
     private static final int WIDE_LINK_EXTRA_WIDTH = 200;
     private static final int GROUPS_SCROLL_WIDTH = 160;
     private static final int USERS_SCROLL_WIDTH = 258;
     private static final int ACTIONS_SCROLL_WIDTH = 430;
-    private static final int DONE_BUTTON_WIDTH = 140;
     private static final int GROUP_NAME_WIDTH = 140;
-    private static final int NEW_USER_WIDTH = 238;
 
     private final boolean showKeyHint;
 
@@ -207,8 +201,8 @@ public class ModSettingsPage extends PageScreen
     }
 
     private TabbedBox createTabbedBox() {
-        TabbedBox tabs = content.addChild(new TabbedBox(font, actualWidth - TABBED_BOX_MARGIN_X,
-                actualHeight - TABBED_BOX_MARGIN_Y, this::onTabChanged));
+        TabbedBox tabs = content.addChild(new TabbedBox(font, actualWidth - LayoutConstants.PAGE_MARGIN * 2,
+                actualHeight - LayoutConstants.PAGE_MARGIN * 2, this::onTabChanged));
         tabs.addTab(TAB_CREDITS_LABEL, true);
         tabs.addTab(TAB_GENERAL_LABEL, true);
         tabs.addTab(TAB_GROUPS_LABEL, canEditGroups);
@@ -227,7 +221,7 @@ public class ModSettingsPage extends PageScreen
     }
 
     private void buildCreditsTab() {
-        LinearLayout creditsLayout = LinearLayout.vertical().spacing(SECTION_SPACING_SMALL);
+        LinearLayout creditsLayout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         creditsLayout.defaultCellSetting().alignHorizontallyCenter();
         tabbedBox.addChild(creditsLayout, Tab.Credits.ordinal(),
                 LayoutSettings.defaults().alignHorizontallyCenter().alignVerticallyTop());
@@ -250,7 +244,7 @@ public class ModSettingsPage extends PageScreen
     }
 
     private void buildGeneralTab() {
-        LinearLayout generalLayout = LinearLayout.vertical().spacing(SECTION_SPACING_SMALL);
+        LinearLayout generalLayout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         generalLayout.defaultCellSetting().alignHorizontallyCenter();
         tabbedBox.addChild(generalLayout, Tab.General.ordinal(),
                 LayoutSettings.defaults().alignHorizontallyCenter().alignVerticallyTop());
@@ -258,7 +252,7 @@ public class ModSettingsPage extends PageScreen
         generalLayout.addChild(SpacerElement.height(16));
         generalLayout.addChild(new StringWidget(FRONTIERS_LABEL, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
 
-        GridLayout settingsGrid = new GridLayout().spacing(SECTION_SPACING_SMALL);
+        GridLayout settingsGrid = new GridLayout().spacing(LayoutConstants.SPACING_SMALL);
         settingsGrid.defaultCellSetting().alignHorizontallyLeft().alignVerticallyMiddle();
         generalLayout.addChild(settingsGrid);
 
@@ -278,8 +272,8 @@ public class ModSettingsPage extends PageScreen
         row = addIntSettingRow(settingsGrid, row, ClientConfig.PATH_PROXIMITY_ENTER_DISTANCE, DEFAULT_TEXTBOX_WIDTH, 3);
         row = addIntSettingRow(settingsGrid, row, ClientConfig.PATH_PROXIMITY_EXIT_DISTANCE, DEFAULT_TEXTBOX_WIDTH, 3);
 
-        int frontierButtonWidth = ScreenHelper.getPaddedMaxTextWidth(font, FRONTIER_BUTTON_MIN_WIDTH,
-                FRONTIER_BUTTON_HORIZONTAL_PADDING, FRONTIER_APPEARANCE_LABEL, DEFAULT_PATH_STYLE_LABEL,
+        int frontierButtonWidth = ScreenHelper.getPaddedMaxTextWidth(font, LayoutConstants.PAGE_BUTTON_WIDTH,
+                BUTTON_HORIZONTAL_PADDING, FRONTIER_APPEARANCE_LABEL, DEFAULT_PATH_STYLE_LABEL,
                 FORCED_VISIBILITY_LABEL);
 
         buttonFrontierAppearance = createWideSimpleButton(frontierButtonWidth, FRONTIER_APPEARANCE_LABEL,
@@ -298,7 +292,7 @@ public class ModSettingsPage extends PageScreen
     }
 
     private int buildGuiSection(GridLayout settingsGrid, int row) {
-        settingsGrid.addChild(SpacerElement.height(SECTION_SPACING_SMALL), row++, 0);
+        settingsGrid.addChild(SpacerElement.height(LayoutConstants.SPACING_SMALL), row++, 0);
         settingsGrid.addChild(new StringWidget(GUI_LABEL, font).setColor(ColorConstants.TEXT_HIGHLIGHT), row++, 0, 1, 2,
                 LayoutSettings.defaults().alignHorizontallyCenter());
 
@@ -313,28 +307,28 @@ public class ModSettingsPage extends PageScreen
     }
 
     private void buildHudSection(LinearLayout generalLayout, GridLayout settingsGrid, int row) {
-        settingsGrid.addChild(SpacerElement.height(SECTION_SPACING_SMALL), row++, 0);
+        settingsGrid.addChild(SpacerElement.height(LayoutConstants.SPACING_SMALL), row++, 0);
         settingsGrid.addChild(new StringWidget(HUD_LABEL, font).setColor(ColorConstants.TEXT_HIGHLIGHT), row++, 0, 1, 2,
                 LayoutSettings.defaults().alignHorizontallyCenter());
 
         addOptionSettingRow(settingsGrid, row, ClientConfig.HUD_ENABLED, createOnOffOptionButton(ClientConfig.HUD_ENABLED,
                 this::onHudEnabledChanged));
 
-        buttonEditHUD = generalLayout.addChild(createWideSimpleButton(100, EDIT_HUD_LABEL, b -> onEditHUDPressed()));
+        buttonEditHUD = generalLayout.addChild(createWideSimpleButton(LayoutConstants.PAGE_BUTTON_WIDTH, EDIT_HUD_LABEL, b -> onEditHUDPressed()));
     }
 
     private void buildGroupsTab() {
-        LinearLayout groupsLayout = LinearLayout.horizontal().spacing(SECTION_SPACING_SMALL);
+        LinearLayout groupsLayout = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         groupsLayout.defaultCellSetting().alignHorizontallyLeft();
         tabbedBox.addChild(groupsLayout, Tab.Groups.ordinal());
 
-        LinearLayout groupsColumn = LinearLayout.vertical().spacing(SECTION_SPACING_SMALL);
+        LinearLayout groupsColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         groupsColumn.defaultCellSetting().alignHorizontallyCenter();
         groupsLayout.addChild(groupsColumn);
         buildGroupsList(groupsColumn);
         buildNewGroupControls(groupsColumn);
 
-        LinearLayout usersColumn = LinearLayout.vertical().spacing(SECTION_SPACING_SMALL);
+        LinearLayout usersColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         usersColumn.defaultCellSetting().alignHorizontallyLeft();
         groupsLayout.addChild(usersColumn);
         buildUsersPanel(usersColumn);
@@ -351,7 +345,7 @@ public class ModSettingsPage extends PageScreen
     }
 
     private void buildNewGroupControls(LinearLayout groupsColumn) {
-        LinearLayout newGroupLayout = LinearLayout.horizontal().spacing(SECTION_SPACING_SMALL);
+        LinearLayout newGroupLayout = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         groupsColumn.addChild(newGroupLayout);
 
         textNewGroupName = newGroupLayout.addChild(new TextBox(font, GROUP_NAME_WIDTH, I18n.get("mapfrontiers.new_group_name")));
@@ -373,10 +367,10 @@ public class ModSettingsPage extends PageScreen
     }
 
     private void buildNewUserControls(LinearLayout usersColumn) {
-        LinearLayout newUserLayout = LinearLayout.horizontal().spacing(SECTION_SPACING_SMALL);
+        LinearLayout newUserLayout = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         usersColumn.addChild(newUserLayout);
 
-        textNewUser = newUserLayout.addChild(new TextBoxUser(minecraft, font, NEW_USER_WIDTH, I18n.get("mapfrontiers.new_user")));
+        textNewUser = newUserLayout.addChild(new TextBoxUser(minecraft, font, LayoutConstants.USER_TEXTBOX_WIDTH, I18n.get("mapfrontiers.new_user")));
         textNewUser.setMaxLength(38);
         textNewUser.setSubmitCallback(value -> onNewUserPressed());
 
@@ -384,7 +378,7 @@ public class ModSettingsPage extends PageScreen
     }
 
     private void buildActionsTab() {
-        LinearLayout actionsLayout = LinearLayout.vertical().spacing(SECTION_SPACING_MEDIUM);
+        LinearLayout actionsLayout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
         actionsLayout.defaultCellSetting().alignHorizontallyCenter();
         tabbedBox.addChild(actionsLayout, Tab.Actions.ordinal());
 
@@ -401,7 +395,7 @@ public class ModSettingsPage extends PageScreen
     }
 
     private void buildBottomButtons() {
-        addBottomButton(new SimpleButton(font, DONE_BUTTON_WIDTH, DONE_LABEL, b -> onClose()));
+        addBottomButton(new SimpleButton(font, LayoutConstants.PAGE_BUTTON_WIDTH, DONE_LABEL, b -> onClose()));
     }
 
     private LinkButton createExternalLinkButton(Component label, String url) {
@@ -632,7 +626,7 @@ public class ModSettingsPage extends PageScreen
 
     @Override
     public void repositionElements() {
-        tabbedBox.setSize(actualWidth - TABBED_BOX_MARGIN_X, actualHeight - TABBED_BOX_MARGIN_Y);
+        tabbedBox.setSize(actualWidth - LayoutConstants.PAGE_MARGIN * 2, actualHeight - LayoutConstants.PAGE_MARGIN * 2);
         groups.setHeight(actualHeight - 120);
         users.setHeight(actualHeight - 160);
         groupsActions.setHeight(actualHeight - 128);
