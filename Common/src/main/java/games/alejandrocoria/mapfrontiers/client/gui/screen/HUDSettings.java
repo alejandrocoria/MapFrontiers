@@ -11,6 +11,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt
 import games.alejandrocoria.mapfrontiers.client.gui.hud.HUD;
 import games.alejandrocoria.mapfrontiers.client.gui.hud.HUDPlacementHelper;
 import games.alejandrocoria.mapfrontiers.client.gui.hud.HUDWidget;
+import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
 import games.alejandrocoria.mapfrontiers.platform.Services;
@@ -24,6 +25,7 @@ import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -73,7 +75,7 @@ public class HUDSettings extends AutoScaledScreen {
     }
 
     @Override
-    public void initScreen() {
+    protected void initScreen() {
         postInitialConfigUpdate();
         createHUDPreview();
 
@@ -102,7 +104,7 @@ public class HUDSettings extends AutoScaledScreen {
     }
 
     @Override
-    public void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+    protected void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         if (Services.JOURNEYMAP.isMinimapEnabled()) {
             Services.JOURNEYMAP.drawMinimapPreview(graphics);
         }
@@ -182,21 +184,20 @@ public class HUDSettings extends AutoScaledScreen {
         return button;
     }
 
-    private void addIntSettingRow(GridLayout mainLayout, int row, IntConfigEntry entry, int width, int maxLength,
-                                  Runnable onChanged) {
+    private void addIntSettingRow(GridLayout mainLayout, int row, IntConfigEntry entry, int width, int maxLength, Runnable onChanged) {
         mainLayout.addChild(createConfigLabel(entry), row, 0);
         TextBoxInt textBox = createIntConfigTextBox(entry, width, maxLength, onChanged);
         mainLayout.addChild(textBox, row, 1);
     }
 
-    private StringWidget createConfigLabel(Component label, Tooltip tooltip) {
+    private StringWidget createConfigLabel(Component label,@Nullable Tooltip tooltip) {
         StringWidget stringWidget = new StringWidget(label, font).setColor(ColorConstants.TEXT);
         stringWidget.setTooltip(tooltip);
         return stringWidget;
     }
 
     private StringWidget createConfigLabel(ConfigEntry<?, ?> entry) {
-        return createConfigLabel(entry.translatedName(), tooltip(entry));
+        return createConfigLabel(entry.translatedName(), ScreenHelper.tooltip(entry));
     }
 
     private OptionButton createHUDSlotButton(int selectedValue) {
@@ -413,10 +414,5 @@ public class HUDSettings extends AutoScaledScreen {
         buttonAnchor.setSelected(ClientConfig.HUD_ANCHOR.get().ordinal());
         textPositionX.setValue(String.valueOf(ClientConfig.HUD_X_POSITION.get()));
         textPositionY.setValue(String.valueOf(ClientConfig.HUD_Y_POSITION.get()));
-    }
-
-    private static Tooltip tooltip(ConfigEntry<?, ?> entry) {
-        Component component = entry.tooltip();
-        return component == null ? null : Tooltip.create(component);
     }
 }

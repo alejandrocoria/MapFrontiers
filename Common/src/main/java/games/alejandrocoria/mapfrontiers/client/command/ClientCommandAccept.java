@@ -6,7 +6,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import games.alejandrocoria.mapfrontiers.client.ChatFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.gui.dialog.AcceptFrontierCopyDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.AcceptFrontierCopyDialog;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandSourceStack;

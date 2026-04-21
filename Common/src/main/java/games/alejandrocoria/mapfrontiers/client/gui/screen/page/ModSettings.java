@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.client.gui.screen;
+package games.alejandrocoria.mapfrontiers.client.gui.screen.page;
 
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
@@ -18,11 +18,12 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.UserElement
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
-import games.alejandrocoria.mapfrontiers.client.gui.dialog.ConfirmationDialog;
-import games.alejandrocoria.mapfrontiers.client.gui.dialog.DeleteConfirmationDialog;
-import games.alejandrocoria.mapfrontiers.client.gui.dialog.FrontierAppearanceDialog;
-import games.alejandrocoria.mapfrontiers.client.gui.dialog.PathStyleDialog;
-import games.alejandrocoria.mapfrontiers.client.gui.dialog.VisibilityDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.HUDSettings;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.FrontierAppearanceDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.PathStyleDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.VisibilityDialog;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.config.BooleanConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
@@ -40,7 +41,6 @@ import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
-import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
@@ -63,7 +63,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
-public class ModSettings extends AutoScaledScreen {
+public class ModSettings extends PageScreen {
     public enum Tab {
         Credits, General, Groups, Actions
     }
@@ -175,7 +175,7 @@ public class ModSettings extends AutoScaledScreen {
     }
 
     @Override
-    public void initScreen() {
+    protected void initScreen() {
         resolveInitialState();
         tabbedBox = createTabbedBox();
 
@@ -400,7 +400,7 @@ public class ModSettings extends AutoScaledScreen {
     }
 
     private void buildBottomButtons() {
-        bottomButtons.addChild(new SimpleButton(font, DONE_BUTTON_WIDTH, DONE_LABEL, b -> onClose()));
+        addBottomButton(new SimpleButton(font, DONE_BUTTON_WIDTH, DONE_LABEL, b -> onClose()));
     }
 
     private LinkButton createExternalLinkButton(Component label, String url) {
@@ -483,7 +483,7 @@ public class ModSettings extends AutoScaledScreen {
 
     private StringWidget createConfigLabel(ConfigEntry<?, ?> entry) {
         StringWidget label = new StringWidget(entry.translatedName(), font).setColor(ColorConstants.TEXT);
-        label.setTooltip(tooltip(entry));
+        label.setTooltip(ScreenHelper.tooltip(entry));
         return label;
     }
 
@@ -698,7 +698,7 @@ public class ModSettings extends AutoScaledScreen {
     }
 
     @Override
-    public void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+    protected void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         tabbedBox.renderBackground(graphics, mouseX, mouseY, partialTicks);
 
         if (tabSelected == Tab.Credits || tabSelected == Tab.General) {
@@ -1026,10 +1026,5 @@ public class ModSettings extends AutoScaledScreen {
         }
 
         return false;
-    }
-
-    private static Tooltip tooltip(ConfigEntry<?, ?> entry) {
-        Component component = entry.tooltip();
-        return component == null ? null : Tooltip.create(component);
     }
 }

@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.client.gui.screen;
+package games.alejandrocoria.mapfrontiers.client.gui.screen.dialog;
 
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
@@ -8,7 +8,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.ChunkShapePresetSelector;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.PathShapePresetSelector;
-import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.VertexShapePresetSelector;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
@@ -17,7 +16,6 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.util.UIState;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.core.BlockPos;
@@ -32,8 +30,7 @@ import java.util.List;
 import java.util.Set;
 
 @ParametersAreNonnullByDefault
-public class NewFrontier extends AutoScaledScreen {
-    private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_new_frontier");
+public class NewFrontierDialog extends PanelDialog {
     private static final Component FRONTIER_TYPE_LABEL = Component.translatable("mapfrontiers.frontier_type");
     private static final Component FRONTIER_MODE_LABEL = Component.translatable("mapfrontiers.frontier_mode");
     private static final Component AFTER_CREATING_LABEL = Component.translatable("mapfrontiers.after_creating");
@@ -44,9 +41,9 @@ public class NewFrontier extends AutoScaledScreen {
     private static final String POINTS_KEY = "mapfrontiers.points";
     private static final String CHUNKS_KEY = "mapfrontiers.chunks";
     private static final Component CREATE_LABEL = Component.translatable("mapfrontiers.create");
-    private static final Component CANCEL_LABEL = Component.translatable("gui.cancel");
 
     private final IClientAPI jmAPI;
+    private final BlockPos centerPos;
 
     private OptionButton buttonFrontierType;
     private OptionButton buttonFrontierMode;
@@ -60,21 +57,20 @@ public class NewFrontier extends AutoScaledScreen {
     private StringWidget labelSize;
     private StringWidget labelSizeInfo;
     private TextBoxInt textSize;
-    private BlockPos centerPos;
 
-    public NewFrontier(IClientAPI jmAPI, BlockPos centerPos) {
-        super(TITLE_LABEL, 344, 295);
+    public NewFrontierDialog(IClientAPI jmAPI, BlockPos centerPos) {
+        super(344, 295);
         this.jmAPI = jmAPI;
         this.centerPos = centerPos;
 
         MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> {
             onClose();
-            new NewFrontier(jmAPI, centerPos).display();
+            new NewFrontierDialog(jmAPI, centerPos).display();
         });
     }
 
     @Override
-    public void initScreen() {
+    protected void initScreen() {
         GridLayout mainLayout = new GridLayout().spacing(8);
         content.addChild(mainLayout);
         LayoutSettings leftColumnSettings = LayoutSettings.defaults().alignHorizontallyRight();
@@ -151,7 +147,7 @@ public class NewFrontier extends AutoScaledScreen {
 
         labelSizeInfo = mainLayout.addChild(new StringWidget(SIZE_INFO_LABEL, font).setColor(ColorConstants.WHITE), 5, 0, 1, 2, centerColumnSettings);
 
-        SimpleButton createButton = bottomButtons.addChild(new SimpleButton(font, 100, CREATE_LABEL, (b) -> {
+        addConfirmButton(CREATE_LABEL, (b) -> {
             boolean personal = buttonFrontierType.getSelected() == 1;
             closeAndReturnToFullscreenMap();
             UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
@@ -161,17 +157,10 @@ public class NewFrontier extends AutoScaledScreen {
                 MapFrontiersClient.getOperationService().createNewFrontier(personal, uiState.dimension,
                         calculateVertices(), calculateChunks(), calculatePoints(), pathStyle);
             }
-        }));
-        createButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM, ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM_HIGHLIGHT);
-
-        bottomButtons.addChild(new SimpleButton(font, 100, CANCEL_LABEL, b -> onClose()));
+        });
+        addCancelButton();
 
         shapePresetUpdated();
-    }
-
-    @Override
-    public void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
-        drawCenteredBoxBackground(graphics, 344, 234);
     }
 
     @Override

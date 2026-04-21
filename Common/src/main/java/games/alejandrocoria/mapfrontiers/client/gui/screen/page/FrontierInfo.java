@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.client.gui.screen;
+package games.alejandrocoria.mapfrontiers.client.gui.screen.page;
 
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
@@ -15,10 +15,10 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButto
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
-import games.alejandrocoria.mapfrontiers.client.gui.dialog.ConfirmationDialog;
-import games.alejandrocoria.mapfrontiers.client.gui.dialog.DeleteConfirmationDialog;
-import games.alejandrocoria.mapfrontiers.client.gui.dialog.PathStyleDialog;
-import games.alejandrocoria.mapfrontiers.client.gui.dialog.VisibilityDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.PathStyleDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.VisibilityDialog;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
@@ -59,7 +59,7 @@ import java.util.function.Consumer;
 import java.util.function.IntUnaryOperator;
 
 @ParametersAreNonnullByDefault
-public class FrontierInfo extends AutoScaledScreen {
+public class FrontierInfo extends PageScreen {
     static final DateFormat DATE_FORMAT = new SimpleDateFormat();
     private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_info");
     private static final Component ASSIGN_BANNER_LABEL = Component.translatable("mapfrontiers.assign_banner");
@@ -169,6 +169,8 @@ public class FrontierInfo extends AutoScaledScreen {
     private final Stack<FrontierData> undoStack = new Stack<>();
     private final Stack<FrontierData> redoStack = new Stack<>();
 
+    private boolean saveChangesOnClose = true;
+
     public FrontierInfo(IClientAPI jmAPI, FrontierOverlay frontier) {
         super(TITLE_LABEL, 636, 306);
         this.jmAPI = jmAPI;
@@ -178,6 +180,7 @@ public class FrontierInfo extends AutoScaledScreen {
 
         MapFrontiersClient.getFrontierEvents().subscribeDeleted(this, frontierID -> {
             if (frontier.getId().equals(frontierID)) {
+                saveChangesOnClose = false;
                 onClose();
             }
         });
@@ -205,7 +208,7 @@ public class FrontierInfo extends AutoScaledScreen {
     }
 
     @Override
-    public void initScreen() {
+    protected void initScreen() {
         GridLayout mainLayout = createMainLayout();
 
         buildBannerSection(mainLayout);
@@ -435,17 +438,17 @@ public class FrontierInfo extends AutoScaledScreen {
     }
 
     private void buildBottomButtons() {
-        buttonSelect = bottomButtons.addChild(new SimpleButton(font, SECTION_WIDTH, SELECT_IN_MAP_LABEL, b -> onSelectInMapPressed()));
-        buttonShareSettings = bottomButtons.addChild(new SimpleButton(font, SECTION_WIDTH, SHARE_SETTINGS_LABEL, b -> onSharePressed()));
-        buttonDelete = bottomButtons.addChild(new SimpleButton(font, SECTION_WIDTH, DELETE_LABEL, b -> onDeletePressed()));
+        buttonSelect = addBottomButton(new SimpleButton(font, SECTION_WIDTH, SELECT_IN_MAP_LABEL, b -> onSelectInMapPressed()));
+        buttonShareSettings = addBottomButton(new SimpleButton(font, SECTION_WIDTH, SHARE_SETTINGS_LABEL, b -> onSharePressed()));
+        buttonDelete = addBottomButton(new SimpleButton(font, SECTION_WIDTH, DELETE_LABEL, b -> onDeletePressed()));
         buttonDelete.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
-        buttonDone = bottomButtons.addChild(new SimpleButton(font, SECTION_WIDTH, DONE_LABEL, b -> onClose()));
+        buttonDone = addBottomButton(new SimpleButton(font, SECTION_WIDTH, DONE_LABEL, b -> onClose()));
     }
 
     private TextBoxInt createRgbTextBox(IntUnaryOperator colorComposer) {
         TextBoxInt textBox = new TextBoxInt(0, 0, 255, font, RGB_TEXTBOX_WIDTH);
         textBox.setHeight(DEFAULT_TEXTBOX_HEIGHT);
-        textBox.setValueChangedCallback(value -> applyColorChange(colorComposer.applyAsInt(value), true));
+        textBox.setValueChangedCallback(value -> applyColorChange(colorComposer.applyAsInt(value)));
         return textBox;
     }
 
@@ -591,7 +594,7 @@ public class FrontierInfo extends AutoScaledScreen {
     }
 
     private void onRandomColorPressed() {
-        applyColorChange(ColorHelper.getRandomColor(), true);
+        applyColorChange(ColorHelper.getRandomColor());
     }
 
     private void onCopyPressed() {
@@ -660,12 +663,7 @@ public class FrontierInfo extends AutoScaledScreen {
     }
 
     @Override
-    public void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
-        drawCenteredBoxBackground(graphics, content.getWidth() + 20, content.getHeight() + 20);
-    }
-
-    @Override
-    public void renderScaledScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+    protected void renderScaledScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         if (frontier.getBannerRenderer().hasBanner()) {
             frontier.getBannerRenderer().renderBanner(graphics, buttonBanner.getX() + buttonBanner.getWidth() / 2, sliderBannerRotation.getY() + 25, 3);
         }
@@ -699,23 +697,28 @@ public class FrontierInfo extends AutoScaledScreen {
 
     @Override
     public void onClose() {
-        sendCurrentInfoChangesToServer();
-        MapFrontiersClient.getFrontierEvents().unsubscribe(this);
-        MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
-        ClientGlobalEvents.unsubscribeAllEvents(this);
+        if (saveChangesOnClose) {
+            sendCurrentInfoChangesToServer();
+        }
+        unsubscribeEvents();
         super.onClose();
     }
 
     private void deleteFrontier() {
+        saveChangesOnClose = false;
         // Unsubscribing to not receive this same event.
-        MapFrontiersClient.getFrontierEvents().unsubscribe(this);
-        MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
-        ClientGlobalEvents.unsubscribeAllEvents(this);
+        unsubscribeEvents();
         MapFrontiersClient.getOperationService().deleteFrontier(frontier);
         onClose();
     }
 
-    private void applyColorChange(int color, boolean sendToServer) {
+    private void unsubscribeEvents() {
+        MapFrontiersClient.getFrontierEvents().unsubscribe(this);
+        MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
+        ClientGlobalEvents.unsubscribeAllEvents(this);
+    }
+
+    private void applyColorChange(int color) {
         if (color == frontier.getColor()) {
             return;
         }
@@ -724,9 +727,7 @@ public class FrontierInfo extends AutoScaledScreen {
         colorPicker.setColor(color);
         syncColorWidgets(color);
 
-        if (sendToServer) {
-            sendColorChangeToServer();
-        }
+        sendColorChangeToServer();
     }
 
     private void syncColorWidgets(int color) {

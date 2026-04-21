@@ -1,13 +1,16 @@
 package games.alejandrocoria.mapfrontiers.client.util;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
 import org.lwjgl.glfw.GLFW;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
@@ -49,6 +52,12 @@ public final class ScreenHelper {
         }
 
         return width;
+    }
+
+    @Nullable
+    public static Tooltip tooltip(ConfigEntry<?, ?> entry) {
+        Component component = entry.tooltipComponent();
+        return component == null ? null : Tooltip.create(component);
     }
 
     private ScreenHelper() {

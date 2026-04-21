@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.client.gui.screen;
+package games.alejandrocoria.mapfrontiers.client.gui.screen.page;
 
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
@@ -11,8 +11,8 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox.ScrollElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.UserSharedElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
-import games.alejandrocoria.mapfrontiers.client.gui.dialog.ConfirmationDialog;
-import games.alejandrocoria.mapfrontiers.client.gui.dialog.DeleteConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -30,7 +30,7 @@ import java.util.Date;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class ShareSettings extends AutoScaledScreen {
+public class ShareSettings extends PageScreen {
     private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_share_settings");
     private static final Component UPDATE_FRONTIER_LABEL = Component.translatable("mapfrontiers.update_frontier");
     private static final Component UPDATE_SETTINGS_LABEL = Component.translatable("mapfrontiers.update_settings");
@@ -73,9 +73,10 @@ public class ShareSettings extends AutoScaledScreen {
     }
 
     @Override
-    public void initScreen() {
+    protected void initScreen() {
         if (!MapFrontiersClient.isModOnServer()) {
             onClose();
+            return;
         }
 
         LinearLayout mainLayout = LinearLayout.vertical().spacing(8);
@@ -121,7 +122,7 @@ public class ShareSettings extends AutoScaledScreen {
         buttonNewUser.visible = false;
         newUserLayout.addChild(buttonNewUser);
 
-        bottomButtons.addChild(new SimpleButton(font, 140, DONE_LABEL, (b) -> onClose()));
+        addBottomButton(new SimpleButton(font, 140, DONE_LABEL, (b) -> onClose()));
 
         updateCanUpdate();
         updateButtonsVisibility();
@@ -179,11 +180,6 @@ public class ShareSettings extends AutoScaledScreen {
         super.repositionElements();
         updateFrontier.setX(users.getX() + 250 - updateFrontier.getWidth() / 2);
         updateSettings.setX(users.getX() + 310 - updateSettings.getWidth() / 2);
-    }
-
-    @Override
-    public void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
-        drawCenteredBoxBackground(graphics, content.getWidth() + 20, content.getHeight() + 20);
     }
 
     @Override

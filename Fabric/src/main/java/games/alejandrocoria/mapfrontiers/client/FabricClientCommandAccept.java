@@ -4,7 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.gui.dialog.AcceptFrontierCopyDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.AcceptFrontierCopyDialog;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;

@@ -5,11 +5,11 @@ import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.gui.dialog.ConfirmationDialog;
-import games.alejandrocoria.mapfrontiers.client.gui.dialog.DeleteConfirmationDialog;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.FrontierInfo;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.FrontierList;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.NewFrontier;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.page.FrontierInfo;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.page.FrontierList;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.NewFrontierDialog;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
@@ -279,7 +279,7 @@ public class FullscreenMap {
             frontierHighlighted = null;
         }
 
-        new NewFrontier(jmAPI, centerPos).display();
+        new NewFrontierDialog(jmAPI, centerPos).display();
 
         updateButtons();
     }
