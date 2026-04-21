@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.client.gui.screen;
+package games.alejandrocoria.mapfrontiers.client.gui.screen.page;
 
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
@@ -14,8 +14,9 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.RadioListEl
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox.ScrollElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
-import games.alejandrocoria.mapfrontiers.client.gui.dialog.ConfirmationDialog;
-import games.alejandrocoria.mapfrontiers.client.gui.dialog.DeleteConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.NewFrontierDialog;
 import games.alejandrocoria.mapfrontiers.common.config.EnumConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
@@ -40,7 +41,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class FrontierList extends AutoScaledScreen {
+public class FrontierList extends PageScreen {
     private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_frontiers");
     private static final Component RESET_FILTERS_LABEL = Component.translatable("mapfrontiers.reset_filters");
     private static final Component FILTER_TYPE_LABEL = Component.translatable("mapfrontiers.filter_type");
@@ -98,7 +99,7 @@ public class FrontierList extends AutoScaledScreen {
     }
 
     @Override
-    public void initScreen() {
+    protected void initScreen() {
         GridLayout mainLayout = createMainLayout();
 
         buildToolbar(mainLayout);
@@ -121,7 +122,7 @@ public class FrontierList extends AutoScaledScreen {
     }
 
     @Override
-    public void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    protected void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         drawCenteredBoxBackground(graphics, actualWidth - 60, actualHeight - 60);
     }
 
@@ -226,12 +227,12 @@ public class FrontierList extends AutoScaledScreen {
     }
 
     private void buildBottomButtons() {
-        buttonCreate = bottomButtons.addChild(createCreateButton());
-        buttonInfo = bottomButtons.addChild(createInfoButton());
-        buttonDelete = bottomButtons.addChild(createDeleteButton());
-        buttonVisible = bottomButtons.addChild(createVisibleButton());
-        buttonSettings = bottomButtons.addChild(createSettingsButton());
-        bottomButtons.addChild(createDoneButton());
+        buttonCreate = addBottomButton(createCreateButton());
+        buttonInfo = addBottomButton(createInfoButton());
+        buttonDelete = addBottomButton(createDeleteButton());
+        buttonVisible = addBottomButton(createVisibleButton());
+        buttonSettings = addBottomButton(createSettingsButton());
+        addBottomButton(createDoneButton());
     }
 
     private SimpleButton createResetFiltersButton() {
@@ -328,7 +329,7 @@ public class FrontierList extends AutoScaledScreen {
 
     private void onCreatePressed() {
         if (minecraft.player != null) {
-            new NewFrontier(jmAPI, minecraft.player.blockPosition()).display();
+            new NewFrontierDialog(jmAPI, minecraft.player.blockPosition()).display();
         }
     }
 

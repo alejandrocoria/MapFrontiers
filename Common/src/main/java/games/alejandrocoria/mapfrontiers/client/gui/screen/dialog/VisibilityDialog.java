@@ -1,13 +1,11 @@
-package games.alejandrocoria.mapfrontiers.client.gui.dialog;
+package games.alejandrocoria.mapfrontiers.client.gui.screen.dialog;
 
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.AutoScaledScreen;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
@@ -19,7 +17,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.function.BiConsumer;
 
 @ParametersAreNonnullByDefault
-public class VisibilityDialog extends AutoScaledScreen {
+public class VisibilityDialog extends PanelDialog {
     private static final Component GENERAL_LABEL = Component.translatable("mapfrontiers.general");
     private static final Component SHOW_FRONTIER_LABEL = Component.translatable("mapfrontiers.show_frontier");
     private static final Component ANNOUNCE_IN_CHAT_LABEL = Component.translatable("mapfrontiers.announce_in_chat");
@@ -36,7 +34,6 @@ public class VisibilityDialog extends AutoScaledScreen {
     private static final Component TOPO_LABEL = Component.translatable("mapfrontiers.topo");
     private static final Component BIOME_LABEL = Component.translatable("mapfrontiers.biome");
     private static final Component SAVE_LABEL = Component.translatable("mapfrontiers.save");
-    private static final Component CANCEL_LABEL = Component.translatable("gui.cancel");
     private static final Component ON_LABEL = Component.translatable("options.on");
     private static final Component OFF_LABEL = Component.translatable("options.off");
 
@@ -44,18 +41,16 @@ public class VisibilityDialog extends AutoScaledScreen {
     @Nullable
     private final FrontierData.VisibilityData visibilityMask;
     private final BiConsumer<FrontierData.VisibilityData, FrontierData.VisibilityData> saveCallback;
-    protected SimpleButton saveButton;
-    protected SimpleButton cancelButton;
 
     public VisibilityDialog(FrontierData.VisibilityData visibilityData, BiConsumer<FrontierData.VisibilityData, FrontierData.VisibilityData> saveCallback) {
-        super(Component.empty(), 554, 191);
+        super(554, 191);
         this.visibilityData = new FrontierData.VisibilityData(visibilityData);
         this.visibilityMask = null;
         this.saveCallback = saveCallback;
     }
 
     public VisibilityDialog(FrontierData.VisibilityData visibilityData, FrontierData.VisibilityData visibilityDataMask, BiConsumer<FrontierData.VisibilityData, FrontierData.VisibilityData> saveCallback) {
-        super(Component.empty(), 554, 191);
+        super(554, 191);
         this.visibilityData = new FrontierData.VisibilityData(visibilityData);
         this.visibilityMask = new FrontierData.VisibilityData(visibilityDataMask);
         this.saveCallback = saveCallback;
@@ -146,11 +141,8 @@ public class VisibilityDialog extends AutoScaledScreen {
         createWidgets(webmapGrid, row++, TOPO_LABEL, FrontierData.VisibilityData.Visibility.WebmapTopo);
         createWidgets(webmapGrid, row++, BIOME_LABEL, FrontierData.VisibilityData.Visibility.WebmapBiome);
 
-        LinearLayout buttons = LinearLayout.horizontal().spacing(7);
-        saveButton = buttons.addChild(new SimpleButton(font, 100, SAVE_LABEL, (b) -> saveAndClose()));
-        saveButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM, ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM_HIGHLIGHT);
-        cancelButton = buttons.addChild(new SimpleButton(font, 100, CANCEL_LABEL, (b) -> onClose()));
-        mainLayout.addChild(buttons);
+        addConfirmButton(SAVE_LABEL, (b) -> saveAndClose());
+        addCancelButton();
     }
 
     private void createWidgets(GridLayout layout, int row, Component label, FrontierData.VisibilityData.Visibility visibility) {
@@ -172,11 +164,6 @@ public class VisibilityDialog extends AutoScaledScreen {
             layout.addChild(checkBox, row, 1);
             button.active = checkBox.isChecked();
         }
-    }
-
-    @Override
-    public void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        drawCenteredBoxBackground(graphics, content.getWidth() + 20, content.getHeight() + 20);
     }
 
     private void saveAndClose() {

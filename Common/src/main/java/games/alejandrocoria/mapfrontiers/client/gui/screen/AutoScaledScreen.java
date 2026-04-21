@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.mixin.GuiGraphicsAccessor;
 import games.alejandrocoria.mapfrontiers.client.mixin.GuiRenderStateAccessor;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
@@ -20,37 +21,63 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public abstract class AutoScaledScreen extends LayeredScreen {
+    public enum BottomButtonsMode {
+        None,
+        Floating,
+        Integrated
+    }
+
     protected float scaleFactor = 1.f;
     private final int minWidth;
     private final int minHeight;
+    private final BottomButtonsMode bottomButtonsMode;
     protected int actualWidth;
     protected int actualHeight;
 
     protected LinearLayout content;
-    protected LinearLayout bottomButtons;
+    private LinearLayout bottomButtons;
 
     public AutoScaledScreen(Component title) {
-        this(title, 0, 0);
+        this(title, 0, 0, BottomButtonsMode.None);
     }
 
-    public AutoScaledScreen(Component title, int minWidth, int minHeight) {
+    public AutoScaledScreen(Component title, int minWidth, int minHeight, BottomButtonsMode bottomButtonsMode) {
         super(title);
         this.minWidth = minWidth;
         this.minHeight = minHeight;
+        this.bottomButtonsMode = bottomButtonsMode;
     }
 
     @Override
     public final void init() {
         updateScale(width, height);
 
-        content = LinearLayout.vertical();
-        bottomButtons = LinearLayout.horizontal();
+        content = LinearLayout.vertical().spacing(10);
+        content.defaultCellSetting().alignHorizontallyCenter();
+
+        if (bottomButtonsMode != BottomButtonsMode.None) {
+            bottomButtons = LinearLayout.horizontal();
+            bottomButtons.spacing(10);
+        } else {
+            bottomButtons = null;
+        }
+
         initScreen();
+
+        if (bottomButtonsMode == BottomButtonsMode.Integrated) {
+            content.addChild(bottomButtons);
+        }
+
         content.visitWidgets(this::addRenderableWidget);
         content.visitWidgets((w) -> w.setTabOrderGroup(0));
-        bottomButtons.visitWidgets(this::addRenderableWidget);
-        bottomButtons.visitWidgets((w) -> w.setTabOrderGroup(1));
-        bottomButtons.spacing(7);
+
+        if (bottomButtonsMode == BottomButtonsMode.Floating) {
+            bottomButtons.visitWidgets(this::addRenderableWidget);
+        }
+
+        if (bottomButtonsMode != BottomButtonsMode.None) {
+            bottomButtons.visitWidgets((w) -> w.setTabOrderGroup(1));
+        }
 
         repositionElements();
     }
@@ -59,8 +86,12 @@ public abstract class AutoScaledScreen extends LayeredScreen {
     public void repositionElements() {
         content.arrangeElements();
         content.setPosition((actualWidth - content.getWidth()) / 2, (actualHeight - content.getHeight()) / 2);
-        bottomButtons.arrangeElements();
-        bottomButtons.setPosition((actualWidth - bottomButtons.getWidth()) / 2, actualHeight - 15 - bottomButtons.getHeight() / 2);
+        if (bottomButtonsMode != BottomButtonsMode.None) {
+            bottomButtons.arrangeElements();
+            if (bottomButtonsMode == BottomButtonsMode.Floating) {
+                bottomButtons.setPosition((actualWidth - bottomButtons.getWidth()) / 2, actualHeight - 15 - bottomButtons.getHeight() / 2);
+            }
+        }
     }
 
     @Override
@@ -82,6 +113,14 @@ public abstract class AutoScaledScreen extends LayeredScreen {
     protected void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {}
 
     protected void renderScaledScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {}
+
+    protected SimpleButton addBottomButton(SimpleButton child) {
+        if (bottomButtons == null) {
+            throw new IllegalStateException(getClass().getSimpleName() + " was created with BottomButtonsMode.None");
+        }
+
+        return bottomButtons.addChild(child);
+    }
 
     @Override
     protected final void renderPopupScreenBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {

@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.ModSettings;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.page.ModSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.server.settings.ServerSettingsOperationResult;
 import net.minecraft.client.Minecraft;

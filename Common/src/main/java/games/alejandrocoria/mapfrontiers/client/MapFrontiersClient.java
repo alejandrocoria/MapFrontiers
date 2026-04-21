@@ -12,7 +12,7 @@ import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.hud.HUD;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.ModSettings;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.page.ModSettings;
 import games.alejandrocoria.mapfrontiers.client.settings.ClientSettingsProfileEvents;
 import games.alejandrocoria.mapfrontiers.common.api.MapFrontiersApiLogAdapter;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;

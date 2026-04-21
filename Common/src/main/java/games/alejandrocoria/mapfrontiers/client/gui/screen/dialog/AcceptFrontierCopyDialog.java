@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.client.gui.dialog;
+package games.alejandrocoria.mapfrontiers.client.gui.screen.dialog;
 
 import games.alejandrocoria.mapfrontiers.client.ChatFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;

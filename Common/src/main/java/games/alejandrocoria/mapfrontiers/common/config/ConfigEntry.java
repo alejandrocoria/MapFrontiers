@@ -124,7 +124,7 @@ public abstract class ConfigEntry<T, SELF extends ConfigEntry<T, SELF>> {
     }
 
     @Nullable
-    public final Component tooltip() {
+    public final Component tooltipComponent() {
         if (translationKey == null) {
             return null;
         }

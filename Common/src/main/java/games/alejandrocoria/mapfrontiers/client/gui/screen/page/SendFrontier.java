@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.client.gui.screen;
+package games.alejandrocoria.mapfrontiers.client.gui.screen.page;
 
 import games.alejandrocoria.mapfrontiers.client.ChatFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
@@ -21,7 +21,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class SendFrontier extends AutoScaledScreen {
+public class SendFrontier extends PageScreen {
     private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_send");
     private static final Component DESCRIPTION_LABEL = Component.translatable("mapfrontiers.send_description");
     private static final Component ERROR_UUID_SIZE_LABEL = Component.translatable("mapfrontiers.new_user_error_uuid_size");
@@ -53,9 +53,10 @@ public class SendFrontier extends AutoScaledScreen {
     }
 
     @Override
-    public void initScreen() {
+    protected void initScreen() {
         if (MapFrontiersClient.isModOnServer()) {
             onClose();
+            return;
         }
 
         LinearLayout mainLayout = LinearLayout.vertical().spacing(8);
@@ -79,12 +80,7 @@ public class SendFrontier extends AutoScaledScreen {
         buttonNewUser = new IconButton(IconButton.Type.Send, (b) -> buttonNewUserPressed());
         newUserLayout.addChild(buttonNewUser);
 
-        bottomButtons.addChild(new SimpleButton(font, 140, DONE_LABEL, (b) -> onClose()));
-    }
-
-    @Override
-    public void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        drawCenteredBoxBackground(graphics, content.getWidth() + 20, content.getHeight() + 20);
+        addBottomButton(new SimpleButton(font, 140, DONE_LABEL, (b) -> onClose()));
     }
 
     private void buttonNewUserPressed() {

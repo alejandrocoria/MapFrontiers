@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.client.gui.dialog;
+package games.alejandrocoria.mapfrontiers.client.gui.screen.dialog;
 
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
@@ -9,11 +9,10 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButto
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxDouble;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.AutoScaledScreen;
+import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.DoubleConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
@@ -23,31 +22,30 @@ import net.minecraft.network.chat.Component;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-public class FrontierAppearanceDialog extends AutoScaledScreen {
+public class FrontierAppearanceDialog extends PanelDialog {
     private static final Component HIDE_NAMES_THAT_DONT_FIT_LABEL = ClientConfig.HIDE_NAMES_THAT_DONT_FIT.translatedName();
-    private static final Tooltip HIDE_NAMES_THAT_DONT_FIT_TOOLTIP = tooltip(ClientConfig.HIDE_NAMES_THAT_DONT_FIT);
+    private static final Tooltip HIDE_NAMES_THAT_DONT_FIT_TOOLTIP = ScreenHelper.tooltip(ClientConfig.HIDE_NAMES_THAT_DONT_FIT);
     private static final Component POLYGONS_OPACITY_LABEL = ClientConfig.POLYGONS_OPACITY.translatedName();
-    private static final Tooltip POLYGONS_OPACITY_TOOLTIP = tooltip(ClientConfig.POLYGONS_OPACITY);
+    private static final Tooltip POLYGONS_OPACITY_TOOLTIP = ScreenHelper.tooltip(ClientConfig.POLYGONS_OPACITY);
     private static final Component BORDER_WIDTH_LABEL = ClientConfig.BORDER_WIDTH.translatedName();
-    private static final Tooltip BORDER_WIDTH_TOOLTIP = tooltip(ClientConfig.BORDER_WIDTH);
+    private static final Tooltip BORDER_WIDTH_TOOLTIP = ScreenHelper.tooltip(ClientConfig.BORDER_WIDTH);
     private static final Component BORDER_OPACITY_LABEL = ClientConfig.BORDER_OPACITY.translatedName();
-    private static final Tooltip BORDER_OPACITY_TOOLTIP = tooltip(ClientConfig.BORDER_OPACITY);
+    private static final Tooltip BORDER_OPACITY_TOOLTIP = ScreenHelper.tooltip(ClientConfig.BORDER_OPACITY);
     private static final Component PATH_MARKER_SIZE_LABEL = ClientConfig.PATH_MARKER_SIZE.translatedName();
-    private static final Tooltip PATH_MARKER_SIZE_TOOLTIP = tooltip(ClientConfig.PATH_MARKER_SIZE);
+    private static final Tooltip PATH_MARKER_SIZE_TOOLTIP = ScreenHelper.tooltip(ClientConfig.PATH_MARKER_SIZE);
     private static final Component PATH_MARKER_OPACITY_LABEL = ClientConfig.PATH_MARKER_OPACITY.translatedName();
-    private static final Tooltip PATH_MARKER_OPACITY_TOOLTIP = tooltip(ClientConfig.PATH_MARKER_OPACITY);
+    private static final Tooltip PATH_MARKER_OPACITY_TOOLTIP = ScreenHelper.tooltip(ClientConfig.PATH_MARKER_OPACITY);
     private static final Component TEXT_SIZE_LABEL = ClientConfig.TEXT_SIZE.translatedName();
-    private static final Tooltip TEXT_SIZE_TOOLTIP = tooltip(ClientConfig.TEXT_SIZE);
+    private static final Tooltip TEXT_SIZE_TOOLTIP = ScreenHelper.tooltip(ClientConfig.TEXT_SIZE);
     private static final Component TEXT_OPACITY_LABEL = ClientConfig.TEXT_OPACITY.translatedName();
-    private static final Tooltip TEXT_OPACITY_TOOLTIP = tooltip(ClientConfig.TEXT_OPACITY);
+    private static final Tooltip TEXT_OPACITY_TOOLTIP = ScreenHelper.tooltip(ClientConfig.TEXT_OPACITY);
     private static final Component TEXT_COLOR_LABEL = ClientConfig.TEXT_COLOR.translatedName();
-    private static final Tooltip TEXT_COLOR_TOOLTIP = tooltip(ClientConfig.TEXT_COLOR);
+    private static final Tooltip TEXT_COLOR_TOOLTIP = ScreenHelper.tooltip(ClientConfig.TEXT_COLOR);
     private static final Component BANNER_SIZE_LABEL = ClientConfig.BANNER_SIZE.translatedName();
-    private static final Tooltip BANNER_SIZE_TOOLTIP = tooltip(ClientConfig.BANNER_SIZE);
+    private static final Tooltip BANNER_SIZE_TOOLTIP = ScreenHelper.tooltip(ClientConfig.BANNER_SIZE);
     private static final Component BANNER_OPACITY_LABEL = ClientConfig.BANNER_OPACITY.translatedName();
-    private static final Tooltip BANNER_OPACITY_TOOLTIP = tooltip(ClientConfig.BANNER_OPACITY);
+    private static final Tooltip BANNER_OPACITY_TOOLTIP = ScreenHelper.tooltip(ClientConfig.BANNER_OPACITY);
     private static final Component SAVE_LABEL = Component.translatable("mapfrontiers.save");
-    private static final Component CANCEL_LABEL = Component.translatable("gui.cancel");
     private static final Component ON_LABEL = Component.translatable("options.on");
     private static final Component OFF_LABEL = Component.translatable("options.off");
 
@@ -77,11 +75,8 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
     private PreviewFrontiersWidget previewFrontiers;
     private boolean saved = false;
 
-    private SimpleButton saveButton;
-    private SimpleButton cancelButton;
-
     public FrontierAppearanceDialog() {
-        super(Component.empty(), 455, 255);
+        super(455, 255);
         initialSnapshot = AppearanceSnapshot.capture();
     }
 
@@ -211,22 +206,14 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
 
         previewFrontiers = columnsLayout.addChild(new PreviewFrontiersWidget());
 
-        LinearLayout buttons = LinearLayout.horizontal().spacing(7);
-        saveButton = buttons.addChild(new SimpleButton(font, 100, SAVE_LABEL, (b) -> saveAndClose()));
-        saveButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM, ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM_HIGHLIGHT);
-        cancelButton = buttons.addChild(new SimpleButton(font, 100, CANCEL_LABEL, (b) -> onClose()));
-        mainLayout.addChild(buttons);
+        addConfirmButton(SAVE_LABEL, (b) -> saveAndClose());
+        addCancelButton();
     }
 
     @Override
     public void repositionElements() {
         previewFrontiers.setScaleFactor(scaleFactor);
         super.repositionElements();
-    }
-
-    @Override
-    public void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        drawCenteredBoxBackground(graphics, content.getWidth() + 20, content.getHeight() + 20);
     }
 
     @Override
@@ -242,11 +229,6 @@ public class FrontierAppearanceDialog extends AutoScaledScreen {
         saved = true;
         ClientGlobalEvents.postUpdatedConfigEvent();
         super.onClose();
-    }
-
-    private static Tooltip tooltip(ConfigEntry<?, ?> entry) {
-        Component component = entry.tooltip();
-        return component == null ? null : Tooltip.create(component);
     }
 
     private static void addSectionSpacing(GridLayout layout, int row) {

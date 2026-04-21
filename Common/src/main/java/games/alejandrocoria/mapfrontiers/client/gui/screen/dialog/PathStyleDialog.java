@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.client.gui.dialog;
+package games.alejandrocoria.mapfrontiers.client.gui.screen.dialog;
 
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.PathMarkerSelectorWidget;
@@ -7,9 +7,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxIdentifier;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.AutoScaledScreen;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
@@ -23,7 +21,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
-public class PathStyleDialog extends AutoScaledScreen {
+public class PathStyleDialog extends PanelDialog {
     private static final Component DEFAULT_DESCRIPTION_LABEL = Component.translatable("mapfrontiers.path_style_default_description");
     private static final Component START_LABEL = Component.translatable("mapfrontiers.start");
     private static final Component END_LABEL = Component.translatable("mapfrontiers.end");
@@ -34,7 +32,6 @@ public class PathStyleDialog extends AutoScaledScreen {
     private static final Component LABELS_REQUIRED_LABEL = Component.translatable("mapfrontiers.path_style_labels_required");
     private static final Component REPLACE_DEFAULT_LABEL = Component.translatable("mapfrontiers.replace_with_default_path_style");
     private static final Component SAVE_LABEL = Component.translatable("mapfrontiers.save");
-    private static final Component CANCEL_LABEL = Component.translatable("gui.cancel");
     private static final int WARNING_WIDTH = 120;
     private static final int BUTTON_HORIZONTAL_PADDING = 16;
 
@@ -44,8 +41,6 @@ public class PathStyleDialog extends AutoScaledScreen {
 
     private PathStylePreviewWidget previewWidget;
     private MultiLineTextWidget warningWidget;
-    private SimpleButton saveButton;
-    private SimpleButton cancelButton;
     private CheckBoxButton checkLabelAtStart;
     private CheckBoxButton checkLabelAtEnd;
     private CheckBoxButton checkLabelAtMiddle;
@@ -56,14 +51,14 @@ public class PathStyleDialog extends AutoScaledScreen {
     private boolean syncingWidgets = false;
 
     public PathStyleDialog(FrontierData.PathStyle initialStyle, FrontierData.PathStyle defaultStyle, Consumer<FrontierData.PathStyle> saveCallback) {
-        super(Component.empty(), 530, 260);
+        super(530, 260);
         this.defaultStyle = new FrontierData.PathStyle(defaultStyle);
         this.saveCallback = saveCallback;
         this.workingStyle = new FrontierData.PathStyle(initialStyle);
     }
 
     public PathStyleDialog(FrontierData.PathStyle initialStyle, Consumer<FrontierData.PathStyle> saveCallback) {
-        super(Component.empty(), 530, 260);
+        super(530, 260);
         this.defaultStyle = null;
         this.saveCallback = saveCallback;
         this.workingStyle = new FrontierData.PathStyle(initialStyle);
@@ -123,11 +118,9 @@ public class PathStyleDialog extends AutoScaledScreen {
             mainLayout.addChild(defaultActionRow, LayoutSettings.defaults().alignHorizontallyCenter());
         }
 
-        LinearLayout buttons = LinearLayout.horizontal().spacing(7);
-        saveButton = buttons.addChild(new SimpleButton(font, 100, SAVE_LABEL, b -> saveAndClose()));
-        saveButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM, ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM_HIGHLIGHT);
-        cancelButton = buttons.addChild(new SimpleButton(font, 100, CANCEL_LABEL, b -> onClose()));
-        mainLayout.addChild(buttons, LayoutSettings.defaults().alignHorizontallyCenter());
+        addConfirmButton(SAVE_LABEL, (b) -> saveAndClose());
+        addCancelButton();
+
         updateWarningAndPreview();
     }
 
@@ -212,11 +205,6 @@ public class PathStyleDialog extends AutoScaledScreen {
         if (button.isChecked() != value) {
             button.toggle();
         }
-    }
-
-    @Override
-    public void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        drawCenteredBoxBackground(graphics, content.getWidth() + 20, content.getHeight() + 20);
     }
 
     @Override

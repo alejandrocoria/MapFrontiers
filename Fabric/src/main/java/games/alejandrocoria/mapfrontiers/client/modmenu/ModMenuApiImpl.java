@@ -2,7 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.modmenu;
 
 import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.ModSettings;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.page.ModSettings;
 
 public class ModMenuApiImpl implements ModMenuApi {
     @Override
