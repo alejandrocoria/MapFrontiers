@@ -261,30 +261,58 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private void removeOverlay() {
-        for (PolygonOverlay polygon : polygonOverlays) {
-            jmAPI.remove(polygon);
-        }
+        try {
+            for (PolygonOverlay polygon : polygonOverlays) {
+                removePolygonOverlay(polygon);
+            }
 
-        for (PolygonOverlay polygon : highlightPolygonOverlays) {
-            jmAPI.remove(polygon);
-        }
+            for (PolygonOverlay polygon : highlightPolygonOverlays) {
+                removePolygonOverlay(polygon);
+            }
 
-        for (MarkerOverlay marker : markerOverlays) {
-            jmAPI.remove(marker);
-        }
+            for (MarkerOverlay marker : markerOverlays) {
+                removeMarkerOverlay(marker);
+            }
 
-        for (MarkerOverlay marker : highlightMarkerOverlays) {
-            jmAPI.remove(marker);
-        }
+            for (MarkerOverlay marker : highlightMarkerOverlays) {
+                removeMarkerOverlay(marker);
+            }
 
-        for (MarkerOverlay label : labelOverlays) {
-            jmAPI.remove(label);
+            for (MarkerOverlay label : labelOverlays) {
+                removeMarkerOverlay(label);
+            }
+        } finally {
+            polygonOverlays.clear();
+            highlightPolygonOverlays.clear();
+            markerOverlays.clear();
+            highlightMarkerOverlays.clear();
+            labelOverlays.clear();
         }
     }
 
     public void deleted() {
         removeOverlay();
-        bannerRenderer.releaseTexture();
+        try {
+            bannerRenderer.releaseTexture();
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error("Failed to release banner texture for frontier {}", id, t);
+        }
+    }
+
+    private void removePolygonOverlay(PolygonOverlay polygon) {
+        try {
+            jmAPI.remove(polygon);
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error("Failed to remove polygon overlay for frontier {}", id, t);
+        }
+    }
+
+    private void removeMarkerOverlay(MarkerOverlay marker) {
+        try {
+            jmAPI.remove(marker);
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error("Failed to remove marker overlay for frontier {}", id, t);
+        }
     }
 
     public boolean pointIsInside(BlockPos pos, double maxDistanceToOpen) {

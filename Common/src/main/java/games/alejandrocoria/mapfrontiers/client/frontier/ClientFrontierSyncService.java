@@ -50,6 +50,10 @@ public class ClientFrontierSyncService {
         loadLocalPersonalFrontiers();
 
         globalManager.replaceFrontiers(globalFrontiers);
+        if (mc.isLocalServer()) {
+            personalManager.replaceFrontiers(personalFrontiers);
+            return;
+        }
 
         List<FrontierOverlay> existingLocalPersonal = personalManager.getAllFrontiers().values().stream()
                 .flatMap(List::stream)

@@ -14,7 +14,7 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -29,7 +29,7 @@ public class MapFrontiersForge extends MapFrontiers {
         FMLCommonSetupEvent.getBus(context.getModBusGroup()).addListener(MapFrontiersForge::onCommonSetup);
 
         RegisterCommandsEvent.BUS.addListener(MapFrontiersForge::onRegisterCommands);
-        ServerStartingEvent.BUS.addListener(MapFrontiersForge::onServerStarting);
+        ServerStartedEvent.BUS.addListener(MapFrontiersForge::onServerStarted);
         ServerStoppingEvent.BUS.addListener(MapFrontiersForge::onServerStopping);
         PlayerEvent.PlayerLoggedInEvent.BUS.addListener(MapFrontiersForge::onPlayerLoggedIn);
         TickEvent.ServerTickEvent.Post.BUS.addListener(MapFrontiersForge::onServerTick);
@@ -58,7 +58,7 @@ public class MapFrontiersForge extends MapFrontiers {
         CommandAccept.register(event.getDispatcher());
     }
 
-    public static void onServerStarting(ServerStartingEvent event) {
+    public static void onServerStarted(ServerStartedEvent event) {
         ServerGlobalEvents.postServerStartingEvent(event.getServer());
     }
 

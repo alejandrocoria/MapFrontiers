@@ -1,6 +1,7 @@
 **Beta 3:**
 * Added: More colors to the color palette.
 * Fixed: Filter reset not saving changes.
+* Fixed: Personal frontiers from a previous singleplayer world could be carried over into a newly opened world.
 
 **Beta 2:**
 * API - Added: Temporary personal frontiers that exist only for the current session and are not saved, synchronized, or shareable.

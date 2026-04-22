@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.frontier;
 
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.api.MapFrontiersClientAPIImpl;
 import games.alejandrocoria.mapfrontiers.client.settings.ClientSettingsProfileEvents;
 import journeymap.api.v2.client.IClientAPI;
@@ -108,38 +109,60 @@ public class ClientFrontierRuntime {
     }
 
     public void close() {
-        if (globalFrontiersOverlayManager != null) {
-            globalFrontiersOverlayManager.close();
-            globalFrontiersOverlayManager = null;
-        }
+        FrontiersOverlayManager globalManager = globalFrontiersOverlayManager;
+        FrontiersOverlayManager personalManager = personalFrontiersOverlayManager;
+        ClientFrontierSyncService sync = syncService;
+        MapFrontiersClientAPIImpl api = clientApi;
+        ClientFrontierEvents events = frontierEvents;
+        ClientSettingsProfileEvents settingsEvents = settingsProfileEvents;
 
-        if (personalFrontiersOverlayManager != null) {
-            personalFrontiersOverlayManager.close();
-            personalFrontiersOverlayManager = null;
-        }
-
-        if (syncService != null) {
-            syncService.close();
-            syncService = null;
-        }
-
-        if (clientApi != null) {
-            clientApi.close();
-            clientApi = null;
-        }
-
-        if (frontierEvents != null) {
-            frontierEvents.close();
-            frontierEvents = null;
-        }
-
-        if (settingsProfileEvents != null) {
-            settingsProfileEvents.close();
-            settingsProfileEvents = null;
-        }
-
+        globalFrontiersOverlayManager = null;
+        personalFrontiersOverlayManager = null;
+        syncService = null;
+        clientApi = null;
+        frontierEvents = null;
+        settingsProfileEvents = null;
         operationService = null;
         localPersonalFrontierStore = null;
         localOverrides = null;
+
+        closeStep("global frontier overlays", () -> {
+            if (globalManager != null) {
+                globalManager.close();
+            }
+        });
+        closeStep("personal frontier overlays", () -> {
+            if (personalManager != null) {
+                personalManager.close();
+            }
+        });
+        closeStep("frontier sync service", () -> {
+            if (sync != null) {
+                sync.close();
+            }
+        });
+        closeStep("client API", () -> {
+            if (api != null) {
+                api.close();
+            }
+        });
+        closeStep("frontier events", () -> {
+            if (events != null) {
+                events.close();
+            }
+        });
+        closeStep("settings profile events", () -> {
+            if (settingsEvents != null) {
+                settingsEvents.close();
+            }
+        });
+    }
+
+    private static void closeStep(String name, Runnable action) {
+        try {
+            action.run();
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error("Failed to close {}", name, t);
+        }
     }
 }

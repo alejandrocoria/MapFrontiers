@@ -10,7 +10,6 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtFileHelper;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -414,10 +413,8 @@ public class FrontiersManager {
             File mcDir;
             if (server.isDedicatedServer()) {
                 mcDir = server.getServerDirectory().toFile();
-            } else if (Minecraft.getInstance().getSingleplayerServer() != null) {
-                mcDir = Minecraft.getInstance().getSingleplayerServer().getWorldPath(LevelResource.ROOT).toFile();
             } else {
-                mcDir = Minecraft.getInstance().gameDirectory;
+                mcDir = server.getWorldPath(LevelResource.ROOT).toFile();
             }
             if (mcDir.getPath().isEmpty()) {
                 mcDir = new File(".");
