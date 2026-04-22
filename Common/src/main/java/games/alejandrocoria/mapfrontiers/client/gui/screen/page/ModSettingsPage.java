@@ -40,7 +40,6 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.GridLayout;
@@ -57,7 +56,6 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
@@ -711,12 +709,12 @@ public class ModSettingsPage extends PageScreen
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (event.input() == GLFW.GLFW_KEY_E && !(getFocused() instanceof EditBox)) {
+        if (MapFrontiersClient.matchesOpenSettingsKey(event) && !isTextFieldFocused()) {
             onClose();
             return true;
-        } else {
-            return super.keyPressed(event);
         }
+
+        return super.keyPressed(event);
     }
 
     @Override

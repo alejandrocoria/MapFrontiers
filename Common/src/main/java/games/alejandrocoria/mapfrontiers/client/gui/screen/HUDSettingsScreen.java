@@ -17,17 +17,14 @@ import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -112,16 +109,6 @@ public class HUDSettingsScreen extends AutoScaledScreen {
 
         drawAnchor(graphics, minecraft.getWindow());
         drawCenteredBoxBackground(graphics);
-    }
-
-    @Override
-    public boolean keyPressed(KeyEvent event) {
-        if (event.input() == GLFW.GLFW_KEY_E && !(getFocused() instanceof EditBox)) {
-            onClose();
-            return true;
-        } else {
-            return super.keyPressed(event);
-        }
     }
 
     private void postInitialConfigUpdate() {
