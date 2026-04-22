@@ -170,11 +170,19 @@ public abstract class AutoScaledScreen extends LayeredScreen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (event.input() == GLFW.GLFW_KEY_ESCAPE) {
+        if (event.input() == GLFW.GLFW_KEY_ESCAPE || shouldCloseFromInventoryKey(event)) {
             this.onClose();
             return true;
         }
         return super.keyPressed(event);
+    }
+
+    protected boolean isTextFieldFocused() {
+        return getFocused() instanceof EditBox editBox && editBox.isFocused();
+    }
+
+    private boolean shouldCloseFromInventoryKey(KeyEvent event) {
+        return minecraft != null && minecraft.options.keyInventory.matches(event) && !isTextFieldFocused();
     }
 
     @Override

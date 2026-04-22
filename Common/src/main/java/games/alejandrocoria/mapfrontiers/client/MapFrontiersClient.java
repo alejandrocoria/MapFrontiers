@@ -25,6 +25,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -453,6 +454,10 @@ public class MapFrontiersClient {
         } else {
             return openSettingsKey.getTranslatedKeyMessage();
         }
+    }
+
+    public static boolean matchesOpenSettingsKey(KeyEvent event) {
+        return openSettingsKey != null && openSettingsKey.matches(event);
     }
 
     public static boolean isModOnServer() {
