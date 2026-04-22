@@ -116,6 +116,15 @@ public class ModSettingsPage extends PageScreen
     private static final int USERS_SCROLL_WIDTH = 258;
     private static final int ACTIONS_SCROLL_WIDTH = 430;
     private static final int GROUP_NAME_WIDTH = 140;
+    private static final int GROUPS_MIN_ROWS = 20;
+    private static final int USERS_MIN_ROWS = 17;
+    private static final int ACTIONS_MIN_ROWS = 20;
+    private static final int GROUPS_ELEMENT_HEIGHT = 15;
+    private static final int USERS_ELEMENT_HEIGHT = 16;
+    private static final int ACTIONS_ELEMENT_HEIGHT = 15;
+    private static final int GROUPS_VERTICAL_MARGIN = 120;
+    private static final int USERS_VERTICAL_MARGIN = 160;
+    private static final int ACTIONS_VERTICAL_MARGIN = 128;
 
     private final boolean showKeyHint;
 
@@ -147,7 +156,7 @@ public class ModSettingsPage extends PageScreen
     private final boolean subscribeToSettingsProfileEvents;
 
     public ModSettingsPage(boolean showKeyHint) {
-        super(TITLE_LABEL, 696, 450);
+        super(TITLE_LABEL);
         this.showKeyHint = showKeyHint;
         subscribeToSettingsProfileEvents = MapFrontiersClient.isJourneyMapPluginAvailable();
 
@@ -199,8 +208,7 @@ public class ModSettingsPage extends PageScreen
     }
 
     private TabbedBox createTabbedBox() {
-        TabbedBox tabs = content.addChild(new TabbedBox(font, actualWidth - LayoutConstants.PAGE_MARGIN * 2,
-                actualHeight - LayoutConstants.PAGE_MARGIN * 2, this::onTabChanged));
+        TabbedBox tabs = content.addChild(new TabbedBox(font, this::onTabChanged));
         tabs.addTab(TAB_CREDITS_LABEL, true);
         tabs.addTab(TAB_GENERAL_LABEL, true);
         tabs.addTab(TAB_GROUPS_LABEL, canEditGroups);
@@ -224,7 +232,6 @@ public class ModSettingsPage extends PageScreen
         tabbedBox.addChild(creditsLayout, Tab.Credits.ordinal(),
                 LayoutSettings.defaults().alignHorizontallyCenter().alignVerticallyTop());
 
-        creditsLayout.addChild(SpacerElement.height(16));
         creditsLayout.addChild(new StringWidget(CREATED_BY_LABEL, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
         creditsLayout.addChild(createWideExternalLinkButton(WEB_LINK_LABEL, WEB_URL));
         creditsLayout.addChild(SpacerElement.height(16));
@@ -247,7 +254,6 @@ public class ModSettingsPage extends PageScreen
         tabbedBox.addChild(generalLayout, Tab.General.ordinal(),
                 LayoutSettings.defaults().alignHorizontallyCenter().alignVerticallyTop());
 
-        generalLayout.addChild(SpacerElement.height(16));
         generalLayout.addChild(new StringWidget(FRONTIERS_LABEL, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
 
         GridLayout settingsGrid = new GridLayout().spacing(LayoutConstants.SPACING_SMALL);
@@ -334,7 +340,7 @@ public class ModSettingsPage extends PageScreen
     }
 
     private void buildGroupsList(LinearLayout groupsColumn) {
-        groups = groupsColumn.addChild(new ScrollBox(actualHeight - 120, GROUPS_SCROLL_WIDTH, 15));
+        groups = groupsColumn.addChild(ScrollBox.withRows(GROUPS_MIN_ROWS, GROUPS_SCROLL_WIDTH, GROUPS_ELEMENT_HEIGHT));
         groups.setElementClickedCallback(element -> {
             onGroupElementClicked((GroupElement) element);
             updateButtonsVisibility();
@@ -360,7 +366,7 @@ public class ModSettingsPage extends PageScreen
 
         labelGroupDesc = usersColumn.addChild(new MultiLineTextWidget(GROUP_OPS_DESC_LABEL.copy().withColor(ColorConstants.TEXT), font));
 
-        users = usersColumn.addChild(new ScrollBox(actualHeight - 160, USERS_SCROLL_WIDTH, 16));
+        users = usersColumn.addChild(ScrollBox.withRows(USERS_MIN_ROWS, USERS_SCROLL_WIDTH, USERS_ELEMENT_HEIGHT));
         users.setElementDeletePressedCallback(this::onUserDeletePressed);
     }
 
@@ -389,7 +395,7 @@ public class ModSettingsPage extends PageScreen
         labelUpdateSettings = actionsHeader.addChild(createActionsHeaderLabel(UPDATE_SETTINGS_LABEL));
         labelSharePersonalFrontier = actionsHeader.addChild(createActionsHeaderLabel(SHARE_PERSONAL_FRONTIER_LABEL));
 
-        groupsActions = actionsLayout.addChild(new ScrollBox(actualHeight - 128, ACTIONS_SCROLL_WIDTH, 15));
+        groupsActions = actionsLayout.addChild(ScrollBox.withRows(ACTIONS_MIN_ROWS, ACTIONS_SCROLL_WIDTH, ACTIONS_ELEMENT_HEIGHT));
     }
 
     private void buildBottomButtons() {
@@ -623,11 +629,36 @@ public class ModSettingsPage extends PageScreen
     }
 
     @Override
+    protected int getMinimumLayoutExtraWidth() {
+        return LayoutConstants.PAGE_MARGIN * 2;
+    }
+
+    @Override
+    protected int getMinimumLayoutExtraHeight() {
+        return LayoutConstants.PAGE_MARGIN * 2;
+    }
+
+    @Override
+    protected void resetContentToMinimumSize() {
+        tabbedBox.setSizeToContent();
+        groups.setVisibleRows(GROUPS_MIN_ROWS);
+        users.setVisibleRows(USERS_MIN_ROWS);
+        groupsActions.setVisibleRows(ACTIONS_MIN_ROWS);
+    }
+
+    @Override
+    protected void resizeContentToAvailableSpace() {
+        tabbedBox.setSize(availableWidth(LayoutConstants.PAGE_MARGIN * 2), availableHeight(LayoutConstants.PAGE_MARGIN * 2));
+        groups.setHeight(Math.max(ScrollBox.heightForRows(GROUPS_MIN_ROWS, GROUPS_ELEMENT_HEIGHT),
+                availableHeight(GROUPS_VERTICAL_MARGIN)));
+        users.setHeight(Math.max(ScrollBox.heightForRows(USERS_MIN_ROWS, USERS_ELEMENT_HEIGHT),
+                availableHeight(USERS_VERTICAL_MARGIN)));
+        groupsActions.setHeight(Math.max(ScrollBox.heightForRows(ACTIONS_MIN_ROWS, ACTIONS_ELEMENT_HEIGHT),
+                availableHeight(ACTIONS_VERTICAL_MARGIN)));
+    }
+
+    @Override
     public void repositionElements() {
-        tabbedBox.setSize(actualWidth - LayoutConstants.PAGE_MARGIN * 2, actualHeight - LayoutConstants.PAGE_MARGIN * 2);
-        groups.setHeight(actualHeight - 120);
-        users.setHeight(actualHeight - 160);
-        groupsActions.setHeight(actualHeight - 128);
         super.repositionElements();
 
         textNewUser.setY(textNewGroupName.getY());

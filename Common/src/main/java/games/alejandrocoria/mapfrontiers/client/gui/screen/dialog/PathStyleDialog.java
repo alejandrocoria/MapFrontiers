@@ -52,14 +52,14 @@ public class PathStyleDialog extends PanelDialog {
     private boolean syncingWidgets = false;
 
     public PathStyleDialog(FrontierData.PathStyle initialStyle, FrontierData.PathStyle defaultStyle, Consumer<FrontierData.PathStyle> saveCallback) {
-        super(530, 260);
+        super();
         this.defaultStyle = new FrontierData.PathStyle(defaultStyle);
         this.saveCallback = saveCallback;
         this.workingStyle = new FrontierData.PathStyle(initialStyle);
     }
 
     public PathStyleDialog(FrontierData.PathStyle initialStyle, Consumer<FrontierData.PathStyle> saveCallback) {
-        super(530, 260);
+        super();
         this.defaultStyle = null;
         this.saveCallback = saveCallback;
         this.workingStyle = new FrontierData.PathStyle(initialStyle);
@@ -209,11 +209,17 @@ public class PathStyleDialog extends PanelDialog {
     }
 
     @Override
-    public void repositionElements() {
+    protected void resetContentToMinimumSize() {
+        if (previewWidget != null) {
+            previewWidget.setScaleFactor(1.f);
+        }
+    }
+
+    @Override
+    protected void resizeContentToAvailableSpace() {
         if (previewWidget != null) {
             previewWidget.setScaleFactor(scaleFactor);
         }
-        super.repositionElements();
     }
 
     private void saveAndClose() {

@@ -57,6 +57,14 @@ public class ScrollBox extends AbstractContainerWidget {
         this.height = scrollHeight * this.elementHeight;
     }
 
+    public static ScrollBox withRows(int rows, int elementWidth, int elementHeight) {
+        return new ScrollBox(heightForRows(rows, elementHeight), elementWidth, elementHeight);
+    }
+
+    public static int heightForRows(int rows, int elementHeight) {
+        return Math.max(1, rows) * (elementHeight + ELEMENT_GAP);
+    }
+
     public void setElementClickedCallback(Consumer<ScrollElement> callback) {
         elementClickedCallback = callback;
     }
@@ -281,6 +289,10 @@ public class ScrollBox extends AbstractContainerWidget {
         this.height = scrollHeight * elementHeight;
         updateScrollWindow();
         updateScrollBar();
+    }
+
+    public void setVisibleRows(int rows) {
+        setHeight(Math.max(1, rows) * elementHeight);
     }
 
     @Override

@@ -29,8 +29,8 @@ public abstract class AutoScaledScreen extends LayeredScreen {
     }
 
     protected float scaleFactor = 1.f;
-    private final int minWidth;
-    private final int minHeight;
+    private int minimumWidth;
+    private int minimumHeight;
     private final BottomButtonsMode bottomButtonsMode;
     protected int actualWidth;
     protected int actualHeight;
@@ -39,19 +39,19 @@ public abstract class AutoScaledScreen extends LayeredScreen {
     private LinearLayout bottomButtons;
 
     public AutoScaledScreen(Component title) {
-        this(title, 0, 0, BottomButtonsMode.None);
+        this(title, BottomButtonsMode.None);
     }
 
-    public AutoScaledScreen(Component title, int minWidth, int minHeight, BottomButtonsMode bottomButtonsMode) {
+    public AutoScaledScreen(Component title, BottomButtonsMode bottomButtonsMode) {
         super(title);
-        this.minWidth = minWidth;
-        this.minHeight = minHeight;
         this.bottomButtonsMode = bottomButtonsMode;
     }
 
     @Override
     public final void init() {
-        updateScale(width, height);
+        scaleFactor = 1.f;
+        actualWidth = width;
+        actualHeight = height;
 
         content = LinearLayout.vertical().spacing(LayoutConstants.SCREEN_CONTENT_SPACING);
         content.defaultCellSetting().alignHorizontallyCenter();
@@ -85,26 +85,77 @@ public abstract class AutoScaledScreen extends LayeredScreen {
 
     @Override
     public void repositionElements() {
+        resetContentToMinimumSize();
+        arrangeLayouts();
+        updateMinimumSizeFromLayout();
+        updateScale(width, height);
+        resizeContentToAvailableSpace();
+        arrangeLayouts();
+        positionContent();
+        positionBottomButtons();
+    }
+
+    private void arrangeLayouts() {
         content.arrangeElements();
-        content.setPosition((actualWidth - content.getWidth()) / 2, (actualHeight - content.getHeight()) / 2);
-        if (bottomButtonsMode != BottomButtonsMode.None) {
+        if (bottomButtonsMode == BottomButtonsMode.Floating) {
             bottomButtons.arrangeElements();
-            if (bottomButtonsMode == BottomButtonsMode.Floating) {
-                bottomButtons.setPosition((actualWidth - bottomButtons.getWidth()) / 2, actualHeight - bottomButtons.getHeight() - LayoutConstants.FLOATING_BUTTON_BOTTOM_MARGIN);
-            }
         }
+    }
+
+    private void updateMinimumSizeFromLayout() {
+        minimumWidth = content.getWidth() + getMinimumLayoutExtraWidth();
+        minimumHeight = content.getHeight() + getMinimumLayoutExtraHeight();
+
+        if (bottomButtonsMode == BottomButtonsMode.Floating) {
+            minimumWidth = Math.max(minimumWidth, bottomButtons.getWidth() + getMinimumLayoutExtraWidth());
+            int bottomButtonsHeight = bottomButtons.getHeight() + LayoutConstants.FLOATING_BUTTON_BOTTOM_MARGIN;
+            minimumHeight = Math.max(minimumHeight, content.getHeight()
+                    + Math.max(getMinimumLayoutExtraHeight(), bottomButtonsHeight * 2));
+        }
+    }
+
+    protected int getMinimumLayoutExtraWidth() {
+        return LayoutConstants.BOX_PADDING * 2;
+    }
+
+    protected int getMinimumLayoutExtraHeight() {
+        return LayoutConstants.BOX_PADDING * 2;
+    }
+
+    protected void resetContentToMinimumSize() {
+    }
+
+    protected void resizeContentToAvailableSpace() {
+    }
+
+    protected void positionContent() {
+        content.setPosition((actualWidth - content.getWidth()) / 2, (actualHeight - content.getHeight()) / 2);
+    }
+
+    private void positionBottomButtons() {
+        if (bottomButtonsMode == BottomButtonsMode.Floating) {
+            bottomButtons.setPosition((actualWidth - bottomButtons.getWidth()) / 2,
+                    actualHeight - bottomButtons.getHeight() - LayoutConstants.FLOATING_BUTTON_BOTTOM_MARGIN);
+        }
+    }
+
+    protected int availableWidth(int horizontalMargin) {
+        return Math.max(0, actualWidth - horizontalMargin);
+    }
+
+    protected int availableHeight(int verticalMargin) {
+        return Math.max(0, actualHeight - verticalMargin);
     }
 
     @Override
     public void resize(int width, int height) {
         this.width = width;
         this.height = height;
-        updateScale(width, height);
         super.resize(width, height);
     }
 
     private void updateScale(int width, int height) {
-        scaleFactor = ScreenHelper.getScaleFactorThatFit(minecraft, this, minWidth, minHeight);
+        scaleFactor = ScreenHelper.getScaleFactorThatFit(minecraft, this, minimumWidth, minimumHeight);
         actualWidth = (int) (width * scaleFactor);
         actualHeight = (int) (height * scaleFactor);
     }

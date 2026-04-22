@@ -75,7 +75,7 @@ public class FrontierAppearanceDialog extends PanelDialog {
     private boolean saved = false;
 
     public FrontierAppearanceDialog() {
-        super(455, 255);
+        super();
         initialSnapshot = AppearanceSnapshot.capture();
     }
 
@@ -210,9 +210,13 @@ public class FrontierAppearanceDialog extends PanelDialog {
     }
 
     @Override
-    public void repositionElements() {
+    protected void resetContentToMinimumSize() {
+        previewFrontiers.setScaleFactor(1.f);
+    }
+
+    @Override
+    protected void resizeContentToAvailableSpace() {
         previewFrontiers.setScaleFactor(scaleFactor);
-        super.repositionElements();
     }
 
     @Override

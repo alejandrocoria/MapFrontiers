@@ -44,14 +44,14 @@ public class VisibilityDialog extends PanelDialog {
     private final BiConsumer<FrontierData.VisibilityData, FrontierData.VisibilityData> saveCallback;
 
     public VisibilityDialog(FrontierData.VisibilityData visibilityData, BiConsumer<FrontierData.VisibilityData, FrontierData.VisibilityData> saveCallback) {
-        super(554, 191);
+        super();
         this.visibilityData = new FrontierData.VisibilityData(visibilityData);
         this.visibilityMask = null;
         this.saveCallback = saveCallback;
     }
 
     public VisibilityDialog(FrontierData.VisibilityData visibilityData, FrontierData.VisibilityData visibilityDataMask, BiConsumer<FrontierData.VisibilityData, FrontierData.VisibilityData> saveCallback) {
-        super(554, 191);
+        super();
         this.visibilityData = new FrontierData.VisibilityData(visibilityData);
         this.visibilityMask = new FrontierData.VisibilityData(visibilityDataMask);
         this.saveCallback = saveCallback;

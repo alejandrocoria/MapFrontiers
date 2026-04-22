@@ -42,6 +42,10 @@ public class ShareSettingsPage extends PageScreen
     private static final Component ERROR_OWNER_LABEL = Component.translatable("mapfrontiers.new_user_shared_error_owner");
     private static final Component ERROR_REPEATED_LABEL = Component.translatable("mapfrontiers.new_user_shared_error_user_repeated");
     private static final Component DONE_LABEL = Component.translatable("gui.done");
+    private static final int USERS_WIDTH = 430;
+    private static final int USERS_ELEMENT_HEIGHT = 15;
+    private static final int USERS_MIN_ROWS = 4;
+    private static final int USERS_VERTICAL_MARGIN = 128;
 
     private FrontierOverlay frontier;
     private MultiLineTextWidget updateFrontier;
@@ -54,7 +58,7 @@ public class ShareSettingsPage extends PageScreen
     private int ticksSinceLastUpdate = 0;
 
     public ShareSettingsPage(FrontierOverlay frontier) {
-        super(TITLE_LABEL, 470, 120);
+        super(TITLE_LABEL);
         this.frontier = frontier;
 
         MapFrontiersClient.getFrontierEvents().subscribeDeleted(this, frontierID -> {
@@ -92,7 +96,7 @@ public class ShareSettingsPage extends PageScreen
         updateSettings = header.addChild(new MultiLineTextWidget(UPDATE_SETTINGS_LABEL.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
         updateSettings.setCentered(true);
 
-        users = new ScrollBox(actualHeight - 128, 430, 15);
+        users = ScrollBox.withRows(USERS_MIN_ROWS, USERS_WIDTH, USERS_ELEMENT_HEIGHT);
         users.setElementDeletePressedCallback(element -> {
             if (ClientConfig.ASK_CONFIRMATION_USER_DELETE.get()) {
                 new DeleteConfirmationDialog(
@@ -176,8 +180,18 @@ public class ShareSettingsPage extends PageScreen
     }
 
     @Override
+    protected void resetContentToMinimumSize() {
+        users.setVisibleRows(USERS_MIN_ROWS);
+    }
+
+    @Override
+    protected void resizeContentToAvailableSpace() {
+        users.setSize(USERS_WIDTH, Math.max(ScrollBox.heightForRows(USERS_MIN_ROWS, USERS_ELEMENT_HEIGHT),
+                availableHeight(USERS_VERTICAL_MARGIN)));
+    }
+
+    @Override
     public void repositionElements() {
-        users.setSize(430, actualHeight - 128);
         super.repositionElements();
         updateFrontier.setX(users.getX() + 250 - updateFrontier.getWidth() / 2);
         updateSettings.setX(users.getX() + 310 - updateSettings.getWidth() / 2);

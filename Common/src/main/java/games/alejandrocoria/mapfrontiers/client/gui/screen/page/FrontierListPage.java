@@ -60,6 +60,14 @@ public class FrontierListPage extends PageScreen
     private static final Component HIDE_LABEL = Component.translatable("mapfrontiers.hide");
     private static final Component SETTINGS_LABEL = Component.translatable("mapfrontiers.settings");
     private static final Component DONE_LABEL = Component.translatable("gui.done");
+    private static final int CONTENT_TOP = 60;
+    private static final int FRONTIERS_WIDTH = 450;
+    private static final int FRONTIERS_ELEMENT_HEIGHT = 25;
+    private static final int FRONTIERS_MIN_ROWS = 7;
+    private static final int FILTER_WIDTH = 200;
+    private static final int FILTER_ELEMENT_HEIGHT = 15;
+    private static final int FILTER_MIN_ROWS = 3;
+    private static final int FILTER_DIMENSION_MIN_ROWS = 2;
 
     private final IClientAPI jmAPI;
     private final FullscreenMap fullscreenMap;
@@ -76,7 +84,7 @@ public class FrontierListPage extends PageScreen
     private SimpleButton buttonSettings;
 
     public FrontierListPage(IClientAPI jmAPI, FullscreenMap fullscreenMap) {
-        super(TITLE_LABEL, 778, 302);
+        super(TITLE_LABEL);
         this.jmAPI = jmAPI;
         this.fullscreenMap = fullscreenMap;
 
@@ -116,11 +124,38 @@ public class FrontierListPage extends PageScreen
     }
 
     @Override
-    public void repositionElements() {
-        frontiers.setSize(450, actualHeight - 120);
-        filterDimension.setSize(200, actualHeight - 269);
-        super.repositionElements();
-        content.setPosition((actualWidth - content.getWidth()) / 2, 60);
+    protected int getMinimumLayoutExtraWidth() {
+        return LayoutConstants.PAGE_MARGIN * 2;
+    }
+
+    @Override
+    protected int getMinimumLayoutExtraHeight() {
+        return CONTENT_TOP + LayoutConstants.PAGE_MARGIN + 1;
+    }
+
+    @Override
+    protected void resetContentToMinimumSize() {
+        frontiers.setVisibleRows(FRONTIERS_MIN_ROWS);
+        filterDimension.setVisibleRows(FILTER_DIMENSION_MIN_ROWS);
+    }
+
+    @Override
+    protected void resizeContentToAvailableSpace() {
+        frontiers.setSize(FRONTIERS_WIDTH, Math.max(ScrollBox.heightForRows(FRONTIERS_MIN_ROWS, FRONTIERS_ELEMENT_HEIGHT),
+                getAvailableScrollHeightInsideBackground(frontiers)));
+        filterDimension.setSize(FILTER_WIDTH, Math.max(ScrollBox.heightForRows(FILTER_DIMENSION_MIN_ROWS, FILTER_ELEMENT_HEIGHT),
+                getAvailableScrollHeightInsideBackground(filterDimension)));
+    }
+
+    private int getAvailableScrollHeightInsideBackground(ScrollBox scrollBox) {
+        // The first arrange pass gives the scroll box its content-relative Y before the final height is chosen.
+        int scrollBoxY = CONTENT_TOP + scrollBox.getY() - content.getY();
+        return Math.max(0, actualHeight - scrollBoxY - LayoutConstants.PAGE_MARGIN - 1);
+    }
+
+    @Override
+    protected void positionContent() {
+        content.setPosition((actualWidth - content.getWidth()) / 2, CONTENT_TOP);
     }
 
     @Override
@@ -169,7 +204,7 @@ public class FrontierListPage extends PageScreen
     }
 
     private void buildFrontiersList(GridLayout mainLayout) {
-        frontiers = new ScrollBox(actualHeight - 120, 450, 25);
+        frontiers = ScrollBox.withRows(FRONTIERS_MIN_ROWS, FRONTIERS_WIDTH, FRONTIERS_ELEMENT_HEIGHT);
         frontiers.setElementDeletedCallback(element -> onFrontierElementDeleted());
         frontiers.setElementClickedCallback(this::onFrontierElementClicked);
         mainLayout.addChild(frontiers, 1, 0, LayoutSettings.defaults().alignHorizontallyRight());
@@ -192,7 +227,7 @@ public class FrontierListPage extends PageScreen
     private void buildTypeFilter(LinearLayout column) {
         column.addChild(createSectionLabel(FILTER_TYPE_LABEL));
 
-        filterType = createFilterScrollBox(52);
+        filterType = createFilterScrollBox(FILTER_MIN_ROWS);
         addEnumFilterOptions(filterType, ClientConfig.FILTER_FRONTIER_TYPE);
         filterType.setElementClickedCallback(this::onTypeFilterSelected);
         column.addChild(filterType);
@@ -201,7 +236,7 @@ public class FrontierListPage extends PageScreen
     private void buildOwnerFilter(LinearLayout column) {
         column.addChild(createSectionLabel(FILTER_OWNER_LABEL));
 
-        filterOwner = createFilterScrollBox(52);
+        filterOwner = createFilterScrollBox(FILTER_MIN_ROWS);
         addEnumFilterOptions(filterOwner, ClientConfig.FILTER_FRONTIER_OWNER);
         filterOwner.setElementClickedCallback(this::onOwnerFilterSelected);
         column.addChild(filterOwner);
@@ -210,7 +245,7 @@ public class FrontierListPage extends PageScreen
     private void buildDimensionFilter(LinearLayout column) {
         column.addChild(createSectionLabel(FILTER_DIMENSION_LABEL));
 
-        filterDimension = createFilterScrollBox(actualHeight - 274);
+        filterDimension = createFilterScrollBox(FILTER_DIMENSION_MIN_ROWS);
         filterDimension.addElement(createRadioFilterOption(CONFIG_ALL_LABEL, ClientConfig.DIMENSION_FILTER_ALL));
         filterDimension.addElement(createRadioFilterOption(CONFIG_CURRENT_LABEL, ClientConfig.DIMENSION_FILTER_CURRENT));
         filterDimension.addElement(createRadioFilterOption(OVERWORLD_LABEL, "minecraft:overworld"));
@@ -275,8 +310,8 @@ public class FrontierListPage extends PageScreen
         return new RadioListElement<>(font, label, value);
     }
 
-    private ScrollBox createFilterScrollBox(int height) {
-        return new ScrollBox(height, 200, 15);
+    private ScrollBox createFilterScrollBox(int rows) {
+        return ScrollBox.withRows(rows, FILTER_WIDTH, FILTER_ELEMENT_HEIGHT);
     }
 
     private <E extends Enum<E>> void addEnumFilterOptions(ScrollBox filter, EnumConfigEntry<E> entry) {
