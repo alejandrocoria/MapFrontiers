@@ -170,7 +170,7 @@ public class FrontierInfoPage extends PageScreen
     private boolean saveChangesOnClose = true;
 
     public FrontierInfoPage(IClientAPI jmAPI, FrontierOverlay frontier) {
-        super(TITLE_LABEL, 636, 306);
+        super(TITLE_LABEL);
         this.jmAPI = jmAPI;
         this.frontier = frontier;
         frontierHash = frontier.getHash();

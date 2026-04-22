@@ -20,8 +20,11 @@ import java.util.function.IntConsumer;
 
 @ParametersAreNonnullByDefault
 public class TabbedBox implements Layout {
+    private static final int CONTENT_HEIGHT_OFFSET = 32;
+
     private final Font font;
     private final IntConsumer tabChanged;
+    private boolean sizeToContent = true;
     private int width;
     private int height;
     private final List<Tab> tabs = new ArrayList<>();
@@ -31,14 +34,11 @@ public class TabbedBox implements Layout {
     private final FrameLayout contentLayouts = new FrameLayout();
     private int selected;
 
-    public TabbedBox(Font font, int width, int height, IntConsumer tabChanged) {
+    public TabbedBox(Font font, IntConsumer tabChanged) {
         super();
         this.font = font;
         this.tabChanged = tabChanged;
         selected = -1;
-        this.width = width;
-        this.height = height;
-        contentLayouts.setMinDimensions(width, height - 32);
         mainLayout.addChild(tabLayouts, LayoutSettings.defaults().alignHorizontallyCenter());
         mainLayout.addChild(contentLayouts, LayoutSettings.defaults().alignHorizontallyCenter());
     }
@@ -47,8 +47,12 @@ public class TabbedBox implements Layout {
         tabs.add(new Tab(font, text, tabs.size(), enabled, this::setTabSelected));
         tabLayouts.addChild(tabs.getLast());
 
-        contents.add(new FrameLayout(width, height - 32));
-        contentLayouts.addChild(contents.getLast());
+        FrameLayout content = new FrameLayout();
+        if (!sizeToContent) {
+            content.setMinDimensions(width, contentHeight());
+        }
+        contents.add(content);
+        contentLayouts.addChild(content);
 
         if (selected == -1) {
             selected = 0;
@@ -74,13 +78,27 @@ public class TabbedBox implements Layout {
     }
 
     public void setSize(int width, int height) {
+        sizeToContent = false;
         this.width = width;
         this.height = height;
-        contentLayouts.setMinDimensions(width, height - 32);
+        contentLayouts.setMinDimensions(width, contentHeight());
         for (FrameLayout content : contents) {
-            content.setMinDimensions(width, height - 32);
+            content.setMinDimensions(width, contentHeight());
         }
         arrangeElements();
+    }
+
+    public void setSizeToContent() {
+        sizeToContent = true;
+        contentLayouts.setMinDimensions(0, 0);
+        for (FrameLayout content : contents) {
+            content.setMinDimensions(0, 0);
+        }
+        arrangeElements();
+    }
+
+    private int contentHeight() {
+        return Math.max(0, height - CONTENT_HEIGHT_OFFSET);
     }
 
     public <T extends LayoutElement> T addChild(T layoutElement, int tab) {
@@ -105,12 +123,12 @@ public class TabbedBox implements Layout {
 
     @Override
     public int getWidth() {
-        return mainLayout.getWidth();
+        return sizeToContent ? mainLayout.getWidth() : width;
     }
 
     @Override
     public int getHeight() {
-        return mainLayout.getHeight();
+        return sizeToContent ? mainLayout.getHeight() : height;
     }
 
     @Override
@@ -134,19 +152,21 @@ public class TabbedBox implements Layout {
     }
 
     public void renderBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
-        graphics.fill(getX(), getY() + 16, getX() + width - 1, getY() + height - 1, ColorConstants.SCREEN_BG);
+        int backgroundWidth = getWidth();
+        int backgroundHeight = getHeight();
+        graphics.fill(getX(), getY() + 16, getX() + backgroundWidth - 1, getY() + backgroundHeight - 1, ColorConstants.SCREEN_BG);
 
         if (selected == -1) {
-            graphics.horizontalLine(getX(), getX() + width - 1, getY() + 16, ColorConstants.TAB_BORDER);
+            graphics.horizontalLine(getX(), getX() + backgroundWidth - 1, getY() + 16, ColorConstants.TAB_BORDER);
         } else {
             Tab tab = tabs.get(selected);
             graphics.horizontalLine(getX(), tab.getX(), getY() + 16, ColorConstants.TAB_BORDER);
-            graphics.horizontalLine(tab.getX() + tab.getWidth(), getX() + width - 1, getY() + 16, ColorConstants.TAB_BORDER);
+            graphics.horizontalLine(tab.getX() + tab.getWidth(), getX() + backgroundWidth - 1, getY() + 16, ColorConstants.TAB_BORDER);
         }
 
-        graphics.horizontalLine(getX(), getX() + width - 1, getY() + height - 1, ColorConstants.TAB_BORDER);
-        graphics.verticalLine(getX(), getY() + 16, getY() + height - 1, ColorConstants.TAB_BORDER);
-        graphics.verticalLine(getX() + width - 1, getY() + 16, getY() + height - 1, ColorConstants.TAB_BORDER);
+        graphics.horizontalLine(getX(), getX() + backgroundWidth - 1, getY() + backgroundHeight - 1, ColorConstants.TAB_BORDER);
+        graphics.verticalLine(getX(), getY() + 16, getY() + backgroundHeight - 1, ColorConstants.TAB_BORDER);
+        graphics.verticalLine(getX() + backgroundWidth - 1, getY() + 16, getY() + backgroundHeight - 1, ColorConstants.TAB_BORDER);
     }
 
     private static class Tab extends ButtonBase {

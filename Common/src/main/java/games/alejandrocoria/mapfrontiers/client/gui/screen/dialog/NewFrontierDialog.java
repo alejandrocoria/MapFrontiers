@@ -60,7 +60,7 @@ public class NewFrontierDialog extends PanelDialog {
     private TextBoxInt textSize;
 
     public NewFrontierDialog(IClientAPI jmAPI, BlockPos centerPos) {
-        super(344, 295);
+        super();
         this.jmAPI = jmAPI;
         this.centerPos = centerPos;
 

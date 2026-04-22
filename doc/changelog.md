@@ -1,6 +1,7 @@
 **Beta 3:**
 * Added: More colors to the color palette.
 * Changed: Screens can now be closed with the configured inventory key, and settings can also be closed with the configured MapFrontiers settings key.
+* Changed: Screens and dialogs now scale and fit their contents more consistently at small window sizes.
 * Fixed: Filter reset not saving changes.
 * Fixed: Personal frontiers from a previous singleplayer world could be carried over into a newly opened world.
 

@@ -37,7 +37,7 @@ public class SendFrontierPage extends PageScreen
     private IconButton buttonNewUser;
 
     public SendFrontierPage(FrontierOverlay frontier) {
-        super(TITLE_LABEL, 470, 120);
+        super(TITLE_LABEL);
         this.frontier = frontier;
 
         MapFrontiersClient.getFrontierEvents().subscribeDeleted(this, frontierID -> {
@@ -153,4 +153,3 @@ public class SendFrontierPage extends PageScreen
         super.onClose();
     }
 }
-

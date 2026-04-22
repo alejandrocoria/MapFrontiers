@@ -13,8 +13,8 @@ import javax.annotation.ParametersAreNonnullByDefault;
 public abstract class PanelDialog extends AutoScaledScreen {
     private static final Component CANCEL_LABEL = Component.translatable("gui.cancel");
 
-    public PanelDialog(int minWidth, int minHeight) {
-        super(Component.empty(), minWidth, minHeight, BottomButtonsMode.Integrated);
+    public PanelDialog() {
+        super(Component.empty(), BottomButtonsMode.Integrated);
     }
 
     @Override
