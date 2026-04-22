@@ -88,7 +88,6 @@ public class FrontierInfoPage extends PageScreen
     private static final Component VISIBILITY_LABEL = Component.translatable("mapfrontiers.visibility");
     private static final Component VISIBILITY_OVERRIDE_LABEL = Component.translatable("mapfrontiers.visibility_override");
     private static final Component PATH_STYLE_LABEL = Component.translatable("mapfrontiers.path_style");
-    private static final Component COLOR_LABEL = Component.translatable("mapfrontiers.color");
     private static final Component R_LABEL = Component.literal("R");
     private static final Component G_LABEL = Component.literal("G");
     private static final Component B_LABEL = Component.literal("B");
@@ -248,7 +247,7 @@ public class FrontierInfoPage extends PageScreen
         LinearLayout headerRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
         Component dimension = Component.translatable(DIMENSION_KEY, frontier.getDimension().identifier().toString());
         headerRow.addChild(new StringWidget(NAME_LABEL, font).setColor(ColorConstants.INFO_LABEL_TEXT));
-        headerRow.addChild(SpacerElement.width(Math.max(0, NAME_SECTION_WIDTH - font.width(NAME_LABEL.getVisualOrderText()) - font.width(dimension.getVisualOrderText()) - LayoutConstants.SPACING_TINY - 2)));
+        headerRow.addChild(SpacerElement.width(Math.max(0, NAME_SECTION_WIDTH - font.width(NAME_LABEL.getVisualOrderText()) - font.width(dimension.getVisualOrderText()) - LayoutConstants.SPACING_TINY * 2)));
         headerRow.addChild(new StringWidget(dimension, font).setColor(ColorConstants.TEXT_DIMENSION));
         nameColumn.addChild(headerRow);
 
@@ -361,9 +360,7 @@ public class FrontierInfoPage extends PageScreen
 
         LinearLayout colorColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         colorColumn.defaultCellSetting().alignHorizontallyCenter();
-        mainLayout.addChild(colorColumn, 1, 2);
-
-        colorColumn.addChild(new StringWidget(COLOR_LABEL, font).setColor(ColorConstants.INFO_LABEL_TEXT), LayoutSettings.defaults().alignHorizontallyLeft());
+        mainLayout.addChild(colorColumn, 1, 2, LayoutSettings.defaults().alignVerticallyBottom());
 
         LinearLayout rgbRow = LinearLayout.horizontal().spacing(RGB_INLINE_SPACING);
         rgbRow.defaultCellSetting().alignVerticallyMiddle();
