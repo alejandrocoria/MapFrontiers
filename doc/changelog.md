@@ -1,4 +1,5 @@
 **Beta 3:**
+* Added: More colors to the color palette.
 * Fixed: Filter reset not saving changes.
 
 **Beta 2:**

@@ -1,6 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
-import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
@@ -13,26 +12,34 @@ import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
 public class ColorPaletteWidget extends AbstractWidgetNoNarration {
-    private static final int COLUMNS = 6;
-    private static final int ROWS = 3;
-    private static final int CELL_SIZE = 23;
+    private static final int COLUMNS = 7;
+    private static final int ROWS = 4;
+    private static final int CELL_SIZE = 20;
+    private static final int CELL_GAP = 1;
     private static final int CELL_INSET = 1;
+    private static final int CELL_PITCH = CELL_SIZE + CELL_GAP;
+    private static final int WIDTH = COLUMNS * CELL_SIZE + (COLUMNS - 1) * CELL_GAP;
+    private static final int HEIGHT = ROWS * CELL_SIZE + (ROWS - 1) * CELL_GAP;
+    private static final int BORDER_COLOR = 0xFF404040;
+    private static final int SELECTED_COLOR = 0xFFFFFFFF;
 
     private static final int[] PALETTE_COLORS = {
-            0xffff0000, 0xffff8000, 0xffffff00, 0xff80ff00, 0xff00ff00, 0xff00ff80,
-            0xff00ffff, 0xff0080ff, 0xff0000ff, 0xff8000ff, 0xffff00ff, 0xffff0080,
-            0xff572f07, 0xff000000, 0xff404040, 0xff808080, 0xffbfbfbf, 0xffffffff};
+            0xFFFF0000, 0xFFFF8000, 0xFFFFFF00, 0xFF80FF00, 0xFF00FF00, 0xFF00FF80, 0xFFFFFFFF,
+            0xFFD29292, 0xFFE4C5A5, 0xFFF7F7B8, 0xFFCEEEAE, 0xFFA5E4A5, 0xFFA8E8C8, 0xFFBFBFBF,
+            0xFF00FFFF, 0xFF0080FF, 0xFF0000FF, 0xFF8000FF, 0xFFFF00FF, 0xFFFF0080, 0xFF808080,
+            0xFFACEBEB, 0xFF99B9D9, 0xFF8686C6, 0xFFB090CF, 0xFFD999D9, 0xFFD596B6, 0xFF404040};
 
     private static final int[] PALETTE_COLORS_INACTIVE = {
-            0xff343434, 0xff595959, 0xff7e7e7e, 0xff6b6b6b, 0xff585858, 0xff5f5f5f,
-            0xff666666, 0xff424242, 0xff1c1c1c, 0xff2f2f2f, 0xff424242, 0xff3b3b3b,
-            0xff292929, 0xff0e0e0e, 0xff2e2e2e, 0xff4d4d4d, 0xff6d6d6d, 0xff8d8d8d};
+            0xFF343434, 0xFF595959, 0xFF7E7E7E, 0xFF6B6B6B, 0xFF585858, 0xFFA4A4A4, 0xFFFFFFFF,
+            0xFFA5A5A5, 0xFFCBCBCB, 0xFFF0F0F0, 0xFFDDDDDD, 0xFFCACACA, 0xFFD1D1D1, 0xFFBFBFBF,
+            0xFF666666, 0xFF424242, 0xFF1C1C1C, 0xFF2F2F2F, 0xFF424242, 0xFF5B5B5B, 0xFF808080,
+            0xFFD8D8D8, 0xFFB3B3B3, 0xFF8D8D8D, 0xFFA1A1A1, 0xFFB3B3B3, 0xFFACACAC, 0xFF404040};
 
     private int color;
     private final Consumer<Integer> onPress;
 
     public ColorPaletteWidget(int color, Consumer<Integer> onPress) {
-        super(0, 0, COLUMNS * CELL_SIZE, ROWS * CELL_SIZE, Component.empty());
+        super(0, 0, WIDTH, HEIGHT, Component.empty());
         this.color = color;
         this.onPress = onPress;
     }
@@ -48,30 +55,39 @@ public class ColorPaletteWidget extends AbstractWidgetNoNarration {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        double paletteX = (event.x() - getX()) / CELL_SIZE;
-        double paletteY = (event.y() - getY()) / CELL_SIZE;
-        if (paletteX >= 0.0 && paletteX < COLUMNS && paletteY >= 0.0 && paletteY < ROWS) {
-            color = PALETTE_COLORS[(int) paletteX + (int) paletteY * COLUMNS];
-            onPress.accept(color);
+        int localX = (int) Math.floor(event.x() - getX());
+        int localY = (int) Math.floor(event.y() - getY());
+
+        if (localX < 0 || localX >= WIDTH || localY < 0 || localY >= HEIGHT) {
+            return false;
         }
 
+        int col = localX / CELL_PITCH;
+        int row = localY / CELL_PITCH;
+
+        if (localX % CELL_PITCH >= CELL_SIZE || localY % CELL_PITCH >= CELL_SIZE) {
+            return false;
+        }
+
+        color = PALETTE_COLORS[col + row * COLUMNS];
+        onPress.accept(color);
         return true;
     }
 
     @Override
     public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        graphics.fill(getX(), getY(), getX() + getWidth(), getY() + getHeight(), ColorConstants.BLACK);
         int col = 0;
         int row = 0;
         for (int c : (active ? PALETTE_COLORS : PALETTE_COLORS_INACTIVE)) {
+            int x = getX() + col * CELL_PITCH;
+            int y = getY() + row * CELL_PITCH;
             if (active && c == color) {
-                graphics.fill(getX() + col * CELL_SIZE, getY() + row * CELL_SIZE,
-                        getX() + CELL_SIZE + col * CELL_SIZE, getY() + CELL_SIZE + row * CELL_SIZE,
-                        ColorConstants.WHITE);
+                graphics.fill(x, y, x + CELL_SIZE, y + CELL_SIZE, SELECTED_COLOR);
+            } else {
+                graphics.fill(x, y, x + CELL_SIZE, y + CELL_SIZE, BORDER_COLOR);
             }
-            graphics.fill(getX() + CELL_INSET + col * CELL_SIZE, getY() + CELL_INSET + row * CELL_SIZE,
-                    getX() + CELL_SIZE - CELL_INSET + col * CELL_SIZE,
-                    getY() + CELL_SIZE - CELL_INSET + row * CELL_SIZE, c);
+            graphics.fill(x + CELL_INSET, y + CELL_INSET, x + CELL_SIZE - CELL_INSET,
+                    y + CELL_SIZE - CELL_INSET, c);
             ++col;
             if (col == COLUMNS) {
                 col = 0;
