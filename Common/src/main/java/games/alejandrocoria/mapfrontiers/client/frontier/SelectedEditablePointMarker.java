@@ -81,10 +81,13 @@ public class SelectedEditablePointMarker {
     }
 
     public void clear() {
-        for (MarkerOverlay[] overlays : overlaysByDimension.values()) {
-            remove(overlays);
+        try {
+            for (MarkerOverlay[] overlays : overlaysByDimension.values()) {
+                remove(overlays);
+            }
+        } finally {
+            overlaysByDimension.clear();
         }
-        overlaysByDimension.clear();
     }
 
     public void configUpdated() {
@@ -146,7 +149,11 @@ public class SelectedEditablePointMarker {
 
     private void remove(MarkerOverlay[] overlays) {
         for (MarkerOverlay overlay : overlays) {
-            jmAPI.remove(overlay);
+            try {
+                jmAPI.remove(overlay);
+            } catch (Throwable t) {
+                MapFrontiers.LOGGER.error("Failed to remove selected frontier marker", t);
+            }
         }
     }
 }

@@ -250,9 +250,15 @@ public class MapFrontiersClient {
     }
 
     private static void handleClientDisconnected() {
-        if (frontierRuntime != null) {
-            frontierRuntime.close();
-            frontierRuntime = null;
+        ClientFrontierRuntime runtime = frontierRuntime;
+        frontierRuntime = null;
+
+        if (runtime != null) {
+            try {
+                runtime.close();
+            } catch (Throwable t) {
+                MapFrontiers.LOGGER.error("Failed to close client frontier runtime", t);
+            }
         }
 
         if (hud != null) {

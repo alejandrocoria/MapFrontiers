@@ -56,6 +56,9 @@ public class PacketPersonalFrontier {
             if (player == null || MapFrontiers.getServerRuntime() == null) {
                 return;
             }
+            if (!player.level().getServer().isDedicatedServer()) {
+                return;
+            }
             ServerFrontierOperationResult result = MapFrontiers.getServerRuntime().getOperationService().importPersonalFrontier(player, message.frontier);
             result.dispatchNetworkActions();
         }

@@ -10,7 +10,7 @@ import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
@@ -21,7 +21,7 @@ public class MapFrontiersNeoForge extends MapFrontiers {
 
         eventBus.addListener((FMLClientSetupEvent event) -> MapFrontiersClientNeoForge.onClientSetup(event, eventBus));
         NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::onRegisterCommands);
-        NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::onServerStarting);
+        NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::onServerStarted);
         NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::onServerStopping);
         NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::onServerTick);
@@ -33,7 +33,7 @@ public class MapFrontiersNeoForge extends MapFrontiers {
         CommandAccept.register(event.getDispatcher());
     }
 
-    public static void onServerStarting(ServerStartingEvent event) {
+    public static void onServerStarted(ServerStartedEvent event) {
         ServerGlobalEvents.postServerStartingEvent(event.getServer());
     }
 

@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.frontier;
 
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin;
@@ -42,15 +43,8 @@ public class FrontiersOverlayManager {
 
     public void close() {
         ClientGlobalEvents.unsubscribeAllEvents(this);
-        selectedEditablePointMarker.clear();
-
-        for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
-            for (FrontierOverlay frontier : frontiers) {
-                frontier.deleted();
-            }
-        }
-
-        dimensionsFrontiers.clear();
+        clearSelectedEditablePointMarker();
+        clearFrontiers();
     }
 
     public FrontierOverlay addFrontier(FrontierData data) {
@@ -90,7 +84,7 @@ public class FrontiersOverlayManager {
         }
 
         FrontierOverlay frontier = frontiers.remove(index);
-        frontier.deleted();
+        deleteFrontierOverlay(frontier);
         MapFrontiersClient.markFrontierActivationDirty();
 
         return frontier;
@@ -141,13 +135,16 @@ public class FrontiersOverlayManager {
     }
 
     public void clearFrontiers() {
-        for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
-            for (FrontierOverlay frontier : frontiers) {
-                frontier.deleted();
+        try {
+            for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
+                for (FrontierOverlay frontier : frontiers) {
+                    deleteFrontierOverlay(frontier);
+                }
             }
+        } finally {
+            dimensionsFrontiers.clear();
+            MapFrontiersClient.markFrontierActivationDirty();
         }
-        dimensionsFrontiers.clear();
-        MapFrontiersClient.markFrontierActivationDirty();
     }
 
     public List<FrontierOverlay> getFrontiersInPosition(ResourceKey<Level> dimension, BlockPos pos, double maxDistanceToOpen,
@@ -209,6 +206,22 @@ public class FrontiersOverlayManager {
     public void updateSelectedMarker(ResourceKey<Level> dimension, @Nullable FrontierOverlay frontier) {
         BlockPos pos = frontier != null ? frontier.getSelectedEditablePoint() : null;
         selectedEditablePointMarker.update(dimension, pos);
+    }
+
+    private void clearSelectedEditablePointMarker() {
+        try {
+            selectedEditablePointMarker.clear();
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error("Failed to clear selected frontier marker", t);
+        }
+    }
+
+    private static void deleteFrontierOverlay(FrontierOverlay frontier) {
+        try {
+            frontier.deleted();
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error("Failed to delete frontier overlay {}", frontier.getId(), t);
+        }
     }
 
 }
