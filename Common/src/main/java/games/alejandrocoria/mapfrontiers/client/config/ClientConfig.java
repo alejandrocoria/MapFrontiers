@@ -19,6 +19,7 @@ import net.minecraft.resources.Identifier;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 
 public final class ClientConfig {
@@ -276,6 +277,7 @@ public final class ClientConfig {
     public static final EnumConfigEntry<HUDSlot> HUD_SLOT_3 = register(enumEntry(HUDSlot.class, HUDSlot.Banner, "hud", "slot3")
             .comment("HUD element on slot 3.")
             .translation(translation("hud", "slot3")));
+    public static final List<EnumConfigEntry<HUDSlot>> HUD_SLOTS = List.of(HUD_SLOT_1, HUD_SLOT_2, HUD_SLOT_3);
     public static final EnumConfigEntry<HUDAnchor> HUD_ANCHOR = register(enumEntry(HUDAnchor.class, HUDAnchor.MinimapHorizontal, "hud", "anchor")
             .comment("Anchor point of the HUD. When anchored to the minimap, coordinates are relative to the minimap's default position.")
             .translation(translation("hud", "anchor")));
@@ -373,6 +375,22 @@ public final class ClientConfig {
 
     public static <E extends Enum<E>> Component getTranslatedEnum(E value) {
         return Component.translatable("mapfrontiers.config." + value.name());
+    }
+
+    public static List<HUDSlot> getHUDSlots() {
+        List<HUDSlot> configuredSlots = HUD_SLOTS.stream().map(ConfigEntry::get).toList();
+        List<HUDSlot> resolvedSlots = new ArrayList<>(configuredSlots.size());
+        EnumSet<HUDSlot> seenSlots = EnumSet.noneOf(HUDSlot.class);
+
+        for (HUDSlot slot : configuredSlots) {
+            if (slot == HUDSlot.None || seenSlots.add(slot)) {
+                resolvedSlots.add(slot);
+            } else {
+                resolvedSlots.add(HUDSlot.None);
+            }
+        }
+
+        return resolvedSlots;
     }
 
     public static List<Sorting> getFrontierSortingValues() {

@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 
 @ParametersAreNonnullByDefault
@@ -27,16 +28,10 @@ public class HUD {
     private FrontierOverlay frontier;
     private int frontierHash;
     private long activeFrontiersRevision = -1L;
-    private final StringWidget frontierName1;
-    private final StringWidget frontierName2;
-    private final StringWidget frontierOwner;
-    private final List<ClientConfig.HUDSlot> slots;
+    private final EnumMap<ClientConfig.HUDSlot, SlotRenderer> slotRenderers;
+    private final List<PreparedSlot> preparedSlots;
     private int posX = 0;
     private int posY = 0;
-    private int nameOffsetY = 0;
-    private int ownerOffsetY = 0;
-    private int bannerOffsetY = 0;
-    private int nameLinesCount = 0;
     private int hudWidth = 0;
     private int hudHeight = 0;
     private int textScale = 1;
@@ -69,10 +64,11 @@ public class HUD {
     }
 
     public HUD() {
-        slots = new ArrayList<>();
-        frontierName1 = new StringWidget(Component.empty(), mc.font, StringWidget.Align.Center);
-        frontierName2 = new StringWidget(Component.empty(), mc.font, StringWidget.Align.Center);
-        frontierOwner = new StringWidget(Component.empty(), mc.font, StringWidget.Align.Center);
+        slotRenderers = new EnumMap<>(ClientConfig.HUDSlot.class);
+        slotRenderers.put(ClientConfig.HUDSlot.Name, new NameSlotRenderer());
+        slotRenderers.put(ClientConfig.HUDSlot.Owner, new OwnerSlotRenderer());
+        slotRenderers.put(ClientConfig.HUDSlot.Banner, new BannerSlotRenderer());
+        preparedSlots = new ArrayList<>();
 
         MapFrontiersClient.getFrontierEvents().subscribeDeleted(this, frontierID -> frontierChanged());
         MapFrontiersClient.getFrontierEvents().subscribeCreated(this, (frontierOverlay, playerID) -> frontierChanged());
@@ -198,7 +194,7 @@ public class HUD {
             updateData();
         }
 
-        if (slots.isEmpty()) {
+        if (preparedSlots.isEmpty()) {
             return;
         }
 
@@ -211,109 +207,42 @@ public class HUD {
         graphics.pose().pushMatrix();
         graphics.pose().scale(1.0f / factor, 1.0f / factor);
 
-        for (ClientConfig.HUDSlot slot : slots) {
-            switch (slot) {
-            case Name:
-                drawName(graphics, frameColor, textNameColor, partialTicks);
-                break;
-            case Owner:
-                drawOwner(graphics, frameColor, textOwnerColor, partialTicks);
-                break;
-            case Banner:
-                drawBanner(graphics, frameColor);
-                break;
-            case None:
-                break;
-            }
+        for (PreparedSlot slot : preparedSlots) {
+            slot.render(graphics, frameColor, textNameColor, textOwnerColor, partialTicks);
         }
 
         graphics.pose().popMatrix();
     }
 
-    private void drawName(GuiGraphics graphics, int frameColor, int textColor, float partialTicks) {
-        graphics.fill(posX, posY + nameOffsetY, posX + hudWidth, posY + nameOffsetY + 12 * nameLinesCount * textScale, frameColor);
-
-        frontierName1.setColor(textColor);
-        frontierName2.setColor(textColor);
-
-        frontierName1.render(graphics, 0, 0, partialTicks);
-        frontierName2.render(graphics, 0, 0, partialTicks);
-    }
-
-    private void drawOwner(GuiGraphics graphics, int frameColor, int textColor, float partialTicks) {
-        graphics.fill(posX, posY + ownerOffsetY, posX + hudWidth, posY + ownerOffsetY + 12 * textScale,
-                frameColor);
-
-        frontierOwner.setColor(textColor);
-        frontierOwner.render(graphics, 0, 0, partialTicks);
-    }
-
-    private void drawBanner(GuiGraphics graphics, int frameColor) {
-        int bannerX = posX + hudWidth / 2;
-        int bannerY = posY + bannerOffsetY + 2;
-
-        int[] bannerBounds = frontier.getBannerBounds(bannerX - 11 * bannerScale, bannerY, bannerScale);
-
-        graphics.fill(bannerBounds[0] - 2, bannerBounds[1] - 2, bannerBounds[2] + 2, bannerBounds[3] + 2, frameColor);
-        frontier.getBannerRenderer().renderBanner(graphics, bannerX, bannerY, bannerScale);
-    }
-
     private void updateData() {
         displayWidth = mc.getWindow().getWidth();
         displayHeight = mc.getWindow().getHeight();
-
-        slots.clear();
+        preparedSlots.clear();
+        hudWidth = 0;
+        hudHeight = 0;
 
         if (frontier == null) {
             return;
         }
 
-        addSlot(ClientConfig.HUD_SLOT_1.get());
-        addSlot(ClientConfig.HUD_SLOT_2.get());
-        addSlot(ClientConfig.HUD_SLOT_3.get());
+        textScale = ClientConfig.HUD_TEXT_SIZE.get();
+        bannerScale = ClientConfig.HUD_BANNER_SIZE.get();
 
-        if (slots.isEmpty()) {
+        List<SlotRenderer> visibleSlots = new ArrayList<>();
+        for (ClientConfig.HUDSlot slot : ClientConfig.getHUDSlots()) {
+            SlotRenderer renderer = slotRenderers.get(slot);
+            if (renderer != null && renderer.isVisible()) {
+                visibleSlots.add(renderer);
+            }
+        }
+
+        if (visibleSlots.isEmpty()) {
             return;
         }
 
-        hudWidth = 0;
-        hudHeight = 0;
-        bannerScale = ClientConfig.HUD_BANNER_SIZE.get();
-        nameLinesCount = 0;
-
-        textScale = ClientConfig.HUD_TEXT_SIZE.get();
-
-        for (ClientConfig.HUDSlot slot : slots) {
-            switch (slot) {
-                case Name:
-                    if (!StringUtils.isBlank(frontier.getName1())) {
-                        ++nameLinesCount;
-                    }
-                    if (!StringUtils.isBlank(frontier.getName2())) {
-                        ++nameLinesCount;
-                    }
-                    int name1Width = mc.font.width(frontier.getName1()) + 3;
-                    int name2Width = mc.font.width(frontier.getName2()) + 3;
-                    int nameWidth = Math.max(name1Width, name2Width) * textScale;
-                    hudWidth = Math.max(hudWidth, nameWidth);
-                    hudHeight += 12 * nameLinesCount * textScale;
-                    break;
-                case Owner:
-                    if (!frontier.getOwner().isEmpty()) {
-                        String owner = getOwnerString();
-                        int ownerWidth = (mc.font.width(owner) + 3) * textScale;
-                        hudWidth = Math.max(hudWidth, ownerWidth);
-                        hudHeight += 12 * textScale;
-                    }
-                    break;
-                case Banner:
-                    int[] bannerBounds = frontier.getBannerBounds(0, 0, bannerScale);
-                    hudWidth = Math.max(hudWidth, bannerBounds[2] - bannerBounds[0] + 4);
-                    hudHeight += bannerBounds[3] - bannerBounds[1] + 4;
-                    break;
-                case None:
-                    break;
-            }
+        for (SlotRenderer renderer : visibleSlots) {
+            hudWidth = Math.max(hudWidth, renderer.getWidth());
+            hudHeight += renderer.getHeight();
         }
 
         HUDPlacementHelper.Point anchorPos = HUDPlacementHelper.getHUDAnchor(ClientConfig.HUD_ANCHOR.get());
@@ -322,57 +251,10 @@ public class HUD {
         posY = anchorPos.y - originPos.y + ClientConfig.HUD_Y_POSITION.get();
 
         int offsetY = 0;
-        nameOffsetY = 0;
-        ownerOffsetY = 0;
-        bannerOffsetY = 0;
-
-        for (ClientConfig.HUDSlot slot : slots) {
-            switch (slot) {
-                case Name:
-                    nameOffsetY = offsetY;
-
-                    if (StringUtils.isBlank(frontier.getName1())) {
-                        frontierName1.setMessage(Component.empty());
-                    } else {
-                        frontierName1.setX(posX + hudWidth / 2);
-                        frontierName1.setY(posY + nameOffsetY + 2 * textScale);
-                        frontierName1.setScale(textScale);
-                        frontierName1.setMessage(Component.literal(frontier.getName1()));
-                        offsetY += 12 * textScale;
-                    }
-
-                    if (StringUtils.isBlank(frontier.getName2())) {
-                        frontierName2.setMessage(Component.empty());
-                    } else {
-                        frontierName2.setX(posX + hudWidth / 2);
-                        frontierName2.setY(posY + offsetY + 2 * textScale);
-                        frontierName2.setScale(textScale);
-                        frontierName2.setMessage(Component.literal(frontier.getName2()));
-                        offsetY += 12 * textScale;
-                    }
-                    break;
-                case Owner:
-                    if (!frontier.getOwner().isEmpty()) {
-                        String owner = getOwnerString();
-                        ownerOffsetY = offsetY;
-
-                        frontierOwner.setX(posX + hudWidth / 2);
-                        frontierOwner.setY(posY + ownerOffsetY + 2 * textScale);
-                        frontierOwner.setScale(textScale);
-                        frontierOwner.setMessage(Component.literal(ChatFormatting.ITALIC + owner));
-
-                        offsetY += 12 * textScale;
-                    }
-                    break;
-                case Banner:
-                    int[] bannerBounds = frontier.getBannerBounds(0, 0, bannerScale);
-                    int bannerHeight = bannerBounds[3] - bannerBounds[1];
-                    bannerOffsetY = (offsetY - bannerBounds[1]);
-                    offsetY += bannerHeight + 4;
-                    break;
-                case None:
-                    break;
-            }
+        for (SlotRenderer renderer : visibleSlots) {
+            PreparedSlot preparedSlot = renderer.prepare(offsetY);
+            preparedSlots.add(preparedSlot);
+            offsetY += preparedSlot.getHeight();
         }
     }
 
@@ -388,19 +270,175 @@ public class HUD {
         return ownerString;
     }
 
-    private void addSlot(ClientConfig.HUDSlot slot) {
-        if (slot == ClientConfig.HUDSlot.Name) {
-            if (frontier.isNamed()) {
-                slots.add(slot);
+    private StringWidget createCenteredWidget(String text, int topY) {
+        StringWidget widget = new StringWidget(Component.literal(text), mc.font, StringWidget.Align.Center);
+        widget.setX(posX + hudWidth / 2);
+        widget.setY(topY + 2 * textScale);
+        widget.setScale(textScale);
+        return widget;
+    }
+
+    private interface SlotRenderer {
+        boolean isVisible();
+        int getWidth();
+        int getHeight();
+        PreparedSlot prepare(int offsetY);
+    }
+
+    private interface PreparedSlot {
+        int getHeight();
+        void render(GuiGraphics graphics, int frameColor, int textNameColor, int textOwnerColor, float partialTicks);
+    }
+
+    private class NameSlotRenderer implements SlotRenderer {
+        @Override
+        public boolean isVisible() {
+            return frontier.isNamed();
+        }
+
+        @Override
+        public int getWidth() {
+            int name1Width = mc.font.width(frontier.getName1()) + 3;
+            int name2Width = mc.font.width(frontier.getName2()) + 3;
+            return Math.max(name1Width, name2Width) * textScale;
+        }
+
+        @Override
+        public int getHeight() {
+            return getLineCount() * 12 * textScale;
+        }
+
+        @Override
+        public PreparedSlot prepare(int offsetY) {
+            List<StringWidget> widgets = new ArrayList<>();
+            int currentY = posY + offsetY;
+
+            if (!StringUtils.isBlank(frontier.getName1())) {
+                widgets.add(createCenteredWidget(frontier.getName1(), currentY));
+                currentY += 12 * textScale;
             }
-        } else if (slot == ClientConfig.HUDSlot.Owner) {
-            if (!frontier.getOwner().isEmpty()) {
-                slots.add(slot);
+
+            if (!StringUtils.isBlank(frontier.getName2())) {
+                widgets.add(createCenteredWidget(frontier.getName2(), currentY));
             }
-        } else if (slot == ClientConfig.HUDSlot.Banner) {
-            if (frontier.getBannerRenderer().hasBanner()) {
-                slots.add(slot);
+
+            return new TextPreparedSlot(offsetY, getHeight(), widgets, true);
+        }
+
+        private int getLineCount() {
+            int lineCount = 0;
+            if (!StringUtils.isBlank(frontier.getName1())) {
+                ++lineCount;
             }
+            if (!StringUtils.isBlank(frontier.getName2())) {
+                ++lineCount;
+            }
+            return lineCount;
+        }
+    }
+
+    private class OwnerSlotRenderer implements SlotRenderer {
+        @Override
+        public boolean isVisible() {
+            return !frontier.getOwner().isEmpty();
+        }
+
+        @Override
+        public int getWidth() {
+            return (mc.font.width(getOwnerString()) + 3) * textScale;
+        }
+
+        @Override
+        public int getHeight() {
+            return 12 * textScale;
+        }
+
+        @Override
+        public PreparedSlot prepare(int offsetY) {
+            List<StringWidget> widgets = List.of(createCenteredWidget(ChatFormatting.ITALIC + getOwnerString(), posY + offsetY));
+            return new TextPreparedSlot(offsetY, getHeight(), widgets, false);
+        }
+    }
+
+    private class BannerSlotRenderer implements SlotRenderer {
+        @Override
+        public boolean isVisible() {
+            return frontier.getBannerRenderer().hasBanner();
+        }
+
+        @Override
+        public int getWidth() {
+            int[] bannerBounds = frontier.getBannerBounds(0, 0, bannerScale);
+            return bannerBounds[2] - bannerBounds[0] + 4;
+        }
+
+        @Override
+        public int getHeight() {
+            int[] bannerBounds = frontier.getBannerBounds(0, 0, bannerScale);
+            return bannerBounds[3] - bannerBounds[1] + 4;
+        }
+
+        @Override
+        public PreparedSlot prepare(int offsetY) {
+            int bannerX = posX + hudWidth / 2;
+            int bannerY = posY + offsetY + 2;
+            int[] bannerBounds = frontier.getBannerBounds(bannerX - 11 * bannerScale, bannerY, bannerScale);
+            return new BannerPreparedSlot(getHeight(), bannerX, bannerY, bannerBounds);
+        }
+    }
+
+    private class TextPreparedSlot implements PreparedSlot {
+        private final int offsetY;
+        private final int height;
+        private final List<StringWidget> widgets;
+        private final boolean nameSlot;
+
+        private TextPreparedSlot(int offsetY, int height, List<StringWidget> widgets, boolean nameSlot) {
+            this.offsetY = offsetY;
+            this.height = height;
+            this.widgets = widgets;
+            this.nameSlot = nameSlot;
+        }
+
+        @Override
+        public int getHeight() {
+            return height;
+        }
+
+        @Override
+        public void render(GuiGraphics graphics, int frameColor, int textNameColor, int textOwnerColor, float partialTicks) {
+            graphics.fill(posX, posY + offsetY, posX + hudWidth, posY + offsetY + height, frameColor);
+
+            int textColor = nameSlot ? textNameColor : textOwnerColor;
+            for (StringWidget widget : widgets) {
+                widget.setColor(textColor);
+                widget.renderWidget(graphics, 0, 0, partialTicks);
+            }
+        }
+    }
+
+    private class BannerPreparedSlot implements PreparedSlot {
+        private final int height;
+        private final int bannerX;
+        private final int bannerY;
+        private final int[] bannerBounds;
+
+        private BannerPreparedSlot(int height, int bannerX, int bannerY, int[] bannerBounds) {
+            this.height = height;
+            this.bannerX = bannerX;
+            this.bannerY = bannerY;
+            this.bannerBounds = bannerBounds;
+        }
+
+        @Override
+        public int getHeight() {
+            return height;
+        }
+
+        @Override
+        public void render(GuiGraphics graphics, int frameColor, int textNameColor, int textOwnerColor, float partialTicks) {
+            graphics.fill(bannerBounds[0] - 2, bannerBounds[1] - 2, bannerBounds[2] + 2, bannerBounds[3] + 2, frameColor);
+            frontier.getBannerRenderer().renderBanner(graphics, bannerX, bannerY, bannerScale);
         }
     }
 }
