@@ -530,6 +530,10 @@ public class ModSettingsPage extends PageScreen
     }
 
     private void onGroupDeletePressed(ScrollElement element) {
+        if (((GroupElement) element).getGroup().isSpecial()) {
+            return;
+        }
+
         if (groups.getSelectedElement() != null) {
             groupClicked((GroupElement) element);
         }
@@ -556,6 +560,10 @@ public class ModSettingsPage extends PageScreen
     }
 
     private void deleteGroup(ScrollElement element) {
+        if (((GroupElement) element).getGroup().isSpecial()) {
+            return;
+        }
+
         groups.removeElement(element);
         settings.removeCustomGroup(((GroupElement) element).getGroup());
         sendChangesToServer();
