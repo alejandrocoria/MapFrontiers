@@ -87,6 +87,6 @@ public class GroupElement extends ScrollBox.ScrollElement {
 
     @Override
     protected boolean canBeDeleted() {
-        return true;
+        return !group.isSpecial();
     }
 }
