@@ -14,6 +14,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.hud.HUDPlacementHelper;
 import games.alejandrocoria.mapfrontiers.client.gui.hud.HUDWidget;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
+import games.alejandrocoria.mapfrontiers.common.config.EnumConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -27,6 +28,8 @@ import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
+import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class HUDSettingsScreen extends AutoScaledScreen {
@@ -38,9 +41,7 @@ public class HUDSettingsScreen extends AutoScaledScreen {
     private static final Component OFF_LABEL = Component.translatable("options.off");
 
     private HUDWidget HUDWidget;
-    private OptionButton buttonSlot1;
-    private OptionButton buttonSlot2;
-    private OptionButton buttonSlot3;
+    private final List<OptionButton> slotButtons = new ArrayList<>();
     private OptionButton buttonAnchor;
     private TextBoxInt textPositionX;
     private TextBoxInt textPositionY;
@@ -127,9 +128,11 @@ public class HUDSettingsScreen extends AutoScaledScreen {
     }
 
     private void buildSlotsSection(GridLayout mainLayout) {
-        buttonSlot1 = addHUDSlotRow(mainLayout, 0, ClientConfig.HUD_SLOT_1, ClientConfig.HUD_SLOT_1.get().ordinal());
-        buttonSlot2 = addHUDSlotRow(mainLayout, 1, ClientConfig.HUD_SLOT_2, ClientConfig.HUD_SLOT_2.get().ordinal());
-        buttonSlot3 = addHUDSlotRow(mainLayout, 2, ClientConfig.HUD_SLOT_3, ClientConfig.HUD_SLOT_3.get().ordinal());
+        slotButtons.clear();
+        for (int i = 0; i < ClientConfig.HUD_SLOTS.size(); ++i) {
+            EnumConfigEntry<ClientConfig.HUDSlot> entry = ClientConfig.HUD_SLOTS.get(i);
+            slotButtons.add(addHUDSlotRow(mainLayout, i, entry, entry.get().ordinal()));
+        }
     }
 
     private void buildAppearanceSection(GridLayout mainLayout) {
@@ -190,10 +193,9 @@ public class HUDSettingsScreen extends AutoScaledScreen {
 
     private OptionButton createHUDSlotButton(int selectedValue) {
         OptionButton button = new OptionButton(font, 64, pressedButton -> updateSlots());
-        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.None));
-        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Name));
-        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Owner));
-        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDSlot.Banner));
+        for (ClientConfig.HUDSlot slot : ClientConfig.HUDSlot.values()) {
+            button.addOption(ClientConfig.getTranslatedEnum(slot));
+        }
         button.setSelected(selectedValue);
         return button;
     }
@@ -271,7 +273,7 @@ public class HUDSettingsScreen extends AutoScaledScreen {
     }
 
     private void refreshViewState() {
-        updateSlotsValidity();
+        updateSlotsStyle();
         updatePosition();
     }
 
@@ -330,52 +332,37 @@ public class HUDSettingsScreen extends AutoScaledScreen {
     }
 
     private void updateSlots() {
-        updateSlotsValidity();
-        boolean updated = false;
-        if (buttonSlot1.getColor() == ColorConstants.TEXT || buttonSlot1.getColor() == ColorConstants.TEXT_HIGHLIGHT) {
-            ClientConfig.HUD_SLOT_1.set(ClientConfig.HUDSlot.values()[buttonSlot1.getSelected()]);
-            updated = true;
+        for (int i = 0; i < slotButtons.size(); ++i) {
+            ClientConfig.HUD_SLOTS.get(i).set(getSelectedSlot(slotButtons.get(i)));
         }
 
-        if (buttonSlot2.getColor() == ColorConstants.TEXT || buttonSlot2.getColor() == ColorConstants.TEXT_HIGHLIGHT) {
-            ClientConfig.HUD_SLOT_2.set(ClientConfig.HUDSlot.values()[buttonSlot2.getSelected()]);
-            updated = true;
+        updateSlotsStyle();
+        ClientGlobalEvents.postUpdatedConfigEvent();
+        updatePosition();
+    }
+
+    private void updateSlotsStyle() {
+        for (int i = 0; i < slotButtons.size(); ++i) {
+            slotButtons.get(i).setColor(ColorConstants.TEXT, ColorConstants.TEXT_HIGHLIGHT);
         }
 
-        if (buttonSlot3.getColor() == ColorConstants.TEXT || buttonSlot3.getColor() == ColorConstants.TEXT_HIGHLIGHT) {
-            ClientConfig.HUD_SLOT_3.set(ClientConfig.HUDSlot.values()[buttonSlot3.getSelected()]);
-            updated = true;
-        }
+        for (int i = 0; i < slotButtons.size(); ++i) {
+            ClientConfig.HUDSlot leftSlot = getSelectedSlot(slotButtons.get(i));
+            if (leftSlot == ClientConfig.HUDSlot.None) {
+                continue;
+            }
 
-        if (updated) {
-            ClientGlobalEvents.postUpdatedConfigEvent();
-            updatePosition();
+            for (int j = i + 1; j < slotButtons.size(); ++j) {
+                if (leftSlot == getSelectedSlot(slotButtons.get(j))) {
+                    slotButtons.get(i).setColor(ColorConstants.TEXT_ERROR, ColorConstants.TEXT_ERROR_HIGHLIGHT);
+                    slotButtons.get(j).setColor(ColorConstants.TEXT_ERROR, ColorConstants.TEXT_ERROR_HIGHLIGHT);
+                }
+            }
         }
     }
 
-    private void updateSlotsValidity() {
-        ClientConfig.HUDSlot slot1 = ClientConfig.HUDSlot.values()[buttonSlot1.getSelected()];
-        ClientConfig.HUDSlot slot2 = ClientConfig.HUDSlot.values()[buttonSlot2.getSelected()];
-        ClientConfig.HUDSlot slot3 = ClientConfig.HUDSlot.values()[buttonSlot3.getSelected()];
-
-        buttonSlot1.setColor(ColorConstants.TEXT, ColorConstants.TEXT_HIGHLIGHT);
-        buttonSlot2.setColor(ColorConstants.TEXT, ColorConstants.TEXT_HIGHLIGHT);
-        buttonSlot3.setColor(ColorConstants.TEXT, ColorConstants.TEXT_HIGHLIGHT);
-
-        if (slot1 != ClientConfig.HUDSlot.None && slot1 == slot2) {
-            buttonSlot1.setColor(ColorConstants.TEXT_ERROR, ColorConstants.TEXT_ERROR_HIGHLIGHT);
-            buttonSlot2.setColor(ColorConstants.TEXT_ERROR, ColorConstants.TEXT_ERROR_HIGHLIGHT);
-        }
-
-        if (slot1 != ClientConfig.HUDSlot.None && slot1 == slot3) {
-            buttonSlot1.setColor(ColorConstants.TEXT_ERROR, ColorConstants.TEXT_ERROR_HIGHLIGHT);
-            buttonSlot3.setColor(ColorConstants.TEXT_ERROR, ColorConstants.TEXT_ERROR_HIGHLIGHT);
-        }
-
-        if (slot2 != ClientConfig.HUDSlot.None && slot2 == slot3) {
-            buttonSlot2.setColor(ColorConstants.TEXT_ERROR, ColorConstants.TEXT_ERROR_HIGHLIGHT);
-            buttonSlot3.setColor(ColorConstants.TEXT_ERROR, ColorConstants.TEXT_ERROR_HIGHLIGHT);
-        }
+    private ClientConfig.HUDSlot getSelectedSlot(OptionButton button) {
+        return ClientConfig.HUDSlot.values()[button.getSelected()];
     }
 
     @Override
