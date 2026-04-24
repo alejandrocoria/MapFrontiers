@@ -15,7 +15,9 @@ public final class ColorConstants {
     public static final int CHECKBOX_CHECK = 0xFF666666;
     public static final int HUD_ANCHOR_DARK = 0xFF222222;
     public static final int HUD_ANCHOR_LIGHT = 0xFFDDDDDD;
-    public static final int INFO_LABEL_TEXT = 0xFF00FFFF;
+    public static final int LABEL_R = 0xFFE84949;
+    public static final int LABEL_G = 0xFF52F152;
+    public static final int LABEL_B = 0xFF4343E2;
     public static final int LINK = 0xFFFFFFFF;
     public static final int LINK_HIGHLIGHT = 0xFFFFFF00;
     public static final int OPTION_BG = 0xFF000000;
