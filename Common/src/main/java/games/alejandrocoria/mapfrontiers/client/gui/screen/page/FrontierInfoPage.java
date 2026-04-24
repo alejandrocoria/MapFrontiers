@@ -249,7 +249,7 @@ public class FrontierInfoPage extends PageScreen
 
         LinearLayout headerRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
         Component dimension = Component.translatable(DIMENSION_KEY, frontier.getDimension().identifier().toString());
-        headerRow.addChild(new StringWidget(NAME_LABEL, font).setColor(ColorConstants.INFO_LABEL_TEXT));
+        headerRow.addChild(new StringWidget(NAME_LABEL, font).setColor(ColorConstants.WHITE));
         headerRow.addChild(SpacerElement.width(Math.max(0, NAME_SECTION_WIDTH - font.width(NAME_LABEL.getVisualOrderText()) - font.width(dimension.getVisualOrderText()) - LayoutConstants.SPACING_TINY * 2)));
         headerRow.addChild(new StringWidget(dimension, font).setColor(ColorConstants.TEXT_DIMENSION));
         nameColumn.addChild(headerRow);
@@ -369,17 +369,17 @@ public class FrontierInfoPage extends PageScreen
         rgbRow.defaultCellSetting().alignVerticallyMiddle();
         colorColumn.addChild(rgbRow);
 
-        rgbRow.addChild(new StringWidget(R_LABEL, font, RGB_LABEL_HEIGHT).setColor(ColorConstants.INFO_LABEL_TEXT));
+        rgbRow.addChild(new StringWidget(R_LABEL, font, RGB_LABEL_HEIGHT).setColor(ColorConstants.LABEL_R));
         textRed = createRgbTextBox(value -> (frontier.getColor() & 0xFF00FFFF) | (value << 16));
         rgbRow.addChild(textRed);
         rgbRow.addChild(SpacerElement.width(RGB_ROW_SPACER_WIDTH));
 
-        rgbRow.addChild(new StringWidget(G_LABEL, font, RGB_LABEL_HEIGHT).setColor(ColorConstants.INFO_LABEL_TEXT));
+        rgbRow.addChild(new StringWidget(G_LABEL, font, RGB_LABEL_HEIGHT).setColor(ColorConstants.LABEL_G));
         textGreen = createRgbTextBox(value -> (frontier.getColor() & 0xFFFF00FF) | (value << 8));
         rgbRow.addChild(textGreen);
         rgbRow.addChild(SpacerElement.width(RGB_ROW_SPACER_WIDTH));
 
-        rgbRow.addChild(new StringWidget(B_LABEL, font, RGB_LABEL_HEIGHT).setColor(ColorConstants.INFO_LABEL_TEXT));
+        rgbRow.addChild(new StringWidget(B_LABEL, font, RGB_LABEL_HEIGHT).setColor(ColorConstants.LABEL_B));
         textBlue = createRgbTextBox(value -> (frontier.getColor() & 0xFFFFFF00) | value);
         rgbRow.addChild(textBlue);
 
