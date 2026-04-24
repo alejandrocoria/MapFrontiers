@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.client.mixin;
+package games.alejandrocoria.mapfrontiers.mixin.client;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.renderer.texture.SpriteContents;

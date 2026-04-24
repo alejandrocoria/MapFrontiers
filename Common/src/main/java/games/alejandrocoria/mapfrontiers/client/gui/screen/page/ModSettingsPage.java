@@ -166,12 +166,7 @@ public class ModSettingsPage extends PageScreen
                     return;
                 }
 
-                if (tabSelected != null) {
-                    MapFrontiersClient.setLastSettingsTab(tabSelected);
-                }
-
-                onClose();
-                new ModSettingsPage(showKeyHint).display();
+                onSettingsProfileUpdated();
             });
         }
     }
@@ -224,6 +219,11 @@ public class ModSettingsPage extends PageScreen
         }
 
         updateButtonsVisibility();
+    }
+
+    private void onSettingsProfileUpdated() {
+        resolveInitialState();
+        refreshPermissionsState();
     }
 
     private void buildCreditsTab() {
@@ -624,6 +624,33 @@ public class ModSettingsPage extends PageScreen
     private void refreshViewState() {
         restoreInitialTabSelection();
         updateButtonsVisibility();
+    }
+
+    private void refreshPermissionsState() {
+        if (tabbedBox == null) {
+            return;
+        }
+
+        tabbedBox.setTabEnabled(Tab.Groups.ordinal(), canEditGroups);
+        tabbedBox.setTabEnabled(Tab.Actions.ordinal(), canEditGroups);
+
+        if (!tabbedBox.isTabEnabled(tabSelected.ordinal())) {
+            tabSelected = Tab.Credits;
+        }
+
+        tabbedBox.setTabSelected(tabSelected.ordinal());
+        updateButtonsVisibility();
+
+        if (canEditGroups) {
+            if (settings != null) {
+                updateGroupsActions();
+                if (groups.getSelectedElement() != null) {
+                    groupClicked((GroupElement) groups.getSelectedElement());
+                }
+            } else {
+                requestInitialDataIfNeeded();
+            }
+        }
     }
 
     private void restoreInitialTabSelection() {

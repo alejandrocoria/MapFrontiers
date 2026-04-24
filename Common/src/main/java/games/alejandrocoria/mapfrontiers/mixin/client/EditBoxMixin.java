@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.client.mixin;
+package games.alejandrocoria.mapfrontiers.mixin.client;
 
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxDouble;

@@ -14,6 +14,7 @@ public class ServerGlobalEvents {
     private static final Map<Object, Consumer<MinecraftServer>> serverStartingEventMap = new HashMap<>();
     private static final Map<Object, Consumer<MinecraftServer>> serverStoppingEventMap = new HashMap<>();
     private static final Map<Object, BiConsumer<MinecraftServer, ServerPlayer>> playerJoinedEventMap = new HashMap<>();
+    private static final Map<Object, BiConsumer<MinecraftServer, ServerPlayer>> playerPermissionLevelUpdatedEventMap = new HashMap<>();
     private static final Map<Object, Consumer<MinecraftServer>> serverTickEventMap = new HashMap<>();
 
     public static void subscribeServerStartingEvent(Object object, Consumer<MinecraftServer> callback) {
@@ -28,6 +29,10 @@ public class ServerGlobalEvents {
         playerJoinedEventMap.put(object, callback);
     }
 
+    public static void subscribePlayerPermissionLevelUpdatedEvent(Object object, BiConsumer<MinecraftServer, ServerPlayer> callback) {
+        playerPermissionLevelUpdatedEventMap.put(object, callback);
+    }
+
     public static void subscribeServerTickEvent(Object object, Consumer<MinecraftServer> callback) {
         serverTickEventMap.put(object, callback);
     }
@@ -37,6 +42,7 @@ public class ServerGlobalEvents {
         serverStartingEventMap.remove(object);
         serverStoppingEventMap.remove(object);
         playerJoinedEventMap.remove(object);
+        playerPermissionLevelUpdatedEventMap.remove(object);
         serverTickEventMap.remove(object);
     }
 
@@ -55,6 +61,12 @@ public class ServerGlobalEvents {
 
     public static void postPlayerJoinedEvent(MinecraftServer server, ServerPlayer player) {
         for (BiConsumer<MinecraftServer, ServerPlayer> callback : playerJoinedEventMap.values()) {
+            callback.accept(server, player);
+        }
+    }
+
+    public static void postPlayerPermissionLevelUpdatedEvent(MinecraftServer server, ServerPlayer player) {
+        for (BiConsumer<MinecraftServer, ServerPlayer> callback : playerPermissionLevelUpdatedEventMap.values()) {
             callback.accept(server, player);
         }
     }

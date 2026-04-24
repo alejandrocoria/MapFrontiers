@@ -53,6 +53,14 @@ public class MapFrontiers {
 
         });
 
+        ServerGlobalEvents.subscribePlayerPermissionLevelUpdatedEvent(MapFrontiers.class, (server, player) -> {
+            if (serverRuntime == null) {
+                return;
+            }
+
+            PacketHandler.sendTo(serverRuntime.createSettingsProfilePacket(player), player);
+        });
+
         ServerGlobalEvents.subscribeServerTickEvent(MapFrontiers.class, server -> {
             if (serverRuntime != null) {
                 serverRuntime.onServerTick();

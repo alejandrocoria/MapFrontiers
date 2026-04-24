@@ -1,18 +1,20 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "games.alejandrocoria.mapfrontiers.client.mixin",
+  "package": "games.alejandrocoria.mapfrontiers.mixin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "mapfrontiers-refmap.json",
   "client": [
-    "AbstractSliderButtonAccessor",
-    "CubeInvoker",
-    "EditBoxMixin",
-    "GuiGraphicsAccessor",
-    "GuiRenderStateAccessor",
-    "SpriteContentsInvoker"
+    "client.AbstractSliderButtonAccessor",
+    "client.CubeInvoker",
+    "client.EditBoxMixin",
+    "client.GuiGraphicsAccessor",
+    "client.GuiRenderStateAccessor",
+    "client.SpriteContentsInvoker"
   ],
-  "server": [],
+  "server": [
+    "server.PlayerListMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }
