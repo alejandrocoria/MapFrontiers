@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.client.mixin;
+package games.alejandrocoria.mapfrontiers.mixin.client;
 
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import org.spongepowered.asm.mixin.Mixin;

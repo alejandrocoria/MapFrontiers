@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.client.mixin;
+package games.alejandrocoria.mapfrontiers.mixin.client;
 
 import net.minecraft.client.renderer.state.gui.GuiRenderState;
 import org.spongepowered.asm.mixin.Mixin;

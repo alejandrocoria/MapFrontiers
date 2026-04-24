@@ -60,21 +60,63 @@ public class TabbedBox implements Layout {
     }
 
     public void setTabSelected(int tab) {
+        if (tab < 0 || tab >= tabs.size() || !tabs.get(tab).isEnabled()) {
+            return;
+        }
+
         if (selected != -1) {
             tabs.get(selected).setSelected(false);
         }
         selected = tab;
         tabs.get(selected).setSelected(true);
+        updateContentVisibility();
 
-        for (int i = 0; i < contents.size(); ++i) {
-            if (i == selected) {
-                contents.get(i).visitWidgets((widget) -> widget.visible = true);
+        tabChanged.accept(selected);
+    }
+
+    public void setTabEnabled(int tab, boolean enabled) {
+        if (tab < 0 || tab >= tabs.size()) {
+            return;
+        }
+
+        tabs.get(tab).setEnabled(enabled);
+
+        if (!enabled && selected == tab) {
+            tabs.get(tab).setSelected(false);
+            selected = findFirstEnabledTab();
+            if (selected != -1) {
+                tabs.get(selected).setSelected(true);
+                updateContentVisibility();
+                tabChanged.accept(selected);
             } else {
-                contents.get(i).visitWidgets((widget) -> widget.visible = false);
+                updateContentVisibility();
+            }
+        }
+    }
+
+    public boolean isTabEnabled(int tab) {
+        if (tab < 0 || tab >= tabs.size()) {
+            return false;
+        }
+
+        return tabs.get(tab).isEnabled();
+    }
+
+    private int findFirstEnabledTab() {
+        for (int i = 0; i < tabs.size(); ++i) {
+            if (tabs.get(i).isEnabled()) {
+                return i;
             }
         }
 
-        tabChanged.accept(selected);
+        return -1;
+    }
+
+    private void updateContentVisibility() {
+        for (int i = 0; i < contents.size(); ++i) {
+            final boolean visible = i == selected;
+            contents.get(i).visitWidgets((widget) -> widget.visible = visible);
+        }
     }
 
     public void setSize(int width, int height) {
@@ -181,6 +223,14 @@ public class TabbedBox implements Layout {
 
         public void setSelected(boolean selected) {
             this.selected = selected;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.active = enabled;
+        }
+
+        public boolean isEnabled() {
+            return active;
         }
 
         @Override
