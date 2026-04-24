@@ -57,6 +57,7 @@
   "mapfrontiers.close_paste_options": "Закрыть опции вставки",
   "mapfrontiers.paste_name": "Имя вставки",
   "mapfrontiers.paste_visibility": "Видимость вставки",
+  "mapfrontiers.paste_path_style": "Стиль пути вставки",
   "mapfrontiers.paste_color": "Цвет вставки",
   "mapfrontiers.paste_banner": "Баннер вставки",
   "mapfrontiers.undo": "Отменить",

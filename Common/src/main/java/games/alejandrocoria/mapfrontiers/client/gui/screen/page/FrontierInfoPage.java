@@ -94,6 +94,7 @@ public class FrontierInfoPage extends PageScreen
     private static final Component RANDOM_COLOR_LABEL = Component.translatable("mapfrontiers.random_color");
     private static final Component PASTE_NAME_LABEL = Component.translatable("mapfrontiers.paste_name");
     private static final Component PASTE_VISIBILITY_LABEL = Component.translatable("mapfrontiers.paste_visibility");
+    private static final Component PASTE_PATH_STYLE_LABEL = Component.translatable("mapfrontiers.paste_path_style");
     private static final Component PASTE_COLOR_LABEL = Component.translatable("mapfrontiers.paste_color");
     private static final Component PASTE_BANNER_LABEL = Component.translatable("mapfrontiers.paste_banner");
     private static final Component SELECT_IN_MAP_LABEL = Component.translatable("mapfrontiers.select_in_map");
@@ -145,10 +146,12 @@ public class FrontierInfoPage extends PageScreen
     private IconButton buttonPasteOptions;
     private OptionButton buttonPasteName;
     private OptionButton buttonPasteVisibility;
+    private OptionButton buttonPastePathStyle;
     private OptionButton buttonPasteColor;
     private OptionButton buttonPasteBanner;
     private StringWidget labelPasteName;
     private StringWidget labelPasteVisibility;
+    private StringWidget labelPastePathStyle;
     private StringWidget labelPasteColor;
     private StringWidget labelPasteBanner;
     private IconButton buttonUndo;
@@ -404,14 +407,17 @@ public class FrontierInfoPage extends PageScreen
         labelPasteVisibility = editColumn.addChild(new StringWidget(PASTE_VISIBILITY_LABEL, font).setColor(ColorConstants.TEXT), 1, 0);
         buttonPasteVisibility = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_VISIBILITY.get(), ClientConfig.PASTE_VISIBILITY::set), 1, 1);
 
-        labelPasteColor = editColumn.addChild(new StringWidget(PASTE_COLOR_LABEL, font).setColor(ColorConstants.TEXT), 2, 0);
-        buttonPasteColor = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_COLOR.get(), ClientConfig.PASTE_COLOR::set), 2, 1);
+        labelPastePathStyle = editColumn.addChild(new StringWidget(PASTE_PATH_STYLE_LABEL, font).setColor(ColorConstants.TEXT), 2, 0);
+        buttonPastePathStyle = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_PATH_STYLE.get(), ClientConfig.PASTE_PATH_STYLE::set), 2, 1);
 
-        labelPasteBanner = editColumn.addChild(new StringWidget(PASTE_BANNER_LABEL, font).setColor(ColorConstants.TEXT), 3, 0);
-        buttonPasteBanner = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_BANNER.get(), ClientConfig.PASTE_BANNER::set), 3, 1);
+        labelPasteColor = editColumn.addChild(new StringWidget(PASTE_COLOR_LABEL, font).setColor(ColorConstants.TEXT), 3, 0);
+        buttonPasteColor = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_COLOR.get(), ClientConfig.PASTE_COLOR::set), 3, 1);
+
+        labelPasteBanner = editColumn.addChild(new StringWidget(PASTE_BANNER_LABEL, font).setColor(ColorConstants.TEXT), 4, 0);
+        buttonPasteBanner = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_BANNER.get(), ClientConfig.PASTE_BANNER::set), 4, 1);
 
         LinearLayout editButtons = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
-        editColumn.addChild(editButtons, 4, 0);
+        editColumn.addChild(editButtons, 5, 0);
 
         buttonCopy = editButtons.addChild(new IconButton(IconButton.Type.Copy, b -> onCopyPressed()));
         buttonCopy.setTooltip(COPY_TOOLTIP);
@@ -454,7 +460,6 @@ public class FrontierInfoPage extends PageScreen
     private OptionButton createBinaryOptionButton(boolean defaultValue, Consumer<Boolean> consumer) {
         OptionButton button = new OptionButton(font, LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH, b -> {
             consumer.accept(b.getSelected() == 0);
-            sendCurrentInfoChangesToServer();
         });
         button.addOption(ON_LABEL);
         button.addOption(OFF_LABEL);
@@ -601,9 +606,9 @@ public class FrontierInfoPage extends PageScreen
     private void onPastePressed() {
         FrontierData clipboard = MapFrontiersClient.getClipboard();
         if (clipboard != null && (ClientConfig.PASTE_NAME.get() || ClientConfig.PASTE_VISIBILITY.get()
-                || ClientConfig.PASTE_COLOR.get() || ClientConfig.PASTE_BANNER.get())) {
+                || ClientConfig.PASTE_PATH_STYLE.get() || ClientConfig.PASTE_COLOR.get() || ClientConfig.PASTE_BANNER.get())) {
             setFrontier(clipboard, ClientConfig.PASTE_NAME.get(), ClientConfig.PASTE_VISIBILITY.get(),
-                    ClientConfig.PASTE_COLOR.get(), ClientConfig.PASTE_BANNER.get(), false);
+                    ClientConfig.PASTE_COLOR.get(), ClientConfig.PASTE_BANNER.get(), ClientConfig.PASTE_PATH_STYLE.get());
             sendCurrentInfoChangesToServer();
             rebuildWidgets();
             repositionElements();
@@ -884,16 +889,24 @@ public class FrontierInfoPage extends PageScreen
     }
 
     private void updatePasteOptionsVisibility() {
+        FrontierData clipboard = MapFrontiersClient.getClipboard();
         buttonPaste.visible = buttonPaste.active && MapFrontiersClient.getClipboard() != null;
+        boolean pathStyleOptionVisible = buttonPaste.visible
+                && ClientConfig.PASTE_OPTIONS_VISIBLE.get()
+                && frontier.getMode() == FrontierData.Mode.Path
+                && clipboard != null
+                && clipboard.getMode() == FrontierData.Mode.Path;
         buttonPasteOptions.visible = buttonPaste.visible;
         buttonPasteOptions.setType(ClientConfig.PASTE_OPTIONS_VISIBLE.get() ? IconButton.Type.ArrowDown : IconButton.Type.ArrowUp);
         buttonPasteOptions.setTooltip(ClientConfig.PASTE_OPTIONS_VISIBLE.get() ? CLOSE_PASTE_TOOLTIP : OPEN_PASTE_TOOLTIP);
         buttonPasteName.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
         buttonPasteVisibility.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
+        buttonPastePathStyle.visible = pathStyleOptionVisible;
         buttonPasteColor.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
         buttonPasteBanner.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
         labelPasteName.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
         labelPasteVisibility.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
+        labelPastePathStyle.visible = pathStyleOptionVisible;
         labelPasteColor.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
         labelPasteBanner.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
     }
