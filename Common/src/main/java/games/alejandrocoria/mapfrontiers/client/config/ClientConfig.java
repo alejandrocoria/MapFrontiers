@@ -313,6 +313,8 @@ public final class ClientConfig {
             .comment("Paste the frontier name when pasting info."));
     public static final BooleanConfigEntry PASTE_VISIBILITY = register(boolEntry(true, "paste", "visibility")
             .comment("Paste visibility settings when pasting info."));
+    public static final BooleanConfigEntry PASTE_PATH_STYLE = register(boolEntry(true, "paste", "pathStyle")
+            .comment("Paste the frontier path style when pasting info."));
     public static final BooleanConfigEntry PASTE_COLOR = register(boolEntry(true, "paste", "color")
             .comment("Paste the frontier color when pasting info."));
     public static final BooleanConfigEntry PASTE_BANNER = register(boolEntry(true, "paste", "banner")

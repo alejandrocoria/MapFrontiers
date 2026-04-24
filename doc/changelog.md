@@ -1,3 +1,7 @@
+**Beta 4:**
+* Added: Frontier info paste options now support copying Path style between Path frontiers.
+* Fixed: Changing frontier info paste options no longer sends unnecessary frontier updates to the server.
+
 **Beta 3:**
 * Added: More colors to the color palette.
 * Changed: Screens can now be closed with the configured inventory key, and settings can also be closed with the configured MapFrontiers settings key.
