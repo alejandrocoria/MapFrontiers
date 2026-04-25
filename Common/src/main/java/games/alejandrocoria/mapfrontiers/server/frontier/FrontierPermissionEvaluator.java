@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.server.frontier;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
@@ -31,14 +32,28 @@ public class FrontierPermissionEvaluator {
         return getSettings().checkAction(FrontierSettings.Action.CreateGlobalFrontier, getPlayerUser(player), MapFrontiers.isOPorHost(player), null);
     }
 
+    public boolean canCreateGlobalCollection(ServerPlayer player) {
+        return canCreateGlobalFrontier(player);
+    }
+
     public boolean canUpdateGlobalFrontier(ServerPlayer player, FrontierData frontier) {
         return getSettings().checkAction(FrontierSettings.Action.UpdateGlobalFrontier, getPlayerUser(player),
                 MapFrontiers.isOPorHost(player), frontier.getOwner());
     }
 
+    public boolean canUpdateGlobalCollection(ServerPlayer player, CollectionData collection) {
+        return getSettings().checkAction(FrontierSettings.Action.UpdateGlobalFrontier, getPlayerUser(player),
+                MapFrontiers.isOPorHost(player), collection.getOwner());
+    }
+
     public boolean canDeleteGlobalFrontier(ServerPlayer player, FrontierData frontier) {
         return getSettings().checkAction(FrontierSettings.Action.DeleteGlobalFrontier, getPlayerUser(player),
                 MapFrontiers.isOPorHost(player), frontier.getOwner());
+    }
+
+    public boolean canDeleteGlobalCollection(ServerPlayer player, CollectionData collection) {
+        return getSettings().checkAction(FrontierSettings.Action.DeleteGlobalFrontier, getPlayerUser(player),
+                MapFrontiers.isOPorHost(player), collection.getOwner());
     }
 
     public boolean canSharePersonalFrontier(ServerPlayer player, FrontierData frontier) {
@@ -53,6 +68,10 @@ public class FrontierPermissionEvaluator {
 
     public boolean canUpdatePersonalFrontier(ServerPlayer player, FrontierData frontier) {
         return frontier.checkActionUserShared(getPlayerUser(player), SettingsUserShared.Action.UpdateFrontier);
+    }
+
+    public boolean canUpdatePersonalCollection(ServerPlayer player, CollectionData collection) {
+        return collection.getOwner().equals(getPlayerUser(player));
     }
 
     public boolean canManagePersonalShareSettings(ServerPlayer player, FrontierData frontier) {

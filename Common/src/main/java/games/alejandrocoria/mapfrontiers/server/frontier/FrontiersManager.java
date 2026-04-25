@@ -116,6 +116,29 @@ public class FrontiersManager {
         return usersPersonalCollections.computeIfAbsent(user, k -> new ArrayList<>());
     }
 
+    public List<FrontierData> getFrontiersInCollection(UUID collectionId) {
+        ArrayList<FrontierData> frontiers = new ArrayList<>();
+        for (FrontierData frontier : allFrontiers.values()) {
+            if (collectionId.equals(frontier.getCollectionId())) {
+                frontiers.add(frontier);
+            }
+        }
+
+        return frontiers;
+    }
+
+    public boolean userHasVisiblePersonalCollection(SettingsUser user, UUID collectionId) {
+        for (ArrayList<FrontierData> frontiers : getAllPersonalFrontiers(user).values()) {
+            for (FrontierData frontier : frontiers) {
+                if (collectionId.equals(frontier.getCollectionId())) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     public FrontierData createNewGlobalFrontier(UUID frontierId,
                                                 ResourceKey<Level> dimension,
                                                 ServerPlayer player,
@@ -576,10 +599,10 @@ public class FrontiersManager {
         lastFrontiersSaveAt = System.currentTimeMillis();
     }
 
-    public boolean deleteCollection(UUID collectionId) {
+    public @Nullable CollectionData removeCollection(UUID collectionId) {
         CollectionData collection = allCollections.remove(collectionId);
         if (collection == null) {
-            return false;
+            return null;
         }
 
         if (collection.getPersonal()) {
@@ -588,17 +611,24 @@ public class FrontiersManager {
             globalCollections.removeIf(existing -> existing.getId().equals(collectionId));
         }
 
-        clearCollectionIdFromFrontiers(collectionId);
         saveFrontiersNow();
-        return true;
+        return collection;
     }
 
-    private void clearCollectionIdFromFrontiers(UUID collectionId) {
+    public boolean deleteCollection(UUID collectionId) {
+        CollectionData collection = removeCollection(collectionId);
+        if (collection == null) {
+            return false;
+        }
+
         for (FrontierData frontier : allFrontiers.values()) {
             if (collectionId.equals(frontier.getCollectionId())) {
                 frontier.setCollectionId(null);
             }
         }
+
+        saveFrontiersNow();
+        return true;
     }
 
     private void saveSettingsData() {

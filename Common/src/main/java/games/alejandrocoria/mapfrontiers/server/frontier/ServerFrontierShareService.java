@@ -1,6 +1,8 @@
 package games.alejandrocoria.mapfrontiers.server.frontier;
+import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierSharingChange;
+import games.alejandrocoria.mapfrontiers.common.network.PacketCollectionCreated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierCreated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierDeleted;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSharingUpdated;
@@ -179,6 +181,8 @@ public class ServerFrontierShareService {
             return ServerFrontierOperationResult.ignored(ServerFrontierOperationResult.Reason.AlreadyAccepted, frontier);
         }
 
+        boolean targetAlreadySeesCollection = frontier.hasCollection()
+                && frontiersManager.userHasVisiblePersonalCollection(pending.targetUser, frontier.getCollectionId());
         frontiersManager.addPersonalFrontier(pending.targetUser, frontier);
         userShared.setPending(false);
         frontiersManager.saveFrontiersNow();
@@ -187,6 +191,12 @@ public class ServerFrontierShareService {
         PacketFrontierSharingUpdated frontierSharingUpdatedPacket = createSharingUpdatedPacket(frontier);
 
         ServerFrontierOperationResult result = ServerFrontierOperationResult.success(frontier);
+        if (frontier.hasCollection() && !targetAlreadySeesCollection) {
+            CollectionData collection = frontiersManager.getCollectionFromID(frontier.getCollectionId());
+            if (collection != null) {
+                result.addNetworkAction(() -> PacketHandler.sendTo(new PacketCollectionCreated(new CollectionData(collection)), player));
+            }
+        }
         result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierCreated(frontier), player));
         result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(frontierSharingUpdatedPacket, frontier, server));
         return result;
