@@ -12,6 +12,7 @@ public class ClientFrontierRuntime {
     private final IClientAPI journeyMapApi;
     private FrontiersOverlayManager globalFrontiersOverlayManager;
     private FrontiersOverlayManager personalFrontiersOverlayManager;
+    private ClientCollectionRuntime collectionRuntime;
     private ClientLocalPersonalFrontierStore localPersonalFrontierStore;
     private ClientFrontierEvents frontierEvents;
     private ClientSettingsProfileEvents settingsProfileEvents;
@@ -33,6 +34,10 @@ public class ClientFrontierRuntime {
             personalFrontiersOverlayManager = new FrontiersOverlayManager(journeyMapApi);
         }
 
+        if (collectionRuntime == null) {
+            collectionRuntime = new ClientCollectionRuntime();
+        }
+
         if (localPersonalFrontierStore == null) {
             localPersonalFrontierStore = new ClientLocalPersonalFrontierStore();
         }
@@ -47,11 +52,12 @@ public class ClientFrontierRuntime {
 
         if (operationService == null) {
             operationService = new ClientFrontierOperationService(globalFrontiersOverlayManager, personalFrontiersOverlayManager,
-                    localPersonalFrontierStore, frontierEvents);
+                    collectionRuntime, localPersonalFrontierStore, frontierEvents);
         }
 
         if (syncService == null) {
-            syncService = new ClientFrontierSyncService(globalFrontiersOverlayManager, personalFrontiersOverlayManager, localPersonalFrontierStore);
+            syncService = new ClientFrontierSyncService(globalFrontiersOverlayManager, personalFrontiersOverlayManager,
+                    collectionRuntime, localPersonalFrontierStore);
             syncService.loadLocalPersonalFrontiers();
         }
 
@@ -77,6 +83,11 @@ public class ClientFrontierRuntime {
     public FrontierLocalOverrides getLocalOverrides() {
         ensureInitialized();
         return localOverrides;
+    }
+
+    public ClientCollectionRuntime getCollectionRuntime() {
+        ensureInitialized();
+        return collectionRuntime;
     }
 
     public ClientFrontierOperationService getOperationService() {
@@ -111,6 +122,7 @@ public class ClientFrontierRuntime {
     public void close() {
         FrontiersOverlayManager globalManager = globalFrontiersOverlayManager;
         FrontiersOverlayManager personalManager = personalFrontiersOverlayManager;
+        ClientCollectionRuntime collections = collectionRuntime;
         ClientFrontierSyncService sync = syncService;
         MapFrontiersClientAPIImpl api = clientApi;
         ClientFrontierEvents events = frontierEvents;
@@ -118,6 +130,7 @@ public class ClientFrontierRuntime {
 
         globalFrontiersOverlayManager = null;
         personalFrontiersOverlayManager = null;
+        collectionRuntime = null;
         syncService = null;
         clientApi = null;
         frontierEvents = null;
@@ -134,6 +147,11 @@ public class ClientFrontierRuntime {
         closeStep("personal frontier overlays", () -> {
             if (personalManager != null) {
                 personalManager.close();
+            }
+        });
+        closeStep("client collection runtime", () -> {
+            if (collections != null) {
+                collections.clear();
             }
         });
         closeStep("frontier sync service", () -> {

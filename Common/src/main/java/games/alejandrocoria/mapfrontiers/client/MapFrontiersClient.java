@@ -356,7 +356,7 @@ public class MapFrontiersClient {
 
         MapFrontiers.LOGGER.debug("Received initial frontier snapshot from server. globalFrontiers={}, personalFrontiers={}, globalCollections={}, personalCollections={}",
                 globalFrontiers.size(), personalFrontiers.size(), globalCollections.size(), personalCollections.size());
-        runtime.getSyncService().applyServerSnapshot(globalFrontiers, personalFrontiers);
+        runtime.getSyncService().applyServerSnapshot(globalFrontiers, personalFrontiers, globalCollections, personalCollections);
         connectionState.markInitialFrontiersReceived();
         publishClientApiIfReady();
         if (hud != null) {
@@ -369,8 +369,7 @@ public class MapFrontiersClient {
             return;
         }
 
-        MapFrontiers.LOGGER.debug("Ignoring PacketCollectionCreated for collection={} until client collection runtime is implemented.",
-                collection.getId());
+        requireFrontierRuntime().getOperationService().applyCollectionCreated(collection);
     }
 
     public static void applyCollectionUpdated(CollectionData collection) {
@@ -378,8 +377,7 @@ public class MapFrontiersClient {
             return;
         }
 
-        MapFrontiers.LOGGER.debug("Ignoring PacketCollectionUpdated for collection={} until client collection runtime is implemented.",
-                collection.getId());
+        requireFrontierRuntime().getOperationService().applyCollectionUpdated(collection);
     }
 
     public static void applyCollectionDeleted(UUID collectionId) {
@@ -387,8 +385,7 @@ public class MapFrontiersClient {
             return;
         }
 
-        MapFrontiers.LOGGER.debug("Ignoring PacketCollectionDeleted for collection={} until client collection runtime is implemented.",
-                collectionId);
+        requireFrontierRuntime().getOperationService().applyCollectionDeleted(collectionId);
     }
 
     public static List<FrontierOverlay> getFrontiers(boolean personal, ResourceKey<Level> dimension) {
@@ -407,6 +404,51 @@ public class MapFrontiersClient {
         }
 
         return manager.getAllFrontiers().values().stream().flatMap(List::stream).toList();
+    }
+
+    public static @Nullable CollectionData getCollection(UUID collectionId) {
+        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        if (runtime == null) {
+            return null;
+        }
+
+        return runtime.getCollectionRuntime().getCollection(collectionId);
+    }
+
+    public static List<CollectionData> getCollections(boolean personal) {
+        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        if (runtime == null) {
+            return List.of();
+        }
+
+        return runtime.getCollectionRuntime().getCollections(personal);
+    }
+
+    public static List<FrontierOverlay> getFrontiersInCollection(UUID collectionId) {
+        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        if (runtime == null) {
+            return List.of();
+        }
+
+        return runtime.getCollectionRuntime().getFrontiersInCollection(collectionId);
+    }
+
+    public static List<FrontierOverlay> getFrontiersWithoutCollection(boolean personal) {
+        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        if (runtime == null) {
+            return List.of();
+        }
+
+        return runtime.getCollectionRuntime().getFrontiersWithoutCollection(personal);
+    }
+
+    public static int getVisibleFrontierCountInCollection(UUID collectionId) {
+        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        if (runtime == null) {
+            return 0;
+        }
+
+        return runtime.getCollectionRuntime().getVisibleFrontierCount(collectionId);
     }
 
     public static void updateSelectedFrontierMarker(boolean personal, ResourceKey<Level> dimension, @Nullable FrontierOverlay frontier) {

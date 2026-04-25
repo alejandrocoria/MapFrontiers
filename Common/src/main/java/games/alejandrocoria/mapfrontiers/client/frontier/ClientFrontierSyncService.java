@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.frontier;
 
+import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketPersonalFrontier;
@@ -20,14 +21,17 @@ public class ClientFrontierSyncService {
 
     private final FrontiersOverlayManager globalManager;
     private final FrontiersOverlayManager personalManager;
+    private final ClientCollectionRuntime collectionRuntime;
     private final ClientLocalPersonalFrontierStore localPersonalStore;
     private boolean localPersonalFrontiersLoaded = false;
 
     public ClientFrontierSyncService(FrontiersOverlayManager globalManager,
                                      FrontiersOverlayManager personalManager,
+                                     ClientCollectionRuntime collectionRuntime,
                                      ClientLocalPersonalFrontierStore localPersonalStore) {
         this.globalManager = globalManager;
         this.personalManager = personalManager;
+        this.collectionRuntime = collectionRuntime;
         this.localPersonalStore = localPersonalStore;
     }
 
@@ -46,12 +50,17 @@ public class ClientFrontierSyncService {
         localPersonalFrontiersLoaded = true;
     }
 
-    public void applyServerSnapshot(List<FrontierData> globalFrontiers, List<FrontierData> personalFrontiers) {
+    public void applyServerSnapshot(List<FrontierData> globalFrontiers,
+                                    List<FrontierData> personalFrontiers,
+                                    List<CollectionData> globalCollections,
+                                    List<CollectionData> personalCollections) {
         loadLocalPersonalFrontiers();
 
         globalManager.replaceFrontiers(globalFrontiers);
+        collectionRuntime.replaceCollections(globalCollections, personalCollections);
         if (mc.isLocalServer()) {
             personalManager.replaceFrontiers(personalFrontiers);
+            collectionRuntime.refreshFromFrontiers(globalManager, personalManager);
             return;
         }
 
@@ -85,11 +94,13 @@ public class ClientFrontierSyncService {
             frontier.removeAllUserShared();
             PacketHandler.sendToServer(new PacketPersonalFrontier(frontier));
         }
+        collectionRuntime.refreshFromFrontiers(globalManager, personalManager);
         persistOwnedPersonalFrontiers();
     }
 
     public void close() {
         localPersonalFrontiersLoaded = false;
+        collectionRuntime.clear();
     }
 
     private void persistOwnedPersonalFrontiers() {

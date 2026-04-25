@@ -14,6 +14,7 @@ import games.alejandrocoria.mapfrontiers.api.model.Point2i;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
+import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreationFactory;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
@@ -51,6 +52,7 @@ public class ClientFrontierOperationService {
 
     private final FrontiersOverlayManager globalManager;
     private final FrontiersOverlayManager personalManager;
+    private final ClientCollectionRuntime collectionRuntime;
     private final ClientLocalPersonalFrontierStore localPersonalStore;
     private final ClientFrontierEvents frontierEvents;
 
@@ -66,10 +68,12 @@ public class ClientFrontierOperationService {
 
     public ClientFrontierOperationService(FrontiersOverlayManager globalManager,
                                           FrontiersOverlayManager personalManager,
+                                          ClientCollectionRuntime collectionRuntime,
                                           ClientLocalPersonalFrontierStore localPersonalStore,
                                           ClientFrontierEvents frontierEvents) {
         this.globalManager = globalManager;
         this.personalManager = personalManager;
+        this.collectionRuntime = collectionRuntime;
         this.localPersonalStore = localPersonalStore;
         this.frontierEvents = frontierEvents;
     }
@@ -130,6 +134,7 @@ public class ClientFrontierOperationService {
         FrontierData frontier = FrontierCreationFactory.createFrontier(frontierId, new SettingsUser(mc.player), dimension,
                 true, lifetime, sourcePluginId, vertices, chunks, points, pathStyle);
         FrontierOverlay frontierOverlay = personalManager.addFrontier(frontier);
+        refreshCollectionRuntime();
         persistLocalPersonalFrontiersIfPersistent(frontierOverlay);
         frontierEvents.postCreated(frontierOverlay, mc.player.getId());
         return frontierOverlay;
@@ -146,6 +151,7 @@ public class ClientFrontierOperationService {
         }
 
         personalManager.deleteFrontier(frontier.getDimension(), frontier.getId());
+        refreshCollectionRuntime();
         persistLocalPersonalFrontiersIfPersistent(frontier);
         frontierEvents.postDeleted(frontier.getId());
     }
@@ -170,6 +176,7 @@ public class ClientFrontierOperationService {
             return;
         }
 
+        refreshCollectionRuntime();
         persistLocalPersonalFrontiersIfPersistent(frontier);
         frontierEvents.postUpdated(frontier, mc.player.getId());
     }
@@ -367,6 +374,7 @@ public class ClientFrontierOperationService {
         }
 
         FrontierOverlay frontierOverlay = personalManager.addFrontier(receivedFrontier);
+        refreshCollectionRuntime();
         persistLocalPersonalFrontiersIfPersistent(frontierOverlay);
         if (mc.player != null) {
             frontierEvents.postCreated(frontierOverlay, mc.player.getId());
@@ -379,6 +387,7 @@ public class ClientFrontierOperationService {
         frontierEvents.postDeleted(currentFrontier.getId());
 
         FrontierOverlay frontierOverlay = personalManager.addFrontier(receivedFrontier);
+        refreshCollectionRuntime();
         if (currentFrontier.isPersistent() || frontierOverlay.isPersistent()) {
             persistLocalPersonalFrontiers();
         }
@@ -390,6 +399,7 @@ public class ClientFrontierOperationService {
 
     public void applyFrontierCreated(FrontierData frontier, int playerId) {
         FrontierOverlay frontierOverlay = getManager(frontier.getPersonal()).addFrontier(frontier);
+        refreshCollectionRuntime();
         if (frontier.getPersonal() && frontier.isPersistent()) {
             persistLocalPersonalFrontiers();
         }
@@ -403,6 +413,7 @@ public class ClientFrontierOperationService {
                                      int playerId) {
         FrontierOverlay frontierOverlay = getManager(personal).applyFrontierChange(dimension, frontierId, change);
         if (frontierOverlay != null) {
+            refreshCollectionRuntime();
             if (personal && frontierOverlay.isPersistent()) {
                 persistLocalPersonalFrontiers();
             }
@@ -426,6 +437,7 @@ public class ClientFrontierOperationService {
     public void applyFrontierDeleted(ResourceKey<Level> dimension, UUID frontierId, boolean personal) {
         FrontierOverlay deletedFrontier = getManager(personal).deleteFrontier(dimension, frontierId);
         if (deletedFrontier != null) {
+            refreshCollectionRuntime();
             if (personal && deletedFrontier.isPersistent()) {
                 persistLocalPersonalFrontiers();
             }
@@ -445,6 +457,7 @@ public class ClientFrontierOperationService {
         frontierOverlay.removeAllUserShared();
         frontierOverlay.recreateBannerRenderer();
         globalManager.addFrontier(frontierOverlay);
+        refreshCollectionRuntime();
         persistLocalPersonalFrontiers();
         frontierEvents.postUpdated(frontierOverlay, -1);
         frontierOverlay.updateOverlay();
@@ -462,9 +475,23 @@ public class ClientFrontierOperationService {
         frontierOverlay.setCurrentPlayerAsOwner();
         frontierOverlay.recreateBannerRenderer();
         personalManager.addFrontier(frontierOverlay);
+        refreshCollectionRuntime();
         persistLocalPersonalFrontiers();
         frontierEvents.postUpdated(frontierOverlay, -1);
         frontierOverlay.updateOverlay();
+    }
+
+    public void applyCollectionCreated(CollectionData collection) {
+        collectionRuntime.addOrUpdateCollection(collection);
+    }
+
+    public void applyCollectionUpdated(CollectionData collection) {
+        collectionRuntime.addOrUpdateCollection(collection);
+    }
+
+    public void applyCollectionDeleted(UUID collectionId) {
+        collectionRuntime.deleteCollection(collectionId);
+        refreshCollectionRuntime();
     }
 
     public void notifyLocalFrontierUpdated(FrontierOverlay frontierOverlay) {
@@ -493,6 +520,10 @@ public class ClientFrontierOperationService {
 
     private FrontiersOverlayManager getManager(boolean personal) {
         return personal ? personalManager : globalManager;
+    }
+
+    private void refreshCollectionRuntime() {
+        collectionRuntime.refreshFromFrontiers(globalManager, personalManager);
     }
 
     private static boolean usesAuthoritativeCreateFlow(FrontierData.FrontierLifetime lifetime) {
