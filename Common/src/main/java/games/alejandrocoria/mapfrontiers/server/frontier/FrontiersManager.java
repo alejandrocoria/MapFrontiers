@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.server.frontier;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreationFactory;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
@@ -39,8 +40,11 @@ public class FrontiersManager {
     private static final long FRONTIERS_UPDATE_SAVE_MAX_DELAY_MS = 60_000L;
 
     private final HashMap<UUID, FrontierData> allFrontiers;
+    private final HashMap<UUID, CollectionData> allCollections;
     private final HashMap<ResourceKey<Level>, ArrayList<FrontierData>> dimensionsGlobalFrontiers;
+    private final ArrayList<CollectionData> globalCollections;
     private final HashMap<SettingsUser, HashMap<ResourceKey<Level>, ArrayList<FrontierData>>> usersDimensionsPersonalFrontiers;
+    private final HashMap<SettingsUser, ArrayList<CollectionData>> usersPersonalCollections;
     private final HashMap<Integer, PendingShareFrontier> pendingShareFrontiers;
     private FrontierSettings frontierSettings;
     private File ModDir;
@@ -53,8 +57,11 @@ public class FrontiersManager {
 
     public FrontiersManager() {
         allFrontiers = new HashMap<>();
+        allCollections = new HashMap<>();
         dimensionsGlobalFrontiers = new HashMap<>();
+        globalCollections = new ArrayList<>();
         usersDimensionsPersonalFrontiers = new HashMap<>();
+        usersPersonalCollections = new HashMap<>();
         pendingShareFrontiers = new HashMap<>();
         frontierSettings = new FrontierSettings();
     }
@@ -95,6 +102,18 @@ public class FrontiersManager {
 
     public FrontierData getFrontierFromID(UUID id) {
         return allFrontiers.get(id);
+    }
+
+    public @Nullable CollectionData getCollectionFromID(UUID id) {
+        return allCollections.get(id);
+    }
+
+    public List<CollectionData> getAllGlobalCollections() {
+        return globalCollections;
+    }
+
+    public List<CollectionData> getAllPersonalCollections(SettingsUser user) {
+        return usersPersonalCollections.computeIfAbsent(user, k -> new ArrayList<>());
     }
 
     public FrontierData createNewGlobalFrontier(UUID frontierId,
@@ -162,6 +181,26 @@ public class FrontiersManager {
         frontiers.add(frontier);
         allFrontiers.put(frontier.getId(), frontier);
 
+        saveFrontiersNow();
+    }
+
+    public void addGlobalCollection(CollectionData collection) {
+        if (collection.getPersonal()) {
+            return;
+        }
+
+        globalCollections.add(collection);
+        allCollections.put(collection.getId(), collection);
+        saveFrontiersNow();
+    }
+
+    public void addPersonalCollection(CollectionData collection) {
+        if (!collection.getPersonal()) {
+            return;
+        }
+
+        getAllPersonalCollections(collection.getOwner()).add(collection);
+        allCollections.put(collection.getId(), collection);
         saveFrontiersNow();
     }
 
@@ -268,6 +307,7 @@ public class FrontiersManager {
                     }
                 }
                 frontier.setPersonal(false);
+                frontier.setCollectionId(null);
                 frontier.setModified(new Date());
                 frontier.removeAllUserShared();
                 getAllGlobalFrontiers(dimension).add(frontier);
@@ -289,6 +329,7 @@ public class FrontiersManager {
         if (deleted) {
             FrontierData frontier = allFrontiers.get(id);
             frontier.setPersonal(true);
+            frontier.setCollectionId(null);
             frontier.setModified(new Date());
             frontier.setOwner(newOwner);
             getAllPersonalFrontiers(newOwner, dimension).add(frontier);
@@ -345,6 +386,21 @@ public class FrontiersManager {
             frontier.ensureOwner(server);
         }
 
+        for (CollectionData collection : allCollections.values()) {
+            if (collection.getOwner().isEmpty()) {
+                if (server.isDedicatedServer()) {
+                    continue;
+                }
+
+                List<ServerPlayer> playerList = server.getPlayerList().getPlayers();
+                if (!playerList.isEmpty()) {
+                    collection.setOwner(new SettingsUser(playerList.getFirst()));
+                }
+            } else {
+                collection.getOwner().fillMissingInfo(false, server);
+            }
+        }
+
         frontierOwnersChecked = true;
     }
 
@@ -363,6 +419,25 @@ public class FrontiersManager {
                 needBackup = true;
             }
 
+            ListTag allCollectionsTagList = nbt.getListOrEmpty("collections");
+            for (int i = 0; i < allCollectionsTagList.size(); ++i) {
+                try {
+                    CollectionData collection = new CollectionData();
+                    CompoundTag collectionTag = NbtReadHelper.requireCompound(allCollectionsTagList, i, "collections");
+                    collection.readFromNBT(collectionTag, version);
+                    allCollections.put(collection.getId(), collection);
+
+                    if (collection.getPersonal()) {
+                        getAllPersonalCollections(collection.getOwner()).add(collection);
+                    } else {
+                        getAllGlobalCollections().add(collection);
+                    }
+                } catch (InvalidNbtFormatException e) {
+                    MapFrontiers.LOGGER.warn("Skipping invalid collection at collections[{}]: {}", i, e.getMessage());
+                    needBackup = true;
+                }
+            }
+
             ListTag allFrontiersTagList = nbt.getListOrEmpty("frontiers");
             for (int i = 0; i < allFrontiersTagList.size(); ++i) {
                 try {
@@ -371,6 +446,17 @@ public class FrontiersManager {
                     frontier.readFromNBT(frontierTag, version);
                     frontier.removePendingUsersShared();
                     allFrontiers.put(frontier.getId(), frontier);
+
+                    if (frontier.hasCollection()) {
+                        CollectionData collection = allCollections.get(frontier.getCollectionId());
+                        boolean invalidCollectionReference = collection == null
+                                || collection.getPersonal() != frontier.getPersonal()
+                                || (frontier.getPersonal() && !collection.getOwner().equals(frontier.getOwner()));
+                        if (invalidCollectionReference) {
+                            frontier.setCollectionId(null);
+                            needBackup = true;
+                        }
+                    }
 
                     if (frontier.getPersonal()) {
                         getAllPersonalFrontiers(frontier.getOwner(), frontier.getDimension()).add(frontier);
@@ -397,6 +483,14 @@ public class FrontiersManager {
     }
 
     private void writeToNBT(CompoundTag nbt) {
+        ListTag allCollectionsTagList = new ListTag();
+        for (CollectionData collection : allCollections.values()) {
+            CompoundTag collectionTag = new CompoundTag();
+            collection.writeToNBT(collectionTag);
+            allCollectionsTagList.add(collectionTag);
+        }
+        nbt.put("collections", allCollectionsTagList);
+
         ListTag allFrontiersTagList = new ListTag();
         for (FrontierData frontier : allFrontiers.values()) {
             CompoundTag frontierTag = new CompoundTag();
@@ -480,6 +574,31 @@ public class FrontiersManager {
         saveFile("frontiers.dat", nbtFrontiers);
         frontiersDirty = false;
         lastFrontiersSaveAt = System.currentTimeMillis();
+    }
+
+    public boolean deleteCollection(UUID collectionId) {
+        CollectionData collection = allCollections.remove(collectionId);
+        if (collection == null) {
+            return false;
+        }
+
+        if (collection.getPersonal()) {
+            getAllPersonalCollections(collection.getOwner()).removeIf(existing -> existing.getId().equals(collectionId));
+        } else {
+            globalCollections.removeIf(existing -> existing.getId().equals(collectionId));
+        }
+
+        clearCollectionIdFromFrontiers(collectionId);
+        saveFrontiersNow();
+        return true;
+    }
+
+    private void clearCollectionIdFromFrontiers(UUID collectionId) {
+        for (FrontierData frontier : allFrontiers.values()) {
+            if (collectionId.equals(frontier.getCollectionId())) {
+                frontier.setCollectionId(null);
+            }
+        }
     }
 
     private void saveSettingsData() {

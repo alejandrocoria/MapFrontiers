@@ -76,6 +76,7 @@ public class FrontierData {
     protected FrontierLifetime lifetime = FrontierLifetime.PERSISTENT;
     protected List<SettingsUserShared> usersShared;
     protected CopiedFrom copiedFrom;
+    protected @Nullable UUID collectionId;
     protected @Nullable String sourcePluginId;
     protected PathStyle pathStyle;
     protected Date created;
@@ -118,6 +119,7 @@ public class FrontierData {
         pathStyle = other.pathStyle == null ? new PathStyle() : new PathStyle(other.pathStyle);
 
         copiedFrom = other.copiedFrom;
+        collectionId = other.collectionId;
         sourcePluginId = other.sourcePluginId;
 
         created = other.created;
@@ -153,6 +155,7 @@ public class FrontierData {
         pathStyle = other.pathStyle == null ? new PathStyle() : new PathStyle(other.pathStyle);
 
         copiedFrom = other.copiedFrom;
+        collectionId = other.collectionId;
         sourcePluginId = other.sourcePluginId;
         created = other.created;
 
@@ -188,6 +191,10 @@ public class FrontierData {
 
         if (change.hasPathStyleChange()) {
             pathStyle = change.getPathStyle().getPathStyle();
+        }
+
+        if (change.hasCollectionIdChange()) {
+            collectionId = change.getCollectionIdChange().getCollectionId();
         }
 
         if (change.hasModifiedTime()) {
@@ -511,6 +518,9 @@ public class FrontierData {
 
     public void setPersonal(boolean personal) {
         validateTypeAndLifetime(personal, lifetime);
+        if (this.personal != personal) {
+            collectionId = null;
+        }
         this.personal = personal;
         sanitizeSharedUsers();
     }
@@ -670,6 +680,18 @@ public class FrontierData {
         return modified;
     }
 
+    public void setCollectionId(@Nullable UUID collectionId) {
+        this.collectionId = collectionId;
+    }
+
+    public @Nullable UUID getCollectionId() {
+        return collectionId;
+    }
+
+    public boolean hasCollection() {
+        return collectionId != null;
+    }
+
     public void setSourcePluginId(@Nullable String sourcePluginId) {
         this.sourcePluginId = sourcePluginId;
     }
@@ -793,6 +815,12 @@ public class FrontierData {
             copiedFrom.readFromNBT(NbtReadHelper.requireCompound(nbt, "copiedFrom"), version);
         }
 
+        if (nbt.contains("collectionId")) {
+            collectionId = UUID.fromString(NbtReadHelper.requireString(nbt, "collectionId"));
+        } else {
+            collectionId = null;
+        }
+
         if (nbt.contains("created")) {
             created = new Date(NbtReadHelper.requireLong(nbt, "created"));
         }
@@ -888,6 +916,10 @@ public class FrontierData {
             nbt.put("copiedFrom", nbtCopiedFrom);
         }
 
+        if (collectionId != null) {
+            nbt.putString("collectionId", collectionId.toString());
+        }
+
         if (created != null) {
             nbt.putLong("created", created.getTime());
         }
@@ -979,6 +1011,12 @@ public class FrontierData {
         }
 
         if (buf.readBoolean()) {
+            collectionId = UUIDHelper.fromBytes(buf);
+        } else {
+            collectionId = null;
+        }
+
+        if (buf.readBoolean()) {
             created = new Date(buf.readLong());
         } else {
             created = null;
@@ -1059,6 +1097,13 @@ public class FrontierData {
             copiedFrom.toBytes(buf);
         } else {
             buf.writeBoolean(false);
+        }
+
+        if (collectionId == null) {
+            buf.writeBoolean(false);
+        } else {
+            buf.writeBoolean(true);
+            UUIDHelper.toBytes(buf, collectionId);
         }
 
         if (created == null) {
@@ -1690,6 +1735,14 @@ public class FrontierData {
     public static class CopiedFrom {
         protected UUID id;
         protected SettingsUser user = new SettingsUser();
+
+        public CopiedFrom() {
+        }
+
+        public CopiedFrom(CopiedFrom other) {
+            id = other.id;
+            user = other.user;
+        }
 
         public void readFromNBT(CompoundTag nbt, int version) {
             id = UUID.fromString(NbtReadHelper.requireString(nbt, "id"));

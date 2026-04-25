@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.common.frontier;
 
+import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.ChunkPos;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class FrontierChange {
@@ -19,6 +21,7 @@ public class FrontierChange {
     private @Nullable BannerChange banner;
     private @Nullable ShapeChange shape;
     private @Nullable PathStyleChange pathStyle;
+    private @Nullable CollectionIdChange collectionId;
     private @Nullable Long modifiedTime;
 
     public FrontierChange() {
@@ -42,6 +45,9 @@ public class FrontierChange {
         }
         if (other.pathStyle != null) {
             pathStyle = new PathStyleChange(other.pathStyle.pathStyle);
+        }
+        if (other.collectionId != null) {
+            collectionId = new CollectionIdChange(other.collectionId.collectionId);
         }
         modifiedTime = other.modifiedTime;
     }
@@ -110,6 +116,14 @@ public class FrontierChange {
         }
 
         if (buf.readBoolean()) {
+            UUID value = null;
+            if (buf.readBoolean()) {
+                value = UUIDHelper.fromBytes(buf);
+            }
+            collectionId = new CollectionIdChange(value);
+        }
+
+        if (buf.readBoolean()) {
             modifiedTime = buf.readLong();
         }
     }
@@ -128,6 +142,7 @@ public class FrontierChange {
         if (frontier.getMode() == FrontierData.Mode.Path) {
             change.setPathStyle(frontier.getPathStyle());
         }
+        change.setCollectionId(frontier.getCollectionId());
 
         if (includeModifiedTime && frontier.getModified() != null) {
             change.setModifiedTime(frontier.getModified().getTime());
@@ -194,6 +209,16 @@ public class FrontierChange {
             pathStyle.pathStyle.toBytes(buf);
         }
 
+        buf.writeBoolean(collectionId != null);
+        if (collectionId != null) {
+            if (collectionId.collectionId == null) {
+                buf.writeBoolean(false);
+            } else {
+                buf.writeBoolean(true);
+                UUIDHelper.toBytes(buf, collectionId.collectionId);
+            }
+        }
+
         buf.writeBoolean(modifiedTime != null);
         if (modifiedTime != null) {
             buf.writeLong(modifiedTime);
@@ -202,7 +227,7 @@ public class FrontierChange {
 
     public boolean isEmpty() {
         return name == null && visibility == null && color == null && banner == null && shape == null && pathStyle == null
-                && modifiedTime == null;
+                && collectionId == null && modifiedTime == null;
     }
 
     public @Nullable NameChange getName() {
@@ -227,6 +252,10 @@ public class FrontierChange {
 
     public @Nullable PathStyleChange getPathStyle() {
         return pathStyle;
+    }
+
+    public @Nullable CollectionIdChange getCollectionIdChange() {
+        return collectionId;
     }
 
     public @Nullable Long getModifiedTime() {
@@ -257,6 +286,10 @@ public class FrontierChange {
         return pathStyle != null;
     }
 
+    public boolean hasCollectionIdChange() {
+        return collectionId != null;
+    }
+
     public boolean hasModifiedTime() {
         return modifiedTime != null;
     }
@@ -283,6 +316,10 @@ public class FrontierChange {
 
     public void setPathStyle(FrontierData.PathStyle pathStyle) {
         this.pathStyle = new PathStyleChange(pathStyle);
+    }
+
+    public void setCollectionId(@Nullable UUID collectionId) {
+        this.collectionId = new CollectionIdChange(collectionId);
     }
 
     public void setModifiedTime(long modifiedTime) {
@@ -370,6 +407,18 @@ public class FrontierChange {
 
         public FrontierData.Mode getMode() {
             return mode;
+        }
+    }
+
+    public static class CollectionIdChange {
+        private final @Nullable UUID collectionId;
+
+        private CollectionIdChange(@Nullable UUID collectionId) {
+            this.collectionId = collectionId;
+        }
+
+        public @Nullable UUID getCollectionId() {
+            return collectionId;
         }
     }
 
