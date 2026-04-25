@@ -7,6 +7,7 @@ import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.frontier.ClientFrontierEvents;
 import games.alejandrocoria.mapfrontiers.client.frontier.ClientFrontierOperationService;
 import games.alejandrocoria.mapfrontiers.client.frontier.ClientFrontierRuntime;
+import games.alejandrocoria.mapfrontiers.client.frontier.ClientCollectionEvents;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierLocalOverrides;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontiersOverlayManager;
@@ -498,6 +499,11 @@ public class MapFrontiersClient {
     public static ClientFrontierEvents getFrontierEvents() {
         ClientFrontierRuntime runtime = requireFrontierRuntime();
         return runtime.getFrontierEvents();
+    }
+
+    public static ClientCollectionEvents getCollectionEvents() {
+        ClientFrontierRuntime runtime = requireFrontierRuntime();
+        return runtime.getCollectionEvents();
     }
 
     public static ClientSettingsProfileEvents getSettingsProfileEvents() {

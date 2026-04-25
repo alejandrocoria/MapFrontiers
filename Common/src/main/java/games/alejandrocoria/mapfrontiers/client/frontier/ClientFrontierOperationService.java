@@ -56,6 +56,7 @@ public class ClientFrontierOperationService {
     private final ClientLocalPersonalFrontierStore localPersonalStore;
     private final ClientLocalPersonalCollectionStore localPersonalCollectionStore;
     private final ClientFrontierEvents frontierEvents;
+    private final ClientCollectionEvents collectionEvents;
 
     private static class SharingActionContext {
         private final @Nullable FrontierOverlay frontier;
@@ -72,13 +73,15 @@ public class ClientFrontierOperationService {
                                           ClientCollectionRuntime collectionRuntime,
                                           ClientLocalPersonalFrontierStore localPersonalStore,
                                           ClientLocalPersonalCollectionStore localPersonalCollectionStore,
-                                          ClientFrontierEvents frontierEvents) {
+                                          ClientFrontierEvents frontierEvents,
+                                          ClientCollectionEvents collectionEvents) {
         this.globalManager = globalManager;
         this.personalManager = personalManager;
         this.collectionRuntime = collectionRuntime;
         this.localPersonalStore = localPersonalStore;
         this.localPersonalCollectionStore = localPersonalCollectionStore;
         this.frontierEvents = frontierEvents;
+        this.collectionEvents = collectionEvents;
     }
 
     public void createNewFrontier(boolean personal,
@@ -493,6 +496,7 @@ public class ClientFrontierOperationService {
         if (collection.getPersonal()) {
             persistLocalPersonalCollections();
         }
+        collectionEvents.postCreated(collection);
     }
 
     public void applyCollectionUpdated(CollectionData collection) {
@@ -500,6 +504,7 @@ public class ClientFrontierOperationService {
         if (collection.getPersonal()) {
             persistLocalPersonalCollections();
         }
+        collectionEvents.postUpdated(collection);
     }
 
     public void applyCollectionDeleted(UUID collectionId) {
@@ -509,6 +514,7 @@ public class ClientFrontierOperationService {
         if (existing != null && existing.getPersonal()) {
             persistLocalPersonalCollections();
         }
+        collectionEvents.postDeleted(collectionId);
     }
 
     public void notifyLocalFrontierUpdated(FrontierOverlay frontierOverlay) {

@@ -33,9 +33,8 @@ public class ScrollBox extends AbstractContainerWidget {
     private static final int SCROLLBAR_WIDTH = 10;
     private static final int ELEMENT_GAP = 1;
 
-    private final int elementHeight;
-    private int scrollStart = 0;
-    private int scrollHeight;
+    private final int defaultElementHeight;
+    private int scrollOffset = 0;
     private int scrollBarPos = 0;
     private int scrollBarHeight = 0;
     private boolean scrollBarHovered = false;
@@ -54,9 +53,11 @@ public class ScrollBox extends AbstractContainerWidget {
         elements = new ArrayList<>();
         selected = -1;
         focused = -1;
-        this.elementHeight = elementHeight + ELEMENT_GAP;
-        scrollHeight = this.height / this.elementHeight;
-        this.height = scrollHeight * this.elementHeight;
+        defaultElementHeight = elementHeight + ELEMENT_GAP;
+        this.height = Math.max(defaultElementHeight, height / defaultElementHeight * defaultElementHeight);
+        if (this.height == 0) {
+            this.height = defaultElementHeight;
+        }
     }
 
     public static ScrollBox withRows(int rows, int elementWidth, int elementHeight) {
@@ -85,7 +86,6 @@ public class ScrollBox extends AbstractContainerWidget {
 
     public void addElement(ScrollElement element) {
         element.setX(getX());
-        element.setY(getY() + elements.size() * elementHeight);
         elements.add(element);
         scrollBarGrabbed = false;
         updateScrollWindow();
@@ -147,7 +147,7 @@ public class ScrollBox extends AbstractContainerWidget {
         }
 
         for (int i = 0; i < elements.size(); ++i) {
-            elements.get(i).setY(getY() + i * elementHeight);
+            elements.get(i).setY(getElementTop(i) - scrollOffset + getY());
         }
 
         scrollBarGrabbed = false;
@@ -237,15 +237,7 @@ public class ScrollBox extends AbstractContainerWidget {
             }
         }
 
-        if (focused < scrollStart || focused >= scrollStart + scrollHeight) {
-            if (focused < scrollStart) {
-                scrollStart = focused;
-            } else {
-                scrollStart = focused - scrollHeight + 1;
-            }
-            updateScrollWindow();
-            updateScrollBar();
-        }
+        scrollElementIntoView(focused);
 
         if (!elements.get(focused).children().isEmpty()) {
             if (focusedChild == -1) {
@@ -268,9 +260,7 @@ public class ScrollBox extends AbstractContainerWidget {
     @Override
     public void setY(int y) {
         super.setY(y);
-        for (int i = 0; i < elements.size(); ++i) {
-            elements.get(i).setY(y + i * elementHeight);
-        }
+        updateScrollWindow();
     }
 
     @Override
@@ -287,14 +277,17 @@ public class ScrollBox extends AbstractContainerWidget {
     @Override
     public void setHeight(int height) {
         super.setHeight(height);
-        scrollHeight = this.height / elementHeight;
-        this.height = scrollHeight * elementHeight;
+        this.height = Math.max(defaultElementHeight, this.height / defaultElementHeight * defaultElementHeight);
+        if (this.height == 0) {
+            this.height = defaultElementHeight;
+        }
+        clampScrollOffset();
         updateScrollWindow();
         updateScrollBar();
     }
 
     public void setVisibleRows(int rows) {
-        setHeight(Math.max(1, rows) * elementHeight);
+        setHeight(Math.max(1, rows) * defaultElementHeight);
     }
 
     @Override
@@ -310,13 +303,14 @@ public class ScrollBox extends AbstractContainerWidget {
     public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
         if (visible && (isHovered || scrollBarHovered) && !scrollBarGrabbed) {
             int amount = (int) -vDelta;
-            if (amount < 0 && scrollStart == 0) {
+            if (amount < 0 && scrollOffset == 0) {
                 return false;
-            } else if (amount > 0 && scrollStart + scrollHeight >= elements.size()) {
+            } else if (amount > 0 && scrollOffset >= getMaxScrollOffset()) {
                 return false;
             }
 
-            scrollStart += amount;
+            scrollOffset += amount * defaultElementHeight;
+            clampScrollOffset();
             updateScrollWindow();
             updateScrollBar();
             return true;
@@ -327,16 +321,16 @@ public class ScrollBox extends AbstractContainerWidget {
 
     @Override
     protected int contentHeight() {
-        return elementHeight;
+        return getContentHeight();
     }
 
     @Override
     protected double scrollRate() {
-        return elementHeight;
+        return defaultElementHeight;
     }
 
     public void scrollBottom() {
-        scrollStart = elements.size() - scrollHeight;
+        scrollOffset = getMaxScrollOffset();
         scrollBarGrabbed = false;
         updateScrollWindow();
         updateScrollBar();
@@ -401,11 +395,11 @@ public class ScrollBox extends AbstractContainerWidget {
                     } else if (action == ScrollElement.Action.Clicked) {
                         if (getSelectedElement() != element) {
                             selectElement(element);
-                            if (elementClickedCallback != null) {
-                                elementClickedCallback.accept(element);
-                            }
-                            return true;
                         }
+                        if (elementClickedCallback != null) {
+                            elementClickedCallback.accept(element);
+                        }
+                        return true;
                     }
                 }
             }
@@ -470,12 +464,13 @@ public class ScrollBox extends AbstractContainerWidget {
                 scrollBarPos = height - scrollBarHeight;
             }
 
-            int newScrollStart = Math.round(((float) scrollBarPos) / height * elements.size());
-
-            if (newScrollStart != scrollStart) {
-                scrollStart = newScrollStart;
-                updateScrollWindow();
+            if (height == scrollBarHeight) {
+                scrollOffset = 0;
+            } else {
+                scrollOffset = Math.round(((float) scrollBarPos) / (height - scrollBarHeight) * getMaxScrollOffset());
             }
+            clampScrollOffset();
+            updateScrollWindow();
         }
     }
 
@@ -488,41 +483,87 @@ public class ScrollBox extends AbstractContainerWidget {
     }
 
     private void updateScrollWindow() {
-        if (elements.size() <= scrollHeight) {
-            scrollStart = 0;
-        } else {
-            int bottomExtra = elements.size() - (scrollStart + scrollHeight);
-            if (bottomExtra < 0) {
-                scrollStart += bottomExtra;
-            }
+        clampScrollOffset();
 
-            if (scrollStart < 0) {
-                scrollStart = 0;
-            }
-        }
-
-        for (int i = 0; i < elements.size(); ++i) {
-            if (i < scrollStart || i >= scrollStart + scrollHeight) {
-                elements.get(i).visible = false;
-            } else {
-                elements.get(i).visible = true;
-                elements.get(i).setY(getY() + (i - scrollStart) * elementHeight);
-            }
+        int currentY = getY() - scrollOffset;
+        int viewportBottom = getY() + height;
+        for (ScrollElement element : elements) {
+            int elementBottom = currentY + element.getHeight();
+            element.visible = elementBottom > getY() && currentY < viewportBottom;
+            element.setY(currentY);
+            currentY = elementBottom + ELEMENT_GAP;
         }
     }
 
     private void updateScrollBar() {
-        if (elements.size() <= scrollHeight) {
+        int contentHeight = getContentHeight();
+        if (contentHeight <= height) {
             scrollBarHeight = 0;
             scrollBarHovered = false;
             scrollBarGrabbed = false;
             return;
         }
 
-        scrollBarHeight = Math.round(((float) scrollHeight) / elements.size() * height);
-        scrollBarPos = Math.round(((float) scrollStart) / elements.size() * height);
+        scrollBarHeight = Math.max(10, Math.round(((float) height) / contentHeight * height));
+        int maxScrollOffset = getMaxScrollOffset();
+        if (maxScrollOffset == 0) {
+            scrollBarPos = 0;
+        } else {
+            scrollBarPos = Math.round(((float) scrollOffset) / maxScrollOffset * (height - scrollBarHeight));
+        }
         if (scrollBarPos + scrollBarHeight > height) {
             scrollBarPos = height - scrollBarHeight;
+        }
+    }
+
+    private void scrollElementIntoView(int index) {
+        if (index < 0 || index >= elements.size()) {
+            return;
+        }
+
+        int elementTop = getElementTop(index);
+        int elementBottom = elementTop + elements.get(index).getHeight();
+
+        if (elementTop < scrollOffset) {
+            scrollOffset = elementTop;
+        } else if (elementBottom > scrollOffset + height) {
+            scrollOffset = elementBottom - height;
+        }
+
+        clampScrollOffset();
+        updateScrollWindow();
+        updateScrollBar();
+    }
+
+    private int getElementTop(int index) {
+        int top = 0;
+        for (int i = 0; i < index; ++i) {
+            top += elements.get(i).getHeight() + ELEMENT_GAP;
+        }
+        return top;
+    }
+
+    private int getContentHeight() {
+        if (elements.isEmpty()) {
+            return 0;
+        }
+
+        int contentHeight = -ELEMENT_GAP;
+        for (ScrollElement element : elements) {
+            contentHeight += element.getHeight() + ELEMENT_GAP;
+        }
+        return Math.max(0, contentHeight);
+    }
+
+    private int getMaxScrollOffset() {
+        return Math.max(0, getContentHeight() - height);
+    }
+
+    private void clampScrollOffset() {
+        if (scrollOffset < 0) {
+            scrollOffset = 0;
+        } else {
+            scrollOffset = Math.min(scrollOffset, getMaxScrollOffset());
         }
     }
 
@@ -551,6 +592,10 @@ public class ScrollBox extends AbstractContainerWidget {
 
         protected void setY(int y) {
             this.y = y;
+        }
+
+        public int getHeight() {
+            return height;
         }
 
         protected void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks, boolean selected, boolean focused) {

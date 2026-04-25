@@ -16,6 +16,7 @@ public class ClientFrontierRuntime {
     private ClientLocalPersonalFrontierStore localPersonalFrontierStore;
     private ClientLocalPersonalCollectionStore localPersonalCollectionStore;
     private ClientFrontierEvents frontierEvents;
+    private ClientCollectionEvents collectionEvents;
     private ClientSettingsProfileEvents settingsProfileEvents;
     private ClientFrontierOperationService operationService;
     private ClientFrontierSyncService syncService;
@@ -51,13 +52,17 @@ public class ClientFrontierRuntime {
             frontierEvents = new ClientFrontierEvents();
         }
 
+        if (collectionEvents == null) {
+            collectionEvents = new ClientCollectionEvents();
+        }
+
         if (settingsProfileEvents == null) {
             settingsProfileEvents = new ClientSettingsProfileEvents();
         }
 
         if (operationService == null) {
             operationService = new ClientFrontierOperationService(globalFrontiersOverlayManager, personalFrontiersOverlayManager,
-                    collectionRuntime, localPersonalFrontierStore, localPersonalCollectionStore, frontierEvents);
+                    collectionRuntime, localPersonalFrontierStore, localPersonalCollectionStore, frontierEvents, collectionEvents);
         }
 
         if (syncService == null) {
@@ -111,6 +116,11 @@ public class ClientFrontierRuntime {
         return settingsProfileEvents;
     }
 
+    public ClientCollectionEvents getCollectionEvents() {
+        ensureInitialized();
+        return collectionEvents;
+    }
+
     public ClientFrontierSyncService getSyncService() {
         ensureInitialized();
         return syncService;
@@ -132,6 +142,7 @@ public class ClientFrontierRuntime {
         ClientFrontierSyncService sync = syncService;
         MapFrontiersClientAPIImpl api = clientApi;
         ClientFrontierEvents events = frontierEvents;
+        ClientCollectionEvents collectionEventsState = collectionEvents;
         ClientSettingsProfileEvents settingsEvents = settingsProfileEvents;
 
         globalFrontiersOverlayManager = null;
@@ -140,6 +151,7 @@ public class ClientFrontierRuntime {
         syncService = null;
         clientApi = null;
         frontierEvents = null;
+        collectionEvents = null;
         settingsProfileEvents = null;
         operationService = null;
         localPersonalFrontierStore = null;
@@ -174,6 +186,11 @@ public class ClientFrontierRuntime {
         closeStep("frontier events", () -> {
             if (events != null) {
                 events.close();
+            }
+        });
+        closeStep("collection events", () -> {
+            if (collectionEventsState != null) {
+                collectionEventsState.close();
             }
         });
         closeStep("settings profile events", () -> {

@@ -15,10 +15,11 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.Identifier;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public class FrontierListElement extends ScrollBox.ScrollElement {
+public class FrontierListElement extends FrontierListRowElement {
     private static final Identifier NAME_FADE_TEXTURE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/frontier_list/name_fade.png");
     private static final Identifier CHUNK_FILL_TEXTURE = frontierListTexture("chunk_fill.png");
     private static final Identifier CHUNK_OUTLINE_TEXTURE = frontierListTexture("chunk_outline.png");
@@ -44,6 +45,7 @@ public class FrontierListElement extends ScrollBox.ScrollElement {
     private static final String ELLIPSIS = "...";
     private final Font font;
     private final FrontierOverlay frontier;
+    private final int indent;
     private final String name1;
     private final String name2;
     private final String type;
@@ -53,9 +55,14 @@ public class FrontierListElement extends ScrollBox.ScrollElement {
     private final int offset1;
 
     public FrontierListElement(Font font, FrontierOverlay frontier) {
-        super(450, 25);
+        this(font, frontier, 450, 0);
+    }
+
+    public FrontierListElement(Font font, FrontierOverlay frontier, int width, int indent) {
+        super(frontierRowId(frontier.getId()), width, 25);
         this.font = font;
         this.frontier = frontier;
+        this.indent = indent;
 
         if (frontier.isNamed()) {
             name1 = frontier.getName1();
@@ -112,9 +119,10 @@ public class FrontierListElement extends ScrollBox.ScrollElement {
         boolean name2Truncated = !visibleName2.equals(name2);
         boolean showExpandedNames = isNameAreaHovered(mouseX, mouseY) && (name1Truncated || name2Truncated);
 
-        graphics.text(font, type, x + METADATA_X, y + 4, color);
-        graphics.text(font, dimension, x + METADATA_X, y + 14, ColorConstants.TEXT_DIMENSION);
-        graphics.text(font, owner, x + METADATA_X + OWNER_X_OFFSET + offset1, y + 4, color);
+        int contentX = x + indent;
+        graphics.text(font, type, contentX + METADATA_X, y + 4, color);
+        graphics.text(font, dimension, contentX + METADATA_X, y + 14, ColorConstants.TEXT_DIMENSION);
+        graphics.text(font, owner, contentX + METADATA_X + OWNER_X_OFFSET + offset1, y + 4, color);
 
         drawNameLine(graphics, name1, visibleName1, name1Truncated, showExpandedNames, NAME_LINE_1_Y,
                 frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier), color, hiddenColor);
@@ -143,7 +151,7 @@ public class FrontierListElement extends ScrollBox.ScrollElement {
             default -> throw new IllegalStateException("Unexpected frontier mode: " + frontier.getMode());
         }
 
-        int iconX = x + MODE_BADGE_X;
+        int iconX = x + indent + MODE_BADGE_X;
         int iconY = y + MODE_BADGE_ICON_Y;
         graphics.blit(RenderPipelines.GUI_TEXTURED, fillTexture, iconX, iconY, 0, 0, MODE_BADGE_ICON_WIDTH,
                 MODE_BADGE_ICON_HEIGHT, MODE_BADGE_ICON_WIDTH, MODE_BADGE_ICON_HEIGHT, frontier.getColor() | 0xFF000000);
@@ -169,7 +177,7 @@ public class FrontierListElement extends ScrollBox.ScrollElement {
 
         if (showExpandedNames && truncated) {
             int textWidth = font.width(fullName);
-            int bgLeft = x + NAME_X - 1;
+            int bgLeft = x + indent + NAME_X - 1;
             int bgOpaqueRight = bgLeft + textWidth + 2;
             graphics.fill(bgLeft, y + lineY + NAME_LINE_BG_TOP_OFFSET, bgOpaqueRight, y + lineY + NAME_LINE_BG_BOTTOM_OFFSET, ColorConstants.SCROLL_ELEMENT_SELECTED);
             graphics.blit(RenderPipelines.GUI_TEXTURED, NAME_FADE_TEXTURE, bgOpaqueRight, y + lineY + NAME_LINE_BG_TOP_OFFSET, 0, 0,
@@ -178,9 +186,9 @@ public class FrontierListElement extends ScrollBox.ScrollElement {
         }
 
         if (visible) {
-            graphics.text(font, renderedName, x + NAME_X, y + lineY, visibleColor);
+            graphics.text(font, renderedName, x + indent + NAME_X, y + lineY, visibleColor);
         } else {
-            graphics.text(font, ChatFormatting.STRIKETHROUGH + renderedName, x + NAME_X, y + lineY, hiddenColor);
+            graphics.text(font, ChatFormatting.STRIKETHROUGH + renderedName, x + indent + NAME_X, y + lineY, hiddenColor);
         }
     }
 
@@ -198,11 +206,15 @@ public class FrontierListElement extends ScrollBox.ScrollElement {
     }
 
     private boolean isNameAreaHovered(int mouseX, int mouseY) {
-        return mouseX >= x + NAME_HOVER_X && mouseY >= y && mouseX < x + METADATA_X && mouseY < y + height;
+        return mouseX >= x + indent + NAME_HOVER_X && mouseY >= y && mouseX < x + indent + METADATA_X && mouseY < y + height;
     }
 
     private static Identifier frontierListTexture(String fileName) {
         return Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/frontier_list/" + fileName);
+    }
+
+    private static String frontierRowId(UUID frontierId) {
+        return "frontier:" + frontierId;
     }
 
     @Override
