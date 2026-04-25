@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers.client;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
+import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -15,6 +16,7 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.StringUtil;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,9 +34,27 @@ import java.util.Random;
 import java.util.UUID;
 
 public class ChatFrontiers {
+    public static class ReceivedFrontierCopy {
+        private final FrontierData frontier;
+        private final @Nullable CollectionData collection;
+
+        public ReceivedFrontierCopy(FrontierData frontier, @Nullable CollectionData collection) {
+            this.frontier = frontier;
+            this.collection = collection;
+        }
+
+        public FrontierData frontier() {
+            return frontier;
+        }
+
+        public @Nullable CollectionData collection() {
+            return collection;
+        }
+    }
+
     private static int receivedId = -1;
     private static final List<String> receivedData = new ArrayList<>();
-    private static final LinkedHashMap<Integer, FrontierData> receivedFrontiers = LinkedHashMap.newLinkedHashMap(3);
+    private static final LinkedHashMap<Integer, ReceivedFrontierCopy> receivedFrontiers = LinkedHashMap.newLinkedHashMap(3);
 
     public static void clear() {
         receivedId = -1;
@@ -43,7 +63,7 @@ public class ChatFrontiers {
     }
 
     @Nullable
-    public static FrontierData getReceivedFrontier(int id) {
+    public static ReceivedFrontierCopy getReceivedFrontier(int id) {
         return receivedFrontiers.get(id);
     }
 
@@ -59,7 +79,19 @@ public class ChatFrontiers {
             }
 
             CompoundTag nbt = new CompoundTag();
-            frontier.writeToNBT(nbt);
+            CompoundTag frontierTag = new CompoundTag();
+            frontier.writeToNBT(frontierTag);
+            nbt.put("frontier", frontierTag);
+
+            if (frontier.hasCollection()) {
+                CollectionData collection = MapFrontiersClient.getCollection(frontier.getCollectionId());
+                if (collection != null) {
+                    CompoundTag collectionTag = new CompoundTag();
+                    collection.writeToNBT(collectionTag);
+                    nbt.put("collection", collectionTag);
+                }
+            }
+
             String encodedData = encodeNBT(nbt);
             String command = ClientConfig.SEND_COMMAND.get() + " " + user.username + " #MapFrontiers:";
             String format = "%d:%d:%d:%d:%s";
@@ -129,20 +161,31 @@ public class ChatFrontiers {
 
             if (receivedData.stream().noneMatch(String::isBlank)) {
                 String encodedData = String.join("", receivedData);
-                FrontierData frontier = new FrontierData();
-                frontier.readFromNBT(decodeNBT(encodedData), version);
+                CompoundTag payload = decodeNBT(encodedData);
+                FrontierData frontier = readFrontier(payload, version);
+                CollectionData collection = readCollection(payload, version);
                 frontier.setCopiedFromId(frontier.getId());
                 frontier.setCopiedFromUser(frontier.getOwner());
                 frontier.setId(UUID.randomUUID());
                 frontier.setOwner(new SettingsUser(player));
                 frontier.setPersonal(true);
+                if (collection != null) {
+                    collection.setCopiedFromId(collection.getId());
+                    collection.setCopiedFromUser(collection.getOwner());
+                    collection.setId(UUID.randomUUID());
+                    collection.setOwner(new SettingsUser(player));
+                    collection.setPersonal(true);
+                    frontier.setCollectionId(collection.getId());
+                } else {
+                    frontier.setCollectionId(null);
+                }
                 receivedFrontiers.remove(receivedId);
                 if (receivedFrontiers.size() == 3) {
                     var iterator = receivedFrontiers.entrySet().iterator();
                     iterator.next();
                     iterator.remove();
                 }
-                receivedFrontiers.putLast(receivedId, frontier);
+                receivedFrontiers.putLast(receivedId, new ReceivedFrontierCopy(frontier, collection));
 
                 String frontierName;
                 if (frontier.getName1().isEmpty() && frontier.getName2().isEmpty()) {
@@ -198,5 +241,25 @@ public class ChatFrontiers {
         try (DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data))) {
             return NbtIo.readCompressed(dis, NbtAccounter.create(16384)); // 16KB ought to be enough for anybody
         }
+    }
+
+    private static FrontierData readFrontier(CompoundTag payload, int version) {
+        FrontierData frontier = new FrontierData();
+        if (payload.contains("frontier")) {
+            frontier.readFromNBT(payload.getCompoundOrEmpty("frontier"), version);
+        } else {
+            frontier.readFromNBT(payload, version);
+        }
+        return frontier;
+    }
+
+    private static @Nullable CollectionData readCollection(CompoundTag payload, int version) {
+        if (!payload.contains("collection")) {
+            return null;
+        }
+
+        CollectionData collection = new CollectionData();
+        collection.readFromNBT(payload.getCompoundOrEmpty("collection"), version);
+        return collection;
     }
 }

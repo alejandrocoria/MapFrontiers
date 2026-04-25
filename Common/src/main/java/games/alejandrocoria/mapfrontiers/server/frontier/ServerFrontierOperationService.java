@@ -210,6 +210,24 @@ public class ServerFrontierOperationService {
         return ServerFrontierOperationResult.success(frontier);
     }
 
+    public ServerFrontierOperationResult importPersonalCollection(ServerPlayer player, CollectionData collection) {
+        SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
+        CollectionData currentCollection = frontiersManager.getCollectionFromID(collection.getId());
+
+        if (!collection.getPersonal()) {
+            MapFrontiers.LOGGER.warn("Rejected personal collection import because only personal collections can be imported. collectionId={}",
+                    collection.getId());
+            return ServerFrontierOperationResult.rejected(null);
+        }
+
+        if (currentCollection != null || !collection.getOwner().equals(playerUser)) {
+            return ServerFrontierOperationResult.ignored(null);
+        }
+
+        frontiersManager.addPersonalCollection(collection);
+        return createdCollection(collection);
+    }
+
     public ServerFrontierOperationResult createGlobalFrontier(FrontierData frontier) {
         if (!isAuthoritativeGlobalFrontier(frontier)) {
             MapFrontiers.LOGGER.warn(

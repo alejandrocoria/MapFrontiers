@@ -83,6 +83,16 @@ public class ClientCollectionRuntime {
         return personalCollectionsById.containsKey(collectionId) || globalCollectionsById.containsKey(collectionId);
     }
 
+    public @Nullable CollectionData getPersonalCollectionCopiedFrom(UUID copiedFromId) {
+        for (CollectionData collection : personalCollectionsById.values()) {
+            if (collection.wasCopied() && collection.getCopiedFromId().equals(copiedFromId)) {
+                return collection;
+            }
+        }
+
+        return null;
+    }
+
     public List<FrontierOverlay> getFrontiersInCollection(UUID collectionId) {
         List<FrontierOverlay> frontiers = visibleFrontiersByCollectionId.get(collectionId);
         return frontiers == null ? List.of() : List.copyOf(frontiers);

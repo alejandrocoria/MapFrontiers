@@ -28,15 +28,16 @@ public class ClientCommandAccept {
     }
 
     public static int acceptInvitation(CommandSourceStack source, int messageID) {
-        FrontierData receivedFrontier = ChatFrontiers.getReceivedFrontier(messageID);
-        if (receivedFrontier == null) {
+        ChatFrontiers.ReceivedFrontierCopy receivedCopy = ChatFrontiers.getReceivedFrontier(messageID);
+        if (receivedCopy == null) {
             source.sendFailure(Component.literal("The frontier no longer exists"));
             return messageID;
         }
 
+        FrontierData receivedFrontier = receivedCopy.frontier();
         FrontierOverlay currentFrontier = MapFrontiersClient.getCopiedPersonalFrontier(receivedFrontier.getCopiedFromId());
         Minecraft.getInstance().setScreen(null);
-        Minecraft.getInstance().schedule(() -> new AcceptFrontierCopyConfirmationDialog(messageID, receivedFrontier, currentFrontier).display());
+        Minecraft.getInstance().schedule(() -> new AcceptFrontierCopyConfirmationDialog(messageID, receivedCopy, currentFrontier).display());
 
         return messageID;
     }

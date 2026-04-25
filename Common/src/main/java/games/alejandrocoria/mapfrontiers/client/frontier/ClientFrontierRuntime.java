@@ -14,6 +14,7 @@ public class ClientFrontierRuntime {
     private FrontiersOverlayManager personalFrontiersOverlayManager;
     private ClientCollectionRuntime collectionRuntime;
     private ClientLocalPersonalFrontierStore localPersonalFrontierStore;
+    private ClientLocalPersonalCollectionStore localPersonalCollectionStore;
     private ClientFrontierEvents frontierEvents;
     private ClientSettingsProfileEvents settingsProfileEvents;
     private ClientFrontierOperationService operationService;
@@ -42,6 +43,10 @@ public class ClientFrontierRuntime {
             localPersonalFrontierStore = new ClientLocalPersonalFrontierStore();
         }
 
+        if (localPersonalCollectionStore == null) {
+            localPersonalCollectionStore = new ClientLocalPersonalCollectionStore();
+        }
+
         if (frontierEvents == null) {
             frontierEvents = new ClientFrontierEvents();
         }
@@ -52,13 +57,14 @@ public class ClientFrontierRuntime {
 
         if (operationService == null) {
             operationService = new ClientFrontierOperationService(globalFrontiersOverlayManager, personalFrontiersOverlayManager,
-                    collectionRuntime, localPersonalFrontierStore, frontierEvents);
+                    collectionRuntime, localPersonalFrontierStore, localPersonalCollectionStore, frontierEvents);
         }
 
         if (syncService == null) {
             syncService = new ClientFrontierSyncService(globalFrontiersOverlayManager, personalFrontiersOverlayManager,
-                    collectionRuntime, localPersonalFrontierStore);
+                    collectionRuntime, localPersonalFrontierStore, localPersonalCollectionStore);
             syncService.loadLocalPersonalFrontiers();
+            syncService.loadLocalPersonalCollections();
         }
 
         if (localOverrides == null) {
@@ -137,6 +143,7 @@ public class ClientFrontierRuntime {
         settingsProfileEvents = null;
         operationService = null;
         localPersonalFrontierStore = null;
+        localPersonalCollectionStore = null;
         localOverrides = null;
 
         closeStep("global frontier overlays", () -> {

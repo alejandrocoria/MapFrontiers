@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.frontier;
 import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
+import games.alejandrocoria.mapfrontiers.common.network.PacketPersonalCollection;
 import games.alejandrocoria.mapfrontiers.common.network.PacketPersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.Minecraft;
@@ -23,16 +24,20 @@ public class ClientFrontierSyncService {
     private final FrontiersOverlayManager personalManager;
     private final ClientCollectionRuntime collectionRuntime;
     private final ClientLocalPersonalFrontierStore localPersonalStore;
+    private final ClientLocalPersonalCollectionStore localPersonalCollectionStore;
     private boolean localPersonalFrontiersLoaded = false;
+    private boolean localPersonalCollectionsLoaded = false;
 
     public ClientFrontierSyncService(FrontiersOverlayManager globalManager,
                                      FrontiersOverlayManager personalManager,
                                      ClientCollectionRuntime collectionRuntime,
-                                     ClientLocalPersonalFrontierStore localPersonalStore) {
+                                     ClientLocalPersonalFrontierStore localPersonalStore,
+                                     ClientLocalPersonalCollectionStore localPersonalCollectionStore) {
         this.globalManager = globalManager;
         this.personalManager = personalManager;
         this.collectionRuntime = collectionRuntime;
         this.localPersonalStore = localPersonalStore;
+        this.localPersonalCollectionStore = localPersonalCollectionStore;
     }
 
     public void loadLocalPersonalFrontiers() {
@@ -55,19 +60,34 @@ public class ClientFrontierSyncService {
                                     List<CollectionData> globalCollections,
                                     List<CollectionData> personalCollections) {
         loadLocalPersonalFrontiers();
+        loadLocalPersonalCollections();
 
         globalManager.replaceFrontiers(globalFrontiers);
-        collectionRuntime.replaceCollections(globalCollections, personalCollections);
         if (mc.isLocalServer()) {
+            collectionRuntime.replaceCollections(globalCollections, personalCollections);
             personalManager.replaceFrontiers(personalFrontiers);
             collectionRuntime.refreshFromFrontiers(globalManager, personalManager);
             return;
         }
 
+        SettingsUser currentPlayer = mc.player == null ? null : new SettingsUser(mc.player);
         List<FrontierOverlay> existingLocalPersonal = personalManager.getAllFrontiers().values().stream()
                 .flatMap(List::stream)
                 .toList();
+        List<CollectionData> existingLocalPersonalCollections = currentPlayer == null
+                ? List.of()
+                : collectionRuntime.getCollections(true).stream()
+                        .filter(collection -> collection.getOwner().equals(currentPlayer))
+                        .map(CollectionData::new)
+                        .toList();
         Set<UUID> serverFrontierIds = new HashSet<>();
+        Set<UUID> serverCollectionIds = new HashSet<>();
+
+        for (CollectionData collection : personalCollections) {
+            serverCollectionIds.add(collection.getId());
+        }
+
+        collectionRuntime.replaceCollections(globalCollections, personalCollections);
 
         for (FrontierData data : personalFrontiers) {
             serverFrontierIds.add(data.getId());
@@ -80,14 +100,25 @@ public class ClientFrontierSyncService {
         }
 
         List<FrontierOverlay> localOnlyOwnedFrontiers = new ArrayList<>();
-        if (mc.player != null) {
-            SettingsUser currentPlayer = new SettingsUser(mc.player);
+        List<CollectionData> localOnlyOwnedCollections = new ArrayList<>();
+        if (currentPlayer != null) {
             for (FrontierOverlay localFrontier : existingLocalPersonal) {
                 if (!serverFrontierIds.contains(localFrontier.getId()) && localFrontier.getOwner().equals(currentPlayer)
                         && localFrontier.isPersistent()) {
                     localOnlyOwnedFrontiers.add(localFrontier);
                 }
             }
+
+            for (CollectionData localCollection : existingLocalPersonalCollections) {
+                if (!serverCollectionIds.contains(localCollection.getId())) {
+                    localOnlyOwnedCollections.add(localCollection);
+                    collectionRuntime.addOrUpdateCollection(localCollection);
+                }
+            }
+        }
+
+        for (CollectionData collection : localOnlyOwnedCollections) {
+            PacketHandler.sendToServer(new PacketPersonalCollection(collection));
         }
 
         for (FrontierOverlay frontier : localOnlyOwnedFrontiers) {
@@ -95,20 +126,36 @@ public class ClientFrontierSyncService {
             PacketHandler.sendToServer(new PacketPersonalFrontier(frontier));
         }
         collectionRuntime.refreshFromFrontiers(globalManager, personalManager);
-        persistOwnedPersonalFrontiers();
+        persistOwnedPersonalData();
     }
 
     public void close() {
         localPersonalFrontiersLoaded = false;
+        localPersonalCollectionsLoaded = false;
         collectionRuntime.clear();
     }
 
-    private void persistOwnedPersonalFrontiers() {
+    public void loadLocalPersonalCollections() {
+        if (localPersonalCollectionsLoaded || mc.isLocalServer()) {
+            return;
+        }
+
+        for (CollectionData collection : localPersonalCollectionStore.loadCollections()) {
+            collectionRuntime.addOrUpdateCollection(collection);
+        }
+
+        collectionRuntime.refreshFromFrontiers(globalManager, personalManager);
+        localPersonalCollectionsLoaded = true;
+    }
+
+    private void persistOwnedPersonalData() {
         if (mc.isLocalServer() || mc.player == null) {
             return;
         }
 
-        localPersonalStore.saveOwnedFrontierMirror(getAllPersonalFrontiers(), new SettingsUser(mc.player));
+        SettingsUser currentPlayer = new SettingsUser(mc.player);
+        localPersonalStore.saveOwnedFrontierMirror(getAllPersonalFrontiers(), currentPlayer);
+        localPersonalCollectionStore.saveOwnedCollectionMirror(collectionRuntime.getCollections(true), currentPlayer);
     }
 
     private Collection<FrontierOverlay> getAllPersonalFrontiers() {
