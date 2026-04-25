@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.server.frontier;
 
+import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontiers;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSettingsProfile;
@@ -11,6 +12,9 @@ import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class ServerFrontierRuntime {
@@ -66,13 +70,32 @@ public class ServerFrontierRuntime {
 
     public PacketFrontiers createFrontiersSnapshot(ServerPlayer player) {
         PacketFrontiers packetFrontiers = new PacketFrontiers();
+        SettingsUser playerUser = new SettingsUser(player);
+        Set<UUID> includedPersonalCollectionIds = new HashSet<>();
 
         for (ArrayList<FrontierData> frontiers : frontiersManager.getAllGlobalFrontiers().values()) {
             packetFrontiers.addGlobalFrontiers(frontiers);
         }
+        packetFrontiers.addGlobalCollections(frontiersManager.getAllGlobalCollections());
 
-        for (ArrayList<FrontierData> frontiers : frontiersManager.getAllPersonalFrontiers(new SettingsUser(player)).values()) {
+        for (CollectionData collection : frontiersManager.getAllPersonalCollections(playerUser)) {
+            if (includedPersonalCollectionIds.add(collection.getId())) {
+                packetFrontiers.addPersonalCollection(collection);
+            }
+        }
+
+        for (ArrayList<FrontierData> frontiers : frontiersManager.getAllPersonalFrontiers(playerUser).values()) {
             packetFrontiers.addPersonalFrontiers(frontiers);
+            for (FrontierData frontier : frontiers) {
+                if (!frontier.hasCollection()) {
+                    continue;
+                }
+
+                CollectionData collection = frontiersManager.getCollectionFromID(frontier.getCollectionId());
+                if (collection != null && includedPersonalCollectionIds.add(collection.getId())) {
+                    packetFrontiers.addPersonalCollection(collection);
+                }
+            }
         }
 
         return packetFrontiers;

@@ -4,6 +4,7 @@ import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
+import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -22,10 +23,14 @@ public class PacketFrontiers {
 
     private final List<FrontierData> globalFrontiers;
     private final List<FrontierData> personalFrontiers;
+    private final List<CollectionData> globalCollections;
+    private final List<CollectionData> personalCollections;
 
     public PacketFrontiers() {
         globalFrontiers = new ArrayList<>();
         personalFrontiers = new ArrayList<>();
+        globalCollections = new ArrayList<>();
+        personalCollections = new ArrayList<>();
     }
 
     public static CustomPacketPayload.Type<CustomPacketPayload> type() {
@@ -40,6 +45,14 @@ public class PacketFrontiers {
         personalFrontiers.add(frontier);
     }
 
+    public void addGlobalCollection(CollectionData collection) {
+        globalCollections.add(collection);
+    }
+
+    public void addPersonalCollection(CollectionData collection) {
+        personalCollections.add(collection);
+    }
+
     public void addGlobalFrontiers(List<FrontierData> frontiers) {
         globalFrontiers.addAll(frontiers);
     }
@@ -48,9 +61,19 @@ public class PacketFrontiers {
         personalFrontiers.addAll(frontiers);
     }
 
+    public void addGlobalCollections(List<CollectionData> collections) {
+        globalCollections.addAll(collections);
+    }
+
+    public void addPersonalCollections(List<CollectionData> collections) {
+        personalCollections.addAll(collections);
+    }
+
     public PacketFrontiers(FriendlyByteBuf buf) {
         globalFrontiers = new ArrayList<>();
         personalFrontiers = new ArrayList<>();
+        globalCollections = new ArrayList<>();
+        personalCollections = new ArrayList<>();
 
         try {
             if (buf.readableBytes() > 1) {
@@ -66,6 +89,20 @@ public class PacketFrontiers {
                     FrontierData frontier = new FrontierData();
                     frontier.fromBytes(buf);
                     this.addPersonalFrontier(frontier);
+                }
+
+                size = buf.readInt();
+                for (int i = 0; i < size; ++i) {
+                    CollectionData collection = new CollectionData();
+                    collection.fromBytes(buf);
+                    this.addGlobalCollection(collection);
+                }
+
+                size = buf.readInt();
+                for (int i = 0; i < size; ++i) {
+                    CollectionData collection = new CollectionData();
+                    collection.fromBytes(buf);
+                    this.addPersonalCollection(collection);
                 }
             }
         } catch (Throwable t) {
@@ -84,6 +121,16 @@ public class PacketFrontiers {
             for (FrontierData frontier : personalFrontiers) {
                 frontier.toBytes(buf);
             }
+
+            buf.writeInt(globalCollections.size());
+            for (CollectionData collection : globalCollections) {
+                collection.toBytes(buf);
+            }
+
+            buf.writeInt(personalCollections.size());
+            for (CollectionData collection : personalCollections) {
+                collection.toBytes(buf);
+            }
         } catch (Throwable t) {
             MapFrontiers.LOGGER.error("Failed to write message for PacketFrontiers", t);
         }
@@ -92,9 +139,11 @@ public class PacketFrontiers {
     public static void handle(PacketContext<PacketFrontiers> ctx) {
         if (Side.CLIENT.equals(ctx.side())) {
             PacketFrontiers message = ctx.message();
-            MapFrontiers.LOGGER.debug("Handling PacketFrontiers. global={}, personal={}",
-                    message.globalFrontiers.size(), message.personalFrontiers.size());
-            MapFrontiersClient.setFrontiersFromServer(message.globalFrontiers, message.personalFrontiers);
+            MapFrontiers.LOGGER.debug("Handling PacketFrontiers. globalFrontiers={}, personalFrontiers={}, globalCollections={}, personalCollections={}",
+                    message.globalFrontiers.size(), message.personalFrontiers.size(),
+                    message.globalCollections.size(), message.personalCollections.size());
+            MapFrontiersClient.setFrontiersFromServer(message.globalFrontiers, message.personalFrontiers,
+                    message.globalCollections, message.personalCollections);
         }
     }
 }

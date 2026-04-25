@@ -53,6 +53,7 @@ public class ServerFrontierOperationService {
                                                       UUID frontierId,
                                                       ResourceKey<Level> dimension,
                                                       boolean personal,
+                                                      @Nullable UUID collectionId,
                                                       FrontierData.FrontierLifetime lifetime,
                                                       @Nullable String sourcePluginId,
                                                       @Nullable List<BlockPos> vertices,
@@ -68,6 +69,10 @@ public class ServerFrontierOperationService {
         if (personal) {
             FrontierData frontier = frontiersManager.createNewPersonalFrontier(frontierId, dimension, player, sourcePluginId,
                     vertices, chunks, points, pathStyle);
+            if (collectionId != null) {
+                MapFrontiers.LOGGER.debug("Ignoring collectionId={} on createFrontier until collection create logic is implemented. frontierId={}",
+                        collectionId, frontierId);
+            }
             return createdPersonalFrontier(frontier, player.getId());
         }
 
@@ -77,6 +82,10 @@ public class ServerFrontierOperationService {
 
         FrontierData frontier = frontiersManager.createNewGlobalFrontier(frontierId, dimension, player, sourcePluginId,
                 vertices, chunks, points, pathStyle);
+        if (collectionId != null) {
+            MapFrontiers.LOGGER.debug("Ignoring collectionId={} on createFrontier until collection create logic is implemented. frontierId={}",
+                    collectionId, frontierId);
+        }
         return createdGlobalFrontier(frontier, player.getId());
     }
 

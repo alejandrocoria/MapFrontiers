@@ -32,6 +32,7 @@ public class PacketCreateFrontier {
     private ResourceKey<Level> dimension = Level.OVERWORLD;
     private boolean personal = false;
     private UUID frontierId = new UUID(0L, 0L);
+    private @Nullable UUID collectionId;
     private @Nullable String sourcePluginId;
     private List<BlockPos> vertices;
     private List<ChunkPos> chunks;
@@ -39,7 +40,7 @@ public class PacketCreateFrontier {
     private @Nullable FrontierData.PathStyle pathStyle;
 
     public PacketCreateFrontier(UUID frontierId, ResourceKey<Level> dimension, boolean personal, @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks) {
-        this(frontierId, dimension, personal, null, vertices, chunks, null, null);
+        this(frontierId, dimension, personal, null, null, vertices, chunks, null, null);
     }
 
     public PacketCreateFrontier(UUID frontierId,
@@ -50,9 +51,22 @@ public class PacketCreateFrontier {
                                 @Nullable List<ChunkPos> chunks,
                                 @Nullable List<BlockPos> points,
                                 @Nullable FrontierData.PathStyle pathStyle) {
+        this(frontierId, dimension, personal, null, sourcePluginId, vertices, chunks, points, pathStyle);
+    }
+
+    public PacketCreateFrontier(UUID frontierId,
+                                ResourceKey<Level> dimension,
+                                boolean personal,
+                                @Nullable UUID collectionId,
+                                @Nullable String sourcePluginId,
+                                @Nullable List<BlockPos> vertices,
+                                @Nullable List<ChunkPos> chunks,
+                                @Nullable List<BlockPos> points,
+                                @Nullable FrontierData.PathStyle pathStyle) {
         this.frontierId = frontierId;
         this.dimension = dimension;
         this.personal = personal;
+        this.collectionId = collectionId;
         this.sourcePluginId = sourcePluginId;
         this.vertices = vertices;
         this.chunks = chunks;
@@ -70,6 +84,7 @@ public class PacketCreateFrontier {
                 this.dimension = ResourceKey.create(Registries.DIMENSION, buf.readIdentifier());
                 this.personal = buf.readBoolean();
                 this.frontierId = UUIDHelper.fromBytes(buf);
+                this.collectionId = buf.readBoolean() ? UUIDHelper.fromBytes(buf) : null;
                 this.sourcePluginId = buf.readNullable(FriendlyByteBuf::readUtf);
 
                 boolean hasVertex = buf.readBoolean();
@@ -118,6 +133,12 @@ public class PacketCreateFrontier {
             buf.writeIdentifier(dimension.identifier());
             buf.writeBoolean(personal);
             UUIDHelper.toBytes(buf, frontierId);
+            if (collectionId == null) {
+                buf.writeBoolean(false);
+            } else {
+                buf.writeBoolean(true);
+                UUIDHelper.toBytes(buf, collectionId);
+            }
             buf.writeNullable(sourcePluginId, FriendlyByteBuf::writeUtf);
 
             buf.writeBoolean(vertices != null);
@@ -166,12 +187,12 @@ public class PacketCreateFrontier {
             }
 
             MapFrontiers.LOGGER.debug(
-                    "Handling PacketCreateFrontier from player={} frontierId={} personal={} sourcePluginId={}",
+                "Handling PacketCreateFrontier from player={} frontierId={} personal={} sourcePluginId={}",
                     player.getGameProfile().name(), message.frontierId, message.personal, message.sourcePluginId
             );
 
             ServerFrontierOperationResult result = MapFrontiers.getServerRuntime().getOperationService().createFrontier(player, message.frontierId,
-                    message.dimension, message.personal, FrontierData.FrontierLifetime.PERSISTENT, message.sourcePluginId,
+                    message.dimension, message.personal, message.collectionId, FrontierData.FrontierLifetime.PERSISTENT, message.sourcePluginId,
                     message.vertices, message.chunks, message.points, message.pathStyle);
             if (!result.isSuccess()) {
                 MapFrontiers.LOGGER.warn(

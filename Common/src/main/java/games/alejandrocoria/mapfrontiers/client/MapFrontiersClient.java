@@ -15,6 +15,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.hud.HUD;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.page.ModSettingsPage;
 import games.alejandrocoria.mapfrontiers.client.settings.ClientSettingsProfileEvents;
 import games.alejandrocoria.mapfrontiers.common.api.MapFrontiersApiLogAdapter;
+import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
@@ -340,7 +341,10 @@ public class MapFrontiersClient {
         return runtime.getGlobalFrontiersOverlayManager();
     }
 
-    public static void setFrontiersFromServer(List<FrontierData> globalFrontiers, List<FrontierData> personalFrontiers) {
+    public static void setFrontiersFromServer(List<FrontierData> globalFrontiers,
+                                              List<FrontierData> personalFrontiers,
+                                              List<CollectionData> globalCollections,
+                                              List<CollectionData> personalCollections) {
         ClientFrontierRuntime runtime = ensureFrontierRuntime();
         if (runtime == null) {
             return;
@@ -350,14 +354,41 @@ public class MapFrontiersClient {
             return;
         }
 
-        MapFrontiers.LOGGER.debug("Received initial frontier snapshot from server. global={}, personal={}",
-                globalFrontiers.size(), personalFrontiers.size());
+        MapFrontiers.LOGGER.debug("Received initial frontier snapshot from server. globalFrontiers={}, personalFrontiers={}, globalCollections={}, personalCollections={}",
+                globalFrontiers.size(), personalFrontiers.size(), globalCollections.size(), personalCollections.size());
         runtime.getSyncService().applyServerSnapshot(globalFrontiers, personalFrontiers);
         connectionState.markInitialFrontiersReceived();
         publishClientApiIfReady();
         if (hud != null) {
             hud.frontierChanged();
         }
+    }
+
+    public static void applyCollectionCreated(CollectionData collection) {
+        if (!isJourneyMapPluginAvailable()) {
+            return;
+        }
+
+        MapFrontiers.LOGGER.debug("Ignoring PacketCollectionCreated for collection={} until client collection runtime is implemented.",
+                collection.getId());
+    }
+
+    public static void applyCollectionUpdated(CollectionData collection) {
+        if (!isJourneyMapPluginAvailable()) {
+            return;
+        }
+
+        MapFrontiers.LOGGER.debug("Ignoring PacketCollectionUpdated for collection={} until client collection runtime is implemented.",
+                collection.getId());
+    }
+
+    public static void applyCollectionDeleted(UUID collectionId) {
+        if (!isJourneyMapPluginAvailable()) {
+            return;
+        }
+
+        MapFrontiers.LOGGER.debug("Ignoring PacketCollectionDeleted for collection={} until client collection runtime is implemented.",
+                collectionId);
     }
 
     public static List<FrontierOverlay> getFrontiers(boolean personal, ResourceKey<Level> dimension) {

@@ -118,7 +118,7 @@ public class ClientFrontierOperationService {
                                                       @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks,
                                                       @Nullable List<BlockPos> points, @Nullable FrontierData.PathStyle pathStyle) {
         if (usesAuthoritativeCreateFlow(lifetime)) {
-            PacketHandler.sendToServer(new PacketCreateFrontier(frontierId, dimension, personal, sourcePluginId,
+            PacketHandler.sendToServer(new PacketCreateFrontier(frontierId, dimension, personal, null, sourcePluginId,
                     vertices, chunks, points, pathStyle));
             return null;
         }
