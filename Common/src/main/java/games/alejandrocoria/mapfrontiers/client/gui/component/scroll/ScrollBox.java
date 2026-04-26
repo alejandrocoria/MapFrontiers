@@ -353,9 +353,22 @@ public class ScrollBox extends AbstractContainerWidget {
 
     @Override
     public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
-        for (int i = 0; i < elements.size(); ++i) {
-            boolean isFocused = focused == i && isKeyboardFocused();
-            elements.get(i).render(graphics, mouseX, mouseY, partialTicks, selected == i, isFocused);
+        int clipLeft = getX() - 1;
+        int clipTop = getY() - 1;
+        int clipRight = getX() + width - SCROLLBAR_AREA_WIDTH + 1;
+        int clipBottom = getY() + height + 1;
+
+        if (!elements.isEmpty()) {
+            graphics.enableScissor(clipLeft, clipTop, clipRight, clipBottom);
+            try {
+                for (int i = 0; i < elements.size(); ++i) {
+                    boolean isFocused = focused == i && isKeyboardFocused();
+                    elements.get(i).render(graphics, mouseX, mouseY, partialTicks, selected == i, isFocused,
+                            clipLeft, clipTop, clipRight, clipBottom);
+                }
+            } finally {
+                graphics.disableScissor();
+            }
         }
 
         if (scrollBarHeight > 0) {
@@ -618,9 +631,22 @@ public class ScrollBox extends AbstractContainerWidget {
             return height;
         }
 
-        protected void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks, boolean selected, boolean focused) {
+        protected void render(GuiGraphicsExtractor graphics,
+                              int mouseX,
+                              int mouseY,
+                              float partialTicks,
+                              boolean selected,
+                              boolean focused,
+                              int clipLeft,
+                              int clipTop,
+                              int clipRight,
+                              int clipBottom) {
             if (visible) {
-                isHovered = mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height;
+                int hoverLeft = Math.max(x, clipLeft);
+                int hoverTop = Math.max(y, clipTop);
+                int hoverRight = Math.min(x + width, clipRight);
+                int hoverBottom = Math.min(y + height, clipBottom);
+                isHovered = mouseX >= hoverLeft && mouseY >= hoverTop && mouseX < hoverRight && mouseY < hoverBottom;
                 extractWidgetRenderState(graphics, mouseX, mouseY, partialTicks, selected, focused);
                 if (focused) {
                     graphics.horizontalLine(x - 1, x + width, y - 1, ColorConstants.WHITE);
