@@ -20,8 +20,8 @@ public class CollectionListElement extends FrontierListRowElement {
     private static final int CONTENT_X = 14;
     private static final int TITLE_Y = 4;
     private static final int COUNTERS_GAP = 6;
-    private static final int RIGHT_PADDING = 4;
-    private static final int ACTION_GAP = 4;
+    private static final int RIGHT_PADDING = 2;
+    private static final int ACTION_GAP = 2;
     private static final int ACTION_HEIGHT = 11;
     private static final int ACTION_TEXT_Y = 2;
     private static final int CHECKBOX_Y = 2;
@@ -34,6 +34,7 @@ public class CollectionListElement extends FrontierListRowElement {
     private final String counters;
     private final boolean collapsed;
     private final boolean checkboxVisible;
+    private final boolean checkboxVisibleOnHover;
     private final int markedCount;
     private final int eligibleCount;
     private final @Nullable String actionLabel;
@@ -53,6 +54,7 @@ public class CollectionListElement extends FrontierListRowElement {
                                  String counters,
                                  boolean collapsed,
                                  boolean checkboxVisible,
+                                 boolean checkboxVisibleOnHover,
                                  int markedCount,
                                  int eligibleCount,
                                  @Nullable String actionLabel,
@@ -69,6 +71,7 @@ public class CollectionListElement extends FrontierListRowElement {
         this.counters = counters;
         this.collapsed = collapsed;
         this.checkboxVisible = checkboxVisible;
+        this.checkboxVisibleOnHover = checkboxVisibleOnHover;
         this.markedCount = markedCount;
         this.eligibleCount = eligibleCount;
         this.actionLabel = actionLabel;
@@ -168,11 +171,15 @@ public class CollectionListElement extends FrontierListRowElement {
     }
 
     private void renderCheckBox(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        if (!checkboxVisible) {
+        if (!shouldRenderCheckBox()) {
             return;
         }
 
         CheckBoxRenderHelper.render(graphics, getCheckBoxX(), y + CHECKBOX_Y, isCheckBoxHovered(mouseX, mouseY), getCheckBoxState());
+    }
+
+    private boolean shouldRenderCheckBox() {
+        return checkboxVisible || checkboxVisibleOnHover && isHovered;
     }
 
     private CheckBoxRenderHelper.State getCheckBoxState() {
@@ -192,7 +199,7 @@ public class CollectionListElement extends FrontierListRowElement {
     }
 
     private boolean isCheckBoxHovered(int mouseX, int mouseY) {
-        return isHovered && CheckBoxRenderHelper.contains(getCheckBoxX(), y + CHECKBOX_Y, mouseX, mouseY);
+        return CheckBoxRenderHelper.contains(getCheckBoxX(), y + CHECKBOX_Y, mouseX, mouseY);
     }
 
     private int getCheckBoxX() {
@@ -230,7 +237,7 @@ public class CollectionListElement extends FrontierListRowElement {
             return ScrollBox.ScrollElement.Action.None;
         }
 
-        if (checkboxVisible && CheckBoxRenderHelper.contains(getCheckBoxX(), y + CHECKBOX_Y, event.x(), event.y())) {
+        if (shouldRenderCheckBox() && CheckBoxRenderHelper.contains(getCheckBoxX(), y + CHECKBOX_Y, event.x(), event.y())) {
             markToggleRequested = true;
             return ScrollBox.ScrollElement.Action.Handled;
         }

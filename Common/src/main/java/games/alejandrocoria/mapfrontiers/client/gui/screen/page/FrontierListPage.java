@@ -722,7 +722,8 @@ public class FrontierListPage extends PageScreen
 
         return new CollectionListElement(group.rowId, font, group.collection, group.virtualRow, group.personal, group.title,
                 formatCollectionCounters(group.totalFrontiers, group.filteredFrontiers.size()), group.collapsed,
-                shouldShowCollectionCheckbox(group, eligibleFrontierIds),
+                shouldShowCheckboxInMarkedMode(!eligibleFrontierIds.isEmpty(), isCompatibleWithMarkedType(group.personal)),
+                shouldShowCheckboxOnHover(!eligibleFrontierIds.isEmpty()),
                 countMarkedFrontiers(eligibleFrontierIds),
                 eligibleFrontierIds.size(),
                 getCollectionActionLabel(group),
@@ -740,7 +741,8 @@ public class FrontierListPage extends PageScreen
                 visibleFilteredFrontiers.add(frontier.getId());
             }
             rows.add(new FrontierListElement(font, frontier, FRONTIERS_WIDTH, FRONTIER_CHILD_INDENT,
-                    shouldAlwaysShowFrontierCheckbox(frontier), shouldShowFrontierCheckboxOnHover(frontier), isFrontierMarked(frontier)));
+                    shouldShowCheckboxInMarkedMode(canMarkFrontier(frontier), isCompatibleWithMarkedType(frontier.getPersonal())),
+                    shouldShowCheckboxOnHover(canMarkFrontier(frontier)), isFrontierMarked(frontier)));
         }
     }
 
@@ -927,16 +929,12 @@ public class FrontierListPage extends PageScreen
         return markedFrontierIds.contains(frontier.getId());
     }
 
-    private boolean shouldAlwaysShowFrontierCheckbox(FrontierOverlay frontier) {
-        return canMarkFrontier(frontier) && isMarkedModeActive() && isCompatibleWithMarkedType(frontier.getPersonal());
+    private boolean shouldShowCheckboxInMarkedMode(boolean eligible, boolean compatible) {
+        return eligible && isMarkedModeActive() && compatible;
     }
 
-    private boolean shouldShowFrontierCheckboxOnHover(FrontierOverlay frontier) {
-        return canMarkFrontier(frontier) && !isMarkedModeActive();
-    }
-
-    private boolean shouldShowCollectionCheckbox(CollectionGroupModel group, List<UUID> eligibleFrontierIds) {
-        return !eligibleFrontierIds.isEmpty() && (!isMarkedModeActive() || isCompatibleWithMarkedType(group.personal));
+    private boolean shouldShowCheckboxOnHover(boolean eligible) {
+        return eligible && !isMarkedModeActive();
     }
 
     private int countMarkedFrontiers(List<UUID> eligibleFrontierIds) {

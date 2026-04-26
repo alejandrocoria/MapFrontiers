@@ -28,7 +28,7 @@ public class FrontierListElement extends FrontierListRowElement {
     private static final Identifier PATH_OUTLINE_TEXTURE = frontierListTexture("path_outline.png");
     private static final Identifier VERTEX_FILL_TEXTURE = frontierListTexture("vertex_fill.png");
     private static final Identifier VERTEX_OUTLINE_TEXTURE = frontierListTexture("vertex_outline.png");
-    private static final int RIGHT_PADDING = 4;
+    private static final int RIGHT_PADDING = 2;
     private static final int CHECKBOX_Y = 7;
     private static final int NAME_HOVER_X = 24;
     private static final int NAME_X = 26;
@@ -60,10 +60,6 @@ public class FrontierListElement extends FrontierListRowElement {
     private final boolean checkboxVisibleOnHover;
     private final boolean checked;
     private boolean markToggleRequested;
-
-    public FrontierListElement(Font font, FrontierOverlay frontier) {
-        this(font, frontier, 450, 0, false, false, false);
-    }
 
     public FrontierListElement(Font font, FrontierOverlay frontier, int width, int indent,
                                boolean checkboxVisible, boolean checkboxVisibleOnHover, boolean checked) {
