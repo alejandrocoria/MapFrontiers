@@ -17,6 +17,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.FrontierLis
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.RadioListElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox.ScrollElement;
+import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.SeparatorListElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteCollectionConfirmationDialog;
@@ -638,21 +639,28 @@ public class FrontierListPage extends PageScreen
         boolean previousSelectionWasFrontier = previousSelection != null && previousSelection.startsWith("frontier:");
         int previousScrollOffset = frontiers.getScrollOffset();
         CollectionUiStateStore collapseState = getCollectionUiStateStore();
-        List<FrontierListRowElement> rows = new ArrayList<>();
+        List<ScrollElement> rows = new ArrayList<>();
         Set<UUID> visibleFilteredFrontiers = new HashSet<>();
 
-        rows.addAll(buildBlockRows(true, visibleFilteredFrontiers));
-        rows.addAll(buildBlockRows(false, visibleFilteredFrontiers));
+        List<ScrollElement> personalRows = buildBlockRows(true, visibleFilteredFrontiers);
+        List<ScrollElement> globalRows = buildBlockRows(false, visibleFilteredFrontiers);
+        rows.addAll(personalRows);
+        if (!personalRows.isEmpty() && !globalRows.isEmpty()) {
+            rows.add(new SeparatorListElement(FRONTIERS_WIDTH));
+        }
+        rows.addAll(globalRows);
         pruneMarkedFrontiers(visibleFilteredFrontiers);
 
         Set<String> validRowIds = new HashSet<>();
-        for (FrontierListRowElement row : rows) {
-            validRowIds.add(row.getRowId());
+        for (ScrollElement row : rows) {
+            if (row instanceof FrontierListRowElement frontierRow) {
+                validRowIds.add(frontierRow.getRowId());
+            }
         }
         collapseState.prune(validRowIds);
 
         frontiers.removeAll();
-        for (FrontierListRowElement row : rows) {
+        for (ScrollElement row : rows) {
             frontiers.addElement(row);
         }
         frontiers.setScrollOffset(previousScrollOffset);
@@ -675,8 +683,8 @@ public class FrontierListPage extends PageScreen
         return frontiers.getSelectedElement() instanceof FrontierListRowElement rowElement && rowElement.getRowId().equals(rowId);
     }
 
-    private List<FrontierListRowElement> buildBlockRows(boolean personal, Set<UUID> visibleFilteredFrontiers) {
-        List<FrontierListRowElement> rows = new ArrayList<>();
+    private List<ScrollElement> buildBlockRows(boolean personal, Set<UUID> visibleFilteredFrontiers) {
+        List<ScrollElement> rows = new ArrayList<>();
         List<CollectionGroupModel> collectionGroups = buildCollectionGroups(personal);
         boolean includeVirtualRow = personal || shouldShowGlobalVirtualRow() || !collectionGroups.isEmpty();
 
@@ -724,7 +732,7 @@ public class FrontierListPage extends PageScreen
                 FRONTIERS_WIDTH);
     }
 
-    private void addFrontierChildren(List<FrontierListRowElement> rows, List<FrontierOverlay> filteredFrontiers,
+    private void addFrontierChildren(List<ScrollElement> rows, List<FrontierOverlay> filteredFrontiers,
                                      Set<UUID> visibleFilteredFrontiers) {
         filteredFrontiers.sort(this::compareFrontiers);
         for (FrontierOverlay frontier : filteredFrontiers) {
