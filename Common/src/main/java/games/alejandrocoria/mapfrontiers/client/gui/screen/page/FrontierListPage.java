@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.screen.page;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
+import games.alejandrocoria.mapfrontiers.client.frontier.CollectionUiStateStore;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.FullscreenMap;
@@ -86,7 +87,6 @@ public class FrontierListPage extends PageScreen
 
     private final IClientAPI jmAPI;
     private final FullscreenMap fullscreenMap;
-    private final FrontierListCollapseState collapseState = new FrontierListCollapseState();
     private final Set<UUID> markedFrontierIds = new HashSet<>();
     private MarkedType markedType = MarkedType.NONE;
 
@@ -387,6 +387,7 @@ public class FrontierListPage extends PageScreen
 
         if (element instanceof CollectionListElement collectionElement) {
             if (collectionElement.consumeCollapseToggleRequested()) {
+                CollectionUiStateStore collapseState = getCollectionUiStateStore();
                 collapseState.setCollapsed(rowElement.getRowId(), !collapseState.isCollapsed(rowElement.getRowId()));
                 updateFrontiers();
                 refreshViewState();
@@ -633,6 +634,7 @@ public class FrontierListPage extends PageScreen
     private void updateFrontiers() {
         String previousSelection = selectedRowId;
         boolean previousSelectionWasFrontier = previousSelection != null && previousSelection.startsWith("frontier:");
+        CollectionUiStateStore collapseState = getCollectionUiStateStore();
         List<FrontierListRowElement> rows = new ArrayList<>();
         Set<UUID> visibleFilteredFrontiers = new HashSet<>();
 
@@ -733,6 +735,7 @@ public class FrontierListPage extends PageScreen
 
     private CollectionGroupModel buildVirtualGroup(boolean personal) {
         String rowId = personal ? PERSONAL_VIRTUAL_COLLECTION_ID : GLOBAL_VIRTUAL_COLLECTION_ID;
+        CollectionUiStateStore collapseState = getCollectionUiStateStore();
         List<FrontierOverlay> allFrontiers = new ArrayList<>(MapFrontiersClient.getFrontiersWithoutCollection(personal));
         List<FrontierOverlay> filteredFrontiers = filterFrontiers(allFrontiers);
 
@@ -747,6 +750,7 @@ public class FrontierListPage extends PageScreen
     }
 
     private List<CollectionGroupModel> buildCollectionGroups(boolean personal) {
+        CollectionUiStateStore collapseState = getCollectionUiStateStore();
         List<CollectionGroupModel> groups = new ArrayList<>();
         for (CollectionData collection : MapFrontiersClient.getCollections(personal)) {
             List<FrontierOverlay> allFrontiers = new ArrayList<>(MapFrontiersClient.getFrontiersInCollection(collection.getId()));
@@ -1246,6 +1250,10 @@ public class FrontierListPage extends PageScreen
         return "collection:" + collectionId;
     }
 
+    private static CollectionUiStateStore getCollectionUiStateStore() {
+        return MapFrontiersClient.getCollectionUiStateStore();
+    }
+
     @FunctionalInterface
     private interface SortComparator<T> {
         int compare(ClientConfig.Sorting sort, T a, T b);
@@ -1292,26 +1300,6 @@ public class FrontierListPage extends PageScreen
                 area += frontier.area;
             }
             totalArea = area;
-        }
-    }
-
-    private static class FrontierListCollapseState {
-        private final Set<String> collapsedRows = new HashSet<>();
-
-        public boolean isCollapsed(String rowId) {
-            return collapsedRows.contains(rowId);
-        }
-
-        public void setCollapsed(String rowId, boolean collapsed) {
-            if (collapsed) {
-                collapsedRows.add(rowId);
-            } else {
-                collapsedRows.remove(rowId);
-            }
-        }
-
-        public void prune(Set<String> validRowIds) {
-            collapsedRows.retainAll(validRowIds);
         }
     }
 }

@@ -21,6 +21,7 @@ public class ClientFrontierRuntime {
     private ClientFrontierOperationService operationService;
     private ClientFrontierSyncService syncService;
     private FrontierLocalOverrides localOverrides;
+    private CollectionUiStateStore collectionUiStateStore;
     private MapFrontiersClientAPIImpl clientApi;
 
     public ClientFrontierRuntime(IClientAPI journeyMapApi) {
@@ -75,6 +76,10 @@ public class ClientFrontierRuntime {
         if (localOverrides == null) {
             localOverrides = new FrontierLocalOverrides();
         }
+
+        if (collectionUiStateStore == null) {
+            collectionUiStateStore = new CollectionUiStateStore();
+        }
     }
 
     public boolean hasInitializedManagers() {
@@ -126,6 +131,11 @@ public class ClientFrontierRuntime {
         return syncService;
     }
 
+    public CollectionUiStateStore getCollectionUiStateStore() {
+        ensureInitialized();
+        return collectionUiStateStore;
+    }
+
     public MapFrontiersClientAPIImpl getOrCreateClientApi() {
         ensureInitialized();
         if (clientApi == null) {
@@ -157,6 +167,7 @@ public class ClientFrontierRuntime {
         localPersonalFrontierStore = null;
         localPersonalCollectionStore = null;
         localOverrides = null;
+        collectionUiStateStore = null;
 
         closeStep("global frontier overlays", () -> {
             if (globalManager != null) {

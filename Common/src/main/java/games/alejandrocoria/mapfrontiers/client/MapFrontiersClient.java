@@ -9,6 +9,7 @@ import games.alejandrocoria.mapfrontiers.client.frontier.ClientFrontierOperation
 import games.alejandrocoria.mapfrontiers.client.frontier.ClientFrontierRuntime;
 import games.alejandrocoria.mapfrontiers.client.frontier.ClientCollectionEvents;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierLocalOverrides;
+import games.alejandrocoria.mapfrontiers.client.frontier.CollectionUiStateStore;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
@@ -547,6 +548,11 @@ public class MapFrontiersClient {
     public static FrontierLocalOverrides getLocalOverrides() {
         ClientFrontierRuntime runtime = requireFrontierRuntime();
         return runtime.getLocalOverrides();
+    }
+
+    public static CollectionUiStateStore getCollectionUiStateStore() {
+        ClientFrontierRuntime runtime = requireFrontierRuntime();
+        return runtime.getCollectionUiStateStore();
     }
 
     public static ClientFrontierOperationService getOperationService() {
