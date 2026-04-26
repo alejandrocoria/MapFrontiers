@@ -22,6 +22,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirma
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.NewFrontierDialog;
 import games.alejandrocoria.mapfrontiers.common.config.EnumConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -79,10 +80,14 @@ public class FrontierListPage extends PageScreen
     private static final int FILTER_DIMENSION_MIN_ROWS = 2;
     private static final String PERSONAL_VIRTUAL_COLLECTION_ID = "mapfrontiers:personal_virtual_collection";
     private static final String GLOBAL_VIRTUAL_COLLECTION_ID = "mapfrontiers:global_virtual_collection";
+    private static final String NEW_ACTION_LABEL = "Nueva";
+    private static final String MOVE_HERE_ACTION_LABEL = "Mover aca";
 
     private final IClientAPI jmAPI;
     private final FullscreenMap fullscreenMap;
     private final FrontierListCollapseState collapseState = new FrontierListCollapseState();
+    private final Set<UUID> markedFrontierIds = new HashSet<>();
+    private MarkedType markedType = MarkedType.NONE;
 
     private TextBox searchBox;
     private ScrollBox frontiers;
@@ -95,6 +100,12 @@ public class FrontierListPage extends PageScreen
     private SimpleButton buttonVisible;
     private SimpleButton buttonSettings;
     private @Nullable String selectedRowId;
+
+    private enum MarkedType {
+        NONE,
+        PERSONAL,
+        GLOBAL
+    }
 
     public FrontierListPage(IClientAPI jmAPI, FullscreenMap fullscreenMap) {
         super(TITLE_LABEL);
@@ -358,20 +369,47 @@ public class FrontierListPage extends PageScreen
     }
 
     private void onSearchValueChanged(String value) {
+        clearMarkedFrontiers();
         updateFrontiers();
+        refreshViewState();
     }
 
     private void onFrontierRowClicked(ScrollElement element) {
+        if (element instanceof FrontierListElement frontierElement && frontierElement.consumeMarkToggleRequested()) {
+            toggleFrontierMarked(frontierElement.getFrontier());
+            return;
+        }
+
         if (!(element instanceof FrontierListRowElement rowElement)) {
             return;
         }
 
+        if (element instanceof CollectionListElement collectionElement) {
+            if (collectionElement.consumeCollapseToggleRequested()) {
+                collapseState.setCollapsed(rowElement.getRowId(), !collapseState.isCollapsed(rowElement.getRowId()));
+                updateFrontiers();
+                refreshViewState();
+                return;
+            }
+
+            if (collectionElement.consumeMarkToggleRequested()) {
+                toggleCollectionGroupMarked(collectionElement);
+                return;
+            }
+
+            if (collectionElement.consumeActionRequested()) {
+                if (collectionElement.isActionEnabled() && isMarkedModeActive()) {
+                    moveMarkedFrontiersToCollection(collectionElement);
+                }
+                refreshViewState();
+                return;
+            }
+        }
+
         selectedRowId = rowElement.getRowId();
 
-        if (element instanceof CollectionListElement collectionElement && collectionElement.consumeCollapseToggleRequested()) {
+        if (element instanceof CollectionListElement) {
             fullscreenMap.selectFrontier(null);
-            collapseState.setCollapsed(selectedRowId, !collapseState.isCollapsed(selectedRowId));
-            updateFrontiers();
             refreshViewState();
             return;
         }
@@ -456,6 +494,9 @@ public class FrontierListPage extends PageScreen
     }
 
     private void onSettingsPressed() {
+        clearMarkedFrontiers();
+        updateFrontiers();
+        refreshViewState();
         new ModSettingsPage(true).display();
     }
 
@@ -476,6 +517,7 @@ public class FrontierListPage extends PageScreen
     }
 
     private void notifyFiltersChanged() {
+        clearMarkedFrontiers();
         updateFrontiers();
         ClientGlobalEvents.postUpdatedConfigEvent();
         refreshViewState();
@@ -523,9 +565,11 @@ public class FrontierListPage extends PageScreen
         String previousSelection = selectedRowId;
         boolean previousSelectionWasFrontier = previousSelection != null && previousSelection.startsWith("frontier:");
         List<FrontierListRowElement> rows = new ArrayList<>();
+        Set<UUID> visibleFilteredFrontiers = new HashSet<>();
 
-        rows.addAll(buildBlockRows(true));
-        rows.addAll(buildBlockRows(false));
+        rows.addAll(buildBlockRows(true, visibleFilteredFrontiers));
+        rows.addAll(buildBlockRows(false, visibleFilteredFrontiers));
+        pruneMarkedFrontiers(visibleFilteredFrontiers);
 
         Set<String> validRowIds = new HashSet<>();
         for (FrontierListRowElement row : rows) {
@@ -555,7 +599,7 @@ public class FrontierListPage extends PageScreen
         return frontiers.getSelectedElement() instanceof FrontierListRowElement rowElement && rowElement.getRowId().equals(rowId);
     }
 
-    private List<FrontierListRowElement> buildBlockRows(boolean personal) {
+    private List<FrontierListRowElement> buildBlockRows(boolean personal, Set<UUID> visibleFilteredFrontiers) {
         List<FrontierListRowElement> rows = new ArrayList<>();
         List<CollectionGroupModel> collectionGroups = buildCollectionGroups(personal);
         boolean includeVirtualRow = personal || shouldShowGlobalVirtualRow() || !collectionGroups.isEmpty();
@@ -568,7 +612,7 @@ public class FrontierListPage extends PageScreen
             CollectionGroupModel virtualGroup = buildVirtualGroup(personal);
             rows.add(createCollectionRowElement(virtualGroup));
             if (!virtualGroup.collapsed) {
-                addFrontierChildren(rows, virtualGroup.filteredFrontiers);
+                addFrontierChildren(rows, virtualGroup.filteredFrontiers, visibleFilteredFrontiers);
             }
         }
 
@@ -576,22 +620,38 @@ public class FrontierListPage extends PageScreen
         for (CollectionGroupModel group : collectionGroups) {
             rows.add(createCollectionRowElement(group));
             if (!group.collapsed) {
-                addFrontierChildren(rows, group.filteredFrontiers);
+                addFrontierChildren(rows, group.filteredFrontiers, visibleFilteredFrontiers);
             }
         }
+
+        rows.stream()
+                .filter(row -> row instanceof CollectionListElement)
+                .map(row -> (CollectionListElement) row)
+                .forEach(row -> visibleFilteredFrontiers.addAll(row.getEligibleFrontierIds()));
 
         return rows;
     }
 
     private CollectionListElement createCollectionRowElement(CollectionGroupModel group) {
-        return new CollectionListElement(group.rowId, font, group.collection, group.virtualRow, group.title,
-                formatCollectionCounters(group.totalFrontiers, group.filteredFrontiers.size()), group.collapsed, FRONTIERS_WIDTH);
+        return new CollectionListElement(group.rowId, font, group.collection, group.virtualRow, group.personal, group.title,
+                formatCollectionCounters(group.totalFrontiers, group.filteredFrontiers.size()), group.collapsed,
+                shouldShowCollectionCheckbox(group),
+                countMarkedFrontiers(group.filteredFrontiers),
+                group.filteredFrontiers.size(),
+                getCollectionActionLabel(group),
+                isCollectionActionEnabled(group),
+                getCollectionActionWidth(),
+                group.filteredFrontiers.stream().map(FrontierOverlay::getId).toList(),
+                FRONTIERS_WIDTH);
     }
 
-    private void addFrontierChildren(List<FrontierListRowElement> rows, List<FrontierOverlay> filteredFrontiers) {
+    private void addFrontierChildren(List<FrontierListRowElement> rows, List<FrontierOverlay> filteredFrontiers,
+                                     Set<UUID> visibleFilteredFrontiers) {
         filteredFrontiers.sort(this::compareFrontiers);
         for (FrontierOverlay frontier : filteredFrontiers) {
-            rows.add(new FrontierListElement(font, frontier, FRONTIERS_WIDTH, FRONTIER_CHILD_INDENT));
+            visibleFilteredFrontiers.add(frontier.getId());
+            rows.add(new FrontierListElement(font, frontier, FRONTIERS_WIDTH, FRONTIER_CHILD_INDENT,
+                    shouldAlwaysShowFrontierCheckbox(frontier), shouldShowFrontierCheckboxOnHover(frontier), isFrontierMarked(frontier)));
         }
     }
 
@@ -768,6 +828,168 @@ public class FrontierListPage extends PageScreen
         return !MapFrontiersClient.getAllFrontiers(false).isEmpty() || canManageGlobalCollections();
     }
 
+    private boolean isMarkedModeActive() {
+        return markedType != MarkedType.NONE && !markedFrontierIds.isEmpty();
+    }
+
+    private boolean isFrontierMarked(FrontierOverlay frontier) {
+        return markedFrontierIds.contains(frontier.getId());
+    }
+
+    private boolean shouldAlwaysShowFrontierCheckbox(FrontierOverlay frontier) {
+        return isMarkedModeActive() && isCompatibleWithMarkedType(frontier.getPersonal());
+    }
+
+    private boolean shouldShowFrontierCheckboxOnHover(FrontierOverlay frontier) {
+        return !isMarkedModeActive();
+    }
+
+    private boolean shouldShowCollectionCheckbox(CollectionGroupModel group) {
+        return !isMarkedModeActive() || isCompatibleWithMarkedType(group.personal);
+    }
+
+    private int countMarkedFrontiers(List<FrontierOverlay> filteredFrontiers) {
+        int count = 0;
+        for (FrontierOverlay frontier : filteredFrontiers) {
+            if (markedFrontierIds.contains(frontier.getId())) {
+                ++count;
+            }
+        }
+        return count;
+    }
+
+    private @Nullable String getCollectionActionLabel(CollectionGroupModel group) {
+        if (!isMarkedModeActive()) {
+            if (group.virtualRow && (group.personal || canManageGlobalCollections())) {
+                return NEW_ACTION_LABEL;
+            }
+            return null;
+        }
+
+        if (!isCompatibleWithMarkedType(group.personal)) {
+            return null;
+        }
+
+        return MOVE_HERE_ACTION_LABEL;
+    }
+
+    private boolean isCollectionActionEnabled(CollectionGroupModel group) {
+        if (!isMarkedModeActive()) {
+            return false;
+        }
+
+        if (!isCompatibleWithMarkedType(group.personal)) {
+            return false;
+        }
+
+        UUID targetCollectionId = group.collection == null ? null : group.collection.getId();
+        for (FrontierOverlay frontier : getMarkedFrontiers()) {
+            if (!Objects.equals(frontier.getCollectionId(), targetCollectionId)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private int getCollectionActionWidth() {
+        return Math.max(font.width(NEW_ACTION_LABEL), font.width(MOVE_HERE_ACTION_LABEL)) + 8;
+    }
+
+    private void toggleFrontierMarked(FrontierOverlay frontier) {
+        MarkedType frontierType = getMarkedType(frontier.getPersonal());
+        if (markedType == MarkedType.NONE) {
+            markedType = frontierType;
+        } else if (markedType != frontierType) {
+            return;
+        }
+
+        if (!markedFrontierIds.add(frontier.getId())) {
+            markedFrontierIds.remove(frontier.getId());
+        }
+
+        if (markedFrontierIds.isEmpty()) {
+            markedType = MarkedType.NONE;
+        }
+
+        updateFrontiers();
+        refreshViewState();
+    }
+
+    private void toggleCollectionGroupMarked(CollectionListElement groupElement) {
+        MarkedType groupType = getMarkedType(groupElement.isPersonal());
+        if (markedType == MarkedType.NONE) {
+            markedType = groupType;
+        } else if (markedType != groupType) {
+            return;
+        }
+
+        int currentlyMarked = 0;
+        for (UUID frontierId : groupElement.getEligibleFrontierIds()) {
+            if (markedFrontierIds.contains(frontierId)) {
+                ++currentlyMarked;
+            }
+        }
+
+        if (currentlyMarked == 0) {
+            markedFrontierIds.addAll(groupElement.getEligibleFrontierIds());
+        } else {
+            markedFrontierIds.removeAll(groupElement.getEligibleFrontierIds());
+        }
+
+        if (markedFrontierIds.isEmpty()) {
+            markedType = MarkedType.NONE;
+        }
+
+        updateFrontiers();
+        refreshViewState();
+    }
+
+    private void moveMarkedFrontiersToCollection(CollectionListElement targetElement) {
+        UUID targetCollectionId = targetElement.getCollection() == null ? null : targetElement.getCollection().getId();
+
+        for (FrontierOverlay frontier : getMarkedFrontiers()) {
+            if (Objects.equals(frontier.getCollectionId(), targetCollectionId)) {
+                continue;
+            }
+
+            FrontierChange change = new FrontierChange();
+            change.setCollectionId(targetCollectionId);
+            MapFrontiersClient.getOperationService().updateFrontier(frontier, change);
+        }
+    }
+
+    private List<FrontierOverlay> getMarkedFrontiers() {
+        boolean personal = markedType == MarkedType.PERSONAL;
+        List<FrontierOverlay> frontiers = new ArrayList<>();
+        for (FrontierOverlay frontier : MapFrontiersClient.getAllFrontiers(personal)) {
+            if (markedFrontierIds.contains(frontier.getId())) {
+                frontiers.add(frontier);
+            }
+        }
+        return frontiers;
+    }
+
+    private boolean isCompatibleWithMarkedType(boolean personal) {
+        return markedType == MarkedType.NONE || markedType == getMarkedType(personal);
+    }
+
+    private MarkedType getMarkedType(boolean personal) {
+        return personal ? MarkedType.PERSONAL : MarkedType.GLOBAL;
+    }
+
+    private void clearMarkedFrontiers() {
+        markedFrontierIds.clear();
+        markedType = MarkedType.NONE;
+    }
+
+    private void pruneMarkedFrontiers(Set<UUID> visibleFilteredFrontiers) {
+        markedFrontierIds.retainAll(visibleFilteredFrontiers);
+        if (markedFrontierIds.isEmpty()) {
+            markedType = MarkedType.NONE;
+        }
+    }
+
     private boolean canManageGlobalCollections() {
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
         if (profile == null) {
@@ -788,6 +1010,16 @@ public class FrontierListPage extends PageScreen
 
     private void updateButtons() {
         if (minecraft.player == null) {
+            return;
+        }
+
+        if (isMarkedModeActive()) {
+            buttonCreate.active = false;
+            buttonInfo.active = false;
+            buttonDelete.active = false;
+            buttonVisible.active = false;
+            buttonVisible.setMessage(Component.translatable("mapfrontiers.hide"));
+            buttonSettings.active = true;
             return;
         }
 
@@ -834,6 +1066,7 @@ public class FrontierListPage extends PageScreen
         private final String rowId;
         private final @Nullable CollectionData collection;
         private final boolean virtualRow;
+        private final boolean personal;
         private final String title;
         private final boolean collapsed;
         private final List<FrontierOverlay> allFrontiers;
@@ -855,6 +1088,7 @@ public class FrontierListPage extends PageScreen
             this.rowId = rowId;
             this.collection = collection;
             this.virtualRow = virtualRow;
+            this.personal = personal;
             this.title = title;
             this.collapsed = collapsed;
             this.allFrontiers = allFrontiers;

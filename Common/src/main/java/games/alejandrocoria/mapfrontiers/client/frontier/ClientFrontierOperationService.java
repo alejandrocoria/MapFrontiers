@@ -182,6 +182,7 @@ public class ClientFrontierOperationService {
             return;
         }
 
+        frontier.applyChange(change);
         refreshCollectionRuntime();
         persistLocalPersonalDataIfPersistent(frontier);
         frontierEvents.postUpdated(frontier, mc.player.getId());

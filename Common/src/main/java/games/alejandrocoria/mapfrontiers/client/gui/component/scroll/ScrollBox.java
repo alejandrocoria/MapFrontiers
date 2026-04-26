@@ -392,6 +392,11 @@ public class ScrollBox extends AbstractContainerWidget {
                             removeElement(element, it);
                         }
                         return true;
+                    } else if (action == ScrollElement.Action.Handled) {
+                        if (elementClickedCallback != null) {
+                            elementClickedCallback.accept(element);
+                        }
+                        return true;
                     } else if (action == ScrollElement.Action.Clicked) {
                         if (getSelectedElement() != element) {
                             selectElement(element);
@@ -569,7 +574,7 @@ public class ScrollBox extends AbstractContainerWidget {
 
     public static class ScrollElement implements ContainerEventHandler {
         public enum Action {
-            None, Clicked, Deleted
+            None, Clicked, Deleted, Handled
         }
 
         protected boolean visible = true;
