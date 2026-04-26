@@ -568,6 +568,7 @@ public class FrontierListPage extends PageScreen
     private void refreshInitialSelection() {
         if (selectedRowId != null) {
             selectRowIfPresent(selectedRowId);
+            frontiers.scrollSelectedElementIntoView();
             return;
         }
 
@@ -575,6 +576,7 @@ public class FrontierListPage extends PageScreen
         if (selectedFrontier != null) {
             selectedRowId = frontierRowId(selectedFrontier.getId());
             selectRowIfPresent(selectedRowId);
+            frontiers.scrollSelectedElementIntoView();
         }
     }
 
@@ -634,6 +636,7 @@ public class FrontierListPage extends PageScreen
     private void updateFrontiers() {
         String previousSelection = selectedRowId;
         boolean previousSelectionWasFrontier = previousSelection != null && previousSelection.startsWith("frontier:");
+        int previousScrollOffset = frontiers.getScrollOffset();
         CollectionUiStateStore collapseState = getCollectionUiStateStore();
         List<FrontierListRowElement> rows = new ArrayList<>();
         Set<UUID> visibleFilteredFrontiers = new HashSet<>();
@@ -652,9 +655,11 @@ public class FrontierListPage extends PageScreen
         for (FrontierListRowElement row : rows) {
             frontiers.addElement(row);
         }
+        frontiers.setScrollOffset(previousScrollOffset);
 
         if (previousSelection != null && selectRowIfPresent(previousSelection)) {
             selectedRowId = previousSelection;
+            frontiers.scrollSelectedElementIntoView();
         } else {
             selectedRowId = null;
             if (previousSelectionWasFrontier) {
@@ -675,16 +680,14 @@ public class FrontierListPage extends PageScreen
         List<CollectionGroupModel> collectionGroups = buildCollectionGroups(personal);
         boolean includeVirtualRow = personal || shouldShowGlobalVirtualRow() || !collectionGroups.isEmpty();
 
-        if (!includeVirtualRow && collectionGroups.isEmpty()) {
+        if (!includeVirtualRow) {
             return rows;
         }
 
-        if (includeVirtualRow) {
-            CollectionGroupModel virtualGroup = buildVirtualGroup(personal);
-            rows.add(createCollectionRowElement(virtualGroup));
-            if (!virtualGroup.collapsed) {
-                addFrontierChildren(rows, virtualGroup.filteredFrontiers, visibleFilteredFrontiers);
-            }
+        CollectionGroupModel virtualGroup = buildVirtualGroup(personal);
+        rows.add(createCollectionRowElement(virtualGroup));
+        if (!virtualGroup.collapsed) {
+            addFrontierChildren(rows, virtualGroup.filteredFrontiers, visibleFilteredFrontiers);
         }
 
         collectionGroups.sort(this::compareCollectionGroups);

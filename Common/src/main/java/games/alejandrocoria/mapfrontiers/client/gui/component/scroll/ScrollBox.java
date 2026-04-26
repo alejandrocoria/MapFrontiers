@@ -115,6 +115,21 @@ public class ScrollBox extends AbstractContainerWidget {
         return selected;
     }
 
+    public int getScrollOffset() {
+        return scrollOffset;
+    }
+
+    public void setScrollOffset(int scrollOffset) {
+        this.scrollOffset = scrollOffset;
+        clampScrollOffset();
+        updateScrollWindow();
+        updateScrollBar();
+    }
+
+    public void scrollSelectedElementIntoView() {
+        scrollElementIntoView(selected);
+    }
+
     public void selectElementIf(Predicate<ScrollElement> pred) {
         ScrollElement element = elements.stream()
                 .filter(pred)
