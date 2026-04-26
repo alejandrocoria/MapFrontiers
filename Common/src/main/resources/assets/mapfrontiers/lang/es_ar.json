@@ -17,6 +17,7 @@
   "mapfrontiers.perimeter": "Perímetro: %1$sm",
   "mapfrontiers.owner": "Dueño: %1$s",
   "mapfrontiers.collection": "Colección: %1$s",
+  "mapfrontiers.collection_frontiers_count": "Fronteras: %1$s",
   "mapfrontiers.original_owner": "Dueño original: %1$s",
   "mapfrontiers.created": "Creada: %1$s",
   "mapfrontiers.modified": "Modificada: %1$s",

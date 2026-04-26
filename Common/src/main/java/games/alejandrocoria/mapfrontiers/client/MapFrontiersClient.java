@@ -87,7 +87,8 @@ public class MapFrontiersClient {
     private static final Map<UUID, FrontierOverlay> announcementActiveFrontiers = new HashMap<>();
     private static long lastTitleTime;
 
-    private static FrontierData clipboard = null;
+    private static @Nullable FrontierData clipboard = null;
+    private static @Nullable CollectionData collectionClipboard = null;
     private static ClientLevel lastClientLevel = null;
 
     protected static void init() {
@@ -654,8 +655,16 @@ public class MapFrontiersClient {
         clipboard = new FrontierData(newClipboard);
     }
 
-    public static FrontierData getClipboard() {
+    public static @Nullable FrontierData getClipboard() {
         return clipboard;
+    }
+
+    public static void setCollectionClipboard(CollectionData newClipboard) {
+        collectionClipboard = new CollectionData(newClipboard);
+    }
+
+    public static @Nullable CollectionData getCollectionClipboard() {
+        return collectionClipboard;
     }
 
     private static void updateHudActiveFrontiers(ResourceKey<Level> dimension, BlockPos playerPosition) {
