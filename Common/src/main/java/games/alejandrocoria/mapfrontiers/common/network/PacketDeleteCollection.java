@@ -1,0 +1,63 @@
+package games.alejandrocoria.mapfrontiers.common.network;
+
+import commonnetwork.networking.data.PacketContext;
+import commonnetwork.networking.data.Side;
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
+import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationResult;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
+
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.UUID;
+
+@ParametersAreNonnullByDefault
+public class PacketDeleteCollection {
+    public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_delete_collection");
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketDeleteCollection> STREAM_CODEC = StreamCodec.ofMember(PacketDeleteCollection::encode, PacketDeleteCollection::new);
+
+    private UUID collectionId;
+
+    public PacketDeleteCollection(UUID collectionId) {
+        this.collectionId = collectionId;
+    }
+
+    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
+        return new CustomPacketPayload.Type<>(CHANNEL);
+    }
+
+    public PacketDeleteCollection(FriendlyByteBuf buf) {
+        try {
+            if (buf.readableBytes() > 1) {
+                this.collectionId = UUIDHelper.fromBytes(buf);
+            }
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error("Failed to read message for PacketDeleteCollection", t);
+        }
+    }
+
+    public void encode(FriendlyByteBuf buf) {
+        try {
+            UUIDHelper.toBytes(buf, collectionId);
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error("Failed to write message for PacketDeleteCollection", t);
+        }
+    }
+
+    public static void handle(PacketContext<PacketDeleteCollection> ctx) {
+        if (Side.SERVER.equals(ctx.side())) {
+            PacketDeleteCollection message = ctx.message();
+            ServerPlayer player = ctx.sender();
+            if (player == null || MapFrontiers.getServerRuntime() == null) {
+                return;
+            }
+
+            ServerFrontierOperationResult result = MapFrontiers.getServerRuntime().getOperationService().deleteCollection(player, message.collectionId);
+            result.dispatchNetworkActions();
+        }
+    }
+}

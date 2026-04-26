@@ -286,6 +286,9 @@ public class ServerFrontierOperationService {
                 return ServerFrontierOperationResult.notFound();
             }
 
+            PacketFrontierUpdated frontierUpdatedPacket = new PacketFrontierUpdated(frontierId, currentFrontier.getDimension(),
+                    true, new FrontierChange(change), player.getId());
+            ServerFrontierOperationResult result = ServerFrontierOperationResult.success(currentFrontier);
             if (collectionMembershipChanged) {
                 Date modified = currentFrontier.getModified();
                 if (sourceCollection != null) {
@@ -294,13 +297,9 @@ public class ServerFrontierOperationService {
                 if (targetCollection != null && targetCollection != sourceCollection) {
                     touchCollection(targetCollection, modified);
                 }
-            }
-
-            PacketFrontierUpdated frontierUpdatedPacket = new PacketFrontierUpdated(frontierId, currentFrontier.getDimension(),
-                    true, new FrontierChange(change), player.getId());
-            ServerFrontierOperationResult result = ServerFrontierOperationResult.success(currentFrontier);
-            if (collectionMembershipChanged) {
-                enqueueCollectionVisibilityChange(result, sourceCollection, sourceCollectionRecipientsBefore);
+                if (sourceCollection != null) {
+                    enqueueCollectionVisibilityChange(result, sourceCollection, sourceCollectionRecipientsBefore);
+                }
                 if (targetCollection != null && targetCollection != sourceCollection) {
                     enqueueCollectionVisibilityChange(result, targetCollection, targetCollectionRecipientsBefore);
                 }
@@ -334,6 +333,7 @@ public class ServerFrontierOperationService {
             return ServerFrontierOperationResult.notFound();
         }
 
+        ServerFrontierOperationResult result = updatedGlobalFrontier(currentFrontier, new FrontierChange(change), player.getId());
         if (collectionMembershipChanged) {
             Date modified = currentFrontier.getModified();
             if (sourceCollection != null) {
@@ -342,11 +342,9 @@ public class ServerFrontierOperationService {
             if (targetCollection != null && targetCollection != sourceCollection) {
                 touchCollection(targetCollection, modified);
             }
-        }
-
-        ServerFrontierOperationResult result = updatedGlobalFrontier(currentFrontier, new FrontierChange(change), player.getId());
-        if (collectionMembershipChanged) {
-            enqueueCollectionVisibilityChange(result, sourceCollection, sourceCollectionRecipientsBefore);
+            if (sourceCollection != null) {
+                enqueueCollectionVisibilityChange(result, sourceCollection, sourceCollectionRecipientsBefore);
+            }
             if (targetCollection != null && targetCollection != sourceCollection) {
                 enqueueCollectionVisibilityChange(result, targetCollection, targetCollectionRecipientsBefore);
             }
@@ -406,7 +404,9 @@ public class ServerFrontierOperationService {
             if (targetCollection != null && targetCollection != sourceCollection) {
                 touchCollection(targetCollection, modified);
             }
-            enqueueCollectionVisibilityChange(result, sourceCollection, sourceCollectionRecipientsBefore);
+            if (sourceCollection != null) {
+                enqueueCollectionVisibilityChange(result, sourceCollection, sourceCollectionRecipientsBefore);
+            }
             if (targetCollection != null && targetCollection != sourceCollection) {
                 enqueueCollectionVisibilityChange(result, targetCollection, targetCollectionRecipientsBefore);
             }

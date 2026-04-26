@@ -24,11 +24,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.phys.Vec2;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class NewFrontierDialog extends PanelDialog {
@@ -45,6 +47,8 @@ public class NewFrontierDialog extends PanelDialog {
 
     private final IClientAPI jmAPI;
     private final BlockPos centerPos;
+    private final @Nullable Boolean forcedPersonal;
+    private final @Nullable UUID collectionId;
 
     private OptionButton buttonFrontierType;
     private OptionButton buttonFrontierMode;
@@ -60,13 +64,19 @@ public class NewFrontierDialog extends PanelDialog {
     private TextBoxInt textSize;
 
     public NewFrontierDialog(IClientAPI jmAPI, BlockPos centerPos) {
+        this(jmAPI, centerPos, null, null);
+    }
+
+    public NewFrontierDialog(IClientAPI jmAPI, BlockPos centerPos, @Nullable Boolean forcedPersonal, @Nullable UUID collectionId) {
         super();
         this.jmAPI = jmAPI;
         this.centerPos = centerPos;
+        this.forcedPersonal = forcedPersonal;
+        this.collectionId = collectionId;
 
         MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> {
             onClose();
-            new NewFrontierDialog(jmAPI, centerPos).display();
+            new NewFrontierDialog(jmAPI, centerPos, forcedPersonal, collectionId).display();
         });
     }
 
@@ -89,6 +99,10 @@ public class NewFrontierDialog extends PanelDialog {
                 && profile.createFrontier == SettingsProfile.State.Enabled;
         if (!canCreateGlobal) {
             buttonFrontierType.setSelected(1);
+            buttonFrontierType.active = false;
+        }
+        if (forcedPersonal != null) {
+            buttonFrontierType.setSelected(forcedPersonal ? 1 : 0);
             buttonFrontierType.active = false;
         }
         mainLayout.addChild(buttonFrontierType, 0, 1, rightColumnSettings);
@@ -155,7 +169,7 @@ public class NewFrontierDialog extends PanelDialog {
             if (uiState != null) {
                 FrontierData.Mode mode = ClientConfig.NEW_FRONTIER_MODE.get();
                 FrontierData.PathStyle pathStyle = mode == FrontierData.Mode.Path ? ClientConfig.getDefaultPathStyle() : null;
-                MapFrontiersClient.getOperationService().createNewFrontier(personal, uiState.dimension,
+                MapFrontiersClient.getOperationService().createNewFrontier(personal, collectionId, uiState.dimension,
                         calculateVertices(), calculateChunks(), calculatePoints(), pathStyle);
             }
         });

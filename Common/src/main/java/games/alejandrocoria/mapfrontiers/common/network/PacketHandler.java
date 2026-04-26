@@ -29,6 +29,9 @@ public class PacketHandler {
         // client to server
         CommonNetworkMod.registerPacket(PacketPersonalFrontier.type(), PacketPersonalFrontier.class, PacketPersonalFrontier.STREAM_CODEC, PacketPersonalFrontier::handle);
         CommonNetworkMod.registerPacket(PacketPersonalCollection.type(), PacketPersonalCollection.class, PacketPersonalCollection.STREAM_CODEC, PacketPersonalCollection::handle);
+        CommonNetworkMod.registerPacket(PacketCreateCollection.type(), PacketCreateCollection.class, PacketCreateCollection.STREAM_CODEC, PacketCreateCollection::handle);
+        CommonNetworkMod.registerPacket(PacketUpdateCollection.type(), PacketUpdateCollection.class, PacketUpdateCollection.STREAM_CODEC, PacketUpdateCollection::handle);
+        CommonNetworkMod.registerPacket(PacketDeleteCollection.type(), PacketDeleteCollection.class, PacketDeleteCollection.STREAM_CODEC, PacketDeleteCollection::handle);
         CommonNetworkMod.registerPacket(PacketCreateFrontier.type(), PacketCreateFrontier.class, PacketCreateFrontier.STREAM_CODEC, PacketCreateFrontier::handle);
         CommonNetworkMod.registerPacket(PacketDeleteFrontier.type(), PacketDeleteFrontier.class, PacketDeleteFrontier.STREAM_CODEC, PacketDeleteFrontier::handle);
         CommonNetworkMod.registerPacket(PacketUpdateFrontier.type(), PacketUpdateFrontier.class, PacketUpdateFrontier.STREAM_CODEC, PacketUpdateFrontier::handle);

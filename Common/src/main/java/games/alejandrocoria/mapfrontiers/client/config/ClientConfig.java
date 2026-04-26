@@ -246,6 +246,9 @@ public final class ClientConfig {
     public static final BooleanConfigEntry ASK_CONFIRMATION_FRONTIER_DELETE = register(boolEntry(true, "gui", "confirmation", "frontierDelete")
             .comment("Show a confirmation dialog before deleting a frontier.")
             .translation(translation("gui", "confirmation", "frontierDelete")));
+    public static final BooleanConfigEntry ASK_CONFIRMATION_COLLECTION_DELETE = register(boolEntry(true, "gui", "confirmation", "collectionDelete")
+            .comment("Show a confirmation dialog before deleting a collection.")
+            .translation(translation("gui", "confirmation", "collectionDelete")));
     public static final BooleanConfigEntry ASK_CONFIRMATION_GROUP_DELETE = register(boolEntry(true, "gui", "confirmation", "groupDelete")
             .comment("Show a confirmation dialog before deleting a group.")
             .translation(translation("gui", "confirmation", "groupDelete")));

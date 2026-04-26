@@ -20,6 +20,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDi
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.PathStyleDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.VisibilityDialog;
+import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
@@ -44,6 +45,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.util.StringUtil;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.BannerItem;
 import net.minecraft.world.item.ItemStack;
@@ -75,6 +77,7 @@ public class FrontierInfoPage extends PageScreen
     private static final String CHUNKS_KEY = "mapfrontiers.chunks";
     private static final String POINTS_KEY = "mapfrontiers.points";
     private static final String OWNER_KEY = "mapfrontiers.owner";
+    private static final String COLLECTION_KEY = "mapfrontiers.collection";
     private static final String ORIGINAL_OWNER_KEY = "mapfrontiers.original_owner";
     private static final String DIMENSION_KEY = "mapfrontiers.dimension";
     private static final String SOURCE_PLUGIN_KEY = "mapfrontiers.source_plugin";
@@ -325,6 +328,16 @@ public class FrontierInfoPage extends PageScreen
             Tooltip ownerTooltip = Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET)
                     .append(Component.translatable(ORIGINAL_OWNER_KEY, frontier.getCopiedFromUser().toString())));
             ownerWidget.setTooltip(ownerTooltip);
+        }
+
+        if (frontier.hasCollection()) {
+            CollectionData collection = MapFrontiersClient.getCollection(frontier.getCollectionId());
+            if (collection != null) {
+                Component collectionName = StringUtil.isBlank(collection.getName())
+                        ? Component.translatable("mapfrontiers.unnamed", ChatFormatting.ITALIC)
+                        : Component.literal(collection.getName());
+                infoColumn.addChild(new StringWidget(Component.translatable(COLLECTION_KEY, collectionName), font).setColor(ColorConstants.WHITE));
+            }
         }
 
         LinearLayout identityRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);

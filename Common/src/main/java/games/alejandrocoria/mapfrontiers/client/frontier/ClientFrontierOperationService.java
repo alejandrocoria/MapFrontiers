@@ -21,11 +21,14 @@ import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierSharingChange;
 import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToGlobal;
 import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToPersonal;
+import games.alejandrocoria.mapfrontiers.common.network.PacketCreateCollection;
 import games.alejandrocoria.mapfrontiers.common.network.PacketCreateFrontier;
+import games.alejandrocoria.mapfrontiers.common.network.PacketDeleteCollection;
 import games.alejandrocoria.mapfrontiers.common.network.PacketDeleteFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketRemoveSharedUserPersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSharePersonalFrontier;
+import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateCollection;
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateSharedUserPersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -38,6 +41,7 @@ import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.EnumSet;
@@ -85,17 +89,28 @@ public class ClientFrontierOperationService {
     }
 
     public void createNewFrontier(boolean personal,
+                                  @Nullable UUID collectionId,
                                   ResourceKey<Level> dimension,
                                   @Nullable List<BlockPos> vertices,
                                   @Nullable List<ChunkPos> chunks,
                                   @Nullable List<BlockPos> points,
                                   @Nullable FrontierData.PathStyle pathStyle) {
-        createNewFrontierAndReturn(personal, UUID.randomUUID(), dimension, FrontierData.FrontierLifetime.PERSISTENT, null,
+        createNewFrontierAndReturn(personal, UUID.randomUUID(), dimension, collectionId, FrontierData.FrontierLifetime.PERSISTENT, null,
                 vertices, chunks, points, pathStyle);
+    }
+
+    public void createNewFrontier(boolean personal,
+                                  ResourceKey<Level> dimension,
+                                  @Nullable List<BlockPos> vertices,
+                                  @Nullable List<ChunkPos> chunks,
+                                  @Nullable List<BlockPos> points,
+                                  @Nullable FrontierData.PathStyle pathStyle) {
+        createNewFrontier(personal, null, dimension, vertices, chunks, points, pathStyle);
     }
 
     @Nullable
     public FrontierOverlay createNewFrontierAndReturn(boolean personal, UUID frontierId, ResourceKey<Level> dimension,
+                                                      @Nullable UUID collectionId,
                                                       FrontierData.FrontierLifetime lifetime, @Nullable String sourcePluginId, FrontierShape shape) {
         List<BlockPos> vertices = null;
         List<ChunkPos> chunks = null;
@@ -119,16 +134,17 @@ public class ClientFrontierOperationService {
             }
         }
 
-        return createNewFrontierAndReturn(personal, frontierId, dimension, lifetime, sourcePluginId, vertices, chunks, points, null);
+        return createNewFrontierAndReturn(personal, frontierId, dimension, collectionId, lifetime, sourcePluginId, vertices, chunks, points, null);
     }
 
     @Nullable
     public FrontierOverlay createNewFrontierAndReturn(boolean personal, UUID frontierId, ResourceKey<Level> dimension,
+                                                      @Nullable UUID collectionId,
                                                       FrontierData.FrontierLifetime lifetime, @Nullable String sourcePluginId,
                                                       @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks,
                                                       @Nullable List<BlockPos> points, @Nullable FrontierData.PathStyle pathStyle) {
         if (usesAuthoritativeCreateFlow(lifetime)) {
-            PacketHandler.sendToServer(new PacketCreateFrontier(frontierId, dimension, personal, null, sourcePluginId,
+            PacketHandler.sendToServer(new PacketCreateFrontier(frontierId, dimension, personal, collectionId, sourcePluginId,
                     vertices, chunks, points, pathStyle));
             return null;
         }
@@ -139,11 +155,76 @@ public class ClientFrontierOperationService {
 
         FrontierData frontier = FrontierCreationFactory.createFrontier(frontierId, new SettingsUser(mc.player), dimension,
                 true, lifetime, sourcePluginId, vertices, chunks, points, pathStyle);
+        if (collectionId != null) {
+            frontier.setCollectionId(collectionId);
+        }
         FrontierOverlay frontierOverlay = personalManager.addFrontier(frontier);
         refreshCollectionRuntime();
         persistLocalPersonalDataIfPersistent(frontierOverlay);
         frontierEvents.postCreated(frontierOverlay, mc.player.getId());
         return frontierOverlay;
+    }
+
+    public void createCollection(CollectionData collection) {
+        if (usesAuthoritativeCollectionMutationFlow(collection)) {
+            PacketHandler.sendToServer(new PacketCreateCollection(collection));
+            return;
+        }
+
+        if (!canMutateLocalCollection(collection)) {
+            return;
+        }
+
+        CollectionData createdCollection = new CollectionData(collection);
+        Date now = new Date();
+        createdCollection.setOwner(new SettingsUser(mc.player));
+        createdCollection.setCreated(now);
+        createdCollection.setModified(now);
+        collectionRuntime.addOrUpdateCollection(createdCollection);
+        persistLocalPersonalCollections();
+        collectionEvents.postCreated(createdCollection);
+    }
+
+    public void updateCollection(CollectionData collection) {
+        if (usesAuthoritativeCollectionMutationFlow(collection)) {
+            PacketHandler.sendToServer(new PacketUpdateCollection(collection));
+            return;
+        }
+
+        if (!canMutateLocalCollection(collection)) {
+            return;
+        }
+
+        CollectionData updatedCollection = new CollectionData(collection);
+        updatedCollection.setOwner(new SettingsUser(mc.player));
+        updatedCollection.setModified(new Date());
+        collectionRuntime.addOrUpdateCollection(updatedCollection);
+        persistLocalPersonalCollections();
+        collectionEvents.postUpdated(updatedCollection);
+    }
+
+    public void deleteCollection(CollectionData collection) {
+        if (usesAuthoritativeCollectionMutationFlow(collection)) {
+            PacketHandler.sendToServer(new PacketDeleteCollection(collection.getId()));
+            return;
+        }
+
+        if (!canMutateLocalCollection(collection)) {
+            return;
+        }
+
+        List<FrontierOverlay> affectedFrontiers = new ArrayList<>(collectionRuntime.getFrontiersInCollection(collection.getId()));
+        for (FrontierOverlay frontier : affectedFrontiers) {
+            frontier.setCollectionId(null);
+        }
+
+        collectionRuntime.deleteCollection(collection.getId());
+        refreshCollectionRuntime();
+        persistLocalPersonalData();
+        for (FrontierOverlay frontier : affectedFrontiers) {
+            frontierEvents.postUpdated(frontier, -1);
+        }
+        collectionEvents.postDeleted(collection.getId());
     }
 
     public void deleteFrontier(FrontierOverlay frontier) {
@@ -213,7 +294,7 @@ public class ClientFrontierOperationService {
 
         ResourceKey<Level> resourceKey = ApiConverters.toDimension(dimension);
         FrontierId frontierId = new FrontierId(UUID.randomUUID());
-        FrontierOverlay frontier = createNewFrontierAndReturn(personal, frontierId.value(), resourceKey, internalLifetime, pluginModId, shape);
+        FrontierOverlay frontier = createNewFrontierAndReturn(personal, frontierId.value(), resourceKey, null, internalLifetime, pluginModId, shape);
         if (frontier == null) {
             return usesAuthoritativeCreateFlow(internalLifetime) ? FrontierActionResult.acceptedAsync(frontierId) : FrontierActionResult.rejected();
         }
@@ -592,6 +673,18 @@ public class ClientFrontierOperationService {
 
     private static boolean usesAuthoritativeCreateFlow(FrontierData.FrontierLifetime lifetime) {
         return lifetime != FrontierData.FrontierLifetime.SESSION_ONLY && MapFrontiersClient.isModOnServer();
+    }
+
+    private static boolean usesAuthoritativeCollectionMutationFlow(CollectionData collection) {
+        return MapFrontiersClient.isModOnServer();
+    }
+
+    private boolean canMutateLocalCollection(CollectionData collection) {
+        if (mc.player == null) {
+            return false;
+        }
+
+        return collection.getPersonal() && collection.getOwner().equals(new SettingsUser(mc.player));
     }
 
     private static boolean usesAuthoritativeMutationFlow(FrontierData frontier) {
