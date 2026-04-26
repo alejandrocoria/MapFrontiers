@@ -203,6 +203,16 @@ public class FrontiersOverlayManager {
         }
     }
 
+    public void markCollectionChanged(UUID collectionId) {
+        for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
+            for (FrontierOverlay frontier : frontiers) {
+                if (collectionId.equals(frontier.getCollectionId())) {
+                    frontier.collectionPresentationChanged();
+                }
+            }
+        }
+    }
+
     public void updateSelectedMarker(ResourceKey<Level> dimension, @Nullable FrontierOverlay frontier) {
         BlockPos pos = frontier != null ? frontier.getSelectedEditablePoint() : null;
         selectedEditablePointMarker.update(dimension, pos);

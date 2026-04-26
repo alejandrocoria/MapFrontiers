@@ -8,6 +8,7 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierSharingChange;
@@ -41,6 +42,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.data.AtlasIds;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.ARGB;
@@ -165,6 +167,7 @@ public class FrontierOverlay extends FrontierData {
         }
 
         if (change.hasNameChange() || change.hasShapeChange() || change.hasColorChange() || change.hasVisibilityChange()
+                || change.hasCollectionIdChange()
                 || change.hasPathStyleChange() || change.hasBannerChange()) {
             updateOverlay();
         }
@@ -181,11 +184,26 @@ public class FrontierOverlay extends FrontierData {
     public int getHash() {
         if (hashDirty) {
             hashDirty = false;
+            CollectionData collection = getCollection();
             hash = Objects.hash(id, color, dimension, name1, name2, visibilityData, vertices, chunks, points, mode, pathStyle, banner, usersShared,
-                    copiedFrom, sourcePluginId);
+                    copiedFrom, collectionId, sourcePluginId,
+                    collection == null ? null : collection.getName(),
+                    collection == null ? null : collection.getColor(),
+                    collection == null ? null : collection.getModified());
         }
 
         return hash;
+    }
+
+    @Override
+    public void setCollectionId(@Nullable UUID collectionId) {
+        super.setCollectionId(collectionId);
+        collectionPresentationChanged();
+    }
+
+    public void collectionPresentationChanged() {
+        hashDirty = true;
+        needUpdateOverlay = true;
     }
 
     public List<PolygonOverlay> getPolygonOverlays() {
@@ -1278,12 +1296,14 @@ public class FrontierOverlay extends FrontierData {
             if (addLabels) {
                 boolean fullscreenNameV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_NAME_VISIBILITY.get(),
                         getVisibility(VisibilityData.Visibility.FullscreenName));
+                boolean fullscreenCollectionV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_COLLECTION_VISIBILITY.get(),
+                        getVisibility(VisibilityData.Visibility.FullscreenCollection));
                 boolean fullscreenOwnerV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_OWNER_VISIBILITY.get(),
                         getVisibility(VisibilityData.Visibility.FullscreenOwner));
                 boolean fullscreenBannerV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_BANNER_VISIBILITY.get(),
                         getVisibility(VisibilityData.Visibility.FullscreenBanner));
                 addLabelOverlay(overlay,
-                        buildLabelContentMetrics(fullscreenNameV, fullscreenOwnerV, fullscreenBannerV),
+                        buildLabelContentMetrics(fullscreenNameV, fullscreenCollectionV, fullscreenOwnerV, fullscreenBannerV),
                         overlayArea,
                         labelSolverPrecision,
                         placementCache);
@@ -1296,12 +1316,14 @@ public class FrontierOverlay extends FrontierData {
             if (addLabels) {
                 boolean minimapNameV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_NAME_VISIBILITY.get(),
                         getVisibility(VisibilityData.Visibility.MinimapName));
+                boolean minimapCollectionV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_COLLECTION_VISIBILITY.get(),
+                        getVisibility(VisibilityData.Visibility.MinimapCollection));
                 boolean minimapOwnerV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_OWNER_VISIBILITY.get(),
                         getVisibility(VisibilityData.Visibility.MinimapOwner));
                 boolean minimapBannerV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_BANNER_VISIBILITY.get(),
                         getVisibility(VisibilityData.Visibility.MinimapBanner));
                 addLabelOverlay(overlay,
-                        buildLabelContentMetrics(minimapNameV, minimapOwnerV, minimapBannerV),
+                        buildLabelContentMetrics(minimapNameV, minimapCollectionV, minimapOwnerV, minimapBannerV),
                         overlayArea,
                         labelSolverPrecision,
                         placementCache);
@@ -1314,12 +1336,14 @@ public class FrontierOverlay extends FrontierData {
             if (addLabels) {
                 boolean webmapNameV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_NAME_VISIBILITY.get(),
                         getVisibility(VisibilityData.Visibility.WebmapName));
+                boolean webmapCollectionV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_COLLECTION_VISIBILITY.get(),
+                        getVisibility(VisibilityData.Visibility.WebmapCollection));
                 boolean webmapOwnerV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_OWNER_VISIBILITY.get(),
                         getVisibility(VisibilityData.Visibility.WebmapOwner));
                 boolean webmapBannerV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_BANNER_VISIBILITY.get(),
                         getVisibility(VisibilityData.Visibility.WebmapBanner));
                 addLabelOverlay(overlay,
-                        buildLabelContentMetrics(webmapNameV, webmapOwnerV, webmapBannerV),
+                        buildLabelContentMetrics(webmapNameV, webmapCollectionV, webmapOwnerV, webmapBannerV),
                         overlayArea,
                         labelSolverPrecision,
                         placementCache);
@@ -1389,6 +1413,7 @@ public class FrontierOverlay extends FrontierData {
         synchronized (points) {
             boolean fullscreenV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Fullscreen));
             boolean fullscreenNameV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_NAME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenName));
+            boolean fullscreenCollectionV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_COLLECTION_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenCollection));
             boolean fullscreenOwnerV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_OWNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenOwner));
             boolean fullscreenBannerV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_BANNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenBanner));
             boolean fullscreenDayV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenDay));
@@ -1398,6 +1423,7 @@ public class FrontierOverlay extends FrontierData {
             boolean fullscreenBiomeV = ClientConfig.getVisibilityValue(ClientConfig.FULLSCREEN_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.FullscreenBiome));
             boolean minimapV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Minimap));
             boolean minimapNameV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_NAME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapName));
+            boolean minimapCollectionV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_COLLECTION_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapCollection));
             boolean minimapOwnerV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_OWNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapOwner));
             boolean minimapBannerV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_BANNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapBanner));
             boolean minimapDayV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapDay));
@@ -1407,6 +1433,7 @@ public class FrontierOverlay extends FrontierData {
             boolean minimapBiomeV = ClientConfig.getVisibilityValue(ClientConfig.MINIMAP_BIOME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.MinimapBiome));
             boolean webmapV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.Webmap));
             boolean webmapNameV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_NAME_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapName));
+            boolean webmapCollectionV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_COLLECTION_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapCollection));
             boolean webmapOwnerV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_OWNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapOwner));
             boolean webmapBannerV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_BANNER_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapBanner));
             boolean webmapDayV = ClientConfig.getVisibilityValue(ClientConfig.WEBMAP_DAY_VISIBILITY.get(), getVisibility(VisibilityData.Visibility.WebmapDay));
@@ -1418,17 +1445,17 @@ public class FrontierOverlay extends FrontierData {
             if (fullscreenV) {
                 Context.MapType[] mapTypes = getActiveMapTypes(fullscreenDayV, fullscreenNightV, fullscreenUndergroundV, fullscreenTopoV, fullscreenBiomeV);
                 createPathMarkers(Context.UI.Fullscreen, mapTypes);
-                createPathLabels(Context.UI.Fullscreen, mapTypes, fullscreenNameV, fullscreenOwnerV, fullscreenBannerV);
+                createPathLabels(Context.UI.Fullscreen, mapTypes, fullscreenNameV, fullscreenCollectionV, fullscreenOwnerV, fullscreenBannerV);
             }
             if (minimapV) {
                 Context.MapType[] mapTypes = getActiveMapTypes(minimapDayV, minimapNightV, minimapUndergroundV, minimapTopoV, minimapBiomeV);
                 createPathMarkers(Context.UI.Minimap, mapTypes);
-                createPathLabels(Context.UI.Minimap, mapTypes, minimapNameV, minimapOwnerV, minimapBannerV);
+                createPathLabels(Context.UI.Minimap, mapTypes, minimapNameV, minimapCollectionV, minimapOwnerV, minimapBannerV);
             }
             if (webmapV) {
                 Context.MapType[] mapTypes = getActiveMapTypes(webmapDayV, webmapNightV, webmapUndergroundV, webmapTopoV, webmapBiomeV);
                 createPathMarkers(Context.UI.Webmap, mapTypes);
-                createPathLabels(Context.UI.Webmap, mapTypes, webmapNameV, webmapOwnerV, webmapBannerV);
+                createPathLabels(Context.UI.Webmap, mapTypes, webmapNameV, webmapCollectionV, webmapOwnerV, webmapBannerV);
             }
 
             if (highlighted) {
@@ -1615,8 +1642,9 @@ public class FrontierOverlay extends FrontierData {
         return getSegmentRotation(points.get(pointIndex - 1), points.get(pointIndex));
     }
 
-    private void createPathLabels(Context.UI uiArray, Context.MapType[] mapTypesArray, boolean nameVisible, boolean ownerVisible, boolean bannerVisible) {
-        LabelContentMetrics metrics = buildLabelContentMetrics(nameVisible, ownerVisible, bannerVisible);
+    private void createPathLabels(Context.UI uiArray, Context.MapType[] mapTypesArray, boolean nameVisible, boolean collectionVisible,
+                                  boolean ownerVisible, boolean bannerVisible) {
+        LabelContentMetrics metrics = buildLabelContentMetrics(nameVisible, collectionVisible, ownerVisible, bannerVisible);
         if (!metrics.hasText() && !metrics.hasBanner()) {
             return;
         }
@@ -1828,9 +1856,11 @@ public class FrontierOverlay extends FrontierData {
         labelOverlays.add(labelOverlay);
     }
 
-    private LabelContentMetrics buildLabelContentMetrics(boolean nameVisible, boolean ownerVisible, boolean bannerVisible) {
+    private LabelContentMetrics buildLabelContentMetrics(boolean nameVisible, boolean collectionVisible, boolean ownerVisible, boolean bannerVisible) {
         boolean hasBanner = bannerVisible && bannerRenderer.hasBanner();
-        if (!nameVisible && !ownerVisible && !hasBanner) {
+        String collectionName = collectionVisible ? getCollectionName() : null;
+        boolean hasCollectionName = collectionName != null && !collectionName.isEmpty();
+        if (!nameVisible && !hasCollectionName && !ownerVisible && !hasBanner) {
             return new LabelContentMetrics("", false, false, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         }
 
@@ -1852,6 +1882,15 @@ public class FrontierOverlay extends FrontierData {
                 }
                 label += name2;
             }
+        }
+
+        if (hasCollectionName) {
+            ++lines;
+            textWidthPx = Math.max(textWidthPx, Minecraft.getInstance().font.width(Component.literal(collectionName).withStyle(ChatFormatting.BOLD)));
+            if (!label.isEmpty()) {
+                label += "\n";
+            }
+            label += ChatFormatting.BOLD + collectionName + ChatFormatting.RESET;
         }
 
         if (ownerVisible && !owner.username.isEmpty()) {
@@ -1947,6 +1986,20 @@ public class FrontierOverlay extends FrontierData {
 
     private int getTextSize() {
         return previewTextSize > 0 ? previewTextSize : ClientConfig.TEXT_SIZE.get();
+    }
+
+    private @Nullable CollectionData getCollection() {
+        return collectionId == null ? null : MapFrontiersClient.getCollection(collectionId);
+    }
+
+    private @Nullable String getCollectionName() {
+        CollectionData collection = getCollection();
+        if (collection == null) {
+            return null;
+        }
+
+        String name = collection.getName().trim();
+        return name.isEmpty() ? null : name;
     }
 
     private int getBannerSize() {

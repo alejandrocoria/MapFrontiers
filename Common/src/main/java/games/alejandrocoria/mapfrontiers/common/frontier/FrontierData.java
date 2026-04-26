@@ -1459,8 +1459,10 @@ public class FrontierData {
             Frontier,
             AnnounceInChat,
             AnnounceInTitle,
+            MentionCollection,
             Fullscreen,
             FullscreenName,
+            FullscreenCollection,
             FullscreenOwner,
             FullscreenBanner,
             FullscreenDay,
@@ -1470,6 +1472,7 @@ public class FrontierData {
             FullscreenBiome,
             Minimap,
             MinimapName,
+            MinimapCollection,
             MinimapOwner,
             MinimapBanner,
             MinimapDay,
@@ -1479,6 +1482,7 @@ public class FrontierData {
             MinimapBiome,
             Webmap,
             WebmapName,
+            WebmapCollection,
             WebmapOwner,
             WebmapBanner,
             WebmapDay,
@@ -1495,6 +1499,7 @@ public class FrontierData {
         public VisibilityData() {
             values = EnumSet.of(
                     Visibility.Frontier,
+                    Visibility.MentionCollection,
                     Visibility.Fullscreen,
                     Visibility.FullscreenName,
                     Visibility.FullscreenDay,
@@ -1569,6 +1574,7 @@ public class FrontierData {
             setValue(Visibility.Frontier, NbtReadHelper.requireBoolean(nbt, "visible"));
             setValue(Visibility.Fullscreen, NbtReadHelper.requireBoolean(nbt, "visible"));
             setValue(Visibility.FullscreenName, NbtReadHelper.requireBoolean(nbt, "visible"));
+            setValue(Visibility.FullscreenCollection, false);
             setValue(Visibility.FullscreenOwner, NbtReadHelper.requireBoolean(nbt, "nameVisible"));
             setValue(Visibility.FullscreenBanner, false);
             setValue(Visibility.FullscreenDay, NbtReadHelper.requireBoolean(nbt, "visible"));
@@ -1578,6 +1584,7 @@ public class FrontierData {
             setValue(Visibility.FullscreenBiome, NbtReadHelper.requireBoolean(nbt, "visible"));
             setValue(Visibility.Minimap, NbtReadHelper.requireBoolean(nbt, "visible"));
             setValue(Visibility.MinimapName, NbtReadHelper.requireBoolean(nbt, "nameVisible"));
+            setValue(Visibility.MinimapCollection, false);
             setValue(Visibility.MinimapOwner, NbtReadHelper.requireBoolean(nbt, "ownerVisible"));
             setValue(Visibility.MinimapBanner, false);
             setValue(Visibility.MinimapDay, NbtReadHelper.requireBoolean(nbt, "visible"));
@@ -1587,6 +1594,7 @@ public class FrontierData {
             setValue(Visibility.MinimapBiome, NbtReadHelper.requireBoolean(nbt, "visible"));
             setValue(Visibility.Webmap, NbtReadHelper.requireBoolean(nbt, "visible"));
             setValue(Visibility.WebmapName, NbtReadHelper.requireBoolean(nbt, "nameVisible"));
+            setValue(Visibility.WebmapCollection, false);
             setValue(Visibility.WebmapOwner, NbtReadHelper.requireBoolean(nbt, "ownerVisible"));
             setValue(Visibility.WebmapBanner, false);
             setValue(Visibility.WebmapDay, NbtReadHelper.requireBoolean(nbt, "visible"));
@@ -1597,12 +1605,14 @@ public class FrontierData {
 
             setValue(Visibility.AnnounceInChat, NbtReadHelper.getBooleanOrDefault(nbt, "announceInChat", false));
             setValue(Visibility.AnnounceInTitle, NbtReadHelper.getBooleanOrDefault(nbt, "announceInTitle", false));
+            setValue(Visibility.MentionCollection, true);
         }
 
         public void readFromNBT(CompoundTag nbt) {
             setValue(Visibility.Frontier, NbtReadHelper.requireBoolean(nbt, "visible"));
             setValue(Visibility.Fullscreen, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenVisible", true));
             setValue(Visibility.FullscreenName, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenNameVisible", true));
+            setValue(Visibility.FullscreenCollection, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenCollectionVisible", false));
             setValue(Visibility.FullscreenOwner, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenOwnerVisible", false));
             setValue(Visibility.FullscreenBanner, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenBannerVisible", false));
             setValue(Visibility.FullscreenDay, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenDay", true));
@@ -1612,6 +1622,7 @@ public class FrontierData {
             setValue(Visibility.FullscreenBiome, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenBiome", true));
             setValue(Visibility.Minimap, NbtReadHelper.getBooleanOrDefault(nbt, "minimapVisible", true));
             setValue(Visibility.MinimapName, NbtReadHelper.getBooleanOrDefault(nbt, "minimapNameVisible", true));
+            setValue(Visibility.MinimapCollection, NbtReadHelper.getBooleanOrDefault(nbt, "minimapCollectionVisible", false));
             setValue(Visibility.MinimapOwner, NbtReadHelper.getBooleanOrDefault(nbt, "minimapOwnerVisible", false));
             setValue(Visibility.MinimapBanner, NbtReadHelper.getBooleanOrDefault(nbt, "minimapBannerVisible", false));
             setValue(Visibility.MinimapDay, NbtReadHelper.getBooleanOrDefault(nbt, "minimapDay", true));
@@ -1621,6 +1632,7 @@ public class FrontierData {
             setValue(Visibility.MinimapBiome, NbtReadHelper.getBooleanOrDefault(nbt, "minimapBiome", true));
             setValue(Visibility.Webmap, NbtReadHelper.getBooleanOrDefault(nbt, "webmapVisible", getValue(Visibility.Minimap)));
             setValue(Visibility.WebmapName, NbtReadHelper.getBooleanOrDefault(nbt, "webmapNameVisible", getValue(Visibility.MinimapName)));
+            setValue(Visibility.WebmapCollection, NbtReadHelper.getBooleanOrDefault(nbt, "webmapCollectionVisible", getValue(Visibility.MinimapCollection)));
             setValue(Visibility.WebmapOwner, NbtReadHelper.getBooleanOrDefault(nbt, "webmapOwnerVisible", getValue(Visibility.MinimapOwner)));
             setValue(Visibility.WebmapBanner, NbtReadHelper.getBooleanOrDefault(nbt, "webmapBannerVisible", getValue(Visibility.MinimapBanner)));
             setValue(Visibility.WebmapDay, NbtReadHelper.getBooleanOrDefault(nbt, "webmapDay", getValue(Visibility.MinimapDay)));
@@ -1630,14 +1642,17 @@ public class FrontierData {
             setValue(Visibility.WebmapBiome, NbtReadHelper.getBooleanOrDefault(nbt, "webmapBiome", getValue(Visibility.MinimapBiome)));
             setValue(Visibility.AnnounceInChat, NbtReadHelper.getBooleanOrDefault(nbt, "announceInChat", false));
             setValue(Visibility.AnnounceInTitle, NbtReadHelper.getBooleanOrDefault(nbt, "announceInTitle", false));
+            setValue(Visibility.MentionCollection, NbtReadHelper.getBooleanOrDefault(nbt, "mentionCollection", true));
         }
 
         public void writeToNBT(CompoundTag nbt) {
             nbt.putBoolean("visible", getValue(Visibility.Frontier));
             nbt.putBoolean("announceInChat", getValue(Visibility.AnnounceInChat));
             nbt.putBoolean("announceInTitle", getValue(Visibility.AnnounceInTitle));
+            nbt.putBoolean("mentionCollection", getValue(Visibility.MentionCollection));
             nbt.putBoolean("fullscreenVisible", getValue(Visibility.Fullscreen));
             nbt.putBoolean("fullscreenNameVisible", getValue(Visibility.FullscreenName));
+            nbt.putBoolean("fullscreenCollectionVisible", getValue(Visibility.FullscreenCollection));
             nbt.putBoolean("fullscreenOwnerVisible", getValue(Visibility.FullscreenOwner));
             nbt.putBoolean("fullscreenBannerVisible", getValue(Visibility.FullscreenBanner));
             nbt.putBoolean("fullscreenDay", getValue(Visibility.FullscreenDay));
@@ -1647,6 +1662,7 @@ public class FrontierData {
             nbt.putBoolean("fullscreenBiome", getValue(Visibility.FullscreenBiome));
             nbt.putBoolean("minimapVisible", getValue(Visibility.Minimap));
             nbt.putBoolean("minimapNameVisible", getValue(Visibility.MinimapName));
+            nbt.putBoolean("minimapCollectionVisible", getValue(Visibility.MinimapCollection));
             nbt.putBoolean("minimapOwnerVisible", getValue(Visibility.MinimapOwner));
             nbt.putBoolean("minimapBannerVisible", getValue(Visibility.MinimapBanner));
             nbt.putBoolean("minimapDay", getValue(Visibility.MinimapDay));
@@ -1656,6 +1672,7 @@ public class FrontierData {
             nbt.putBoolean("minimapBiome", getValue(Visibility.MinimapBiome));
             nbt.putBoolean("webmapVisible", getValue(Visibility.Webmap));
             nbt.putBoolean("webmapNameVisible", getValue(Visibility.WebmapName));
+            nbt.putBoolean("webmapCollectionVisible", getValue(Visibility.WebmapCollection));
             nbt.putBoolean("webmapOwnerVisible", getValue(Visibility.WebmapOwner));
             nbt.putBoolean("webmapBannerVisible", getValue(Visibility.WebmapBanner));
             nbt.putBoolean("webmapDay", getValue(Visibility.WebmapDay));
@@ -1669,8 +1686,10 @@ public class FrontierData {
             setValue(Visibility.Frontier, buf.readBoolean());
             setValue(Visibility.AnnounceInChat, buf.readBoolean());
             setValue(Visibility.AnnounceInTitle, buf.readBoolean());
+            setValue(Visibility.MentionCollection, buf.readBoolean());
             setValue(Visibility.Fullscreen, buf.readBoolean());
             setValue(Visibility.FullscreenName, buf.readBoolean());
+            setValue(Visibility.FullscreenCollection, buf.readBoolean());
             setValue(Visibility.FullscreenOwner, buf.readBoolean());
             setValue(Visibility.FullscreenBanner, buf.readBoolean());
             setValue(Visibility.FullscreenDay, buf.readBoolean());
@@ -1680,6 +1699,7 @@ public class FrontierData {
             setValue(Visibility.FullscreenBiome, buf.readBoolean());
             setValue(Visibility.Minimap, buf.readBoolean());
             setValue(Visibility.MinimapName, buf.readBoolean());
+            setValue(Visibility.MinimapCollection, buf.readBoolean());
             setValue(Visibility.MinimapOwner, buf.readBoolean());
             setValue(Visibility.MinimapBanner, buf.readBoolean());
             setValue(Visibility.MinimapDay, buf.readBoolean());
@@ -1689,6 +1709,7 @@ public class FrontierData {
             setValue(Visibility.MinimapBiome, buf.readBoolean());
             setValue(Visibility.Webmap, buf.readBoolean());
             setValue(Visibility.WebmapName, buf.readBoolean());
+            setValue(Visibility.WebmapCollection, buf.readBoolean());
             setValue(Visibility.WebmapOwner, buf.readBoolean());
             setValue(Visibility.WebmapBanner, buf.readBoolean());
             setValue(Visibility.WebmapDay, buf.readBoolean());
@@ -1702,8 +1723,10 @@ public class FrontierData {
             buf.writeBoolean(getValue(Visibility.Frontier));
             buf.writeBoolean(getValue(Visibility.AnnounceInChat));
             buf.writeBoolean(getValue(Visibility.AnnounceInTitle));
+            buf.writeBoolean(getValue(Visibility.MentionCollection));
             buf.writeBoolean(getValue(Visibility.Fullscreen));
             buf.writeBoolean(getValue(Visibility.FullscreenName));
+            buf.writeBoolean(getValue(Visibility.FullscreenCollection));
             buf.writeBoolean(getValue(Visibility.FullscreenOwner));
             buf.writeBoolean(getValue(Visibility.FullscreenBanner));
             buf.writeBoolean(getValue(Visibility.FullscreenDay));
@@ -1713,6 +1736,7 @@ public class FrontierData {
             buf.writeBoolean(getValue(Visibility.FullscreenBiome));
             buf.writeBoolean(getValue(Visibility.Minimap));
             buf.writeBoolean(getValue(Visibility.MinimapName));
+            buf.writeBoolean(getValue(Visibility.MinimapCollection));
             buf.writeBoolean(getValue(Visibility.MinimapOwner));
             buf.writeBoolean(getValue(Visibility.MinimapBanner));
             buf.writeBoolean(getValue(Visibility.MinimapDay));
@@ -1722,6 +1746,7 @@ public class FrontierData {
             buf.writeBoolean(getValue(Visibility.MinimapBiome));
             buf.writeBoolean(getValue(Visibility.Webmap));
             buf.writeBoolean(getValue(Visibility.WebmapName));
+            buf.writeBoolean(getValue(Visibility.WebmapCollection));
             buf.writeBoolean(getValue(Visibility.WebmapOwner));
             buf.writeBoolean(getValue(Visibility.WebmapBanner));
             buf.writeBoolean(getValue(Visibility.WebmapDay));

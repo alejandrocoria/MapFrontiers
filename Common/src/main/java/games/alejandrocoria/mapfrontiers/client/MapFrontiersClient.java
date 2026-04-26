@@ -195,7 +195,7 @@ public class MapFrontiersClient {
                 boolean frontierAnnounceInChat = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat);
                 if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), frontierAnnounceInChat)
                         && (frontier.isNamed() || ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS.get())) {
-                    player.sendSystemMessage(Component.translatable("mapfrontiers.chat.leaving", createAnnounceTextWithName(frontier)));
+                    player.sendSystemMessage(Component.translatable("mapfrontiers.chat.leaving", createAnnounceText(frontier)));
                 }
             }
         }
@@ -203,21 +203,24 @@ public class MapFrontiersClient {
         for (FrontierOverlay frontier : currentlyActiveFrontiers.values()) {
             if (!announcementActiveFrontiers.containsKey(frontier.getId())
                     && (frontier.isNamed() || ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS.get())) {
-                Component text = createAnnounceTextWithName(frontier);
+                Component chatAndHotbarText = createAnnounceText(frontier);
+                Component titleText = createAnnounceTitle(frontier);
+                Component subtitleText = createAnnounceSubtitle(frontier);
 
                 boolean frontierAnnounceInChat = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat);
                 if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), frontierAnnounceInChat)) {
-                    player.sendSystemMessage(Component.translatable("mapfrontiers.chat.entering", text));
+                    player.sendSystemMessage(Component.translatable("mapfrontiers.chat.entering", chatAndHotbarText));
                 }
 
                 boolean frontierAnnounceInTitle = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInTitle);
                 if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_TITLE.get(), frontierAnnounceInTitle)) {
                     if (ClientConfig.TITLE_ANNOUNCEMENT_ABOVE_HOTBAR.get()) {
-                        client.gui.setOverlayMessage(text, false);
+                        client.gui.setOverlayMessage(chatAndHotbarText, false);
                     } else if (System.currentTimeMillis() >= lastTitleTime + ClientConfig.TITLE_ANNOUNCEMENT_TIMEOUT.get() / 20 * 1000L) {
                         lastTitleTime = System.currentTimeMillis();
                         client.gui.setTimes(10, ClientConfig.TITLE_ANNOUNCEMENT_DURATION.get(), 20);
-                        client.gui.setTitle(text);
+                        client.gui.setTitle(titleText);
+                        client.gui.setSubtitle(subtitleText);
                     }
                 }
             }
@@ -279,7 +282,30 @@ public class MapFrontiersClient {
         MapFrontiers.LOGGER.info("Client world session ended");
     }
 
-    private static Component createAnnounceTextWithName(FrontierOverlay frontier) {
+    private static Component createAnnounceTitle(FrontierOverlay frontier) {
+        return createFrontierNameComponent(frontier);
+    }
+
+    private static Component createAnnounceSubtitle(FrontierOverlay frontier) {
+        Component collectionComponent = createAnnouncementCollectionComponent(frontier);
+        if (collectionComponent == null) {
+            return Component.empty();
+        }
+
+        return Component.translatable("mapfrontiers.in_collection", collectionComponent);
+    }
+
+    private static Component createAnnounceText(FrontierOverlay frontier) {
+        Component frontierName = createFrontierNameComponent(frontier);
+        Component collectionComponent = createAnnouncementCollectionComponent(frontier);
+        if (collectionComponent == null) {
+            return frontierName;
+        }
+
+        return Component.translatable("mapfrontiers.frontier_in_collection", frontierName, collectionComponent);
+    }
+
+    private static Component createFrontierNameComponent(FrontierOverlay frontier) {
         if (!frontier.isNamed()) {
             MutableComponent text = Component.translatable("mapfrontiers.unnamed", ChatFormatting.ITALIC);
             text.withStyle(style -> style.withItalic(true).withColor(ColorConstants.TEXT_MEDIUM));
@@ -300,6 +326,30 @@ public class MapFrontiersClient {
         return text;
     }
 
+    private static @Nullable Component createAnnouncementCollectionComponent(FrontierOverlay frontier) {
+        if (!ClientConfig.getVisibilityValue(ClientConfig.MENTION_COLLECTION.get(),
+                frontier.getVisibility(FrontierData.VisibilityData.Visibility.MentionCollection))) {
+            return null;
+        }
+
+        UUID collectionId = frontier.getCollectionId();
+        if (collectionId == null) {
+            return null;
+        }
+
+        CollectionData collection = getCollection(collectionId);
+        if (collection == null) {
+            return null;
+        }
+
+        String collectionName = collection.getName().trim();
+        if (collectionName.isEmpty()) {
+            return null;
+        }
+
+        return Component.literal(collectionName);
+    }
+
     public static void setJmAPI(IClientAPI newJmAPI) {
         jmAPI = newJmAPI;
     }
@@ -315,6 +365,13 @@ public class MapFrontiersClient {
 
         if (frontierRuntime == null) {
             frontierRuntime = new ClientFrontierRuntime(jmAPI);
+            frontierRuntime.getCollectionEvents().subscribeCreated(MapFrontiersClient.class, collection -> refreshCollectionPresentation(collection.getId()));
+            frontierRuntime.getCollectionEvents().subscribeUpdated(MapFrontiersClient.class, collection -> refreshCollectionPresentation(collection.getId()));
+            frontierRuntime.getCollectionEvents().subscribeDeleted(MapFrontiersClient.class, collectionId -> {
+                if (hud != null) {
+                    hud.frontierChanged();
+                }
+            });
         }
 
         frontierRuntime.ensureInitialized();
@@ -783,5 +840,21 @@ public class MapFrontiersClient {
 
     public static void markFrontierActivationDirty() {
         frontierActivationDirty = true;
+    }
+
+    private static void refreshCollectionPresentation(UUID collectionId) {
+        FrontiersOverlayManager globalManager = getFrontiersOverlayManagerOrNull(false);
+        if (globalManager != null) {
+            globalManager.markCollectionChanged(collectionId);
+        }
+
+        FrontiersOverlayManager personalManager = getFrontiersOverlayManagerOrNull(true);
+        if (personalManager != null) {
+            personalManager.markCollectionChanged(collectionId);
+        }
+
+        if (hud != null) {
+            hud.frontierChanged();
+        }
     }
 }

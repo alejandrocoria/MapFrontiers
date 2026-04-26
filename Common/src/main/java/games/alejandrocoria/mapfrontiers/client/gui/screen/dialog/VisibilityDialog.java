@@ -22,8 +22,10 @@ public class VisibilityDialog extends PanelDialog {
     private static final Component SHOW_FRONTIER_LABEL = Component.translatable("mapfrontiers.show_frontier");
     private static final Component ANNOUNCE_IN_CHAT_LABEL = Component.translatable("mapfrontiers.announce_in_chat");
     private static final Component ANNOUNCE_IN_TITLE_LABEL = Component.translatable("mapfrontiers.announce_in_title");
+    private static final Component MENTION_COLLECTION_LABEL = Component.translatable("mapfrontiers.mention_collection");
     private static final Component FULLSCREEN_LABEL = Component.translatable("mapfrontiers.fullscreen");
     private static final Component SHOW_NAME_LABEL = Component.translatable("mapfrontiers.show_name");
+    private static final Component SHOW_COLLECTION_LABEL = Component.translatable("mapfrontiers.show_collection");
     private static final Component SHOW_OWNER_LABEL = Component.translatable("mapfrontiers.show_owner");
     private static final Component SHOW_BANNER_LABEL = Component.translatable("mapfrontiers.show_banner");
     private static final Component MINIMAP_LABEL = Component.translatable("mapfrontiers.minimap");
@@ -78,6 +80,7 @@ public class VisibilityDialog extends PanelDialog {
         generalGrid.addChild(SpacerElement.height(2), row++, 0);
         createWidgets(generalGrid, row++, ANNOUNCE_IN_CHAT_LABEL, FrontierData.VisibilityData.Visibility.AnnounceInChat);
         createWidgets(generalGrid, row++, ANNOUNCE_IN_TITLE_LABEL, FrontierData.VisibilityData.Visibility.AnnounceInTitle);
+        createWidgets(generalGrid, row++, MENTION_COLLECTION_LABEL, FrontierData.VisibilityData.Visibility.MentionCollection);
 
         LinearLayout fullscreenColumn = LinearLayout.vertical().spacing(COLUMN_SPACING);
         fullscreenColumn.defaultCellSetting().alignHorizontallyCenter();
@@ -91,6 +94,7 @@ public class VisibilityDialog extends PanelDialog {
         createWidgets(fullscreenGrid, row++, SHOW_FRONTIER_LABEL, FrontierData.VisibilityData.Visibility.Fullscreen);
         fullscreenGrid.addChild(SpacerElement.height(2), row++, 0);
         createWidgets(fullscreenGrid, row++, SHOW_NAME_LABEL, FrontierData.VisibilityData.Visibility.FullscreenName);
+        createWidgets(fullscreenGrid, row++, SHOW_COLLECTION_LABEL, FrontierData.VisibilityData.Visibility.FullscreenCollection);
         createWidgets(fullscreenGrid, row++, SHOW_OWNER_LABEL, FrontierData.VisibilityData.Visibility.FullscreenOwner);
         createWidgets(fullscreenGrid, row++, SHOW_BANNER_LABEL, FrontierData.VisibilityData.Visibility.FullscreenBanner);
         fullscreenGrid.addChild(SpacerElement.height(2), row++, 0);
@@ -112,6 +116,7 @@ public class VisibilityDialog extends PanelDialog {
         createWidgets(minimapGrid, row++, SHOW_FRONTIER_LABEL, FrontierData.VisibilityData.Visibility.Minimap);
         minimapGrid.addChild(SpacerElement.height(2), row++, 0);
         createWidgets(minimapGrid, row++, SHOW_NAME_LABEL, FrontierData.VisibilityData.Visibility.MinimapName);
+        createWidgets(minimapGrid, row++, SHOW_COLLECTION_LABEL, FrontierData.VisibilityData.Visibility.MinimapCollection);
         createWidgets(minimapGrid, row++, SHOW_OWNER_LABEL, FrontierData.VisibilityData.Visibility.MinimapOwner);
         createWidgets(minimapGrid, row++, SHOW_BANNER_LABEL, FrontierData.VisibilityData.Visibility.MinimapBanner);
         minimapGrid.addChild(SpacerElement.height(2), row++, 0);
@@ -133,6 +138,7 @@ public class VisibilityDialog extends PanelDialog {
         createWidgets(webmapGrid, row++, SHOW_FRONTIER_LABEL, FrontierData.VisibilityData.Visibility.Webmap);
         webmapGrid.addChild(SpacerElement.height(2), row++, 0);
         createWidgets(webmapGrid, row++, SHOW_NAME_LABEL, FrontierData.VisibilityData.Visibility.WebmapName);
+        createWidgets(webmapGrid, row++, SHOW_COLLECTION_LABEL, FrontierData.VisibilityData.Visibility.WebmapCollection);
         createWidgets(webmapGrid, row++, SHOW_OWNER_LABEL, FrontierData.VisibilityData.Visibility.WebmapOwner);
         createWidgets(webmapGrid, row++, SHOW_BANNER_LABEL, FrontierData.VisibilityData.Visibility.WebmapBanner);
         webmapGrid.addChild(SpacerElement.height(2), row++, 0);

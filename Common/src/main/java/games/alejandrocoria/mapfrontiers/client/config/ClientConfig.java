@@ -53,7 +53,7 @@ public final class ClientConfig {
     }
 
     public enum HUDSlot {
-        None, Name, Owner, Banner
+        None, Collection, Name, Owner, Banner
     }
 
     public enum TextColor {
@@ -158,12 +158,18 @@ public final class ClientConfig {
     public static final EnumConfigEntry<Visibility> ANNOUNCE_IN_TITLE = visibilityEntry(
             "Force all frontiers to be announced as titles. In Custom, you can decide for each frontier.",
             "visibility", "announceInTitle");
+    public static final EnumConfigEntry<Visibility> MENTION_COLLECTION = visibilityEntry(
+            "Force collection names to be mentioned in local frontier announcements. In Custom, you can decide for each frontier.",
+            "visibility", "mentionCollection");
     public static final EnumConfigEntry<Visibility> FULLSCREEN_VISIBILITY = visibilityEntry(
             "Force all frontiers to be shown or hidden on the fullscreen map. In Custom, you can decide for each frontier.",
             "visibility", "fullscreen", "frontier");
     public static final EnumConfigEntry<Visibility> FULLSCREEN_NAME_VISIBILITY = visibilityEntry(
             "Force all frontier names to be shown or hidden on the fullscreen map. In Custom, you can decide for each frontier.",
             "visibility", "fullscreen", "name");
+    public static final EnumConfigEntry<Visibility> FULLSCREEN_COLLECTION_VISIBILITY = visibilityEntry(
+            "Force all frontier collection names to be shown or hidden on the fullscreen map. In Custom, you can decide for each frontier.",
+            "visibility", "fullscreen", "collection");
     public static final EnumConfigEntry<Visibility> FULLSCREEN_OWNER_VISIBILITY = visibilityEntry(
             "Force all frontier owners to be shown or hidden on the fullscreen map. In Custom, you can decide for each frontier.",
             "visibility", "fullscreen", "owner");
@@ -191,6 +197,9 @@ public final class ClientConfig {
     public static final EnumConfigEntry<Visibility> MINIMAP_NAME_VISIBILITY = visibilityEntry(
             "Force all frontier names to be shown or hidden on the minimap. In Custom, you can decide for each frontier.",
             "visibility", "minimap", "name");
+    public static final EnumConfigEntry<Visibility> MINIMAP_COLLECTION_VISIBILITY = visibilityEntry(
+            "Force all frontier collection names to be shown or hidden on the minimap. In Custom, you can decide for each frontier.",
+            "visibility", "minimap", "collection");
     public static final EnumConfigEntry<Visibility> MINIMAP_OWNER_VISIBILITY = visibilityEntry(
             "Force all frontier owners to be shown or hidden on the minimap. In Custom, you can decide for each frontier.",
             "visibility", "minimap", "owner");
@@ -218,6 +227,9 @@ public final class ClientConfig {
     public static final EnumConfigEntry<Visibility> WEBMAP_NAME_VISIBILITY = visibilityEntry(
             "Force all frontier names to be shown or hidden on the webmap. In Custom, you can decide for each frontier.",
             "visibility", "webmap", "name");
+    public static final EnumConfigEntry<Visibility> WEBMAP_COLLECTION_VISIBILITY = visibilityEntry(
+            "Force all frontier collection names to be shown or hidden on the webmap. In Custom, you can decide for each frontier.",
+            "visibility", "webmap", "collection");
     public static final EnumConfigEntry<Visibility> WEBMAP_OWNER_VISIBILITY = visibilityEntry(
             "Force all frontier owners to be shown or hidden on the webmap. In Custom, you can decide for each frontier.",
             "visibility", "webmap", "owner");

@@ -35,10 +35,12 @@
   "mapfrontiers.webmap": "Webmap",
   "mapfrontiers.show_frontier": "Show frontier",
   "mapfrontiers.show_name": "Show name",
+  "mapfrontiers.show_collection": "Show collection",
   "mapfrontiers.show_owner": "Show owner",
   "mapfrontiers.show_banner": "Show banner",
   "mapfrontiers.announce_in_chat": "Announce in chat",
   "mapfrontiers.announce_in_title": "Announce in title",
+  "mapfrontiers.mention_collection": "Mention collection",
   "mapfrontiers.day": "Day",
   "mapfrontiers.night": "Night",
   "mapfrontiers.underground": "Underground",
@@ -298,5 +300,9 @@
   "mapfrontiers.key.open_settings.hint": "You can use [%1$s] to open this screen during gameplay",
 
   "mapfrontiers.chat.entering": "Entering %1$s",
-  "mapfrontiers.chat.leaving": "Leaving %1$s"
+  "mapfrontiers.chat.leaving": "Leaving %1$s",
+  "mapfrontiers.frontier_in_collection": "%1$s, in %2$s",
+  "mapfrontiers.in_collection": "in %1$s",
+  "mapfrontiers.preview_collection": "Preview Collection",
+  "mapfrontiers.config.Collection": "Collection"
 }
