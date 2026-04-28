@@ -109,6 +109,7 @@
   "mapfrontiers.filter_dimension": "Dimensión:",
   "mapfrontiers.frontier_type": "Tipo de frontera",
   "mapfrontiers.frontier_mode": "Modo de frontera",
+  "mapfrontiers.new_frontier_contextual_hint": "Esta frontera %1$s se creará en %2$s",
   "mapfrontiers.initial_shape": "Figura Inicial",
   "mapfrontiers.shape_width": "Ancho de la figura",
   "mapfrontiers.shape_vertex_count": "Vértices",

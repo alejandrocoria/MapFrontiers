@@ -17,10 +17,13 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.util.UIState;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.util.StringUtil;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.phys.Vec2;
 
@@ -88,24 +91,16 @@ public class NewFrontierDialog extends PanelDialog {
         LayoutSettings rightColumnSettings = LayoutSettings.defaults().alignHorizontallyLeft();
         LayoutSettings centerColumnSettings = LayoutSettings.defaults().alignHorizontallyCenter();
 
-        mainLayout.addChild(new StringWidget(FRONTIER_TYPE_LABEL, font).setColor(ColorConstants.TEXT), 0, 0, leftColumnSettings);
-        buttonFrontierType = new OptionButton(font, 130, OptionButton.DO_NOTHING);
-        buttonFrontierType.addOption(ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierType.Global));
-        buttonFrontierType.addOption(ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierType.Personal));
-        buttonFrontierType.setSelected(0);
-        SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
-        boolean canCreateGlobal = MapFrontiersClient.isModOnServer()
-                && profile != null
-                && profile.createFrontier == SettingsProfile.State.Enabled;
-        if (!canCreateGlobal) {
-            buttonFrontierType.setSelected(1);
-            buttonFrontierType.active = false;
+        buttonFrontierType = createFrontierTypeButton();
+        if (collectionId != null) {
+            boolean personal = resolvePersonalSelection();
+            Component contextualHint = createContextualTypeHint(personal);
+            mainLayout.addChild(new StringWidget(contextualHint, font).setColor(ColorConstants.TEXT), 0, 0, 1, 2,
+                    LayoutSettings.defaults().alignHorizontallyCenter());
+        } else {
+            mainLayout.addChild(new StringWidget(FRONTIER_TYPE_LABEL, font).setColor(ColorConstants.TEXT), 0, 0, leftColumnSettings);
+            mainLayout.addChild(buttonFrontierType, 0, 1, rightColumnSettings);
         }
-        if (forcedPersonal != null) {
-            buttonFrontierType.setSelected(forcedPersonal ? 1 : 0);
-            buttonFrontierType.active = false;
-        }
-        mainLayout.addChild(buttonFrontierType, 0, 1, rightColumnSettings);
 
         mainLayout.addChild(new StringWidget(FRONTIER_MODE_LABEL, font).setColor(ColorConstants.TEXT), 1, 0, leftColumnSettings);
         buttonFrontierMode = new OptionButton(font, 130, (b) -> {
@@ -163,7 +158,7 @@ public class NewFrontierDialog extends PanelDialog {
         labelSizeInfo = mainLayout.addChild(new StringWidget(SIZE_INFO_LABEL, font).setColor(ColorConstants.WHITE), 5, 0, 1, 2, centerColumnSettings);
 
         addConfirmButton(CREATE_LABEL, (b) -> {
-            boolean personal = buttonFrontierType.getSelected() == 1;
+            boolean personal = resolvePersonalSelection();
             closeAndReturnToFullscreenMap();
             UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
             if (uiState != null) {
@@ -290,6 +285,57 @@ public class NewFrontierDialog extends PanelDialog {
         }
 
         repositionElements();
+    }
+
+    private OptionButton createFrontierTypeButton() {
+        OptionButton button = new OptionButton(font, 130, OptionButton.DO_NOTHING);
+        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierType.Global));
+        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierType.Personal));
+        button.setSelected(0);
+
+        SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
+        boolean canCreateGlobal = MapFrontiersClient.isModOnServer()
+                && profile != null
+                && profile.createFrontier == SettingsProfile.State.Enabled;
+        if (!canCreateGlobal) {
+            button.setSelected(1);
+            button.active = false;
+        }
+        if (forcedPersonal != null) {
+            button.setSelected(forcedPersonal ? 1 : 0);
+            button.active = false;
+        }
+
+        return button;
+    }
+
+    private boolean resolvePersonalSelection() {
+        if (forcedPersonal != null) {
+            return forcedPersonal;
+        }
+        return buttonFrontierType.getSelected() == 1;
+    }
+
+    private Component createContextualTypeHint(boolean personal) {
+        Component typeComponent = ClientConfig.getTranslatedEnum(
+                personal ? ClientConfig.FilterFrontierType.Personal : ClientConfig.FilterFrontierType.Global);
+        Component collectionComponent = resolveCollectionNameComponent();
+        return Component.translatable("mapfrontiers.new_frontier_contextual_hint", typeComponent, collectionComponent);
+    }
+
+    private Component resolveCollectionNameComponent() {
+        if (collectionId == null) {
+            return Component.empty();
+        }
+
+        var collection = MapFrontiersClient.getCollection(collectionId);
+        if (collection == null || StringUtil.isBlank(collection.getName())) {
+            MutableComponent unnamed = Component.translatable("mapfrontiers.unnamed", ChatFormatting.ITALIC);
+            unnamed.withStyle(style -> style.withItalic(true));
+            return unnamed;
+        }
+
+        return Component.literal(collection.getName().trim());
     }
 
     private void setLabelCountMessage(Component message) {
