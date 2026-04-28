@@ -18,13 +18,14 @@ import java.util.UUID;
 public class CollectionListElement extends FrontierListRowElement {
     private static final int CHEVRON_CLICK_WIDTH = 18;
     private static final int CONTENT_X = 14;
-    private static final int TITLE_Y = 4;
+    private static final int TITLE_Y = 6;
     private static final int COUNTERS_GAP = 6;
-    private static final int RIGHT_PADDING = 2;
+    private static final int RIGHT_PADDING = 4;
     private static final int ACTION_GAP = 2;
+    private static final int ACTION_Y = 4;
     private static final int ACTION_HEIGHT = 11;
     private static final int ACTION_TEXT_Y = 2;
-    private static final int CHECKBOX_Y = 2;
+    private static final int CHECKBOX_Y = 4;
 
     private final Font font;
     private final @Nullable CollectionData collection;
@@ -32,6 +33,7 @@ public class CollectionListElement extends FrontierListRowElement {
     private final boolean personal;
     private final String title;
     private final String counters;
+    private final int color;
     private final boolean collapsed;
     private final boolean checkboxVisible;
     private final boolean checkboxVisibleOnHover;
@@ -52,6 +54,7 @@ public class CollectionListElement extends FrontierListRowElement {
                                  boolean personal,
                                  String title,
                                  String counters,
+                                 int color,
                                  boolean collapsed,
                                  boolean checkboxVisible,
                                  boolean checkboxVisibleOnHover,
@@ -62,13 +65,14 @@ public class CollectionListElement extends FrontierListRowElement {
                                  int actionWidth,
                                  List<UUID> eligibleFrontierIds,
                                  int width) {
-        super(rowId, width, 15);
+        super(rowId, width, 17);
         this.font = font;
         this.collection = collection;
         this.virtualRow = virtualRow;
         this.personal = personal;
         this.title = title;
         this.counters = counters;
+        this.color = color;
         this.collapsed = collapsed;
         this.checkboxVisible = checkboxVisible;
         this.checkboxVisibleOnHover = checkboxVisibleOnHover;
@@ -121,15 +125,23 @@ public class CollectionListElement extends FrontierListRowElement {
     @Override
     protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks,
                                             boolean selected, boolean focused) {
-        int textColor = selected ? ColorConstants.TEXT_HIGHLIGHT : ColorConstants.TEXT;
         if (selected) {
             graphics.fill(x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_SELECTED);
         } else if (isHovered) {
             graphics.fill(x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
         }
 
-        graphics.text(font, collapsed ? ">" : "v", x + 2, y + TITLE_Y, textColor);
-        int titleColor = virtualRow ? ColorConstants.TEXT_HIGHLIGHT : textColor;
+        graphics.fill(x, y, x + width, y + 2, color);
+        graphics.fill(x, y + 2, x + 2, y + height, color);
+        graphics.fill(x + width - 2, y + 2, x + width, y + height, color);
+
+        int titleColor = ColorConstants.TEXT;
+        if (selected) {
+            titleColor = ColorConstants.TEXT_HIGHLIGHT;
+        } else if (virtualRow) {
+            titleColor = ColorConstants.VIRTUAL_COLLECTION;
+        }
+        graphics.text(font, collapsed ? ">" : "v", x + 4, y + TITLE_Y, titleColor);
         graphics.text(font, title, x + CONTENT_X, y + TITLE_Y, titleColor);
 
         int countersX = x + CONTENT_X + font.width(title) + COUNTERS_GAP;
@@ -157,7 +169,7 @@ public class CollectionListElement extends FrontierListRowElement {
         }
 
         int left = getActionLeft();
-        int top = y + 2;
+        int top = y + ACTION_Y;
         boolean hovered = isActionHovered(mouseX, mouseY);
         int borderColor = actionEnabled ? (hovered ? ColorConstants.SIMPLE_BUTTON_BORDER_FOCUSED : ColorConstants.SIMPLE_BUTTON_BORDER)
                 : ColorConstants.SIMPLE_BUTTON_BORDER_DISABLED;
@@ -194,8 +206,8 @@ public class CollectionListElement extends FrontierListRowElement {
 
     private boolean isActionHovered(int mouseX, int mouseY) {
         int left = getActionLeft();
-        return isHovered && actionLabel != null && mouseX >= left && mouseY >= y + 2
-                && mouseX < left + actionWidth && mouseY < y + 2 + ACTION_HEIGHT;
+        return isHovered && actionLabel != null && mouseX >= left && mouseY >= y + ACTION_Y
+                && mouseX < left + actionWidth && mouseY < y + ACTION_Y + ACTION_HEIGHT;
     }
 
     private boolean isCheckBoxHovered(int mouseX, int mouseY) {
@@ -243,7 +255,7 @@ public class CollectionListElement extends FrontierListRowElement {
         }
 
         if (actionLabel != null && event.x() >= getActionLeft() && event.x() < getActionLeft() + actionWidth
-                && event.y() >= y + 2 && event.y() < y + 2 + ACTION_HEIGHT) {
+                && event.y() >= y + ACTION_Y && event.y() < y + ACTION_Y + ACTION_HEIGHT) {
             actionRequested = true;
             return ScrollBox.ScrollElement.Action.Handled;
         }

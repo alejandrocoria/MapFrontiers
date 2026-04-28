@@ -147,8 +147,6 @@
   "mapfrontiers.groups": "Grupos",
   "mapfrontiers.actions": "Ações",
   "mapfrontiers.frontiers": "Fronteiras",
-  "mapfrontiers.personal_without_collection": "Pessoais sem colecao",
-  "mapfrontiers.global_without_collection": "Globais sem colecao",
   "mapfrontiers.filtered_out_count": "%1$d fora do filtro",
   "mapfrontiers.gui": "GUI",
   "mapfrontiers.hud": "Interface",

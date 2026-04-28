@@ -11,13 +11,15 @@ import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.SortToolbar;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
+import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.CollectionBorderCapListElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.CollectionListElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.FrontierListElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.FrontierListRowElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.RadioListElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox.ScrollElement;
-import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.SeparatorListElement;
+import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.SectionHeaderListElement;
+import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.SpacerListElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteCollectionConfirmationDialog;
@@ -29,6 +31,7 @@ import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import journeymap.api.v2.client.IClientAPI;
 import net.minecraft.ChatFormatting;
@@ -75,12 +78,12 @@ public class FrontierListPage extends PageScreen
     private static final int CONTENT_TOP = 60;
     private static final int FRONTIERS_WIDTH = 450;
     private static final int FRONTIERS_ELEMENT_HEIGHT = 25;
-    private static final int FRONTIER_CHILD_INDENT = 12;
     private static final int FILTER_WIDTH = 200;
     private static final int FILTER_ELEMENT_HEIGHT = 15;
     private static final int FRONTIERS_MIN_ROWS = 7;
     private static final int FILTER_MIN_ROWS = 3;
     private static final int FILTER_DIMENSION_MIN_ROWS = 2;
+    private static final float MIN_COLLECTION_BRIGHTNESS = 0.3f;
     private static final String PERSONAL_VIRTUAL_COLLECTION_ID = "mapfrontiers:personal_virtual_collection";
     private static final String GLOBAL_VIRTUAL_COLLECTION_ID = "mapfrontiers:global_virtual_collection";
     private static final String NEW_ACTION_LABEL = "Nueva";
@@ -646,7 +649,7 @@ public class FrontierListPage extends PageScreen
         List<ScrollElement> globalRows = buildBlockRows(false, visibleFilteredFrontiers);
         rows.addAll(personalRows);
         if (!personalRows.isEmpty() && !globalRows.isEmpty()) {
-            rows.add(new SeparatorListElement(FRONTIERS_WIDTH));
+            rows.add(new SpacerListElement(FRONTIERS_WIDTH));
         }
         rows.addAll(globalRows);
         pruneMarkedFrontiers(visibleFilteredFrontiers);
@@ -693,17 +696,22 @@ public class FrontierListPage extends PageScreen
         }
 
         CollectionGroupModel virtualGroup = buildVirtualGroup(personal);
-        rows.add(createCollectionRowElement(virtualGroup));
+        String headerText = personal ? I18n.get("mapfrontiers.personal_frontiers_header") : I18n.get("mapfrontiers.global_frontiers_header");
+        rows.add(new SectionHeaderListElement(font, headerText, FRONTIERS_WIDTH, ColorConstants.SCROLL_HEADER));
+        rows.add(createCollectionRowElement(virtualGroup, ColorConstants.VIRTUAL_COLLECTION));
         if (!virtualGroup.collapsed) {
-            addFrontierChildren(rows, virtualGroup.filteredFrontiers, visibleFilteredFrontiers);
+            addFrontierChildren(rows, virtualGroup.filteredFrontiers, visibleFilteredFrontiers, ColorConstants.VIRTUAL_COLLECTION);
         }
+        rows.add(new CollectionBorderCapListElement(FRONTIERS_WIDTH, ColorConstants.VIRTUAL_COLLECTION));
 
         collectionGroups.sort(this::compareCollectionGroups);
         for (CollectionGroupModel group : collectionGroups) {
-            rows.add(createCollectionRowElement(group));
+            int collectionColor = ColorHelper.ensureMinBrightness(group.collection.getColor(), MIN_COLLECTION_BRIGHTNESS);
+            rows.add(createCollectionRowElement(group, collectionColor));
             if (!group.collapsed) {
-                addFrontierChildren(rows, group.filteredFrontiers, visibleFilteredFrontiers);
+                addFrontierChildren(rows, group.filteredFrontiers, visibleFilteredFrontiers, collectionColor);
             }
+            rows.add(new CollectionBorderCapListElement(FRONTIERS_WIDTH, collectionColor));
         }
 
         rows.stream()
@@ -714,14 +722,16 @@ public class FrontierListPage extends PageScreen
         return rows;
     }
 
-    private CollectionListElement createCollectionRowElement(CollectionGroupModel group) {
+    private CollectionListElement createCollectionRowElement(CollectionGroupModel group, int collectionColor) {
         List<UUID> eligibleFrontierIds = group.filteredFrontiers.stream()
                 .filter(this::canMarkFrontier)
                 .map(FrontierOverlay::getId)
                 .toList();
 
         return new CollectionListElement(group.rowId, font, group.collection, group.virtualRow, group.personal, group.title,
-                formatCollectionCounters(group.totalFrontiers, group.filteredFrontiers.size()), group.collapsed,
+                formatCollectionCounters(group.totalFrontiers, group.filteredFrontiers.size()),
+                collectionColor,
+                group.collapsed,
                 shouldShowCheckboxInMarkedMode(!eligibleFrontierIds.isEmpty(), isCompatibleWithMarkedType(group.personal)),
                 shouldShowCheckboxOnHover(!eligibleFrontierIds.isEmpty()),
                 countMarkedFrontiers(eligibleFrontierIds),
@@ -734,13 +744,13 @@ public class FrontierListPage extends PageScreen
     }
 
     private void addFrontierChildren(List<ScrollElement> rows, List<FrontierOverlay> filteredFrontiers,
-                                     Set<UUID> visibleFilteredFrontiers) {
+                                     Set<UUID> visibleFilteredFrontiers, int collectionColor) {
         filteredFrontiers.sort(this::compareFrontiers);
         for (FrontierOverlay frontier : filteredFrontiers) {
             if (canMarkFrontier(frontier)) {
                 visibleFilteredFrontiers.add(frontier.getId());
             }
-            rows.add(new FrontierListElement(font, frontier, FRONTIERS_WIDTH, FRONTIER_CHILD_INDENT,
+            rows.add(new FrontierListElement(font, frontier, FRONTIERS_WIDTH, collectionColor,
                     shouldShowCheckboxInMarkedMode(canMarkFrontier(frontier), isCompatibleWithMarkedType(frontier.getPersonal())),
                     shouldShowCheckboxOnHover(canMarkFrontier(frontier)), isFrontierMarked(frontier)));
         }
@@ -756,7 +766,7 @@ public class FrontierListPage extends PageScreen
                 null,
                 true,
                 personal,
-                personal ? I18n.get("mapfrontiers.personal_without_collection") : I18n.get("mapfrontiers.global_without_collection"),
+                I18n.get("mapfrontiers.no_collection"),
                 collapseState.isCollapsed(rowId),
                 allFrontiers,
                 filteredFrontiers);

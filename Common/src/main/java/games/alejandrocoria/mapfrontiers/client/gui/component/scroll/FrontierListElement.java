@@ -6,7 +6,6 @@ import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxRenderHelper;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -28,12 +27,12 @@ public class FrontierListElement extends FrontierListRowElement {
     private static final Identifier PATH_OUTLINE_TEXTURE = frontierListTexture("path_outline.png");
     private static final Identifier VERTEX_FILL_TEXTURE = frontierListTexture("vertex_fill.png");
     private static final Identifier VERTEX_OUTLINE_TEXTURE = frontierListTexture("vertex_outline.png");
-    private static final int RIGHT_PADDING = 2;
+    private static final int LEFT_PADDING = 4;
+    private static final int RIGHT_PADDING = 4;
     private static final int CHECKBOX_Y = 7;
     private static final int NAME_HOVER_X = 24;
     private static final int NAME_X = 26;
-    private static final int METADATA_X = 170;
-    private static final int OWNER_X_OFFSET = 12;
+    private static final int METADATA_X = 206;
     private static final int NAME_METADATA_SPACING = 2;
     private static final int MODE_BADGE_X = 2;
     private static final int MODE_BADGE_ICON_Y = 1;
@@ -48,25 +47,23 @@ public class FrontierListElement extends FrontierListRowElement {
     private static final String ELLIPSIS = "...";
     private final Font font;
     private final FrontierOverlay frontier;
-    private final int indent;
     private final String name1;
     private final String name2;
-    private final String type;
     private final String owner;
     private final String dimension;
     private final int count;
-    private final int offset1;
+    private final int collectionColor;
     private final boolean checkboxVisible;
     private final boolean checkboxVisibleOnHover;
     private final boolean checked;
     private boolean markToggleRequested;
 
-    public FrontierListElement(Font font, FrontierOverlay frontier, int width, int indent,
+    public FrontierListElement(Font font, FrontierOverlay frontier, int width, int collectionColor,
                                boolean checkboxVisible, boolean checkboxVisibleOnHover, boolean checked) {
         super(frontierRowId(frontier.getId()), width, 25);
         this.font = font;
         this.frontier = frontier;
-        this.indent = indent;
+        this.collectionColor = collectionColor;
         this.checkboxVisible = checkboxVisible;
         this.checkboxVisibleOnHover = checkboxVisibleOnHover;
         this.checked = checked;
@@ -79,7 +76,6 @@ public class FrontierListElement extends FrontierListRowElement {
             name2 = I18n.get("mapfrontiers.unnamed_2", ChatFormatting.ITALIC);
         }
 
-        type = I18n.get(frontier.getPersonal() ? "mapfrontiers.config.Personal" : "mapfrontiers.config.Global");
         owner = I18n.get("mapfrontiers.owner", frontier.getOwner());
         dimension = I18n.get("mapfrontiers.dimension", frontier.getDimension().identifier().toString());
 
@@ -90,8 +86,6 @@ public class FrontierListElement extends FrontierListRowElement {
         } else {
             count = frontier.getChunkCount();
         }
-
-        offset1 = StringHelper.getMaxWidth(font, I18n.get("mapfrontiers.config.Personal"), I18n.get("mapfrontiers.config.Global"));
     }
 
     public FrontierOverlay getFrontier() {
@@ -102,16 +96,6 @@ public class FrontierListElement extends FrontierListRowElement {
         boolean requested = markToggleRequested;
         markToggleRequested = false;
         return requested;
-    }
-
-    @Override
-    protected void setX(int x) {
-        super.setX(x);
-    }
-
-    @Override
-    protected void setY(int y) {
-        super.setY(y);
     }
 
     @Override
@@ -132,10 +116,12 @@ public class FrontierListElement extends FrontierListRowElement {
         boolean name2Truncated = !visibleName2.equals(name2);
         boolean showExpandedNames = isNameAreaHovered(mouseX, mouseY) && (name1Truncated || name2Truncated);
 
-        int rowContentX = x + indent;
-        graphics.text(font, type, rowContentX + METADATA_X, y + 4, color);
+        graphics.fill(x, y - 1, x + 2, y + height, collectionColor);
+        graphics.fill(x + width - 2, y - 1, x + width, y + height, collectionColor);
+
+        int rowContentX = x + LEFT_PADDING;
+        graphics.text(font, owner, rowContentX + METADATA_X, y + 4, color);
         graphics.text(font, dimension, rowContentX + METADATA_X, y + 14, ColorConstants.TEXT_DIMENSION);
-        graphics.text(font, owner, rowContentX + METADATA_X + OWNER_X_OFFSET + offset1, y + 4, color);
 
         drawNameLine(graphics, name1, visibleName1, name1Truncated, showExpandedNames, NAME_LINE_1_Y,
                 frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier), color, hiddenColor, rowContentX);
@@ -234,7 +220,7 @@ public class FrontierListElement extends FrontierListRowElement {
     }
 
     private boolean isNameAreaHovered(int mouseX, int mouseY) {
-        int rowContentX = x + indent;
+        int rowContentX = x + LEFT_PADDING;
         return mouseX >= rowContentX + NAME_HOVER_X && mouseY >= y && mouseX < rowContentX + METADATA_X && mouseY < y + height;
     }
 

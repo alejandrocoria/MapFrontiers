@@ -147,8 +147,6 @@
   "mapfrontiers.groups": "分组设置",
   "mapfrontiers.actions": "操作权限",
   "mapfrontiers.frontiers": "领地设置",
-  "mapfrontiers.personal_without_collection": "个人无集合",
-  "mapfrontiers.global_without_collection": "全局无集合",
   "mapfrontiers.filtered_out_count": "%1$d 个在筛选外",
   "mapfrontiers.gui": "GUI",
   "mapfrontiers.hud": "HUD设置",
