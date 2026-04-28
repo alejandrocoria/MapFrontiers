@@ -1,12 +1,15 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.scroll;
 
 import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxRenderHelper;
 import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.resources.Identifier;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -16,16 +19,23 @@ import java.util.UUID;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class CollectionListElement extends FrontierListRowElement {
+    private static final Identifier NAME_FADE_TEXTURE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/frontier_list/name_fade.png");
     private static final int CHEVRON_CLICK_WIDTH = 18;
     private static final int CONTENT_X = 14;
     private static final int TITLE_Y = 6;
-    private static final int COUNTERS_GAP = 6;
+    private static final int COUNTERS_GAP = 4;
+    private static final int COUNTERS_RIGHT_GAP = 2;
+    private static final int TITLE_HOVER_X = 14;
+    private static final int TITLE_BG_TOP_OFFSET = -2;
+    private static final int TITLE_BG_BOTTOM_OFFSET = 8;
+    private static final int TITLE_BG_FADE_WIDTH = 6;
     private static final int RIGHT_PADDING = 4;
     private static final int ACTION_GAP = 2;
     private static final int ACTION_Y = 4;
     private static final int ACTION_HEIGHT = 11;
     private static final int ACTION_TEXT_Y = 2;
     private static final int CHECKBOX_Y = 4;
+    private static final String ELLIPSIS = "...";
 
     private final Font font;
     private final @Nullable CollectionData collection;
@@ -142,11 +152,16 @@ public class CollectionListElement extends FrontierListRowElement {
             titleColor = ColorConstants.VIRTUAL_COLLECTION;
         }
         graphics.text(font, collapsed ? ">" : "v", x + 4, y + TITLE_Y, titleColor);
-        graphics.text(font, title, x + CONTENT_X, y + TITLE_Y, titleColor);
-
-        int countersX = x + CONTENT_X + font.width(title) + COUNTERS_GAP;
         int rightZoneStart = getRightZoneStart();
-        graphics.text(font, ellipsize(counters, rightZoneStart - countersX), countersX, y + TITLE_Y, ColorConstants.TEXT_DIMENSION);
+        int countersWidth = font.width(counters);
+        int countersX = rightZoneStart - countersWidth;
+        int titleX = x + CONTENT_X;
+        int titleMaxWidth = countersX - titleX - COUNTERS_GAP;
+        String visibleTitle = ellipsize(title, titleMaxWidth);
+        boolean titleTruncated = !visibleTitle.equals(title);
+        boolean showExpandedTitle = titleTruncated && isTitleAreaHovered(mouseX, mouseY, titleX, visibleTitle);
+        graphics.text(font, counters, countersX, y + TITLE_Y, ColorConstants.TEXT_DIMENSION);
+        drawTitle(graphics, titleX, titleColor, visibleTitle, titleTruncated, showExpandedTitle);
 
         renderMarkedCount(graphics);
         renderActionButton(graphics, mouseX, mouseY);
@@ -224,7 +239,7 @@ public class CollectionListElement extends FrontierListRowElement {
 
     private int getRightZoneStart() {
         int countWidth = markedCount <= 0 ? 0 : font.width("[" + markedCount + "]");
-        return getActionLeft() - ACTION_GAP - countWidth;
+        return getActionLeft() - ACTION_GAP - countWidth - COUNTERS_RIGHT_GAP;
     }
 
     private String ellipsize(String text, int maxWidth) {
@@ -235,12 +250,36 @@ public class CollectionListElement extends FrontierListRowElement {
             return text;
         }
 
-        int ellipsisWidth = font.width("...");
+        int ellipsisWidth = font.width(ELLIPSIS);
         if (ellipsisWidth >= maxWidth) {
-            return font.plainSubstrByWidth("...", maxWidth);
+            return font.plainSubstrByWidth(ELLIPSIS, maxWidth);
         }
 
-        return font.plainSubstrByWidth(text, maxWidth - ellipsisWidth) + "...";
+        return font.plainSubstrByWidth(text, maxWidth - ellipsisWidth) + ELLIPSIS;
+    }
+
+    private void drawTitle(GuiGraphicsExtractor graphics, int titleX, int titleColor,
+                           String visibleTitle, boolean titleTruncated, boolean showExpandedTitle) {
+        String renderedTitle = showExpandedTitle ? title : visibleTitle;
+        if (showExpandedTitle) {
+            int textWidth = font.width(title);
+            int bgLeft = titleX - 1;
+            int bgOpaqueRight = bgLeft + textWidth + 2;
+            graphics.fill(bgLeft, y + TITLE_Y + TITLE_BG_TOP_OFFSET, bgOpaqueRight,
+                    y + TITLE_Y + TITLE_BG_BOTTOM_OFFSET, ColorConstants.SCROLL_ELEMENT_SELECTED);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, NAME_FADE_TEXTURE, bgOpaqueRight, y + TITLE_Y + TITLE_BG_TOP_OFFSET, 0, 0,
+                    TITLE_BG_FADE_WIDTH, TITLE_BG_BOTTOM_OFFSET - TITLE_BG_TOP_OFFSET, TITLE_BG_FADE_WIDTH,
+                    TITLE_BG_BOTTOM_OFFSET - TITLE_BG_TOP_OFFSET, ColorConstants.SCROLL_ELEMENT_SELECTED);
+        }
+
+        graphics.text(font, renderedTitle, titleX, y + TITLE_Y, titleColor);
+    }
+
+    private boolean isTitleAreaHovered(int mouseX, int mouseY, int titleX, String visibleTitle) {
+        int titleWidth = font.width(visibleTitle);
+        int hoverLeft = Math.max(x + TITLE_HOVER_X, titleX);
+        int hoverRight = titleX + titleWidth;
+        return mouseX >= hoverLeft && mouseY >= y && mouseX < hoverRight && mouseY < y + height;
     }
 
     @Override
