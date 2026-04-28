@@ -22,6 +22,7 @@ import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
+import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.Context;
 import net.minecraft.ChatFormatting;
@@ -70,6 +71,7 @@ public class MapFrontiersClient {
 
     private static final long HANDSHAKE_TIMEOUT_MS = 1800L;
     private static final long HANDSHAKE_RETRY_MS = 600L;
+    private static final float ANNOUNCEMENT_MIN_BRIGHTNESS = 0.5f;
 
     private static IClientAPI jmAPI;
     private static final ClientConnectionState connectionState = new ClientConnectionState();
@@ -323,7 +325,8 @@ public class MapFrontiersClient {
         }
 
         MutableComponent text = Component.literal(name);
-        text.withStyle(style -> style.withColor(frontier.getColor()));
+        text.withStyle(style -> style.withColor(
+                ColorHelper.ensureMinBrightness(frontier.getColor(), ANNOUNCEMENT_MIN_BRIGHTNESS)));
         return text;
     }
 
@@ -348,7 +351,10 @@ public class MapFrontiersClient {
             return null;
         }
 
-        return Component.literal(collectionName);
+        MutableComponent text = Component.literal(collectionName);
+        text.withStyle(style -> style.withColor(
+                ColorHelper.ensureMinBrightness(collection.getColor(), ANNOUNCEMENT_MIN_BRIGHTNESS)));
+        return text;
     }
 
     public static void setJmAPI(IClientAPI newJmAPI) {
