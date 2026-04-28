@@ -88,6 +88,7 @@
   "mapfrontiers.replace": "Replace",
   "mapfrontiers.accept_frontier_as_new": "Accept frontier as new and keep the current one",
   "mapfrontiers.delete_frontier_dialog": "Are you sure you want to delete the frontier?",
+  "mapfrontiers.delete_frontier_dialog_desc_shared": "This won't delete the frontier for everyone.\nYou will only lose access to it.",
   "mapfrontiers.delete_collection_dialog": "Are you sure you want to delete the collection?",
   "mapfrontiers.delete_collection_dialog_desc": "The frontiers in this collection won't be deleted.\nThey will remain without collection.",
   "mapfrontiers.delete_group_dialog": "Are you sure you want to delete the group?",

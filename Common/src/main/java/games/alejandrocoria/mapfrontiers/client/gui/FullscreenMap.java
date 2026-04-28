@@ -6,7 +6,7 @@ import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteFrontierConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.NewFrontierDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.page.FrontierInfoPage;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.page.FrontierListPage;
@@ -311,16 +311,13 @@ public class FullscreenMap {
 
     private void buttonDelete() {
         if (ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.get()) {
-            new DeleteConfirmationDialog(
-                    "mapfrontiers.delete_frontier_dialog",
-                    response -> {
-                        if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                            ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.set(false);
-                            ClientGlobalEvents.postUpdatedConfigEvent();
-                        }
-                        deleteFrontier();
-                    }
-            ).display();
+            new DeleteFrontierConfirmationDialog(frontierHighlighted, response -> {
+                if (response == ConfirmationDialog.Response.ConfirmAlternative) {
+                    ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.set(false);
+                    ClientGlobalEvents.postUpdatedConfigEvent();
+                }
+                deleteFrontier();
+            }).display();
         } else {
             deleteFrontier();
         }

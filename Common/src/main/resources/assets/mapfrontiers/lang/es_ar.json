@@ -88,6 +88,7 @@
   "mapfrontiers.replace": "Reemplazar",
   "mapfrontiers.accept_frontier_as_new": "Aceptar frontera como nueva, mantener la actual",
   "mapfrontiers.delete_frontier_dialog": "¿Seguro que quieres eliminar la frontera?",
+  "mapfrontiers.delete_frontier_dialog_desc_shared": "Esto no eliminará la frontera para todos.\nSolo perderás acceso a ella.",
   "mapfrontiers.delete_collection_dialog": "¿Seguro que quieres eliminar la colección?",
   "mapfrontiers.delete_collection_dialog_desc": "Las fronteras de esta colección no se eliminarán.\nQuedarán sin colección.",
   "mapfrontiers.delete_group_dialog": "¿Seguro que quieres eliminar el grupo?",

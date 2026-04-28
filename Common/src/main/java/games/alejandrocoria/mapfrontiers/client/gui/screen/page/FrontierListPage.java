@@ -23,7 +23,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.SpacerListE
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteCollectionConfirmationDialog;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteFrontierConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.NewFrontierDialog;
 import games.alejandrocoria.mapfrontiers.common.config.EnumConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
@@ -506,16 +506,18 @@ public class FrontierListPage extends PageScreen
     }
 
     private void showDeleteConfirmation() {
-        new DeleteConfirmationDialog(
-                "mapfrontiers.delete_frontier_dialog",
-                response -> {
-                    if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                        ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.set(false);
-                        ClientGlobalEvents.postUpdatedConfigEvent();
-                    }
-                    deleteSelectedFrontier();
-                }
-        ).display();
+        FrontierOverlay frontier = getSelectedFrontier();
+        if (frontier == null) {
+            return;
+        }
+
+        new DeleteFrontierConfirmationDialog(frontier, response -> {
+            if (response == ConfirmationDialog.Response.ConfirmAlternative) {
+                ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.set(false);
+                ClientGlobalEvents.postUpdatedConfigEvent();
+            }
+            deleteSelectedFrontier();
+        }).display();
     }
 
     private void showDeleteCollectionConfirmation() {
