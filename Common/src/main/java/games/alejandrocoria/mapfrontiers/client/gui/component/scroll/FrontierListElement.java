@@ -116,8 +116,8 @@ public class FrontierListElement extends FrontierListRowElement {
         boolean name2Truncated = !visibleName2.equals(name2);
         boolean showExpandedNames = isNameAreaHovered(mouseX, mouseY) && (name1Truncated || name2Truncated);
 
-        graphics.fill(x, y - 1, x + 2, y + height, collectionColor);
-        graphics.fill(x + width - 2, y - 1, x + width, y + height, collectionColor);
+        graphics.fill(x, y, x + 2, y + height, collectionColor);
+        graphics.fill(x + width - 2, y, x + width, y + height, collectionColor);
 
         int rowContentX = x + LEFT_PADDING;
         graphics.text(font, owner, rowContentX + METADATA_X, y + 4, color);

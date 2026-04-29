@@ -8,7 +8,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class CollectionBorderCapListElement extends ScrollBox.ScrollElement {
-    private static final int HEIGHT = 1;
+    private static final int HEIGHT = 2;
 
     private final int color;
 
@@ -20,6 +20,6 @@ public class CollectionBorderCapListElement extends ScrollBox.ScrollElement {
     @Override
     protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks,
                                             boolean selected, boolean focused) {
-        graphics.fill(x, y - 1, x + width, y + 1, color);
+        graphics.fill(x, y, x + width, y + height, color);
     }
 }

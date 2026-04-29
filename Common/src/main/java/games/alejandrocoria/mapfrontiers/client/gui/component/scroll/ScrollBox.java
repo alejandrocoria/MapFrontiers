@@ -31,7 +31,6 @@ import java.util.function.Predicate;
 public class ScrollBox extends AbstractContainerWidget {
     private static final int SCROLLBAR_AREA_WIDTH = 15;
     private static final int SCROLLBAR_WIDTH = 10;
-    private static final int ELEMENT_GAP = 1;
 
     private final int defaultElementHeight;
     private int scrollOffset = 0;
@@ -48,12 +47,12 @@ public class ScrollBox extends AbstractContainerWidget {
     private Consumer<ScrollElement> elementDeletePressedCallback;
 
     public ScrollBox(int height, int elementWidth, int elementHeight) {
-        super(0, 0, elementWidth + SCROLLBAR_AREA_WIDTH, Math.max(height, elementHeight + ELEMENT_GAP),
+        super(0, 0, elementWidth + SCROLLBAR_AREA_WIDTH, Math.max(height, elementHeight),
                 Component.empty(), AbstractScrollArea.defaultSettings(SCROLLBAR_WIDTH));
         elements = new ArrayList<>();
         selected = -1;
         focused = -1;
-        defaultElementHeight = elementHeight + ELEMENT_GAP;
+        defaultElementHeight = elementHeight;
         this.height = Math.max(defaultElementHeight, height / defaultElementHeight * defaultElementHeight);
         if (this.height == 0) {
             this.height = defaultElementHeight;
@@ -65,7 +64,7 @@ public class ScrollBox extends AbstractContainerWidget {
     }
 
     public static int heightForRows(int rows, int elementHeight) {
-        return Math.max(1, rows) * (elementHeight + ELEMENT_GAP);
+        return Math.max(1, rows) * elementHeight;
     }
 
     public void setElementClickedCallback(Consumer<ScrollElement> callback) {
@@ -353,10 +352,10 @@ public class ScrollBox extends AbstractContainerWidget {
 
     @Override
     public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
-        int clipLeft = getX() - 1;
-        int clipTop = getY() - 1;
-        int clipRight = getX() + width - SCROLLBAR_AREA_WIDTH + 1;
-        int clipBottom = getY() + height + 1;
+        int clipLeft = getX();
+        int clipTop = getY();
+        int clipRight = getX() + width - SCROLLBAR_AREA_WIDTH;
+        int clipBottom = getY() + height;
 
         if (!elements.isEmpty()) {
             graphics.enableScissor(clipLeft, clipTop, clipRight, clipBottom);
@@ -524,7 +523,7 @@ public class ScrollBox extends AbstractContainerWidget {
             int elementBottom = currentY + element.getHeight();
             element.visible = elementBottom > getY() && currentY < viewportBottom;
             element.setY(currentY);
-            currentY = elementBottom + ELEMENT_GAP;
+            currentY = elementBottom;
         }
     }
 
@@ -571,7 +570,7 @@ public class ScrollBox extends AbstractContainerWidget {
     private int getElementTop(int index) {
         int top = 0;
         for (int i = 0; i < index; ++i) {
-            top += elements.get(i).getHeight() + ELEMENT_GAP;
+            top += elements.get(i).getHeight();
         }
         return top;
     }
@@ -581,9 +580,9 @@ public class ScrollBox extends AbstractContainerWidget {
             return 0;
         }
 
-        int contentHeight = -ELEMENT_GAP;
+        int contentHeight = 0;
         for (ScrollElement element : elements) {
-            contentHeight += element.getHeight() + ELEMENT_GAP;
+            contentHeight += element.getHeight();
         }
         return Math.max(0, contentHeight);
     }
@@ -649,10 +648,12 @@ public class ScrollBox extends AbstractContainerWidget {
                 isHovered = mouseX >= hoverLeft && mouseY >= hoverTop && mouseX < hoverRight && mouseY < hoverBottom;
                 extractWidgetRenderState(graphics, mouseX, mouseY, partialTicks, selected, focused);
                 if (focused) {
-                    graphics.horizontalLine(x - 1, x + width, y - 1, ColorConstants.WHITE);
-                    graphics.horizontalLine(x - 1, x + width, y + height, ColorConstants.WHITE);
-                    graphics.verticalLine(x - 1, y - 1, y + height, ColorConstants.WHITE);
-                    graphics.verticalLine(x + width, y - 1, y + height, ColorConstants.WHITE);
+                    int right = x + width - 1;
+                    int bottom = y + height - 1;
+                    graphics.horizontalLine(x, right, y, ColorConstants.WHITE);
+                    graphics.horizontalLine(x, right, bottom, ColorConstants.WHITE);
+                    graphics.verticalLine(x, y, bottom, ColorConstants.WHITE);
+                    graphics.verticalLine(right, y, bottom, ColorConstants.WHITE);
                 }
             } else {
                 isHovered = false;

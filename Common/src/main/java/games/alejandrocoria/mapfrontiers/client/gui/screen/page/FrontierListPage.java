@@ -651,7 +651,7 @@ public class FrontierListPage extends PageScreen
         List<ScrollElement> globalRows = buildBlockRows(false, visibleFilteredFrontiers);
         rows.addAll(personalRows);
         if (!personalRows.isEmpty() && !globalRows.isEmpty()) {
-            rows.add(new SpacerListElement(FRONTIERS_WIDTH));
+            rows.add(new SpacerListElement(FRONTIERS_WIDTH, 5));
         }
         rows.addAll(globalRows);
         pruneMarkedFrontiers(visibleFilteredFrontiers);
@@ -708,6 +708,7 @@ public class FrontierListPage extends PageScreen
 
         collectionGroups.sort(this::compareCollectionGroups);
         for (CollectionGroupModel group : collectionGroups) {
+            rows.add(new SpacerListElement(FRONTIERS_WIDTH, 2));
             int collectionColor = ColorHelper.ensureMinBrightness(group.collection.getColor(), MIN_COLLECTION_BRIGHTNESS);
             rows.add(createCollectionRowElement(group, collectionColor));
             if (!group.collapsed) {

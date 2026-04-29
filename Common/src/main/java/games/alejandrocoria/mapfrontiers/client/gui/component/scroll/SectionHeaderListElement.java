@@ -27,6 +27,6 @@ public class SectionHeaderListElement extends ScrollBox.ScrollElement {
     @Override
     protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks,
                                             boolean selected, boolean focused) {
-        graphics.text(font, title, x + titleX, y + 4, color);
+        graphics.text(font, title, x + titleX, y + 3, color);
     }
 }

@@ -7,9 +7,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class SpacerListElement extends ScrollBox.ScrollElement {
-    private static final int HEIGHT = 5;
-
-    public SpacerListElement(int width) {
-        super(width, HEIGHT);
+    public SpacerListElement(int width, int height) {
+        super(width, height);
     }
 }
