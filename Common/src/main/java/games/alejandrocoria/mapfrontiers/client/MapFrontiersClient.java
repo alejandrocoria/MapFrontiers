@@ -90,7 +90,7 @@ public class MapFrontiersClient {
     private static final Map<UUID, FrontierOverlay> announcementActiveFrontiers = new HashMap<>();
     private static long lastTitleTime;
 
-    private static @Nullable FrontierData clipboard = null;
+    private static @Nullable FrontierData frontierClipboard = null;
     private static @Nullable CollectionData collectionClipboard = null;
     private static ClientLevel lastClientLevel = null;
 
@@ -720,12 +720,12 @@ public class MapFrontiersClient {
         );
     }
 
-    public static void setClipboard(FrontierData newClipboard) {
-        clipboard = new FrontierData(newClipboard);
+    public static void setFrontierClipboard(FrontierData newClipboard) {
+        frontierClipboard = new FrontierData(newClipboard);
     }
 
-    public static @Nullable FrontierData getClipboard() {
-        return clipboard;
+    public static @Nullable FrontierData getFrontierClipboard() {
+        return frontierClipboard;
     }
 
     public static void setCollectionClipboard(CollectionData newClipboard) {

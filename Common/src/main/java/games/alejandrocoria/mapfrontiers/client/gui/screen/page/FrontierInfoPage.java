@@ -611,13 +611,13 @@ public class FrontierInfoPage extends PageScreen
     }
 
     private void onCopyPressed() {
-        MapFrontiersClient.setClipboard(frontier);
+        MapFrontiersClient.setFrontierClipboard(frontier);
         Minecraft.getInstance().keyboardHandler.setClipboard(frontier.getId().toString());
         updatePasteOptionsVisibility();
     }
 
     private void onPastePressed() {
-        FrontierData clipboard = MapFrontiersClient.getClipboard();
+        FrontierData clipboard = MapFrontiersClient.getFrontierClipboard();
         if (clipboard != null && (ClientConfig.PASTE_NAME.get() || ClientConfig.PASTE_VISIBILITY.get()
                 || ClientConfig.PASTE_PATH_STYLE.get() || ClientConfig.PASTE_COLOR.get() || ClientConfig.PASTE_BANNER.get())) {
             setFrontier(clipboard, ClientConfig.PASTE_NAME.get(), ClientConfig.PASTE_VISIBILITY.get(),
@@ -899,26 +899,28 @@ public class FrontierInfoPage extends PageScreen
     }
 
     private void updatePasteOptionsVisibility() {
-        FrontierData clipboard = MapFrontiersClient.getClipboard();
-        buttonPaste.visible = buttonPaste.active && MapFrontiersClient.getClipboard() != null;
-        boolean pathStyleOptionVisible = buttonPaste.visible
-                && ClientConfig.PASTE_OPTIONS_VISIBLE.get()
+        FrontierData clipboard = MapFrontiersClient.getFrontierClipboard();
+        boolean hasClipboard = clipboard != null;
+        boolean showPaste = buttonPaste.active && hasClipboard;
+        boolean showPasteOptions = showPaste && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
+        boolean pathStyleOptionVisible = showPasteOptions
                 && frontier.getMode() == FrontierData.Mode.Path
-                && clipboard != null
                 && clipboard.getMode() == FrontierData.Mode.Path;
-        buttonPasteOptions.visible = buttonPaste.visible;
+
+        buttonPaste.visible = showPaste;
+        buttonPasteOptions.visible = showPaste;
         buttonPasteOptions.setType(ClientConfig.PASTE_OPTIONS_VISIBLE.get() ? IconButton.Type.CollapseOptions : IconButton.Type.ExpandOptions);
         buttonPasteOptions.setTooltip(ClientConfig.PASTE_OPTIONS_VISIBLE.get() ? CLOSE_PASTE_TOOLTIP : OPEN_PASTE_TOOLTIP);
-        buttonPasteName.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
-        buttonPasteVisibility.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
+        buttonPasteName.visible = showPasteOptions;
+        buttonPasteVisibility.visible = showPasteOptions;
         buttonPastePathStyle.visible = pathStyleOptionVisible;
-        buttonPasteColor.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
-        buttonPasteBanner.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
-        labelPasteName.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
-        labelPasteVisibility.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
+        buttonPasteColor.visible = showPasteOptions;
+        buttonPasteBanner.visible = showPasteOptions;
+        labelPasteName.visible = showPasteOptions;
+        labelPasteVisibility.visible = showPasteOptions;
         labelPastePathStyle.visible = pathStyleOptionVisible;
-        labelPasteColor.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
-        labelPasteBanner.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
+        labelPasteColor.visible = showPasteOptions;
+        labelPasteBanner.visible = showPasteOptions;
     }
 
     private void updateUndoRedoVisibility() {
