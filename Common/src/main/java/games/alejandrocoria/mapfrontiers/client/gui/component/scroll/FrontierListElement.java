@@ -132,6 +132,18 @@ public class FrontierListElement extends FrontierListRowElement {
         renderCheckBox(graphics, mouseX, mouseY);
     }
 
+    @Override
+    protected void drawFocusOutline(GuiGraphicsExtractor graphics) {
+        int left = x + 2;
+        int right = x + width - 3;
+        int top = y;
+        int bottom = y + height - 1;
+        graphics.horizontalLine(left, right, top, ColorConstants.WHITE);
+        graphics.horizontalLine(left, right, bottom, ColorConstants.WHITE);
+        graphics.verticalLine(left, top, bottom, ColorConstants.WHITE);
+        graphics.verticalLine(right, top, bottom, ColorConstants.WHITE);
+    }
+
     private void renderCheckBox(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         if (!shouldRenderCheckBox()) {
             return;

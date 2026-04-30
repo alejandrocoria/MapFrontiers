@@ -22,4 +22,9 @@ public class CollectionBorderCapListElement extends ScrollBox.ScrollElement {
                                             boolean selected, boolean focused) {
         graphics.fill(x, y, x + width, y + height, color);
     }
+
+    @Override
+    protected boolean isKeyboardFocusable() {
+        return false;
+    }
 }

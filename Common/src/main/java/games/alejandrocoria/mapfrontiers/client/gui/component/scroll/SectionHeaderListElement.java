@@ -29,4 +29,9 @@ public class SectionHeaderListElement extends ScrollBox.ScrollElement {
                                             boolean selected, boolean focused) {
         graphics.text(font, title, x + titleX, y + 3, color);
     }
+
+    @Override
+    protected boolean isKeyboardFocusable() {
+        return false;
+    }
 }

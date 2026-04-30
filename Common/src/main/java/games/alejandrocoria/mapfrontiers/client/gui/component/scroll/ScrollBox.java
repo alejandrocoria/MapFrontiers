@@ -228,26 +228,21 @@ public class ScrollBox extends AbstractContainerWidget {
                 forward = tabNavigation.forward();
             }
 
-            if (forward) {
-                if (focused == elements.size() - 1) {
-                    return null;
-                } else {
-                    ++focused;
-                }
-            } else {
-                if (focused == 0) {
-                    return null;
-                } else if (focused == -1) {
-                    focused = elements.size() - 1;
-                } else {
-                    --focused;
-                }
+            int nextFocused = findNextFocusableIndex(focused, forward);
+            if (nextFocused == -1) {
+                return null;
             }
+            focused = nextFocused;
         } else {
-            if (navigationEvent.getVerticalDirectionForInitialFocus().isPositive()) {
-                focused = 0;
+            boolean forward = navigationEvent.getVerticalDirectionForInitialFocus().isPositive();
+            if (forward) {
+                focused = findNextFocusableIndex(-1, true);
             } else {
-                focused = elements.size() - 1;
+                focused = findNextFocusableIndex(elements.size(), false);
+            }
+
+            if (focused == -1) {
+                return null;
             }
         }
 
@@ -452,8 +447,11 @@ public class ScrollBox extends AbstractContainerWidget {
     public boolean keyPressed(KeyEvent event) {
         if (this.active && this.visible) {
             if (event.isSelection()) {
+                if (focused == -1 || !elements.get(focused).isKeyboardFocusable()) {
+                    return true;
+                }
                 selectIndex(focused);
-                if (selected != -1) {
+                if (selected != -1 && elements.get(selected).isKeyboardFocusable()) {
                     ScrollElement focusedElement = elements.get(focused);
                     if (!focusedElement.children().isEmpty()) {
                         focusedElement.keyPressed(event);
@@ -466,7 +464,7 @@ public class ScrollBox extends AbstractContainerWidget {
 
             if (event.input() == GLFW.GLFW_KEY_DELETE && focused != -1) {
                 ScrollElement element = elements.get(focused);
-                if (element.canBeDeleted()) {
+                if (element.isKeyboardFocusable() && element.canBeDeleted()) {
                     if (elementDeletePressedCallback != null) {
                         elementDeletePressedCallback.accept(element);
                     } else {
@@ -599,6 +597,23 @@ public class ScrollBox extends AbstractContainerWidget {
         }
     }
 
+    private int findNextFocusableIndex(int startExclusive, boolean forward) {
+        if (forward) {
+            for (int i = Math.max(startExclusive + 1, 0); i < elements.size(); ++i) {
+                if (elements.get(i).isKeyboardFocusable()) {
+                    return i;
+                }
+            }
+        } else {
+            for (int i = Math.min(startExclusive - 1, elements.size() - 1); i >= 0; --i) {
+                if (elements.get(i).isKeyboardFocusable()) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
     public static class ScrollElement implements ContainerEventHandler {
         public enum Action {
             None, Clicked, Deleted, Handled
@@ -648,12 +663,7 @@ public class ScrollBox extends AbstractContainerWidget {
                 isHovered = mouseX >= hoverLeft && mouseY >= hoverTop && mouseX < hoverRight && mouseY < hoverBottom;
                 extractWidgetRenderState(graphics, mouseX, mouseY, partialTicks, selected, focused);
                 if (focused) {
-                    int right = x + width - 1;
-                    int bottom = y + height - 1;
-                    graphics.horizontalLine(x, right, y, ColorConstants.WHITE);
-                    graphics.horizontalLine(x, right, bottom, ColorConstants.WHITE);
-                    graphics.verticalLine(x, y, bottom, ColorConstants.WHITE);
-                    graphics.verticalLine(right, y, bottom, ColorConstants.WHITE);
+                    drawFocusOutline(graphics);
                 }
             } else {
                 isHovered = false;
@@ -663,12 +673,25 @@ public class ScrollBox extends AbstractContainerWidget {
         protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks, boolean selected, boolean focused) {
         }
 
+        protected void drawFocusOutline(GuiGraphicsExtractor graphics) {
+            int right = x + width - 1;
+            int bottom = y + height - 1;
+            graphics.horizontalLine(x, right, y, ColorConstants.WHITE);
+            graphics.horizontalLine(x, right, bottom, ColorConstants.WHITE);
+            graphics.verticalLine(x, y, bottom, ColorConstants.WHITE);
+            graphics.verticalLine(right, y, bottom, ColorConstants.WHITE);
+        }
+
         protected Action mousePressed(MouseButtonEvent event, boolean doubleClick) {
             return Action.None;
         }
 
         protected boolean canBeDeleted() {
             return false;
+        }
+
+        protected boolean isKeyboardFocusable() {
+            return true;
         }
 
         public List<GuiEventListener> children() {
