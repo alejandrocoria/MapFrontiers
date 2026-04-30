@@ -4,6 +4,7 @@ import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxRenderHelper;
+import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -20,7 +21,6 @@ import java.util.UUID;
 @MethodsReturnNonnullByDefault
 public class CollectionListElement extends FrontierListRowElement {
     private static final Identifier NAME_FADE_TEXTURE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/frontier_list/name_fade.png");
-    private static final int CHEVRON_CLICK_WIDTH = 18;
     private static final int CONTENT_X = 14;
     private static final int TITLE_Y = 6;
     private static final int COUNTERS_GAP = 4;
@@ -44,7 +44,6 @@ public class CollectionListElement extends FrontierListRowElement {
     private final String title;
     private final String counters;
     private final int color;
-    private final boolean collapsed;
     private final boolean checkboxVisible;
     private final boolean checkboxVisibleOnHover;
     private final int markedCount;
@@ -53,6 +52,7 @@ public class CollectionListElement extends FrontierListRowElement {
     private final boolean actionEnabled;
     private final int actionWidth;
     private final List<UUID> eligibleFrontierIds;
+    private final IconButton collapseToggleButton;
     private boolean collapseToggleRequested;
     private boolean markToggleRequested;
     private boolean actionRequested;
@@ -83,7 +83,6 @@ public class CollectionListElement extends FrontierListRowElement {
         this.title = title;
         this.counters = counters;
         this.color = color;
-        this.collapsed = collapsed;
         this.checkboxVisible = checkboxVisible;
         this.checkboxVisibleOnHover = checkboxVisibleOnHover;
         this.markedCount = markedCount;
@@ -92,6 +91,20 @@ public class CollectionListElement extends FrontierListRowElement {
         this.actionEnabled = actionEnabled;
         this.actionWidth = actionWidth;
         this.eligibleFrontierIds = List.copyOf(eligibleFrontierIds);
+
+        collapseToggleButton = new IconButton(collapsed ? IconButton.Type.Collapsed : IconButton.Type.Expanded, (button) -> {});
+    }
+
+    @Override
+    protected void setX(int x) {
+        super.setX(x);
+        collapseToggleButton.setX(this.x + 4);
+    }
+
+    @Override
+    protected void setY(int y) {
+        super.setY(y);
+        collapseToggleButton.setY(this.y + 5);
     }
 
     public @Nullable CollectionData getCollection() {
@@ -145,13 +158,15 @@ public class CollectionListElement extends FrontierListRowElement {
         graphics.fill(x, y + 2, x + 2, y + height, color);
         graphics.fill(x + width - 2, y + 2, x + width, y + height, color);
 
+        collapseToggleButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
+
         int titleColor = ColorConstants.TEXT;
         if (selected) {
             titleColor = ColorConstants.TEXT_HIGHLIGHT;
         } else if (virtualRow) {
             titleColor = ColorConstants.VIRTUAL_COLLECTION;
         }
-        graphics.text(font, collapsed ? ">" : "v", x + 4, y + TITLE_Y, titleColor);
+
         int rightZoneStart = getRightZoneStart();
         int countersWidth = font.width(counters);
         int countersX = rightZoneStart - countersWidth;
@@ -161,7 +176,7 @@ public class CollectionListElement extends FrontierListRowElement {
         boolean titleTruncated = !visibleTitle.equals(title);
         boolean showExpandedTitle = titleTruncated && isTitleAreaHovered(mouseX, mouseY, titleX, visibleTitle);
         graphics.text(font, counters, countersX, y + TITLE_Y, ColorConstants.TEXT_DIMENSION);
-        drawTitle(graphics, titleX, titleColor, visibleTitle, titleTruncated, showExpandedTitle);
+        drawTitle(graphics, titleX, titleColor, visibleTitle, showExpandedTitle);
 
         renderMarkedCount(graphics);
         renderActionButton(graphics, mouseX, mouseY);
@@ -258,8 +273,7 @@ public class CollectionListElement extends FrontierListRowElement {
         return font.plainSubstrByWidth(text, maxWidth - ellipsisWidth) + ELLIPSIS;
     }
 
-    private void drawTitle(GuiGraphicsExtractor graphics, int titleX, int titleColor,
-                           String visibleTitle, boolean titleTruncated, boolean showExpandedTitle) {
+    private void drawTitle(GuiGraphicsExtractor graphics, int titleX, int titleColor, String visibleTitle, boolean showExpandedTitle) {
         String renderedTitle = showExpandedTitle ? title : visibleTitle;
         if (showExpandedTitle) {
             int textWidth = font.width(title);
@@ -288,6 +302,11 @@ public class CollectionListElement extends FrontierListRowElement {
             return ScrollBox.ScrollElement.Action.None;
         }
 
+        if (collapseToggleButton.isMouseOver(event.x(), event.y())) {
+            collapseToggleRequested = true;
+            return ScrollBox.ScrollElement.Action.Handled;
+        }
+
         if (shouldRenderCheckBox() && CheckBoxRenderHelper.contains(getCheckBoxX(), y + CHECKBOX_Y, event.x(), event.y())) {
             markToggleRequested = true;
             return ScrollBox.ScrollElement.Action.Handled;
@@ -296,11 +315,6 @@ public class CollectionListElement extends FrontierListRowElement {
         if (actionLabel != null && event.x() >= getActionLeft() && event.x() < getActionLeft() + actionWidth
                 && event.y() >= y + ACTION_Y && event.y() < y + ACTION_Y + ACTION_HEIGHT) {
             actionRequested = true;
-            return ScrollBox.ScrollElement.Action.Handled;
-        }
-
-        if (event.x() >= x && event.x() < x + CHEVRON_CLICK_WIDTH) {
-            collapseToggleRequested = true;
             return ScrollBox.ScrollElement.Action.Handled;
         }
 
