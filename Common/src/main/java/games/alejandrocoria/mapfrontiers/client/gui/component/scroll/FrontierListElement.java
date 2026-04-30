@@ -15,7 +15,6 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.Identifier;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
@@ -60,7 +59,7 @@ public class FrontierListElement extends FrontierListRowElement {
 
     public FrontierListElement(Font font, FrontierOverlay frontier, int width, int collectionColor,
                                boolean checkboxVisible, boolean checkboxVisibleOnHover, boolean checked) {
-        super(frontierRowId(frontier.getId()), width, 25);
+        super(frontier.getId().toString(), width, 25);
         this.font = font;
         this.frontier = frontier;
         this.collectionColor = collectionColor;
@@ -246,10 +245,6 @@ public class FrontierListElement extends FrontierListRowElement {
 
     private static Identifier frontierListTexture(String fileName) {
         return Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/frontier_list/" + fileName);
-    }
-
-    private static String frontierRowId(UUID frontierId) {
-        return "frontier:" + frontierId;
     }
 
     @Override

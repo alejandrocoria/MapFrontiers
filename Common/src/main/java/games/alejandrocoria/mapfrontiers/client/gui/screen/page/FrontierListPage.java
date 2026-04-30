@@ -580,7 +580,7 @@ public class FrontierListPage extends PageScreen
 
         FrontierOverlay selectedFrontier = fullscreenMap.getSelected();
         if (selectedFrontier != null) {
-            selectedRowId = frontierRowId(selectedFrontier.getId());
+            selectedRowId = selectedFrontier.getId().toString();
             selectRowIfPresent(selectedRowId);
             frontiers.scrollSelectedElementIntoView();
         }
@@ -625,7 +625,7 @@ public class FrontierListPage extends PageScreen
         collection.setPersonal(virtualRow.isPersonal());
         collection.setOwner(new SettingsUser(minecraft.player));
 
-        selectedRowId = collectionRowId(collection.getId());
+        selectedRowId = collection.getId().toString();
         MapFrontiersClient.getOperationService().createCollection(collection);
         new CollectionInfoPage(collection).display();
     }
@@ -641,7 +641,10 @@ public class FrontierListPage extends PageScreen
 
     private void updateFrontiers() {
         String previousSelection = selectedRowId;
-        boolean previousSelectionWasFrontier = previousSelection != null && previousSelection.startsWith("frontier:");
+        FrontierOverlay selectedFrontierBeforeUpdate = getSelectedFrontier();
+        boolean previousSelectionWasFrontier = previousSelection != null
+                && selectedFrontierBeforeUpdate != null
+                && previousSelection.equals(selectedFrontierBeforeUpdate.getId().toString());
         int previousScrollOffset = frontiers.getScrollOffset();
         CollectionUiStateStore collapseState = getCollectionUiStateStore();
         List<ScrollElement> rows = new ArrayList<>();
@@ -786,12 +789,13 @@ public class FrontierListPage extends PageScreen
                 title = I18n.get("mapfrontiers.unnamed", ChatFormatting.ITALIC);
             }
 
-            groups.add(new CollectionGroupModel(collectionRowId(collection.getId()),
+            String rowId = collection.getId().toString();
+            groups.add(new CollectionGroupModel(rowId,
                     collection,
                     false,
                     personal,
                     title,
-                    collapseState.isCollapsed(collectionRowId(collection.getId())),
+                    collapseState.isCollapsed(rowId),
                     allFrontiers,
                     filteredFrontiers));
         }
@@ -1262,14 +1266,6 @@ public class FrontierListPage extends PageScreen
             case Chunk -> frontier.getChunkCount();
             case Path -> frontier.getPointCount();
         };
-    }
-
-    private static String frontierRowId(UUID frontierId) {
-        return "frontier:" + frontierId;
-    }
-
-    private static String collectionRowId(UUID collectionId) {
-        return "collection:" + collectionId;
     }
 
     private static CollectionUiStateStore getCollectionUiStateStore() {

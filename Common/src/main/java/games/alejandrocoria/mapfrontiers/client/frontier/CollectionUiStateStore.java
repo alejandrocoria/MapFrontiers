@@ -8,6 +8,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 
 import java.io.File;
@@ -81,8 +82,8 @@ public class CollectionUiStateStore {
             ListTag collapsedTagList = nbt.getListOrEmpty("collapsed");
             for (int i = 0; i < collapsedTagList.size(); ++i) {
                 Tag rowTag = collapsedTagList.get(i);
-                if (rowTag instanceof CompoundTag collapsedRowTag) {
-                    String rowId = collapsedRowTag.getStringOr("id", "");
+                if (rowTag instanceof StringTag collapsedRowTag) {
+                    String rowId = collapsedRowTag.value();
                     if (rowId.isEmpty()) {
                         MapFrontiers.LOGGER.warn("Skipping invalid collapsed row entry at collapsed[{}]", i);
                         needBackup = true;
@@ -105,9 +106,7 @@ public class CollectionUiStateStore {
     private void writeToNBT(CompoundTag nbt) {
         ListTag collapsedTagList = new ListTag();
         for (String rowId : collapsedRows) {
-            CompoundTag collapsedRowTag = new CompoundTag();
-            collapsedRowTag.putString("id", rowId);
-            collapsedTagList.add(collapsedRowTag);
+            collapsedTagList.add(StringTag.valueOf(rowId));
         }
 
         nbt.put("collapsed", collapsedTagList);
