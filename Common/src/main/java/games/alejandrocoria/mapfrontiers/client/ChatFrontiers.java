@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
+import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -205,11 +206,11 @@ public class ChatFrontiers {
                 SettingsUser userSender = new SettingsUser();
                 userSender.uuid = sender;
                 userSender.fillMissingInfo(true, null);
-                MutableComponent text = Component.literal(userSender.toString("User not found") + " ");
+                MutableComponent text = Component.literal(SettingsUserFormatter.getDisplayName(userSender, "User not found") + " ");
                 if (userSender.equals(frontier.getCopiedFromUser())) {
                     text.append("want to send a frontier to you: ");
                 } else {
-                    text.append("want to send a frontier of " + frontier.getCopiedFromUser().toString("User not found") + " to you: ");
+                    text.append("want to send a frontier of " + SettingsUserFormatter.getDisplayName(frontier.getCopiedFromUser(), "User not found") + " to you: ");
                 }
 
                 text.append(button);

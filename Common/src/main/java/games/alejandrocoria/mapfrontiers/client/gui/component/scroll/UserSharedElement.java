@@ -4,6 +4,7 @@ import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
+import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.ChatFormatting;
@@ -94,7 +95,7 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
             }
         }
 
-        graphics.text(font, user.getUser().toString(), x + 16, y + 4, ColorConstants.TEXT_HIGHLIGHT);
+        graphics.text(font, SettingsUserFormatter.getDisplayName(user.getUser()), x + 16, y + 4, ColorConstants.TEXT_HIGHLIGHT);
 
         updateFrontier.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         updateSettings.extractRenderState(graphics, mouseX, mouseY, partialTicks);

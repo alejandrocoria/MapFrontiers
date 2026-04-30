@@ -20,6 +20,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDi
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteFrontierConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.PathStyleDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.VisibilityDialog;
+import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
@@ -319,14 +320,14 @@ public class FrontierInfoPage extends PageScreen
         LinearLayout infoColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_TINY);
         mainLayout.addChild(infoColumn, 0, 3, 1, 1, LayoutSettings.defaults().alignHorizontallyLeft());
 
-        MutableComponent owner = Component.translatable(OWNER_KEY, frontier.getOwner().toString());
+        MutableComponent owner = Component.translatable(OWNER_KEY, SettingsUserFormatter.getDisplayName(frontier.getOwner()));
         if (frontier.wasCopied()) {
             owner.append(Component.literal(ColorConstants.WARNING + " !"));
         }
         StringWidget ownerWidget = infoColumn.addChild(new StringWidget(owner, font).setColor(ColorConstants.WHITE));
         if (frontier.wasCopied()) {
             Tooltip ownerTooltip = Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET)
-                    .append(Component.translatable(ORIGINAL_OWNER_KEY, frontier.getCopiedFromUser().toString())));
+                    .append(Component.translatable(ORIGINAL_OWNER_KEY, SettingsUserFormatter.getDisplayName(frontier.getCopiedFromUser()))));
             ownerWidget.setTooltip(ownerTooltip);
         }
 

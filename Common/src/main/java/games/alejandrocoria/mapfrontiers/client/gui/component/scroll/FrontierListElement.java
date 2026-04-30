@@ -5,6 +5,7 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxRenderHelper;
+import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
@@ -75,7 +76,7 @@ public class FrontierListElement extends FrontierListRowElement {
             name2 = I18n.get("mapfrontiers.unnamed_2", ChatFormatting.ITALIC);
         }
 
-        owner = I18n.get("mapfrontiers.owner", frontier.getOwner());
+        owner = I18n.get("mapfrontiers.owner", SettingsUserFormatter.getDisplayName(frontier.getOwner()));
         dimension = I18n.get("mapfrontiers.dimension", frontier.getDimension().identifier().toString());
 
         if (frontier.getMode() == FrontierData.Mode.Vertex) {

@@ -16,6 +16,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteCollectionConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
@@ -401,7 +402,7 @@ public class CollectionInfoPage extends PageScreen {
             }
         }
 
-        ownerLabel.setMessage(Component.translatable(OWNER_KEY, collection.getOwner().toString()));
+        ownerLabel.setMessage(Component.translatable(OWNER_KEY, SettingsUserFormatter.getDisplayName(collection.getOwner())));
         typeLabel.setMessage(collection.getPersonal() ? PERSONAL_LABEL : GLOBAL_LABEL);
         frontiersCountLabel.setMessage(Component.translatable(FRONTIERS_COUNT_KEY, frontiers.size()));
         areaLabel.setMessage(Component.translatable(AREA_KEY, formatMeasurement(totalArea)));
