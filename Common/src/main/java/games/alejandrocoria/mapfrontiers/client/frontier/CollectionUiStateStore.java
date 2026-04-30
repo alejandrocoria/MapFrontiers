@@ -2,7 +2,6 @@ package games.alejandrocoria.mapfrontiers.client.frontier;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.util.NbtFileHelper;
-import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -52,10 +51,11 @@ public class CollectionUiStateStore {
 
     private void loadData() {
         try {
-            File jmDir = Services.JOURNEYMAP.getJMWorldDir(Minecraft.getInstance());
-            modDir = new File(jmDir, "mapfrontier");
-            //noinspection ResultOfMethodCallIgnored
-            modDir.mkdirs();
+            Minecraft client = Minecraft.getInstance();
+            modDir = ClientMapFrontierStorageHelper.resolvePreferredModDir(client);
+            if (client.isLocalServer() && client.getSingleplayerServer() == null) {
+                MapFrontiers.LOGGER.warn("Singleplayer server unavailable while resolving {} storage. Falling back to JourneyMap directory.", FILENAME);
+            }
 
             CompoundTag nbt = loadFile(FILENAME);
             if (!nbt.isEmpty() && readFromNBT(nbt)) {

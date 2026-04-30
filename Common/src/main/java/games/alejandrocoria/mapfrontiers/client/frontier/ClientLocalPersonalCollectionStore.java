@@ -6,7 +6,6 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtFileHelper;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
-import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -121,10 +120,7 @@ public class ClientLocalPersonalCollectionStore {
         }
 
         try {
-            File jmDir = Services.JOURNEYMAP.getJMWorldDir(Minecraft.getInstance());
-            modDir = new File(jmDir, "mapfrontier");
-            //noinspection ResultOfMethodCallIgnored
-            modDir.mkdirs();
+            modDir = ClientMapFrontierStorageHelper.resolveJourneyMapModDir(Minecraft.getInstance());
         } catch (Exception e) {
             MapFrontiers.LOGGER.error(e.getMessage(), e);
         }

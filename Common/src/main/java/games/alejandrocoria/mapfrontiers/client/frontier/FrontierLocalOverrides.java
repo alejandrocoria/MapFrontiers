@@ -5,7 +5,6 @@ import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtFileHelper;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
-import games.alejandrocoria.mapfrontiers.platform.Services;
 import it.unimi.dsi.fastutil.Pair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
@@ -20,6 +19,8 @@ import java.util.Map;
 import java.util.UUID;
 
 public class FrontierLocalOverrides {
+    private static final String FILENAME = "frontier_overrides.dat";
+
     private final Map<UUID, Pair<FrontierData.VisibilityData, FrontierData.VisibilityData>> overrides = new HashMap<>();
     private File ModDir;
 
@@ -49,10 +50,10 @@ public class FrontierLocalOverrides {
         try {
             int version = nbt.getIntOr("Version", 0);
             if (version == 0) {
-                MapFrontiers.LOGGER.warn("Data version in frontier_overrides not found, expected " + MapFrontiers.FRONTIER_DATA_VERSION);
+                MapFrontiers.LOGGER.warn("Data version in {} not found, expected {}", FILENAME, MapFrontiers.FRONTIER_DATA_VERSION);
                 needBackup = true;
             } else if (version > MapFrontiers.FRONTIER_DATA_VERSION) {
-                MapFrontiers.LOGGER.warn("Data version in frontier_overrides higher than expected. The mod uses " + MapFrontiers.FRONTIER_DATA_VERSION);
+                MapFrontiers.LOGGER.warn("Data version in {} higher than expected. The mod uses {}", FILENAME, MapFrontiers.FRONTIER_DATA_VERSION);
                 needBackup = true;
             }
 
@@ -79,7 +80,7 @@ public class FrontierLocalOverrides {
                 }
             }
         } catch (Exception e) {
-            MapFrontiers.LOGGER.warn("Failed to read frontier_overrides.dat: {}", e.getMessage());
+            MapFrontiers.LOGGER.warn("Failed to read {}: {}", FILENAME, e.getMessage());
             return true;
         }
 
@@ -109,15 +110,23 @@ public class FrontierLocalOverrides {
 
     private void loadData() {
         try {
-            File jmDir = Services.JOURNEYMAP.getJMWorldDir(Minecraft.getInstance());
-            ModDir = new File(jmDir, "mapfrontier");
-            //noinspection ResultOfMethodCallIgnored
-            ModDir.mkdirs();
+            Minecraft client = Minecraft.getInstance();
+            File journeyMapModDir = ClientMapFrontierStorageHelper.resolveJourneyMapModDir(client);
+            File singleplayerModDir = ClientMapFrontierStorageHelper.resolveSingleplayerModDir(client);
+            if (singleplayerModDir != null) {
+                ModDir = singleplayerModDir;
+                migrateSingleplayerData(journeyMapModDir, singleplayerModDir);
+            } else {
+                if (client.isLocalServer()) {
+                    MapFrontiers.LOGGER.warn("Singleplayer server unavailable while resolving {} storage. Falling back to JourneyMap directory.", FILENAME);
+                }
+                ModDir = journeyMapModDir;
+            }
 
-            CompoundTag nbtFrontiers = loadFile("frontier_overrides.dat");
+            CompoundTag nbtFrontiers = loadFile(FILENAME);
             if (!nbtFrontiers.isEmpty()) {
                 if (readFromNBT(nbtFrontiers)) {
-                    NbtFileHelper.createBackup(ModDir, "frontier_overrides.dat");
+                    NbtFileHelper.createBackup(ModDir, FILENAME);
                     saveData();
                 }
             }
@@ -130,8 +139,25 @@ public class FrontierLocalOverrides {
         if (ModDir != null) {
             CompoundTag nbtFrontiers = new CompoundTag();
             writeToNBT(nbtFrontiers);
-            saveFile("frontier_overrides.dat", nbtFrontiers);
+            saveFile(FILENAME, nbtFrontiers);
         }
+    }
+
+    private void migrateSingleplayerData(File journeyMapModDir, File singleplayerModDir) {
+        if (!NbtFileHelper.hasRelatedFiles(journeyMapModDir, FILENAME)) {
+            return;
+        }
+
+        if (!NbtFileHelper.hasRelatedFiles(singleplayerModDir, FILENAME)) {
+            NbtFileHelper.moveRelatedFiles(journeyMapModDir, singleplayerModDir, FILENAME);
+            MapFrontiers.LOGGER.info("Moved {} data from JourneyMap directory to singleplayer world directory.", FILENAME);
+            return;
+        }
+
+        File conflictDir = NbtFileHelper.moveRelatedFilesToConflictDir(journeyMapModDir,
+                new File(journeyMapModDir, "migration_conflicts"), FILENAME);
+        MapFrontiers.LOGGER.warn("Detected conflicting {} data in JourneyMap and singleplayer world directories. Preserved JourneyMap files at {}",
+                FILENAME, conflictDir);
     }
 
     private void saveFile(String filename, CompoundTag nbt) {

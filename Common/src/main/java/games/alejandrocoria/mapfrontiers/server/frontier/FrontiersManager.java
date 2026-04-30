@@ -21,7 +21,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.storage.LevelResource;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -527,15 +526,7 @@ public class FrontiersManager {
 
     public void loadOrCreateData(MinecraftServer server) {
         try {
-            File mcDir;
-            if (server.isDedicatedServer()) {
-                mcDir = server.getServerDirectory().toFile();
-            } else {
-                mcDir = server.getWorldPath(LevelResource.ROOT).toFile();
-            }
-            if (mcDir.getPath().isEmpty()) {
-                mcDir = new File(".");
-            }
+            File mcDir = NbtFileHelper.resolveServerRootDir(server);
             ModDir = new File(mcDir, "mapfrontiers");
             if (ModDir.mkdirs()) {
                 MapFrontiers.LOGGER.info("Created MapFrontiers data directory at {}", ModDir);
