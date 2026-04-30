@@ -159,7 +159,13 @@ public class CollectionListElement extends FrontierListRowElement {
         graphics.fill(x + width - 2, y + 2, x + width, y + height, color);
 
         collapseToggleButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
+        renderTexts(graphics, mouseX, mouseY, selected);
+        renderMarkedCount(graphics);
+        renderActionButton(graphics, mouseX, mouseY);
+        renderCheckBox(graphics, mouseX, mouseY);
+    }
 
+    private void renderTexts(GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean selected) {
         int titleColor = ColorConstants.TEXT;
         if (selected) {
             titleColor = ColorConstants.TEXT_HIGHLIGHT;
@@ -168,19 +174,16 @@ public class CollectionListElement extends FrontierListRowElement {
         }
 
         int rightZoneStart = getRightZoneStart();
-        int countersWidth = font.width(counters);
-        int countersX = rightZoneStart - countersWidth;
+        int countersX = rightZoneStart - font.width(counters);
         int titleX = x + CONTENT_X;
         int titleMaxWidth = countersX - titleX - COUNTERS_GAP;
         String visibleTitle = ellipsize(title, titleMaxWidth);
+
         boolean titleTruncated = !visibleTitle.equals(title);
         boolean showExpandedTitle = titleTruncated && isTitleAreaHovered(mouseX, mouseY, titleX, visibleTitle);
+
         graphics.text(font, counters, countersX, y + TITLE_Y, ColorConstants.TEXT_DIMENSION);
         drawTitle(graphics, titleX, titleColor, visibleTitle, showExpandedTitle);
-
-        renderMarkedCount(graphics);
-        renderActionButton(graphics, mouseX, mouseY);
-        renderCheckBox(graphics, mouseX, mouseY);
     }
 
     private void renderMarkedCount(GuiGraphicsExtractor graphics) {

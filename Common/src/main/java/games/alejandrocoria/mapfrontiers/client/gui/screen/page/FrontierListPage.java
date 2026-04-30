@@ -922,7 +922,7 @@ public class FrontierListPage extends PageScreen
     }
 
     private String formatCollectionCounters(int totalFrontiers, int filteredFrontiers) {
-        String text = totalFrontiers + " " + I18n.get("mapfrontiers.frontiers");
+        String text = I18n.get("mapfrontiers.collection_frontiers_count", totalFrontiers);
         int outOfFilter = totalFrontiers - filteredFrontiers;
         if (outOfFilter > 0) {
             text += " (" + I18n.get("mapfrontiers.filtered_out_count", outOfFilter) + ")";

@@ -160,7 +160,7 @@
   "mapfrontiers.personal_frontiers_header": "Fronteras personales",
   "mapfrontiers.global_frontiers_header": "Fronteras globales",
   "mapfrontiers.no_collection": "Sin colección",
-  "mapfrontiers.filtered_out_count": "%1$d fuera del filtro",
+  "mapfrontiers.filtered_out_count": "fuera del filtro: %1$d",
   "mapfrontiers.gui": "GUI",
   "mapfrontiers.hud": "HUD",
   "mapfrontiers.edit_hud": "Editar HUD",
