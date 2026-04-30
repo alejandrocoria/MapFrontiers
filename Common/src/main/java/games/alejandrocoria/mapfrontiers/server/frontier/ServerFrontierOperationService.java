@@ -201,12 +201,16 @@ public class ServerFrontierOperationService {
                     frontier.getId(), frontier.getPersonal(), frontier.getLifetime());
         }
 
-        if (currentFrontier != null || !frontier.getOwner().equals(playerUser)) {
+        if (currentFrontier != null) {
+            return ServerFrontierOperationResult.ignored(frontier);
+        }
+
+        if (!frontier.getOwner().equals(playerUser)) {
             return ServerFrontierOperationResult.ignored(frontier);
         }
 
         frontier.removeAllUserShared();
-        frontiersManager.addPersonalFrontier(frontier);
+        frontiersManager.importPersonalFrontier(frontier);
         return ServerFrontierOperationResult.success(frontier);
     }
 
@@ -220,11 +224,15 @@ public class ServerFrontierOperationService {
             return ServerFrontierOperationResult.rejected(null);
         }
 
-        if (currentCollection != null || !collection.getOwner().equals(playerUser)) {
+        if (currentCollection != null) {
             return ServerFrontierOperationResult.ignored(null);
         }
 
-        frontiersManager.addPersonalCollection(collection);
+        if (!collection.getOwner().equals(playerUser)) {
+            return ServerFrontierOperationResult.ignored(null);
+        }
+
+        frontiersManager.importPersonalCollection(collection);
         return createdCollection(collection);
     }
 

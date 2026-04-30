@@ -56,9 +56,6 @@ public class PacketPersonalCollection {
             if (player == null || MapFrontiers.getServerRuntime() == null) {
                 return;
             }
-            if (!player.level().getServer().isDedicatedServer()) {
-                return;
-            }
             ServerFrontierOperationResult result = MapFrontiers.getServerRuntime().getOperationService().importPersonalCollection(player, message.collection);
             result.dispatchNetworkActions();
         }

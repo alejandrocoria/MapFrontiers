@@ -190,8 +190,18 @@ public class FrontiersManager {
         List<FrontierData> frontiers = getAllPersonalFrontiers(frontier.getOwner(), frontier.getDimension());
         frontiers.add(frontier);
         allFrontiers.put(frontier.getId(), frontier);
-
         saveFrontiersNow();
+    }
+
+    public void importPersonalFrontier(FrontierData frontier) {
+        if (!frontier.getPersonal()) {
+            return;
+        }
+
+        List<FrontierData> frontiers = getAllPersonalFrontiers(frontier.getOwner(), frontier.getDimension());
+        frontiers.add(frontier);
+        allFrontiers.put(frontier.getId(), frontier);
+        markFrontiersUpdated();
     }
 
     public void addGlobalFrontier(FrontierData frontier) {
@@ -202,7 +212,6 @@ public class FrontiersManager {
         List<FrontierData> frontiers = getAllGlobalFrontiers(frontier.getDimension());
         frontiers.add(frontier);
         allFrontiers.put(frontier.getId(), frontier);
-
         saveFrontiersNow();
     }
 
@@ -224,6 +233,17 @@ public class FrontiersManager {
         getAllPersonalCollections(collection.getOwner()).add(collection);
         allCollections.put(collection.getId(), collection);
         saveFrontiersNow();
+    }
+
+    public void importPersonalCollection(CollectionData collection) {
+        if (!collection.getPersonal()) {
+            return;
+        }
+
+        List<CollectionData> collections = getAllPersonalCollections(collection.getOwner());
+        collections.add(collection);
+        allCollections.put(collection.getId(), collection);
+        markFrontiersUpdated();
     }
 
     public void addPersonalFrontier(SettingsUser user, FrontierData frontier) {

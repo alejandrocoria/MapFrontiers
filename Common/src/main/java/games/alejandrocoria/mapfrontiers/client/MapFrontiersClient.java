@@ -625,7 +625,6 @@ public class MapFrontiersClient {
 
         MapFrontiers.LOGGER.debug("Received settings profile from server.");
         runtime.getSettingsProfileEvents().postUpdated(profile);
-        resolveHandshake(true, HandshakeSignal.SETTINGS_PROFILE);
     }
 
     public static void receiveHandshakeAck(long nonce) {
