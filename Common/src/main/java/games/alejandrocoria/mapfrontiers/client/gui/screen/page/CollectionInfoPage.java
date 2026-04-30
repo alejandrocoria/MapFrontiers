@@ -251,7 +251,7 @@ public class CollectionInfoPage extends PageScreen {
         buttonPaste = pasteButtons.addChild(new IconButton(IconButton.Type.Paste, b -> onPastePressed()));
         buttonPaste.setTooltip(PASTE_TOOLTIP);
 
-        buttonPasteOptions = pasteButtons.addChild(new IconButton(IconButton.Type.ArrowUp, b -> onPasteOptionsPressed()));
+        buttonPasteOptions = pasteButtons.addChild(new IconButton(IconButton.Type.ExpandOptions, b -> onPasteOptionsPressed()));
         buttonPasteOptions.setTooltip(OPEN_PASTE_TOOLTIP);
 
         buttonUndo = editButtons.addChild(new IconButton(IconButton.Type.Undo, b -> undo()));
@@ -527,7 +527,7 @@ public class CollectionInfoPage extends PageScreen {
         buttonPaste.visible = buttonPaste.active;
         buttonPasteOptions.active = editable && hasClipboard;
         buttonPasteOptions.visible = buttonPaste.visible;
-        buttonPasteOptions.setType(ClientConfig.PASTE_OPTIONS_VISIBLE.get() ? IconButton.Type.ArrowDown : IconButton.Type.ArrowUp);
+        buttonPasteOptions.setType(ClientConfig.PASTE_OPTIONS_VISIBLE.get() ? IconButton.Type.CollapseOptions : IconButton.Type.ExpandOptions);
         buttonPasteOptions.setTooltip(ClientConfig.PASTE_OPTIONS_VISIBLE.get() ? CLOSE_PASTE_TOOLTIP : OPEN_PASTE_TOOLTIP);
 
         boolean optionsVisible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
