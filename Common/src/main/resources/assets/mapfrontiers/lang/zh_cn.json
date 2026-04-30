@@ -86,7 +86,7 @@
   "mapfrontiers.delete_frontier_dialog": "确定要删除该领地吗？",
   "mapfrontiers.delete_group_dialog": "确定要删除该分组吗？",
   "mapfrontiers.delete_user_dialog": "确定要删除该用户吗？",
-  "mapfrontiers.delete_frontier_dont_ask": "删除并且不再询问",
+  "mapfrontiers.delete_dont_ask": "删除并且不再询问",
   "mapfrontiers.change_to_global_frontier_dialog": "确定要将该领地改为全局吗？",
   "mapfrontiers.change_to_global_frontier_dialog_desc": "This frontier will be visible to all players.\nAny player with sufficient permissions will be able to edit or delete it.",
   "mapfrontiers.change_to_global": "设为全局",

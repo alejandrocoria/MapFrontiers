@@ -88,7 +88,7 @@
   "mapfrontiers.delete_frontier_dialog": "Вы уверены, что хотите удалить границу?",
   "mapfrontiers.delete_group_dialog": "Вы уверены, что хотите удалить группу?",
   "mapfrontiers.delete_user_dialog": "Вы уверены, что хотите удалить пользователя?",
-  "mapfrontiers.delete_frontier_dont_ask": "Удалить и больше не спрашивать",
+  "mapfrontiers.delete_dont_ask": "Удалить и больше не спрашивать",
   "mapfrontiers.change_to_global_frontier_dialog": "Вы уверены, что хотите сделать границу глобальной?",
   "mapfrontiers.change_to_global_frontier_dialog_desc": "This frontier will be visible to all players.\nAny player with sufficient permissions will be able to edit or delete it.",
   "mapfrontiers.change_to_global": "Сделать глобальной",

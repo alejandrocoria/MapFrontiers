@@ -86,7 +86,7 @@
   "mapfrontiers.delete_frontier_dialog": "Tem certeza de que deseja excluir a fronteira?",
   "mapfrontiers.delete_group_dialog": "Tem certeza de que deseja excluir o grupo?",
   "mapfrontiers.delete_user_dialog": "Tem certeza de que deseja excluir o usuário?",
-  "mapfrontiers.delete_frontier_dont_ask": "Excluir e não perguntar novamente",
+  "mapfrontiers.delete_dont_ask": "Excluir e não perguntar novamente",
   "mapfrontiers.change_to_global_frontier_dialog": "Tem certeza de que deseja alterar a fronteira para Global?",
   "mapfrontiers.change_to_global_frontier_dialog_desc": "Esta fronteira ficará visível para todos os jogadores.\nQualquer jogador com permissões suficientes poderá editá-la ou excluí-la.",
   "mapfrontiers.change_to_global": "Alterar para Global",
