@@ -4,9 +4,9 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedServerFrontierService;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
+import games.alejandrocoria.mapfrontiers.api.model.FrontierCreateRequest;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
-import games.alejandrocoria.mapfrontiers.api.model.FrontierShape;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
@@ -33,13 +33,17 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
     }
 
     @Override
-    public FrontierDataView createGlobalFrontier(String pluginModId, UserRef owner, DimensionId dimension, FrontierShape shape) {
-        ResourceKey<Level> level = ApiConverters.toDimension(dimension);
+    public FrontierDataView createGlobalFrontier(String pluginModId, UserRef owner, FrontierCreateRequest request) {
+        if (hasUnsupportedCreateFields(request)) {
+            throw new UnsupportedOperationException("Enriched frontier create fields are not implemented yet.");
+        }
+
+        ResourceKey<Level> level = ApiConverters.toDimension(request.dimension());
         SettingsUser frontierOwner = ApiConverters.toUser(owner);
 
         FrontierData frontier = FrontierCreationFactory.createFrontier(UUID.randomUUID(), frontierOwner, level, false,
                 FrontierData.FrontierLifetime.PERSISTENT, pluginModId, null, null);
-        ApiConverters.applyShape(frontier, shape);
+        ApiConverters.applyShape(frontier, request.shape());
 
         ServerFrontierOperationResult result = operationService.createGlobalFrontier(frontier);
         result.dispatchNetworkActions();
@@ -105,4 +109,13 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
                 .toList();
     }
 
+    private static boolean hasUnsupportedCreateFields(FrontierCreateRequest request) {
+        return request.collectionId().isPresent()
+                || request.name1().isPresent()
+                || request.name2().isPresent()
+                || request.color().isPresent()
+                || request.visibility().isPresent()
+                || request.banner().isPresent()
+                || request.pathStyle().isPresent();
+    }
 }

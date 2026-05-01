@@ -1,13 +1,14 @@
 package games.alejandrocoria.mapfrontiers.client.api;
 
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.api.client.FrontierActionResult;
 import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedClientFrontierService;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
+import games.alejandrocoria.mapfrontiers.api.model.FrontierCreateRequest;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierLifetime;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
-import games.alejandrocoria.mapfrontiers.api.model.FrontierShape;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierSharePermission;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
@@ -18,18 +19,18 @@ import java.util.Set;
 
 public class ClientFrontierServiceImpl implements PluginScopedClientFrontierService {
     @Override
-    public FrontierActionResult createPersonalFrontier(String pluginModId, DimensionId dimension, FrontierShape shape) {
-        return createPersonalFrontier(pluginModId, dimension, shape, FrontierLifetime.PERSISTENT);
+    public FrontierActionResult createPersonalFrontier(String pluginModId, FrontierCreateRequest request) {
+        return createFrontier(pluginModId, request, true, FrontierLifetime.PERSISTENT);
     }
 
     @Override
-    public FrontierActionResult createPersonalFrontier(String pluginModId, DimensionId dimension, FrontierShape shape, FrontierLifetime lifetime) {
-        return MapFrontiersClient.getOperationService().createFrontierAction(true, pluginModId, dimension, shape, lifetime);
+    public FrontierActionResult createTemporaryPersonalFrontier(String pluginModId, FrontierCreateRequest request) {
+        return createFrontier(pluginModId, request, true, FrontierLifetime.SESSION_ONLY);
     }
 
     @Override
-    public FrontierActionResult createGlobalFrontier(String pluginModId, DimensionId dimension, FrontierShape shape) {
-        return MapFrontiersClient.getOperationService().createFrontierAction(false, pluginModId, dimension, shape);
+    public FrontierActionResult createGlobalFrontier(String pluginModId, FrontierCreateRequest request) {
+        return createFrontier(pluginModId, request, false, FrontierLifetime.PERSISTENT);
     }
 
     @Override
@@ -99,5 +100,25 @@ public class ClientFrontierServiceImpl implements PluginScopedClientFrontierServ
     @Override
     public FrontierActionResult removeSharedUser(String pluginModId, FrontierId frontierId, UserRef user) {
         return MapFrontiersClient.getOperationService().removeSharedUserAction(pluginModId, frontierId, user);
+    }
+
+    private FrontierActionResult createFrontier(String pluginModId, FrontierCreateRequest request, boolean personal, FrontierLifetime lifetime) {
+        if (hasUnsupportedCreateFields(request)) {
+            MapFrontiers.LOGGER.debug("Rejected frontier create request because enriched create fields are not implemented yet. pluginModId={}, personal={}, request={}",
+                    pluginModId, personal, request);
+            return FrontierActionResult.rejected();
+        }
+
+        return MapFrontiersClient.getOperationService().createFrontierAction(personal, pluginModId, request.dimension(), request.shape(), lifetime);
+    }
+
+    private static boolean hasUnsupportedCreateFields(FrontierCreateRequest request) {
+        return request.collectionId().isPresent()
+                || request.name1().isPresent()
+                || request.name2().isPresent()
+                || request.color().isPresent()
+                || request.visibility().isPresent()
+                || request.banner().isPresent()
+                || request.pathStyle().isPresent();
     }
 }

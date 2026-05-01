@@ -5,6 +5,7 @@ import games.alejandrocoria.mapfrontiers.api.event.FrontierCreatedEvent;
 import games.alejandrocoria.mapfrontiers.api.event.FrontierDeletedEvent;
 import games.alejandrocoria.mapfrontiers.api.event.FrontierUpdatedEvent;
 import games.alejandrocoria.mapfrontiers.api.internal.InternalMapFrontiersServerAPI;
+import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedServerCollectionService;
 import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedServerFrontierService;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
@@ -14,6 +15,7 @@ import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperation
 
 public class MapFrontiersServerAPIImpl implements InternalMapFrontiersServerAPI {
     private final PluginScopedServerFrontierService frontiers;
+    private final PluginScopedServerCollectionService collections;
     private final SimpleEventBus eventBus;
     private final ServerFrontierEvents frontierEvents;
 
@@ -21,6 +23,7 @@ public class MapFrontiersServerAPIImpl implements InternalMapFrontiersServerAPI 
         this.frontierEvents = frontierEvents;
         this.eventBus = new SimpleEventBus();
         this.frontiers = new ServerFrontierServiceImpl(operationService, frontierEvents);
+        this.collections = new ServerCollectionServiceImpl();
 
         frontierEvents.subscribeCreated(this, frontier -> eventBus.post(new FrontierCreatedEvent(ApiConverters.fromFrontier(frontier))));
         frontierEvents.subscribeUpdated(this, frontier -> eventBus.post(new FrontierUpdatedEvent(ApiConverters.fromFrontier(frontier))));
@@ -34,6 +37,11 @@ public class MapFrontiersServerAPIImpl implements InternalMapFrontiersServerAPI 
     @Override
     public PluginScopedServerFrontierService frontiers() {
         return frontiers;
+    }
+
+    @Override
+    public PluginScopedServerCollectionService collections() {
+        return collections;
     }
 
     @Override

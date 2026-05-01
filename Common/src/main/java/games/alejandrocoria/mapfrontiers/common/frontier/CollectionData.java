@@ -21,6 +21,7 @@ public class CollectionData {
     protected SettingsUser owner = new SettingsUser();
     protected String name = "";
     protected int color = ColorConstants.WHITE;
+    protected @Nullable String sourcePluginId;
     protected @Nullable FrontierData.CopiedFrom copiedFrom;
     protected @Nullable Date created;
     protected @Nullable Date modified;
@@ -35,6 +36,7 @@ public class CollectionData {
         owner = other.owner;
         name = other.name;
         color = other.color;
+        sourcePluginId = other.sourcePluginId;
         copiedFrom = other.copiedFrom == null ? null : new FrontierData.CopiedFrom(other.copiedFrom);
         created = other.created;
         modified = other.modified;
@@ -50,6 +52,7 @@ public class CollectionData {
         owner = other.owner;
         name = other.name;
         color = other.color;
+        sourcePluginId = other.sourcePluginId;
         copiedFrom = other.copiedFrom == null ? null : new FrontierData.CopiedFrom(other.copiedFrom);
         created = other.created;
         modified = other.modified;
@@ -62,6 +65,7 @@ public class CollectionData {
         owner.readFromNBT(nbt.getCompoundOrEmpty("owner"));
         name = nbt.getStringOr("name", "");
         color = NbtReadHelper.requireInt(nbt, "color");
+        sourcePluginId = nbt.getStringOr("sourcePluginId", null);
 
         if (nbt.contains("copiedFrom")) {
             copiedFrom = new FrontierData.CopiedFrom();
@@ -93,6 +97,9 @@ public class CollectionData {
 
         nbt.putString("name", name);
         nbt.putInt("color", color);
+        if (sourcePluginId != null) {
+            nbt.putString("sourcePluginId", sourcePluginId);
+        }
 
         if (copiedFrom != null) {
             CompoundTag copiedFromTag = new CompoundTag();
@@ -116,6 +123,11 @@ public class CollectionData {
         owner.fromBytes(buf);
         name = buf.readUtf(MAX_NAME_CHARACTERS);
         color = buf.readInt();
+        if (buf.readBoolean()) {
+            sourcePluginId = buf.readUtf();
+        } else {
+            sourcePluginId = null;
+        }
 
         if (buf.readBoolean()) {
             copiedFrom = new FrontierData.CopiedFrom();
@@ -143,6 +155,12 @@ public class CollectionData {
         owner.toBytes(buf);
         buf.writeUtf(name, MAX_NAME_CHARACTERS);
         buf.writeInt(color);
+        if (sourcePluginId == null) {
+            buf.writeBoolean(false);
+        } else {
+            buf.writeBoolean(true);
+            buf.writeUtf(sourcePluginId);
+        }
 
         if (copiedFrom == null) {
             buf.writeBoolean(false);
@@ -204,6 +222,14 @@ public class CollectionData {
 
     public void setColor(int color) {
         this.color = color;
+    }
+
+    public void setSourcePluginId(@Nullable String sourcePluginId) {
+        this.sourcePluginId = sourcePluginId;
+    }
+
+    public @Nullable String getSourcePluginId() {
+        return sourcePluginId;
     }
 
     public void setCreated(Date created) {

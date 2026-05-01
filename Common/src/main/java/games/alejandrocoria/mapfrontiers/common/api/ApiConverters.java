@@ -1,6 +1,9 @@
 package games.alejandrocoria.mapfrontiers.common.api;
 
 import games.alejandrocoria.mapfrontiers.api.model.ChunkCoord;
+import games.alejandrocoria.mapfrontiers.api.model.CollectionDataView;
+import games.alejandrocoria.mapfrontiers.api.model.CollectionId;
+import games.alejandrocoria.mapfrontiers.api.model.CollectionMutation;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierBanner;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
@@ -16,6 +19,7 @@ import games.alejandrocoria.mapfrontiers.api.model.PathStyle;
 import games.alejandrocoria.mapfrontiers.api.model.Point2i;
 import games.alejandrocoria.mapfrontiers.api.model.SharedUserAccess;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
+import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierMutationApplier;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -102,6 +106,17 @@ public final class ApiConverters {
         return new SharedUserAccess(fromUser(userShared.getUser()), permissions, userShared.isPending());
     }
 
+    public static CollectionDataView fromCollection(CollectionData collection) {
+        return new CollectionDataView(
+                new CollectionId(collection.getId()),
+                collection.getPersonal() ? FrontierType.PERSONAL : FrontierType.GLOBAL,
+                fromUser(collection.getOwner()),
+                collection.getName(),
+                collection.getColor(),
+                Optional.ofNullable(collection.getSourcePluginId())
+        );
+    }
+
     public static FrontierDataView fromFrontier(FrontierData frontier) {
         UserRef owner = fromUser(frontier.getOwner());
         List<SharedUserAccess> sharedUsers = new ArrayList<>();
@@ -123,6 +138,7 @@ public final class ApiConverters {
                 fromVisibility(frontier.getVisibilityData()),
                 fromBanner(frontier.getbannerData()),
                 frontier.getMode() == FrontierData.Mode.Path ? Optional.of(fromPathStyle(frontier.getPathStyle())) : Optional.empty(),
+                Optional.ofNullable(frontier.getCollectionId()).map(CollectionId::new),
                 Optional.ofNullable(frontier.getSourcePluginId()),
                 owner,
                 sharedUsers
@@ -157,5 +173,10 @@ public final class ApiConverters {
 
     public static void applyMutation(FrontierData frontier, FrontierMutation mutation) {
         FrontierMutationApplier.applyMutation(frontier, mutation);
+    }
+
+    public static void applyCollectionMutation(CollectionData collection, CollectionMutation mutation) {
+        mutation.name().ifPresent(collection::setName);
+        mutation.color().ifPresent(collection::setColor);
     }
 }
