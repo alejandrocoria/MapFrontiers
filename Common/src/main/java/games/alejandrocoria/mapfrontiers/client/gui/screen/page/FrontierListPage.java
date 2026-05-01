@@ -463,11 +463,46 @@ public class FrontierListPage extends PageScreen
             CollectionListElement selectedCollectionElement = getSelectedCollectionElement();
             if (selectedCollectionElement != null) {
                 UUID collectionId = selectedCollectionElement.getCollection() == null ? null : selectedCollectionElement.getCollection().getId();
-                new NewFrontierDialog(jmAPI, minecraft.player.blockPosition(), selectedCollectionElement.isPersonal(), collectionId).display();
+                new NewFrontierDialog(jmAPI, minecraft.player.blockPosition(), selectedCollectionElement.isPersonal(), collectionId,
+                        createNewFrontierResultHandler()).display();
             } else {
-                new NewFrontierDialog(jmAPI, minecraft.player.blockPosition()).display();
+                new NewFrontierDialog(jmAPI, minecraft.player.blockPosition(), createNewFrontierResultHandler()).display();
             }
         }
+    }
+
+    private NewFrontierDialog.ResultHandler createNewFrontierResultHandler() {
+        return new NewFrontierDialog.ResultHandler() {
+            @Override
+            public void beforeCreate(NewFrontierDialog dialog, ClientConfig.AfterCreatingFrontier action) {
+                if (action == ClientConfig.AfterCreatingFrontier.EditShape) {
+                    dialog.closeToFullscreenMap();
+                } else {
+                    dialog.onClose();
+                }
+            }
+
+            @Override
+            public void onFrontierCreated(FrontierOverlay frontier, ClientConfig.AfterCreatingFrontier action) {
+                if (action == ClientConfig.AfterCreatingFrontier.EditShape) {
+                    fullscreenMap.beginEditingFrontier(frontier);
+                    return;
+                }
+
+                selectCreatedFrontier(frontier);
+                if (action == ClientConfig.AfterCreatingFrontier.InfoScreen) {
+                    new FrontierInfoPage(jmAPI, frontier).display();
+                }
+            }
+        };
+    }
+
+    private void selectCreatedFrontier(FrontierOverlay frontier) {
+        selectedRowId = frontier.getId().toString();
+        fullscreenMap.selectFrontier(frontier);
+        updateFrontiers();
+        frontiers.scrollSelectedElementIntoView();
+        refreshViewState();
     }
 
     private void onInfoPressed() {

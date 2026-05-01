@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.screen.dialog;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
+import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
@@ -48,10 +49,19 @@ public class NewFrontierDialog extends PanelDialog {
     private static final String CHUNKS_KEY = "mapfrontiers.chunks";
     private static final Component CREATE_LABEL = Component.translatable("mapfrontiers.create");
 
+    public interface ResultHandler {
+        void beforeCreate(NewFrontierDialog dialog, ClientConfig.AfterCreatingFrontier action);
+
+        void onFrontierCreated(FrontierOverlay frontier, ClientConfig.AfterCreatingFrontier action);
+    }
+
     private final IClientAPI jmAPI;
     private final BlockPos centerPos;
     private final @Nullable Boolean forcedPersonal;
     private final @Nullable UUID collectionId;
+    private final ResultHandler resultHandler;
+    private final Object createdFrontierListenerOwner = new Object();
+    private @Nullable UUID pendingCreatedFrontierId;
 
     private OptionButton buttonFrontierType;
     private OptionButton buttonFrontierMode;
@@ -66,20 +76,22 @@ public class NewFrontierDialog extends PanelDialog {
     private StringWidget labelSizeInfo;
     private TextBoxInt textSize;
 
-    public NewFrontierDialog(IClientAPI jmAPI, BlockPos centerPos) {
-        this(jmAPI, centerPos, null, null);
+    public NewFrontierDialog(IClientAPI jmAPI, BlockPos centerPos, ResultHandler resultHandler) {
+        this(jmAPI, centerPos, null, null, resultHandler);
     }
 
-    public NewFrontierDialog(IClientAPI jmAPI, BlockPos centerPos, @Nullable Boolean forcedPersonal, @Nullable UUID collectionId) {
+    public NewFrontierDialog(IClientAPI jmAPI, BlockPos centerPos, @Nullable Boolean forcedPersonal, @Nullable UUID collectionId,
+                             ResultHandler resultHandler) {
         super();
         this.jmAPI = jmAPI;
         this.centerPos = centerPos;
         this.forcedPersonal = forcedPersonal;
         this.collectionId = collectionId;
+        this.resultHandler = resultHandler;
 
         MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> {
             onClose();
-            new NewFrontierDialog(jmAPI, centerPos, forcedPersonal, collectionId).display();
+            new NewFrontierDialog(jmAPI, centerPos, forcedPersonal, collectionId, resultHandler).display();
         });
     }
 
@@ -159,13 +171,21 @@ public class NewFrontierDialog extends PanelDialog {
 
         addConfirmButton(CREATE_LABEL, (b) -> {
             boolean personal = resolvePersonalSelection();
-            closeAndReturnToFullscreenMap();
+            ClientConfig.AfterCreatingFrontier afterCreate = ClientConfig.AFTER_CREATING_FRONTIER.get();
+            resultHandler.beforeCreate(this, afterCreate);
             UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
             if (uiState != null) {
+                UUID frontierId = UUID.randomUUID();
                 FrontierData.Mode mode = ClientConfig.NEW_FRONTIER_MODE.get();
                 FrontierData.PathStyle pathStyle = mode == FrontierData.Mode.Path ? ClientConfig.getDefaultPathStyle() : null;
-                MapFrontiersClient.getOperationService().createNewFrontier(personal, collectionId, uiState.dimension,
+                FrontierOverlay createdFrontier = MapFrontiersClient.getOperationService().createNewFrontierAndReturn(personal,
+                        frontierId, uiState.dimension, collectionId, FrontierData.FrontierLifetime.PERSISTENT, null,
                         calculateVertices(), calculateChunks(), calculatePoints(), pathStyle);
+                if (createdFrontier != null) {
+                    resultHandler.onFrontierCreated(createdFrontier, afterCreate);
+                } else {
+                    awaitCreatedFrontier(frontierId, afterCreate);
+                }
             }
         });
         addCancelButton();
@@ -176,9 +196,30 @@ public class NewFrontierDialog extends PanelDialog {
     @Override
     public void onClose() {
         MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
+        if (pendingCreatedFrontierId == null) {
+            MapFrontiersClient.getFrontierEvents().unsubscribe(createdFrontierListenerOwner);
+        }
         ClientGlobalEvents.unsubscribeAllEvents(this);
         ClientGlobalEvents.postUpdatedConfigEvent();
         super.onClose();
+    }
+
+    public void closeToFullscreenMap() {
+        closeAndReturnToFullscreenMap();
+    }
+
+    private void awaitCreatedFrontier(UUID frontierId, ClientConfig.AfterCreatingFrontier afterCreate) {
+        pendingCreatedFrontierId = frontierId;
+        MapFrontiersClient.getFrontierEvents().unsubscribe(createdFrontierListenerOwner);
+        MapFrontiersClient.getFrontierEvents().subscribeCreated(createdFrontierListenerOwner, (frontier, playerId) -> {
+            if (!frontierId.equals(frontier.getId())) {
+                return;
+            }
+
+            pendingCreatedFrontierId = null;
+            MapFrontiersClient.getFrontierEvents().unsubscribe(createdFrontierListenerOwner);
+            resultHandler.onFrontierCreated(frontier, afterCreate);
+        });
     }
 
     private void shapePresetUpdated() {

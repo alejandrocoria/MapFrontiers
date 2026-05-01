@@ -71,32 +71,6 @@ public class FullscreenMap {
             }
         });
 
-        MapFrontiersClient.getFrontierEvents().subscribeCreated(this, (frontierOverlay, playerID) -> {
-            UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
-            if (uiState == null || frontierOverlay.getDimension() != uiState.dimension) {
-                return;
-            }
-
-            Player localPlayer = Minecraft.getInstance().player;
-            if (playerID == -1 || (localPlayer != null && localPlayer.getId() == playerID)) {
-                stopEditing();
-                if (frontierHighlighted != null) {
-                    frontierHighlighted.setHighlighted(false);
-                }
-
-                frontierHighlighted = frontierOverlay;
-                frontierHighlighted.setHighlighted(true);
-
-                updateButtons();
-
-                if (ClientConfig.AFTER_CREATING_FRONTIER.get() == ClientConfig.AfterCreatingFrontier.EditShape) {
-                    buttonEditToggled();
-                } else if (ClientConfig.AFTER_CREATING_FRONTIER.get() == ClientConfig.AfterCreatingFrontier.InfoScreen) {
-                    buttonInfoPressed();
-                }
-            }
-        });
-
         MapFrontiersClient.getFrontierEvents().subscribeUpdated(this, (frontierOverlay, playerID) -> {
             if (frontierHighlighted != null && frontierHighlighted.getId().equals(frontierOverlay.getId())) {
                 frontierHighlighted = frontierOverlay;
@@ -230,6 +204,12 @@ public class FullscreenMap {
                 shapeDirty = false;
             }
         }
+
+        if (buttonEdit != null) {
+            buttonEdit.setToggled(false);
+        }
+
+        updateButtons();
     }
 
     public void updateButtons() {
@@ -279,27 +259,21 @@ public class FullscreenMap {
             frontierHighlighted = null;
         }
 
-        new NewFrontierDialog(jmAPI, centerPos).display();
+        new NewFrontierDialog(jmAPI, centerPos, createNewFrontierResultHandler()).display();
 
         updateButtons();
     }
 
     private void buttonInfoPressed() {
-        new FrontierInfoPage(jmAPI, frontierHighlighted).display();
+        openFrontierInfo(frontierHighlighted);
     }
 
     private void buttonEditToggled() {
-        buttonEdit.toggle();
         if (!editing) {
-            editing = true;
-            shapeDirty = false;
-            drawingChunk = ChunkDrawing.Nothing;
-            frontierHighlighted.clearSelectedEditablePoint();
+            startEditingSelectedFrontier();
         } else {
             stopEditing();
         }
-
-        updateButtons();
     }
 
     private void buttonVisibleToggled() {
@@ -430,6 +404,40 @@ public class FullscreenMap {
         return frontierHighlighted;
     }
 
+    public void showCreatedFrontier(FrontierOverlay frontier) {
+        stopEditing();
+        selectFrontier(frontier);
+    }
+
+    public void openFrontierInfo(FrontierOverlay frontier) {
+        showCreatedFrontier(frontier);
+        new FrontierInfoPage(jmAPI, frontier).display();
+    }
+
+    public void beginEditingFrontier(FrontierOverlay frontier) {
+        showCreatedFrontier(frontier);
+        startEditingSelectedFrontier();
+    }
+
+    public NewFrontierDialog.ResultHandler createNewFrontierResultHandler() {
+        return new NewFrontierDialog.ResultHandler() {
+            @Override
+            public void beforeCreate(NewFrontierDialog dialog, ClientConfig.AfterCreatingFrontier action) {
+                dialog.closeToFullscreenMap();
+            }
+
+            @Override
+            public void onFrontierCreated(FrontierOverlay frontier, ClientConfig.AfterCreatingFrontier action) {
+                showCreatedFrontier(frontier);
+                if (action == ClientConfig.AfterCreatingFrontier.InfoScreen) {
+                    openFrontierInfo(frontier);
+                } else if (action == ClientConfig.AfterCreatingFrontier.EditShape) {
+                    beginEditingFrontier(frontier);
+                }
+            }
+        };
+    }
+
     public void selectFrontier(@Nullable FrontierOverlay frontier) {
         UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
         if (uiState != null && frontier != null && frontier.getDimension().equals(uiState.dimension)) {
@@ -444,6 +452,25 @@ public class FullscreenMap {
         } else if (frontierHighlighted != null) {
             frontierHighlighted.setHighlighted(false);
             frontierHighlighted = null;
+        }
+
+        updateButtons();
+    }
+
+    private void startEditingSelectedFrontier() {
+        if (frontierHighlighted == null || editing) {
+            updateButtons();
+            return;
+        }
+
+        editing = true;
+        shapeDirty = false;
+        relocating = false;
+        drawingChunk = ChunkDrawing.Nothing;
+        frontierHighlighted.clearSelectedEditablePoint();
+
+        if (buttonEdit != null) {
+            buttonEdit.setToggled(true);
         }
 
         updateButtons();

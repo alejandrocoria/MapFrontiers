@@ -1,5 +1,6 @@
 **Beta 4:**
 * Added: Frontier info paste options now support copying Path style between Path frontiers.
+* Changed: Frontier creation from the frontier list now stays in the list unless shape editing is selected.
 * Fixed: Changing frontier info paste options no longer sends unnecessary frontier updates to the server.
 * Fixed: OP permission changes from the server only applying after the player disconnected and reconnected.
 
