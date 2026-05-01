@@ -10,6 +10,7 @@ import games.alejandrocoria.mapfrontiers.api.model.CollectionId;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionMutation;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
+import games.alejandrocoria.mapfrontiers.api.model.FrontierCreateRequest;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierLifetime;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
@@ -176,6 +177,25 @@ public class ClientFrontierOperationService {
         return frontierOverlay;
     }
 
+    @Nullable
+    public FrontierOverlay createNewFrontierAndReturn(FrontierCreateSpec createSpec) {
+        if (usesAuthoritativeCreateFlow(createSpec.getLifetime())) {
+            PacketHandler.sendToServer(new PacketCreateFrontier(createSpec));
+            return null;
+        }
+
+        if (!createSpec.isPersonal() || mc.player == null) {
+            return null;
+        }
+
+        FrontierData frontier = FrontierCreationFactory.createFrontier(createSpec);
+        FrontierOverlay frontierOverlay = personalManager.addFrontier(frontier);
+        refreshCollectionRuntime();
+        persistLocalPersonalDataIfPersistent(frontierOverlay);
+        frontierEvents.postCreated(frontierOverlay, mc.player.getId());
+        return frontierOverlay;
+    }
+
     public void createCollection(CollectionData collection) {
         if (usesAuthoritativeCollectionMutationFlow(collection)) {
             PacketHandler.sendToServer(new PacketCreateCollection(collection));
@@ -308,6 +328,24 @@ public class ClientFrontierOperationService {
         FrontierOverlay frontier = createNewFrontierAndReturn(personal, frontierId.value(), resourceKey, null, internalLifetime, pluginModId, shape);
         if (frontier == null) {
             return usesAuthoritativeCreateFlow(internalLifetime) ? FrontierActionResult.acceptedAsync(frontierId) : FrontierActionResult.rejected();
+        }
+
+        return FrontierActionResult.applied(ApiConverters.fromFrontier(frontier));
+    }
+
+    public FrontierActionResult createFrontierAction(boolean personal, String pluginModId, FrontierCreateRequest request) {
+        FrontierCreateSpec createSpec = createFrontierSpec(UUID.randomUUID(), personal, pluginModId, request,
+                FrontierData.FrontierLifetime.PERSISTENT);
+        if (createSpec == null) {
+            return FrontierActionResult.rejected();
+        }
+
+        FrontierOverlay frontier = createNewFrontierAndReturn(createSpec);
+        FrontierId frontierId = new FrontierId(createSpec.getFrontierId());
+        if (frontier == null) {
+            return usesAuthoritativeCreateFlow(createSpec.getLifetime())
+                    ? FrontierActionResult.acceptedAsync(frontierId)
+                    : FrontierActionResult.rejected();
         }
 
         return FrontierActionResult.applied(ApiConverters.fromFrontier(frontier));
@@ -726,6 +764,53 @@ public class ClientFrontierOperationService {
         collection.setCreated(now);
         collection.setModified(now);
         return collection;
+    }
+
+    private @Nullable FrontierCreateSpec createFrontierSpec(UUID frontierId,
+                                                            boolean personal,
+                                                            @Nullable String sourcePluginId,
+                                                            FrontierCreateRequest request,
+                                                            FrontierData.FrontierLifetime lifetime) {
+        if (mc.player == null) {
+            return null;
+        }
+
+        FrontierData defaults = new FrontierData();
+        SettingsUser owner = new SettingsUser(mc.player);
+        UUID collectionId = request.collectionId().map(CollectionId::value).orElse(null);
+        String name1 = request.name1().orElse(defaults.getName1());
+        String name2 = request.name2().orElse(defaults.getName2());
+        int color = request.color().orElseGet(ColorHelper::getRandomColor);
+        FrontierData.VisibilityData visibility = request.visibility()
+                .map(ApiConverters::toVisibility)
+                .orElseGet(defaults::getVisibilityData);
+        FrontierData.BannerData banner = request.banner()
+                .map(ApiConverters::toBanner)
+                .orElseGet(defaults::getbannerData);
+        FrontierData.PathStyle pathStyle = request.pathStyle()
+                .map(ApiConverters::toPathStyle)
+                .orElseGet(FrontierData.PathStyle::new);
+
+        return switch (request.shape().type()) {
+            case VERTEX -> FrontierCreateSpec.vertex(frontierId, owner, personal, ApiConverters.toDimension(request.dimension()),
+                    lifetime, collectionId, sourcePluginId, name1, name2, color, visibility, banner,
+                    request.shape().vertices() == null ? List.of() : request.shape().vertices().stream()
+                            .map(vertex -> new BlockPos(vertex.x(), 0, vertex.z()))
+                            .toList(),
+                    pathStyle);
+            case CHUNK -> FrontierCreateSpec.chunk(frontierId, owner, personal, ApiConverters.toDimension(request.dimension()),
+                    lifetime, collectionId, sourcePluginId, name1, name2, color, visibility, banner,
+                    request.shape().chunks() == null ? Set.of() : request.shape().chunks().stream()
+                            .map(chunk -> new ChunkPos(chunk.x(), chunk.z()))
+                            .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new)),
+                    pathStyle);
+            case PATH -> FrontierCreateSpec.path(frontierId, owner, personal, ApiConverters.toDimension(request.dimension()),
+                    lifetime, collectionId, sourcePluginId, name1, name2, color, visibility, banner,
+                    request.shape().points() == null ? List.of() : request.shape().points().stream()
+                            .map(point -> new BlockPos(point.x(), 0, point.z()))
+                            .toList(),
+                    pathStyle);
+        };
     }
 
     private @Nullable FrontierCreateSpec createAuthoritativeFrontierSpec(UUID frontierId,

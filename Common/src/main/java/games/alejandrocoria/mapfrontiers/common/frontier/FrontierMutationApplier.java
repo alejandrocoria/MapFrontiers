@@ -115,16 +115,7 @@ public final class FrontierMutationApplier {
             throw new IllegalArgumentException("Path style can only be applied to path frontiers");
         }
 
-        FrontierData.PathStyle result = new FrontierData.PathStyle();
-        result.startMarker = Identifier.parse(pathStyle.startMarker().value());
-        result.innerMarker = Identifier.parse(pathStyle.innerMarker().value());
-        result.endMarker = Identifier.parse(pathStyle.endMarker().value());
-        result.segmentMarker = Identifier.parse(pathStyle.segmentMarker().value());
-        result.labelAtStart = pathStyle.labelAtStart();
-        result.labelAtMiddle = pathStyle.labelAtMiddle();
-        result.labelAtEnd = pathStyle.labelAtEnd();
-        result.normalizeForPersistence();
-        frontier.setPathStyle(result);
+        frontier.setPathStyle(toPathStyle(pathStyle));
     }
 
     public static Set<FrontierVisibilityFlag> fromVisibility(FrontierData.VisibilityData visibilityData) {
@@ -161,5 +152,18 @@ public final class FrontierMutationApplier {
         }
         data.rotation = banner.rotation();
         return data;
+    }
+
+    public static FrontierData.PathStyle toPathStyle(PathStyle pathStyle) {
+        FrontierData.PathStyle result = new FrontierData.PathStyle();
+        result.startMarker = Identifier.parse(pathStyle.startMarker().value());
+        result.innerMarker = Identifier.parse(pathStyle.innerMarker().value());
+        result.endMarker = Identifier.parse(pathStyle.endMarker().value());
+        result.segmentMarker = Identifier.parse(pathStyle.segmentMarker().value());
+        result.labelAtStart = pathStyle.labelAtStart();
+        result.labelAtMiddle = pathStyle.labelAtMiddle();
+        result.labelAtEnd = pathStyle.labelAtEnd();
+        result.normalizeForPersistence();
+        return result;
     }
 }

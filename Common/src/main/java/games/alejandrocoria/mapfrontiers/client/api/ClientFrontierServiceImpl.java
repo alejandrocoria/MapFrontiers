@@ -20,7 +20,7 @@ import java.util.Set;
 public class ClientFrontierServiceImpl implements PluginScopedClientFrontierService {
     @Override
     public FrontierActionResult createPersonalFrontier(String pluginModId, FrontierCreateRequest request) {
-        return createFrontier(pluginModId, request, true, FrontierLifetime.PERSISTENT);
+        return MapFrontiersClient.getOperationService().createFrontierAction(true, pluginModId, request);
     }
 
     @Override
@@ -30,7 +30,7 @@ public class ClientFrontierServiceImpl implements PluginScopedClientFrontierServ
 
     @Override
     public FrontierActionResult createGlobalFrontier(String pluginModId, FrontierCreateRequest request) {
-        return createFrontier(pluginModId, request, false, FrontierLifetime.PERSISTENT);
+        return MapFrontiersClient.getOperationService().createFrontierAction(false, pluginModId, request);
     }
 
     @Override

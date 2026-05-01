@@ -30,6 +30,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -68,6 +69,10 @@ public final class ApiConverters {
         return FrontierMutationApplier.fromVisibility(visibilityData);
     }
 
+    public static FrontierData.VisibilityData toVisibility(Set<FrontierVisibilityFlag> visibilityFlags) {
+        return FrontierMutationApplier.toVisibility(visibilityFlags);
+    }
+
     public static FrontierBanner fromBanner(FrontierData.BannerData bannerData) {
         if (bannerData == null) {
             return null;
@@ -80,6 +85,10 @@ public final class ApiConverters {
                 patterns == null ? "[]" : patterns.toString(),
                 bannerData.rotation
         );
+    }
+
+    public static FrontierData.BannerData toBanner(@Nullable FrontierBanner banner) {
+        return FrontierMutationApplier.toBanner(banner);
     }
 
     public static PathStyle fromPathStyle(FrontierData.PathStyle pathStyle) {
@@ -95,6 +104,10 @@ public final class ApiConverters {
                 normalized.labelAtMiddle,
                 normalized.labelAtEnd
         );
+    }
+
+    public static FrontierData.PathStyle toPathStyle(PathStyle pathStyle) {
+        return FrontierMutationApplier.toPathStyle(pathStyle);
     }
 
     public static SharedUserAccess fromSharedUser(SettingsUserShared userShared) {
