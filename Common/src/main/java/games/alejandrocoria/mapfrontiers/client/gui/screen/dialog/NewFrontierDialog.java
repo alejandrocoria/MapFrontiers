@@ -13,7 +13,10 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.PathShapePr
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.VertexShapePresetSelector;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.Context;
@@ -24,8 +27,10 @@ import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.StringUtil;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec2;
 
 import javax.annotation.Nullable;
@@ -175,16 +180,14 @@ public class NewFrontierDialog extends PanelDialog {
             resultHandler.beforeCreate(this, afterCreate);
             UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
             if (uiState != null) {
-                UUID frontierId = UUID.randomUUID();
-                FrontierData.Mode mode = ClientConfig.NEW_FRONTIER_MODE.get();
-                FrontierData.PathStyle pathStyle = mode == FrontierData.Mode.Path ? ClientConfig.getDefaultPathStyle() : null;
-                FrontierOverlay createdFrontier = MapFrontiersClient.getOperationService().createNewFrontierAndReturn(personal,
-                        frontierId, uiState.dimension, collectionId, FrontierData.FrontierLifetime.PERSISTENT, null,
-                        calculateVertices(), calculateChunks(), calculatePoints(), pathStyle);
-                if (createdFrontier != null) {
-                    resultHandler.onFrontierCreated(createdFrontier, afterCreate);
-                } else {
-                    awaitCreatedFrontier(frontierId, afterCreate);
+                FrontierCreateSpec createSpec = createFrontierSpec(personal, uiState.dimension);
+                if (createSpec != null) {
+                    FrontierOverlay createdFrontier = MapFrontiersClient.getOperationService().createNewFrontierAndReturn(createSpec);
+                    if (createdFrontier != null) {
+                        resultHandler.onFrontierCreated(createdFrontier, afterCreate);
+                    } else {
+                        awaitCreatedFrontier(createSpec.getFrontierId(), afterCreate);
+                    }
                 }
             }
         });
@@ -412,6 +415,36 @@ public class NewFrontierDialog extends PanelDialog {
         }
 
         return null;
+    }
+
+    private @Nullable FrontierCreateSpec createFrontierSpec(boolean personal, ResourceKey<Level> dimension) {
+        if (minecraft.player == null) {
+            return null;
+        }
+
+        FrontierData defaults = new FrontierData();
+        SettingsUser owner = new SettingsUser(minecraft.player);
+        UUID frontierId = UUID.randomUUID();
+        FrontierData.VisibilityData visibility = new FrontierData.VisibilityData(defaults.getVisibilityData());
+        FrontierData.BannerData banner = defaults.getbannerData() == null ? null : new FrontierData.BannerData(defaults.getbannerData());
+        FrontierData.PathStyle pathStyle = ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Path
+                ? ClientConfig.getDefaultPathStyle()
+                : defaults.getPathStyle();
+        int color = ColorHelper.getRandomColor();
+
+        if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Path) {
+            return FrontierCreateSpec.path(frontierId, owner, personal, dimension, FrontierData.FrontierLifetime.PERSISTENT, collectionId,
+                    null, defaults.getName1(), defaults.getName2(), color, visibility, banner, calculatePoints(), pathStyle);
+        }
+
+        if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Chunk) {
+            return FrontierCreateSpec.chunk(frontierId, owner, personal, dimension, FrontierData.FrontierLifetime.PERSISTENT, collectionId,
+                    null, defaults.getName1(), defaults.getName2(), color, visibility, banner, new LinkedHashSet<>(calculateChunks()),
+                    pathStyle);
+        }
+
+        return FrontierCreateSpec.vertex(frontierId, owner, personal, dimension, FrontierData.FrontierLifetime.PERSISTENT, collectionId,
+                null, defaults.getName1(), defaults.getName2(), color, visibility, banner, calculateVertices(), pathStyle);
     }
 
     private void setSizeTextBoxValue(IntConfigEntry entry) {
