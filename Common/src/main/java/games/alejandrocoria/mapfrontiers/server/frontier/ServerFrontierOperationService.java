@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.server.frontier;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierSharingChange;
 import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToGlobal;
@@ -204,17 +205,11 @@ public class ServerFrontierOperationService {
         return result;
     }
 
-    public ServerFrontierOperationResult createFrontier(ServerPlayer player,
-                                                      UUID frontierId,
-                                                      ResourceKey<Level> dimension,
-                                                      boolean personal,
-                                                      @Nullable UUID collectionId,
-                                                      FrontierData.FrontierLifetime lifetime,
-                                                      @Nullable String sourcePluginId,
-                                                      @Nullable List<BlockPos> vertices,
-                                                      @Nullable List<ChunkPos> chunks,
-                                                      @Nullable List<BlockPos> points,
-                                                      @Nullable FrontierData.PathStyle pathStyle) {
+    public ServerFrontierOperationResult createFrontier(ServerPlayer player, FrontierCreateSpec createSpec) {
+        UUID frontierId = createSpec.getFrontierId();
+        boolean personal = createSpec.isPersonal();
+        FrontierData.FrontierLifetime lifetime = createSpec.getLifetime();
+
         if (lifetime != FrontierData.FrontierLifetime.PERSISTENT) {
             return rejectInvalidAuthoritativeFrontier(player, null,
                     "Rejected authoritative frontier creation because only PERSISTENT lifetime is supported on the server. frontierId={}, personal={}, lifetime={}",
@@ -222,10 +217,11 @@ public class ServerFrontierOperationService {
         }
 
         if (personal) {
-            FrontierData frontier = frontiersManager.createNewPersonalFrontier(frontierId, dimension, player, sourcePluginId,
-                    vertices, chunks, points, pathStyle);
-            CollectionData targetCollection = validateTargetCollection(player, frontier, collectionId);
-            if (collectionId != null && targetCollection == null) {
+            FrontierData frontier = frontiersManager.createNewPersonalFrontier(frontierId, createSpec.getDimension(), player,
+                    createSpec.getSourcePluginId(), createSpec.getVertices(), new ArrayList<>(createSpec.getChunks()),
+                    createSpec.getPoints(), createSpec.getPathStyle());
+            CollectionData targetCollection = validateTargetCollection(player, frontier, createSpec.getCollectionId());
+            if (createSpec.getCollectionId() != null && targetCollection == null) {
                 frontiersManager.deletePersonalFrontier(frontier.getOwner(), frontier.getDimension(), frontier.getId());
                 return ServerFrontierOperationResult.rejected(frontier);
             }
@@ -239,10 +235,11 @@ public class ServerFrontierOperationService {
             return rejectedWithProfileRefresh(player, null);
         }
 
-        FrontierData frontier = frontiersManager.createNewGlobalFrontier(frontierId, dimension, player, sourcePluginId,
-                vertices, chunks, points, pathStyle);
-        CollectionData targetCollection = validateTargetCollection(player, frontier, collectionId);
-        if (collectionId != null && targetCollection == null) {
+        FrontierData frontier = frontiersManager.createNewGlobalFrontier(frontierId, createSpec.getDimension(), player,
+                createSpec.getSourcePluginId(), createSpec.getVertices(), new ArrayList<>(createSpec.getChunks()),
+                createSpec.getPoints(), createSpec.getPathStyle());
+        CollectionData targetCollection = validateTargetCollection(player, frontier, createSpec.getCollectionId());
+        if (createSpec.getCollectionId() != null && targetCollection == null) {
             frontiersManager.deleteGlobalFrontier(frontier.getDimension(), frontier.getId());
             return ServerFrontierOperationResult.rejected(frontier);
         }

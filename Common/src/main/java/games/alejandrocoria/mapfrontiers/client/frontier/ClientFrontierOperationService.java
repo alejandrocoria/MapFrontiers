@@ -20,6 +20,7 @@ import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
 import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreationFactory;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
@@ -38,6 +39,7 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateSharedUserPersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
@@ -149,8 +151,12 @@ public class ClientFrontierOperationService {
                                                       @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks,
                                                       @Nullable List<BlockPos> points, @Nullable FrontierData.PathStyle pathStyle) {
         if (usesAuthoritativeCreateFlow(lifetime)) {
-            PacketHandler.sendToServer(new PacketCreateFrontier(frontierId, dimension, personal, collectionId, sourcePluginId,
-                    vertices, chunks, points, pathStyle));
+            FrontierCreateSpec createSpec = createAuthoritativeFrontierSpec(frontierId, personal, dimension, collectionId, lifetime,
+                    sourcePluginId, vertices, chunks, points, pathStyle);
+            if (createSpec == null) {
+                return null;
+            }
+            PacketHandler.sendToServer(new PacketCreateFrontier(createSpec));
             return null;
         }
 
@@ -720,6 +726,42 @@ public class ClientFrontierOperationService {
         collection.setCreated(now);
         collection.setModified(now);
         return collection;
+    }
+
+    private @Nullable FrontierCreateSpec createAuthoritativeFrontierSpec(UUID frontierId,
+                                                                         boolean personal,
+                                                                         ResourceKey<Level> dimension,
+                                                                         @Nullable UUID collectionId,
+                                                                         FrontierData.FrontierLifetime lifetime,
+                                                                         @Nullable String sourcePluginId,
+                                                                         @Nullable List<BlockPos> vertices,
+                                                                         @Nullable List<ChunkPos> chunks,
+                                                                         @Nullable List<BlockPos> points,
+                                                                         @Nullable FrontierData.PathStyle pathStyle) {
+        if (mc.player == null) {
+            return null;
+        }
+
+        FrontierData defaults = new FrontierData();
+        SettingsUser owner = new SettingsUser(mc.player);
+        int color = ColorHelper.getRandomColor();
+        FrontierData.PathStyle resolvedPathStyle = pathStyle == null ? new FrontierData.PathStyle() : new FrontierData.PathStyle(pathStyle);
+
+        if (points != null) {
+            return FrontierCreateSpec.path(frontierId, owner, personal, dimension, lifetime, collectionId,
+                    sourcePluginId, defaults.getName1(), defaults.getName2(), color,
+                    defaults.getVisibilityData(), defaults.getbannerData(), points, resolvedPathStyle);
+        }
+
+        if (chunks != null) {
+            return FrontierCreateSpec.chunk(frontierId, owner, personal, dimension, lifetime, collectionId,
+                    sourcePluginId, defaults.getName1(), defaults.getName2(), color,
+                    defaults.getVisibilityData(), defaults.getbannerData(), Set.copyOf(chunks), resolvedPathStyle);
+        }
+
+        return FrontierCreateSpec.vertex(frontierId, owner, personal, dimension, lifetime, collectionId,
+                sourcePluginId, defaults.getName1(), defaults.getName2(), color,
+                defaults.getVisibilityData(), defaults.getbannerData(), vertices == null ? List.of() : vertices, resolvedPathStyle);
     }
 
     private FrontierData resolveCopiedFrontier(FrontierData receivedFrontier, @Nullable CollectionData receivedCollection) {
