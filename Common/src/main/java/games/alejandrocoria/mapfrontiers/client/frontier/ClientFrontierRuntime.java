@@ -139,7 +139,7 @@ public class ClientFrontierRuntime {
     public MapFrontiersClientAPIImpl getOrCreateClientApi() {
         ensureInitialized();
         if (clientApi == null) {
-            clientApi = new MapFrontiersClientAPIImpl(frontierEvents);
+            clientApi = new MapFrontiersClientAPIImpl(frontierEvents, collectionEvents);
         }
 
         return clientApi;
