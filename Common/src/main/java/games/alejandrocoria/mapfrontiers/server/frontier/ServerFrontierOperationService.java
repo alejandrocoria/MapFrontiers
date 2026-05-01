@@ -60,6 +60,10 @@ public class ServerFrontierOperationService {
         return frontiersManager.getAllGlobalFrontiers(dimension);
     }
 
+    public List<CollectionData> getAllGlobalCollections() {
+        return frontiersManager.getAllGlobalCollections();
+    }
+
     public ServerFrontierOperationResult createCollection(ServerPlayer player, CollectionData collectionData) {
         if (frontiersManager.getCollectionFromID(collectionData.getId()) != null) {
             return ServerFrontierOperationResult.ignored(null);
@@ -88,6 +92,24 @@ public class ServerFrontierOperationService {
         return createdCollection(collection);
     }
 
+    public ServerFrontierOperationResult createGlobalCollection(CollectionData collectionData) {
+        if (frontiersManager.getCollectionFromID(collectionData.getId()) != null) {
+            return ServerFrontierOperationResult.ignored(null);
+        }
+        if (collectionData.getPersonal()) {
+            return ServerFrontierOperationResult.rejected(null);
+        }
+
+        CollectionData collection = new CollectionData(collectionData);
+        collection.setPersonal(false);
+        collection.removeCopiedFromInfo();
+        Date now = new Date();
+        collection.setCreated(now);
+        collection.setModified(now);
+        frontiersManager.addGlobalCollection(collection);
+        return createdCollection(collection);
+    }
+
     public ServerFrontierOperationResult updateCollection(ServerPlayer player, UUID collectionId, CollectionData collectionData) {
         CollectionData collection = frontiersManager.getCollectionFromID(collectionId);
         if (collection == null) {
@@ -100,6 +122,19 @@ public class ServerFrontierOperationService {
             }
         } else if (!permissionEvaluator.canUpdateGlobalCollection(player, collection)) {
             return rejectedWithProfileRefresh(player, null);
+        }
+
+        collection.setName(collectionData.getName());
+        collection.setColor(collectionData.getColor());
+        collection.setModified(new Date());
+        frontiersManager.markFrontiersUpdated();
+        return updatedCollection(collection, null);
+    }
+
+    public ServerFrontierOperationResult updateGlobalCollection(UUID collectionId, CollectionData collectionData) {
+        CollectionData collection = frontiersManager.getCollectionFromID(collectionId);
+        if (collection == null || collection.getPersonal()) {
+            return ServerFrontierOperationResult.notFound();
         }
 
         collection.setName(collectionData.getName());
@@ -130,6 +165,32 @@ public class ServerFrontierOperationService {
         for (FrontierData frontier : affectedFrontiers) {
             FrontierChange change = touchFrontierMembership(frontier, null, now);
             frontierUpdates.add(new FrontierUpdateEmission(frontier, change, player.getId()));
+        }
+
+        CollectionData removedCollection = frontiersManager.removeCollection(collectionId);
+        if (removedCollection == null) {
+            return ServerFrontierOperationResult.notFound();
+        }
+
+        ServerFrontierOperationResult result = ServerFrontierOperationResult.success(null);
+        enqueueFrontierUpdates(result, frontierUpdates);
+        enqueueCollectionDeleted(result, removedCollection, collectionRecipientsBefore);
+        return result;
+    }
+
+    public ServerFrontierOperationResult deleteGlobalCollection(UUID collectionId) {
+        CollectionData collection = frontiersManager.getCollectionFromID(collectionId);
+        if (collection == null || collection.getPersonal()) {
+            return ServerFrontierOperationResult.notFound();
+        }
+
+        Set<UUID> collectionRecipientsBefore = getCollectionRecipientIds(collection);
+        List<FrontierData> affectedFrontiers = new ArrayList<>(frontiersManager.getFrontiersInCollection(collectionId));
+        Date now = new Date();
+        ArrayList<FrontierUpdateEmission> frontierUpdates = new ArrayList<>();
+        for (FrontierData frontier : affectedFrontiers) {
+            FrontierChange change = touchFrontierMembership(frontier, null, now);
+            frontierUpdates.add(new FrontierUpdateEmission(frontier, change, SYSTEM_ACTOR_ID));
         }
 
         CollectionData removedCollection = frontiersManager.removeCollection(collectionId);
