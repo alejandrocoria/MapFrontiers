@@ -1,13 +1,18 @@
 package games.alejandrocoria.mapfrontiers.common.frontier;
 
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -192,6 +197,124 @@ public final class FrontierCreateSpec {
 
     public FrontierData.PathStyle getPathStyle() {
         return new FrontierData.PathStyle(pathStyle);
+    }
+
+    public void toBytes(FriendlyByteBuf buf) {
+        UUIDHelper.toBytes(buf, frontierId);
+        owner.toBytes(buf);
+        buf.writeBoolean(personal);
+        buf.writeIdentifier(dimension.identifier());
+        buf.writeInt(lifetime.ordinal());
+
+        if (collectionId == null) {
+            buf.writeBoolean(false);
+        } else {
+            buf.writeBoolean(true);
+            UUIDHelper.toBytes(buf, collectionId);
+        }
+
+        if (sourcePluginId == null) {
+            buf.writeBoolean(false);
+        } else {
+            buf.writeBoolean(true);
+            buf.writeUtf(sourcePluginId);
+        }
+
+        buf.writeUtf(name1, FrontierData.MAX_NAME_CHARACTERS);
+        buf.writeUtf(name2, FrontierData.MAX_NAME_CHARACTERS);
+        buf.writeInt(color);
+        visibility.toBytes(buf);
+
+        if (banner == null) {
+            buf.writeBoolean(false);
+        } else {
+            buf.writeBoolean(true);
+            banner.toBytes(buf);
+        }
+
+        buf.writeInt(mode.ordinal());
+
+        switch (mode) {
+            case Vertex -> {
+                buf.writeInt(vertices.size());
+                for (BlockPos pos : vertices) {
+                    buf.writeLong(pos.asLong());
+                }
+            }
+            case Chunk -> {
+                buf.writeInt(chunks.size());
+                for (ChunkPos pos : chunks) {
+                    buf.writeLong(pos.pack());
+                }
+            }
+            case Path -> {
+                buf.writeInt(points.size());
+                for (BlockPos pos : points) {
+                    buf.writeLong(pos.asLong());
+                }
+            }
+        }
+
+        pathStyle.toBytes(buf);
+    }
+
+    public static FrontierCreateSpec fromBytes(FriendlyByteBuf buf) {
+        UUID frontierId = UUIDHelper.fromBytes(buf);
+        SettingsUser owner = new SettingsUser();
+        owner.fromBytes(buf);
+        boolean personal = buf.readBoolean();
+        ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION, buf.readIdentifier());
+        FrontierData.FrontierLifetime lifetime = FrontierData.FrontierLifetime.VALUES[buf.readInt()];
+        UUID collectionId = buf.readBoolean() ? UUIDHelper.fromBytes(buf) : null;
+        String sourcePluginId = buf.readBoolean() ? buf.readUtf() : null;
+        String name1 = buf.readUtf(FrontierData.MAX_NAME_CHARACTERS);
+        String name2 = buf.readUtf(FrontierData.MAX_NAME_CHARACTERS);
+        int color = buf.readInt();
+
+        FrontierData.VisibilityData visibility = new FrontierData.VisibilityData();
+        visibility.fromBytes(buf);
+
+        FrontierData.BannerData banner = null;
+        if (buf.readBoolean()) {
+            banner = new FrontierData.BannerData();
+            banner.fromBytes(buf);
+        }
+
+        FrontierData.Mode mode = FrontierData.Mode.VALUES[buf.readInt()];
+        FrontierData.PathStyle pathStyle = new FrontierData.PathStyle();
+
+        return switch (mode) {
+            case Vertex -> {
+                int vertexCount = buf.readInt();
+                List<BlockPos> vertices = new ArrayList<>(vertexCount);
+                for (int i = 0; i < vertexCount; ++i) {
+                    vertices.add(BlockPos.of(buf.readLong()));
+                }
+                pathStyle.fromBytes(buf);
+                yield vertex(frontierId, owner, personal, dimension, lifetime, collectionId, sourcePluginId, name1, name2,
+                        color, visibility, banner, vertices, pathStyle);
+            }
+            case Chunk -> {
+                int chunkCount = buf.readInt();
+                Set<ChunkPos> chunks = new LinkedHashSet<>(chunkCount);
+                for (int i = 0; i < chunkCount; ++i) {
+                    chunks.add(ChunkPos.unpack(buf.readLong()));
+                }
+                pathStyle.fromBytes(buf);
+                yield chunk(frontierId, owner, personal, dimension, lifetime, collectionId, sourcePluginId, name1, name2,
+                        color, visibility, banner, chunks, pathStyle);
+            }
+            case Path -> {
+                int pointCount = buf.readInt();
+                List<BlockPos> points = new ArrayList<>(pointCount);
+                for (int i = 0; i < pointCount; ++i) {
+                    points.add(BlockPos.of(buf.readLong()));
+                }
+                pathStyle.fromBytes(buf);
+                yield path(frontierId, owner, personal, dimension, lifetime, collectionId, sourcePluginId, name1, name2,
+                        color, visibility, banner, points, pathStyle);
+            }
+        };
     }
 
     private static SettingsUser copyUser(SettingsUser owner) {
