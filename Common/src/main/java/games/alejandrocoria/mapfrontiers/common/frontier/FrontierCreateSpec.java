@@ -199,6 +199,11 @@ public final class FrontierCreateSpec {
         return new FrontierData.PathStyle(pathStyle);
     }
 
+    public FrontierCreateSpec withOwner(SettingsUser owner) {
+        return new FrontierCreateSpec(frontierId, owner, personal, dimension, lifetime, collectionId, sourcePluginId,
+                name1, name2, color, visibility, banner, mode, vertices, chunks, points, pathStyle);
+    }
+
     public void toBytes(FriendlyByteBuf buf) {
         UUIDHelper.toBytes(buf, frontierId);
         owner.toBytes(buf);

@@ -206,9 +206,10 @@ public class ServerFrontierOperationService {
     }
 
     public ServerFrontierOperationResult createFrontier(ServerPlayer player, FrontierCreateSpec createSpec) {
-        UUID frontierId = createSpec.getFrontierId();
-        boolean personal = createSpec.isPersonal();
-        FrontierData.FrontierLifetime lifetime = createSpec.getLifetime();
+        FrontierCreateSpec serverSpec = createSpec.withOwner(permissionEvaluator.getPlayerUser(player));
+        UUID frontierId = serverSpec.getFrontierId();
+        boolean personal = serverSpec.isPersonal();
+        FrontierData.FrontierLifetime lifetime = serverSpec.getLifetime();
 
         if (lifetime != FrontierData.FrontierLifetime.PERSISTENT) {
             return rejectInvalidAuthoritativeFrontier(player, null,
@@ -217,11 +218,9 @@ public class ServerFrontierOperationService {
         }
 
         if (personal) {
-            FrontierData frontier = frontiersManager.createNewPersonalFrontier(frontierId, createSpec.getDimension(), player,
-                    createSpec.getSourcePluginId(), createSpec.getVertices(), new ArrayList<>(createSpec.getChunks()),
-                    createSpec.getPoints(), createSpec.getPathStyle());
-            CollectionData targetCollection = validateTargetCollection(player, frontier, createSpec.getCollectionId());
-            if (createSpec.getCollectionId() != null && targetCollection == null) {
+            FrontierData frontier = frontiersManager.createNewPersonalFrontier(frontierId, serverSpec);
+            CollectionData targetCollection = validateTargetCollection(player, frontier, serverSpec.getCollectionId());
+            if (serverSpec.getCollectionId() != null && targetCollection == null) {
                 frontiersManager.deletePersonalFrontier(frontier.getOwner(), frontier.getDimension(), frontier.getId());
                 return ServerFrontierOperationResult.rejected(frontier);
             }
@@ -235,11 +234,9 @@ public class ServerFrontierOperationService {
             return rejectedWithProfileRefresh(player, null);
         }
 
-        FrontierData frontier = frontiersManager.createNewGlobalFrontier(frontierId, createSpec.getDimension(), player,
-                createSpec.getSourcePluginId(), createSpec.getVertices(), new ArrayList<>(createSpec.getChunks()),
-                createSpec.getPoints(), createSpec.getPathStyle());
-        CollectionData targetCollection = validateTargetCollection(player, frontier, createSpec.getCollectionId());
-        if (createSpec.getCollectionId() != null && targetCollection == null) {
+        FrontierData frontier = frontiersManager.createNewGlobalFrontier(frontierId, serverSpec);
+        CollectionData targetCollection = validateTargetCollection(player, frontier, serverSpec.getCollectionId());
+        if (serverSpec.getCollectionId() != null && targetCollection == null) {
             frontiersManager.deleteGlobalFrontier(frontier.getDimension(), frontier.getId());
             return ServerFrontierOperationResult.rejected(frontier);
         }

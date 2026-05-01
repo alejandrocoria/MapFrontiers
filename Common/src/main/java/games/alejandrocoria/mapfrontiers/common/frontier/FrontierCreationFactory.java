@@ -54,4 +54,44 @@ public final class FrontierCreationFactory {
         }
         return frontier;
     }
+
+    public static FrontierData createFrontier(FrontierCreateSpec spec) {
+        FrontierData frontier = new FrontierData();
+        frontier.setId(spec.getFrontierId());
+        frontier.setOwner(spec.getOwner());
+        frontier.setDimension(spec.getDimension());
+        frontier.setPersonal(spec.isPersonal());
+        frontier.setLifetime(spec.getLifetime());
+        frontier.setCreated(new Date());
+        applySpecShape(frontier, spec);
+        FrontierCreateMetadataApplier.applyInitialMetadata(frontier, spec);
+        return frontier;
+    }
+
+    private static void applySpecShape(FrontierData frontier, FrontierCreateSpec spec) {
+        frontier.clearVertices();
+        frontier.clearChunks();
+        frontier.clearPoints();
+
+        switch (spec.getMode()) {
+            case Vertex -> {
+                frontier.setMode(FrontierData.Mode.Vertex);
+                for (BlockPos vertex : spec.getVertices()) {
+                    frontier.addVertex(vertex);
+                }
+            }
+            case Chunk -> {
+                frontier.setMode(FrontierData.Mode.Chunk);
+                for (ChunkPos chunk : spec.getChunks()) {
+                    frontier.addChunk(chunk);
+                }
+            }
+            case Path -> {
+                frontier.setMode(FrontierData.Mode.Path);
+                for (BlockPos point : spec.getPoints()) {
+                    frontier.addPoint(point);
+                }
+            }
+        }
+    }
 }

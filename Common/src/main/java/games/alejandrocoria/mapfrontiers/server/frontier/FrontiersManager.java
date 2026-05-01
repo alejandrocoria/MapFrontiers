@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.server.frontier;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreationFactory;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
@@ -19,7 +20,6 @@ import net.minecraft.nbt.NbtIo;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
@@ -139,41 +139,21 @@ public class FrontiersManager {
     }
 
     public FrontierData createNewGlobalFrontier(UUID frontierId,
-                                                ResourceKey<Level> dimension,
-                                                ServerPlayer player,
-                                                @Nullable String sourcePluginId,
-                                                @Nullable List<BlockPos> vertices,
-                                                @Nullable List<ChunkPos> chunks,
-                                                @Nullable List<BlockPos> points,
-                                                @Nullable FrontierData.PathStyle pathStyle) {
-        List<FrontierData> frontiers = getAllGlobalFrontiers(dimension);
-        return createNewFrontier(frontierId, frontiers, dimension, false, player, sourcePluginId, vertices, chunks, points, pathStyle);
+                                                FrontierCreateSpec createSpec) {
+        List<FrontierData> frontiers = getAllGlobalFrontiers(createSpec.getDimension());
+        return createNewFrontier(frontierId, frontiers, createSpec);
     }
 
     public FrontierData createNewPersonalFrontier(UUID frontierId,
-                                                  ResourceKey<Level> dimension,
-                                                  ServerPlayer player,
-                                                  @Nullable String sourcePluginId,
-                                                  @Nullable List<BlockPos> vertices,
-                                                  @Nullable List<ChunkPos> chunks,
-                                                  @Nullable List<BlockPos> points,
-                                                  @Nullable FrontierData.PathStyle pathStyle) {
-        List<FrontierData> frontiers = getAllPersonalFrontiers(new SettingsUser(player), dimension);
-        return createNewFrontier(frontierId, frontiers, dimension, true, player, sourcePluginId, vertices, chunks, points, pathStyle);
+                                                  FrontierCreateSpec createSpec) {
+        List<FrontierData> frontiers = getAllPersonalFrontiers(createSpec.getOwner(), createSpec.getDimension());
+        return createNewFrontier(frontierId, frontiers, createSpec);
     }
 
     private FrontierData createNewFrontier(UUID frontierId,
                                            List<FrontierData> frontiers,
-                                           ResourceKey<Level> dimension,
-                                           boolean personal,
-                                           ServerPlayer player,
-                                           @Nullable String sourcePluginId,
-                                           @Nullable List<BlockPos> vertices,
-                                           @Nullable List<ChunkPos> chunks,
-                                           @Nullable List<BlockPos> points,
-                                           @Nullable FrontierData.PathStyle pathStyle) {
-        FrontierData frontier = FrontierCreationFactory.createFrontier(frontierId, new SettingsUser(player), dimension, personal,
-                FrontierData.FrontierLifetime.PERSISTENT, sourcePluginId, vertices, chunks, points, pathStyle);
+                                           FrontierCreateSpec createSpec) {
+        FrontierData frontier = FrontierCreationFactory.createFrontier(createSpec);
 
         frontiers.add(frontier);
         allFrontiers.put(frontier.getId(), frontier);
