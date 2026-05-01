@@ -291,17 +291,25 @@ public class ServerFrontierOperationService {
         return createdCollection(collection);
     }
 
-    public ServerFrontierOperationResult createGlobalFrontier(FrontierData frontier) {
-        if (!isAuthoritativeGlobalFrontier(frontier)) {
+    public ServerFrontierOperationResult createGlobalFrontier(FrontierCreateSpec createSpec) {
+        if (createSpec.isPersonal() || createSpec.getLifetime() != FrontierData.FrontierLifetime.PERSISTENT) {
             MapFrontiers.LOGGER.warn(
                     "Rejected global frontier creation because only persistent global frontiers can exist on the server. frontierId={}, personal={}, lifetime={}",
-                    frontier.getId(), frontier.getPersonal(), frontier.getLifetime()
+                    createSpec.getFrontierId(), createSpec.isPersonal(), createSpec.getLifetime()
             );
-            return ServerFrontierOperationResult.rejected(frontier);
+            return ServerFrontierOperationResult.rejected(null);
         }
 
-        frontiersManager.addGlobalFrontier(frontier);
-        return createdGlobalFrontier(frontier, SYSTEM_ACTOR_ID, null, null);
+        FrontierData frontier = frontiersManager.createNewGlobalFrontier(createSpec.getFrontierId(), createSpec);
+        CollectionData targetCollection = validateTargetCollectionForAuthoritativeFrontier(frontier, createSpec.getCollectionId());
+        if (createSpec.getCollectionId() != null && targetCollection == null) {
+            frontiersManager.deleteGlobalFrontier(frontier.getDimension(), frontier.getId());
+            return ServerFrontierOperationResult.rejected(frontier);
+        }
+        if (targetCollection != null) {
+            touchCollection(targetCollection, frontier.getModified());
+        }
+        return createdGlobalFrontier(frontier, SYSTEM_ACTOR_ID, null, targetCollection);
     }
 
     public ServerFrontierOperationResult updateFrontier(ServerPlayer player, UUID frontierId, FrontierChange change) {

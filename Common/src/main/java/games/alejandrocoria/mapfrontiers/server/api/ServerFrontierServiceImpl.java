@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers.server.api;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedServerFrontierService;
+import games.alejandrocoria.mapfrontiers.api.model.CollectionId;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierCreateRequest;
@@ -10,17 +11,22 @@ import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreationFactory;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierEvents;
 import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationResult;
 import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationService;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public class ServerFrontierServiceImpl implements PluginScopedServerFrontierService {
@@ -34,21 +40,15 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
 
     @Override
     public FrontierDataView createGlobalFrontier(String pluginModId, UserRef owner, FrontierCreateRequest request) {
-        if (hasUnsupportedCreateFields(request)) {
-            throw new UnsupportedOperationException("Enriched frontier create fields are not implemented yet.");
+        FrontierCreateSpec createSpec = createGlobalFrontierSpec(pluginModId, owner, request);
+        ServerFrontierOperationResult result = operationService.createGlobalFrontier(createSpec);
+        if (!result.isSuccess() || result.getFrontier() == null) {
+            throw new IllegalArgumentException("Invalid global frontier create request");
         }
-
-        ResourceKey<Level> level = ApiConverters.toDimension(request.dimension());
-        SettingsUser frontierOwner = ApiConverters.toUser(owner);
-
-        FrontierData frontier = FrontierCreationFactory.createFrontier(UUID.randomUUID(), frontierOwner, level, false,
-                FrontierData.FrontierLifetime.PERSISTENT, pluginModId, null, null);
-        ApiConverters.applyShape(frontier, request.shape());
-
-        ServerFrontierOperationResult result = operationService.createGlobalFrontier(frontier);
         result.dispatchNetworkActions();
+        FrontierData frontier = result.getFrontier();
         MapFrontiers.LOGGER.info("Created global frontier via server API. pluginModId={}, frontierId={}, owner={}, dimension={}",
-                pluginModId, frontier.getId(), frontierOwner.username, level.identifier());
+                pluginModId, frontier.getId(), frontier.getOwner().username, frontier.getDimension().identifier());
 
         FrontierDataView view = ApiConverters.fromFrontier(frontier);
         frontierEvents.postCreated(frontier);
@@ -109,13 +109,44 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
                 .toList();
     }
 
-    private static boolean hasUnsupportedCreateFields(FrontierCreateRequest request) {
-        return request.collectionId().isPresent()
-                || request.name1().isPresent()
-                || request.name2().isPresent()
-                || request.color().isPresent()
-                || request.visibility().isPresent()
-                || request.banner().isPresent()
-                || request.pathStyle().isPresent();
+    private static FrontierCreateSpec createGlobalFrontierSpec(String pluginModId, UserRef owner, FrontierCreateRequest request) {
+        FrontierData defaults = new FrontierData();
+        UUID frontierId = UUID.randomUUID();
+        SettingsUser frontierOwner = ApiConverters.toUser(owner);
+        ResourceKey<Level> dimension = ApiConverters.toDimension(request.dimension());
+        UUID collectionId = request.collectionId().map(CollectionId::value).orElse(null);
+        String name1 = request.name1().orElse(defaults.getName1());
+        String name2 = request.name2().orElse(defaults.getName2());
+        int color = request.color().orElseGet(ColorHelper::getRandomColor);
+        FrontierData.VisibilityData visibility = request.visibility()
+                .map(ApiConverters::toVisibility)
+                .orElseGet(defaults::getVisibilityData);
+        FrontierData.BannerData banner = request.banner()
+                .map(ApiConverters::toBanner)
+                .orElseGet(defaults::getbannerData);
+        FrontierData.PathStyle pathStyle = request.pathStyle()
+                .map(ApiConverters::toPathStyle)
+                .orElseGet(FrontierData.PathStyle::new);
+
+        return switch (request.shape().type()) {
+            case VERTEX -> FrontierCreateSpec.vertex(frontierId, frontierOwner, false, dimension,
+                    FrontierData.FrontierLifetime.PERSISTENT, collectionId, pluginModId, name1, name2, color, visibility, banner,
+                    request.shape().vertices() == null ? List.of() : request.shape().vertices().stream()
+                            .map(vertex -> new BlockPos(vertex.x(), 0, vertex.z()))
+                            .toList(),
+                    pathStyle);
+            case CHUNK -> FrontierCreateSpec.chunk(frontierId, frontierOwner, false, dimension,
+                    FrontierData.FrontierLifetime.PERSISTENT, collectionId, pluginModId, name1, name2, color, visibility, banner,
+                    request.shape().chunks() == null ? Set.of() : request.shape().chunks().stream()
+                            .map(chunk -> new ChunkPos(chunk.x(), chunk.z()))
+                            .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new)),
+                    pathStyle);
+            case PATH -> FrontierCreateSpec.path(frontierId, frontierOwner, false, dimension,
+                    FrontierData.FrontierLifetime.PERSISTENT, collectionId, pluginModId, name1, name2, color, visibility, banner,
+                    request.shape().points() == null ? List.of() : request.shape().points().stream()
+                            .map(point -> new BlockPos(point.x(), 0, point.z()))
+                            .toList(),
+                    pathStyle);
+        };
     }
 }

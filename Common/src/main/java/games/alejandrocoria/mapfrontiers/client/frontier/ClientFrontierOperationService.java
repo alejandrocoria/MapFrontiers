@@ -334,8 +334,19 @@ public class ClientFrontierOperationService {
     }
 
     public FrontierActionResult createFrontierAction(boolean personal, String pluginModId, FrontierCreateRequest request) {
+        return createFrontierAction(personal, pluginModId, request, FrontierData.FrontierLifetime.PERSISTENT);
+    }
+
+    public FrontierActionResult createTemporaryPersonalFrontierAction(String pluginModId, FrontierCreateRequest request) {
+        return createFrontierAction(true, pluginModId, request, FrontierData.FrontierLifetime.SESSION_ONLY);
+    }
+
+    private FrontierActionResult createFrontierAction(boolean personal,
+                                                      String pluginModId,
+                                                      FrontierCreateRequest request,
+                                                      FrontierData.FrontierLifetime lifetime) {
         FrontierCreateSpec createSpec = createFrontierSpec(UUID.randomUUID(), personal, pluginModId, request,
-                FrontierData.FrontierLifetime.PERSISTENT);
+                lifetime);
         if (createSpec == null) {
             return FrontierActionResult.rejected();
         }
