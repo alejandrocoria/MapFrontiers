@@ -1,8 +1,13 @@
 package games.alejandrocoria.mapfrontiers.client.frontier;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.api.client.CollectionActionResult;
 import games.alejandrocoria.mapfrontiers.api.client.FrontierActionResult;
 import games.alejandrocoria.mapfrontiers.api.model.ChunkCoord;
+import games.alejandrocoria.mapfrontiers.api.model.CollectionCreateRequest;
+import games.alejandrocoria.mapfrontiers.api.model.CollectionDataView;
+import games.alejandrocoria.mapfrontiers.api.model.CollectionId;
+import games.alejandrocoria.mapfrontiers.api.model.CollectionMutation;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
@@ -300,6 +305,68 @@ public class ClientFrontierOperationService {
         }
 
         return FrontierActionResult.applied(ApiConverters.fromFrontier(frontier));
+    }
+
+    public Optional<CollectionDataView> getCollectionAction(CollectionId collectionId) {
+        CollectionData collection = collectionRuntime.getCollection(collectionId.value());
+        return collection == null ? Optional.empty() : Optional.of(ApiConverters.fromCollection(collection));
+    }
+
+    public List<CollectionDataView> listCollectionsAction(boolean personal) {
+        return collectionRuntime.getCollections(personal).stream().map(ApiConverters::fromCollection).toList();
+    }
+
+    public CollectionActionResult createCollectionAction(boolean personal, String pluginModId, CollectionCreateRequest request) {
+        if (mc.player == null) {
+            return CollectionActionResult.rejected();
+        }
+
+        CollectionData collection = createCollectionData(personal, pluginModId, request);
+        boolean authoritativeCreate = usesAuthoritativeCollectionMutationFlow(collection);
+        createCollection(collection);
+        if (authoritativeCreate) {
+            return CollectionActionResult.acceptedAsync(new CollectionId(collection.getId()));
+        }
+
+        return collectionRuntime.hasCollection(collection.getId())
+                ? CollectionActionResult.applied(ApiConverters.fromCollection(collection))
+                : CollectionActionResult.rejected();
+    }
+
+    public CollectionActionResult updateCollectionAction(boolean personal, CollectionId collectionId, CollectionMutation mutation) {
+        CollectionData collection = collectionRuntime.getCollection(collectionId.value());
+        if (collection == null || collection.getPersonal() != personal) {
+            return CollectionActionResult.notFound(collectionId);
+        }
+
+        CollectionData updatedCollection = new CollectionData(collection);
+        ApiConverters.applyCollectionMutation(updatedCollection, mutation);
+        boolean authoritativeUpdate = usesAuthoritativeCollectionMutationFlow(collection);
+        updateCollection(updatedCollection);
+        if (authoritativeUpdate) {
+            return CollectionActionResult.acceptedAsync(collectionId);
+        }
+
+        return collectionRuntime.hasCollection(collectionId.value())
+                ? CollectionActionResult.applied(ApiConverters.fromCollection(updatedCollection))
+                : CollectionActionResult.rejected();
+    }
+
+    public CollectionActionResult deleteCollectionAction(boolean personal, CollectionId collectionId) {
+        CollectionData collection = collectionRuntime.getCollection(collectionId.value());
+        if (collection == null || collection.getPersonal() != personal) {
+            return CollectionActionResult.notFound(collectionId);
+        }
+
+        boolean authoritativeDelete = usesAuthoritativeCollectionMutationFlow(collection);
+        deleteCollection(collection);
+        if (authoritativeDelete) {
+            return CollectionActionResult.acceptedAsync(collectionId);
+        }
+
+        return collectionRuntime.hasCollection(collectionId.value())
+                ? CollectionActionResult.rejected()
+                : CollectionActionResult.applied(ApiConverters.fromCollection(collection));
     }
 
     public Optional<FrontierDataView> getFrontierAction(FrontierId frontierId) {
@@ -639,6 +706,20 @@ public class ClientFrontierOperationService {
 
     private void refreshCollectionRuntime() {
         collectionRuntime.refreshFromFrontiers(globalManager, personalManager);
+    }
+
+    private CollectionData createCollectionData(boolean personal, String pluginModId, CollectionCreateRequest request) {
+        CollectionData collection = new CollectionData();
+        collection.setId(UUID.randomUUID());
+        collection.setPersonal(personal);
+        collection.setOwner(new SettingsUser(mc.player));
+        collection.setSourcePluginId(pluginModId);
+        request.name().ifPresent(collection::setName);
+        request.color().ifPresent(collection::setColor);
+        Date now = new Date();
+        collection.setCreated(now);
+        collection.setModified(now);
+        return collection;
     }
 
     private FrontierData resolveCopiedFrontier(FrontierData receivedFrontier, @Nullable CollectionData receivedCollection) {
