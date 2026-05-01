@@ -33,9 +33,9 @@ public class ServerFrontierRuntime {
         this.frontiersManager = new FrontiersManager();
         this.frontiersManager.loadOrCreateData(server);
         this.permissionEvaluator = new FrontierPermissionEvaluator(frontiersManager);
-        this.operationService = new ServerFrontierOperationService(server, frontiersManager, permissionEvaluator);
         this.frontierEvents = new ServerFrontierEvents();
         this.collectionEvents = new ServerCollectionEvents();
+        this.operationService = new ServerFrontierOperationService(server, frontiersManager, permissionEvaluator, frontierEvents, collectionEvents);
         this.shareService = new ServerFrontierShareService(server, frontiersManager, permissionEvaluator);
         this.settingsOperationService = new ServerSettingsOperationService(server, frontiersManager, permissionEvaluator);
         this.serverApi = new MapFrontiersServerAPIImpl(operationService, frontierEvents, collectionEvents);

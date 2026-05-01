@@ -15,7 +15,6 @@ import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
-import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierEvents;
 import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationResult;
 import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationService;
 import net.minecraft.core.BlockPos;
@@ -31,11 +30,9 @@ import java.util.UUID;
 
 public class ServerFrontierServiceImpl implements PluginScopedServerFrontierService {
     private final ServerFrontierOperationService operationService;
-    private final ServerFrontierEvents frontierEvents;
 
-    public ServerFrontierServiceImpl(ServerFrontierOperationService operationService, ServerFrontierEvents frontierEvents) {
+    public ServerFrontierServiceImpl(ServerFrontierOperationService operationService) {
         this.operationService = operationService;
-        this.frontierEvents = frontierEvents;
     }
 
     @Override
@@ -51,7 +48,6 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
                 pluginModId, frontier.getId(), frontier.getOwner().username, frontier.getDimension().identifier());
 
         FrontierDataView view = ApiConverters.fromFrontier(frontier);
-        frontierEvents.postCreated(frontier);
         return view;
     }
 
@@ -71,7 +67,6 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
         result.dispatchNetworkActions();
 
         FrontierDataView view = ApiConverters.fromFrontier(frontier);
-        frontierEvents.postUpdated(frontier);
         return Optional.of(view);
     }
 
@@ -85,7 +80,6 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
         ServerFrontierOperationResult result = operationService.deleteGlobalFrontier(frontierId.value());
         if (result.isSuccess()) {
             result.dispatchNetworkActions();
-            frontierEvents.postDeleted(frontierId.value());
         }
 
         return result.isSuccess();

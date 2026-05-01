@@ -9,7 +9,6 @@ import games.alejandrocoria.mapfrontiers.api.model.CollectionMutation;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
 import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
-import games.alejandrocoria.mapfrontiers.server.frontier.ServerCollectionEvents;
 import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationResult;
 import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationService;
 
@@ -20,21 +19,21 @@ import java.util.UUID;
 
 public class ServerCollectionServiceImpl implements PluginScopedServerCollectionService {
     private final ServerFrontierOperationService operationService;
-    private final ServerCollectionEvents collectionEvents;
 
-    public ServerCollectionServiceImpl(ServerFrontierOperationService operationService, ServerCollectionEvents collectionEvents) {
+    public ServerCollectionServiceImpl(ServerFrontierOperationService operationService) {
         this.operationService = operationService;
-        this.collectionEvents = collectionEvents;
     }
 
     @Override
     public CollectionDataView createGlobalCollection(String pluginModId, UserRef owner, CollectionCreateRequest request) {
         CollectionData collection = createCollectionData(pluginModId, owner, request);
         ServerFrontierOperationResult result = operationService.createGlobalCollection(collection);
+        if (!result.isSuccess()) {
+            throw new IllegalArgumentException("Invalid global collection create request");
+        }
         result.dispatchNetworkActions();
         MapFrontiers.LOGGER.info("Created global collection via server API. pluginModId={}, collectionId={}, owner={}",
                 pluginModId, collection.getId(), collection.getOwner().username);
-        collectionEvents.postCreated(collection);
         return ApiConverters.fromCollection(collection);
     }
 
@@ -52,7 +51,6 @@ public class ServerCollectionServiceImpl implements PluginScopedServerCollection
             return Optional.empty();
         }
         result.dispatchNetworkActions();
-        collectionEvents.postUpdated(collection);
         return Optional.of(ApiConverters.fromCollection(collection));
     }
 
@@ -68,7 +66,6 @@ public class ServerCollectionServiceImpl implements PluginScopedServerCollection
             return false;
         }
         result.dispatchNetworkActions();
-        collectionEvents.postDeleted(collectionId.value());
         return true;
     }
 

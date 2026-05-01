@@ -29,8 +29,8 @@ public class MapFrontiersServerAPIImpl implements InternalMapFrontiersServerAPI 
         this.frontierEvents = frontierEvents;
         this.collectionEvents = collectionEvents;
         this.eventBus = new SimpleEventBus();
-        this.frontiers = new ServerFrontierServiceImpl(operationService, frontierEvents);
-        this.collections = new ServerCollectionServiceImpl(operationService, collectionEvents);
+        this.frontiers = new ServerFrontierServiceImpl(operationService);
+        this.collections = new ServerCollectionServiceImpl(operationService);
 
         frontierEvents.subscribeCreated(this, frontier -> eventBus.post(new FrontierCreatedEvent(ApiConverters.fromFrontier(frontier))));
         frontierEvents.subscribeUpdated(this, frontier -> eventBus.post(new FrontierUpdatedEvent(ApiConverters.fromFrontier(frontier))));

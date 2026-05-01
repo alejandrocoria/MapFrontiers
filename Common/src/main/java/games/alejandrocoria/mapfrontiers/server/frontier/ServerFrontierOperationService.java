@@ -41,12 +41,18 @@ public class ServerFrontierOperationService {
     private final MinecraftServer server;
     private final FrontiersManager frontiersManager;
     private final FrontierPermissionEvaluator permissionEvaluator;
+    private final ServerFrontierEvents frontierEvents;
+    private final ServerCollectionEvents collectionEvents;
 
     public ServerFrontierOperationService(MinecraftServer server, FrontiersManager frontiersManager,
-                                          FrontierPermissionEvaluator permissionEvaluator) {
+                                          FrontierPermissionEvaluator permissionEvaluator,
+                                          ServerFrontierEvents frontierEvents,
+                                          ServerCollectionEvents collectionEvents) {
         this.server = server;
         this.frontiersManager = frontiersManager;
         this.permissionEvaluator = permissionEvaluator;
+        this.frontierEvents = frontierEvents;
+        this.collectionEvents = collectionEvents;
     }
 
     public @Nullable FrontierData getFrontier(UUID frontierId) {
@@ -375,6 +381,7 @@ public class ServerFrontierOperationService {
                     enqueueCollectionVisibilityChange(result, targetCollection, targetCollectionRecipientsBefore);
                 }
             }
+            frontierEvents.postUpdated(currentFrontier);
             result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(frontierUpdatedPacket, currentFrontier, server));
             return result;
         }
@@ -515,8 +522,9 @@ public class ServerFrontierOperationService {
                 if (collection != null) {
                     enqueueCollectionVisibilityChange(result, collection, collectionRecipientsBefore);
                 }
-                result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(new PacketFrontierDeleted(frontier.getDimension(),
+            result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(new PacketFrontierDeleted(frontier.getDimension(),
                         frontier.getId(), frontier.getPersonal(), player.getId()), frontier, server));
+                frontierEvents.postDeleted(frontier.getId());
                 return result;
             }
 
@@ -530,6 +538,7 @@ public class ServerFrontierOperationService {
             result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(),
                     frontier.getPersonal(), player.getId()), player));
             result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(frontierSharingUpdatedPacket, frontier, server));
+            frontierEvents.postUpdated(frontier);
             return result;
         }
 
@@ -548,6 +557,7 @@ public class ServerFrontierOperationService {
             touchCollection(collection, new Date());
             enqueueCollectionVisibilityChange(result, collection, null);
         }
+        frontierEvents.postDeleted(frontier.getId());
         return result;
     }
 
@@ -624,6 +634,7 @@ public class ServerFrontierOperationService {
         }
         result.addNetworkAction(() -> PacketHandler.sendTo(new PacketChangeFrontierToGlobal(frontier.getId(), frontier.getModified()), relevantPlayers));
         result.addNetworkAction(() -> PacketHandler.sendToAllExcept(new PacketFrontierCreated(frontier, player.getId()), server, relevantPlayers));
+        frontierEvents.postUpdated(frontier);
         return result;
     }
 
@@ -663,6 +674,7 @@ public class ServerFrontierOperationService {
         result.addNetworkAction(() -> PacketHandler.sendTo(new PacketChangeFrontierToPersonal(frontier.getId(), frontier.getModified()), player));
         result.addNetworkAction(() -> PacketHandler.sendToAllExcept(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(),
                 false, player.getId()), server, player));
+        frontierEvents.postUpdated(frontier);
         return result;
     }
 
@@ -675,6 +687,7 @@ public class ServerFrontierOperationService {
             enqueueCollectionVisibilityChange(result, collection, collectionRecipientsBefore);
         }
         result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(new PacketFrontierCreated(frontier, actorId), frontier, server));
+        frontierEvents.postCreated(frontier);
         return result;
     }
 
@@ -687,6 +700,7 @@ public class ServerFrontierOperationService {
             enqueueCollectionVisibilityChange(result, collection, collectionRecipientsBefore);
         }
         result.addNetworkAction(() -> PacketHandler.sendToAll(new PacketFrontierCreated(frontier, actorId), server));
+        frontierEvents.postCreated(frontier);
         return result;
     }
 
@@ -694,6 +708,7 @@ public class ServerFrontierOperationService {
         ServerFrontierOperationResult result = ServerFrontierOperationResult.success(frontier);
         result.addNetworkAction(() -> PacketHandler.sendToAll(new PacketFrontierUpdated(frontier.getId(), frontier.getDimension(),
                 false, change, actorId), server));
+        frontierEvents.postUpdated(frontier);
         return result;
     }
 
@@ -701,6 +716,7 @@ public class ServerFrontierOperationService {
         ServerFrontierOperationResult result = ServerFrontierOperationResult.success(frontier);
         result.addNetworkAction(() -> PacketHandler.sendToAll(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(),
                 false, actorId), server));
+        frontierEvents.postDeleted(frontier.getId());
         return result;
     }
 
@@ -714,6 +730,7 @@ public class ServerFrontierOperationService {
             CollectionData payload = new CollectionData(collection);
             result.addNetworkAction(() -> PacketHandler.sendToAll(new PacketCollectionCreated(payload), server));
         }
+        collectionEvents.postCreated(collection);
         return result;
     }
 
@@ -741,6 +758,7 @@ public class ServerFrontierOperationService {
     private void enqueueCollectionVisibilityChange(ServerFrontierOperationResult result,
                                                    CollectionData collection,
                                                    @Nullable Set<UUID> recipientsBefore) {
+        collectionEvents.postUpdated(collection);
         if (!collection.getPersonal()) {
             CollectionData payload = new CollectionData(collection);
             result.addNetworkAction(() -> PacketHandler.sendToAll(new PacketCollectionUpdated(payload), server));
@@ -772,6 +790,7 @@ public class ServerFrontierOperationService {
     }
 
     private void enqueueCollectionDeleted(ServerFrontierOperationResult result, CollectionData collection, @Nullable Set<UUID> recipientsBefore) {
+        collectionEvents.postDeleted(collection.getId());
         if (!collection.getPersonal()) {
             UUID collectionId = collection.getId();
             result.addNetworkAction(() -> PacketHandler.sendToAll(new PacketCollectionDeleted(collectionId), server));
