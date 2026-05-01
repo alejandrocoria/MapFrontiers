@@ -103,8 +103,11 @@ public class ClientFrontierOperationService {
                                   @Nullable List<ChunkPos> chunks,
                                   @Nullable List<BlockPos> points,
                                   @Nullable FrontierData.PathStyle pathStyle) {
-        createNewFrontierAndReturn(personal, UUID.randomUUID(), dimension, collectionId, FrontierData.FrontierLifetime.PERSISTENT, null,
-                vertices, chunks, points, pathStyle);
+        FrontierCreateSpec createSpec = createFrontierSpecFromLegacyInputs(UUID.randomUUID(), personal, dimension, collectionId,
+                FrontierData.FrontierLifetime.PERSISTENT, null, vertices, chunks, points, pathStyle);
+        if (createSpec != null) {
+            createNewFrontierAndReturn(createSpec);
+        }
     }
 
     public void createNewFrontier(boolean personal,
@@ -151,30 +154,12 @@ public class ClientFrontierOperationService {
                                                       FrontierData.FrontierLifetime lifetime, @Nullable String sourcePluginId,
                                                       @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks,
                                                       @Nullable List<BlockPos> points, @Nullable FrontierData.PathStyle pathStyle) {
-        if (usesAuthoritativeCreateFlow(lifetime)) {
-            FrontierCreateSpec createSpec = createAuthoritativeFrontierSpec(frontierId, personal, dimension, collectionId, lifetime,
-                    sourcePluginId, vertices, chunks, points, pathStyle);
-            if (createSpec == null) {
-                return null;
-            }
-            PacketHandler.sendToServer(new PacketCreateFrontier(createSpec));
+        FrontierCreateSpec createSpec = createFrontierSpecFromLegacyInputs(frontierId, personal, dimension, collectionId, lifetime,
+                sourcePluginId, vertices, chunks, points, pathStyle);
+        if (createSpec == null) {
             return null;
         }
-
-        if (!personal || mc.player == null) {
-            return null;
-        }
-
-        FrontierData frontier = FrontierCreationFactory.createFrontier(frontierId, new SettingsUser(mc.player), dimension,
-                true, lifetime, sourcePluginId, vertices, chunks, points, pathStyle);
-        if (collectionId != null) {
-            frontier.setCollectionId(collectionId);
-        }
-        FrontierOverlay frontierOverlay = personalManager.addFrontier(frontier);
-        refreshCollectionRuntime();
-        persistLocalPersonalDataIfPersistent(frontierOverlay);
-        frontierEvents.postCreated(frontierOverlay, mc.player.getId());
-        return frontierOverlay;
+        return createNewFrontierAndReturn(createSpec);
     }
 
     @Nullable
@@ -824,16 +809,16 @@ public class ClientFrontierOperationService {
         };
     }
 
-    private @Nullable FrontierCreateSpec createAuthoritativeFrontierSpec(UUID frontierId,
-                                                                         boolean personal,
-                                                                         ResourceKey<Level> dimension,
-                                                                         @Nullable UUID collectionId,
-                                                                         FrontierData.FrontierLifetime lifetime,
-                                                                         @Nullable String sourcePluginId,
-                                                                         @Nullable List<BlockPos> vertices,
-                                                                         @Nullable List<ChunkPos> chunks,
-                                                                         @Nullable List<BlockPos> points,
-                                                                         @Nullable FrontierData.PathStyle pathStyle) {
+    private @Nullable FrontierCreateSpec createFrontierSpecFromLegacyInputs(UUID frontierId,
+                                                                            boolean personal,
+                                                                            ResourceKey<Level> dimension,
+                                                                            @Nullable UUID collectionId,
+                                                                            FrontierData.FrontierLifetime lifetime,
+                                                                            @Nullable String sourcePluginId,
+                                                                            @Nullable List<BlockPos> vertices,
+                                                                            @Nullable List<ChunkPos> chunks,
+                                                                            @Nullable List<BlockPos> points,
+                                                                            @Nullable FrontierData.PathStyle pathStyle) {
         if (mc.player == null) {
             return null;
         }
