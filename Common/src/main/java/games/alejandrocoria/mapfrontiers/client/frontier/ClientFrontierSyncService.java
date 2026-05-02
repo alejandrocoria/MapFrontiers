@@ -154,13 +154,45 @@ public class ClientFrontierSyncService {
         }
 
         SettingsUser currentPlayer = new SettingsUser(mc.player);
-        localPersonalStore.saveOwnedFrontierMirror(getAllPersonalFrontiers(), currentPlayer);
-        localPersonalCollectionStore.saveOwnedCollectionMirror(collectionRuntime.getCollections(true), currentPlayer);
+        localPersonalStore.saveOwnedFrontierMirror(getPersistablePersonalFrontiers(), currentPlayer);
+        localPersonalCollectionStore.saveOwnedCollectionMirror(getPersistentPersonalCollections(), currentPlayer);
     }
 
     private Collection<FrontierOverlay> getAllPersonalFrontiers() {
         return personalManager.getAllFrontiers().values().stream()
                 .flatMap(List::stream)
                 .toList();
+    }
+
+    private Collection<FrontierData> getPersistablePersonalFrontiers() {
+        return getAllPersonalFrontiers().stream()
+                .map(frontier -> sanitizePersistentPersonalFrontierForStorage(new FrontierData(frontier)))
+                .toList();
+    }
+
+    private Collection<CollectionData> getPersistentPersonalCollections() {
+        return collectionRuntime.getCollections(true).stream()
+                .filter(CollectionData::isPersistent)
+                .toList();
+    }
+
+    private FrontierData sanitizePersistentPersonalFrontierForStorage(FrontierData frontier) {
+        if (!frontier.isPersistent()) {
+            return frontier;
+        }
+
+        UUID collectionId = frontier.getCollectionId();
+        if (collectionId == null) {
+            return frontier;
+        }
+
+        CollectionData collection = collectionRuntime.getCollection(collectionId);
+        if (collection == null || !collection.isPersistent()
+                || collection.getPersonal() != frontier.getPersonal()
+                || (frontier.getPersonal() && !collection.getOwner().equals(frontier.getOwner()))) {
+            frontier.setCollectionId(null);
+        }
+
+        return frontier;
     }
 }

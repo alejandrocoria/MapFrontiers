@@ -144,6 +144,6 @@ public class ClientLocalPersonalCollectionStore {
     }
 
     private static boolean shouldPersist(CollectionData collection) {
-        return collection.getPersonal();
+        return collection.getPersonal() && collection.isPersistent();
     }
 }

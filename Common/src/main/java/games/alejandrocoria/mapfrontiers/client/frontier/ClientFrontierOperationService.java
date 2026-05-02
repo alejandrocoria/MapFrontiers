@@ -640,7 +640,7 @@ public class ClientFrontierOperationService {
         }
 
         SettingsUser currentPlayer = new SettingsUser(mc.player);
-        localPersonalStore.saveOwnedFrontierMirror(getAllPersonalFrontiers(), currentPlayer);
+        localPersonalStore.saveOwnedFrontierMirror(getPersistablePersonalFrontiers(), currentPlayer);
         localPersonalCollectionStore.saveOwnedCollectionMirror(getPersistentPersonalCollections(), currentPlayer);
     }
 
@@ -661,6 +661,12 @@ public class ClientFrontierOperationService {
     private Collection<FrontierOverlay> getAllPersonalFrontiers() {
         return personalManager.getAllFrontiers().values().stream()
                 .flatMap(List::stream)
+                .toList();
+    }
+
+    private Collection<FrontierData> getPersistablePersonalFrontiers() {
+        return getAllPersonalFrontiers().stream()
+                .map(frontier -> sanitizePersistentPersonalFrontierForStorage(new FrontierData(frontier)))
                 .toList();
     }
 
@@ -773,6 +779,25 @@ public class ClientFrontierOperationService {
 
     private boolean isValidLocalCollectionAssignment(boolean personal, SettingsUser owner, @Nullable UUID collectionId) {
         return collectionId == null || resolveValidLocalCollectionId(personal, owner, collectionId) != null;
+    }
+
+    private FrontierData sanitizePersistentPersonalFrontierForStorage(FrontierData frontier) {
+        if (!frontier.isPersistent()) {
+            return frontier;
+        }
+
+        UUID collectionId = frontier.getCollectionId();
+        if (collectionId == null) {
+            return frontier;
+        }
+
+        CollectionData collection = collectionRuntime.getCollection(collectionId);
+        if (collection == null || !collection.isPersistent()
+                || !isValidLocalCollectionAssignment(frontier.getPersonal(), frontier.getOwner(), collectionId)) {
+            frontier.setCollectionId(null);
+        }
+
+        return frontier;
     }
 
     private FrontierData resolveCopiedFrontier(FrontierData receivedFrontier, @Nullable CollectionData receivedCollection) {
