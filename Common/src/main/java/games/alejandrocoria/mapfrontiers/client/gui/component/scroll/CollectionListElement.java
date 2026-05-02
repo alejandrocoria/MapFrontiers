@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component.scroll;
 
 import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.frontier.CollectionScope;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxRenderHelper;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
@@ -40,7 +41,7 @@ public class CollectionListElement extends FrontierListRowElement {
     private final Font font;
     private final @Nullable CollectionData collection;
     private final boolean virtualRow;
-    private final boolean personal;
+    private final CollectionScope scope;
     private final String title;
     private final String counters;
     private final int color;
@@ -61,7 +62,7 @@ public class CollectionListElement extends FrontierListRowElement {
                                  Font font,
                                  @Nullable CollectionData collection,
                                  boolean virtualRow,
-                                 boolean personal,
+                                 CollectionScope scope,
                                  String title,
                                  String counters,
                                  int color,
@@ -79,7 +80,7 @@ public class CollectionListElement extends FrontierListRowElement {
         this.font = font;
         this.collection = collection;
         this.virtualRow = virtualRow;
-        this.personal = personal;
+        this.scope = scope;
         this.title = title;
         this.counters = counters;
         this.color = color;
@@ -116,7 +117,11 @@ public class CollectionListElement extends FrontierListRowElement {
     }
 
     public boolean isPersonal() {
-        return personal;
+        return scope != CollectionScope.GLOBAL_PERSISTENT;
+    }
+
+    public CollectionScope getScope() {
+        return scope;
     }
 
     public List<UUID> getEligibleFrontierIds() {

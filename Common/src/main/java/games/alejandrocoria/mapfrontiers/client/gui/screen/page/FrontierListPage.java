@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.screen.page;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
+import games.alejandrocoria.mapfrontiers.client.frontier.CollectionScope;
 import games.alejandrocoria.mapfrontiers.client.frontier.CollectionUiStateStore;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
@@ -85,6 +86,7 @@ public class FrontierListPage extends PageScreen
     private static final int FILTER_DIMENSION_MIN_ROWS = 2;
     private static final float MIN_COLLECTION_BRIGHTNESS = 0.3f;
     private static final String PERSONAL_VIRTUAL_COLLECTION_ID = "mapfrontiers:personal_virtual_collection";
+    private static final String TEMPORARY_VIRTUAL_COLLECTION_ID = "mapfrontiers:temporary_virtual_collection";
     private static final String GLOBAL_VIRTUAL_COLLECTION_ID = "mapfrontiers:global_virtual_collection";
     private static final String NEW_ACTION_LABEL = "Nueva";
     private static final String MOVE_HERE_ACTION_LABEL = "Mover aca";
@@ -652,13 +654,16 @@ public class FrontierListPage extends PageScreen
     }
 
     private void createCollectionFromVirtualRow(CollectionListElement virtualRow) {
-        if (minecraft.player == null || !virtualRow.isVirtualRow() || !canCreateCollection(virtualRow.isPersonal())) {
+        if (minecraft.player == null || !virtualRow.isVirtualRow() || !canCreateCollection(virtualRow.getScope())) {
             return;
         }
 
         CollectionData collection = new CollectionData();
         collection.setId(UUID.randomUUID());
         collection.setPersonal(virtualRow.isPersonal());
+        collection.setLifetime(virtualRow.getScope() == CollectionScope.PERSONAL_SESSION
+                ? FrontierData.FrontierLifetime.SESSION_ONLY
+                : FrontierData.FrontierLifetime.PERSISTENT);
         collection.setOwner(new SettingsUser(minecraft.player));
 
         selectedRowId = collection.getId().toString();
@@ -686,13 +691,21 @@ public class FrontierListPage extends PageScreen
         List<ScrollElement> rows = new ArrayList<>();
         Set<UUID> visibleFilteredFrontiers = new HashSet<>();
 
-        List<ScrollElement> personalRows = buildBlockRows(true, visibleFilteredFrontiers);
-        List<ScrollElement> globalRows = buildBlockRows(false, visibleFilteredFrontiers);
-        rows.addAll(personalRows);
-        if (!personalRows.isEmpty() && !globalRows.isEmpty()) {
-            rows.add(new SpacerListElement(FRONTIERS_WIDTH, 5));
+        List<List<ScrollElement>> blocks = List.of(
+                buildBlockRows(CollectionScope.PERSONAL_PERSISTENT, visibleFilteredFrontiers),
+                buildBlockRows(CollectionScope.PERSONAL_SESSION, visibleFilteredFrontiers),
+                buildBlockRows(CollectionScope.GLOBAL_PERSISTENT, visibleFilteredFrontiers));
+        boolean firstBlock = true;
+        for (List<ScrollElement> block : blocks) {
+            if (block.isEmpty()) {
+                continue;
+            }
+            if (!firstBlock) {
+                rows.add(new SpacerListElement(FRONTIERS_WIDTH, 5));
+            }
+            rows.addAll(block);
+            firstBlock = false;
         }
-        rows.addAll(globalRows);
         pruneMarkedFrontiers(visibleFilteredFrontiers);
 
         Set<String> validRowIds = new HashSet<>();
@@ -727,17 +740,17 @@ public class FrontierListPage extends PageScreen
         return frontiers.getSelectedElement() instanceof FrontierListRowElement rowElement && rowElement.getRowId().equals(rowId);
     }
 
-    private List<ScrollElement> buildBlockRows(boolean personal, Set<UUID> visibleFilteredFrontiers) {
+    private List<ScrollElement> buildBlockRows(CollectionScope scope, Set<UUID> visibleFilteredFrontiers) {
         List<ScrollElement> rows = new ArrayList<>();
-        List<CollectionGroupModel> collectionGroups = buildCollectionGroups(personal);
-        boolean includeVirtualRow = personal || shouldShowGlobalVirtualRow() || !collectionGroups.isEmpty();
+        List<CollectionGroupModel> collectionGroups = buildCollectionGroups(scope);
+        boolean includeVirtualRow = scope != CollectionScope.GLOBAL_PERSISTENT || shouldShowGlobalVirtualRow() || !collectionGroups.isEmpty();
 
         if (!includeVirtualRow) {
             return rows;
         }
 
-        CollectionGroupModel virtualGroup = buildVirtualGroup(personal);
-        String headerText = personal ? I18n.get("mapfrontiers.personal_frontiers_header") : I18n.get("mapfrontiers.global_frontiers_header");
+        CollectionGroupModel virtualGroup = buildVirtualGroup(scope);
+        String headerText = getHeaderText(scope);
         rows.add(new SectionHeaderListElement(font, headerText, FRONTIERS_WIDTH, ColorConstants.SCROLL_HEADER));
         rows.add(createCollectionRowElement(virtualGroup, ColorConstants.VIRTUAL_COLLECTION));
         if (!virtualGroup.collapsed) {
@@ -771,7 +784,7 @@ public class FrontierListPage extends PageScreen
                 .toList();
         boolean canMarkGroup = canMarkCollectionGroup(group, eligibleFrontierIds);
 
-        return new CollectionListElement(group.rowId, font, group.collection, group.virtualRow, group.personal, group.title,
+        return new CollectionListElement(group.rowId, font, group.collection, group.virtualRow, group.scope, group.title,
                 formatCollectionCounters(group.totalFrontiers, group.filteredFrontiers.size()),
                 collectionColor,
                 group.collapsed,
@@ -799,26 +812,26 @@ public class FrontierListPage extends PageScreen
         }
     }
 
-    private CollectionGroupModel buildVirtualGroup(boolean personal) {
-        String rowId = personal ? PERSONAL_VIRTUAL_COLLECTION_ID : GLOBAL_VIRTUAL_COLLECTION_ID;
+    private CollectionGroupModel buildVirtualGroup(CollectionScope scope) {
+        String rowId = getVirtualCollectionRowId(scope);
         CollectionUiStateStore collapseState = getCollectionUiStateStore();
-        List<FrontierOverlay> allFrontiers = new ArrayList<>(MapFrontiersClient.getFrontiersWithoutCollection(personal));
+        List<FrontierOverlay> allFrontiers = new ArrayList<>(MapFrontiersClient.getFrontiersWithoutCollection(scope));
         List<FrontierOverlay> filteredFrontiers = filterFrontiers(allFrontiers);
 
         return new CollectionGroupModel(rowId,
                 null,
                 true,
-                personal,
+                scope,
                 I18n.get("mapfrontiers.no_collection"),
                 collapseState.isCollapsed(rowId),
                 allFrontiers,
                 filteredFrontiers);
     }
 
-    private List<CollectionGroupModel> buildCollectionGroups(boolean personal) {
+    private List<CollectionGroupModel> buildCollectionGroups(CollectionScope scope) {
         CollectionUiStateStore collapseState = getCollectionUiStateStore();
         List<CollectionGroupModel> groups = new ArrayList<>();
-        for (CollectionData collection : MapFrontiersClient.getCollections(personal)) {
+        for (CollectionData collection : MapFrontiersClient.getCollections(scope)) {
             List<FrontierOverlay> allFrontiers = new ArrayList<>(MapFrontiersClient.getFrontiersInCollection(collection.getId()));
             List<FrontierOverlay> filteredFrontiers = filterFrontiers(allFrontiers);
             String title = collection.getName();
@@ -830,7 +843,7 @@ public class FrontierListPage extends PageScreen
             groups.add(new CollectionGroupModel(rowId,
                     collection,
                     false,
-                    personal,
+                    scope,
                     title,
                     collapseState.isCollapsed(rowId),
                     allFrontiers,
@@ -975,6 +988,22 @@ public class FrontierListPage extends PageScreen
         return !MapFrontiersClient.getAllFrontiers(false).isEmpty() || canManageGlobalCollections();
     }
 
+    private String getHeaderText(CollectionScope scope) {
+        return switch (scope) {
+            case PERSONAL_PERSISTENT -> I18n.get("mapfrontiers.personal_frontiers_header");
+            case PERSONAL_SESSION -> I18n.get("mapfrontiers.temporary") + " " + I18n.get("mapfrontiers.personal_frontiers_header");
+            case GLOBAL_PERSISTENT -> I18n.get("mapfrontiers.global_frontiers_header");
+        };
+    }
+
+    private String getVirtualCollectionRowId(CollectionScope scope) {
+        return switch (scope) {
+            case PERSONAL_PERSISTENT -> PERSONAL_VIRTUAL_COLLECTION_ID;
+            case PERSONAL_SESSION -> TEMPORARY_VIRTUAL_COLLECTION_ID;
+            case GLOBAL_PERSISTENT -> GLOBAL_VIRTUAL_COLLECTION_ID;
+        };
+    }
+
     private boolean isMarkedModeActive() {
         return markedType != MarkedType.NONE && !markedFrontierIds.isEmpty();
     }
@@ -1003,7 +1032,7 @@ public class FrontierListPage extends PageScreen
 
     private @Nullable String getCollectionActionLabel(CollectionGroupModel group) {
         if (!isMarkedModeActive()) {
-            if (group.virtualRow && canCreateCollection(group.personal)) {
+            if (group.virtualRow && canCreateCollection(group.scope)) {
                 return NEW_ACTION_LABEL;
             }
             return null;
@@ -1022,7 +1051,7 @@ public class FrontierListPage extends PageScreen
 
     private boolean isCollectionActionEnabled(CollectionGroupModel group) {
         if (!isMarkedModeActive()) {
-            return group.virtualRow && canCreateCollection(group.personal);
+            return group.virtualRow && canCreateCollection(group.scope);
         }
 
         if (!isCompatibleWithMarkedType(group, getEligibleFrontierIds(group))) {
@@ -1142,7 +1171,7 @@ public class FrontierListPage extends PageScreen
         }
 
         if (group.virtualRow) {
-            return group.personal ? markedType != MarkedType.GLOBAL : markedType == MarkedType.GLOBAL;
+            return markedType == getMarkedType(group.scope);
         }
 
         if (group.collection != null) {
@@ -1167,13 +1196,17 @@ public class FrontierListPage extends PageScreen
         return collection.isSessionOnly() ? MarkedType.PERSONAL_SESSION : MarkedType.PERSONAL_PERSISTENT;
     }
 
+    private MarkedType getMarkedType(CollectionScope scope) {
+        return switch (scope) {
+            case GLOBAL_PERSISTENT -> MarkedType.GLOBAL;
+            case PERSONAL_PERSISTENT -> MarkedType.PERSONAL_PERSISTENT;
+            case PERSONAL_SESSION -> MarkedType.PERSONAL_SESSION;
+        };
+    }
+
     private boolean canMarkCollectionGroup(CollectionGroupModel group, List<UUID> eligibleFrontierIds) {
         if (eligibleFrontierIds.isEmpty()) {
             return false;
-        }
-
-        if (!group.personal || !group.virtualRow) {
-            return resolveMarkedType(eligibleFrontierIds) != null;
         }
 
         return resolveMarkedType(eligibleFrontierIds) != null;
@@ -1232,12 +1265,12 @@ public class FrontierListPage extends PageScreen
                 || profile.updateFrontier == SettingsProfile.State.Enabled;
     }
 
-    private boolean canCreateCollection(boolean personal) {
+    private boolean canCreateCollection(CollectionScope scope) {
         if (minecraft.player == null) {
             return false;
         }
 
-        if (personal) {
+        if (scope != CollectionScope.GLOBAL_PERSISTENT) {
             return true;
         }
 
@@ -1249,6 +1282,10 @@ public class FrontierListPage extends PageScreen
         CollectionListElement selectedCollectionElement = getSelectedCollectionElement();
         if (selectedCollectionElement == null) {
             return true;
+        }
+
+        if (selectedCollectionElement.getScope() == CollectionScope.PERSONAL_SESSION) {
+            return false;
         }
 
         CollectionData selectedCollection = selectedCollectionElement.getCollection();
@@ -1279,7 +1316,7 @@ public class FrontierListPage extends PageScreen
     }
 
     private boolean canUseCollectionAsMoveTarget(CollectionGroupModel group) {
-        if (!group.personal) {
+        if (group.scope == CollectionScope.GLOBAL_PERSISTENT) {
             return true;
         }
 
@@ -1295,14 +1332,7 @@ public class FrontierListPage extends PageScreen
             return false;
         }
 
-        if (markedType == MarkedType.PERSONAL_PERSISTENT) {
-            return group.collection.isPersistent();
-        }
-        if (markedType == MarkedType.PERSONAL_SESSION) {
-            return group.collection.isSessionOnly();
-        }
-
-        return true;
+        return markedType == getMarkedType(group.scope);
     }
 
     private boolean canDeleteSelectedCollection(CollectionData collection) {
@@ -1407,7 +1437,7 @@ public class FrontierListPage extends PageScreen
         private final String rowId;
         private final @Nullable CollectionData collection;
         private final boolean virtualRow;
-        private final boolean personal;
+        private final CollectionScope scope;
         private final String title;
         private final boolean collapsed;
         private final List<FrontierOverlay> allFrontiers;
@@ -1421,7 +1451,7 @@ public class FrontierListPage extends PageScreen
         private CollectionGroupModel(String rowId,
                                      @Nullable CollectionData collection,
                                      boolean virtualRow,
-                                     boolean personal,
+                                     CollectionScope scope,
                                      String title,
                                      boolean collapsed,
                                      List<FrontierOverlay> allFrontiers,
@@ -1429,7 +1459,7 @@ public class FrontierListPage extends PageScreen
             this.rowId = rowId;
             this.collection = collection;
             this.virtualRow = virtualRow;
-            this.personal = personal;
+            this.scope = scope;
             this.title = title;
             this.collapsed = collapsed;
             this.allFrontiers = allFrontiers;
