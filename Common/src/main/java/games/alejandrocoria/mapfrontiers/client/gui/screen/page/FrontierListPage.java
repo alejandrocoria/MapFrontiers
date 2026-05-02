@@ -893,7 +893,7 @@ public class FrontierListPage extends PageScreen
                 null,
                 true,
                 scope,
-                I18n.get("mapfrontiers.no_collection"),
+                getVirtualCollectionTitle(scope),
                 collapseState.isCollapsed(rowId),
                 allFrontiers,
                 filteredFrontiers);
@@ -1062,8 +1062,15 @@ public class FrontierListPage extends PageScreen
     private String getHeaderText(CollectionScope scope) {
         return switch (scope) {
             case PERSONAL_PERSISTENT -> I18n.get("mapfrontiers.personal_frontiers_header");
-            case PERSONAL_SESSION -> I18n.get("mapfrontiers.temporary") + " " + I18n.get("mapfrontiers.personal_frontiers_header");
+            case PERSONAL_SESSION -> I18n.get("mapfrontiers.temporary_frontiers_header");
             case GLOBAL_PERSISTENT -> I18n.get("mapfrontiers.global_frontiers_header");
+        };
+    }
+
+    private String getVirtualCollectionTitle(CollectionScope scope) {
+        return switch (scope) {
+            case PERSONAL_SESSION -> I18n.get("mapfrontiers.temporary_no_collection");
+            case PERSONAL_PERSISTENT, GLOBAL_PERSISTENT -> I18n.get("mapfrontiers.no_collection");
         };
     }
 

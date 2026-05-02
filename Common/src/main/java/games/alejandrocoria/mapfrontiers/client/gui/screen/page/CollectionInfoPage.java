@@ -52,7 +52,11 @@ public class CollectionInfoPage extends PageScreen {
     private static final Component RANDOM_COLOR_LABEL = Component.translatable("mapfrontiers.random_color");
     private static final Component PERSONAL_LABEL = Component.translatable("mapfrontiers.config.Personal");
     private static final Component GLOBAL_LABEL = Component.translatable("mapfrontiers.config.Global");
+    private static final String TYPE_KEY = "mapfrontiers.type";
     private static final String OWNER_KEY = "mapfrontiers.owner";
+    private static final String SOURCE_PLUGIN_KEY = "mapfrontiers.source_plugin";
+    private static final String TEMPORARY_SOURCE_PLUGIN_KEY = "mapfrontiers.temporary_source_plugin";
+    private static final String TEMPORARY_KEY = "mapfrontiers.temporary";
     private static final String FRONTIERS_COUNT_KEY = "mapfrontiers.collection_frontiers_count";
     private static final String AREA_KEY = "mapfrontiers.area";
     private static final String LENGTH_KEY = "mapfrontiers.length";
@@ -106,6 +110,7 @@ public class CollectionInfoPage extends PageScreen {
     private SimpleButton buttonDone;
     private StringWidget labelPasteName;
     private StringWidget labelPasteColor;
+    private StringWidget sourceInfoLabel;
     private StringWidget ownerLabel;
     private StringWidget typeLabel;
     private StringWidget frontiersCountLabel;
@@ -167,6 +172,8 @@ public class CollectionInfoPage extends PageScreen {
         textName.setValueChangedCallback(this::onNameChanged);
         textName.setLostFocusCallback(value -> addCurrentStateToUndo());
         overviewColumn.addChild(textName);
+
+        sourceInfoLabel = overviewColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.TEXT_SOURCE_PLUGIN));
     }
 
     private void buildInfoSection(GridLayout mainLayout) {
@@ -403,7 +410,8 @@ public class CollectionInfoPage extends PageScreen {
         }
 
         ownerLabel.setMessage(Component.translatable(OWNER_KEY, SettingsUserFormatter.getDisplayName(collection.getOwner())));
-        typeLabel.setMessage(collection.getPersonal() ? PERSONAL_LABEL : GLOBAL_LABEL);
+        typeLabel.setMessage(Component.translatable(TYPE_KEY, collection.getPersonal() ? PERSONAL_LABEL : GLOBAL_LABEL));
+        sourceInfoLabel.setMessage(createSourceInfoMessage());
         frontiersCountLabel.setMessage(Component.translatable(FRONTIERS_COUNT_KEY, frontiers.size()));
         areaLabel.setMessage(Component.translatable(AREA_KEY, formatMeasurement(totalArea)));
         lengthLabel.setMessage(Component.translatable(LENGTH_KEY, formatMeasurement(totalPathLength)));
@@ -424,7 +432,7 @@ public class CollectionInfoPage extends PageScreen {
         colorPicker.active = editable;
         colorPalette.active = editable;
         buttonRandomColor.active = editable;
-        buttonDelete.active = editable;
+        buttonDelete.active = canDeleteCollection();
         updatePasteOptionsVisibility(editable);
         updateUndoRedoVisibility(editable);
     }
@@ -574,7 +582,7 @@ public class CollectionInfoPage extends PageScreen {
 
         SettingsUser playerUser = new SettingsUser(minecraft.player);
         if (collection.getPersonal()) {
-            return collection.getOwner().equals(playerUser);
+            return canManageLocalPersonalCollection(playerUser);
         }
 
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
@@ -582,12 +590,48 @@ public class CollectionInfoPage extends PageScreen {
                 || (profile.updateFrontier == SettingsProfile.State.Owner && collection.getOwner().equals(playerUser)));
     }
 
+    private boolean canDeleteCollection() {
+        if (minecraft.player == null) {
+            return false;
+        }
+
+        SettingsUser playerUser = new SettingsUser(minecraft.player);
+        if (collection.getPersonal()) {
+            return canManageLocalPersonalCollection(playerUser);
+        }
+
+        SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
+        return profile != null && (profile.deleteFrontier == SettingsProfile.State.Enabled
+                || (profile.deleteFrontier == SettingsProfile.State.Owner && collection.getOwner().equals(playerUser)));
+    }
+
+    private boolean canManageLocalPersonalCollection(SettingsUser playerUser) {
+        return collection.getOwner().equals(playerUser);
+    }
+
     private void deleteCollection() {
+        if (!canDeleteCollection()) {
+            return;
+        }
+
         saveChangesOnClose = false;
         MapFrontiersClient.getCollectionEvents().unsubscribe(this);
         MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
         MapFrontiersClient.getOperationService().deleteCollection(collection);
         super.onClose();
+    }
+
+    private Component createSourceInfoMessage() {
+        if (collection.getSourcePluginId() != null) {
+            return collection.isSessionOnly()
+                    ? Component.translatable(TEMPORARY_SOURCE_PLUGIN_KEY, collection.getSourcePluginId())
+                    : Component.translatable(SOURCE_PLUGIN_KEY, collection.getSourcePluginId());
+        }
+        if (collection.isSessionOnly()) {
+            return Component.translatable(TEMPORARY_KEY);
+        }
+
+        return Component.empty();
     }
 
     private static String formatMeasurement(float value) {
