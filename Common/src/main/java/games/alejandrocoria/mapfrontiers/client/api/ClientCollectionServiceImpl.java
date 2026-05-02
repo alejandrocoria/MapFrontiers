@@ -39,7 +39,7 @@ public class ClientCollectionServiceImpl implements PluginScopedClientCollection
 
     @Override
     public CollectionActionResult createTemporaryPersonalCollection(String pluginModId, CollectionCreateRequest request) {
-        return CollectionActionResult.rejected();
+        return MapFrontiersClient.getOperationService().createTemporaryPersonalCollectionAction(pluginModId, request);
     }
 
     @Override

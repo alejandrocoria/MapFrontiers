@@ -284,6 +284,18 @@ public class ClientFrontierOperationService {
                 : CollectionActionResult.rejected();
     }
 
+    public CollectionActionResult createTemporaryPersonalCollectionAction(String pluginModId, CollectionCreateRequest request) {
+        if (mc.player == null) {
+            return CollectionActionResult.rejected();
+        }
+
+        CollectionData collection = createCollectionData(true, pluginModId, FrontierData.FrontierLifetime.SESSION_ONLY, request);
+        createCollection(collection);
+        return collectionRuntime.hasCollection(collection.getId())
+                ? CollectionActionResult.applied(ApiConverters.fromCollection(collection))
+                : CollectionActionResult.rejected();
+    }
+
     public CollectionActionResult updateCollectionAction(boolean personal, CollectionId collectionId, CollectionMutation mutation) {
         CollectionData collection = collectionRuntime.getCollection(collectionId.value());
         if (collection == null || collection.getPersonal() != personal) {
@@ -629,7 +641,7 @@ public class ClientFrontierOperationService {
 
         SettingsUser currentPlayer = new SettingsUser(mc.player);
         localPersonalStore.saveOwnedFrontierMirror(getAllPersonalFrontiers(), currentPlayer);
-        localPersonalCollectionStore.saveOwnedCollectionMirror(collectionRuntime.getCollections(true), currentPlayer);
+        localPersonalCollectionStore.saveOwnedCollectionMirror(getPersistentPersonalCollections(), currentPlayer);
     }
 
     private void persistLocalPersonalCollections() {
@@ -637,7 +649,7 @@ public class ClientFrontierOperationService {
             return;
         }
 
-        localPersonalCollectionStore.saveOwnedCollectionMirror(collectionRuntime.getCollections(true), new SettingsUser(mc.player));
+        localPersonalCollectionStore.saveOwnedCollectionMirror(getPersistentPersonalCollections(), new SettingsUser(mc.player));
     }
 
     private void persistLocalPersonalDataIfPersistent(FrontierData frontier) {
@@ -652,6 +664,12 @@ public class ClientFrontierOperationService {
                 .toList();
     }
 
+    private Collection<CollectionData> getPersistentPersonalCollections() {
+        return collectionRuntime.getCollections(true).stream()
+                .filter(CollectionData::isPersistent)
+                .toList();
+    }
+
     private FrontiersOverlayManager getManager(boolean personal) {
         return personal ? personalManager : globalManager;
     }
@@ -661,11 +679,20 @@ public class ClientFrontierOperationService {
     }
 
     private CollectionData createCollectionData(boolean personal, String pluginModId, CollectionCreateRequest request) {
+        return createCollectionData(personal, pluginModId, FrontierData.FrontierLifetime.PERSISTENT, request);
+    }
+
+    private CollectionData createCollectionData(boolean personal,
+                                                String pluginModId,
+                                                FrontierData.FrontierLifetime lifetime,
+                                                CollectionCreateRequest request) {
         CollectionData collection = new CollectionData();
         collection.setId(UUID.randomUUID());
         collection.setPersonal(personal);
+        collection.setLifetime(lifetime);
         collection.setOwner(new SettingsUser(mc.player));
         collection.setSourcePluginId(pluginModId);
+        collection.removeCopiedFromInfo();
         request.name().ifPresent(collection::setName);
         request.color().ifPresent(collection::setColor);
         Date now = new Date();
@@ -783,7 +810,7 @@ public class ClientFrontierOperationService {
     }
 
     private static boolean usesAuthoritativeCollectionMutationFlow(CollectionData collection) {
-        return MapFrontiersClient.isModOnServer();
+        return collection.isPersistent() && MapFrontiersClient.isModOnServer();
     }
 
     private boolean canMutateLocalCollection(CollectionData collection) {
