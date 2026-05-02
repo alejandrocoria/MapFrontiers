@@ -108,6 +108,12 @@ public final class FrontierMutationApplier {
         } else {
             mutation.banner().ifPresent(value -> frontier.setBannerData(toBanner(value)));
         }
+
+        if (mutation.clearCollection()) {
+            frontier.setCollectionId(null);
+        } else {
+            mutation.collectionId().ifPresent(value -> frontier.setCollectionId(value.value()));
+        }
     }
 
     private static void applyPathStyle(FrontierData frontier, PathStyle pathStyle) {

@@ -86,7 +86,7 @@ public class FrontierListPage extends PageScreen
     private static final int FILTER_DIMENSION_MIN_ROWS = 2;
     private static final float MIN_COLLECTION_BRIGHTNESS = 0.3f;
     private static final String PERSONAL_VIRTUAL_COLLECTION_ID = "mapfrontiers:personal_virtual_collection";
-    private static final String TEMPORARY_VIRTUAL_COLLECTION_ID = "mapfrontiers:temporary_virtual_collection";
+    private static final String TEMPORARY_VIRTUAL_COLLECTION_ID = "mapfrontiers:personal_temporary_virtual_collection";
     private static final String GLOBAL_VIRTUAL_COLLECTION_ID = "mapfrontiers:global_virtual_collection";
     private static final String NEW_ACTION_LABEL = "Nueva";
     private static final String MOVE_HERE_ACTION_LABEL = "Mover aca";
@@ -893,7 +893,7 @@ public class FrontierListPage extends PageScreen
                 null,
                 true,
                 scope,
-                getVirtualCollectionTitle(scope),
+                I18n.get("mapfrontiers.no_collection"),
                 collapseState.isCollapsed(rowId),
                 allFrontiers,
                 filteredFrontiers);
@@ -1064,13 +1064,6 @@ public class FrontierListPage extends PageScreen
             case PERSONAL_PERSISTENT -> I18n.get("mapfrontiers.personal_frontiers_header");
             case PERSONAL_SESSION -> I18n.get("mapfrontiers.temporary_frontiers_header");
             case GLOBAL_PERSISTENT -> I18n.get("mapfrontiers.global_frontiers_header");
-        };
-    }
-
-    private String getVirtualCollectionTitle(CollectionScope scope) {
-        return switch (scope) {
-            case PERSONAL_SESSION -> I18n.get("mapfrontiers.temporary_no_collection");
-            case PERSONAL_PERSISTENT, GLOBAL_PERSISTENT -> I18n.get("mapfrontiers.no_collection");
         };
     }
 
