@@ -8,6 +8,7 @@ import games.alejandrocoria.mapfrontiers.client.frontier.ClientCollectionEvents;
 import games.alejandrocoria.mapfrontiers.client.frontier.ClientFrontierEvents;
 import games.alejandrocoria.mapfrontiers.client.frontier.ClientFrontierOperationService;
 import games.alejandrocoria.mapfrontiers.client.frontier.ClientFrontierRuntime;
+import games.alejandrocoria.mapfrontiers.client.frontier.CollectionScope;
 import games.alejandrocoria.mapfrontiers.client.frontier.CollectionUiStateStore;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierLocalOverrides;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
@@ -490,6 +491,15 @@ public class MapFrontiersClient {
         return runtime.getCollectionRuntime().getCollections(personal);
     }
 
+    public static List<CollectionData> getCollections(CollectionScope scope) {
+        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        if (runtime == null) {
+            return List.of();
+        }
+
+        return runtime.getCollectionRuntime().getCollections(scope);
+    }
+
     public static List<FrontierOverlay> getFrontiersInCollection(UUID collectionId) {
         ClientFrontierRuntime runtime = ensureFrontierRuntime();
         if (runtime == null) {
@@ -506,6 +516,15 @@ public class MapFrontiersClient {
         }
 
         return runtime.getCollectionRuntime().getFrontiersWithoutCollection(personal);
+    }
+
+    public static List<FrontierOverlay> getFrontiersWithoutCollection(CollectionScope scope) {
+        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        if (runtime == null) {
+            return List.of();
+        }
+
+        return runtime.getCollectionRuntime().getFrontiersWithoutCollection(scope);
     }
 
     public static void updateSelectedFrontierMarker(boolean personal, ResourceKey<Level> dimension, @Nullable FrontierOverlay frontier) {

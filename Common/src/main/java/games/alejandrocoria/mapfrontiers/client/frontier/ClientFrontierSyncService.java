@@ -83,8 +83,7 @@ public class ClientFrontierSyncService {
                 .toList();
         List<CollectionData> existingLocalPersonalCollections = currentPlayer == null
                 ? List.of()
-                : collectionRuntime.getCollections(true).stream()
-                        .filter(CollectionData::isPersistent)
+                : collectionRuntime.getCollections(CollectionScope.PERSONAL_PERSISTENT).stream()
                         .filter(collection -> collection.getOwner().equals(currentPlayer))
                         .map(CollectionData::new)
                         .toList();
@@ -179,9 +178,7 @@ public class ClientFrontierSyncService {
     }
 
     private Collection<CollectionData> getPersistentPersonalCollections() {
-        return collectionRuntime.getCollections(true).stream()
-                .filter(CollectionData::isPersistent)
-                .toList();
+        return collectionRuntime.getCollections(CollectionScope.PERSONAL_PERSISTENT);
     }
 
     private FrontierData sanitizePersistentPersonalFrontierForStorage(FrontierData frontier) {

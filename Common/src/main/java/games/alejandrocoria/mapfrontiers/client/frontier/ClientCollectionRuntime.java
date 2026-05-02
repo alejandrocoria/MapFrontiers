@@ -17,57 +17,65 @@ public class ClientCollectionRuntime {
     private static final Minecraft mc = Minecraft.getInstance();
 
     private final Map<UUID, CollectionData> globalCollectionsById = new LinkedHashMap<>();
-    private final Map<UUID, CollectionData> personalCollectionsById = new LinkedHashMap<>();
+    private final Map<UUID, CollectionData> personalPersistentCollectionsById = new LinkedHashMap<>();
+    private final Map<UUID, CollectionData> personalSessionCollectionsById = new LinkedHashMap<>();
     private final Map<UUID, List<FrontierOverlay>> visibleFrontiersByCollectionId = new LinkedHashMap<>();
     private final List<FrontierOverlay> globalFrontiersWithoutCollection = new ArrayList<>();
-    private final List<FrontierOverlay> personalFrontiersWithoutCollection = new ArrayList<>();
+    private final List<FrontierOverlay> personalPersistentFrontiersWithoutCollection = new ArrayList<>();
+    private final List<FrontierOverlay> personalSessionFrontiersWithoutCollection = new ArrayList<>();
 
     public void clear() {
         globalCollectionsById.clear();
-        personalCollectionsById.clear();
+        personalPersistentCollectionsById.clear();
+        personalSessionCollectionsById.clear();
         visibleFrontiersByCollectionId.clear();
         globalFrontiersWithoutCollection.clear();
-        personalFrontiersWithoutCollection.clear();
+        personalPersistentFrontiersWithoutCollection.clear();
+        personalSessionFrontiersWithoutCollection.clear();
     }
 
     public void replaceCollections(List<CollectionData> globalCollections, List<CollectionData> personalCollections) {
         globalCollectionsById.clear();
-        personalCollectionsById.clear();
+        personalPersistentCollectionsById.clear();
 
         for (CollectionData collection : globalCollections) {
             globalCollectionsById.put(collection.getId(), new CollectionData(collection));
         }
 
         for (CollectionData collection : personalCollections) {
-            personalCollectionsById.put(collection.getId(), new CollectionData(collection));
+            if (!collection.isSessionOnly()) {
+                personalPersistentCollectionsById.put(collection.getId(), new CollectionData(collection));
+            }
         }
     }
 
     public void addOrUpdateCollection(CollectionData collection) {
-        Map<UUID, CollectionData> target = collection.getPersonal() ? personalCollectionsById : globalCollectionsById;
-        Map<UUID, CollectionData> other = collection.getPersonal() ? globalCollectionsById : personalCollectionsById;
-
-        other.remove(collection.getId());
-        target.put(collection.getId(), new CollectionData(collection));
+        removeCollectionFromAllScopes(collection.getId());
+        getCollectionMap(collection).put(collection.getId(), new CollectionData(collection));
     }
 
     public void deleteCollection(UUID collectionId) {
-        globalCollectionsById.remove(collectionId);
-        personalCollectionsById.remove(collectionId);
+        removeCollectionFromAllScopes(collectionId);
     }
 
     public void refreshFromFrontiers(FrontiersOverlayManager globalManager, FrontiersOverlayManager personalManager) {
         visibleFrontiersByCollectionId.clear();
         globalFrontiersWithoutCollection.clear();
-        personalFrontiersWithoutCollection.clear();
+        personalPersistentFrontiersWithoutCollection.clear();
+        personalSessionFrontiersWithoutCollection.clear();
 
         indexFrontiers(globalManager, globalFrontiersWithoutCollection);
-        indexFrontiers(personalManager, personalFrontiersWithoutCollection);
+        indexFrontiers(personalManager, personalPersistentFrontiersWithoutCollection, personalSessionFrontiersWithoutCollection);
         pruneIndirectPersonalCollectionsWithoutVisibleFrontiers();
     }
 
     public @Nullable CollectionData getCollection(UUID collectionId) {
-        CollectionData collection = personalCollectionsById.get(collectionId);
+        CollectionData collection = personalPersistentCollectionsById.get(collectionId);
+        if (collection != null) {
+            return collection;
+        }
+
+        collection = personalSessionCollectionsById.get(collectionId);
         if (collection != null) {
             return collection;
         }
@@ -76,15 +84,33 @@ public class ClientCollectionRuntime {
     }
 
     public List<CollectionData> getCollections(boolean personal) {
-        return List.copyOf((personal ? personalCollectionsById : globalCollectionsById).values());
+        if (!personal) {
+            return getCollections(CollectionScope.GLOBAL_PERSISTENT);
+        }
+
+        List<CollectionData> collections = new ArrayList<>(personalPersistentCollectionsById.size()
+                + personalSessionCollectionsById.size());
+        collections.addAll(personalPersistentCollectionsById.values());
+        collections.addAll(personalSessionCollectionsById.values());
+        return List.copyOf(collections);
+    }
+
+    public List<CollectionData> getCollections(CollectionScope scope) {
+        return switch (scope) {
+            case GLOBAL_PERSISTENT -> List.copyOf(globalCollectionsById.values());
+            case PERSONAL_PERSISTENT -> List.copyOf(personalPersistentCollectionsById.values());
+            case PERSONAL_SESSION -> List.copyOf(personalSessionCollectionsById.values());
+        };
     }
 
     public boolean hasCollection(UUID collectionId) {
-        return personalCollectionsById.containsKey(collectionId) || globalCollectionsById.containsKey(collectionId);
+        return globalCollectionsById.containsKey(collectionId)
+                || personalPersistentCollectionsById.containsKey(collectionId)
+                || personalSessionCollectionsById.containsKey(collectionId);
     }
 
     public @Nullable CollectionData getPersonalCollectionCopiedFrom(UUID copiedFromId) {
-        for (CollectionData collection : personalCollectionsById.values()) {
+        for (CollectionData collection : personalPersistentCollectionsById.values()) {
             if (collection.wasCopied() && collection.getCopiedFromId().equals(copiedFromId)) {
                 return collection;
             }
@@ -99,7 +125,23 @@ public class ClientCollectionRuntime {
     }
 
     public List<FrontierOverlay> getFrontiersWithoutCollection(boolean personal) {
-        return personal ? List.copyOf(personalFrontiersWithoutCollection) : List.copyOf(globalFrontiersWithoutCollection);
+        if (!personal) {
+            return getFrontiersWithoutCollection(CollectionScope.GLOBAL_PERSISTENT);
+        }
+
+        List<FrontierOverlay> frontiers = new ArrayList<>(personalPersistentFrontiersWithoutCollection.size()
+                + personalSessionFrontiersWithoutCollection.size());
+        frontiers.addAll(personalPersistentFrontiersWithoutCollection);
+        frontiers.addAll(personalSessionFrontiersWithoutCollection);
+        return List.copyOf(frontiers);
+    }
+
+    public List<FrontierOverlay> getFrontiersWithoutCollection(CollectionScope scope) {
+        return switch (scope) {
+            case GLOBAL_PERSISTENT -> List.copyOf(globalFrontiersWithoutCollection);
+            case PERSONAL_PERSISTENT -> List.copyOf(personalPersistentFrontiersWithoutCollection);
+            case PERSONAL_SESSION -> List.copyOf(personalSessionFrontiersWithoutCollection);
+        };
     }
 
     public int getVisibleFrontierCount(UUID collectionId) {
@@ -120,13 +162,43 @@ public class ClientCollectionRuntime {
         }
     }
 
+    private void indexFrontiers(FrontiersOverlayManager manager,
+                                List<FrontierOverlay> persistentFrontiersWithoutCollection,
+                                List<FrontierOverlay> sessionFrontiersWithoutCollection) {
+        for (List<FrontierOverlay> frontiers : manager.getAllFrontiers().values()) {
+            for (FrontierOverlay frontier : frontiers) {
+                if (!frontier.hasCollection()) {
+                    (frontier.isSessionOnly() ? sessionFrontiersWithoutCollection : persistentFrontiersWithoutCollection)
+                            .add(frontier);
+                    continue;
+                }
+
+                visibleFrontiersByCollectionId.computeIfAbsent(frontier.getCollectionId(), ignored -> new ArrayList<>()).add(frontier);
+            }
+        }
+    }
+
     private void pruneIndirectPersonalCollectionsWithoutVisibleFrontiers() {
         SettingsUser currentPlayer = mc.player == null ? null : new SettingsUser(mc.player);
         if (currentPlayer == null) {
             return;
         }
 
-        personalCollectionsById.entrySet().removeIf(entry -> !entry.getValue().getOwner().equals(currentPlayer)
+        personalPersistentCollectionsById.entrySet().removeIf(entry -> !entry.getValue().getOwner().equals(currentPlayer)
                 && getVisibleFrontierCount(entry.getKey()) == 0);
+    }
+
+    private Map<UUID, CollectionData> getCollectionMap(CollectionData collection) {
+        if (!collection.getPersonal()) {
+            return globalCollectionsById;
+        }
+
+        return collection.isSessionOnly() ? personalSessionCollectionsById : personalPersistentCollectionsById;
+    }
+
+    private void removeCollectionFromAllScopes(UUID collectionId) {
+        globalCollectionsById.remove(collectionId);
+        personalPersistentCollectionsById.remove(collectionId);
+        personalSessionCollectionsById.remove(collectionId);
     }
 }

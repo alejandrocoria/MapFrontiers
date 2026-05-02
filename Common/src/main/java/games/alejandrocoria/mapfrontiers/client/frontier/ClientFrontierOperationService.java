@@ -671,9 +671,7 @@ public class ClientFrontierOperationService {
     }
 
     private Collection<CollectionData> getPersistentPersonalCollections() {
-        return collectionRuntime.getCollections(true).stream()
-                .filter(CollectionData::isPersistent)
-                .toList();
+        return collectionRuntime.getCollections(CollectionScope.PERSONAL_PERSISTENT);
     }
 
     private FrontiersOverlayManager getManager(boolean personal) {
