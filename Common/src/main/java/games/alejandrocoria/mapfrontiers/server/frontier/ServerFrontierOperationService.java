@@ -360,7 +360,7 @@ public class ServerFrontierOperationService {
 
             if (collectionMembershipChanged) {
                 targetCollection = validateTargetCollectionAssignment(currentFrontier.getId(), currentFrontier.getPersonal(),
-                        currentFrontier.getOwner(), change.getCollectionIdChange().getCollectionId());
+                        currentFrontier.getLifetime(), currentFrontier.getOwner(), change.getCollectionIdChange().getCollectionId());
                 if (change.getCollectionIdChange().getCollectionId() != null && targetCollection == null) {
                     return ServerFrontierOperationResult.ignored(currentFrontier);
                 }
@@ -409,7 +409,7 @@ public class ServerFrontierOperationService {
 
         if (collectionMembershipChanged) {
             targetCollection = validateTargetCollectionAssignment(currentFrontier.getId(), currentFrontier.getPersonal(),
-                    currentFrontier.getOwner(), change.getCollectionIdChange().getCollectionId());
+                    currentFrontier.getLifetime(), currentFrontier.getOwner(), change.getCollectionIdChange().getCollectionId());
             if (change.getCollectionIdChange().getCollectionId() != null && targetCollection == null) {
                 return ServerFrontierOperationResult.ignored(currentFrontier);
             }
@@ -472,7 +472,7 @@ public class ServerFrontierOperationService {
 
         if (collectionMembershipChanged) {
             targetCollection = validateTargetCollectionAssignment(frontier.getId(), frontier.getPersonal(),
-                    frontier.getOwner(), change.getCollectionIdChange().getCollectionId());
+                    frontier.getLifetime(), frontier.getOwner(), change.getCollectionIdChange().getCollectionId());
             if (change.getCollectionIdChange().getCollectionId() != null && targetCollection == null) {
                 return ServerFrontierOperationResult.rejected(frontier);
             }
@@ -626,6 +626,11 @@ public class ServerFrontierOperationService {
                     "Rejected changeFrontierToGlobal because session-only frontiers cannot exist on the server. frontierId={}, lifetime={}",
                     frontierId, frontier.getLifetime());
         }
+        if (sourceCollection != null) {
+            return rejectInvalidAuthoritativeFrontier(player, frontier,
+                    "Rejected changeFrontierToGlobal because frontiers in a collection cannot change scope without clearing collection membership first. frontierId={}, collectionId={}",
+                    frontierId, sourceCollection.getId());
+        }
 
         List<ServerPlayer> relevantPlayers = new ArrayList<>();
         relevantPlayers.add(player);
@@ -678,6 +683,11 @@ public class ServerFrontierOperationService {
 
         if (!permissionEvaluator.canDeleteGlobalFrontier(player, frontier)) {
             return rejectedWithProfileRefresh(player, frontier);
+        }
+        if (sourceCollection != null) {
+            return rejectInvalidAuthoritativeFrontier(player, frontier,
+                    "Rejected changeFrontierToPersonal because frontiers in a collection cannot change scope without clearing collection membership first. frontierId={}, collectionId={}",
+                    frontierId, sourceCollection.getId());
         }
 
         boolean changed = frontiersManager.changeGlobalFrontierToPersonal(frontier.getOwner(), frontier.getDimension(), frontier.getId());
@@ -893,12 +903,13 @@ public class ServerFrontierOperationService {
     }
 
     private @Nullable CollectionData validateTargetCollectionForCreateSpec(FrontierCreateSpec createSpec) {
-        return validateTargetCollectionAssignment(createSpec.getFrontierId(), createSpec.isPersonal(), createSpec.getOwner(),
-                createSpec.getCollectionId());
+        return validateTargetCollectionAssignment(createSpec.getFrontierId(), createSpec.isPersonal(), createSpec.getLifetime(),
+                createSpec.getOwner(), createSpec.getCollectionId());
     }
 
     private @Nullable CollectionData validateTargetCollectionAssignment(UUID frontierId,
                                                                         boolean personal,
+                                                                        FrontierData.FrontierLifetime lifetime,
                                                                         SettingsUser owner,
                                                                         @Nullable UUID collectionId) {
         if (collectionId == null) {
@@ -915,6 +926,11 @@ public class ServerFrontierOperationService {
         if (collection.getPersonal() != personal) {
             MapFrontiers.LOGGER.warn("Rejected authoritative collection assignment because collection type mismatched frontier type. frontierId={}, collectionId={}, frontierPersonal={}, collectionPersonal={}",
                     frontierId, collectionId, personal, collection.getPersonal());
+            return null;
+        }
+        if (collection.getLifetime() != lifetime) {
+            MapFrontiers.LOGGER.warn("Rejected authoritative collection assignment because collection lifetime mismatched frontier lifetime. frontierId={}, collectionId={}, frontierLifetime={}, collectionLifetime={}",
+                    frontierId, collectionId, lifetime, collection.getLifetime());
             return null;
         }
 

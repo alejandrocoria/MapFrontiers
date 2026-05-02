@@ -108,7 +108,8 @@ public class FrontierListPage extends PageScreen
 
     private enum MarkedType {
         NONE,
-        PERSONAL,
+        PERSONAL_PERSISTENT,
+        PERSONAL_SESSION,
         GLOBAL
     }
 
@@ -768,13 +769,14 @@ public class FrontierListPage extends PageScreen
                 .filter(this::canMarkFrontier)
                 .map(FrontierOverlay::getId)
                 .toList();
+        boolean canMarkGroup = canMarkCollectionGroup(group, eligibleFrontierIds);
 
         return new CollectionListElement(group.rowId, font, group.collection, group.virtualRow, group.personal, group.title,
                 formatCollectionCounters(group.totalFrontiers, group.filteredFrontiers.size()),
                 collectionColor,
                 group.collapsed,
-                shouldShowCheckboxInMarkedMode(!eligibleFrontierIds.isEmpty(), isCompatibleWithMarkedType(group.personal)),
-                shouldShowCheckboxOnHover(!eligibleFrontierIds.isEmpty()),
+                shouldShowCheckboxInMarkedMode(canMarkGroup, isCompatibleWithMarkedType(group, eligibleFrontierIds)),
+                shouldShowCheckboxOnHover(canMarkGroup),
                 countMarkedFrontiers(eligibleFrontierIds),
                 eligibleFrontierIds.size(),
                 getCollectionActionLabel(group),
@@ -792,7 +794,7 @@ public class FrontierListPage extends PageScreen
                 visibleFilteredFrontiers.add(frontier.getId());
             }
             rows.add(new FrontierListElement(font, frontier, FRONTIERS_WIDTH, collectionColor,
-                    shouldShowCheckboxInMarkedMode(canMarkFrontier(frontier), isCompatibleWithMarkedType(frontier.getPersonal())),
+                    shouldShowCheckboxInMarkedMode(canMarkFrontier(frontier), isCompatibleWithMarkedType(frontier)),
                     shouldShowCheckboxOnHover(canMarkFrontier(frontier)), isFrontierMarked(frontier)));
         }
     }
@@ -1007,7 +1009,7 @@ public class FrontierListPage extends PageScreen
             return null;
         }
 
-        if (!isCompatibleWithMarkedType(group.personal)) {
+        if (!isCompatibleWithMarkedType(group, getEligibleFrontierIds(group))) {
             return null;
         }
 
@@ -1023,7 +1025,7 @@ public class FrontierListPage extends PageScreen
             return group.virtualRow && canCreateCollection(group.personal);
         }
 
-        if (!isCompatibleWithMarkedType(group.personal)) {
+        if (!isCompatibleWithMarkedType(group, getEligibleFrontierIds(group))) {
             return false;
         }
 
@@ -1050,7 +1052,7 @@ public class FrontierListPage extends PageScreen
             return;
         }
 
-        MarkedType frontierType = getMarkedType(frontier.getPersonal());
+        MarkedType frontierType = getMarkedType(frontier);
         if (markedType == MarkedType.NONE) {
             markedType = frontierType;
         } else if (markedType != frontierType) {
@@ -1070,11 +1072,15 @@ public class FrontierListPage extends PageScreen
     }
 
     private void toggleCollectionGroupMarked(CollectionListElement groupElement) {
-        if (groupElement.getEligibleFrontierIds().isEmpty()) {
+        List<UUID> eligibleFrontierIds = groupElement.getEligibleFrontierIds();
+        if (eligibleFrontierIds.isEmpty()) {
             return;
         }
 
-        MarkedType groupType = getMarkedType(groupElement.isPersonal());
+        MarkedType groupType = resolveMarkedType(eligibleFrontierIds);
+        if (groupType == null) {
+            return;
+        }
         if (markedType == MarkedType.NONE) {
             markedType = groupType;
         } else if (markedType != groupType) {
@@ -1082,16 +1088,16 @@ public class FrontierListPage extends PageScreen
         }
 
         int currentlyMarked = 0;
-        for (UUID frontierId : groupElement.getEligibleFrontierIds()) {
+        for (UUID frontierId : eligibleFrontierIds) {
             if (markedFrontierIds.contains(frontierId)) {
                 ++currentlyMarked;
             }
         }
 
         if (currentlyMarked == 0) {
-            markedFrontierIds.addAll(groupElement.getEligibleFrontierIds());
+            markedFrontierIds.addAll(eligibleFrontierIds);
         } else {
-            markedFrontierIds.removeAll(groupElement.getEligibleFrontierIds());
+            markedFrontierIds.removeAll(eligibleFrontierIds);
         }
 
         if (markedFrontierIds.isEmpty()) {
@@ -1117,9 +1123,8 @@ public class FrontierListPage extends PageScreen
     }
 
     private List<FrontierOverlay> getMarkedFrontiers() {
-        boolean personal = markedType == MarkedType.PERSONAL;
         List<FrontierOverlay> frontiers = new ArrayList<>();
-        for (FrontierOverlay frontier : MapFrontiersClient.getAllFrontiers(personal)) {
+        for (FrontierOverlay frontier : MapFrontiersClient.getAllFrontiers(markedType != MarkedType.GLOBAL)) {
             if (markedFrontierIds.contains(frontier.getId())) {
                 frontiers.add(frontier);
             }
@@ -1127,12 +1132,82 @@ public class FrontierListPage extends PageScreen
         return frontiers;
     }
 
-    private boolean isCompatibleWithMarkedType(boolean personal) {
-        return markedType == MarkedType.NONE || markedType == getMarkedType(personal);
+    private boolean isCompatibleWithMarkedType(FrontierOverlay frontier) {
+        return markedType == MarkedType.NONE || markedType == getMarkedType(frontier);
     }
 
-    private MarkedType getMarkedType(boolean personal) {
-        return personal ? MarkedType.PERSONAL : MarkedType.GLOBAL;
+    private boolean isCompatibleWithMarkedType(CollectionGroupModel group, List<UUID> eligibleFrontierIds) {
+        if (markedType == MarkedType.NONE) {
+            return true;
+        }
+
+        if (group.virtualRow) {
+            return group.personal ? markedType != MarkedType.GLOBAL : markedType == MarkedType.GLOBAL;
+        }
+
+        if (group.collection != null) {
+            return markedType == getMarkedType(group.collection);
+        }
+
+        MarkedType groupType = resolveMarkedType(eligibleFrontierIds);
+        return groupType != null && markedType == groupType;
+    }
+
+    private MarkedType getMarkedType(FrontierOverlay frontier) {
+        if (!frontier.getPersonal()) {
+            return MarkedType.GLOBAL;
+        }
+        return frontier.isSessionOnly() ? MarkedType.PERSONAL_SESSION : MarkedType.PERSONAL_PERSISTENT;
+    }
+
+    private MarkedType getMarkedType(CollectionData collection) {
+        if (!collection.getPersonal()) {
+            return MarkedType.GLOBAL;
+        }
+        return collection.isSessionOnly() ? MarkedType.PERSONAL_SESSION : MarkedType.PERSONAL_PERSISTENT;
+    }
+
+    private boolean canMarkCollectionGroup(CollectionGroupModel group, List<UUID> eligibleFrontierIds) {
+        if (eligibleFrontierIds.isEmpty()) {
+            return false;
+        }
+
+        if (!group.personal || !group.virtualRow) {
+            return resolveMarkedType(eligibleFrontierIds) != null;
+        }
+
+        return resolveMarkedType(eligibleFrontierIds) != null;
+    }
+
+    private @Nullable MarkedType resolveMarkedType(List<UUID> frontierIds) {
+        MarkedType resolved = null;
+        for (UUID frontierId : frontierIds) {
+            FrontierOverlay frontier = MapFrontiersClient.getAllFrontiers(true).stream()
+                    .filter(candidate -> candidate.getId().equals(frontierId))
+                    .findFirst()
+                    .orElseGet(() -> MapFrontiersClient.getAllFrontiers(false).stream()
+                            .filter(candidate -> candidate.getId().equals(frontierId))
+                            .findFirst()
+                            .orElse(null));
+            if (frontier == null) {
+                continue;
+            }
+
+            MarkedType frontierType = getMarkedType(frontier);
+            if (resolved == null) {
+                resolved = frontierType;
+            } else if (resolved != frontierType) {
+                return null;
+            }
+        }
+        return resolved;
+    }
+
+    private List<UUID> getEligibleFrontierIds(CollectionGroupModel group) {
+        return group.filteredFrontiers.stream()
+                .filter(this::canMarkFrontier)
+                .map(FrontierOverlay::getId)
+                .toList();
     }
 
     private void clearMarkedFrontiers() {
@@ -1176,6 +1251,11 @@ public class FrontierListPage extends PageScreen
             return true;
         }
 
+        CollectionData selectedCollection = selectedCollectionElement.getCollection();
+        if (selectedCollection != null && selectedCollection.isSessionOnly()) {
+            return false;
+        }
+
         if (selectedCollectionElement.isPersonal()) {
             return minecraft.player != null;
         }
@@ -1211,7 +1291,18 @@ public class FrontierListPage extends PageScreen
             return true;
         }
 
-        return group.collection != null && group.collection.getOwner().equals(new SettingsUser(minecraft.player));
+        if (group.collection == null || !group.collection.getOwner().equals(new SettingsUser(minecraft.player))) {
+            return false;
+        }
+
+        if (markedType == MarkedType.PERSONAL_PERSISTENT) {
+            return group.collection.isPersistent();
+        }
+        if (markedType == MarkedType.PERSONAL_SESSION) {
+            return group.collection.isSessionOnly();
+        }
+
+        return true;
     }
 
     private boolean canDeleteSelectedCollection(CollectionData collection) {

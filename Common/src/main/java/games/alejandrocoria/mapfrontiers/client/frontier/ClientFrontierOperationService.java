@@ -94,16 +94,17 @@ public class ClientFrontierOperationService {
 
     @Nullable
     public FrontierOverlay createNewFrontierAndReturn(FrontierCreateSpec createSpec) {
+        if (!isValidLocalCollectionAssignment(createSpec.isPersonal(), createSpec.getLifetime(), createSpec.getOwner(),
+                createSpec.getCollectionId())) {
+            return null;
+        }
+
         if (usesAuthoritativeCreateFlow(createSpec.getLifetime())) {
             PacketHandler.sendToServer(new PacketCreateFrontier(createSpec));
             return null;
         }
 
         if (!createSpec.isPersonal() || mc.player == null) {
-            return null;
-        }
-
-        if (!isValidLocalCollectionAssignment(createSpec.isPersonal(), createSpec.getOwner(), createSpec.getCollectionId())) {
             return null;
         }
 
@@ -199,6 +200,9 @@ public class ClientFrontierOperationService {
 
     public void updateFrontier(FrontierOverlay frontier, FrontierChange change) {
         if (change.isEmpty()) {
+            return;
+        }
+        if (!isValidLocalCollectionChange(frontier, change)) {
             return;
         }
 
@@ -352,15 +356,23 @@ public class ClientFrontierOperationService {
             return FrontierActionResult.notFound(frontierId);
         }
 
+        FrontierData payload = new FrontierData(frontier);
+        ApiConverters.applyMutation(payload, mutation);
+        FrontierChange change = FrontierChange.fromFrontierData(payload);
+
         if (usesAuthoritativeMutationFlow(frontier)) {
-            FrontierData payload = new FrontierData(frontier);
-            ApiConverters.applyMutation(payload, mutation);
-            PacketHandler.sendToServer(new PacketUpdateFrontier(frontierId.value(), FrontierChange.fromFrontierData(payload)));
+            if (!isValidLocalCollectionAssignment(payload.getPersonal(), payload.getLifetime(), payload.getOwner(), payload.getCollectionId())) {
+                return FrontierActionResult.rejected();
+            }
+            PacketHandler.sendToServer(new PacketUpdateFrontier(frontierId.value(), change));
             return FrontierActionResult.acceptedAsync(frontierId);
         }
 
-        ApiConverters.applyMutation(frontier, mutation);
-        updateFrontier(frontier);
+        if (!isValidLocalCollectionAssignment(payload.getPersonal(), payload.getLifetime(), payload.getOwner(), payload.getCollectionId())) {
+            return FrontierActionResult.rejected();
+        }
+
+        updateFrontier(frontier, change);
         return FrontierActionResult.applied(ApiConverters.fromFrontier(frontier));
     }
 
@@ -717,7 +729,7 @@ public class ClientFrontierOperationService {
         FrontierData defaults = new FrontierData();
         SettingsUser owner = new SettingsUser(mc.player);
         UUID collectionId = request.collectionId().map(CollectionId::value).orElse(null);
-        UUID validatedCollectionId = resolveValidLocalCollectionId(personal, owner, collectionId);
+        UUID validatedCollectionId = resolveValidLocalCollectionId(personal, lifetime, owner, collectionId);
         if (collectionId != null && validatedCollectionId == null) {
             return null;
         }
@@ -760,7 +772,10 @@ public class ClientFrontierOperationService {
         };
     }
 
-    private @Nullable UUID resolveValidLocalCollectionId(boolean personal, SettingsUser owner, @Nullable UUID collectionId) {
+    private @Nullable UUID resolveValidLocalCollectionId(boolean personal,
+                                                         FrontierData.FrontierLifetime lifetime,
+                                                         SettingsUser owner,
+                                                         @Nullable UUID collectionId) {
         if (collectionId == null) {
             return null;
         }
@@ -769,14 +784,29 @@ public class ClientFrontierOperationService {
         if (collection == null || collection.getPersonal() != personal) {
             return null;
         }
+        if (collection.getLifetime() != lifetime) {
+            return null;
+        }
         if (personal && !collection.getOwner().equals(owner)) {
             return null;
         }
         return collectionId;
     }
 
-    private boolean isValidLocalCollectionAssignment(boolean personal, SettingsUser owner, @Nullable UUID collectionId) {
-        return collectionId == null || resolveValidLocalCollectionId(personal, owner, collectionId) != null;
+    private boolean isValidLocalCollectionAssignment(boolean personal,
+                                                     FrontierData.FrontierLifetime lifetime,
+                                                     SettingsUser owner,
+                                                     @Nullable UUID collectionId) {
+        return collectionId == null || resolveValidLocalCollectionId(personal, lifetime, owner, collectionId) != null;
+    }
+
+    private boolean isValidLocalCollectionChange(FrontierOverlay frontier, FrontierChange change) {
+        if (!change.hasCollectionIdChange()) {
+            return true;
+        }
+
+        return isValidLocalCollectionAssignment(frontier.getPersonal(), frontier.getLifetime(), frontier.getOwner(),
+                change.getCollectionIdChange().getCollectionId());
     }
 
     private FrontierData sanitizePersistentPersonalFrontierForStorage(FrontierData frontier) {
@@ -791,7 +821,7 @@ public class ClientFrontierOperationService {
 
         CollectionData collection = collectionRuntime.getCollection(collectionId);
         if (collection == null || !collection.isPersistent()
-                || !isValidLocalCollectionAssignment(frontier.getPersonal(), frontier.getOwner(), collectionId)) {
+                || !isValidLocalCollectionAssignment(frontier.getPersonal(), frontier.getLifetime(), frontier.getOwner(), collectionId)) {
             frontier.setCollectionId(null);
         }
 
