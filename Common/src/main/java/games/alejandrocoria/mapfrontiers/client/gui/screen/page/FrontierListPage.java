@@ -465,13 +465,28 @@ public class FrontierListPage extends PageScreen
         if (minecraft.player != null) {
             CollectionListElement selectedCollectionElement = getSelectedCollectionElement();
             if (selectedCollectionElement != null) {
-                UUID collectionId = selectedCollectionElement.getCollection() == null ? null : selectedCollectionElement.getCollection().getId();
-                new NewFrontierDialog(jmAPI, minecraft.player.blockPosition(), selectedCollectionElement.isPersonal(), collectionId,
-                        createNewFrontierResultHandler()).display();
+                if (selectedCollectionElement.getScope() == CollectionScope.PERSONAL_SESSION) {
+                    showTemporaryFrontierCreateConfirmation(() -> openNewFrontierDialog(selectedCollectionElement));
+                } else {
+                    openNewFrontierDialog(selectedCollectionElement);
+                }
             } else {
                 new NewFrontierDialog(jmAPI, minecraft.player.blockPosition(), createNewFrontierResultHandler()).display();
             }
         }
+    }
+
+    private void openNewFrontierDialog(CollectionListElement selectedCollectionElement) {
+        if (minecraft.player == null) {
+            return;
+        }
+
+        UUID collectionId = selectedCollectionElement.getCollection() == null ? null : selectedCollectionElement.getCollection().getId();
+        FrontierData.FrontierLifetime lifetime = selectedCollectionElement.getScope() == CollectionScope.PERSONAL_SESSION
+                ? FrontierData.FrontierLifetime.SESSION_ONLY
+                : FrontierData.FrontierLifetime.PERSISTENT;
+        new NewFrontierDialog(jmAPI, minecraft.player.blockPosition(), selectedCollectionElement.isPersonal(), lifetime, collectionId,
+                createNewFrontierResultHandler()).display();
     }
 
     private NewFrontierDialog.ResultHandler createNewFrontierResultHandler() {
@@ -658,6 +673,18 @@ public class FrontierListPage extends PageScreen
             return;
         }
 
+        if (virtualRow.getScope() == CollectionScope.PERSONAL_SESSION) {
+            showTemporaryCollectionCreateConfirmation(() -> createCollectionFromVirtualRowConfirmed(virtualRow));
+            return;
+        }
+        createCollectionFromVirtualRowConfirmed(virtualRow);
+    }
+
+    private void createCollectionFromVirtualRowConfirmed(CollectionListElement virtualRow) {
+        if (minecraft.player == null) {
+            return;
+        }
+
         CollectionData collection = new CollectionData();
         collection.setId(UUID.randomUUID());
         collection.setPersonal(virtualRow.isPersonal());
@@ -669,6 +696,50 @@ public class FrontierListPage extends PageScreen
         selectedRowId = collection.getId().toString();
         MapFrontiersClient.getOperationService().createCollection(collection);
         new CollectionInfoPage(collection).display();
+    }
+
+    private void showTemporaryFrontierCreateConfirmation(Runnable onConfirm) {
+        if (!ClientConfig.ASK_CONFIRMATION_TEMPORARY_FRONTIER_CREATE.get()) {
+            onConfirm.run();
+            return;
+        }
+
+        new ConfirmationDialog(
+                "mapfrontiers.create_temporary_frontier_dialog",
+                "mapfrontiers.create_temporary_frontier_dialog_desc",
+                "mapfrontiers.create",
+                "gui.cancel",
+                "mapfrontiers.create_and_dont_ask_again",
+                response -> {
+                    if (response == ConfirmationDialog.Response.ConfirmAlternative) {
+                        ClientConfig.ASK_CONFIRMATION_TEMPORARY_FRONTIER_CREATE.set(false);
+                        ClientGlobalEvents.postUpdatedConfigEvent();
+                    }
+                    onConfirm.run();
+                }
+        ).display();
+    }
+
+    private void showTemporaryCollectionCreateConfirmation(Runnable onConfirm) {
+        if (!ClientConfig.ASK_CONFIRMATION_TEMPORARY_COLLECTION_CREATE.get()) {
+            onConfirm.run();
+            return;
+        }
+
+        new ConfirmationDialog(
+                "mapfrontiers.create_temporary_collection_dialog",
+                "mapfrontiers.create_temporary_collection_dialog_desc",
+                "mapfrontiers.create",
+                "gui.cancel",
+                "mapfrontiers.create_and_dont_ask_again",
+                response -> {
+                    if (response == ConfirmationDialog.Response.ConfirmAlternative) {
+                        ClientConfig.ASK_CONFIRMATION_TEMPORARY_COLLECTION_CREATE.set(false);
+                        ClientGlobalEvents.postUpdatedConfigEvent();
+                    }
+                    onConfirm.run();
+                }
+        ).display();
     }
 
     private void addDimensionsToFilter() {
@@ -1284,15 +1355,7 @@ public class FrontierListPage extends PageScreen
             return true;
         }
 
-        if (selectedCollectionElement.getScope() == CollectionScope.PERSONAL_SESSION) {
-            return false;
-        }
-
         CollectionData selectedCollection = selectedCollectionElement.getCollection();
-        if (selectedCollection != null && selectedCollection.isSessionOnly()) {
-            return false;
-        }
-
         if (selectedCollectionElement.isPersonal()) {
             return minecraft.player != null;
         }

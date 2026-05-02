@@ -63,6 +63,7 @@ public class NewFrontierDialog extends PanelDialog {
     private final IClientAPI jmAPI;
     private final BlockPos centerPos;
     private final @Nullable Boolean forcedPersonal;
+    private final @Nullable FrontierData.FrontierLifetime forcedLifetime;
     private final @Nullable UUID collectionId;
     private final ResultHandler resultHandler;
     private final Object createdFrontierListenerOwner = new Object();
@@ -82,21 +83,28 @@ public class NewFrontierDialog extends PanelDialog {
     private TextBoxInt textSize;
 
     public NewFrontierDialog(IClientAPI jmAPI, BlockPos centerPos, ResultHandler resultHandler) {
-        this(jmAPI, centerPos, null, null, resultHandler);
+        this(jmAPI, centerPos, null, null, null, resultHandler);
     }
 
     public NewFrontierDialog(IClientAPI jmAPI, BlockPos centerPos, @Nullable Boolean forcedPersonal, @Nullable UUID collectionId,
+                             ResultHandler resultHandler) {
+        this(jmAPI, centerPos, forcedPersonal, null, collectionId, resultHandler);
+    }
+
+    public NewFrontierDialog(IClientAPI jmAPI, BlockPos centerPos, @Nullable Boolean forcedPersonal,
+                             @Nullable FrontierData.FrontierLifetime forcedLifetime, @Nullable UUID collectionId,
                              ResultHandler resultHandler) {
         super();
         this.jmAPI = jmAPI;
         this.centerPos = centerPos;
         this.forcedPersonal = forcedPersonal;
+        this.forcedLifetime = forcedLifetime;
         this.collectionId = collectionId;
         this.resultHandler = resultHandler;
 
         MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> {
             onClose();
-            new NewFrontierDialog(jmAPI, centerPos, forcedPersonal, collectionId, resultHandler).display();
+            new NewFrontierDialog(jmAPI, centerPos, forcedPersonal, forcedLifetime, collectionId, resultHandler).display();
         });
     }
 
@@ -431,19 +439,20 @@ public class NewFrontierDialog extends PanelDialog {
                 ? ClientConfig.getDefaultPathStyle()
                 : defaults.getPathStyle();
         int color = ColorHelper.getRandomColor();
+        FrontierData.FrontierLifetime lifetime = forcedLifetime == null ? FrontierData.FrontierLifetime.PERSISTENT : forcedLifetime;
 
         if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Path) {
-            return FrontierCreateSpec.path(frontierId, owner, personal, dimension, FrontierData.FrontierLifetime.PERSISTENT, collectionId,
+            return FrontierCreateSpec.path(frontierId, owner, personal, dimension, lifetime, collectionId,
                     null, defaults.getName1(), defaults.getName2(), color, visibility, banner, calculatePoints(), pathStyle);
         }
 
         if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Chunk) {
-            return FrontierCreateSpec.chunk(frontierId, owner, personal, dimension, FrontierData.FrontierLifetime.PERSISTENT, collectionId,
+            return FrontierCreateSpec.chunk(frontierId, owner, personal, dimension, lifetime, collectionId,
                     null, defaults.getName1(), defaults.getName2(), color, visibility, banner, new LinkedHashSet<>(calculateChunks()),
                     pathStyle);
         }
 
-        return FrontierCreateSpec.vertex(frontierId, owner, personal, dimension, FrontierData.FrontierLifetime.PERSISTENT, collectionId,
+        return FrontierCreateSpec.vertex(frontierId, owner, personal, dimension, lifetime, collectionId,
                 null, defaults.getName1(), defaults.getName2(), color, visibility, banner, calculateVertices(), pathStyle);
     }
 

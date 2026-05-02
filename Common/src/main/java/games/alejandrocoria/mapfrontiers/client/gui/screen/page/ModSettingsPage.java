@@ -303,6 +303,8 @@ public class ModSettingsPage extends PageScreen
         row = addOptionSettingRow(settingsGrid, row, ClientConfig.FULLSCREEN_BUTTONS);
         row = addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE);
         row = addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_COLLECTION_DELETE);
+        row = addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_TEMPORARY_FRONTIER_CREATE);
+        row = addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_TEMPORARY_COLLECTION_CREATE);
         buttonAskConfirmationGroupDelete = createOnOffOptionButton(ClientConfig.ASK_CONFIRMATION_GROUP_DELETE);
         row = addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_GROUP_DELETE,
                 buttonAskConfirmationGroupDelete);
