@@ -78,9 +78,14 @@ public class ServerFrontierRuntime {
         for (ArrayList<FrontierData> frontiers : frontiersManager.getAllGlobalFrontiers().values()) {
             packetFrontiers.addGlobalFrontiers(frontiers);
         }
-        packetFrontiers.addGlobalCollections(frontiersManager.getAllGlobalCollections());
+        packetFrontiers.addGlobalCollections(frontiersManager.getAllGlobalCollections().stream()
+                .filter(CollectionData::isPersistent)
+                .toList());
 
         for (CollectionData collection : frontiersManager.getAllPersonalCollections(playerUser)) {
+            if (!collection.isPersistent()) {
+                continue;
+            }
             if (includedPersonalCollectionIds.add(collection.getId())) {
                 packetFrontiers.addPersonalCollection(collection);
             }
@@ -94,7 +99,7 @@ public class ServerFrontierRuntime {
                 }
 
                 CollectionData collection = frontiersManager.getCollectionFromID(frontier.getCollectionId());
-                if (collection != null && includedPersonalCollectionIds.add(collection.getId())) {
+                if (collection != null && collection.isPersistent() && includedPersonalCollectionIds.add(collection.getId())) {
                     packetFrontiers.addPersonalCollection(collection);
                 }
             }

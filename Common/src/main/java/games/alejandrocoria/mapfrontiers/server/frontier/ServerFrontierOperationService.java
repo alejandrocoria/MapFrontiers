@@ -73,6 +73,13 @@ public class ServerFrontierOperationService {
         if (frontiersManager.getCollectionFromID(collectionData.getId()) != null) {
             return ServerFrontierOperationResult.ignored(null);
         }
+        if (!collectionData.isPersistent()) {
+            MapFrontiers.LOGGER.warn(
+                    "Rejected collection creation because SESSION_ONLY collections are client-only. collectionId={}, personal={}, lifetime={}",
+                    collectionData.getId(), collectionData.getPersonal(), collectionData.getLifetime()
+            );
+            return ServerFrontierOperationResult.rejected(null);
+        }
 
         SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
         CollectionData collection = new CollectionData(collectionData);
@@ -102,7 +109,13 @@ public class ServerFrontierOperationService {
         if (frontiersManager.getCollectionFromID(collectionData.getId()) != null) {
             return ServerFrontierOperationResult.ignored(null);
         }
-        if (collectionData.getPersonal()) {
+        if (collectionData.getPersonal() || !collectionData.isPersistent()) {
+            if (!collectionData.isPersistent()) {
+                MapFrontiers.LOGGER.warn(
+                        "Rejected global collection creation because SESSION_ONLY collections are client-only. collectionId={}, personal={}, lifetime={}",
+                        collectionData.getId(), collectionData.getPersonal(), collectionData.getLifetime()
+                );
+            }
             return ServerFrontierOperationResult.rejected(null);
         }
 
@@ -276,9 +289,16 @@ public class ServerFrontierOperationService {
         SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
         CollectionData currentCollection = frontiersManager.getCollectionFromID(collection.getId());
 
-        if (!collection.getPersonal()) {
-            MapFrontiers.LOGGER.warn("Rejected personal collection import because only personal collections can be imported. collectionId={}",
-                    collection.getId());
+        if (!collection.getPersonal() || !collection.isPersistent()) {
+            if (!collection.getPersonal()) {
+                MapFrontiers.LOGGER.warn("Rejected personal collection import because only personal collections can be imported. collectionId={}",
+                        collection.getId());
+            } else {
+                MapFrontiers.LOGGER.warn(
+                        "Rejected personal collection import because SESSION_ONLY collections are client-only. collectionId={}, lifetime={}",
+                        collection.getId(), collection.getLifetime()
+                );
+            }
             return ServerFrontierOperationResult.rejected(null);
         }
 

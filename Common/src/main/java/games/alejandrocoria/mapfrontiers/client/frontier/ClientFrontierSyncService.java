@@ -62,9 +62,16 @@ public class ClientFrontierSyncService {
         loadLocalPersonalFrontiers();
         loadLocalPersonalCollections();
 
+        List<CollectionData> persistentGlobalCollections = globalCollections.stream()
+                .filter(CollectionData::isPersistent)
+                .toList();
+        List<CollectionData> persistentPersonalCollections = personalCollections.stream()
+                .filter(CollectionData::isPersistent)
+                .toList();
+
         globalManager.replaceFrontiers(globalFrontiers);
         if (mc.isLocalServer()) {
-            collectionRuntime.replaceCollections(globalCollections, personalCollections);
+            collectionRuntime.replaceCollections(persistentGlobalCollections, persistentPersonalCollections);
             personalManager.replaceFrontiers(personalFrontiers);
             collectionRuntime.refreshFromFrontiers(globalManager, personalManager);
             return;
@@ -77,17 +84,18 @@ public class ClientFrontierSyncService {
         List<CollectionData> existingLocalPersonalCollections = currentPlayer == null
                 ? List.of()
                 : collectionRuntime.getCollections(true).stream()
+                        .filter(CollectionData::isPersistent)
                         .filter(collection -> collection.getOwner().equals(currentPlayer))
                         .map(CollectionData::new)
                         .toList();
         Set<UUID> serverFrontierIds = new HashSet<>();
         Set<UUID> serverCollectionIds = new HashSet<>();
 
-        for (CollectionData collection : personalCollections) {
+        for (CollectionData collection : persistentPersonalCollections) {
             serverCollectionIds.add(collection.getId());
         }
 
-        collectionRuntime.replaceCollections(globalCollections, personalCollections);
+        collectionRuntime.replaceCollections(persistentGlobalCollections, persistentPersonalCollections);
 
         for (FrontierData data : personalFrontiers) {
             serverFrontierIds.add(data.getId());
