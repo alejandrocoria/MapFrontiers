@@ -126,14 +126,7 @@ public class ClientFrontierOperationService {
             return;
         }
 
-        CollectionData createdCollection = new CollectionData(collection);
-        Date now = new Date();
-        createdCollection.setOwner(new SettingsUser(mc.player));
-        createdCollection.setCreated(now);
-        createdCollection.setModified(now);
-        collectionRuntime.addOrUpdateCollection(createdCollection);
-        persistLocalPersonalCollections();
-        collectionEvents.postCreated(createdCollection);
+        createLocalCollection(collection);
     }
 
     public void updateCollection(CollectionData collection) {
@@ -146,12 +139,7 @@ public class ClientFrontierOperationService {
             return;
         }
 
-        CollectionData updatedCollection = new CollectionData(collection);
-        updatedCollection.setOwner(new SettingsUser(mc.player));
-        updatedCollection.setModified(new Date());
-        collectionRuntime.addOrUpdateCollection(updatedCollection);
-        persistLocalPersonalCollections();
-        collectionEvents.postUpdated(updatedCollection);
+        updateLocalCollection(collection);
     }
 
     public void deleteCollection(CollectionData collection) {
@@ -164,18 +152,7 @@ public class ClientFrontierOperationService {
             return;
         }
 
-        List<FrontierOverlay> affectedFrontiers = new ArrayList<>(collectionRuntime.getFrontiersInCollection(collection.getId()));
-        for (FrontierOverlay frontier : affectedFrontiers) {
-            frontier.setCollectionId(null);
-        }
-
-        collectionRuntime.deleteCollection(collection.getId());
-        refreshCollectionRuntime();
-        persistLocalPersonalData();
-        for (FrontierOverlay frontier : affectedFrontiers) {
-            frontierEvents.postUpdated(frontier, -1);
-        }
-        collectionEvents.postDeleted(collection.getId());
+        deleteLocalCollection(collection);
     }
 
     public void deleteFrontier(FrontierOverlay frontier) {
@@ -662,6 +639,47 @@ public class ClientFrontierOperationService {
         }
 
         localPersonalCollectionStore.saveOwnedCollectionMirror(getPersistentPersonalCollections(), new SettingsUser(mc.player));
+    }
+
+    private void createLocalCollection(CollectionData collection) {
+        CollectionData createdCollection = new CollectionData(collection);
+        Date now = new Date();
+        createdCollection.setOwner(new SettingsUser(mc.player));
+        createdCollection.setCreated(now);
+        createdCollection.setModified(now);
+        collectionRuntime.addOrUpdateCollection(createdCollection);
+        if (createdCollection.isPersistent()) {
+            persistLocalPersonalCollections();
+        }
+        collectionEvents.postCreated(createdCollection);
+    }
+
+    private void updateLocalCollection(CollectionData collection) {
+        CollectionData updatedCollection = new CollectionData(collection);
+        updatedCollection.setOwner(new SettingsUser(mc.player));
+        updatedCollection.setModified(new Date());
+        collectionRuntime.addOrUpdateCollection(updatedCollection);
+        if (updatedCollection.isPersistent()) {
+            persistLocalPersonalCollections();
+        }
+        collectionEvents.postUpdated(updatedCollection);
+    }
+
+    private void deleteLocalCollection(CollectionData collection) {
+        List<FrontierOverlay> affectedFrontiers = new ArrayList<>(collectionRuntime.getFrontiersInCollection(collection.getId()));
+        for (FrontierOverlay frontier : affectedFrontiers) {
+            frontier.setCollectionId(null);
+        }
+
+        collectionRuntime.deleteCollection(collection.getId());
+        refreshCollectionRuntime();
+        if (collection.isPersistent()) {
+            persistLocalPersonalData();
+        }
+        for (FrontierOverlay frontier : affectedFrontiers) {
+            frontierEvents.postUpdated(frontier, -1);
+        }
+        collectionEvents.postDeleted(collection.getId());
     }
 
     private void persistLocalPersonalDataIfPersistent(FrontierData frontier) {
