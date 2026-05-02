@@ -65,10 +65,6 @@ public class PacketFrontiers {
         globalCollections.addAll(collections);
     }
 
-    public void addPersonalCollections(List<CollectionData> collections) {
-        personalCollections.addAll(collections);
-    }
-
     public PacketFrontiers(FriendlyByteBuf buf) {
         globalFrontiers = new ArrayList<>();
         personalFrontiers = new ArrayList<>();

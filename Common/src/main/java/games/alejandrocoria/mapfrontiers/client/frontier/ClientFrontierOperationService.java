@@ -3,26 +3,22 @@ package games.alejandrocoria.mapfrontiers.client.frontier;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.api.client.CollectionActionResult;
 import games.alejandrocoria.mapfrontiers.api.client.FrontierActionResult;
-import games.alejandrocoria.mapfrontiers.api.model.ChunkCoord;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionCreateRequest;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionDataView;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionId;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionMutation;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
-import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierCreateRequest;
+import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
-import games.alejandrocoria.mapfrontiers.api.model.FrontierLifetime;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
-import games.alejandrocoria.mapfrontiers.api.model.FrontierShape;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierSharePermission;
-import games.alejandrocoria.mapfrontiers.api.model.Point2i;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
 import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreationFactory;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierSharingChange;
@@ -96,72 +92,6 @@ public class ClientFrontierOperationService {
         this.collectionEvents = collectionEvents;
     }
 
-    public void createNewFrontier(boolean personal,
-                                  @Nullable UUID collectionId,
-                                  ResourceKey<Level> dimension,
-                                  @Nullable List<BlockPos> vertices,
-                                  @Nullable List<ChunkPos> chunks,
-                                  @Nullable List<BlockPos> points,
-                                  @Nullable FrontierData.PathStyle pathStyle) {
-        FrontierCreateSpec createSpec = createFrontierSpecFromLegacyInputs(UUID.randomUUID(), personal, dimension, collectionId,
-                FrontierData.FrontierLifetime.PERSISTENT, null, vertices, chunks, points, pathStyle);
-        if (createSpec != null) {
-            createNewFrontierAndReturn(createSpec);
-        }
-    }
-
-    public void createNewFrontier(boolean personal,
-                                  ResourceKey<Level> dimension,
-                                  @Nullable List<BlockPos> vertices,
-                                  @Nullable List<ChunkPos> chunks,
-                                  @Nullable List<BlockPos> points,
-                                  @Nullable FrontierData.PathStyle pathStyle) {
-        createNewFrontier(personal, null, dimension, vertices, chunks, points, pathStyle);
-    }
-
-    @Nullable
-    public FrontierOverlay createNewFrontierAndReturn(boolean personal, UUID frontierId, ResourceKey<Level> dimension,
-                                                      @Nullable UUID collectionId,
-                                                      FrontierData.FrontierLifetime lifetime, @Nullable String sourcePluginId, FrontierShape shape) {
-        List<BlockPos> vertices = null;
-        List<ChunkPos> chunks = null;
-        List<BlockPos> points = null;
-
-        switch (shape.type()) {
-            case VERTEX -> {
-                List<Point2i> shapeVertices = shape.vertices();
-                vertices = shapeVertices == null ? List.of() : shapeVertices.stream()
-                        .map(vertex -> new BlockPos(vertex.x(), 0, vertex.z())).toList();
-            }
-            case CHUNK -> {
-                List<ChunkCoord> shapeChunks = shape.chunks();
-                chunks = shapeChunks == null ? List.of() : shapeChunks.stream()
-                        .map(chunk -> new ChunkPos(chunk.x(), chunk.z())).toList();
-            }
-            case PATH -> {
-                List<Point2i> shapePoints = shape.points();
-                points = shapePoints == null ? List.of() : shapePoints.stream()
-                        .map(point -> new BlockPos(point.x(), 0, point.z())).toList();
-            }
-        }
-
-        return createNewFrontierAndReturn(personal, frontierId, dimension, collectionId, lifetime, sourcePluginId, vertices, chunks, points, null);
-    }
-
-    @Nullable
-    public FrontierOverlay createNewFrontierAndReturn(boolean personal, UUID frontierId, ResourceKey<Level> dimension,
-                                                      @Nullable UUID collectionId,
-                                                      FrontierData.FrontierLifetime lifetime, @Nullable String sourcePluginId,
-                                                      @Nullable List<BlockPos> vertices, @Nullable List<ChunkPos> chunks,
-                                                      @Nullable List<BlockPos> points, @Nullable FrontierData.PathStyle pathStyle) {
-        FrontierCreateSpec createSpec = createFrontierSpecFromLegacyInputs(frontierId, personal, dimension, collectionId, lifetime,
-                sourcePluginId, vertices, chunks, points, pathStyle);
-        if (createSpec == null) {
-            return null;
-        }
-        return createNewFrontierAndReturn(createSpec);
-    }
-
     @Nullable
     public FrontierOverlay createNewFrontierAndReturn(FrontierCreateSpec createSpec) {
         if (usesAuthoritativeCreateFlow(createSpec.getLifetime())) {
@@ -170,6 +100,10 @@ public class ClientFrontierOperationService {
         }
 
         if (!createSpec.isPersonal() || mc.player == null) {
+            return null;
+        }
+
+        if (!isValidLocalCollectionAssignment(createSpec.isPersonal(), createSpec.getOwner(), createSpec.getCollectionId())) {
             return null;
         }
 
@@ -293,29 +227,6 @@ public class ClientFrontierOperationService {
         SettingsUserShared sharedUser = new SettingsUserShared(targetUser, false);
         sharedUser.setActions(EnumSet.noneOf(SettingsUserShared.Action.class));
         PacketHandler.sendToServer(new PacketSharePersonalFrontier(frontierId, sharedUser));
-    }
-
-    public FrontierActionResult createFrontierAction(boolean personal, String pluginModId, DimensionId dimension, FrontierShape shape) {
-        return createFrontierAction(personal, pluginModId, dimension, shape, FrontierLifetime.PERSISTENT);
-    }
-
-    public FrontierActionResult createFrontierAction(boolean personal, String pluginModId, DimensionId dimension, FrontierShape shape,
-                                                     @Nullable FrontierLifetime lifetime) {
-        FrontierData.FrontierLifetime internalLifetime = ApiConverters.toLifetime(lifetime);
-        if (!personal && internalLifetime == FrontierData.FrontierLifetime.SESSION_ONLY) {
-            MapFrontiers.LOGGER.debug("Rejected frontier creation because SESSION_ONLY frontiers must be personal. pluginModId={}, dimension={}",
-                    pluginModId, dimension.value());
-            return FrontierActionResult.rejected();
-        }
-
-        ResourceKey<Level> resourceKey = ApiConverters.toDimension(dimension);
-        FrontierId frontierId = new FrontierId(UUID.randomUUID());
-        FrontierOverlay frontier = createNewFrontierAndReturn(personal, frontierId.value(), resourceKey, null, internalLifetime, pluginModId, shape);
-        if (frontier == null) {
-            return usesAuthoritativeCreateFlow(internalLifetime) ? FrontierActionResult.acceptedAsync(frontierId) : FrontierActionResult.rejected();
-        }
-
-        return FrontierActionResult.applied(ApiConverters.fromFrontier(frontier));
     }
 
     public FrontierActionResult createFrontierAction(boolean personal, String pluginModId, FrontierCreateRequest request) {
@@ -514,7 +425,8 @@ public class ClientFrontierOperationService {
     public FrontierActionResult updateSharedUserPermissionsPartialAction(String pluginModId, FrontierId frontierId, UserRef user,
                                                                         Set<FrontierSharePermission> permissionsToAdd,
                                                                         Set<FrontierSharePermission> permissionsToRemove) {
-        SharingActionContext context = resolveSharingActionContext("partial shared-permission update",
+        String operationName = "updateSharedUserPermissionsPartial";
+        SharingActionContext context = resolveSharingActionContext(operationName,
                 "Could not partially update shared user permissions because frontier was not found locally or is not personal.",
                 pluginModId, frontierId, user);
         if (context.failure != null) {
@@ -523,8 +435,8 @@ public class ClientFrontierOperationService {
 
         SettingsUserShared currentSharedUser = context.frontier.getUserShared(ApiConverters.toUser(user));
         if (currentSharedUser == null) {
-            MapFrontiers.LOGGER.debug("Rejected partial shared-permission update because target user is not currently shared. pluginModId={}, frontierId={}, targetUser={}",
-                    pluginModId, frontierId.value(), user.name());
+            MapFrontiers.LOGGER.debug("Rejected {} because target user is not currently shared. pluginModId={}, frontierId={}, targetUser={}",
+                    operationName, pluginModId, frontierId.value(), user.name());
             return FrontierActionResult.rejected();
         }
 
@@ -774,6 +686,10 @@ public class ClientFrontierOperationService {
         FrontierData defaults = new FrontierData();
         SettingsUser owner = new SettingsUser(mc.player);
         UUID collectionId = request.collectionId().map(CollectionId::value).orElse(null);
+        UUID validatedCollectionId = resolveValidLocalCollectionId(personal, owner, collectionId);
+        if (collectionId != null && validatedCollectionId == null) {
+            return null;
+        }
         String name1 = request.name1().orElse(defaults.getName1());
         String name2 = request.name2().orElse(defaults.getName2());
         int color = request.color().orElseGet(ColorHelper::getRandomColor);
@@ -783,25 +699,29 @@ public class ClientFrontierOperationService {
         FrontierData.BannerData banner = request.banner()
                 .map(ApiConverters::toBanner)
                 .orElseGet(defaults::getbannerData);
-        FrontierData.PathStyle pathStyle = request.pathStyle()
-                .map(ApiConverters::toPathStyle)
-                .orElseGet(FrontierData.PathStyle::new);
+        boolean pathShape = switch (request.shape().type()) {
+            case PATH -> true;
+            default -> false;
+        };
+        FrontierData.PathStyle pathStyle = pathShape
+                ? request.pathStyle().map(ApiConverters::toPathStyle).orElseGet(FrontierData.PathStyle::new)
+                : new FrontierData.PathStyle();
 
         return switch (request.shape().type()) {
             case VERTEX -> FrontierCreateSpec.vertex(frontierId, owner, personal, ApiConverters.toDimension(request.dimension()),
-                    lifetime, collectionId, sourcePluginId, name1, name2, color, visibility, banner,
+                    lifetime, validatedCollectionId, sourcePluginId, name1, name2, color, visibility, banner,
                     request.shape().vertices() == null ? List.of() : request.shape().vertices().stream()
                             .map(vertex -> new BlockPos(vertex.x(), 0, vertex.z()))
                             .toList(),
                     pathStyle);
             case CHUNK -> FrontierCreateSpec.chunk(frontierId, owner, personal, ApiConverters.toDimension(request.dimension()),
-                    lifetime, collectionId, sourcePluginId, name1, name2, color, visibility, banner,
+                    lifetime, validatedCollectionId, sourcePluginId, name1, name2, color, visibility, banner,
                     request.shape().chunks() == null ? Set.of() : request.shape().chunks().stream()
                             .map(chunk -> new ChunkPos(chunk.x(), chunk.z()))
                             .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new)),
                     pathStyle);
             case PATH -> FrontierCreateSpec.path(frontierId, owner, personal, ApiConverters.toDimension(request.dimension()),
-                    lifetime, collectionId, sourcePluginId, name1, name2, color, visibility, banner,
+                    lifetime, validatedCollectionId, sourcePluginId, name1, name2, color, visibility, banner,
                     request.shape().points() == null ? List.of() : request.shape().points().stream()
                             .map(point -> new BlockPos(point.x(), 0, point.z()))
                             .toList(),
@@ -809,40 +729,23 @@ public class ClientFrontierOperationService {
         };
     }
 
-    private @Nullable FrontierCreateSpec createFrontierSpecFromLegacyInputs(UUID frontierId,
-                                                                            boolean personal,
-                                                                            ResourceKey<Level> dimension,
-                                                                            @Nullable UUID collectionId,
-                                                                            FrontierData.FrontierLifetime lifetime,
-                                                                            @Nullable String sourcePluginId,
-                                                                            @Nullable List<BlockPos> vertices,
-                                                                            @Nullable List<ChunkPos> chunks,
-                                                                            @Nullable List<BlockPos> points,
-                                                                            @Nullable FrontierData.PathStyle pathStyle) {
-        if (mc.player == null) {
+    private @Nullable UUID resolveValidLocalCollectionId(boolean personal, SettingsUser owner, @Nullable UUID collectionId) {
+        if (collectionId == null) {
             return null;
         }
 
-        FrontierData defaults = new FrontierData();
-        SettingsUser owner = new SettingsUser(mc.player);
-        int color = ColorHelper.getRandomColor();
-        FrontierData.PathStyle resolvedPathStyle = pathStyle == null ? new FrontierData.PathStyle() : new FrontierData.PathStyle(pathStyle);
-
-        if (points != null) {
-            return FrontierCreateSpec.path(frontierId, owner, personal, dimension, lifetime, collectionId,
-                    sourcePluginId, defaults.getName1(), defaults.getName2(), color,
-                    defaults.getVisibilityData(), defaults.getbannerData(), points, resolvedPathStyle);
+        CollectionData collection = collectionRuntime.getCollection(collectionId);
+        if (collection == null || collection.getPersonal() != personal) {
+            return null;
         }
-
-        if (chunks != null) {
-            return FrontierCreateSpec.chunk(frontierId, owner, personal, dimension, lifetime, collectionId,
-                    sourcePluginId, defaults.getName1(), defaults.getName2(), color,
-                    defaults.getVisibilityData(), defaults.getbannerData(), Set.copyOf(chunks), resolvedPathStyle);
+        if (personal && !collection.getOwner().equals(owner)) {
+            return null;
         }
+        return collectionId;
+    }
 
-        return FrontierCreateSpec.vertex(frontierId, owner, personal, dimension, lifetime, collectionId,
-                sourcePluginId, defaults.getName1(), defaults.getName2(), color,
-                defaults.getVisibilityData(), defaults.getbannerData(), vertices == null ? List.of() : vertices, resolvedPathStyle);
+    private boolean isValidLocalCollectionAssignment(boolean personal, SettingsUser owner, @Nullable UUID collectionId) {
+        return collectionId == null || resolveValidLocalCollectionId(personal, owner, collectionId) != null;
     }
 
     private FrontierData resolveCopiedFrontier(FrontierData receivedFrontier, @Nullable CollectionData receivedCollection) {

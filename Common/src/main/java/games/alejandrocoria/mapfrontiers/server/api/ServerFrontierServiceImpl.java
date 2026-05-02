@@ -4,8 +4,8 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedServerFrontierService;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionId;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
-import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierCreateRequest;
+import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
@@ -118,9 +118,13 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
         FrontierData.BannerData banner = request.banner()
                 .map(ApiConverters::toBanner)
                 .orElseGet(defaults::getbannerData);
-        FrontierData.PathStyle pathStyle = request.pathStyle()
-                .map(ApiConverters::toPathStyle)
-                .orElseGet(FrontierData.PathStyle::new);
+        boolean pathShape = switch (request.shape().type()) {
+            case PATH -> true;
+            default -> false;
+        };
+        FrontierData.PathStyle pathStyle = pathShape
+                ? request.pathStyle().map(ApiConverters::toPathStyle).orElseGet(FrontierData.PathStyle::new)
+                : new FrontierData.PathStyle();
 
         return switch (request.shape().type()) {
             case VERTEX -> FrontierCreateSpec.vertex(frontierId, frontierOwner, false, dimension,

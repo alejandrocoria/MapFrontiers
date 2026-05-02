@@ -5,14 +5,13 @@ import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
 public class ServerFrontierEvents {
     private final Map<Object, Consumer<FrontierData>> createdSubscribers = new HashMap<>();
     private final Map<Object, Consumer<FrontierData>> updatedSubscribers = new HashMap<>();
-    private final Map<Object, Consumer<UUID>> deletedSubscribers = new HashMap<>();
+    private final Map<Object, Consumer<FrontierData>> deletedSubscribers = new HashMap<>();
 
     public void subscribeCreated(Object owner, Consumer<FrontierData> callback) {
         createdSubscribers.put(owner, callback);
@@ -22,7 +21,7 @@ public class ServerFrontierEvents {
         updatedSubscribers.put(owner, callback);
     }
 
-    public void subscribeDeleted(Object owner, Consumer<UUID> callback) {
+    public void subscribeDeleted(Object owner, Consumer<FrontierData> callback) {
         deletedSubscribers.put(owner, callback);
     }
 
@@ -44,9 +43,9 @@ public class ServerFrontierEvents {
         }
     }
 
-    public void postDeleted(UUID frontierId) {
-        for (Consumer<UUID> callback : deletedSubscribers.values()) {
-            callback.accept(frontierId);
+    public void postDeleted(FrontierData frontier) {
+        for (Consumer<FrontierData> callback : deletedSubscribers.values()) {
+            callback.accept(frontier);
         }
     }
 

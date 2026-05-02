@@ -61,10 +61,6 @@ public final class ApiConverters {
         };
     }
 
-    public static void applyShape(FrontierData frontier, FrontierShape shape) {
-        FrontierMutationApplier.applyShape(frontier, shape);
-    }
-
     public static Set<FrontierVisibilityFlag> fromVisibility(FrontierData.VisibilityData visibilityData) {
         return FrontierMutationApplier.fromVisibility(visibilityData);
     }

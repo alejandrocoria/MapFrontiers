@@ -18,11 +18,9 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierUpdated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
-import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
@@ -79,6 +77,7 @@ public class ServerFrontierOperationService {
         SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
         CollectionData collection = new CollectionData(collectionData);
         collection.setOwner(playerUser);
+        collection.removeCopiedFromInfo();
 
         if (collection.getPersonal()) {
             Date now = new Date();
@@ -224,12 +223,11 @@ public class ServerFrontierOperationService {
         }
 
         if (personal) {
-            FrontierData frontier = frontiersManager.createNewPersonalFrontier(frontierId, serverSpec);
-            CollectionData targetCollection = validateTargetCollection(player, frontier, serverSpec.getCollectionId());
+            CollectionData targetCollection = validateTargetCollectionForCreateSpec(serverSpec);
             if (serverSpec.getCollectionId() != null && targetCollection == null) {
-                frontiersManager.deletePersonalFrontier(frontier.getOwner(), frontier.getDimension(), frontier.getId());
-                return ServerFrontierOperationResult.rejected(frontier);
+                return ServerFrontierOperationResult.rejected(null);
             }
+            FrontierData frontier = frontiersManager.createNewPersonalFrontier(serverSpec);
             if (targetCollection != null) {
                 touchCollection(targetCollection, frontier.getModified());
             }
@@ -240,12 +238,11 @@ public class ServerFrontierOperationService {
             return rejectedWithProfileRefresh(player, null);
         }
 
-        FrontierData frontier = frontiersManager.createNewGlobalFrontier(frontierId, serverSpec);
-        CollectionData targetCollection = validateTargetCollection(player, frontier, serverSpec.getCollectionId());
+        CollectionData targetCollection = validateTargetCollectionForCreateSpec(serverSpec);
         if (serverSpec.getCollectionId() != null && targetCollection == null) {
-            frontiersManager.deleteGlobalFrontier(frontier.getDimension(), frontier.getId());
-            return ServerFrontierOperationResult.rejected(frontier);
+            return ServerFrontierOperationResult.rejected(null);
         }
+        FrontierData frontier = frontiersManager.createNewGlobalFrontier(serverSpec);
         if (targetCollection != null) {
             touchCollection(targetCollection, frontier.getModified());
         }
@@ -272,7 +269,7 @@ public class ServerFrontierOperationService {
 
         frontier.removeAllUserShared();
         frontiersManager.importPersonalFrontier(frontier);
-        return ServerFrontierOperationResult.success(frontier);
+        return createdImportedPersonalFrontier(frontier);
     }
 
     public ServerFrontierOperationResult importPersonalCollection(ServerPlayer player, CollectionData collection) {
@@ -306,12 +303,11 @@ public class ServerFrontierOperationService {
             return ServerFrontierOperationResult.rejected(null);
         }
 
-        FrontierData frontier = frontiersManager.createNewGlobalFrontier(createSpec.getFrontierId(), createSpec);
-        CollectionData targetCollection = validateTargetCollectionForAuthoritativeFrontier(frontier, createSpec.getCollectionId());
+        CollectionData targetCollection = validateTargetCollectionForCreateSpec(createSpec);
         if (createSpec.getCollectionId() != null && targetCollection == null) {
-            frontiersManager.deleteGlobalFrontier(frontier.getDimension(), frontier.getId());
-            return ServerFrontierOperationResult.rejected(frontier);
+            return ServerFrontierOperationResult.rejected(null);
         }
+        FrontierData frontier = frontiersManager.createNewGlobalFrontier(createSpec);
         if (targetCollection != null) {
             touchCollection(targetCollection, frontier.getModified());
         }
@@ -343,7 +339,8 @@ public class ServerFrontierOperationService {
             }
 
             if (collectionMembershipChanged) {
-                targetCollection = validateTargetCollectionForAuthoritativeFrontier(currentFrontier, change.getCollectionIdChange().getCollectionId());
+                targetCollection = validateTargetCollectionAssignment(currentFrontier.getId(), currentFrontier.getPersonal(),
+                        currentFrontier.getOwner(), change.getCollectionIdChange().getCollectionId());
                 if (change.getCollectionIdChange().getCollectionId() != null && targetCollection == null) {
                     return ServerFrontierOperationResult.ignored(currentFrontier);
                 }
@@ -391,7 +388,8 @@ public class ServerFrontierOperationService {
         }
 
         if (collectionMembershipChanged) {
-            targetCollection = validateTargetCollectionForAuthoritativeFrontier(currentFrontier, change.getCollectionIdChange().getCollectionId());
+            targetCollection = validateTargetCollectionAssignment(currentFrontier.getId(), currentFrontier.getPersonal(),
+                    currentFrontier.getOwner(), change.getCollectionIdChange().getCollectionId());
             if (change.getCollectionIdChange().getCollectionId() != null && targetCollection == null) {
                 return ServerFrontierOperationResult.ignored(currentFrontier);
             }
@@ -453,7 +451,8 @@ public class ServerFrontierOperationService {
                 && !equalsNullableUuid(frontier.getCollectionId(), change.getCollectionIdChange().getCollectionId());
 
         if (collectionMembershipChanged) {
-            targetCollection = validateTargetCollectionForAuthoritativeFrontier(frontier, change.getCollectionIdChange().getCollectionId());
+            targetCollection = validateTargetCollectionAssignment(frontier.getId(), frontier.getPersonal(),
+                    frontier.getOwner(), change.getCollectionIdChange().getCollectionId());
             if (change.getCollectionIdChange().getCollectionId() != null && targetCollection == null) {
                 return ServerFrontierOperationResult.rejected(frontier);
             }
@@ -522,9 +521,9 @@ public class ServerFrontierOperationService {
                 if (collection != null) {
                     enqueueCollectionVisibilityChange(result, collection, collectionRecipientsBefore);
                 }
-            result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(new PacketFrontierDeleted(frontier.getDimension(),
+                result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(new PacketFrontierDeleted(frontier.getDimension(),
                         frontier.getId(), frontier.getPersonal(), player.getId()), frontier, server));
-                frontierEvents.postDeleted(frontier.getId());
+                frontierEvents.postDeleted(frontier);
                 return result;
             }
 
@@ -557,7 +556,6 @@ public class ServerFrontierOperationService {
             touchCollection(collection, new Date());
             enqueueCollectionVisibilityChange(result, collection, null);
         }
-        frontierEvents.postDeleted(frontier.getId());
         return result;
     }
 
@@ -634,7 +632,7 @@ public class ServerFrontierOperationService {
         }
         result.addNetworkAction(() -> PacketHandler.sendTo(new PacketChangeFrontierToGlobal(frontier.getId(), frontier.getModified()), relevantPlayers));
         result.addNetworkAction(() -> PacketHandler.sendToAllExcept(new PacketFrontierCreated(frontier, player.getId()), server, relevantPlayers));
-        frontierEvents.postUpdated(frontier);
+        frontierEvents.postCreated(frontier);
         return result;
     }
 
@@ -647,6 +645,7 @@ public class ServerFrontierOperationService {
         CollectionData sourceCollection = frontier.hasCollection()
                 ? frontiersManager.getCollectionFromID(frontier.getCollectionId())
                 : null;
+        FrontierData previousGlobalFrontier = new FrontierData(frontier);
 
         if (frontier.getPersonal()) {
             return rejectedWithProfileRefresh(player, frontier);
@@ -674,7 +673,7 @@ public class ServerFrontierOperationService {
         result.addNetworkAction(() -> PacketHandler.sendTo(new PacketChangeFrontierToPersonal(frontier.getId(), frontier.getModified()), player));
         result.addNetworkAction(() -> PacketHandler.sendToAllExcept(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(),
                 false, player.getId()), server, player));
-        frontierEvents.postUpdated(frontier);
+        frontierEvents.postDeleted(previousGlobalFrontier);
         return result;
     }
 
@@ -704,6 +703,12 @@ public class ServerFrontierOperationService {
         return result;
     }
 
+    private ServerFrontierOperationResult createdImportedPersonalFrontier(FrontierData frontier) {
+        ServerFrontierOperationResult result = ServerFrontierOperationResult.success(frontier);
+        frontierEvents.postCreated(frontier);
+        return result;
+    }
+
     private ServerFrontierOperationResult updatedGlobalFrontier(FrontierData frontier, FrontierChange change, int actorId) {
         ServerFrontierOperationResult result = ServerFrontierOperationResult.success(frontier);
         result.addNetworkAction(() -> PacketHandler.sendToAll(new PacketFrontierUpdated(frontier.getId(), frontier.getDimension(),
@@ -716,16 +721,16 @@ public class ServerFrontierOperationService {
         ServerFrontierOperationResult result = ServerFrontierOperationResult.success(frontier);
         result.addNetworkAction(() -> PacketHandler.sendToAll(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(),
                 false, actorId), server));
-        frontierEvents.postDeleted(frontier.getId());
+        frontierEvents.postDeleted(frontier);
         return result;
     }
 
     private ServerFrontierOperationResult createdCollection(CollectionData collection) {
-        ServerFrontierOperationResult result = ServerFrontierOperationResult.success(null);
+        ServerFrontierOperationResult result = ServerFrontierOperationResult.successCollection(collection);
         if (collection.getPersonal()) {
             Set<UUID> recipients = getCollectionRecipientIds(collection);
             CollectionData payload = new CollectionData(collection);
-            result.addNetworkAction(() -> sendToUsers(payload, recipients, true, false, false));
+            result.addNetworkAction(() -> sendCollectionCreatedToUsers(payload, recipients));
         } else {
             CollectionData payload = new CollectionData(collection);
             result.addNetworkAction(() -> PacketHandler.sendToAll(new PacketCollectionCreated(payload), server));
@@ -735,7 +740,7 @@ public class ServerFrontierOperationService {
     }
 
     private ServerFrontierOperationResult updatedCollection(CollectionData collection, @Nullable Set<UUID> recipientsBefore) {
-        ServerFrontierOperationResult result = ServerFrontierOperationResult.success(null);
+        ServerFrontierOperationResult result = ServerFrontierOperationResult.successCollection(collection);
         enqueueCollectionVisibilityChange(result, collection, recipientsBefore);
         return result;
     }
@@ -743,6 +748,7 @@ public class ServerFrontierOperationService {
     private void enqueueFrontierUpdates(ServerFrontierOperationResult result, List<FrontierUpdateEmission> updates) {
         for (FrontierUpdateEmission update : updates) {
             FrontierData frontier = update.frontier();
+            frontierEvents.postUpdated(frontier);
             PacketFrontierUpdated packet = new PacketFrontierUpdated(frontier.getId(), frontier.getDimension(),
                     frontier.getPersonal(), new FrontierChange(update.change()), update.actorId());
             result.addNetworkAction(() -> {
@@ -782,15 +788,15 @@ public class ServerFrontierOperationService {
 
         CollectionData payload = new CollectionData(collection);
         if (!recipientsForCreate.isEmpty()) {
-            result.addNetworkAction(() -> sendToUsers(payload, recipientsForCreate, true, false, false));
+            result.addNetworkAction(() -> sendCollectionCreatedToUsers(payload, recipientsForCreate));
         }
         if (!recipientsForUpdate.isEmpty()) {
-            result.addNetworkAction(() -> sendToUsers(payload, recipientsForUpdate, false, true, false));
+            result.addNetworkAction(() -> sendCollectionUpdatedToUsers(payload, recipientsForUpdate));
         }
     }
 
     private void enqueueCollectionDeleted(ServerFrontierOperationResult result, CollectionData collection, @Nullable Set<UUID> recipientsBefore) {
-        collectionEvents.postDeleted(collection.getId());
+        collectionEvents.postDeleted(collection);
         if (!collection.getPersonal()) {
             UUID collectionId = collection.getId();
             result.addNetworkAction(() -> PacketHandler.sendToAll(new PacketCollectionDeleted(collectionId), server));
@@ -802,43 +808,39 @@ public class ServerFrontierOperationService {
         }
 
         UUID collectionId = collection.getId();
-        result.addNetworkAction(() -> sendToUsers(collectionId, recipientsBefore, false, false, true));
+        result.addNetworkAction(() -> sendCollectionDeletedToUsers(collectionId, recipientsBefore));
     }
 
-    private void sendToUsers(CollectionData payload,
-                             Set<UUID> recipientIds,
-                             boolean create,
-                             boolean update,
-                             boolean delete) {
+    private void sendCollectionCreatedToUsers(CollectionData payload, Set<UUID> recipientIds) {
         for (UUID recipientId : recipientIds) {
             ServerPlayer recipient = server.getPlayerList().getPlayer(recipientId);
             if (recipient == null) {
                 continue;
             }
 
-            if (create) {
-                PacketHandler.sendTo(new PacketCollectionCreated(new CollectionData(payload)), recipient);
-            }
-            if (update) {
-                PacketHandler.sendTo(new PacketCollectionUpdated(new CollectionData(payload)), recipient);
-            }
+            PacketHandler.sendTo(new PacketCollectionCreated(new CollectionData(payload)), recipient);
         }
     }
 
-    private void sendToUsers(UUID collectionId,
-                             Set<UUID> recipientIds,
-                             boolean create,
-                             boolean update,
-                             boolean delete) {
+    private void sendCollectionUpdatedToUsers(CollectionData payload, Set<UUID> recipientIds) {
         for (UUID recipientId : recipientIds) {
             ServerPlayer recipient = server.getPlayerList().getPlayer(recipientId);
             if (recipient == null) {
                 continue;
             }
 
-            if (delete) {
-                PacketHandler.sendTo(new PacketCollectionDeleted(collectionId), recipient);
+            PacketHandler.sendTo(new PacketCollectionUpdated(new CollectionData(payload)), recipient);
+        }
+    }
+
+    private void sendCollectionDeletedToUsers(UUID collectionId, Set<UUID> recipientIds) {
+        for (UUID recipientId : recipientIds) {
+            ServerPlayer recipient = server.getPlayerList().getPlayer(recipientId);
+            if (recipient == null) {
+                continue;
             }
+
+            PacketHandler.sendTo(new PacketCollectionDeleted(collectionId), recipient);
         }
     }
 
@@ -870,36 +872,15 @@ public class ServerFrontierOperationService {
         return recipients;
     }
 
-    private @Nullable CollectionData validateTargetCollection(ServerPlayer player, FrontierData frontier, @Nullable UUID collectionId) {
-        if (collectionId == null) {
-            frontier.setCollectionId(null);
-            return null;
-        }
-
-        CollectionData collection = frontiersManager.getCollectionFromID(collectionId);
-        if (collection == null) {
-            MapFrontiers.LOGGER.warn("Rejected collection assignment because collection was not found. frontierId={}, collectionId={}",
-                    frontier.getId(), collectionId);
-            return null;
-        }
-
-        if (collection.getPersonal() != frontier.getPersonal()) {
-            MapFrontiers.LOGGER.warn("Rejected collection assignment because collection type mismatched frontier type. frontierId={}, collectionId={}, frontierPersonal={}, collectionPersonal={}",
-                    frontier.getId(), collectionId, frontier.getPersonal(), collection.getPersonal());
-            return null;
-        }
-
-        if (frontier.getPersonal() && !collection.getOwner().equals(frontier.getOwner())) {
-            MapFrontiers.LOGGER.warn("Rejected collection assignment because personal collection owner mismatched frontier owner. frontierId={}, collectionId={}, frontierOwner={}, collectionOwner={}",
-                    frontier.getId(), collectionId, frontier.getOwner(), collection.getOwner());
-            return null;
-        }
-
-        frontier.setCollectionId(collectionId);
-        return collection;
+    private @Nullable CollectionData validateTargetCollectionForCreateSpec(FrontierCreateSpec createSpec) {
+        return validateTargetCollectionAssignment(createSpec.getFrontierId(), createSpec.isPersonal(), createSpec.getOwner(),
+                createSpec.getCollectionId());
     }
 
-    private @Nullable CollectionData validateTargetCollectionForAuthoritativeFrontier(FrontierData frontier, @Nullable UUID collectionId) {
+    private @Nullable CollectionData validateTargetCollectionAssignment(UUID frontierId,
+                                                                        boolean personal,
+                                                                        SettingsUser owner,
+                                                                        @Nullable UUID collectionId) {
         if (collectionId == null) {
             return null;
         }
@@ -907,19 +888,19 @@ public class ServerFrontierOperationService {
         CollectionData collection = frontiersManager.getCollectionFromID(collectionId);
         if (collection == null) {
             MapFrontiers.LOGGER.warn("Rejected authoritative collection assignment because collection was not found. frontierId={}, collectionId={}",
-                    frontier.getId(), collectionId);
+                    frontierId, collectionId);
             return null;
         }
 
-        if (collection.getPersonal() != frontier.getPersonal()) {
+        if (collection.getPersonal() != personal) {
             MapFrontiers.LOGGER.warn("Rejected authoritative collection assignment because collection type mismatched frontier type. frontierId={}, collectionId={}, frontierPersonal={}, collectionPersonal={}",
-                    frontier.getId(), collectionId, frontier.getPersonal(), collection.getPersonal());
+                    frontierId, collectionId, personal, collection.getPersonal());
             return null;
         }
 
-        if (frontier.getPersonal() && !collection.getOwner().equals(frontier.getOwner())) {
+        if (personal && !collection.getOwner().equals(owner)) {
             MapFrontiers.LOGGER.warn("Rejected authoritative collection assignment because personal collection owner mismatched frontier owner. frontierId={}, collectionId={}, frontierOwner={}, collectionOwner={}",
-                    frontier.getId(), collectionId, frontier.getOwner(), collection.getOwner());
+                    frontierId, collectionId, owner, collection.getOwner());
             return null;
         }
 

@@ -32,9 +32,13 @@ public class ServerCollectionServiceImpl implements PluginScopedServerCollection
             throw new IllegalArgumentException("Invalid global collection create request");
         }
         result.dispatchNetworkActions();
+        CollectionData storedCollection = result.getCollection();
+        if (storedCollection == null) {
+            throw new IllegalStateException("Global collection creation succeeded without returning the created collection");
+        }
         MapFrontiers.LOGGER.info("Created global collection via server API. pluginModId={}, collectionId={}, owner={}",
-                pluginModId, collection.getId(), collection.getOwner().username);
-        return ApiConverters.fromCollection(collection);
+                pluginModId, storedCollection.getId(), storedCollection.getOwner().username);
+        return ApiConverters.fromCollection(storedCollection);
     }
 
     @Override
@@ -51,7 +55,11 @@ public class ServerCollectionServiceImpl implements PluginScopedServerCollection
             return Optional.empty();
         }
         result.dispatchNetworkActions();
-        return Optional.of(ApiConverters.fromCollection(collection));
+        CollectionData updatedCollection = result.getCollection();
+        if (updatedCollection == null) {
+            throw new IllegalStateException("Global collection update succeeded without returning the updated collection");
+        }
+        return Optional.of(ApiConverters.fromCollection(updatedCollection));
     }
 
     @Override

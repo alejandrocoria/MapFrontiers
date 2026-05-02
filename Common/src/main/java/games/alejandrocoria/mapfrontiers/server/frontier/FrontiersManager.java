@@ -12,7 +12,6 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtFileHelper;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
-import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtAccounter;
@@ -138,39 +137,28 @@ public class FrontiersManager {
         return false;
     }
 
-    public FrontierData createNewGlobalFrontier(UUID frontierId,
-                                                FrontierCreateSpec createSpec) {
+    public FrontierData createNewGlobalFrontier(FrontierCreateSpec createSpec) {
         List<FrontierData> frontiers = getAllGlobalFrontiers(createSpec.getDimension());
-        return createNewFrontier(frontierId, frontiers, createSpec);
+        return createNewFrontier(frontiers, createSpec);
     }
 
-    public FrontierData createNewPersonalFrontier(UUID frontierId,
-                                                  FrontierCreateSpec createSpec) {
+    public FrontierData createNewPersonalFrontier(FrontierCreateSpec createSpec) {
         List<FrontierData> frontiers = getAllPersonalFrontiers(createSpec.getOwner(), createSpec.getDimension());
-        return createNewFrontier(frontierId, frontiers, createSpec);
+        return createNewFrontier(frontiers, createSpec);
     }
 
-    private FrontierData createNewFrontier(UUID frontierId,
-                                           List<FrontierData> frontiers,
+    private FrontierData createNewFrontier(List<FrontierData> frontiers,
                                            FrontierCreateSpec createSpec) {
         FrontierData frontier = FrontierCreationFactory.createFrontier(createSpec);
+        if (!frontier.getId().equals(createSpec.getFrontierId())) {
+            throw new IllegalStateException("Created frontier id does not match the create spec");
+        }
 
         frontiers.add(frontier);
         allFrontiers.put(frontier.getId(), frontier);
         saveFrontiersNow();
 
         return frontier;
-    }
-
-    public void addPersonalFrontier(FrontierData frontier) {
-        if (!frontier.getPersonal()) {
-            return;
-        }
-
-        List<FrontierData> frontiers = getAllPersonalFrontiers(frontier.getOwner(), frontier.getDimension());
-        frontiers.add(frontier);
-        allFrontiers.put(frontier.getId(), frontier);
-        saveFrontiersNow();
     }
 
     public void importPersonalFrontier(FrontierData frontier) {
@@ -182,17 +170,6 @@ public class FrontiersManager {
         frontiers.add(frontier);
         allFrontiers.put(frontier.getId(), frontier);
         markFrontiersUpdated();
-    }
-
-    public void addGlobalFrontier(FrontierData frontier) {
-        if (frontier.getPersonal()) {
-            return;
-        }
-
-        List<FrontierData> frontiers = getAllGlobalFrontiers(frontier.getDimension());
-        frontiers.add(frontier);
-        allFrontiers.put(frontier.getId(), frontier);
-        saveFrontiersNow();
     }
 
     public void addGlobalCollection(CollectionData collection) {
@@ -604,22 +581,6 @@ public class FrontiersManager {
 
         saveFrontiersNow();
         return collection;
-    }
-
-    public boolean deleteCollection(UUID collectionId) {
-        CollectionData collection = removeCollection(collectionId);
-        if (collection == null) {
-            return false;
-        }
-
-        for (FrontierData frontier : allFrontiers.values()) {
-            if (collectionId.equals(frontier.getCollectionId())) {
-                frontier.setCollectionId(null);
-            }
-        }
-
-        saveFrontiersNow();
-        return true;
     }
 
     private void saveSettingsData() {

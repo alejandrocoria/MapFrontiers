@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.server.frontier;
 
+import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 
 import javax.annotation.Nullable;
@@ -28,40 +29,47 @@ public class ServerFrontierOperationResult {
     private final Status status;
     private final Reason reason;
     private final @Nullable FrontierData frontier;
+    private final @Nullable CollectionData collection;
     private final List<Runnable> networkActions = new ArrayList<>();
 
-    private ServerFrontierOperationResult(Status status, Reason reason, @Nullable FrontierData frontier) {
+    private ServerFrontierOperationResult(Status status, Reason reason, @Nullable FrontierData frontier,
+                                          @Nullable CollectionData collection) {
         this.status = status;
         this.reason = reason;
         this.frontier = frontier;
+        this.collection = collection;
     }
 
     public static ServerFrontierOperationResult success(@Nullable FrontierData frontier) {
-        return new ServerFrontierOperationResult(Status.Success, Reason.None, frontier);
+        return new ServerFrontierOperationResult(Status.Success, Reason.None, frontier, null);
+    }
+
+    public static ServerFrontierOperationResult successCollection(@Nullable CollectionData collection) {
+        return new ServerFrontierOperationResult(Status.Success, Reason.None, null, collection);
     }
 
     public static ServerFrontierOperationResult rejected(@Nullable FrontierData frontier) {
-        return new ServerFrontierOperationResult(Status.Rejected, Reason.None, frontier);
+        return new ServerFrontierOperationResult(Status.Rejected, Reason.None, frontier, null);
     }
 
     public static ServerFrontierOperationResult rejected(Reason reason, @Nullable FrontierData frontier) {
-        return new ServerFrontierOperationResult(Status.Rejected, reason, frontier);
+        return new ServerFrontierOperationResult(Status.Rejected, reason, frontier, null);
     }
 
     public static ServerFrontierOperationResult notFound() {
-        return new ServerFrontierOperationResult(Status.NotFound, Reason.None, null);
+        return new ServerFrontierOperationResult(Status.NotFound, Reason.None, null, null);
     }
 
     public static ServerFrontierOperationResult notFound(Reason reason) {
-        return new ServerFrontierOperationResult(Status.NotFound, reason, null);
+        return new ServerFrontierOperationResult(Status.NotFound, reason, null, null);
     }
 
     public static ServerFrontierOperationResult ignored(@Nullable FrontierData frontier) {
-        return new ServerFrontierOperationResult(Status.Ignored, Reason.None, frontier);
+        return new ServerFrontierOperationResult(Status.Ignored, Reason.None, frontier, null);
     }
 
     public static ServerFrontierOperationResult ignored(Reason reason, @Nullable FrontierData frontier) {
-        return new ServerFrontierOperationResult(Status.Ignored, reason, frontier);
+        return new ServerFrontierOperationResult(Status.Ignored, reason, frontier, null);
     }
 
     public Status getStatus() {
@@ -78,6 +86,10 @@ public class ServerFrontierOperationResult {
 
     public @Nullable FrontierData getFrontier() {
         return frontier;
+    }
+
+    public @Nullable CollectionData getCollection() {
+        return collection;
     }
 
     public void addNetworkAction(Runnable action) {

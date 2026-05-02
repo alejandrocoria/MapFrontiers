@@ -508,15 +508,6 @@ public class MapFrontiersClient {
         return runtime.getCollectionRuntime().getFrontiersWithoutCollection(personal);
     }
 
-    public static int getVisibleFrontierCountInCollection(UUID collectionId) {
-        ClientFrontierRuntime runtime = ensureFrontierRuntime();
-        if (runtime == null) {
-            return 0;
-        }
-
-        return runtime.getCollectionRuntime().getVisibleFrontierCount(collectionId);
-    }
-
     public static void updateSelectedFrontierMarker(boolean personal, ResourceKey<Level> dimension, @Nullable FrontierOverlay frontier) {
         FrontiersOverlayManager manager = getFrontiersOverlayManagerOrNull(personal);
         if (manager != null) {

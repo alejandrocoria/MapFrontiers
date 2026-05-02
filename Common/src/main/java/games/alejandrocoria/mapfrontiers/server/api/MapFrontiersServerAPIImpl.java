@@ -1,9 +1,9 @@
 package games.alejandrocoria.mapfrontiers.server.api;
 
-import games.alejandrocoria.mapfrontiers.api.event.EventBus;
 import games.alejandrocoria.mapfrontiers.api.event.CollectionCreatedEvent;
 import games.alejandrocoria.mapfrontiers.api.event.CollectionDeletedEvent;
 import games.alejandrocoria.mapfrontiers.api.event.CollectionUpdatedEvent;
+import games.alejandrocoria.mapfrontiers.api.event.EventBus;
 import games.alejandrocoria.mapfrontiers.api.event.FrontierCreatedEvent;
 import games.alejandrocoria.mapfrontiers.api.event.FrontierDeletedEvent;
 import games.alejandrocoria.mapfrontiers.api.event.FrontierUpdatedEvent;
@@ -32,12 +32,37 @@ public class MapFrontiersServerAPIImpl implements InternalMapFrontiersServerAPI 
         this.frontiers = new ServerFrontierServiceImpl(operationService);
         this.collections = new ServerCollectionServiceImpl(operationService);
 
-        frontierEvents.subscribeCreated(this, frontier -> eventBus.post(new FrontierCreatedEvent(ApiConverters.fromFrontier(frontier))));
-        frontierEvents.subscribeUpdated(this, frontier -> eventBus.post(new FrontierUpdatedEvent(ApiConverters.fromFrontier(frontier))));
-        frontierEvents.subscribeDeleted(this, frontierId -> eventBus.post(new FrontierDeletedEvent(new FrontierId(frontierId))));
-        collectionEvents.subscribeCreated(this, collection -> eventBus.post(new CollectionCreatedEvent(ApiConverters.fromCollection(collection))));
-        collectionEvents.subscribeUpdated(this, collection -> eventBus.post(new CollectionUpdatedEvent(ApiConverters.fromCollection(collection))));
-        collectionEvents.subscribeDeleted(this, collectionId -> eventBus.post(new CollectionDeletedEvent(new CollectionId(collectionId))));
+        // Server API exposes only global entities, so personal/global conversions surface as created/deleted here.
+        frontierEvents.subscribeCreated(this, frontier -> {
+            if (!frontier.getPersonal()) {
+                eventBus.post(new FrontierCreatedEvent(ApiConverters.fromFrontier(frontier)));
+            }
+        });
+        frontierEvents.subscribeUpdated(this, frontier -> {
+            if (!frontier.getPersonal()) {
+                eventBus.post(new FrontierUpdatedEvent(ApiConverters.fromFrontier(frontier)));
+            }
+        });
+        frontierEvents.subscribeDeleted(this, frontier -> {
+            if (!frontier.getPersonal()) {
+                eventBus.post(new FrontierDeletedEvent(new FrontierId(frontier.getId())));
+            }
+        });
+        collectionEvents.subscribeCreated(this, collection -> {
+            if (!collection.getPersonal()) {
+                eventBus.post(new CollectionCreatedEvent(ApiConverters.fromCollection(collection)));
+            }
+        });
+        collectionEvents.subscribeUpdated(this, collection -> {
+            if (!collection.getPersonal()) {
+                eventBus.post(new CollectionUpdatedEvent(ApiConverters.fromCollection(collection)));
+            }
+        });
+        collectionEvents.subscribeDeleted(this, collection -> {
+            if (!collection.getPersonal()) {
+                eventBus.post(new CollectionDeletedEvent(new CollectionId(collection.getId())));
+            }
+        });
     }
 
     public void close() {

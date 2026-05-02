@@ -1,9 +1,9 @@
 package games.alejandrocoria.mapfrontiers.client.api;
 
-import games.alejandrocoria.mapfrontiers.api.event.EventBus;
 import games.alejandrocoria.mapfrontiers.api.event.CollectionCreatedEvent;
 import games.alejandrocoria.mapfrontiers.api.event.CollectionDeletedEvent;
 import games.alejandrocoria.mapfrontiers.api.event.CollectionUpdatedEvent;
+import games.alejandrocoria.mapfrontiers.api.event.EventBus;
 import games.alejandrocoria.mapfrontiers.api.event.FrontierCreatedEvent;
 import games.alejandrocoria.mapfrontiers.api.event.FrontierDeletedEvent;
 import games.alejandrocoria.mapfrontiers.api.event.FrontierUpdatedEvent;
