@@ -5,10 +5,10 @@ import games.alejandrocoria.mapfrontiers.api.model.CollectionDataView;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionId;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionMutation;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
+import games.alejandrocoria.mapfrontiers.api.model.EntityLifetime;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierBanner;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
-import games.alejandrocoria.mapfrontiers.api.model.FrontierLifetime;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierShape;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierSharePermission;
@@ -119,6 +119,7 @@ public final class ApiConverters {
         return new CollectionDataView(
                 new CollectionId(collection.getId()),
                 collection.getPersonal() ? FrontierType.PERSONAL : FrontierType.GLOBAL,
+                fromLifetime(collection.getLifetime()),
                 fromUser(collection.getOwner()),
                 collection.getName(),
                 collection.getColor(),
@@ -154,15 +155,15 @@ public final class ApiConverters {
         );
     }
 
-    public static FrontierLifetime fromLifetime(FrontierData.FrontierLifetime lifetime) {
+    public static EntityLifetime fromLifetime(FrontierData.FrontierLifetime lifetime) {
         return switch (lifetime) {
-            case PERSISTENT -> FrontierLifetime.PERSISTENT;
-            case SESSION_ONLY -> FrontierLifetime.SESSION_ONLY;
+            case PERSISTENT -> EntityLifetime.PERSISTENT;
+            case SESSION_ONLY -> EntityLifetime.SESSION_ONLY;
         };
     }
 
-    public static FrontierData.FrontierLifetime toLifetime(FrontierLifetime lifetime) {
-        FrontierLifetime checkedLifetime = lifetime == null ? FrontierLifetime.PERSISTENT : lifetime;
+    public static FrontierData.FrontierLifetime toLifetime(EntityLifetime lifetime) {
+        EntityLifetime checkedLifetime = lifetime == null ? EntityLifetime.PERSISTENT : lifetime;
         return switch (checkedLifetime) {
             case PERSISTENT -> FrontierData.FrontierLifetime.PERSISTENT;
             case SESSION_ONLY -> FrontierData.FrontierLifetime.SESSION_ONLY;
