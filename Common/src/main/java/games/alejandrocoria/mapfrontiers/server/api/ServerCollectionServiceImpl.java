@@ -44,7 +44,7 @@ public class ServerCollectionServiceImpl implements PluginScopedServerCollection
     @Override
     public Optional<CollectionDataView> updateGlobalCollection(String pluginModId, CollectionId collectionId, CollectionMutation mutation) {
         CollectionData collection = operationService.getCollection(collectionId.value());
-        if (collection == null || collection.getPersonal()) {
+        if (collection == null || collection.getPersonal() || !collection.isPersistent()) {
             return Optional.empty();
         }
 
@@ -65,7 +65,7 @@ public class ServerCollectionServiceImpl implements PluginScopedServerCollection
     @Override
     public boolean deleteGlobalCollection(String pluginModId, CollectionId collectionId) {
         CollectionData collection = operationService.getCollection(collectionId.value());
-        if (collection == null || collection.getPersonal()) {
+        if (collection == null || collection.getPersonal() || !collection.isPersistent()) {
             return false;
         }
 
@@ -87,7 +87,7 @@ public class ServerCollectionServiceImpl implements PluginScopedServerCollection
     @Override
     public Optional<CollectionDataView> getCollection(String pluginModId, CollectionId collectionId) {
         CollectionData collection = operationService.getCollection(collectionId.value());
-        if (collection == null || collection.getPersonal()) {
+        if (collection == null || collection.getPersonal() || !collection.isPersistent()) {
             return Optional.empty();
         }
         return Optional.of(ApiConverters.fromCollection(collection));

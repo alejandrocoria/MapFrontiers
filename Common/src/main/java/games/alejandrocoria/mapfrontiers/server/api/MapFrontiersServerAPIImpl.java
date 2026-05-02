@@ -34,32 +34,32 @@ public class MapFrontiersServerAPIImpl implements InternalMapFrontiersServerAPI 
 
         // Server API exposes only global entities, so personal/global conversions surface as created/deleted here.
         frontierEvents.subscribeCreated(this, frontier -> {
-            if (!frontier.getPersonal()) {
+            if (!frontier.getPersonal() && frontier.isPersistent()) {
                 eventBus.post(new FrontierCreatedEvent(ApiConverters.fromFrontier(frontier)));
             }
         });
         frontierEvents.subscribeUpdated(this, frontier -> {
-            if (!frontier.getPersonal()) {
+            if (!frontier.getPersonal() && frontier.isPersistent()) {
                 eventBus.post(new FrontierUpdatedEvent(ApiConverters.fromFrontier(frontier)));
             }
         });
         frontierEvents.subscribeDeleted(this, frontier -> {
-            if (!frontier.getPersonal()) {
+            if (!frontier.getPersonal() && frontier.isPersistent()) {
                 eventBus.post(new FrontierDeletedEvent(new FrontierId(frontier.getId())));
             }
         });
         collectionEvents.subscribeCreated(this, collection -> {
-            if (!collection.getPersonal()) {
+            if (!collection.getPersonal() && collection.isPersistent()) {
                 eventBus.post(new CollectionCreatedEvent(ApiConverters.fromCollection(collection)));
             }
         });
         collectionEvents.subscribeUpdated(this, collection -> {
-            if (!collection.getPersonal()) {
+            if (!collection.getPersonal() && collection.isPersistent()) {
                 eventBus.post(new CollectionUpdatedEvent(ApiConverters.fromCollection(collection)));
             }
         });
         collectionEvents.subscribeDeleted(this, collection -> {
-            if (!collection.getPersonal()) {
+            if (!collection.getPersonal() && collection.isPersistent()) {
                 eventBus.post(new CollectionDeletedEvent(new CollectionId(collection.getId())));
             }
         });

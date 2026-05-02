@@ -194,6 +194,7 @@ public class ClientFrontierSyncService {
         CollectionData collection = collectionRuntime.getCollection(collectionId);
         if (collection == null || !collection.isPersistent()
                 || collection.getPersonal() != frontier.getPersonal()
+                || collection.getLifetime() != frontier.getLifetime()
                 || (frontier.getPersonal() && !collection.getOwner().equals(frontier.getOwner()))) {
             frontier.setCollectionId(null);
         }
