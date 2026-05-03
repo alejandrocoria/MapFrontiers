@@ -261,18 +261,18 @@ public final class ClientConfig {
     public static final BooleanConfigEntry ASK_CONFIRMATION_COLLECTION_DELETE = register(boolEntry(true, "gui", "confirmation", "collectionDelete")
             .comment("Show a confirmation dialog before deleting a collection.")
             .translation(translation("gui", "confirmation", "collectionDelete")));
-    public static final BooleanConfigEntry ASK_CONFIRMATION_TEMPORARY_FRONTIER_CREATE = register(boolEntry(true, "gui", "confirmation", "temporaryFrontierCreate")
-            .comment("Show a confirmation dialog before creating a temporary frontier.")
-            .translation(translation("gui", "confirmation", "temporaryFrontierCreate")));
-    public static final BooleanConfigEntry ASK_CONFIRMATION_TEMPORARY_COLLECTION_CREATE = register(boolEntry(true, "gui", "confirmation", "temporaryCollectionCreate")
-            .comment("Show a confirmation dialog before creating a temporary collection.")
-            .translation(translation("gui", "confirmation", "temporaryCollectionCreate")));
     public static final BooleanConfigEntry ASK_CONFIRMATION_GROUP_DELETE = register(boolEntry(true, "gui", "confirmation", "groupDelete")
             .comment("Show a confirmation dialog before deleting a group.")
             .translation(translation("gui", "confirmation", "groupDelete")));
     public static final BooleanConfigEntry ASK_CONFIRMATION_USER_DELETE = register(boolEntry(true, "gui", "confirmation", "userDelete")
             .comment("Show a confirmation dialog before deleting a user.")
             .translation(translation("gui", "confirmation", "userDelete")));
+    public static final BooleanConfigEntry ASK_CONFIRMATION_TEMPORARY_FRONTIER_CREATE = register(boolEntry(true, "gui", "confirmation", "temporaryFrontierCreate")
+            .comment("Show a confirmation dialog before creating a temporary frontier.")
+            .translation(translation("gui", "confirmation", "temporaryFrontierCreate")));
+    public static final BooleanConfigEntry ASK_CONFIRMATION_TEMPORARY_COLLECTION_CREATE = register(boolEntry(true, "gui", "confirmation", "temporaryCollectionCreate")
+            .comment("Show a confirmation dialog before creating a temporary collection.")
+            .translation(translation("gui", "confirmation", "temporaryCollectionCreate")));
 
     public static final BooleanConfigEntry HUD_ENABLED = register(boolEntry(true, "hud", "enabled")
             .comment("Show the HUD on screen.")

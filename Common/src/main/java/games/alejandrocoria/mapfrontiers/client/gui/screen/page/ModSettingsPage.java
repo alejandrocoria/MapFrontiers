@@ -21,6 +21,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.HUDSettingsScreen;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationSettingsDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.FrontierAppearanceDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.PathStyleDialog;
@@ -93,6 +94,7 @@ public class ModSettingsPage extends PageScreen
     private static final Component DEFAULT_PATH_STYLE_LABEL = Component.translatable("mapfrontiers.default_path_style");
     private static final Component FORCED_VISIBILITY_LABEL = Component.translatable("mapfrontiers.forced_visibility");
     private static final Component GUI_LABEL = Component.translatable("mapfrontiers.gui");
+    private static final Component CONFIRMATION_DIALOGS_LABEL = Component.translatable("mapfrontiers.confirmation_dialogs");
     private static final Component HUD_LABEL = Component.translatable("mapfrontiers.hud");
     private static final Component ON_LABEL = Component.translatable("options.on");
     private static final Component OFF_LABEL = Component.translatable("options.off");
@@ -132,8 +134,7 @@ public class ModSettingsPage extends PageScreen
     private TabbedBox tabbedBox;
     private SimpleButton buttonFrontierAppearance;
     private SimpleButton buttonDefaultPathStyle;
-    private OptionButton buttonAskConfirmationGroupDelete;
-    private OptionButton buttonAskConfirmationUserDelete;
+    private SimpleButton buttonConfirmationDialogs;
     private SimpleButton buttonEditHUD;
     private ScrollBox groups;
     private MultiLineTextWidget labelGroupDesc;
@@ -301,16 +302,10 @@ public class ModSettingsPage extends PageScreen
                 LayoutSettings.defaults().alignHorizontallyCenter());
 
         row = addOptionSettingRow(settingsGrid, row, ClientConfig.FULLSCREEN_BUTTONS);
-        row = addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE);
-        row = addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_COLLECTION_DELETE);
-        row = addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_TEMPORARY_FRONTIER_CREATE);
-        row = addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_TEMPORARY_COLLECTION_CREATE);
-        buttonAskConfirmationGroupDelete = createOnOffOptionButton(ClientConfig.ASK_CONFIRMATION_GROUP_DELETE);
-        row = addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_GROUP_DELETE,
-                buttonAskConfirmationGroupDelete);
-        buttonAskConfirmationUserDelete = createOnOffOptionButton(ClientConfig.ASK_CONFIRMATION_USER_DELETE);
-        return addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_USER_DELETE,
-                buttonAskConfirmationUserDelete);
+        buttonConfirmationDialogs = createWideSimpleButton(LayoutConstants.PAGE_BUTTON_WIDTH, CONFIRMATION_DIALOGS_LABEL,
+                b -> onConfirmationDialogsPressed());
+        settingsGrid.addChild(buttonConfirmationDialogs, row, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
+        return row + 1;
     }
 
     private void buildHudSection(LinearLayout generalLayout, GridLayout settingsGrid, int row) {
@@ -525,6 +520,10 @@ public class ModSettingsPage extends PageScreen
         new HUDSettingsScreen().display();
     }
 
+    private void onConfirmationDialogsPressed() {
+        new ConfirmationSettingsDialog().display();
+    }
+
     private void onHudEnabledChanged(boolean enabled) {
         ClientConfig.HUD_ENABLED.set(enabled);
         updateButtonsVisibility();
@@ -556,7 +555,6 @@ public class ModSettingsPage extends PageScreen
                 response -> {
                     if (response == ConfirmationDialog.Response.ConfirmAlternative) {
                         ClientConfig.ASK_CONFIRMATION_GROUP_DELETE.set(false);
-                        buttonAskConfirmationGroupDelete.setSelected(1);
                         ClientGlobalEvents.postUpdatedConfigEvent();
                     }
                     deleteGroup(element);
@@ -594,7 +592,6 @@ public class ModSettingsPage extends PageScreen
                 response -> {
                     if (response == ConfirmationDialog.Response.ConfirmAlternative) {
                         ClientConfig.ASK_CONFIRMATION_USER_DELETE.set(false);
-                        buttonAskConfirmationUserDelete.setSelected(1);
                         ClientGlobalEvents.postUpdatedConfigEvent();
                     }
                     deleteUser(group, element);
@@ -1016,6 +1013,7 @@ public class ModSettingsPage extends PageScreen
         buttonEditHUD.visible = tabSelected == Tab.General && ClientConfig.HUD_ENABLED.get() && minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
         buttonFrontierAppearance.visible = tabSelected == Tab.General && minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
         buttonDefaultPathStyle.visible = tabSelected == Tab.General && minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
+        buttonConfirmationDialogs.visible = tabSelected == Tab.General;
         textNewUser.visible = canAddNewUser();
         buttonNewUser.visible = canAddNewUser();
     }
