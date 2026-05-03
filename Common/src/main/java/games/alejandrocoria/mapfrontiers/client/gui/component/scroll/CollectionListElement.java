@@ -9,6 +9,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
@@ -25,16 +26,14 @@ public class CollectionListElement extends FrontierListRowElement {
     private static final int CONTENT_X = 14;
     private static final int TITLE_Y = 6;
     private static final int COUNTERS_GAP = 4;
-    private static final int COUNTERS_RIGHT_GAP = 2;
+    private static final int COUNTERS_RIGHT_GAP = 4;
     private static final int TITLE_HOVER_X = 14;
     private static final int TITLE_BG_TOP_OFFSET = -2;
     private static final int TITLE_BG_BOTTOM_OFFSET = 8;
     private static final int TITLE_BG_FADE_WIDTH = 6;
     private static final int RIGHT_PADDING = 4;
     private static final int ACTION_GAP = 2;
-    private static final int ACTION_Y = 4;
-    private static final int ACTION_HEIGHT = 11;
-    private static final int ACTION_TEXT_Y = 2;
+    private static final int ACTION_Y = 3;
     private static final int CHECKBOX_Y = 4;
     private static final String ELLIPSIS = "...";
 
@@ -49,9 +48,9 @@ public class CollectionListElement extends FrontierListRowElement {
     private final boolean checkboxVisibleOnHover;
     private final int markedCount;
     private final int eligibleCount;
-    private final @Nullable String actionLabel;
+    private final @Nullable IconButton actionButton;
     private final boolean actionEnabled;
-    private final int actionWidth;
+    private final boolean actionVisibleWhenDisabled;
     private final List<UUID> eligibleFrontierIds;
     private final IconButton collapseToggleButton;
     private boolean collapseToggleRequested;
@@ -71,9 +70,9 @@ public class CollectionListElement extends FrontierListRowElement {
                                  boolean checkboxVisibleOnHover,
                                  int markedCount,
                                  int eligibleCount,
-                                 @Nullable String actionLabel,
+                                 @Nullable IconButton.Type actionType,
                                  boolean actionEnabled,
-                                 int actionWidth,
+                                 @Nullable Tooltip actionTooltip,
                                  List<UUID> eligibleFrontierIds,
                                  int width) {
         super(rowId, width, 17);
@@ -88,24 +87,34 @@ public class CollectionListElement extends FrontierListRowElement {
         this.checkboxVisibleOnHover = checkboxVisibleOnHover;
         this.markedCount = markedCount;
         this.eligibleCount = eligibleCount;
-        this.actionLabel = actionLabel;
         this.actionEnabled = actionEnabled;
-        this.actionWidth = actionWidth;
+        this.actionVisibleWhenDisabled = actionType == IconButton.Type.MoveHere;
         this.eligibleFrontierIds = List.copyOf(eligibleFrontierIds);
 
         collapseToggleButton = new IconButton(collapsed ? IconButton.Type.Collapsed : IconButton.Type.Expanded, (button) -> {});
+        actionButton = actionType == null ? null : new IconButton(actionType, (button) -> {});
+        if (actionButton != null) {
+            actionButton.setTooltip(actionTooltip);
+            actionButton.active = actionEnabled;
+        }
     }
 
     @Override
     protected void setX(int x) {
         super.setX(x);
         collapseToggleButton.setX(this.x + 4);
+        if (actionButton != null) {
+            actionButton.setX(getActionLeft());
+        }
     }
 
     @Override
     protected void setY(int y) {
         super.setY(y);
         collapseToggleButton.setY(this.y + 5);
+        if (actionButton != null) {
+            actionButton.setY(this.y + ACTION_Y);
+        }
     }
 
     public @Nullable CollectionData getCollection() {
@@ -166,7 +175,7 @@ public class CollectionListElement extends FrontierListRowElement {
         collapseToggleButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         renderTexts(graphics, mouseX, mouseY, selected);
         renderMarkedCount(graphics);
-        renderActionButton(graphics, mouseX, mouseY);
+        renderActionButton(graphics, mouseX, mouseY, partialTicks);
         renderCheckBox(graphics, mouseX, mouseY);
     }
 
@@ -213,23 +222,16 @@ public class CollectionListElement extends FrontierListRowElement {
         graphics.text(font, markedText, countX, y + TITLE_Y, ColorConstants.TEXT_HIGHLIGHT);
     }
 
-    private void renderActionButton(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        if (actionLabel == null) {
+    private void renderActionButton(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        if (actionButton == null) {
             return;
         }
 
-        int left = getActionLeft();
-        int top = y + ACTION_Y;
-        boolean hovered = isActionHovered(mouseX, mouseY);
-        int borderColor = actionEnabled ? (hovered ? ColorConstants.SIMPLE_BUTTON_BORDER_FOCUSED : ColorConstants.SIMPLE_BUTTON_BORDER)
-                : ColorConstants.SIMPLE_BUTTON_BORDER_DISABLED;
-        int textColor = actionEnabled ? (hovered ? ColorConstants.SIMPLE_BUTTON_TEXT_HIGHLIGHT : ColorConstants.SIMPLE_BUTTON_TEXT)
-                : ColorConstants.SIMPLE_BUTTON_TEXT_INACTIVE;
+        if (!actionEnabled && !actionVisibleWhenDisabled) {
+            return;
+        }
 
-        graphics.fill(left, top, left + actionWidth, top + ACTION_HEIGHT, borderColor);
-        graphics.fill(left + 1, top + 1, left + actionWidth - 1, top + ACTION_HEIGHT - 1, ColorConstants.SIMPLE_BUTTON_BG);
-        int textX = left + (actionWidth - font.width(actionLabel)) / 2;
-        graphics.text(font, actionLabel, textX, top + ACTION_TEXT_Y, textColor);
+        actionButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
     }
 
     private void renderCheckBox(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
@@ -255,9 +257,7 @@ public class CollectionListElement extends FrontierListRowElement {
     }
 
     private boolean isActionHovered(int mouseX, int mouseY) {
-        int left = getActionLeft();
-        return isHovered && actionLabel != null && mouseX >= left && mouseY >= y + ACTION_Y
-                && mouseX < left + actionWidth && mouseY < y + ACTION_Y + ACTION_HEIGHT;
+        return isHovered && actionButton != null && actionEnabled && actionButton.isMouseOver(mouseX, mouseY);
     }
 
     private boolean isCheckBoxHovered(int mouseX, int mouseY) {
@@ -269,7 +269,10 @@ public class CollectionListElement extends FrontierListRowElement {
     }
 
     private int getActionLeft() {
-        return getCheckBoxX() - ACTION_GAP - actionWidth;
+        if (actionButton == null) {
+            return getCheckBoxX();
+        }
+        return getCheckBoxX() - ACTION_GAP - actionButton.getWidth();
     }
 
     private int getRightZoneStart() {
@@ -332,8 +335,7 @@ public class CollectionListElement extends FrontierListRowElement {
             return ScrollBox.ScrollElement.Action.Handled;
         }
 
-        if (actionLabel != null && event.x() >= getActionLeft() && event.x() < getActionLeft() + actionWidth
-                && event.y() >= y + ACTION_Y && event.y() < y + ACTION_Y + ACTION_HEIGHT) {
+        if (isActionHovered((int) event.x(), (int) event.y())) {
             actionRequested = true;
             return ScrollBox.ScrollElement.Action.Handled;
         }

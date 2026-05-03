@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.button;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -17,6 +18,7 @@ public class IconButton extends ButtonBase {
         Add            (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/add.png"),             39, 13),
         Remove         (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/remove.png"),          39, 13),
         Send           (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/send.png"),            39, 13),
+        MoveHere       (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/move_here.png"),       39, 13),
         Copy           (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/copy.png"),            51, 17),
         Paste          (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/paste.png"),           51, 17),
         ExpandOptions  (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/expand_options.png"),  24, 17),
@@ -65,7 +67,10 @@ public class IconButton extends ButtonBase {
     @Override
     public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         int stateIndex = 0;
-        if (isFocused() && Minecraft.getInstance().getLastInputType().isKeyboard()) {
+        int color = ColorConstants.WHITE;
+        if (!active) {
+            color = 0xFF7F7F7F;
+        } else if (isFocused() && Minecraft.getInstance().getLastInputType().isKeyboard()) {
             stateIndex = 2;
         } else if (isHovered()) {
             stateIndex = 1;
@@ -73,6 +78,6 @@ public class IconButton extends ButtonBase {
 
         int u = type.frameWidth * stateIndex;
         graphics.blit(RenderPipelines.GUI_TEXTURED, type.texture, getX(), getY(), u, 0, width, height,
-                type.textureWidth, type.height);
+                type.textureWidth, type.height, color);
     }
 }

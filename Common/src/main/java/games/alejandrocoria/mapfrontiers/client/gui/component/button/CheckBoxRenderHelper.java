@@ -27,8 +27,7 @@ public final class CheckBoxRenderHelper {
         } else if (state == State.PARTIAL) {
             int partialX = x + (SIZE - PARTIAL_WIDTH) / 2;
             int partialY = y + (SIZE - PARTIAL_HEIGHT) / 2;
-            graphics.fill(partialX, partialY, partialX + PARTIAL_WIDTH, partialY + PARTIAL_HEIGHT + 1,
-                    ColorConstants.CHECKBOX_CHECK);
+            graphics.fill(partialX, partialY, partialX + PARTIAL_WIDTH, partialY + PARTIAL_HEIGHT, ColorConstants.CHECKBOX_CHECK);
         }
     }
 

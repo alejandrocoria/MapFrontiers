@@ -11,6 +11,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.FullscreenMap;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.SortToolbar;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
+import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.CollectionBorderCapListElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.CollectionListElement;
@@ -23,6 +24,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.SectionHead
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.SpacerListElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.CreateConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteCollectionConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteFrontierConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.NewFrontierDialog;
@@ -37,6 +39,7 @@ import games.alejandrocoria.mapfrontiers.platform.Services;
 import journeymap.api.v2.client.IClientAPI;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
@@ -88,8 +91,6 @@ public class FrontierListPage extends PageScreen
     private static final String PERSONAL_VIRTUAL_COLLECTION_ID = "mapfrontiers:personal_virtual_collection";
     private static final String TEMPORARY_VIRTUAL_COLLECTION_ID = "mapfrontiers:personal_temporary_virtual_collection";
     private static final String GLOBAL_VIRTUAL_COLLECTION_ID = "mapfrontiers:global_virtual_collection";
-    private static final String NEW_ACTION_LABEL = "Nueva";
-    private static final String MOVE_HERE_ACTION_LABEL = "Mover aca";
 
     private final IClientAPI jmAPI;
     private final FullscreenMap fullscreenMap;
@@ -388,6 +389,12 @@ public class FrontierListPage extends PageScreen
             return;
         }
 
+        if (element instanceof SectionHeaderListElement headerElement && headerElement.consumeAddRequested()) {
+            createCollectionFromHeader(headerElement.getRowId());
+            refreshViewState();
+            return;
+        }
+
         if (!(element instanceof FrontierListRowElement rowElement)) {
             return;
         }
@@ -414,8 +421,8 @@ public class FrontierListPage extends PageScreen
                     if (isMarkedModeActive()) {
                         moveMarkedFrontiersToCollection(collectionElement);
                         updateFrontiers();
-                    } else if (collectionElement.isVirtualRow()) {
-                        createCollectionFromVirtualRow(collectionElement);
+                    } else {
+                        createFrontierFromCollectionRow(collectionElement);
                     }
                 }
                 refreshViewState();
@@ -668,27 +675,28 @@ public class FrontierListPage extends PageScreen
         refreshViewState();
     }
 
-    private void createCollectionFromVirtualRow(CollectionListElement virtualRow) {
-        if (minecraft.player == null || !virtualRow.isVirtualRow() || !canCreateCollection(virtualRow.getScope())) {
+    private void createCollectionFromHeader(String headerRowId) {
+        CollectionScope scope = getScopeFromHeaderRowId(headerRowId);
+        if (scope == null || minecraft.player == null || !canCreateCollection(scope)) {
             return;
         }
 
-        if (virtualRow.getScope() == CollectionScope.PERSONAL_SESSION) {
-            showTemporaryCollectionCreateConfirmation(() -> createCollectionFromVirtualRowConfirmed(virtualRow));
+        if (scope == CollectionScope.PERSONAL_SESSION) {
+            showTemporaryCollectionCreateConfirmation(() -> createCollectionConfirmed(scope));
             return;
         }
-        createCollectionFromVirtualRowConfirmed(virtualRow);
+        createCollectionConfirmed(scope);
     }
 
-    private void createCollectionFromVirtualRowConfirmed(CollectionListElement virtualRow) {
+    private void createCollectionConfirmed(CollectionScope scope) {
         if (minecraft.player == null) {
             return;
         }
 
         CollectionData collection = new CollectionData();
         collection.setId(UUID.randomUUID());
-        collection.setPersonal(virtualRow.isPersonal());
-        collection.setLifetime(virtualRow.getScope() == CollectionScope.PERSONAL_SESSION
+        collection.setPersonal(scope != CollectionScope.GLOBAL_PERSISTENT);
+        collection.setLifetime(scope == CollectionScope.PERSONAL_SESSION
                 ? FrontierData.FrontierLifetime.SESSION_ONLY
                 : FrontierData.FrontierLifetime.PERSISTENT);
         collection.setOwner(new SettingsUser(minecraft.player));
@@ -698,18 +706,28 @@ public class FrontierListPage extends PageScreen
         new CollectionInfoPage(collection).display();
     }
 
+    private void createFrontierFromCollectionRow(CollectionListElement collectionElement) {
+        if (minecraft.player == null) {
+            return;
+        }
+
+        if (collectionElement.getScope() == CollectionScope.PERSONAL_SESSION) {
+            showTemporaryFrontierCreateConfirmation(() -> openNewFrontierDialog(collectionElement));
+            return;
+        }
+
+        openNewFrontierDialog(collectionElement);
+    }
+
     private void showTemporaryFrontierCreateConfirmation(Runnable onConfirm) {
         if (!ClientConfig.ASK_CONFIRMATION_TEMPORARY_FRONTIER_CREATE.get()) {
             onConfirm.run();
             return;
         }
 
-        new ConfirmationDialog(
+        new CreateConfirmationDialog(
                 "mapfrontiers.create_temporary_frontier_dialog",
                 "mapfrontiers.create_temporary_frontier_dialog_desc",
-                "mapfrontiers.create",
-                "gui.cancel",
-                "mapfrontiers.create_and_dont_ask_again",
                 response -> {
                     if (response == ConfirmationDialog.Response.ConfirmAlternative) {
                         ClientConfig.ASK_CONFIRMATION_TEMPORARY_FRONTIER_CREATE.set(false);
@@ -726,12 +744,9 @@ public class FrontierListPage extends PageScreen
             return;
         }
 
-        new ConfirmationDialog(
+        new CreateConfirmationDialog(
                 "mapfrontiers.create_temporary_collection_dialog",
                 "mapfrontiers.create_temporary_collection_dialog_desc",
-                "mapfrontiers.create",
-                "gui.cancel",
-                "mapfrontiers.create_and_dont_ask_again",
                 response -> {
                     if (response == ConfirmationDialog.Response.ConfirmAlternative) {
                         ClientConfig.ASK_CONFIRMATION_TEMPORARY_COLLECTION_CREATE.set(false);
@@ -822,7 +837,8 @@ public class FrontierListPage extends PageScreen
 
         CollectionGroupModel virtualGroup = buildVirtualGroup(scope);
         String headerText = getHeaderText(scope);
-        rows.add(new SectionHeaderListElement(font, headerText, FRONTIERS_WIDTH, ColorConstants.SCROLL_HEADER));
+        rows.add(new SectionHeaderListElement(getHeaderRowId(scope), font, headerText, FRONTIERS_WIDTH, ColorConstants.SCROLL_HEADER,
+                !isMarkedModeActive() && canCreateCollection(scope), getCreateCollectionTooltip(scope)));
         rows.add(createCollectionRowElement(virtualGroup, ColorConstants.VIRTUAL_COLLECTION));
         if (!virtualGroup.collapsed) {
             addFrontierChildren(rows, virtualGroup.filteredFrontiers, visibleFilteredFrontiers, ColorConstants.VIRTUAL_COLLECTION);
@@ -863,9 +879,9 @@ public class FrontierListPage extends PageScreen
                 shouldShowCheckboxOnHover(canMarkGroup),
                 countMarkedFrontiers(eligibleFrontierIds),
                 eligibleFrontierIds.size(),
-                getCollectionActionLabel(group),
+                getCollectionActionType(group),
                 isCollectionActionEnabled(group),
-                getCollectionActionWidth(),
+                getCollectionActionTooltip(group),
                 eligibleFrontierIds,
                 FRONTIERS_WIDTH);
     }
@@ -1067,6 +1083,23 @@ public class FrontierListPage extends PageScreen
         };
     }
 
+    private String getHeaderRowId(CollectionScope scope) {
+        return switch (scope) {
+            case PERSONAL_PERSISTENT -> "mapfrontiers:personal_header_row";
+            case PERSONAL_SESSION -> "mapfrontiers:temporary_header_row";
+            case GLOBAL_PERSISTENT -> "mapfrontiers:global_header_row";
+        };
+    }
+
+    private @Nullable CollectionScope getScopeFromHeaderRowId(String rowId) {
+        return switch (rowId) {
+            case "mapfrontiers:personal_header_row" -> CollectionScope.PERSONAL_PERSISTENT;
+            case "mapfrontiers:temporary_header_row" -> CollectionScope.PERSONAL_SESSION;
+            case "mapfrontiers:global_header_row" -> CollectionScope.GLOBAL_PERSISTENT;
+            default -> null;
+        };
+    }
+
     private String getVirtualCollectionRowId(CollectionScope scope) {
         return switch (scope) {
             case PERSONAL_PERSISTENT -> PERSONAL_VIRTUAL_COLLECTION_ID;
@@ -1101,10 +1134,10 @@ public class FrontierListPage extends PageScreen
         return count;
     }
 
-    private @Nullable String getCollectionActionLabel(CollectionGroupModel group) {
+    private @Nullable IconButton.Type getCollectionActionType(CollectionGroupModel group) {
         if (!isMarkedModeActive()) {
-            if (group.virtualRow && canCreateCollection(group.scope)) {
-                return NEW_ACTION_LABEL;
+            if (canCreateFrontierInScope(group.scope)) {
+                return IconButton.Type.Add;
             }
             return null;
         }
@@ -1117,12 +1150,12 @@ public class FrontierListPage extends PageScreen
             return null;
         }
 
-        return MOVE_HERE_ACTION_LABEL;
+        return IconButton.Type.MoveHere;
     }
 
     private boolean isCollectionActionEnabled(CollectionGroupModel group) {
         if (!isMarkedModeActive()) {
-            return group.virtualRow && canCreateCollection(group.scope);
+            return canCreateFrontierInScope(group.scope);
         }
 
         if (!isCompatibleWithMarkedType(group, getEligibleFrontierIds(group))) {
@@ -1143,8 +1176,16 @@ public class FrontierListPage extends PageScreen
         return false;
     }
 
-    private int getCollectionActionWidth() {
-        return Math.max(font.width(NEW_ACTION_LABEL), font.width(MOVE_HERE_ACTION_LABEL)) + 8;
+    private @Nullable Tooltip getCollectionActionTooltip(CollectionGroupModel group) {
+        if (isMarkedModeActive()) {
+            return Tooltip.create(Component.translatable("mapfrontiers.tooltip.move_here"));
+        }
+
+        if (group.virtualRow) {
+            return getCreateFrontierTooltipWithoutCollection(group.scope);
+        }
+
+        return getCreateFrontierTooltipInCollection(group.scope);
     }
 
     private void toggleFrontierMarked(FrontierOverlay frontier) {
@@ -1347,6 +1388,43 @@ public class FrontierListPage extends PageScreen
 
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
         return profile != null && profile.createFrontier == SettingsProfile.State.Enabled;
+    }
+
+    private boolean canCreateFrontierInScope(CollectionScope scope) {
+        if (minecraft.player == null) {
+            return false;
+        }
+
+        if (scope != CollectionScope.GLOBAL_PERSISTENT) {
+            return true;
+        }
+
+        SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
+        return profile != null && profile.createFrontier == SettingsProfile.State.Enabled;
+    }
+
+    private Tooltip getCreateCollectionTooltip(CollectionScope scope) {
+        return Tooltip.create(Component.translatable(switch (scope) {
+            case PERSONAL_PERSISTENT -> "mapfrontiers.tooltip.create_collection_personal";
+            case PERSONAL_SESSION -> "mapfrontiers.tooltip.create_collection_temporary";
+            case GLOBAL_PERSISTENT -> "mapfrontiers.tooltip.create_collection_global";
+        }));
+    }
+
+    private Tooltip getCreateFrontierTooltipInCollection(CollectionScope scope) {
+        return Tooltip.create(Component.translatable(switch (scope) {
+            case PERSONAL_PERSISTENT -> "mapfrontiers.tooltip.create_frontier_personal_in_collection";
+            case PERSONAL_SESSION -> "mapfrontiers.tooltip.create_frontier_temporary_in_collection";
+            case GLOBAL_PERSISTENT -> "mapfrontiers.tooltip.create_frontier_global_in_collection";
+        }));
+    }
+
+    private Tooltip getCreateFrontierTooltipWithoutCollection(CollectionScope scope) {
+        return Tooltip.create(Component.translatable(switch (scope) {
+            case PERSONAL_PERSISTENT -> "mapfrontiers.tooltip.create_frontier_personal";
+            case PERSONAL_SESSION -> "mapfrontiers.tooltip.create_frontier_temporary";
+            case GLOBAL_PERSISTENT -> "mapfrontiers.tooltip.create_frontier_global";
+        }));
     }
 
     private boolean canCreateFrontierInSelection() {
