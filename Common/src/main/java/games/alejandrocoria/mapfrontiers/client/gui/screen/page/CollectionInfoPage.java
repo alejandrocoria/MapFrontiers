@@ -195,13 +195,7 @@ public class CollectionInfoPage extends PageScreen {
     }
 
     private void buildColorSection(GridLayout mainLayout) {
-        colorPicker = new ColorPicker(collection.getColor(), (color, dragging) -> {
-            if (dragging) {
-                applyColorChange(color, false);
-            } else {
-                applyColorChange(color, true);
-            }
-        });
+        colorPicker = new ColorPicker(collection.getColor(), this::onColorPicked);
         mainLayout.addChild(colorPicker, 1, 0, LayoutSettings.defaults().alignVerticallyBottom().alignHorizontallyCenter());
 
         LinearLayout colorColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
@@ -358,6 +352,21 @@ public class CollectionInfoPage extends PageScreen {
         }
 
         if (trackUndo) {
+            addCurrentStateToUndo();
+        }
+    }
+
+    private void onColorPicked(int color, boolean dragging) {
+        if (syncingWidgets) {
+            return;
+        }
+
+        if (color != collection.getColor()) {
+            collection.setColor(color);
+            syncColorWidgets(color);
+        }
+
+        if (!dragging) {
             addCurrentStateToUndo();
         }
     }
