@@ -191,7 +191,7 @@ public class FrontierListPage extends PageScreen
 
     @Override
     protected void positionContent() {
-        content.setX((actualWidth - content.getWidth()) / 2);
+        content.setPosition((actualWidth - content.getWidth()) / 2, LayoutConstants.PAGE_MARGIN + LayoutConstants.BOX_PADDING);
     }
 
     @Override
