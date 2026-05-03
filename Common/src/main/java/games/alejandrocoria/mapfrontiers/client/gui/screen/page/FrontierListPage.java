@@ -73,12 +73,12 @@ public class FrontierListPage extends PageScreen
     private static final Component OVERWORLD_LABEL = Component.literal("minecraft:overworld");
     private static final Component THE_NETHER_LABEL = Component.literal("minecraft:the_nether");
     private static final Component THE_END_LABEL = Component.literal("minecraft:the_end");
-    private static final Component CREATE_LABEL = Component.translatable("mapfrontiers.create");
     private static final Component INFO_LABEL = Component.translatable("mapfrontiers.info");
     private static final Component DELETE_LABEL = Component.translatable("mapfrontiers.delete");
     private static final Component HIDE_LABEL = Component.translatable("mapfrontiers.hide");
     private static final Component SETTINGS_LABEL = Component.translatable("mapfrontiers.settings");
     private static final Component DONE_LABEL = Component.translatable("gui.done");
+    private static final int BOTTOM_BUTTON_WIDTH = 132;
     private static final int CONTENT_TOP = 60;
     private static final int FRONTIERS_WIDTH = 450;
     private static final int FRONTIERS_ELEMENT_HEIGHT = 25;
@@ -102,10 +102,9 @@ public class FrontierListPage extends PageScreen
     private ScrollBox filterType;
     private ScrollBox filterOwner;
     private ScrollBox filterDimension;
-    private SimpleButton buttonCreate;
     private SimpleButton buttonInfo;
-    private SimpleButton buttonDelete;
     private SimpleButton buttonVisible;
+    private SimpleButton buttonDelete;
     private SimpleButton buttonSettings;
     private @Nullable String selectedRowId;
 
@@ -312,10 +311,9 @@ public class FrontierListPage extends PageScreen
     }
 
     private void buildBottomButtons() {
-        buttonCreate = addBottomButton(createCreateButton());
         buttonInfo = addBottomButton(createInfoButton());
-        buttonDelete = addBottomButton(createDeleteButton());
         buttonVisible = addBottomButton(createVisibleButton());
+        buttonDelete = addBottomButton(createDeleteButton());
         buttonSettings = addBottomButton(createSettingsButton());
         addBottomButton(createDoneButton());
     }
@@ -324,30 +322,26 @@ public class FrontierListPage extends PageScreen
         return new SimpleButton(font, 110, RESET_FILTERS_LABEL, button -> onResetFiltersPressed());
     }
 
-    private SimpleButton createCreateButton() {
-        return new SimpleButton(font, 110, CREATE_LABEL, button -> onCreatePressed());
-    }
-
     private SimpleButton createInfoButton() {
-        return new SimpleButton(font, 110, INFO_LABEL, button -> onInfoPressed());
+        return new SimpleButton(font, BOTTOM_BUTTON_WIDTH, INFO_LABEL, button -> onInfoPressed());
     }
 
     private SimpleButton createDeleteButton() {
-        SimpleButton button = new SimpleButton(font, 110, DELETE_LABEL, pressedButton -> onDeletePressed());
+        SimpleButton button = new SimpleButton(font, BOTTOM_BUTTON_WIDTH, DELETE_LABEL, pressedButton -> onDeletePressed());
         button.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
         return button;
     }
 
     private SimpleButton createVisibleButton() {
-        return new SimpleButton(font, 110, HIDE_LABEL, button -> onVisiblePressed());
+        return new SimpleButton(font, BOTTOM_BUTTON_WIDTH, HIDE_LABEL, button -> onVisiblePressed());
     }
 
     private SimpleButton createSettingsButton() {
-        return new SimpleButton(font, 110, SETTINGS_LABEL, button -> onSettingsPressed());
+        return new SimpleButton(font, BOTTOM_BUTTON_WIDTH, SETTINGS_LABEL, button -> onSettingsPressed());
     }
 
     private SimpleButton createDoneButton() {
-        return new SimpleButton(font, 110, DONE_LABEL, button -> onDonePressed());
+        return new SimpleButton(font, BOTTOM_BUTTON_WIDTH, DONE_LABEL, button -> onDonePressed());
     }
 
     private StringWidget createSectionLabel(Component label) {
@@ -466,21 +460,6 @@ public class FrontierListPage extends PageScreen
     private void onDimensionFilterSelected(ScrollElement element) {
         ClientConfig.FILTER_FRONTIER_DIMENSION.set(radioValue(element, String.class));
         notifyFiltersChanged();
-    }
-
-    private void onCreatePressed() {
-        if (minecraft.player != null) {
-            CollectionListElement selectedCollectionElement = getSelectedCollectionElement();
-            if (selectedCollectionElement != null) {
-                if (selectedCollectionElement.getScope() == CollectionScope.PERSONAL_SESSION) {
-                    showTemporaryFrontierCreateConfirmation(() -> openNewFrontierDialog(selectedCollectionElement));
-                } else {
-                    openNewFrontierDialog(selectedCollectionElement);
-                }
-            } else {
-                new NewFrontierDialog(jmAPI, minecraft.player.blockPosition(), createNewFrontierResultHandler()).display();
-            }
-        }
     }
 
     private void openNewFrontierDialog(CollectionListElement selectedCollectionElement) {
@@ -1427,21 +1406,6 @@ public class FrontierListPage extends PageScreen
         }));
     }
 
-    private boolean canCreateFrontierInSelection() {
-        CollectionListElement selectedCollectionElement = getSelectedCollectionElement();
-        if (selectedCollectionElement == null) {
-            return true;
-        }
-
-        CollectionData selectedCollection = selectedCollectionElement.getCollection();
-        if (selectedCollectionElement.isPersonal()) {
-            return minecraft.player != null;
-        }
-
-        SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
-        return profile != null && profile.createFrontier == SettingsProfile.State.Enabled;
-    }
-
     private boolean canMarkFrontier(FrontierOverlay frontier) {
         if (minecraft.player == null) {
             return false;
@@ -1518,7 +1482,6 @@ public class FrontierListPage extends PageScreen
         }
 
         if (isMarkedModeActive()) {
-            buttonCreate.active = false;
             buttonInfo.active = false;
             buttonDelete.active = false;
             buttonVisible.active = false;
@@ -1530,11 +1493,10 @@ public class FrontierListPage extends PageScreen
         CollectionListElement selectedCollectionElement = getSelectedCollectionElement();
         if (selectedCollectionElement != null) {
             CollectionData selectedCollection = selectedCollectionElement.getCollection();
-            buttonCreate.active = canCreateFrontierInSelection();
             buttonInfo.active = selectedCollection != null;
-            buttonDelete.active = selectedCollection != null && canDeleteSelectedCollection(selectedCollection);
             buttonVisible.active = false;
             buttonVisible.setMessage(Component.translatable("mapfrontiers.hide"));
+            buttonDelete.active = selectedCollection != null && canDeleteSelectedCollection(selectedCollection);
             buttonSettings.active = true;
             return;
         }
@@ -1544,10 +1506,9 @@ public class FrontierListPage extends PageScreen
         SettingsUser playerUser = new SettingsUser(minecraft.player);
         SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, selectedFrontier, playerUser);
 
-        buttonCreate.active = true;
         buttonInfo.active = selectedFrontier != null;
-        buttonDelete.active = actions.canDelete;
         buttonVisible.active = actions.canUpdate;
+        buttonDelete.active = actions.canDelete;
         buttonSettings.active = true;
 
         if (selectedFrontier != null && selectedFrontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier)) {
