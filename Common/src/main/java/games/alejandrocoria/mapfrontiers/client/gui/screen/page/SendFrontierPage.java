@@ -71,6 +71,7 @@ public class SendFrontierPage extends PageScreen
         description.setCentered(true);
 
         LinearLayout newUserLayout = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
+        newUserLayout.defaultCellSetting().alignVerticallyMiddle();
         mainLayout.addChild(newUserLayout);
 
         textNewUser = new TextBoxUser(minecraft, font, LayoutConstants.USER_TEXTBOX_WIDTH);

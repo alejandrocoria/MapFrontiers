@@ -353,6 +353,7 @@ public class ModSettingsPage extends PageScreen
 
     private void buildNewGroupControls(LinearLayout groupsColumn) {
         LinearLayout newGroupLayout = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
+        newGroupLayout.defaultCellSetting().alignVerticallyMiddle();
         groupsColumn.addChild(newGroupLayout);
 
         textNewGroupName = newGroupLayout.addChild(new TextBox(font, GROUP_NAME_WIDTH, I18n.get("mapfrontiers.new_group_name")));
@@ -375,6 +376,7 @@ public class ModSettingsPage extends PageScreen
 
     private void buildNewUserControls(LinearLayout usersColumn) {
         LinearLayout newUserLayout = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
+        newUserLayout.defaultCellSetting().alignVerticallyMiddle();
         usersColumn.addChild(newUserLayout);
 
         textNewUser = newUserLayout.addChild(new TextBoxUser(minecraft, font, LayoutConstants.USER_TEXTBOX_WIDTH, I18n.get("mapfrontiers.new_user")));

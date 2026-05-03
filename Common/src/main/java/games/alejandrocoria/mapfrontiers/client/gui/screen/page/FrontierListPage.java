@@ -787,7 +787,7 @@ public class FrontierListPage extends PageScreen
                 continue;
             }
             if (!firstBlock) {
-                rows.add(new SpacerListElement(FRONTIERS_WIDTH, 5));
+                rows.add(new SpacerListElement(FRONTIERS_WIDTH, 9));
             }
             rows.addAll(block);
             firstBlock = false;

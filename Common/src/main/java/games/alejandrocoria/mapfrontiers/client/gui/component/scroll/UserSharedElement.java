@@ -79,7 +79,7 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
         updateFrontier.setY(y + 2);
         updateSettings.setY(y + 2);
         if (buttonDelete != null) {
-            buttonDelete.setY(this.y + 1);
+            buttonDelete.setY(this.y + 2);
         }
     }
 

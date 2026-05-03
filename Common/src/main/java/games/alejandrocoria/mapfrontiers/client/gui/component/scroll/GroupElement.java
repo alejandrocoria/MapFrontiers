@@ -45,7 +45,7 @@ public class GroupElement extends ScrollBox.ScrollElement {
     protected void setY(int y) {
         super.setY(y);
         if (buttonDelete != null) {
-            buttonDelete.setY(this.y + 1);
+            buttonDelete.setY(this.y + 2);
         }
     }
 

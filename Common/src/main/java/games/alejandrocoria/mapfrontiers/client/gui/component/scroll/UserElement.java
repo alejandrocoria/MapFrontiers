@@ -50,7 +50,7 @@ public class UserElement extends ScrollBox.ScrollElement {
     @Override
     protected void setY(int y) {
         super.setY(y);
-        buttonDelete.setY(this.y + 1);
+        buttonDelete.setY(this.y + 2);
     }
 
     @Override

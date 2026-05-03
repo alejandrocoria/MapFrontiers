@@ -116,6 +116,7 @@ public class ShareSettingsPage extends PageScreen
         mainLayout.addChild(users);
 
         LinearLayout newUserLayout = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
+        newUserLayout.defaultCellSetting().alignVerticallyMiddle();
         mainLayout.addChild(newUserLayout);
 
         textNewUser = new TextBoxUser(minecraft, font, LayoutConstants.USER_TEXTBOX_WIDTH);

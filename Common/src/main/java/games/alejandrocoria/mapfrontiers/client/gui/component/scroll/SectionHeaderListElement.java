@@ -13,9 +13,9 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class SectionHeaderListElement extends FrontierListRowElement {
-    private static final int HEIGHT = 13;
-    private static final int TITLE_Y = 3;
-    private static final int TITLE_BUTTON_GAP = 2;
+    private static final int HEIGHT = 12;
+    private static final int TITLE_Y = 2;
+    private static final int TITLE_BUTTON_GAP = 3;
 
     private final Font font;
     private final int color;

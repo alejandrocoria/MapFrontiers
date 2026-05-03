@@ -33,7 +33,7 @@ public class CollectionListElement extends FrontierListRowElement {
     private static final int TITLE_BG_FADE_WIDTH = 6;
     private static final int RIGHT_PADDING = 4;
     private static final int ACTION_GAP = 2;
-    private static final int ACTION_Y = 3;
+    private static final int ACTION_Y = 4;
     private static final int CHECKBOX_Y = 4;
     private static final String ELLIPSIS = "...";
 
@@ -276,7 +276,7 @@ public class CollectionListElement extends FrontierListRowElement {
     }
 
     private int getRightZoneStart() {
-        int countWidth = markedCount <= 0 ? 0 : font.width("[" + markedCount + "]");
+        int countWidth = markedCount <= 0 ? -ACTION_GAP : font.width("[" + markedCount + "]");
         return getActionLeft() - ACTION_GAP - countWidth - COUNTERS_RIGHT_GAP;
     }
 
