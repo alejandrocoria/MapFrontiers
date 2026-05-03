@@ -133,12 +133,13 @@ public class FrontierInfoPage extends PageScreen
     private final IClientAPI jmAPI;
 
     private final FrontierOverlay frontier;
+    private final boolean hasPathStyle;
     private int frontierHash;
     private TextBox textName1;
     private TextBox textName2;
     private SimpleButton buttonVisibility;
     private SimpleButton buttonVisibilityOverride;
-    private SimpleButton buttonPathStyle;
+    private @Nullable SimpleButton buttonPathStyle;
     private TextBoxInt textRed;
     private TextBoxInt textGreen;
     private TextBoxInt textBlue;
@@ -150,12 +151,12 @@ public class FrontierInfoPage extends PageScreen
     private IconButton buttonPasteOptions;
     private OptionButton buttonPasteName;
     private OptionButton buttonPasteVisibility;
-    private OptionButton buttonPastePathStyle;
+    private @Nullable OptionButton buttonPastePathStyle;
     private OptionButton buttonPasteColor;
     private OptionButton buttonPasteBanner;
     private StringWidget labelPasteName;
     private StringWidget labelPasteVisibility;
-    private StringWidget labelPastePathStyle;
+    private @Nullable StringWidget labelPastePathStyle;
     private StringWidget labelPasteColor;
     private StringWidget labelPasteBanner;
     private IconButton buttonUndo;
@@ -180,6 +181,7 @@ public class FrontierInfoPage extends PageScreen
         super(TITLE_LABEL);
         this.jmAPI = jmAPI;
         this.frontier = frontier;
+        hasPathStyle = frontier.getMode() == FrontierData.Mode.Path;
         frontierHash = frontier.getHash();
         undoStack.push(new FrontierData(frontier));
 
@@ -296,14 +298,15 @@ public class FrontierInfoPage extends PageScreen
         buttonVisibilityOverride.setTooltip(VISIBILITY_OVERRIDE_TOOLTIP);
         visibilityRow.addChild(buttonVisibilityOverride);
 
-        LinearLayout pathStyleRow = LinearLayout.horizontal().spacing(MAIN_LAYOUT_SPACING);
-        pathStyleRow.defaultCellSetting().alignVerticallyMiddle();
-        nameColumn.addChild(pathStyleRow);
+        if (hasPathStyle) {
+            LinearLayout pathStyleRow = LinearLayout.horizontal().spacing(MAIN_LAYOUT_SPACING);
+            pathStyleRow.defaultCellSetting().alignVerticallyMiddle();
+            nameColumn.addChild(pathStyleRow);
 
-        buttonPathStyle = new SimpleButton(font, SECTION_WIDTH, PATH_STYLE_LABEL, b -> onPathStyleButtonPressed());
-        buttonPathStyle.visible = frontier.getMode() == FrontierData.Mode.Path;
-        pathStyleRow.addChild(buttonPathStyle);
-        pathStyleRow.addChild(SpacerElement.width(SECTION_WIDTH));
+            buttonPathStyle = new SimpleButton(font, SECTION_WIDTH, PATH_STYLE_LABEL, b -> onPathStyleButtonPressed());
+            pathStyleRow.addChild(buttonPathStyle);
+            pathStyleRow.addChild(SpacerElement.width(SECTION_WIDTH));
+        }
     }
 
     private TextBox createNameTextBox(String initialValue, Consumer<String> setter) {
@@ -415,23 +418,26 @@ public class FrontierInfoPage extends PageScreen
         editColumn.addChild(SpacerElement.width(CLIPBOARD_SPACER_WIDTH), 0, 0);
         mainLayout.addChild(editColumn, 1, 3, LayoutSettings.defaults().alignVerticallyBottom());
 
-        labelPasteName = editColumn.addChild(new StringWidget(PASTE_NAME_LABEL, font).setColor(ColorConstants.TEXT), 0, 0);
-        buttonPasteName = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_NAME.get(), ClientConfig.PASTE_NAME::set), 0, 1);
+        int row = 0;
+        labelPasteName = editColumn.addChild(new StringWidget(PASTE_NAME_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        buttonPasteName = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_NAME.get(), ClientConfig.PASTE_NAME::set), row++, 1);
 
-        labelPasteVisibility = editColumn.addChild(new StringWidget(PASTE_VISIBILITY_LABEL, font).setColor(ColorConstants.TEXT), 1, 0);
-        buttonPasteVisibility = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_VISIBILITY.get(), ClientConfig.PASTE_VISIBILITY::set), 1, 1);
+        labelPasteVisibility = editColumn.addChild(new StringWidget(PASTE_VISIBILITY_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        buttonPasteVisibility = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_VISIBILITY.get(), ClientConfig.PASTE_VISIBILITY::set), row++, 1);
 
-        labelPastePathStyle = editColumn.addChild(new StringWidget(PASTE_PATH_STYLE_LABEL, font).setColor(ColorConstants.TEXT), 2, 0);
-        buttonPastePathStyle = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_PATH_STYLE.get(), ClientConfig.PASTE_PATH_STYLE::set), 2, 1);
+        if (hasPathStyle) {
+            labelPastePathStyle = editColumn.addChild(new StringWidget(PASTE_PATH_STYLE_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+            buttonPastePathStyle = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_PATH_STYLE.get(), ClientConfig.PASTE_PATH_STYLE::set), row++, 1);
+        }
 
-        labelPasteColor = editColumn.addChild(new StringWidget(PASTE_COLOR_LABEL, font).setColor(ColorConstants.TEXT), 3, 0);
-        buttonPasteColor = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_COLOR.get(), ClientConfig.PASTE_COLOR::set), 3, 1);
+        labelPasteColor = editColumn.addChild(new StringWidget(PASTE_COLOR_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        buttonPasteColor = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_COLOR.get(), ClientConfig.PASTE_COLOR::set), row++, 1);
 
-        labelPasteBanner = editColumn.addChild(new StringWidget(PASTE_BANNER_LABEL, font).setColor(ColorConstants.TEXT), 4, 0);
-        buttonPasteBanner = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_BANNER.get(), ClientConfig.PASTE_BANNER::set), 4, 1);
+        labelPasteBanner = editColumn.addChild(new StringWidget(PASTE_BANNER_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        buttonPasteBanner = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_BANNER.get(), ClientConfig.PASTE_BANNER::set), row++, 1);
 
         LinearLayout editButtons = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
-        editColumn.addChild(editButtons, 5, 0);
+        editColumn.addChild(editButtons, row, 0);
 
         buttonCopy = editButtons.addChild(new IconButton(IconButton.Type.Copy, b -> onCopyPressed()));
         buttonCopy.setTooltip(COPY_TOOLTIP);
@@ -619,15 +625,20 @@ public class FrontierInfoPage extends PageScreen
 
     private void onPastePressed() {
         FrontierData clipboard = MapFrontiersClient.getFrontierClipboard();
-        if (clipboard != null && (ClientConfig.PASTE_NAME.get() || ClientConfig.PASTE_VISIBILITY.get()
-                || ClientConfig.PASTE_PATH_STYLE.get() || ClientConfig.PASTE_COLOR.get() || ClientConfig.PASTE_BANNER.get())) {
-            setFrontier(clipboard, ClientConfig.PASTE_NAME.get(), ClientConfig.PASTE_VISIBILITY.get(),
-                    ClientConfig.PASTE_COLOR.get(), ClientConfig.PASTE_BANNER.get(), ClientConfig.PASTE_PATH_STYLE.get());
-            sendCurrentInfoChangesToServer();
-            rebuildWidgets();
-            repositionElements();
-            if (minecraft.getLastInputType().isKeyboard()) {
-                setInitialFocus(buttonPaste);
+        if (clipboard != null) {
+            boolean pastePathStyleEnabled = hasPathStyle
+                    && ClientConfig.PASTE_PATH_STYLE.get()
+                    && clipboard.getMode() == FrontierData.Mode.Path;
+            if (ClientConfig.PASTE_NAME.get() || ClientConfig.PASTE_VISIBILITY.get()
+                    || pastePathStyleEnabled || ClientConfig.PASTE_COLOR.get() || ClientConfig.PASTE_BANNER.get()) {
+                setFrontier(clipboard, ClientConfig.PASTE_NAME.get(), ClientConfig.PASTE_VISIBILITY.get(),
+                        pastePathStyleEnabled, ClientConfig.PASTE_COLOR.get(), ClientConfig.PASTE_BANNER.get());
+                sendCurrentInfoChangesToServer();
+                rebuildWidgets();
+                repositionElements();
+                if (minecraft.getLastInputType().isKeyboard()) {
+                    setInitialFocus(buttonPaste);
+                }
             }
         }
     }
@@ -788,7 +799,7 @@ public class FrontierInfoPage extends PageScreen
         }
     }
 
-    private void setFrontier(FrontierData other, boolean name, boolean visibility, boolean color, boolean banner, boolean pathStyle) {
+    private void setFrontier(FrontierData other, boolean name, boolean visibility, boolean pathStyle, boolean color, boolean banner) {
         if (name) {
             frontier.setName1(other.getName1());
             frontier.setName2(other.getName2());
@@ -796,14 +807,14 @@ public class FrontierInfoPage extends PageScreen
         if (visibility) {
             frontier.setVisibilityData(other.getVisibilityData());
         }
+        if (pathStyle && frontier.getMode() == FrontierData.Mode.Path && other.getMode() == FrontierData.Mode.Path) {
+            frontier.setPathStyle(other.getPathStyle());
+        }
         if (color) {
             frontier.setColor(other.getColor());
         }
         if (banner) {
             frontier.setBannerData(other.getbannerData());
-        }
-        if (pathStyle && frontier.getMode() == FrontierData.Mode.Path && other.getMode() == FrontierData.Mode.Path) {
-            frontier.setPathStyle(other.getPathStyle());
         }
     }
 
@@ -867,8 +878,8 @@ public class FrontierInfoPage extends PageScreen
         textName2.setEditable(actions.canUpdate);
         buttonVisibility.active = actions.canUpdate;
         if (buttonPathStyle != null) {
-            buttonPathStyle.visible = frontier.getMode() == FrontierData.Mode.Path;
-            buttonPathStyle.active = actions.canUpdate && frontier.getMode() == FrontierData.Mode.Path;
+            buttonPathStyle.visible = hasPathStyle;
+            buttonPathStyle.active = actions.canUpdate && hasPathStyle;
         }
         textRed.setEditable(actions.canUpdate);
         textGreen.setEditable(actions.canUpdate);
@@ -904,9 +915,7 @@ public class FrontierInfoPage extends PageScreen
         boolean hasClipboard = clipboard != null;
         boolean showPaste = buttonPaste.active && hasClipboard;
         boolean showPasteOptions = showPaste && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
-        boolean pathStyleOptionVisible = showPasteOptions
-                && frontier.getMode() == FrontierData.Mode.Path
-                && clipboard.getMode() == FrontierData.Mode.Path;
+        boolean pathStyleOptionVisible = showPasteOptions && hasPathStyle && clipboard.getMode() == FrontierData.Mode.Path;
 
         buttonPaste.visible = showPaste;
         buttonPasteOptions.visible = showPaste;
@@ -914,12 +923,16 @@ public class FrontierInfoPage extends PageScreen
         buttonPasteOptions.setTooltip(ClientConfig.PASTE_OPTIONS_VISIBLE.get() ? CLOSE_PASTE_TOOLTIP : OPEN_PASTE_TOOLTIP);
         buttonPasteName.visible = showPasteOptions;
         buttonPasteVisibility.visible = showPasteOptions;
-        buttonPastePathStyle.visible = pathStyleOptionVisible;
+        if (buttonPastePathStyle != null) {
+            buttonPastePathStyle.visible = pathStyleOptionVisible;
+        }
         buttonPasteColor.visible = showPasteOptions;
         buttonPasteBanner.visible = showPasteOptions;
         labelPasteName.visible = showPasteOptions;
         labelPasteVisibility.visible = showPasteOptions;
-        labelPastePathStyle.visible = pathStyleOptionVisible;
+        if (labelPastePathStyle != null) {
+            labelPastePathStyle.visible = pathStyleOptionVisible;
+        }
         labelPasteColor.visible = showPasteOptions;
         labelPasteBanner.visible = showPasteOptions;
     }
@@ -965,7 +978,7 @@ public class FrontierInfoPage extends PageScreen
         change.setVisibility(frontier.getVisibilityData());
         change.setColor(frontier.getColor());
         change.setBanner(frontier.getbannerData());
-        if (frontier.getMode() == FrontierData.Mode.Path) {
+        if (hasPathStyle) {
             change.setPathStyle(frontier.getPathStyle());
         }
         sendChangeToServer(change);
