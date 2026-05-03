@@ -79,8 +79,7 @@ public class FrontierListPage extends PageScreen
     private static final Component SETTINGS_LABEL = Component.translatable("mapfrontiers.settings");
     private static final Component DONE_LABEL = Component.translatable("gui.done");
     private static final int BOTTOM_BUTTON_WIDTH = 132;
-    private static final int CONTENT_TOP = 60;
-    private static final int FRONTIERS_WIDTH = 450;
+    private static final int FRONTIERS_WIDTH = 542;
     private static final int FRONTIERS_ELEMENT_HEIGHT = 25;
     private static final int FILTER_WIDTH = 200;
     private static final int FILTER_ELEMENT_HEIGHT = 15;
@@ -172,16 +171,6 @@ public class FrontierListPage extends PageScreen
     }
 
     @Override
-    protected int getMinimumLayoutExtraWidth() {
-        return LayoutConstants.PAGE_MARGIN * 2;
-    }
-
-    @Override
-    protected int getMinimumLayoutExtraHeight() {
-        return CONTENT_TOP + LayoutConstants.PAGE_MARGIN + 1;
-    }
-
-    @Override
     protected void resetContentToMinimumSize() {
         frontiers.setVisibleRows(FRONTIERS_MIN_ROWS);
         filterDimension.setVisibleRows(FILTER_DIMENSION_MIN_ROWS);
@@ -196,13 +185,13 @@ public class FrontierListPage extends PageScreen
     }
 
     private int getAvailableScrollHeightInsideBackground(ScrollBox scrollBox) {
-        int scrollBoxY = CONTENT_TOP + scrollBox.getY() - content.getY();
-        return Math.max(0, actualHeight - scrollBoxY - LayoutConstants.PAGE_MARGIN - 1);
+        int scrollBoxY = scrollBox.getY() - content.getY();
+        return Math.max(0, actualHeight - scrollBoxY - getMinimumLayoutExtraHeight());
     }
 
     @Override
     protected void positionContent() {
-        content.setPosition((actualWidth - content.getWidth()) / 2, CONTENT_TOP);
+        content.setX((actualWidth - content.getWidth()) / 2);
     }
 
     @Override
@@ -231,7 +220,7 @@ public class FrontierListPage extends PageScreen
     }
 
     private GridLayout createMainLayout() {
-        GridLayout mainLayout = new GridLayout().columnSpacing(8).rowSpacing(4);
+        GridLayout mainLayout = new GridLayout().columnSpacing(LayoutConstants.SPACING_MEDIUM).rowSpacing(LayoutConstants.SPACING_MEDIUM);
         content.addChild(mainLayout);
         return mainLayout;
     }

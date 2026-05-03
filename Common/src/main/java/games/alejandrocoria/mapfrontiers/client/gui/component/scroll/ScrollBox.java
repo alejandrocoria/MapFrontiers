@@ -29,8 +29,8 @@ import java.util.function.Predicate;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class ScrollBox extends AbstractContainerWidget {
-    private static final int SCROLLBAR_AREA_WIDTH = 15;
-    private static final int SCROLLBAR_WIDTH = 10;
+    private static final int SCROLLBAR_AREA_WIDTH = 12;
+    private static final int SCROLLBAR_WIDTH = 8;
 
     private final int defaultElementHeight;
     private int scrollOffset = 0;

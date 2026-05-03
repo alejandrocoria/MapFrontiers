@@ -32,7 +32,7 @@ public class FrontierListElement extends FrontierListRowElement {
     private static final int CHECKBOX_Y = 7;
     private static final int NAME_HOVER_X = 24;
     private static final int NAME_X = 26;
-    private static final int METADATA_X = 206;
+    private static final int METADATA_X = 280;
     private static final int NAME_METADATA_SPACING = 2;
     private static final int MODE_BADGE_X = 2;
     private static final int MODE_BADGE_ICON_Y = 1;

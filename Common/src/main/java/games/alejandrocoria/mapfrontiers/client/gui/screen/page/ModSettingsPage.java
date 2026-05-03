@@ -669,16 +669,6 @@ public class ModSettingsPage extends PageScreen
     }
 
     @Override
-    protected int getMinimumLayoutExtraWidth() {
-        return LayoutConstants.PAGE_MARGIN * 2;
-    }
-
-    @Override
-    protected int getMinimumLayoutExtraHeight() {
-        return LayoutConstants.PAGE_MARGIN * 2;
-    }
-
-    @Override
     protected void resetContentToMinimumSize() {
         tabbedBox.setSizeToContent();
         groups.setVisibleRows(GROUPS_MIN_ROWS);
