@@ -37,8 +37,8 @@ public final class ClientConfig {
         public static final Sorting[] VALUES = values();
     }
 
-    public enum FilterFrontierType {
-        All, Global, Personal
+    public enum FilterFrontierShape {
+        All, Vertex, Chunk, Path
     }
 
     public enum FilterFrontierOwner {
@@ -352,8 +352,8 @@ public final class ClientConfig {
             .comment("Order of the frontier list sorting modes."));
     public static final BooleanListConfigEntry FRONTIER_SORTING_DIRECTION = register(booleanListEntry(DEFAULT_SORTING_DIRECTION, "list", "sorting", "directions")
             .comment("Direction of the frontier list sorting modes. True means ascending and false means descending."));
-    public static final EnumConfigEntry<FilterFrontierType> FILTER_FRONTIER_TYPE = register(enumEntry(FilterFrontierType.class, FilterFrontierType.All, "list", "filters", "type")
-            .comment("Selected frontier type filter in the frontier list."));
+    public static final EnumConfigEntry<FilterFrontierShape> FILTER_FRONTIER_SHAPE = register(enumEntry(FilterFrontierShape.class, FilterFrontierShape.All, "list", "filters", "shape")
+            .comment("Selected frontier shape filter in the frontier list."));
     public static final EnumConfigEntry<FilterFrontierOwner> FILTER_FRONTIER_OWNER = register(enumEntry(FilterFrontierOwner.class, FilterFrontierOwner.All, "list", "filters", "owner")
             .comment("Selected frontier owner filter in the frontier list."));
     public static final StringConfigEntry FILTER_FRONTIER_DIMENSION = register(stringEntry(DIMENSION_FILTER_ALL, "list", "filters", "dimension")

@@ -50,8 +50,8 @@ public class CollectionInfoPage extends PageScreen {
     private static final Component DONE_LABEL = Component.translatable("gui.done");
     private static final Component DELETE_LABEL = Component.translatable("mapfrontiers.delete");
     private static final Component RANDOM_COLOR_LABEL = Component.translatable("mapfrontiers.random_color");
-    private static final Component PERSONAL_LABEL = Component.translatable("mapfrontiers.config.Personal");
-    private static final Component GLOBAL_LABEL = Component.translatable("mapfrontiers.config.Global");
+    private static final Component PERSONAL_LABEL = Component.translatable("mapfrontiers.personal_type");
+    private static final Component GLOBAL_LABEL = Component.translatable("mapfrontiers.global_type");
     private static final String TYPE_KEY = "mapfrontiers.type";
     private static final String OWNER_KEY = "mapfrontiers.owner";
     private static final String SOURCE_PLUGIN_KEY = "mapfrontiers.source_plugin";

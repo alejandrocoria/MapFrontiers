@@ -44,6 +44,8 @@ import java.util.UUID;
 @ParametersAreNonnullByDefault
 public class NewFrontierDialog extends PanelDialog {
     private static final Component FRONTIER_TYPE_LABEL = Component.translatable("mapfrontiers.frontier_type");
+    private static final Component PERSONAL_LABEL = Component.translatable("mapfrontiers.personal_type");
+    private static final Component GLOBAL_LABEL = Component.translatable("mapfrontiers.global_type");
     private static final Component FRONTIER_MODE_LABEL = Component.translatable("mapfrontiers.frontier_mode");
     private static final Component AFTER_CREATING_LABEL = Component.translatable("mapfrontiers.after_creating");
     private static final Component VERTEX_COUNT_LABEL = Component.translatable("mapfrontiers.shape_vertex_count");
@@ -53,6 +55,11 @@ public class NewFrontierDialog extends PanelDialog {
     private static final String POINTS_KEY = "mapfrontiers.points";
     private static final String CHUNKS_KEY = "mapfrontiers.chunks";
     private static final Component CREATE_LABEL = Component.translatable("mapfrontiers.create");
+
+    private enum FrontierTypeOption {
+        GLOBAL,
+        PERSONAL
+    }
 
     public interface ResultHandler {
         void beforeCreate(NewFrontierDialog dialog, ClientConfig.AfterCreatingFrontier action);
@@ -341,20 +348,20 @@ public class NewFrontierDialog extends PanelDialog {
 
     private OptionButton createFrontierTypeButton() {
         OptionButton button = new OptionButton(font, 130, OptionButton.DO_NOTHING);
-        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierType.Global));
-        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierType.Personal));
-        button.setSelected(0);
+        button.addOption(GLOBAL_LABEL);
+        button.addOption(PERSONAL_LABEL);
+        button.setSelected(FrontierTypeOption.GLOBAL.ordinal());
 
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
         boolean canCreateGlobal = MapFrontiersClient.isModOnServer()
                 && profile != null
                 && profile.createFrontier == SettingsProfile.State.Enabled;
         if (!canCreateGlobal) {
-            button.setSelected(1);
+            button.setSelected(FrontierTypeOption.PERSONAL.ordinal());
             button.active = false;
         }
         if (forcedPersonal != null) {
-            button.setSelected(forcedPersonal ? 1 : 0);
+            button.setSelected(forcedPersonal ? FrontierTypeOption.PERSONAL.ordinal() : FrontierTypeOption.GLOBAL.ordinal());
             button.active = false;
         }
 
@@ -365,12 +372,11 @@ public class NewFrontierDialog extends PanelDialog {
         if (forcedPersonal != null) {
             return forcedPersonal;
         }
-        return buttonFrontierType.getSelected() == 1;
+        return buttonFrontierType.getSelected() == FrontierTypeOption.PERSONAL.ordinal();
     }
 
     private Component createContextualTypeHint(boolean personal) {
-        Component typeComponent = ClientConfig.getTranslatedEnum(
-                personal ? ClientConfig.FilterFrontierType.Personal : ClientConfig.FilterFrontierType.Global);
+        Component typeComponent = personal ? PERSONAL_LABEL : GLOBAL_LABEL;
         Component collectionComponent = resolveCollectionNameComponent();
         return Component.translatable("mapfrontiers.new_frontier_contextual_hint", typeComponent, collectionComponent);
     }

@@ -99,7 +99,6 @@
   "mapfrontiers.frontier_changed_dialog_desc": "Другой игрок изменил эту границу, пока диалог был открыт.\nВсе равно применить ваши изменения?",
   "mapfrontiers.apply_changes": "Применить изменения",
 
-  "mapfrontiers.filter_type": "Тип:",
   "mapfrontiers.filter_owner": "Владелец:",
   "mapfrontiers.filter_dimension": "Измерение:",
   "mapfrontiers.frontier_type": "Тип границы",
@@ -254,8 +253,6 @@
   "mapfrontiers.config.Always": "Всегда",
   "mapfrontiers.config.Never": "Никогда",
   "mapfrontiers.config.All": "Все",
-  "mapfrontiers.config.Global": "Глобальный",
-  "mapfrontiers.config.Personal": "Личный",
   "mapfrontiers.config.Self": "Вы",
   "mapfrontiers.config.Others": "Другие",
   "mapfrontiers.config.Current": "Текущий",

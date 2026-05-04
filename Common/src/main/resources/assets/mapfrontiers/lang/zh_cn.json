@@ -97,7 +97,6 @@
   "mapfrontiers.frontier_changed_dialog_desc": "另一个玩家在对话框打开期间更改了该领地。\n仍要应用你的更改吗？",
   "mapfrontiers.apply_changes": "应用更改",
 
-  "mapfrontiers.filter_type": "类别：",
   "mapfrontiers.filter_owner": "所有者：",
   "mapfrontiers.filter_dimension": "维度：",
   "mapfrontiers.frontier_type": "领地类型",
@@ -252,8 +251,6 @@
   "mapfrontiers.config.Always": "始终",
   "mapfrontiers.config.Never": "从不",
   "mapfrontiers.config.All": "全部",
-  "mapfrontiers.config.Global": "全局",
-  "mapfrontiers.config.Personal": "私人",
   "mapfrontiers.config.Self": "你",
   "mapfrontiers.config.Others": "他人",
   "mapfrontiers.config.Current": "当前",

@@ -65,7 +65,7 @@ public class FrontierListPage extends PageScreen
 {
     private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_frontiers");
     private static final Component RESET_FILTERS_LABEL = Component.translatable("mapfrontiers.reset_filters");
-    private static final Component FILTER_TYPE_LABEL = Component.translatable("mapfrontiers.filter_type");
+    private static final Component FILTER_SHAPE_LABEL = Component.translatable("mapfrontiers.filter_shape");
     private static final Component FILTER_OWNER_LABEL = Component.translatable("mapfrontiers.filter_owner");
     private static final Component FILTER_DIMENSION_LABEL = Component.translatable("mapfrontiers.filter_dimension");
     private static final Component CONFIG_ALL_LABEL = Component.translatable("mapfrontiers.config.All");
@@ -84,7 +84,8 @@ public class FrontierListPage extends PageScreen
     private static final int FILTER_WIDTH = 200;
     private static final int FILTER_ELEMENT_HEIGHT = 15;
     private static final int FRONTIERS_MIN_ROWS = 7;
-    private static final int FILTER_MIN_ROWS = 3;
+    private static final int FILTER_SHAPE_MIN_ROWS = 4;
+    private static final int FILTER_OWNER_MIN_ROWS = 3;
     private static final int FILTER_DIMENSION_MIN_ROWS = 2;
     private static final float MIN_COLLECTION_BRIGHTNESS = 0.3f;
     private static final String PERSONAL_VIRTUAL_COLLECTION_ID = "mapfrontiers:personal_virtual_collection";
@@ -98,7 +99,7 @@ public class FrontierListPage extends PageScreen
 
     private TextBox searchBox;
     private ScrollBox frontiers;
-    private ScrollBox filterType;
+    private ScrollBox filterShape;
     private ScrollBox filterOwner;
     private ScrollBox filterDimension;
     private SimpleButton buttonInfo;
@@ -253,26 +254,26 @@ public class FrontierListPage extends PageScreen
         filtersColumn.defaultCellSetting().alignHorizontallyLeft();
         mainLayout.addChild(filtersColumn, 1, 1, LayoutSettings.defaults().alignHorizontallyLeft());
 
-        buildTypeFilter(filtersColumn);
+        buildShapeFilter(filtersColumn);
         filtersColumn.addChild(SpacerElement.height(4));
         buildOwnerFilter(filtersColumn);
         filtersColumn.addChild(SpacerElement.height(4));
         buildDimensionFilter(filtersColumn);
     }
 
-    private void buildTypeFilter(LinearLayout column) {
-        column.addChild(createSectionLabel(FILTER_TYPE_LABEL));
+    private void buildShapeFilter(LinearLayout column) {
+        column.addChild(createSectionLabel(FILTER_SHAPE_LABEL));
 
-        filterType = createFilterScrollBox(FILTER_MIN_ROWS);
-        addEnumFilterOptions(filterType, ClientConfig.FILTER_FRONTIER_TYPE);
-        filterType.setElementClickedCallback(this::onTypeFilterSelected);
-        column.addChild(filterType);
+        filterShape = createFilterScrollBox(FILTER_SHAPE_MIN_ROWS);
+        addEnumFilterOptions(filterShape, ClientConfig.FILTER_FRONTIER_SHAPE);
+        filterShape.setElementClickedCallback(this::onShapeFilterSelected);
+        column.addChild(filterShape);
     }
 
     private void buildOwnerFilter(LinearLayout column) {
         column.addChild(createSectionLabel(FILTER_OWNER_LABEL));
 
-        filterOwner = createFilterScrollBox(FILTER_MIN_ROWS);
+        filterOwner = createFilterScrollBox(FILTER_OWNER_MIN_ROWS);
         addEnumFilterOptions(filterOwner, ClientConfig.FILTER_FRONTIER_OWNER);
         filterOwner.setElementClickedCallback(this::onOwnerFilterSelected);
         column.addChild(filterOwner);
@@ -436,8 +437,8 @@ public class FrontierListPage extends PageScreen
         notifyFiltersChanged();
     }
 
-    private void onTypeFilterSelected(ScrollElement element) {
-        ClientConfig.FILTER_FRONTIER_TYPE.set(radioValue(element, ClientConfig.FilterFrontierType.class));
+    private void onShapeFilterSelected(ScrollElement element) {
+        ClientConfig.FILTER_FRONTIER_SHAPE.set(radioValue(element, ClientConfig.FilterFrontierShape.class));
         notifyFiltersChanged();
     }
 
@@ -581,13 +582,13 @@ public class FrontierListPage extends PageScreen
     }
 
     private void resetFiltersToDefaults() {
-        ClientConfig.FILTER_FRONTIER_TYPE.set(ClientConfig.FILTER_FRONTIER_TYPE.defaultValue());
+        ClientConfig.FILTER_FRONTIER_SHAPE.set(ClientConfig.FILTER_FRONTIER_SHAPE.defaultValue());
         ClientConfig.FILTER_FRONTIER_OWNER.set(ClientConfig.FILTER_FRONTIER_OWNER.defaultValue());
         ClientConfig.FILTER_FRONTIER_DIMENSION.set(ClientConfig.FILTER_FRONTIER_DIMENSION.defaultValue());
     }
 
     private void syncFilterSelectionsFromConfig() {
-        selectRadioByValue(filterType, ClientConfig.FILTER_FRONTIER_TYPE.get());
+        selectRadioByValue(filterShape, ClientConfig.FILTER_FRONTIER_SHAPE.get());
         selectRadioByValue(filterOwner, ClientConfig.FILTER_FRONTIER_OWNER.get());
         selectRadioByValue(filterDimension, ClientConfig.FILTER_FRONTIER_DIMENSION.get());
     }
@@ -918,14 +919,16 @@ public class FrontierListPage extends PageScreen
     }
 
     private boolean matchesFilters(FrontierOverlay frontier) {
-        return checkFilterType(frontier) && checkFilterOwner(frontier) && checkFilterDimension(frontier) && checkSearch(frontier);
+        return checkFilterShape(frontier) && checkFilterOwner(frontier) && checkFilterDimension(frontier) && checkSearch(frontier);
     }
 
-    private boolean checkFilterType(FrontierOverlay frontier) {
-        return ClientConfig.FILTER_FRONTIER_TYPE.get() == ClientConfig.FilterFrontierType.All
-                || ClientConfig.FILTER_FRONTIER_TYPE.get() == (frontier.getPersonal()
-                ? ClientConfig.FilterFrontierType.Personal
-                : ClientConfig.FilterFrontierType.Global);
+    private boolean checkFilterShape(FrontierOverlay frontier) {
+        return switch (ClientConfig.FILTER_FRONTIER_SHAPE.get()) {
+            case All -> true;
+            case Vertex -> frontier.getMode() == FrontierData.Mode.Vertex;
+            case Chunk -> frontier.getMode() == FrontierData.Mode.Chunk;
+            case Path -> frontier.getMode() == FrontierData.Mode.Path;
+        };
     }
 
     private boolean checkFilterOwner(FrontierOverlay frontier) {

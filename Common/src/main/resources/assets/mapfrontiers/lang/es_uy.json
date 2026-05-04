@@ -97,7 +97,6 @@
   "mapfrontiers.frontier_changed_dialog_desc": "Otro jugador cambió esta frontera mientras el diálogo estaba abierto.\n¿Quieres aplicar tus cambios de todas formas?",
   "mapfrontiers.apply_changes": "Aplicar cambios",
 
-  "mapfrontiers.filter_type": "Tipo:",
   "mapfrontiers.filter_owner": "Dueño:",
   "mapfrontiers.filter_dimension": "Dimensión:",
   "mapfrontiers.frontier_type": "Tipo de frontera",
@@ -255,8 +254,6 @@
   "mapfrontiers.config.Always": "Siempre",
   "mapfrontiers.config.Never": "Nunca",
   "mapfrontiers.config.All": "Todos",
-  "mapfrontiers.config.Global": "Global",
-  "mapfrontiers.config.Personal": "Personal",
   "mapfrontiers.config.Self": "Vos",
   "mapfrontiers.config.Others": "Otros",
   "mapfrontiers.config.Current": "Actual",

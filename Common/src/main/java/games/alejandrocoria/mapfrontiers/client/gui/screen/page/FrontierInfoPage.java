@@ -72,8 +72,8 @@ public class FrontierInfoPage extends PageScreen
     private static final Component REMOVE_BANNER_LABEL = Component.translatable("mapfrontiers.remove_banner");
     private static final String BANNER_ROTATION_KEY = "mapfrontiers.banner_rotation";
     private static final Component NAME_LABEL = Component.translatable("mapfrontiers.name");
-    private static final Component PERSONAL_LABEL = Component.translatable("mapfrontiers.config.Personal");
-    private static final Component GLOBAL_LABEL = Component.translatable("mapfrontiers.config.Global");
+    private static final Component PERSONAL_LABEL = Component.translatable("mapfrontiers.personal_type");
+    private static final Component GLOBAL_LABEL = Component.translatable("mapfrontiers.global_type");
     private static final String VERTICES_KEY = "mapfrontiers.vertices";
     private static final String CHUNKS_KEY = "mapfrontiers.chunks";
     private static final String POINTS_KEY = "mapfrontiers.points";
