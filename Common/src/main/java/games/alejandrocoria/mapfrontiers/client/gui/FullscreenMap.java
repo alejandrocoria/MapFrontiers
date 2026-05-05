@@ -259,7 +259,7 @@ public class FullscreenMap {
             frontierHighlighted = null;
         }
 
-        new NewFrontierDialog(jmAPI, centerPos, createNewFrontierResultHandler()).display();
+        new NewFrontierDialog(jmAPI, centerPos, null, FrontierData.FrontierLifetime.PERSISTENT, null, createNewFrontierResultHandler()).display();
 
         updateButtons();
     }

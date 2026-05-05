@@ -22,6 +22,7 @@ import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.util.UIState;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.core.BlockPos;
@@ -55,6 +56,10 @@ public class NewFrontierDialog extends PanelDialog {
     private static final String POINTS_KEY = "mapfrontiers.points";
     private static final String CHUNKS_KEY = "mapfrontiers.chunks";
     private static final Component CREATE_LABEL = Component.translatable("mapfrontiers.create");
+    private static final String CONTEXTUAL_HINT_KEY = "mapfrontiers.new_frontier_contextual_hint";
+    private static final String CONTEXTUAL_HINT_TEMPORARY_KEY = "mapfrontiers.new_frontier_contextual_hint_temporary";
+    private static final String CONTEXTUAL_HINT_IN_COLLECTION_KEY = "mapfrontiers.new_frontier_contextual_hint_in_collection";
+    private static final String CONTEXTUAL_HINT_TEMPORARY_IN_COLLECTION_KEY = "mapfrontiers.new_frontier_contextual_hint_temporary_in_collection";
 
     private enum FrontierTypeOption {
         GLOBAL,
@@ -70,7 +75,7 @@ public class NewFrontierDialog extends PanelDialog {
     private final IClientAPI jmAPI;
     private final BlockPos centerPos;
     private final @Nullable Boolean forcedPersonal;
-    private final @Nullable FrontierData.FrontierLifetime forcedLifetime;
+    private final FrontierData.FrontierLifetime frontierLifetime;
     private final @Nullable UUID collectionId;
     private final ResultHandler resultHandler;
     private final Object createdFrontierListenerOwner = new Object();
@@ -89,29 +94,20 @@ public class NewFrontierDialog extends PanelDialog {
     private StringWidget labelSizeInfo;
     private TextBoxInt textSize;
 
-    public NewFrontierDialog(IClientAPI jmAPI, BlockPos centerPos, ResultHandler resultHandler) {
-        this(jmAPI, centerPos, null, null, null, resultHandler);
-    }
-
-    public NewFrontierDialog(IClientAPI jmAPI, BlockPos centerPos, @Nullable Boolean forcedPersonal, @Nullable UUID collectionId,
-                             ResultHandler resultHandler) {
-        this(jmAPI, centerPos, forcedPersonal, null, collectionId, resultHandler);
-    }
-
     public NewFrontierDialog(IClientAPI jmAPI, BlockPos centerPos, @Nullable Boolean forcedPersonal,
-                             @Nullable FrontierData.FrontierLifetime forcedLifetime, @Nullable UUID collectionId,
+                             FrontierData.FrontierLifetime frontierLifetime, @Nullable UUID collectionId,
                              ResultHandler resultHandler) {
         super();
         this.jmAPI = jmAPI;
         this.centerPos = centerPos;
         this.forcedPersonal = forcedPersonal;
-        this.forcedLifetime = forcedLifetime;
+        this.frontierLifetime = frontierLifetime;
         this.collectionId = collectionId;
         this.resultHandler = resultHandler;
 
         MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> {
             onClose();
-            new NewFrontierDialog(jmAPI, centerPos, forcedPersonal, forcedLifetime, collectionId, resultHandler).display();
+            new NewFrontierDialog(jmAPI, centerPos, forcedPersonal, frontierLifetime, collectionId, resultHandler).display();
         });
     }
 
@@ -124,11 +120,11 @@ public class NewFrontierDialog extends PanelDialog {
         LayoutSettings centerColumnSettings = LayoutSettings.defaults().alignHorizontallyCenter();
 
         buttonFrontierType = createFrontierTypeButton();
-        if (collectionId != null) {
+        if (shouldShowContextualHint()) {
             boolean personal = resolvePersonalSelection();
-            Component contextualHint = createContextualTypeHint(personal);
-            mainLayout.addChild(new StringWidget(contextualHint, font).setColor(ColorConstants.TEXT), 0, 0, 1, 2,
-                    LayoutSettings.defaults().alignHorizontallyCenter());
+            Component contextualHint = createContextualTypeHint(personal).copy().withColor(ColorConstants.TEXT);
+            MultiLineTextWidget hintWidget = new MultiLineTextWidget(contextualHint, font).setCentered(true);
+            mainLayout.addChild(hintWidget, 0, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
         } else {
             mainLayout.addChild(new StringWidget(FRONTIER_TYPE_LABEL, font).setColor(ColorConstants.TEXT), 0, 0, leftColumnSettings);
             mainLayout.addChild(buttonFrontierType, 0, 1, rightColumnSettings);
@@ -364,21 +360,45 @@ public class NewFrontierDialog extends PanelDialog {
             button.setSelected(forcedPersonal ? FrontierTypeOption.PERSONAL.ordinal() : FrontierTypeOption.GLOBAL.ordinal());
             button.active = false;
         }
+        if (frontierLifetime == FrontierData.FrontierLifetime.SESSION_ONLY) {
+            button.setSelected(FrontierTypeOption.PERSONAL.ordinal());
+            button.active = false;
+        }
 
         return button;
     }
 
     private boolean resolvePersonalSelection() {
+        if (frontierLifetime == FrontierData.FrontierLifetime.SESSION_ONLY) {
+            return true;
+        }
         if (forcedPersonal != null) {
             return forcedPersonal;
         }
         return buttonFrontierType.getSelected() == FrontierTypeOption.PERSONAL.ordinal();
     }
 
+    private boolean shouldShowContextualHint() {
+        return collectionId != null || forcedPersonal != null || frontierLifetime == FrontierData.FrontierLifetime.SESSION_ONLY;
+    }
+
     private Component createContextualTypeHint(boolean personal) {
+        if (collectionId != null) {
+            Component collectionComponent = resolveCollectionNameComponent();
+            if (frontierLifetime == FrontierData.FrontierLifetime.SESSION_ONLY) {
+                return Component.translatable(CONTEXTUAL_HINT_TEMPORARY_IN_COLLECTION_KEY, collectionComponent);
+            }
+
+            Component typeComponent = personal ? PERSONAL_LABEL : GLOBAL_LABEL;
+            return Component.translatable(CONTEXTUAL_HINT_IN_COLLECTION_KEY, typeComponent, collectionComponent);
+        }
+
+        if (frontierLifetime == FrontierData.FrontierLifetime.SESSION_ONLY) {
+            return Component.translatable(CONTEXTUAL_HINT_TEMPORARY_KEY);
+        }
+
         Component typeComponent = personal ? PERSONAL_LABEL : GLOBAL_LABEL;
-        Component collectionComponent = resolveCollectionNameComponent();
-        return Component.translatable("mapfrontiers.new_frontier_contextual_hint", typeComponent, collectionComponent);
+        return Component.translatable(CONTEXTUAL_HINT_KEY, typeComponent);
     }
 
     private Component resolveCollectionNameComponent() {
@@ -445,7 +465,7 @@ public class NewFrontierDialog extends PanelDialog {
                 ? ClientConfig.getDefaultPathStyle()
                 : defaults.getPathStyle();
         int color = ColorHelper.getRandomColor();
-        FrontierData.FrontierLifetime lifetime = forcedLifetime == null ? FrontierData.FrontierLifetime.PERSISTENT : forcedLifetime;
+        FrontierData.FrontierLifetime lifetime = frontierLifetime == null ? FrontierData.FrontierLifetime.PERSISTENT : frontierLifetime;
 
         if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Path) {
             return FrontierCreateSpec.path(frontierId, owner, personal, dimension, lifetime, collectionId,
