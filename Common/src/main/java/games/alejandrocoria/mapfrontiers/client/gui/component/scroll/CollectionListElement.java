@@ -4,7 +4,7 @@ import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.frontier.CollectionScope;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
-import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxRenderHelper;
+import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import net.minecraft.client.gui.Font;
@@ -60,10 +60,10 @@ public class CollectionListElement extends FrontierListRowElement {
     private final boolean checkboxVisible;
     private final boolean checkboxVisibleOnHover;
     private final int markedCount;
-    private final int eligibleCount;
     private final @Nullable IconButton createButton;
     private final @Nullable IconButton moveHereButton;
     private final @Nullable IconButton deleteButton;
+    private final CheckBoxButton checkBoxButton;
     private final List<UUID> eligibleFrontierIds;
     private final IconButton collapseToggleButton;
     private boolean collapseToggleRequested;
@@ -100,7 +100,6 @@ public class CollectionListElement extends FrontierListRowElement {
         this.checkboxVisible = checkboxVisible;
         this.checkboxVisibleOnHover = checkboxVisibleOnHover;
         this.markedCount = markedCount;
-        this.eligibleCount = eligibleCount;
         this.eligibleFrontierIds = List.copyOf(eligibleFrontierIds);
 
         collapseToggleButton = new IconButton(collapsed ? IconButton.Type.Collapsed : IconButton.Type.Expanded, (button) -> {});
@@ -121,6 +120,14 @@ public class CollectionListElement extends FrontierListRowElement {
             deleteButton.active = true;
             deleteButton.setTooltip(DELETE_TOOLTIP);
         }
+        checkBoxButton = new CheckBoxButton(false, button -> {});
+        if (markedCount <= 0) {
+            checkBoxButton.setChecked(false);
+        } else if (eligibleCount > 0 && markedCount >= eligibleCount) {
+            checkBoxButton.setChecked(true);
+        } else {
+            checkBoxButton.setPartial();
+        }
     }
 
     @Override
@@ -136,6 +143,7 @@ public class CollectionListElement extends FrontierListRowElement {
         if (deleteButton != null) {
             deleteButton.setX(getDeleteLeft());
         }
+        checkBoxButton.setX(getCheckBoxX());
     }
 
     @Override
@@ -151,6 +159,7 @@ public class CollectionListElement extends FrontierListRowElement {
         if (deleteButton != null) {
             deleteButton.setY(this.y + RAIL_CONTENT_Y);
         }
+        checkBoxButton.setY(this.y + RAIL_CONTENT_Y);
     }
 
     public @Nullable CollectionData getCollection() {
@@ -220,7 +229,7 @@ public class CollectionListElement extends FrontierListRowElement {
         renderTexts(graphics, mouseX, mouseY);
         renderMarkedCount(graphics);
         renderActionButtons(graphics, mouseX, mouseY, partialTicks);
-        renderCheckBox(graphics, mouseX, mouseY);
+        renderCheckBox(graphics, mouseX, mouseY, partialTicks);
     }
 
     @Override
@@ -276,26 +285,18 @@ public class CollectionListElement extends FrontierListRowElement {
         }
     }
 
-    private void renderCheckBox(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+    private void renderCheckBox(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         if (!shouldRenderCheckBox()) {
             return;
         }
 
-        CheckBoxRenderHelper.render(graphics, getCheckBoxX(), y + RAIL_CONTENT_Y, isCheckBoxHovered(mouseX, mouseY), getCheckBoxState());
+        checkBoxButton.visible = true;
+        checkBoxButton.active = true;
+        checkBoxButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
     }
 
     private boolean shouldRenderCheckBox() {
         return checkboxVisible || checkboxVisibleOnHover && isHovered;
-    }
-
-    private CheckBoxRenderHelper.State getCheckBoxState() {
-        if (markedCount <= 0) {
-            return CheckBoxRenderHelper.State.UNCHECKED;
-        }
-        if (eligibleCount > 0 && markedCount >= eligibleCount) {
-            return CheckBoxRenderHelper.State.CHECKED;
-        }
-        return CheckBoxRenderHelper.State.PARTIAL;
     }
 
     private boolean isCreateHovered(int mouseX, int mouseY) {
@@ -311,11 +312,11 @@ public class CollectionListElement extends FrontierListRowElement {
     }
 
     private boolean isCheckBoxHovered(int mouseX, int mouseY) {
-        return CheckBoxRenderHelper.contains(getCheckBoxX(), y + RAIL_CONTENT_Y, mouseX, mouseY);
+        return shouldRenderCheckBox() && checkBoxButton.isMouseOver(mouseX, mouseY);
     }
 
     private int getCheckBoxX() {
-        return x + width - RIGHT_PADDING - CheckBoxRenderHelper.SIZE;
+        return x + width - RIGHT_PADDING - CheckBoxButton.SIZE;
     }
 
     private int getSelectionRightBound() {
@@ -428,7 +429,7 @@ public class CollectionListElement extends FrontierListRowElement {
             return ScrollBox.ScrollElement.Action.Handled;
         }
 
-        if (shouldRenderCheckBox() && CheckBoxRenderHelper.contains(getCheckBoxX(), y + RAIL_CONTENT_Y, event.x(), event.y())) {
+        if (isCheckBoxHovered((int) event.x(), (int) event.y())) {
             markToggleRequested = true;
             return ScrollBox.ScrollElement.Action.Handled;
         }

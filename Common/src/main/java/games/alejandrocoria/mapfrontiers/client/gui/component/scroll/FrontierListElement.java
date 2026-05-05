@@ -4,7 +4,7 @@ import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
-import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxRenderHelper;
+import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
@@ -64,7 +64,7 @@ public class FrontierListElement extends FrontierListRowElement {
     private final int collectionColor;
     private final boolean checkboxVisible;
     private final boolean checkboxVisibleOnHover;
-    private final boolean checked;
+    private final CheckBoxButton checkBoxButton;
     private final @Nullable IconButton visibilityButton;
     private final @Nullable IconButton deleteButton;
     private boolean markToggleRequested;
@@ -80,7 +80,7 @@ public class FrontierListElement extends FrontierListRowElement {
         this.collectionColor = collectionColor;
         this.checkboxVisible = checkboxVisible;
         this.checkboxVisibleOnHover = checkboxVisibleOnHover;
-        this.checked = checked;
+        checkBoxButton = new CheckBoxButton(checked, button -> {});
 
         boolean visibleNow = frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier);
         visibilityButton = visibilityEnabled ? new IconButton(visibleNow ? IconButton.Type.Hide : IconButton.Type.Show, button -> {}) : null;
@@ -145,6 +145,7 @@ public class FrontierListElement extends FrontierListRowElement {
         if (deleteButton != null) {
             deleteButton.setX(getDeleteLeft());
         }
+        checkBoxButton.setX(getCheckBoxX());
     }
 
     @Override
@@ -156,6 +157,7 @@ public class FrontierListElement extends FrontierListRowElement {
         if (deleteButton != null) {
             deleteButton.setY(this.y + RAIL_CONTENT_Y);
         }
+        checkBoxButton.setY(this.y + RAIL_CONTENT_Y);
     }
 
     @Override
@@ -189,7 +191,7 @@ public class FrontierListElement extends FrontierListRowElement {
 
         drawModeBadge(graphics, selected, rowContentX);
         renderActionButtons(graphics, mouseX, mouseY, partialTicks);
-        renderCheckBox(graphics, mouseX, mouseY);
+        renderCheckBox(graphics, mouseX, mouseY, partialTicks);
     }
 
     @Override
@@ -204,13 +206,14 @@ public class FrontierListElement extends FrontierListRowElement {
         graphics.verticalLine(right, top, bottom, ColorConstants.WHITE);
     }
 
-    private void renderCheckBox(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+    private void renderCheckBox(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         if (!shouldRenderCheckBox()) {
             return;
         }
 
-        CheckBoxRenderHelper.render(graphics, getCheckBoxX(), y + RAIL_CONTENT_Y, isCheckBoxHovered(mouseX, mouseY),
-                checked ? CheckBoxRenderHelper.State.CHECKED : CheckBoxRenderHelper.State.UNCHECKED);
+        checkBoxButton.visible = true;
+        checkBoxButton.active = true;
+        checkBoxButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
     }
 
     private void renderActionButtons(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
@@ -306,7 +309,7 @@ public class FrontierListElement extends FrontierListRowElement {
     }
 
     private int getCheckBoxX() {
-        return x + width - RIGHT_PADDING - CheckBoxRenderHelper.SIZE;
+        return x + width - RIGHT_PADDING - CheckBoxButton.SIZE;
     }
 
     private int getSelectionRightBound() {
@@ -334,7 +337,7 @@ public class FrontierListElement extends FrontierListRowElement {
     }
 
     private boolean isCheckBoxHovered(int mouseX, int mouseY) {
-        return CheckBoxRenderHelper.contains(getCheckBoxX(), y + RAIL_CONTENT_Y, mouseX, mouseY);
+        return shouldRenderCheckBox() && checkBoxButton.isMouseOver(mouseX, mouseY);
     }
 
     private static Identifier frontierListTexture(String fileName) {
@@ -344,7 +347,7 @@ public class FrontierListElement extends FrontierListRowElement {
     @Override
     public ScrollBox.ScrollElement.Action mousePressed(MouseButtonEvent event, boolean doubleClick) {
         if (visible && isHovered) {
-            if (shouldRenderCheckBox() && CheckBoxRenderHelper.contains(getCheckBoxX(), y + RAIL_CONTENT_Y, event.x(), event.y())) {
+            if (isCheckBoxHovered((int) event.x(), (int) event.y())) {
                 markToggleRequested = true;
                 return ScrollBox.ScrollElement.Action.Handled;
             }
