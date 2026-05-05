@@ -5,16 +5,20 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxRenderHelper;
+import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.resources.language.I18n;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
@@ -29,10 +33,13 @@ public class FrontierListElement extends FrontierListRowElement {
     private static final Identifier VERTEX_OUTLINE_TEXTURE = frontierListTexture("vertex_outline.png");
     private static final int LEFT_PADDING = 4;
     private static final int RIGHT_PADDING = 4;
-    private static final int CHECKBOX_Y = 7;
+    private static final int SELECTION_RAIL_GAP = 2;
+    private static final int ACTION_GAP = 2;
+    private static final int ACTION_BUTTON_WIDTH = 11;
+    private static final int RAIL_CONTENT_Y = 7;
     private static final int NAME_HOVER_X = 24;
     private static final int NAME_X = 26;
-    private static final int METADATA_X = 280;
+    private static final int METADATA_X = 254;
     private static final int NAME_METADATA_SPACING = 2;
     private static final int MODE_BADGE_X = 2;
     private static final int MODE_BADGE_ICON_Y = 1;
@@ -45,6 +52,8 @@ public class FrontierListElement extends FrontierListRowElement {
     private static final int NAME_LINE_BG_BOTTOM_OFFSET = 9;
     private static final int NAME_LINE_BG_FADE_WIDTH = 6;
     private static final String ELLIPSIS = "...";
+    private static final int RAIL_HOVER_COLOR = 0xA0202020;
+    private static final Tooltip DELETE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.delete"));
     private final Font font;
     private final FrontierOverlay frontier;
     private final String name1;
@@ -56,10 +65,15 @@ public class FrontierListElement extends FrontierListRowElement {
     private final boolean checkboxVisible;
     private final boolean checkboxVisibleOnHover;
     private final boolean checked;
+    private final @Nullable IconButton visibilityButton;
+    private final @Nullable IconButton deleteButton;
     private boolean markToggleRequested;
+    private boolean visibilityRequested;
+    private boolean deleteRequested;
 
     public FrontierListElement(Font font, FrontierOverlay frontier, int width, int collectionColor,
-                               boolean checkboxVisible, boolean checkboxVisibleOnHover, boolean checked) {
+                               boolean checkboxVisible, boolean checkboxVisibleOnHover, boolean checked,
+                               boolean visibilityEnabled, boolean deleteEnabled) {
         super(frontier.getId().toString(), width, 25);
         this.font = font;
         this.frontier = frontier;
@@ -67,6 +81,18 @@ public class FrontierListElement extends FrontierListRowElement {
         this.checkboxVisible = checkboxVisible;
         this.checkboxVisibleOnHover = checkboxVisibleOnHover;
         this.checked = checked;
+
+        boolean visibleNow = frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier);
+        visibilityButton = visibilityEnabled ? new IconButton(visibleNow ? IconButton.Type.Hide : IconButton.Type.Show, button -> {}) : null;
+        if (visibilityButton != null) {
+            visibilityButton.active = true;
+            visibilityButton.setTooltip(Tooltip.create(Component.translatable(visibleNow ? "mapfrontiers.hide" : "mapfrontiers.show")));
+        }
+        deleteButton = deleteEnabled ? new IconButton(IconButton.Type.Remove, button -> {}) : null;
+        if (deleteButton != null) {
+            deleteButton.active = true;
+            deleteButton.setTooltip(DELETE_TOOLTIP);
+        }
 
         if (frontier.isNamed()) {
             name1 = frontier.getName1();
@@ -98,14 +124,46 @@ public class FrontierListElement extends FrontierListRowElement {
         return requested;
     }
 
+    public boolean consumeVisibilityRequested() {
+        boolean requested = visibilityRequested;
+        visibilityRequested = false;
+        return requested;
+    }
+
+    public boolean consumeDeleteRequested() {
+        boolean requested = deleteRequested;
+        deleteRequested = false;
+        return requested;
+    }
+
+    @Override
+    protected void setX(int x) {
+        super.setX(x);
+        if (visibilityButton != null) {
+            visibilityButton.setX(getVisibilityLeft());
+        }
+        if (deleteButton != null) {
+            deleteButton.setX(getDeleteLeft());
+        }
+    }
+
+    @Override
+    protected void setY(int y) {
+        super.setY(y);
+        if (visibilityButton != null) {
+            visibilityButton.setY(this.y + RAIL_CONTENT_Y);
+        }
+        if (deleteButton != null) {
+            deleteButton.setY(this.y + RAIL_CONTENT_Y);
+        }
+    }
+
     @Override
     protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks, boolean selected, boolean focused) {
-        int color = ColorConstants.TEXT;
-        if (selected) {
-            color = ColorConstants.TEXT_HIGHLIGHT;
-            graphics.fill(x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_SELECTED);
-        } else if (isHovered) {
-            graphics.fill(x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
+        int selectionRightBound = getSelectionRightBound();
+        if (isHovered) {
+            graphics.fill(x, y, selectionRightBound, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
+            graphics.fill(selectionRightBound, y, x + width, y + height, RAIL_HOVER_COLOR);
         }
 
         int hiddenColor = ColorConstants.TEXT_DARK;
@@ -120,15 +178,17 @@ public class FrontierListElement extends FrontierListRowElement {
         graphics.fill(x + width - 2, y, x + width, y + height, collectionColor);
 
         int rowContentX = x + LEFT_PADDING;
-        graphics.text(font, owner, rowContentX + METADATA_X, y + 4, color);
+        graphics.text(font, owner, rowContentX + METADATA_X, y + 4, ColorConstants.TEXT);
         graphics.text(font, dimension, rowContentX + METADATA_X, y + 14, ColorConstants.TEXT_DIMENSION);
 
+        int nameColor = selected ? ColorConstants.TEXT_HIGHLIGHT : ColorConstants.TEXT;
         drawNameLine(graphics, name1, visibleName1, name1Truncated, showExpandedNames, NAME_LINE_1_Y,
-                frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier), color, hiddenColor, rowContentX);
+                frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier), nameColor, hiddenColor, rowContentX);
         drawNameLine(graphics, name2, visibleName2, name2Truncated, showExpandedNames, NAME_LINE_2_Y,
-                frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier), color, hiddenColor, rowContentX);
+                frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier), nameColor, hiddenColor, rowContentX);
 
         drawModeBadge(graphics, selected, rowContentX);
+        renderActionButtons(graphics, mouseX, mouseY, partialTicks);
         renderCheckBox(graphics, mouseX, mouseY);
     }
 
@@ -149,8 +209,17 @@ public class FrontierListElement extends FrontierListRowElement {
             return;
         }
 
-        CheckBoxRenderHelper.render(graphics, getCheckBoxX(), y + CHECKBOX_Y, isCheckBoxHovered(mouseX, mouseY),
+        CheckBoxRenderHelper.render(graphics, getCheckBoxX(), y + RAIL_CONTENT_Y, isCheckBoxHovered(mouseX, mouseY),
                 checked ? CheckBoxRenderHelper.State.CHECKED : CheckBoxRenderHelper.State.UNCHECKED);
+    }
+
+    private void renderActionButtons(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        if (visibilityButton != null && (isHovered || !frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier))) {
+            visibilityButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
+        }
+        if (deleteButton != null && isHovered) {
+            deleteButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
+        }
     }
 
     private boolean shouldRenderCheckBox() {
@@ -240,8 +309,32 @@ public class FrontierListElement extends FrontierListRowElement {
         return x + width - RIGHT_PADDING - CheckBoxRenderHelper.SIZE;
     }
 
+    private int getSelectionRightBound() {
+        return Math.max(x, getRailLeft() - SELECTION_RAIL_GAP);
+    }
+
+    private int getRailLeft() {
+        return getVisibilitySlotLeft();
+    }
+
+    private int getDeleteLeft() {
+        return getDeleteSlotLeft();
+    }
+
+    private int getVisibilityLeft() {
+        return getVisibilitySlotLeft();
+    }
+
+    private int getDeleteSlotLeft() {
+        return getCheckBoxX() - ACTION_GAP - ACTION_BUTTON_WIDTH;
+    }
+
+    private int getVisibilitySlotLeft() {
+        return getDeleteSlotLeft() - ACTION_GAP - ACTION_BUTTON_WIDTH;
+    }
+
     private boolean isCheckBoxHovered(int mouseX, int mouseY) {
-        return CheckBoxRenderHelper.contains(getCheckBoxX(), y + CHECKBOX_Y, mouseX, mouseY);
+        return CheckBoxRenderHelper.contains(getCheckBoxX(), y + RAIL_CONTENT_Y, mouseX, mouseY);
     }
 
     private static Identifier frontierListTexture(String fileName) {
@@ -251,11 +344,22 @@ public class FrontierListElement extends FrontierListRowElement {
     @Override
     public ScrollBox.ScrollElement.Action mousePressed(MouseButtonEvent event, boolean doubleClick) {
         if (visible && isHovered) {
-            if (shouldRenderCheckBox() && CheckBoxRenderHelper.contains(getCheckBoxX(), y + CHECKBOX_Y, event.x(), event.y())) {
+            if (shouldRenderCheckBox() && CheckBoxRenderHelper.contains(getCheckBoxX(), y + RAIL_CONTENT_Y, event.x(), event.y())) {
                 markToggleRequested = true;
                 return ScrollBox.ScrollElement.Action.Handled;
             }
-            return ScrollBox.ScrollElement.Action.Clicked;
+            if (deleteButton != null && deleteButton.isMouseOver(event.x(), event.y())) {
+                deleteRequested = true;
+                return ScrollBox.ScrollElement.Action.Handled;
+            }
+            if (visibilityButton != null && visibilityButton.isMouseOver(event.x(), event.y())) {
+                visibilityRequested = true;
+                return ScrollBox.ScrollElement.Action.Handled;
+            }
+            if (event.x() >= getSelectionRightBound()) {
+                return ScrollBox.ScrollElement.Action.None;
+            }
+            return ScrollBox.ScrollElement.Action.Handled;
         }
 
         return ScrollBox.ScrollElement.Action.None;

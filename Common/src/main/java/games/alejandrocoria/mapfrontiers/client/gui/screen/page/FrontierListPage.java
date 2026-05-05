@@ -11,7 +11,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.FullscreenMap;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.SortToolbar;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
-import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.CollectionBorderCapListElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.CollectionListElement;
@@ -73,12 +72,8 @@ public class FrontierListPage extends PageScreen
     private static final Component OVERWORLD_LABEL = Component.literal("minecraft:overworld");
     private static final Component THE_NETHER_LABEL = Component.literal("minecraft:the_nether");
     private static final Component THE_END_LABEL = Component.literal("minecraft:the_end");
-    private static final Component INFO_LABEL = Component.translatable("mapfrontiers.info");
-    private static final Component DELETE_LABEL = Component.translatable("mapfrontiers.delete");
-    private static final Component HIDE_LABEL = Component.translatable("mapfrontiers.hide");
     private static final Component SETTINGS_LABEL = Component.translatable("mapfrontiers.settings");
     private static final Component DONE_LABEL = Component.translatable("gui.done");
-    private static final int BOTTOM_BUTTON_WIDTH = 132;
     private static final int FRONTIERS_WIDTH = 542;
     private static final int FRONTIERS_ELEMENT_HEIGHT = 25;
     private static final int FILTER_WIDTH = 200;
@@ -102,11 +97,7 @@ public class FrontierListPage extends PageScreen
     private ScrollBox filterShape;
     private ScrollBox filterOwner;
     private ScrollBox filterDimension;
-    private SimpleButton buttonInfo;
-    private SimpleButton buttonVisible;
-    private SimpleButton buttonDelete;
     private SimpleButton buttonSettings;
-    private @Nullable String selectedRowId;
 
     private enum MarkedType {
         NONE,
@@ -122,37 +113,30 @@ public class FrontierListPage extends PageScreen
 
         MapFrontiersClient.getFrontierEvents().subscribeDeleted(this, frontierID -> {
             updateFrontiers();
-            updateButtons();
         });
 
         MapFrontiersClient.getFrontierEvents().subscribeCreated(this, (frontierOverlay, playerID) -> {
             updateFrontiers();
-            updateButtons();
         });
 
         MapFrontiersClient.getFrontierEvents().subscribeUpdated(this, (frontierOverlay, playerID) -> {
             updateFrontiers();
-            updateButtons();
         });
 
         MapFrontiersClient.getCollectionEvents().subscribeCreated(this, collection -> {
             updateFrontiers();
-            updateButtons();
         });
 
         MapFrontiersClient.getCollectionEvents().subscribeUpdated(this, collection -> {
             updateFrontiers();
-            updateButtons();
         });
 
         MapFrontiersClient.getCollectionEvents().subscribeDeleted(this, collectionId -> {
             updateFrontiers();
-            updateButtons();
         });
 
         MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> {
             updateFrontiers();
-            updateButtons();
         });
     }
 
@@ -167,8 +151,6 @@ public class FrontierListPage extends PageScreen
         buildBottomButtons();
 
         updateFrontiers();
-        refreshInitialSelection();
-        refreshViewState();
     }
 
     @Override
@@ -301,9 +283,6 @@ public class FrontierListPage extends PageScreen
     }
 
     private void buildBottomButtons() {
-        buttonInfo = addBottomButton(createInfoButton());
-        buttonVisible = addBottomButton(createVisibleButton());
-        buttonDelete = addBottomButton(createDeleteButton());
         buttonSettings = addBottomButton(createSettingsButton());
         addBottomButton(createDoneButton());
     }
@@ -312,26 +291,12 @@ public class FrontierListPage extends PageScreen
         return new SimpleButton(font, 110, RESET_FILTERS_LABEL, button -> onResetFiltersPressed());
     }
 
-    private SimpleButton createInfoButton() {
-        return new SimpleButton(font, BOTTOM_BUTTON_WIDTH, INFO_LABEL, button -> onInfoPressed());
-    }
-
-    private SimpleButton createDeleteButton() {
-        SimpleButton button = new SimpleButton(font, BOTTOM_BUTTON_WIDTH, DELETE_LABEL, pressedButton -> onDeletePressed());
-        button.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
-        return button;
-    }
-
-    private SimpleButton createVisibleButton() {
-        return new SimpleButton(font, BOTTOM_BUTTON_WIDTH, HIDE_LABEL, button -> onVisiblePressed());
-    }
-
     private SimpleButton createSettingsButton() {
-        return new SimpleButton(font, BOTTOM_BUTTON_WIDTH, SETTINGS_LABEL, button -> onSettingsPressed());
+        return new SimpleButton(font, LayoutConstants.PAGE_BUTTON_WIDTH, SETTINGS_LABEL, button -> onSettingsPressed());
     }
 
     private SimpleButton createDoneButton() {
-        return new SimpleButton(font, BOTTOM_BUTTON_WIDTH, DONE_LABEL, button -> onDonePressed());
+        return new SimpleButton(font, LayoutConstants.PAGE_BUTTON_WIDTH, DONE_LABEL, button -> onDonePressed());
     }
 
     private StringWidget createSectionLabel(Component label) {
@@ -364,7 +329,6 @@ public class FrontierListPage extends PageScreen
     private void onSearchValueChanged(String value) {
         clearMarkedFrontiers();
         updateFrontiers();
-        refreshViewState();
     }
 
     private void onFrontierRowClicked(ScrollElement element) {
@@ -373,9 +337,18 @@ public class FrontierListPage extends PageScreen
             return;
         }
 
+        if (element instanceof FrontierListElement frontierElement && frontierElement.consumeVisibilityRequested()) {
+            onFrontierVisibilityPressed(frontierElement.getFrontier());
+            return;
+        }
+
+        if (element instanceof FrontierListElement frontierElement && frontierElement.consumeDeleteRequested()) {
+            onFrontierDeletePressed(frontierElement.getFrontier());
+            return;
+        }
+
         if (element instanceof SectionHeaderListElement headerElement && headerElement.consumeAddRequested()) {
             createCollectionFromHeader(headerElement.getRowId());
-            refreshViewState();
             return;
         }
 
@@ -388,7 +361,6 @@ public class FrontierListPage extends PageScreen
                 CollectionUiStateStore collapseState = getCollectionUiStateStore();
                 collapseState.setCollapsed(rowElement.getRowId(), !collapseState.isCollapsed(rowElement.getRowId()));
                 updateFrontiers();
-                refreshViewState();
                 return;
             }
 
@@ -397,38 +369,46 @@ public class FrontierListPage extends PageScreen
                 return;
             }
 
-            if (collectionElement.consumeActionRequested()) {
-                if (collectionElement.isActionEnabled()) {
-                    selectedRowId = rowElement.getRowId();
-                    frontiers.selectElement(collectionElement);
-                    fullscreenMap.selectFrontier(null);
-                    if (isMarkedModeActive()) {
-                        moveMarkedFrontiersToCollection(collectionElement);
-                        updateFrontiers();
-                    } else {
-                        createFrontierFromCollectionRow(collectionElement);
-                    }
+            if (collectionElement.consumeDeleteRequested()) {
+                CollectionData collection = collectionElement.getCollection();
+                if (collection != null) {
+                    onCollectionDeletePressed(collection);
                 }
-                refreshViewState();
+                return;
+            }
+
+            if (collectionElement.consumeMoveHereRequested()) {
+                if (isMarkedModeActive()) {
+                    moveMarkedFrontiersToCollection(collectionElement);
+                    updateFrontiers();
+                }
+                return;
+            }
+
+            if (collectionElement.consumeCreateRequested()) {
+                createFrontierFromCollectionRow(collectionElement);
                 return;
             }
         }
 
-        selectedRowId = rowElement.getRowId();
-
-        if (element instanceof CollectionListElement) {
-            fullscreenMap.selectFrontier(null);
-            refreshViewState();
-            return;
+        if (isMarkedModeActive()) {
+            clearMarkedFrontiers();
+            updateFrontiers();
         }
 
         if (element instanceof FrontierListElement frontierElement) {
             fullscreenMap.selectFrontier(frontierElement.getFrontier());
-        } else {
-            fullscreenMap.selectFrontier(null);
+            syncSelectedRowWithMapSelection();
+            new FrontierInfoPage(jmAPI, frontierElement.getFrontier()).display();
+            return;
         }
 
-        refreshViewState();
+        if (element instanceof CollectionListElement collectionElement) {
+            CollectionData collection = collectionElement.getCollection();
+            if (collection != null) {
+                new CollectionInfoPage(collection).display();
+            }
+        }
     }
 
     private void onResetFiltersPressed() {
@@ -492,88 +472,54 @@ public class FrontierListPage extends PageScreen
     }
 
     private void selectCreatedFrontier(FrontierOverlay frontier) {
-        selectedRowId = frontier.getId().toString();
         fullscreenMap.selectFrontier(frontier);
         updateFrontiers();
-        frontiers.scrollSelectedElementIntoView();
-        refreshViewState();
     }
 
-    private void onInfoPressed() {
-        FrontierOverlay frontier = getSelectedFrontier();
-        if (frontier != null) {
-            new FrontierInfoPage(jmAPI, frontier).display();
-            return;
-        }
-
-        CollectionData collection = getSelectedCollection();
-        if (collection != null) {
-            new CollectionInfoPage(collection).display();
-        }
+    private void onFrontierVisibilityPressed(FrontierOverlay frontier) {
+        frontier.toggleVisibility(FrontierData.VisibilityData.Visibility.Frontier);
+        MapFrontiersClient.getOperationService().updateFrontier(frontier);
     }
 
-    private void onDeletePressed() {
-        CollectionData collection = getSelectedCollection();
-        if (collection != null) {
-            if (ClientConfig.ASK_CONFIRMATION_COLLECTION_DELETE.get()) {
-                showDeleteCollectionConfirmation();
-            } else {
-                deleteSelectedCollection();
-            }
-            return;
-        }
-
-        if (getSelectedFrontier() == null) {
-            return;
-        }
-
+    private void onFrontierDeletePressed(FrontierOverlay frontier) {
         if (ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.get()) {
-            showDeleteConfirmation();
+            showDeleteFrontierConfirmation(frontier);
         } else {
-            deleteSelectedFrontier();
+            deleteFrontier(frontier);
         }
     }
 
-    private void showDeleteConfirmation() {
-        FrontierOverlay frontier = getSelectedFrontier();
-        if (frontier == null) {
-            return;
+    private void onCollectionDeletePressed(CollectionData collection) {
+        if (ClientConfig.ASK_CONFIRMATION_COLLECTION_DELETE.get()) {
+            showDeleteCollectionConfirmation(collection);
+        } else {
+            deleteCollection(collection);
         }
+    }
 
+    private void showDeleteFrontierConfirmation(FrontierOverlay frontier) {
         new DeleteFrontierConfirmationDialog(frontier, response -> {
             if (response == ConfirmationDialog.Response.ConfirmAlternative) {
                 ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.set(false);
                 ClientGlobalEvents.postUpdatedConfigEvent();
             }
-            deleteSelectedFrontier();
+            deleteFrontier(frontier);
         }).display();
     }
 
-    private void showDeleteCollectionConfirmation() {
+    private void showDeleteCollectionConfirmation(CollectionData collection) {
         new DeleteCollectionConfirmationDialog(response -> {
             if (response == ConfirmationDialog.Response.ConfirmAlternative) {
                 ClientConfig.ASK_CONFIRMATION_COLLECTION_DELETE.set(false);
                 ClientGlobalEvents.postUpdatedConfigEvent();
             }
-            deleteSelectedCollection();
+            deleteCollection(collection);
         }).display();
-    }
-
-    private void onVisiblePressed() {
-        FrontierOverlay frontier = getSelectedFrontier();
-        if (frontier == null) {
-            return;
-        }
-
-        frontier.toggleVisibility(FrontierData.VisibilityData.Visibility.Frontier);
-        MapFrontiersClient.getOperationService().updateFrontier(frontier);
-        refreshViewState();
     }
 
     private void onSettingsPressed() {
         clearMarkedFrontiers();
         updateFrontiers();
-        refreshViewState();
         new ModSettingsPage(true).display();
     }
 
@@ -597,51 +543,19 @@ public class FrontierListPage extends PageScreen
         clearMarkedFrontiers();
         updateFrontiers();
         ClientGlobalEvents.postUpdatedConfigEvent();
-        refreshViewState();
     }
 
-    private void refreshInitialSelection() {
-        if (selectedRowId != null) {
-            selectRowIfPresent(selectedRowId);
-            frontiers.scrollSelectedElementIntoView();
-            return;
-        }
-
-        FrontierOverlay selectedFrontier = fullscreenMap.getSelected();
-        if (selectedFrontier != null) {
-            selectedRowId = selectedFrontier.getId().toString();
-            selectRowIfPresent(selectedRowId);
-            frontiers.scrollSelectedElementIntoView();
-        }
-    }
-
-    private void refreshViewState() {
-        updateButtons();
-    }
-
-    private void deleteSelectedFrontier() {
-        FrontierOverlay frontier = getSelectedFrontier();
-        if (frontier == null) {
-            return;
-        }
-
+    private void deleteFrontier(FrontierOverlay frontier) {
         MapFrontiersClient.getOperationService().deleteFrontier(frontier);
-        selectedRowId = null;
-        fullscreenMap.selectFrontier(null);
+        if (frontier == fullscreenMap.getSelected()) {
+            fullscreenMap.selectFrontier(null);
+        }
         updateFrontiers();
-        refreshViewState();
     }
 
-    private void deleteSelectedCollection() {
-        CollectionData collection = getSelectedCollection();
-        if (collection == null) {
-            return;
-        }
-
+    private void deleteCollection(CollectionData collection) {
         MapFrontiersClient.getOperationService().deleteCollection(collection);
-        selectedRowId = null;
         updateFrontiers();
-        refreshViewState();
     }
 
     private void createCollectionFromHeader(String headerRowId) {
@@ -670,7 +584,6 @@ public class FrontierListPage extends PageScreen
                 : FrontierData.FrontierLifetime.PERSISTENT);
         collection.setOwner(new SettingsUser(minecraft.player));
 
-        selectedRowId = collection.getId().toString();
         MapFrontiersClient.getOperationService().createCollection(collection);
         new CollectionInfoPage(collection).display();
     }
@@ -736,11 +649,6 @@ public class FrontierListPage extends PageScreen
     }
 
     private void updateFrontiers() {
-        String previousSelection = selectedRowId;
-        FrontierOverlay selectedFrontierBeforeUpdate = getSelectedFrontier();
-        boolean previousSelectionWasFrontier = previousSelection != null
-                && selectedFrontierBeforeUpdate != null
-                && previousSelection.equals(selectedFrontierBeforeUpdate.getId().toString());
         int previousScrollOffset = frontiers.getScrollOffset();
         CollectionUiStateStore collapseState = getCollectionUiStateStore();
         List<ScrollElement> rows = new ArrayList<>();
@@ -776,23 +684,19 @@ public class FrontierListPage extends PageScreen
             frontiers.addElement(row);
         }
         frontiers.setScrollOffset(previousScrollOffset);
-
-        if (previousSelection != null && selectRowIfPresent(previousSelection)) {
-            selectedRowId = previousSelection;
-            frontiers.scrollSelectedElementIntoView();
-        } else {
-            selectedRowId = null;
-            if (previousSelectionWasFrontier) {
-                fullscreenMap.selectFrontier(null);
-            }
-        }
-
-        updateButtons();
+        syncSelectedRowWithMapSelection();
     }
 
-    private boolean selectRowIfPresent(String rowId) {
-        frontiers.selectElementIf(element -> element instanceof FrontierListRowElement rowElement && rowElement.getRowId().equals(rowId));
-        return frontiers.getSelectedElement() instanceof FrontierListRowElement rowElement && rowElement.getRowId().equals(rowId);
+    private void syncSelectedRowWithMapSelection() {
+        FrontierOverlay selectedFrontier = fullscreenMap.getSelected();
+        if (selectedFrontier == null) {
+            frontiers.deselectElement();
+            return;
+        }
+
+        UUID selectedFrontierId = selectedFrontier.getId();
+        frontiers.selectElementIf(element -> element instanceof FrontierListElement frontierElement
+                && frontierElement.getFrontier().getId().equals(selectedFrontierId));
     }
 
     private List<ScrollElement> buildBlockRows(CollectionScope scope, Set<UUID> visibleFilteredFrontiers) {
@@ -839,6 +743,8 @@ public class FrontierListPage extends PageScreen
                 .map(FrontierOverlay::getId)
                 .toList();
         boolean canMarkGroup = canMarkCollectionGroup(group, eligibleFrontierIds);
+        CollectionListElement.ActionState actionState = getCollectionActionState(group);
+        boolean canDelete = !isMarkedModeActive() && group.collection != null && canDeleteSelectedCollection(group.collection);
 
         return new CollectionListElement(group.rowId, font, group.collection, group.virtualRow, group.scope, group.title,
                 formatCollectionCounters(group.totalFrontiers, group.filteredFrontiers.size()),
@@ -848,9 +754,8 @@ public class FrontierListPage extends PageScreen
                 shouldShowCheckboxOnHover(canMarkGroup),
                 countMarkedFrontiers(eligibleFrontierIds),
                 eligibleFrontierIds.size(),
-                getCollectionActionType(group),
-                isCollectionActionEnabled(group),
-                getCollectionActionTooltip(group),
+                actionState,
+                canDelete,
                 eligibleFrontierIds,
                 FRONTIERS_WIDTH);
     }
@@ -862,9 +767,13 @@ public class FrontierListPage extends PageScreen
             if (canMarkFrontier(frontier)) {
                 visibleFilteredFrontiers.add(frontier.getId());
             }
+            SettingsProfile.AvailableActions actions = getAvailableActions(frontier);
             rows.add(new FrontierListElement(font, frontier, FRONTIERS_WIDTH, collectionColor,
                     shouldShowCheckboxInMarkedMode(canMarkFrontier(frontier), isCompatibleWithMarkedType(frontier)),
-                    shouldShowCheckboxOnHover(canMarkFrontier(frontier)), isFrontierMarked(frontier)));
+                    shouldShowCheckboxOnHover(canMarkFrontier(frontier)),
+                    isFrontierMarked(frontier),
+                    !isMarkedModeActive() && actions.canUpdate,
+                    !isMarkedModeActive() && actions.canDelete));
         }
     }
 
@@ -1105,58 +1014,29 @@ public class FrontierListPage extends PageScreen
         return count;
     }
 
-    private @Nullable IconButton.Type getCollectionActionType(CollectionGroupModel group) {
+    private CollectionListElement.ActionState getCollectionActionState(CollectionGroupModel group) {
         if (!isMarkedModeActive()) {
-            if (canCreateFrontierInScope(group.scope)) {
-                return IconButton.Type.Add;
-            }
-            return null;
+            return canCreateFrontierInScope(group.scope)
+                    ? CollectionListElement.ActionState.CREATE_FRONTIER
+                    : CollectionListElement.ActionState.NONE;
         }
 
         if (!isCompatibleWithMarkedType(group, getEligibleFrontierIds(group))) {
-            return null;
+            return CollectionListElement.ActionState.NONE;
         }
 
         if (!canUseCollectionAsMoveTarget(group)) {
-            return null;
-        }
-
-        return IconButton.Type.MoveHere;
-    }
-
-    private boolean isCollectionActionEnabled(CollectionGroupModel group) {
-        if (!isMarkedModeActive()) {
-            return canCreateFrontierInScope(group.scope);
-        }
-
-        if (!isCompatibleWithMarkedType(group, getEligibleFrontierIds(group))) {
-            return false;
-        }
-
-        if (!canUseCollectionAsMoveTarget(group)) {
-            return false;
+            return CollectionListElement.ActionState.NONE;
         }
 
         UUID targetCollectionId = group.collection == null ? null : group.collection.getId();
         for (FrontierOverlay frontier : getMarkedFrontiers()) {
             if (!Objects.equals(frontier.getCollectionId(), targetCollectionId)) {
-                return true;
+                return CollectionListElement.ActionState.MOVE_HERE_ENABLED;
             }
         }
 
-        return false;
-    }
-
-    private @Nullable Tooltip getCollectionActionTooltip(CollectionGroupModel group) {
-        if (isMarkedModeActive()) {
-            return Tooltip.create(Component.translatable("mapfrontiers.tooltip.move_here"));
-        }
-
-        if (group.virtualRow) {
-            return getCreateFrontierTooltipWithoutCollection(group.scope);
-        }
-
-        return getCreateFrontierTooltipInCollection(group.scope);
+        return CollectionListElement.ActionState.MOVE_HERE_DISABLED;
     }
 
     private void toggleFrontierMarked(FrontierOverlay frontier) {
@@ -1180,7 +1060,6 @@ public class FrontierListPage extends PageScreen
         }
 
         updateFrontiers();
-        refreshViewState();
     }
 
     private void toggleCollectionGroupMarked(CollectionListElement groupElement) {
@@ -1217,7 +1096,6 @@ public class FrontierListPage extends PageScreen
         }
 
         updateFrontiers();
-        refreshViewState();
     }
 
     private void moveMarkedFrontiersToCollection(CollectionListElement targetElement) {
@@ -1382,6 +1260,13 @@ public class FrontierListPage extends PageScreen
         }));
     }
 
+    private SettingsProfile.AvailableActions getAvailableActions(FrontierOverlay frontier) {
+        if (minecraft.player == null) {
+            return new SettingsProfile.AvailableActions();
+        }
+        return SettingsProfile.getAvailableActions(MapFrontiersClient.getSettingsProfile(), frontier, new SettingsUser(minecraft.player));
+    }
+
     private Tooltip getCreateFrontierTooltipInCollection(CollectionScope scope) {
         return Tooltip.create(Component.translatable(switch (scope) {
             case PERSONAL_PERSISTENT -> "mapfrontiers.tooltip.create_frontier_personal_in_collection";
@@ -1445,69 +1330,6 @@ public class FrontierListPage extends PageScreen
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
         return profile != null && (profile.deleteFrontier == SettingsProfile.State.Enabled
                 || (profile.deleteFrontier == SettingsProfile.State.Owner && collection.getOwner().equals(playerUser)));
-    }
-
-    private @Nullable FrontierOverlay getSelectedFrontier() {
-        ScrollElement selectedElement = frontiers.getSelectedElement();
-        if (selectedElement instanceof FrontierListElement frontierElement) {
-            return frontierElement.getFrontier();
-        }
-        return null;
-    }
-
-    private @Nullable CollectionListElement getSelectedCollectionElement() {
-        ScrollElement selectedElement = frontiers.getSelectedElement();
-        if (selectedElement instanceof CollectionListElement collectionElement) {
-            return collectionElement;
-        }
-        return null;
-    }
-
-    private @Nullable CollectionData getSelectedCollection() {
-        CollectionListElement selectedCollectionElement = getSelectedCollectionElement();
-        return selectedCollectionElement == null ? null : selectedCollectionElement.getCollection();
-    }
-
-    private void updateButtons() {
-        if (minecraft.player == null) {
-            return;
-        }
-
-        if (isMarkedModeActive()) {
-            buttonInfo.active = false;
-            buttonDelete.active = false;
-            buttonVisible.active = false;
-            buttonVisible.setMessage(Component.translatable("mapfrontiers.hide"));
-            buttonSettings.active = true;
-            return;
-        }
-
-        CollectionListElement selectedCollectionElement = getSelectedCollectionElement();
-        if (selectedCollectionElement != null) {
-            CollectionData selectedCollection = selectedCollectionElement.getCollection();
-            buttonInfo.active = selectedCollection != null;
-            buttonVisible.active = false;
-            buttonVisible.setMessage(Component.translatable("mapfrontiers.hide"));
-            buttonDelete.active = selectedCollection != null && canDeleteSelectedCollection(selectedCollection);
-            buttonSettings.active = true;
-            return;
-        }
-
-        FrontierOverlay selectedFrontier = getSelectedFrontier();
-        SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
-        SettingsUser playerUser = new SettingsUser(minecraft.player);
-        SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, selectedFrontier, playerUser);
-
-        buttonInfo.active = selectedFrontier != null;
-        buttonVisible.active = actions.canUpdate;
-        buttonDelete.active = actions.canDelete;
-        buttonSettings.active = true;
-
-        if (selectedFrontier != null && selectedFrontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier)) {
-            buttonVisible.setMessage(Component.translatable("mapfrontiers.hide"));
-        } else {
-            buttonVisible.setMessage(Component.translatable("mapfrontiers.show"));
-        }
     }
 
     private static int getShapeCount(FrontierOverlay frontier) {

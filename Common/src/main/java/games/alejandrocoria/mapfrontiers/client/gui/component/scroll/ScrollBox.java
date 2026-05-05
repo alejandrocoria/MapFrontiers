@@ -136,11 +136,15 @@ public class ScrollBox extends AbstractContainerWidget {
                 .orElse(null);
 
         if (element == null) {
-            selected = -1;
-            focused = -1;
+            deselectElement();
         } else {
             selectElement(element);
         }
+    }
+
+    public void deselectElement() {
+        selected = -1;
+        focused = -1;
     }
 
     public void removeElement(ScrollElement element) {

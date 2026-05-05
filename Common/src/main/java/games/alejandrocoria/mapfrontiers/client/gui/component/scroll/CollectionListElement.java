@@ -12,6 +12,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
 import javax.annotation.Nullable;
@@ -22,20 +23,32 @@ import java.util.UUID;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class CollectionListElement extends FrontierListRowElement {
+    public enum ActionState {
+        NONE,
+        CREATE_FRONTIER,
+        MOVE_HERE_ENABLED,
+        MOVE_HERE_DISABLED
+    }
+
     private static final Identifier NAME_FADE_TEXTURE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/frontier_list/name_fade.png");
     private static final int CONTENT_X = 14;
     private static final int TITLE_Y = 6;
     private static final int COUNTERS_GAP = 4;
-    private static final int COUNTERS_RIGHT_GAP = 4;
+    private static final int COUNTERS_RIGHT_GAP = 1;
     private static final int TITLE_HOVER_X = 14;
     private static final int TITLE_BG_TOP_OFFSET = -2;
     private static final int TITLE_BG_BOTTOM_OFFSET = 8;
     private static final int TITLE_BG_FADE_WIDTH = 6;
     private static final int RIGHT_PADDING = 4;
     private static final int ACTION_GAP = 2;
-    private static final int ACTION_Y = 4;
-    private static final int CHECKBOX_Y = 4;
+    private static final int ACTION_BUTTON_WIDTH = 11;
+    private static final int SELECTION_RAIL_GAP = 2;
+    private static final int RAIL_CONTENT_Y = 4;
     private static final String ELLIPSIS = "...";
+    private static final int RAIL_HOVER_COLOR = 0xA0202020;
+    private static final int RAIL_SELECTED_COLOR = 0xFF202020;
+    private static final Tooltip MOVE_HERE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.tooltip.move_here"));
+    private static final Tooltip DELETE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.delete"));
 
     private final Font font;
     private final @Nullable CollectionData collection;
@@ -48,14 +61,16 @@ public class CollectionListElement extends FrontierListRowElement {
     private final boolean checkboxVisibleOnHover;
     private final int markedCount;
     private final int eligibleCount;
-    private final @Nullable IconButton actionButton;
-    private final boolean actionEnabled;
-    private final boolean actionVisibleWhenDisabled;
+    private final @Nullable IconButton createButton;
+    private final @Nullable IconButton moveHereButton;
+    private final @Nullable IconButton deleteButton;
     private final List<UUID> eligibleFrontierIds;
     private final IconButton collapseToggleButton;
     private boolean collapseToggleRequested;
     private boolean markToggleRequested;
-    private boolean actionRequested;
+    private boolean createRequested;
+    private boolean moveHereRequested;
+    private boolean deleteRequested;
 
     public CollectionListElement(String rowId,
                                  Font font,
@@ -70,9 +85,8 @@ public class CollectionListElement extends FrontierListRowElement {
                                  boolean checkboxVisibleOnHover,
                                  int markedCount,
                                  int eligibleCount,
-                                 @Nullable IconButton.Type actionType,
-                                 boolean actionEnabled,
-                                 @Nullable Tooltip actionTooltip,
+                                 ActionState actionState,
+                                 boolean deleteEnabled,
                                  List<UUID> eligibleFrontierIds,
                                  int width) {
         super(rowId, width, 17);
@@ -87,15 +101,25 @@ public class CollectionListElement extends FrontierListRowElement {
         this.checkboxVisibleOnHover = checkboxVisibleOnHover;
         this.markedCount = markedCount;
         this.eligibleCount = eligibleCount;
-        this.actionEnabled = actionEnabled;
-        this.actionVisibleWhenDisabled = actionType == IconButton.Type.MoveHere;
         this.eligibleFrontierIds = List.copyOf(eligibleFrontierIds);
 
         collapseToggleButton = new IconButton(collapsed ? IconButton.Type.Collapsed : IconButton.Type.Expanded, (button) -> {});
-        actionButton = actionType == null ? null : new IconButton(actionType, (button) -> {});
-        if (actionButton != null) {
-            actionButton.setTooltip(actionTooltip);
-            actionButton.active = actionEnabled;
+        createButton = actionState == ActionState.CREATE_FRONTIER ? new IconButton(IconButton.Type.Add, (button) -> {}) : null;
+        if (createButton != null) {
+            createButton.active = true;
+            createButton.setTooltip(getCreateTooltip(scope, virtualRow));
+        }
+        moveHereButton = actionState == ActionState.MOVE_HERE_ENABLED || actionState == ActionState.MOVE_HERE_DISABLED
+                ? new IconButton(IconButton.Type.MoveHere, (button) -> {})
+                : null;
+        if (moveHereButton != null) {
+            moveHereButton.active = actionState == ActionState.MOVE_HERE_ENABLED;
+            moveHereButton.setTooltip(MOVE_HERE_TOOLTIP);
+        }
+        deleteButton = deleteEnabled ? new IconButton(IconButton.Type.Remove, (button) -> {}) : null;
+        if (deleteButton != null) {
+            deleteButton.active = true;
+            deleteButton.setTooltip(DELETE_TOOLTIP);
         }
     }
 
@@ -103,8 +127,14 @@ public class CollectionListElement extends FrontierListRowElement {
     protected void setX(int x) {
         super.setX(x);
         collapseToggleButton.setX(this.x + 4);
-        if (actionButton != null) {
-            actionButton.setX(getActionLeft());
+        if (createButton != null) {
+            createButton.setX(getCreateLeft());
+        }
+        if (moveHereButton != null) {
+            moveHereButton.setX(getMoveHereLeft());
+        }
+        if (deleteButton != null) {
+            deleteButton.setX(getDeleteLeft());
         }
     }
 
@@ -112,8 +142,14 @@ public class CollectionListElement extends FrontierListRowElement {
     protected void setY(int y) {
         super.setY(y);
         collapseToggleButton.setY(this.y + 5);
-        if (actionButton != null) {
-            actionButton.setY(this.y + ACTION_Y);
+        if (createButton != null) {
+            createButton.setY(this.y + RAIL_CONTENT_Y);
+        }
+        if (moveHereButton != null) {
+            moveHereButton.setY(this.y + RAIL_CONTENT_Y);
+        }
+        if (deleteButton != null) {
+            deleteButton.setY(this.y + RAIL_CONTENT_Y);
         }
     }
 
@@ -149,23 +185,31 @@ public class CollectionListElement extends FrontierListRowElement {
         return requested;
     }
 
-    public boolean consumeActionRequested() {
-        boolean requested = actionRequested;
-        actionRequested = false;
+    public boolean consumeCreateRequested() {
+        boolean requested = createRequested;
+        createRequested = false;
         return requested;
     }
 
-    public boolean isActionEnabled() {
-        return actionEnabled;
+    public boolean consumeMoveHereRequested() {
+        boolean requested = moveHereRequested;
+        moveHereRequested = false;
+        return requested;
+    }
+
+    public boolean consumeDeleteRequested() {
+        boolean requested = deleteRequested;
+        deleteRequested = false;
+        return requested;
     }
 
     @Override
     protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks,
                                             boolean selected, boolean focused) {
-        if (selected) {
-            graphics.fill(x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_SELECTED);
-        } else if (isHovered) {
-            graphics.fill(x, y, x + width, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
+        int selectionRightBound = getSelectionRightBound();
+        if (isHovered) {
+            graphics.fill(x, y, selectionRightBound, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
+            graphics.fill(selectionRightBound, y, x + width, y + height, RAIL_HOVER_COLOR);
         }
 
         graphics.fill(x, y, x + width, y + 2, color);
@@ -173,9 +217,9 @@ public class CollectionListElement extends FrontierListRowElement {
         graphics.fill(x + width - 2, y + 2, x + width, y + height, color);
 
         collapseToggleButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
-        renderTexts(graphics, mouseX, mouseY, selected);
+        renderTexts(graphics, mouseX, mouseY);
         renderMarkedCount(graphics);
-        renderActionButton(graphics, mouseX, mouseY, partialTicks);
+        renderActionButtons(graphics, mouseX, mouseY, partialTicks);
         renderCheckBox(graphics, mouseX, mouseY);
     }
 
@@ -191,11 +235,9 @@ public class CollectionListElement extends FrontierListRowElement {
         graphics.verticalLine(right, top, bottom, ColorConstants.WHITE);
     }
 
-    private void renderTexts(GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean selected) {
+    private void renderTexts(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int titleColor = ColorConstants.TEXT;
-        if (selected) {
-            titleColor = ColorConstants.TEXT_HIGHLIGHT;
-        } else if (virtualRow) {
+        if (virtualRow) {
             titleColor = ColorConstants.VIRTUAL_COLLECTION;
         }
 
@@ -218,20 +260,20 @@ public class CollectionListElement extends FrontierListRowElement {
         }
 
         String markedText = "[" + markedCount + "]";
-        int countX = getActionLeft() - ACTION_GAP - font.width(markedText);
+        int countX = getRailTextRight() - font.width(markedText);
         graphics.text(font, markedText, countX, y + TITLE_Y, ColorConstants.TEXT_HIGHLIGHT);
     }
 
-    private void renderActionButton(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
-        if (actionButton == null) {
-            return;
+    private void renderActionButtons(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        if (createButton != null) {
+            createButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         }
-
-        if (!actionEnabled && !actionVisibleWhenDisabled) {
-            return;
+        if (moveHereButton != null) {
+            moveHereButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         }
-
-        actionButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
+        if (deleteButton != null && isHovered) {
+            deleteButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
+        }
     }
 
     private void renderCheckBox(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
@@ -239,7 +281,7 @@ public class CollectionListElement extends FrontierListRowElement {
             return;
         }
 
-        CheckBoxRenderHelper.render(graphics, getCheckBoxX(), y + CHECKBOX_Y, isCheckBoxHovered(mouseX, mouseY), getCheckBoxState());
+        CheckBoxRenderHelper.render(graphics, getCheckBoxX(), y + RAIL_CONTENT_Y, isCheckBoxHovered(mouseX, mouseY), getCheckBoxState());
     }
 
     private boolean shouldRenderCheckBox() {
@@ -256,28 +298,84 @@ public class CollectionListElement extends FrontierListRowElement {
         return CheckBoxRenderHelper.State.PARTIAL;
     }
 
-    private boolean isActionHovered(int mouseX, int mouseY) {
-        return isHovered && actionButton != null && actionEnabled && actionButton.isMouseOver(mouseX, mouseY);
+    private boolean isCreateHovered(int mouseX, int mouseY) {
+        return isHovered && createButton != null && createButton.isMouseOver(mouseX, mouseY);
+    }
+
+    private boolean isMoveHereHovered(int mouseX, int mouseY) {
+        return isHovered && moveHereButton != null && moveHereButton.isMouseOver(mouseX, mouseY);
+    }
+
+    private boolean isDeleteHovered(int mouseX, int mouseY) {
+        return isHovered && deleteButton != null && deleteButton.isMouseOver(mouseX, mouseY);
     }
 
     private boolean isCheckBoxHovered(int mouseX, int mouseY) {
-        return CheckBoxRenderHelper.contains(getCheckBoxX(), y + CHECKBOX_Y, mouseX, mouseY);
+        return CheckBoxRenderHelper.contains(getCheckBoxX(), y + RAIL_CONTENT_Y, mouseX, mouseY);
     }
 
     private int getCheckBoxX() {
         return x + width - RIGHT_PADDING - CheckBoxRenderHelper.SIZE;
     }
 
-    private int getActionLeft() {
-        if (actionButton == null) {
-            return getCheckBoxX();
-        }
-        return getCheckBoxX() - ACTION_GAP - actionButton.getWidth();
+    private int getSelectionRightBound() {
+        return Math.max(x, getRailLeft() - SELECTION_RAIL_GAP);
+    }
+
+    private int getRailLeft() {
+        return getPrimarySlotLeft();
+    }
+
+    private int getDeleteLeft() {
+        return getDeleteSlotLeft();
+    }
+
+    private int getMoveHereLeft() {
+        return getDeleteSlotLeft();
+    }
+
+    private int getCreateLeft() {
+        return getPrimarySlotLeft();
+    }
+
+    private int getDeleteSlotLeft() {
+        return getCheckBoxX() - ACTION_GAP - ACTION_BUTTON_WIDTH;
+    }
+
+    private int getPrimarySlotLeft() {
+        return getDeleteSlotLeft() - ACTION_GAP - ACTION_BUTTON_WIDTH;
     }
 
     private int getRightZoneStart() {
-        int countWidth = markedCount <= 0 ? -ACTION_GAP : font.width("[" + markedCount + "]");
-        return getActionLeft() - ACTION_GAP - countWidth - COUNTERS_RIGHT_GAP;
+        if (markedCount <= 0) {
+            return getRailTextRight();
+        }
+
+        int markedTextWidth = font.width("[" + markedCount + "]");
+        return getRailTextRight() - markedTextWidth - ACTION_GAP;
+    }
+
+    private int getRailTextRight() {
+        return getSelectionRightBound() - COUNTERS_RIGHT_GAP;
+    }
+
+    private static Tooltip getCreateTooltip(CollectionScope scope, boolean virtualRow) {
+        String key;
+        if (virtualRow) {
+            key = switch (scope) {
+                case PERSONAL_PERSISTENT -> "mapfrontiers.tooltip.create_frontier_personal";
+                case PERSONAL_SESSION -> "mapfrontiers.tooltip.create_frontier_temporary";
+                case GLOBAL_PERSISTENT -> "mapfrontiers.tooltip.create_frontier_global";
+            };
+        } else {
+            key = switch (scope) {
+                case PERSONAL_PERSISTENT -> "mapfrontiers.tooltip.create_frontier_personal_in_collection";
+                case PERSONAL_SESSION -> "mapfrontiers.tooltip.create_frontier_temporary_in_collection";
+                case GLOBAL_PERSISTENT -> "mapfrontiers.tooltip.create_frontier_global_in_collection";
+            };
+        }
+
+        return Tooltip.create(Component.translatable(key));
     }
 
     private String ellipsize(String text, int maxWidth) {
@@ -330,16 +428,30 @@ public class CollectionListElement extends FrontierListRowElement {
             return ScrollBox.ScrollElement.Action.Handled;
         }
 
-        if (shouldRenderCheckBox() && CheckBoxRenderHelper.contains(getCheckBoxX(), y + CHECKBOX_Y, event.x(), event.y())) {
+        if (shouldRenderCheckBox() && CheckBoxRenderHelper.contains(getCheckBoxX(), y + RAIL_CONTENT_Y, event.x(), event.y())) {
             markToggleRequested = true;
             return ScrollBox.ScrollElement.Action.Handled;
         }
 
-        if (isActionHovered((int) event.x(), (int) event.y())) {
-            actionRequested = true;
+        if (isDeleteHovered((int) event.x(), (int) event.y())) {
+            deleteRequested = true;
             return ScrollBox.ScrollElement.Action.Handled;
         }
 
-        return ScrollBox.ScrollElement.Action.Clicked;
+        if (isMoveHereHovered((int) event.x(), (int) event.y())) {
+            moveHereRequested = true;
+            return ScrollBox.ScrollElement.Action.Handled;
+        }
+
+        if (isCreateHovered((int) event.x(), (int) event.y())) {
+            createRequested = true;
+            return ScrollBox.ScrollElement.Action.Handled;
+        }
+
+        if (event.x() >= getSelectionRightBound()) {
+            return ScrollBox.ScrollElement.Action.None;
+        }
+
+        return ScrollBox.ScrollElement.Action.Handled;
     }
 }
