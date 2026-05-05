@@ -32,7 +32,7 @@ public class ScrollBox extends AbstractContainerWidget {
     private static final int SCROLLBAR_AREA_WIDTH = 12;
     private static final int SCROLLBAR_WIDTH = 8;
 
-    private final int defaultElementHeight;
+    private final int scrollStep;
     private int scrollOffset = 0;
     private int scrollBarPos = 0;
     private int scrollBarHeight = 0;
@@ -46,25 +46,18 @@ public class ScrollBox extends AbstractContainerWidget {
     private Consumer<ScrollElement> elementDeletedCallback;
     private Consumer<ScrollElement> elementDeletePressedCallback;
 
-    public ScrollBox(int height, int elementWidth, int elementHeight) {
-        super(0, 0, elementWidth + SCROLLBAR_AREA_WIDTH, Math.max(height, elementHeight),
+    public ScrollBox(int viewportHeight, int elementWidth, int scrollStep) {
+        super(0, 0, elementWidth + SCROLLBAR_AREA_WIDTH, Math.max(1, viewportHeight),
                 Component.empty(), AbstractScrollArea.defaultSettings(SCROLLBAR_WIDTH));
         elements = new ArrayList<>();
         selected = -1;
         focused = -1;
-        defaultElementHeight = elementHeight;
-        this.height = Math.max(defaultElementHeight, height / defaultElementHeight * defaultElementHeight);
-        if (this.height == 0) {
-            this.height = defaultElementHeight;
-        }
+        this.scrollStep = Math.max(1, scrollStep);
+        this.height = Math.max(1, viewportHeight);
     }
 
-    public static ScrollBox withRows(int rows, int elementWidth, int elementHeight) {
-        return new ScrollBox(heightForRows(rows, elementHeight), elementWidth, elementHeight);
-    }
-
-    public static int heightForRows(int rows, int elementHeight) {
-        return Math.max(1, rows) * elementHeight;
+    public static int rowsToHeight(int rows, int rowHeight) {
+        return Math.max(1, rows) * Math.max(1, rowHeight);
     }
 
     public void setElementClickedCallback(Consumer<ScrollElement> callback) {
@@ -290,17 +283,18 @@ public class ScrollBox extends AbstractContainerWidget {
     @Override
     public void setHeight(int height) {
         super.setHeight(height);
-        this.height = Math.max(defaultElementHeight, this.height / defaultElementHeight * defaultElementHeight);
-        if (this.height == 0) {
-            this.height = defaultElementHeight;
-        }
+        this.height = Math.max(1, this.height);
         clampScrollOffset();
         updateScrollWindow();
         updateScrollBar();
     }
 
-    public void setVisibleRows(int rows) {
-        setHeight(Math.max(1, rows) * defaultElementHeight);
+    public void setViewportHeight(int viewportHeight) {
+        setHeight(viewportHeight);
+    }
+
+    public void setViewportSize(int elementWidth, int viewportHeight) {
+        setSize(elementWidth, viewportHeight);
     }
 
     @Override
@@ -322,7 +316,7 @@ public class ScrollBox extends AbstractContainerWidget {
                 return false;
             }
 
-            scrollOffset += amount * defaultElementHeight;
+            scrollOffset += amount * scrollStep;
             clampScrollOffset();
             updateScrollWindow();
             updateScrollBar();
@@ -339,7 +333,7 @@ public class ScrollBox extends AbstractContainerWidget {
 
     @Override
     protected double scrollRate() {
-        return defaultElementHeight;
+        return scrollStep;
     }
 
     public void scrollBottom() {

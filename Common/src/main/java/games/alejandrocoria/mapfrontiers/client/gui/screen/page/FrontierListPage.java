@@ -78,7 +78,7 @@ public class FrontierListPage extends PageScreen
     private static final int FRONTIERS_ELEMENT_HEIGHT = 25;
     private static final int FILTER_WIDTH = 200;
     private static final int FILTER_ELEMENT_HEIGHT = 15;
-    private static final int FRONTIERS_MIN_ROWS = 7;
+    private static final int FRONTIERS_MIN_VIEWPORT_HEIGHT = 175;
     private static final int FILTER_SHAPE_MIN_ROWS = 4;
     private static final int FILTER_OWNER_MIN_ROWS = 3;
     private static final int FILTER_DIMENSION_MIN_ROWS = 2;
@@ -155,15 +155,15 @@ public class FrontierListPage extends PageScreen
 
     @Override
     protected void resetContentToMinimumSize() {
-        frontiers.setVisibleRows(FRONTIERS_MIN_ROWS);
-        filterDimension.setVisibleRows(FILTER_DIMENSION_MIN_ROWS);
+        frontiers.setViewportHeight(FRONTIERS_MIN_VIEWPORT_HEIGHT);
+        filterDimension.setViewportHeight(ScrollBox.rowsToHeight(FILTER_DIMENSION_MIN_ROWS, FILTER_ELEMENT_HEIGHT));
     }
 
     @Override
     protected void resizeContentToAvailableSpace() {
-        frontiers.setSize(FRONTIERS_WIDTH, Math.max(ScrollBox.heightForRows(FRONTIERS_MIN_ROWS, FRONTIERS_ELEMENT_HEIGHT),
+        frontiers.setViewportSize(FRONTIERS_WIDTH, Math.max(FRONTIERS_MIN_VIEWPORT_HEIGHT,
                 getAvailableScrollHeightInsideBackground(frontiers)));
-        filterDimension.setSize(FILTER_WIDTH, Math.max(ScrollBox.heightForRows(FILTER_DIMENSION_MIN_ROWS, FILTER_ELEMENT_HEIGHT),
+        filterDimension.setViewportSize(FILTER_WIDTH, Math.max(ScrollBox.rowsToHeight(FILTER_DIMENSION_MIN_ROWS, FILTER_ELEMENT_HEIGHT),
                 getAvailableScrollHeightInsideBackground(filterDimension)));
     }
 
@@ -224,7 +224,7 @@ public class FrontierListPage extends PageScreen
     }
 
     private void buildFrontiersList(GridLayout mainLayout) {
-        frontiers = ScrollBox.withRows(FRONTIERS_MIN_ROWS, FRONTIERS_WIDTH, FRONTIERS_ELEMENT_HEIGHT);
+        frontiers = new ScrollBox(FRONTIERS_MIN_VIEWPORT_HEIGHT, FRONTIERS_WIDTH, FRONTIERS_ELEMENT_HEIGHT);
         frontiers.setElementClickedCallback(this::onFrontierRowClicked);
         mainLayout.addChild(frontiers, 1, 0, LayoutSettings.defaults().alignHorizontallyRight());
     }
@@ -308,7 +308,7 @@ public class FrontierListPage extends PageScreen
     }
 
     private ScrollBox createFilterScrollBox(int rows) {
-        return ScrollBox.withRows(rows, FILTER_WIDTH, FILTER_ELEMENT_HEIGHT);
+        return new ScrollBox(ScrollBox.rowsToHeight(rows, FILTER_ELEMENT_HEIGHT), FILTER_WIDTH, FILTER_ELEMENT_HEIGHT);
     }
 
     private <E extends Enum<E>> void addEnumFilterOptions(ScrollBox filter, EnumConfigEntry<E> entry) {

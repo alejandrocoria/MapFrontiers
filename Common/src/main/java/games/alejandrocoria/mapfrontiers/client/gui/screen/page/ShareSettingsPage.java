@@ -96,7 +96,7 @@ public class ShareSettingsPage extends PageScreen
         updateSettings = header.addChild(new MultiLineTextWidget(UPDATE_SETTINGS_LABEL.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
         updateSettings.setCentered(true);
 
-        users = ScrollBox.withRows(USERS_MIN_ROWS, USERS_WIDTH, USERS_ELEMENT_HEIGHT);
+        users = new ScrollBox(ScrollBox.rowsToHeight(USERS_MIN_ROWS, USERS_ELEMENT_HEIGHT), USERS_WIDTH, USERS_ELEMENT_HEIGHT);
         users.setElementDeletePressedCallback(element -> {
             if (ClientConfig.ASK_CONFIRMATION_USER_DELETE.get()) {
                 new DeleteConfirmationDialog(
@@ -182,12 +182,12 @@ public class ShareSettingsPage extends PageScreen
 
     @Override
     protected void resetContentToMinimumSize() {
-        users.setVisibleRows(USERS_MIN_ROWS);
+        users.setViewportHeight(ScrollBox.rowsToHeight(USERS_MIN_ROWS, USERS_ELEMENT_HEIGHT));
     }
 
     @Override
     protected void resizeContentToAvailableSpace() {
-        users.setSize(USERS_WIDTH, Math.max(ScrollBox.heightForRows(USERS_MIN_ROWS, USERS_ELEMENT_HEIGHT),
+        users.setViewportSize(USERS_WIDTH, Math.max(ScrollBox.rowsToHeight(USERS_MIN_ROWS, USERS_ELEMENT_HEIGHT),
                 availableHeight(USERS_VERTICAL_MARGIN)));
     }
 

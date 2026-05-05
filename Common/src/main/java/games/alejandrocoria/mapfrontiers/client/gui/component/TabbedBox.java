@@ -144,13 +144,11 @@ public class TabbedBox implements Layout {
     }
 
     public <T extends LayoutElement> T addChild(T layoutElement, int tab) {
-        contents.get(tab).addChild(layoutElement);
-        return layoutElement;
+        return addChild(layoutElement, tab, LayoutSettings.defaults().alignHorizontallyCenter().alignVerticallyTop());
     }
 
     public <T extends LayoutElement> T addChild(T layoutElement, int tab, LayoutSettings layoutSettings) {
-        contents.get(tab).addChild(layoutElement, layoutSettings);
-        return layoutElement;
+        return contents.get(tab).addChild(layoutElement, layoutSettings);
     }
 
     @Override
