@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common.frontier;
 
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.util.SourcePluginIdHelper;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -61,7 +62,7 @@ public final class FrontierCreateSpec {
         this.dimension = Objects.requireNonNull(dimension, "dimension");
         this.lifetime = Objects.requireNonNull(lifetime, "lifetime");
         this.collectionId = collectionId;
-        this.sourcePluginId = sourcePluginId;
+        this.sourcePluginId = SourcePluginIdHelper.normalize(sourcePluginId);
         this.name1 = Objects.requireNonNull(name1, "name1");
         this.name2 = Objects.requireNonNull(name2, "name2");
         this.color = color;

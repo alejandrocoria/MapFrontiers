@@ -5,6 +5,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
+import games.alejandrocoria.mapfrontiers.common.util.SourcePluginIdHelper;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -81,7 +82,7 @@ public class CollectionData {
         owner.readFromNBT(nbt.getCompoundOrEmpty("owner"));
         name = nbt.getStringOr("name", "");
         color = NbtReadHelper.requireInt(nbt, "color");
-        sourcePluginId = nbt.getStringOr("sourcePluginId", null);
+        setSourcePluginId(nbt.getStringOr("sourcePluginId", null));
 
         if (nbt.contains("copiedFrom")) {
             copiedFrom = new FrontierData.CopiedFrom();
@@ -142,11 +143,7 @@ public class CollectionData {
         owner.fromBytes(buf);
         name = buf.readUtf(MAX_NAME_CHARACTERS);
         color = buf.readInt();
-        if (buf.readBoolean()) {
-            sourcePluginId = buf.readUtf();
-        } else {
-            sourcePluginId = null;
-        }
+        setSourcePluginId(buf.readBoolean() ? buf.readUtf() : null);
 
         if (buf.readBoolean()) {
             copiedFrom = new FrontierData.CopiedFrom();
@@ -264,7 +261,7 @@ public class CollectionData {
     }
 
     public void setSourcePluginId(@Nullable String sourcePluginId) {
-        this.sourcePluginId = sourcePluginId;
+        this.sourcePluginId = SourcePluginIdHelper.normalize(sourcePluginId);
     }
 
     public @Nullable String getSourcePluginId() {

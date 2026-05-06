@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
+import games.alejandrocoria.mapfrontiers.common.util.SourcePluginIdHelper;
 import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.client.Minecraft;
@@ -693,7 +694,7 @@ public class FrontierData {
     }
 
     public void setSourcePluginId(@Nullable String sourcePluginId) {
-        this.sourcePluginId = sourcePluginId;
+        this.sourcePluginId = SourcePluginIdHelper.normalize(sourcePluginId);
     }
 
     public @Nullable String getSourcePluginId() {
@@ -729,7 +730,7 @@ public class FrontierData {
         } catch (IllegalArgumentException e) {
             throw new InvalidNbtFormatException("Invalid lifetime for frontier " + id + ": " + e.getMessage(), e);
         }
-        sourcePluginId = nbt.getStringOr("sourcePluginId", null);
+        setSourcePluginId(nbt.getStringOr("sourcePluginId", null));
 
         owner = new SettingsUser();
         owner.readFromNBT(nbt.getCompoundOrEmpty("owner"));
@@ -940,11 +941,7 @@ public class FrontierData {
         personal = buf.readBoolean();
         lifetime = readLifetimeFromBytes(buf);
         validateTypeAndLifetime(personal, lifetime);
-        if (buf.readBoolean()) {
-            sourcePluginId = buf.readUtf();
-        } else {
-            sourcePluginId = null;
-        }
+        setSourcePluginId(buf.readBoolean() ? buf.readUtf() : null);
         owner = new SettingsUser();
         owner.fromBytes(buf);
         visibilityData.fromBytes(buf);
