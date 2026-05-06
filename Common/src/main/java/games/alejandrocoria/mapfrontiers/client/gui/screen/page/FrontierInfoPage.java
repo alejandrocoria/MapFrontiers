@@ -20,6 +20,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDi
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteFrontierConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.PathStyleDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.VisibilityDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.util.SourcePluginUiHelper;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
@@ -81,8 +82,6 @@ public class FrontierInfoPage extends PageScreen
     private static final String COLLECTION_KEY = "mapfrontiers.collection";
     private static final String ORIGINAL_OWNER_KEY = "mapfrontiers.original_owner";
     private static final String DIMENSION_KEY = "mapfrontiers.dimension";
-    private static final String SOURCE_PLUGIN_KEY = "mapfrontiers.source_plugin";
-    private static final String TEMPORARY_SOURCE_PLUGIN_KEY = "mapfrontiers.temporary_source_plugin";
     private static final String TEMPORARY_KEY = "mapfrontiers.temporary";
     private static final String AREA_KEY = "mapfrontiers.area";
     private static final String LENGTH_KEY = "mapfrontiers.length";
@@ -254,10 +253,19 @@ public class FrontierInfoPage extends PageScreen
         mainLayout.addChild(nameColumn, 0, 1, 1, 2);
 
         LinearLayout headerRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
-        Component dimension = Component.translatable(DIMENSION_KEY, frontier.getDimension().identifier().toString());
         headerRow.addChild(new StringWidget(NAME_LABEL, font).setColor(ColorConstants.WHITE));
-        headerRow.addChild(SpacerElement.width(Math.max(0, NAME_SECTION_WIDTH - font.width(NAME_LABEL.getVisualOrderText()) - font.width(dimension.getVisualOrderText()) - LayoutConstants.SPACING_TINY * 2)));
-        headerRow.addChild(new StringWidget(dimension, font).setColor(ColorConstants.TEXT_DIMENSION));
+        SourcePluginUiHelper.SourcePluginDisplay sourcePluginDisplay = SourcePluginUiHelper.createDisplay(
+                font,
+                frontier.getSourcePluginId(),
+                NAME_SECTION_WIDTH - font.width(NAME_LABEL.getVisualOrderText()) - LayoutConstants.SPACING_TINY * 2
+        );
+        if (sourcePluginDisplay != null) {
+            int sourceWidth = font.width(sourcePluginDisplay.text().getVisualOrderText());
+            headerRow.addChild(SpacerElement.width(Math.max(0, NAME_SECTION_WIDTH - font.width(NAME_LABEL.getVisualOrderText()) - sourceWidth - LayoutConstants.SPACING_TINY * 2)));
+            StringWidget sourceWidget = new StringWidget(sourcePluginDisplay.text(), font).setColor(ColorConstants.TEXT);
+            sourceWidget.setTooltip(sourcePluginDisplay.tooltip());
+            headerRow.addChild(sourceWidget);
+        }
         nameColumn.addChild(headerRow);
 
         textName1 = createNameTextBox(frontier.getName1(), value -> {
@@ -274,17 +282,37 @@ public class FrontierInfoPage extends PageScreen
         });
         nameColumn.addChild(textName2);
 
-        nameColumn.addChild(SpacerElement.height(0));
+        LinearLayout collectionInfoColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_TINY);
+        nameColumn.addChild(collectionInfoColumn);
 
-        Component sourceInfo = Component.empty();
-        if (frontier.getSourcePluginId() != null) {
-            sourceInfo = frontier.isSessionOnly()
-                    ? Component.translatable(TEMPORARY_SOURCE_PLUGIN_KEY, frontier.getSourcePluginId())
-                    : Component.translatable(SOURCE_PLUGIN_KEY, frontier.getSourcePluginId());
-        } else if (frontier.isSessionOnly()) {
-            sourceInfo = Component.translatable(TEMPORARY_KEY);
+        LinearLayout collectionHeaderRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
+        collectionHeaderRow.defaultCellSetting().alignVerticallyMiddle();
+        collectionInfoColumn.addChild(collectionHeaderRow);
+
+        Component dimension = Component.translatable(DIMENSION_KEY, frontier.getDimension().identifier().toString());
+        int dimensionWidth = font.width(dimension.getVisualOrderText());
+        boolean hasCollection = frontier.hasCollection();
+        if (hasCollection) {
+            Component collectionLabel = Component.translatable(COLLECTION_KEY);
+            collectionHeaderRow.addChild(new StringWidget(collectionLabel, font).setColor(ColorConstants.WHITE));
+            int collectionLabelWidth = font.width(collectionLabel.getVisualOrderText());
+            collectionHeaderRow.addChild(SpacerElement.width(Math.max(0,
+                    NAME_SECTION_WIDTH - collectionLabelWidth - dimensionWidth - LayoutConstants.SPACING_TINY * 2)));
+        } else {
+            collectionHeaderRow.addChild(SpacerElement.width(Math.max(0, NAME_SECTION_WIDTH - dimensionWidth - LayoutConstants.SPACING_TINY)));
         }
-        nameColumn.addChild(new StringWidget(sourceInfo, font).setColor(ColorConstants.TEXT_SOURCE_PLUGIN));
+        collectionHeaderRow.addChild(new StringWidget(dimension, font).setColor(ColorConstants.TEXT_DIMENSION));
+
+        if (hasCollection) {
+            Component collectionName = Component.empty();
+            CollectionData collection = MapFrontiersClient.getCollection(frontier.getCollectionId());
+            if (collection != null) {
+                collectionName = StringUtil.isBlank(collection.getName())
+                        ? Component.translatable("mapfrontiers.unnamed", ChatFormatting.ITALIC)
+                        : Component.literal(collection.getName());
+            }
+            collectionInfoColumn.addChild(new StringWidget(collectionName, font).setColor(ColorConstants.WHITE));
+        }
 
         LinearLayout visibilityRow = LinearLayout.horizontal().spacing(MAIN_LAYOUT_SPACING);
         visibilityRow.defaultCellSetting().alignVerticallyMiddle();
@@ -334,20 +362,10 @@ public class FrontierInfoPage extends PageScreen
             ownerWidget.setTooltip(ownerTooltip);
         }
 
-        if (frontier.hasCollection()) {
-            CollectionData collection = MapFrontiersClient.getCollection(frontier.getCollectionId());
-            if (collection != null) {
-                Component collectionName = StringUtil.isBlank(collection.getName())
-                        ? Component.translatable("mapfrontiers.unnamed", ChatFormatting.ITALIC)
-                        : Component.literal(collection.getName());
-                infoColumn.addChild(new StringWidget(Component.translatable(COLLECTION_KEY, collectionName), font).setColor(ColorConstants.WHITE));
-            }
-        }
-
         LinearLayout identityRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         infoColumn.addChild(identityRow);
 
-        identityRow.addChild(new StringWidget(frontier.getPersonal() ? PERSONAL_LABEL : GLOBAL_LABEL, font).setColor(ColorConstants.WHITE));
+        identityRow.addChild(new StringWidget(getFrontierTypeLabel(), font).setColor(ColorConstants.WHITE));
         buttonChangeToPersonalGlobal = identityRow.addChild(new IconButton(IconButton.Type.Swap, b -> onChangePersonalGlobalPressed()));
         buttonChangeToPersonalGlobal.setTooltip(frontier.getPersonal() ? CHANGE_TO_GLOBAL_TOOLTIP : CHANGE_TO_PERSONAL_TOOLTIP);
 
@@ -1032,4 +1050,13 @@ public class FrontierInfoPage extends PageScreen
             updateUndoRedoVisibility();
         }
     }
+
+    private Component getFrontierTypeLabel() {
+        Component baseType = frontier.getPersonal() ? PERSONAL_LABEL : GLOBAL_LABEL;
+        if (frontier.isSessionOnly()) {
+            return Component.translatable(TEMPORARY_KEY).append(Component.literal(" ")).append(baseType);
+        }
+        return baseType;
+    }
+
 }

@@ -4,8 +4,11 @@ import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.frontier.CollectionScope;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
+import games.alejandrocoria.mapfrontiers.client.gui.util.SourcePluginUiHelper;
+import games.alejandrocoria.mapfrontiers.client.gui.util.TextEllipsizeHelper;
 import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -36,6 +39,7 @@ public class CollectionListElement extends FrontierListRowElement {
     private static final int COUNTERS_GAP = 4;
     private static final int COUNTERS_RIGHT_GAP = 2;
     private static final int TITLE_HOVER_X = 14;
+    private static final int SOURCE_PLUGIN_GAP = 2;
     private static final int TITLE_BG_TOP_OFFSET = -2;
     private static final int TITLE_BG_BOTTOM_OFFSET = 8;
     private static final int TITLE_BG_FADE_WIDTH = 6;
@@ -49,7 +53,6 @@ public class CollectionListElement extends FrontierListRowElement {
     private static final int MARKED_BADGE_TEXT_LEFT = 3;
     private static final int MARKED_BADGE_WIDTH_EXTRA = 5;
     private static final int MARKED_BADGE_GAP = 4;
-    private static final String ELLIPSIS = "...";
     private static final int RAIL_HOVER_COLOR = 0xA0202020;
     private static final Tooltip MOVE_HERE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.tooltip.move_here"));
     private static final Tooltip DELETE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.delete"));
@@ -64,6 +67,7 @@ public class CollectionListElement extends FrontierListRowElement {
     private final boolean checkboxVisible;
     private final boolean checkboxVisibleOnHover;
     private final int markedCount;
+    private final @Nullable StringWidget sourcePluginWidget;
     private final @Nullable IconButton createButton;
     private final @Nullable IconButton moveHereButton;
     private final @Nullable IconButton deleteButton;
@@ -105,6 +109,7 @@ public class CollectionListElement extends FrontierListRowElement {
         this.checkboxVisibleOnHover = checkboxVisibleOnHover;
         this.markedCount = markedCount;
         this.eligibleFrontierIds = List.copyOf(eligibleFrontierIds);
+        sourcePluginWidget = createSourcePluginWidget();
 
         collapseToggleButton = new IconButton(collapsed ? IconButton.Type.Collapsed : IconButton.Type.Expanded, (button) -> {});
         createButton = actionState == ActionState.CREATE_FRONTIER ? new IconButton(IconButton.Type.Add, (button) -> {}) : null;
@@ -148,6 +153,9 @@ public class CollectionListElement extends FrontierListRowElement {
             deleteButton.setX(getDeleteLeft());
         }
         checkBoxButton.setX(getCheckBoxX());
+        if (sourcePluginWidget != null) {
+            sourcePluginWidget.setX(getSourcePluginX());
+        }
     }
 
     @Override
@@ -164,6 +172,9 @@ public class CollectionListElement extends FrontierListRowElement {
             deleteButton.setY(this.y + RAIL_CONTENT_Y);
         }
         checkBoxButton.setY(this.y + RAIL_CONTENT_Y);
+        if (sourcePluginWidget != null) {
+            sourcePluginWidget.setY(this.y + 4);
+        }
     }
 
     public @Nullable CollectionData getCollection() {
@@ -230,7 +241,7 @@ public class CollectionListElement extends FrontierListRowElement {
         graphics.fill(x + width - 2, y + 2, x + width, y + height, color);
 
         collapseToggleButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
-        renderTexts(graphics, mouseX, mouseY);
+        renderTexts(graphics, mouseX, mouseY, partialTicks);
         renderMarkedCount(graphics);
         renderActionButtons(graphics, mouseX, mouseY, partialTicks);
         renderCheckBox(graphics, mouseX, mouseY, partialTicks);
@@ -243,23 +254,30 @@ public class CollectionListElement extends FrontierListRowElement {
         graphics.outline(left, top, width - 4, height - 2, ColorConstants.WHITE);
     }
 
-    private void renderTexts(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+    private void renderTexts(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         int titleColor = ColorConstants.TEXT;
         if (virtualRow) {
             titleColor = ColorConstants.VIRTUAL_COLLECTION;
         }
 
+        int titleX = getTitleX();
         int rightZoneStart = getRightZoneStart();
         int countersX = rightZoneStart - font.width(counters);
-        int titleX = x + TITLE_X;
         int titleMaxWidth = countersX - titleX - COUNTERS_GAP;
         String visibleTitle = ellipsize(title, titleMaxWidth);
 
         boolean titleTruncated = !visibleTitle.equals(title);
         boolean showExpandedTitle = titleTruncated && isTitleAreaHovered(mouseX, mouseY, titleX, visibleTitle);
 
+        renderSourcePlugin(graphics, mouseX, mouseY, partialTicks);
         graphics.text(font, counters, countersX, y + TITLE_Y, ColorConstants.TEXT_DIMENSION);
         drawTitle(graphics, titleX, titleColor, visibleTitle, showExpandedTitle);
+    }
+
+    private void renderSourcePlugin(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        if (sourcePluginWidget != null) {
+            sourcePluginWidget.extractRenderState(graphics, mouseX, mouseY, partialTicks);
+        }
     }
 
     private void renderMarkedCount(GuiGraphicsExtractor graphics) {
@@ -359,6 +377,22 @@ public class CollectionListElement extends FrontierListRowElement {
         return getRailTextRight() - getMarkedBadgeWidth() - MARKED_BADGE_GAP;
     }
 
+    private int getTitleX() {
+        return x + TITLE_X + getSourcePluginOffset();
+    }
+
+    private int getSourcePluginOffset() {
+        if (sourcePluginWidget == null) {
+            return 0;
+        }
+
+        return sourcePluginWidget.getWidth() + SOURCE_PLUGIN_GAP;
+    }
+
+    private int getSourcePluginX() {
+        return x + TITLE_X;
+    }
+
     private int getRailTextRight() {
         return getSelectionRightBound() - COUNTERS_RIGHT_GAP;
     }
@@ -398,12 +432,7 @@ public class CollectionListElement extends FrontierListRowElement {
             return text;
         }
 
-        int ellipsisWidth = font.width(ELLIPSIS);
-        if (ellipsisWidth >= maxWidth) {
-            return font.plainSubstrByWidth(ELLIPSIS, maxWidth);
-        }
-
-        return font.plainSubstrByWidth(text, maxWidth - ellipsisWidth) + ELLIPSIS;
+        return TextEllipsizeHelper.ellipsizeByWidth(font, text, maxWidth);
     }
 
     private void drawTitle(GuiGraphicsExtractor graphics, int titleX, int titleColor, String visibleTitle, boolean showExpandedTitle) {
@@ -427,6 +456,22 @@ public class CollectionListElement extends FrontierListRowElement {
         int hoverLeft = Math.max(x + TITLE_HOVER_X, titleX);
         int hoverRight = titleX + titleWidth;
         return mouseX >= hoverLeft && mouseY >= y && mouseX < hoverRight && mouseY < y + height;
+    }
+
+    private @Nullable StringWidget createSourcePluginWidget() {
+        if (collection == null) {
+            return null;
+        }
+
+        Tooltip tooltip = SourcePluginUiHelper.createTooltip(collection.getSourcePluginId());
+        if (tooltip == null) {
+            return null;
+        }
+
+        StringWidget widget = new StringWidget(SourcePluginUiHelper.createSymbolComponent(), font);
+        widget.setColor(ColorConstants.TEXT_SOURCE_PLUGIN);
+        widget.setTooltip(tooltip);
+        return widget;
     }
 
     @Override

@@ -16,6 +16,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteCollectionConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.util.SourcePluginUiHelper;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
@@ -53,10 +54,8 @@ public class CollectionInfoPage extends PageScreen {
     private static final Component PERSONAL_LABEL = Component.translatable("mapfrontiers.personal_type");
     private static final Component GLOBAL_LABEL = Component.translatable("mapfrontiers.global_type");
     private static final String TYPE_KEY = "mapfrontiers.type";
-    private static final String OWNER_KEY = "mapfrontiers.owner";
-    private static final String SOURCE_PLUGIN_KEY = "mapfrontiers.source_plugin";
-    private static final String TEMPORARY_SOURCE_PLUGIN_KEY = "mapfrontiers.temporary_source_plugin";
     private static final String TEMPORARY_KEY = "mapfrontiers.temporary";
+    private static final String OWNER_KEY = "mapfrontiers.owner";
     private static final String FRONTIERS_COUNT_KEY = "mapfrontiers.collection_frontiers_count";
     private static final String AREA_KEY = "mapfrontiers.area";
     private static final String LENGTH_KEY = "mapfrontiers.length";
@@ -110,7 +109,6 @@ public class CollectionInfoPage extends PageScreen {
     private SimpleButton buttonDone;
     private StringWidget labelPasteName;
     private StringWidget labelPasteColor;
-    private StringWidget sourceInfoLabel;
     private StringWidget ownerLabel;
     private StringWidget typeLabel;
     private StringWidget frontiersCountLabel;
@@ -163,7 +161,21 @@ public class CollectionInfoPage extends PageScreen {
         overviewColumn.defaultCellSetting().alignHorizontallyLeft();
         mainLayout.addChild(overviewColumn, 0, 0, 1, 2);
 
-        overviewColumn.addChild(new StringWidget(NAME_LABEL, font).setColor(ColorConstants.WHITE));
+        LinearLayout headerRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
+        headerRow.addChild(new StringWidget(NAME_LABEL, font).setColor(ColorConstants.WHITE));
+        SourcePluginUiHelper.SourcePluginDisplay sourcePluginDisplay = SourcePluginUiHelper.createDisplay(
+                font,
+                collection.getSourcePluginId(),
+                NAME_SECTION_WIDTH - font.width(NAME_LABEL.getVisualOrderText()) - LayoutConstants.SPACING_TINY * 2
+        );
+        if (sourcePluginDisplay != null) {
+            int sourceWidth = font.width(sourcePluginDisplay.text().getVisualOrderText());
+            headerRow.addChild(SpacerElement.width(Math.max(0, NAME_SECTION_WIDTH - font.width(NAME_LABEL.getVisualOrderText()) - sourceWidth - LayoutConstants.SPACING_TINY * 2)));
+            StringWidget sourceWidget = new StringWidget(sourcePluginDisplay.text(), font).setColor(ColorConstants.TEXT);
+            sourceWidget.setTooltip(sourcePluginDisplay.tooltip());
+            headerRow.addChild(sourceWidget);
+        }
+        overviewColumn.addChild(headerRow);
 
         textName = new TextBox(font, NAME_SECTION_WIDTH);
         textName.setMaxLength(CollectionData.MAX_NAME_CHARACTERS);
@@ -172,8 +184,6 @@ public class CollectionInfoPage extends PageScreen {
         textName.setValueChangedCallback(this::onNameChanged);
         textName.setLostFocusCallback(value -> addCurrentStateToUndo());
         overviewColumn.addChild(textName);
-
-        sourceInfoLabel = overviewColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.TEXT_SOURCE_PLUGIN));
     }
 
     private void buildInfoSection(GridLayout mainLayout) {
@@ -419,8 +429,7 @@ public class CollectionInfoPage extends PageScreen {
         }
 
         ownerLabel.setMessage(Component.translatable(OWNER_KEY, SettingsUserFormatter.getDisplayName(collection.getOwner())));
-        typeLabel.setMessage(Component.translatable(TYPE_KEY, collection.getPersonal() ? PERSONAL_LABEL : GLOBAL_LABEL));
-        sourceInfoLabel.setMessage(createSourceInfoMessage());
+        typeLabel.setMessage(Component.translatable(TYPE_KEY, getCollectionTypeLabel()));
         frontiersCountLabel.setMessage(Component.translatable(FRONTIERS_COUNT_KEY, frontiers.size()));
         areaLabel.setMessage(Component.translatable(AREA_KEY, formatMeasurement(totalArea)));
         lengthLabel.setMessage(Component.translatable(LENGTH_KEY, formatMeasurement(totalPathLength)));
@@ -618,6 +627,14 @@ public class CollectionInfoPage extends PageScreen {
         return collection.getOwner().equals(playerUser);
     }
 
+    private Component getCollectionTypeLabel() {
+        Component baseType = collection.getPersonal() ? PERSONAL_LABEL : GLOBAL_LABEL;
+        if (collection.isSessionOnly()) {
+            return Component.translatable(TEMPORARY_KEY).append(Component.literal(" ")).append(baseType);
+        }
+        return baseType;
+    }
+
     private void deleteCollection() {
         if (!canDeleteCollection()) {
             return;
@@ -628,19 +645,6 @@ public class CollectionInfoPage extends PageScreen {
         MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
         MapFrontiersClient.getOperationService().deleteCollection(collection);
         super.onClose();
-    }
-
-    private Component createSourceInfoMessage() {
-        if (collection.getSourcePluginId() != null) {
-            return collection.isSessionOnly()
-                    ? Component.translatable(TEMPORARY_SOURCE_PLUGIN_KEY, collection.getSourcePluginId())
-                    : Component.translatable(SOURCE_PLUGIN_KEY, collection.getSourcePluginId());
-        }
-        if (collection.isSessionOnly()) {
-            return Component.translatable(TEMPORARY_KEY);
-        }
-
-        return Component.empty();
     }
 
     private static String formatMeasurement(float value) {

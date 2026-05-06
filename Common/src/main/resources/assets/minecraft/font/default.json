@@ -1,0 +1,13 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "mapfrontiers:font/plugin_source_symbol.png",
+      "ascent": 8,
+      "height": 8,
+      "chars": [
+        "🧩"
+      ]
+    }
+  ]
+}

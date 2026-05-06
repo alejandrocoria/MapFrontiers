@@ -4,8 +4,11 @@ import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
+import games.alejandrocoria.mapfrontiers.client.gui.util.SourcePluginUiHelper;
+import games.alejandrocoria.mapfrontiers.client.gui.util.TextEllipsizeHelper;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import net.minecraft.ChatFormatting;
@@ -39,6 +42,7 @@ public class FrontierListElement extends FrontierListRowElement {
     private static final int RAIL_CONTENT_Y = 7;
     private static final int NAME_HOVER_X = 24;
     private static final int NAME_X = 26;
+    private static final int SOURCE_PLUGIN_GAP = 2;
     private static final int METADATA_X = 254;
     private static final int NAME_METADATA_SPACING = 2;
     private static final int MODE_BADGE_X = 2;
@@ -51,7 +55,6 @@ public class FrontierListElement extends FrontierListRowElement {
     private static final int NAME_LINE_BG_TOP_OFFSET = -1;
     private static final int NAME_LINE_BG_BOTTOM_OFFSET = 9;
     private static final int NAME_LINE_BG_FADE_WIDTH = 6;
-    private static final String ELLIPSIS = "...";
     private static final int RAIL_HOVER_COLOR = 0xA0202020;
     private static final Tooltip DELETE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.delete"));
     private final Font font;
@@ -65,6 +68,7 @@ public class FrontierListElement extends FrontierListRowElement {
     private final boolean checkboxVisible;
     private final boolean checkboxVisibleOnHover;
     private final CheckBoxButton checkBoxButton;
+    private final @Nullable StringWidget sourcePluginWidget;
     private final @Nullable IconButton visibilityButton;
     private final @Nullable IconButton deleteButton;
     private boolean markToggleRequested;
@@ -81,6 +85,7 @@ public class FrontierListElement extends FrontierListRowElement {
         this.checkboxVisible = checkboxVisible;
         this.checkboxVisibleOnHover = checkboxVisibleOnHover;
         checkBoxButton = new CheckBoxButton(checked, button -> {});
+        sourcePluginWidget = createSourcePluginWidget();
 
         boolean visibleNow = frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier);
         visibilityButton = visibilityEnabled ? new IconButton(visibleNow ? IconButton.Type.Hide : IconButton.Type.Show, button -> {}) : null;
@@ -146,6 +151,9 @@ public class FrontierListElement extends FrontierListRowElement {
             deleteButton.setX(getDeleteLeft());
         }
         checkBoxButton.setX(getCheckBoxX());
+        if (sourcePluginWidget != null) {
+            sourcePluginWidget.setX(getSourcePluginX());
+        }
     }
 
     @Override
@@ -158,6 +166,9 @@ public class FrontierListElement extends FrontierListRowElement {
             deleteButton.setY(this.y + RAIL_CONTENT_Y);
         }
         checkBoxButton.setY(this.y + RAIL_CONTENT_Y);
+        if (sourcePluginWidget != null) {
+            sourcePluginWidget.setY(this.y + 1);
+        }
     }
 
     @Override
@@ -168,26 +179,28 @@ public class FrontierListElement extends FrontierListRowElement {
             graphics.fill(selectionRightBound, y, x + width, y + height, RAIL_HOVER_COLOR);
         }
 
+        int rowContentX = x + LEFT_PADDING;
         int hiddenColor = ColorConstants.TEXT_DARK;
-        int maxNameWidth = METADATA_X - NAME_X - NAME_METADATA_SPACING;
+        int nameX = getNameX();
+        int maxNameWidth = METADATA_X - nameX - NAME_METADATA_SPACING;
         String visibleName1 = ellipsize(name1, maxNameWidth);
         String visibleName2 = ellipsize(name2, maxNameWidth);
         boolean name1Truncated = !visibleName1.equals(name1);
         boolean name2Truncated = !visibleName2.equals(name2);
-        boolean showExpandedNames = isNameAreaHovered(mouseX, mouseY) && (name1Truncated || name2Truncated);
+        boolean showExpandedNames = isNameAreaHovered(mouseX, mouseY, rowContentX, nameX) && (name1Truncated || name2Truncated);
 
         graphics.fill(x, y, x + 2, y + height, collectionColor);
         graphics.fill(x + width - 2, y, x + width, y + height, collectionColor);
 
-        int rowContentX = x + LEFT_PADDING;
         graphics.text(font, owner, rowContentX + METADATA_X, y + 4, ColorConstants.TEXT);
         graphics.text(font, dimension, rowContentX + METADATA_X, y + 14, ColorConstants.TEXT_DIMENSION);
+        renderSourcePlugin(graphics, mouseX, mouseY, partialTicks);
 
         int nameColor = selected ? ColorConstants.TEXT_HIGHLIGHT : ColorConstants.TEXT;
         drawNameLine(graphics, name1, visibleName1, name1Truncated, showExpandedNames, NAME_LINE_1_Y,
-                frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier), nameColor, hiddenColor, rowContentX);
+                frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier), nameColor, hiddenColor, rowContentX, nameX);
         drawNameLine(graphics, name2, visibleName2, name2Truncated, showExpandedNames, NAME_LINE_2_Y,
-                frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier), nameColor, hiddenColor, rowContentX);
+                frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier), nameColor, hiddenColor, rowContentX, nameX);
 
         drawModeBadge(graphics, selected, rowContentX);
         renderActionButtons(graphics, mouseX, mouseY, partialTicks);
@@ -217,6 +230,12 @@ public class FrontierListElement extends FrontierListRowElement {
         }
         if (deleteButton != null && isHovered) {
             deleteButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
+        }
+    }
+
+    private void renderSourcePlugin(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        if (sourcePluginWidget != null) {
+            sourcePluginWidget.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         }
     }
 
@@ -265,12 +284,13 @@ public class FrontierListElement extends FrontierListRowElement {
                               boolean visible,
                               int visibleColor,
                               int hiddenColor,
-                              int rowContentX) {
+                              int rowContentX,
+                              int nameX) {
         String renderedName = showExpandedNames && truncated ? fullName : visibleName;
 
         if (showExpandedNames && truncated) {
             int textWidth = font.width(fullName);
-            int bgLeft = rowContentX + NAME_X - 1;
+            int bgLeft = rowContentX + nameX - 1;
             int bgOpaqueRight = bgLeft + textWidth + 2;
             graphics.fill(bgLeft, y + lineY + NAME_LINE_BG_TOP_OFFSET, bgOpaqueRight, y + lineY + NAME_LINE_BG_BOTTOM_OFFSET, ColorConstants.SCROLL_ELEMENT_SELECTED);
             graphics.blit(RenderPipelines.GUI_TEXTURED, NAME_FADE_TEXTURE, bgOpaqueRight, y + lineY + NAME_LINE_BG_TOP_OFFSET, 0, 0,
@@ -279,9 +299,9 @@ public class FrontierListElement extends FrontierListRowElement {
         }
 
         if (visible) {
-            graphics.text(font, renderedName, rowContentX + NAME_X, y + lineY, visibleColor);
+            graphics.text(font, renderedName, rowContentX + nameX, y + lineY, visibleColor);
         } else {
-            graphics.text(font, ChatFormatting.STRIKETHROUGH + renderedName, rowContentX + NAME_X, y + lineY, hiddenColor);
+            graphics.text(font, ChatFormatting.STRIKETHROUGH + renderedName, rowContentX + nameX, y + lineY, hiddenColor);
         }
     }
 
@@ -290,17 +310,40 @@ public class FrontierListElement extends FrontierListRowElement {
             return text;
         }
 
-        int ellipsisWidth = font.width(ELLIPSIS);
-        if (ellipsisWidth >= maxWidth) {
-            return font.plainSubstrByWidth(ELLIPSIS, maxWidth);
-        }
-
-        return font.plainSubstrByWidth(text, maxWidth - ellipsisWidth) + ELLIPSIS;
+        return TextEllipsizeHelper.ellipsizeByWidth(font, text, maxWidth);
     }
 
-    private boolean isNameAreaHovered(int mouseX, int mouseY) {
-        int rowContentX = x + LEFT_PADDING;
-        return mouseX >= rowContentX + NAME_HOVER_X && mouseY >= y && mouseX < rowContentX + METADATA_X && mouseY < y + height;
+    private boolean isNameAreaHovered(int mouseX, int mouseY, int rowContentX, int nameX) {
+        int hoverLeft = Math.max(rowContentX + NAME_HOVER_X, rowContentX + nameX - 1);
+        return mouseX >= hoverLeft && mouseY >= y && mouseX < rowContentX + METADATA_X && mouseY < y + height;
+    }
+
+    private @Nullable StringWidget createSourcePluginWidget() {
+        Tooltip tooltip = SourcePluginUiHelper.createTooltip(frontier.getSourcePluginId());
+        if (tooltip == null) {
+            return null;
+        }
+
+        StringWidget widget = new StringWidget(SourcePluginUiHelper.createSymbolComponent(), font, height - 1);
+        widget.setColor(ColorConstants.TEXT_SOURCE_PLUGIN);
+        widget.setTooltip(tooltip);
+        return widget;
+    }
+
+    private int getNameX() {
+        return NAME_X + getSourcePluginOffset();
+    }
+
+    private int getSourcePluginOffset() {
+        if (sourcePluginWidget == null) {
+            return 0;
+        }
+
+        return sourcePluginWidget.getWidth() + SOURCE_PLUGIN_GAP;
+    }
+
+    private int getSourcePluginX() {
+        return x + LEFT_PADDING + NAME_X;
     }
 
     private int getCheckBoxX() {
