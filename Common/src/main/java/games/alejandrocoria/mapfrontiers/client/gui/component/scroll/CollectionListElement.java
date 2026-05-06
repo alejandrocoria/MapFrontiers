@@ -31,7 +31,7 @@ public class CollectionListElement extends FrontierListRowElement {
     }
 
     private static final Identifier NAME_FADE_TEXTURE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/frontier_list/name_fade.png");
-    private static final int CONTENT_X = 14;
+    private static final int TITLE_X = 15;
     private static final int TITLE_Y = 6;
     private static final int COUNTERS_GAP = 4;
     private static final int COUNTERS_RIGHT_GAP = 1;
@@ -39,6 +39,7 @@ public class CollectionListElement extends FrontierListRowElement {
     private static final int TITLE_BG_TOP_OFFSET = -2;
     private static final int TITLE_BG_BOTTOM_OFFSET = 8;
     private static final int TITLE_BG_FADE_WIDTH = 6;
+    private static final int LEFT_PADDING = 4;
     private static final int RIGHT_PADDING = 4;
     private static final int ACTION_GAP = 2;
     private static final int ACTION_BUTTON_WIDTH = 11;
@@ -46,7 +47,6 @@ public class CollectionListElement extends FrontierListRowElement {
     private static final int RAIL_CONTENT_Y = 4;
     private static final String ELLIPSIS = "...";
     private static final int RAIL_HOVER_COLOR = 0xA0202020;
-    private static final int RAIL_SELECTED_COLOR = 0xFF202020;
     private static final Tooltip MOVE_HERE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.tooltip.move_here"));
     private static final Tooltip DELETE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.delete"));
 
@@ -133,7 +133,7 @@ public class CollectionListElement extends FrontierListRowElement {
     @Override
     protected void setX(int x) {
         super.setX(x);
-        collapseToggleButton.setX(this.x + 4);
+        collapseToggleButton.setX(this.x + LEFT_PADDING);
         if (createButton != null) {
             createButton.setX(getCreateLeft());
         }
@@ -149,7 +149,7 @@ public class CollectionListElement extends FrontierListRowElement {
     @Override
     protected void setY(int y) {
         super.setY(y);
-        collapseToggleButton.setY(this.y + 5);
+        collapseToggleButton.setY(this.y + RAIL_CONTENT_Y);
         if (createButton != null) {
             createButton.setY(this.y + RAIL_CONTENT_Y);
         }
@@ -252,7 +252,7 @@ public class CollectionListElement extends FrontierListRowElement {
 
         int rightZoneStart = getRightZoneStart();
         int countersX = rightZoneStart - font.width(counters);
-        int titleX = x + CONTENT_X;
+        int titleX = x + TITLE_X;
         int titleMaxWidth = countersX - titleX - COUNTERS_GAP;
         String visibleTitle = ellipsize(title, titleMaxWidth);
 
