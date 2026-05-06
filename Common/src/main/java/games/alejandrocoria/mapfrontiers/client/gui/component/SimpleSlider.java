@@ -103,10 +103,7 @@ public class SimpleSlider extends AbstractSliderButton
     @Override
     public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         int lineColor = ((AbstractSliderButtonAccessor) this).getCanChangeValue() ? ColorConstants.SIMPLE_BUTTON_BORDER_FOCUSED : ColorConstants.SIMPLE_BUTTON_BORDER;
-        graphics.horizontalLine(getX(), getX() + width - 1, getY(), lineColor);
-        graphics.horizontalLine(getX(), getX() + width - 1, getY() + height - 1, lineColor);
-        graphics.verticalLine(getX(), getY(), getY() + height - 1, lineColor);
-        graphics.verticalLine(getX() + width - 1, getY(), getY() + height - 1, lineColor);
+        graphics.outline(getX(), getY(), width, height, lineColor);
 
         int handleX = getX() + (int)(value * (width - HANDLE_RANGE_PADDING)) + HANDLE_X_OFFSET;
         graphics.fill(handleX, getY() + HANDLE_VERTICAL_INSET, handleX + HANDLE_WIDTH,

@@ -672,12 +672,7 @@ public class ScrollBox extends AbstractContainerWidget {
         }
 
         protected void drawFocusOutline(GuiGraphicsExtractor graphics) {
-            int right = x + width - 1;
-            int bottom = y + height - 1;
-            graphics.horizontalLine(x, right, y, ColorConstants.WHITE);
-            graphics.horizontalLine(x, right, bottom, ColorConstants.WHITE);
-            graphics.verticalLine(x, y, bottom, ColorConstants.WHITE);
-            graphics.verticalLine(right, y, bottom, ColorConstants.WHITE);
+            graphics.outline(x, y, width, height, ColorConstants.WHITE);
         }
 
         protected Action mousePressed(MouseButtonEvent event, boolean doubleClick) {

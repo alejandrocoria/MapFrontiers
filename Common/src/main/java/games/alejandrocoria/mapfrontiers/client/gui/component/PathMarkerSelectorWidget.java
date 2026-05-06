@@ -128,10 +128,7 @@ public class PathMarkerSelectorWidget extends AbstractWidgetNoNarration {
             }
 
             if (isKeyboardFocused() && focusedIndex == i) {
-                graphics.horizontalLine(x - 1, x + CELL_SIZE, getY() - 1, ColorConstants.WHITE);
-                graphics.horizontalLine(x - 1, x + CELL_SIZE, getY() + CELL_SIZE, ColorConstants.WHITE);
-                graphics.verticalLine(x - 1, getY() - 1, getY() + CELL_SIZE, ColorConstants.WHITE);
-                graphics.verticalLine(x + CELL_SIZE, getY() - 1, getY() + CELL_SIZE, ColorConstants.WHITE);
+                graphics.outline(x - 1, getY() - 1, CELL_SIZE + 2, CELL_SIZE + 2, ColorConstants.WHITE);
             }
 
             x += CELL_SIZE + CELL_SPACING;
