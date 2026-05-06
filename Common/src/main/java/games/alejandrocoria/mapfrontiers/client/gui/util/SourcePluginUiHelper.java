@@ -19,12 +19,14 @@ public final class SourcePluginUiHelper {
     private static final String SOURCE_PLUGIN_SYMBOL = "\uD83E\uDDE9";
 
     public static @Nullable SourcePluginDisplay createDisplay(Font font, @Nullable String sourcePluginId, int maxWidth) {
-        if (sourcePluginId == null) {
+        SourcePluginInfo sourcePluginInfo = resolveSourcePluginInfo(sourcePluginId);
+        if (sourcePluginInfo == null) {
             return null;
         }
 
-        String sourcePluginName = Services.PLATFORM.getModDisplayName(sourcePluginId);
-        String sourcePluginDisplay = !StringUtil.isBlank(sourcePluginName) ? sourcePluginName : sourcePluginId;
+        String sourcePluginDisplay = !StringUtil.isBlank(sourcePluginInfo.displayName())
+                ? sourcePluginInfo.displayName()
+                : sourcePluginInfo.id();
         int symbolWidth = font.width(SOURCE_PLUGIN_SYMBOL);
         int separatorWidth = font.width(" ");
         Component text;
@@ -43,34 +45,46 @@ public final class SourcePluginUiHelper {
 
         return new SourcePluginDisplay(
                 text,
-                buildTooltip(sourcePluginId, sourcePluginName)
+                buildTooltip(sourcePluginInfo)
         );
     }
 
     public static @Nullable Tooltip createTooltip(@Nullable String sourcePluginId) {
-        if (sourcePluginId == null) {
+        SourcePluginInfo sourcePluginInfo = resolveSourcePluginInfo(sourcePluginId);
+        if (sourcePluginInfo == null) {
             return null;
         }
 
-        return buildTooltip(sourcePluginId, Services.PLATFORM.getModDisplayName(sourcePluginId));
+        return buildTooltip(sourcePluginInfo);
     }
 
     public static Component createSymbolComponent() {
         return Component.literal(SOURCE_PLUGIN_SYMBOL).withStyle(ColorConstants.WARNING);
     }
 
-    private static Tooltip buildTooltip(String sourcePluginId, @Nullable String sourcePluginName) {
+    private static @Nullable SourcePluginInfo resolveSourcePluginInfo(@Nullable String sourcePluginId) {
+        if (sourcePluginId == null) {
+            return null;
+        }
+
+        return new SourcePluginInfo(sourcePluginId, Services.PLATFORM.getModDisplayName(sourcePluginId));
+    }
+
+    private static Tooltip buildTooltip(SourcePluginInfo sourcePluginInfo) {
         MutableComponent tooltip = Component.empty()
                 .append(Component.literal(SOURCE_PLUGIN_SYMBOL).withStyle(ColorConstants.WARNING))
                 .append(Component.literal(" "))
                 .append(Component.translatable(CREATED_BY_PLUGIN_KEY))
                 .append(Component.literal("\n"))
-                .append(Component.translatable(PLUGIN_ID_KEY, sourcePluginId));
-        if (!StringUtil.isBlank(sourcePluginName)) {
+                .append(Component.translatable(PLUGIN_ID_KEY, sourcePluginInfo.id()));
+        if (!StringUtil.isBlank(sourcePluginInfo.displayName())) {
             tooltip.append(Component.literal("\n"))
-                    .append(Component.translatable(PLUGIN_NAME_KEY, sourcePluginName));
+                    .append(Component.translatable(PLUGIN_NAME_KEY, sourcePluginInfo.displayName()));
         }
         return Tooltip.create(tooltip);
+    }
+
+    private record SourcePluginInfo(String id, @Nullable String displayName) {
     }
 
     public record SourcePluginDisplay(Component text, Tooltip tooltip) {
