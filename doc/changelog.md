@@ -1,5 +1,6 @@
 **Beta 4:**
 * Added: Frontier collections, including grouped sections and per-collection actions in the frontier list.
+* Added: HUD now supports a fourth slot and includes Collection by default (Name, Collection, Owner, Banner).
 * Added: Temporary personal frontiers can now be created directly from the GUI for session-only use.
 * Added: Frontier info paste options now support copying Path style between Path frontiers.
 * Changed: Frontier creation from the frontier list now stays in the list unless shape editing is selected.

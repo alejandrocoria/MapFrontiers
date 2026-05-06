@@ -280,6 +280,8 @@
   "mapfrontiers.config.hud.slot2.tooltip": "HUD element on slot 2.",
   "mapfrontiers.config.hud.slot3": "Slot 3",
   "mapfrontiers.config.hud.slot3.tooltip": "HUD element on slot 3.",
+  "mapfrontiers.config.hud.slot4": "Slot 4",
+  "mapfrontiers.config.hud.slot4.tooltip": "HUD element on slot 4.",
   "mapfrontiers.config.hud.anchor": "Anchor",
   "mapfrontiers.config.hud.anchor.tooltip": "Anchor point of the HUD. When anchored to the minimap, coordinates are relative to the minimap's default position.",
   "mapfrontiers.config.hud.position": "Position",

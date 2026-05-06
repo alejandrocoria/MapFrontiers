@@ -53,7 +53,7 @@ public final class ClientConfig {
     }
 
     public enum HUDSlot {
-        None, Collection, Name, Owner, Banner
+        None, Name, Collection, Owner, Banner
     }
 
     public enum TextColor {
@@ -70,13 +70,16 @@ public final class ClientConfig {
     );
     private static final List<Boolean> DEFAULT_SORTING_DIRECTION = List.of(false, true, true, true, true, false);
 
-    public static final int CURRENT_VERSION = 1;
+    public static final int CURRENT_VERSION = 2;
     public static final String DIMENSION_FILTER_ALL = "mapfrontiers:all";
     public static final String DIMENSION_FILTER_CURRENT = "mapfrontiers:current";
 
     private static final Path CONFIG_PATH = Services.PLATFORM.getConfigDirectory().resolve(MapFrontiers.MODID + "-client.toml");
     private static final ConfigFile FILE = new ConfigFile(CONFIG_PATH, CURRENT_VERSION, ClientConfigMigrations.INSTANCE);
     private static boolean initialized = false;
+    private static final int HUD_SLOT_COUNT = 4;
+    private static final List<HUDSlot> DEFAULT_HUD_SLOTS = List.of(HUDSlot.Name, HUDSlot.Collection, HUDSlot.Owner, HUDSlot.Banner);
+    private static final List<String> DEFAULT_HUD_SLOT_NAMES = DEFAULT_HUD_SLOTS.stream().map(Enum::name).toList();
 
     public static final IntConfigEntry TITLE_ANNOUNCEMENT_DURATION = register(intEntry(70, 0, 1200, "announcement", "title", "duration")
             .comment("Duration of title announcement, in game ticks.")
@@ -289,16 +292,8 @@ public final class ClientConfig {
     public static final IntConfigEntry HUD_BANNER_SIZE = register(intEntry(3, 1, 8, "hud", "bannerSize")
             .comment("Size of the HUD banner.")
             .translation(translation("hud", "bannerSize")));
-    public static final EnumConfigEntry<HUDSlot> HUD_SLOT_1 = register(enumEntry(HUDSlot.class, HUDSlot.Name, "hud", "slot1")
-            .comment("HUD element on slot 1.")
-            .translation(translation("hud", "slot1")));
-    public static final EnumConfigEntry<HUDSlot> HUD_SLOT_2 = register(enumEntry(HUDSlot.class, HUDSlot.Owner, "hud", "slot2")
-            .comment("HUD element on slot 2.")
-            .translation(translation("hud", "slot2")));
-    public static final EnumConfigEntry<HUDSlot> HUD_SLOT_3 = register(enumEntry(HUDSlot.class, HUDSlot.Banner, "hud", "slot3")
-            .comment("HUD element on slot 3.")
-            .translation(translation("hud", "slot3")));
-    public static final List<EnumConfigEntry<HUDSlot>> HUD_SLOTS = List.of(HUD_SLOT_1, HUD_SLOT_2, HUD_SLOT_3);
+    public static final StringListConfigEntry HUD_SLOTS = register(stringListEntry(DEFAULT_HUD_SLOT_NAMES, ClientConfig::isValidHUDSlot, "hud", "slots")
+            .comment("HUD elements in order from slot 1 to slot 4. Valid values: None, Name, Collection, Owner, Banner."));
     public static final EnumConfigEntry<HUDAnchor> HUD_ANCHOR = register(enumEntry(HUDAnchor.class, HUDAnchor.MinimapHorizontal, "hud", "anchor")
             .comment("Anchor point of the HUD. When anchored to the minimap, coordinates are relative to the minimap's default position.")
             .translation(translation("hud", "anchor")));
@@ -364,6 +359,7 @@ public final class ClientConfig {
 
     public static boolean load() {
         boolean dirty = FILE.load();
+        dirty |= validateHUDSlots();
         dirty |= validateDefaultPathStyle();
         dirty |= validatePathActivationDistances();
         dirty |= validateSorting();
@@ -371,6 +367,7 @@ public final class ClientConfig {
     }
 
     public static void save() {
+        validateHUDSlots();
         validatePathActivationDistances();
         validateSorting();
         FILE.save();
@@ -401,11 +398,33 @@ public final class ClientConfig {
     }
 
     public static List<HUDSlot> getHUDSlots() {
-        List<HUDSlot> configuredSlots = HUD_SLOTS.stream().map(ConfigEntry::get).toList();
-        List<HUDSlot> resolvedSlots = new ArrayList<>(configuredSlots.size());
+        List<HUDSlot> configuredSlots = HUD_SLOTS.get().stream().map(ClientConfig::parseHUDSlot).toList();
+        return normalizeHUDSlots(configuredSlots);
+    }
+
+    public static HUDSlot getDefaultHUDSlot(int index) {
+        if (index >= 0 && index < DEFAULT_HUD_SLOTS.size()) {
+            return DEFAULT_HUD_SLOTS.get(index);
+        }
+        return HUDSlot.None;
+    }
+
+    public static void setHUDSlots(List<HUDSlot> slots) {
+        List<HUDSlot> normalized = normalizeHUDSlots(slots);
+        HUD_SLOTS.set(normalized.stream().map(Enum::name).toList());
+    }
+
+    private static List<HUDSlot> normalizeHUDSlots(List<HUDSlot> slots) {
+        List<HUDSlot> paddedSlots = new ArrayList<>(HUD_SLOT_COUNT);
+        for (int i = 0; i < HUD_SLOT_COUNT; ++i) {
+            HUDSlot slot = i < slots.size() && slots.get(i) != null ? slots.get(i) : HUDSlot.None;
+            paddedSlots.add(slot);
+        }
+
+        List<HUDSlot> resolvedSlots = new ArrayList<>(HUD_SLOT_COUNT);
         EnumSet<HUDSlot> seenSlots = EnumSet.noneOf(HUDSlot.class);
 
-        for (HUDSlot slot : configuredSlots) {
+        for (HUDSlot slot : paddedSlots) {
             if (slot == HUDSlot.None || seenSlots.add(slot)) {
                 resolvedSlots.add(slot);
             } else {
@@ -539,6 +558,17 @@ public final class ClientConfig {
         return dirty;
     }
 
+    private static boolean validateHUDSlots() {
+        List<HUDSlot> normalized = normalizeHUDSlots(HUD_SLOTS.get().stream().map(ClientConfig::parseHUDSlot).toList());
+        List<String> normalizedStrings = normalized.stream().map(Enum::name).toList();
+        if (!HUD_SLOTS.get().equals(normalizedStrings)) {
+            HUD_SLOTS.set(normalizedStrings);
+            return true;
+        }
+
+        return false;
+    }
+
     private static boolean isValidSorting(String value) {
         if (value.equals("VertexChunk")) {
             return true;
@@ -549,6 +579,23 @@ public final class ClientConfig {
             return true;
         } catch (Exception ignored) {
             return false;
+        }
+    }
+
+    private static boolean isValidHUDSlot(String value) {
+        try {
+            HUDSlot.valueOf(value);
+            return true;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private static HUDSlot parseHUDSlot(String value) {
+        try {
+            return HUDSlot.valueOf(value);
+        } catch (Exception ignored) {
+            return HUDSlot.None;
         }
     }
 

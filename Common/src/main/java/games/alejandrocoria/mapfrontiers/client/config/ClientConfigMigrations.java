@@ -6,6 +6,8 @@ import games.alejandrocoria.mapfrontiers.common.config.ConfigMigrationStep;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigMigrations;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.UnaryOperator;
 
 public final class ClientConfigMigrations implements ConfigMigrations {
@@ -107,6 +109,7 @@ public final class ClientConfigMigrations implements ConfigMigrations {
     public ConfigMigrationStep step(int fromVersion) {
         return switch (fromVersion) {
             case 0 -> this::migrateFrom0To1;
+            case 1 -> this::migrateFrom1To2;
             default -> null;
         };
     }
@@ -136,6 +139,41 @@ public final class ClientConfigMigrations implements ConfigMigrations {
         });
     }
 
+    private void migrateFrom1To2(CommentedConfig config) {
+        List<ClientConfig.HUDSlot> oldSlots = List.of(
+                parseHUDSlot(config.get("hud.slot1")),
+                parseHUDSlot(config.get("hud.slot2")),
+                parseHUDSlot(config.get("hud.slot3"))
+        );
+
+        List<ClientConfig.HUDSlot> migratedSlots = new ArrayList<>(4);
+        int nameIndex = oldSlots.indexOf(ClientConfig.HUDSlot.Name);
+        if (nameIndex >= 0) {
+            for (int i = 0; i < oldSlots.size(); ++i) {
+                migratedSlots.add(oldSlots.get(i));
+                if (i == nameIndex) {
+                    migratedSlots.add(ClientConfig.HUDSlot.Collection);
+                }
+            }
+        } else {
+            migratedSlots.addAll(oldSlots);
+            migratedSlots.add(ClientConfig.HUDSlot.None);
+        }
+
+        while (migratedSlots.size() < 4) {
+            migratedSlots.add(ClientConfig.HUDSlot.None);
+        }
+        if (migratedSlots.size() > 4) {
+            migratedSlots = new ArrayList<>(migratedSlots.subList(0, 4));
+        }
+
+        List<String> migratedSlotNames = migratedSlots.stream().map(Enum::name).toList();
+        config.set("hud.slots", migratedSlotNames);
+        config.remove("hud.slot1");
+        config.remove("hud.slot2");
+        config.remove("hud.slot3");
+    }
+
     private static void moveAll(CommentedConfig config, String[][] moves) {
         for (String[] move : moves) {
             move(config, move[0], move[1]);
@@ -163,5 +201,17 @@ public final class ClientConfigMigrations implements ConfigMigrations {
         }
 
         config.set(path, rewrite.apply(stringValue));
+    }
+
+    private static ClientConfig.HUDSlot parseHUDSlot(@Nullable Object rawValue) {
+        if (!(rawValue instanceof String value)) {
+            return ClientConfig.HUDSlot.None;
+        }
+
+        try {
+            return ClientConfig.HUDSlot.valueOf(value);
+        } catch (Exception ignored) {
+            return ClientConfig.HUDSlot.None;
+        }
     }
 }

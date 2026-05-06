@@ -280,6 +280,8 @@
   "mapfrontiers.config.hud.slot2.tooltip": "Elemento HUD en la ranura 2.",
   "mapfrontiers.config.hud.slot3": "Ranura 3",
   "mapfrontiers.config.hud.slot3.tooltip": "Elemento HUD en la ranura 3.",
+  "mapfrontiers.config.hud.slot4": "Ranura 4",
+  "mapfrontiers.config.hud.slot4.tooltip": "Elemento HUD en la ranura 4.",
   "mapfrontiers.config.hud.anchor": "Anclaje",
   "mapfrontiers.config.hud.anchor.tooltip": "Punto de anclaje del HUD. En el caso de elegir el minimapa como ancla, su posición por defecto se usará como referencia en las coordenadas.",
   "mapfrontiers.config.hud.position": "Posición",
