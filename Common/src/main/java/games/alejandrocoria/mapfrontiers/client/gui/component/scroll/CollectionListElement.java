@@ -34,7 +34,7 @@ public class CollectionListElement extends FrontierListRowElement {
     private static final int TITLE_X = 15;
     private static final int TITLE_Y = 6;
     private static final int COUNTERS_GAP = 4;
-    private static final int COUNTERS_RIGHT_GAP = 1;
+    private static final int COUNTERS_RIGHT_GAP = 2;
     private static final int TITLE_HOVER_X = 14;
     private static final int TITLE_BG_TOP_OFFSET = -2;
     private static final int TITLE_BG_BOTTOM_OFFSET = 8;
@@ -45,6 +45,10 @@ public class CollectionListElement extends FrontierListRowElement {
     private static final int ACTION_BUTTON_WIDTH = 11;
     private static final int SELECTION_RAIL_GAP = 2;
     private static final int RAIL_CONTENT_Y = 4;
+    private static final int MARKED_BADGE_HEIGHT = 11;
+    private static final int MARKED_BADGE_TEXT_LEFT = 3;
+    private static final int MARKED_BADGE_WIDTH_EXTRA = 5;
+    private static final int MARKED_BADGE_GAP = 4;
     private static final String ELLIPSIS = "...";
     private static final int RAIL_HOVER_COLOR = 0xA0202020;
     private static final Tooltip MOVE_HERE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.tooltip.move_here"));
@@ -268,9 +272,14 @@ public class CollectionListElement extends FrontierListRowElement {
             return;
         }
 
-        String markedText = "[" + markedCount + "]";
-        int countX = getRailTextRight() - font.width(markedText);
-        graphics.text(font, markedText, countX, y + TITLE_Y, ColorConstants.TEXT_HIGHLIGHT);
+        String markedText = Integer.toString(markedCount);
+        int badgeWidth = getMarkedBadgeWidth();
+        int badgeRight = getRailTextRight();
+        int badgeLeft = badgeRight - badgeWidth;
+        int badgeTop = y + RAIL_CONTENT_Y;
+
+        graphics.outline(badgeLeft, badgeTop, badgeWidth, MARKED_BADGE_HEIGHT, ColorConstants.WHITE);
+        graphics.text(font, markedText, badgeLeft + MARKED_BADGE_TEXT_LEFT, y + TITLE_Y, ColorConstants.TEXT_HIGHLIGHT);
     }
 
     private void renderActionButtons(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
@@ -352,12 +361,19 @@ public class CollectionListElement extends FrontierListRowElement {
             return getRailTextRight();
         }
 
-        int markedTextWidth = font.width("[" + markedCount + "]");
-        return getRailTextRight() - markedTextWidth - ACTION_GAP;
+        return getRailTextRight() - getMarkedBadgeWidth() - MARKED_BADGE_GAP;
     }
 
     private int getRailTextRight() {
         return getSelectionRightBound() - COUNTERS_RIGHT_GAP;
+    }
+
+    private int getMarkedBadgeWidth() {
+        if (markedCount <= 0) {
+            return 0;
+        }
+
+        return font.width(Integer.toString(markedCount)) + MARKED_BADGE_WIDTH_EXTRA;
     }
 
     private static Tooltip getCreateTooltip(CollectionScope scope, boolean virtualRow) {
