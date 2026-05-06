@@ -509,6 +509,10 @@ public class FrontierInfoPage extends PageScreen
     }
 
     private void onChangePersonalGlobalPressed() {
+        if (frontier.isSessionOnly()) {
+            return;
+        }
+
         if (frontier.getPersonal()) {
             showChangeToGlobalConfirmation();
         } else {
@@ -889,7 +893,9 @@ public class FrontierInfoPage extends PageScreen
         colorPalette.active = actions.canUpdate;
         buttonPaste.active = actions.canUpdate;
         buttonPasteOptions.active = actions.canUpdate;
-        if (frontier.getPersonal()) {
+        if (frontier.isSessionOnly()) {
+            buttonChangeToPersonalGlobal.visible = false;
+        } else if (frontier.getPersonal()) {
             buttonChangeToPersonalGlobal.visible = MapFrontiersClient.isModOnServer()
                     && frontier.getOwner().equals(playerUser)
                     && profile != null
