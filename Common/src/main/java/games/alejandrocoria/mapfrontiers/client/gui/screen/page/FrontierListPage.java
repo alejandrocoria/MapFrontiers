@@ -37,6 +37,7 @@ import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import journeymap.api.v2.client.IClientAPI;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -319,7 +320,7 @@ public class FrontierListPage extends PageScreen
     }
 
     private void selectRadioByValue(ScrollBox scrollBox, Object value) {
-        scrollBox.selectElementIf(element -> Objects.equals(((RadioListElement<?>) element).value(), value));
+        scrollBox.setSelectedElementIf(element -> Objects.equals(((RadioListElement<?>) element).value(), value));
     }
 
     private static <T> T radioValue(ScrollElement element, Class<T> type) {
@@ -650,6 +651,7 @@ public class FrontierListPage extends PageScreen
 
     private void updateFrontiers() {
         int previousScrollOffset = frontiers.getScrollOffset();
+        ScrollBox.FocusSnapshot focusSnapshot = frontiers.captureFocusSnapshot();
         CollectionUiStateStore collapseState = getCollectionUiStateStore();
         List<ScrollElement> rows = new ArrayList<>();
         Set<UUID> visibleFilteredFrontiers = new HashSet<>();
@@ -685,17 +687,22 @@ public class FrontierListPage extends PageScreen
         }
         frontiers.setScrollOffset(previousScrollOffset);
         syncSelectedRowWithMapSelection();
+        ComponentPath path = frontiers.restoreFocusSnapshot(focusSnapshot);
+        if (path != null) {
+            setFocused(frontiers);
+            path.applyFocus(true);
+        }
     }
 
     private void syncSelectedRowWithMapSelection() {
         FrontierOverlay selectedFrontier = fullscreenMap.getSelected();
         if (selectedFrontier == null) {
-            frontiers.deselectElement();
+            frontiers.clearSelection();
             return;
         }
 
         UUID selectedFrontierId = selectedFrontier.getId();
-        frontiers.selectElementIf(element -> element instanceof FrontierListElement frontierElement
+        frontiers.setSelectedElementIf(element -> element instanceof FrontierListElement frontierElement
                 && frontierElement.getFrontier().getId().equals(selectedFrontierId));
     }
 

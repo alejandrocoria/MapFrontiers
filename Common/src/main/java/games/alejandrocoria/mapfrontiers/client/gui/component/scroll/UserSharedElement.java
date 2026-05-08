@@ -53,6 +53,11 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
         return user.getUser();
     }
 
+    @Override
+    public Object getFocusRestoreKey() {
+        return getUser();
+    }
+
     public void setPingBar(int value) {
         pingBar = value;
 
@@ -130,7 +135,7 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
         if (enabled && visible && isHovered) {
             for (GuiEventListener checkBox : children) {
                 if (checkBox.mouseClicked(event, doubleClick)) {
-                    return ScrollBox.ScrollElement.Action.None;
+                    return ScrollBox.ScrollElement.Action.Handled;
                 }
             }
 

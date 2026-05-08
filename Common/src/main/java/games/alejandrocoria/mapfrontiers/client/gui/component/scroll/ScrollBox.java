@@ -12,6 +12,7 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.gui.navigation.ScreenAxis;
+import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
@@ -23,12 +24,25 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class ScrollBox extends AbstractContainerWidget {
+    public enum HorizontalEdgeNavigation {
+        EXIT_SCROLLBOX,
+        KEEP_FOCUS,
+        WRAP_WITHIN_ROW
+    }
+
+    public record FocusSnapshot(@Nullable Object rowKey,
+                                @Nullable Object navigationKey,
+                                int childIndex,
+                                boolean restoreActiveFocus) {
+    }
+
     private static final int SCROLLBAR_AREA_WIDTH = 12;
     private static final int SCROLLBAR_WIDTH = 8;
 
@@ -45,6 +59,7 @@ public class ScrollBox extends AbstractContainerWidget {
     private Consumer<ScrollElement> elementClickedCallback;
     private Consumer<ScrollElement> elementDeletedCallback;
     private Consumer<ScrollElement> elementDeletePressedCallback;
+    private HorizontalEdgeNavigation horizontalEdgeNavigation = HorizontalEdgeNavigation.EXIT_SCROLLBOX;
 
     public ScrollBox(int viewportHeight, int elementWidth, int scrollStep) {
         super(0, 0, elementWidth + SCROLLBAR_AREA_WIDTH, Math.max(1, viewportHeight),
@@ -72,6 +87,10 @@ public class ScrollBox extends AbstractContainerWidget {
         elementDeletePressedCallback = callback;
     }
 
+    public void setHorizontalEdgeNavigation(HorizontalEdgeNavigation horizontalEdgeNavigation) {
+        this.horizontalEdgeNavigation = horizontalEdgeNavigation;
+    }
+
     public List<ScrollElement> getElements() {
         return elements;
     }
@@ -84,9 +103,8 @@ public class ScrollBox extends AbstractContainerWidget {
         updateScrollBar();
     }
 
-    public void selectElement(ScrollElement element) {
+    public void setSelectedElement(ScrollElement element) {
         selected = elements.indexOf(element);
-        focused = selected;
     }
 
     @Nullable
@@ -98,13 +116,17 @@ public class ScrollBox extends AbstractContainerWidget {
         return null;
     }
 
-    public void selectIndex(int index) {
-        selected = Math.min(Math.max(index, 0), elements.size() - 1);
-        focused = selected;
-    }
-
     public int getSelectedIndex() {
         return selected;
+    }
+
+    @Nullable
+    public ScrollElement getFocusedElement() {
+        if (focused >= 0 && focused < elements.size()) {
+            return elements.get(focused);
+        }
+
+        return null;
     }
 
     public int getScrollOffset() {
@@ -118,26 +140,75 @@ public class ScrollBox extends AbstractContainerWidget {
         updateScrollBar();
     }
 
-    public void scrollSelectedElementIntoView() {
-        scrollElementIntoView(selected);
-    }
-
-    public void selectElementIf(Predicate<ScrollElement> pred) {
+    public void setSelectedElementIf(Predicate<ScrollElement> pred) {
         ScrollElement element = elements.stream()
                 .filter(pred)
                 .findFirst()
                 .orElse(null);
 
         if (element == null) {
-            deselectElement();
+            clearSelection();
         } else {
-            selectElement(element);
+            setSelectedElement(element);
         }
     }
 
-    public void deselectElement() {
+    public void clearSelection() {
         selected = -1;
-        focused = -1;
+    }
+
+    public @Nullable FocusSnapshot captureFocusSnapshot() {
+        ScrollElement focusedElement = getFocusedElement();
+        if (focusedElement == null) {
+            return null;
+        }
+
+        Object rowKey = focusedElement.getFocusRestoreKey();
+        Object navigationKey = null;
+        int childIndex = -1;
+
+        if (focusedElement instanceof KeyedFocusNavigation keyedFocusNavigation) {
+            navigationKey = keyedFocusNavigation.getFocusedNavigationKey();
+        } else {
+            GuiEventListener focusedChild = focusedElement.getFocused();
+            if (focusedChild != null) {
+                int index = focusedElement.children().indexOf(focusedChild);
+                if (index >= 0) {
+                    childIndex = index;
+                }
+            }
+        }
+
+        return new FocusSnapshot(rowKey, navigationKey, childIndex, isFocused());
+    }
+
+    public @Nullable ComponentPath restoreFocusSnapshot(@Nullable FocusSnapshot focusSnapshot) {
+        if (focusSnapshot == null) {
+            return null;
+        }
+
+        int index = findIndexByFocusRestoreKey(focusSnapshot.rowKey());
+        if (index == -1) {
+            return null;
+        }
+
+        focused = index;
+        scrollElementIntoView(index);
+
+        if (!focusSnapshot.restoreActiveFocus()) {
+            return null;
+        }
+
+        ScrollElement element = elements.get(index);
+        if (element instanceof KeyedFocusNavigation) {
+            return focusIndex(index, focusSnapshot.navigationKey());
+        }
+
+        if (focusSnapshot.childIndex() >= 0) {
+            return focusIndexChild(index, focusSnapshot.childIndex());
+        }
+
+        return focusRowPath(index);
     }
 
     public void removeElement(ScrollElement element) {
@@ -191,8 +262,14 @@ public class ScrollBox extends AbstractContainerWidget {
             return null;
         }
 
+        Object focusedNavigationKey = null;
         int focusedChild = -1;
-        List<GuiEventListener> children = focused == -1 ? null : elements.get(focused).children();
+        ScrollElement focusedElement = focused == -1 ? null : elements.get(focused);
+        if (focusedElement instanceof KeyedFocusNavigation keyedFocusNavigation) {
+            focusedNavigationKey = keyedFocusNavigation.getFocusedNavigationKey();
+        }
+
+        List<GuiEventListener> children = focusedElement == null ? null : focusedElement.children();
         if (children != null) {
             if (children.isEmpty()) {
                 children = null;
@@ -211,18 +288,40 @@ public class ScrollBox extends AbstractContainerWidget {
             if (navigationEvent instanceof FocusNavigationEvent.ArrowNavigation arrowNavigation) {
                 forward = arrowNavigation.direction().isPositive();
                 if (arrowNavigation.direction().getAxis() == ScreenAxis.HORIZONTAL) {
-                    if (children != null) {
-                        focusedChild += forward ? 1 : -1;
-                        if (focusedChild < 0 || focusedChild >= children.size()) {
-                            return null;
-                        } else {
-                            return ComponentPath.path(this, elements.get(focused).focusPathAtIndex(navigationEvent, focusedChild));
+                    if (focusedElement instanceof KeyedFocusNavigation keyedFocusNavigation) {
+                        ComponentPath keyedPath = keyedFocusNavigation.focusRelativeNavigationKey(navigationEvent, forward ? 1 : -1);
+                        if (keyedPath != null) {
+                            return ComponentPath.path(this, keyedPath);
                         }
+                        return handleHorizontalEdgeNavigation(navigationEvent, forward, focusedElement, children);
                     }
-                    return null;
+
+                    if (children != null) {
+                        if (focusedChild == -1) {
+                            if (!forward) {
+                                return handleHorizontalEdgeNavigation(navigationEvent, forward, focusedElement, children);
+                            }
+                            ComponentPath childPath = focusChildPath(navigationEvent, focused, 0, true);
+                            return childPath != null ? childPath
+                                    : handleHorizontalEdgeNavigation(navigationEvent, forward, focusedElement, children);
+                        }
+
+                        int nextChild = focusedChild + (forward ? 1 : -1);
+                        if (nextChild < 0) {
+                            return handleHorizontalEdgeNavigation(navigationEvent, forward, focusedElement, children);
+                        }
+                        if (nextChild >= children.size()) {
+                            return handleHorizontalEdgeNavigation(navigationEvent, forward, focusedElement, children);
+                        }
+
+                        ComponentPath childPath = focusChildPath(navigationEvent, focused, nextChild, forward);
+                        return childPath != null ? childPath
+                                : handleHorizontalEdgeNavigation(navigationEvent, forward, focusedElement, children);
+                    }
+                    return handleHorizontalEdgeNavigation(navigationEvent, forward, focusedElement, children);
                 }
             } else if (navigationEvent instanceof FocusNavigationEvent.TabNavigation tabNavigation) {
-                forward = tabNavigation.forward();
+                return null;
             }
 
             int nextFocused = findNextFocusableIndex(focused, forward);
@@ -231,6 +330,77 @@ public class ScrollBox extends AbstractContainerWidget {
             }
             focused = nextFocused;
         } else {
+            if (navigationEvent instanceof FocusNavigationEvent.TabNavigation tabNavigation) {
+                boolean forward = tabNavigation.forward();
+                if (focused == -1 || focused >= elements.size() || !elements.get(focused).isKeyboardFocusable()) {
+                    focused = forward ? findNextFocusableIndex(-1, true)
+                            : findNextFocusableIndex(elements.size(), false);
+                }
+                if (focused == -1) {
+                    return null;
+                }
+
+                scrollElementIntoView(focused);
+
+                ScrollElement targetElement = elements.get(focused);
+                if (targetElement instanceof KeyedFocusNavigation keyedFocusNavigation) {
+                    Object defaultNavigationKey = keyedFocusNavigation.getDefaultNavigationKey();
+                    if (defaultNavigationKey != null) {
+                        ComponentPath keyedPath = keyedFocusNavigation.focusNavigationKey(navigationEvent, defaultNavigationKey);
+                        if (keyedPath != null) {
+                            return ComponentPath.path(this, keyedPath);
+                        }
+                    }
+                }
+
+                List<GuiEventListener> targetChildren = targetElement.children();
+                if (!targetChildren.isEmpty()) {
+                    int childIndex = forward ? 0 : targetChildren.size() - 1;
+                    ComponentPath childPath = targetElement.focusPathAtIndex(navigationEvent, childIndex);
+                    if (childPath != null) {
+                        return ComponentPath.path(this, childPath);
+                    }
+                }
+
+                return focusRowPath(focused);
+            }
+
+            if (navigationEvent instanceof FocusNavigationEvent.ArrowNavigation arrowNavigation
+                    && arrowNavigation.direction().getAxis() == ScreenAxis.HORIZONTAL) {
+                boolean forward = arrowNavigation.direction().isPositive();
+                if (focused == -1 || focused >= elements.size() || !elements.get(focused).isKeyboardFocusable()) {
+                    focused = forward ? findNextFocusableIndex(-1, true)
+                            : findNextFocusableIndex(elements.size(), false);
+                }
+                if (focused == -1) {
+                    return null;
+                }
+
+                scrollElementIntoView(focused);
+
+                ScrollElement targetElement = elements.get(focused);
+                if (targetElement instanceof KeyedFocusNavigation keyedFocusNavigation) {
+                    Object edgeNavigationKey = keyedFocusNavigation.getEdgeNavigationKey(forward);
+                    if (edgeNavigationKey != null) {
+                        ComponentPath keyedPath = keyedFocusNavigation.focusNavigationKey(navigationEvent, edgeNavigationKey);
+                        if (keyedPath != null) {
+                            return ComponentPath.path(this, keyedPath);
+                        }
+                    }
+                }
+
+                List<GuiEventListener> targetChildren = targetElement.children();
+                if (!targetChildren.isEmpty()) {
+                    int childIndex = forward ? 0 : targetChildren.size() - 1;
+                    ComponentPath childPath = targetElement.focusPathAtIndex(navigationEvent, childIndex);
+                    if (childPath != null) {
+                        return ComponentPath.path(this, childPath);
+                    }
+                }
+
+                return focusRowPath(focused);
+            }
+
             boolean forward = navigationEvent.getVerticalDirectionForInitialFocus().isPositive();
             if (forward) {
                 focused = findNextFocusableIndex(-1, true);
@@ -245,14 +415,40 @@ public class ScrollBox extends AbstractContainerWidget {
 
         scrollElementIntoView(focused);
 
-        if (!elements.get(focused).children().isEmpty()) {
+        ScrollElement targetElement = elements.get(focused);
+        if (targetElement instanceof KeyedFocusNavigation keyedFocusNavigation) {
+            if (focusedNavigationKey != null) {
+                ComponentPath keyedPath = keyedFocusNavigation.focusNavigationKey(navigationEvent, focusedNavigationKey);
+                if (keyedPath != null) {
+                    return ComponentPath.path(this, keyedPath);
+                }
+            }
+
+            Object defaultNavigationKey = keyedFocusNavigation.getDefaultNavigationKey();
+            if (defaultNavigationKey != null) {
+                ComponentPath keyedPath = keyedFocusNavigation.focusNavigationKey(navigationEvent, defaultNavigationKey);
+                if (keyedPath != null) {
+                    return ComponentPath.path(this, keyedPath);
+                }
+            }
+        }
+
+        if (!targetElement.children().isEmpty()) {
             if (focusedChild == -1) {
                 focusedChild = 0;
             }
-            return ComponentPath.path(this, elements.get(focused).focusPathAtIndex(navigationEvent, focusedChild));
+            ComponentPath childPath = targetElement.focusPathAtIndex(navigationEvent, focusedChild);
+            if (childPath != null) {
+                return ComponentPath.path(this, childPath);
+            }
         }
 
-        return ComponentPath.path(this, ComponentPath.leaf(elements.get(focused)));
+        return focusRowPath(focused);
+    }
+
+    @Override
+    public ScreenRectangle getRectangle() {
+        return new ScreenRectangle(getX(), getY(), width, height);
     }
 
     @Override
@@ -403,9 +599,11 @@ public class ScrollBox extends AbstractContainerWidget {
             if (isHovered && !scrollBarGrabbed) {
                 ListIterator<ScrollElement> it = elements.listIterator();
                 while (it.hasNext()) {
+                    int elementIndex = it.nextIndex();
                     ScrollElement element = it.next();
                     ScrollElement.Action action = element.mousePressed(event, doubleClick);
                     if (action == ScrollElement.Action.Deleted) {
+                        setFocusedIndex(elementIndex);
                         if (elementDeletePressedCallback != null) {
                             elementDeletePressedCallback.accept(element);
                         } else {
@@ -413,13 +611,15 @@ public class ScrollBox extends AbstractContainerWidget {
                         }
                         return true;
                     } else if (action == ScrollElement.Action.Handled) {
+                        setFocusedIndex(elementIndex);
                         if (elementClickedCallback != null) {
                             elementClickedCallback.accept(element);
                         }
                         return true;
                     } else if (action == ScrollElement.Action.Clicked) {
+                        setFocusedIndex(elementIndex);
                         if (getSelectedElement() != element) {
-                            selectElement(element);
+                            setSelectedElement(element);
                         }
                         if (elementClickedCallback != null) {
                             elementClickedCallback.accept(element);
@@ -448,12 +648,21 @@ public class ScrollBox extends AbstractContainerWidget {
                 if (focused == -1 || !elements.get(focused).isKeyboardFocusable()) {
                     return true;
                 }
-                selectIndex(focused);
-                if (selected != -1 && elements.get(selected).isKeyboardFocusable()) {
-                    ScrollElement focusedElement = elements.get(focused);
-                    if (!focusedElement.children().isEmpty()) {
-                        focusedElement.keyPressed(event);
-                    } else if (elementClickedCallback != null) {
+                ScrollElement focusedElement = elements.get(focused);
+                if (focusedElement.getFocused() != null) {
+                    boolean handled = focusedElement.keyPressed(event);
+                    if (handled && elementClickedCallback != null) {
+                        elementClickedCallback.accept(focusedElement);
+                    } else if (!handled && focusedElement instanceof KeyedFocusNavigation keyedFocusNavigation
+                            && keyedFocusNavigation.isPrimaryActionFocused()) {
+                        selected = focused;
+                        if (elementClickedCallback != null) {
+                            elementClickedCallback.accept(focusedElement);
+                        }
+                    }
+                } else {
+                    selected = focused;
+                    if (selected != -1 && elements.get(selected).isKeyboardFocusable() && elementClickedCallback != null) {
                         elementClickedCallback.accept(getSelectedElement());
                     }
                 }
@@ -597,19 +806,148 @@ public class ScrollBox extends AbstractContainerWidget {
 
     private int findNextFocusableIndex(int startExclusive, boolean forward) {
         if (forward) {
-            for (int i = Math.max(startExclusive + 1, 0); i < elements.size(); ++i) {
+            if (startExclusive + 1 >= elements.size()) {
+                return -1;
+            }
+            for (int i = startExclusive + 1; i < elements.size(); ++i) {
                 if (elements.get(i).isKeyboardFocusable()) {
                     return i;
                 }
             }
         } else {
-            for (int i = Math.min(startExclusive - 1, elements.size() - 1); i >= 0; --i) {
+            if (startExclusive - 1 < 0) {
+                return -1;
+            }
+            for (int i = startExclusive - 1; i >= 0; --i) {
                 if (elements.get(i).isKeyboardFocusable()) {
                     return i;
                 }
             }
         }
         return -1;
+    }
+
+    private int findIndexByFocusRestoreKey(@Nullable Object rowKey) {
+        for (int i = 0; i < elements.size(); ++i) {
+            if (Objects.equals(elements.get(i).getFocusRestoreKey(), rowKey)) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private void setFocusedIndex(int index) {
+        focused = index >= 0 && index < elements.size() ? index : -1;
+    }
+
+    private @Nullable ComponentPath handleHorizontalEdgeNavigation(FocusNavigationEvent navigationEvent,
+                                                                   boolean forward,
+                                                                   @Nullable ScrollElement focusedElement,
+                                                                   @Nullable List<GuiEventListener> children) {
+        if (focusedElement == null) {
+            return null;
+        }
+
+        return switch (horizontalEdgeNavigation) {
+            case EXIT_SCROLLBOX -> null;
+            case KEEP_FOCUS -> getCurrentFocusPath();
+            case WRAP_WITHIN_ROW -> wrapHorizontalFocus(navigationEvent, forward, focusedElement, children);
+        };
+    }
+
+    private @Nullable ComponentPath wrapHorizontalFocus(FocusNavigationEvent navigationEvent,
+                                                        boolean forward,
+                                                        ScrollElement focusedElement,
+                                                        @Nullable List<GuiEventListener> children) {
+        if (focusedElement instanceof KeyedFocusNavigation keyedFocusNavigation) {
+            Object edgeNavigationKey = keyedFocusNavigation.getEdgeNavigationKey(!forward);
+            if (edgeNavigationKey == null) {
+                return ComponentPath.path(this, focusedElement.getCurrentFocusPath());
+            }
+
+            ComponentPath keyedPath = keyedFocusNavigation.focusNavigationKey(navigationEvent, edgeNavigationKey);
+            return keyedPath != null ? ComponentPath.path(this, keyedPath)
+                    : ComponentPath.path(this, focusedElement.getCurrentFocusPath());
+        }
+
+        if (children != null && !children.isEmpty()) {
+            ComponentPath wrappedPath = focusChildPath(navigationEvent, focused,
+                    forward ? 0 : children.size() - 1, forward);
+            if (wrappedPath == null) {
+                wrappedPath = focusChildPath(navigationEvent, focused, forward ? children.size() - 1 : 0, !forward);
+            }
+            return wrappedPath != null ? wrappedPath : ComponentPath.path(this, focusedElement.getCurrentFocusPath());
+        }
+
+        return ComponentPath.path(this, focusedElement.getCurrentFocusPath());
+    }
+
+    private ComponentPath focusRowPath(int rowIndex) {
+        return ComponentPath.path(this, ComponentPath.leaf(elements.get(rowIndex)));
+    }
+
+    private @Nullable ComponentPath focusChildPath(FocusNavigationEvent navigationEvent, int rowIndex, int childIndex,
+                                                   boolean forwardOnly) {
+        ScrollElement element = elements.get(rowIndex);
+        ComponentPath childPath = element.focusPathAtIndexDirectional(navigationEvent, childIndex, forwardOnly ? 1 : -1);
+        if (childPath == null) {
+            return null;
+        }
+        return ComponentPath.path(this, ComponentPath.path(element, childPath));
+    }
+
+    @Nullable
+    private ComponentPath focusIndex(int index, @Nullable Object navigationKey) {
+        if (index < 0 || index >= elements.size()) {
+            return null;
+        }
+
+        focused = index;
+        scrollElementIntoView(index);
+
+        ScrollElement element = elements.get(index);
+        if (element instanceof KeyedFocusNavigation keyedFocusNavigation) {
+            if (navigationKey != null) {
+                ComponentPath path = keyedFocusNavigation.getFocusPathForKey(navigationKey);
+                if (path != null) {
+                    return ComponentPath.path(this, path);
+                }
+            }
+
+            Object defaultNavigationKey = keyedFocusNavigation.getDefaultNavigationKey();
+            if (defaultNavigationKey != null) {
+                ComponentPath path = keyedFocusNavigation.getFocusPathForKey(defaultNavigationKey);
+                if (path != null) {
+                    return ComponentPath.path(this, path);
+                }
+            }
+        }
+
+        return focusRowPath(index);
+    }
+
+    @Nullable
+    private ComponentPath focusIndexChild(int index, int childIndex) {
+        if (index < 0 || index >= elements.size()) {
+            return null;
+        }
+
+        focused = index;
+        scrollElementIntoView(index);
+
+        ScrollElement element = elements.get(index);
+        List<GuiEventListener> children = element.children();
+        if (children.isEmpty()) {
+            return focusRowPath(index);
+        }
+
+        ComponentPath childPath = element.focusPathAtIndex(new FocusNavigationEvent.InitialFocus(), childIndex);
+        if (childPath == null) {
+            return null;
+        }
+
+        return ComponentPath.path(this, childPath);
     }
 
     public static class ScrollElement implements ContainerEventHandler {
@@ -687,6 +1025,10 @@ public class ScrollBox extends AbstractContainerWidget {
             return true;
         }
 
+        public @Nullable Object getFocusRestoreKey() {
+            return this;
+        }
+
         public List<GuiEventListener> children() {
             return Collections.emptyList();
         }
@@ -713,6 +1055,9 @@ public class ScrollBox extends AbstractContainerWidget {
             }
 
             this.focused = guiEventListener;
+            if (this.focused != null) {
+                this.focused.setFocused(true);
+            }
         }
 
         @Nullable
@@ -720,22 +1065,36 @@ public class ScrollBox extends AbstractContainerWidget {
             if (this.children().isEmpty()) {
                 return null;
             } else {
-                ComponentPath path = this.children().get(Math.min(index, this.children().size() - 1)).nextFocusPath(navigationEvent);
-                for (int i = index; i < this.children().size() && path == null; ++i) {
-                    if (this.children().get(i).isFocused()) {
-                        break;
-                    }
-                    path = this.children().get(i).nextFocusPath(navigationEvent);
-                }
-                for (int i = index - 1; i > 0 && path == null; --i) {
-                    if (this.children().get(i).isFocused()) {
-                        break;
-                    }
-                    path = this.children().get(i).nextFocusPath(navigationEvent);
+                ComponentPath path = focusPathAtIndexDirectional(navigationEvent, index, 1);
+                if (path != null) {
+                    return ComponentPath.path(this, path);
                 }
 
-                return ComponentPath.path(this, path);
+                path = focusPathAtIndexDirectional(navigationEvent, index - 1, -1);
+                if (path != null) {
+                    return ComponentPath.path(this, path);
+                }
+
+                return null;
             }
+        }
+
+        @Nullable
+        private ComponentPath focusPathAtIndexDirectional(FocusNavigationEvent navigationEvent, int index, int delta) {
+            List<? extends GuiEventListener> children = this.children();
+            if (children.isEmpty()) {
+                return null;
+            }
+
+            int clampedStart = Math.min(Math.max(index, 0), children.size() - 1);
+            for (int i = clampedStart; i >= 0 && i < children.size(); i += delta) {
+                ComponentPath path = children.get(i).nextFocusPath(navigationEvent);
+                if (path != null) {
+                    return path;
+                }
+            }
+
+            return null;
         }
 
         @Override
@@ -746,5 +1105,26 @@ public class ScrollBox extends AbstractContainerWidget {
                 return this.getFocused() != null ? ComponentPath.path(this, this.getFocused().getCurrentFocusPath()) : ComponentPath.leaf(this);
             }
         }
+
+        @Override
+        public ScreenRectangle getRectangle() {
+            return new ScreenRectangle(x, y, width, height);
+        }
+    }
+
+    public interface KeyedFocusNavigation {
+        @Nullable Object getFocusedNavigationKey();
+
+        @Nullable Object getDefaultNavigationKey();
+
+        @Nullable Object getEdgeNavigationKey(boolean forward);
+
+        @Nullable ComponentPath getFocusPathForKey(Object key);
+
+        boolean isPrimaryActionFocused();
+
+        @Nullable ComponentPath focusNavigationKey(FocusNavigationEvent navigationEvent, Object key);
+
+        @Nullable ComponentPath focusRelativeNavigationKey(FocusNavigationEvent navigationEvent, int delta);
     }
 }

@@ -397,6 +397,7 @@ public class ModSettingsPage extends PageScreen
 
         groupsActions = actionsLayout.addChild(new ScrollBox(ScrollBox.rowsToHeight(ACTIONS_MIN_ROWS, ACTIONS_ELEMENT_HEIGHT),
                 ACTIONS_SCROLL_WIDTH, ACTIONS_ELEMENT_HEIGHT));
+        groupsActions.setHorizontalEdgeNavigation(ScrollBox.HorizontalEdgeNavigation.WRAP_WITHIN_ROW);
     }
 
     private void buildBottomButtons() {
@@ -998,11 +999,17 @@ public class ModSettingsPage extends PageScreen
         updateButtonsVisibility();
 
         if (selectedElement != null) {
-            groups.selectElementIf(element -> ((GroupElement) element).getGroup().getName().equals(selectedElement.getGroup().getName()));
+            groups.setSelectedElementIf(element -> ((GroupElement) element).getGroup().getName().equals(selectedElement.getGroup().getName()));
         }
 
         if (groups.getSelectedElement() == null) {
-            groups.selectIndex(selectedIndex);
+            if (selectedIndex >= 0 && selectedIndex < groups.getElements().size()) {
+                groups.setSelectedElement(groups.getElements().get(selectedIndex));
+            }
+        }
+
+        if (groups.getSelectedElement() == null && !groups.getElements().isEmpty()) {
+            groups.setSelectedElement(groups.getElements().getFirst());
         }
 
         if (groups.getSelectedElement() != null) {
@@ -1020,7 +1027,7 @@ public class ModSettingsPage extends PageScreen
     }
 
     public void groupClicked(GroupElement element) {
-        groups.selectElement(element);
+        groups.setSelectedElement(element);
         SettingsGroup group = element.getGroup();
         textGroupName.setValue(group.getName());
         textGroupName.setEditable(!group.isSpecial());

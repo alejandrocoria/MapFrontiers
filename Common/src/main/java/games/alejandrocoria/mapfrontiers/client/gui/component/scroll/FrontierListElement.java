@@ -12,9 +12,13 @@ import games.alejandrocoria.mapfrontiers.client.gui.util.TextEllipsizeHelper;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.navigation.FocusNavigationEvent;
+import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.resources.language.I18n;
@@ -23,10 +27,12 @@ import net.minecraft.resources.Identifier;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
+import java.util.List;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public class FrontierListElement extends FrontierListRowElement {
+public class FrontierListElement extends FrontierListRowElement implements ScrollBox.KeyedFocusNavigation {
     private static final Identifier NAME_FADE_TEXTURE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/frontier_list/name_fade.png");
     private static final Identifier CHUNK_FILL_TEXTURE = frontierListTexture("chunk_fill.png");
     private static final Identifier CHUNK_OUTLINE_TEXTURE = frontierListTexture("chunk_outline.png");
@@ -68,6 +74,8 @@ public class FrontierListElement extends FrontierListRowElement {
     private final boolean checkboxVisible;
     private final boolean checkboxVisibleOnHover;
     private final CheckBoxButton checkBoxButton;
+    private final FocusTarget mainFocusTarget;
+    private final List<GuiEventListener> children;
     private final @Nullable StringWidget sourcePluginWidget;
     private final @Nullable IconButton visibilityButton;
     private final @Nullable IconButton deleteButton;
@@ -84,20 +92,21 @@ public class FrontierListElement extends FrontierListRowElement {
         this.collectionColor = collectionColor;
         this.checkboxVisible = checkboxVisible;
         this.checkboxVisibleOnHover = checkboxVisibleOnHover;
-        checkBoxButton = new CheckBoxButton(checked, button -> {});
+        mainFocusTarget = new FocusTarget(this::getMainFocusRectangle);
+        checkBoxButton = new CheckBoxButton(checked, button -> requestMarkToggle());
         sourcePluginWidget = createSourcePluginWidget();
 
-        boolean visibleNow = frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier);
-        visibilityButton = visibilityEnabled ? new IconButton(visibleNow ? IconButton.Type.Hide : IconButton.Type.Show, button -> {}) : null;
+        visibilityButton = visibilityEnabled ? new IconButton(getVisibilityButtonType(), button -> requestVisibility()) : null;
         if (visibilityButton != null) {
             visibilityButton.active = true;
-            visibilityButton.setTooltip(Tooltip.create(Component.translatable(visibleNow ? "mapfrontiers.hide" : "mapfrontiers.show")));
+            visibilityButton.setTooltip(getVisibilityTooltip());
         }
-        deleteButton = deleteEnabled ? new IconButton(IconButton.Type.Remove, button -> {}) : null;
+        deleteButton = deleteEnabled ? new IconButton(IconButton.Type.Remove, button -> requestDelete()) : null;
         if (deleteButton != null) {
             deleteButton.active = true;
             deleteButton.setTooltip(DELETE_TOOLTIP);
         }
+        children = buildChildren();
 
         if (frontier.isNamed()) {
             name1 = frontier.getName1();
@@ -203,19 +212,23 @@ public class FrontierListElement extends FrontierListRowElement {
                 frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier), nameColor, hiddenColor, rowContentX, nameX);
 
         drawModeBadge(graphics, selected, rowContentX);
-        renderActionButtons(graphics, mouseX, mouseY, partialTicks);
-        renderCheckBox(graphics, mouseX, mouseY, partialTicks);
+        renderActionButtons(graphics, mouseX, mouseY, partialTicks, focused);
+        renderCheckBox(graphics, mouseX, mouseY, partialTicks, focused);
     }
 
     @Override
     protected void drawFocusOutline(GuiGraphicsExtractor graphics) {
+        if (getFocused() != mainFocusTarget) {
+            return;
+        }
+
         int left = x + 2;
         int top = y;
         graphics.outline(left, top, width - 4, height, ColorConstants.WHITE);
     }
 
-    private void renderCheckBox(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
-        if (!shouldRenderCheckBox()) {
+    private void renderCheckBox(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks, boolean focused) {
+        if (!shouldRenderCheckBox(focused)) {
             return;
         }
 
@@ -224,11 +237,13 @@ public class FrontierListElement extends FrontierListRowElement {
         checkBoxButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
     }
 
-    private void renderActionButtons(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
-        if (visibilityButton != null && (isHovered || !frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier))) {
+    private void renderActionButtons(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks, boolean focused) {
+        if (visibilityButton != null && (focused || isHovered || !frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier))) {
+            visibilityButton.setType(getVisibilityButtonType());
+            visibilityButton.setTooltip(getVisibilityTooltip());
             visibilityButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         }
-        if (deleteButton != null && isHovered) {
+        if (deleteButton != null && (focused || isHovered)) {
             deleteButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         }
     }
@@ -239,8 +254,8 @@ public class FrontierListElement extends FrontierListRowElement {
         }
     }
 
-    private boolean shouldRenderCheckBox() {
-        return checkboxVisible || checkboxVisibleOnHover && isHovered;
+    private boolean shouldRenderCheckBox(boolean focused) {
+        return checkboxVisible || checkboxVisibleOnHover && (isHovered || focused);
     }
 
     private void drawModeBadge(GuiGraphicsExtractor graphics, boolean selected, int rowContentX) {
@@ -375,7 +390,7 @@ public class FrontierListElement extends FrontierListRowElement {
     }
 
     private boolean isCheckBoxHovered(int mouseX, int mouseY) {
-        return shouldRenderCheckBox() && checkBoxButton.isMouseOver(mouseX, mouseY);
+        return shouldRenderCheckBox(false) && checkBoxButton.isMouseOver(mouseX, mouseY);
     }
 
     private static Identifier frontierListTexture(String fileName) {
@@ -386,15 +401,15 @@ public class FrontierListElement extends FrontierListRowElement {
     public ScrollBox.ScrollElement.Action mousePressed(MouseButtonEvent event, boolean doubleClick) {
         if (visible && isHovered) {
             if (isCheckBoxHovered((int) event.x(), (int) event.y())) {
-                markToggleRequested = true;
+                requestMarkToggle();
                 return ScrollBox.ScrollElement.Action.Handled;
             }
             if (deleteButton != null && deleteButton.isMouseOver(event.x(), event.y())) {
-                deleteRequested = true;
+                requestDelete();
                 return ScrollBox.ScrollElement.Action.Handled;
             }
             if (visibilityButton != null && visibilityButton.isMouseOver(event.x(), event.y())) {
-                visibilityRequested = true;
+                requestVisibility();
                 return ScrollBox.ScrollElement.Action.Handled;
             }
             if (event.x() >= getSelectionRightBound()) {
@@ -404,5 +419,157 @@ public class FrontierListElement extends FrontierListRowElement {
         }
 
         return ScrollBox.ScrollElement.Action.None;
+    }
+
+    @Override
+    public List<GuiEventListener> children() {
+        return children;
+    }
+
+    @Override
+    public @Nullable Object getFocusedNavigationKey() {
+        return resolveNavigationKey(getFocused());
+    }
+
+    @Override
+    public Object getDefaultNavigationKey() {
+        return FrontierListFocusKey.MAIN;
+    }
+
+    @Override
+    public @Nullable Object getEdgeNavigationKey(boolean forward) {
+        return forward ? FrontierListFocusKey.MAIN : getLastNavigationKey();
+    }
+
+    @Override
+    public @Nullable ComponentPath getFocusPathForKey(Object key) {
+        if (!(key instanceof FrontierListFocusKey focusKey)) {
+            return null;
+        }
+
+        return switch (focusKey) {
+            case MAIN -> focusPathForListener(mainFocusTarget);
+            case PRIMARY_ACTION -> focusPathForListener(visibilityButton);
+            case SECONDARY_ACTION -> focusPathForListener(deleteButton);
+            case MARK -> checkboxVisible || checkboxVisibleOnHover ? focusPathForListener(checkBoxButton) : null;
+            case COLLAPSE -> null;
+        };
+    }
+
+    @Override
+    public boolean isPrimaryActionFocused() {
+        return getFocused() == mainFocusTarget;
+    }
+
+    @Override
+    public @Nullable ComponentPath focusNavigationKey(FocusNavigationEvent navigationEvent, Object key) {
+        return getFocusPathForKey(key);
+    }
+
+    @Override
+    public @Nullable ComponentPath focusRelativeNavigationKey(FocusNavigationEvent navigationEvent, int delta) {
+        FrontierListFocusKey[] order = {
+                FrontierListFocusKey.MAIN,
+                FrontierListFocusKey.PRIMARY_ACTION,
+                FrontierListFocusKey.SECONDARY_ACTION,
+                FrontierListFocusKey.MARK
+        };
+
+        FrontierListFocusKey currentKey = (FrontierListFocusKey) getFocusedNavigationKey();
+        int currentIndex = indexOf(order, currentKey);
+        for (int i = currentIndex + delta; i >= 0 && i < order.length; i += delta) {
+            ComponentPath path = focusNavigationKey(navigationEvent, order[i]);
+            if (path != null) {
+                return path;
+            }
+        }
+
+        return null;
+    }
+
+    private void requestMarkToggle() {
+        markToggleRequested = true;
+    }
+
+    private void requestVisibility() {
+        visibilityRequested = true;
+    }
+
+    private void requestDelete() {
+        deleteRequested = true;
+    }
+
+    private List<GuiEventListener> buildChildren() {
+        List<GuiEventListener> children = new ArrayList<>(4);
+        children.add(mainFocusTarget);
+        if (visibilityButton != null) {
+            children.add(visibilityButton);
+        }
+        if (deleteButton != null) {
+            children.add(deleteButton);
+        }
+        if (checkboxVisible || checkboxVisibleOnHover) {
+            children.add(checkBoxButton);
+        }
+        return List.copyOf(children);
+    }
+
+    private IconButton.Type getVisibilityButtonType() {
+        return frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier) ? IconButton.Type.Hide : IconButton.Type.Show;
+    }
+
+    private Tooltip getVisibilityTooltip() {
+        return Tooltip.create(Component.translatable(
+                frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier) ? "mapfrontiers.hide" : "mapfrontiers.show"));
+    }
+
+    private @Nullable ComponentPath focusPathForListener(@Nullable GuiEventListener listener) {
+        if (listener == null) {
+            return null;
+        }
+
+        return ComponentPath.path(this, ComponentPath.leaf(listener));
+    }
+
+    private FrontierListFocusKey getLastNavigationKey() {
+        if (checkboxVisible || checkboxVisibleOnHover) {
+            return FrontierListFocusKey.MARK;
+        }
+        if (deleteButton != null) {
+            return FrontierListFocusKey.SECONDARY_ACTION;
+        }
+        if (visibilityButton != null) {
+            return FrontierListFocusKey.PRIMARY_ACTION;
+        }
+        return FrontierListFocusKey.MAIN;
+    }
+
+    private FrontierListFocusKey resolveNavigationKey(@Nullable GuiEventListener listener) {
+        if (listener == mainFocusTarget) {
+            return FrontierListFocusKey.MAIN;
+        }
+        if (listener == visibilityButton) {
+            return FrontierListFocusKey.PRIMARY_ACTION;
+        }
+        if (listener == deleteButton) {
+            return FrontierListFocusKey.SECONDARY_ACTION;
+        }
+        if (listener == checkBoxButton) {
+            return FrontierListFocusKey.MARK;
+        }
+        return FrontierListFocusKey.MAIN;
+    }
+
+    private ScreenRectangle getMainFocusRectangle() {
+        return new ScreenRectangle(x + 2, y, Math.max(1, getSelectionRightBound() - (x + 2)), height);
+    }
+
+    private static int indexOf(FrontierListFocusKey[] order, FrontierListFocusKey key) {
+        for (int i = 0; i < order.length; ++i) {
+            if (order[i] == key) {
+                return i;
+            }
+        }
+        return -1;
     }
 }

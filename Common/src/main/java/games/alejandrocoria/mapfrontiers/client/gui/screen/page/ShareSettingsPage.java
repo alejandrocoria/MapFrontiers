@@ -16,6 +16,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDi
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.LinearLayout;
@@ -97,6 +98,7 @@ public class ShareSettingsPage extends PageScreen
         updateSettings.setCentered(true);
 
         users = new ScrollBox(ScrollBox.rowsToHeight(USERS_MIN_ROWS, USERS_ELEMENT_HEIGHT), USERS_WIDTH, USERS_ELEMENT_HEIGHT);
+        users.setHorizontalEdgeNavigation(ScrollBox.HorizontalEdgeNavigation.KEEP_FOCUS);
         users.setElementDeletePressedCallback(element -> {
             if (ClientConfig.ASK_CONFIRMATION_USER_DELETE.get()) {
                 new DeleteConfirmationDialog(
@@ -340,6 +342,7 @@ public class ShareSettingsPage extends PageScreen
     }
 
     private void updateUsers() {
+        ScrollBox.FocusSnapshot focusSnapshot = users.captureFocusSnapshot();
         users.removeAll();
         if (minecraft.player == null) {
             return;
@@ -353,6 +356,11 @@ public class ShareSettingsPage extends PageScreen
         }
 
         resetLabels();
+        ComponentPath path = users.restoreFocusSnapshot(focusSnapshot);
+        if (path != null) {
+            setFocused(users);
+            path.applyFocus(true);
+        }
     }
 
     private void updateCanUpdate() {
@@ -361,4 +369,5 @@ public class ShareSettingsPage extends PageScreen
         }
         canUpdate = frontier.checkActionUserShared(new SettingsUser(minecraft.player), SettingsUserShared.Action.UpdateSettings);
     }
+
 }

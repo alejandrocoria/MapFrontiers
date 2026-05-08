@@ -2,17 +2,21 @@ package games.alejandrocoria.mapfrontiers.client.gui.component.scroll;
 
 import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
+import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.List;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public class SectionHeaderListElement extends FrontierListRowElement {
+public class SectionHeaderListElement extends FrontierListRowElement implements ScrollBox.KeyedFocusNavigation {
     private static final int HEIGHT = 12;
     private static final int TITLE_Y = 2;
     private static final int TITLE_BUTTON_GAP = 3;
@@ -22,6 +26,7 @@ public class SectionHeaderListElement extends FrontierListRowElement {
     private final String title;
     private final IconButton addButton;
     private final boolean addEnabled;
+    private final List<GuiEventListener> children;
     private boolean addRequested;
 
     public SectionHeaderListElement(String rowId, Font font, String title, int width, int color, boolean addEnabled,
@@ -31,8 +36,9 @@ public class SectionHeaderListElement extends FrontierListRowElement {
         this.color = color;
         this.title = title;
         this.addEnabled = addEnabled;
-        this.addButton = new IconButton(IconButton.Type.Add, (button) -> {});
+        this.addButton = new IconButton(IconButton.Type.Add, (button) -> requestAdd());
         this.addButton.setTooltip(addTooltip);
+        this.children = addEnabled ? List.of(addButton) : List.of();
     }
 
     public boolean consumeAddRequested() {
@@ -64,8 +70,56 @@ public class SectionHeaderListElement extends FrontierListRowElement {
     }
 
     @Override
+    protected void drawFocusOutline(GuiGraphicsExtractor graphics) {
+    }
+
+    @Override
     protected boolean isKeyboardFocusable() {
+        return addEnabled;
+    }
+
+    @Override
+    public List<GuiEventListener> children() {
+        return children;
+    }
+
+    @Override
+    public @Nullable Object getFocusedNavigationKey() {
+        return addEnabled ? FrontierListFocusKey.MAIN : null;
+    }
+
+    @Override
+    public @Nullable Object getDefaultNavigationKey() {
+        return addEnabled ? FrontierListFocusKey.MAIN : null;
+    }
+
+    @Override
+    public @Nullable Object getEdgeNavigationKey(boolean forward) {
+        return addEnabled ? FrontierListFocusKey.MAIN : null;
+    }
+
+    @Override
+    public @Nullable ComponentPath getFocusPathForKey(Object key) {
+        if (!addEnabled || key != FrontierListFocusKey.MAIN) {
+            return null;
+        }
+
+        return ComponentPath.path(this, ComponentPath.leaf(addButton));
+    }
+
+    @Override
+    public boolean isPrimaryActionFocused() {
         return false;
+    }
+
+    @Override
+    public @Nullable ComponentPath focusNavigationKey(FocusNavigationEvent navigationEvent, Object key) {
+        return getFocusPathForKey(key);
+    }
+
+    @Override
+    public @Nullable ComponentPath focusRelativeNavigationKey(FocusNavigationEvent navigationEvent, int delta) {
+        return null;
     }
 
     @Override
@@ -75,7 +129,7 @@ public class SectionHeaderListElement extends FrontierListRowElement {
         }
 
         if (addEnabled && addButton.isMouseOver(event.x(), event.y())) {
-            addRequested = true;
+            requestAdd();
             return ScrollBox.ScrollElement.Action.Handled;
         }
 
@@ -88,5 +142,9 @@ public class SectionHeaderListElement extends FrontierListRowElement {
 
     private int getAddLeft() {
         return getTitleLeft() + font.width(title) + TITLE_BUTTON_GAP;
+    }
+
+    private void requestAdd() {
+        addRequested = true;
     }
 }

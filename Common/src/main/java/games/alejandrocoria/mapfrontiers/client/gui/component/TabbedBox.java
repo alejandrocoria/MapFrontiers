@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component;
 
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.ButtonBase;
+import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -10,6 +11,8 @@ import net.minecraft.client.gui.layouts.Layout;
 import net.minecraft.client.gui.layouts.LayoutElement;
 import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.client.gui.layouts.LinearLayout;
+import net.minecraft.client.gui.navigation.FocusNavigationEvent;
+import net.minecraft.client.gui.navigation.ScreenAxis;
 import net.minecraft.network.chat.Component;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -44,7 +47,7 @@ public class TabbedBox implements Layout {
     }
 
     public void addTab(Component text, boolean enabled) {
-        tabs.add(new Tab(font, text, tabs.size(), enabled, this::setTabSelected));
+        tabs.add(new Tab(this, font, text, tabs.size(), enabled, this::setTabSelected));
         tabLayouts.addChild(tabs.getLast());
 
         FrameLayout content = new FrameLayout();
@@ -209,12 +212,44 @@ public class TabbedBox implements Layout {
         graphics.verticalLine(getX() + backgroundWidth - 1, getY() + 16, getY() + backgroundHeight - 1, ColorConstants.TAB_BORDER);
     }
 
+    private int findNextEnabledTab(int startIndex, boolean forward) {
+        if (forward) {
+            for (int i = startIndex + 1; i < tabs.size(); ++i) {
+                if (tabs.get(i).isEnabled()) {
+                    return i;
+                }
+            }
+        } else {
+            for (int i = startIndex - 1; i >= 0; --i) {
+                if (tabs.get(i).isEnabled()) {
+                    return i;
+                }
+            }
+        }
+
+        return -1;
+    }
+
+    private boolean hasFocusedTab() {
+        for (Tab tab : tabs) {
+            if (tab.isFocused()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static class Tab extends ButtonBase {
         private final Font font;
+        private final TabbedBox parent;
+        private final int index;
         private boolean selected = false;
 
-        public Tab(Font font, Component text, int index, boolean enabled, Consumer<Integer> onPress) {
+        public Tab(TabbedBox parent, Font font, Component text, int index, boolean enabled, Consumer<Integer> onPress) {
             super(0, 0, 70, 16, text, (b) -> onPress.accept(index), Button.DEFAULT_NARRATION);
+            this.parent = parent;
+            this.index = index;
             this.font = font;
             this.active = enabled;
         }
@@ -229,6 +264,41 @@ public class TabbedBox implements Layout {
 
         public boolean isEnabled() {
             return active;
+        }
+
+        @Override
+        public ComponentPath nextFocusPath(FocusNavigationEvent navigationEvent) {
+            if (!visible || !active) {
+                return null;
+            }
+
+            if (navigationEvent instanceof FocusNavigationEvent.TabNavigation) {
+                if (parent.hasFocusedTab()) {
+                    return null;
+                }
+
+                return selected ? ComponentPath.leaf(this) : null;
+            }
+
+            if (navigationEvent instanceof FocusNavigationEvent.ArrowNavigation arrowNavigation
+                    && arrowNavigation.direction().getAxis() == ScreenAxis.HORIZONTAL) {
+                if (!isFocused()) {
+                    return selected ? ComponentPath.leaf(this) : null;
+                }
+
+                int nextIndex = parent.findNextEnabledTab(index, arrowNavigation.direction().isPositive());
+                if (nextIndex == -1) {
+                    return null;
+                }
+
+                return ComponentPath.leaf(parent.tabs.get(nextIndex));
+            }
+
+            if (!isFocused()) {
+                return selected ? ComponentPath.leaf(this) : null;
+            }
+
+            return null;
         }
 
         @Override
