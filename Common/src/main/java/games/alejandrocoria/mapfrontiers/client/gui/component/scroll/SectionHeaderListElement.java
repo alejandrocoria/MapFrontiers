@@ -79,6 +79,11 @@ public class SectionHeaderListElement extends FrontierListRowElement implements 
     }
 
     @Override
+    protected boolean isPageNavigationTarget() {
+        return true;
+    }
+
+    @Override
     public List<GuiEventListener> children() {
         return children;
     }

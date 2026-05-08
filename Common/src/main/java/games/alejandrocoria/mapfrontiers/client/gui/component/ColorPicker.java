@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import net.minecraft.client.Minecraft;
@@ -13,6 +14,7 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -23,7 +25,7 @@ import java.util.function.BiConsumer;
 public class ColorPicker extends AbstractWidgetNoNarration {
     private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/color_picker.png");
     private static final int TEXTURE_WIDTH = 274;
-    private static final int TEXTURE_HEIGHT = 134;
+    private static final int TEXTURE_HEIGHT = 135;
     private static final int WIDTH = 141;
     private static final int HEIGHT = 128;
     private static final int HS_SIZE = 128;
@@ -37,10 +39,10 @@ public class ColorPicker extends AbstractWidgetNoNarration {
     private static final int HS_SELECTION_OFFSET = 2;
     private static final int HS_FOCUS_OFFSET = 3;
     private static final int V_MARKER_OFFSET_Y = 2;
-    private static final int HS_STEP = 4;
-    private static final int V_STEP = 4;
-    private static final int HS_FINE_STEP = 1;
-    private static final int V_FINE_STEP = 1;
+    private static final double HS_SPEED = 80.0;
+    private static final double V_SPEED = 120.0;
+    private static final double HS_FINE_SPEED = 25.0;
+    private static final double V_FINE_SPEED = 35.0;
     private static final int HS_BACKGROUND_U = 0;
     private static final int HS_BACKGROUND_V = 0;
     private static final int HS_BACKGROUND_DISABLED_U = 145;
@@ -54,16 +56,16 @@ public class ColorPicker extends AbstractWidgetNoNarration {
     private static final int HS_SELECTION_DISABLED_U = 145;
     private static final int HS_SELECTION_DISABLED_V = 129;
     private static final int HS_SELECTION_SIZE = 5;
-    private static final int V_SELECTION_U = 6;
+    private static final int V_SELECTION_U = 5;
     private static final int V_SELECTION_V = 129;
-    private static final int V_SELECTION_DISABLED_U = 151;
+    private static final int V_SELECTION_DISABLED_U = 150;
     private static final int V_SELECTION_DISABLED_V = 129;
     private static final int V_SELECTION_WIDTH = 10;
     private static final int V_SELECTION_HEIGHT = 5;
-    private static final int HS_FOCUS_U = 16;
-    private static final int HS_FOCUS_V = 127;
+    private static final int HS_FOCUS_U = 15;
+    private static final int HS_FOCUS_V = 128;
     private static final int HS_FOCUS_SIZE = 7;
-    private static final int V_FOCUS_U = 23;
+    private static final int V_FOCUS_U = 22;
     private static final int V_FOCUS_V = 129;
     private static final int V_FOCUS_WIDTH = 10;
     private static final int V_FOCUS_HEIGHT = 5;
@@ -81,6 +83,7 @@ public class ColorPicker extends AbstractWidgetNoNarration {
     private double focusedV;
     private int color;
     private int colorFullBrightness;
+    private long lastKeyboardMoveTimeNanos = -1L;
     private boolean hsGrabbed = false;
     private boolean vGrabbed = false;
     private FocusPart focusedPart = FocusPart.HS;
@@ -121,9 +124,9 @@ public class ColorPicker extends AbstractWidgetNoNarration {
         }
 
         if (navigationEvent instanceof FocusNavigationEvent.TabNavigation tabNavigation) {
+            syncFocusedToSelection();
             if (tabNavigation.forward()) {
                 if (focusedPart == FocusPart.HS) {
-                    resetFocusedPartToSelection(FocusPart.V);
                     focusedPart = FocusPart.V;
                     return ComponentPath.leaf(this);
                 }
@@ -131,7 +134,6 @@ public class ColorPicker extends AbstractWidgetNoNarration {
             }
 
             if (focusedPart == FocusPart.V) {
-                resetFocusedPartToSelection(FocusPart.HS);
                 focusedPart = FocusPart.HS;
                 return ComponentPath.leaf(this);
             }
@@ -139,7 +141,6 @@ public class ColorPicker extends AbstractWidgetNoNarration {
         }
 
         if (navigationEvent instanceof FocusNavigationEvent.ArrowNavigation arrowNavigation) {
-            moveFocusedSelection(arrowNavigation.direction());
             return ComponentPath.leaf(this);
         }
 
@@ -148,7 +149,22 @@ public class ColorPicker extends AbstractWidgetNoNarration {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (!isFocused() || !visible || !active || !event.isSelection()) {
+        if (!isFocused() || !visible || !active) {
+            return false;
+        }
+
+        if (focusedPart == FocusPart.V) {
+            if (event.input() == GLFW.GLFW_KEY_HOME) {
+                focusedV = 0.0;
+                return true;
+            }
+            if (event.input() == GLFW.GLFW_KEY_END) {
+                focusedV = 127.99;
+                return true;
+            }
+        }
+
+        if (!event.isSelection()) {
             return false;
         }
 
@@ -203,6 +219,7 @@ public class ColorPicker extends AbstractWidgetNoNarration {
 
     @Override
     public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        updateKeyboardMovement();
         renderHsBackground(graphics);
         renderVBackground(graphics);
         renderSelectedMarkers(graphics);
@@ -290,23 +307,73 @@ public class ColorPicker extends AbstractWidgetNoNarration {
         };
     }
 
-    private void moveFocusedSelection(ScreenDirection direction) {
+    private void moveFocusedSelection(ScreenDirection direction, double amount) {
         if (focusedPart == FocusPart.HS) {
-            int step = ScreenHelper.hasShiftDown() ? HS_FINE_STEP : HS_STEP;
             switch (direction) {
-                case LEFT -> setFocusedHs(focusedHsX - step, focusedHsY);
-                case RIGHT -> setFocusedHs(focusedHsX + step, focusedHsY);
-                case UP -> setFocusedHs(focusedHsX, focusedHsY - step);
-                case DOWN -> setFocusedHs(focusedHsX, focusedHsY + step);
+                case LEFT -> setFocusedHs(focusedHsX - amount, focusedHsY);
+                case RIGHT -> setFocusedHs(focusedHsX + amount, focusedHsY);
+                case UP -> setFocusedHs(focusedHsX, focusedHsY - amount);
+                case DOWN -> setFocusedHs(focusedHsX, focusedHsY + amount);
             }
             return;
         }
 
         if (direction == ScreenDirection.UP || direction == ScreenDirection.DOWN) {
-            int step = ScreenHelper.hasShiftDown() ? V_FINE_STEP : V_STEP;
-            double nextV = direction == ScreenDirection.UP ? focusedV - step : focusedV + step;
+            double nextV = direction == ScreenDirection.UP ? focusedV - amount : focusedV + amount;
             focusedV = Math.max(0.0, Math.min(nextV, 127.99));
         }
+    }
+
+    private void updateKeyboardMovement() {
+        if (!isFocused() || !visible || !active || hsGrabbed || vGrabbed) {
+            lastKeyboardMoveTimeNanos = -1L;
+            return;
+        }
+
+        Minecraft minecraft = Minecraft.getInstance();
+        var window = minecraft.getWindow();
+        boolean leftPressed = InputConstants.isKeyDown(window, org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT);
+        boolean rightPressed = InputConstants.isKeyDown(window, org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT);
+        boolean upPressed = InputConstants.isKeyDown(window, org.lwjgl.glfw.GLFW.GLFW_KEY_UP);
+        boolean downPressed = InputConstants.isKeyDown(window, org.lwjgl.glfw.GLFW.GLFW_KEY_DOWN);
+
+        if (!leftPressed && !rightPressed && !upPressed && !downPressed) {
+            lastKeyboardMoveTimeNanos = -1L;
+            return;
+        }
+
+        long now = System.nanoTime();
+        if (lastKeyboardMoveTimeNanos == -1L) {
+            lastKeyboardMoveTimeNanos = now;
+            return;
+        }
+
+        double deltaSeconds = (now - lastKeyboardMoveTimeNanos) / 1_000_000_000.0;
+        lastKeyboardMoveTimeNanos = now;
+        if (deltaSeconds <= 0.0) {
+            return;
+        }
+
+        if (focusedPart == FocusPart.HS) {
+            double moveX = (rightPressed ? 1.0 : 0.0) - (leftPressed ? 1.0 : 0.0);
+            double moveY = (downPressed ? 1.0 : 0.0) - (upPressed ? 1.0 : 0.0);
+            if (moveX == 0.0 && moveY == 0.0) {
+                return;
+            }
+
+            double magnitude = Math.sqrt(moveX * moveX + moveY * moveY);
+            double speed = ScreenHelper.hasShiftDown() ? HS_FINE_SPEED : HS_SPEED;
+            setFocusedHs(focusedHsX + moveX / magnitude * speed * deltaSeconds,
+                    focusedHsY + moveY / magnitude * speed * deltaSeconds);
+            return;
+        }
+
+        if (upPressed == downPressed) {
+            return;
+        }
+
+        double speed = ScreenHelper.hasShiftDown() ? V_FINE_SPEED : V_SPEED;
+        moveFocusedSelection(upPressed ? ScreenDirection.UP : ScreenDirection.DOWN, speed * deltaSeconds);
     }
 
     private void setFocusedHs(double newFocusedHsX, double newFocusedHsY) {
@@ -324,16 +391,6 @@ public class ColorPicker extends AbstractWidgetNoNarration {
     private void syncFocusedToSelection() {
         focusedHsX = hsX;
         focusedHsY = hsY;
-        focusedV = v;
-    }
-
-    private void resetFocusedPartToSelection(FocusPart part) {
-        if (part == FocusPart.HS) {
-            focusedHsX = hsX;
-            focusedHsY = hsY;
-            return;
-        }
-
         focusedV = v;
     }
 

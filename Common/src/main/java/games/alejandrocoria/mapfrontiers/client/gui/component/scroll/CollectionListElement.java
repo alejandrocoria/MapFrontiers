@@ -615,6 +615,16 @@ public class CollectionListElement extends FrontierListRowElement implements Scr
         deleteRequested = true;
     }
 
+    @Override
+    protected boolean isPageNavigationTarget() {
+        return true;
+    }
+
+    @Override
+    protected @Nullable Class<? extends ScrollBox.ScrollElement> getPageNavigationRangeEndType() {
+        return CollectionBorderCapListElement.class;
+    }
+
     private List<GuiEventListener> buildChildren() {
         List<GuiEventListener> children = new ArrayList<>(6);
         children.add(collapseToggleButton);

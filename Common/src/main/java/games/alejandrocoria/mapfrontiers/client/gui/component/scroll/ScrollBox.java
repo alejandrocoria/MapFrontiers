@@ -43,6 +43,9 @@ public class ScrollBox extends AbstractContainerWidget {
                                 boolean restoreActiveFocus) {
     }
 
+    private record NavigationTarget(int focusIndex, int rangeEndIndex) {
+    }
+
     private static final int SCROLLBAR_AREA_WIDTH = 12;
     private static final int SCROLLBAR_WIDTH = 8;
 
@@ -60,6 +63,10 @@ public class ScrollBox extends AbstractContainerWidget {
     private Consumer<ScrollElement> elementDeletedCallback;
     private Consumer<ScrollElement> elementDeletePressedCallback;
     private HorizontalEdgeNavigation horizontalEdgeNavigation = HorizontalEdgeNavigation.EXIT_SCROLLBOX;
+    private boolean navigationTargetsDirty = true;
+    private @Nullable NavigationTarget homeTarget = null;
+    private @Nullable NavigationTarget endTarget = null;
+    private List<NavigationTarget> pageNavigationTargets = List.of();
 
     public ScrollBox(int viewportHeight, int elementWidth, int scrollStep) {
         super(0, 0, elementWidth + SCROLLBAR_AREA_WIDTH, Math.max(1, viewportHeight),
@@ -98,6 +105,7 @@ public class ScrollBox extends AbstractContainerWidget {
     public void addElement(ScrollElement element) {
         element.setX(getX());
         elements.add(element);
+        invalidateNavigationTargets();
         scrollBarGrabbed = false;
         updateScrollWindow();
         updateScrollBar();
@@ -223,6 +231,7 @@ public class ScrollBox extends AbstractContainerWidget {
 
     private void removeElement(ScrollElement element, ListIterator<ScrollElement> it) {
         it.remove();
+        invalidateNavigationTargets();
 
         if (selected == elements.size()) {
             selected = elements.size() - 1;
@@ -251,6 +260,7 @@ public class ScrollBox extends AbstractContainerWidget {
         elements.clear();
         selected = -1;
         focused = -1;
+        invalidateNavigationTargets();
         scrollBarGrabbed = false;
         updateScrollWindow();
         updateScrollBar();
@@ -340,7 +350,7 @@ public class ScrollBox extends AbstractContainerWidget {
                     return null;
                 }
 
-                scrollElementIntoView(focused);
+                scrollFocusedElementIntoView();
 
                 ScrollElement targetElement = elements.get(focused);
                 if (targetElement instanceof KeyedFocusNavigation keyedFocusNavigation) {
@@ -376,7 +386,7 @@ public class ScrollBox extends AbstractContainerWidget {
                     return null;
                 }
 
-                scrollElementIntoView(focused);
+                scrollFocusedElementIntoView();
 
                 ScrollElement targetElement = elements.get(focused);
                 if (targetElement instanceof KeyedFocusNavigation keyedFocusNavigation) {
@@ -413,7 +423,7 @@ public class ScrollBox extends AbstractContainerWidget {
             }
         }
 
-        scrollElementIntoView(focused);
+        scrollFocusedElementIntoView();
 
         ScrollElement targetElement = elements.get(focused);
         if (targetElement instanceof KeyedFocusNavigation keyedFocusNavigation) {
@@ -644,6 +654,22 @@ public class ScrollBox extends AbstractContainerWidget {
     @Override
     public boolean keyPressed(KeyEvent event) {
         if (this.active && this.visible) {
+            if ((event.input() == GLFW.GLFW_KEY_HOME || event.input() == GLFW.GLFW_KEY_END) && isFocused()) {
+                ComponentPath focusPath = focusBoundaryElement(event.input() == GLFW.GLFW_KEY_END);
+                if (focusPath != null) {
+                    focusPath.applyFocus(true);
+                }
+                return true;
+            }
+
+            if ((event.input() == GLFW.GLFW_KEY_PAGE_UP || event.input() == GLFW.GLFW_KEY_PAGE_DOWN) && isFocused()) {
+                ComponentPath focusPath = focusPageNavigationTarget(event.input() == GLFW.GLFW_KEY_PAGE_DOWN);
+                if (focusPath != null) {
+                    focusPath.applyFocus(true);
+                }
+                return true;
+            }
+
             if (event.isSelection()) {
                 if (focused == -1 || !elements.get(focused).isKeyboardFocusable()) {
                     return true;
@@ -837,6 +863,242 @@ public class ScrollBox extends AbstractContainerWidget {
         return -1;
     }
 
+    // Navigation targets used by Home/End/PageUp/PageDown.
+    private void invalidateNavigationTargets() {
+        navigationTargetsDirty = true;
+    }
+
+    private void ensureNavigationTargets() {
+        if (!navigationTargetsDirty) {
+            return;
+        }
+
+        homeTarget = null;
+        endTarget = null;
+        pageNavigationTargets = List.of();
+
+        if (elements.isEmpty()) {
+            navigationTargetsDirty = false;
+            return;
+        }
+
+        int firstFocusableIndex = findNextFocusableIndex(-1, true);
+        int lastFocusableIndex = findNextFocusableIndex(elements.size(), false);
+
+        if (firstFocusableIndex != -1) {
+            int rangeEndIndex = findContiguousNonFocusableBoundaryIndex(firstFocusableIndex, false);
+            homeTarget = new NavigationTarget(firstFocusableIndex,
+                    rangeEndIndex == firstFocusableIndex ? -1 : rangeEndIndex);
+        }
+        if (lastFocusableIndex != -1) {
+            int rangeEndIndex = findContiguousNonFocusableBoundaryIndex(lastFocusableIndex, true);
+            endTarget = new NavigationTarget(lastFocusableIndex,
+                    rangeEndIndex == lastFocusableIndex ? -1 : rangeEndIndex);
+        }
+
+        List<NavigationTarget> navigationTargets = new ArrayList<>();
+        for (int i = 0; i < elements.size(); ++i) {
+            ScrollElement element = elements.get(i);
+            if (!element.isPageNavigationTarget()) {
+                continue;
+            }
+
+            int focusIndex = element.isKeyboardFocusable() ? i : findNextFocusableIndex(i, true);
+            if (focusIndex == -1) {
+                continue;
+            }
+
+            int rangeEndIndex = -1;
+            Class<? extends ScrollElement> rangeEndType = element.getPageNavigationRangeEndType();
+            if (rangeEndType != null) {
+                rangeEndIndex = findNextPageNavigationRangeEnd(i, rangeEndType);
+                if (rangeEndIndex < focusIndex) {
+                    rangeEndIndex = -1;
+                }
+            }
+
+            navigationTargets.add(new NavigationTarget(focusIndex, rangeEndIndex));
+        }
+
+        if (!navigationTargets.isEmpty()) {
+            List<NavigationTarget> deduplicatedTargets = new ArrayList<>();
+            for (NavigationTarget target : navigationTargets) {
+                NavigationTarget previous = deduplicatedTargets.isEmpty() ? null
+                        : deduplicatedTargets.get(deduplicatedTargets.size() - 1);
+                if (previous != null && previous.focusIndex() == target.focusIndex()) {
+                    deduplicatedTargets.set(deduplicatedTargets.size() - 1, new NavigationTarget(previous.focusIndex(),
+                            Math.max(previous.rangeEndIndex(), target.rangeEndIndex())));
+                } else {
+                    deduplicatedTargets.add(target);
+                }
+            }
+            pageNavigationTargets = List.copyOf(deduplicatedTargets);
+        }
+
+        navigationTargetsDirty = false;
+    }
+
+    private int findContiguousNonFocusableBoundaryIndex(int startIndex, boolean forward) {
+        int boundaryIndex = startIndex;
+        if (forward) {
+            for (int i = startIndex + 1; i < elements.size(); ++i) {
+                if (elements.get(i).isKeyboardFocusable()) {
+                    break;
+                }
+                boundaryIndex = i;
+            }
+        } else {
+            for (int i = startIndex - 1; i >= 0; --i) {
+                if (elements.get(i).isKeyboardFocusable()) {
+                    break;
+                }
+                boundaryIndex = i;
+            }
+        }
+
+        return boundaryIndex;
+    }
+
+    private int findNextPageNavigationRangeEnd(int startExclusive, Class<? extends ScrollElement> rangeEndType) {
+        for (int i = startExclusive + 1; i < elements.size(); ++i) {
+            if (rangeEndType.isInstance(elements.get(i))) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private int findPageNavigationTargetListIndex(boolean forward) {
+        if (forward) {
+            for (int i = 0; i < pageNavigationTargets.size(); ++i) {
+                if (pageNavigationTargets.get(i).focusIndex() > focused) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        int currentOrPrevious = -1;
+        for (int i = 0; i < pageNavigationTargets.size(); ++i) {
+            int targetFocusIndex = pageNavigationTargets.get(i).focusIndex();
+            if (targetFocusIndex > focused) {
+                break;
+            }
+            currentOrPrevious = i;
+        }
+
+        if (currentOrPrevious == -1) {
+            return -1;
+        }
+        if (pageNavigationTargets.get(currentOrPrevious).focusIndex() == focused) {
+            return currentOrPrevious - 1;
+        }
+        return currentOrPrevious;
+    }
+
+    private int getFocusedChildIndex() {
+        ScrollElement currentFocusedElement = getFocusedElement();
+        if (currentFocusedElement == null) {
+            return -1;
+        }
+
+        List<GuiEventListener> currentChildren = currentFocusedElement.children();
+        for (int i = 0; i < currentChildren.size(); ++i) {
+            if (currentChildren.get(i).isFocused()) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private @Nullable ComponentPath focusBoundaryElement(boolean end) {
+        ensureNavigationTargets();
+        NavigationTarget target = end ? endTarget : homeTarget;
+        if (target == null) {
+            return null;
+        }
+
+        return focusNavigationTarget(target, getFocusedChildIndex());
+    }
+
+    private @Nullable ComponentPath focusPageNavigationTarget(boolean forward) {
+        if (focused == -1) {
+            return null;
+        }
+
+        ensureNavigationTargets();
+        if (pageNavigationTargets.isEmpty()) {
+            return null;
+        }
+
+        int targetListIndex = findPageNavigationTargetListIndex(forward);
+        if (targetListIndex == -1) {
+            return null;
+        }
+
+        return focusNavigationTarget(pageNavigationTargets.get(targetListIndex), getFocusedChildIndex());
+    }
+
+    private @Nullable ComponentPath focusNavigationTarget(NavigationTarget target, int focusedChildIndex) {
+        ComponentPath path = focusElementAtIndex(target.focusIndex(), focusedChildIndex);
+        if (path == null) {
+            return null;
+        }
+
+        scrollNavigationTargetIntoView(target);
+
+        return path;
+    }
+
+    private void scrollFocusedElementIntoView() {
+        if (focused == -1) {
+            return;
+        }
+
+        scrollElementIntoView(focused);
+        scrollEndTargetIntoViewIfFocused();
+    }
+
+    private void scrollEndTargetIntoViewIfFocused() {
+        ensureNavigationTargets();
+        if (endTarget != null && endTarget.focusIndex() == focused) {
+            scrollNavigationTargetIntoView(endTarget);
+        }
+    }
+
+    private void scrollNavigationTargetIntoView(NavigationTarget target) {
+        if (target.rangeEndIndex() != -1) {
+            scrollElementIntoView(target.rangeEndIndex());
+            scrollElementIntoView(target.focusIndex());
+        }
+    }
+
+    private @Nullable ComponentPath focusElementAtIndex(int index, int focusedChildIndex) {
+        if (index < 0 || index >= elements.size()) {
+            return null;
+        }
+
+        ScrollElement element = elements.get(index);
+        if (element instanceof KeyedFocusNavigation keyedFocusNavigation) {
+            Object key = keyedFocusNavigation.getDefaultNavigationKey();
+            return focusIndex(index, key);
+        }
+
+        List<GuiEventListener> children = element.children();
+        if (!children.isEmpty()) {
+            if (focusedChildIndex >= 0) {
+                return focusIndexChild(index, focusedChildIndex);
+            }
+            return focusIndexChild(index, 0);
+        }
+
+        focused = index;
+        scrollFocusedElementIntoView();
+        return focusRowPath(index);
+    }
+
     private void setFocusedIndex(int index) {
         focused = index >= 0 && index < elements.size() ? index : -1;
     }
@@ -1023,6 +1285,14 @@ public class ScrollBox extends AbstractContainerWidget {
 
         protected boolean isKeyboardFocusable() {
             return true;
+        }
+
+        protected boolean isPageNavigationTarget() {
+            return false;
+        }
+
+        protected @Nullable Class<? extends ScrollElement> getPageNavigationRangeEndType() {
+            return null;
         }
 
         public @Nullable Object getFocusRestoreKey() {
