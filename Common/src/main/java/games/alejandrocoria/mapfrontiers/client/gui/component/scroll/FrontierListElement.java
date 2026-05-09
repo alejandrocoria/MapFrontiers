@@ -4,7 +4,7 @@ import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
-import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
+import games.alejandrocoria.mapfrontiers.client.gui.component.PluginSourceBadge;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.util.SourcePluginUiHelper;
@@ -76,7 +76,7 @@ public class FrontierListElement extends FrontierListRowElement implements Scrol
     private final CheckBoxButton checkBoxButton;
     private final FocusTarget mainFocusTarget;
     private final List<GuiEventListener> children;
-    private final @Nullable StringWidget sourcePluginWidget;
+    private final @Nullable PluginSourceBadge sourcePluginWidget;
     private final @Nullable IconButton visibilityButton;
     private final @Nullable IconButton deleteButton;
     private boolean markToggleRequested;
@@ -333,18 +333,6 @@ public class FrontierListElement extends FrontierListRowElement implements Scrol
         return mouseX >= hoverLeft && mouseY >= y && mouseX < rowContentX + METADATA_X && mouseY < y + height;
     }
 
-    private @Nullable StringWidget createSourcePluginWidget() {
-        Tooltip tooltip = SourcePluginUiHelper.createTooltip(frontier.getSourcePluginId());
-        if (tooltip == null) {
-            return null;
-        }
-
-        StringWidget widget = new StringWidget(SourcePluginUiHelper.createSymbolComponent(), font, height - 1);
-        widget.setColor(ColorConstants.TEXT_SOURCE_PLUGIN);
-        widget.setTooltip(tooltip);
-        return widget;
-    }
-
     private int getNameX() {
         return NAME_X + getSourcePluginOffset();
     }
@@ -448,6 +436,7 @@ public class FrontierListElement extends FrontierListRowElement implements Scrol
         }
 
         return switch (focusKey) {
+            case SOURCE_PLUGIN -> focusPathForListener(sourcePluginWidget);
             case MAIN -> focusPathForListener(mainFocusTarget);
             case PRIMARY_ACTION -> focusPathForListener(visibilityButton);
             case SECONDARY_ACTION -> focusPathForListener(deleteButton);
@@ -469,6 +458,7 @@ public class FrontierListElement extends FrontierListRowElement implements Scrol
     @Override
     public @Nullable ComponentPath focusRelativeNavigationKey(FocusNavigationEvent navigationEvent, int delta) {
         FrontierListFocusKey[] order = {
+                FrontierListFocusKey.SOURCE_PLUGIN,
                 FrontierListFocusKey.MAIN,
                 FrontierListFocusKey.PRIMARY_ACTION,
                 FrontierListFocusKey.SECONDARY_ACTION,
@@ -500,7 +490,10 @@ public class FrontierListElement extends FrontierListRowElement implements Scrol
     }
 
     private List<GuiEventListener> buildChildren() {
-        List<GuiEventListener> children = new ArrayList<>(4);
+        List<GuiEventListener> children = new ArrayList<>(5);
+        if (sourcePluginWidget != null) {
+            children.add(sourcePluginWidget);
+        }
         children.add(mainFocusTarget);
         if (visibilityButton != null) {
             children.add(visibilityButton);
@@ -541,10 +534,16 @@ public class FrontierListElement extends FrontierListRowElement implements Scrol
         if (visibilityButton != null) {
             return FrontierListFocusKey.PRIMARY_ACTION;
         }
+        if (sourcePluginWidget != null) {
+            return FrontierListFocusKey.SOURCE_PLUGIN;
+        }
         return FrontierListFocusKey.MAIN;
     }
 
     private FrontierListFocusKey resolveNavigationKey(@Nullable GuiEventListener listener) {
+        if (listener == sourcePluginWidget) {
+            return FrontierListFocusKey.SOURCE_PLUGIN;
+        }
         if (listener == mainFocusTarget) {
             return FrontierListFocusKey.MAIN;
         }
@@ -558,6 +557,14 @@ public class FrontierListElement extends FrontierListRowElement implements Scrol
             return FrontierListFocusKey.MARK;
         }
         return FrontierListFocusKey.MAIN;
+    }
+
+    private @Nullable PluginSourceBadge createSourcePluginWidget() {
+        if (!SourcePluginUiHelper.hasSourcePlugin(frontier.getSourcePluginId())) {
+            return null;
+        }
+
+        return new PluginSourceBadge(font, frontier.getSourcePluginId(), false, height - 1);
     }
 
     private ScreenRectangle getMainFocusRectangle() {

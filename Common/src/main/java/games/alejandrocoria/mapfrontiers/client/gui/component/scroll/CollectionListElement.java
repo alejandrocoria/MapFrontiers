@@ -4,7 +4,7 @@ import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.frontier.CollectionScope;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
-import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
+import games.alejandrocoria.mapfrontiers.client.gui.component.PluginSourceBadge;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.util.SourcePluginUiHelper;
@@ -72,7 +72,7 @@ public class CollectionListElement extends FrontierListRowElement implements Scr
     private final boolean checkboxVisible;
     private final boolean checkboxVisibleOnHover;
     private final int markedCount;
-    private final @Nullable StringWidget sourcePluginWidget;
+    private final @Nullable PluginSourceBadge sourcePluginWidget;
     private final FocusTarget mainFocusTarget;
     private final List<GuiEventListener> children;
     private final @Nullable IconButton createButton;
@@ -471,22 +471,6 @@ public class CollectionListElement extends FrontierListRowElement implements Scr
         return mouseX >= hoverLeft && mouseY >= y && mouseX < hoverRight && mouseY < y + height;
     }
 
-    private @Nullable StringWidget createSourcePluginWidget() {
-        if (collection == null) {
-            return null;
-        }
-
-        Tooltip tooltip = SourcePluginUiHelper.createTooltip(collection.getSourcePluginId());
-        if (tooltip == null) {
-            return null;
-        }
-
-        StringWidget widget = new StringWidget(SourcePluginUiHelper.createSymbolComponent(), font);
-        widget.setColor(ColorConstants.TEXT_SOURCE_PLUGIN);
-        widget.setTooltip(tooltip);
-        return widget;
-    }
-
     @Override
     protected ScrollBox.ScrollElement.Action mousePressed(MouseButtonEvent event, boolean doubleClick) {
         if (!visible || !isHovered) {
@@ -553,6 +537,7 @@ public class CollectionListElement extends FrontierListRowElement implements Scr
 
         return switch (focusKey) {
             case COLLAPSE -> focusPathForListener(collapseToggleButton);
+            case SOURCE_PLUGIN -> focusPathForListener(sourcePluginWidget);
             case MAIN -> focusPathForListener(mainFocusTarget);
             case PRIMARY_ACTION -> focusPathForListener(createButton);
             case SECONDARY_ACTION -> {
@@ -577,6 +562,7 @@ public class CollectionListElement extends FrontierListRowElement implements Scr
     public @Nullable ComponentPath focusRelativeNavigationKey(FocusNavigationEvent navigationEvent, int delta) {
         FrontierListFocusKey[] order = {
                 FrontierListFocusKey.COLLAPSE,
+                FrontierListFocusKey.SOURCE_PLUGIN,
                 FrontierListFocusKey.MAIN,
                 FrontierListFocusKey.PRIMARY_ACTION,
                 FrontierListFocusKey.SECONDARY_ACTION,
@@ -626,8 +612,11 @@ public class CollectionListElement extends FrontierListRowElement implements Scr
     }
 
     private List<GuiEventListener> buildChildren() {
-        List<GuiEventListener> children = new ArrayList<>(6);
+        List<GuiEventListener> children = new ArrayList<>(7);
         children.add(collapseToggleButton);
+        if (sourcePluginWidget != null) {
+            children.add(sourcePluginWidget);
+        }
         children.add(mainFocusTarget);
         if (createButton != null) {
             children.add(createButton);
@@ -662,12 +651,18 @@ public class CollectionListElement extends FrontierListRowElement implements Scr
         if (createButton != null) {
             return FrontierListFocusKey.PRIMARY_ACTION;
         }
+        if (sourcePluginWidget != null) {
+            return FrontierListFocusKey.SOURCE_PLUGIN;
+        }
         return FrontierListFocusKey.MAIN;
     }
 
     private FrontierListFocusKey resolveNavigationKey(@Nullable GuiEventListener listener) {
         if (listener == collapseToggleButton) {
             return FrontierListFocusKey.COLLAPSE;
+        }
+        if (listener == sourcePluginWidget) {
+            return FrontierListFocusKey.SOURCE_PLUGIN;
         }
         if (listener == mainFocusTarget) {
             return FrontierListFocusKey.MAIN;
@@ -682,6 +677,15 @@ public class CollectionListElement extends FrontierListRowElement implements Scr
             return FrontierListFocusKey.MARK;
         }
         return FrontierListFocusKey.MAIN;
+    }
+
+    private @Nullable PluginSourceBadge createSourcePluginWidget() {
+        String sourcePluginId = collection == null ? null : collection.getSourcePluginId();
+        if (!SourcePluginUiHelper.hasSourcePlugin(sourcePluginId)) {
+            return null;
+        }
+
+        return new PluginSourceBadge(font, sourcePluginId, false, height - 1);
     }
 
     private ScreenRectangle getMainFocusRectangle() {

@@ -8,6 +8,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPaletteWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPicker;
+import games.alejandrocoria.mapfrontiers.client.gui.component.PluginSourceBadge;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
@@ -16,7 +17,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteCollectionConfirmationDialog;
-import games.alejandrocoria.mapfrontiers.client.gui.util.SourcePluginUiHelper;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
@@ -163,18 +163,11 @@ public class CollectionInfoPage extends PageScreen {
 
         LinearLayout headerRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
         headerRow.addChild(new StringWidget(NAME_LABEL, font).setColor(ColorConstants.WHITE));
-        SourcePluginUiHelper.SourcePluginDisplay sourcePluginDisplay = SourcePluginUiHelper.createDisplay(
-                font,
-                collection.getSourcePluginId(),
-                NAME_SECTION_WIDTH - font.width(NAME_LABEL.getVisualOrderText()) - LayoutConstants.SPACING_TINY * 2
-        );
-        if (sourcePluginDisplay != null) {
-            int sourceWidth = font.width(sourcePluginDisplay.text().getVisualOrderText());
-            headerRow.addChild(SpacerElement.width(Math.max(0, NAME_SECTION_WIDTH - font.width(NAME_LABEL.getVisualOrderText()) - sourceWidth - LayoutConstants.SPACING_TINY * 2)));
-            StringWidget sourceWidget = new StringWidget(sourcePluginDisplay.text(), font).setColor(ColorConstants.TEXT);
-            sourceWidget.setTooltip(sourcePluginDisplay.tooltip());
-            headerRow.addChild(sourceWidget);
-        }
+        PluginSourceBadge sourceBadge = new PluginSourceBadge(font, collection.getSourcePluginId(), true);
+        int sourceWidth = sourceBadge.getWidth();
+        headerRow.addChild(SpacerElement.width(Math.max(0,
+                NAME_SECTION_WIDTH - font.width(NAME_LABEL.getVisualOrderText()) - sourceWidth - LayoutConstants.SPACING_TINY * 2)));
+        headerRow.addChild(sourceBadge);
         overviewColumn.addChild(headerRow);
 
         textName = new TextBox(font, NAME_SECTION_WIDTH);
@@ -334,7 +327,7 @@ public class CollectionInfoPage extends PageScreen {
 
     private void onDeletePressed() {
         if (ClientConfig.ASK_CONFIRMATION_COLLECTION_DELETE.get()) {
-            new DeleteCollectionConfirmationDialog(response -> {
+            new DeleteCollectionConfirmationDialog(collection, response -> {
                 if (response == ConfirmationDialog.Response.ConfirmAlternative) {
                     ClientConfig.ASK_CONFIRMATION_COLLECTION_DELETE.set(false);
                     ClientGlobalEvents.postUpdatedConfigEvent();

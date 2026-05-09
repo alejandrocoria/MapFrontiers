@@ -9,6 +9,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPaletteWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPicker;
+import games.alejandrocoria.mapfrontiers.client.gui.component.PluginSourceBadge;
 import games.alejandrocoria.mapfrontiers.client.gui.component.SimpleSlider;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
@@ -20,7 +21,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDi
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteFrontierConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.PathStyleDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.VisibilityDialog;
-import games.alejandrocoria.mapfrontiers.client.gui.util.SourcePluginUiHelper;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
@@ -254,18 +254,11 @@ public class FrontierInfoPage extends PageScreen
 
         LinearLayout headerRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
         headerRow.addChild(new StringWidget(NAME_LABEL, font).setColor(ColorConstants.WHITE));
-        SourcePluginUiHelper.SourcePluginDisplay sourcePluginDisplay = SourcePluginUiHelper.createDisplay(
-                font,
-                frontier.getSourcePluginId(),
-                NAME_SECTION_WIDTH - font.width(NAME_LABEL.getVisualOrderText()) - LayoutConstants.SPACING_TINY * 2
-        );
-        if (sourcePluginDisplay != null) {
-            int sourceWidth = font.width(sourcePluginDisplay.text().getVisualOrderText());
-            headerRow.addChild(SpacerElement.width(Math.max(0, NAME_SECTION_WIDTH - font.width(NAME_LABEL.getVisualOrderText()) - sourceWidth - LayoutConstants.SPACING_TINY * 2)));
-            StringWidget sourceWidget = new StringWidget(sourcePluginDisplay.text(), font).setColor(ColorConstants.TEXT);
-            sourceWidget.setTooltip(sourcePluginDisplay.tooltip());
-            headerRow.addChild(sourceWidget);
-        }
+        PluginSourceBadge sourceBadge = new PluginSourceBadge(font, frontier.getSourcePluginId(), true);
+        int sourceWidth = sourceBadge.getWidth();
+        headerRow.addChild(SpacerElement.width(Math.max(0,
+                NAME_SECTION_WIDTH - font.width(NAME_LABEL.getVisualOrderText()) - sourceWidth - LayoutConstants.SPACING_TINY * 2)));
+        headerRow.addChild(sourceBadge);
         nameColumn.addChild(headerRow);
 
         textName1 = createNameTextBox(frontier.getName1(), value -> {

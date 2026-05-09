@@ -18,6 +18,10 @@ public final class SourcePluginUiHelper {
     private static final String PLUGIN_NAME_KEY = "mapfrontiers.plugin_name";
     private static final String SOURCE_PLUGIN_SYMBOL = "\uD83E\uDDE9";
 
+    public static boolean hasSourcePlugin(@Nullable String sourcePluginId) {
+        return !StringUtil.isBlank(sourcePluginId);
+    }
+
     public static @Nullable SourcePluginDisplay createDisplay(Font font, @Nullable String sourcePluginId, int maxWidth) {
         SourcePluginInfo sourcePluginInfo = resolveSourcePluginInfo(sourcePluginId);
         if (sourcePluginInfo == null) {
@@ -63,7 +67,7 @@ public final class SourcePluginUiHelper {
     }
 
     private static @Nullable SourcePluginInfo resolveSourcePluginInfo(@Nullable String sourcePluginId) {
-        if (sourcePluginId == null) {
+        if (!hasSourcePlugin(sourcePluginId)) {
             return null;
         }
 

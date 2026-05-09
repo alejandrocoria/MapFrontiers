@@ -509,7 +509,7 @@ public class FrontierListPage extends PageScreen
     }
 
     private void showDeleteCollectionConfirmation(CollectionData collection) {
-        new DeleteCollectionConfirmationDialog(response -> {
+        new DeleteCollectionConfirmationDialog(collection, response -> {
             if (response == ConfirmationDialog.Response.ConfirmAlternative) {
                 ClientConfig.ASK_CONFIRMATION_COLLECTION_DELETE.set(false);
                 ClientGlobalEvents.postUpdatedConfigEvent();
