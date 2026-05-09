@@ -19,7 +19,7 @@ public class ClientCollectionRuntime {
     private final Map<UUID, CollectionData> globalCollectionsById = new LinkedHashMap<>();
     private final Map<UUID, CollectionData> personalPersistentCollectionsById = new LinkedHashMap<>();
     private final Map<UUID, CollectionData> personalSessionCollectionsById = new LinkedHashMap<>();
-    private final Map<UUID, List<FrontierOverlay>> visibleFrontiersByCollectionId = new LinkedHashMap<>();
+    private final Map<UUID, List<FrontierOverlay>> indexedFrontiersByCollectionId = new LinkedHashMap<>();
     private final List<FrontierOverlay> globalFrontiersWithoutCollection = new ArrayList<>();
     private final List<FrontierOverlay> personalPersistentFrontiersWithoutCollection = new ArrayList<>();
     private final List<FrontierOverlay> personalSessionFrontiersWithoutCollection = new ArrayList<>();
@@ -28,7 +28,7 @@ public class ClientCollectionRuntime {
         globalCollectionsById.clear();
         personalPersistentCollectionsById.clear();
         personalSessionCollectionsById.clear();
-        visibleFrontiersByCollectionId.clear();
+        indexedFrontiersByCollectionId.clear();
         globalFrontiersWithoutCollection.clear();
         personalPersistentFrontiersWithoutCollection.clear();
         personalSessionFrontiersWithoutCollection.clear();
@@ -59,14 +59,14 @@ public class ClientCollectionRuntime {
     }
 
     public void refreshFromFrontiers(FrontiersOverlayManager globalManager, FrontiersOverlayManager personalManager) {
-        visibleFrontiersByCollectionId.clear();
+        indexedFrontiersByCollectionId.clear();
         globalFrontiersWithoutCollection.clear();
         personalPersistentFrontiersWithoutCollection.clear();
         personalSessionFrontiersWithoutCollection.clear();
 
         indexFrontiers(globalManager, globalFrontiersWithoutCollection);
         indexFrontiers(personalManager, personalPersistentFrontiersWithoutCollection, personalSessionFrontiersWithoutCollection);
-        pruneIndirectPersonalCollectionsWithoutVisibleFrontiers();
+        pruneNonOwnedPersonalCollectionsWithoutIndexedFrontiers();
     }
 
     public @Nullable CollectionData getCollection(UUID collectionId) {
@@ -120,7 +120,7 @@ public class ClientCollectionRuntime {
     }
 
     public List<FrontierOverlay> getFrontiersInCollection(UUID collectionId) {
-        List<FrontierOverlay> frontiers = visibleFrontiersByCollectionId.get(collectionId);
+        List<FrontierOverlay> frontiers = indexedFrontiersByCollectionId.get(collectionId);
         return frontiers == null ? List.of() : List.copyOf(frontiers);
     }
 
@@ -144,8 +144,8 @@ public class ClientCollectionRuntime {
         };
     }
 
-    public int getVisibleFrontierCount(UUID collectionId) {
-        List<FrontierOverlay> frontiers = visibleFrontiersByCollectionId.get(collectionId);
+    public int getIndexedFrontierCount(UUID collectionId) {
+        List<FrontierOverlay> frontiers = indexedFrontiersByCollectionId.get(collectionId);
         return frontiers == null ? 0 : frontiers.size();
     }
 
@@ -157,7 +157,7 @@ public class ClientCollectionRuntime {
                     continue;
                 }
 
-                visibleFrontiersByCollectionId.computeIfAbsent(frontier.getCollectionId(), ignored -> new ArrayList<>()).add(frontier);
+                indexedFrontiersByCollectionId.computeIfAbsent(frontier.getCollectionId(), ignored -> new ArrayList<>()).add(frontier);
             }
         }
     }
@@ -173,19 +173,19 @@ public class ClientCollectionRuntime {
                     continue;
                 }
 
-                visibleFrontiersByCollectionId.computeIfAbsent(frontier.getCollectionId(), ignored -> new ArrayList<>()).add(frontier);
+                indexedFrontiersByCollectionId.computeIfAbsent(frontier.getCollectionId(), ignored -> new ArrayList<>()).add(frontier);
             }
         }
     }
 
-    private void pruneIndirectPersonalCollectionsWithoutVisibleFrontiers() {
+    private void pruneNonOwnedPersonalCollectionsWithoutIndexedFrontiers() {
         SettingsUser currentPlayer = mc.player == null ? null : new SettingsUser(mc.player);
         if (currentPlayer == null) {
             return;
         }
 
         personalPersistentCollectionsById.entrySet().removeIf(entry -> !entry.getValue().getOwner().equals(currentPlayer)
-                && getVisibleFrontierCount(entry.getKey()) == 0);
+                && getIndexedFrontierCount(entry.getKey()) == 0);
     }
 
     private Map<UUID, CollectionData> getCollectionMap(CollectionData collection) {
