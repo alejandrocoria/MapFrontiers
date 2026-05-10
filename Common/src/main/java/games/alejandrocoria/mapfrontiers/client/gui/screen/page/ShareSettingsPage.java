@@ -3,7 +3,6 @@ package games.alejandrocoria.mapfrontiers.client.gui.screen.page;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
-import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
@@ -14,6 +13,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.UserSharedE
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.client.gui.ComponentPath;
@@ -31,8 +31,7 @@ import java.util.Date;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class ShareSettingsPage extends PageScreen
-{
+public class ShareSettingsPage extends PageScreen {
     private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_share_settings");
     private static final Component UPDATE_FRONTIER_LABEL = Component.translatable("mapfrontiers.update_frontier");
     private static final Component UPDATE_SETTINGS_LABEL = Component.translatable("mapfrontiers.update_settings");

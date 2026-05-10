@@ -1356,7 +1356,7 @@ public class ScrollBox extends AbstractContainerWidget {
                 return null;
             }
 
-            int clampedStart = Math.min(Math.max(index, 0), children.size() - 1);
+            int clampedStart = Math.clamp(index, 0, children.size() - 1);
             for (int i = clampedStart; i >= 0 && i < children.size(); i += delta) {
                 ComponentPath path = children.get(i).nextFocusPath(navigationEvent);
                 if (path != null) {

@@ -10,13 +10,15 @@ import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreateSpec;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierCreateSpec;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
+import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
-import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationResult;
-import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationService;
+import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationResult;
+import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationService;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.ChunkPos;
@@ -29,16 +31,16 @@ import java.util.Set;
 import java.util.UUID;
 
 public class ServerFrontierServiceImpl implements PluginScopedServerFrontierService {
-    private final ServerFrontierOperationService operationService;
+    private final ServerTerritoryOperationService operationService;
 
-    public ServerFrontierServiceImpl(ServerFrontierOperationService operationService) {
+    public ServerFrontierServiceImpl(ServerTerritoryOperationService operationService) {
         this.operationService = operationService;
     }
 
     @Override
     public FrontierDataView createGlobalFrontier(String pluginModId, UserRef owner, FrontierCreateRequest request) {
         FrontierCreateSpec createSpec = createGlobalFrontierSpec(pluginModId, owner, request);
-        ServerFrontierOperationResult result = operationService.createGlobalFrontier(createSpec);
+        ServerTerritoryOperationResult result = operationService.createGlobalFrontier(createSpec);
         if (!result.isSuccess() || result.getFrontier() == null) {
             throw new IllegalArgumentException("Invalid global frontier create request");
         }
@@ -60,7 +62,7 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
 
         FrontierData payload = new FrontierData(frontier);
         ApiConverters.applyMutation(payload, mutation);
-        ServerFrontierOperationResult result = operationService.updateGlobalFrontier(frontierId.value(), FrontierChange.fromFrontierData(payload));
+        ServerTerritoryOperationResult result = operationService.updateGlobalFrontier(frontierId.value(), FrontierChange.fromFrontierData(payload));
         if (!result.isSuccess()) {
             return Optional.empty();
         }
@@ -77,7 +79,7 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
             return false;
         }
 
-        ServerFrontierOperationResult result = operationService.deleteGlobalFrontier(frontierId.value());
+        ServerTerritoryOperationResult result = operationService.deleteGlobalFrontier(frontierId.value());
         if (result.isSuccess()) {
             result.dispatchNetworkActions();
         }
@@ -112,7 +114,7 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
         String name1 = request.name1().orElse(defaults.getName1());
         String name2 = request.name2().orElse(defaults.getName2());
         int color = request.color().orElseGet(ColorHelper::getRandomColor);
-        FrontierData.VisibilityData visibility = request.visibility()
+        VisibilityData visibility = request.visibility()
                 .map(ApiConverters::toVisibility)
                 .orElseGet(defaults::getVisibilityData);
         FrontierData.BannerData banner = request.banner()
@@ -128,19 +130,19 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
 
         return switch (request.shape().type()) {
             case VERTEX -> FrontierCreateSpec.vertex(frontierId, frontierOwner, false, dimension,
-                    FrontierData.FrontierLifetime.PERSISTENT, collectionId, pluginModId, name1, name2, color, visibility, banner,
+                    TerritoryLifetime.PERSISTENT, collectionId, pluginModId, name1, name2, color, visibility, banner,
                     request.shape().vertices() == null ? List.of() : request.shape().vertices().stream()
                             .map(vertex -> new BlockPos(vertex.x(), 0, vertex.z()))
                             .toList(),
                     pathStyle);
             case CHUNK -> FrontierCreateSpec.chunk(frontierId, frontierOwner, false, dimension,
-                    FrontierData.FrontierLifetime.PERSISTENT, collectionId, pluginModId, name1, name2, color, visibility, banner,
+                    TerritoryLifetime.PERSISTENT, collectionId, pluginModId, name1, name2, color, visibility, banner,
                     request.shape().chunks() == null ? Set.of() : request.shape().chunks().stream()
                             .map(chunk -> new ChunkPos(chunk.x(), chunk.z()))
                             .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new)),
                     pathStyle);
             case PATH -> FrontierCreateSpec.path(frontierId, frontierOwner, false, dimension,
-                    FrontierData.FrontierLifetime.PERSISTENT, collectionId, pluginModId, name1, name2, color, visibility, banner,
+                    TerritoryLifetime.PERSISTENT, collectionId, pluginModId, name1, name2, color, visibility, banner,
                     request.shape().points() == null ? List.of() : request.shape().points().stream()
                             .map(point -> new BlockPos(point.x(), 0, point.z()))
                             .toList(),

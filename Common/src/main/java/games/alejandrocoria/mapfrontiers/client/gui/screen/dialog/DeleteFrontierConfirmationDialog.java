@@ -1,14 +1,13 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen.dialog;
 
-import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.component.PluginSourceBadge;
 import games.alejandrocoria.mapfrontiers.client.gui.util.SourcePluginUiHelper;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
 
 import javax.annotation.Nullable;
-
 import java.util.function.Consumer;
 
 public class DeleteFrontierConfirmationDialog extends DeleteConfirmationDialog {

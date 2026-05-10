@@ -2,11 +2,11 @@ package games.alejandrocoria.mapfrontiers.client;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
-import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
-import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
 import net.minecraft.SharedConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -34,31 +34,15 @@ import java.util.Random;
 import java.util.UUID;
 
 public class ChatFrontiers {
-    public static class ReceivedFrontierCopy {
-        private final FrontierData frontier;
-        private final @Nullable CollectionData collection;
-
-        public ReceivedFrontierCopy(FrontierData frontier, @Nullable CollectionData collection) {
-            this.frontier = frontier;
-            this.collection = collection;
-        }
-
-        public FrontierData frontier() {
-            return frontier;
-        }
-
-        public @Nullable CollectionData collection() {
-            return collection;
-        }
+    public record ReceivedFrontierCopy(FrontierData frontier, @Nullable CollectionData collection) {
     }
 
-    private static int receivedId = -1;
+    private static int currentReceivedMessageId = -1;
     private static final List<String> receivedData = new ArrayList<>();
     private static final LinkedHashMap<Integer, ReceivedFrontierCopy> receivedFrontiers = LinkedHashMap.newLinkedHashMap(3);
 
     public static void clear() {
-        receivedId = -1;
-        receivedData.clear();
+        resetReceivedMessageAssembly();
         receivedFrontiers.clear();
     }
 
@@ -151,10 +135,8 @@ public class ChatFrontiers {
                 throw new IllegalArgumentException();
             }
 
-            if (id != receivedId || total != receivedData.size() || !StringUtil.isBlank(receivedData.get(index - 1))) {
-                receivedData.clear();
-                receivedData.addAll(Collections.nCopies(total, ""));
-                receivedId = id;
+            if (shouldStartNewMessageAssembly(id, index, total)) {
+                startReceivedMessageAssembly(id, total);
             }
 
             receivedData.set(index - 1, data);
@@ -179,13 +161,13 @@ public class ChatFrontiers {
                 } else {
                     frontier.setCollectionId(null);
                 }
-                receivedFrontiers.remove(receivedId);
+                receivedFrontiers.remove(currentReceivedMessageId);
                 if (receivedFrontiers.size() == 3) {
                     var iterator = receivedFrontiers.entrySet().iterator();
                     iterator.next();
                     iterator.remove();
                 }
-                receivedFrontiers.putLast(receivedId, new ReceivedFrontierCopy(frontier, collection));
+                receivedFrontiers.putLast(currentReceivedMessageId, new ReceivedFrontierCopy(frontier, collection));
 
                 String frontierName;
                 if (frontier.getName1().isEmpty() && frontier.getName2().isEmpty()) {
@@ -199,9 +181,9 @@ public class ChatFrontiers {
                 }
 
                 MutableComponent button = Component.literal(frontierName);
-                button.withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to accept or use command /mfacceptcopy " + receivedId))));
+                button.withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to accept or use command /mfacceptcopy " + currentReceivedMessageId))));
                 button.withStyle(style -> style.withBold(true));
-                button.withStyle(style -> style.withClickEvent(new ClickEvent.RunCommand("/mapfrontiersacceptcopy " + receivedId)));
+                button.withStyle(style -> style.withClickEvent(new ClickEvent.RunCommand("/mapfrontiersacceptcopy " + currentReceivedMessageId)));
 
                 SettingsUser userSender = new SettingsUser();
                 userSender.uuid = sender;
@@ -216,7 +198,7 @@ public class ChatFrontiers {
                 text.append(button);
                 player.sendSystemMessage(text);
 
-                receivedId = -1;
+                resetReceivedMessageAssembly();
             }
 
         } catch (Throwable t) {
@@ -261,5 +243,22 @@ public class ChatFrontiers {
         CollectionData collection = new CollectionData();
         collection.readFromNBT(payload.getCompoundOrEmpty("collection"), version);
         return collection;
+    }
+
+    private static boolean shouldStartNewMessageAssembly(int messageId, int partIndex, int totalParts) {
+        return messageId != currentReceivedMessageId
+                || totalParts != receivedData.size()
+                || !StringUtil.isBlank(receivedData.get(partIndex - 1));
+    }
+
+    private static void startReceivedMessageAssembly(int messageId, int totalParts) {
+        resetReceivedMessageAssembly();
+        receivedData.addAll(Collections.nCopies(totalParts, ""));
+        currentReceivedMessageId = messageId;
+    }
+
+    private static void resetReceivedMessageAssembly() {
+        currentReceivedMessageId = -1;
+        receivedData.clear();
     }
 }

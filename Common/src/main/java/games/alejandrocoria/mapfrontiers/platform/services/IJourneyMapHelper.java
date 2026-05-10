@@ -1,6 +1,6 @@
 package games.alejandrocoria.mapfrontiers.platform.services;
 
-import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.MultiBufferSource;

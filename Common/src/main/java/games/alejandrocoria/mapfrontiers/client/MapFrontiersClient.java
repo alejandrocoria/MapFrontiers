@@ -3,26 +3,28 @@ package games.alejandrocoria.mapfrontiers.client;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.api.MapFrontiersAPIBootstrap;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
+import games.alejandrocoria.mapfrontiers.client.config.FrontierDisplayVisibility;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
-import games.alejandrocoria.mapfrontiers.client.frontier.ClientCollectionEvents;
-import games.alejandrocoria.mapfrontiers.client.frontier.ClientFrontierEvents;
-import games.alejandrocoria.mapfrontiers.client.frontier.ClientFrontierOperationService;
-import games.alejandrocoria.mapfrontiers.client.frontier.ClientFrontierRuntime;
-import games.alejandrocoria.mapfrontiers.client.frontier.CollectionScope;
-import games.alejandrocoria.mapfrontiers.client.frontier.CollectionUiStateStore;
-import games.alejandrocoria.mapfrontiers.client.frontier.FrontierLocalOverrides;
-import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.frontier.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.hud.HUD;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.page.ModSettingsPage;
 import games.alejandrocoria.mapfrontiers.client.settings.ClientSettingsProfileEvents;
+import games.alejandrocoria.mapfrontiers.client.territory.ClientTerritoryOperationService;
+import games.alejandrocoria.mapfrontiers.client.territory.ClientTerritoryRuntime;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientCollectionEvents;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionScope;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionUiStateStore;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientFrontierEvents;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierLocalOverrides;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.common.api.MapFrontiersApiLogAdapter;
-import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.Context;
@@ -76,7 +78,7 @@ public class MapFrontiersClient {
 
     private static IClientAPI jmAPI;
     private static final ClientConnectionState connectionState = new ClientConnectionState();
-    private static ClientFrontierRuntime frontierRuntime;
+    private static ClientTerritoryRuntime territoryRuntime;
     private static ModSettingsPage.Tab lastSettingsTab = ModSettingsPage.Tab.Credits;
 
     protected static KeyMapping openSettingsKey;
@@ -133,7 +135,7 @@ public class MapFrontiersClient {
             return;
         }
 
-        if (player == null || ClientConfig.FRONTIER_VISIBILITY.get() == ClientConfig.Visibility.Never) {
+        if (player == null || ClientConfig.FRONTIER_VISIBILITY.get() == FrontierDisplayVisibility.Never) {
             clearFrontierActivationState();
             return;
         }
@@ -154,7 +156,7 @@ public class MapFrontiersClient {
     }
 
     private static void updateOverlayManagers() {
-        ClientFrontierRuntime runtime = requireFrontierRuntime();
+        ClientTerritoryRuntime runtime = requireTerritoryRuntime();
         FrontiersOverlayManager frontiersOverlayManager = runtime.getGlobalFrontiersOverlayManager();
         FrontiersOverlayManager personalFrontiersOverlayManager = runtime.getPersonalFrontiersOverlayManager();
         frontiersOverlayManager.updateAllOverlays(false);
@@ -196,8 +198,8 @@ public class MapFrontiersClient {
 
         for (FrontierOverlay frontier : announcementActiveFrontiers.values()) {
             if (!currentlyActiveFrontiers.containsKey(frontier.getId())) {
-                boolean frontierAnnounceInChat = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat);
-                if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), frontierAnnounceInChat)
+                boolean frontierAnnounceInChat = frontier.getVisibility(FrontierVisibility.AnnounceInChat);
+                if (ClientConfig.resolveVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), frontierAnnounceInChat)
                         && (frontier.isNamed() || ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS.get())) {
                     player.sendSystemMessage(Component.translatable("mapfrontiers.chat.leaving", createAnnounceText(frontier)));
                 }
@@ -211,13 +213,13 @@ public class MapFrontiersClient {
                 Component titleText = createAnnounceTitle(frontier);
                 Component subtitleText = createAnnounceSubtitle(frontier);
 
-                boolean frontierAnnounceInChat = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat);
-                if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), frontierAnnounceInChat)) {
+                boolean frontierAnnounceInChat = frontier.getVisibility(FrontierVisibility.AnnounceInChat);
+                if (ClientConfig.resolveVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), frontierAnnounceInChat)) {
                     player.sendSystemMessage(Component.translatable("mapfrontiers.chat.entering", chatAndHotbarText));
                 }
 
-                boolean frontierAnnounceInTitle = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInTitle);
-                if (ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_TITLE.get(), frontierAnnounceInTitle)) {
+                boolean frontierAnnounceInTitle = frontier.getVisibility(FrontierVisibility.AnnounceInTitle);
+                if (ClientConfig.resolveVisibilityValue(ClientConfig.ANNOUNCE_IN_TITLE.get(), frontierAnnounceInTitle)) {
                     if (ClientConfig.TITLE_ANNOUNCEMENT_ABOVE_HOTBAR.get()) {
                         client.gui.setOverlayMessage(chatAndHotbarText, false);
                     } else if (System.currentTimeMillis() >= lastTitleTime + ClientConfig.TITLE_ANNOUNCEMENT_TIMEOUT.get() / 20 * 1000L) {
@@ -254,15 +256,15 @@ public class MapFrontiersClient {
             return;
         }
 
-        ensureFrontierRuntime();
+        ensureTerritoryRuntime();
         connectionState.restartHandshake();
 
         MapFrontiers.LOGGER.info("Client world session started");
     }
 
     private static void handleClientDisconnected() {
-        ClientFrontierRuntime runtime = frontierRuntime;
-        frontierRuntime = null;
+        ClientTerritoryRuntime runtime = territoryRuntime;
+        territoryRuntime = null;
 
         if (runtime != null) {
             try {
@@ -332,8 +334,8 @@ public class MapFrontiersClient {
     }
 
     private static @Nullable Component createAnnouncementCollectionComponent(FrontierOverlay frontier) {
-        if (!ClientConfig.getVisibilityValue(ClientConfig.MENTION_COLLECTION.get(),
-                frontier.getVisibility(FrontierData.VisibilityData.Visibility.MentionCollection))) {
+        if (!ClientConfig.resolveVisibilityValue(ClientConfig.MENTION_COLLECTION.get(),
+                frontier.getVisibility(FrontierVisibility.MentionCollection))) {
             return null;
         }
 
@@ -366,28 +368,28 @@ public class MapFrontiersClient {
         return jmAPI != null;
     }
 
-    private static @Nullable ClientFrontierRuntime ensureFrontierRuntime() {
+    private static @Nullable ClientTerritoryRuntime ensureTerritoryRuntime() {
         if (jmAPI == null) {
             return null;
         }
 
-        if (frontierRuntime == null) {
-            frontierRuntime = new ClientFrontierRuntime(jmAPI);
-            frontierRuntime.getCollectionEvents().subscribeCreated(MapFrontiersClient.class, collection -> refreshCollectionPresentation(collection.getId()));
-            frontierRuntime.getCollectionEvents().subscribeUpdated(MapFrontiersClient.class, collection -> refreshCollectionPresentation(collection.getId()));
-            frontierRuntime.getCollectionEvents().subscribeDeleted(MapFrontiersClient.class, collectionId -> {
+        if (territoryRuntime == null) {
+            territoryRuntime = new ClientTerritoryRuntime(jmAPI);
+            territoryRuntime.getCollectionEvents().subscribeCreated(MapFrontiersClient.class, collection -> refreshCollectionPresentation(collection.getId()));
+            territoryRuntime.getCollectionEvents().subscribeUpdated(MapFrontiersClient.class, collection -> refreshCollectionPresentation(collection.getId()));
+            territoryRuntime.getCollectionEvents().subscribeDeleted(MapFrontiersClient.class, collectionId -> {
                 if (hud != null) {
                     hud.frontierChanged();
                 }
             });
         }
 
-        frontierRuntime.ensureInitialized();
-        return frontierRuntime;
+        territoryRuntime.ensureInitialized();
+        return territoryRuntime;
     }
 
-    private static ClientFrontierRuntime requireFrontierRuntime() {
-        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+    private static ClientTerritoryRuntime requireTerritoryRuntime() {
+        ClientTerritoryRuntime runtime = ensureTerritoryRuntime();
         if (runtime == null) {
             throw new IllegalStateException("JourneyMap plugin is not available.");
         }
@@ -396,7 +398,7 @@ public class MapFrontiersClient {
     }
 
     private static FrontiersOverlayManager getFrontiersOverlayManagerOrNull(boolean personal) {
-        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        ClientTerritoryRuntime runtime = ensureTerritoryRuntime();
         if (runtime == null) {
             return null;
         }
@@ -408,11 +410,11 @@ public class MapFrontiersClient {
         return runtime.getGlobalFrontiersOverlayManager();
     }
 
-    public static void setFrontiersFromServer(List<FrontierData> globalFrontiers,
-                                              List<FrontierData> personalFrontiers,
-                                              List<CollectionData> globalCollections,
-                                              List<CollectionData> personalCollections) {
-        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+    public static void applyTerritoriesSnapshot(List<FrontierData> globalFrontiers,
+                                                List<FrontierData> personalFrontiers,
+                                                List<CollectionData> globalCollections,
+                                                List<CollectionData> personalCollections) {
+        ClientTerritoryRuntime runtime = ensureTerritoryRuntime();
         if (runtime == null) {
             return;
         }
@@ -421,10 +423,10 @@ public class MapFrontiersClient {
             return;
         }
 
-        MapFrontiers.LOGGER.debug("Received initial frontier snapshot from server. globalFrontiers={}, personalFrontiers={}, globalCollections={}, personalCollections={}",
+        MapFrontiers.LOGGER.debug("Received initial territories snapshot from server. globalFrontiers={}, personalFrontiers={}, globalCollections={}, personalCollections={}",
                 globalFrontiers.size(), personalFrontiers.size(), globalCollections.size(), personalCollections.size());
         runtime.getSyncService().applyServerSnapshot(globalFrontiers, personalFrontiers, globalCollections, personalCollections);
-        connectionState.markInitialFrontiersReceived();
+        connectionState.markInitialTerritoriesReceived();
         publishClientApiIfReady();
         if (hud != null) {
             hud.frontierChanged();
@@ -436,7 +438,7 @@ public class MapFrontiersClient {
             return;
         }
 
-        requireFrontierRuntime().getOperationService().applyCollectionCreated(collection);
+        requireTerritoryRuntime().getOperationService().applyCollectionCreated(collection);
     }
 
     public static void applyCollectionUpdated(CollectionData collection) {
@@ -444,7 +446,7 @@ public class MapFrontiersClient {
             return;
         }
 
-        requireFrontierRuntime().getOperationService().applyCollectionUpdated(collection);
+        requireTerritoryRuntime().getOperationService().applyCollectionUpdated(collection);
     }
 
     public static void applyCollectionDeleted(UUID collectionId) {
@@ -452,7 +454,7 @@ public class MapFrontiersClient {
             return;
         }
 
-        requireFrontierRuntime().getOperationService().applyCollectionDeleted(collectionId);
+        requireTerritoryRuntime().getOperationService().applyCollectionDeleted(collectionId);
     }
 
     public static List<FrontierOverlay> getFrontiers(boolean personal, ResourceKey<Level> dimension) {
@@ -474,7 +476,7 @@ public class MapFrontiersClient {
     }
 
     public static @Nullable CollectionData getCollection(UUID collectionId) {
-        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        ClientTerritoryRuntime runtime = ensureTerritoryRuntime();
         if (runtime == null) {
             return null;
         }
@@ -482,17 +484,8 @@ public class MapFrontiersClient {
         return runtime.getCollectionRuntime().getCollection(collectionId);
     }
 
-    public static List<CollectionData> getCollections(boolean personal) {
-        ClientFrontierRuntime runtime = ensureFrontierRuntime();
-        if (runtime == null) {
-            return List.of();
-        }
-
-        return runtime.getCollectionRuntime().getCollections(personal);
-    }
-
     public static List<CollectionData> getCollections(CollectionScope scope) {
-        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        ClientTerritoryRuntime runtime = ensureTerritoryRuntime();
         if (runtime == null) {
             return List.of();
         }
@@ -501,7 +494,7 @@ public class MapFrontiersClient {
     }
 
     public static List<FrontierOverlay> getFrontiersInCollection(UUID collectionId) {
-        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        ClientTerritoryRuntime runtime = ensureTerritoryRuntime();
         if (runtime == null) {
             return List.of();
         }
@@ -509,17 +502,8 @@ public class MapFrontiersClient {
         return runtime.getCollectionRuntime().getFrontiersInCollection(collectionId);
     }
 
-    public static List<FrontierOverlay> getFrontiersWithoutCollection(boolean personal) {
-        ClientFrontierRuntime runtime = ensureFrontierRuntime();
-        if (runtime == null) {
-            return List.of();
-        }
-
-        return runtime.getCollectionRuntime().getFrontiersWithoutCollection(personal);
-    }
-
     public static List<FrontierOverlay> getFrontiersWithoutCollection(CollectionScope scope) {
-        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        ClientTerritoryRuntime runtime = ensureTerritoryRuntime();
         if (runtime == null) {
             return List.of();
         }
@@ -562,32 +546,32 @@ public class MapFrontiersClient {
     }
 
     public static FrontierLocalOverrides getLocalOverrides() {
-        ClientFrontierRuntime runtime = requireFrontierRuntime();
+        ClientTerritoryRuntime runtime = requireTerritoryRuntime();
         return runtime.getLocalOverrides();
     }
 
     public static CollectionUiStateStore getCollectionUiStateStore() {
-        ClientFrontierRuntime runtime = requireFrontierRuntime();
+        ClientTerritoryRuntime runtime = requireTerritoryRuntime();
         return runtime.getCollectionUiStateStore();
     }
 
-    public static ClientFrontierOperationService getOperationService() {
-        ClientFrontierRuntime runtime = requireFrontierRuntime();
+    public static ClientTerritoryOperationService getOperationService() {
+        ClientTerritoryRuntime runtime = requireTerritoryRuntime();
         return runtime.getOperationService();
     }
 
     public static ClientFrontierEvents getFrontierEvents() {
-        ClientFrontierRuntime runtime = requireFrontierRuntime();
+        ClientTerritoryRuntime runtime = requireTerritoryRuntime();
         return runtime.getFrontierEvents();
     }
 
     public static ClientCollectionEvents getCollectionEvents() {
-        ClientFrontierRuntime runtime = requireFrontierRuntime();
+        ClientTerritoryRuntime runtime = requireTerritoryRuntime();
         return runtime.getCollectionEvents();
     }
 
     public static ClientSettingsProfileEvents getSettingsProfileEvents() {
-        ClientFrontierRuntime runtime = requireFrontierRuntime();
+        ClientTerritoryRuntime runtime = requireTerritoryRuntime();
         return runtime.getSettingsProfileEvents();
     }
 
@@ -624,7 +608,7 @@ public class MapFrontiersClient {
     }
 
     public static void receiveSettingsProfile(SettingsProfile profile) {
-        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        ClientTerritoryRuntime runtime = ensureTerritoryRuntime();
         if (runtime == null) {
             return;
         }
@@ -710,7 +694,7 @@ public class MapFrontiersClient {
     }
 
     private static void publishClientApiIfReady() {
-        ClientFrontierRuntime runtime = ensureFrontierRuntime();
+        ClientTerritoryRuntime runtime = ensureTerritoryRuntime();
         if (runtime == null) {
             return;
         }
@@ -722,10 +706,10 @@ public class MapFrontiersClient {
         MapFrontiersAPIBootstrap.setClientAPI(runtime.getOrCreateClientApi());
         connectionState.markClientApiPublished();
         MapFrontiers.LOGGER.info(
-                "Published client API. modOnServer={}, initialSettingsProfileReceived={}, initialFrontiersReceived={}",
+                "Published client API. modOnServer={}, initialSettingsProfileReceived={}, initialTerritoriesSnapshotReceived={}",
                 connectionState.isModOnServer(),
                 connectionState.isInitialSettingsProfileReceived(),
-                connectionState.isInitialFrontiersReceived()
+                connectionState.isInitialTerritoriesSnapshotReceived()
         );
     }
 
@@ -812,14 +796,14 @@ public class MapFrontiersClient {
     private static boolean qualifiesForHudOrAnnouncement(FrontierOverlay frontier, BlockPos pos, boolean alreadyActive,
                                                          boolean requireAnnouncementVisibility) {
         if (requireAnnouncementVisibility) {
-            boolean announceInChat = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInChat);
-            boolean announceInTitle = frontier.getVisibility(FrontierData.VisibilityData.Visibility.AnnounceInTitle);
-            if (!ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), announceInChat)
-                    && !ClientConfig.getVisibilityValue(ClientConfig.ANNOUNCE_IN_TITLE.get(), announceInTitle)) {
+            boolean announceInChat = frontier.getVisibility(FrontierVisibility.AnnounceInChat);
+            boolean announceInTitle = frontier.getVisibility(FrontierVisibility.AnnounceInTitle);
+            if (!ClientConfig.resolveVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), announceInChat)
+                    && !ClientConfig.resolveVisibilityValue(ClientConfig.ANNOUNCE_IN_TITLE.get(), announceInTitle)) {
                 return false;
             }
-        } else if (!ClientConfig.getVisibilityValue(ClientConfig.FRONTIER_VISIBILITY.get(),
-                frontier.getVisibility(FrontierData.VisibilityData.Visibility.Frontier))) {
+        } else if (!ClientConfig.resolveVisibilityValue(ClientConfig.FRONTIER_VISIBILITY.get(),
+                frontier.getVisibility(FrontierVisibility.Frontier))) {
             return false;
         }
 

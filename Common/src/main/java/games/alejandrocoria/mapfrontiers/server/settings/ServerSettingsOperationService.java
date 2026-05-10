@@ -3,8 +3,8 @@ package games.alejandrocoria.mapfrontiers.server.settings;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
-import games.alejandrocoria.mapfrontiers.server.frontier.FrontierPermissionEvaluator;
-import games.alejandrocoria.mapfrontiers.server.frontier.FrontiersManager;
+import games.alejandrocoria.mapfrontiers.server.territory.TerritoriesManager;
+import games.alejandrocoria.mapfrontiers.server.territory.TerritoryPermissionEvaluator;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -13,18 +13,18 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 public class ServerSettingsOperationService {
     private final MinecraftServer server;
-    private final FrontiersManager frontiersManager;
-    private final FrontierPermissionEvaluator permissionEvaluator;
+    private final TerritoriesManager territoriesManager;
+    private final TerritoryPermissionEvaluator permissionEvaluator;
 
-    public ServerSettingsOperationService(MinecraftServer server, FrontiersManager frontiersManager,
-                                          FrontierPermissionEvaluator permissionEvaluator) {
+    public ServerSettingsOperationService(MinecraftServer server, TerritoriesManager territoriesManager,
+                                          TerritoryPermissionEvaluator permissionEvaluator) {
         this.server = server;
-        this.frontiersManager = frontiersManager;
+        this.territoriesManager = territoriesManager;
         this.permissionEvaluator = permissionEvaluator;
     }
 
     public ServerSettingsOperationResult requestSettings(ServerPlayer player, int clientChangeCounter) {
-        FrontierSettings settings = frontiersManager.getSettings();
+        FrontierSettings settings = territoriesManager.getSettings();
         if (permissionEvaluator.canUpdateSettings(player) && settings.getChangeCounter() > clientChangeCounter) {
             ServerSettingsOperationResult result = ServerSettingsOperationResult.success();
             result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierSettings(settings), player));
@@ -39,7 +39,7 @@ public class ServerSettingsOperationService {
             return rejectedWithProfileRefresh(player);
         }
 
-        frontiersManager.setSettings(settings);
+        territoriesManager.setSettings(settings);
 
         ServerSettingsOperationResult result = ServerSettingsOperationResult.success();
         result.addNetworkAction(() -> {

@@ -4,7 +4,6 @@ import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
-import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPaletteWidget;
@@ -21,12 +20,14 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDi
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteFrontierConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.PathStyleDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.VisibilityDialog;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
-import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import it.unimi.dsi.fastutil.Pair;
@@ -64,10 +65,9 @@ import java.util.function.Consumer;
 import java.util.function.IntUnaryOperator;
 
 @ParametersAreNonnullByDefault
-public class FrontierInfoPage extends PageScreen
-{
+public class FrontierInfoPage extends PageScreen {
     static final DateFormat DATE_FORMAT = new SimpleDateFormat();
-    private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_info");
+    private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_frontier_info");
     private static final Component ASSIGN_BANNER_LABEL = Component.translatable("mapfrontiers.assign_banner");
     private static final Component ASSIGN_BANNER_WARN_LABEL = ASSIGN_BANNER_LABEL.copy().append(Component.literal(ColorConstants.WARNING + " !"));
     private static final Component REMOVE_BANNER_LABEL = Component.translatable("mapfrontiers.remove_banner");
@@ -554,7 +554,7 @@ public class FrontierInfoPage extends PageScreen
     }
 
     private void onVisibilityButtonPressed() {
-        FrontierData.VisibilityData baseVisibilityData = frontier.getVisibilityData();
+        VisibilityData baseVisibilityData = frontier.getVisibilityData();
         new VisibilityDialog(baseVisibilityData, (newVisibilityData, newVisibilityMask) -> {
             if (newVisibilityData.equals(baseVisibilityData)) {
                 return;
@@ -576,10 +576,10 @@ public class FrontierInfoPage extends PageScreen
     }
 
     private void onVisibilityOverrideButtonPressed() {
-        Pair<FrontierData.VisibilityData, FrontierData.VisibilityData> override = MapFrontiersClient.getLocalOverrides().getVisibility(frontier.getId());
+        Pair<VisibilityData, VisibilityData> override = MapFrontiersClient.getLocalOverrides().getVisibility(frontier.getId());
         new VisibilityDialog(override.first(), override.second(), (newVisibilityData, newVisibilityMask) -> {
             if (!newVisibilityData.equals(override.first()) || !newVisibilityMask.equals(override.second())) {
-                Pair<FrontierData.VisibilityData, FrontierData.VisibilityData> newOverride = Pair.of(newVisibilityData, newVisibilityMask);
+                Pair<VisibilityData, VisibilityData> newOverride = Pair.of(newVisibilityData, newVisibilityMask);
                 MapFrontiersClient.getLocalOverrides().setVisibility(frontier.getId(), newOverride);
                 frontier.setVisibilityOverride(newOverride);
             }

@@ -5,7 +5,7 @@ import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
-import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationResult;
+import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationResult;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -66,7 +66,7 @@ public class PacketRemoveSharedUserPersonalFrontier {
                 return;
             }
 
-            ServerFrontierOperationResult result = MapFrontiers.getServerRuntime().getShareService()
+            ServerTerritoryOperationResult result = MapFrontiers.getServerRuntime().getShareService()
                     .removeSharedUserPersonalFrontier(player, message.frontierID, message.targetUser);
             result.dispatchNetworkActions();
         }

@@ -8,9 +8,9 @@ import games.alejandrocoria.mapfrontiers.api.model.CollectionId;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionMutation;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
-import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
-import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationResult;
-import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationService;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
+import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationResult;
+import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationService;
 
 import java.util.Date;
 import java.util.List;
@@ -18,16 +18,16 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class ServerCollectionServiceImpl implements PluginScopedServerCollectionService {
-    private final ServerFrontierOperationService operationService;
+    private final ServerTerritoryOperationService operationService;
 
-    public ServerCollectionServiceImpl(ServerFrontierOperationService operationService) {
+    public ServerCollectionServiceImpl(ServerTerritoryOperationService operationService) {
         this.operationService = operationService;
     }
 
     @Override
     public CollectionDataView createGlobalCollection(String pluginModId, UserRef owner, CollectionCreateRequest request) {
         CollectionData collection = createCollectionData(pluginModId, owner, request);
-        ServerFrontierOperationResult result = operationService.createGlobalCollection(collection);
+        ServerTerritoryOperationResult result = operationService.createGlobalCollection(collection);
         if (!result.isSuccess()) {
             throw new IllegalArgumentException("Invalid global collection create request");
         }
@@ -50,7 +50,7 @@ public class ServerCollectionServiceImpl implements PluginScopedServerCollection
 
         CollectionData payload = new CollectionData(collection);
         ApiConverters.applyCollectionMutation(payload, mutation);
-        ServerFrontierOperationResult result = operationService.updateGlobalCollection(collectionId.value(), payload);
+        ServerTerritoryOperationResult result = operationService.updateGlobalCollection(collectionId.value(), payload);
         if (!result.isSuccess()) {
             return Optional.empty();
         }
@@ -69,7 +69,7 @@ public class ServerCollectionServiceImpl implements PluginScopedServerCollection
             return false;
         }
 
-        ServerFrontierOperationResult result = operationService.deleteGlobalCollection(collectionId.value());
+        ServerTerritoryOperationResult result = operationService.deleteGlobalCollection(collectionId.value());
         if (!result.isSuccess()) {
             return false;
         }

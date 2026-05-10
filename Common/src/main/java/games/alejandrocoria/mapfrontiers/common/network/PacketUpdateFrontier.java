@@ -3,8 +3,8 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
-import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationResult;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
+import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationResult;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -63,7 +63,7 @@ public class PacketUpdateFrontier {
                 return;
             }
 
-            ServerFrontierOperationResult result = MapFrontiers.getServerRuntime().getOperationService()
+            ServerTerritoryOperationResult result = MapFrontiers.getServerRuntime().getOperationService()
                     .updateFrontier(player, message.frontierId, message.change);
             result.dispatchNetworkActions();
         }

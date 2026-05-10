@@ -71,10 +71,6 @@ public class CheckBoxButton extends ButtonBase {
         }
     }
 
-    public static boolean contains(int x, int y, double mouseX, double mouseY) {
-        return mouseX >= x && mouseY >= y && mouseX < x + SIZE && mouseY < y + SIZE;
-    }
-
     @Override
     public void onPress(InputWithModifiers modifiers) {
         toggle();

@@ -7,7 +7,6 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 public final class ColorConstants {
     public static final int WHITE = 0xFFFFFFFF;
-    public static final int BLACK = 0xFF000000;
 
     public static final int CHECKBOX_BG = 0xFF000000;
     public static final int CHECKBOX_BORDER = 0xFF444444;
@@ -60,7 +59,6 @@ public final class ColorConstants {
     public static final int TEXTBOX_TEXT = 0xFFE0E0E0;
     public static final int TEXT_DARK = 0xFF777777;
     public static final int TEXT_DIMENSION = 0xFF999999;
-    public static final int TEXT_SOURCE_PLUGIN = 0xFFFFFF00;
     public static final int TEXT_ERROR = 0xFFDD1111;
     public static final int TEXT_ERROR_HIGHLIGHT = 0xFFFF4444;
     public static final int TEXT_HIGHLIGHT = 0xFFFFFFFF;

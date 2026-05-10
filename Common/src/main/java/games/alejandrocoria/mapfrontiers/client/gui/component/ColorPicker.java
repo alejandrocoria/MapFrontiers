@@ -260,7 +260,7 @@ public class ColorPicker extends AbstractWidgetNoNarration {
             }
 
             if (vGrabbed) {
-                v = Math.max(0.0, Math.min(localY, 127.99));
+                v = Math.clamp(localY, 0.0, 127.99);
                 focusedV = v;
                 focusedPart = FocusPart.V;
                 updateColor(dragging);
@@ -320,7 +320,7 @@ public class ColorPicker extends AbstractWidgetNoNarration {
 
         if (direction == ScreenDirection.UP || direction == ScreenDirection.DOWN) {
             double nextV = direction == ScreenDirection.UP ? focusedV - amount : focusedV + amount;
-            focusedV = Math.max(0.0, Math.min(nextV, 127.99));
+            focusedV = Math.clamp(nextV, 0.0, 127.99);
         }
     }
 

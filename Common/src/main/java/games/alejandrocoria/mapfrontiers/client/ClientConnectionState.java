@@ -21,7 +21,7 @@ public class ClientConnectionState {
     private boolean handshakeResolved = false;
     private boolean modOnServer = false;
     private boolean initialSettingsProfileReceived = false;
-    private boolean initialFrontiersReceived = false;
+    private boolean initialTerritoriesSnapshotReceived = false;
     private boolean clientApiPublished = false;
     private @Nullable SettingsProfile settingsProfile;
 
@@ -45,8 +45,8 @@ public class ClientConnectionState {
         return initialSettingsProfileReceived;
     }
 
-    public boolean isInitialFrontiersReceived() {
-        return initialFrontiersReceived;
+    public boolean isInitialTerritoriesSnapshotReceived() {
+        return initialTerritoriesSnapshotReceived;
     }
 
     public @Nullable SettingsProfile getSettingsProfile() {
@@ -70,7 +70,7 @@ public class ClientConnectionState {
         handshakeStartedAtMs = 0L;
         lastHandshakeSentAtMs = 0L;
         initialSettingsProfileReceived = false;
-        initialFrontiersReceived = false;
+        initialTerritoriesSnapshotReceived = false;
         clientApiPublished = false;
         settingsProfile = null;
     }
@@ -117,8 +117,8 @@ public class ClientConnectionState {
         return true;
     }
 
-    public void markInitialFrontiersReceived() {
-        initialFrontiersReceived = true;
+    public void markInitialTerritoriesReceived() {
+        initialTerritoriesSnapshotReceived = true;
     }
 
     public HandshakeOutcome resolveHandshake(boolean hasModOnServer) {
@@ -140,7 +140,7 @@ public class ClientConnectionState {
             return false;
         }
 
-        return !modOnServer || (initialSettingsProfileReceived && initialFrontiersReceived);
+        return !modOnServer || (initialSettingsProfileReceived && initialTerritoriesSnapshotReceived);
     }
 
     public void markClientApiPublished() {

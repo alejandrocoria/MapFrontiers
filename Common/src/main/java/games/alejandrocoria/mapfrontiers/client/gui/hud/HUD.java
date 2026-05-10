@@ -2,13 +2,16 @@ package games.alejandrocoria.mapfrontiers.client.gui.hud;
 
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
+import games.alejandrocoria.mapfrontiers.client.config.FrontierDisplayVisibility;
+import games.alejandrocoria.mapfrontiers.client.config.HUDAnchor;
+import games.alejandrocoria.mapfrontiers.client.config.HUDSlot;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
-import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.component.PreviewFrontierHelper;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
-import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -30,7 +33,7 @@ public class HUD {
     private FrontierOverlay frontier;
     private int frontierHash;
     private long activeFrontiersRevision = -1L;
-    private final EnumMap<ClientConfig.HUDSlot, SlotRenderer> slotRenderers;
+    private final EnumMap<HUDSlot, SlotRenderer> slotRenderers;
     private final List<PreparedSlot> preparedSlots;
     private int posX = 0;
     private int posY = 0;
@@ -66,11 +69,11 @@ public class HUD {
     }
 
     public HUD() {
-        slotRenderers = new EnumMap<>(ClientConfig.HUDSlot.class);
-        slotRenderers.put(ClientConfig.HUDSlot.Collection, new CollectionSlotRenderer());
-        slotRenderers.put(ClientConfig.HUDSlot.Name, new NameSlotRenderer());
-        slotRenderers.put(ClientConfig.HUDSlot.Owner, new OwnerSlotRenderer());
-        slotRenderers.put(ClientConfig.HUDSlot.Banner, new BannerSlotRenderer());
+        slotRenderers = new EnumMap<>(HUDSlot.class);
+        slotRenderers.put(HUDSlot.Collection, new CollectionSlotRenderer());
+        slotRenderers.put(HUDSlot.Name, new NameSlotRenderer());
+        slotRenderers.put(HUDSlot.Owner, new OwnerSlotRenderer());
+        slotRenderers.put(HUDSlot.Banner, new BannerSlotRenderer());
         preparedSlots = new ArrayList<>();
 
         MapFrontiersClient.getFrontierEvents().subscribeDeleted(this, frontierID -> frontierChanged());
@@ -100,7 +103,7 @@ public class HUD {
     }
 
     public void tick() {
-        if (previewMode || mc.player == null || ClientConfig.FRONTIER_VISIBILITY.get() == ClientConfig.Visibility.Never) {
+        if (previewMode || mc.player == null || ClientConfig.FRONTIER_VISIBILITY.get() == FrontierDisplayVisibility.Never) {
             return;
         }
 
@@ -185,8 +188,8 @@ public class HUD {
             needUpdate = true;
         }
 
-        if (ClientConfig.HUD_ANCHOR.get() == ClientConfig.HUDAnchor.Minimap || ClientConfig.HUD_ANCHOR.get() == ClientConfig.HUDAnchor.MinimapHorizontal
-                || ClientConfig.HUD_ANCHOR.get() == ClientConfig.HUDAnchor.MinimapVertical) {
+        if (ClientConfig.HUD_ANCHOR.get() == HUDAnchor.Minimap || ClientConfig.HUD_ANCHOR.get() == HUDAnchor.MinimapHorizontal
+                || ClientConfig.HUD_ANCHOR.get() == HUDAnchor.MinimapVertical) {
             if (Services.JOURNEYMAP.minimapPropertiesChanged()) {
                 needUpdate = true;
             }
@@ -232,7 +235,7 @@ public class HUD {
         bannerScale = ClientConfig.HUD_BANNER_SIZE.get();
 
         List<SlotRenderer> visibleSlots = new ArrayList<>();
-        for (ClientConfig.HUDSlot slot : ClientConfig.getHUDSlots()) {
+        for (HUDSlot slot : ClientConfig.getHUDSlots()) {
             SlotRenderer renderer = slotRenderers.get(slot);
             if (renderer != null && renderer.isVisible()) {
                 visibleSlots.add(renderer);

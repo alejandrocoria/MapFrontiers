@@ -11,8 +11,7 @@ import net.minecraft.network.chat.Component;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-public class SimpleSlider extends AbstractSliderButton
-{
+public class SimpleSlider extends AbstractSliderButton {
     private static final int DEFAULT_HEIGHT = 15;
     private static final int HANDLE_WIDTH = 4;
     private static final int HANDLE_RANGE_PADDING = 6;

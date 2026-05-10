@@ -1,0 +1,40 @@
+package games.alejandrocoria.mapfrontiers.common.territory;
+
+public enum FrontierVisibility {
+    Frontier,
+    AnnounceInChat,
+    AnnounceInTitle,
+    MentionCollection,
+    Fullscreen,
+    FullscreenName,
+    FullscreenCollection,
+    FullscreenOwner,
+    FullscreenBanner,
+    FullscreenDay,
+    FullscreenNight,
+    FullscreenUnderground,
+    FullscreenTopo,
+    FullscreenBiome,
+    Minimap,
+    MinimapName,
+    MinimapCollection,
+    MinimapOwner,
+    MinimapBanner,
+    MinimapDay,
+    MinimapNight,
+    MinimapUnderground,
+    MinimapTopo,
+    MinimapBiome,
+    Webmap,
+    WebmapName,
+    WebmapCollection,
+    WebmapOwner,
+    WebmapBanner,
+    WebmapDay,
+    WebmapNight,
+    WebmapUnderground,
+    WebmapTopo,
+    WebmapBiome;
+
+    public static final FrontierVisibility[] VALUES = values();
+}

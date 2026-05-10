@@ -19,11 +19,13 @@ import games.alejandrocoria.mapfrontiers.api.model.PathStyle;
 import games.alejandrocoria.mapfrontiers.api.model.Point2i;
 import games.alejandrocoria.mapfrontiers.api.model.SharedUserAccess;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
-import games.alejandrocoria.mapfrontiers.common.frontier.CollectionData;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierMutationApplier;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierMutationApplier;
+import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
+import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.resources.Identifier;
@@ -38,9 +40,6 @@ import java.util.Optional;
 import java.util.Set;
 
 public final class ApiConverters {
-    private ApiConverters() {
-    }
-
     public static DimensionId fromDimension(ResourceKey<Level> dimension) {
         return new DimensionId(dimension.identifier().toString());
     }
@@ -61,11 +60,11 @@ public final class ApiConverters {
         };
     }
 
-    public static Set<FrontierVisibilityFlag> fromVisibility(FrontierData.VisibilityData visibilityData) {
+    public static Set<FrontierVisibilityFlag> fromVisibility(VisibilityData visibilityData) {
         return FrontierMutationApplier.fromVisibility(visibilityData);
     }
 
-    public static FrontierData.VisibilityData toVisibility(Set<FrontierVisibilityFlag> visibilityFlags) {
+    public static VisibilityData toVisibility(Set<FrontierVisibilityFlag> visibilityFlags) {
         return FrontierMutationApplier.toVisibility(visibilityFlags);
     }
 
@@ -155,18 +154,18 @@ public final class ApiConverters {
         );
     }
 
-    public static EntityLifetime fromLifetime(FrontierData.FrontierLifetime lifetime) {
+    public static EntityLifetime fromLifetime(TerritoryLifetime lifetime) {
         return switch (lifetime) {
             case PERSISTENT -> EntityLifetime.PERSISTENT;
             case SESSION_ONLY -> EntityLifetime.SESSION_ONLY;
         };
     }
 
-    public static FrontierData.FrontierLifetime toLifetime(EntityLifetime lifetime) {
+    public static TerritoryLifetime toLifetime(EntityLifetime lifetime) {
         EntityLifetime checkedLifetime = lifetime == null ? EntityLifetime.PERSISTENT : lifetime;
         return switch (checkedLifetime) {
-            case PERSISTENT -> FrontierData.FrontierLifetime.PERSISTENT;
-            case SESSION_ONLY -> FrontierData.FrontierLifetime.SESSION_ONLY;
+            case PERSISTENT -> TerritoryLifetime.PERSISTENT;
+            case SESSION_ONLY -> TerritoryLifetime.SESSION_ONLY;
         };
     }
 
@@ -188,5 +187,8 @@ public final class ApiConverters {
     public static void applyCollectionMutation(CollectionData collection, CollectionMutation mutation) {
         mutation.name().ifPresent(collection::setName);
         mutation.color().ifPresent(collection::setColor);
+    }
+
+    private ApiConverters() {
     }
 }

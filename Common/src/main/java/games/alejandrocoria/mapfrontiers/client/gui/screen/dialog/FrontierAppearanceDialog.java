@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen.dialog;
 
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
+import games.alejandrocoria.mapfrontiers.client.config.TextColor;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
@@ -175,12 +176,12 @@ public class FrontierAppearanceDialog extends PanelDialog {
         labelTextUsesCustomColor = settingsLayout.addChild(new StringWidget(TEXT_COLOR_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
         labelTextUsesCustomColor.setTooltip(TEXT_COLOR_TOOLTIP);
         buttonTextUsesCustomColor = settingsLayout.addChild(new OptionButton(font, 60, (b) -> {
-            ClientConfig.TEXT_COLOR.set(ClientConfig.TextColor.values()[b.getSelected()]);
+            ClientConfig.TEXT_COLOR.set(TextColor.values()[b.getSelected()]);
             previewFrontiers.configUpdated();
         }), row++, 1);
-        buttonTextUsesCustomColor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.TextColor.FrontierColor));
-        buttonTextUsesCustomColor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.TextColor.FrontierColorBright));
-        buttonTextUsesCustomColor.addOption(ClientConfig.getTranslatedEnum(ClientConfig.TextColor.White));
+        buttonTextUsesCustomColor.addOption(ClientConfig.getTranslatedEnum(TextColor.FrontierColor));
+        buttonTextUsesCustomColor.addOption(ClientConfig.getTranslatedEnum(TextColor.FrontierColorBright));
+        buttonTextUsesCustomColor.addOption(ClientConfig.getTranslatedEnum(TextColor.White));
         buttonTextUsesCustomColor.setSelected(ClientConfig.TEXT_COLOR.get().ordinal());
 
         addSectionSpacing(settingsLayout, row++);
@@ -258,7 +259,7 @@ public class FrontierAppearanceDialog extends PanelDialog {
                                       double pathMarkerOpacity,
                                       int textSize,
                                       double textOpacity,
-                                      ClientConfig.TextColor textColor,
+                                      TextColor textColor,
                                       int bannerSize,
                                       double bannerOpacity) {
         private static AppearanceSnapshot capture() {

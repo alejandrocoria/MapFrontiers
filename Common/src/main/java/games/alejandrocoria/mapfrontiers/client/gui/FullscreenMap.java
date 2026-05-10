@@ -2,19 +2,23 @@ package games.alejandrocoria.mapfrontiers.client.gui;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
+import games.alejandrocoria.mapfrontiers.client.config.AfterCreatingFrontier;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
+import games.alejandrocoria.mapfrontiers.client.config.FrontierDisplayVisibility;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
-import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteFrontierConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.NewFrontierDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.page.FrontierInfoPage;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.page.FrontierListPage;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.page.TerritoryListPage;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
+import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.fullscreen.IThemeButton;
@@ -119,7 +123,7 @@ public class FullscreenMap {
         }
 
         String path = "textures/gui/journeymap/";
-        buttonFrontiers = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_frontiers"), Identifier.fromNamespaceAndPath(MapFrontiers.MODID, path + "frontiers.png"), b -> buttonFrontiersPressed());
+        buttonFrontiers = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_mapfrontiers"), Identifier.fromNamespaceAndPath(MapFrontiers.MODID, path + "mapfrontiers.png"), b -> buttonFrontiersPressed());
         buttonNew = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_new_frontier"), Identifier.fromNamespaceAndPath(MapFrontiers.MODID, path + "new_frontier.png"), b -> buttonNewPressed(mc.player.blockPosition()));
         buttonInfo = buttonDisplay.addThemeButton(I18n.get("mapfrontiers.button_frontier_info"), Identifier.fromNamespaceAndPath(MapFrontiers.MODID, path + "info_frontier.png"), b -> buttonInfoPressed());
         buttonEdit = buttonDisplay.addThemeToggleButton(I18n.get("mapfrontiers.button_done_editing"), I18n.get("mapfrontiers.button_edit_frontier"),
@@ -173,13 +177,13 @@ public class FullscreenMap {
             SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerUser);
 
             ModPopupMenu subMenu = popupMenu.createSubItemList("MapFrontiers");
-            subMenu.addMenuItem(I18n.get("mapfrontiers.button_frontiers"), p -> buttonFrontiersPressed());
+            subMenu.addMenuItem(I18n.get("mapfrontiers.button_mapfrontiers"), p -> buttonFrontiersPressed());
             subMenu.addMenuItem(I18n.get("mapfrontiers.button_new_frontier"), p -> buttonNewPressed(p));
             if (frontierHighlighted != null) {
                 subMenu.addMenuItem(I18n.get("mapfrontiers.button_frontier_info"), p -> buttonInfoPressed());
             }
-            if (actions.canUpdate && frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Frontier)
-                    && frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Fullscreen)) {
+            if (actions.canUpdate && frontierHighlighted.getVisibility(FrontierVisibility.Frontier)
+                    && frontierHighlighted.getVisibility(FrontierVisibility.Fullscreen)) {
                 subMenu.addMenuItem(I18n.get("mapfrontiers.button_edit_frontier"), p -> buttonEditToggled());
             }
             if (actions.canUpdate) {
@@ -243,14 +247,14 @@ public class FullscreenMap {
         buttonDelete.setEnabled(actions.canDelete && !editing);
 
         if (frontierHighlighted != null) {
-            buttonVisible.setToggled(frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Frontier) && frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Fullscreen));
+            buttonVisible.setToggled(frontierHighlighted.getVisibility(FrontierVisibility.Frontier) && frontierHighlighted.getVisibility(FrontierVisibility.Fullscreen));
         } else {
             buttonVisible.setToggled(false);
         }
     }
 
     private void buttonFrontiersPressed() {
-        new FrontierListPage(jmAPI, this).display();
+        new TerritoryListPage(jmAPI, this).display();
     }
 
     private void buttonNewPressed(BlockPos centerPos) {
@@ -259,7 +263,7 @@ public class FullscreenMap {
             frontierHighlighted = null;
         }
 
-        new NewFrontierDialog(jmAPI, centerPos, null, FrontierData.FrontierLifetime.PERSISTENT, null, createNewFrontierResultHandler()).display();
+        new NewFrontierDialog(jmAPI, centerPos, null, TerritoryLifetime.PERSISTENT, null, createNewFrontierResultHandler()).display();
 
         updateButtons();
     }
@@ -277,7 +281,7 @@ public class FullscreenMap {
     }
 
     private void buttonVisibleToggled() {
-        frontierHighlighted.setVisibility(FrontierData.VisibilityData.Visibility.Frontier, !frontierHighlighted.getVisibility(FrontierData.VisibilityData.Visibility.Frontier));
+        frontierHighlighted.setVisibility(FrontierVisibility.Frontier, !frontierHighlighted.getVisibility(FrontierVisibility.Frontier));
         MapFrontiersClient.getOperationService().updateFrontier(frontierHighlighted);
 
         updateButtons();
@@ -422,16 +426,16 @@ public class FullscreenMap {
     public NewFrontierDialog.ResultHandler createNewFrontierResultHandler() {
         return new NewFrontierDialog.ResultHandler() {
             @Override
-            public void beforeCreate(NewFrontierDialog dialog, ClientConfig.AfterCreatingFrontier action) {
+            public void beforeCreate(NewFrontierDialog dialog, AfterCreatingFrontier action) {
                 dialog.closeToFullscreenMap();
             }
 
             @Override
-            public void onFrontierCreated(FrontierOverlay frontier, ClientConfig.AfterCreatingFrontier action) {
+            public void onFrontierCreated(FrontierOverlay frontier, AfterCreatingFrontier action) {
                 showCreatedFrontier(frontier);
-                if (action == ClientConfig.AfterCreatingFrontier.InfoScreen) {
+                if (action == AfterCreatingFrontier.InfoScreen) {
                     openFrontierInfo(frontier);
-                } else if (action == ClientConfig.AfterCreatingFrontier.EditShape) {
+                } else if (action == AfterCreatingFrontier.EditShape) {
                     beginEditingFrontier(frontier);
                 }
             }
@@ -511,7 +515,7 @@ public class FullscreenMap {
             return false;
         }
 
-        if (ClientConfig.FRONTIER_VISIBILITY.get() == ClientConfig.Visibility.Never) {
+        if (ClientConfig.FRONTIER_VISIBILITY.get() == FrontierDisplayVisibility.Never) {
             selectFrontier(null);
             return false;
         }

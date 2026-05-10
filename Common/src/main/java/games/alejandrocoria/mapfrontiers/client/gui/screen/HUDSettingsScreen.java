@@ -2,6 +2,8 @@ package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
 import com.mojang.blaze3d.platform.Window;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
+import games.alejandrocoria.mapfrontiers.client.config.HUDAnchor;
+import games.alejandrocoria.mapfrontiers.client.config.HUDSlot;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
@@ -48,7 +50,7 @@ public class HUDSettingsScreen extends AutoScaledScreen {
     private OptionButton buttonAutoAdjustAnchor;
     private OptionButton buttonSnapToBorder;
     private final HUD hud;
-    private final List<ClientConfig.HUDSlot> configuredSlots = new ArrayList<>();
+    private final List<HUDSlot> configuredSlots = new ArrayList<>();
     private int anchorLineColor = ColorConstants.HUD_ANCHOR_LIGHT;
     private int anchorLineColorTick = 0;
 
@@ -210,7 +212,7 @@ public class HUDSettingsScreen extends AutoScaledScreen {
 
     private OptionButton createHUDSlotButton(int selectedValue) {
         OptionButton button = new OptionButton(font, 64, pressedButton -> updateSlots());
-        for (ClientConfig.HUDSlot slot : ClientConfig.HUDSlot.values()) {
+        for (HUDSlot slot : HUDSlot.values()) {
             button.addOption(ClientConfig.getTranslatedEnum(slot));
         }
         button.setSelected(selectedValue);
@@ -219,20 +221,20 @@ public class HUDSettingsScreen extends AutoScaledScreen {
 
     private OptionButton createAnchorButton() {
         OptionButton button = new OptionButton(font, 134, pressedButton -> {
-            ClientConfig.HUD_ANCHOR.set(ClientConfig.HUDAnchor.VALUES[pressedButton.getSelected()]);
+            ClientConfig.HUD_ANCHOR.set(HUDAnchor.VALUES[pressedButton.getSelected()]);
             postConfigUpdatedAndRefreshPosition();
         });
-        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenTop));
-        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenTopRight));
-        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenRight));
-        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenBottomRight));
-        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenBottom));
-        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenBottomLeft));
-        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenLeft));
-        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.ScreenTopLeft));
-        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.Minimap));
-        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.MinimapHorizontal));
-        button.addOption(ClientConfig.getTranslatedEnum(ClientConfig.HUDAnchor.MinimapVertical));
+        button.addOption(ClientConfig.getTranslatedEnum(HUDAnchor.ScreenTop));
+        button.addOption(ClientConfig.getTranslatedEnum(HUDAnchor.ScreenTopRight));
+        button.addOption(ClientConfig.getTranslatedEnum(HUDAnchor.ScreenRight));
+        button.addOption(ClientConfig.getTranslatedEnum(HUDAnchor.ScreenBottomRight));
+        button.addOption(ClientConfig.getTranslatedEnum(HUDAnchor.ScreenBottom));
+        button.addOption(ClientConfig.getTranslatedEnum(HUDAnchor.ScreenBottomLeft));
+        button.addOption(ClientConfig.getTranslatedEnum(HUDAnchor.ScreenLeft));
+        button.addOption(ClientConfig.getTranslatedEnum(HUDAnchor.ScreenTopLeft));
+        button.addOption(ClientConfig.getTranslatedEnum(HUDAnchor.Minimap));
+        button.addOption(ClientConfig.getTranslatedEnum(HUDAnchor.MinimapHorizontal));
+        button.addOption(ClientConfig.getTranslatedEnum(HUDAnchor.MinimapVertical));
         button.setSelected(ClientConfig.HUD_ANCHOR.get().ordinal());
         return button;
     }
@@ -321,7 +323,7 @@ public class HUDSettingsScreen extends AutoScaledScreen {
             --anchor.y;
         }
 
-        if (ClientConfig.HUD_ANCHOR.get() == ClientConfig.HUDAnchor.Minimap) {
+        if (ClientConfig.HUD_ANCHOR.get() == HUDAnchor.Minimap) {
             directionX = -directionX;
             directionY = -directionY;
 
@@ -366,8 +368,8 @@ public class HUDSettingsScreen extends AutoScaledScreen {
         }
 
         for (int i = 0; i < slotButtons.size(); ++i) {
-            ClientConfig.HUDSlot leftSlot = getSelectedSlot(slotButtons.get(i));
-            if (leftSlot == ClientConfig.HUDSlot.None) {
+            HUDSlot leftSlot = getSelectedSlot(slotButtons.get(i));
+            if (leftSlot == HUDSlot.None) {
                 continue;
             }
 
@@ -380,8 +382,8 @@ public class HUDSettingsScreen extends AutoScaledScreen {
         }
     }
 
-    private ClientConfig.HUDSlot getSelectedSlot(OptionButton button) {
-        return ClientConfig.HUDSlot.values()[button.getSelected()];
+    private HUDSlot getSelectedSlot(OptionButton button) {
+        return HUDSlot.values()[button.getSelected()];
     }
 
     @Override

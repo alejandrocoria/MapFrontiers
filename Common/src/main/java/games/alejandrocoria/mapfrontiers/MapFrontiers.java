@@ -5,7 +5,7 @@ import games.alejandrocoria.mapfrontiers.common.api.MapFrontiersApiLogAdapter;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
 import games.alejandrocoria.mapfrontiers.server.event.ServerGlobalEvents;
-import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierRuntime;
+import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryRuntime;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.apache.logging.log4j.LogManager;
@@ -17,7 +17,7 @@ public class MapFrontiers {
     public static final int FRONTIER_DATA_VERSION = 12;
     public static final int SETTINGS_DATA_VERSION = 4;
 
-    private static ServerFrontierRuntime serverRuntime;
+    private static ServerTerritoryRuntime serverRuntime;
 
     public MapFrontiers() {
 
@@ -28,7 +28,7 @@ public class MapFrontiers {
         MapFrontiersAPIBootstrap.setLogger(new MapFrontiersApiLogAdapter());
 
         ServerGlobalEvents.subscribeServerStartingEvent(MapFrontiers.class, server -> {
-            serverRuntime = new ServerFrontierRuntime(server);
+            serverRuntime = new ServerTerritoryRuntime(server);
             MapFrontiersAPIBootstrap.setServerAPI(serverRuntime.getServerApi());
 
             LOGGER.info("MapFrontiers server runtime initialized");
@@ -75,7 +75,7 @@ public class MapFrontiers {
 
         PacketHandler.sendTo(new PacketHandshake(nonce), player);
         PacketHandler.sendTo(serverRuntime.createSettingsProfilePacket(player), player);
-        PacketHandler.sendTo(serverRuntime.createFrontiersSnapshot(player), player);
+        PacketHandler.sendTo(serverRuntime.createTerritoriesSnapshot(player), player);
     }
 
     public static boolean isOPorHost(ServerPlayer player) {
@@ -83,7 +83,7 @@ public class MapFrontiers {
         return server.getPlayerList().isOp(player.nameAndId());
     }
 
-    public static ServerFrontierRuntime getServerRuntime() {
+    public static ServerTerritoryRuntime getServerRuntime() {
         return serverRuntime;
     }
 }

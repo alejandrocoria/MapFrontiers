@@ -3,8 +3,8 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreateSpec;
-import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationResult;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierCreateSpec;
+import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationResult;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -65,7 +65,7 @@ public class PacketCreateFrontier {
                     message.createSpec.getSourcePluginId()
             );
 
-            ServerFrontierOperationResult result = MapFrontiers.getServerRuntime().getOperationService().createFrontier(player, message.createSpec);
+            ServerTerritoryOperationResult result = MapFrontiers.getServerRuntime().getOperationService().createFrontier(player, message.createSpec);
             if (!result.isSuccess()) {
                 MapFrontiers.LOGGER.warn(
                         "Rejected PacketCreateFrontier from player={} frontierId={} personal={} sourcePluginId={}",

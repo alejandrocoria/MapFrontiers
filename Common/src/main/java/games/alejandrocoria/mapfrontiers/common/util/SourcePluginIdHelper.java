@@ -3,9 +3,6 @@ package games.alejandrocoria.mapfrontiers.common.util;
 import javax.annotation.Nullable;
 
 public final class SourcePluginIdHelper {
-    private SourcePluginIdHelper() {
-    }
-
     public static @Nullable String normalize(@Nullable String sourcePluginId) {
         if (sourcePluginId == null) {
             return null;
@@ -28,5 +25,8 @@ public final class SourcePluginIdHelper {
 
     private static boolean isValidNamespaceChar(char c) {
         return c == '_' || c == '-' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '.';
+    }
+
+    private SourcePluginIdHelper() {
     }
 }

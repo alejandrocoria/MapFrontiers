@@ -11,7 +11,7 @@ import games.alejandrocoria.mapfrontiers.common.config.EnumConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.StringConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.StringListConfigEntry;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -23,63 +23,29 @@ import java.util.EnumSet;
 import java.util.List;
 
 public final class ClientConfig {
-    public enum AfterCreatingFrontier {
-        InfoScreen, EditShape, DoNothing
-    }
-
-    public enum Visibility {
-        Custom, Always, Never
-    }
-
-    public enum Sorting {
-        Name, Owner, Shape, Area, Modified, Created;
-
-        public static final Sorting[] VALUES = values();
-    }
-
-    public enum FilterFrontierShape {
-        All, Vertex, Chunk, Path
-    }
-
-    public enum FilterFrontierOwner {
-        All, Self, Others
-    }
-
-    public enum HUDAnchor {
-        ScreenTop, ScreenTopRight, ScreenRight, ScreenBottomRight, ScreenBottom, ScreenBottomLeft, ScreenLeft, ScreenTopLeft,
-        Minimap, MinimapHorizontal, MinimapVertical;
-
-        public static final HUDAnchor[] VALUES = values();
-    }
-
-    public enum HUDSlot {
-        None, Name, Collection, Owner, Banner
-    }
-
-    public enum TextColor {
-        FrontierColor, FrontierColorBright, White
-    }
-
-    private static final List<String> DEFAULT_SORTING = List.of(
-            Sorting.Created.name(),
-            Sorting.Name.name(),
-            Sorting.Owner.name(),
-            Sorting.Shape.name(),
-            Sorting.Area.name(),
-            Sorting.Modified.name()
-    );
-    private static final List<Boolean> DEFAULT_SORTING_DIRECTION = List.of(false, true, true, true, true, false);
-
     public static final int CURRENT_VERSION = 2;
-    public static final String DIMENSION_FILTER_ALL = "mapfrontiers:all";
-    public static final String DIMENSION_FILTER_CURRENT = "mapfrontiers:current";
 
     private static final Path CONFIG_PATH = Services.PLATFORM.getConfigDirectory().resolve(MapFrontiers.MODID + "-client.toml");
     private static final ConfigFile FILE = new ConfigFile(CONFIG_PATH, CURRENT_VERSION, ClientConfigMigrations.INSTANCE);
     private static boolean initialized = false;
+
+    private static final List<String> DEFAULT_TERRITORY_LIST_SORTING = List.of(
+            TerritoryListSorting.Created.name(),
+            TerritoryListSorting.Name.name(),
+            TerritoryListSorting.Owner.name(),
+            TerritoryListSorting.Shape.name(),
+            TerritoryListSorting.Area.name(),
+            TerritoryListSorting.Modified.name()
+    );
+    private static final List<Boolean> DEFAULT_TERRITORY_LIST_SORTING_DIRECTION = List.of(false, true, true, true, true, false);
+
+    public static final String DIMENSION_FILTER_ALL = "mapfrontiers:all";
+    public static final String DIMENSION_FILTER_CURRENT = "mapfrontiers:current";
+
     private static final int HUD_SLOT_COUNT = 4;
     private static final List<HUDSlot> DEFAULT_HUD_SLOTS = List.of(HUDSlot.Name, HUDSlot.Collection, HUDSlot.Owner, HUDSlot.Banner);
     private static final List<String> DEFAULT_HUD_SLOT_NAMES = DEFAULT_HUD_SLOTS.stream().map(Enum::name).toList();
+
 
     public static final IntConfigEntry TITLE_ANNOUNCEMENT_DURATION = register(intEntry(70, 0, 1200, "announcement", "title", "duration")
             .comment("Duration of title announcement, in game ticks.")
@@ -152,106 +118,106 @@ public final class ClientConfig {
             .comment("Distance in blocks used to keep Path frontiers active for HUD and announcements.")
             .translation(translation("path", "proximity", "exitDistance")));
 
-    public static final EnumConfigEntry<Visibility> FRONTIER_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> FRONTIER_VISIBILITY = frontierVisibilityEntry(
             "Force all frontiers to be shown or hidden. In Custom, you can decide for each frontier.",
             "visibility", "frontier");
-    public static final EnumConfigEntry<Visibility> ANNOUNCE_IN_CHAT = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> ANNOUNCE_IN_CHAT = frontierVisibilityEntry(
             "Force all frontiers to be announced in chat. In Custom, you can decide for each frontier.",
             "visibility", "announceInChat");
-    public static final EnumConfigEntry<Visibility> ANNOUNCE_IN_TITLE = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> ANNOUNCE_IN_TITLE = frontierVisibilityEntry(
             "Force all frontiers to be announced as titles. In Custom, you can decide for each frontier.",
             "visibility", "announceInTitle");
-    public static final EnumConfigEntry<Visibility> MENTION_COLLECTION = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> MENTION_COLLECTION = frontierVisibilityEntry(
             "Force collection names to be mentioned in local frontier announcements. In Custom, you can decide for each frontier.",
             "visibility", "mentionCollection");
-    public static final EnumConfigEntry<Visibility> FULLSCREEN_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> FULLSCREEN_VISIBILITY = frontierVisibilityEntry(
             "Force all frontiers to be shown or hidden on the fullscreen map. In Custom, you can decide for each frontier.",
             "visibility", "fullscreen", "frontier");
-    public static final EnumConfigEntry<Visibility> FULLSCREEN_NAME_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> FULLSCREEN_NAME_VISIBILITY = frontierVisibilityEntry(
             "Force all frontier names to be shown or hidden on the fullscreen map. In Custom, you can decide for each frontier.",
             "visibility", "fullscreen", "name");
-    public static final EnumConfigEntry<Visibility> FULLSCREEN_COLLECTION_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> FULLSCREEN_COLLECTION_VISIBILITY = frontierVisibilityEntry(
             "Force all frontier collection names to be shown or hidden on the fullscreen map. In Custom, you can decide for each frontier.",
             "visibility", "fullscreen", "collection");
-    public static final EnumConfigEntry<Visibility> FULLSCREEN_OWNER_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> FULLSCREEN_OWNER_VISIBILITY = frontierVisibilityEntry(
             "Force all frontier owners to be shown or hidden on the fullscreen map. In Custom, you can decide for each frontier.",
             "visibility", "fullscreen", "owner");
-    public static final EnumConfigEntry<Visibility> FULLSCREEN_BANNER_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> FULLSCREEN_BANNER_VISIBILITY = frontierVisibilityEntry(
             "Force all frontier banners to be shown or hidden on the fullscreen map. In Custom, you can decide for each frontier.",
             "visibility", "fullscreen", "banner");
-    public static final EnumConfigEntry<Visibility> FULLSCREEN_DAY_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> FULLSCREEN_DAY_VISIBILITY = frontierVisibilityEntry(
             "Force all frontiers to be shown or hidden on the day fullscreen map. In Custom, you can decide for each frontier.",
             "visibility", "fullscreen", "day");
-    public static final EnumConfigEntry<Visibility> FULLSCREEN_NIGHT_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> FULLSCREEN_NIGHT_VISIBILITY = frontierVisibilityEntry(
             "Force all frontiers to be shown or hidden on the night fullscreen map. In Custom, you can decide for each frontier.",
             "visibility", "fullscreen", "night");
-    public static final EnumConfigEntry<Visibility> FULLSCREEN_UNDERGROUND_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> FULLSCREEN_UNDERGROUND_VISIBILITY = frontierVisibilityEntry(
             "Force all frontiers to be shown or hidden on the underground fullscreen map. In Custom, you can decide for each frontier.",
             "visibility", "fullscreen", "underground");
-    public static final EnumConfigEntry<Visibility> FULLSCREEN_TOPO_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> FULLSCREEN_TOPO_VISIBILITY = frontierVisibilityEntry(
             "Force all frontiers to be shown or hidden on the topo fullscreen map. In Custom, you can decide for each frontier.",
             "visibility", "fullscreen", "topo");
-    public static final EnumConfigEntry<Visibility> FULLSCREEN_BIOME_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> FULLSCREEN_BIOME_VISIBILITY = frontierVisibilityEntry(
             "Force all frontiers to be shown or hidden on the biome fullscreen map. In Custom, you can decide for each frontier.",
             "visibility", "fullscreen", "biome");
-    public static final EnumConfigEntry<Visibility> MINIMAP_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> MINIMAP_VISIBILITY = frontierVisibilityEntry(
             "Force all frontiers to be shown or hidden on the minimap. In Custom, you can decide for each frontier.",
             "visibility", "minimap", "frontier");
-    public static final EnumConfigEntry<Visibility> MINIMAP_NAME_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> MINIMAP_NAME_VISIBILITY = frontierVisibilityEntry(
             "Force all frontier names to be shown or hidden on the minimap. In Custom, you can decide for each frontier.",
             "visibility", "minimap", "name");
-    public static final EnumConfigEntry<Visibility> MINIMAP_COLLECTION_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> MINIMAP_COLLECTION_VISIBILITY = frontierVisibilityEntry(
             "Force all frontier collection names to be shown or hidden on the minimap. In Custom, you can decide for each frontier.",
             "visibility", "minimap", "collection");
-    public static final EnumConfigEntry<Visibility> MINIMAP_OWNER_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> MINIMAP_OWNER_VISIBILITY = frontierVisibilityEntry(
             "Force all frontier owners to be shown or hidden on the minimap. In Custom, you can decide for each frontier.",
             "visibility", "minimap", "owner");
-    public static final EnumConfigEntry<Visibility> MINIMAP_BANNER_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> MINIMAP_BANNER_VISIBILITY = frontierVisibilityEntry(
             "Force all frontier banners to be shown or hidden on the minimap. In Custom, you can decide for each frontier.",
             "visibility", "minimap", "banner");
-    public static final EnumConfigEntry<Visibility> MINIMAP_DAY_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> MINIMAP_DAY_VISIBILITY = frontierVisibilityEntry(
             "Force all frontiers to be shown or hidden on the day minimap. In Custom, you can decide for each frontier.",
             "visibility", "minimap", "day");
-    public static final EnumConfigEntry<Visibility> MINIMAP_NIGHT_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> MINIMAP_NIGHT_VISIBILITY = frontierVisibilityEntry(
             "Force all frontiers to be shown or hidden on the night minimap. In Custom, you can decide for each frontier.",
             "visibility", "minimap", "night");
-    public static final EnumConfigEntry<Visibility> MINIMAP_UNDERGROUND_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> MINIMAP_UNDERGROUND_VISIBILITY = frontierVisibilityEntry(
             "Force all frontiers to be shown or hidden on the underground minimap. In Custom, you can decide for each frontier.",
             "visibility", "minimap", "underground");
-    public static final EnumConfigEntry<Visibility> MINIMAP_TOPO_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> MINIMAP_TOPO_VISIBILITY = frontierVisibilityEntry(
             "Force all frontiers to be shown or hidden on the topo minimap. In Custom, you can decide for each frontier.",
             "visibility", "minimap", "topo");
-    public static final EnumConfigEntry<Visibility> MINIMAP_BIOME_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> MINIMAP_BIOME_VISIBILITY = frontierVisibilityEntry(
             "Force all frontiers to be shown or hidden on the biome minimap. In Custom, you can decide for each frontier.",
             "visibility", "minimap", "biome");
-    public static final EnumConfigEntry<Visibility> WEBMAP_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> WEBMAP_VISIBILITY = frontierVisibilityEntry(
             "Force all frontiers to be shown or hidden on the webmap. In Custom, you can decide for each frontier.",
             "visibility", "webmap", "frontier");
-    public static final EnumConfigEntry<Visibility> WEBMAP_NAME_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> WEBMAP_NAME_VISIBILITY = frontierVisibilityEntry(
             "Force all frontier names to be shown or hidden on the webmap. In Custom, you can decide for each frontier.",
             "visibility", "webmap", "name");
-    public static final EnumConfigEntry<Visibility> WEBMAP_COLLECTION_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> WEBMAP_COLLECTION_VISIBILITY = frontierVisibilityEntry(
             "Force all frontier collection names to be shown or hidden on the webmap. In Custom, you can decide for each frontier.",
             "visibility", "webmap", "collection");
-    public static final EnumConfigEntry<Visibility> WEBMAP_OWNER_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> WEBMAP_OWNER_VISIBILITY = frontierVisibilityEntry(
             "Force all frontier owners to be shown or hidden on the webmap. In Custom, you can decide for each frontier.",
             "visibility", "webmap", "owner");
-    public static final EnumConfigEntry<Visibility> WEBMAP_BANNER_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> WEBMAP_BANNER_VISIBILITY = frontierVisibilityEntry(
             "Force all frontier banners to be shown or hidden on the webmap. In Custom, you can decide for each frontier.",
             "visibility", "webmap", "banner");
-    public static final EnumConfigEntry<Visibility> WEBMAP_DAY_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> WEBMAP_DAY_VISIBILITY = frontierVisibilityEntry(
             "Force all frontiers to be shown or hidden on the day webmap. In Custom, you can decide for each frontier.",
             "visibility", "webmap", "day");
-    public static final EnumConfigEntry<Visibility> WEBMAP_NIGHT_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> WEBMAP_NIGHT_VISIBILITY = frontierVisibilityEntry(
             "Force all frontiers to be shown or hidden on the night webmap. In Custom, you can decide for each frontier.",
             "visibility", "webmap", "night");
-    public static final EnumConfigEntry<Visibility> WEBMAP_UNDERGROUND_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> WEBMAP_UNDERGROUND_VISIBILITY = frontierVisibilityEntry(
             "Force all frontiers to be shown or hidden on the underground webmap. In Custom, you can decide for each frontier.",
             "visibility", "webmap", "underground");
-    public static final EnumConfigEntry<Visibility> WEBMAP_TOPO_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> WEBMAP_TOPO_VISIBILITY = frontierVisibilityEntry(
             "Force all frontiers to be shown or hidden on the topo webmap. In Custom, you can decide for each frontier.",
             "visibility", "webmap", "topo");
-    public static final EnumConfigEntry<Visibility> WEBMAP_BIOME_VISIBILITY = visibilityEntry(
+    public static final EnumConfigEntry<FrontierDisplayVisibility> WEBMAP_BIOME_VISIBILITY = frontierVisibilityEntry(
             "Force all frontiers to be shown or hidden on the biome webmap. In Custom, you can decide for each frontier.",
             "visibility", "webmap", "biome");
 
@@ -326,33 +292,33 @@ public final class ClientConfig {
             .comment("Segment length used by the selected path shape preset."));
 
     public static final BooleanConfigEntry PASTE_NAME = register(boolEntry(false, "paste", "name")
-            .comment("Paste the frontier name when pasting info."));
+            .comment("Paste the name when pasting info."));
     public static final BooleanConfigEntry PASTE_VISIBILITY = register(boolEntry(true, "paste", "visibility")
             .comment("Paste visibility settings when pasting info."));
     public static final BooleanConfigEntry PASTE_PATH_STYLE = register(boolEntry(true, "paste", "pathStyle")
             .comment("Paste the frontier path style when pasting info."));
     public static final BooleanConfigEntry PASTE_COLOR = register(boolEntry(true, "paste", "color")
-            .comment("Paste the frontier color when pasting info."));
+            .comment("Paste the color when pasting info."));
     public static final BooleanConfigEntry PASTE_BANNER = register(boolEntry(true, "paste", "banner")
             .comment("Paste the frontier banner when pasting info."));
     public static final BooleanConfigEntry PASTE_OPTIONS_VISIBLE = register(boolEntry(false, "paste", "optionsVisible")
             .comment("Whether paste options are currently expanded."));
 
     static {
-        FILE.registerSectionComment("list", "Frontier list settings.");
+        FILE.registerSectionComment("list", "MapFrontiers list settings.");
         FILE.registerSectionComment("path", "Path settings.");
     }
 
-    public static final StringListConfigEntry FRONTIER_SORTING = register(stringListEntry(DEFAULT_SORTING, ClientConfig::isValidSorting, "list", "sorting", "priority")
-            .comment("Order of the frontier list sorting modes."));
-    public static final BooleanListConfigEntry FRONTIER_SORTING_DIRECTION = register(booleanListEntry(DEFAULT_SORTING_DIRECTION, "list", "sorting", "directions")
-            .comment("Direction of the frontier list sorting modes. True means ascending and false means descending."));
+    public static final StringListConfigEntry TERRITORY_LIST_SORTING = register(stringListEntry(DEFAULT_TERRITORY_LIST_SORTING, ClientConfig::isValidTerritoryListSorting, "list", "sorting", "priority")
+            .comment("Order of the MapFrontiers list sorting modes."));
+    public static final BooleanListConfigEntry TERRITORY_LIST_SORTING_DIRECTION = register(booleanListEntry(DEFAULT_TERRITORY_LIST_SORTING_DIRECTION, "list", "sorting", "directions")
+            .comment("Direction of the MapFrontiers list sorting modes. True means ascending and false means descending."));
     public static final EnumConfigEntry<FilterFrontierShape> FILTER_FRONTIER_SHAPE = register(enumEntry(FilterFrontierShape.class, FilterFrontierShape.All, "list", "filters", "shape")
-            .comment("Selected frontier shape filter in the frontier list."));
+            .comment("Selected frontier shape filter in the MapFrontiers list."));
     public static final EnumConfigEntry<FilterFrontierOwner> FILTER_FRONTIER_OWNER = register(enumEntry(FilterFrontierOwner.class, FilterFrontierOwner.All, "list", "filters", "owner")
-            .comment("Selected frontier owner filter in the frontier list."));
+            .comment("Selected frontier owner filter in the MapFrontiers list."));
     public static final StringConfigEntry FILTER_FRONTIER_DIMENSION = register(stringEntry(DIMENSION_FILTER_ALL, "list", "filters", "dimension")
-            .comment("Selected dimension filter in the frontier list. Use \"" + DIMENSION_FILTER_ALL + "\" to show every dimension or \"" + DIMENSION_FILTER_CURRENT + "\" to show only the current one."));
+            .comment("Selected dimension filter in the MapFrontiers list. Use \"" + DIMENSION_FILTER_ALL + "\" to show every dimension or \"" + DIMENSION_FILTER_CURRENT + "\" to show only the current one."));
 
     public static final StringConfigEntry SEND_COMMAND = register(stringEntry("msg", "chatSharing", "sendCommand")
             .comment("Chat command used to send shared frontiers to another player."));
@@ -385,7 +351,7 @@ public final class ClientConfig {
         }
     }
 
-    public static boolean getVisibilityValue(Visibility visibility, boolean customValue) {
+    public static boolean resolveVisibilityValue(FrontierDisplayVisibility visibility, boolean customValue) {
         return switch (visibility) {
             case Always -> true;
             case Never -> false;
@@ -435,16 +401,20 @@ public final class ClientConfig {
         return resolvedSlots;
     }
 
-    public static List<Sorting> getFrontierSortingValues() {
-        return FRONTIER_SORTING.get().stream().map(Sorting::valueOf).toList();
+    public static List<TerritoryListSorting> getTerritoryListSortingValues() {
+        return TERRITORY_LIST_SORTING.get().stream().map(TerritoryListSorting::valueOf).toList();
     }
 
-    public static void setFrontierSortingValues(List<Sorting> sorting) {
-        FRONTIER_SORTING.set(sorting.stream().map(Enum::name).toList());
+    public static void setTerritoryListSortingValues(List<TerritoryListSorting> sorting) {
+        TERRITORY_LIST_SORTING.set(sorting.stream().map(Enum::name).toList());
     }
 
-    public static List<Boolean> getFrontierSortingDirectionValues() {
-        return FRONTIER_SORTING_DIRECTION.get();
+    public static List<Boolean> getTerritoryListSortingDirectionValues() {
+        return TERRITORY_LIST_SORTING_DIRECTION.get();
+    }
+
+    public static void setTerritoryListSortingDirectionValues(List<Boolean> direction) {
+        TERRITORY_LIST_SORTING_DIRECTION.set(direction);
     }
 
     public static FrontierData.PathStyle getDefaultPathStyle() {
@@ -473,10 +443,6 @@ public final class ClientConfig {
 
     public static double getPathActivationDistance(boolean alreadyActive) {
         return alreadyActive ? PATH_PROXIMITY_EXIT_DISTANCE.get() : PATH_PROXIMITY_ENTER_DISTANCE.get();
-    }
-
-    public static void setFrontierSortingDirectionValues(List<Boolean> direction) {
-        FRONTIER_SORTING_DIRECTION.set(direction);
     }
 
     private static boolean validateDefaultPathStyle() {
@@ -511,29 +477,29 @@ public final class ClientConfig {
     }
 
     private static boolean validateSorting() {
-        List<String> sorting = new ArrayList<>(FRONTIER_SORTING.get());
-        List<Boolean> direction = new ArrayList<>(FRONTIER_SORTING_DIRECTION.get());
+        List<String> sorting = new ArrayList<>(TERRITORY_LIST_SORTING.get());
+        List<Boolean> direction = new ArrayList<>(TERRITORY_LIST_SORTING_DIRECTION.get());
         boolean dirty = false;
 
         for (int i = 0; i < sorting.size(); ++i) {
             if (sorting.get(i).equals("VertexChunk")) {
-                sorting.set(i, Sorting.Shape.name());
+                sorting.set(i, TerritoryListSorting.Shape.name());
                 dirty = true;
             }
         }
 
-        if (sorting.size() > Sorting.VALUES.length || direction.size() != sorting.size()) {
-            FRONTIER_SORTING.set(DEFAULT_SORTING);
-            FRONTIER_SORTING_DIRECTION.set(DEFAULT_SORTING_DIRECTION);
+        if (sorting.size() > TerritoryListSorting.VALUES.length || direction.size() != sorting.size()) {
+            TERRITORY_LIST_SORTING.set(DEFAULT_TERRITORY_LIST_SORTING);
+            TERRITORY_LIST_SORTING_DIRECTION.set(DEFAULT_TERRITORY_LIST_SORTING_DIRECTION);
             return true;
         }
 
-        List<Sorting> missing = new ArrayList<>();
-        for (Sorting sort : Sorting.VALUES) {
+        List<TerritoryListSorting> missing = new ArrayList<>();
+        for (TerritoryListSorting sort : TerritoryListSorting.VALUES) {
             int count = Collections.frequency(sorting, sort.name());
             if (count > 1) {
-                FRONTIER_SORTING.set(DEFAULT_SORTING);
-                FRONTIER_SORTING_DIRECTION.set(DEFAULT_SORTING_DIRECTION);
+                TERRITORY_LIST_SORTING.set(DEFAULT_TERRITORY_LIST_SORTING);
+                TERRITORY_LIST_SORTING_DIRECTION.set(DEFAULT_TERRITORY_LIST_SORTING_DIRECTION);
                 return true;
             }
             if (count == 0) {
@@ -543,16 +509,16 @@ public final class ClientConfig {
 
         if (!missing.isEmpty()) {
             dirty = true;
-            for (Sorting missingSort : missing) {
+            for (TerritoryListSorting missingSort : missing) {
                 sorting.add(missingSort.name());
-                int defaultIndex = DEFAULT_SORTING.indexOf(missingSort.name());
-                direction.add(DEFAULT_SORTING_DIRECTION.get(defaultIndex));
+                int defaultIndex = DEFAULT_TERRITORY_LIST_SORTING.indexOf(missingSort.name());
+                direction.add(DEFAULT_TERRITORY_LIST_SORTING_DIRECTION.get(defaultIndex));
             }
 
-            FRONTIER_SORTING.set(sorting);
-            FRONTIER_SORTING_DIRECTION.set(direction);
+            TERRITORY_LIST_SORTING.set(sorting);
+            TERRITORY_LIST_SORTING_DIRECTION.set(direction);
         } else if (dirty) {
-            FRONTIER_SORTING.set(sorting);
+            TERRITORY_LIST_SORTING.set(sorting);
         }
 
         return dirty;
@@ -569,13 +535,13 @@ public final class ClientConfig {
         return false;
     }
 
-    private static boolean isValidSorting(String value) {
+    private static boolean isValidTerritoryListSorting(String value) {
         if (value.equals("VertexChunk")) {
             return true;
         }
 
         try {
-            Sorting.valueOf(value);
+            TerritoryListSorting.valueOf(value);
             return true;
         } catch (Exception ignored) {
             return false;
@@ -653,8 +619,8 @@ public final class ClientConfig {
         return new BooleanListConfigEntry(defaultValue, path);
     }
 
-    private static EnumConfigEntry<Visibility> visibilityEntry(String comment, String... path) {
-        return register(enumEntry(Visibility.class, Visibility.Custom, path)
+    private static EnumConfigEntry<FrontierDisplayVisibility> frontierVisibilityEntry(String comment, String... path) {
+        return register(enumEntry(FrontierDisplayVisibility.class, FrontierDisplayVisibility.Custom, path)
                 .comment(comment));
     }
 

@@ -1,9 +1,9 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen.dialog;
 
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
+import games.alejandrocoria.mapfrontiers.client.config.AfterCreatingFrontier;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
-import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
@@ -12,11 +12,14 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButto
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.PathShapePresetSelector;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.VertexShapePresetSelector;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierCreateSpec;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierCreateSpec;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
+import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.Context;
@@ -67,15 +70,15 @@ public class NewFrontierDialog extends PanelDialog {
     }
 
     public interface ResultHandler {
-        void beforeCreate(NewFrontierDialog dialog, ClientConfig.AfterCreatingFrontier action);
+        void beforeCreate(NewFrontierDialog dialog, AfterCreatingFrontier action);
 
-        void onFrontierCreated(FrontierOverlay frontier, ClientConfig.AfterCreatingFrontier action);
+        void onFrontierCreated(FrontierOverlay frontier, AfterCreatingFrontier action);
     }
 
     private final IClientAPI jmAPI;
     private final BlockPos centerPos;
     private final @Nullable Boolean forcedPersonal;
-    private final FrontierData.FrontierLifetime frontierLifetime;
+    private final TerritoryLifetime frontierLifetime;
     private final @Nullable UUID collectionId;
     private final ResultHandler resultHandler;
     private final Object createdFrontierListenerOwner = new Object();
@@ -95,7 +98,7 @@ public class NewFrontierDialog extends PanelDialog {
     private TextBoxInt textSize;
 
     public NewFrontierDialog(IClientAPI jmAPI, BlockPos centerPos, @Nullable Boolean forcedPersonal,
-                             FrontierData.FrontierLifetime frontierLifetime, @Nullable UUID collectionId,
+                             TerritoryLifetime frontierLifetime, @Nullable UUID collectionId,
                              ResultHandler resultHandler) {
         super();
         this.jmAPI = jmAPI;
@@ -143,10 +146,10 @@ public class NewFrontierDialog extends PanelDialog {
 
         mainLayout.addChild(new StringWidget(AFTER_CREATING_LABEL, font).setColor(ColorConstants.TEXT), 2, 0, leftColumnSettings);
         buttonAfterCreate = new OptionButton(font, 130,
-                (b) -> ClientConfig.AFTER_CREATING_FRONTIER.set(ClientConfig.AfterCreatingFrontier.values()[b.getSelected()]));
-        buttonAfterCreate.addOption(ClientConfig.getTranslatedEnum(ClientConfig.AfterCreatingFrontier.InfoScreen));
-        buttonAfterCreate.addOption(ClientConfig.getTranslatedEnum(ClientConfig.AfterCreatingFrontier.EditShape));
-        buttonAfterCreate.addOption(ClientConfig.getTranslatedEnum(ClientConfig.AfterCreatingFrontier.DoNothing));
+                (b) -> ClientConfig.AFTER_CREATING_FRONTIER.set(AfterCreatingFrontier.values()[b.getSelected()]));
+        buttonAfterCreate.addOption(ClientConfig.getTranslatedEnum(AfterCreatingFrontier.InfoScreen));
+        buttonAfterCreate.addOption(ClientConfig.getTranslatedEnum(AfterCreatingFrontier.EditShape));
+        buttonAfterCreate.addOption(ClientConfig.getTranslatedEnum(AfterCreatingFrontier.DoNothing));
         buttonAfterCreate.setSelected(ClientConfig.AFTER_CREATING_FRONTIER.get().ordinal());
         mainLayout.addChild(buttonAfterCreate, 2, 1, rightColumnSettings);
 
@@ -187,7 +190,7 @@ public class NewFrontierDialog extends PanelDialog {
 
         addConfirmButton(CREATE_LABEL, (b) -> {
             boolean personal = resolvePersonalSelection();
-            ClientConfig.AfterCreatingFrontier afterCreate = ClientConfig.AFTER_CREATING_FRONTIER.get();
+            AfterCreatingFrontier afterCreate = ClientConfig.AFTER_CREATING_FRONTIER.get();
             resultHandler.beforeCreate(this, afterCreate);
             UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
             if (uiState != null) {
@@ -222,7 +225,7 @@ public class NewFrontierDialog extends PanelDialog {
         closeAndReturnToFullscreenMap();
     }
 
-    private void awaitCreatedFrontier(UUID frontierId, ClientConfig.AfterCreatingFrontier afterCreate) {
+    private void awaitCreatedFrontier(UUID frontierId, AfterCreatingFrontier afterCreate) {
         pendingCreatedFrontierId = frontierId;
         MapFrontiersClient.getFrontierEvents().unsubscribe(createdFrontierListenerOwner);
         MapFrontiersClient.getFrontierEvents().subscribeCreated(createdFrontierListenerOwner, (frontier, playerId) -> {
@@ -360,7 +363,7 @@ public class NewFrontierDialog extends PanelDialog {
             button.setSelected(forcedPersonal ? FrontierTypeOption.PERSONAL.ordinal() : FrontierTypeOption.GLOBAL.ordinal());
             button.active = false;
         }
-        if (frontierLifetime == FrontierData.FrontierLifetime.SESSION_ONLY) {
+        if (frontierLifetime == TerritoryLifetime.SESSION_ONLY) {
             button.setSelected(FrontierTypeOption.PERSONAL.ordinal());
             button.active = false;
         }
@@ -369,7 +372,7 @@ public class NewFrontierDialog extends PanelDialog {
     }
 
     private boolean resolvePersonalSelection() {
-        if (frontierLifetime == FrontierData.FrontierLifetime.SESSION_ONLY) {
+        if (frontierLifetime == TerritoryLifetime.SESSION_ONLY) {
             return true;
         }
         if (forcedPersonal != null) {
@@ -379,13 +382,13 @@ public class NewFrontierDialog extends PanelDialog {
     }
 
     private boolean shouldShowContextualHint() {
-        return collectionId != null || forcedPersonal != null || frontierLifetime == FrontierData.FrontierLifetime.SESSION_ONLY;
+        return collectionId != null || forcedPersonal != null || frontierLifetime == TerritoryLifetime.SESSION_ONLY;
     }
 
     private Component createContextualTypeHint(boolean personal) {
         if (collectionId != null) {
             Component collectionComponent = resolveCollectionNameComponent();
-            if (frontierLifetime == FrontierData.FrontierLifetime.SESSION_ONLY) {
+            if (frontierLifetime == TerritoryLifetime.SESSION_ONLY) {
                 return Component.translatable(CONTEXTUAL_HINT_TEMPORARY_IN_COLLECTION_KEY, collectionComponent);
             }
 
@@ -393,7 +396,7 @@ public class NewFrontierDialog extends PanelDialog {
             return Component.translatable(CONTEXTUAL_HINT_IN_COLLECTION_KEY, typeComponent, collectionComponent);
         }
 
-        if (frontierLifetime == FrontierData.FrontierLifetime.SESSION_ONLY) {
+        if (frontierLifetime == TerritoryLifetime.SESSION_ONLY) {
             return Component.translatable(CONTEXTUAL_HINT_TEMPORARY_KEY);
         }
 
@@ -459,13 +462,13 @@ public class NewFrontierDialog extends PanelDialog {
         FrontierData defaults = new FrontierData();
         SettingsUser owner = new SettingsUser(minecraft.player);
         UUID frontierId = UUID.randomUUID();
-        FrontierData.VisibilityData visibility = new FrontierData.VisibilityData(defaults.getVisibilityData());
+        VisibilityData visibility = new VisibilityData(defaults.getVisibilityData());
         FrontierData.BannerData banner = defaults.getbannerData() == null ? null : new FrontierData.BannerData(defaults.getbannerData());
         FrontierData.PathStyle pathStyle = ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Path
                 ? ClientConfig.getDefaultPathStyle()
                 : defaults.getPathStyle();
         int color = ColorHelper.getRandomColor();
-        FrontierData.FrontierLifetime lifetime = frontierLifetime == null ? FrontierData.FrontierLifetime.PERSISTENT : frontierLifetime;
+        TerritoryLifetime lifetime = frontierLifetime == null ? TerritoryLifetime.PERSISTENT : frontierLifetime;
 
         if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Path) {
             return FrontierCreateSpec.path(frontierId, owner, personal, dimension, lifetime, collectionId,

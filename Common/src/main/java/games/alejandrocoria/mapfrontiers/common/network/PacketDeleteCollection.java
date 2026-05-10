@@ -4,7 +4,7 @@ import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
-import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationResult;
+import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationResult;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -56,7 +56,7 @@ public class PacketDeleteCollection {
                 return;
             }
 
-            ServerFrontierOperationResult result = MapFrontiers.getServerRuntime().getOperationService().deleteCollection(player, message.collectionId);
+            ServerTerritoryOperationResult result = MapFrontiers.getServerRuntime().getOperationService().deleteCollection(player, message.collectionId);
             result.dispatchNetworkActions();
         }
     }

@@ -14,9 +14,9 @@ import games.alejandrocoria.mapfrontiers.api.model.CollectionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
 import games.alejandrocoria.mapfrontiers.common.api.SimpleEventBus;
-import games.alejandrocoria.mapfrontiers.server.frontier.ServerCollectionEvents;
-import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierEvents;
-import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationService;
+import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationService;
+import games.alejandrocoria.mapfrontiers.server.territory.collection.ServerCollectionEvents;
+import games.alejandrocoria.mapfrontiers.server.territory.frontier.ServerFrontierEvents;
 
 public class MapFrontiersServerAPIImpl implements InternalMapFrontiersServerAPI {
     private final PluginScopedServerFrontierService frontiers;
@@ -25,14 +25,14 @@ public class MapFrontiersServerAPIImpl implements InternalMapFrontiersServerAPI 
     private final ServerFrontierEvents frontierEvents;
     private final ServerCollectionEvents collectionEvents;
 
-    public MapFrontiersServerAPIImpl(ServerFrontierOperationService operationService, ServerFrontierEvents frontierEvents, ServerCollectionEvents collectionEvents) {
+    public MapFrontiersServerAPIImpl(ServerTerritoryOperationService operationService, ServerFrontierEvents frontierEvents, ServerCollectionEvents collectionEvents) {
         this.frontierEvents = frontierEvents;
         this.collectionEvents = collectionEvents;
         this.eventBus = new SimpleEventBus();
         this.frontiers = new ServerFrontierServiceImpl(operationService);
         this.collections = new ServerCollectionServiceImpl(operationService);
 
-        // Server API exposes only global entities, so personal/global conversions surface as created/deleted here.
+        // Server API exposes only global territories, so personal/global conversions surface as created/deleted here.
         frontierEvents.subscribeCreated(this, frontier -> {
             if (!frontier.getPersonal() && frontier.isPersistent()) {
                 eventBus.post(new FrontierCreatedEvent(ApiConverters.fromFrontier(frontier)));

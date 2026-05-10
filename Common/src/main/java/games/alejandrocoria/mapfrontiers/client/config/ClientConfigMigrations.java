@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.function.UnaryOperator;
 
 public final class ClientConfigMigrations implements ConfigMigrations {
-    private static final String[][] MIGRATION_0_TO_1_MOVES = {
+    private static final String[][] LEGACY_PATH_MOVES_V0_TO_V1 = {
             // announcement
             {"titleAnnouncementDuration", "announcement.title.duration"},
             {"titleAnnouncementTimeout", "announcement.title.timeout"},
@@ -115,24 +115,24 @@ public final class ClientConfigMigrations implements ConfigMigrations {
     }
 
     private void migrateFrom0To1(CommentedConfig config) throws ConfigMigrationException {
-        moveAll(config, MIGRATION_0_TO_1_MOVES);
+        moveAll(config, LEGACY_PATH_MOVES_V0_TO_V1);
 
-        rewriteString(config, "newFrontier.afterCreation", value -> switch (value) {
+        rewriteStringIfPresent(config, "newFrontier.afterCreation", value -> switch (value) {
             case "Info" -> "InfoScreen";
             case "Edit" -> "EditShape";
             case "Nothing" -> "DoNothing";
             default -> value;
         });
-        rewriteString(config, "appearance.text.color", value -> switch (value) {
+        rewriteStringIfPresent(config, "appearance.text.color", value -> switch (value) {
             case "Frontier" -> "FrontierColor";
             case "Bright" -> "FrontierColorBright";
             default -> value;
         });
-        rewriteString(config, "list.filters.owner", value -> switch (value) {
+        rewriteStringIfPresent(config, "list.filters.owner", value -> switch (value) {
             case "You" -> "Self";
             default -> value;
         });
-        rewriteString(config, "list.filters.dimension", value -> switch (value) {
+        rewriteStringIfPresent(config, "list.filters.dimension", value -> switch (value) {
             case "all" -> ClientConfig.DIMENSION_FILTER_ALL;
             case "current" -> ClientConfig.DIMENSION_FILTER_CURRENT;
             default -> value;
@@ -140,34 +140,34 @@ public final class ClientConfigMigrations implements ConfigMigrations {
     }
 
     private void migrateFrom1To2(CommentedConfig config) {
-        List<ClientConfig.HUDSlot> oldSlots = List.of(
-                parseHUDSlot(config.get("hud.slot1")),
-                parseHUDSlot(config.get("hud.slot2")),
-                parseHUDSlot(config.get("hud.slot3"))
+        List<HUDSlot> legacyHudSlots = List.of(
+                parseLegacyHudSlot(config.get("hud.slot1")),
+                parseLegacyHudSlot(config.get("hud.slot2")),
+                parseLegacyHudSlot(config.get("hud.slot3"))
         );
 
-        List<ClientConfig.HUDSlot> migratedSlots = new ArrayList<>(4);
-        int nameIndex = oldSlots.indexOf(ClientConfig.HUDSlot.Name);
-        if (nameIndex >= 0) {
-            for (int i = 0; i < oldSlots.size(); ++i) {
-                migratedSlots.add(oldSlots.get(i));
-                if (i == nameIndex) {
-                    migratedSlots.add(ClientConfig.HUDSlot.Collection);
+        List<HUDSlot> migratedHudSlots = new ArrayList<>(4);
+        int nameSlotIndex = legacyHudSlots.indexOf(HUDSlot.Name);
+        if (nameSlotIndex >= 0) {
+            for (int i = 0; i < legacyHudSlots.size(); ++i) {
+                migratedHudSlots.add(legacyHudSlots.get(i));
+                if (i == nameSlotIndex) {
+                    migratedHudSlots.add(HUDSlot.Collection);
                 }
             }
         } else {
-            migratedSlots.addAll(oldSlots);
-            migratedSlots.add(ClientConfig.HUDSlot.None);
+            migratedHudSlots.addAll(legacyHudSlots);
+            migratedHudSlots.add(HUDSlot.None);
         }
 
-        while (migratedSlots.size() < 4) {
-            migratedSlots.add(ClientConfig.HUDSlot.None);
+        while (migratedHudSlots.size() < 4) {
+            migratedHudSlots.add(HUDSlot.None);
         }
-        if (migratedSlots.size() > 4) {
-            migratedSlots = new ArrayList<>(migratedSlots.subList(0, 4));
+        if (migratedHudSlots.size() > 4) {
+            migratedHudSlots = new ArrayList<>(migratedHudSlots.subList(0, 4));
         }
 
-        List<String> migratedSlotNames = migratedSlots.stream().map(Enum::name).toList();
+        List<String> migratedSlotNames = migratedHudSlots.stream().map(Enum::name).toList();
         config.set("hud.slots", migratedSlotNames);
         config.remove("hud.slot1");
         config.remove("hud.slot2");
@@ -176,11 +176,11 @@ public final class ClientConfigMigrations implements ConfigMigrations {
 
     private static void moveAll(CommentedConfig config, String[][] moves) {
         for (String[] move : moves) {
-            move(config, move[0], move[1]);
+            moveIfPresent(config, move[0], move[1]);
         }
     }
 
-    private static void move(CommentedConfig config, String legacyPath, String newPath) {
+    private static void moveIfPresent(CommentedConfig config, String legacyPath, String newPath) {
         Object value = config.get(legacyPath);
         if (value == null) {
             return;
@@ -190,7 +190,7 @@ public final class ClientConfigMigrations implements ConfigMigrations {
         config.remove(legacyPath);
     }
 
-    private static void rewriteString(CommentedConfig config, String path, UnaryOperator<String> rewrite) throws ConfigMigrationException {
+    private static void rewriteStringIfPresent(CommentedConfig config, String path, UnaryOperator<String> rewrite) throws ConfigMigrationException {
         Object value = config.get(path);
         if (value == null) {
             return;
@@ -203,15 +203,15 @@ public final class ClientConfigMigrations implements ConfigMigrations {
         config.set(path, rewrite.apply(stringValue));
     }
 
-    private static ClientConfig.HUDSlot parseHUDSlot(@Nullable Object rawValue) {
+    private static HUDSlot parseLegacyHudSlot(@Nullable Object rawValue) {
         if (!(rawValue instanceof String value)) {
-            return ClientConfig.HUDSlot.None;
+            return HUDSlot.None;
         }
 
         try {
-            return ClientConfig.HUDSlot.valueOf(value);
+            return HUDSlot.valueOf(value);
         } catch (Exception ignored) {
-            return ClientConfig.HUDSlot.None;
+            return HUDSlot.None;
         }
     }
 }

@@ -12,8 +12,8 @@ import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedClientCollecti
 import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedClientFrontierService;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
-import games.alejandrocoria.mapfrontiers.client.frontier.ClientCollectionEvents;
-import games.alejandrocoria.mapfrontiers.client.frontier.ClientFrontierEvents;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientCollectionEvents;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientFrontierEvents;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
 import games.alejandrocoria.mapfrontiers.common.api.SimpleEventBus;
 

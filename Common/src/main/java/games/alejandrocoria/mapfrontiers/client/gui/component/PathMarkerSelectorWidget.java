@@ -1,8 +1,8 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
-import games.alejandrocoria.mapfrontiers.client.frontier.MarkerImageConstants;
-import games.alejandrocoria.mapfrontiers.client.frontier.PathMarkerCatalog;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.MarkerImageConstants;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.PathMarkerCatalog;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
