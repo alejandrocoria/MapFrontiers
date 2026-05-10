@@ -11,7 +11,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.util.SourcePluginUiHelper;
 import games.alejandrocoria.mapfrontiers.client.gui.util.TextEllipsizeHelper;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.ComponentPath;
@@ -53,11 +53,11 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
     private static final int SOURCE_PLUGIN_GAP = 2;
     private static final int METADATA_X = 254;
     private static final int NAME_METADATA_SPACING = 2;
-    private static final int MODE_BADGE_X = 2;
-    private static final int MODE_BADGE_ICON_Y = 1;
-    private static final int MODE_BADGE_COUNT_Y = 16;
-    private static final int MODE_BADGE_ICON_WIDTH = 21;
-    private static final int MODE_BADGE_ICON_HEIGHT = 14;
+    private static final int SHAPE_BADGE_X = 2;
+    private static final int SHAPE_BADGE_ICON_Y = 1;
+    private static final int SHAPE_BADGE_COUNT_Y = 16;
+    private static final int SHAPE_BADGE_ICON_WIDTH = 21;
+    private static final int SHAPE_BADGE_ICON_HEIGHT = 14;
     private static final int NAME_LINE_1_Y = 4;
     private static final int NAME_LINE_2_Y = 14;
     private static final int NAME_LINE_BG_TOP_OFFSET = -1;
@@ -121,9 +121,9 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
         owner = I18n.get("mapfrontiers.owner", SettingsUserFormatter.getDisplayName(frontier.getOwner()));
         dimension = I18n.get("mapfrontiers.dimension", frontier.getDimension().identifier().toString());
 
-        if (frontier.getMode() == FrontierData.Mode.Vertex) {
+        if (frontier.getShape() == FrontierShape.Vertex) {
             count = frontier.getVertexCount();
-        } else if (frontier.getMode() == FrontierData.Mode.Path) {
+        } else if (frontier.getShape() == FrontierShape.Path) {
             count = frontier.getPointCount();
         } else {
             count = frontier.getChunkCount();
@@ -213,7 +213,7 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
         drawNameLine(graphics, name2, visibleName2, name2Truncated, showExpandedNames, NAME_LINE_2_Y,
                 frontier.getVisibility(FrontierVisibility.Frontier), nameColor, hiddenColor, rowContentX, nameX);
 
-        drawModeBadge(graphics, selected, rowContentX);
+        drawShapeBadge(graphics, selected, rowContentX);
         renderActionButtons(graphics, mouseX, mouseY, partialTicks, focused);
         renderCheckBox(graphics, mouseX, mouseY, partialTicks, focused);
     }
@@ -260,10 +260,10 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
         return checkboxVisible || checkboxVisibleOnHover && (isHovered || focused);
     }
 
-    private void drawModeBadge(GuiGraphicsExtractor graphics, boolean selected, int rowContentX) {
+    private void drawShapeBadge(GuiGraphicsExtractor graphics, boolean selected, int rowContentX) {
         Identifier fillTexture;
         Identifier outlineTexture;
-        switch (frontier.getMode()) {
+        switch (frontier.getShape()) {
             case Vertex -> {
                 fillTexture = VERTEX_FILL_TEXTURE;
                 outlineTexture = VERTEX_OUTLINE_TEXTURE;
@@ -276,20 +276,20 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
                 fillTexture = CHUNK_FILL_TEXTURE;
                 outlineTexture = CHUNK_OUTLINE_TEXTURE;
             }
-            default -> throw new IllegalStateException("Unexpected frontier mode: " + frontier.getMode());
+            default -> throw new IllegalStateException("Unexpected frontier shape: " + frontier.getShape());
         }
 
-        int iconX = rowContentX + MODE_BADGE_X;
-        int iconY = y + MODE_BADGE_ICON_Y;
-        graphics.blit(RenderPipelines.GUI_TEXTURED, fillTexture, iconX, iconY, 0, 0, MODE_BADGE_ICON_WIDTH,
-                MODE_BADGE_ICON_HEIGHT, MODE_BADGE_ICON_WIDTH, MODE_BADGE_ICON_HEIGHT, frontier.getColor() | 0xFF000000);
+        int iconX = rowContentX + SHAPE_BADGE_X;
+        int iconY = y + SHAPE_BADGE_ICON_Y;
+        graphics.blit(RenderPipelines.GUI_TEXTURED, fillTexture, iconX, iconY, 0, 0, SHAPE_BADGE_ICON_WIDTH,
+                SHAPE_BADGE_ICON_HEIGHT, SHAPE_BADGE_ICON_WIDTH, SHAPE_BADGE_ICON_HEIGHT, frontier.getColor() | 0xFF000000);
         int outlineColor = selected ? ColorConstants.WHITE : ColorConstants.TEXT_DARK;
-        graphics.blit(RenderPipelines.GUI_TEXTURED, outlineTexture, iconX, iconY, 0, 0, MODE_BADGE_ICON_WIDTH,
-                MODE_BADGE_ICON_HEIGHT, MODE_BADGE_ICON_WIDTH, MODE_BADGE_ICON_HEIGHT, outlineColor);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, outlineTexture, iconX, iconY, 0, 0, SHAPE_BADGE_ICON_WIDTH,
+                SHAPE_BADGE_ICON_HEIGHT, SHAPE_BADGE_ICON_WIDTH, SHAPE_BADGE_ICON_HEIGHT, outlineColor);
 
         String countText = Integer.toString(count);
-        int countX = iconX + (MODE_BADGE_ICON_WIDTH - font.width(countText)) / 2;
-        graphics.text(font, countText, countX, y + MODE_BADGE_COUNT_Y, ColorConstants.TEXT_DIMENSION);
+        int countX = iconX + (SHAPE_BADGE_ICON_WIDTH - font.width(countText)) / 2;
+        graphics.text(font, countText, countX, y + SHAPE_BADGE_COUNT_Y, ColorConstants.TEXT_DIMENSION);
     }
 
     private void drawNameLine(GuiGraphicsExtractor graphics,

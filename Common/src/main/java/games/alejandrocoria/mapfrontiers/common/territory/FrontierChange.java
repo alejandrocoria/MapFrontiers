@@ -41,7 +41,7 @@ public class FrontierChange {
             banner = new BannerChange(other.banner.banner == null ? null : new FrontierData.BannerData(other.banner.banner));
         }
         if (other.shape != null) {
-            shape = new ShapeChange(other.shape.vertices, other.shape.chunks, other.shape.points, other.shape.mode);
+            shape = new ShapeChange(other.shape.vertices, other.shape.chunks, other.shape.points, other.shape.frontierShape);
         }
         if (other.pathStyle != null) {
             pathStyle = new PathStyleChange(other.pathStyle.pathStyle);
@@ -77,12 +77,12 @@ public class FrontierChange {
         }
 
         if (buf.readBoolean()) {
-            FrontierData.Mode mode = FrontierData.Mode.VALUES[buf.readInt()];
+            FrontierShape frontierShape = FrontierShape.VALUES[buf.readInt()];
             List<BlockPos> vertices = new ArrayList<>();
             Set<ChunkPos> chunks = new HashSet<>();
             List<BlockPos> points = new ArrayList<>();
 
-            switch (mode) {
+            switch (frontierShape) {
                 case Vertex -> {
                     int verticesCount = buf.readInt();
                     vertices = new ArrayList<>(verticesCount);
@@ -106,7 +106,7 @@ public class FrontierChange {
                 }
             }
 
-            shape = new ShapeChange(vertices, chunks, points, mode);
+            shape = new ShapeChange(vertices, chunks, points, frontierShape);
         }
 
         if (buf.readBoolean()) {
@@ -138,8 +138,8 @@ public class FrontierChange {
         change.setVisibility(frontier.getVisibilityData());
         change.setColor(frontier.getColor());
         change.setBanner(frontier.getbannerData());
-        change.setShape(frontier.getVertices(), frontier.getChunks(), frontier.getPoints(), frontier.getMode());
-        if (frontier.getMode() == FrontierData.Mode.Path) {
+        change.setShape(frontier.getVertices(), frontier.getChunks(), frontier.getPoints(), frontier.getShape());
+        if (frontier.getShape() == FrontierShape.Path) {
             change.setPathStyle(frontier.getPathStyle());
         }
         change.setCollectionId(frontier.getCollectionId());
@@ -180,9 +180,9 @@ public class FrontierChange {
 
         buf.writeBoolean(shape != null);
         if (shape != null) {
-            buf.writeInt(shape.mode.ordinal());
+            buf.writeInt(shape.frontierShape.ordinal());
 
-            switch (shape.mode) {
+            switch (shape.frontierShape) {
                 case Vertex -> {
                     buf.writeInt(shape.vertices.size());
                     for (BlockPos vertex : shape.vertices) {
@@ -310,8 +310,8 @@ public class FrontierChange {
         this.banner = new BannerChange(banner == null ? null : new FrontierData.BannerData(banner));
     }
 
-    public void setShape(List<BlockPos> vertices, Set<ChunkPos> chunks, List<BlockPos> points, FrontierData.Mode mode) {
-        shape = new ShapeChange(vertices, chunks, points, mode);
+    public void setShape(List<BlockPos> vertices, Set<ChunkPos> chunks, List<BlockPos> points, FrontierShape frontierShape) {
+        shape = new ShapeChange(vertices, chunks, points, frontierShape);
     }
 
     public void setPathStyle(FrontierData.PathStyle pathStyle) {
@@ -384,13 +384,13 @@ public class FrontierChange {
         private final List<BlockPos> vertices;
         private final Set<ChunkPos> chunks;
         private final List<BlockPos> points;
-        private final FrontierData.Mode mode;
+        private final FrontierShape frontierShape;
 
-        private ShapeChange(List<BlockPos> vertices, Set<ChunkPos> chunks, List<BlockPos> points, FrontierData.Mode mode) {
+        private ShapeChange(List<BlockPos> vertices, Set<ChunkPos> chunks, List<BlockPos> points, FrontierShape frontierShape) {
             this.vertices = new ArrayList<>(vertices);
             this.chunks = new HashSet<>(chunks);
             this.points = new ArrayList<>(points);
-            this.mode = mode;
+            this.frontierShape = frontierShape;
         }
 
         public List<BlockPos> getVertices() {
@@ -405,8 +405,8 @@ public class FrontierChange {
             return new ArrayList<>(points);
         }
 
-        public FrontierData.Mode getMode() {
-            return mode;
+        public FrontierShape getShape() {
+            return frontierShape;
         }
     }
 

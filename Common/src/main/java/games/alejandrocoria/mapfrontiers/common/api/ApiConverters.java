@@ -53,10 +53,10 @@ public final class ApiConverters {
         List<ChunkCoord> chunks = frontier.getChunks().stream().map(chunk -> new ChunkCoord(chunk.x(), chunk.z())).toList();
         List<Point2i> points = frontier.getPoints().stream().map(pos -> new Point2i(pos.getX(), pos.getZ())).toList();
 
-        return switch (frontier.getMode()) {
-            case Vertex -> FrontierShape.vertex(vertices);
-            case Chunk -> FrontierShape.chunk(chunks);
-            case Path -> FrontierShape.path(points);
+        return switch (frontier.getShape()) {
+            case Vertex -> games.alejandrocoria.mapfrontiers.api.model.FrontierShape.vertex(vertices);
+            case Chunk -> games.alejandrocoria.mapfrontiers.api.model.FrontierShape.chunk(chunks);
+            case Path -> games.alejandrocoria.mapfrontiers.api.model.FrontierShape.path(points);
         };
     }
 
@@ -146,7 +146,7 @@ public final class ApiConverters {
                 toShape(frontier),
                 fromVisibility(frontier.getVisibilityData()),
                 fromBanner(frontier.getbannerData()),
-                frontier.getMode() == FrontierData.Mode.Path ? Optional.of(fromPathStyle(frontier.getPathStyle())) : Optional.empty(),
+                frontier.getShape() == games.alejandrocoria.mapfrontiers.common.territory.FrontierShape.Path ? Optional.of(fromPathStyle(frontier.getPathStyle())) : Optional.empty(),
                 Optional.ofNullable(frontier.getCollectionId()).map(CollectionId::new),
                 Optional.ofNullable(frontier.getSourcePluginId()),
                 owner,

@@ -33,7 +33,7 @@ public final class FrontierCreateSpec {
     private final int color;
     private final VisibilityData visibility;
     private final @Nullable FrontierData.BannerData banner;
-    private final FrontierData.Mode mode;
+    private final FrontierShape frontierShape;
     private final List<BlockPos> vertices;
     private final Set<ChunkPos> chunks;
     private final List<BlockPos> points;
@@ -51,7 +51,7 @@ public final class FrontierCreateSpec {
                                int color,
                                VisibilityData visibility,
                                @Nullable FrontierData.BannerData banner,
-                               FrontierData.Mode mode,
+                               FrontierShape frontierShape,
                                List<BlockPos> vertices,
                                Set<ChunkPos> chunks,
                                List<BlockPos> points,
@@ -68,14 +68,14 @@ public final class FrontierCreateSpec {
         this.color = color;
         this.visibility = new VisibilityData(Objects.requireNonNull(visibility, "visibility"));
         this.banner = banner == null ? null : new FrontierData.BannerData(banner);
-        this.mode = Objects.requireNonNull(mode, "mode");
+        this.frontierShape = Objects.requireNonNull(frontierShape, "mode");
         this.vertices = List.copyOf(Objects.requireNonNull(vertices, "vertices"));
         this.chunks = Set.copyOf(Objects.requireNonNull(chunks, "chunks"));
         this.points = List.copyOf(Objects.requireNonNull(points, "points"));
         this.pathStyle = new FrontierData.PathStyle(Objects.requireNonNull(pathStyle, "pathStyle"));
 
         validateTypeAndLifetime(personal, lifetime);
-        validateShape(mode, this.vertices, this.chunks, this.points);
+        validateShape(frontierShape, this.vertices, this.chunks, this.points);
     }
 
     public static FrontierCreateSpec vertex(UUID frontierId,
@@ -93,7 +93,7 @@ public final class FrontierCreateSpec {
                                             List<BlockPos> vertices,
                                             FrontierData.PathStyle pathStyle) {
         return new FrontierCreateSpec(frontierId, owner, personal, dimension, lifetime, collectionId, sourcePluginId,
-                name1, name2, color, visibility, banner, FrontierData.Mode.Vertex, vertices, Set.of(), List.of(), pathStyle);
+                name1, name2, color, visibility, banner, FrontierShape.Vertex, vertices, Set.of(), List.of(), pathStyle);
     }
 
     public static FrontierCreateSpec chunk(UUID frontierId,
@@ -111,7 +111,7 @@ public final class FrontierCreateSpec {
                                            Set<ChunkPos> chunks,
                                            FrontierData.PathStyle pathStyle) {
         return new FrontierCreateSpec(frontierId, owner, personal, dimension, lifetime, collectionId, sourcePluginId,
-                name1, name2, color, visibility, banner, FrontierData.Mode.Chunk, List.of(), chunks, List.of(), pathStyle);
+                name1, name2, color, visibility, banner, FrontierShape.Chunk, List.of(), chunks, List.of(), pathStyle);
     }
 
     public static FrontierCreateSpec path(UUID frontierId,
@@ -129,7 +129,7 @@ public final class FrontierCreateSpec {
                                           List<BlockPos> points,
                                           FrontierData.PathStyle pathStyle) {
         return new FrontierCreateSpec(frontierId, owner, personal, dimension, lifetime, collectionId, sourcePluginId,
-                name1, name2, color, visibility, banner, FrontierData.Mode.Path, List.of(), Set.of(), points, pathStyle);
+                name1, name2, color, visibility, banner, FrontierShape.Path, List.of(), Set.of(), points, pathStyle);
     }
 
     public UUID getFrontierId() {
@@ -180,8 +180,8 @@ public final class FrontierCreateSpec {
         return banner == null ? null : new FrontierData.BannerData(banner);
     }
 
-    public FrontierData.Mode getMode() {
-        return mode;
+    public FrontierShape getMode() {
+        return frontierShape;
     }
 
     public List<BlockPos> getVertices() {
@@ -202,7 +202,7 @@ public final class FrontierCreateSpec {
 
     public FrontierCreateSpec withOwner(SettingsUser owner) {
         return new FrontierCreateSpec(frontierId, owner, personal, dimension, lifetime, collectionId, sourcePluginId,
-                name1, name2, color, visibility, banner, mode, vertices, chunks, points, pathStyle);
+                name1, name2, color, visibility, banner, frontierShape, vertices, chunks, points, pathStyle);
     }
 
     public void toBytes(FriendlyByteBuf buf) {
@@ -238,9 +238,9 @@ public final class FrontierCreateSpec {
             banner.toBytes(buf);
         }
 
-        buf.writeInt(mode.ordinal());
+        buf.writeInt(frontierShape.ordinal());
 
-        switch (mode) {
+        switch (frontierShape) {
             case Vertex -> {
                 buf.writeInt(vertices.size());
                 for (BlockPos pos : vertices) {
@@ -286,10 +286,10 @@ public final class FrontierCreateSpec {
             banner.fromBytes(buf);
         }
 
-        FrontierData.Mode mode = FrontierData.Mode.VALUES[buf.readInt()];
+        FrontierShape frontierShape = FrontierShape.VALUES[buf.readInt()];
         FrontierData.PathStyle pathStyle = new FrontierData.PathStyle();
 
-        return switch (mode) {
+        return switch (frontierShape) {
             case Vertex -> {
                 int vertexCount = buf.readInt();
                 List<BlockPos> vertices = new ArrayList<>(vertexCount);
@@ -336,11 +336,11 @@ public final class FrontierCreateSpec {
         }
     }
 
-    private static void validateShape(FrontierData.Mode mode,
+    private static void validateShape(FrontierShape frontierShape,
                                       List<BlockPos> vertices,
                                       Set<ChunkPos> chunks,
                                       List<BlockPos> points) {
-        switch (mode) {
+        switch (frontierShape) {
             case Vertex -> {
                 if (!chunks.isEmpty() || !points.isEmpty()) {
                     throw new IllegalArgumentException("Vertex create specs can only carry vertices");

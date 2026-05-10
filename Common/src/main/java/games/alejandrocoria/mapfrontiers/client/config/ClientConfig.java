@@ -12,6 +12,7 @@ import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.StringConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.StringListConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -268,17 +269,17 @@ public final class ClientConfig {
     public static final IntConfigEntry HUD_Y_POSITION = register(intEntry(0, Integer.MIN_VALUE, Integer.MAX_VALUE, "hud", "yPosition")
             .comment("Vertical HUD offset relative to the selected anchor."));
 
-    public static final EnumConfigEntry<FrontierData.Mode> NEW_FRONTIER_MODE = register(enumEntry(FrontierData.Mode.class, FrontierData.Mode.Vertex, "newFrontier", "mode")
-            .comment("Mode used when creating a new frontier."));
+    public static final EnumConfigEntry<FrontierShape> NEW_FRONTIER_SHAPE = register(enumEntry(FrontierShape.class, FrontierShape.Vertex, "newFrontier", "shape")
+            .comment("Shape used when creating a new frontier."));
     public static final EnumConfigEntry<AfterCreatingFrontier> AFTER_CREATING_FRONTIER = register(enumEntry(AfterCreatingFrontier.class, AfterCreatingFrontier.InfoScreen, "newFrontier", "afterCreation")
             .comment("Action to perform after creating a new frontier."));
-    public static final IntConfigEntry NEW_FRONTIER_SHAPE = register(intEntry(6, 0, 11, "newFrontier", "shape")
+    public static final IntConfigEntry NEW_FRONTIER_VERTEX_SHAPE = register(intEntry(6, 0, 11, "newFrontier", "vertexShape")
             .comment("Shape preset used when creating a new vertex frontier."));
-    public static final IntConfigEntry NEW_FRONTIER_COUNT = register(intEntry(16, 3, 999, "newFrontier", "vertexCount")
+    public static final IntConfigEntry NEW_FRONTIER_VERTEX_COUNT = register(intEntry(16, 3, 999, "newFrontier", "vertexCount")
             .comment("Number of vertices used by the selected vertex shape preset."));
-    public static final IntConfigEntry NEW_FRONTIER_SHAPE_WIDTH = register(intEntry(10, 0, 999, "newFrontier", "shapeWidth")
+    public static final IntConfigEntry NEW_FRONTIER_VERTEX_SHAPE_WIDTH = register(intEntry(10, 0, 999, "newFrontier", "vertexShapeWidth")
             .comment("Width used by the selected vertex shape preset."));
-    public static final IntConfigEntry NEW_FRONTIER_SHAPE_RADIUS = register(intEntry(20, 0, 999, "newFrontier", "shapeRadius")
+    public static final IntConfigEntry NEW_FRONTIER_VERTEX_SHAPE_RADIUS = register(intEntry(20, 0, 999, "newFrontier", "vertexShapeRadius")
             .comment("Radius used by the selected vertex shape preset."));
     public static final IntConfigEntry NEW_FRONTIER_CHUNK_SHAPE = register(intEntry(2, 0, 7, "newFrontier", "chunkShape")
             .comment("Shape preset used when creating a new chunk frontier."));

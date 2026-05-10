@@ -24,6 +24,7 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import journeymap.api.v2.client.IClientAPI;
@@ -807,14 +808,14 @@ public class MapFrontiersClient {
             return false;
         }
 
-        if (frontier.getMode() == FrontierData.Mode.Path) {
+        if (frontier.getShape() == FrontierShape.Path) {
             if (frontier.getPoints().isEmpty()) {
                 return false;
             }
             return frontier.pointIsInside(pos, ClientConfig.getPathActivationDistance(alreadyActive));
         }
 
-        if (frontier.getMode() == FrontierData.Mode.Vertex && frontier.getVertices().size() < 3) {
+        if (frontier.getShape() == FrontierShape.Vertex && frontier.getVertices().size() < 3) {
             return false;
         }
 
@@ -822,9 +823,9 @@ public class MapFrontiersClient {
     }
 
     private static void prioritizeActiveFrontiers(List<FrontierOverlay> frontiers) {
-        boolean hasAreaFrontier = frontiers.stream().anyMatch(frontier -> frontier.getMode() != FrontierData.Mode.Path);
+        boolean hasAreaFrontier = frontiers.stream().anyMatch(frontier -> frontier.getShape() != FrontierShape.Path);
         if (hasAreaFrontier) {
-            frontiers.removeIf(frontier -> frontier.getMode() == FrontierData.Mode.Path);
+            frontiers.removeIf(frontier -> frontier.getShape() == FrontierShape.Path);
         }
 
         frontiers.sort(Comparator.comparingDouble(frontier -> frontier.area));

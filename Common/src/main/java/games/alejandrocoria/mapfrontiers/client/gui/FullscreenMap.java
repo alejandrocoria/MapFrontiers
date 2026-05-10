@@ -16,7 +16,7 @@ import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import journeymap.api.v2.client.IClientAPI;
@@ -99,7 +99,7 @@ public class FullscreenMap {
 
             relocating = false;
 
-            if (!editing || drawingChunk == ChunkDrawing.Nothing || frontierHighlighted.getMode() != FrontierData.Mode.Chunk) {
+            if (!editing || drawingChunk == ChunkDrawing.Nothing || frontierHighlighted.getShape() != FrontierShape.Chunk) {
                 return;
             }
 
@@ -137,12 +137,12 @@ public class FullscreenMap {
 
     public void addPopupMenu(ModPopupMenu popupMenu) {
         if (editing) {
-            if (frontierHighlighted.getMode() == FrontierData.Mode.Vertex) {
+            if (frontierHighlighted.getShape() == FrontierShape.Vertex) {
                 popupMenu.addMenuItem(I18n.get("mapfrontiers.add_vertex"), this::buttonAddVertex);
                 if (frontierHighlighted.getSelectedVertexIndex() != -1) {
                     popupMenu.addMenuItem(I18n.get("mapfrontiers.remove_vertex"), p -> buttonRemoveVertex());
                 }
-            } else if (frontierHighlighted.getMode() == FrontierData.Mode.Path) {
+            } else if (frontierHighlighted.getShape() == FrontierShape.Path) {
                 popupMenu.addMenuItem(I18n.get("mapfrontiers.add_point"), this::buttonAddPoint);
                 popupMenu.addMenuItem(I18n.get("mapfrontiers.add_point_before_start"), this::buttonAddPointBeforeStart);
                 popupMenu.addMenuItem(I18n.get("mapfrontiers.add_point_after_end"), this::buttonAddPointAfterEnd);
@@ -203,7 +203,7 @@ public class FullscreenMap {
             if (shapeDirty) {
                 FrontierChange change = new FrontierChange();
                 change.setShape(frontierHighlighted.getVertices(), frontierHighlighted.getChunks(), frontierHighlighted.getPoints(),
-                        frontierHighlighted.getMode());
+                        frontierHighlighted.getShape());
                 MapFrontiersClient.getOperationService().updateFrontier(frontierHighlighted, change);
                 shapeDirty = false;
             }
@@ -393,15 +393,15 @@ public class FullscreenMap {
     }
 
     public boolean isEditingVertices() {
-        return editing && frontierHighlighted.getMode() == FrontierData.Mode.Vertex;
+        return editing && frontierHighlighted.getShape() == FrontierShape.Vertex;
     }
 
     public boolean isEditingPaths() {
-        return editing && frontierHighlighted.getMode() == FrontierData.Mode.Path;
+        return editing && frontierHighlighted.getShape() == FrontierShape.Path;
     }
 
     public boolean isEditingChunks() {
-        return editing && frontierHighlighted.getMode() == FrontierData.Mode.Chunk;
+        return editing && frontierHighlighted.getShape() == FrontierShape.Chunk;
     }
 
     public FrontierOverlay getSelected() {
@@ -494,9 +494,9 @@ public class FullscreenMap {
                 relocatingPrevPos = position;
                 return true;
             }
-            else if (frontierHighlighted.getMode() == FrontierData.Mode.Vertex) {
+            else if (frontierHighlighted.getShape() == FrontierShape.Vertex) {
                 frontierHighlighted.selectClosestVertex(position, maxDistanceToClosest);
-            } else if (frontierHighlighted.getMode() == FrontierData.Mode.Path) {
+            } else if (frontierHighlighted.getShape() == FrontierShape.Path) {
                 frontierHighlighted.selectClosestPoint(position, maxDistanceToClosest);
             } else if (button == 1) {
                 lastEditedChunk = ChunkPos.containing(position);
@@ -545,7 +545,7 @@ public class FullscreenMap {
             return false;
         }
 
-        if (frontierHighlighted.getMode() == FrontierData.Mode.Chunk) {
+        if (frontierHighlighted.getShape() == FrontierShape.Chunk) {
             return false;
         }
 
@@ -565,13 +565,13 @@ public class FullscreenMap {
         }
 
         if (relocating) {
-            if (frontierHighlighted.getMode() == FrontierData.Mode.Vertex) {
+            if (frontierHighlighted.getShape() == FrontierShape.Vertex) {
                 if (!position.equals(relocatingPrevPos)) {
                     frontierHighlighted.moveAllVertices(position.subtract(relocatingPrevPos));
                     relocatingPrevPos = position;
                     shapeDirty = true;
                 }
-            } else if (frontierHighlighted.getMode() == FrontierData.Mode.Path) {
+            } else if (frontierHighlighted.getShape() == FrontierShape.Path) {
                 if (!position.equals(relocatingPrevPos)) {
                     frontierHighlighted.moveAllPathPoints(position.subtract(relocatingPrevPos));
                     relocatingPrevPos = position;
@@ -597,7 +597,7 @@ public class FullscreenMap {
             return;
         }
 
-        if (frontierHighlighted.getMode() != FrontierData.Mode.Chunk) {
+        if (frontierHighlighted.getShape() != FrontierShape.Chunk) {
             return;
         }
 

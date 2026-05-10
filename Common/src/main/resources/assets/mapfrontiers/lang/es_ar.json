@@ -1,7 +1,6 @@
 {
   "mapfrontiers.type": "Tipo: %1$s",
   "mapfrontiers.dimension": "Dimensión: %1$s",
-  "mapfrontiers.mode": "Modo: %1$s",
   "mapfrontiers.vertices": "Vértices: %1$d",
   "mapfrontiers.points": "Puntos: %1$d",
   "mapfrontiers.chunks": "Chunks: %1$d",
@@ -126,7 +125,7 @@
   "mapfrontiers.global_type": "Global",
   "mapfrontiers.personal_type": "Personal",
   "mapfrontiers.frontier_type": "Tipo de frontera",
-  "mapfrontiers.frontier_mode": "Modo de frontera",
+  "mapfrontiers.frontier_shape": "Forma de frontera",
   "mapfrontiers.new_frontier_contextual_hint": "Se creará una frontera %1$s",
   "mapfrontiers.new_frontier_contextual_hint_temporary": "Se creará una frontera Personal temporal",
   "mapfrontiers.new_frontier_contextual_hint_in_collection": "Se creará una frontera %1$s\nen %2$s",

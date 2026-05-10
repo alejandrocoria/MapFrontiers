@@ -27,6 +27,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.platform.Services;
@@ -180,7 +181,7 @@ public class FrontierInfoPage extends PageScreen {
         super(TITLE_LABEL);
         this.jmAPI = jmAPI;
         this.frontier = frontier;
-        hasPathStyle = frontier.getMode() == FrontierData.Mode.Path;
+        hasPathStyle = frontier.getShape() == FrontierShape.Path;
         frontierHash = frontier.getHash();
         undoStack.push(new FrontierData(frontier));
 
@@ -362,14 +363,14 @@ public class FrontierInfoPage extends PageScreen {
         buttonChangeToPersonalGlobal = identityRow.addChild(new IconButton(IconButton.Type.Swap, b -> onChangePersonalGlobalPressed()));
         buttonChangeToPersonalGlobal.setTooltip(frontier.getPersonal() ? CHANGE_TO_GLOBAL_TOOLTIP : CHANGE_TO_PERSONAL_TOOLTIP);
 
-        Component shapeSummary = switch (frontier.getMode()) {
+        Component shapeSummary = switch (frontier.getShape()) {
             case Vertex -> Component.translatable(VERTICES_KEY, frontier.getVertexCount());
             case Chunk -> Component.translatable(CHUNKS_KEY, frontier.getChunkCount());
             case Path -> Component.translatable(POINTS_KEY, frontier.getPointCount());
         };
         infoColumn.addChild(new StringWidget(shapeSummary, font).setColor(ColorConstants.WHITE));
 
-        if (frontier.getMode() != FrontierData.Mode.Path) {
+        if (frontier.getShape() != FrontierShape.Path) {
             infoColumn.addChild(new StringWidget(Component.translatable(AREA_KEY, formatMeasurement(frontier.area)), font).setColor(ColorConstants.WHITE));
             infoColumn.addChild(new StringWidget(Component.translatable(PERIMETER_KEY, formatMeasurement(frontier.perimeter)), font).setColor(ColorConstants.WHITE));
         } else {
@@ -643,7 +644,7 @@ public class FrontierInfoPage extends PageScreen {
         if (clipboard != null) {
             boolean pastePathStyleEnabled = hasPathStyle
                     && ClientConfig.PASTE_PATH_STYLE.get()
-                    && clipboard.getMode() == FrontierData.Mode.Path;
+                    && clipboard.getShape() == FrontierShape.Path;
             if (ClientConfig.PASTE_NAME.get() || ClientConfig.PASTE_VISIBILITY.get()
                     || pastePathStyleEnabled || ClientConfig.PASTE_COLOR.get() || ClientConfig.PASTE_BANNER.get()) {
                 setFrontier(clipboard, ClientConfig.PASTE_NAME.get(), ClientConfig.PASTE_VISIBILITY.get(),
@@ -822,7 +823,7 @@ public class FrontierInfoPage extends PageScreen {
         if (visibility) {
             frontier.setVisibilityData(other.getVisibilityData());
         }
-        if (pathStyle && frontier.getMode() == FrontierData.Mode.Path && other.getMode() == FrontierData.Mode.Path) {
+        if (pathStyle && frontier.getShape() == FrontierShape.Path && other.getShape() == FrontierShape.Path) {
             frontier.setPathStyle(other.getPathStyle());
         }
         if (color) {
@@ -932,7 +933,7 @@ public class FrontierInfoPage extends PageScreen {
         boolean hasClipboard = clipboard != null;
         boolean showPaste = buttonPaste.active && hasClipboard;
         boolean showPasteOptions = showPaste && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
-        boolean pathStyleOptionVisible = showPasteOptions && hasPathStyle && clipboard.getMode() == FrontierData.Mode.Path;
+        boolean pathStyleOptionVisible = showPasteOptions && hasPathStyle && clipboard.getShape() == FrontierShape.Path;
 
         buttonPaste.visible = showPaste;
         buttonPasteOptions.visible = showPaste;
@@ -1027,7 +1028,7 @@ public class FrontierInfoPage extends PageScreen {
                     || !Objects.equals(u.getVisibilityData(), frontier.getVisibilityData())
                     || u.getColor() != frontier.getColor()
                     || !Objects.equals(u.getbannerData(), frontier.getbannerData())
-                    || (u.getMode() == FrontierData.Mode.Path && frontier.getMode() == FrontierData.Mode.Path
+                    || (u.getShape() == FrontierShape.Path && frontier.getShape() == FrontierShape.Path
                     && !Objects.equals(u.getPathStyle(), frontier.getPathStyle()))) {
                 add = true;
             }

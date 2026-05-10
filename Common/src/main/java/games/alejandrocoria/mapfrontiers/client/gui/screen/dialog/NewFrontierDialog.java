@@ -18,6 +18,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
@@ -50,7 +51,7 @@ public class NewFrontierDialog extends PanelDialog {
     private static final Component FRONTIER_TYPE_LABEL = Component.translatable("mapfrontiers.frontier_type");
     private static final Component PERSONAL_LABEL = Component.translatable("mapfrontiers.personal_type");
     private static final Component GLOBAL_LABEL = Component.translatable("mapfrontiers.global_type");
-    private static final Component FRONTIER_MODE_LABEL = Component.translatable("mapfrontiers.frontier_mode");
+    private static final Component FRONTIER_SHAPE_LABEL = Component.translatable("mapfrontiers.frontier_shape");
     private static final Component AFTER_CREATING_LABEL = Component.translatable("mapfrontiers.after_creating");
     private static final Component VERTEX_COUNT_LABEL = Component.translatable("mapfrontiers.shape_vertex_count");
     private static final Component POINT_COUNT_LABEL = Component.translatable("mapfrontiers.shape_point_count");
@@ -85,7 +86,7 @@ public class NewFrontierDialog extends PanelDialog {
     private @Nullable UUID pendingCreatedFrontierId;
 
     private OptionButton buttonFrontierType;
-    private OptionButton buttonFrontierMode;
+    private OptionButton buttonFrontierShape;
     private OptionButton buttonAfterCreate;
     private VertexShapePresetSelector vertexShapePresetSelector;
     private ChunkShapePresetSelector chunkShapePresetSelector;
@@ -133,16 +134,16 @@ public class NewFrontierDialog extends PanelDialog {
             mainLayout.addChild(buttonFrontierType, 0, 1, rightColumnSettings);
         }
 
-        mainLayout.addChild(new StringWidget(FRONTIER_MODE_LABEL, font).setColor(ColorConstants.TEXT), 1, 0, leftColumnSettings);
-        buttonFrontierMode = new OptionButton(font, 130, (b) -> {
-                    ClientConfig.NEW_FRONTIER_MODE.set(FrontierData.Mode.VALUES[b.getSelected()]);
+        mainLayout.addChild(new StringWidget(FRONTIER_SHAPE_LABEL, font).setColor(ColorConstants.TEXT), 1, 0, leftColumnSettings);
+        buttonFrontierShape = new OptionButton(font, 130, (b) -> {
+                    ClientConfig.NEW_FRONTIER_SHAPE.set(FrontierShape.VALUES[b.getSelected()]);
                     shapePresetUpdated();
         });
-        buttonFrontierMode.addOption(ClientConfig.getTranslatedEnum(FrontierData.Mode.Vertex));
-        buttonFrontierMode.addOption(ClientConfig.getTranslatedEnum(FrontierData.Mode.Chunk));
-        buttonFrontierMode.addOption(ClientConfig.getTranslatedEnum(FrontierData.Mode.Path));
-        buttonFrontierMode.setSelected(ClientConfig.NEW_FRONTIER_MODE.get().ordinal());
-        mainLayout.addChild(buttonFrontierMode, 1, 1, rightColumnSettings);
+        buttonFrontierShape.addOption(ClientConfig.getTranslatedEnum(FrontierShape.Vertex));
+        buttonFrontierShape.addOption(ClientConfig.getTranslatedEnum(FrontierShape.Chunk));
+        buttonFrontierShape.addOption(ClientConfig.getTranslatedEnum(FrontierShape.Path));
+        buttonFrontierShape.setSelected(ClientConfig.NEW_FRONTIER_SHAPE.get().ordinal());
+        mainLayout.addChild(buttonFrontierShape, 1, 1, rightColumnSettings);
 
         mainLayout.addChild(new StringWidget(AFTER_CREATING_LABEL, font).setColor(ColorConstants.TEXT), 2, 0, leftColumnSettings);
         buttonAfterCreate = new OptionButton(font, 130,
@@ -153,7 +154,7 @@ public class NewFrontierDialog extends PanelDialog {
         buttonAfterCreate.setSelected(ClientConfig.AFTER_CREATING_FRONTIER.get().ordinal());
         mainLayout.addChild(buttonAfterCreate, 2, 1, rightColumnSettings);
 
-        vertexShapePresetSelector = new VertexShapePresetSelector(font, ClientConfig.NEW_FRONTIER_SHAPE.get(), (s) -> shapePresetUpdated());
+        vertexShapePresetSelector = new VertexShapePresetSelector(font, ClientConfig.NEW_FRONTIER_VERTEX_SHAPE.get(), (s) -> shapePresetUpdated());
         mainLayout.addChild(vertexShapePresetSelector, 3, 0, 1, 2, centerColumnSettings);
         chunkShapePresetSelector = new ChunkShapePresetSelector(font, ClientConfig.NEW_FRONTIER_CHUNK_SHAPE.get(), (s) -> shapePresetUpdated());
         mainLayout.addChild(chunkShapePresetSelector, 3, 0, 1, 2, centerColumnSettings);
@@ -161,9 +162,9 @@ public class NewFrontierDialog extends PanelDialog {
         mainLayout.addChild(pathShapePresetSelector, 3, 0, 1, 2, centerColumnSettings);
 
         labelCount = mainLayout.addChild(new StringWidget(VERTEX_COUNT_LABEL, font).setColor(ColorConstants.WHITE), 4, 0, leftColumnSettings);
-        textCount = new TextBoxInt(ClientConfig.NEW_FRONTIER_COUNT, font, 64);
-        textCount.setValue(String.valueOf(ClientConfig.NEW_FRONTIER_COUNT.get()));
-        textCount.setValueChangedCallback(ClientConfig.NEW_FRONTIER_COUNT::set);
+        textCount = new TextBoxInt(ClientConfig.NEW_FRONTIER_VERTEX_COUNT, font, 64);
+        textCount.setValue(String.valueOf(ClientConfig.NEW_FRONTIER_VERTEX_COUNT.get()));
+        textCount.setValueChangedCallback(ClientConfig.NEW_FRONTIER_VERTEX_COUNT::set);
         mainLayout.addChild(textCount, 4, 1, rightColumnSettings);
 
         labelCountInfo = mainLayout.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.WHITE), 4, 0, 1, 2, centerColumnSettings);
@@ -176,7 +177,7 @@ public class NewFrontierDialog extends PanelDialog {
                 entry.set(value);
             }
 
-            if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Chunk) {
+            if (ClientConfig.NEW_FRONTIER_SHAPE.get() == FrontierShape.Chunk) {
                 if (chunkShapePresetSelector.getShapeMeasure() == ChunkShapePresetSelector.ShapeMeasure.Width) {
                     chunkShapePresetSelector.setSize(value);
                 } else if (chunkShapePresetSelector.getShapeMeasure() == ChunkShapePresetSelector.ShapeMeasure.Length) {
@@ -240,13 +241,13 @@ public class NewFrontierDialog extends PanelDialog {
     }
 
     private void shapePresetUpdated() {
-        if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Vertex) {
+        if (ClientConfig.NEW_FRONTIER_SHAPE.get() == FrontierShape.Vertex) {
             vertexShapePresetSelector.visible = true;
             chunkShapePresetSelector.visible = false;
             pathShapePresetSelector.visible = false;
 
             int selected = vertexShapePresetSelector.getSelected();
-            ClientConfig.NEW_FRONTIER_SHAPE.set(selected);
+            ClientConfig.NEW_FRONTIER_VERTEX_SHAPE.set(selected);
             setLabelCountMessage(VERTEX_COUNT_LABEL);
 
             if (selected == 11) {
@@ -274,12 +275,12 @@ public class NewFrontierDialog extends PanelDialog {
 
             if (vertexShapePresetSelector.getShapeMeasure() == VertexShapePresetSelector.ShapeMeasure.Width) {
                 setLabelSizeMessage("mapfrontiers.shape_width");
-                setSizeTextBoxValue(ClientConfig.NEW_FRONTIER_SHAPE_WIDTH);
+                setSizeTextBoxValue(ClientConfig.NEW_FRONTIER_VERTEX_SHAPE_WIDTH);
             } else if (vertexShapePresetSelector.getShapeMeasure() == VertexShapePresetSelector.ShapeMeasure.Radius) {
                 setLabelSizeMessage("mapfrontiers.shape_radius");
-                setSizeTextBoxValue(ClientConfig.NEW_FRONTIER_SHAPE_RADIUS);
+                setSizeTextBoxValue(ClientConfig.NEW_FRONTIER_VERTEX_SHAPE_RADIUS);
             }
-        } else if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Chunk) {
+        } else if (ClientConfig.NEW_FRONTIER_SHAPE.get() == FrontierShape.Chunk) {
             vertexShapePresetSelector.visible = false;
             chunkShapePresetSelector.visible = true;
             pathShapePresetSelector.visible = false;
@@ -435,13 +436,13 @@ public class NewFrontierDialog extends PanelDialog {
     }
 
     private IntConfigEntry activeSizeConfigEntry() {
-        if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Vertex) {
+        if (ClientConfig.NEW_FRONTIER_SHAPE.get() == FrontierShape.Vertex) {
             if (vertexShapePresetSelector.getShapeMeasure() == VertexShapePresetSelector.ShapeMeasure.Width) {
-                return ClientConfig.NEW_FRONTIER_SHAPE_WIDTH;
+                return ClientConfig.NEW_FRONTIER_VERTEX_SHAPE_WIDTH;
             } else if (vertexShapePresetSelector.getShapeMeasure() == VertexShapePresetSelector.ShapeMeasure.Radius) {
-                return ClientConfig.NEW_FRONTIER_SHAPE_RADIUS;
+                return ClientConfig.NEW_FRONTIER_VERTEX_SHAPE_RADIUS;
             }
-        } else if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Chunk) {
+        } else if (ClientConfig.NEW_FRONTIER_SHAPE.get() == FrontierShape.Chunk) {
             if (chunkShapePresetSelector.getShapeMeasure() == ChunkShapePresetSelector.ShapeMeasure.Width) {
                 return ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_WIDTH;
             } else if (chunkShapePresetSelector.getShapeMeasure() == ChunkShapePresetSelector.ShapeMeasure.Length) {
@@ -464,18 +465,18 @@ public class NewFrontierDialog extends PanelDialog {
         UUID frontierId = UUID.randomUUID();
         VisibilityData visibility = new VisibilityData(defaults.getVisibilityData());
         FrontierData.BannerData banner = defaults.getbannerData() == null ? null : new FrontierData.BannerData(defaults.getbannerData());
-        FrontierData.PathStyle pathStyle = ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Path
+        FrontierData.PathStyle pathStyle = ClientConfig.NEW_FRONTIER_SHAPE.get() == FrontierShape.Path
                 ? ClientConfig.getDefaultPathStyle()
                 : defaults.getPathStyle();
         int color = ColorHelper.getRandomColor();
         TerritoryLifetime lifetime = frontierLifetime == null ? TerritoryLifetime.PERSISTENT : frontierLifetime;
 
-        if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Path) {
+        if (ClientConfig.NEW_FRONTIER_SHAPE.get() == FrontierShape.Path) {
             return FrontierCreateSpec.path(frontierId, owner, personal, dimension, lifetime, collectionId,
                     null, defaults.getName1(), defaults.getName2(), color, visibility, banner, calculatePoints(), pathStyle);
         }
 
-        if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Chunk) {
+        if (ClientConfig.NEW_FRONTIER_SHAPE.get() == FrontierShape.Chunk) {
             return FrontierCreateSpec.chunk(frontierId, owner, personal, dimension, lifetime, collectionId,
                     null, defaults.getName1(), defaults.getName2(), color, visibility, banner, new LinkedHashSet<>(calculateChunks()),
                     pathStyle);
@@ -491,13 +492,13 @@ public class NewFrontierDialog extends PanelDialog {
     }
 
     private List<BlockPos> calculateVertices() {
-        if (ClientConfig.NEW_FRONTIER_MODE.get() != FrontierData.Mode.Vertex) {
+        if (ClientConfig.NEW_FRONTIER_SHAPE.get() != FrontierShape.Vertex) {
             return null;
         }
 
         List<Vec2> shapeVertices;
         if (vertexShapePresetSelector.getSelected() == 11) {
-            shapeVertices = vertexShapePresetSelector.getVertices(ClientConfig.NEW_FRONTIER_COUNT.get());
+            shapeVertices = vertexShapePresetSelector.getVertices(ClientConfig.NEW_FRONTIER_VERTEX_COUNT.get());
         } else {
             shapeVertices = vertexShapePresetSelector.getVertices();
         }
@@ -509,7 +510,7 @@ public class NewFrontierDialog extends PanelDialog {
         double radius = 0.0;
 
         if (vertexShapePresetSelector.getShapeMeasure() == VertexShapePresetSelector.ShapeMeasure.Width) {
-            radius = ClientConfig.NEW_FRONTIER_SHAPE_WIDTH.get();
+            radius = ClientConfig.NEW_FRONTIER_VERTEX_SHAPE_WIDTH.get();
             if (radius < 2) {
                 radius = 2;
             }
@@ -519,7 +520,7 @@ public class NewFrontierDialog extends PanelDialog {
                 radius = Math.sqrt(radius * radius * 2.0) / 2.0;
             }
         } else if (vertexShapePresetSelector.getShapeMeasure() == VertexShapePresetSelector.ShapeMeasure.Radius) {
-            radius = ClientConfig.NEW_FRONTIER_SHAPE_RADIUS.get();
+            radius = ClientConfig.NEW_FRONTIER_VERTEX_SHAPE_RADIUS.get();
             if (radius < 1) {
                 radius = 1;
             }
@@ -545,7 +546,7 @@ public class NewFrontierDialog extends PanelDialog {
     }
 
     private List<ChunkPos> calculateChunks() {
-        if (ClientConfig.NEW_FRONTIER_MODE.get() != FrontierData.Mode.Chunk) {
+        if (ClientConfig.NEW_FRONTIER_SHAPE.get() != FrontierShape.Chunk) {
             return null;
         }
 
@@ -610,7 +611,7 @@ public class NewFrontierDialog extends PanelDialog {
     }
 
     private List<BlockPos> calculatePoints() {
-        if (ClientConfig.NEW_FRONTIER_MODE.get() != FrontierData.Mode.Path) {
+        if (ClientConfig.NEW_FRONTIER_SHAPE.get() != FrontierShape.Path) {
             return null;
         }
 

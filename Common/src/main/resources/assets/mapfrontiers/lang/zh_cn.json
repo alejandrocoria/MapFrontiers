@@ -1,7 +1,6 @@
 {
   "mapfrontiers.type": "类型: %1$s",
   "mapfrontiers.dimension": "维度: %1$s",
-  "mapfrontiers.mode": "模式: %1$s",
   "mapfrontiers.vertices": "顶点数: %1$d",
   "mapfrontiers.points": "点数: %1$d",
   "mapfrontiers.chunks": "区块: %1$d",
@@ -101,7 +100,7 @@
   "mapfrontiers.filter_owner": "所有者：",
   "mapfrontiers.filter_dimension": "维度：",
   "mapfrontiers.frontier_type": "领地类型",
-  "mapfrontiers.frontier_mode": "领地模式",
+  "mapfrontiers.frontier_shape": "领地形状",
   "mapfrontiers.initial_shape": "初始形状",
   "mapfrontiers.shape_width": "形状宽度",
   "mapfrontiers.shape_vertex_count": "顶点数",

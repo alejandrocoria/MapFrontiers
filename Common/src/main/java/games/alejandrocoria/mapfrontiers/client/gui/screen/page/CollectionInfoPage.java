@@ -21,7 +21,7 @@ import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -414,7 +414,7 @@ public class CollectionInfoPage extends PageScreen {
         float totalArea = 0.f;
         float totalPathLength = 0.f;
         for (FrontierOverlay frontier : frontiers) {
-            if (frontier.getMode() == FrontierData.Mode.Path) {
+            if (frontier.getShape() == FrontierShape.Path) {
                 totalPathLength += frontier.perimeter;
             } else {
                 totalArea += frontier.area;

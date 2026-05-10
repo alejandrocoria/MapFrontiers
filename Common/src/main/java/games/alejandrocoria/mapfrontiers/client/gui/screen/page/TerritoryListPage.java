@@ -37,7 +37,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionVirtualIds;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
@@ -843,9 +843,9 @@ public class TerritoryListPage extends PageScreen {
     private boolean checkFilterShape(FrontierOverlay frontier) {
         return switch (ClientConfig.FILTER_FRONTIER_SHAPE.get()) {
             case All -> true;
-            case Vertex -> frontier.getMode() == FrontierData.Mode.Vertex;
-            case Chunk -> frontier.getMode() == FrontierData.Mode.Chunk;
-            case Path -> frontier.getMode() == FrontierData.Mode.Path;
+            case Vertex -> frontier.getShape() == FrontierShape.Vertex;
+            case Chunk -> frontier.getShape() == FrontierShape.Chunk;
+            case Path -> frontier.getShape() == FrontierShape.Path;
         };
     }
 
@@ -1326,7 +1326,7 @@ public class TerritoryListPage extends PageScreen {
     }
 
     private static int getShapeCount(FrontierOverlay frontier) {
-        return switch (frontier.getMode()) {
+        return switch (frontier.getShape()) {
             case Vertex -> frontier.getVertexCount();
             case Chunk -> frontier.getChunkCount();
             case Path -> frontier.getPointCount();

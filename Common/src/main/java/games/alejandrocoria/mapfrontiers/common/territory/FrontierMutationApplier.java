@@ -29,7 +29,7 @@ public final class FrontierMutationApplier {
 
         switch (shape.type()) {
             case VERTEX -> {
-                frontier.setMode(FrontierData.Mode.Vertex);
+                frontier.setShape(games.alejandrocoria.mapfrontiers.common.territory.FrontierShape.Vertex);
                 if (shape.vertices() != null) {
                     for (Point2i vertex : shape.vertices()) {
                         frontier.addVertex(new BlockPos(vertex.x(), 0, vertex.z()));
@@ -37,7 +37,7 @@ public final class FrontierMutationApplier {
                 }
             }
             case CHUNK -> {
-                frontier.setMode(FrontierData.Mode.Chunk);
+                frontier.setShape(games.alejandrocoria.mapfrontiers.common.territory.FrontierShape.Chunk);
                 if (shape.chunks() != null) {
                     for (ChunkCoord chunk : shape.chunks()) {
                         frontier.addChunk(new ChunkPos(chunk.x(), chunk.z()));
@@ -45,7 +45,7 @@ public final class FrontierMutationApplier {
                 }
             }
             case PATH -> {
-                frontier.setMode(FrontierData.Mode.Path);
+                frontier.setShape(games.alejandrocoria.mapfrontiers.common.territory.FrontierShape.Path);
                 if (shape.points() != null) {
                     for (Point2i point : shape.points()) {
                         frontier.addPoint(new BlockPos(point.x(), 0, point.z()));
@@ -87,7 +87,7 @@ public final class FrontierMutationApplier {
     }
 
     private static void applyPathStyle(FrontierData frontier, PathStyle pathStyle) {
-        if (frontier.getMode() != FrontierData.Mode.Path) {
+        if (frontier.getShape() != games.alejandrocoria.mapfrontiers.common.territory.FrontierShape.Path) {
             throw new IllegalArgumentException("Path style can only be applied to path frontiers");
         }
 

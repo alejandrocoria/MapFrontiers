@@ -3,7 +3,6 @@
 
   "mapfrontiers.type": "Тип: %1$s",
   "mapfrontiers.dimension": "Измерение: %1$s",
-  "mapfrontiers.mode": "Режим: %1$s",
   "mapfrontiers.vertices": "Вершины: %1$d",
   "mapfrontiers.points": "Точки: %1$d",
   "mapfrontiers.chunks": "Чанки: %1$d",
@@ -103,7 +102,7 @@
   "mapfrontiers.filter_owner": "Владелец:",
   "mapfrontiers.filter_dimension": "Измерение:",
   "mapfrontiers.frontier_type": "Тип границы",
-  "mapfrontiers.frontier_mode": "Режим границы",
+  "mapfrontiers.frontier_shape": "Форма границы",
   "mapfrontiers.initial_shape": "Начальная форма",
   "mapfrontiers.shape_width": "Ширина формы",
   "mapfrontiers.shape_vertex_count": "Вершины",

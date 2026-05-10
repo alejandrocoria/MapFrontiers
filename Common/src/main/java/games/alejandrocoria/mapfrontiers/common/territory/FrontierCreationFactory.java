@@ -28,19 +28,19 @@ public final class FrontierCreationFactory {
 
         switch (spec.getMode()) {
             case Vertex -> {
-                frontier.setMode(FrontierData.Mode.Vertex);
+                frontier.setShape(FrontierShape.Vertex);
                 for (BlockPos vertex : spec.getVertices()) {
                     frontier.addVertex(vertex);
                 }
             }
             case Chunk -> {
-                frontier.setMode(FrontierData.Mode.Chunk);
+                frontier.setShape(FrontierShape.Chunk);
                 for (ChunkPos chunk : spec.getChunks()) {
                     frontier.addChunk(chunk);
                 }
             }
             case Path -> {
-                frontier.setMode(FrontierData.Mode.Path);
+                frontier.setShape(FrontierShape.Path);
                 for (BlockPos point : spec.getPoints()) {
                     frontier.addPoint(point);
                 }

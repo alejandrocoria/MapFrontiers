@@ -46,19 +46,13 @@ import java.util.stream.Collectors;
 
 @ParametersAreNonnullByDefault
 public class FrontierData {
-    public enum Mode {
-        Vertex, Chunk, Path;
-
-        public static final Mode[] VALUES = values();
-    }
-
     public static final int MAX_NAME_CHARACTERS = 48;
 
     protected UUID id;
     protected final List<BlockPos> vertices = new ArrayList<>();
     protected final Set<ChunkPos> chunks = new HashSet<>();
     protected final List<BlockPos> points = new ArrayList<>();
-    protected Mode mode = Mode.Vertex;
+    protected FrontierShape frontierShape = FrontierShape.Vertex;
     protected String name1 = "New";
     protected String name2 = "Frontier";
     protected VisibilityData visibilityData;
@@ -109,7 +103,7 @@ public class FrontierData {
         chunks.addAll(other.chunks);
         points.clear();
         points.addAll(other.points);
-        mode = other.mode;
+        frontierShape = other.frontierShape;
         pathStyle = other.pathStyle == null ? new PathStyle() : new PathStyle(other.pathStyle);
 
         copiedFrom = other.copiedFrom;
@@ -145,7 +139,7 @@ public class FrontierData {
         chunks.addAll(other.chunks);
         points.clear();
         points.addAll(other.points);
-        mode = other.mode;
+        frontierShape = other.frontierShape;
         pathStyle = other.pathStyle == null ? new PathStyle() : new PathStyle(other.pathStyle);
 
         copiedFrom = other.copiedFrom;
@@ -180,7 +174,7 @@ public class FrontierData {
 
         if (change.hasShapeChange()) {
             FrontierChange.ShapeChange shapeChange = change.getShape();
-            applyShapeData(shapeChange.getMode(), shapeChange.getVertices(), shapeChange.getChunks(), shapeChange.getPoints());
+            applyShapeData(shapeChange.getShape(), shapeChange.getVertices(), shapeChange.getChunks(), shapeChange.getPoints());
         }
 
         if (change.hasPathStyleChange()) {
@@ -399,12 +393,12 @@ public class FrontierData {
         }
     }
 
-    public void setMode(Mode mode) {
-        this.mode = mode;
+    public void setShape(FrontierShape frontierShape) {
+        this.frontierShape = frontierShape;
     }
 
-    public Mode getMode() {
-        return mode;
+    public FrontierShape getShape() {
+        return frontierShape;
     }
 
     public void setPathStyle(PathStyle pathStyle) {
@@ -783,24 +777,24 @@ public class FrontierData {
 
         String modeTag = nbt.getStringOr("mode", "");
         if (modeTag.isEmpty()) {
-            mode = Mode.Vertex;
+            frontierShape = FrontierShape.Vertex;
         } else {
             try {
-                mode = Mode.valueOf(modeTag);
+                frontierShape = FrontierShape.valueOf(modeTag);
             } catch (IllegalArgumentException e) {
                 if (chunks.size() > 0) {
-                    mode = Mode.Chunk;
+                    frontierShape = FrontierShape.Chunk;
                 } else {
-                    mode = Mode.Vertex;
+                    frontierShape = FrontierShape.Vertex;
                 }
 
-                String availableModes = StringHelper.enumValuesToString(Arrays.asList(Mode.VALUES));
+                String availableModes = StringHelper.enumValuesToString(Arrays.asList(FrontierShape.VALUES));
 
                 MapFrontiers.LOGGER.warn("Unknown mode in frontier {}. Found: \"{}\". Expected: {}", id, modeTag, availableModes);
             }
         }
 
-        if (mode == Mode.Path && nbt.contains("pathStyle")) {
+        if (frontierShape == FrontierShape.Path && nbt.contains("pathStyle")) {
             pathStyle.readFromNBT(NbtReadHelper.requireCompound(nbt, "pathStyle"));
         }
 
@@ -863,9 +857,9 @@ public class FrontierData {
             nbt.put("usersShared", usersSharedTagList);
         }
 
-        nbt.putString("mode", mode.name());
+        nbt.putString("mode", frontierShape.name());
 
-        switch (mode) {
+        switch (frontierShape) {
             case Vertex -> {
                 ListTag verticesTagList = new ListTag();
                 for (BlockPos pos : vertices) {
@@ -969,9 +963,9 @@ public class FrontierData {
             usersShared = null;
         }
 
-        mode = Mode.VALUES[buf.readInt()];
+        frontierShape = FrontierShape.VALUES[buf.readInt()];
 
-        switch (mode) {
+        switch (frontierShape) {
             case Vertex -> {
                 int vertexCount = buf.readInt();
                 for (int i = 0; i < vertexCount; ++i) {
@@ -1058,9 +1052,9 @@ public class FrontierData {
             buf.writeBoolean(false);
         }
 
-        buf.writeInt(mode.ordinal());
+        buf.writeInt(frontierShape.ordinal());
 
-        switch (mode) {
+        switch (frontierShape) {
             case Vertex -> {
                 buf.writeInt(vertices.size());
                 for (BlockPos pos : vertices) {
@@ -1111,14 +1105,14 @@ public class FrontierData {
         }
     }
 
-    private void applyShapeData(Mode mode, List<BlockPos> vertices, Set<ChunkPos> chunks, List<BlockPos> points) {
-        this.mode = mode;
+    private void applyShapeData(FrontierShape frontierShape, List<BlockPos> vertices, Set<ChunkPos> chunks, List<BlockPos> points) {
+        this.frontierShape = frontierShape;
 
         clearVertices();
         clearChunks();
         clearPoints();
 
-        switch (mode) {
+        switch (frontierShape) {
             case Vertex -> {
                 synchronized (this.vertices) {
                     this.vertices.addAll(vertices);
@@ -1138,7 +1132,7 @@ public class FrontierData {
     }
 
     private void normalizeDataForMode() {
-        switch (mode) {
+        switch (frontierShape) {
             case Vertex -> {
                 clearChunks();
                 clearPoints();

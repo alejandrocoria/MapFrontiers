@@ -14,6 +14,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierSharingChange;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
 import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
@@ -188,7 +189,7 @@ public class FrontierOverlay extends FrontierData {
         if (hashDirty) {
             hashDirty = false;
             CollectionData collection = getCollection();
-            hash = Objects.hash(id, color, dimension, name1, name2, visibilityData, vertices, chunks, points, mode, pathStyle, banner, usersShared,
+            hash = Objects.hash(id, color, dimension, name1, name2, visibilityData, vertices, chunks, points, frontierShape, pathStyle, banner, usersShared,
                     copiedFrom, collectionId, sourcePluginId,
                     collection == null ? null : collection.getName(),
                     collection == null ? null : collection.getColor(),
@@ -337,13 +338,13 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public boolean pointIsInside(BlockPos pos, double maxDistanceToOpen) {
-        if (mode == Mode.Vertex) {
+        if (frontierShape == FrontierShape.Vertex) {
             if (vertices.size() > 2) {
                 return polygonArea != null && polygonArea.contains(pos.getX() + 0.5, pos.getZ() + 0.5);
             } else if (maxDistanceToOpen > 0.0) {
                 return distanceToPolylineSq(pos, vertices, true) <= maxDistanceToOpen * maxDistanceToOpen;
             }
-        } else if (mode == Mode.Path) {
+        } else if (frontierShape == FrontierShape.Path) {
             if (points.isEmpty()) {
                 return false;
             }
@@ -362,7 +363,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void selectClosestVertex(BlockPos pos, double limit) {
-        if (mode != Mode.Vertex) {
+        if (frontierShape != FrontierShape.Vertex) {
             selectedPointIndex = -1;
             return;
         }
@@ -389,7 +390,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void selectClosestEdge(BlockPos pos) {
-        if (mode != Mode.Vertex) {
+        if (frontierShape != FrontierShape.Vertex) {
             selectedPointIndex = -1;
             return;
         }
@@ -455,7 +456,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void selectClosestPoint(BlockPos pos, double limit) {
-        if (mode != Mode.Path) {
+        if (frontierShape != FrontierShape.Path) {
             selectedPointIndex = -1;
             return;
         }
@@ -882,7 +883,7 @@ public class FrontierOverlay extends FrontierData {
         BlockPos closest = null;
         double closestDistance = belowDistance;
 
-        if (mode == Mode.Path) {
+        if (frontierShape == FrontierShape.Path) {
             synchronized (points) {
                 for (BlockPos point : points) {
                     double distance = point.distSqr(vertex);
@@ -1002,15 +1003,15 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public int getSelectedVertexIndex() {
-        return mode == Mode.Vertex ? selectedPointIndex : -1;
+        return frontierShape == FrontierShape.Vertex ? selectedPointIndex : -1;
     }
 
     public int getSelectedPointIndex() {
-        return mode == Mode.Path ? selectedPointIndex : -1;
+        return frontierShape == FrontierShape.Path ? selectedPointIndex : -1;
     }
 
     public int getSelectedEditablePointIndex() {
-        return switch (mode) {
+        return switch (frontierShape) {
             case Vertex, Path -> selectedPointIndex;
             case Chunk -> -1;
         };
@@ -1022,10 +1023,10 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public @Nullable BlockPos getSelectedEditablePoint() {
-        if (mode == Mode.Path && selectedPointIndex >= 0 && selectedPointIndex < points.size()) {
+        if (frontierShape == FrontierShape.Path && selectedPointIndex >= 0 && selectedPointIndex < points.size()) {
             return points.get(selectedPointIndex);
         }
-        if (mode == Mode.Vertex && selectedPointIndex >= 0 && selectedPointIndex < vertices.size()) {
+        if (frontierShape == FrontierShape.Vertex && selectedPointIndex >= 0 && selectedPointIndex < vertices.size()) {
             return vertices.get(selectedPointIndex);
         }
 
@@ -1033,9 +1034,9 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void moveSelectedEditablePoint(BlockPos pos, float snapDistance) {
-        if (mode == Mode.Path) {
+        if (frontierShape == FrontierShape.Path) {
             moveSelectedPoint(pos, snapDistance);
-        } else if (mode == Mode.Vertex) {
+        } else if (frontierShape == FrontierShape.Vertex) {
             moveSelectedVertex(pos, snapDistance);
         }
     }
@@ -1049,7 +1050,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void addPathPointBeforeStart(BlockPos pos) {
-        if (mode != Mode.Path) {
+        if (frontierShape != FrontierShape.Path) {
             return;
         }
 
@@ -1063,7 +1064,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void addPathPointAfterEnd(BlockPos pos) {
-        if (mode != Mode.Path) {
+        if (frontierShape != FrontierShape.Path) {
             return;
         }
 
@@ -1078,7 +1079,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void insertPathPoint(BlockPos pos) {
-        if (mode != Mode.Path) {
+        if (frontierShape != FrontierShape.Path) {
             return;
         }
 
@@ -1098,7 +1099,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void invertPathDirection() {
-        if (mode != Mode.Path || points.size() < 2) {
+        if (frontierShape != FrontierShape.Path || points.size() < 2) {
             return;
         }
 
@@ -1167,7 +1168,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private void clampSelectedEditablePoint() {
-        int size = switch (mode) {
+        int size = switch (frontierShape) {
             case Vertex -> vertices.size();
             case Path -> points.size();
             case Chunk -> 0;
@@ -1186,7 +1187,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public BlockPos getCenter() {
-        if (mode == Mode.Path && points.size() == 1) {
+        if (frontierShape == FrontierShape.Path && points.size() == 1) {
             return points.getFirst();
         }
 
@@ -1252,9 +1253,9 @@ public class FrontierOverlay extends FrontierData {
                 .setFillColor(color)
                 .setFillOpacity(ClientConfig.POLYGONS_OPACITY.get().floatValue());
 
-        if (mode == Mode.Vertex) {
+        if (frontierShape == FrontierShape.Vertex) {
             recalculateVertices(shapeProps, highlighted ? createHighlightShapeProperties() : null);
-        } else if (mode == Mode.Path) {
+        } else if (frontierShape == FrontierShape.Path) {
             recalculatePath();
         } else {
             recalculateChunks(shapeProps, highlighted ? createHighlightShapeProperties() : null);
@@ -1785,7 +1786,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private Area buildOverlayArea(MapPolygon polygon, @Nullable List<MapPolygon> holes) {
-        if (mode == Mode.Vertex) {
+        if (frontierShape == FrontierShape.Vertex) {
             return polygonArea != null ? new Area(polygonArea) : PolygonHelper.toArea(polygon);
         }
 
@@ -1951,7 +1952,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private double getLabelSolverPrecision() {
-        return mode == Mode.Chunk ? CHUNK_LABEL_SOLVER_PRECISION : VERTEX_LABEL_SOLVER_PRECISION;
+        return frontierShape == FrontierShape.Chunk ? CHUNK_LABEL_SOLVER_PRECISION : VERTEX_LABEL_SOLVER_PRECISION;
     }
 
     private TextProperties createBaseTextProperties() {
@@ -2142,7 +2143,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private void updateBounds() {
-        if (mode == Mode.Vertex) {
+        if (frontierShape == FrontierShape.Vertex) {
             if (vertices.isEmpty()) {
                 topLeft = new BlockPos(0, OVERLAY_Y, 0);
                 bottomRight = new BlockPos(0, OVERLAY_Y, 0);
@@ -2168,7 +2169,7 @@ public class FrontierOverlay extends FrontierData {
                 topLeft = new BlockPos(minX, OVERLAY_Y, minZ);
                 bottomRight = new BlockPos(maxX, OVERLAY_Y, maxZ);
             }
-        } else if (mode == Mode.Path) {
+        } else if (frontierShape == FrontierShape.Path) {
             if (points.isEmpty()) {
                 topLeft = new BlockPos(0, OVERLAY_Y, 0);
                 bottomRight = new BlockPos(0, OVERLAY_Y, 0);

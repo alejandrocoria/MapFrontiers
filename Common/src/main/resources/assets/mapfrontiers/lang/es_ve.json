@@ -1,7 +1,6 @@
 {
   "mapfrontiers.type": "Tipo: %1$s",
   "mapfrontiers.dimension": "Dimensión: %1$s",
-  "mapfrontiers.mode": "Modo: %1$s",
   "mapfrontiers.vertices": "Vértices: %1$d",
   "mapfrontiers.points": "Puntos: %1$d",
   "mapfrontiers.chunks": "Chunks: %1$d",
@@ -101,7 +100,7 @@
   "mapfrontiers.filter_owner": "Dueño:",
   "mapfrontiers.filter_dimension": "Dimensión:",
   "mapfrontiers.frontier_type": "Tipo de frontera",
-  "mapfrontiers.frontier_mode": "Modo de frontera",
+  "mapfrontiers.frontier_shape": "Forma de frontera",
   "mapfrontiers.initial_shape": "Figura Inicial",
   "mapfrontiers.shape_width": "Ancho de la figura",
   "mapfrontiers.shape_vertex_count": "Vértices",

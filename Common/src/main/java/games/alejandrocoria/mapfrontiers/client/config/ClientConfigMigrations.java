@@ -140,6 +140,11 @@ public final class ClientConfigMigrations implements ConfigMigrations {
     }
 
     private void migrateFrom1To2(CommentedConfig config) {
+        migrateHudSlotsToList(config);
+        migrateNewFrontierShapeConfig(config);
+    }
+
+    private static void migrateHudSlotsToList(CommentedConfig config) {
         List<HUDSlot> legacyHudSlots = List.of(
                 parseLegacyHudSlot(config.get("hud.slot1")),
                 parseLegacyHudSlot(config.get("hud.slot2")),
@@ -172,6 +177,14 @@ public final class ClientConfigMigrations implements ConfigMigrations {
         config.remove("hud.slot1");
         config.remove("hud.slot2");
         config.remove("hud.slot3");
+    }
+
+    private static void migrateNewFrontierShapeConfig(CommentedConfig config) {
+        // Preserve the old vertex preset before reusing newFrontier.shape for the frontier shape enum.
+        moveIfPresent(config, "newFrontier.shape", "newFrontier.vertexShape");
+        moveIfPresent(config, "newFrontier.mode", "newFrontier.shape");
+        moveIfPresent(config, "newFrontier.shapeWidth", "newFrontier.vertexShapeWidth");
+        moveIfPresent(config, "newFrontier.shapeRadius", "newFrontier.vertexShapeRadius");
     }
 
     private static void moveAll(CommentedConfig config, String[][] moves) {
