@@ -21,7 +21,7 @@ import java.util.UUID;
 @ParametersAreNonnullByDefault
 public class PacketChangeFrontierToPersonal {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_change_frontier_to_personal");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketChangeFrontierToPersonal> STREAM_CODEC = StreamCodec.ofMember(PacketChangeFrontierToPersonal::encode, PacketChangeFrontierToPersonal::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketChangeFrontierToPersonal> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketChangeFrontierToPersonal::encode, PacketChangeFrontierToPersonal::new);
 
     private UUID frontierID;
     private Date modified;
@@ -36,29 +36,21 @@ public class PacketChangeFrontierToPersonal {
     }
 
     public PacketChangeFrontierToPersonal(FriendlyByteBuf buf) {
-        try {
-            if (buf.readableBytes() > 1) {
-                this.frontierID = UUIDHelper.fromBytes(buf);
-                if (buf.readBoolean()) {
-                    modified = new Date(buf.readLong());
-                }
+        if (buf.readableBytes() > 1) {
+            this.frontierID = UUIDHelper.fromBytes(buf);
+            if (buf.readBoolean()) {
+                modified = new Date(buf.readLong());
             }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to read message for PacketChangeFrontierToPersonal", t);
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
-        try {
-            UUIDHelper.toBytes(buf, frontierID);
-            if (modified == null) {
-                buf.writeBoolean(false);
-            } else {
-                buf.writeBoolean(true);
-                buf.writeLong(modified.getTime());
-            }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to write message for PacketChangeFrontierToPersonal", t);
+        UUIDHelper.toBytes(buf, frontierID);
+        if (modified == null) {
+            buf.writeBoolean(false);
+        } else {
+            buf.writeBoolean(true);
+            buf.writeLong(modified.getTime());
         }
     }
 

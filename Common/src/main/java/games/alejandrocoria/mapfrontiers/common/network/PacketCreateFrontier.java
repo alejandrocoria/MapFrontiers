@@ -17,7 +17,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 public class PacketCreateFrontier {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_create_frontier");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketCreateFrontier> STREAM_CODEC = StreamCodec.ofMember(PacketCreateFrontier::encode, PacketCreateFrontier::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketCreateFrontier> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketCreateFrontier::encode, PacketCreateFrontier::new);
 
     private final FrontierCreateSpec createSpec;
 
@@ -30,21 +30,11 @@ public class PacketCreateFrontier {
     }
 
     public PacketCreateFrontier(FriendlyByteBuf buf) {
-        try {
-            this.createSpec = FrontierCreateSpec.fromBytes(buf);
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to read message for PacketCreateFrontier", t);
-            throw t;
-        }
+        this.createSpec = FrontierCreateSpec.fromBytes(buf);
     }
 
     public void encode(FriendlyByteBuf buf) {
-        try {
-            createSpec.toBytes(buf);
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to write message for PacketCreateFrontier", t);
-            throw t;
-        }
+        createSpec.toBytes(buf);
     }
 
     public static void handle(PacketContext<PacketCreateFrontier> ctx) {

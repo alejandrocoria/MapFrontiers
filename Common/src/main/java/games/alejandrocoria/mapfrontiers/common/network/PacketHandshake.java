@@ -18,7 +18,7 @@ public class PacketHandshake {
     private static final String VERSION = "1";
 
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_handshake");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketHandshake> STREAM_CODEC = StreamCodec.ofMember(PacketHandshake::encode, PacketHandshake::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketHandshake> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketHandshake::encode, PacketHandshake::new);
 
     private long nonce;
     private String version;
@@ -33,26 +33,18 @@ public class PacketHandshake {
     }
 
     public PacketHandshake(FriendlyByteBuf buf) {
-        try {
-            if (buf.readableBytes() > 0) {
-                this.nonce = buf.readLong();
-                this.version = buf.readUtf();
-            } else {
-                this.nonce = 0L;
-                this.version = VERSION;
-            }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to read message for PacketHandshake", t);
+        if (buf.readableBytes() > 0) {
+            this.nonce = buf.readLong();
+            this.version = buf.readUtf();
+        } else {
+            this.nonce = 0L;
+            this.version = VERSION;
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
-        try {
-            buf.writeLong(nonce);
-            buf.writeUtf(version);
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to write message for PacketHandshake", t);
-        }
+        buf.writeLong(nonce);
+        buf.writeUtf(version);
     }
 
     public static void handle(PacketContext<PacketHandshake> ctx) {

@@ -19,7 +19,7 @@ import java.util.List;
 @ParametersAreNonnullByDefault
 public class PacketTerritoriesSnapshot {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_territories_snapshot");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketTerritoriesSnapshot> STREAM_CODEC = StreamCodec.ofMember(PacketTerritoriesSnapshot::encode, PacketTerritoriesSnapshot::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketTerritoriesSnapshot> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketTerritoriesSnapshot::encode, PacketTerritoriesSnapshot::new);
 
     private final List<FrontierData> globalFrontiers;
     private final List<FrontierData> personalFrontiers;
@@ -70,65 +70,56 @@ public class PacketTerritoriesSnapshot {
         personalFrontiers = new ArrayList<>();
         globalCollections = new ArrayList<>();
         personalCollections = new ArrayList<>();
-
-        try {
-            if (buf.readableBytes() > 1) {
-                int size = buf.readInt();
-                for (int i = 0; i < size; ++i) {
-                    FrontierData frontier = new FrontierData();
-                    frontier.fromBytes(buf);
-                    this.addGlobalFrontier(frontier);
-                }
-
-                size = buf.readInt();
-                for (int i = 0; i < size; ++i) {
-                    FrontierData frontier = new FrontierData();
-                    frontier.fromBytes(buf);
-                    this.addPersonalFrontier(frontier);
-                }
-
-                size = buf.readInt();
-                for (int i = 0; i < size; ++i) {
-                    CollectionData collection = new CollectionData();
-                    collection.fromBytes(buf);
-                    this.addGlobalCollection(collection);
-                }
-
-                size = buf.readInt();
-                for (int i = 0; i < size; ++i) {
-                    CollectionData collection = new CollectionData();
-                    collection.fromBytes(buf);
-                    this.addPersonalCollection(collection);
-                }
+        if (buf.readableBytes() > 1) {
+            int size = buf.readInt();
+            for (int i = 0; i < size; ++i) {
+                FrontierData frontier = new FrontierData();
+                frontier.fromBytes(buf);
+                this.addGlobalFrontier(frontier);
             }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to read message for PacketTerritoriesSnapshot", t);
+
+            size = buf.readInt();
+            for (int i = 0; i < size; ++i) {
+                FrontierData frontier = new FrontierData();
+                frontier.fromBytes(buf);
+                this.addPersonalFrontier(frontier);
+            }
+
+            size = buf.readInt();
+            for (int i = 0; i < size; ++i) {
+                CollectionData collection = new CollectionData();
+                collection.fromBytes(buf);
+                this.addGlobalCollection(collection);
+            }
+
+            size = buf.readInt();
+            for (int i = 0; i < size; ++i) {
+                CollectionData collection = new CollectionData();
+                collection.fromBytes(buf);
+                this.addPersonalCollection(collection);
+            }
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
-        try {
-            buf.writeInt(globalFrontiers.size());
-            for (FrontierData frontier : globalFrontiers) {
-                frontier.toBytes(buf);
-            }
+        buf.writeInt(globalFrontiers.size());
+        for (FrontierData frontier : globalFrontiers) {
+            frontier.toBytes(buf);
+        }
 
-            buf.writeInt(personalFrontiers.size());
-            for (FrontierData frontier : personalFrontiers) {
-                frontier.toBytes(buf);
-            }
+        buf.writeInt(personalFrontiers.size());
+        for (FrontierData frontier : personalFrontiers) {
+            frontier.toBytes(buf);
+        }
 
-            buf.writeInt(globalCollections.size());
-            for (CollectionData collection : globalCollections) {
-                collection.toBytes(buf);
-            }
+        buf.writeInt(globalCollections.size());
+        for (CollectionData collection : globalCollections) {
+            collection.toBytes(buf);
+        }
 
-            buf.writeInt(personalCollections.size());
-            for (CollectionData collection : personalCollections) {
-                collection.toBytes(buf);
-            }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to write message for PacketTerritoriesSnapshot", t);
+        buf.writeInt(personalCollections.size());
+        for (CollectionData collection : personalCollections) {
+            collection.toBytes(buf);
         }
     }
 

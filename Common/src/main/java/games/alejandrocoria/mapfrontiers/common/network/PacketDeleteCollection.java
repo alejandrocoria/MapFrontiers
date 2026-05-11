@@ -18,7 +18,7 @@ import java.util.UUID;
 @ParametersAreNonnullByDefault
 public class PacketDeleteCollection {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_delete_collection");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketDeleteCollection> STREAM_CODEC = StreamCodec.ofMember(PacketDeleteCollection::encode, PacketDeleteCollection::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketDeleteCollection> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketDeleteCollection::encode, PacketDeleteCollection::new);
 
     private UUID collectionId;
 
@@ -31,21 +31,13 @@ public class PacketDeleteCollection {
     }
 
     public PacketDeleteCollection(FriendlyByteBuf buf) {
-        try {
-            if (buf.readableBytes() > 1) {
-                this.collectionId = UUIDHelper.fromBytes(buf);
-            }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to read message for PacketDeleteCollection", t);
+        if (buf.readableBytes() > 1) {
+            this.collectionId = UUIDHelper.fromBytes(buf);
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
-        try {
-            UUIDHelper.toBytes(buf, collectionId);
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to write message for PacketDeleteCollection", t);
-        }
+        UUIDHelper.toBytes(buf, collectionId);
     }
 
     public static void handle(PacketContext<PacketDeleteCollection> ctx) {

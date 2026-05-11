@@ -17,7 +17,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 public class PacketPersonalFrontier {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_personal_frontier");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketPersonalFrontier> STREAM_CODEC = StreamCodec.ofMember(PacketPersonalFrontier::encode, PacketPersonalFrontier::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketPersonalFrontier> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketPersonalFrontier::encode, PacketPersonalFrontier::new);
 
     private final FrontierData frontier;
 
@@ -31,22 +31,13 @@ public class PacketPersonalFrontier {
 
     public PacketPersonalFrontier(FriendlyByteBuf buf) {
         this.frontier = new FrontierData();
-
-        try {
-            if (buf.readableBytes() > 1) {
-                this.frontier.fromBytes(buf);
-            }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to read message for PacketPersonalFrontier", t);
+        if (buf.readableBytes() > 1) {
+            this.frontier.fromBytes(buf);
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
-        try {
-            frontier.toBytes(buf);
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to write message for PacketPersonalFrontier", t);
-        }
+        frontier.toBytes(buf);
     }
 
     public static void handle(PacketContext<PacketPersonalFrontier> ctx) {

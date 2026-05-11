@@ -822,6 +822,8 @@ public class FrontierData {
     }
 
     public void writeToNBT(CompoundTag nbt) {
+        assertSerializableLifetime();
+
         nbt.putString("id", id.toString());
         nbt.putInt("color", color);
         nbt.putString("dimension", dimension.identifier().toString());
@@ -1017,6 +1019,8 @@ public class FrontierData {
     }
 
     public void toBytes(FriendlyByteBuf buf) {
+        assertSerializableLifetime();
+
         UUIDHelper.toBytes(buf, id);
         buf.writeIdentifier(dimension.identifier());
         buf.writeBoolean(personal);
@@ -1188,6 +1192,12 @@ public class FrontierData {
         }
 
         return TerritoryLifetime.VALUES[lifetimeOrdinal];
+    }
+
+    private void assertSerializableLifetime() {
+        if (isSessionOnly()) {
+            throw new IllegalStateException("Cannot serialize SESSION_ONLY frontier. id=" + id + ", personal=" + personal + ", lifetime=" + lifetime);
+        }
     }
 
     private static String idFromTag(CompoundTag nbt) {

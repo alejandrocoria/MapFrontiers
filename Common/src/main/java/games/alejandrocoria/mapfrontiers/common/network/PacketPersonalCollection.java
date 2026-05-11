@@ -17,7 +17,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 public class PacketPersonalCollection {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_personal_collection");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketPersonalCollection> STREAM_CODEC = StreamCodec.ofMember(PacketPersonalCollection::encode, PacketPersonalCollection::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketPersonalCollection> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketPersonalCollection::encode, PacketPersonalCollection::new);
 
     private final CollectionData collection;
 
@@ -31,22 +31,13 @@ public class PacketPersonalCollection {
 
     public PacketPersonalCollection(FriendlyByteBuf buf) {
         this.collection = new CollectionData();
-
-        try {
-            if (buf.readableBytes() > 1) {
-                this.collection.fromBytes(buf);
-            }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to read message for PacketPersonalCollection", t);
+        if (buf.readableBytes() > 1) {
+            this.collection.fromBytes(buf);
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
-        try {
-            collection.toBytes(buf);
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to write message for PacketPersonalCollection", t);
-        }
+        collection.toBytes(buf);
     }
 
     public static void handle(PacketContext<PacketPersonalCollection> ctx) {

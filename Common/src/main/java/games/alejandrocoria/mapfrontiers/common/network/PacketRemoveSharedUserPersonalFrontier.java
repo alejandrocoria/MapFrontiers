@@ -19,7 +19,7 @@ import java.util.UUID;
 @ParametersAreNonnullByDefault
 public class PacketRemoveSharedUserPersonalFrontier {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_remove_shared_user_personal_frontier");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketRemoveSharedUserPersonalFrontier> STREAM_CODEC = StreamCodec.ofMember(PacketRemoveSharedUserPersonalFrontier::encode, PacketRemoveSharedUserPersonalFrontier::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketRemoveSharedUserPersonalFrontier> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketRemoveSharedUserPersonalFrontier::encode, PacketRemoveSharedUserPersonalFrontier::new);
 
     private UUID frontierID;
     private final SettingsUser targetUser;
@@ -35,24 +35,15 @@ public class PacketRemoveSharedUserPersonalFrontier {
 
     public PacketRemoveSharedUserPersonalFrontier(FriendlyByteBuf buf) {
         this.targetUser = new SettingsUser();
-
-        try {
-            if (buf.readableBytes() > 1) {
-                this.frontierID = UUIDHelper.fromBytes(buf);
-                this.targetUser.fromBytes(buf);
-            }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to read message for PacketRemoveSharedUserPersonalFrontier", t);
+        if (buf.readableBytes() > 1) {
+            this.frontierID = UUIDHelper.fromBytes(buf);
+            this.targetUser.fromBytes(buf);
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
-        try {
-            UUIDHelper.toBytes(buf, frontierID);
-            targetUser.toBytes(buf);
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to write message for PacketRemoveSharedUserPersonalFrontier", t);
-        }
+        UUIDHelper.toBytes(buf, frontierID);
+        targetUser.toBytes(buf);
     }
 
     public static void handle(PacketContext<PacketRemoveSharedUserPersonalFrontier> ctx) {

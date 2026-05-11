@@ -106,13 +106,25 @@ public class ClientLocalPersonalFrontierStore {
 
     private void writeToNBT(CompoundTag nbt, Collection<? extends FrontierData> frontiers) {
         ListTag frontiersTagList = new ListTag();
+        int skippedFrontiers = 0;
         for (FrontierData frontier : frontiers) {
-            CompoundTag frontierTag = new CompoundTag();
-            frontier.writeToNBT(frontierTag);
-            frontiersTagList.add(frontierTag);
+            try {
+                CompoundTag frontierTag = new CompoundTag();
+                frontier.writeToNBT(frontierTag);
+                frontiersTagList.add(frontierTag);
+            } catch (RuntimeException e) {
+                skippedFrontiers++;
+                MapFrontiers.LOGGER.error("Skipping personal frontier during local save because serialization failed. id={}, personal={}, lifetime={}",
+                        frontier.getId(), frontier.getPersonal(), frontier.getLifetime(), e);
+            }
         }
         nbt.put("frontiers", frontiersTagList);
         nbt.putInt("Version", MapFrontiers.FRONTIER_DATA_VERSION);
+
+        if (skippedFrontiers > 0) {
+            MapFrontiers.LOGGER.warn("Local personal frontier save skipped invalid entries. savedFrontiers={}, skippedFrontiers={}",
+                    frontiersTagList.size(), skippedFrontiers);
+        }
     }
 
     private void ensureDirectory() {

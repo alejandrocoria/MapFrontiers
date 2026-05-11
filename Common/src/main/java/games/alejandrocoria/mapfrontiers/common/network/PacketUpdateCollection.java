@@ -17,7 +17,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 public class PacketUpdateCollection {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_update_collection");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketUpdateCollection> STREAM_CODEC = StreamCodec.ofMember(PacketUpdateCollection::encode, PacketUpdateCollection::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketUpdateCollection> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketUpdateCollection::encode, PacketUpdateCollection::new);
 
     private final CollectionData collection;
 
@@ -31,22 +31,13 @@ public class PacketUpdateCollection {
 
     public PacketUpdateCollection(FriendlyByteBuf buf) {
         this.collection = new CollectionData();
-
-        try {
-            if (buf.readableBytes() > 1) {
-                this.collection.fromBytes(buf);
-            }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to read message for PacketUpdateCollection", t);
+        if (buf.readableBytes() > 1) {
+            this.collection.fromBytes(buf);
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
-        try {
-            collection.toBytes(buf);
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to write message for PacketUpdateCollection", t);
-        }
+        collection.toBytes(buf);
     }
 
     public static void handle(PacketContext<PacketUpdateCollection> ctx) {

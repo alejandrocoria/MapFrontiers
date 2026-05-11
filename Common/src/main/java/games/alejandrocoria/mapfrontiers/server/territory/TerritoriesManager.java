@@ -453,20 +453,39 @@ public class TerritoriesManager {
 
     private void writeToNBT(CompoundTag nbt) {
         ListTag allCollectionsTagList = new ListTag();
+        int skippedCollections = 0;
         for (CollectionData collection : allCollections.values()) {
-            CompoundTag collectionTag = new CompoundTag();
-            collection.writeToNBT(collectionTag);
-            allCollectionsTagList.add(collectionTag);
+            try {
+                CompoundTag collectionTag = new CompoundTag();
+                collection.writeToNBT(collectionTag);
+                allCollectionsTagList.add(collectionTag);
+            } catch (RuntimeException e) {
+                skippedCollections++;
+                MapFrontiers.LOGGER.error("Skipping collection during server save because serialization failed. id={}, personal={}, lifetime={}",
+                        collection.getId(), collection.getPersonal(), collection.getLifetime(), e);
+            }
         }
         nbt.put("collections", allCollectionsTagList);
 
         ListTag allFrontiersTagList = new ListTag();
+        int skippedFrontiers = 0;
         for (FrontierData frontier : allFrontiers.values()) {
-            CompoundTag frontierTag = new CompoundTag();
-            frontier.writeToNBT(frontierTag);
-            allFrontiersTagList.add(frontierTag);
+            try {
+                CompoundTag frontierTag = new CompoundTag();
+                frontier.writeToNBT(frontierTag);
+                allFrontiersTagList.add(frontierTag);
+            } catch (RuntimeException e) {
+                skippedFrontiers++;
+                MapFrontiers.LOGGER.error("Skipping frontier during server save because serialization failed. id={}, personal={}, lifetime={}",
+                        frontier.getId(), frontier.getPersonal(), frontier.getLifetime(), e);
+            }
         }
         nbt.put("frontiers", allFrontiersTagList);
+
+        if (skippedCollections > 0 || skippedFrontiers > 0) {
+            MapFrontiers.LOGGER.warn("Server save skipped invalid territories. savedCollections={}, skippedCollections={}, savedFrontiers={}, skippedFrontiers={}",
+                    allCollectionsTagList.size(), skippedCollections, allFrontiersTagList.size(), skippedFrontiers);
+        }
 
         nbt.putInt("Version", MapFrontiers.FRONTIER_DATA_VERSION);
     }

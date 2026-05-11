@@ -18,7 +18,7 @@ import java.util.UUID;
 @ParametersAreNonnullByDefault
 public class PacketDeleteFrontier {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_delete_frontier");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketDeleteFrontier> STREAM_CODEC = StreamCodec.ofMember(PacketDeleteFrontier::encode, PacketDeleteFrontier::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketDeleteFrontier> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketDeleteFrontier::encode, PacketDeleteFrontier::new);
 
     private UUID frontierID;
 
@@ -31,21 +31,13 @@ public class PacketDeleteFrontier {
     }
 
     public PacketDeleteFrontier(FriendlyByteBuf buf) {
-        try {
-            if (buf.readableBytes() > 1) {
-                this.frontierID = UUIDHelper.fromBytes(buf);
-            }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to read message for PacketDeleteFrontier", t);
+        if (buf.readableBytes() > 1) {
+            this.frontierID = UUIDHelper.fromBytes(buf);
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
-        try {
-            UUIDHelper.toBytes(buf, frontierID);
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to write message for PacketDeleteFrontier", t);
-        }
+        UUIDHelper.toBytes(buf, frontierID);
     }
 
     public static void handle(PacketContext<PacketDeleteFrontier> ctx) {

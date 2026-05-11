@@ -105,6 +105,8 @@ public class CollectionData {
     }
 
     public void writeToNBT(CompoundTag nbt) {
+        assertSerializableLifetime();
+
         nbt.putString("id", id.toString());
         nbt.putBoolean("personal", personal);
         nbt.putString("lifetime", lifetime.name());
@@ -166,6 +168,8 @@ public class CollectionData {
     }
 
     public void toBytes(FriendlyByteBuf buf) {
+        assertSerializableLifetime();
+
         UUIDHelper.toBytes(buf, id);
         buf.writeBoolean(personal);
         buf.writeInt(lifetime.ordinal());
@@ -350,5 +354,11 @@ public class CollectionData {
         }
 
         return TerritoryLifetime.VALUES[lifetimeOrdinal];
+    }
+
+    private void assertSerializableLifetime() {
+        if (isSessionOnly()) {
+            throw new IllegalStateException("Cannot serialize SESSION_ONLY collection. id=" + id + ", personal=" + personal + ", lifetime=" + lifetime);
+        }
     }
 }

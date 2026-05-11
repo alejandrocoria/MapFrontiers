@@ -57,6 +57,12 @@ public class ChatFrontiers {
 
     public static void sendFrontier(FrontierOverlay frontier, SettingsUser user) {
         try {
+            if (frontier.isSessionOnly()) {
+                MapFrontiers.LOGGER.debug("Rejected sendFrontier because source frontier is SESSION_ONLY. frontierId={}, targetUser={}",
+                        frontier.getId(), user.username);
+                return;
+            }
+
             LocalPlayer player = Minecraft.getInstance().player;
             if (player == null) {
                 return;

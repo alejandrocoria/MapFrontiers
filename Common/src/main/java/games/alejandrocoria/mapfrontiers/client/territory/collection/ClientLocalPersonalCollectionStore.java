@@ -106,13 +106,25 @@ public class ClientLocalPersonalCollectionStore {
 
     private void writeToNBT(CompoundTag nbt, Collection<? extends CollectionData> collections) {
         ListTag collectionsTagList = new ListTag();
+        int skippedCollections = 0;
         for (CollectionData collection : collections) {
-            CompoundTag collectionTag = new CompoundTag();
-            collection.writeToNBT(collectionTag);
-            collectionsTagList.add(collectionTag);
+            try {
+                CompoundTag collectionTag = new CompoundTag();
+                collection.writeToNBT(collectionTag);
+                collectionsTagList.add(collectionTag);
+            } catch (RuntimeException e) {
+                skippedCollections++;
+                MapFrontiers.LOGGER.error("Skipping personal collection during local save because serialization failed. id={}, personal={}, lifetime={}",
+                        collection.getId(), collection.getPersonal(), collection.getLifetime(), e);
+            }
         }
         nbt.put("collections", collectionsTagList);
         nbt.putInt("Version", MapFrontiers.FRONTIER_DATA_VERSION);
+
+        if (skippedCollections > 0) {
+            MapFrontiers.LOGGER.warn("Local personal collection save skipped invalid entries. savedCollections={}, skippedCollections={}",
+                    collectionsTagList.size(), skippedCollections);
+        }
     }
 
     private void ensureDirectory() {

@@ -672,6 +672,10 @@ public class FrontierInfoPage extends PageScreen {
     }
 
     private void onSharePressed() {
+        if (frontier.isSessionOnly()) {
+            return;
+        }
+
         if (MapFrontiersClient.isModOnServer()) {
             new ShareSettingsPage(frontier).display();
         } else {
@@ -922,9 +926,10 @@ public class FrontierInfoPage extends PageScreen {
         buttonSelect.active = uiState != null && frontier.getDimension().equals(uiState.dimension);
         if (MapFrontiersClient.isModOnServer()) {
             buttonShareSettings.setMessage(SHARE_SETTINGS_LABEL);
-            buttonShareSettings.active = actions.canShare;
+            buttonShareSettings.active = actions.canShare && !frontier.isSessionOnly();
         } else {
             buttonShareSettings.setMessage(SEND_LABEL);
+            buttonShareSettings.active = !frontier.isSessionOnly();
         }
     }
 

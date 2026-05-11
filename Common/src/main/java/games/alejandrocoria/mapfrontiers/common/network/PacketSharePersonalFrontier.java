@@ -21,7 +21,7 @@ import java.util.UUID;
 @ParametersAreNonnullByDefault
 public class PacketSharePersonalFrontier {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_share_personal_frontier");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketSharePersonalFrontier> STREAM_CODEC = StreamCodec.ofMember(PacketSharePersonalFrontier::encode, PacketSharePersonalFrontier::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketSharePersonalFrontier> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketSharePersonalFrontier::encode, PacketSharePersonalFrontier::new);
 
     private UUID frontierID;
     private final SettingsUserShared userShared;
@@ -45,24 +45,15 @@ public class PacketSharePersonalFrontier {
 
     public PacketSharePersonalFrontier(FriendlyByteBuf buf) {
         this.userShared = new SettingsUserShared();
-
-        try {
-            if (buf.readableBytes() > 1) {
-                this.frontierID = UUIDHelper.fromBytes(buf);
-                this.userShared.fromBytes(buf);
-            }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to read message for PacketSharePersonalFrontier", t);
+        if (buf.readableBytes() > 1) {
+            this.frontierID = UUIDHelper.fromBytes(buf);
+            this.userShared.fromBytes(buf);
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
-        try {
-            UUIDHelper.toBytes(buf, frontierID);
-            userShared.toBytes(buf);
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to write message for PacketSharePersonalFrontier", t);
-        }
+        UUIDHelper.toBytes(buf, frontierID);
+        userShared.toBytes(buf);
     }
 
     public static void handle(PacketContext<PacketSharePersonalFrontier> ctx) {

@@ -23,7 +23,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 public class PacketPersonalFrontierShared {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_personal_frontier_shared");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketPersonalFrontierShared> STREAM_CODEC = StreamCodec.ofMember(PacketPersonalFrontierShared::encode, PacketPersonalFrontierShared::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketPersonalFrontierShared> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketPersonalFrontierShared::encode, PacketPersonalFrontierShared::new);
 
     private int shareMessageID;
     private final SettingsUser playerSharing;
@@ -47,30 +47,21 @@ public class PacketPersonalFrontierShared {
     public PacketPersonalFrontierShared(FriendlyByteBuf buf) {
         this.playerSharing = new SettingsUser();
         this.owner = new SettingsUser();
-
-        try {
-            if (buf.readableBytes() > 1) {
-                this.shareMessageID = buf.readInt();
-                this.playerSharing.fromBytes(buf);
-                this.owner.fromBytes(buf);
-                this.name1 = buf.readUtf(FrontierData.MAX_NAME_CHARACTERS);
-                this.name2 = buf.readUtf(FrontierData.MAX_NAME_CHARACTERS);
-            }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to read message for PacketPersonalFrontierShared", t);
+        if (buf.readableBytes() > 1) {
+            this.shareMessageID = buf.readInt();
+            this.playerSharing.fromBytes(buf);
+            this.owner.fromBytes(buf);
+            this.name1 = buf.readUtf(FrontierData.MAX_NAME_CHARACTERS);
+            this.name2 = buf.readUtf(FrontierData.MAX_NAME_CHARACTERS);
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
-        try {
-            buf.writeInt(shareMessageID);
-            playerSharing.toBytes(buf);
-            owner.toBytes(buf);
-            buf.writeUtf(name1, FrontierData.MAX_NAME_CHARACTERS);
-            buf.writeUtf(name2, FrontierData.MAX_NAME_CHARACTERS);
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to write message for PacketPersonalFrontierShared", t);
-        }
+        buf.writeInt(shareMessageID);
+        playerSharing.toBytes(buf);
+        owner.toBytes(buf);
+        buf.writeUtf(name1, FrontierData.MAX_NAME_CHARACTERS);
+        buf.writeUtf(name2, FrontierData.MAX_NAME_CHARACTERS);
     }
 
     public static void handle(PacketContext<PacketPersonalFrontierShared> ctx) {

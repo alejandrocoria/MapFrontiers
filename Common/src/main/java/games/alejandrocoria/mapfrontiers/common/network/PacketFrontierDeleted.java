@@ -20,7 +20,7 @@ import java.util.UUID;
 @ParametersAreNonnullByDefault
 public class PacketFrontierDeleted {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_frontier_deleted");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketFrontierDeleted> STREAM_CODEC = StreamCodec.ofMember(PacketFrontierDeleted::encode, PacketFrontierDeleted::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketFrontierDeleted> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketFrontierDeleted::encode, PacketFrontierDeleted::new);
 
     private ResourceKey<Level> dimension = Level.OVERWORLD;
     private UUID frontierID;
@@ -39,27 +39,19 @@ public class PacketFrontierDeleted {
     }
 
     public PacketFrontierDeleted(FriendlyByteBuf buf) {
-        try {
-            if (buf.readableBytes() > 1) {
-                this.dimension = ResourceKey.create(Registries.DIMENSION, buf.readIdentifier());
-                this.frontierID = UUIDHelper.fromBytes(buf);
-                this.personal = buf.readBoolean();
-                this.playerID = buf.readInt();
-            }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to read message for PacketFrontierDeleted", t);
+        if (buf.readableBytes() > 1) {
+            this.dimension = ResourceKey.create(Registries.DIMENSION, buf.readIdentifier());
+            this.frontierID = UUIDHelper.fromBytes(buf);
+            this.personal = buf.readBoolean();
+            this.playerID = buf.readInt();
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
-        try {
-            buf.writeIdentifier(dimension.identifier());
-            UUIDHelper.toBytes(buf, frontierID);
-            buf.writeBoolean(personal);
-            buf.writeInt(playerID);
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to write message for PacketFrontierDeleted", t);
-        }
+        buf.writeIdentifier(dimension.identifier());
+        UUIDHelper.toBytes(buf, frontierID);
+        buf.writeBoolean(personal);
+        buf.writeInt(playerID);
     }
 
     public static void handle(PacketContext<PacketFrontierDeleted> ctx) {
