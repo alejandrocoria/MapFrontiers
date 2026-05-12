@@ -1263,9 +1263,9 @@ public class TerritoryListPage extends PageScreen {
 
     private Tooltip getCreateCollectionTooltip(CollectionScope scope) {
         return Tooltip.create(Component.translatable(switch (scope) {
-            case PERSONAL_PERSISTENT -> "mapfrontiers.tooltip.create_collection_personal";
-            case PERSONAL_SESSION -> "mapfrontiers.tooltip.create_collection_temporary";
-            case GLOBAL_PERSISTENT -> "mapfrontiers.tooltip.create_collection_global";
+            case PERSONAL_PERSISTENT -> "mapfrontiers.create_collection_personal.tooltip";
+            case PERSONAL_SESSION -> "mapfrontiers.create_collection_temporary.tooltip";
+            case GLOBAL_PERSISTENT -> "mapfrontiers.create_collection_global.tooltip";
         }));
     }
 

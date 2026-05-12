@@ -36,7 +36,7 @@ import java.util.List;
 @ParametersAreNonnullByDefault
 public class HUDSettingsScreen extends AutoScaledScreen {
     private static final Component POSITION_LABEL = Component.translatable("mapfrontiers.config.hud.position");
-    private static final Tooltip POSITION_TOOLTIP = Tooltip.create(Component.literal("HUD position relative to anchor."));
+    private static final Tooltip POSITION_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.config.hud.position.tooltip"));
     private static final Component POSITION_SEPARATOR_LABEL = Component.literal("x");
     private static final Component DONE_LABEL = Component.translatable("gui.done");
     private static final Component ON_LABEL = Component.translatable("options.on");

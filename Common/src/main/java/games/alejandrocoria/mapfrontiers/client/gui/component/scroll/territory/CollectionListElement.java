@@ -60,7 +60,7 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
     private static final int MARKED_BADGE_WIDTH_EXTRA = 5;
     private static final int MARKED_BADGE_GAP = 4;
     private static final int RAIL_HOVER_COLOR = 0xA0202020;
-    private static final Tooltip MOVE_HERE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.tooltip.move_here"));
+    private static final Tooltip MOVE_HERE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.move_here.tooltip"));
     private static final Tooltip DELETE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.delete"));
 
     private final Font font;
@@ -423,15 +423,15 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
         String key;
         if (virtualRow) {
             key = switch (scope) {
-                case PERSONAL_PERSISTENT -> "mapfrontiers.tooltip.create_frontier_personal";
-                case PERSONAL_SESSION -> "mapfrontiers.tooltip.create_frontier_temporary";
-                case GLOBAL_PERSISTENT -> "mapfrontiers.tooltip.create_frontier_global";
+                case PERSONAL_PERSISTENT -> "mapfrontiers.create_frontier_personal.tooltip";
+                case PERSONAL_SESSION -> "mapfrontiers.create_frontier_temporary.tooltip";
+                case GLOBAL_PERSISTENT -> "mapfrontiers.create_frontier_global.tooltip";
             };
         } else {
             key = switch (scope) {
-                case PERSONAL_PERSISTENT -> "mapfrontiers.tooltip.create_frontier_personal_in_collection";
-                case PERSONAL_SESSION -> "mapfrontiers.tooltip.create_frontier_temporary_in_collection";
-                case GLOBAL_PERSISTENT -> "mapfrontiers.tooltip.create_frontier_global_in_collection";
+                case PERSONAL_PERSISTENT -> "mapfrontiers.create_frontier_personal_in_collection.tooltip";
+                case PERSONAL_SESSION -> "mapfrontiers.create_frontier_temporary_in_collection.tooltip";
+                case GLOBAL_PERSISTENT -> "mapfrontiers.create_frontier_global_in_collection.tooltip";
             };
         }
 

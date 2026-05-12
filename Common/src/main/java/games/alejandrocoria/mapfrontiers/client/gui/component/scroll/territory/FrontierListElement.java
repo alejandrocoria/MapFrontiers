@@ -515,7 +515,7 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
 
     private Tooltip getVisibilityTooltip() {
         return Tooltip.create(Component.translatable(
-                frontier.getVisibility(FrontierVisibility.Frontier) ? "mapfrontiers.hide" : "mapfrontiers.show"));
+                frontier.getVisibility(FrontierVisibility.Frontier) ? "mapfrontiers.hide.tooltip" : "mapfrontiers.show.tooltip"));
     }
 
     private @Nullable ComponentPath focusPathForListener(@Nullable GuiEventListener listener) {

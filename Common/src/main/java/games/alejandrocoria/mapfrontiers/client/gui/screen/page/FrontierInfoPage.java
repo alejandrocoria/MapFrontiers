@@ -111,15 +111,15 @@ public class FrontierInfoPage extends PageScreen {
 
     private static final Tooltip VISIBILITY_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.visibility.tooltip"));
     private static final Tooltip VISIBILITY_OVERRIDE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.visibility_override.tooltip"));
-    private static final Tooltip COPY_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.copy"));
-    private static final Tooltip PASTE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.paste"));
-    private static final Tooltip OPEN_PASTE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.open_paste_options"));
-    private static final Tooltip CLOSE_PASTE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.close_paste_options"));
-    private static final Tooltip UNDO_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.undo"));
-    private static final Tooltip REDO_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.redo"));
+    private static final Tooltip COPY_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.copy.tooltip"));
+    private static final Tooltip PASTE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.paste.tooltip"));
+    private static final Tooltip OPEN_PASTE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.open_paste_options.tooltip"));
+    private static final Tooltip CLOSE_PASTE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.close_paste_options.tooltip"));
+    private static final Tooltip UNDO_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.undo.tooltip"));
+    private static final Tooltip REDO_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.redo.tooltip"));
     private static final Tooltip CHANGE_TO_PERSONAL_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.change_to_personal"));
     private static final Tooltip CHANGE_TO_GLOBAL_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.change_to_global"));
-    private static final Tooltip ASSIGN_BANNER_WARN_TOOLTIP = Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET).append(Component.translatable("mapfrontiers.assign_banner_warn")));
+    private static final Tooltip ASSIGN_BANNER_WARN_TOOLTIP = Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET).append(Component.translatable("mapfrontiers.assign_banner_warn.tooltip")));
     private static final int MAIN_LAYOUT_SPACING = LayoutConstants.SPACING_MEDIUM;
     private static final int SECTION_WIDTH = 146;
     private static final int NAME_SECTION_WIDTH = SECTION_WIDTH * 2 + MAIN_LAYOUT_SPACING;
