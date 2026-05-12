@@ -4,11 +4,11 @@ import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
-import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPaletteWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPicker;
+import games.alejandrocoria.mapfrontiers.client.gui.component.PluginSourceBadge;
 import games.alejandrocoria.mapfrontiers.client.gui.component.SimpleSlider;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
@@ -17,13 +17,18 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButto
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteFrontierConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.PathStyleDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.VisibilityDialog;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
+import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
+import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import it.unimi.dsi.fastutil.Pair;
@@ -44,6 +49,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.util.StringUtil;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.BannerItem;
 import net.minecraft.world.item.ItemStack;
@@ -60,25 +66,23 @@ import java.util.function.Consumer;
 import java.util.function.IntUnaryOperator;
 
 @ParametersAreNonnullByDefault
-public class FrontierInfoPage extends PageScreen
-{
+public class FrontierInfoPage extends PageScreen {
     static final DateFormat DATE_FORMAT = new SimpleDateFormat();
-    private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_info");
+    private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_frontier_info");
     private static final Component ASSIGN_BANNER_LABEL = Component.translatable("mapfrontiers.assign_banner");
     private static final Component ASSIGN_BANNER_WARN_LABEL = ASSIGN_BANNER_LABEL.copy().append(Component.literal(ColorConstants.WARNING + " !"));
     private static final Component REMOVE_BANNER_LABEL = Component.translatable("mapfrontiers.remove_banner");
     private static final String BANNER_ROTATION_KEY = "mapfrontiers.banner_rotation";
     private static final Component NAME_LABEL = Component.translatable("mapfrontiers.name");
-    private static final Component PERSONAL_LABEL = Component.translatable("mapfrontiers.config.Personal");
-    private static final Component GLOBAL_LABEL = Component.translatable("mapfrontiers.config.Global");
+    private static final Component PERSONAL_LABEL = Component.translatable("mapfrontiers.personal_type");
+    private static final Component GLOBAL_LABEL = Component.translatable("mapfrontiers.global_type");
     private static final String VERTICES_KEY = "mapfrontiers.vertices";
     private static final String CHUNKS_KEY = "mapfrontiers.chunks";
     private static final String POINTS_KEY = "mapfrontiers.points";
     private static final String OWNER_KEY = "mapfrontiers.owner";
+    private static final String COLLECTION_KEY = "mapfrontiers.collection";
     private static final String ORIGINAL_OWNER_KEY = "mapfrontiers.original_owner";
     private static final String DIMENSION_KEY = "mapfrontiers.dimension";
-    private static final String SOURCE_PLUGIN_KEY = "mapfrontiers.source_plugin";
-    private static final String TEMPORARY_SOURCE_PLUGIN_KEY = "mapfrontiers.temporary_source_plugin";
     private static final String TEMPORARY_KEY = "mapfrontiers.temporary";
     private static final String AREA_KEY = "mapfrontiers.area";
     private static final String LENGTH_KEY = "mapfrontiers.length";
@@ -98,7 +102,7 @@ public class FrontierInfoPage extends PageScreen
     private static final Component PASTE_COLOR_LABEL = Component.translatable("mapfrontiers.paste_color");
     private static final Component PASTE_BANNER_LABEL = Component.translatable("mapfrontiers.paste_banner");
     private static final Component SELECT_IN_MAP_LABEL = Component.translatable("mapfrontiers.select_in_map");
-    private static final Component SHARE_SETTINGS_LABEL = Component.translatable("mapfrontiers.share_settings");
+    private static final Component SHARED_ACCESS_LABEL = Component.translatable("mapfrontiers.shared_access");
     private static final Component SEND_LABEL = Component.translatable("mapfrontiers.send");
     private static final Component DELETE_LABEL = Component.translatable("mapfrontiers.delete");
     private static final Component DONE_LABEL = Component.translatable("gui.done");
@@ -107,15 +111,15 @@ public class FrontierInfoPage extends PageScreen
 
     private static final Tooltip VISIBILITY_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.visibility.tooltip"));
     private static final Tooltip VISIBILITY_OVERRIDE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.visibility_override.tooltip"));
-    private static final Tooltip COPY_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.copy"));
-    private static final Tooltip PASTE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.paste"));
-    private static final Tooltip OPEN_PASTE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.open_paste_options"));
-    private static final Tooltip CLOSE_PASTE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.close_paste_options"));
-    private static final Tooltip UNDO_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.undo"));
-    private static final Tooltip REDO_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.redo"));
+    private static final Tooltip COPY_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.copy.tooltip"));
+    private static final Tooltip PASTE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.paste.tooltip"));
+    private static final Tooltip OPEN_PASTE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.open_paste_options.tooltip"));
+    private static final Tooltip CLOSE_PASTE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.close_paste_options.tooltip"));
+    private static final Tooltip UNDO_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.undo.tooltip"));
+    private static final Tooltip REDO_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.redo.tooltip"));
     private static final Tooltip CHANGE_TO_PERSONAL_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.change_to_personal"));
     private static final Tooltip CHANGE_TO_GLOBAL_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.change_to_global"));
-    private static final Tooltip ASSIGN_BANNER_WARN_TOOLTIP = Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET).append(Component.translatable("mapfrontiers.assign_banner_warn")));
+    private static final Tooltip ASSIGN_BANNER_WARN_TOOLTIP = Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET).append(Component.translatable("mapfrontiers.assign_banner_warn.tooltip")));
     private static final int MAIN_LAYOUT_SPACING = LayoutConstants.SPACING_MEDIUM;
     private static final int SECTION_WIDTH = 146;
     private static final int NAME_SECTION_WIDTH = SECTION_WIDTH * 2 + MAIN_LAYOUT_SPACING;
@@ -129,12 +133,13 @@ public class FrontierInfoPage extends PageScreen
     private final IClientAPI jmAPI;
 
     private final FrontierOverlay frontier;
+    private final boolean hasPathStyle;
     private int frontierHash;
     private TextBox textName1;
     private TextBox textName2;
     private SimpleButton buttonVisibility;
     private SimpleButton buttonVisibilityOverride;
-    private SimpleButton buttonPathStyle;
+    private @Nullable SimpleButton buttonPathStyle;
     private TextBoxInt textRed;
     private TextBoxInt textGreen;
     private TextBoxInt textBlue;
@@ -146,12 +151,12 @@ public class FrontierInfoPage extends PageScreen
     private IconButton buttonPasteOptions;
     private OptionButton buttonPasteName;
     private OptionButton buttonPasteVisibility;
-    private OptionButton buttonPastePathStyle;
+    private @Nullable OptionButton buttonPastePathStyle;
     private OptionButton buttonPasteColor;
     private OptionButton buttonPasteBanner;
     private StringWidget labelPasteName;
     private StringWidget labelPasteVisibility;
-    private StringWidget labelPastePathStyle;
+    private @Nullable StringWidget labelPastePathStyle;
     private StringWidget labelPasteColor;
     private StringWidget labelPasteBanner;
     private IconButton buttonUndo;
@@ -159,7 +164,7 @@ public class FrontierInfoPage extends PageScreen
     private IconButton buttonChangeToPersonalGlobal;
 
     private SimpleButton buttonSelect;
-    private SimpleButton buttonShareSettings;
+    private SimpleButton buttonSharedAccess;
     private SimpleButton buttonDelete;
     private SimpleButton buttonDone;
     private SimpleButton buttonBanner;
@@ -176,6 +181,7 @@ public class FrontierInfoPage extends PageScreen
         super(TITLE_LABEL);
         this.jmAPI = jmAPI;
         this.frontier = frontier;
+        hasPathStyle = frontier.getShape() == FrontierShape.Path;
         frontierHash = frontier.getHash();
         undoStack.push(new FrontierData(frontier));
 
@@ -248,10 +254,12 @@ public class FrontierInfoPage extends PageScreen
         mainLayout.addChild(nameColumn, 0, 1, 1, 2);
 
         LinearLayout headerRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
-        Component dimension = Component.translatable(DIMENSION_KEY, frontier.getDimension().identifier().toString());
         headerRow.addChild(new StringWidget(NAME_LABEL, font).setColor(ColorConstants.WHITE));
-        headerRow.addChild(SpacerElement.width(Math.max(0, NAME_SECTION_WIDTH - font.width(NAME_LABEL.getVisualOrderText()) - font.width(dimension.getVisualOrderText()) - LayoutConstants.SPACING_TINY * 2)));
-        headerRow.addChild(new StringWidget(dimension, font).setColor(ColorConstants.TEXT_DIMENSION));
+        PluginSourceBadge sourceBadge = new PluginSourceBadge(font, frontier.getSourcePluginId(), true);
+        int sourceWidth = sourceBadge.getWidth();
+        headerRow.addChild(SpacerElement.width(Math.max(0,
+                NAME_SECTION_WIDTH - font.width(NAME_LABEL.getVisualOrderText()) - sourceWidth - LayoutConstants.SPACING_TINY * 2)));
+        headerRow.addChild(sourceBadge);
         nameColumn.addChild(headerRow);
 
         textName1 = createNameTextBox(frontier.getName1(), value -> {
@@ -268,17 +276,37 @@ public class FrontierInfoPage extends PageScreen
         });
         nameColumn.addChild(textName2);
 
-        nameColumn.addChild(SpacerElement.height(0));
+        LinearLayout collectionInfoColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_TINY);
+        nameColumn.addChild(collectionInfoColumn);
 
-        Component sourceInfo = Component.empty();
-        if (frontier.getSourcePluginId() != null) {
-            sourceInfo = frontier.isSessionOnly()
-                    ? Component.translatable(TEMPORARY_SOURCE_PLUGIN_KEY, frontier.getSourcePluginId())
-                    : Component.translatable(SOURCE_PLUGIN_KEY, frontier.getSourcePluginId());
-        } else if (frontier.isSessionOnly()) {
-            sourceInfo = Component.translatable(TEMPORARY_KEY);
+        LinearLayout collectionHeaderRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
+        collectionHeaderRow.defaultCellSetting().alignVerticallyMiddle();
+        collectionInfoColumn.addChild(collectionHeaderRow);
+
+        Component dimension = Component.translatable(DIMENSION_KEY, frontier.getDimension().identifier().toString());
+        int dimensionWidth = font.width(dimension.getVisualOrderText());
+        boolean hasCollection = frontier.hasCollection();
+        if (hasCollection) {
+            Component collectionLabel = Component.translatable(COLLECTION_KEY);
+            collectionHeaderRow.addChild(new StringWidget(collectionLabel, font).setColor(ColorConstants.WHITE));
+            int collectionLabelWidth = font.width(collectionLabel.getVisualOrderText());
+            collectionHeaderRow.addChild(SpacerElement.width(Math.max(0,
+                    NAME_SECTION_WIDTH - collectionLabelWidth - dimensionWidth - LayoutConstants.SPACING_TINY * 2)));
+        } else {
+            collectionHeaderRow.addChild(SpacerElement.width(Math.max(0, NAME_SECTION_WIDTH - dimensionWidth - LayoutConstants.SPACING_TINY)));
         }
-        nameColumn.addChild(new StringWidget(sourceInfo, font).setColor(ColorConstants.TEXT_SOURCE_PLUGIN));
+        collectionHeaderRow.addChild(new StringWidget(dimension, font).setColor(ColorConstants.TEXT_DIMENSION));
+
+        if (hasCollection) {
+            Component collectionName = Component.empty();
+            CollectionData collection = MapFrontiersClient.getCollection(frontier.getCollectionId());
+            if (collection != null) {
+                collectionName = StringUtil.isBlank(collection.getName())
+                        ? Component.translatable("mapfrontiers.unnamed", ChatFormatting.ITALIC)
+                        : Component.literal(collection.getName());
+            }
+            collectionInfoColumn.addChild(new StringWidget(collectionName, font).setColor(ColorConstants.WHITE));
+        }
 
         LinearLayout visibilityRow = LinearLayout.horizontal().spacing(MAIN_LAYOUT_SPACING);
         visibilityRow.defaultCellSetting().alignVerticallyMiddle();
@@ -292,14 +320,15 @@ public class FrontierInfoPage extends PageScreen
         buttonVisibilityOverride.setTooltip(VISIBILITY_OVERRIDE_TOOLTIP);
         visibilityRow.addChild(buttonVisibilityOverride);
 
-        LinearLayout pathStyleRow = LinearLayout.horizontal().spacing(MAIN_LAYOUT_SPACING);
-        pathStyleRow.defaultCellSetting().alignVerticallyMiddle();
-        nameColumn.addChild(pathStyleRow);
+        if (hasPathStyle) {
+            LinearLayout pathStyleRow = LinearLayout.horizontal().spacing(MAIN_LAYOUT_SPACING);
+            pathStyleRow.defaultCellSetting().alignVerticallyMiddle();
+            nameColumn.addChild(pathStyleRow);
 
-        buttonPathStyle = new SimpleButton(font, SECTION_WIDTH, PATH_STYLE_LABEL, b -> onPathStyleButtonPressed());
-        buttonPathStyle.visible = frontier.getMode() == FrontierData.Mode.Path;
-        pathStyleRow.addChild(buttonPathStyle);
-        pathStyleRow.addChild(SpacerElement.width(SECTION_WIDTH));
+            buttonPathStyle = new SimpleButton(font, SECTION_WIDTH, PATH_STYLE_LABEL, b -> onPathStyleButtonPressed());
+            pathStyleRow.addChild(buttonPathStyle);
+            pathStyleRow.addChild(SpacerElement.width(SECTION_WIDTH));
+        }
     }
 
     private TextBox createNameTextBox(String initialValue, Consumer<String> setter) {
@@ -316,32 +345,32 @@ public class FrontierInfoPage extends PageScreen
         LinearLayout infoColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_TINY);
         mainLayout.addChild(infoColumn, 0, 3, 1, 1, LayoutSettings.defaults().alignHorizontallyLeft());
 
-        MutableComponent owner = Component.translatable(OWNER_KEY, frontier.getOwner().toString());
+        MutableComponent owner = Component.translatable(OWNER_KEY, SettingsUserFormatter.getDisplayName(frontier.getOwner()));
         if (frontier.wasCopied()) {
             owner.append(Component.literal(ColorConstants.WARNING + " !"));
         }
         StringWidget ownerWidget = infoColumn.addChild(new StringWidget(owner, font).setColor(ColorConstants.WHITE));
         if (frontier.wasCopied()) {
             Tooltip ownerTooltip = Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET)
-                    .append(Component.translatable(ORIGINAL_OWNER_KEY, frontier.getCopiedFromUser().toString())));
+                    .append(Component.translatable(ORIGINAL_OWNER_KEY, SettingsUserFormatter.getDisplayName(frontier.getCopiedFromUser()))));
             ownerWidget.setTooltip(ownerTooltip);
         }
 
         LinearLayout identityRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         infoColumn.addChild(identityRow);
 
-        identityRow.addChild(new StringWidget(frontier.getPersonal() ? PERSONAL_LABEL : GLOBAL_LABEL, font).setColor(ColorConstants.WHITE));
+        identityRow.addChild(new StringWidget(getFrontierTypeLabel(), font).setColor(ColorConstants.WHITE));
         buttonChangeToPersonalGlobal = identityRow.addChild(new IconButton(IconButton.Type.Swap, b -> onChangePersonalGlobalPressed()));
         buttonChangeToPersonalGlobal.setTooltip(frontier.getPersonal() ? CHANGE_TO_GLOBAL_TOOLTIP : CHANGE_TO_PERSONAL_TOOLTIP);
 
-        Component shapeSummary = switch (frontier.getMode()) {
+        Component shapeSummary = switch (frontier.getShape()) {
             case Vertex -> Component.translatable(VERTICES_KEY, frontier.getVertexCount());
             case Chunk -> Component.translatable(CHUNKS_KEY, frontier.getChunkCount());
             case Path -> Component.translatable(POINTS_KEY, frontier.getPointCount());
         };
         infoColumn.addChild(new StringWidget(shapeSummary, font).setColor(ColorConstants.WHITE));
 
-        if (frontier.getMode() != FrontierData.Mode.Path) {
+        if (frontier.getShape() != FrontierShape.Path) {
             infoColumn.addChild(new StringWidget(Component.translatable(AREA_KEY, formatMeasurement(frontier.area)), font).setColor(ColorConstants.WHITE));
             infoColumn.addChild(new StringWidget(Component.translatable(PERIMETER_KEY, formatMeasurement(frontier.perimeter)), font).setColor(ColorConstants.WHITE));
         } else {
@@ -401,23 +430,26 @@ public class FrontierInfoPage extends PageScreen
         editColumn.addChild(SpacerElement.width(CLIPBOARD_SPACER_WIDTH), 0, 0);
         mainLayout.addChild(editColumn, 1, 3, LayoutSettings.defaults().alignVerticallyBottom());
 
-        labelPasteName = editColumn.addChild(new StringWidget(PASTE_NAME_LABEL, font).setColor(ColorConstants.TEXT), 0, 0);
-        buttonPasteName = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_NAME.get(), ClientConfig.PASTE_NAME::set), 0, 1);
+        int row = 0;
+        labelPasteName = editColumn.addChild(new StringWidget(PASTE_NAME_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        buttonPasteName = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_NAME.get(), ClientConfig.PASTE_NAME::set), row++, 1);
 
-        labelPasteVisibility = editColumn.addChild(new StringWidget(PASTE_VISIBILITY_LABEL, font).setColor(ColorConstants.TEXT), 1, 0);
-        buttonPasteVisibility = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_VISIBILITY.get(), ClientConfig.PASTE_VISIBILITY::set), 1, 1);
+        labelPasteVisibility = editColumn.addChild(new StringWidget(PASTE_VISIBILITY_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        buttonPasteVisibility = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_VISIBILITY.get(), ClientConfig.PASTE_VISIBILITY::set), row++, 1);
 
-        labelPastePathStyle = editColumn.addChild(new StringWidget(PASTE_PATH_STYLE_LABEL, font).setColor(ColorConstants.TEXT), 2, 0);
-        buttonPastePathStyle = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_PATH_STYLE.get(), ClientConfig.PASTE_PATH_STYLE::set), 2, 1);
+        if (hasPathStyle) {
+            labelPastePathStyle = editColumn.addChild(new StringWidget(PASTE_PATH_STYLE_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+            buttonPastePathStyle = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_PATH_STYLE.get(), ClientConfig.PASTE_PATH_STYLE::set), row++, 1);
+        }
 
-        labelPasteColor = editColumn.addChild(new StringWidget(PASTE_COLOR_LABEL, font).setColor(ColorConstants.TEXT), 3, 0);
-        buttonPasteColor = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_COLOR.get(), ClientConfig.PASTE_COLOR::set), 3, 1);
+        labelPasteColor = editColumn.addChild(new StringWidget(PASTE_COLOR_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        buttonPasteColor = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_COLOR.get(), ClientConfig.PASTE_COLOR::set), row++, 1);
 
-        labelPasteBanner = editColumn.addChild(new StringWidget(PASTE_BANNER_LABEL, font).setColor(ColorConstants.TEXT), 4, 0);
-        buttonPasteBanner = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_BANNER.get(), ClientConfig.PASTE_BANNER::set), 4, 1);
+        labelPasteBanner = editColumn.addChild(new StringWidget(PASTE_BANNER_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        buttonPasteBanner = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_BANNER.get(), ClientConfig.PASTE_BANNER::set), row++, 1);
 
         LinearLayout editButtons = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
-        editColumn.addChild(editButtons, 5, 0);
+        editColumn.addChild(editButtons, row, 0);
 
         buttonCopy = editButtons.addChild(new IconButton(IconButton.Type.Copy, b -> onCopyPressed()));
         buttonCopy.setTooltip(COPY_TOOLTIP);
@@ -428,7 +460,7 @@ public class FrontierInfoPage extends PageScreen
         buttonPaste = pasteButtons.addChild(new IconButton(IconButton.Type.Paste, b -> onPastePressed()));
         buttonPaste.setTooltip(PASTE_TOOLTIP);
 
-        buttonPasteOptions = pasteButtons.addChild(new IconButton(IconButton.Type.ArrowUp, b -> onPasteOptionsPressed()));
+        buttonPasteOptions = pasteButtons.addChild(new IconButton(IconButton.Type.ExpandOptions, b -> onPasteOptionsPressed()));
         buttonPasteOptions.setTooltip(OPEN_PASTE_TOOLTIP);
 
         buttonUndo = editButtons.addChild(new IconButton(IconButton.Type.Undo, b -> undo()));
@@ -440,7 +472,7 @@ public class FrontierInfoPage extends PageScreen
 
     private void buildBottomButtons() {
         buttonSelect = addBottomButton(new SimpleButton(font, SECTION_WIDTH, SELECT_IN_MAP_LABEL, b -> onSelectInMapPressed()));
-        buttonShareSettings = addBottomButton(new SimpleButton(font, SECTION_WIDTH, SHARE_SETTINGS_LABEL, b -> onSharePressed()));
+        buttonSharedAccess = addBottomButton(new SimpleButton(font, SECTION_WIDTH, SHARED_ACCESS_LABEL, b -> onSharedAccessPressed()));
         buttonDelete = addBottomButton(new SimpleButton(font, SECTION_WIDTH, DELETE_LABEL, b -> onDeletePressed()));
         buttonDelete.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
         buttonDone = addBottomButton(new SimpleButton(font, SECTION_WIDTH, DONE_LABEL, b -> onClose()));
@@ -489,6 +521,10 @@ public class FrontierInfoPage extends PageScreen
     }
 
     private void onChangePersonalGlobalPressed() {
+        if (frontier.isSessionOnly()) {
+            return;
+        }
+
         if (frontier.getPersonal()) {
             showChangeToGlobalConfirmation();
         } else {
@@ -519,7 +555,7 @@ public class FrontierInfoPage extends PageScreen
     }
 
     private void onVisibilityButtonPressed() {
-        FrontierData.VisibilityData baseVisibilityData = frontier.getVisibilityData();
+        VisibilityData baseVisibilityData = frontier.getVisibilityData();
         new VisibilityDialog(baseVisibilityData, (newVisibilityData, newVisibilityMask) -> {
             if (newVisibilityData.equals(baseVisibilityData)) {
                 return;
@@ -541,10 +577,10 @@ public class FrontierInfoPage extends PageScreen
     }
 
     private void onVisibilityOverrideButtonPressed() {
-        Pair<FrontierData.VisibilityData, FrontierData.VisibilityData> override = MapFrontiersClient.getLocalOverrides().getVisibility(frontier.getId());
+        Pair<VisibilityData, VisibilityData> override = MapFrontiersClient.getLocalOverrides().getVisibility(frontier.getId());
         new VisibilityDialog(override.first(), override.second(), (newVisibilityData, newVisibilityMask) -> {
             if (!newVisibilityData.equals(override.first()) || !newVisibilityMask.equals(override.second())) {
-                Pair<FrontierData.VisibilityData, FrontierData.VisibilityData> newOverride = Pair.of(newVisibilityData, newVisibilityMask);
+                Pair<VisibilityData, VisibilityData> newOverride = Pair.of(newVisibilityData, newVisibilityMask);
                 MapFrontiersClient.getLocalOverrides().setVisibility(frontier.getId(), newOverride);
                 frontier.setVisibilityOverride(newOverride);
             }
@@ -598,22 +634,27 @@ public class FrontierInfoPage extends PageScreen
     }
 
     private void onCopyPressed() {
-        MapFrontiersClient.setClipboard(frontier);
+        MapFrontiersClient.setFrontierClipboard(frontier);
         Minecraft.getInstance().keyboardHandler.setClipboard(frontier.getId().toString());
         updatePasteOptionsVisibility();
     }
 
     private void onPastePressed() {
-        FrontierData clipboard = MapFrontiersClient.getClipboard();
-        if (clipboard != null && (ClientConfig.PASTE_NAME.get() || ClientConfig.PASTE_VISIBILITY.get()
-                || ClientConfig.PASTE_PATH_STYLE.get() || ClientConfig.PASTE_COLOR.get() || ClientConfig.PASTE_BANNER.get())) {
-            setFrontier(clipboard, ClientConfig.PASTE_NAME.get(), ClientConfig.PASTE_VISIBILITY.get(),
-                    ClientConfig.PASTE_COLOR.get(), ClientConfig.PASTE_BANNER.get(), ClientConfig.PASTE_PATH_STYLE.get());
-            sendCurrentInfoChangesToServer();
-            rebuildWidgets();
-            repositionElements();
-            if (minecraft.getLastInputType().isKeyboard()) {
-                setInitialFocus(buttonPaste);
+        FrontierData clipboard = MapFrontiersClient.getFrontierClipboard();
+        if (clipboard != null) {
+            boolean pastePathStyleEnabled = hasPathStyle
+                    && ClientConfig.PASTE_PATH_STYLE.get()
+                    && clipboard.getShape() == FrontierShape.Path;
+            if (ClientConfig.PASTE_NAME.get() || ClientConfig.PASTE_VISIBILITY.get()
+                    || pastePathStyleEnabled || ClientConfig.PASTE_COLOR.get() || ClientConfig.PASTE_BANNER.get()) {
+                setFrontier(clipboard, ClientConfig.PASTE_NAME.get(), ClientConfig.PASTE_VISIBILITY.get(),
+                        pastePathStyleEnabled, ClientConfig.PASTE_COLOR.get(), ClientConfig.PASTE_BANNER.get());
+                sendCurrentInfoChangesToServer();
+                rebuildWidgets();
+                repositionElements();
+                if (minecraft.getLastInputType().isKeyboard()) {
+                    setInitialFocus(buttonPaste);
+                }
             }
         }
     }
@@ -630,9 +671,13 @@ public class FrontierInfoPage extends PageScreen
         Services.JOURNEYMAP.fullscreenMapCenterOn(center.getX(), center.getZ());
     }
 
-    private void onSharePressed() {
+    private void onSharedAccessPressed() {
+        if (frontier.isSessionOnly()) {
+            return;
+        }
+
         if (MapFrontiersClient.isModOnServer()) {
-            new ShareSettingsPage(frontier).display();
+            new SharedAccessPage(frontier).display();
         } else {
             new SendFrontierPage(frontier).display();
         }
@@ -640,16 +685,13 @@ public class FrontierInfoPage extends PageScreen
 
     private void onDeletePressed() {
         if (ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.get()) {
-            new DeleteConfirmationDialog(
-                    "mapfrontiers.delete_frontier_dialog",
-                    response -> {
-                        if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                            ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.set(false);
-                            ClientGlobalEvents.postUpdatedConfigEvent();
-                        }
-                        deleteFrontier();
-                    }
-            ).display();
+            new DeleteFrontierConfirmationDialog(frontier, response -> {
+                if (response == ConfirmationDialog.Response.ConfirmAlternative) {
+                    ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.set(false);
+                    ClientGlobalEvents.postUpdatedConfigEvent();
+                }
+                deleteFrontier();
+            }).display();
         } else {
             deleteFrontier();
         }
@@ -777,7 +819,7 @@ public class FrontierInfoPage extends PageScreen
         }
     }
 
-    private void setFrontier(FrontierData other, boolean name, boolean visibility, boolean color, boolean banner, boolean pathStyle) {
+    private void setFrontier(FrontierData other, boolean name, boolean visibility, boolean pathStyle, boolean color, boolean banner) {
         if (name) {
             frontier.setName1(other.getName1());
             frontier.setName2(other.getName2());
@@ -785,14 +827,14 @@ public class FrontierInfoPage extends PageScreen
         if (visibility) {
             frontier.setVisibilityData(other.getVisibilityData());
         }
+        if (pathStyle && frontier.getShape() == FrontierShape.Path && other.getShape() == FrontierShape.Path) {
+            frontier.setPathStyle(other.getPathStyle());
+        }
         if (color) {
             frontier.setColor(other.getColor());
         }
         if (banner) {
             frontier.setBannerData(other.getbannerData());
-        }
-        if (pathStyle && frontier.getMode() == FrontierData.Mode.Path && other.getMode() == FrontierData.Mode.Path) {
-            frontier.setPathStyle(other.getPathStyle());
         }
     }
 
@@ -856,8 +898,8 @@ public class FrontierInfoPage extends PageScreen
         textName2.setEditable(actions.canUpdate);
         buttonVisibility.active = actions.canUpdate;
         if (buttonPathStyle != null) {
-            buttonPathStyle.visible = frontier.getMode() == FrontierData.Mode.Path;
-            buttonPathStyle.active = actions.canUpdate && frontier.getMode() == FrontierData.Mode.Path;
+            buttonPathStyle.visible = hasPathStyle;
+            buttonPathStyle.active = actions.canUpdate && hasPathStyle;
         }
         textRed.setEditable(actions.canUpdate);
         textGreen.setEditable(actions.canUpdate);
@@ -867,7 +909,9 @@ public class FrontierInfoPage extends PageScreen
         colorPalette.active = actions.canUpdate;
         buttonPaste.active = actions.canUpdate;
         buttonPasteOptions.active = actions.canUpdate;
-        if (frontier.getPersonal()) {
+        if (frontier.isSessionOnly()) {
+            buttonChangeToPersonalGlobal.visible = false;
+        } else if (frontier.getPersonal()) {
             buttonChangeToPersonalGlobal.visible = MapFrontiersClient.isModOnServer()
                     && frontier.getOwner().equals(playerUser)
                     && profile != null
@@ -881,34 +925,39 @@ public class FrontierInfoPage extends PageScreen
         UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
         buttonSelect.active = uiState != null && frontier.getDimension().equals(uiState.dimension);
         if (MapFrontiersClient.isModOnServer()) {
-            buttonShareSettings.setMessage(SHARE_SETTINGS_LABEL);
-            buttonShareSettings.active = actions.canShare;
+            buttonSharedAccess.setMessage(SHARED_ACCESS_LABEL);
+            buttonSharedAccess.active = actions.canShare && !frontier.isSessionOnly();
         } else {
-            buttonShareSettings.setMessage(SEND_LABEL);
+            buttonSharedAccess.setMessage(SEND_LABEL);
+            buttonSharedAccess.active = !frontier.isSessionOnly();
         }
     }
 
     private void updatePasteOptionsVisibility() {
-        FrontierData clipboard = MapFrontiersClient.getClipboard();
-        buttonPaste.visible = buttonPaste.active && MapFrontiersClient.getClipboard() != null;
-        boolean pathStyleOptionVisible = buttonPaste.visible
-                && ClientConfig.PASTE_OPTIONS_VISIBLE.get()
-                && frontier.getMode() == FrontierData.Mode.Path
-                && clipboard != null
-                && clipboard.getMode() == FrontierData.Mode.Path;
-        buttonPasteOptions.visible = buttonPaste.visible;
-        buttonPasteOptions.setType(ClientConfig.PASTE_OPTIONS_VISIBLE.get() ? IconButton.Type.ArrowDown : IconButton.Type.ArrowUp);
+        FrontierData clipboard = MapFrontiersClient.getFrontierClipboard();
+        boolean hasClipboard = clipboard != null;
+        boolean showPaste = buttonPaste.active && hasClipboard;
+        boolean showPasteOptions = showPaste && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
+        boolean pathStyleOptionVisible = showPasteOptions && hasPathStyle && clipboard.getShape() == FrontierShape.Path;
+
+        buttonPaste.visible = showPaste;
+        buttonPasteOptions.visible = showPaste;
+        buttonPasteOptions.setType(ClientConfig.PASTE_OPTIONS_VISIBLE.get() ? IconButton.Type.CollapseOptions : IconButton.Type.ExpandOptions);
         buttonPasteOptions.setTooltip(ClientConfig.PASTE_OPTIONS_VISIBLE.get() ? CLOSE_PASTE_TOOLTIP : OPEN_PASTE_TOOLTIP);
-        buttonPasteName.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
-        buttonPasteVisibility.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
-        buttonPastePathStyle.visible = pathStyleOptionVisible;
-        buttonPasteColor.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
-        buttonPasteBanner.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
-        labelPasteName.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
-        labelPasteVisibility.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
-        labelPastePathStyle.visible = pathStyleOptionVisible;
-        labelPasteColor.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
-        labelPasteBanner.visible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
+        buttonPasteName.visible = showPasteOptions;
+        buttonPasteVisibility.visible = showPasteOptions;
+        if (buttonPastePathStyle != null) {
+            buttonPastePathStyle.visible = pathStyleOptionVisible;
+        }
+        buttonPasteColor.visible = showPasteOptions;
+        buttonPasteBanner.visible = showPasteOptions;
+        labelPasteName.visible = showPasteOptions;
+        labelPasteVisibility.visible = showPasteOptions;
+        if (labelPastePathStyle != null) {
+            labelPastePathStyle.visible = pathStyleOptionVisible;
+        }
+        labelPasteColor.visible = showPasteOptions;
+        labelPasteBanner.visible = showPasteOptions;
     }
 
     private void updateUndoRedoVisibility() {
@@ -952,7 +1001,7 @@ public class FrontierInfoPage extends PageScreen
         change.setVisibility(frontier.getVisibilityData());
         change.setColor(frontier.getColor());
         change.setBanner(frontier.getbannerData());
-        if (frontier.getMode() == FrontierData.Mode.Path) {
+        if (hasPathStyle) {
             change.setPathStyle(frontier.getPathStyle());
         }
         sendChangeToServer(change);
@@ -984,7 +1033,7 @@ public class FrontierInfoPage extends PageScreen
                     || !Objects.equals(u.getVisibilityData(), frontier.getVisibilityData())
                     || u.getColor() != frontier.getColor()
                     || !Objects.equals(u.getbannerData(), frontier.getbannerData())
-                    || (u.getMode() == FrontierData.Mode.Path && frontier.getMode() == FrontierData.Mode.Path
+                    || (u.getShape() == FrontierShape.Path && frontier.getShape() == FrontierShape.Path
                     && !Objects.equals(u.getPathStyle(), frontier.getPathStyle()))) {
                 add = true;
             }
@@ -1000,4 +1049,13 @@ public class FrontierInfoPage extends PageScreen
             updateUndoRedoVisibility();
         }
     }
+
+    private Component getFrontierTypeLabel() {
+        Component baseType = frontier.getPersonal() ? PERSONAL_LABEL : GLOBAL_LABEL;
+        if (frontier.isSessionOnly()) {
+            return Component.translatable(TEMPORARY_KEY).append(Component.literal(" ")).append(baseType);
+        }
+        return baseType;
+    }
+
 }

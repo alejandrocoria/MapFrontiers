@@ -7,7 +7,6 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 public final class ColorConstants {
     public static final int WHITE = 0xFFFFFFFF;
-    public static final int BLACK = 0xFF000000;
 
     public static final int CHECKBOX_BG = 0xFF000000;
     public static final int CHECKBOX_BORDER = 0xFF444444;
@@ -33,6 +32,7 @@ public final class ColorConstants {
     public static final int SCROLLBAR_BG = 0x1AFFFFFF;
     public static final int SCROLLBAR_GRABBED = 0xFF666666;
     public static final int SCROLLBAR_HOVERED = 0xFFAAAAAA;
+    public static final int SCROLL_HEADER = 0xFF666666;
     public static final int SCROLL_ELEMENT_HOVERED = 0xA0303030;
     public static final int SCROLL_ELEMENT_SELECTED = 0xFF303030;
     public static final int SIMPLE_BUTTON_BORDER = 0xFF777777;
@@ -59,12 +59,12 @@ public final class ColorConstants {
     public static final int TEXTBOX_TEXT = 0xFFE0E0E0;
     public static final int TEXT_DARK = 0xFF777777;
     public static final int TEXT_DIMENSION = 0xFF999999;
-    public static final int TEXT_SOURCE_PLUGIN = 0xFFFFFF00;
     public static final int TEXT_ERROR = 0xFFDD1111;
     public static final int TEXT_ERROR_HIGHLIGHT = 0xFFFF4444;
     public static final int TEXT_HIGHLIGHT = 0xFFFFFFFF;
     public static final int TEXT_MEDIUM = 0xFFAAAAAA;
     public static final int TEXT_PENDING = 0xFF00DD00;
+    public static final int VIRTUAL_COLLECTION = 0xFF666666;
 
     public static final ChatFormatting WARNING = ChatFormatting.YELLOW;
 

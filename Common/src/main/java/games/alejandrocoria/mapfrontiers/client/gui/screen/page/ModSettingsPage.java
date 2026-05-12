@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.screen.page;
 
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
+import games.alejandrocoria.mapfrontiers.client.config.FrontierDisplayVisibility;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
@@ -21,6 +22,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.HUDSettingsScreen;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationSettingsDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.FrontierAppearanceDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.PathStyleDialog;
@@ -29,7 +31,6 @@ import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.config.BooleanConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketRequestFrontierSettings;
@@ -38,9 +39,13 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings.Action
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
+import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
@@ -62,8 +67,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
-public class ModSettingsPage extends PageScreen
-{
+public class ModSettingsPage extends PageScreen {
     public enum Tab {
         Credits, General, Groups, Actions
     }
@@ -93,6 +97,7 @@ public class ModSettingsPage extends PageScreen
     private static final Component DEFAULT_PATH_STYLE_LABEL = Component.translatable("mapfrontiers.default_path_style");
     private static final Component FORCED_VISIBILITY_LABEL = Component.translatable("mapfrontiers.forced_visibility");
     private static final Component GUI_LABEL = Component.translatable("mapfrontiers.gui");
+    private static final Component CONFIRMATION_DIALOGS_LABEL = Component.translatable("mapfrontiers.confirmation_dialogs");
     private static final Component HUD_LABEL = Component.translatable("mapfrontiers.hud");
     private static final Component ON_LABEL = Component.translatable("options.on");
     private static final Component OFF_LABEL = Component.translatable("options.off");
@@ -106,6 +111,7 @@ public class ModSettingsPage extends PageScreen
     private static final Component UPDATE_SETTINGS_LABEL = Component.translatable("mapfrontiers.update_settings");
     private static final Component SHARE_PERSONAL_FRONTIER_LABEL = Component.translatable("mapfrontiers.share_personal_frontier");
     private static final Component DONE_LABEL = Component.translatable("gui.done");
+    private static final Tooltip ADD_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.add.tooltip"));
     private static final int DEFAULT_OPTION_WIDTH = 40;
     private static final int DEFAULT_TEXTBOX_WIDTH = 40;
     private static final int BUTTON_HORIZONTAL_PADDING = 8;
@@ -116,15 +122,15 @@ public class ModSettingsPage extends PageScreen
     private static final int USERS_SCROLL_WIDTH = 258;
     private static final int ACTIONS_SCROLL_WIDTH = 430;
     private static final int GROUP_NAME_WIDTH = 140;
-    private static final int GROUPS_MIN_ROWS = 20;
-    private static final int USERS_MIN_ROWS = 17;
-    private static final int ACTIONS_MIN_ROWS = 20;
+    private static final int GROUPS_MIN_ROWS = 19;
+    private static final int USERS_MIN_ROWS = 16;
+    private static final int ACTIONS_MIN_ROWS = 19;
     private static final int GROUPS_ELEMENT_HEIGHT = 15;
-    private static final int USERS_ELEMENT_HEIGHT = 16;
+    private static final int USERS_ELEMENT_HEIGHT = 15;
     private static final int ACTIONS_ELEMENT_HEIGHT = 15;
     private static final int GROUPS_VERTICAL_MARGIN = 120;
-    private static final int USERS_VERTICAL_MARGIN = 160;
-    private static final int ACTIONS_VERTICAL_MARGIN = 128;
+    private static final int USERS_VERTICAL_MARGIN = 159;
+    private static final int ACTIONS_VERTICAL_MARGIN = 138;
 
     private final boolean showKeyHint;
 
@@ -132,8 +138,7 @@ public class ModSettingsPage extends PageScreen
     private TabbedBox tabbedBox;
     private SimpleButton buttonFrontierAppearance;
     private SimpleButton buttonDefaultPathStyle;
-    private OptionButton buttonAskConfirmationGroupDelete;
-    private OptionButton buttonAskConfirmationUserDelete;
+    private SimpleButton buttonConfirmationDialogs;
     private SimpleButton buttonEditHUD;
     private ScrollBox groups;
     private MultiLineTextWidget labelGroupDesc;
@@ -229,8 +234,7 @@ public class ModSettingsPage extends PageScreen
     private void buildCreditsTab() {
         LinearLayout creditsLayout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         creditsLayout.defaultCellSetting().alignHorizontallyCenter();
-        tabbedBox.addChild(creditsLayout, Tab.Credits.ordinal(),
-                LayoutSettings.defaults().alignHorizontallyCenter().alignVerticallyTop());
+        tabbedBox.addChild(creditsLayout, Tab.Credits.ordinal());
 
         creditsLayout.addChild(new StringWidget(CREATED_BY_LABEL, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
         creditsLayout.addChild(createWideExternalLinkButton(WEB_LINK_LABEL, WEB_URL));
@@ -251,8 +255,7 @@ public class ModSettingsPage extends PageScreen
     private void buildGeneralTab() {
         LinearLayout generalLayout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         generalLayout.defaultCellSetting().alignHorizontallyCenter();
-        tabbedBox.addChild(generalLayout, Tab.General.ordinal(),
-                LayoutSettings.defaults().alignHorizontallyCenter().alignVerticallyTop());
+        tabbedBox.addChild(generalLayout, Tab.General.ordinal());
 
         generalLayout.addChild(new StringWidget(FRONTIERS_LABEL, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
 
@@ -301,13 +304,10 @@ public class ModSettingsPage extends PageScreen
                 LayoutSettings.defaults().alignHorizontallyCenter());
 
         row = addOptionSettingRow(settingsGrid, row, ClientConfig.FULLSCREEN_BUTTONS);
-        row = addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE);
-        buttonAskConfirmationGroupDelete = createOnOffOptionButton(ClientConfig.ASK_CONFIRMATION_GROUP_DELETE);
-        row = addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_GROUP_DELETE,
-                buttonAskConfirmationGroupDelete);
-        buttonAskConfirmationUserDelete = createOnOffOptionButton(ClientConfig.ASK_CONFIRMATION_USER_DELETE);
-        return addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_USER_DELETE,
-                buttonAskConfirmationUserDelete);
+        buttonConfirmationDialogs = createWideSimpleButton(LayoutConstants.PAGE_BUTTON_WIDTH, CONFIRMATION_DIALOGS_LABEL,
+                b -> onConfirmationDialogsPressed());
+        settingsGrid.addChild(buttonConfirmationDialogs, row, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
+        return row + 1;
     }
 
     private void buildHudSection(LinearLayout generalLayout, GridLayout settingsGrid, int row) {
@@ -340,7 +340,8 @@ public class ModSettingsPage extends PageScreen
     }
 
     private void buildGroupsList(LinearLayout groupsColumn) {
-        groups = groupsColumn.addChild(ScrollBox.withRows(GROUPS_MIN_ROWS, GROUPS_SCROLL_WIDTH, GROUPS_ELEMENT_HEIGHT));
+        groups = groupsColumn.addChild(new ScrollBox(ScrollBox.rowsToHeight(GROUPS_MIN_ROWS, GROUPS_ELEMENT_HEIGHT),
+                GROUPS_SCROLL_WIDTH, GROUPS_ELEMENT_HEIGHT));
         groups.setElementClickedCallback(element -> {
             onGroupElementClicked((GroupElement) element);
             updateButtonsVisibility();
@@ -350,6 +351,7 @@ public class ModSettingsPage extends PageScreen
 
     private void buildNewGroupControls(LinearLayout groupsColumn) {
         LinearLayout newGroupLayout = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
+        newGroupLayout.defaultCellSetting().alignVerticallyMiddle();
         groupsColumn.addChild(newGroupLayout);
 
         textNewGroupName = newGroupLayout.addChild(new TextBox(font, GROUP_NAME_WIDTH, I18n.get("mapfrontiers.new_group_name")));
@@ -357,6 +359,7 @@ public class ModSettingsPage extends PageScreen
         textNewGroupName.setSubmitCallback(value -> onNewGroupPressed());
 
         buttonNewGroup = newGroupLayout.addChild(new IconButton(IconButton.Type.Add, b -> onNewGroupPressed()));
+        buttonNewGroup.setTooltip(ADD_TOOLTIP);
     }
 
     private void buildUsersPanel(LinearLayout usersColumn) {
@@ -366,12 +369,14 @@ public class ModSettingsPage extends PageScreen
 
         labelGroupDesc = usersColumn.addChild(new MultiLineTextWidget(GROUP_OPS_DESC_LABEL.copy().withColor(ColorConstants.TEXT), font));
 
-        users = usersColumn.addChild(ScrollBox.withRows(USERS_MIN_ROWS, USERS_SCROLL_WIDTH, USERS_ELEMENT_HEIGHT));
+        users = usersColumn.addChild(new ScrollBox(ScrollBox.rowsToHeight(USERS_MIN_ROWS, USERS_ELEMENT_HEIGHT),
+                USERS_SCROLL_WIDTH, USERS_ELEMENT_HEIGHT));
         users.setElementDeletePressedCallback(this::onUserDeletePressed);
     }
 
     private void buildNewUserControls(LinearLayout usersColumn) {
         LinearLayout newUserLayout = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
+        newUserLayout.defaultCellSetting().alignVerticallyMiddle();
         usersColumn.addChild(newUserLayout);
 
         textNewUser = newUserLayout.addChild(new TextBoxUser(minecraft, font, LayoutConstants.USER_TEXTBOX_WIDTH, I18n.get("mapfrontiers.new_user")));
@@ -379,6 +384,7 @@ public class ModSettingsPage extends PageScreen
         textNewUser.setSubmitCallback(value -> onNewUserPressed());
 
         buttonNewUser = newUserLayout.addChild(new IconButton(IconButton.Type.Add, b -> onNewUserPressed()));
+        buttonNewUser.setTooltip(ADD_TOOLTIP);
     }
 
     private void buildActionsTab() {
@@ -395,7 +401,9 @@ public class ModSettingsPage extends PageScreen
         labelUpdateSettings = actionsHeader.addChild(createActionsHeaderLabel(UPDATE_SETTINGS_LABEL));
         labelSharePersonalFrontier = actionsHeader.addChild(createActionsHeaderLabel(SHARE_PERSONAL_FRONTIER_LABEL));
 
-        groupsActions = actionsLayout.addChild(ScrollBox.withRows(ACTIONS_MIN_ROWS, ACTIONS_SCROLL_WIDTH, ACTIONS_ELEMENT_HEIGHT));
+        groupsActions = actionsLayout.addChild(new ScrollBox(ScrollBox.rowsToHeight(ACTIONS_MIN_ROWS, ACTIONS_ELEMENT_HEIGHT),
+                ACTIONS_SCROLL_WIDTH, ACTIONS_ELEMENT_HEIGHT));
+        groupsActions.setHorizontalEdgeNavigation(ScrollBox.HorizontalEdgeNavigation.WRAP_WITHIN_ROW);
     }
 
     private void buildBottomButtons() {
@@ -520,6 +528,10 @@ public class ModSettingsPage extends PageScreen
         new HUDSettingsScreen().display();
     }
 
+    private void onConfirmationDialogsPressed() {
+        new ConfirmationSettingsDialog().display();
+    }
+
     private void onHudEnabledChanged(boolean enabled) {
         ClientConfig.HUD_ENABLED.set(enabled);
         updateButtonsVisibility();
@@ -551,7 +563,6 @@ public class ModSettingsPage extends PageScreen
                 response -> {
                     if (response == ConfirmationDialog.Response.ConfirmAlternative) {
                         ClientConfig.ASK_CONFIRMATION_GROUP_DELETE.set(false);
-                        buttonAskConfirmationGroupDelete.setSelected(1);
                         ClientGlobalEvents.postUpdatedConfigEvent();
                     }
                     deleteGroup(element);
@@ -589,7 +600,6 @@ public class ModSettingsPage extends PageScreen
                 response -> {
                     if (response == ConfirmationDialog.Response.ConfirmAlternative) {
                         ClientConfig.ASK_CONFIRMATION_USER_DELETE.set(false);
-                        buttonAskConfirmationUserDelete.setSelected(1);
                         ClientGlobalEvents.postUpdatedConfigEvent();
                     }
                     deleteUser(group, element);
@@ -664,31 +674,21 @@ public class ModSettingsPage extends PageScreen
     }
 
     @Override
-    protected int getMinimumLayoutExtraWidth() {
-        return LayoutConstants.PAGE_MARGIN * 2;
-    }
-
-    @Override
-    protected int getMinimumLayoutExtraHeight() {
-        return LayoutConstants.PAGE_MARGIN * 2;
-    }
-
-    @Override
     protected void resetContentToMinimumSize() {
         tabbedBox.setSizeToContent();
-        groups.setVisibleRows(GROUPS_MIN_ROWS);
-        users.setVisibleRows(USERS_MIN_ROWS);
-        groupsActions.setVisibleRows(ACTIONS_MIN_ROWS);
+        groups.setViewportHeight(ScrollBox.rowsToHeight(GROUPS_MIN_ROWS, GROUPS_ELEMENT_HEIGHT));
+        users.setViewportHeight(ScrollBox.rowsToHeight(USERS_MIN_ROWS, USERS_ELEMENT_HEIGHT));
+        groupsActions.setViewportHeight(ScrollBox.rowsToHeight(ACTIONS_MIN_ROWS, ACTIONS_ELEMENT_HEIGHT));
     }
 
     @Override
     protected void resizeContentToAvailableSpace() {
         tabbedBox.setSize(availableWidth(LayoutConstants.PAGE_MARGIN * 2), availableHeight(LayoutConstants.PAGE_MARGIN * 2));
-        groups.setHeight(Math.max(ScrollBox.heightForRows(GROUPS_MIN_ROWS, GROUPS_ELEMENT_HEIGHT),
+        groups.setViewportHeight(Math.max(ScrollBox.rowsToHeight(GROUPS_MIN_ROWS, GROUPS_ELEMENT_HEIGHT),
                 availableHeight(GROUPS_VERTICAL_MARGIN)));
-        users.setHeight(Math.max(ScrollBox.heightForRows(USERS_MIN_ROWS, USERS_ELEMENT_HEIGHT),
+        users.setViewportHeight(Math.max(ScrollBox.rowsToHeight(USERS_MIN_ROWS, USERS_ELEMENT_HEIGHT),
                 availableHeight(USERS_VERTICAL_MARGIN)));
-        groupsActions.setHeight(Math.max(ScrollBox.heightForRows(ACTIONS_MIN_ROWS, ACTIONS_ELEMENT_HEIGHT),
+        groupsActions.setViewportHeight(Math.max(ScrollBox.rowsToHeight(ACTIONS_MIN_ROWS, ACTIONS_ELEMENT_HEIGHT),
                 availableHeight(ACTIONS_VERTICAL_MARGIN)));
     }
 
@@ -794,114 +794,126 @@ public class ModSettingsPage extends PageScreen
         return super.mouseReleased(event);
     }
 
-    private FrontierData.VisibilityData createForcedVisibility() {
-        FrontierData.VisibilityData visibilityData = new FrontierData.VisibilityData();
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.Frontier, ClientConfig.FRONTIER_VISIBILITY.get() != ClientConfig.Visibility.Never);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.AnnounceInChat, ClientConfig.ANNOUNCE_IN_CHAT.get() == ClientConfig.Visibility.Always);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.AnnounceInTitle, ClientConfig.ANNOUNCE_IN_TITLE.get() == ClientConfig.Visibility.Always);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.Fullscreen, ClientConfig.FULLSCREEN_VISIBILITY.get() != ClientConfig.Visibility.Never);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenName, ClientConfig.FULLSCREEN_NAME_VISIBILITY.get() != ClientConfig.Visibility.Never);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenOwner, ClientConfig.FULLSCREEN_OWNER_VISIBILITY.get() == ClientConfig.Visibility.Always);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenBanner, ClientConfig.FULLSCREEN_BANNER_VISIBILITY.get() == ClientConfig.Visibility.Always);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenDay, ClientConfig.FULLSCREEN_DAY_VISIBILITY.get() != ClientConfig.Visibility.Never);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenNight, ClientConfig.FULLSCREEN_NIGHT_VISIBILITY.get() != ClientConfig.Visibility.Never);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenUnderground, ClientConfig.FULLSCREEN_UNDERGROUND_VISIBILITY.get() != ClientConfig.Visibility.Never);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenTopo, ClientConfig.FULLSCREEN_TOPO_VISIBILITY.get() != ClientConfig.Visibility.Never);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenBiome, ClientConfig.FULLSCREEN_BIOME_VISIBILITY.get() != ClientConfig.Visibility.Never);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.Minimap, ClientConfig.MINIMAP_VISIBILITY.get() != ClientConfig.Visibility.Never);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapName, ClientConfig.MINIMAP_NAME_VISIBILITY.get() != ClientConfig.Visibility.Never);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapOwner, ClientConfig.MINIMAP_OWNER_VISIBILITY.get() == ClientConfig.Visibility.Always);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapBanner, ClientConfig.MINIMAP_BANNER_VISIBILITY.get() == ClientConfig.Visibility.Always);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapDay, ClientConfig.MINIMAP_DAY_VISIBILITY.get() != ClientConfig.Visibility.Never);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapNight, ClientConfig.MINIMAP_NIGHT_VISIBILITY.get() != ClientConfig.Visibility.Never);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapUnderground, ClientConfig.MINIMAP_UNDERGROUND_VISIBILITY.get() != ClientConfig.Visibility.Never);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapTopo, ClientConfig.MINIMAP_TOPO_VISIBILITY.get() != ClientConfig.Visibility.Never);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapBiome, ClientConfig.MINIMAP_BIOME_VISIBILITY.get() != ClientConfig.Visibility.Never);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.Webmap, ClientConfig.WEBMAP_VISIBILITY.get() != ClientConfig.Visibility.Never);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapName, ClientConfig.WEBMAP_NAME_VISIBILITY.get() != ClientConfig.Visibility.Never);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapOwner, ClientConfig.WEBMAP_OWNER_VISIBILITY.get() == ClientConfig.Visibility.Always);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapBanner, ClientConfig.WEBMAP_BANNER_VISIBILITY.get() == ClientConfig.Visibility.Always);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapDay, ClientConfig.WEBMAP_DAY_VISIBILITY.get() != ClientConfig.Visibility.Never);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapNight, ClientConfig.WEBMAP_NIGHT_VISIBILITY.get() != ClientConfig.Visibility.Never);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapUnderground, ClientConfig.WEBMAP_UNDERGROUND_VISIBILITY.get() != ClientConfig.Visibility.Never);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapTopo, ClientConfig.WEBMAP_TOPO_VISIBILITY.get() != ClientConfig.Visibility.Never);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapBiome, ClientConfig.WEBMAP_BIOME_VISIBILITY.get() != ClientConfig.Visibility.Never);
+    private VisibilityData createForcedVisibility() {
+        VisibilityData visibilityData = new VisibilityData();
+        visibilityData.setValue(FrontierVisibility.Frontier, ClientConfig.FRONTIER_VISIBILITY.get() != FrontierDisplayVisibility.Never);
+        visibilityData.setValue(FrontierVisibility.AnnounceInChat, ClientConfig.ANNOUNCE_IN_CHAT.get() == FrontierDisplayVisibility.Always);
+        visibilityData.setValue(FrontierVisibility.AnnounceInTitle, ClientConfig.ANNOUNCE_IN_TITLE.get() == FrontierDisplayVisibility.Always);
+        visibilityData.setValue(FrontierVisibility.MentionCollection, ClientConfig.MENTION_COLLECTION.get() != FrontierDisplayVisibility.Never);
+        visibilityData.setValue(FrontierVisibility.Fullscreen, ClientConfig.FULLSCREEN_VISIBILITY.get() != FrontierDisplayVisibility.Never);
+        visibilityData.setValue(FrontierVisibility.FullscreenName, ClientConfig.FULLSCREEN_NAME_VISIBILITY.get() != FrontierDisplayVisibility.Never);
+        visibilityData.setValue(FrontierVisibility.FullscreenCollection, ClientConfig.FULLSCREEN_COLLECTION_VISIBILITY.get() == FrontierDisplayVisibility.Always);
+        visibilityData.setValue(FrontierVisibility.FullscreenOwner, ClientConfig.FULLSCREEN_OWNER_VISIBILITY.get() == FrontierDisplayVisibility.Always);
+        visibilityData.setValue(FrontierVisibility.FullscreenBanner, ClientConfig.FULLSCREEN_BANNER_VISIBILITY.get() == FrontierDisplayVisibility.Always);
+        visibilityData.setValue(FrontierVisibility.FullscreenDay, ClientConfig.FULLSCREEN_DAY_VISIBILITY.get() != FrontierDisplayVisibility.Never);
+        visibilityData.setValue(FrontierVisibility.FullscreenNight, ClientConfig.FULLSCREEN_NIGHT_VISIBILITY.get() != FrontierDisplayVisibility.Never);
+        visibilityData.setValue(FrontierVisibility.FullscreenUnderground, ClientConfig.FULLSCREEN_UNDERGROUND_VISIBILITY.get() != FrontierDisplayVisibility.Never);
+        visibilityData.setValue(FrontierVisibility.FullscreenTopo, ClientConfig.FULLSCREEN_TOPO_VISIBILITY.get() != FrontierDisplayVisibility.Never);
+        visibilityData.setValue(FrontierVisibility.FullscreenBiome, ClientConfig.FULLSCREEN_BIOME_VISIBILITY.get() != FrontierDisplayVisibility.Never);
+        visibilityData.setValue(FrontierVisibility.Minimap, ClientConfig.MINIMAP_VISIBILITY.get() != FrontierDisplayVisibility.Never);
+        visibilityData.setValue(FrontierVisibility.MinimapName, ClientConfig.MINIMAP_NAME_VISIBILITY.get() != FrontierDisplayVisibility.Never);
+        visibilityData.setValue(FrontierVisibility.MinimapCollection, ClientConfig.MINIMAP_COLLECTION_VISIBILITY.get() == FrontierDisplayVisibility.Always);
+        visibilityData.setValue(FrontierVisibility.MinimapOwner, ClientConfig.MINIMAP_OWNER_VISIBILITY.get() == FrontierDisplayVisibility.Always);
+        visibilityData.setValue(FrontierVisibility.MinimapBanner, ClientConfig.MINIMAP_BANNER_VISIBILITY.get() == FrontierDisplayVisibility.Always);
+        visibilityData.setValue(FrontierVisibility.MinimapDay, ClientConfig.MINIMAP_DAY_VISIBILITY.get() != FrontierDisplayVisibility.Never);
+        visibilityData.setValue(FrontierVisibility.MinimapNight, ClientConfig.MINIMAP_NIGHT_VISIBILITY.get() != FrontierDisplayVisibility.Never);
+        visibilityData.setValue(FrontierVisibility.MinimapUnderground, ClientConfig.MINIMAP_UNDERGROUND_VISIBILITY.get() != FrontierDisplayVisibility.Never);
+        visibilityData.setValue(FrontierVisibility.MinimapTopo, ClientConfig.MINIMAP_TOPO_VISIBILITY.get() != FrontierDisplayVisibility.Never);
+        visibilityData.setValue(FrontierVisibility.MinimapBiome, ClientConfig.MINIMAP_BIOME_VISIBILITY.get() != FrontierDisplayVisibility.Never);
+        visibilityData.setValue(FrontierVisibility.Webmap, ClientConfig.WEBMAP_VISIBILITY.get() != FrontierDisplayVisibility.Never);
+        visibilityData.setValue(FrontierVisibility.WebmapName, ClientConfig.WEBMAP_NAME_VISIBILITY.get() != FrontierDisplayVisibility.Never);
+        visibilityData.setValue(FrontierVisibility.WebmapCollection, ClientConfig.WEBMAP_COLLECTION_VISIBILITY.get() == FrontierDisplayVisibility.Always);
+        visibilityData.setValue(FrontierVisibility.WebmapOwner, ClientConfig.WEBMAP_OWNER_VISIBILITY.get() == FrontierDisplayVisibility.Always);
+        visibilityData.setValue(FrontierVisibility.WebmapBanner, ClientConfig.WEBMAP_BANNER_VISIBILITY.get() == FrontierDisplayVisibility.Always);
+        visibilityData.setValue(FrontierVisibility.WebmapDay, ClientConfig.WEBMAP_DAY_VISIBILITY.get() != FrontierDisplayVisibility.Never);
+        visibilityData.setValue(FrontierVisibility.WebmapNight, ClientConfig.WEBMAP_NIGHT_VISIBILITY.get() != FrontierDisplayVisibility.Never);
+        visibilityData.setValue(FrontierVisibility.WebmapUnderground, ClientConfig.WEBMAP_UNDERGROUND_VISIBILITY.get() != FrontierDisplayVisibility.Never);
+        visibilityData.setValue(FrontierVisibility.WebmapTopo, ClientConfig.WEBMAP_TOPO_VISIBILITY.get() != FrontierDisplayVisibility.Never);
+        visibilityData.setValue(FrontierVisibility.WebmapBiome, ClientConfig.WEBMAP_BIOME_VISIBILITY.get() != FrontierDisplayVisibility.Never);
         return visibilityData;
     }
 
-    private FrontierData.VisibilityData createForcedVisibilityMask() {
-        FrontierData.VisibilityData visibilityData = new FrontierData.VisibilityData();
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.Frontier, ClientConfig.FRONTIER_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.AnnounceInChat, ClientConfig.ANNOUNCE_IN_CHAT.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.AnnounceInTitle, ClientConfig.ANNOUNCE_IN_TITLE.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.Fullscreen, ClientConfig.FULLSCREEN_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenName, ClientConfig.FULLSCREEN_NAME_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenOwner, ClientConfig.FULLSCREEN_OWNER_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenBanner, ClientConfig.FULLSCREEN_BANNER_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenDay, ClientConfig.FULLSCREEN_DAY_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenNight, ClientConfig.FULLSCREEN_NIGHT_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenUnderground, ClientConfig.FULLSCREEN_UNDERGROUND_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenTopo, ClientConfig.FULLSCREEN_TOPO_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.FullscreenBiome, ClientConfig.FULLSCREEN_BIOME_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.Minimap, ClientConfig.MINIMAP_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapName, ClientConfig.MINIMAP_NAME_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapOwner, ClientConfig.MINIMAP_OWNER_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapBanner, ClientConfig.MINIMAP_BANNER_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapDay, ClientConfig.MINIMAP_DAY_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapNight, ClientConfig.MINIMAP_NIGHT_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapUnderground, ClientConfig.MINIMAP_UNDERGROUND_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapTopo, ClientConfig.MINIMAP_TOPO_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.MinimapBiome, ClientConfig.MINIMAP_BIOME_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.Webmap, ClientConfig.WEBMAP_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapName, ClientConfig.WEBMAP_NAME_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapOwner, ClientConfig.WEBMAP_OWNER_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapBanner, ClientConfig.WEBMAP_BANNER_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapDay, ClientConfig.WEBMAP_DAY_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapNight, ClientConfig.WEBMAP_NIGHT_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapUnderground, ClientConfig.WEBMAP_UNDERGROUND_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapTopo, ClientConfig.WEBMAP_TOPO_VISIBILITY.get() != ClientConfig.Visibility.Custom);
-        visibilityData.setValue(FrontierData.VisibilityData.Visibility.WebmapBiome, ClientConfig.WEBMAP_BIOME_VISIBILITY.get() != ClientConfig.Visibility.Custom);
+    private VisibilityData createForcedVisibilityMask() {
+        VisibilityData visibilityData = new VisibilityData();
+        visibilityData.setValue(FrontierVisibility.Frontier, ClientConfig.FRONTIER_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.AnnounceInChat, ClientConfig.ANNOUNCE_IN_CHAT.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.AnnounceInTitle, ClientConfig.ANNOUNCE_IN_TITLE.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.MentionCollection, ClientConfig.MENTION_COLLECTION.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.Fullscreen, ClientConfig.FULLSCREEN_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.FullscreenName, ClientConfig.FULLSCREEN_NAME_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.FullscreenCollection, ClientConfig.FULLSCREEN_COLLECTION_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.FullscreenOwner, ClientConfig.FULLSCREEN_OWNER_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.FullscreenBanner, ClientConfig.FULLSCREEN_BANNER_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.FullscreenDay, ClientConfig.FULLSCREEN_DAY_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.FullscreenNight, ClientConfig.FULLSCREEN_NIGHT_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.FullscreenUnderground, ClientConfig.FULLSCREEN_UNDERGROUND_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.FullscreenTopo, ClientConfig.FULLSCREEN_TOPO_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.FullscreenBiome, ClientConfig.FULLSCREEN_BIOME_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.Minimap, ClientConfig.MINIMAP_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.MinimapName, ClientConfig.MINIMAP_NAME_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.MinimapCollection, ClientConfig.MINIMAP_COLLECTION_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.MinimapOwner, ClientConfig.MINIMAP_OWNER_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.MinimapBanner, ClientConfig.MINIMAP_BANNER_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.MinimapDay, ClientConfig.MINIMAP_DAY_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.MinimapNight, ClientConfig.MINIMAP_NIGHT_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.MinimapUnderground, ClientConfig.MINIMAP_UNDERGROUND_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.MinimapTopo, ClientConfig.MINIMAP_TOPO_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.MinimapBiome, ClientConfig.MINIMAP_BIOME_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.Webmap, ClientConfig.WEBMAP_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.WebmapName, ClientConfig.WEBMAP_NAME_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.WebmapCollection, ClientConfig.WEBMAP_COLLECTION_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.WebmapOwner, ClientConfig.WEBMAP_OWNER_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.WebmapBanner, ClientConfig.WEBMAP_BANNER_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.WebmapDay, ClientConfig.WEBMAP_DAY_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.WebmapNight, ClientConfig.WEBMAP_NIGHT_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.WebmapUnderground, ClientConfig.WEBMAP_UNDERGROUND_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.WebmapTopo, ClientConfig.WEBMAP_TOPO_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        visibilityData.setValue(FrontierVisibility.WebmapBiome, ClientConfig.WEBMAP_BIOME_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
         return visibilityData;
     }
 
-    private void setForcedVisibility(FrontierData.VisibilityData visibilityData, FrontierData.VisibilityData visibilityDataMask) {
-        ClientConfig.FRONTIER_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.Frontier));
-        ClientConfig.ANNOUNCE_IN_CHAT.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.AnnounceInChat));
-        ClientConfig.ANNOUNCE_IN_TITLE.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.AnnounceInTitle));
-        ClientConfig.FULLSCREEN_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.Fullscreen));
-        ClientConfig.FULLSCREEN_NAME_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.FullscreenName));
-        ClientConfig.FULLSCREEN_OWNER_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.FullscreenOwner));
-        ClientConfig.FULLSCREEN_BANNER_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.FullscreenBanner));
-        ClientConfig.FULLSCREEN_DAY_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.FullscreenDay));
-        ClientConfig.FULLSCREEN_NIGHT_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.FullscreenNight));
-        ClientConfig.FULLSCREEN_UNDERGROUND_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.FullscreenUnderground));
-        ClientConfig.FULLSCREEN_TOPO_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.FullscreenTopo));
-        ClientConfig.FULLSCREEN_BIOME_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.FullscreenBiome));
-        ClientConfig.MINIMAP_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.Minimap));
-        ClientConfig.MINIMAP_NAME_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.MinimapName));
-        ClientConfig.MINIMAP_OWNER_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.MinimapOwner));
-        ClientConfig.MINIMAP_BANNER_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.MinimapBanner));
-        ClientConfig.MINIMAP_DAY_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.MinimapDay));
-        ClientConfig.MINIMAP_NIGHT_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.MinimapNight));
-        ClientConfig.MINIMAP_UNDERGROUND_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.MinimapUnderground));
-        ClientConfig.MINIMAP_TOPO_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.MinimapTopo));
-        ClientConfig.MINIMAP_BIOME_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.MinimapBiome));
-        ClientConfig.WEBMAP_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.Webmap));
-        ClientConfig.WEBMAP_NAME_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.WebmapName));
-        ClientConfig.WEBMAP_OWNER_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.WebmapOwner));
-        ClientConfig.WEBMAP_BANNER_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.WebmapBanner));
-        ClientConfig.WEBMAP_DAY_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.WebmapDay));
-        ClientConfig.WEBMAP_NIGHT_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.WebmapNight));
-        ClientConfig.WEBMAP_UNDERGROUND_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.WebmapUnderground));
-        ClientConfig.WEBMAP_TOPO_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.WebmapTopo));
-        ClientConfig.WEBMAP_BIOME_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierData.VisibilityData.Visibility.WebmapBiome));
+    private void setForcedVisibility(VisibilityData visibilityData, VisibilityData visibilityDataMask) {
+        ClientConfig.FRONTIER_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.Frontier));
+        ClientConfig.ANNOUNCE_IN_CHAT.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.AnnounceInChat));
+        ClientConfig.ANNOUNCE_IN_TITLE.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.AnnounceInTitle));
+        ClientConfig.MENTION_COLLECTION.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.MentionCollection));
+        ClientConfig.FULLSCREEN_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.Fullscreen));
+        ClientConfig.FULLSCREEN_NAME_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.FullscreenName));
+        ClientConfig.FULLSCREEN_COLLECTION_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.FullscreenCollection));
+        ClientConfig.FULLSCREEN_OWNER_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.FullscreenOwner));
+        ClientConfig.FULLSCREEN_BANNER_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.FullscreenBanner));
+        ClientConfig.FULLSCREEN_DAY_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.FullscreenDay));
+        ClientConfig.FULLSCREEN_NIGHT_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.FullscreenNight));
+        ClientConfig.FULLSCREEN_UNDERGROUND_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.FullscreenUnderground));
+        ClientConfig.FULLSCREEN_TOPO_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.FullscreenTopo));
+        ClientConfig.FULLSCREEN_BIOME_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.FullscreenBiome));
+        ClientConfig.MINIMAP_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.Minimap));
+        ClientConfig.MINIMAP_NAME_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.MinimapName));
+        ClientConfig.MINIMAP_COLLECTION_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.MinimapCollection));
+        ClientConfig.MINIMAP_OWNER_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.MinimapOwner));
+        ClientConfig.MINIMAP_BANNER_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.MinimapBanner));
+        ClientConfig.MINIMAP_DAY_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.MinimapDay));
+        ClientConfig.MINIMAP_NIGHT_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.MinimapNight));
+        ClientConfig.MINIMAP_UNDERGROUND_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.MinimapUnderground));
+        ClientConfig.MINIMAP_TOPO_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.MinimapTopo));
+        ClientConfig.MINIMAP_BIOME_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.MinimapBiome));
+        ClientConfig.WEBMAP_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.Webmap));
+        ClientConfig.WEBMAP_NAME_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.WebmapName));
+        ClientConfig.WEBMAP_COLLECTION_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.WebmapCollection));
+        ClientConfig.WEBMAP_OWNER_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.WebmapOwner));
+        ClientConfig.WEBMAP_BANNER_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.WebmapBanner));
+        ClientConfig.WEBMAP_DAY_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.WebmapDay));
+        ClientConfig.WEBMAP_NIGHT_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.WebmapNight));
+        ClientConfig.WEBMAP_UNDERGROUND_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.WebmapUnderground));
+        ClientConfig.WEBMAP_TOPO_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.WebmapTopo));
+        ClientConfig.WEBMAP_BIOME_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.WebmapBiome));
     }
 
-    private ClientConfig.Visibility getVisibilityValue(FrontierData.VisibilityData visibilityData, FrontierData.VisibilityData visibilityDataMask, FrontierData.VisibilityData.Visibility visibility) {
+    private FrontierDisplayVisibility getVisibilityValue(VisibilityData visibilityData, VisibilityData visibilityDataMask, FrontierVisibility visibility) {
         if (visibilityDataMask.getValue(visibility)) {
-            return visibilityData.getValue(visibility) ? ClientConfig.Visibility.Always : ClientConfig.Visibility.Never;
+            return visibilityData.getValue(visibility) ? FrontierDisplayVisibility.Always : FrontierDisplayVisibility.Never;
         }
-        return ClientConfig.Visibility.Custom;
+        return FrontierDisplayVisibility.Custom;
     }
 
     private void newGroupPressed() {
@@ -993,11 +1005,17 @@ public class ModSettingsPage extends PageScreen
         updateButtonsVisibility();
 
         if (selectedElement != null) {
-            groups.selectElementIf(element -> ((GroupElement) element).getGroup().getName().equals(selectedElement.getGroup().getName()));
+            groups.setSelectedElementIf(element -> ((GroupElement) element).getGroup().getName().equals(selectedElement.getGroup().getName()));
         }
 
         if (groups.getSelectedElement() == null) {
-            groups.selectIndex(selectedIndex);
+            if (selectedIndex >= 0 && selectedIndex < groups.getElements().size()) {
+                groups.setSelectedElement(groups.getElements().get(selectedIndex));
+            }
+        }
+
+        if (groups.getSelectedElement() == null && !groups.getElements().isEmpty()) {
+            groups.setSelectedElement(groups.getElements().getFirst());
         }
 
         if (groups.getSelectedElement() != null) {
@@ -1009,12 +1027,13 @@ public class ModSettingsPage extends PageScreen
         buttonEditHUD.visible = tabSelected == Tab.General && ClientConfig.HUD_ENABLED.get() && minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
         buttonFrontierAppearance.visible = tabSelected == Tab.General && minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
         buttonDefaultPathStyle.visible = tabSelected == Tab.General && minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
+        buttonConfirmationDialogs.visible = tabSelected == Tab.General;
         textNewUser.visible = canAddNewUser();
         buttonNewUser.visible = canAddNewUser();
     }
 
     public void groupClicked(GroupElement element) {
-        groups.selectElement(element);
+        groups.setSelectedElement(element);
         SettingsGroup group = element.getGroup();
         textGroupName.setValue(group.getName());
         textGroupName.setEditable(!group.isSpecial());

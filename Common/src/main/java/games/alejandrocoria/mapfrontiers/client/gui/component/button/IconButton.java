@@ -1,6 +1,8 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.button;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -12,51 +14,51 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class IconButton extends ButtonBase {
-    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/buttons.png");
-    private static final int TEXTURE_WIDTH = 34;
-    private static final int TEXTURE_HEIGHT = 134;
-
     public enum Type {
-        Add       ( 0,   0, 13,   0, 13, 13),
-        Remove    ( 0,  13, 13,  13, 13, 13),
-        Send      ( 0,  26, 13,  26, 13, 13),
-        Copy      ( 0,  39, 17,  39, 17, 17),
-        Paste     ( 0,  56, 17,  56, 17, 17),
-        ArrowUp   ( 0,  73,  8,  73,  8, 17),
-        ArrowDown (18,  73, 26,  73,  8, 17),
-        Undo      ( 0,  90, 17,  90, 17, 17),
-        Redo      ( 0, 107, 17, 107, 17, 17),
-        Swap      ( 0, 124,  9, 124,  9,  10),
-        SortUp    (27,   0, 27,   5,  7,  5),
-        SortDown  (27,  10, 27,  15,  7,  5);
+        Add            (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/add.png"),             33, 11),
+        Remove         (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/remove.png"),          33, 11),
+        Send           (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/send.png"),            33, 11),
+        MoveHere       (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/move_here.png"),       33, 11),
+        Show           (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/show.png"),            33, 11),
+        Hide           (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/hide.png"),            33, 11),
+        Copy           (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/copy.png"),            51, 17),
+        Paste          (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/paste.png"),           51, 17),
+        ExpandOptions  (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/expand_options.png"),  24, 17),
+        CollapseOptions(Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/collapse_options.png"),24, 17),
+        Undo           (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/undo.png"),            51, 17),
+        Redo           (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/redo.png"),            51, 17),
+        Swap           (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/swap.png"),            27, 10),
+        SortUp         (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/sort_up.png"),         21,  5),
+        SortDown       (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/sort_down.png"),       21,  5),
+        Collapsed      (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/collapsed.png"),       33, 11),
+        Expanded       (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/expanded.png"),        33, 11);
 
-        final int texX;
-        final int texY;
-        final int texHoverX;
-        final int texHoverY;
-        final int width;
+        final Identifier texture;
+        final int textureWidth;
         final int height;
+        final int frameWidth;
 
-        Type(int texX, int texY, int texHoverX, int texHoverY, int width, int height) {
-            this.texX = texX;
-            this.texY = texY;
-            this.texHoverX = texHoverX;
-            this.texHoverY = texHoverY;
-            this.width = width;
+        Type(Identifier texture, int textureWidth, int height) {
+            if (textureWidth % 3 != 0) {
+                throw new IllegalArgumentException("Icon texture width must be divisible by 3: " + textureWidth);
+            }
+            this.texture = texture;
+            this.textureWidth = textureWidth;
             this.height = height;
+            frameWidth = textureWidth / 3;
         }
     }
 
     private Type type;
 
     public IconButton(Type type, OnPress pressedAction) {
-        super(0, 0, type.width, type.height, Component.empty(), pressedAction, Button.DEFAULT_NARRATION);
+        super(0, 0, type.frameWidth, type.height, Component.empty(), pressedAction, Button.DEFAULT_NARRATION);
         this.type = type;
     }
 
     public void setType(Type type) {
         this.type = type;
-        setSize(type.width, type.height);
+        setSize(type.frameWidth, type.height);
     }
 
     @Override
@@ -66,10 +68,18 @@ public class IconButton extends ButtonBase {
 
     @Override
     public void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        if (isHoveredOrKeyboardFocused()) {
-            graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, getX(), getY(), type.texHoverX, type.texHoverY, width, height, TEXTURE_WIDTH, TEXTURE_HEIGHT);
-        } else {
-            graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, getX(), getY(), type.texX, type.texY, width, height, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+        int stateIndex = 0;
+        int color = ColorConstants.WHITE;
+        if (!active) {
+            color = 0xFF7F7F7F;
+        } else if (isFocused() && Minecraft.getInstance().getLastInputType().isKeyboard()) {
+            stateIndex = 2;
+        } else if (isHovered()) {
+            stateIndex = 1;
         }
+
+        int u = type.frameWidth * stateIndex;
+        graphics.blit(RenderPipelines.GUI_TEXTURED, type.texture, getX(), getY(), u, 0, width, height,
+                type.textureWidth, type.height, color);
     }
 }

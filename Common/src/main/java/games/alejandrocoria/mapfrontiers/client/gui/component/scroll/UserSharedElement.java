@@ -4,6 +4,7 @@ import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
+import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.ChatFormatting;
@@ -52,6 +53,11 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
         return user.getUser();
     }
 
+    @Override
+    public Object getFocusRestoreKey() {
+        return getUser();
+    }
+
     public void setPingBar(int value) {
         pingBar = value;
 
@@ -78,7 +84,7 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
         updateFrontier.setY(y + 2);
         updateSettings.setY(y + 2);
         if (buttonDelete != null) {
-            buttonDelete.setY(this.y + 1);
+            buttonDelete.setY(this.y + 2);
         }
     }
 
@@ -94,7 +100,7 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
             }
         }
 
-        graphics.drawString(font, user.getUser().toString(), x + 16, y + 4, ColorConstants.TEXT_HIGHLIGHT);
+        graphics.drawString(font, SettingsUserFormatter.getDisplayName(user.getUser()), x + 16, y + 4, ColorConstants.TEXT_HIGHLIGHT);
 
         updateFrontier.render(graphics, mouseX, mouseY, partialTicks);
         updateSettings.render(graphics, mouseX, mouseY, partialTicks);
@@ -129,7 +135,7 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
         if (enabled && visible && isHovered) {
             for (GuiEventListener checkBox : children) {
                 if (checkBox.mouseClicked(event, doubleClick)) {
-                    return ScrollBox.ScrollElement.Action.None;
+                    return ScrollBox.ScrollElement.Action.Handled;
                 }
             }
 

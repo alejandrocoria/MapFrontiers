@@ -6,6 +6,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLPaths;
 
+import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -22,6 +23,15 @@ public class NeoForgePlatformHelper implements IPlatformHelper {
             return modContainer.get().getModInfo().getVersion().toString();
         }
         return "";
+    }
+
+    @Override
+    public @Nullable String getModDisplayName(String modId) {
+        Optional<? extends ModContainer> modContainer = ModList.get().getModContainerById(modId);
+        if (modContainer.isPresent()) {
+            return modContainer.get().getModInfo().getDisplayName();
+        }
+        return null;
     }
 
     @Override

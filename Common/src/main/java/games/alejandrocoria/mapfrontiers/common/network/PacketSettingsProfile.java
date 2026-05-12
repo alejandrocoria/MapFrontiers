@@ -16,7 +16,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 public class PacketSettingsProfile {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_settings_profile");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketSettingsProfile> STREAM_CODEC = StreamCodec.ofMember(PacketSettingsProfile::encode, PacketSettingsProfile::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketSettingsProfile> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketSettingsProfile::encode, PacketSettingsProfile::new);
 
     private final SettingsProfile profile;
 
@@ -30,22 +30,13 @@ public class PacketSettingsProfile {
 
     public PacketSettingsProfile(FriendlyByteBuf buf) {
         this.profile = new SettingsProfile();
-
-        try {
-            if (buf.readableBytes() > 1) {
-                this.profile.fromBytes(buf);
-            }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to read message for PacketSettingsProfile", t);
+        if (buf.readableBytes() > 1) {
+            this.profile.fromBytes(buf);
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
-        try {
-            profile.toBytes(buf);
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to write message for PacketSettingsProfile", t);
-        }
+        profile.toBytes(buf);
     }
 
     public static void handle(PacketContext<PacketSettingsProfile> ctx) {

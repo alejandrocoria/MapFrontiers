@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component.scroll;
 import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
+import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -49,7 +50,7 @@ public class UserElement extends ScrollBox.ScrollElement {
     @Override
     protected void setY(int y) {
         super.setY(y);
-        buttonDelete.setY(this.y + 1);
+        buttonDelete.setY(this.y + 2);
     }
 
     @Override
@@ -67,7 +68,7 @@ public class UserElement extends ScrollBox.ScrollElement {
             buttonDelete.render(graphics, mouseX, mouseY, partialTicks);
         }
 
-        graphics.drawString(font, user.toString(), x + 16, y + 3, color);
+        graphics.drawString(font, SettingsUserFormatter.getDisplayName(user), x + 16, y + 3, color);
 
         if (pingBar > 0) {
             drawPingLine(graphics, x + 3, y + 11, 2);

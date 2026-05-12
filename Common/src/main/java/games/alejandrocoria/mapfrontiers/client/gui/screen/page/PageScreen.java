@@ -14,8 +14,13 @@ public abstract class PageScreen extends AutoScaledScreen {
     }
 
     @Override
+    protected int getMinimumLayoutExtraWidth() {
+        return (LayoutConstants.PAGE_MARGIN + LayoutConstants.BOX_PADDING) * 2;
+    }
+
+    @Override
     protected int getMinimumLayoutExtraHeight() {
-        return LayoutConstants.PAGE_MARGIN * 2 + 1;
+        return (LayoutConstants.PAGE_MARGIN + LayoutConstants.BOX_PADDING) * 2;
     }
 
     @Override

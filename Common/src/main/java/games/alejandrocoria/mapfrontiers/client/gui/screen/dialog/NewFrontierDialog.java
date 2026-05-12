@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen.dialog;
 
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
+import games.alejandrocoria.mapfrontiers.client.config.AfterCreatingFrontier;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
@@ -11,29 +12,46 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButto
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.PathShapePresetSelector;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.VertexShapePresetSelector;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierCreateSpec;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
+import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
+import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
+import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.util.UIState;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.StringUtil;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec2;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class NewFrontierDialog extends PanelDialog {
     private static final Component FRONTIER_TYPE_LABEL = Component.translatable("mapfrontiers.frontier_type");
-    private static final Component FRONTIER_MODE_LABEL = Component.translatable("mapfrontiers.frontier_mode");
+    private static final Component PERSONAL_LABEL = Component.translatable("mapfrontiers.personal_type");
+    private static final Component GLOBAL_LABEL = Component.translatable("mapfrontiers.global_type");
+    private static final Component FRONTIER_SHAPE_LABEL = Component.translatable("mapfrontiers.frontier_shape");
     private static final Component AFTER_CREATING_LABEL = Component.translatable("mapfrontiers.after_creating");
     private static final Component VERTEX_COUNT_LABEL = Component.translatable("mapfrontiers.shape_vertex_count");
     private static final Component POINT_COUNT_LABEL = Component.translatable("mapfrontiers.shape_point_count");
@@ -42,12 +60,33 @@ public class NewFrontierDialog extends PanelDialog {
     private static final String POINTS_KEY = "mapfrontiers.points";
     private static final String CHUNKS_KEY = "mapfrontiers.chunks";
     private static final Component CREATE_LABEL = Component.translatable("mapfrontiers.create");
+    private static final String CONTEXTUAL_HINT_KEY = "mapfrontiers.new_frontier_contextual_hint";
+    private static final String CONTEXTUAL_HINT_TEMPORARY_KEY = "mapfrontiers.new_frontier_contextual_hint_temporary";
+    private static final String CONTEXTUAL_HINT_IN_COLLECTION_KEY = "mapfrontiers.new_frontier_contextual_hint_in_collection";
+    private static final String CONTEXTUAL_HINT_TEMPORARY_IN_COLLECTION_KEY = "mapfrontiers.new_frontier_contextual_hint_temporary_in_collection";
+
+    private enum FrontierTypeOption {
+        GLOBAL,
+        PERSONAL
+    }
+
+    public interface ResultHandler {
+        void beforeCreate(NewFrontierDialog dialog, AfterCreatingFrontier action);
+
+        void onFrontierCreated(FrontierOverlay frontier, AfterCreatingFrontier action);
+    }
 
     private final IClientAPI jmAPI;
     private final BlockPos centerPos;
+    private final @Nullable Boolean forcedPersonal;
+    private final TerritoryLifetime frontierLifetime;
+    private final @Nullable UUID collectionId;
+    private final ResultHandler resultHandler;
+    private final Object createdFrontierListenerOwner = new Object();
+    private @Nullable UUID pendingCreatedFrontierId;
 
     private OptionButton buttonFrontierType;
-    private OptionButton buttonFrontierMode;
+    private OptionButton buttonFrontierShape;
     private OptionButton buttonAfterCreate;
     private VertexShapePresetSelector vertexShapePresetSelector;
     private ChunkShapePresetSelector chunkShapePresetSelector;
@@ -59,14 +98,20 @@ public class NewFrontierDialog extends PanelDialog {
     private StringWidget labelSizeInfo;
     private TextBoxInt textSize;
 
-    public NewFrontierDialog(IClientAPI jmAPI, BlockPos centerPos) {
+    public NewFrontierDialog(IClientAPI jmAPI, BlockPos centerPos, @Nullable Boolean forcedPersonal,
+                             TerritoryLifetime frontierLifetime, @Nullable UUID collectionId,
+                             ResultHandler resultHandler) {
         super();
         this.jmAPI = jmAPI;
         this.centerPos = centerPos;
+        this.forcedPersonal = forcedPersonal;
+        this.frontierLifetime = frontierLifetime;
+        this.collectionId = collectionId;
+        this.resultHandler = resultHandler;
 
         MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> {
             onClose();
-            new NewFrontierDialog(jmAPI, centerPos).display();
+            new NewFrontierDialog(jmAPI, centerPos, forcedPersonal, frontierLifetime, collectionId, resultHandler).display();
         });
     }
 
@@ -78,42 +123,38 @@ public class NewFrontierDialog extends PanelDialog {
         LayoutSettings rightColumnSettings = LayoutSettings.defaults().alignHorizontallyLeft();
         LayoutSettings centerColumnSettings = LayoutSettings.defaults().alignHorizontallyCenter();
 
-        mainLayout.addChild(new StringWidget(FRONTIER_TYPE_LABEL, font).setColor(ColorConstants.TEXT), 0, 0, leftColumnSettings);
-        buttonFrontierType = new OptionButton(font, 130, OptionButton.DO_NOTHING);
-        buttonFrontierType.addOption(ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierType.Global));
-        buttonFrontierType.addOption(ClientConfig.getTranslatedEnum(ClientConfig.FilterFrontierType.Personal));
-        buttonFrontierType.setSelected(0);
-        SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
-        boolean canCreateGlobal = MapFrontiersClient.isModOnServer()
-                && profile != null
-                && profile.createFrontier == SettingsProfile.State.Enabled;
-        if (!canCreateGlobal) {
-            buttonFrontierType.setSelected(1);
-            buttonFrontierType.active = false;
+        buttonFrontierType = createFrontierTypeButton();
+        if (shouldShowContextualHint()) {
+            boolean personal = resolvePersonalSelection();
+            Component contextualHint = createContextualTypeHint(personal).copy().withColor(ColorConstants.TEXT);
+            MultiLineTextWidget hintWidget = new MultiLineTextWidget(contextualHint, font).setCentered(true);
+            mainLayout.addChild(hintWidget, 0, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
+        } else {
+            mainLayout.addChild(new StringWidget(FRONTIER_TYPE_LABEL, font).setColor(ColorConstants.TEXT), 0, 0, leftColumnSettings);
+            mainLayout.addChild(buttonFrontierType, 0, 1, rightColumnSettings);
         }
-        mainLayout.addChild(buttonFrontierType, 0, 1, rightColumnSettings);
 
-        mainLayout.addChild(new StringWidget(FRONTIER_MODE_LABEL, font).setColor(ColorConstants.TEXT), 1, 0, leftColumnSettings);
-        buttonFrontierMode = new OptionButton(font, 130, (b) -> {
-                    ClientConfig.NEW_FRONTIER_MODE.set(FrontierData.Mode.VALUES[b.getSelected()]);
+        mainLayout.addChild(new StringWidget(FRONTIER_SHAPE_LABEL, font).setColor(ColorConstants.TEXT), 1, 0, leftColumnSettings);
+        buttonFrontierShape = new OptionButton(font, 130, (b) -> {
+                    ClientConfig.NEW_FRONTIER_SHAPE.set(FrontierShape.VALUES[b.getSelected()]);
                     shapePresetUpdated();
         });
-        buttonFrontierMode.addOption(ClientConfig.getTranslatedEnum(FrontierData.Mode.Vertex));
-        buttonFrontierMode.addOption(ClientConfig.getTranslatedEnum(FrontierData.Mode.Chunk));
-        buttonFrontierMode.addOption(ClientConfig.getTranslatedEnum(FrontierData.Mode.Path));
-        buttonFrontierMode.setSelected(ClientConfig.NEW_FRONTIER_MODE.get().ordinal());
-        mainLayout.addChild(buttonFrontierMode, 1, 1, rightColumnSettings);
+        buttonFrontierShape.addOption(ClientConfig.getTranslatedEnum(FrontierShape.Vertex));
+        buttonFrontierShape.addOption(ClientConfig.getTranslatedEnum(FrontierShape.Chunk));
+        buttonFrontierShape.addOption(ClientConfig.getTranslatedEnum(FrontierShape.Path));
+        buttonFrontierShape.setSelected(ClientConfig.NEW_FRONTIER_SHAPE.get().ordinal());
+        mainLayout.addChild(buttonFrontierShape, 1, 1, rightColumnSettings);
 
         mainLayout.addChild(new StringWidget(AFTER_CREATING_LABEL, font).setColor(ColorConstants.TEXT), 2, 0, leftColumnSettings);
         buttonAfterCreate = new OptionButton(font, 130,
-                (b) -> ClientConfig.AFTER_CREATING_FRONTIER.set(ClientConfig.AfterCreatingFrontier.values()[b.getSelected()]));
-        buttonAfterCreate.addOption(ClientConfig.getTranslatedEnum(ClientConfig.AfterCreatingFrontier.InfoScreen));
-        buttonAfterCreate.addOption(ClientConfig.getTranslatedEnum(ClientConfig.AfterCreatingFrontier.EditShape));
-        buttonAfterCreate.addOption(ClientConfig.getTranslatedEnum(ClientConfig.AfterCreatingFrontier.DoNothing));
+                (b) -> ClientConfig.AFTER_CREATING_FRONTIER.set(AfterCreatingFrontier.values()[b.getSelected()]));
+        buttonAfterCreate.addOption(ClientConfig.getTranslatedEnum(AfterCreatingFrontier.InfoScreen));
+        buttonAfterCreate.addOption(ClientConfig.getTranslatedEnum(AfterCreatingFrontier.EditShape));
+        buttonAfterCreate.addOption(ClientConfig.getTranslatedEnum(AfterCreatingFrontier.DoNothing));
         buttonAfterCreate.setSelected(ClientConfig.AFTER_CREATING_FRONTIER.get().ordinal());
         mainLayout.addChild(buttonAfterCreate, 2, 1, rightColumnSettings);
 
-        vertexShapePresetSelector = new VertexShapePresetSelector(font, ClientConfig.NEW_FRONTIER_SHAPE.get(), (s) -> shapePresetUpdated());
+        vertexShapePresetSelector = new VertexShapePresetSelector(font, ClientConfig.NEW_FRONTIER_VERTEX_SHAPE.get(), (s) -> shapePresetUpdated());
         mainLayout.addChild(vertexShapePresetSelector, 3, 0, 1, 2, centerColumnSettings);
         chunkShapePresetSelector = new ChunkShapePresetSelector(font, ClientConfig.NEW_FRONTIER_CHUNK_SHAPE.get(), (s) -> shapePresetUpdated());
         mainLayout.addChild(chunkShapePresetSelector, 3, 0, 1, 2, centerColumnSettings);
@@ -121,9 +162,9 @@ public class NewFrontierDialog extends PanelDialog {
         mainLayout.addChild(pathShapePresetSelector, 3, 0, 1, 2, centerColumnSettings);
 
         labelCount = mainLayout.addChild(new StringWidget(VERTEX_COUNT_LABEL, font).setColor(ColorConstants.WHITE), 4, 0, leftColumnSettings);
-        textCount = new TextBoxInt(ClientConfig.NEW_FRONTIER_COUNT, font, 64);
-        textCount.setValue(String.valueOf(ClientConfig.NEW_FRONTIER_COUNT.get()));
-        textCount.setValueChangedCallback(ClientConfig.NEW_FRONTIER_COUNT::set);
+        textCount = new TextBoxInt(ClientConfig.NEW_FRONTIER_VERTEX_COUNT, font, 64);
+        textCount.setValue(String.valueOf(ClientConfig.NEW_FRONTIER_VERTEX_COUNT.get()));
+        textCount.setValueChangedCallback(ClientConfig.NEW_FRONTIER_VERTEX_COUNT::set);
         mainLayout.addChild(textCount, 4, 1, rightColumnSettings);
 
         labelCountInfo = mainLayout.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.WHITE), 4, 0, 1, 2, centerColumnSettings);
@@ -136,7 +177,7 @@ public class NewFrontierDialog extends PanelDialog {
                 entry.set(value);
             }
 
-            if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Chunk) {
+            if (ClientConfig.NEW_FRONTIER_SHAPE.get() == FrontierShape.Chunk) {
                 if (chunkShapePresetSelector.getShapeMeasure() == ChunkShapePresetSelector.ShapeMeasure.Width) {
                     chunkShapePresetSelector.setSize(value);
                 } else if (chunkShapePresetSelector.getShapeMeasure() == ChunkShapePresetSelector.ShapeMeasure.Length) {
@@ -149,14 +190,20 @@ public class NewFrontierDialog extends PanelDialog {
         labelSizeInfo = mainLayout.addChild(new StringWidget(SIZE_INFO_LABEL, font).setColor(ColorConstants.WHITE), 5, 0, 1, 2, centerColumnSettings);
 
         addConfirmButton(CREATE_LABEL, (b) -> {
-            boolean personal = buttonFrontierType.getSelected() == 1;
-            closeAndReturnToFullscreenMap();
+            boolean personal = resolvePersonalSelection();
+            AfterCreatingFrontier afterCreate = ClientConfig.AFTER_CREATING_FRONTIER.get();
+            resultHandler.beforeCreate(this, afterCreate);
             UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
             if (uiState != null) {
-                FrontierData.Mode mode = ClientConfig.NEW_FRONTIER_MODE.get();
-                FrontierData.PathStyle pathStyle = mode == FrontierData.Mode.Path ? ClientConfig.getDefaultPathStyle() : null;
-                MapFrontiersClient.getOperationService().createNewFrontier(personal, uiState.dimension,
-                        calculateVertices(), calculateChunks(), calculatePoints(), pathStyle);
+                FrontierCreateSpec createSpec = createFrontierSpec(personal, uiState.dimension);
+                if (createSpec != null) {
+                    FrontierOverlay createdFrontier = MapFrontiersClient.getOperationService().createNewFrontierAndReturn(createSpec);
+                    if (createdFrontier != null) {
+                        resultHandler.onFrontierCreated(createdFrontier, afterCreate);
+                    } else {
+                        awaitCreatedFrontier(createSpec.getFrontierId(), afterCreate);
+                    }
+                }
             }
         });
         addCancelButton();
@@ -167,19 +214,40 @@ public class NewFrontierDialog extends PanelDialog {
     @Override
     public void onClose() {
         MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
+        if (pendingCreatedFrontierId == null) {
+            MapFrontiersClient.getFrontierEvents().unsubscribe(createdFrontierListenerOwner);
+        }
         ClientGlobalEvents.unsubscribeAllEvents(this);
         ClientGlobalEvents.postUpdatedConfigEvent();
         super.onClose();
     }
 
+    public void closeToFullscreenMap() {
+        closeAndReturnToFullscreenMap();
+    }
+
+    private void awaitCreatedFrontier(UUID frontierId, AfterCreatingFrontier afterCreate) {
+        pendingCreatedFrontierId = frontierId;
+        MapFrontiersClient.getFrontierEvents().unsubscribe(createdFrontierListenerOwner);
+        MapFrontiersClient.getFrontierEvents().subscribeCreated(createdFrontierListenerOwner, (frontier, playerId) -> {
+            if (!frontierId.equals(frontier.getId())) {
+                return;
+            }
+
+            pendingCreatedFrontierId = null;
+            MapFrontiersClient.getFrontierEvents().unsubscribe(createdFrontierListenerOwner);
+            resultHandler.onFrontierCreated(frontier, afterCreate);
+        });
+    }
+
     private void shapePresetUpdated() {
-        if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Vertex) {
+        if (ClientConfig.NEW_FRONTIER_SHAPE.get() == FrontierShape.Vertex) {
             vertexShapePresetSelector.visible = true;
             chunkShapePresetSelector.visible = false;
             pathShapePresetSelector.visible = false;
 
             int selected = vertexShapePresetSelector.getSelected();
-            ClientConfig.NEW_FRONTIER_SHAPE.set(selected);
+            ClientConfig.NEW_FRONTIER_VERTEX_SHAPE.set(selected);
             setLabelCountMessage(VERTEX_COUNT_LABEL);
 
             if (selected == 11) {
@@ -207,12 +275,12 @@ public class NewFrontierDialog extends PanelDialog {
 
             if (vertexShapePresetSelector.getShapeMeasure() == VertexShapePresetSelector.ShapeMeasure.Width) {
                 setLabelSizeMessage("mapfrontiers.shape_width");
-                setSizeTextBoxValue(ClientConfig.NEW_FRONTIER_SHAPE_WIDTH);
+                setSizeTextBoxValue(ClientConfig.NEW_FRONTIER_VERTEX_SHAPE_WIDTH);
             } else if (vertexShapePresetSelector.getShapeMeasure() == VertexShapePresetSelector.ShapeMeasure.Radius) {
                 setLabelSizeMessage("mapfrontiers.shape_radius");
-                setSizeTextBoxValue(ClientConfig.NEW_FRONTIER_SHAPE_RADIUS);
+                setSizeTextBoxValue(ClientConfig.NEW_FRONTIER_VERTEX_SHAPE_RADIUS);
             }
-        } else if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Chunk) {
+        } else if (ClientConfig.NEW_FRONTIER_SHAPE.get() == FrontierShape.Chunk) {
             vertexShapePresetSelector.visible = false;
             chunkShapePresetSelector.visible = true;
             pathShapePresetSelector.visible = false;
@@ -278,6 +346,80 @@ public class NewFrontierDialog extends PanelDialog {
         repositionElements();
     }
 
+    private OptionButton createFrontierTypeButton() {
+        OptionButton button = new OptionButton(font, 130, OptionButton.DO_NOTHING);
+        button.addOption(GLOBAL_LABEL);
+        button.addOption(PERSONAL_LABEL);
+        button.setSelected(FrontierTypeOption.GLOBAL.ordinal());
+
+        SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
+        boolean canCreateGlobal = MapFrontiersClient.isModOnServer()
+                && profile != null
+                && profile.createFrontier == SettingsProfile.State.Enabled;
+        if (!canCreateGlobal) {
+            button.setSelected(FrontierTypeOption.PERSONAL.ordinal());
+            button.active = false;
+        }
+        if (forcedPersonal != null) {
+            button.setSelected(forcedPersonal ? FrontierTypeOption.PERSONAL.ordinal() : FrontierTypeOption.GLOBAL.ordinal());
+            button.active = false;
+        }
+        if (frontierLifetime == TerritoryLifetime.SESSION_ONLY) {
+            button.setSelected(FrontierTypeOption.PERSONAL.ordinal());
+            button.active = false;
+        }
+
+        return button;
+    }
+
+    private boolean resolvePersonalSelection() {
+        if (frontierLifetime == TerritoryLifetime.SESSION_ONLY) {
+            return true;
+        }
+        if (forcedPersonal != null) {
+            return forcedPersonal;
+        }
+        return buttonFrontierType.getSelected() == FrontierTypeOption.PERSONAL.ordinal();
+    }
+
+    private boolean shouldShowContextualHint() {
+        return collectionId != null || forcedPersonal != null || frontierLifetime == TerritoryLifetime.SESSION_ONLY;
+    }
+
+    private Component createContextualTypeHint(boolean personal) {
+        if (collectionId != null) {
+            Component collectionComponent = resolveCollectionNameComponent();
+            if (frontierLifetime == TerritoryLifetime.SESSION_ONLY) {
+                return Component.translatable(CONTEXTUAL_HINT_TEMPORARY_IN_COLLECTION_KEY, collectionComponent);
+            }
+
+            Component typeComponent = personal ? PERSONAL_LABEL : GLOBAL_LABEL;
+            return Component.translatable(CONTEXTUAL_HINT_IN_COLLECTION_KEY, typeComponent, collectionComponent);
+        }
+
+        if (frontierLifetime == TerritoryLifetime.SESSION_ONLY) {
+            return Component.translatable(CONTEXTUAL_HINT_TEMPORARY_KEY);
+        }
+
+        Component typeComponent = personal ? PERSONAL_LABEL : GLOBAL_LABEL;
+        return Component.translatable(CONTEXTUAL_HINT_KEY, typeComponent);
+    }
+
+    private Component resolveCollectionNameComponent() {
+        if (collectionId == null) {
+            return Component.empty();
+        }
+
+        var collection = MapFrontiersClient.getCollection(collectionId);
+        if (collection == null || StringUtil.isBlank(collection.getName())) {
+            MutableComponent unnamed = Component.translatable("mapfrontiers.unnamed", ChatFormatting.ITALIC);
+            unnamed.withStyle(style -> style.withItalic(true));
+            return unnamed;
+        }
+
+        return Component.literal(collection.getName().trim());
+    }
+
     private void setLabelCountMessage(Component message) {
         labelCount.setMessage(message);
         labelCount.setWidth(font.width(message));
@@ -294,13 +436,13 @@ public class NewFrontierDialog extends PanelDialog {
     }
 
     private IntConfigEntry activeSizeConfigEntry() {
-        if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Vertex) {
+        if (ClientConfig.NEW_FRONTIER_SHAPE.get() == FrontierShape.Vertex) {
             if (vertexShapePresetSelector.getShapeMeasure() == VertexShapePresetSelector.ShapeMeasure.Width) {
-                return ClientConfig.NEW_FRONTIER_SHAPE_WIDTH;
+                return ClientConfig.NEW_FRONTIER_VERTEX_SHAPE_WIDTH;
             } else if (vertexShapePresetSelector.getShapeMeasure() == VertexShapePresetSelector.ShapeMeasure.Radius) {
-                return ClientConfig.NEW_FRONTIER_SHAPE_RADIUS;
+                return ClientConfig.NEW_FRONTIER_VERTEX_SHAPE_RADIUS;
             }
-        } else if (ClientConfig.NEW_FRONTIER_MODE.get() == FrontierData.Mode.Chunk) {
+        } else if (ClientConfig.NEW_FRONTIER_SHAPE.get() == FrontierShape.Chunk) {
             if (chunkShapePresetSelector.getShapeMeasure() == ChunkShapePresetSelector.ShapeMeasure.Width) {
                 return ClientConfig.NEW_FRONTIER_CHUNK_SHAPE_WIDTH;
             } else if (chunkShapePresetSelector.getShapeMeasure() == ChunkShapePresetSelector.ShapeMeasure.Length) {
@@ -313,19 +455,50 @@ public class NewFrontierDialog extends PanelDialog {
         return null;
     }
 
+    private @Nullable FrontierCreateSpec createFrontierSpec(boolean personal, ResourceKey<Level> dimension) {
+        if (minecraft.player == null) {
+            return null;
+        }
+
+        FrontierData defaults = new FrontierData();
+        SettingsUser owner = new SettingsUser(minecraft.player);
+        UUID frontierId = UUID.randomUUID();
+        VisibilityData visibility = new VisibilityData(defaults.getVisibilityData());
+        FrontierData.BannerData banner = defaults.getbannerData() == null ? null : new FrontierData.BannerData(defaults.getbannerData());
+        FrontierData.PathStyle pathStyle = ClientConfig.NEW_FRONTIER_SHAPE.get() == FrontierShape.Path
+                ? ClientConfig.getDefaultPathStyle()
+                : defaults.getPathStyle();
+        int color = ColorHelper.getRandomColor();
+        TerritoryLifetime lifetime = frontierLifetime == null ? TerritoryLifetime.PERSISTENT : frontierLifetime;
+
+        if (ClientConfig.NEW_FRONTIER_SHAPE.get() == FrontierShape.Path) {
+            return FrontierCreateSpec.path(frontierId, owner, personal, dimension, lifetime, collectionId,
+                    null, defaults.getName1(), defaults.getName2(), color, visibility, banner, calculatePoints(), pathStyle);
+        }
+
+        if (ClientConfig.NEW_FRONTIER_SHAPE.get() == FrontierShape.Chunk) {
+            return FrontierCreateSpec.chunk(frontierId, owner, personal, dimension, lifetime, collectionId,
+                    null, defaults.getName1(), defaults.getName2(), color, visibility, banner, new LinkedHashSet<>(calculateChunks()),
+                    pathStyle);
+        }
+
+        return FrontierCreateSpec.vertex(frontierId, owner, personal, dimension, lifetime, collectionId,
+                null, defaults.getName1(), defaults.getName2(), color, visibility, banner, calculateVertices(), pathStyle);
+    }
+
     private void setSizeTextBoxValue(IntConfigEntry entry) {
         textSize.setRange(entry);
         textSize.setValue(String.valueOf(entry.get()));
     }
 
     private List<BlockPos> calculateVertices() {
-        if (ClientConfig.NEW_FRONTIER_MODE.get() != FrontierData.Mode.Vertex) {
+        if (ClientConfig.NEW_FRONTIER_SHAPE.get() != FrontierShape.Vertex) {
             return null;
         }
 
         List<Vec2> shapeVertices;
         if (vertexShapePresetSelector.getSelected() == 11) {
-            shapeVertices = vertexShapePresetSelector.getVertices(ClientConfig.NEW_FRONTIER_COUNT.get());
+            shapeVertices = vertexShapePresetSelector.getVertices(ClientConfig.NEW_FRONTIER_VERTEX_COUNT.get());
         } else {
             shapeVertices = vertexShapePresetSelector.getVertices();
         }
@@ -337,7 +510,7 @@ public class NewFrontierDialog extends PanelDialog {
         double radius = 0.0;
 
         if (vertexShapePresetSelector.getShapeMeasure() == VertexShapePresetSelector.ShapeMeasure.Width) {
-            radius = ClientConfig.NEW_FRONTIER_SHAPE_WIDTH.get();
+            radius = ClientConfig.NEW_FRONTIER_VERTEX_SHAPE_WIDTH.get();
             if (radius < 2) {
                 radius = 2;
             }
@@ -347,7 +520,7 @@ public class NewFrontierDialog extends PanelDialog {
                 radius = Math.sqrt(radius * radius * 2.0) / 2.0;
             }
         } else if (vertexShapePresetSelector.getShapeMeasure() == VertexShapePresetSelector.ShapeMeasure.Radius) {
-            radius = ClientConfig.NEW_FRONTIER_SHAPE_RADIUS.get();
+            radius = ClientConfig.NEW_FRONTIER_VERTEX_SHAPE_RADIUS.get();
             if (radius < 1) {
                 radius = 1;
             }
@@ -373,7 +546,7 @@ public class NewFrontierDialog extends PanelDialog {
     }
 
     private List<ChunkPos> calculateChunks() {
-        if (ClientConfig.NEW_FRONTIER_MODE.get() != FrontierData.Mode.Chunk) {
+        if (ClientConfig.NEW_FRONTIER_SHAPE.get() != FrontierShape.Chunk) {
             return null;
         }
 
@@ -438,7 +611,7 @@ public class NewFrontierDialog extends PanelDialog {
     }
 
     private List<BlockPos> calculatePoints() {
-        if (ClientConfig.NEW_FRONTIER_MODE.get() != FrontierData.Mode.Path) {
+        if (ClientConfig.NEW_FRONTIER_SHAPE.get() != FrontierShape.Path) {
             return null;
         }
 

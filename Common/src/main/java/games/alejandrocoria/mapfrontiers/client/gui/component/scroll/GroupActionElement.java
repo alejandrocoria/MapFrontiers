@@ -97,7 +97,7 @@ public class GroupActionElement extends ScrollBox.ScrollElement {
         if (visible && isHovered) {
             for (GuiEventListener checkBox : children) {
                 if (checkBox.mouseClicked(event, doubleClick)) {
-                    break;
+                    return ScrollBox.ScrollElement.Action.Handled;
                 }
             }
         }

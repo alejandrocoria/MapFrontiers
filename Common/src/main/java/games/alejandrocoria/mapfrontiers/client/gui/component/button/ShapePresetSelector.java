@@ -149,10 +149,7 @@ abstract class ShapePresetSelector extends AbstractWidgetNoNarration {
             int row = focusedIndex / columns;
             int x = getX() + col * BUTTON_SPACING;
             int y = getY() + row * BUTTON_SPACING + BUTTON_Y_OFFSET;
-            graphics.hLine(x - 1, x + BUTTON_SIZE, y - 1, ColorConstants.WHITE);
-            graphics.hLine(x - 1, x + BUTTON_SIZE, y + BUTTON_SIZE, ColorConstants.WHITE);
-            graphics.vLine(x - 1, y - 1, y + BUTTON_SIZE, ColorConstants.WHITE);
-            graphics.vLine(x + BUTTON_SIZE, y - 1, y + BUTTON_SIZE, ColorConstants.WHITE);
+            graphics.renderOutline(x - 1, y - 1, BUTTON_SIZE + 2, BUTTON_SIZE + 2, ColorConstants.WHITE);
         }
 
         labelShapes.renderWidget(graphics, mouseX, mouseY, partialTicks);

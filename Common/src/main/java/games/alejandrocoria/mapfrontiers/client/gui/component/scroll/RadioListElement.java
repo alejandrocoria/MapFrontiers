@@ -36,7 +36,7 @@ public class RadioListElement<T> extends ScrollBox.ScrollElement {
     @Override
     protected void setX(int x) {
         super.setX(x);
-        label.setX(x + 20);
+        label.setX(x + 15);
     }
 
     @Override

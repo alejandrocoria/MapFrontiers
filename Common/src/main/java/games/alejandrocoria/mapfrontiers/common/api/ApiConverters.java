@@ -1,11 +1,14 @@
 package games.alejandrocoria.mapfrontiers.common.api;
 
 import games.alejandrocoria.mapfrontiers.api.model.ChunkCoord;
+import games.alejandrocoria.mapfrontiers.api.model.CollectionDataView;
+import games.alejandrocoria.mapfrontiers.api.model.CollectionId;
+import games.alejandrocoria.mapfrontiers.api.model.CollectionMutation;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
+import games.alejandrocoria.mapfrontiers.api.model.EntityLifetime;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierBanner;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
-import games.alejandrocoria.mapfrontiers.api.model.FrontierLifetime;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierShape;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierSharePermission;
@@ -16,16 +19,20 @@ import games.alejandrocoria.mapfrontiers.api.model.PathStyle;
 import games.alejandrocoria.mapfrontiers.api.model.Point2i;
 import games.alejandrocoria.mapfrontiers.api.model.SharedUserAccess;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierMutationApplier;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierMutationApplier;
+import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
+import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -33,9 +40,6 @@ import java.util.Optional;
 import java.util.Set;
 
 public final class ApiConverters {
-    private ApiConverters() {
-    }
-
     public static DimensionId fromDimension(ResourceKey<Level> dimension) {
         return new DimensionId(dimension.identifier().toString());
     }
@@ -49,19 +53,19 @@ public final class ApiConverters {
         List<ChunkCoord> chunks = frontier.getChunks().stream().map(chunk -> new ChunkCoord(chunk.x, chunk.z)).toList();
         List<Point2i> points = frontier.getPoints().stream().map(pos -> new Point2i(pos.getX(), pos.getZ())).toList();
 
-        return switch (frontier.getMode()) {
-            case Vertex -> FrontierShape.vertex(vertices);
-            case Chunk -> FrontierShape.chunk(chunks);
-            case Path -> FrontierShape.path(points);
+        return switch (frontier.getShape()) {
+            case Vertex -> games.alejandrocoria.mapfrontiers.api.model.FrontierShape.vertex(vertices);
+            case Chunk -> games.alejandrocoria.mapfrontiers.api.model.FrontierShape.chunk(chunks);
+            case Path -> games.alejandrocoria.mapfrontiers.api.model.FrontierShape.path(points);
         };
     }
 
-    public static void applyShape(FrontierData frontier, FrontierShape shape) {
-        FrontierMutationApplier.applyShape(frontier, shape);
+    public static Set<FrontierVisibilityFlag> fromVisibility(VisibilityData visibilityData) {
+        return FrontierMutationApplier.fromVisibility(visibilityData);
     }
 
-    public static Set<FrontierVisibilityFlag> fromVisibility(FrontierData.VisibilityData visibilityData) {
-        return FrontierMutationApplier.fromVisibility(visibilityData);
+    public static VisibilityData toVisibility(Set<FrontierVisibilityFlag> visibilityFlags) {
+        return FrontierMutationApplier.toVisibility(visibilityFlags);
     }
 
     public static FrontierBanner fromBanner(FrontierData.BannerData bannerData) {
@@ -76,6 +80,10 @@ public final class ApiConverters {
                 patterns == null ? "[]" : patterns.toString(),
                 bannerData.rotation
         );
+    }
+
+    public static FrontierData.BannerData toBanner(@Nullable FrontierBanner banner) {
+        return FrontierMutationApplier.toBanner(banner);
     }
 
     public static PathStyle fromPathStyle(FrontierData.PathStyle pathStyle) {
@@ -93,6 +101,10 @@ public final class ApiConverters {
         );
     }
 
+    public static FrontierData.PathStyle toPathStyle(PathStyle pathStyle) {
+        return FrontierMutationApplier.toPathStyle(pathStyle);
+    }
+
     public static SharedUserAccess fromSharedUser(SettingsUserShared userShared) {
         EnumSet<FrontierSharePermission> permissions = EnumSet.noneOf(FrontierSharePermission.class);
         for (SettingsUserShared.Action action : userShared.getActions()) {
@@ -100,6 +112,18 @@ public final class ApiConverters {
         }
 
         return new SharedUserAccess(fromUser(userShared.getUser()), permissions, userShared.isPending());
+    }
+
+    public static CollectionDataView fromCollection(CollectionData collection) {
+        return new CollectionDataView(
+                new CollectionId(collection.getId()),
+                collection.getPersonal() ? FrontierType.PERSONAL : FrontierType.GLOBAL,
+                fromLifetime(collection.getLifetime()),
+                fromUser(collection.getOwner()),
+                collection.getName(),
+                collection.getColor(),
+                Optional.ofNullable(collection.getSourcePluginId())
+        );
     }
 
     public static FrontierDataView fromFrontier(FrontierData frontier) {
@@ -122,25 +146,26 @@ public final class ApiConverters {
                 toShape(frontier),
                 fromVisibility(frontier.getVisibilityData()),
                 fromBanner(frontier.getbannerData()),
-                frontier.getMode() == FrontierData.Mode.Path ? Optional.of(fromPathStyle(frontier.getPathStyle())) : Optional.empty(),
+                frontier.getShape() == games.alejandrocoria.mapfrontiers.common.territory.FrontierShape.Path ? Optional.of(fromPathStyle(frontier.getPathStyle())) : Optional.empty(),
+                Optional.ofNullable(frontier.getCollectionId()).map(CollectionId::new),
                 Optional.ofNullable(frontier.getSourcePluginId()),
                 owner,
                 sharedUsers
         );
     }
 
-    public static FrontierLifetime fromLifetime(FrontierData.FrontierLifetime lifetime) {
+    public static EntityLifetime fromLifetime(TerritoryLifetime lifetime) {
         return switch (lifetime) {
-            case PERSISTENT -> FrontierLifetime.PERSISTENT;
-            case SESSION_ONLY -> FrontierLifetime.SESSION_ONLY;
+            case PERSISTENT -> EntityLifetime.PERSISTENT;
+            case SESSION_ONLY -> EntityLifetime.SESSION_ONLY;
         };
     }
 
-    public static FrontierData.FrontierLifetime toLifetime(FrontierLifetime lifetime) {
-        FrontierLifetime checkedLifetime = lifetime == null ? FrontierLifetime.PERSISTENT : lifetime;
+    public static TerritoryLifetime toLifetime(EntityLifetime lifetime) {
+        EntityLifetime checkedLifetime = lifetime == null ? EntityLifetime.PERSISTENT : lifetime;
         return switch (checkedLifetime) {
-            case PERSISTENT -> FrontierData.FrontierLifetime.PERSISTENT;
-            case SESSION_ONLY -> FrontierData.FrontierLifetime.SESSION_ONLY;
+            case PERSISTENT -> TerritoryLifetime.PERSISTENT;
+            case SESSION_ONLY -> TerritoryLifetime.SESSION_ONLY;
         };
     }
 
@@ -157,5 +182,13 @@ public final class ApiConverters {
 
     public static void applyMutation(FrontierData frontier, FrontierMutation mutation) {
         FrontierMutationApplier.applyMutation(frontier, mutation);
+    }
+
+    public static void applyCollectionMutation(CollectionData collection, CollectionMutation mutation) {
+        mutation.name().ifPresent(collection::setName);
+        mutation.color().ifPresent(collection::setColor);
+    }
+
+    private ApiConverters() {
     }
 }

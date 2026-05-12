@@ -1,6 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.HolderLookup;
@@ -15,9 +15,6 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public final class PreviewFrontierHelper {
-    private PreviewFrontierHelper() {
-    }
-
     public static void setPreviewBanner(FrontierData frontierData) {
         BannerPatternLayers patterns = createPreviewPatterns();
         if (patterns != null) {
@@ -44,5 +41,8 @@ public final class PreviewFrontierHelper {
         } catch (Exception ignored) {
             return null;
         }
+    }
+
+    private PreviewFrontierHelper() {
     }
 }

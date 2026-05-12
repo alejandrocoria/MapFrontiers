@@ -1,8 +1,10 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
-import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphics;
@@ -75,10 +77,10 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
         frontierData.setColor(0xFFAACC60);
         PreviewFrontierHelper.setPreviewBanner(frontierData);
         frontierData.setDimension(OVERWORLD);
-        frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenDay, true);
-        frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenName, true);
-        frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenOwner, true);
-        frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenBanner, true);
+        frontierData.setVisibility(FrontierVisibility.FullscreenDay, true);
+        frontierData.setVisibility(FrontierVisibility.FullscreenName, true);
+        frontierData.setVisibility(FrontierVisibility.FullscreenOwner, true);
+        frontierData.setVisibility(FrontierVisibility.FullscreenBanner, true);
         frontierData.addVertex(new BlockPos(10, 70, 10));
         frontierData.addVertex(new BlockPos(10, 70, 410));
         frontierData.addVertex(new BlockPos(270, 70, 410));
@@ -93,10 +95,10 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
         frontierData.setName2("12345678901234567");
         frontierData.setColor(0xFFA0A0FF);
         frontierData.setDimension(OVERWORLD);
-        frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenDay, true);
-        frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenName, true);
-        frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenOwner, false);
-        frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenBanner, false);
+        frontierData.setVisibility(FrontierVisibility.FullscreenDay, true);
+        frontierData.setVisibility(FrontierVisibility.FullscreenName, true);
+        frontierData.setVisibility(FrontierVisibility.FullscreenOwner, false);
+        frontierData.setVisibility(FrontierVisibility.FullscreenBanner, false);
         frontierData.addVertex(new BlockPos(240, 70, 280));
         frontierData.addVertex(new BlockPos(300, 70, 245));
         frontierData.addVertex(new BlockPos(360, 70, 280));
@@ -108,16 +110,16 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
 
     private static FrontierData createPathFrontier(SettingsUser owner) {
         FrontierData frontierData = new FrontierData();
-        frontierData.setMode(FrontierData.Mode.Path);
+        frontierData.setShape(FrontierShape.Path);
         frontierData.setOwner(owner);
         frontierData.setName1("Path");
         frontierData.setName2("Preview");
         frontierData.setColor(0xFFFFC04D);
         frontierData.setDimension(OVERWORLD);
-        frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenDay, true);
-        frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenName, false);
-        frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenOwner, false);
-        frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenBanner, false);
+        frontierData.setVisibility(FrontierVisibility.FullscreenDay, true);
+        frontierData.setVisibility(FrontierVisibility.FullscreenName, false);
+        frontierData.setVisibility(FrontierVisibility.FullscreenOwner, false);
+        frontierData.setVisibility(FrontierVisibility.FullscreenBanner, false);
         frontierData.addPoint(new BlockPos(305, 70, 40));
         frontierData.addPoint(new BlockPos(375, 70, 95));
         frontierData.addPoint(new BlockPos(325, 70, 150));

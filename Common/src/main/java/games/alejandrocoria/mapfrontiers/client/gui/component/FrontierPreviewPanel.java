@@ -1,8 +1,8 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import games.alejandrocoria.mapfrontiers.platform.services.IJourneyMapHelper;
 import net.minecraft.client.Minecraft;
@@ -48,10 +48,7 @@ public class FrontierPreviewPanel {
     }
 
     public void drawPanelBorder(GuiGraphics graphics, int x, int y, int width, int height) {
-        graphics.hLine(x, x + width - 1, y, ColorConstants.OPTION_BORDER);
-        graphics.hLine(x, x + width - 1, y + height - 1, ColorConstants.OPTION_BORDER);
-        graphics.vLine(x, y, y + height - 1, ColorConstants.OPTION_BORDER);
-        graphics.vLine(x + width - 1, y, y + height - 1, ColorConstants.OPTION_BORDER);
+        graphics.renderOutline(x, y, width, height, ColorConstants.OPTION_BORDER);
     }
 
     public void drawPreview(GuiGraphics graphics, int x, int y, int size, float scaleFactor) {
