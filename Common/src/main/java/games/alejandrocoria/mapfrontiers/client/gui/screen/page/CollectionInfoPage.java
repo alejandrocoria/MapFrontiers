@@ -23,6 +23,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.GridLayout;
@@ -31,6 +32,7 @@ import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
@@ -56,6 +58,7 @@ public class CollectionInfoPage extends PageScreen {
     private static final String TYPE_KEY = "mapfrontiers.type";
     private static final String TEMPORARY_KEY = "mapfrontiers.temporary";
     private static final String OWNER_KEY = "mapfrontiers.owner";
+    private static final String ORIGINAL_OWNER_KEY = "mapfrontiers.original_owner";
     private static final String FRONTIERS_COUNT_KEY = "mapfrontiers.collection_frontiers_count";
     private static final String AREA_KEY = "mapfrontiers.area";
     private static final String LENGTH_KEY = "mapfrontiers.length";
@@ -421,7 +424,15 @@ public class CollectionInfoPage extends PageScreen {
             }
         }
 
-        ownerLabel.setMessage(Component.translatable(OWNER_KEY, SettingsUserFormatter.getDisplayName(collection.getOwner())));
+        MutableComponent owner = Component.translatable(OWNER_KEY, SettingsUserFormatter.getDisplayName(collection.getOwner()));
+        if (collection.wasCopied()) {
+            owner.append(Component.literal(ColorConstants.WARNING + " !"));
+            ownerLabel.setTooltip(Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET)
+                    .append(Component.translatable(ORIGINAL_OWNER_KEY, SettingsUserFormatter.getDisplayName(collection.getCopiedFromUser())))));
+        } else {
+            ownerLabel.setTooltip(null);
+        }
+        ownerLabel.setMessage(owner);
         typeLabel.setMessage(Component.translatable(TYPE_KEY, getCollectionTypeLabel()));
         frontiersCountLabel.setMessage(Component.translatable(FRONTIERS_COUNT_KEY, frontiers.size()));
         areaLabel.setMessage(Component.translatable(AREA_KEY, formatMeasurement(totalArea)));
