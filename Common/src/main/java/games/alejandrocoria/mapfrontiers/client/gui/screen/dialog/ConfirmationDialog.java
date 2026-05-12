@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.AutoScaledScreen;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
@@ -56,7 +57,15 @@ public class ConfirmationDialog extends AutoScaledScreen {
         mainLayout.defaultCellSetting().alignHorizontallyCenter();
         content.addChild(mainLayout);
 
-        mainLayout.addChild(new StringWidget(Component.translatable(titleKey).withStyle(Style.EMPTY.withBold(true)), font).setColor(ColorConstants.WHITE));
+        LinearLayout titleRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
+        titleRow.defaultCellSetting().alignVerticallyMiddle();
+        titleRow.addChild(new StringWidget(Component.translatable(titleKey).withStyle(Style.EMPTY.withBold(true)), font)
+                .setColor(ColorConstants.WHITE));
+        AbstractWidget titleSuffixWidget = createTitleSuffixWidget();
+        if (titleSuffixWidget != null) {
+            titleRow.addChild(titleSuffixWidget);
+        }
+        mainLayout.addChild(titleRow);
 
         if (textKey != null) {
             mainLayout.addChild(new MultiLineTextWidget(Component.translatable(textKey), font).setCentered(true));
@@ -77,6 +86,10 @@ public class ConfirmationDialog extends AutoScaledScreen {
                 callback.accept(Response.ConfirmAlternative);
             }), 1, 0, 1, 2);
         }
+    }
+
+    protected @Nullable AbstractWidget createTitleSuffixWidget() {
+        return null;
     }
 
     @Override

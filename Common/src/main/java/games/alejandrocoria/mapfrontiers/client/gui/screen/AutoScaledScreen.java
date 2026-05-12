@@ -283,10 +283,7 @@ public abstract class AutoScaledScreen extends LayeredScreen {
         int y1 = (actualHeight - height) / 2;
         int y2 = (actualHeight + height) / 2 - 1;
         graphics.fill(x1, y1, x2, y2, ColorConstants.SCREEN_BG);
-        graphics.horizontalLine(x1, x2, y1, ColorConstants.TAB_BORDER);
-        graphics.horizontalLine(x1, x2, y2, ColorConstants.TAB_BORDER);
-        graphics.verticalLine(x1, y1, y2, ColorConstants.TAB_BORDER);
-        graphics.verticalLine(x2, y1, y2, ColorConstants.TAB_BORDER);
+        graphics.outline(x1, y1, x2 - x1 + 1, y2 - y1 + 1, ColorConstants.TAB_BORDER);
     }
 
     protected void drawCenteredBoxBackground(GuiGraphicsExtractor graphics) {

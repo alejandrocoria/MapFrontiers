@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.hud;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
+import games.alejandrocoria.mapfrontiers.client.config.HUDAnchor;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.Minecraft;
 
@@ -11,7 +11,7 @@ public final class HUDPlacementHelper {
         public int y = 0;
     }
 
-    public static Point getHUDAnchor(ClientConfig.HUDAnchor anchor) {
+    public static Point getHUDAnchor(HUDAnchor anchor) {
         Minecraft mc = Minecraft.getInstance();
         Point point = new Point();
         int displayWidth = mc.getWindow().getWidth();
@@ -57,7 +57,7 @@ public final class HUDPlacementHelper {
         return point;
     }
 
-    public static Point getHUDOrigin(ClientConfig.HUDAnchor anchor, int hudWidth, int hudHeight) {
+    public static Point getHUDOrigin(HUDAnchor anchor, int hudWidth, int hudHeight) {
         Point point = new Point();
 
         switch (anchor) {

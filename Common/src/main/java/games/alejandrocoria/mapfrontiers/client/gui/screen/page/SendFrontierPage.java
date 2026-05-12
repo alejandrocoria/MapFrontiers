@@ -3,14 +3,15 @@ package games.alejandrocoria.mapfrontiers.client.gui.screen.page;
 import games.alejandrocoria.mapfrontiers.client.ChatFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
-import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.chat.Component;
@@ -21,8 +22,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class SendFrontierPage extends PageScreen
-{
+public class SendFrontierPage extends PageScreen {
     private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_send");
     private static final Component DESCRIPTION_LABEL = Component.translatable("mapfrontiers.send_description");
     private static final Component ERROR_UUID_SIZE_LABEL = Component.translatable("mapfrontiers.new_user_error_uuid_size");
@@ -30,6 +30,7 @@ public class SendFrontierPage extends PageScreen
     private static final Component ERROR_USER_NOT_FOUND_LABEL = Component.translatable("mapfrontiers.new_user_shared_error_user_not_found");
     private static final Component ERROR_SELF_LABEL = Component.translatable("mapfrontiers.new_user_shared_error_self");
     private static final Component DONE_LABEL = Component.translatable("gui.done");
+    private static final Tooltip SEND_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.send.tooltip"));
 
     private FrontierOverlay frontier;
     private MultiLineTextWidget description;
@@ -71,6 +72,7 @@ public class SendFrontierPage extends PageScreen
         description.setCentered(true);
 
         LinearLayout newUserLayout = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
+        newUserLayout.defaultCellSetting().alignVerticallyMiddle();
         mainLayout.addChild(newUserLayout);
 
         textNewUser = new TextBoxUser(minecraft, font, LayoutConstants.USER_TEXTBOX_WIDTH);
@@ -79,6 +81,7 @@ public class SendFrontierPage extends PageScreen
         newUserLayout.addChild(textNewUser);
 
         buttonNewUser = new IconButton(IconButton.Type.Send, (b) -> buttonNewUserPressed());
+        buttonNewUser.setTooltip(SEND_TOOLTIP);
         newUserLayout.addChild(buttonNewUser);
 
         addBottomButton(new SimpleButton(font, LayoutConstants.PAGE_BUTTON_WIDTH, DONE_LABEL, (b) -> onClose()));

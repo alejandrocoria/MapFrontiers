@@ -3,11 +3,10 @@ package games.alejandrocoria.mapfrontiers.client.api;
 import games.alejandrocoria.mapfrontiers.api.client.FrontierActionResult;
 import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedClientFrontierService;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
+import games.alejandrocoria.mapfrontiers.api.model.FrontierCreateRequest;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
-import games.alejandrocoria.mapfrontiers.api.model.FrontierLifetime;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
-import games.alejandrocoria.mapfrontiers.api.model.FrontierShape;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierSharePermission;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
@@ -18,18 +17,18 @@ import java.util.Set;
 
 public class ClientFrontierServiceImpl implements PluginScopedClientFrontierService {
     @Override
-    public FrontierActionResult createPersonalFrontier(String pluginModId, DimensionId dimension, FrontierShape shape) {
-        return createPersonalFrontier(pluginModId, dimension, shape, FrontierLifetime.PERSISTENT);
+    public FrontierActionResult createPersonalFrontier(String pluginModId, FrontierCreateRequest request) {
+        return MapFrontiersClient.getOperationService().createFrontierAction(true, pluginModId, request);
     }
 
     @Override
-    public FrontierActionResult createPersonalFrontier(String pluginModId, DimensionId dimension, FrontierShape shape, FrontierLifetime lifetime) {
-        return MapFrontiersClient.getOperationService().createFrontierAction(true, pluginModId, dimension, shape, lifetime);
+    public FrontierActionResult createTemporaryPersonalFrontier(String pluginModId, FrontierCreateRequest request) {
+        return MapFrontiersClient.getOperationService().createTemporaryPersonalFrontierAction(pluginModId, request);
     }
 
     @Override
-    public FrontierActionResult createGlobalFrontier(String pluginModId, DimensionId dimension, FrontierShape shape) {
-        return MapFrontiersClient.getOperationService().createFrontierAction(false, pluginModId, dimension, shape);
+    public FrontierActionResult createGlobalFrontier(String pluginModId, FrontierCreateRequest request) {
+        return MapFrontiersClient.getOperationService().createFrontierAction(false, pluginModId, request);
     }
 
     @Override

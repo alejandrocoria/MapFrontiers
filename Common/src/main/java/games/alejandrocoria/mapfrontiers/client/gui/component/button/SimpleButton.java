@@ -52,10 +52,7 @@ public class SimpleButton extends ButtonBase {
         }
 
         int borderColor = isKeyboardFocused() ? ColorConstants.SIMPLE_BUTTON_BORDER_FOCUSED : active ? ColorConstants.SIMPLE_BUTTON_BORDER : ColorConstants.SIMPLE_BUTTON_BORDER_DISABLED;
-        graphics.horizontalLine(getX(), getX() + width - 1, getY(), borderColor);
-        graphics.horizontalLine(getX(), getX() + width - 1, getY() + height - 1, borderColor);
-        graphics.verticalLine(getX(), getY(), getY() + height - 1, borderColor);
-        graphics.verticalLine(getX() + width - 1, getY(), getY() + height - 1, borderColor);
+        graphics.outline(getX(), getY(), width, height, borderColor);
         graphics.fill(getX() + 1, getY() + 1, getX() + width - 1, getY() + height - 1, ColorConstants.SIMPLE_BUTTON_BG);
 
         label.extractRenderState(graphics, mouseX, mouseY, partialTicks);

@@ -15,6 +15,14 @@ public final class ColorHelper {
         return Color.getHSBColor(hue, saturation, luminance).getRGB();
     }
 
+    public static int ensureMinBrightness(int color, float minBrightness) {
+        minBrightness = Math.clamp(minBrightness, 0, 1);
+        float[] hsv = Color.RGBtoHSB((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, null);
+        float brightness = Math.max(hsv[2], minBrightness);
+        int newColor = Color.getHSBColor(hsv[0], hsv[1], brightness).getRGB();
+        return (newColor & 0x00FFFFFF) | (color & 0xFF000000);
+    }
+
     private ColorHelper() {
     }
 }

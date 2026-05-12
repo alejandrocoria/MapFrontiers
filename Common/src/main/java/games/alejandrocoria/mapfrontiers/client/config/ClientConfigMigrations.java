@@ -6,10 +6,12 @@ import games.alejandrocoria.mapfrontiers.common.config.ConfigMigrationStep;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigMigrations;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.UnaryOperator;
 
 public final class ClientConfigMigrations implements ConfigMigrations {
-    private static final String[][] MIGRATION_0_TO_1_MOVES = {
+    private static final String[][] LEGACY_PATH_MOVES_V0_TO_V1 = {
             // announcement
             {"titleAnnouncementDuration", "announcement.title.duration"},
             {"titleAnnouncementTimeout", "announcement.title.timeout"},
@@ -107,42 +109,91 @@ public final class ClientConfigMigrations implements ConfigMigrations {
     public ConfigMigrationStep step(int fromVersion) {
         return switch (fromVersion) {
             case 0 -> this::migrateFrom0To1;
+            case 1 -> this::migrateFrom1To2;
             default -> null;
         };
     }
 
     private void migrateFrom0To1(CommentedConfig config) throws ConfigMigrationException {
-        moveAll(config, MIGRATION_0_TO_1_MOVES);
+        moveAll(config, LEGACY_PATH_MOVES_V0_TO_V1);
 
-        rewriteString(config, "newFrontier.afterCreation", value -> switch (value) {
+        rewriteStringIfPresent(config, "newFrontier.afterCreation", value -> switch (value) {
             case "Info" -> "InfoScreen";
             case "Edit" -> "EditShape";
             case "Nothing" -> "DoNothing";
             default -> value;
         });
-        rewriteString(config, "appearance.text.color", value -> switch (value) {
+        rewriteStringIfPresent(config, "appearance.text.color", value -> switch (value) {
             case "Frontier" -> "FrontierColor";
             case "Bright" -> "FrontierColorBright";
             default -> value;
         });
-        rewriteString(config, "list.filters.owner", value -> switch (value) {
+        rewriteStringIfPresent(config, "list.filters.owner", value -> switch (value) {
             case "You" -> "Self";
             default -> value;
         });
-        rewriteString(config, "list.filters.dimension", value -> switch (value) {
+        rewriteStringIfPresent(config, "list.filters.dimension", value -> switch (value) {
             case "all" -> ClientConfig.DIMENSION_FILTER_ALL;
             case "current" -> ClientConfig.DIMENSION_FILTER_CURRENT;
             default -> value;
         });
     }
 
+    private void migrateFrom1To2(CommentedConfig config) {
+        migrateHudSlotsToList(config);
+        migrateNewFrontierShapeConfig(config);
+    }
+
+    private static void migrateHudSlotsToList(CommentedConfig config) {
+        List<HUDSlot> legacyHudSlots = List.of(
+                parseLegacyHudSlot(config.get("hud.slot1")),
+                parseLegacyHudSlot(config.get("hud.slot2")),
+                parseLegacyHudSlot(config.get("hud.slot3"))
+        );
+
+        List<HUDSlot> migratedHudSlots = new ArrayList<>(4);
+        int nameSlotIndex = legacyHudSlots.indexOf(HUDSlot.Name);
+        if (nameSlotIndex >= 0) {
+            for (int i = 0; i < legacyHudSlots.size(); ++i) {
+                migratedHudSlots.add(legacyHudSlots.get(i));
+                if (i == nameSlotIndex) {
+                    migratedHudSlots.add(HUDSlot.Collection);
+                }
+            }
+        } else {
+            migratedHudSlots.addAll(legacyHudSlots);
+            migratedHudSlots.add(HUDSlot.None);
+        }
+
+        while (migratedHudSlots.size() < 4) {
+            migratedHudSlots.add(HUDSlot.None);
+        }
+        if (migratedHudSlots.size() > 4) {
+            migratedHudSlots = new ArrayList<>(migratedHudSlots.subList(0, 4));
+        }
+
+        List<String> migratedSlotNames = migratedHudSlots.stream().map(Enum::name).toList();
+        config.set("hud.slots", migratedSlotNames);
+        config.remove("hud.slot1");
+        config.remove("hud.slot2");
+        config.remove("hud.slot3");
+    }
+
+    private static void migrateNewFrontierShapeConfig(CommentedConfig config) {
+        // Preserve the old vertex preset before reusing newFrontier.shape for the frontier shape enum.
+        moveIfPresent(config, "newFrontier.shape", "newFrontier.vertexShape");
+        moveIfPresent(config, "newFrontier.mode", "newFrontier.shape");
+        moveIfPresent(config, "newFrontier.shapeWidth", "newFrontier.vertexShapeWidth");
+        moveIfPresent(config, "newFrontier.shapeRadius", "newFrontier.vertexShapeRadius");
+    }
+
     private static void moveAll(CommentedConfig config, String[][] moves) {
         for (String[] move : moves) {
-            move(config, move[0], move[1]);
+            moveIfPresent(config, move[0], move[1]);
         }
     }
 
-    private static void move(CommentedConfig config, String legacyPath, String newPath) {
+    private static void moveIfPresent(CommentedConfig config, String legacyPath, String newPath) {
         Object value = config.get(legacyPath);
         if (value == null) {
             return;
@@ -152,7 +203,7 @@ public final class ClientConfigMigrations implements ConfigMigrations {
         config.remove(legacyPath);
     }
 
-    private static void rewriteString(CommentedConfig config, String path, UnaryOperator<String> rewrite) throws ConfigMigrationException {
+    private static void rewriteStringIfPresent(CommentedConfig config, String path, UnaryOperator<String> rewrite) throws ConfigMigrationException {
         Object value = config.get(path);
         if (value == null) {
             return;
@@ -163,5 +214,17 @@ public final class ClientConfigMigrations implements ConfigMigrations {
         }
 
         config.set(path, rewrite.apply(stringValue));
+    }
+
+    private static HUDSlot parseLegacyHudSlot(@Nullable Object rawValue) {
+        if (!(rawValue instanceof String value)) {
+            return HUDSlot.None;
+        }
+
+        try {
+            return HUDSlot.valueOf(value);
+        } catch (Exception ignored) {
+            return HUDSlot.None;
+        }
     }
 }

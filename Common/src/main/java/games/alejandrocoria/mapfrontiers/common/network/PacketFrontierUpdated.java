@@ -4,8 +4,8 @@ import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierChange;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -21,7 +21,7 @@ import java.util.UUID;
 @ParametersAreNonnullByDefault
 public class PacketFrontierUpdated {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_frontier_updated");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketFrontierUpdated> STREAM_CODEC = StreamCodec.ofMember(PacketFrontierUpdated::encode, PacketFrontierUpdated::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketFrontierUpdated> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketFrontierUpdated::encode, PacketFrontierUpdated::new);
 
     private UUID frontierId = new UUID(0, 0);
     private ResourceKey<Level> dimension = Level.OVERWORLD;
@@ -58,29 +58,21 @@ public class PacketFrontierUpdated {
     }
 
     public PacketFrontierUpdated(FriendlyByteBuf buf) {
-        try {
-            if (buf.readableBytes() > 1) {
-                this.frontierId = buf.readUUID();
-                this.dimension = ResourceKey.create(Registries.DIMENSION, buf.readIdentifier());
-                this.personal = buf.readBoolean();
-                this.change = new FrontierChange(buf);
-                this.playerID = buf.readInt();
-            }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to read message for PacketFrontierUpdated", t);
+        if (buf.readableBytes() > 1) {
+            this.frontierId = buf.readUUID();
+            this.dimension = ResourceKey.create(Registries.DIMENSION, buf.readIdentifier());
+            this.personal = buf.readBoolean();
+            this.change = new FrontierChange(buf);
+            this.playerID = buf.readInt();
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
-        try {
-            buf.writeUUID(frontierId);
-            buf.writeIdentifier(dimension.identifier());
-            buf.writeBoolean(personal);
-            change.toBytes(buf);
-            buf.writeInt(playerID);
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to write message for PacketFrontierUpdated", t);
-        }
+        buf.writeUUID(frontierId);
+        buf.writeIdentifier(dimension.identifier());
+        buf.writeBoolean(personal);
+        change.toBytes(buf);
+        buf.writeInt(playerID);
     }
 
     public static void handle(PacketContext<PacketFrontierUpdated> ctx) {

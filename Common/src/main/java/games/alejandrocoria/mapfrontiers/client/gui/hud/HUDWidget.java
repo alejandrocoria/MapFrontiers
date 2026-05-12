@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.hud;
 
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
+import games.alejandrocoria.mapfrontiers.client.config.HUDAnchor;
 import games.alejandrocoria.mapfrontiers.client.gui.component.AbstractWidgetNoNarration;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
@@ -80,12 +81,12 @@ public class HUDWidget extends AbstractWidgetNoNarration {
             HUDPlacementHelper.Point originPoint = HUDPlacementHelper.getHUDOrigin(ClientConfig.HUD_ANCHOR.get(), hud.getWidth(), hud.getHeight());
 
             if (ClientConfig.HUD_AUTO_ADJUST_ANCHOR.get()) {
-                ClientConfig.HUDAnchor closestAnchor = null;
+                HUDAnchor closestAnchor = null;
                 int closestDistance = 99999;
 
-                for (ClientConfig.HUDAnchor anchor : ClientConfig.HUDAnchor.VALUES) {
-                    if ((anchor == ClientConfig.HUDAnchor.Minimap || anchor == ClientConfig.HUDAnchor.MinimapHorizontal
-                            || anchor == ClientConfig.HUDAnchor.MinimapVertical) && !minimapEnabled) {
+                for (HUDAnchor anchor : HUDAnchor.VALUES) {
+                    if ((anchor == HUDAnchor.Minimap || anchor == HUDAnchor.MinimapHorizontal
+                            || anchor == HUDAnchor.MinimapVertical) && !minimapEnabled) {
                         continue;
                     }
 
@@ -111,8 +112,8 @@ public class HUDWidget extends AbstractWidgetNoNarration {
             if (ClientConfig.HUD_SNAP_TO_BORDER.get()) {
                 snapOffset.x = 16;
                 snapOffset.y = 16;
-                for (ClientConfig.HUDAnchor anchor : ClientConfig.HUDAnchor.VALUES) {
-                    if (anchor == ClientConfig.HUDAnchor.MinimapHorizontal || anchor == ClientConfig.HUDAnchor.MinimapVertical) {
+                for (HUDAnchor anchor : HUDAnchor.VALUES) {
+                    if (anchor == HUDAnchor.MinimapHorizontal || anchor == HUDAnchor.MinimapVertical) {
                         continue;
                     }
 
@@ -121,7 +122,7 @@ public class HUDWidget extends AbstractWidgetNoNarration {
                     int offsetX = positionHUD.x - anchorP.x + originP.x;
                     int offsetY = positionHUD.y - anchorP.y + originP.y;
 
-                    if (anchor == ClientConfig.HUDAnchor.Minimap) {
+                    if (anchor == HUDAnchor.Minimap) {
                         if (!minimapEnabled) {
                             continue;
                         }

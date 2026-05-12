@@ -1,8 +1,10 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
-import games.alejandrocoria.mapfrontiers.client.frontier.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.common.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -93,7 +95,7 @@ public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
         owner.username = "Player";
 
         FrontierData frontierData = new FrontierData();
-        frontierData.setMode(FrontierData.Mode.Path);
+        frontierData.setShape(FrontierShape.Path);
         frontierData.setOwner(owner);
         frontierData.setName1("Preview");
         frontierData.setName2("");
@@ -108,10 +110,10 @@ public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
     }
 
     private static void setPreviewVisibility(FrontierData frontierData) {
-        frontierData.setVisibility(FrontierData.VisibilityData.Visibility.Frontier, true);
-        frontierData.setVisibility(FrontierData.VisibilityData.Visibility.Fullscreen, true);
-        frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenName, true);
-        frontierData.setVisibility(FrontierData.VisibilityData.Visibility.FullscreenDay, true);
+        frontierData.setVisibility(FrontierVisibility.Frontier, true);
+        frontierData.setVisibility(FrontierVisibility.Fullscreen, true);
+        frontierData.setVisibility(FrontierVisibility.FullscreenName, true);
+        frontierData.setVisibility(FrontierVisibility.FullscreenDay, true);
     }
 
     private static FrontierData.PathStyle createPreviewStyle(FrontierData.PathStyle style) {

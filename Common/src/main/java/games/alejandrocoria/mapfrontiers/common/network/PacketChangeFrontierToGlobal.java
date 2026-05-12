@@ -5,7 +5,7 @@ import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
-import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationResult;
+import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationResult;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -21,7 +21,7 @@ import java.util.UUID;
 @ParametersAreNonnullByDefault
 public class PacketChangeFrontierToGlobal {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_change_frontier_to_global");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketChangeFrontierToGlobal> STREAM_CODEC = StreamCodec.ofMember(PacketChangeFrontierToGlobal::encode, PacketChangeFrontierToGlobal::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketChangeFrontierToGlobal> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketChangeFrontierToGlobal::encode, PacketChangeFrontierToGlobal::new);
 
     private UUID frontierID;
     private Date modified;
@@ -36,29 +36,21 @@ public class PacketChangeFrontierToGlobal {
     }
 
     public PacketChangeFrontierToGlobal(FriendlyByteBuf buf) {
-        try {
-            if (buf.readableBytes() > 1) {
-                this.frontierID = UUIDHelper.fromBytes(buf);
-                if (buf.readBoolean()) {
-                    modified = new Date(buf.readLong());
-                }
+        if (buf.readableBytes() > 1) {
+            this.frontierID = UUIDHelper.fromBytes(buf);
+            if (buf.readBoolean()) {
+                modified = new Date(buf.readLong());
             }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to read message for PacketChangeFrontierToGlobal", t);
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
-        try {
-            UUIDHelper.toBytes(buf, frontierID);
-            if (modified == null) {
-                buf.writeBoolean(false);
-            } else {
-                buf.writeBoolean(true);
-                buf.writeLong(modified.getTime());
-            }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to write message for PacketChangeFrontierToGlobal", t);
+        UUIDHelper.toBytes(buf, frontierID);
+        if (modified == null) {
+            buf.writeBoolean(false);
+        } else {
+            buf.writeBoolean(true);
+            buf.writeLong(modified.getTime());
         }
     }
 
@@ -73,7 +65,7 @@ public class PacketChangeFrontierToGlobal {
             if (MapFrontiers.getServerRuntime() == null) {
                 return;
             }
-            ServerFrontierOperationResult result = MapFrontiers.getServerRuntime().getOperationService().changeFrontierToGlobal(player, message.frontierID);
+            ServerTerritoryOperationResult result = MapFrontiers.getServerRuntime().getOperationService().changeFrontierToGlobal(player, message.frontierID);
             result.dispatchNetworkActions();
         } else {
             if (!MapFrontiersClient.isJourneyMapPluginAvailable()) {

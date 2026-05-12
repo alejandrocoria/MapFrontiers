@@ -16,7 +16,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 public class PacketRequestFrontierSettings {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_request_frontier_settings");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketRequestFrontierSettings> STREAM_CODEC = StreamCodec.ofMember(PacketRequestFrontierSettings::encode, PacketRequestFrontierSettings::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketRequestFrontierSettings> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketRequestFrontierSettings::encode, PacketRequestFrontierSettings::new);
 
     private int changeCounter;
 
@@ -33,21 +33,13 @@ public class PacketRequestFrontierSettings {
     }
 
     public PacketRequestFrontierSettings(FriendlyByteBuf buf) {
-        try {
-            if (buf.readableBytes() > 1) {
-                this.changeCounter = buf.readInt();
-            }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to read message for PacketRequestFrontierSettings", t);
+        if (buf.readableBytes() > 1) {
+            this.changeCounter = buf.readInt();
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
-        try {
-            buf.writeInt(changeCounter);
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to write message for PacketRequestFrontierSettings", t);
-        }
+        buf.writeInt(changeCounter);
     }
 
     public static void handle(PacketContext<PacketRequestFrontierSettings> ctx) {
@@ -64,4 +56,3 @@ public class PacketRequestFrontierSettings {
         }
     }
 }
-

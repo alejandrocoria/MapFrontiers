@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
+import games.alejandrocoria.mapfrontiers.client.config.TerritoryListSorting;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.ButtonBase;
@@ -23,12 +24,12 @@ public class SortToolbar extends LinearLayout {
 
         this.onChange = onChange;
 
-        for (ClientConfig.Sorting sort : ClientConfig.Sorting.VALUES) {
-            int index = ClientConfig.getFrontierSortingValues().indexOf(sort);
+        for (TerritoryListSorting sort : TerritoryListSorting.VALUES) {
+            int index = ClientConfig.getTerritoryListSortingValues().indexOf(sort);
             if (index == -1) {
                 continue;
             }
-            SortButton button = addChild(new SortButton(font, sort, ClientConfig.getFrontierSortingDirectionValues().get(index), this::buttonPressed));
+            SortButton button = addChild(new SortButton(font, sort, ClientConfig.getTerritoryListSortingDirectionValues().get(index), this::buttonPressed));
             if (index == 0) {
                 selected = button;
                 selected.setSelected(true);
@@ -38,8 +39,8 @@ public class SortToolbar extends LinearLayout {
 
     private void buttonPressed(Button button) {
         if (button instanceof SortButton sortButton) {
-            java.util.List<ClientConfig.Sorting> sorting = new java.util.ArrayList<>(ClientConfig.getFrontierSortingValues());
-            java.util.List<Boolean> direction = new java.util.ArrayList<>(ClientConfig.getFrontierSortingDirectionValues());
+            java.util.List<TerritoryListSorting> sorting = new java.util.ArrayList<>(ClientConfig.getTerritoryListSortingValues());
+            java.util.List<Boolean> direction = new java.util.ArrayList<>(ClientConfig.getTerritoryListSortingDirectionValues());
             if (sortButton == selected) {
                 sortButton.changeDirection();
                 direction.set(0, !direction.getFirst());
@@ -54,8 +55,8 @@ public class SortToolbar extends LinearLayout {
                 selected.setSelected(true);
             }
 
-            ClientConfig.setFrontierSortingValues(sorting);
-            ClientConfig.setFrontierSortingDirectionValues(direction);
+            ClientConfig.setTerritoryListSortingValues(sorting);
+            ClientConfig.setTerritoryListSortingDirectionValues(direction);
             ClientGlobalEvents.postUpdatedConfigEvent();
         }
 
@@ -67,12 +68,12 @@ public class SortToolbar extends LinearLayout {
     public static class SortButton extends ButtonBase {
         private final LinearLayout layout = LinearLayout.horizontal();
         private boolean selected = false;
-        private final ClientConfig.Sorting sorting;
+        private final TerritoryListSorting sorting;
         private boolean direction;
         private final StringWidget label;
         private final IconButton iconButton;
 
-        public SortButton(Font font, ClientConfig.Sorting sorting, boolean direction, OnPress onPress) {
+        public SortButton(Font font, TerritoryListSorting sorting, boolean direction, OnPress onPress) {
             super(0, 0, 0, 0, Component.empty(), onPress, DEFAULT_NARRATION);
             this.sorting = sorting;
             this.direction = direction;
@@ -97,7 +98,7 @@ public class SortToolbar extends LinearLayout {
             iconButton.setType(direction ? IconButton.Type.SortUp : IconButton.Type.SortDown);
         }
 
-        public ClientConfig.Sorting getSorting() {
+        public TerritoryListSorting getSorting() {
             return sorting;
         }
 

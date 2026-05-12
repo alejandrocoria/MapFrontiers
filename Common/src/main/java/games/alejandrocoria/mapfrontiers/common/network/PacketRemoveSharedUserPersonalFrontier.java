@@ -5,7 +5,7 @@ import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
-import games.alejandrocoria.mapfrontiers.server.frontier.ServerFrontierOperationResult;
+import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationResult;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -19,7 +19,7 @@ import java.util.UUID;
 @ParametersAreNonnullByDefault
 public class PacketRemoveSharedUserPersonalFrontier {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_remove_shared_user_personal_frontier");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketRemoveSharedUserPersonalFrontier> STREAM_CODEC = StreamCodec.ofMember(PacketRemoveSharedUserPersonalFrontier::encode, PacketRemoveSharedUserPersonalFrontier::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketRemoveSharedUserPersonalFrontier> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketRemoveSharedUserPersonalFrontier::encode, PacketRemoveSharedUserPersonalFrontier::new);
 
     private UUID frontierID;
     private final SettingsUser targetUser;
@@ -35,24 +35,15 @@ public class PacketRemoveSharedUserPersonalFrontier {
 
     public PacketRemoveSharedUserPersonalFrontier(FriendlyByteBuf buf) {
         this.targetUser = new SettingsUser();
-
-        try {
-            if (buf.readableBytes() > 1) {
-                this.frontierID = UUIDHelper.fromBytes(buf);
-                this.targetUser.fromBytes(buf);
-            }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to read message for PacketRemoveSharedUserPersonalFrontier", t);
+        if (buf.readableBytes() > 1) {
+            this.frontierID = UUIDHelper.fromBytes(buf);
+            this.targetUser.fromBytes(buf);
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
-        try {
-            UUIDHelper.toBytes(buf, frontierID);
-            targetUser.toBytes(buf);
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to write message for PacketRemoveSharedUserPersonalFrontier", t);
-        }
+        UUIDHelper.toBytes(buf, frontierID);
+        targetUser.toBytes(buf);
     }
 
     public static void handle(PacketContext<PacketRemoveSharedUserPersonalFrontier> ctx) {
@@ -66,7 +57,7 @@ public class PacketRemoveSharedUserPersonalFrontier {
                 return;
             }
 
-            ServerFrontierOperationResult result = MapFrontiers.getServerRuntime().getShareService()
+            ServerTerritoryOperationResult result = MapFrontiers.getServerRuntime().getShareService()
                     .removeSharedUserPersonalFrontier(player, message.frontierID, message.targetUser);
             result.dispatchNetworkActions();
         }
