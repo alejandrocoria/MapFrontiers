@@ -72,7 +72,7 @@ public class ServerFrontierShareService {
             return rejectedWithProfileRefresh(player, frontier);
         }
 
-        if (!permissionEvaluator.canManagePersonalShareSettings(player, frontier)) {
+        if (!permissionEvaluator.canManagePersonalSharedAccess(player, frontier)) {
             return ServerTerritoryOperationResult.ignored(frontier);
         }
 
@@ -136,7 +136,7 @@ public class ServerFrontierShareService {
             return ServerTerritoryOperationResult.ignored(frontier);
         }
 
-        if (!permissionEvaluator.canManagePersonalShareSettings(player, frontier)) {
+        if (!permissionEvaluator.canManagePersonalSharedAccess(player, frontier)) {
             return ServerTerritoryOperationResult.ignored(frontier);
         }
 

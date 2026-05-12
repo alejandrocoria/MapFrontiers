@@ -102,7 +102,7 @@ public class FrontierInfoPage extends PageScreen {
     private static final Component PASTE_COLOR_LABEL = Component.translatable("mapfrontiers.paste_color");
     private static final Component PASTE_BANNER_LABEL = Component.translatable("mapfrontiers.paste_banner");
     private static final Component SELECT_IN_MAP_LABEL = Component.translatable("mapfrontiers.select_in_map");
-    private static final Component SHARE_SETTINGS_LABEL = Component.translatable("mapfrontiers.share_settings");
+    private static final Component SHARED_ACCESS_LABEL = Component.translatable("mapfrontiers.shared_access");
     private static final Component SEND_LABEL = Component.translatable("mapfrontiers.send");
     private static final Component DELETE_LABEL = Component.translatable("mapfrontiers.delete");
     private static final Component DONE_LABEL = Component.translatable("gui.done");
@@ -164,7 +164,7 @@ public class FrontierInfoPage extends PageScreen {
     private IconButton buttonChangeToPersonalGlobal;
 
     private SimpleButton buttonSelect;
-    private SimpleButton buttonShareSettings;
+    private SimpleButton buttonSharedAccess;
     private SimpleButton buttonDelete;
     private SimpleButton buttonDone;
     private SimpleButton buttonBanner;
@@ -472,7 +472,7 @@ public class FrontierInfoPage extends PageScreen {
 
     private void buildBottomButtons() {
         buttonSelect = addBottomButton(new SimpleButton(font, SECTION_WIDTH, SELECT_IN_MAP_LABEL, b -> onSelectInMapPressed()));
-        buttonShareSettings = addBottomButton(new SimpleButton(font, SECTION_WIDTH, SHARE_SETTINGS_LABEL, b -> onSharePressed()));
+        buttonSharedAccess = addBottomButton(new SimpleButton(font, SECTION_WIDTH, SHARED_ACCESS_LABEL, b -> onSharedAccessPressed()));
         buttonDelete = addBottomButton(new SimpleButton(font, SECTION_WIDTH, DELETE_LABEL, b -> onDeletePressed()));
         buttonDelete.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
         buttonDone = addBottomButton(new SimpleButton(font, SECTION_WIDTH, DONE_LABEL, b -> onClose()));
@@ -671,13 +671,13 @@ public class FrontierInfoPage extends PageScreen {
         Services.JOURNEYMAP.fullscreenMapCenterOn(center.getX(), center.getZ());
     }
 
-    private void onSharePressed() {
+    private void onSharedAccessPressed() {
         if (frontier.isSessionOnly()) {
             return;
         }
 
         if (MapFrontiersClient.isModOnServer()) {
-            new ShareSettingsPage(frontier).display();
+            new SharedAccessPage(frontier).display();
         } else {
             new SendFrontierPage(frontier).display();
         }
@@ -925,11 +925,11 @@ public class FrontierInfoPage extends PageScreen {
         UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
         buttonSelect.active = uiState != null && frontier.getDimension().equals(uiState.dimension);
         if (MapFrontiersClient.isModOnServer()) {
-            buttonShareSettings.setMessage(SHARE_SETTINGS_LABEL);
-            buttonShareSettings.active = actions.canShare && !frontier.isSessionOnly();
+            buttonSharedAccess.setMessage(SHARED_ACCESS_LABEL);
+            buttonSharedAccess.active = actions.canShare && !frontier.isSessionOnly();
         } else {
-            buttonShareSettings.setMessage(SEND_LABEL);
-            buttonShareSettings.active = !frontier.isSessionOnly();
+            buttonSharedAccess.setMessage(SEND_LABEL);
+            buttonSharedAccess.active = !frontier.isSessionOnly();
         }
     }
 

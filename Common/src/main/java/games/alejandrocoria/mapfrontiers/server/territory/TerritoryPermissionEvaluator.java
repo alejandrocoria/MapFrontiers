@@ -74,7 +74,7 @@ public class TerritoryPermissionEvaluator {
         return collection.getOwner().equals(getPlayerUser(player));
     }
 
-    public boolean canManagePersonalShareSettings(ServerPlayer player, FrontierData frontier) {
+    public boolean canManagePersonalSharedAccess(ServerPlayer player, FrontierData frontier) {
         return frontier.checkActionUserShared(getPlayerUser(player), SettingsUserShared.Action.UpdateSettings);
     }
 

@@ -31,8 +31,8 @@ import java.util.Date;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class ShareSettingsPage extends PageScreen {
-    private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_share_settings");
+public class SharedAccessPage extends PageScreen {
+    private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_shared_access");
     private static final Component UPDATE_FRONTIER_LABEL = Component.translatable("mapfrontiers.update_frontier");
     private static final Component UPDATE_SETTINGS_LABEL = Component.translatable("mapfrontiers.update_settings");
     private static final Component ERROR_UUID_SIZE_LABEL = Component.translatable("mapfrontiers.new_user_error_uuid_size");
@@ -57,7 +57,7 @@ public class ShareSettingsPage extends PageScreen {
     private boolean canUpdate;
     private int ticksSinceLastUpdate = 0;
 
-    public ShareSettingsPage(FrontierOverlay frontier) {
+    public SharedAccessPage(FrontierOverlay frontier) {
         super(TITLE_LABEL);
         this.frontier = frontier;
 
