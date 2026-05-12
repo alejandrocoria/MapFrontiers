@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.common.api;
 
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.api.event.EventBus;
 
 import java.util.ArrayList;
@@ -41,7 +42,16 @@ public class SimpleEventBus implements EventBus {
         // Snapshot to allow listeners to unsubscribe safely during dispatch.
         List<Consumer<Object>> snapshot = List.copyOf(handlers);
         for (Consumer<Object> handler : snapshot) {
-            handler.accept(event);
+            try {
+                handler.accept(event);
+            } catch (Throwable t) {
+                MapFrontiers.LOGGER.error(
+                        "Unhandled exception in MapFrontiers API listener {} while dispatching {}",
+                        handler.getClass().getName(),
+                        event.getClass().getName(),
+                        t
+                );
+            }
         }
     }
 }
