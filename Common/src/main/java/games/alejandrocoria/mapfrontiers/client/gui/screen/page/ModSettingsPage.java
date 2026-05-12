@@ -45,6 +45,7 @@ import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
@@ -110,6 +111,7 @@ public class ModSettingsPage extends PageScreen {
     private static final Component UPDATE_SETTINGS_LABEL = Component.translatable("mapfrontiers.update_settings");
     private static final Component SHARE_PERSONAL_FRONTIER_LABEL = Component.translatable("mapfrontiers.share_personal_frontier");
     private static final Component DONE_LABEL = Component.translatable("gui.done");
+    private static final Tooltip ADD_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.add.tooltip"));
     private static final int DEFAULT_OPTION_WIDTH = 40;
     private static final int DEFAULT_TEXTBOX_WIDTH = 40;
     private static final int BUTTON_HORIZONTAL_PADDING = 8;
@@ -357,6 +359,7 @@ public class ModSettingsPage extends PageScreen {
         textNewGroupName.setSubmitCallback(value -> onNewGroupPressed());
 
         buttonNewGroup = newGroupLayout.addChild(new IconButton(IconButton.Type.Add, b -> onNewGroupPressed()));
+        buttonNewGroup.setTooltip(ADD_TOOLTIP);
     }
 
     private void buildUsersPanel(LinearLayout usersColumn) {
@@ -381,6 +384,7 @@ public class ModSettingsPage extends PageScreen {
         textNewUser.setSubmitCallback(value -> onNewUserPressed());
 
         buttonNewUser = newUserLayout.addChild(new IconButton(IconButton.Type.Add, b -> onNewUserPressed()));
+        buttonNewUser.setTooltip(ADD_TOOLTIP);
     }
 
     private void buildActionsTab() {

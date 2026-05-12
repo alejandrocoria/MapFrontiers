@@ -11,6 +11,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUse
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.chat.Component;
@@ -29,6 +30,7 @@ public class SendFrontierPage extends PageScreen {
     private static final Component ERROR_USER_NOT_FOUND_LABEL = Component.translatable("mapfrontiers.new_user_shared_error_user_not_found");
     private static final Component ERROR_SELF_LABEL = Component.translatable("mapfrontiers.new_user_shared_error_self");
     private static final Component DONE_LABEL = Component.translatable("gui.done");
+    private static final Tooltip SEND_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.send.tooltip"));
 
     private FrontierOverlay frontier;
     private MultiLineTextWidget description;
@@ -79,6 +81,7 @@ public class SendFrontierPage extends PageScreen {
         newUserLayout.addChild(textNewUser);
 
         buttonNewUser = new IconButton(IconButton.Type.Send, (b) -> buttonNewUserPressed());
+        buttonNewUser.setTooltip(SEND_TOOLTIP);
         newUserLayout.addChild(buttonNewUser);
 
         addBottomButton(new SimpleButton(font, LayoutConstants.PAGE_BUTTON_WIDTH, DONE_LABEL, (b) -> onClose()));

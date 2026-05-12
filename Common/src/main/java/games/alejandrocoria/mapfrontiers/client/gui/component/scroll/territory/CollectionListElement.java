@@ -60,6 +60,8 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
     private static final int MARKED_BADGE_WIDTH_EXTRA = 5;
     private static final int MARKED_BADGE_GAP = 4;
     private static final int RAIL_HOVER_COLOR = 0xA0202020;
+    private static final Tooltip COLLAPSE_COLLECTION_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.collapse_collection.tooltip"));
+    private static final Tooltip EXPAND_COLLECTION_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.expand_collection.tooltip"));
     private static final Tooltip MOVE_HERE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.move_here.tooltip"));
     private static final Tooltip DELETE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.delete"));
 
@@ -121,6 +123,7 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
         mainFocusTarget = new FocusTarget(this::getMainFocusRectangle);
 
         collapseToggleButton = new IconButton(collapsed ? IconButton.Type.Collapsed : IconButton.Type.Expanded, (button) -> requestCollapseToggle());
+        collapseToggleButton.setTooltip(collapsed ? EXPAND_COLLECTION_TOOLTIP : COLLAPSE_COLLECTION_TOOLTIP);
         createButton = actionState == ActionState.CREATE_FRONTIER ? new IconButton(IconButton.Type.Add, (button) -> requestCreate()) : null;
         if (createButton != null) {
             createButton.active = true;

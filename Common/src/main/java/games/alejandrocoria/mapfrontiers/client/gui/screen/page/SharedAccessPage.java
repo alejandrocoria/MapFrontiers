@@ -18,6 +18,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -42,6 +43,7 @@ public class SharedAccessPage extends PageScreen {
     private static final Component ERROR_OWNER_LABEL = Component.translatable("mapfrontiers.new_user_shared_error_owner");
     private static final Component ERROR_REPEATED_LABEL = Component.translatable("mapfrontiers.new_user_shared_error_user_repeated");
     private static final Component DONE_LABEL = Component.translatable("gui.done");
+    private static final Tooltip ADD_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.add.tooltip"));
     private static final int USERS_WIDTH = 430;
     private static final int USERS_ELEMENT_HEIGHT = 15;
     private static final int USERS_MIN_ROWS = 4;
@@ -126,6 +128,7 @@ public class SharedAccessPage extends PageScreen {
         newUserLayout.addChild(textNewUser);
 
         buttonNewUser = new IconButton(IconButton.Type.Add, (b) -> buttonNewUserPressed());
+        buttonNewUser.setTooltip(ADD_TOOLTIP);
         buttonNewUser.visible = false;
         newUserLayout.addChild(buttonNewUser);
 
