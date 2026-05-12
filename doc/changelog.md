@@ -4,6 +4,7 @@
 * Added: Temporary personal frontiers can now be created directly from the GUI for session-only use.
 * Added: Frontier info paste options now support copying Path style between Path frontiers.
 * Changed: Frontier creation from the frontier list now stays in the list unless shape editing is selected.
+* Changed: Renamed frontier mode to shape across the GUI and client config for clearer terminology.
 * Changed: Replaced the frontier list Type filter with a Shape filter (All, Vertex, Chunk, Path).
 * Changed: Improved keyboard navigation across many GUI screens and widgets, including tabs, scroll lists, group settings, the color palette, and the color picker.
 * Fixed: Changing frontier info paste options no longer sends unnecessary frontier updates to the server.
