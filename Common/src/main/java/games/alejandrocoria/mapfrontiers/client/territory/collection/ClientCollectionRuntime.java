@@ -66,17 +66,8 @@ public class ClientCollectionRuntime {
         getCollectionMap(collection).put(collection.getId(), new CollectionData(collection));
     }
 
-    public void deleteCollection(UUID collectionId) {
-        onCollectionDeleted(collectionId);
-    }
-
     public void onCollectionDeleted(UUID collectionId) {
         removeCollectionFromAllScopes(collectionId);
-    }
-
-    public void refreshFromFrontiers(FrontiersOverlayManager globalManager, FrontiersOverlayManager personalManager) {
-        clearFrontierIndexes();
-        replaceFrontierIndexes(globalManager, personalManager);
     }
 
     public void replaceFrontierIndexes(FrontiersOverlayManager globalManager, FrontiersOverlayManager personalManager) {
@@ -162,18 +153,6 @@ public class ClientCollectionRuntime {
     public List<FrontierOverlay> getFrontiersInCollection(UUID collectionId) {
         List<FrontierOverlay> frontiers = indexedFrontiersByCollectionId.get(collectionId);
         return frontiers == null ? List.of() : List.copyOf(frontiers);
-    }
-
-    public List<FrontierOverlay> getFrontiersWithoutCollection(boolean personal) {
-        if (!personal) {
-            return getFrontiersWithoutCollection(CollectionScope.GLOBAL_PERSISTENT);
-        }
-
-        List<FrontierOverlay> frontiers = new ArrayList<>(personalPersistentFrontiersWithoutCollection.size()
-                + personalSessionFrontiersWithoutCollection.size());
-        frontiers.addAll(personalPersistentFrontiersWithoutCollection);
-        frontiers.addAll(personalSessionFrontiersWithoutCollection);
-        return List.copyOf(frontiers);
     }
 
     public List<FrontierOverlay> getFrontiersWithoutCollection(CollectionScope scope) {
