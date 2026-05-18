@@ -119,9 +119,15 @@ public class TerritoriesManager {
     }
 
     public List<FrontierData> getFrontiersInCollection(UUID collectionId) {
+        LinkedHashSet<UUID> frontierIds = frontierIdsByCollectionId.get(collectionId);
+        if (frontierIds == null || frontierIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
         ArrayList<FrontierData> frontiers = new ArrayList<>();
-        for (FrontierData frontier : allFrontiers.values()) {
-            if (collectionId.equals(frontier.getCollectionId())) {
+        for (UUID frontierId : frontierIds) {
+            FrontierData frontier = allFrontiers.get(frontierId);
+            if (frontier != null && collectionId.equals(frontier.getCollectionId())) {
                 frontiers.add(frontier);
             }
         }
@@ -130,9 +136,15 @@ public class TerritoriesManager {
     }
 
     public boolean userHasVisiblePersonalCollection(SettingsUser user, UUID collectionId) {
-        for (ArrayList<FrontierData> frontiers : getAllPersonalFrontiers(user).values()) {
-            for (FrontierData frontier : frontiers) {
-                if (collectionId.equals(frontier.getCollectionId())) {
+        HashMap<ResourceKey<Level>, LinkedHashSet<UUID>> knownFrontierIdsByDimension = knownPersonalFrontierIdsByUserAndDimension.get(user);
+        if (knownFrontierIdsByDimension == null) {
+            return false;
+        }
+
+        for (LinkedHashSet<UUID> knownFrontierIds : knownFrontierIdsByDimension.values()) {
+            for (UUID frontierId : knownFrontierIds) {
+                FrontierData frontier = allFrontiers.get(frontierId);
+                if (frontier != null && collectionId.equals(frontier.getCollectionId())) {
                     return true;
                 }
             }
