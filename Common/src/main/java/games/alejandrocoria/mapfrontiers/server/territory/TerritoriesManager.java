@@ -166,7 +166,7 @@ public class TerritoriesManager {
         frontiers.add(frontier);
         allFrontiers.put(frontier.getId(), frontier);
         indexFrontier(frontier);
-        saveTerritoriesNow();
+        markDirty();
 
         return frontier;
     }
@@ -180,7 +180,7 @@ public class TerritoriesManager {
         frontiers.add(frontier);
         allFrontiers.put(frontier.getId(), frontier);
         indexFrontier(frontier);
-        markTerritoriesUpdated();
+        markDirty();
     }
 
     public void addGlobalCollection(CollectionData collection) {
@@ -191,7 +191,7 @@ public class TerritoriesManager {
         globalCollections.add(collection);
         allCollections.put(collection.getId(), collection);
         ensureCollectionIndexEntry(collection.getId());
-        saveTerritoriesNow();
+        markDirty();
     }
 
     public void addPersonalCollection(CollectionData collection) {
@@ -202,7 +202,7 @@ public class TerritoriesManager {
         getAllPersonalCollections(collection.getOwner()).add(collection);
         allCollections.put(collection.getId(), collection);
         ensureCollectionIndexEntry(collection.getId());
-        saveTerritoriesNow();
+        markDirty();
     }
 
     public void importPersonalCollection(CollectionData collection) {
@@ -214,12 +214,12 @@ public class TerritoriesManager {
         collections.add(collection);
         allCollections.put(collection.getId(), collection);
         ensureCollectionIndexEntry(collection.getId());
-        markTerritoriesUpdated();
+        markDirty();
     }
 
     public void addPersonalFrontier(SettingsUser user, FrontierData frontier) {
         addPersonalFrontierReference(user, frontier);
-        saveTerritoriesNow();
+        markDirty();
     }
 
     public boolean deleteGlobalFrontier(ResourceKey<Level> dimension, UUID id) {
@@ -236,7 +236,7 @@ public class TerritoriesManager {
             if (frontier != null) {
                 deindexFrontier(frontier);
             }
-            saveTerritoriesNow();
+            markDirty();
         }
 
         return deleted;
@@ -262,7 +262,7 @@ public class TerritoriesManager {
             }
         }
 
-        saveTerritoriesNow();
+        markDirty();
         return true;
     }
 
@@ -274,7 +274,7 @@ public class TerritoriesManager {
 
         userShared.setPending(true);
         frontier.addUserShared(userShared);
-        saveTerritoriesNow();
+        markDirty();
         return true;
     }
 
@@ -290,7 +290,7 @@ public class TerritoriesManager {
         }
 
         currentUserShared.setActions(userShared.getActions());
-        saveTerritoriesNow();
+        markDirty();
         return true;
     }
 
@@ -310,7 +310,7 @@ public class TerritoriesManager {
             deletePersonalFrontierInternal(targetUser, frontier.getDimension(), frontierId, false);
         }
 
-        saveTerritoriesNow();
+        markDirty();
         return true;
     }
 
@@ -330,7 +330,7 @@ public class TerritoriesManager {
         }
 
         userShared.setPending(false);
-        saveTerritoriesNow();
+        markDirty();
         return true;
     }
 
@@ -346,11 +346,11 @@ public class TerritoriesManager {
         }
 
         frontier.removeUserShared(targetUser);
-        saveTerritoriesNow();
+        markDirty();
         return true;
     }
 
-    private boolean deletePersonalFrontierInternal(SettingsUser user, ResourceKey<Level> dimension, UUID id, boolean saveImmediately) {
+    private boolean deletePersonalFrontierInternal(SettingsUser user, ResourceKey<Level> dimension, UUID id, boolean markDirtyIfDeleted) {
         Map<ResourceKey<Level>, ArrayList<FrontierData>> dimensionsPersonalFrontiers = usersDimensionsPersonalFrontiers.get(user);
         if (dimensionsPersonalFrontiers == null) {
             return false;
@@ -371,8 +371,8 @@ public class TerritoriesManager {
 
         if (deleted) {
             deindexKnownPersonalFrontier(user, dimension, id);
-            if (saveImmediately) {
-                saveTerritoriesNow();
+            if (markDirtyIfDeleted) {
+                markDirty();
             }
         }
 
@@ -390,7 +390,7 @@ public class TerritoriesManager {
         change.setModifiedTime(frontier.getModified().getTime());
         frontier.applyChange(change);
         reindexFrontierAfterMutation(frontier, previousState);
-        markTerritoriesUpdated();
+        markDirty();
         return true;
     }
 
@@ -415,7 +415,7 @@ public class TerritoriesManager {
         change.setModifiedTime(frontier.getModified().getTime());
         frontier.applyChange(change);
         reindexFrontierAfterMutation(frontier, previousState);
-        markTerritoriesUpdated();
+        markDirty();
         return true;
     }
 
@@ -446,7 +446,7 @@ public class TerritoriesManager {
                 frontier.removeAllUserShared();
                 getAllGlobalFrontiers(dimension).add(frontier);
                 reindexFrontierAfterMutation(frontier, previousState);
-                saveTerritoriesNow();
+                markDirty();
             }
         }
 
@@ -470,7 +470,7 @@ public class TerritoriesManager {
             frontier.setOwner(newOwner);
             getAllPersonalFrontiers(newOwner, dimension).add(frontier);
             reindexFrontierAfterMutation(frontier, previousState);
-            saveTerritoriesNow();
+            markDirty();
         }
 
         return deleted;
@@ -674,15 +674,11 @@ public class TerritoriesManager {
     }
 
     public void tickPersistence() {
-        flushTerritoriesIfDue();
+        flushPendingScheduledTerritoriesSave();
     }
 
     public void markDirty() {
         persistenceController.markDirty(System.currentTimeMillis());
-    }
-
-    public void flushTerritoriesIfDue() {
-        flushPendingScheduledTerritoriesSave();
     }
 
     public void flushTerritoriesOnShutdown() {
@@ -694,18 +690,6 @@ public class TerritoriesManager {
     public void flushTerritoriesNow() {
         saveTerritoriesSnapshot();
         persistenceController.markPersisted(System.currentTimeMillis());
-    }
-
-    public void markTerritoriesUpdated() {
-        markDirty();
-    }
-
-    public void flushPendingTerritoriesUpdates() {
-        flushTerritoriesIfDue();
-    }
-
-    public void saveTerritoriesNow() {
-        flushTerritoriesNow();
     }
 
     public @Nullable CollectionData removeCollection(UUID collectionId) {
@@ -722,7 +706,7 @@ public class TerritoriesManager {
 
         pruneCollectionIndexIfEmpty(collectionId);
 
-        saveTerritoriesNow();
+        markDirty();
         return collection;
     }
 

@@ -149,7 +149,7 @@ public class ServerTerritoryOperationService {
         collection.setName(collectionData.getName());
         collection.setColor(collectionData.getColor());
         collection.setModified(new Date());
-        territoriesManager.markTerritoriesUpdated();
+        territoriesManager.markDirty();
         return updatedCollection(collection, null);
     }
 
@@ -162,7 +162,7 @@ public class ServerTerritoryOperationService {
         collection.setName(collectionData.getName());
         collection.setColor(collectionData.getColor());
         collection.setModified(new Date());
-        territoriesManager.markTerritoriesUpdated();
+        territoriesManager.markDirty();
         return updatedCollection(collection, null);
     }
 
@@ -952,7 +952,7 @@ public class ServerTerritoryOperationService {
 
     private void touchCollection(CollectionData collection, @Nullable Date modified) {
         collection.setModified(modified == null ? new Date() : modified);
-        territoriesManager.markTerritoriesUpdated();
+        territoriesManager.markDirty();
     }
 
     private CollectionData buildPersonalCollectionContext(FrontierData frontier) {
