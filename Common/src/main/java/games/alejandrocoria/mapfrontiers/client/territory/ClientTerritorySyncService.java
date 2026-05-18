@@ -46,27 +46,20 @@ public class ClientTerritorySyncService {
         this.localPersonalCollectionStore = localPersonalCollectionStore;
     }
 
-    public void loadLocalPersonalFrontiers() {
-        if (localPersonalFrontiersLoaded || mc.isLocalServer()) {
+    public void bootstrapLocalPersonalData() {
+        if (mc.isLocalServer() || (localPersonalFrontiersLoaded && localPersonalCollectionsLoaded)) {
             return;
         }
 
-        for (FrontierData frontier : localPersonalStore.loadFrontiers()) {
-            if (!frontier.isPersistent()) {
-                continue;
-            }
-            personalManager.addFrontier(frontier);
-        }
-
-        localPersonalFrontiersLoaded = true;
+        ensureLocalPersonalDataLoadedWithoutRebuild();
+        replaceCollectionRuntimeFrontierIndexes();
     }
 
     public void applyServerSnapshot(List<FrontierData> globalFrontiers,
                                     List<FrontierData> personalFrontiers,
                                     List<CollectionData> globalCollections,
                                     List<CollectionData> personalCollections) {
-        loadLocalPersonalFrontiers();
-        loadLocalPersonalCollections();
+        ensureLocalPersonalDataLoadedWithoutRebuild();
 
         List<CollectionData> persistentGlobalCollections = globalCollections.stream()
                 .filter(CollectionData::isPersistent)
@@ -79,7 +72,7 @@ public class ClientTerritorySyncService {
         if (mc.isLocalServer()) {
             collectionRuntime.replaceCollections(persistentGlobalCollections, persistentPersonalCollections);
             personalManager.replaceFrontiers(personalFrontiers);
-            collectionRuntime.refreshFromFrontiers(globalManager, personalManager);
+            replaceCollectionRuntimeFrontierIndexes();
             return;
         }
 
@@ -138,7 +131,7 @@ public class ClientTerritorySyncService {
             frontier.removeAllUserShared();
             PacketHandler.sendToServer(new PacketPersonalFrontier(frontier));
         }
-        collectionRuntime.refreshFromFrontiers(globalManager, personalManager);
+        replaceCollectionRuntimeFrontierIndexes();
         persistOwnedPersonalData();
     }
 
@@ -148,17 +141,41 @@ public class ClientTerritorySyncService {
         collectionRuntime.clear();
     }
 
-    public void loadLocalPersonalCollections() {
+    private void ensureLocalPersonalDataLoadedWithoutRebuild() {
+        loadLocalPersonalFrontiersRaw();
+        loadLocalPersonalCollectionsRaw();
+    }
+
+    private void loadLocalPersonalFrontiersRaw() {
+        if (localPersonalFrontiersLoaded || mc.isLocalServer()) {
+            return;
+        }
+
+        for (FrontierData frontier : localPersonalStore.loadFrontiers()) {
+            if (!frontier.isPersistent()) {
+                continue;
+            }
+            personalManager.addFrontier(frontier);
+        }
+
+        localPersonalFrontiersLoaded = true;
+    }
+
+    private void loadLocalPersonalCollectionsRaw() {
         if (localPersonalCollectionsLoaded || mc.isLocalServer()) {
             return;
         }
 
         for (CollectionData collection : localPersonalCollectionStore.loadCollections()) {
-            collectionRuntime.addOrUpdateCollection(collection);
+            collectionRuntime.onCollectionUpserted(collection);
         }
 
-        collectionRuntime.refreshFromFrontiers(globalManager, personalManager);
         localPersonalCollectionsLoaded = true;
+    }
+
+    private void replaceCollectionRuntimeFrontierIndexes() {
+        collectionRuntime.clearFrontierIndexes();
+        collectionRuntime.replaceFrontierIndexes(globalManager, personalManager);
     }
 
     private void persistOwnedPersonalData() {

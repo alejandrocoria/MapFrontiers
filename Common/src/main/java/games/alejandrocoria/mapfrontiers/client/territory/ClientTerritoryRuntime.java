@@ -77,8 +77,7 @@ public class ClientTerritoryRuntime {
         if (syncService == null) {
             syncService = new ClientTerritorySyncService(globalFrontiersOverlayManager, personalFrontiersOverlayManager,
                     collectionRuntime, localPersonalFrontierStore, localPersonalCollectionStore);
-            syncService.loadLocalPersonalFrontiers();
-            syncService.loadLocalPersonalCollections();
+            syncService.bootstrapLocalPersonalData();
         }
 
         if (localOverrides == null) {
