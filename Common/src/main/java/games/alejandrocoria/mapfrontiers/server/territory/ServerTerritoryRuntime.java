@@ -66,7 +66,7 @@ public class ServerTerritoryRuntime {
 
     public void onServerTick() {
         shareService.tickPendingInvitations();
-        territoriesManager.flushPendingTerritoriesUpdates();
+        territoriesManager.tickPersistence();
     }
 
     public PacketSettingsProfile createSettingsProfilePacket(ServerPlayer player) {

@@ -48,12 +48,10 @@ public class TerritoriesManager {
     private final HashMap<UUID, LinkedHashSet<UUID>> frontierIdsByCollectionId;
     private final HashMap<ResourceKey<Level>, LinkedHashSet<UUID>> globalFrontierIdsByDimension;
     private final HashMap<SettingsUser, HashMap<ResourceKey<Level>, LinkedHashSet<UUID>>> knownPersonalFrontierIdsByUserAndDimension;
+    private final TerritoriesPersistenceController persistenceController;
     private FrontierSettings frontierSettings;
     private File ModDir;
     private boolean frontierOwnersChecked = false;
-    private boolean territoriesDirty = false;
-    private long lastTerritoriesUpdateAt = 0L;
-    private long lastTerritoriesSaveAt = 0L;
 
     public TerritoriesManager() {
         allFrontiers = new HashMap<>();
@@ -65,12 +63,13 @@ public class TerritoriesManager {
         frontierIdsByCollectionId = new HashMap<>();
         globalFrontierIdsByDimension = new HashMap<>();
         knownPersonalFrontierIdsByUserAndDimension = new HashMap<>();
+        persistenceController = new TerritoriesPersistenceController();
         frontierSettings = new FrontierSettings();
     }
 
     public void close() {
-        if (territoriesDirty) {
-            saveTerritoriesNow();
+        if (persistenceController.hasPendingChanges()) {
+            flushTerritoriesNow();
         }
     }
 
@@ -650,16 +649,15 @@ public class TerritoriesManager {
 
             CompoundTag nbtFrontiers = loadFile("frontiers.dat");
             if (nbtFrontiers.isEmpty()) {
-                writeToNBT(nbtFrontiers);
-                saveFile("frontiers.dat", nbtFrontiers);
-                lastTerritoriesSaveAt = System.currentTimeMillis();
+                saveTerritoriesSnapshot();
+                persistenceController.markPersisted(System.currentTimeMillis());
                 rebuildDerivedIndexes();
             } else {
                 if (readFromNBT(nbtFrontiers)) {
                     NbtFileHelper.createBackup(ModDir, "frontiers.dat");
-                    saveTerritoriesNow();
+                    flushTerritoriesNow();
                 } else {
-                    lastTerritoriesSaveAt = System.currentTimeMillis();
+                    persistenceController.markPersisted(System.currentTimeMillis());
                 }
 
                 rebuildDerivedIndexes();
@@ -681,32 +679,29 @@ public class TerritoriesManager {
         }
     }
 
+    public void tickPersistence() {
+        flushPendingScheduledTerritoriesSave();
+    }
+
+    public void markDirty() {
+        persistenceController.markDirty(System.currentTimeMillis());
+    }
+
+    public void flushTerritoriesNow() {
+        saveTerritoriesSnapshot();
+        persistenceController.markPersisted(System.currentTimeMillis());
+    }
+
     public void markTerritoriesUpdated() {
-        territoriesDirty = true;
-        lastTerritoriesUpdateAt = System.currentTimeMillis();
+        markDirty();
     }
 
     public void flushPendingTerritoriesUpdates() {
-        if (!territoriesDirty) {
-            return;
-        }
-
-        long now = System.currentTimeMillis();
-        boolean debounceElapsed = now - lastTerritoriesUpdateAt >= TERRITORIES_UPDATE_SAVE_DEBOUNCE_MS;
-        boolean maxDelayElapsed = lastTerritoriesSaveAt == 0L
-                || now - lastTerritoriesSaveAt >= TERRITORIES_UPDATE_SAVE_MAX_DELAY_MS;
-
-        if (debounceElapsed || maxDelayElapsed) {
-            saveTerritoriesNow();
-        }
+        flushPendingScheduledTerritoriesSave();
     }
 
     public void saveTerritoriesNow() {
-        CompoundTag nbtFrontiers = new CompoundTag();
-        writeToNBT(nbtFrontiers);
-        saveFile("frontiers.dat", nbtFrontiers);
-        territoriesDirty = false;
-        lastTerritoriesSaveAt = System.currentTimeMillis();
+        flushTerritoriesNow();
     }
 
     public @Nullable CollectionData removeCollection(UUID collectionId) {
@@ -947,6 +942,20 @@ public class TerritoriesManager {
                                          LinkedHashSet<SettingsUser> knownUsers) {
     }
 
+    private void flushPendingScheduledTerritoriesSave() {
+        long now = System.currentTimeMillis();
+        if (persistenceController.shouldFlushOnTick(now)) {
+            saveTerritoriesSnapshot();
+            persistenceController.markPersisted(now);
+        }
+    }
+
+    private void saveTerritoriesSnapshot() {
+        CompoundTag nbtFrontiers = new CompoundTag();
+        writeToNBT(nbtFrontiers);
+        saveFile("frontiers.dat", nbtFrontiers);
+    }
+
     private void saveSettingsData() {
         CompoundTag nbtSettings = new CompoundTag();
         frontierSettings.writeToNBT(nbtSettings);
@@ -968,5 +977,37 @@ public class TerritoriesManager {
 
     private void saveFile(String filename, CompoundTag nbt) {
         NbtFileHelper.saveCompressedNbtSafely(ModDir, filename, nbt);
+    }
+
+    private static final class TerritoriesPersistenceController {
+        private boolean territoriesDirty = false;
+        private long lastTerritoriesUpdateAt = 0L;
+        private long lastTerritoriesSaveAt = 0L;
+
+        public boolean hasPendingChanges() {
+            return territoriesDirty;
+        }
+
+        public void markDirty(long now) {
+            territoriesDirty = true;
+            lastTerritoriesUpdateAt = now;
+        }
+
+        public boolean shouldFlushOnTick(long now) {
+            if (!territoriesDirty) {
+                return false;
+            }
+
+            boolean debounceElapsed = now - lastTerritoriesUpdateAt >= TERRITORIES_UPDATE_SAVE_DEBOUNCE_MS;
+            boolean maxDelayElapsed = lastTerritoriesSaveAt == 0L
+                    || now - lastTerritoriesSaveAt >= TERRITORIES_UPDATE_SAVE_MAX_DELAY_MS;
+
+            return debounceElapsed || maxDelayElapsed;
+        }
+
+        public void markPersisted(long now) {
+            territoriesDirty = false;
+            lastTerritoriesSaveAt = now;
+        }
     }
 }
