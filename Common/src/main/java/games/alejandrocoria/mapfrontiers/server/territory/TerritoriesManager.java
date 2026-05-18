@@ -67,12 +67,6 @@ public class TerritoriesManager {
         frontierSettings = new FrontierSettings();
     }
 
-    public void close() {
-        if (persistenceController.hasPendingChanges()) {
-            flushTerritoriesNow();
-        }
-    }
-
     public void setSettings(FrontierSettings frontierSettings) {
         this.frontierSettings = frontierSettings;
         saveSettingsData();
@@ -680,11 +674,21 @@ public class TerritoriesManager {
     }
 
     public void tickPersistence() {
-        flushPendingScheduledTerritoriesSave();
+        flushTerritoriesIfDue();
     }
 
     public void markDirty() {
         persistenceController.markDirty(System.currentTimeMillis());
+    }
+
+    public void flushTerritoriesIfDue() {
+        flushPendingScheduledTerritoriesSave();
+    }
+
+    public void flushTerritoriesOnShutdown() {
+        if (persistenceController.hasPendingChanges()) {
+            flushTerritoriesNow();
+        }
     }
 
     public void flushTerritoriesNow() {
@@ -697,7 +701,7 @@ public class TerritoriesManager {
     }
 
     public void flushPendingTerritoriesUpdates() {
-        flushPendingScheduledTerritoriesSave();
+        flushTerritoriesIfDue();
     }
 
     public void saveTerritoriesNow() {

@@ -69,6 +69,10 @@ public class ServerTerritoryRuntime {
         territoriesManager.tickPersistence();
     }
 
+    public void onServerStopping() {
+        territoriesManager.flushTerritoriesOnShutdown();
+    }
+
     public PacketSettingsProfile createSettingsProfilePacket(ServerPlayer player) {
         return permissionEvaluator.createProfilePacket(player);
     }
@@ -115,6 +119,5 @@ public class ServerTerritoryRuntime {
         serverApi.close();
         frontierEvents.close();
         collectionEvents.close();
-        territoriesManager.close();
     }
 }
