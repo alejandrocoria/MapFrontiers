@@ -217,11 +217,6 @@ public class TerritoriesManager {
         markDirty();
     }
 
-    public void addPersonalFrontier(SettingsUser user, FrontierData frontier) {
-        addPersonalFrontierReference(user, frontier);
-        markDirty();
-    }
-
     public boolean deleteGlobalFrontier(ResourceKey<Level> dimension, UUID id) {
         List<FrontierData> frontiers = dimensionsGlobalFrontiers.get(dimension);
         if (frontiers == null) {
@@ -240,10 +235,6 @@ public class TerritoriesManager {
         }
 
         return deleted;
-    }
-
-    public boolean deletePersonalFrontier(SettingsUser user, ResourceKey<Level> dimension, UUID id) {
-        return deletePersonalFrontierInternal(user, dimension, id, true);
     }
 
     public boolean deleteOwnedPersonalFrontier(SettingsUser owner, ResourceKey<Level> dimension, UUID id) {
