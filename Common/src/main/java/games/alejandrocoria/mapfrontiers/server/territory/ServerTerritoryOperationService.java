@@ -525,15 +525,9 @@ public class ServerTerritoryOperationService {
             if (frontier.getOwner().equals(playerUser)) {
                 CollectionData collection = frontier.hasCollection() ? territoriesManager.getCollectionFromID(frontier.getCollectionId()) : null;
                 Set<UUID> collectionRecipientsBefore = collection == null ? null : getCollectionRecipientIds(collection);
-                boolean deleted = territoriesManager.deletePersonalFrontier(frontier.getOwner(), frontier.getDimension(), frontier.getId());
+                boolean deleted = territoriesManager.deleteOwnedPersonalFrontier(frontier.getOwner(), frontier.getDimension(), frontier.getId());
                 if (!deleted) {
                     return ServerTerritoryOperationResult.notFound();
-                }
-
-                if (frontier.getUsersShared() != null) {
-                    for (SettingsUserShared userShared : frontier.getUsersShared()) {
-                        territoriesManager.deletePersonalFrontier(userShared.getUser(), frontier.getDimension(), frontier.getId());
-                    }
                 }
 
                 if (collection != null) {
@@ -550,8 +544,9 @@ public class ServerTerritoryOperationService {
                 return result;
             }
 
-            frontier.removeUserShared(playerUser);
-            territoriesManager.deletePersonalFrontier(playerUser, frontier.getDimension(), frontier.getId());
+            if (!territoriesManager.removePersonalFrontierShare(frontierId, playerUser)) {
+                return ServerTerritoryOperationResult.ignored(frontier);
+            }
 
             PacketFrontierSharingUpdated frontierSharingUpdatedPacket = new PacketFrontierSharingUpdated(frontier.getId(), frontier.getDimension(),
                     FrontierSharingChange.fromFrontierData(frontier), player.getId());
