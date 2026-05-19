@@ -160,8 +160,8 @@ public class MapFrontiersClient {
         ClientTerritoryRuntime runtime = requireTerritoryRuntime();
         FrontiersOverlayManager frontiersOverlayManager = runtime.getGlobalFrontiersOverlayManager();
         FrontiersOverlayManager personalFrontiersOverlayManager = runtime.getPersonalFrontiersOverlayManager();
-        frontiersOverlayManager.updateAllOverlays(false);
-        personalFrontiersOverlayManager.updateAllOverlays(false);
+        frontiersOverlayManager.processDirtyOverlays();
+        personalFrontiersOverlayManager.processDirtyOverlays();
     }
 
     private static void tickHud() {
@@ -872,12 +872,12 @@ public class MapFrontiersClient {
     private static void refreshCollectionPresentation(UUID collectionId) {
         FrontiersOverlayManager globalManager = getFrontiersOverlayManagerOrNull(false);
         if (globalManager != null) {
-            globalManager.markCollectionChanged(collectionId);
+            globalManager.markCollectionPresentationDirty(collectionId);
         }
 
         FrontiersOverlayManager personalManager = getFrontiersOverlayManagerOrNull(true);
         if (personalManager != null) {
-            personalManager.markCollectionChanged(collectionId);
+            personalManager.markCollectionPresentationDirty(collectionId);
         }
 
         if (hud != null) {

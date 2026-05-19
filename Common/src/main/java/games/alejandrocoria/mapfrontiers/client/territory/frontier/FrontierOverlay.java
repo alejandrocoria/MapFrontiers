@@ -143,7 +143,7 @@ public class FrontierOverlay extends FrontierData {
         if (banner != null) {
             bannerRenderer.createTexture(id, banner);
         }
-        updateOverlay();
+        rebuildOverlayNow();
     }
 
     @Override
@@ -162,7 +162,7 @@ public class FrontierOverlay extends FrontierData {
             }
 
             invalidateAllOverlayLayers();
-            updateOverlayIfNeeded();
+            processDirtyOverlay();
             hashDirty = true;
             markFrontierActivationDirty();
         } finally {
@@ -199,7 +199,7 @@ public class FrontierOverlay extends FrontierData {
                     invalidateLabels();
                 }
             }
-            updateOverlayIfNeeded();
+            processDirtyOverlay();
             if (change.hasShapeChange() || change.hasVisibilityChange()) {
                 markFrontierActivationDirty();
             }
@@ -230,10 +230,10 @@ public class FrontierOverlay extends FrontierData {
     @Override
     public void setCollectionId(@Nullable UUID collectionId) {
         super.setCollectionId(collectionId);
-        collectionPresentationChanged();
+        markCollectionPresentationDirty();
     }
 
-    public void collectionPresentationChanged() {
+    public void markCollectionPresentationDirty() {
         hashDirty = true;
         invalidateLabels();
     }
@@ -256,13 +256,13 @@ public class FrontierOverlay extends FrontierData {
         invalidateLabels();
     }
 
-    public void updateOverlayIfNeeded() {
+    public void processDirtyOverlay() {
         if (needUpdateOverlay) {
             refreshOverlay();
         }
     }
 
-    public void updateOverlay() {
+    public void rebuildOverlayNow() {
         suppressDirtyOverlayListener = true;
         try {
             hashDirty = true;

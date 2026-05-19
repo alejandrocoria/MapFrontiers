@@ -210,7 +210,7 @@ public class ClientTerritoryOperationService {
 
         ClientCollectionRuntime.FrontierIndexState previousState = collectionRuntime.snapshotFrontier(frontier);
         frontier.applyChange(change);
-        getManager(frontier.getPersonal()).refreshFrontierIndexes(frontier);
+        getManager(frontier.getPersonal()).refreshFrontierDerivedIndexes(frontier);
         collectionRuntime.onFrontierUpdated(previousState, frontier);
         persistLocalPersonalDataIfPersistent(frontier);
         frontierEvents.postUpdated(frontier, mc.player.getId());
@@ -496,7 +496,7 @@ public class ClientTerritoryOperationService {
                                                 @Nullable FrontierOverlay currentFrontier) {
         if (currentFrontier != null) {
             currentFrontier.removeCopiedFromInfo();
-            personalManager.refreshFrontierIndexes(currentFrontier);
+            personalManager.refreshFrontierDerivedIndexes(currentFrontier);
             if (mc.player != null) {
                 frontierEvents.postUpdated(currentFrontier, mc.player.getId());
             }
@@ -602,7 +602,7 @@ public class ClientTerritoryOperationService {
         collectionRuntime.onFrontierAdded(frontierOverlay);
         persistLocalPersonalData();
         frontierEvents.postUpdated(frontierOverlay, -1);
-        frontierOverlay.updateOverlay();
+        frontierOverlay.rebuildOverlayNow();
     }
 
     public void applyFrontierChangeToPersonal(UUID frontierId, @Nullable Date modified) {
@@ -621,7 +621,7 @@ public class ClientTerritoryOperationService {
         collectionRuntime.onFrontierAdded(frontierOverlay);
         persistLocalPersonalData();
         frontierEvents.postUpdated(frontierOverlay, -1);
-        frontierOverlay.updateOverlay();
+        frontierOverlay.rebuildOverlayNow();
     }
 
     public void applyCollectionCreated(CollectionData collection) {
@@ -700,7 +700,7 @@ public class ClientTerritoryOperationService {
         for (FrontierOverlay frontier : affectedFrontiers) {
             ClientCollectionRuntime.FrontierIndexState previousState = collectionRuntime.snapshotFrontier(frontier);
             frontier.setCollectionId(null);
-            getManager(frontier.getPersonal()).refreshFrontierIndexes(frontier);
+            getManager(frontier.getPersonal()).refreshFrontierDerivedIndexes(frontier);
             collectionRuntime.onFrontierUpdated(previousState, frontier);
         }
 

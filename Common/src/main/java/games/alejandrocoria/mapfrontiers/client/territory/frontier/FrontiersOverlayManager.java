@@ -59,7 +59,7 @@ public class FrontiersOverlayManager {
                 client.getDeltaTracker().getGameTimeDeltaTicks(), MapFrontiersPlugin.isEditing()));
         ClientGlobalEvents.subscribeUpdatedConfigEvent(this, () -> {
             selectedEditablePointMarker.configUpdated();
-            updateAllOverlays(true);
+            rebuildAllOverlaysNow();
         });
     }
 
@@ -114,7 +114,7 @@ public class FrontiersOverlayManager {
 
         frontierOverlay.applyChange(change);
         if (change.hasShapeChange() || change.hasCollectionIdChange()) {
-            refreshFrontierIndexes(frontierOverlay);
+            refreshFrontierDerivedIndexes(frontierOverlay);
         }
         MapFrontiersClient.markFrontierActivationDirty();
         return frontierOverlay;
@@ -165,10 +165,6 @@ public class FrontiersOverlayManager {
             dirtyFrontiers.clear();
             MapFrontiersClient.markFrontierActivationDirty();
         }
-    }
-
-    public List<FrontierOverlay> getCandidateFrontiersInPosition(ResourceKey<Level> dimension, BlockPos pos) {
-        return getCandidateFrontiersInBounds(dimension, pos.getX(), pos.getX(), pos.getZ(), pos.getZ());
     }
 
     public List<FrontierOverlay> getCandidateFrontiersInBounds(ResourceKey<Level> dimension, int minX, int maxX, int minZ, int maxZ) {
@@ -231,7 +227,7 @@ public class FrontiersOverlayManager {
         return frontiersById.get(frontierId);
     }
 
-    public void refreshFrontierIndexes(FrontierOverlay frontier) {
+    public void refreshFrontierDerivedIndexes(FrontierOverlay frontier) {
         FrontierOverlay indexedFrontier = frontiersById.get(frontier.getId());
         if (indexedFrontier != frontier) {
             return;
@@ -241,17 +237,7 @@ public class FrontiersOverlayManager {
         registerFrontierDerivedIndexes(frontier);
     }
 
-    public void updateAllOverlays(boolean forceUpdate) {
-        if (forceUpdate) {
-            dirtyFrontiers.clear();
-            for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
-                for (FrontierOverlay frontier : frontiers) {
-                    frontier.updateOverlay();
-                }
-            }
-            return;
-        }
-
+    public void processDirtyOverlays() {
         if (dirtyFrontiers.isEmpty()) {
             return;
         }
@@ -260,12 +246,21 @@ public class FrontiersOverlayManager {
         dirtyFrontiers.clear();
         for (FrontierOverlay frontier : dirtyFrontiersSnapshot) {
             if (frontiersById.get(frontier.getId()) == frontier) {
-                frontier.updateOverlayIfNeeded();
+                frontier.processDirtyOverlay();
             }
         }
     }
 
-    public void markCollectionChanged(UUID collectionId) {
+    public void rebuildAllOverlaysNow() {
+        dirtyFrontiers.clear();
+        for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
+            for (FrontierOverlay frontier : frontiers) {
+                frontier.rebuildOverlayNow();
+            }
+        }
+    }
+
+    public void markCollectionPresentationDirty(UUID collectionId) {
         Set<FrontierOverlay> frontiers = frontiersByCollectionId.get(collectionId);
         if (frontiers == null) {
             return;
@@ -273,7 +268,7 @@ public class FrontiersOverlayManager {
 
         for (FrontierOverlay frontier : frontiers) {
             if (collectionId.equals(frontier.getCollectionId())) {
-                frontier.collectionPresentationChanged();
+                frontier.markCollectionPresentationDirty();
             }
         }
     }
