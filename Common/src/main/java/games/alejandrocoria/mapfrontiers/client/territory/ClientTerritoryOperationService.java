@@ -210,6 +210,7 @@ public class ClientTerritoryOperationService {
 
         ClientCollectionRuntime.FrontierIndexState previousState = collectionRuntime.snapshotFrontier(frontier);
         frontier.applyChange(change);
+        getManager(frontier.getPersonal()).refreshFrontierIndexes(frontier);
         collectionRuntime.onFrontierUpdated(previousState, frontier);
         persistLocalPersonalDataIfPersistent(frontier);
         frontierEvents.postUpdated(frontier, mc.player.getId());
@@ -493,9 +494,12 @@ public class ClientTerritoryOperationService {
     public FrontierOverlay acceptCopiedFrontier(FrontierData receivedFrontier,
                                                 @Nullable CollectionData receivedCollection,
                                                 @Nullable FrontierOverlay currentFrontier) {
-        if (currentFrontier != null && mc.player != null) {
+        if (currentFrontier != null) {
             currentFrontier.removeCopiedFromInfo();
-            frontierEvents.postUpdated(currentFrontier, mc.player.getId());
+            personalManager.refreshFrontierIndexes(currentFrontier);
+            if (mc.player != null) {
+                frontierEvents.postUpdated(currentFrontier, mc.player.getId());
+            }
         }
 
         FrontierOverlay frontierOverlay = personalManager.addFrontier(resolveCopiedFrontier(receivedFrontier, receivedCollection));
@@ -696,6 +700,7 @@ public class ClientTerritoryOperationService {
         for (FrontierOverlay frontier : affectedFrontiers) {
             ClientCollectionRuntime.FrontierIndexState previousState = collectionRuntime.snapshotFrontier(frontier);
             frontier.setCollectionId(null);
+            getManager(frontier.getPersonal()).refreshFrontierIndexes(frontier);
             collectionRuntime.onFrontierUpdated(previousState, frontier);
         }
 
