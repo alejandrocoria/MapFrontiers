@@ -20,6 +20,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,6 +39,7 @@ public class FrontiersOverlayManager {
     private final HashMap<UUID, UUID> frontierCopiedFromIdsById;
     private final HashMap<UUID, UUID> frontierCollectionIdsById;
     private final HashMap<UUID, Set<Long>> frontierRegionBucketsById;
+    private final LinkedHashSet<FrontierOverlay> dirtyFrontiers;
     private final SelectedEditablePointMarker selectedEditablePointMarker;
 
     public FrontiersOverlayManager(IClientAPI jmAPI) {
@@ -50,6 +52,7 @@ public class FrontiersOverlayManager {
         frontierCopiedFromIdsById = new HashMap<>();
         frontierCollectionIdsById = new HashMap<>();
         frontierRegionBucketsById = new HashMap<>();
+        dirtyFrontiers = new LinkedHashSet<>();
         selectedEditablePointMarker = new SelectedEditablePointMarker(jmAPI);
 
         ClientGlobalEvents.subscribeClientTickEvent(this, client -> selectedEditablePointMarker.tick(
@@ -159,6 +162,7 @@ public class FrontiersOverlayManager {
             frontierCopiedFromIdsById.clear();
             frontierCollectionIdsById.clear();
             frontierRegionBucketsById.clear();
+            dirtyFrontiers.clear();
             MapFrontiersClient.markFrontierActivationDirty();
         }
     }
@@ -238,13 +242,25 @@ public class FrontiersOverlayManager {
     }
 
     public void updateAllOverlays(boolean forceUpdate) {
-        for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
-            for (FrontierOverlay frontier : frontiers) {
-                if (forceUpdate) {
+        if (forceUpdate) {
+            dirtyFrontiers.clear();
+            for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
+                for (FrontierOverlay frontier : frontiers) {
                     frontier.updateOverlay();
-                } else {
-                    frontier.updateOverlayIfNeeded();
                 }
+            }
+            return;
+        }
+
+        if (dirtyFrontiers.isEmpty()) {
+            return;
+        }
+
+        List<FrontierOverlay> dirtyFrontiersSnapshot = new ArrayList<>(dirtyFrontiers);
+        dirtyFrontiers.clear();
+        for (FrontierOverlay frontier : dirtyFrontiersSnapshot) {
+            if (frontiersById.get(frontier.getId()) == frontier) {
+                frontier.updateOverlayIfNeeded();
             }
         }
     }
@@ -285,12 +301,21 @@ public class FrontiersOverlayManager {
 
     private void registerFrontier(FrontierOverlay frontier) {
         frontiersById.put(frontier.getId(), frontier);
+        frontier.setDirtyOverlayListener(() -> markFrontierDirty(frontier));
         registerFrontierDerivedIndexes(frontier);
     }
 
     private void unregisterFrontier(FrontierOverlay frontier) {
         unregisterFrontierDerivedIndexes(frontier);
+        dirtyFrontiers.remove(frontier);
+        frontier.setDirtyOverlayListener(null);
         frontiersById.remove(frontier.getId(), frontier);
+    }
+
+    private void markFrontierDirty(FrontierOverlay frontier) {
+        if (frontiersById.get(frontier.getId()) == frontier) {
+            dirtyFrontiers.add(frontier);
+        }
     }
 
     private void registerFrontierDerivedIndexes(FrontierOverlay frontier) {

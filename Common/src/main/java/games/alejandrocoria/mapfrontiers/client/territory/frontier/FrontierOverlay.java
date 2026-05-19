@@ -127,12 +127,14 @@ public class FrontierOverlay extends FrontierData {
     private int hash;
     private boolean hashDirty = true;
 
+    private @Nullable Runnable dirtyOverlayListener;
     private boolean needUpdateOverlay = true;
     private boolean geometryCacheDirty = true;
     private boolean baseOverlaysDirty = true;
     private boolean labelsDirty = true;
     private boolean highlightStructureDirty = true;
     private boolean highlightVisibilityDirty = true;
+    private boolean suppressDirtyOverlayListener = false;
 
     public FrontierOverlay(FrontierData data, @Nullable IClientAPI jmAPI) {
         super(data);
@@ -146,53 +148,63 @@ public class FrontierOverlay extends FrontierData {
 
     @Override
     public void updateFromData(FrontierData other) {
-        super.updateFromData(other);
-        setVisibilityOverride(MapFrontiersClient.getLocalOverrides().getVisibility(id));
+        suppressDirtyOverlayListener = true;
+        try {
+            super.updateFromData(other);
+            setVisibilityOverride(MapFrontiersClient.getLocalOverrides().getVisibility(id));
 
-        clampSelectedEditablePoint();
+            clampSelectedEditablePoint();
 
-        if (banner == null) {
-            bannerRenderer.releaseTexture();
-        } else {
-            bannerRenderer.createTexture(id, banner);
-        }
-
-        invalidateAllOverlayLayers();
-        updateOverlayIfNeeded();
-        hashDirty = true;
-        markFrontierActivationDirty();
-    }
-
-    public void applyChange(FrontierChange change) {
-        super.applyChange(change);
-        setVisibilityOverride(MapFrontiersClient.getLocalOverrides().getVisibility(id));
-
-        clampSelectedEditablePoint();
-
-        if (change.hasBannerChange()) {
             if (banner == null) {
                 bannerRenderer.releaseTexture();
             } else {
                 bannerRenderer.createTexture(id, banner);
             }
-        }
 
-        if (change.hasShapeChange()) {
-            invalidateFromGeometry();
-        } else {
-            if (change.hasColorChange() || change.hasVisibilityChange()) {
-                invalidateBasePresentation();
-            }
-            if (change.hasPathStyleChange()) {
-                invalidateFromDiscretization();
-            }
-            if (change.hasNameChange() || change.hasCollectionIdChange() || change.hasBannerChange()) {
-                invalidateLabels();
-            }
-        }
-        updateOverlayIfNeeded();
-        if (change.hasShapeChange() || change.hasVisibilityChange()) {
+            invalidateAllOverlayLayers();
+            updateOverlayIfNeeded();
+            hashDirty = true;
             markFrontierActivationDirty();
+        } finally {
+            suppressDirtyOverlayListener = false;
+        }
+    }
+
+    public void applyChange(FrontierChange change) {
+        suppressDirtyOverlayListener = true;
+        try {
+            super.applyChange(change);
+            setVisibilityOverride(MapFrontiersClient.getLocalOverrides().getVisibility(id));
+
+            clampSelectedEditablePoint();
+
+            if (change.hasBannerChange()) {
+                if (banner == null) {
+                    bannerRenderer.releaseTexture();
+                } else {
+                    bannerRenderer.createTexture(id, banner);
+                }
+            }
+
+            if (change.hasShapeChange()) {
+                invalidateFromGeometry();
+            } else {
+                if (change.hasColorChange() || change.hasVisibilityChange()) {
+                    invalidateBasePresentation();
+                }
+                if (change.hasPathStyleChange()) {
+                    invalidateFromDiscretization();
+                }
+                if (change.hasNameChange() || change.hasCollectionIdChange() || change.hasBannerChange()) {
+                    invalidateLabels();
+                }
+            }
+            updateOverlayIfNeeded();
+            if (change.hasShapeChange() || change.hasVisibilityChange()) {
+                markFrontierActivationDirty();
+            }
+        } finally {
+            suppressDirtyOverlayListener = false;
         }
     }
 
@@ -251,9 +263,14 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void updateOverlay() {
-        hashDirty = true;
-        invalidateAllOverlayLayers();
-        refreshOverlay();
+        suppressDirtyOverlayListener = true;
+        try {
+            hashDirty = true;
+            invalidateAllOverlayLayers();
+            refreshOverlay();
+        } finally {
+            suppressDirtyOverlayListener = false;
+        }
     }
 
     private void refreshOverlay() {
@@ -288,7 +305,14 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private void invalidateOverlayRefresh() {
+        if (!needUpdateOverlay && dirtyOverlayListener != null && !suppressDirtyOverlayListener) {
+            dirtyOverlayListener.run();
+        }
         needUpdateOverlay = true;
+    }
+
+    void setDirtyOverlayListener(@Nullable Runnable dirtyOverlayListener) {
+        this.dirtyOverlayListener = dirtyOverlayListener;
     }
 
     private void invalidateAllOverlayLayers() {
