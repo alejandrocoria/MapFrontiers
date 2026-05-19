@@ -275,10 +275,6 @@ public class FrontierOverlay extends FrontierData {
 
     private void refreshOverlay() {
         needUpdateOverlay = false;
-        if (jmAPI == null) {
-            return;
-        }
-
         if (geometryCacheDirty) {
             rebuildGeometryCache();
             geometryCacheDirty = false;
@@ -366,12 +362,20 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private void showPolygonOverlays(List<PolygonOverlay> overlays) throws Exception {
+        if (jmAPI == null) {
+            return;
+        }
+
         for (PolygonOverlay polygon : overlays) {
             jmAPI.show(polygon);
         }
     }
 
     private void showMarkerOverlays(List<MarkerOverlay> overlays) throws Exception {
+        if (jmAPI == null) {
+            return;
+        }
+
         for (MarkerOverlay marker : overlays) {
             jmAPI.show(marker);
         }
@@ -417,6 +421,10 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private void removePolygonOverlay(PolygonOverlay polygon) {
+        if (jmAPI == null) {
+            return;
+        }
+
         try {
             jmAPI.remove(polygon);
         } catch (Throwable t) {
@@ -425,6 +433,10 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private void removeMarkerOverlay(MarkerOverlay marker) {
+        if (jmAPI == null) {
+            return;
+        }
+
         try {
             jmAPI.remove(marker);
         } catch (Throwable t) {
@@ -1339,24 +1351,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void recalculateOverlays() {
-        hidePolygonOverlays(polygonOverlays);
-        hidePolygonOverlays(highlightPolygonOverlays);
-        hideMarkerOverlays(markerOverlays);
-        hideMarkerOverlays(highlightMarkerOverlays);
-        hideMarkerOverlays(labelOverlays);
-        polygonOverlays.clear();
-        highlightPolygonOverlays.clear();
-        markerOverlays.clear();
-        highlightMarkerOverlays.clear();
-        labelOverlays.clear();
-        polygonRenderGeometries.clear();
-
-        rebuildGeometryCache();
-        rebuildBaseOverlays();
-        rebuildLabels();
-        if (highlighted) {
-            rebuildHighlightOverlays();
-        }
+        rebuildOverlayNow();
     }
 
     private void rebuildGeometryCache() {
