@@ -760,16 +760,20 @@ public class MapFrontiersClient {
 
     private static List<FrontierOverlay> collectHudActiveFrontiers(ResourceKey<Level> dimension, BlockPos pos) {
         List<FrontierOverlay> frontiers = new ArrayList<>();
-        appendQualifiedFrontiers(frontiers, getFrontiersOverlayManagerOrNull(true), dimension, pos, hudActiveFrontierIds, false);
-        appendQualifiedFrontiers(frontiers, getFrontiersOverlayManagerOrNull(false), dimension, pos, hudActiveFrontierIds, false);
+        appendQualifiedFrontiers(frontiers, getFrontiersOverlayManagerOrNull(true), dimension, pos, hudActiveFrontierIds, false,
+                getMaxPathActivationDistance());
+        appendQualifiedFrontiers(frontiers, getFrontiersOverlayManagerOrNull(false), dimension, pos, hudActiveFrontierIds, false,
+                getMaxPathActivationDistance());
         prioritizeActiveFrontiers(frontiers);
         return frontiers;
     }
 
     private static Map<UUID, FrontierOverlay> collectAnnouncementActiveFrontiers(ResourceKey<Level> dimension, BlockPos pos) {
         List<FrontierOverlay> frontiers = new ArrayList<>();
-        appendQualifiedFrontiers(frontiers, getFrontiersOverlayManagerOrNull(true), dimension, pos, announcementActiveFrontiers.keySet(), true);
-        appendQualifiedFrontiers(frontiers, getFrontiersOverlayManagerOrNull(false), dimension, pos, announcementActiveFrontiers.keySet(), true);
+        appendQualifiedFrontiers(frontiers, getFrontiersOverlayManagerOrNull(true), dimension, pos, announcementActiveFrontiers.keySet(), true,
+                getMaxPathActivationDistance());
+        appendQualifiedFrontiers(frontiers, getFrontiersOverlayManagerOrNull(false), dimension, pos, announcementActiveFrontiers.keySet(), true,
+                getMaxPathActivationDistance());
         prioritizeActiveFrontiers(frontiers);
 
         Map<UUID, FrontierOverlay> activeFrontiers = new HashMap<>();
@@ -781,12 +785,15 @@ public class MapFrontiersClient {
 
     private static void appendQualifiedFrontiers(List<FrontierOverlay> target, @Nullable FrontiersOverlayManager manager,
                                                  ResourceKey<Level> dimension, BlockPos pos, Set<UUID> currentlyActiveFrontierIds,
-                                                 boolean requireAnnouncementVisibility) {
+                                                 boolean requireAnnouncementVisibility, double maxPathActivationDistance) {
         if (manager == null) {
             return;
         }
 
-        for (FrontierOverlay frontier : manager.getAllFrontiers(dimension)) {
+        int activationRadius = (int) Math.ceil(Math.max(0.0, maxPathActivationDistance));
+        for (FrontierOverlay frontier : manager.getCandidateFrontiersInBounds(dimension,
+                pos.getX() - activationRadius, pos.getX() + activationRadius,
+                pos.getZ() - activationRadius, pos.getZ() + activationRadius)) {
             boolean alreadyActive = currentlyActiveFrontierIds.contains(frontier.getId());
             if (qualifiesForHudOrAnnouncement(frontier, pos, alreadyActive, requireAnnouncementVisibility)) {
                 target.add(frontier);
@@ -809,17 +816,31 @@ public class MapFrontiersClient {
         }
 
         if (frontier.getShape() == FrontierShape.Path) {
-            if (frontier.getPoints().isEmpty()) {
+            if (frontier.getPointCount() == 0) {
                 return false;
             }
-            return frontier.pointIsInside(pos, ClientConfig.getPathActivationDistance(alreadyActive));
+
+            double activationDistance = ClientConfig.getPathActivationDistance(alreadyActive);
+            if (!frontier.isInsideBoundingBox(pos, activationDistance)) {
+                return false;
+            }
+
+            return frontier.pointIsInside(pos, activationDistance);
         }
 
-        if (frontier.getShape() == FrontierShape.Vertex && frontier.getVertices().size() < 3) {
+        if (!frontier.isInsideBoundingBox(pos, 0.0)) {
+            return false;
+        }
+
+        if (frontier.getShape() == FrontierShape.Vertex && frontier.getVertexCount() < 3) {
             return false;
         }
 
         return frontier.pointIsInside(pos, 0.0);
+    }
+
+    private static double getMaxPathActivationDistance() {
+        return ClientConfig.getPathActivationDistance(true);
     }
 
     private static void prioritizeActiveFrontiers(List<FrontierOverlay> frontiers) {

@@ -337,6 +337,17 @@ public class FrontierOverlay extends FrontierData {
         }
     }
 
+    public boolean isInsideBoundingBox(BlockPos pos, double padding) {
+        if (topLeft == null || bottomRight == null) {
+            return false;
+        }
+
+        return pos.getX() >= topLeft.getX() - padding
+                && pos.getX() <= bottomRight.getX() + padding
+                && pos.getZ() >= topLeft.getZ() - padding
+                && pos.getZ() <= bottomRight.getZ() + padding;
+    }
+
     public boolean pointIsInside(BlockPos pos, double maxDistanceToOpen) {
         if (frontierShape == FrontierShape.Vertex) {
             if (vertices.size() > 2) {

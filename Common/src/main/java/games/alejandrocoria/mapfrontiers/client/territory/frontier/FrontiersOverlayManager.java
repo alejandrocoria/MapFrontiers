@@ -202,6 +202,10 @@ public class FrontiersOverlayManager {
         for (FrontierOverlay frontier : getCandidateFrontiersInBounds(dimension,
                 pos.getX() - radius, pos.getX() + radius,
                 pos.getZ() - radius, pos.getZ() + radius)) {
+            if (!frontier.isInsideBoundingBox(pos, maxDistanceToOpen)) {
+                continue;
+            }
+
             boolean visible = fullscreenMapType == null
                     ? frontier.getVisibility(FrontierVisibility.Frontier)
                     : frontier.isVisibleOnFullscreenMap(fullscreenMapType);
