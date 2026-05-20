@@ -76,16 +76,8 @@ public class TerritoriesManager {
         return frontierSettings;
     }
 
-    public Map<ResourceKey<Level>, ArrayList<FrontierData>> getAllGlobalFrontiers() {
-        return dimensionsGlobalFrontiers;
-    }
-
     public List<FrontierData> getAllGlobalFrontiers(ResourceKey<Level> dimension) {
         return dimensionsGlobalFrontiers.computeIfAbsent(dimension, k -> new ArrayList<>());
-    }
-
-    public Map<ResourceKey<Level>, ArrayList<FrontierData>> getAllPersonalFrontiers(SettingsUser user) {
-        return usersDimensionsPersonalFrontiers.computeIfAbsent(user, k -> new HashMap<>());
     }
 
     public List<FrontierData> getAllPersonalFrontiers(SettingsUser user, ResourceKey<Level> dimension) {
@@ -111,6 +103,23 @@ public class TerritoriesManager {
         return usersPersonalCollections.computeIfAbsent(user, k -> new ArrayList<>());
     }
 
+    public Iterable<FrontierData> iterateGlobalFrontiers() {
+        return iterateNestedFrontiers(dimensionsGlobalFrontiers);
+    }
+
+    public Iterable<FrontierData> iteratePersonalFrontiers(SettingsUser user) {
+        return iterateNestedFrontiers(usersDimensionsPersonalFrontiers.getOrDefault(user, new HashMap<>()));
+    }
+
+    public Iterable<CollectionData> iterateGlobalCollections() {
+        return globalCollections;
+    }
+
+    public Iterable<CollectionData> iteratePersonalCollections(SettingsUser user) {
+        List<CollectionData> collections = usersPersonalCollections.get(user);
+        return collections != null ? collections : List.of();
+    }
+
     public List<FrontierData> getFrontiersInCollection(UUID collectionId) {
         LinkedHashSet<UUID> frontierIds = frontierIdsByCollectionId.get(collectionId);
         if (frontierIds == null || frontierIds.isEmpty()) {
@@ -128,7 +137,7 @@ public class TerritoriesManager {
         return frontiers;
     }
 
-    public boolean userHasVisiblePersonalCollection(SettingsUser user, UUID collectionId) {
+    public boolean userKnowsPersonalCollection(SettingsUser user, UUID collectionId) {
         HashMap<ResourceKey<Level>, LinkedHashSet<UUID>> knownFrontierIdsByDimension = knownPersonalFrontierIdsByUserAndDimension.get(user);
         if (knownFrontierIdsByDimension == null) {
             return false;
@@ -468,11 +477,9 @@ public class TerritoriesManager {
     }
 
     public boolean hasPersonalFrontier(SettingsUser user, UUID frontierID) {
-        for (List<FrontierData> frontiers : getAllPersonalFrontiers(user).values()) {
-            for (FrontierData frontier : frontiers) {
-                if (frontier.getId().equals(frontierID)) {
-                    return true;
-                }
+        for (FrontierData frontier : iteratePersonalFrontiers(user)) {
+            if (frontier.getId().equals(frontierID)) {
+                return true;
             }
         }
 
@@ -919,6 +926,10 @@ public class TerritoriesManager {
                                          ResourceKey<Level> dimension,
                                          boolean personal,
                                          LinkedHashSet<SettingsUser> knownUsers) {
+    }
+
+    private static Iterable<FrontierData> iterateNestedFrontiers(Map<ResourceKey<Level>, ? extends List<FrontierData>> frontiersByDimension) {
+        return () -> frontiersByDimension.values().stream().flatMap(List::stream).iterator();
     }
 
     private void flushPendingScheduledTerritoriesSave() {

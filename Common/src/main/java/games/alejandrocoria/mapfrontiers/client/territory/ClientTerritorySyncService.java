@@ -118,7 +118,7 @@ public class ClientTerritorySyncService {
             for (CollectionData localCollection : existingLocalPersonalCollections) {
                 if (!serverCollectionIds.contains(localCollection.getId())) {
                     localOnlyOwnedCollections.add(localCollection);
-                    collectionRuntime.addOrUpdateCollection(localCollection);
+                    collectionRuntime.onCollectionUpserted(localCollection);
                 }
             }
         }
@@ -174,7 +174,6 @@ public class ClientTerritorySyncService {
     }
 
     private void replaceCollectionRuntimeFrontierIndexes() {
-        collectionRuntime.clearFrontierIndexes();
         collectionRuntime.replaceFrontierIndexes(globalManager, personalManager);
     }
 

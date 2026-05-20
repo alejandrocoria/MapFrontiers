@@ -178,7 +178,7 @@ public class FrontiersOverlayManager {
         int minRegionZ = Math.floorDiv(minZ, REGION_BUCKET_SIZE_BLOCKS);
         int maxRegionZ = Math.floorDiv(maxZ, REGION_BUCKET_SIZE_BLOCKS);
 
-        HashSet<FrontierOverlay> candidates = new HashSet<>();
+        LinkedHashSet<FrontierOverlay> candidates = new LinkedHashSet<>();
         for (int regionX = minRegionX; regionX <= maxRegionX; ++regionX) {
             for (int regionZ = minRegionZ; regionZ <= maxRegionZ; ++regionZ) {
                 HashSet<FrontierOverlay> frontiers = regionBuckets.get(getRegionBucketKey(regionX, regionZ));

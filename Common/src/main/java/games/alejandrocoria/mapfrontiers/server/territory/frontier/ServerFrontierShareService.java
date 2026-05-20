@@ -189,7 +189,7 @@ public class ServerFrontierShareService {
         }
 
         boolean targetAlreadySeesCollection = frontier.hasCollection()
-                && territoriesManager.userHasVisiblePersonalCollection(pending.targetUser, frontier.getCollectionId());
+                && territoriesManager.userKnowsPersonalCollection(pending.targetUser, frontier.getCollectionId());
         if (!territoriesManager.acceptPendingPersonalFrontierShare(pending.targetUser, pending.frontierID)) {
             return ServerTerritoryOperationResult.ignored(ServerTerritoryOperationResult.Reason.SharedUserMissing, frontier);
         }

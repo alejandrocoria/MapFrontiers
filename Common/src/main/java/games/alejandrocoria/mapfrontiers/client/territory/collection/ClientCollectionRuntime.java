@@ -57,10 +57,6 @@ public class ClientCollectionRuntime {
         }
     }
 
-    public void addOrUpdateCollection(CollectionData collection) {
-        onCollectionUpserted(collection);
-    }
-
     public void onCollectionUpserted(CollectionData collection) {
         removeCollectionFromAllScopes(collection.getId());
         getCollectionMap(collection).put(collection.getId(), new CollectionData(collection));
@@ -71,6 +67,7 @@ public class ClientCollectionRuntime {
     }
 
     public void replaceFrontierIndexes(FrontiersOverlayManager globalManager, FrontiersOverlayManager personalManager) {
+        clearFrontierIndexes();
         indexFrontiers(globalManager);
         indexFrontiers(personalManager);
         pruneNonOwnedPersonalCollectionsWithoutIndexedFrontiers();
@@ -112,18 +109,6 @@ public class ClientCollectionRuntime {
         }
 
         return globalCollectionsById.get(collectionId);
-    }
-
-    public List<CollectionData> getCollections(boolean personal) {
-        if (!personal) {
-            return getCollections(CollectionScope.GLOBAL_PERSISTENT);
-        }
-
-        List<CollectionData> collections = new ArrayList<>(personalPersistentCollectionsById.size()
-                + personalSessionCollectionsById.size());
-        collections.addAll(personalPersistentCollectionsById.values());
-        collections.addAll(personalSessionCollectionsById.values());
-        return List.copyOf(collections);
     }
 
     public List<CollectionData> getCollections(CollectionScope scope) {

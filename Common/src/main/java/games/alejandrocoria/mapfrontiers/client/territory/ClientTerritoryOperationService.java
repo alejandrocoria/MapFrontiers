@@ -261,7 +261,20 @@ public class ClientTerritoryOperationService {
     }
 
     public List<CollectionDataView> listCollectionsAction(boolean personal) {
-        return collectionRuntime.getCollections(personal).stream().map(ApiConverters::fromCollection).toList();
+        if (!personal) {
+            return collectionRuntime.getCollections(CollectionScope.GLOBAL_PERSISTENT).stream()
+                    .map(ApiConverters::fromCollection)
+                    .toList();
+        }
+
+        ArrayList<CollectionDataView> collections = new ArrayList<>();
+        collections.addAll(collectionRuntime.getCollections(CollectionScope.PERSONAL_PERSISTENT).stream()
+                .map(ApiConverters::fromCollection)
+                .toList());
+        collections.addAll(collectionRuntime.getCollections(CollectionScope.PERSONAL_SESSION).stream()
+                .map(ApiConverters::fromCollection)
+                .toList());
+        return List.copyOf(collections);
     }
 
     public CollectionActionResult createCollectionAction(boolean personal, String pluginModId, CollectionCreateRequest request) {

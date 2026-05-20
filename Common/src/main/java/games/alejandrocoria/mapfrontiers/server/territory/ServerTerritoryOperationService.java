@@ -68,8 +68,8 @@ public class ServerTerritoryOperationService {
         return territoriesManager.getAllGlobalFrontiers(dimension);
     }
 
-    public List<CollectionData> getAllGlobalCollections() {
-        return territoriesManager.getAllGlobalCollections();
+    public Iterable<CollectionData> iterateGlobalCollections() {
+        return territoriesManager.iterateGlobalCollections();
     }
 
     public ServerTerritoryOperationResult createCollection(ServerPlayer player, CollectionData collectionData) {
