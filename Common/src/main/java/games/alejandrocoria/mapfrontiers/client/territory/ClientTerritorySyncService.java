@@ -16,7 +16,6 @@ import net.minecraft.client.Minecraft;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -26,6 +25,7 @@ import java.util.UUID;
 public class ClientTerritorySyncService {
     private static final Minecraft mc = Minecraft.getInstance();
 
+    private final ClientTerritoryRuntime runtime;
     private final FrontiersOverlayManager globalManager;
     private final FrontiersOverlayManager personalManager;
     private final ClientCollectionRuntime collectionRuntime;
@@ -34,11 +34,13 @@ public class ClientTerritorySyncService {
     private boolean localPersonalFrontiersLoaded = false;
     private boolean localPersonalCollectionsLoaded = false;
 
-    public ClientTerritorySyncService(FrontiersOverlayManager globalManager,
+    public ClientTerritorySyncService(ClientTerritoryRuntime runtime,
+                                      FrontiersOverlayManager globalManager,
                                       FrontiersOverlayManager personalManager,
                                       ClientCollectionRuntime collectionRuntime,
                                       ClientLocalPersonalFrontierStore localPersonalStore,
                                       ClientLocalPersonalCollectionStore localPersonalCollectionStore) {
+        this.runtime = runtime;
         this.globalManager = globalManager;
         this.personalManager = personalManager;
         this.collectionRuntime = collectionRuntime;
@@ -132,7 +134,7 @@ public class ClientTerritorySyncService {
             PacketHandler.sendToServer(new PacketPersonalFrontier(frontier));
         }
         replaceCollectionRuntimeFrontierIndexes();
-        persistOwnedPersonalData();
+        markOwnedPersonalDataDirty();
     }
 
     public void close() {
@@ -177,50 +179,11 @@ public class ClientTerritorySyncService {
         collectionRuntime.replaceFrontierIndexes(globalManager, personalManager);
     }
 
-    private void persistOwnedPersonalData() {
+    private void markOwnedPersonalDataDirty() {
         if (mc.isLocalServer() || mc.player == null) {
             return;
         }
 
-        SettingsUser currentPlayer = new SettingsUser(mc.player);
-        localPersonalStore.saveOwnedFrontierMirror(getPersistablePersonalFrontiers(), currentPlayer);
-        localPersonalCollectionStore.saveOwnedCollectionMirror(getPersistentPersonalCollections(), currentPlayer);
-    }
-
-    private Collection<FrontierOverlay> getAllPersonalFrontiers() {
-        return personalManager.getAllFrontiers().values().stream()
-                .flatMap(List::stream)
-                .toList();
-    }
-
-    private Collection<FrontierData> getPersistablePersonalFrontiers() {
-        return getAllPersonalFrontiers().stream()
-                .map(frontier -> sanitizePersistentPersonalFrontierForStorage(new FrontierData(frontier)))
-                .toList();
-    }
-
-    private Collection<CollectionData> getPersistentPersonalCollections() {
-        return collectionRuntime.getCollections(CollectionScope.PERSONAL_PERSISTENT);
-    }
-
-    private FrontierData sanitizePersistentPersonalFrontierForStorage(FrontierData frontier) {
-        if (!frontier.isPersistent()) {
-            return frontier;
-        }
-
-        UUID collectionId = frontier.getCollectionId();
-        if (collectionId == null) {
-            return frontier;
-        }
-
-        CollectionData collection = collectionRuntime.getCollection(collectionId);
-        if (collection == null || !collection.isPersistent()
-                || collection.getPersonal() != frontier.getPersonal()
-                || collection.getLifetime() != frontier.getLifetime()
-                || (frontier.getPersonal() && !collection.getOwner().equals(frontier.getOwner()))) {
-            frontier.setCollectionId(null);
-        }
-
-        return frontier;
+        runtime.markDirty();
     }
 }

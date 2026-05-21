@@ -80,13 +80,13 @@ public class ClientTerritoryRuntime {
         }
 
         if (operationService == null) {
-            operationService = new ClientTerritoryOperationService(globalFrontiersOverlayManager, personalFrontiersOverlayManager,
-                    collectionRuntime, localPersonalFrontierStore, localPersonalCollectionStore, frontierEvents, collectionEvents);
+            operationService = new ClientTerritoryOperationService(this, globalFrontiersOverlayManager,
+                    personalFrontiersOverlayManager, collectionRuntime, frontierEvents, collectionEvents);
         }
 
         if (syncService == null) {
-            syncService = new ClientTerritorySyncService(globalFrontiersOverlayManager, personalFrontiersOverlayManager,
-                    collectionRuntime, localPersonalFrontierStore, localPersonalCollectionStore);
+            syncService = new ClientTerritorySyncService(this, globalFrontiersOverlayManager,
+                    personalFrontiersOverlayManager, collectionRuntime, localPersonalFrontierStore, localPersonalCollectionStore);
             syncService.bootstrapLocalPersonalData();
         }
 
