@@ -47,11 +47,7 @@ final class ClientLocalPersistenceCoordinator {
     }
 
     void tickPersistence() {
-        long now = System.currentTimeMillis();
-        if (persistenceController.shouldFlushOnTick(now)) {
-            flushSnapshot();
-            persistenceController.markPersisted(now);
-        }
+        flushPendingScheduledLocalSave();
     }
 
     void flushOnClose() {
@@ -68,6 +64,14 @@ final class ClientLocalPersistenceCoordinator {
 
     void reset() {
         persistenceController.reset();
+    }
+
+    private void flushPendingScheduledLocalSave() {
+        long now = System.currentTimeMillis();
+        if (persistenceController.shouldFlushOnTick(now)) {
+            flushSnapshot();
+            persistenceController.markPersisted(now);
+        }
     }
 
     private void flushSnapshot() {

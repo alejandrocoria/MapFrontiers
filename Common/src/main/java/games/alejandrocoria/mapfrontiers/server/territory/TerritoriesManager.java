@@ -651,7 +651,7 @@ public class TerritoriesManager {
             } else {
                 if (readFromNBT(nbtFrontiers)) {
                     NbtFileHelper.createBackup(ModDir, "frontiers.dat");
-                    flushTerritoriesNow();
+                    flushNow();
                 } else {
                     persistenceController.markPersisted(System.currentTimeMillis());
                 }
@@ -685,11 +685,11 @@ public class TerritoriesManager {
 
     public void flushTerritoriesOnShutdown() {
         if (persistenceController.hasPendingChanges()) {
-            flushTerritoriesNow();
+            flushNow();
         }
     }
 
-    public void flushTerritoriesNow() {
+    public void flushNow() {
         saveTerritoriesSnapshot();
         persistenceController.markPersisted(System.currentTimeMillis());
     }
