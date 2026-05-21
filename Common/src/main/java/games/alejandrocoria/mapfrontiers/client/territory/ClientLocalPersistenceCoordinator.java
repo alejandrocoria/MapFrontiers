@@ -43,11 +43,11 @@ final class ClientLocalPersistenceCoordinator {
         );
     }
 
-    public void markDirty() {
+    void markDirty() {
         persistenceController.markDirty(System.currentTimeMillis());
     }
 
-    public void tickPersistence() {
+    void tickPersistence() {
         long now = System.currentTimeMillis();
         if (persistenceController.shouldFlushOnTick(now)) {
             flushSnapshot();
@@ -55,18 +55,19 @@ final class ClientLocalPersistenceCoordinator {
         }
     }
 
-    public void flushOnClose() {
+    void flushOnClose() {
         if (persistenceController.hasPendingChanges()) {
-            flushNow();
+            flushSnapshot();
+            persistenceController.markPersisted(System.currentTimeMillis());
         }
     }
 
-    public void flushNow() {
+    void flushNow() {
         flushSnapshot();
         persistenceController.markPersisted(System.currentTimeMillis());
     }
 
-    public void reset() {
+    void reset() {
         persistenceController.reset();
     }
 

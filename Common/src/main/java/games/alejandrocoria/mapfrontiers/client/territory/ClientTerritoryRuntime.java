@@ -162,7 +162,7 @@ public class ClientTerritoryRuntime {
         return clientApi;
     }
 
-    public void markDirty() {
+    void markDirty() {
         ensureInitialized();
         localPersistenceCoordinator.markDirty();
     }
@@ -170,16 +170,6 @@ public class ClientTerritoryRuntime {
     public void tickPersistence() {
         ensureInitialized();
         localPersistenceCoordinator.tickPersistence();
-    }
-
-    public void flushOnClose() {
-        ensureInitialized();
-        localPersistenceCoordinator.flushOnClose();
-    }
-
-    public void flushNow() {
-        ensureInitialized();
-        localPersistenceCoordinator.flushNow();
     }
 
     public void close() {
@@ -194,7 +184,7 @@ public class ClientTerritoryRuntime {
         ClientSettingsProfileEvents settingsEvents = settingsProfileEvents;
 
         if (persistence != null) {
-            closeStep("local persistence flush", persistence::flushOnClose);
+            closeStep("local persistence flush", this::flushPendingLocalPersistenceOnClose);
         }
 
         globalFrontiersOverlayManager = null;
@@ -257,6 +247,11 @@ public class ClientTerritoryRuntime {
                 settingsEvents.close();
             }
         });
+    }
+
+    private void flushPendingLocalPersistenceOnClose() {
+        ensureInitialized();
+        localPersistenceCoordinator.flushOnClose();
     }
 
     private static void closeStep(String name, Runnable action) {
