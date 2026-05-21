@@ -10,6 +10,7 @@ import games.alejandrocoria.mapfrontiers.common.territory.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierCreationFactory;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
+import games.alejandrocoria.mapfrontiers.common.util.DebouncedPersistenceController;
 import games.alejandrocoria.mapfrontiers.common.util.NbtFileHelper;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import net.minecraft.nbt.CompoundTag;
@@ -48,7 +49,7 @@ public class TerritoriesManager {
     private final HashMap<UUID, LinkedHashSet<UUID>> frontierIdsByCollectionId;
     private final HashMap<ResourceKey<Level>, LinkedHashSet<UUID>> globalFrontierIdsByDimension;
     private final HashMap<SettingsUser, HashMap<ResourceKey<Level>, LinkedHashSet<UUID>>> knownPersonalFrontierIdsByUserAndDimension;
-    private final TerritoriesPersistenceController persistenceController;
+    private final DebouncedPersistenceController persistenceController;
     private FrontierSettings frontierSettings;
     private File ModDir;
     private boolean frontierOwnersChecked = false;
@@ -63,7 +64,10 @@ public class TerritoriesManager {
         frontierIdsByCollectionId = new HashMap<>();
         globalFrontierIdsByDimension = new HashMap<>();
         knownPersonalFrontierIdsByUserAndDimension = new HashMap<>();
-        persistenceController = new TerritoriesPersistenceController();
+        persistenceController = new DebouncedPersistenceController(
+                TERRITORIES_UPDATE_SAVE_DEBOUNCE_MS,
+                TERRITORIES_UPDATE_SAVE_MAX_DELAY_MS
+        );
         frontierSettings = new FrontierSettings();
     }
 
@@ -969,35 +973,4 @@ public class TerritoriesManager {
         NbtFileHelper.saveCompressedNbtSafely(ModDir, filename, nbt);
     }
 
-    private static final class TerritoriesPersistenceController {
-        private boolean territoriesDirty = false;
-        private long lastTerritoriesUpdateAt = 0L;
-        private long lastTerritoriesSaveAt = 0L;
-
-        public boolean hasPendingChanges() {
-            return territoriesDirty;
-        }
-
-        public void markDirty(long now) {
-            territoriesDirty = true;
-            lastTerritoriesUpdateAt = now;
-        }
-
-        public boolean shouldFlushOnTick(long now) {
-            if (!territoriesDirty) {
-                return false;
-            }
-
-            boolean debounceElapsed = now - lastTerritoriesUpdateAt >= TERRITORIES_UPDATE_SAVE_DEBOUNCE_MS;
-            boolean maxDelayElapsed = lastTerritoriesSaveAt == 0L
-                    || now - lastTerritoriesSaveAt >= TERRITORIES_UPDATE_SAVE_MAX_DELAY_MS;
-
-            return debounceElapsed || maxDelayElapsed;
-        }
-
-        public void markPersisted(long now) {
-            territoriesDirty = false;
-            lastTerritoriesSaveAt = now;
-        }
-    }
 }

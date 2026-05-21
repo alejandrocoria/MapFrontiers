@@ -28,6 +28,7 @@ public class ClientTerritoryRuntime {
     private ClientSettingsProfileEvents settingsProfileEvents;
     private ClientTerritoryOperationService operationService;
     private ClientTerritorySyncService syncService;
+    private ClientLocalPersistenceCoordinator localPersistenceCoordinator;
     private FrontierLocalOverrides localOverrides;
     private CollectionUiStateStore collectionUiStateStore;
     private MapFrontiersClientAPIImpl clientApi;
@@ -67,6 +68,15 @@ public class ClientTerritoryRuntime {
 
         if (settingsProfileEvents == null) {
             settingsProfileEvents = new ClientSettingsProfileEvents();
+        }
+
+        if (localPersistenceCoordinator == null) {
+            localPersistenceCoordinator = new ClientLocalPersistenceCoordinator(
+                    personalFrontiersOverlayManager,
+                    collectionRuntime,
+                    localPersonalFrontierStore,
+                    localPersonalCollectionStore
+            );
         }
 
         if (operationService == null) {
@@ -152,11 +162,32 @@ public class ClientTerritoryRuntime {
         return clientApi;
     }
 
+    public void markDirty() {
+        ensureInitialized();
+        localPersistenceCoordinator.markDirty();
+    }
+
+    public void tickPersistence() {
+        ensureInitialized();
+        localPersistenceCoordinator.tickPersistence();
+    }
+
+    public void flushOnClose() {
+        ensureInitialized();
+        localPersistenceCoordinator.flushOnClose();
+    }
+
+    public void flushNow() {
+        ensureInitialized();
+        localPersistenceCoordinator.flushNow();
+    }
+
     public void close() {
         FrontiersOverlayManager globalManager = globalFrontiersOverlayManager;
         FrontiersOverlayManager personalManager = personalFrontiersOverlayManager;
         ClientCollectionRuntime collections = collectionRuntime;
         ClientTerritorySyncService sync = syncService;
+        ClientLocalPersistenceCoordinator persistence = localPersistenceCoordinator;
         MapFrontiersClientAPIImpl api = clientApi;
         ClientFrontierEvents events = frontierEvents;
         ClientCollectionEvents collectionEventsState = collectionEvents;
@@ -166,6 +197,7 @@ public class ClientTerritoryRuntime {
         personalFrontiersOverlayManager = null;
         collectionRuntime = null;
         syncService = null;
+        localPersistenceCoordinator = null;
         clientApi = null;
         frontierEvents = null;
         collectionEvents = null;
@@ -194,6 +226,11 @@ public class ClientTerritoryRuntime {
         closeStep("frontier sync service", () -> {
             if (sync != null) {
                 sync.close();
+            }
+        });
+        closeStep("local persistence coordinator", () -> {
+            if (persistence != null) {
+                persistence.reset();
             }
         });
         closeStep("client API", () -> {
