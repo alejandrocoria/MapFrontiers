@@ -193,6 +193,10 @@ public class ClientTerritoryRuntime {
         ClientCollectionEvents collectionEventsState = collectionEvents;
         ClientSettingsProfileEvents settingsEvents = settingsProfileEvents;
 
+        if (persistence != null) {
+            closeStep("local persistence flush", persistence::flushOnClose);
+        }
+
         globalFrontiersOverlayManager = null;
         personalFrontiersOverlayManager = null;
         collectionRuntime = null;
