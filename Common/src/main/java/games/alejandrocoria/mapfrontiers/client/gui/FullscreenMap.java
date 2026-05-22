@@ -289,7 +289,9 @@ public class FullscreenMap {
 
     private void buttonVisibleToggled() {
         frontierHighlighted.setVisibility(FrontierVisibility.Frontier, !frontierHighlighted.getVisibility(FrontierVisibility.Frontier));
-        MapFrontiersClient.getOperationService().updateFrontier(frontierHighlighted);
+        FrontierChange change = new FrontierChange();
+        change.setVisibility(frontierHighlighted.getVisibilityData());
+        MapFrontiersClient.getOperationService().updateFrontier(frontierHighlighted, change);
 
         updateButtons();
     }

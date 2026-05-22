@@ -179,10 +179,6 @@ public class ClientTerritoryOperationService {
         frontierEvents.postDeleted(frontier.getId());
     }
 
-    public void updateFrontier(FrontierOverlay frontier) {
-        updateFrontier(frontier, FrontierChange.fromFrontierData(frontier));
-    }
-
     public void updateFrontier(FrontierOverlay frontier, FrontierChange change) {
         if (change.isEmpty()) {
             return;
@@ -356,19 +352,23 @@ public class ClientTerritoryOperationService {
             return FrontierActionResult.notFound(frontierId);
         }
 
-        FrontierData payload = new FrontierData(frontier);
-        ApiConverters.applyMutation(payload, mutation);
-        FrontierChange change = FrontierChange.fromFrontierData(payload);
+        FrontierChange change = FrontierChange.fromMutation(frontier, mutation);
+        if (change.isEmpty()) {
+            return FrontierActionResult.applied(ApiConverters.fromFrontier(frontier));
+        }
+        UUID updatedCollectionId = change.hasCollectionIdChange()
+                ? change.getCollectionIdChange().getCollectionId()
+                : frontier.getCollectionId();
 
         if (usesAuthoritativeMutationFlow(frontier)) {
-            if (!isValidLocalCollectionAssignment(payload.getPersonal(), payload.getLifetime(), payload.getOwner(), payload.getCollectionId())) {
+            if (!isValidLocalCollectionAssignment(frontier.getPersonal(), frontier.getLifetime(), frontier.getOwner(), updatedCollectionId)) {
                 return FrontierActionResult.rejected();
             }
             PacketHandler.sendToServer(new PacketUpdateFrontier(frontierId.value(), change));
             return FrontierActionResult.acceptedAsync(frontierId);
         }
 
-        if (!isValidLocalCollectionAssignment(payload.getPersonal(), payload.getLifetime(), payload.getOwner(), payload.getCollectionId())) {
+        if (!isValidLocalCollectionAssignment(frontier.getPersonal(), frontier.getLifetime(), frontier.getOwner(), updatedCollectionId)) {
             return FrontierActionResult.rejected();
         }
 
