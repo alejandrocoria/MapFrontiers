@@ -8,9 +8,9 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketCollectionDeleted;
 import games.alejandrocoria.mapfrontiers.common.network.PacketCollectionUpdated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierCreated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierDeleted;
+import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierResync;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSharingUpdated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierUpdated;
-import games.alejandrocoria.mapfrontiers.common.network.PacketFullFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
@@ -178,7 +178,7 @@ public class ServerTerritoryOperationService {
         }
 
         ServerTerritoryOperationResult result = ServerTerritoryOperationResult.success(frontier);
-        result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFullFrontier(frontier), player));
+        result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierResync(frontier), player));
         return result;
     }
 
@@ -405,7 +405,7 @@ public class ServerTerritoryOperationService {
                     true, new FrontierChange(change), authoritativeSyncHash, player.getId());
             ServerTerritoryOperationResult result = ServerTerritoryOperationResult.success(currentFrontier);
             if (syncHashMismatch) {
-                result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFullFrontier(currentFrontier), player));
+                result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierResync(currentFrontier), player));
             }
             if (collectionMembershipChanged) {
                 Date modified = currentFrontier.getModified();
@@ -457,7 +457,7 @@ public class ServerTerritoryOperationService {
         boolean syncHashMismatch = logSyncHashMismatchIfNeeded(player, currentFrontier, expectedSyncHash, authoritativeSyncHash);
         ServerTerritoryOperationResult result = updatedGlobalFrontier(currentFrontier, new FrontierChange(change), authoritativeSyncHash, player.getId());
         if (syncHashMismatch) {
-            result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFullFrontier(currentFrontier), player));
+            result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierResync(currentFrontier), player));
         }
         if (collectionMembershipChanged) {
             Date modified = currentFrontier.getModified();

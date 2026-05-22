@@ -210,7 +210,7 @@ public class FrontierChange {
             });
         }
 
-        mutation.pathStyle().ifPresent(pathStyle -> {
+        mutation.pathStyle().filter(ignored -> frontier.getShape() == FrontierShape.Path).ifPresent(pathStyle -> {
             FrontierData.PathStyle resolvedPathStyle = FrontierMutationApplier.toPathStyle(pathStyle);
             if (!frontier.getPathStyle().equals(resolvedPathStyle)) {
                 change.setPathStyle(resolvedPathStyle);

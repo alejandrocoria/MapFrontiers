@@ -14,13 +14,13 @@ import net.minecraft.resources.Identifier;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-public class PacketFullFrontier {
-    public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_full_frontier");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketFullFrontier> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketFullFrontier::encode, PacketFullFrontier::new);
+public class PacketFrontierResync {
+    public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_frontier_resync");
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketFrontierResync> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketFrontierResync::encode, PacketFrontierResync::new);
 
     private final FrontierData frontier;
 
-    public PacketFullFrontier(FrontierData frontier) {
+    public PacketFrontierResync(FrontierData frontier) {
         this.frontier = new FrontierData(frontier);
     }
 
@@ -28,7 +28,7 @@ public class PacketFullFrontier {
         return new CustomPacketPayload.Type<>(CHANNEL);
     }
 
-    public PacketFullFrontier(FriendlyByteBuf buf) {
+    public PacketFrontierResync(FriendlyByteBuf buf) {
         frontier = new FrontierData();
         if (buf.readableBytes() > 1) {
             frontier.fromBytes(buf);
@@ -39,7 +39,7 @@ public class PacketFullFrontier {
         frontier.toBytes(buf);
     }
 
-    public static void handle(PacketContext<PacketFullFrontier> ctx) {
+    public static void handle(PacketContext<PacketFrontierResync> ctx) {
         if (Side.CLIENT.equals(ctx.side())) {
             if (!MapFrontiersClient.isJourneyMapPluginAvailable()) {
                 return;

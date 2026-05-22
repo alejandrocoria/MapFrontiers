@@ -15,13 +15,13 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class PacketRequestFullFrontier {
-    public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_request_full_frontier");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketRequestFullFrontier> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketRequestFullFrontier::encode, PacketRequestFullFrontier::new);
+public class PacketRequestFrontierResync {
+    public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_request_frontier_resync");
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketRequestFrontierResync> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketRequestFrontierResync::encode, PacketRequestFrontierResync::new);
 
     private UUID frontierId = new UUID(0, 0);
 
-    public PacketRequestFullFrontier(UUID frontierId) {
+    public PacketRequestFrontierResync(UUID frontierId) {
         this.frontierId = frontierId;
     }
 
@@ -29,7 +29,7 @@ public class PacketRequestFullFrontier {
         return new CustomPacketPayload.Type<>(CHANNEL);
     }
 
-    public PacketRequestFullFrontier(FriendlyByteBuf buf) {
+    public PacketRequestFrontierResync(FriendlyByteBuf buf) {
         if (buf.readableBytes() > 1) {
             frontierId = buf.readUUID();
         }
@@ -39,9 +39,9 @@ public class PacketRequestFullFrontier {
         buf.writeUUID(frontierId);
     }
 
-    public static void handle(PacketContext<PacketRequestFullFrontier> ctx) {
+    public static void handle(PacketContext<PacketRequestFrontierResync> ctx) {
         if (Side.SERVER.equals(ctx.side())) {
-            PacketRequestFullFrontier message = ctx.message();
+            PacketRequestFrontierResync message = ctx.message();
             ServerPlayer player = ctx.sender();
             if (player == null || MapFrontiers.getServerRuntime() == null) {
                 return;
