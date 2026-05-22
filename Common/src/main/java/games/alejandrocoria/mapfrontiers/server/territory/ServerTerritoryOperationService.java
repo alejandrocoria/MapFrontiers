@@ -9,6 +9,7 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketCollectionUpdated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierCreated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierDeleted;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSharingUpdated;
+import games.alejandrocoria.mapfrontiers.common.network.PacketFullFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierUpdated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -150,7 +151,7 @@ public class ServerTerritoryOperationService {
         collection.setColor(collectionData.getColor());
         collection.setModified(new Date());
         territoriesManager.markDirty();
-        return updatedCollection(collection, null);
+        return updatedCollection(collection, null, true);
     }
 
     public ServerTerritoryOperationResult updateGlobalCollection(UUID collectionId, CollectionData collectionData) {
@@ -163,7 +164,22 @@ public class ServerTerritoryOperationService {
         collection.setColor(collectionData.getColor());
         collection.setModified(new Date());
         territoriesManager.markDirty();
-        return updatedCollection(collection, null);
+        return updatedCollection(collection, null, true);
+    }
+
+    public ServerTerritoryOperationResult requestFullFrontier(ServerPlayer player, UUID frontierId) {
+        FrontierData frontier = territoriesManager.getFrontierFromID(frontierId);
+        if (frontier == null) {
+            return ServerTerritoryOperationResult.notFound();
+        }
+
+        if (frontier.getPersonal() && !canReceivePersonalFrontier(player, frontier)) {
+            return ServerTerritoryOperationResult.ignored(frontier);
+        }
+
+        ServerTerritoryOperationResult result = ServerTerritoryOperationResult.success(frontier);
+        result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFullFrontier(frontier), player));
+        return result;
     }
 
     public ServerTerritoryOperationResult deleteCollection(ServerPlayer player, UUID collectionId) {
@@ -384,10 +400,13 @@ public class ServerTerritoryOperationService {
             }
 
             long authoritativeSyncHash = currentFrontier.computeSyncHash();
-            logSyncHashMismatchIfNeeded(player, currentFrontier, expectedSyncHash, authoritativeSyncHash);
+            boolean syncHashMismatch = logSyncHashMismatchIfNeeded(player, currentFrontier, expectedSyncHash, authoritativeSyncHash);
             PacketFrontierUpdated frontierUpdatedPacket = new PacketFrontierUpdated(frontierId, currentFrontier.getDimension(),
                     true, new FrontierChange(change), authoritativeSyncHash, player.getId());
             ServerTerritoryOperationResult result = ServerTerritoryOperationResult.success(currentFrontier);
+            if (syncHashMismatch) {
+                result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFullFrontier(currentFrontier), player));
+            }
             if (collectionMembershipChanged) {
                 Date modified = currentFrontier.getModified();
                 if (sourceCollection != null) {
@@ -397,10 +416,10 @@ public class ServerTerritoryOperationService {
                     touchCollection(targetCollection, modified);
                 }
                 if (sourceCollection != null) {
-                    enqueueCollectionVisibilityChange(result, sourceCollection, sourceCollectionRecipientsBefore);
+                    enqueueCollectionVisibilityChange(result, sourceCollection, sourceCollectionRecipientsBefore, false);
                 }
                 if (targetCollection != null && targetCollection != sourceCollection) {
-                    enqueueCollectionVisibilityChange(result, targetCollection, targetCollectionRecipientsBefore);
+                    enqueueCollectionVisibilityChange(result, targetCollection, targetCollectionRecipientsBefore, false);
                 }
             }
             frontierEvents.postUpdated(currentFrontier);
@@ -435,8 +454,11 @@ public class ServerTerritoryOperationService {
         }
 
         long authoritativeSyncHash = currentFrontier.computeSyncHash();
-        logSyncHashMismatchIfNeeded(player, currentFrontier, expectedSyncHash, authoritativeSyncHash);
+        boolean syncHashMismatch = logSyncHashMismatchIfNeeded(player, currentFrontier, expectedSyncHash, authoritativeSyncHash);
         ServerTerritoryOperationResult result = updatedGlobalFrontier(currentFrontier, new FrontierChange(change), authoritativeSyncHash, player.getId());
+        if (syncHashMismatch) {
+            result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFullFrontier(currentFrontier), player));
+        }
         if (collectionMembershipChanged) {
             Date modified = currentFrontier.getModified();
             if (sourceCollection != null) {
@@ -446,10 +468,10 @@ public class ServerTerritoryOperationService {
                 touchCollection(targetCollection, modified);
             }
             if (sourceCollection != null) {
-                enqueueCollectionVisibilityChange(result, sourceCollection, sourceCollectionRecipientsBefore);
+                enqueueCollectionVisibilityChange(result, sourceCollection, sourceCollectionRecipientsBefore, false);
             }
             if (targetCollection != null && targetCollection != sourceCollection) {
-                enqueueCollectionVisibilityChange(result, targetCollection, targetCollectionRecipientsBefore);
+                enqueueCollectionVisibilityChange(result, targetCollection, targetCollectionRecipientsBefore, false);
             }
         }
         return result;
@@ -509,10 +531,10 @@ public class ServerTerritoryOperationService {
                 touchCollection(targetCollection, modified);
             }
             if (sourceCollection != null) {
-                enqueueCollectionVisibilityChange(result, sourceCollection, sourceCollectionRecipientsBefore);
+                enqueueCollectionVisibilityChange(result, sourceCollection, sourceCollectionRecipientsBefore, false);
             }
             if (targetCollection != null && targetCollection != sourceCollection) {
-                enqueueCollectionVisibilityChange(result, targetCollection, targetCollectionRecipientsBefore);
+                enqueueCollectionVisibilityChange(result, targetCollection, targetCollectionRecipientsBefore, false);
             }
         }
         return result;
@@ -540,7 +562,7 @@ public class ServerTerritoryOperationService {
 
                 ServerTerritoryOperationResult result = ServerTerritoryOperationResult.success(frontier);
                 if (collection != null) {
-                    enqueueCollectionVisibilityChange(result, collection, collectionRecipientsBefore);
+                    enqueueCollectionVisibilityChange(result, collection, collectionRecipientsBefore, false);
                 }
                 result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(new PacketFrontierDeleted(frontier.getDimension(),
                         frontier.getId(), frontier.getPersonal(), player.getId()), frontier, server));
@@ -576,7 +598,7 @@ public class ServerTerritoryOperationService {
         ServerTerritoryOperationResult result = deletedGlobalFrontier(frontier, player.getId());
         if (collection != null) {
             touchCollection(collection, new Date());
-            enqueueCollectionVisibilityChange(result, collection, null);
+            enqueueCollectionVisibilityChange(result, collection, null, false);
         }
         return result;
     }
@@ -603,7 +625,7 @@ public class ServerTerritoryOperationService {
         ServerTerritoryOperationResult result = deletedGlobalFrontier(frontier, SYSTEM_ACTOR_ID);
         if (collection != null) {
             touchCollection(collection, new Date());
-            enqueueCollectionVisibilityChange(result, collection, null);
+            enqueueCollectionVisibilityChange(result, collection, null, false);
         }
         return result;
     }
@@ -655,7 +677,7 @@ public class ServerTerritoryOperationService {
         ServerTerritoryOperationResult result = ServerTerritoryOperationResult.success(frontier);
         if (sourceCollection != null) {
             touchCollection(sourceCollection, frontier.getModified());
-            enqueueCollectionVisibilityChange(result, sourceCollection, sourceCollectionRecipientsBefore);
+            enqueueCollectionVisibilityChange(result, sourceCollection, sourceCollectionRecipientsBefore, false);
         }
         result.addNetworkAction(() -> PacketHandler.sendTo(new PacketChangeFrontierToGlobal(frontier.getId(), frontier.getModified()), relevantPlayers));
         result.addNetworkAction(() -> PacketHandler.sendToAllExcept(new PacketFrontierCreated(frontier, player.getId()), server, relevantPlayers));
@@ -700,7 +722,7 @@ public class ServerTerritoryOperationService {
         ServerTerritoryOperationResult result = ServerTerritoryOperationResult.success(frontier);
         if (sourceCollection != null) {
             touchCollection(sourceCollection, frontier.getModified());
-            enqueueCollectionVisibilityChange(result, sourceCollection, null);
+            enqueueCollectionVisibilityChange(result, sourceCollection, null, false);
         }
         result.addNetworkAction(() -> PacketHandler.sendTo(new PacketChangeFrontierToPersonal(frontier.getId(), frontier.getModified()), player));
         result.addNetworkAction(() -> PacketHandler.sendToAllExcept(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(),
@@ -715,7 +737,7 @@ public class ServerTerritoryOperationService {
                                                                    @Nullable CollectionData collection) {
         ServerTerritoryOperationResult result = ServerTerritoryOperationResult.success(frontier);
         if (collection != null) {
-            enqueueCollectionVisibilityChange(result, collection, collectionRecipientsBefore);
+            enqueueCollectionVisibilityChange(result, collection, collectionRecipientsBefore, false);
         }
         result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(new PacketFrontierCreated(frontier, actorId), frontier, server));
         frontierEvents.postCreated(frontier);
@@ -728,7 +750,7 @@ public class ServerTerritoryOperationService {
                                                                  @Nullable CollectionData collection) {
         ServerTerritoryOperationResult result = ServerTerritoryOperationResult.success(frontier);
         if (collection != null) {
-            enqueueCollectionVisibilityChange(result, collection, collectionRecipientsBefore);
+            enqueueCollectionVisibilityChange(result, collection, collectionRecipientsBefore, false);
         }
         result.addNetworkAction(() -> PacketHandler.sendToAll(new PacketFrontierCreated(frontier, actorId), server));
         frontierEvents.postCreated(frontier);
@@ -771,9 +793,9 @@ public class ServerTerritoryOperationService {
         return result;
     }
 
-    private ServerTerritoryOperationResult updatedCollection(CollectionData collection, @Nullable Set<UUID> recipientsBefore) {
+    private ServerTerritoryOperationResult updatedCollection(CollectionData collection, @Nullable Set<UUID> recipientsBefore, boolean metadataChanged) {
         ServerTerritoryOperationResult result = ServerTerritoryOperationResult.successCollection(collection);
-        enqueueCollectionVisibilityChange(result, collection, recipientsBefore);
+        enqueueCollectionVisibilityChange(result, collection, recipientsBefore, metadataChanged);
         return result;
     }
 
@@ -795,22 +817,25 @@ public class ServerTerritoryOperationService {
 
     private void enqueueCollectionVisibilityChange(ServerTerritoryOperationResult result,
                                                    CollectionData collection,
-                                                   @Nullable Set<UUID> recipientsBefore) {
+                                                   @Nullable Set<UUID> recipientsBefore,
+                                                   boolean metadataChanged) {
         collectionEvents.postUpdated(collection);
         if (!collection.getPersonal()) {
-            CollectionData payload = new CollectionData(collection);
-            result.addNetworkAction(() -> PacketHandler.sendToAll(new PacketCollectionUpdated(payload), server));
+            if (metadataChanged) {
+                CollectionData payload = new CollectionData(collection);
+                result.addNetworkAction(() -> PacketHandler.sendToAll(new PacketCollectionUpdated(payload), server));
+            }
             return;
         }
 
         Set<UUID> recipientsAfter = getCollectionRecipientIds(collection);
         LinkedHashSet<UUID> recipientsForCreate = new LinkedHashSet<>();
         LinkedHashSet<UUID> recipientsForUpdate = new LinkedHashSet<>();
-        if (recipientsBefore == null) {
+        if (metadataChanged && recipientsBefore == null) {
             recipientsForUpdate.addAll(recipientsAfter);
         } else {
             for (UUID recipientId : recipientsAfter) {
-                if (recipientsBefore.contains(recipientId)) {
+                if (metadataChanged && recipientsBefore != null && recipientsBefore.contains(recipientId)) {
                     recipientsForUpdate.add(recipientId);
                 } else {
                     recipientsForCreate.add(recipientId);
@@ -974,15 +999,26 @@ public class ServerTerritoryOperationService {
         return left.equals(right);
     }
 
-    private void logSyncHashMismatchIfNeeded(ServerPlayer player, FrontierData frontier, long expectedSyncHash, long authoritativeSyncHash) {
+    private boolean logSyncHashMismatchIfNeeded(ServerPlayer player, FrontierData frontier, long expectedSyncHash, long authoritativeSyncHash) {
         if (expectedSyncHash == authoritativeSyncHash) {
-            return;
+            return false;
         }
 
         MapFrontiers.LOGGER.warn(
                 "Frontier sync hash mismatch after server update apply. frontierId={}, player={}, expectedHash={}, authoritativeHash={}",
                 frontier.getId(), player.getName().getString(), expectedSyncHash, authoritativeSyncHash
         );
+        return true;
+    }
+
+    private boolean canReceivePersonalFrontier(ServerPlayer player, FrontierData frontier) {
+        SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
+        if (frontier.getOwner().equals(playerUser)) {
+            return true;
+        }
+
+        SettingsUserShared userShared = frontier.getUserShared(playerUser);
+        return userShared != null && !userShared.isPending();
     }
 
     private ServerTerritoryOperationResult rejectedWithProfileRefresh(ServerPlayer player, @Nullable FrontierData frontier) {

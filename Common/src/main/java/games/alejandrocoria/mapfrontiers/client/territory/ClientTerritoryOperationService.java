@@ -30,6 +30,7 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketDeleteCollection;
 import games.alejandrocoria.mapfrontiers.common.network.PacketDeleteFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketRemoveSharedUserPersonalFrontier;
+import games.alejandrocoria.mapfrontiers.common.network.PacketRequestFullFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSharePersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateCollection;
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateFrontier;
@@ -570,6 +571,7 @@ public class ClientTerritoryOperationService {
                         "Frontier sync hash mismatch after client update apply. frontierId={}, personal={}, expectedHash={}, localHash={}",
                         frontierId, personal, authoritativeSyncHash, localSyncHash
                 );
+                PacketHandler.sendToServer(new PacketRequestFullFrontier(frontierId));
             }
             if (previousState != null) {
                 collectionRuntime.onFrontierUpdated(previousState, frontierOverlay);
@@ -578,6 +580,48 @@ public class ClientTerritoryOperationService {
                 markLocalPersonalDataDirty();
             }
             frontierEvents.postUpdated(frontierOverlay, playerId);
+        }
+    }
+
+    public void applyFullFrontier(FrontierData frontier) {
+        FrontiersOverlayManager targetManager = getManager(frontier.getPersonal());
+        FrontiersOverlayManager otherManager = getManager(!frontier.getPersonal());
+        FrontierOverlay currentFrontier = targetManager.getFrontier(frontier.getId());
+        boolean frontierExisted = currentFrontier != null;
+
+        if (!frontierExisted) {
+            FrontierOverlay staleFrontier = otherManager.deleteFrontier(frontier.getId());
+            if (staleFrontier != null) {
+                collectionRuntime.onFrontierRemoved(staleFrontier);
+                frontierExisted = true;
+            }
+        }
+
+        FrontierOverlay appliedFrontier;
+        if (currentFrontier != null && currentFrontier.getDimension().equals(frontier.getDimension())) {
+            ClientCollectionRuntime.FrontierIndexState previousState = collectionRuntime.snapshotFrontier(currentFrontier);
+            currentFrontier.updateFromData(frontier);
+            targetManager.refreshFrontierDerivedIndexes(currentFrontier);
+            collectionRuntime.onFrontierUpdated(previousState, currentFrontier);
+            appliedFrontier = currentFrontier;
+        } else {
+            if (currentFrontier != null) {
+                targetManager.deleteFrontier(currentFrontier.getDimension(), currentFrontier.getId());
+                collectionRuntime.onFrontierRemoved(currentFrontier);
+            }
+
+            appliedFrontier = targetManager.addFrontier(frontier);
+            collectionRuntime.onFrontierAdded(appliedFrontier);
+        }
+
+        if (frontier.getPersonal() && frontier.isPersistent()) {
+            markLocalPersonalDataDirty();
+        }
+
+        if (frontierExisted) {
+            frontierEvents.postUpdated(appliedFrontier, -1);
+        } else {
+            frontierEvents.postCreated(appliedFrontier, -1);
         }
     }
 
