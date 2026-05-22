@@ -167,7 +167,7 @@ public class ServerTerritoryOperationService {
         return updatedCollection(collection, null, true);
     }
 
-    public ServerTerritoryOperationResult requestFullFrontier(ServerPlayer player, UUID frontierId) {
+    public ServerTerritoryOperationResult requestFrontierResync(ServerPlayer player, UUID frontierId) {
         FrontierData frontier = territoriesManager.getFrontierFromID(frontierId);
         if (frontier == null) {
             return ServerTerritoryOperationResult.notFound();

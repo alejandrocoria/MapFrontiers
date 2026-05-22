@@ -45,7 +45,7 @@ public class PacketFullFrontier {
                 return;
             }
 
-            MapFrontiersClient.getOperationService().applyFullFrontier(ctx.message().frontier);
+            MapFrontiersClient.getOperationService().applyFrontierResync(ctx.message().frontier);
         }
     }
 }

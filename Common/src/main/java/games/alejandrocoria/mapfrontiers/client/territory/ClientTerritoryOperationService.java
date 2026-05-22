@@ -583,7 +583,7 @@ public class ClientTerritoryOperationService {
         }
     }
 
-    public void applyFullFrontier(FrontierData frontier) {
+    public void applyFrontierResync(FrontierData frontier) {
         FrontiersOverlayManager targetManager = getManager(frontier.getPersonal());
         FrontiersOverlayManager otherManager = getManager(!frontier.getPersonal());
         FrontierOverlay currentFrontier = targetManager.getFrontier(frontier.getId());

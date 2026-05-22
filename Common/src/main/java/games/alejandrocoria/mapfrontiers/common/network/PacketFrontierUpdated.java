@@ -5,7 +5,6 @@ import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -30,10 +29,6 @@ public class PacketFrontierUpdated {
     private long authoritativeSyncHash;
     private int playerID = -1;
 
-    public PacketFrontierUpdated(UUID frontierId, ResourceKey<Level> dimension, boolean personal, FrontierChange change, long authoritativeSyncHash) {
-        this(frontierId, dimension, personal, change, authoritativeSyncHash, -1);
-    }
-
     public PacketFrontierUpdated(UUID frontierId, ResourceKey<Level> dimension, boolean personal, FrontierChange change, long authoritativeSyncHash,
                                  int playerID) {
         this.frontierId = frontierId;
@@ -41,19 +36,6 @@ public class PacketFrontierUpdated {
         this.personal = personal;
         this.change = change;
         this.authoritativeSyncHash = authoritativeSyncHash;
-        this.playerID = playerID;
-    }
-
-    public PacketFrontierUpdated(FrontierData frontier) {
-        this(frontier, -1);
-    }
-
-    public PacketFrontierUpdated(FrontierData frontier, int playerID) {
-        frontierId = frontier.getId();
-        dimension = frontier.getDimension();
-        personal = frontier.getPersonal();
-        change = FrontierChange.fromFrontierData(frontier, true);
-        authoritativeSyncHash = frontier.computeSyncHash();
         this.playerID = playerID;
     }
 

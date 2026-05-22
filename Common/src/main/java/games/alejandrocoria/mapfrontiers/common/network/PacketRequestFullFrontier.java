@@ -48,7 +48,7 @@ public class PacketRequestFullFrontier {
             }
 
             ServerTerritoryOperationResult result = MapFrontiers.getServerRuntime().getOperationService()
-                    .requestFullFrontier(player, message.frontierId);
+                    .requestFrontierResync(player, message.frontierId);
             result.dispatchNetworkActions();
         }
     }

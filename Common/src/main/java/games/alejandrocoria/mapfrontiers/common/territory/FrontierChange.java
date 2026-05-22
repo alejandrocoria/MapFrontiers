@@ -134,29 +134,6 @@ public class FrontierChange {
         }
     }
 
-    public static FrontierChange fromFrontierData(FrontierData frontier) {
-        return fromFrontierData(frontier, false);
-    }
-
-    public static FrontierChange fromFrontierData(FrontierData frontier, boolean includeModifiedTime) {
-        FrontierChange change = new FrontierChange();
-        change.setName(frontier.getName1(), frontier.getName2());
-        change.setVisibility(frontier.getVisibilityData());
-        change.setColor(frontier.getColor());
-        change.setBanner(frontier.getbannerData());
-        change.setShape(frontier.getVertices(), frontier.getChunks(), frontier.getPoints(), frontier.getShape());
-        if (frontier.getShape() == FrontierShape.Path) {
-            change.setPathStyle(frontier.getPathStyle());
-        }
-        change.setCollectionId(frontier.getCollectionId());
-
-        if (includeModifiedTime && frontier.getModified() != null) {
-            change.setModifiedTime(frontier.getModified().getTime());
-        }
-
-        return change;
-    }
-
     public static FrontierChange fromMutation(FrontierData frontier, FrontierMutation mutation) {
         FrontierChange change = new FrontierChange();
 
