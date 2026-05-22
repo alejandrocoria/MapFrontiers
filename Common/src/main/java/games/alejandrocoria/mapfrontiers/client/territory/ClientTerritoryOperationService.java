@@ -190,7 +190,9 @@ public class ClientTerritoryOperationService {
         MapFrontiersClient.markFrontierActivationDirty();
 
         if (usesAuthoritativeMutationFlow(frontier)) {
-            PacketHandler.sendToServer(new PacketUpdateFrontier(frontier.getId(), change));
+            FrontierData expectedFrontier = new FrontierData(frontier);
+            expectedFrontier.applyChange(change);
+            PacketHandler.sendToServer(new PacketUpdateFrontier(frontier.getId(), change, expectedFrontier.computeSyncHash()));
             return;
         }
 
@@ -364,7 +366,9 @@ public class ClientTerritoryOperationService {
             if (!isValidLocalCollectionAssignment(frontier.getPersonal(), frontier.getLifetime(), frontier.getOwner(), updatedCollectionId)) {
                 return FrontierActionResult.rejected();
             }
-            PacketHandler.sendToServer(new PacketUpdateFrontier(frontierId.value(), change));
+            FrontierData expectedFrontier = new FrontierData(frontier);
+            expectedFrontier.applyChange(change);
+            PacketHandler.sendToServer(new PacketUpdateFrontier(frontierId.value(), change, expectedFrontier.computeSyncHash()));
             return FrontierActionResult.acceptedAsync(frontierId);
         }
 
@@ -551,6 +555,7 @@ public class ClientTerritoryOperationService {
                                      UUID frontierId,
                                      boolean personal,
                                      FrontierChange change,
+                                     long authoritativeSyncHash,
                                      int playerId) {
         FrontiersOverlayManager manager = getManager(personal);
         FrontierOverlay existingFrontier = manager.getFrontier(frontierId);
@@ -559,6 +564,13 @@ public class ClientTerritoryOperationService {
                 : collectionRuntime.snapshotFrontier(existingFrontier);
         FrontierOverlay frontierOverlay = manager.applyFrontierChange(dimension, frontierId, change);
         if (frontierOverlay != null) {
+            long localSyncHash = frontierOverlay.computeSyncHash();
+            if (localSyncHash != authoritativeSyncHash) {
+                MapFrontiers.LOGGER.warn(
+                        "Frontier sync hash mismatch after client update apply. frontierId={}, personal={}, expectedHash={}, localHash={}",
+                        frontierId, personal, authoritativeSyncHash, localSyncHash
+                );
+            }
             if (previousState != null) {
                 collectionRuntime.onFrontierUpdated(previousState, frontierOverlay);
             }

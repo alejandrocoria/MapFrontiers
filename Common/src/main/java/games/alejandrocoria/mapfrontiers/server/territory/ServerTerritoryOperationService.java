@@ -337,7 +337,7 @@ public class ServerTerritoryOperationService {
         return createdGlobalFrontier(frontier, SYSTEM_ACTOR_ID, null, targetCollection);
     }
 
-    public ServerTerritoryOperationResult updateFrontier(ServerPlayer player, UUID frontierId, FrontierChange change) {
+    public ServerTerritoryOperationResult updateFrontier(ServerPlayer player, UUID frontierId, FrontierChange change, long expectedSyncHash) {
         FrontierData currentFrontier = territoriesManager.getFrontierFromID(frontierId);
         if (currentFrontier == null) {
             return ServerTerritoryOperationResult.notFound();
@@ -383,8 +383,10 @@ public class ServerTerritoryOperationService {
                 return ServerTerritoryOperationResult.notFound();
             }
 
+            long authoritativeSyncHash = currentFrontier.computeSyncHash();
+            logSyncHashMismatchIfNeeded(player, currentFrontier, expectedSyncHash, authoritativeSyncHash);
             PacketFrontierUpdated frontierUpdatedPacket = new PacketFrontierUpdated(frontierId, currentFrontier.getDimension(),
-                    true, new FrontierChange(change), player.getId());
+                    true, new FrontierChange(change), authoritativeSyncHash, player.getId());
             ServerTerritoryOperationResult result = ServerTerritoryOperationResult.success(currentFrontier);
             if (collectionMembershipChanged) {
                 Date modified = currentFrontier.getModified();
@@ -432,7 +434,9 @@ public class ServerTerritoryOperationService {
             return ServerTerritoryOperationResult.notFound();
         }
 
-        ServerTerritoryOperationResult result = updatedGlobalFrontier(currentFrontier, new FrontierChange(change), player.getId());
+        long authoritativeSyncHash = currentFrontier.computeSyncHash();
+        logSyncHashMismatchIfNeeded(player, currentFrontier, expectedSyncHash, authoritativeSyncHash);
+        ServerTerritoryOperationResult result = updatedGlobalFrontier(currentFrontier, new FrontierChange(change), authoritativeSyncHash, player.getId());
         if (collectionMembershipChanged) {
             Date modified = currentFrontier.getModified();
             if (sourceCollection != null) {
@@ -495,7 +499,7 @@ public class ServerTerritoryOperationService {
             return ServerTerritoryOperationResult.notFound();
         }
 
-        ServerTerritoryOperationResult result = updatedGlobalFrontier(frontier, new FrontierChange(change), SYSTEM_ACTOR_ID);
+        ServerTerritoryOperationResult result = updatedGlobalFrontier(frontier, new FrontierChange(change), frontier.computeSyncHash(), SYSTEM_ACTOR_ID);
         if (collectionMembershipChanged) {
             Date modified = frontier.getModified();
             if (sourceCollection != null) {
@@ -737,10 +741,10 @@ public class ServerTerritoryOperationService {
         return result;
     }
 
-    private ServerTerritoryOperationResult updatedGlobalFrontier(FrontierData frontier, FrontierChange change, int actorId) {
+    private ServerTerritoryOperationResult updatedGlobalFrontier(FrontierData frontier, FrontierChange change, long authoritativeSyncHash, int actorId) {
         ServerTerritoryOperationResult result = ServerTerritoryOperationResult.success(frontier);
         result.addNetworkAction(() -> PacketHandler.sendToAll(new PacketFrontierUpdated(frontier.getId(), frontier.getDimension(),
-                false, change, actorId), server));
+                false, change, authoritativeSyncHash, actorId), server));
         frontierEvents.postUpdated(frontier);
         return result;
     }
@@ -778,7 +782,7 @@ public class ServerTerritoryOperationService {
             FrontierData frontier = update.frontier();
             frontierEvents.postUpdated(frontier);
             PacketFrontierUpdated packet = new PacketFrontierUpdated(frontier.getId(), frontier.getDimension(),
-                    frontier.getPersonal(), new FrontierChange(update.change()), update.actorId());
+                    frontier.getPersonal(), new FrontierChange(update.change()), frontier.computeSyncHash(), update.actorId());
             result.addNetworkAction(() -> {
                 if (frontier.getPersonal()) {
                     PacketHandler.sendToUsersWithAccess(packet, frontier, server);
@@ -968,6 +972,17 @@ public class ServerTerritoryOperationService {
         }
 
         return left.equals(right);
+    }
+
+    private void logSyncHashMismatchIfNeeded(ServerPlayer player, FrontierData frontier, long expectedSyncHash, long authoritativeSyncHash) {
+        if (expectedSyncHash == authoritativeSyncHash) {
+            return;
+        }
+
+        MapFrontiers.LOGGER.warn(
+                "Frontier sync hash mismatch after server update apply. frontierId={}, player={}, expectedHash={}, authoritativeHash={}",
+                frontier.getId(), player.getName().getString(), expectedSyncHash, authoritativeSyncHash
+        );
     }
 
     private ServerTerritoryOperationResult rejectedWithProfileRefresh(ServerPlayer player, @Nullable FrontierData frontier) {
