@@ -134,7 +134,7 @@ public class FrontierInfoPage extends PageScreen {
 
     private final FrontierOverlay frontier;
     private final boolean hasPathStyle;
-    private int frontierHash;
+    private long frontierSyncHash;
     private TextBox textName1;
     private TextBox textName2;
     private SimpleButton buttonVisibility;
@@ -182,7 +182,7 @@ public class FrontierInfoPage extends PageScreen {
         this.jmAPI = jmAPI;
         this.frontier = frontier;
         hasPathStyle = frontier.getShape() == FrontierShape.Path;
-        frontierHash = frontier.getHash();
+        frontierSyncHash = frontier.computeSyncHash();
         undoStack.push(new FrontierData(frontier));
 
         MapFrontiersClient.getFrontierEvents().subscribeDeleted(this, frontierID -> {
@@ -204,7 +204,7 @@ public class FrontierInfoPage extends PageScreen {
                         modifiedLabel.setMessage(modified);
                     }
                 }
-                frontierHash = frontier.getHash();
+                frontierSyncHash = frontier.computeSyncHash();
             }
         });
 
@@ -1017,8 +1017,9 @@ public class FrontierInfoPage extends PageScreen {
         SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontier, playerUser);
 
         if (actions.canUpdate) {
-            if (frontier.getHash() != frontierHash) {
-                frontierHash = frontier.getHash();
+            long currentSyncHash = frontier.computeSyncHash();
+            if (currentSyncHash != frontierSyncHash) {
+                frontierSyncHash = currentSyncHash;
                 MapFrontiersClient.getOperationService().updateFrontier(frontier, change);
             }
         }

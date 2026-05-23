@@ -1,5 +1,8 @@
 package games.alejandrocoria.mapfrontiers.common.territory;
 
+import games.alejandrocoria.mapfrontiers.api.model.ChunkCoord;
+import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
+import games.alejandrocoria.mapfrontiers.api.model.Point2i;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -8,8 +11,11 @@ import net.minecraft.world.level.ChunkPos;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -128,24 +134,99 @@ public class FrontierChange {
         }
     }
 
-    public static FrontierChange fromFrontierData(FrontierData frontier) {
-        return fromFrontierData(frontier, false);
-    }
-
-    public static FrontierChange fromFrontierData(FrontierData frontier, boolean includeModifiedTime) {
+    public static FrontierChange fromMutation(FrontierData frontier, FrontierMutation mutation) {
         FrontierChange change = new FrontierChange();
-        change.setName(frontier.getName1(), frontier.getName2());
-        change.setVisibility(frontier.getVisibilityData());
-        change.setColor(frontier.getColor());
-        change.setBanner(frontier.getbannerData());
-        change.setShape(frontier.getVertices(), frontier.getChunks(), frontier.getPoints(), frontier.getShape());
-        if (frontier.getShape() == FrontierShape.Path) {
-            change.setPathStyle(frontier.getPathStyle());
-        }
-        change.setCollectionId(frontier.getCollectionId());
 
-        if (includeModifiedTime && frontier.getModified() != null) {
-            change.setModifiedTime(frontier.getModified().getTime());
+        if (mutation.name1().isPresent() || mutation.name2().isPresent()) {
+            String name1 = mutation.name1().orElse(frontier.getName1());
+            String name2 = mutation.name2().orElse(frontier.getName2());
+            if (!Objects.equals(frontier.getName1(), name1) || !Objects.equals(frontier.getName2(), name2)) {
+                change.setName(name1, name2);
+            }
+        }
+
+        mutation.color().filter(color -> color != frontier.getColor()).ifPresent(change::setColor);
+
+        if (mutation.shape().isPresent()) {
+            switch (mutation.shape().get().type()) {
+                case VERTEX -> {
+                    List<BlockPos> vertices = mutation.shape().get().vertices() == null
+                            ? List.of()
+                            : mutation.shape().get().vertices().stream()
+                            .map(FrontierChange::toBlockPos)
+                            .toList();
+                    if (frontier.getShape() != FrontierShape.Vertex || !frontier.getVertices().equals(vertices)) {
+                        change.setShape(vertices, Set.of(), List.of(), FrontierShape.Vertex);
+                    }
+                }
+                case CHUNK -> {
+                    Set<ChunkPos> chunks = mutation.shape().get().chunks() == null
+                            ? Set.of()
+                            : mutation.shape().get().chunks().stream()
+                            .map(FrontierChange::toChunkPos)
+                            .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+                    if (frontier.getShape() != FrontierShape.Chunk || !frontier.getChunks().equals(chunks)) {
+                        change.setShape(List.of(), chunks, List.of(), FrontierShape.Chunk);
+                    }
+                }
+                case PATH -> {
+                    List<BlockPos> points = mutation.shape().get().points() == null
+                            ? List.of()
+                            : mutation.shape().get().points().stream()
+                            .map(FrontierChange::toBlockPos)
+                            .toList();
+                    if (frontier.getShape() != FrontierShape.Path || !frontier.getPoints().equals(points)) {
+                        change.setShape(List.of(), Set.of(), points, FrontierShape.Path);
+                    }
+                }
+            }
+        }
+
+        if (mutation.visibility().isPresent() || !mutation.visibilityToAdd().isEmpty() || !mutation.visibilityToRemove().isEmpty()) {
+            EnumSet<games.alejandrocoria.mapfrontiers.api.model.FrontierVisibilityFlag> visibility =
+                    EnumSet.noneOf(games.alejandrocoria.mapfrontiers.api.model.FrontierVisibilityFlag.class);
+            mutation.visibility().ifPresentOrElse(
+                    visibility::addAll,
+                    () -> visibility.addAll(FrontierMutationApplier.fromVisibility(frontier.getVisibilityData()))
+            );
+            visibility.addAll(mutation.visibilityToAdd());
+            visibility.removeAll(mutation.visibilityToRemove());
+            VisibilityData resolvedVisibility = FrontierMutationApplier.toVisibility(visibility);
+            if (!frontier.getVisibilityData().equals(resolvedVisibility)) {
+                change.setVisibility(resolvedVisibility);
+            }
+        }
+
+        if (mutation.clearBanner()) {
+            if (frontier.getbannerData() != null) {
+                change.setBanner(null);
+            }
+        } else {
+            mutation.banner().ifPresent(banner -> {
+                FrontierData.BannerData resolvedBanner = FrontierMutationApplier.toBanner(banner);
+                if (!Objects.equals(frontier.getbannerData(), resolvedBanner)) {
+                    change.setBanner(resolvedBanner);
+                }
+            });
+        }
+
+        mutation.pathStyle().filter(ignored -> frontier.getShape() == FrontierShape.Path).ifPresent(pathStyle -> {
+            FrontierData.PathStyle resolvedPathStyle = FrontierMutationApplier.toPathStyle(pathStyle);
+            if (!frontier.getPathStyle().equals(resolvedPathStyle)) {
+                change.setPathStyle(resolvedPathStyle);
+            }
+        });
+
+        if (mutation.clearCollection()) {
+            if (frontier.getCollectionId() != null) {
+                change.setCollectionId(null);
+            }
+        } else {
+            mutation.collectionId().ifPresent(collectionId -> {
+                if (!Objects.equals(frontier.getCollectionId(), collectionId.value())) {
+                    change.setCollectionId(collectionId.value());
+                }
+            });
         }
 
         return change;
@@ -432,5 +513,13 @@ public class FrontierChange {
         public FrontierData.PathStyle getPathStyle() {
             return new FrontierData.PathStyle(pathStyle);
         }
+    }
+
+    private static BlockPos toBlockPos(Point2i point) {
+        return new BlockPos(point.x(), 0, point.z());
+    }
+
+    private static ChunkPos toChunkPos(ChunkCoord chunk) {
+        return new ChunkPos(chunk.x(), chunk.z());
     }
 }

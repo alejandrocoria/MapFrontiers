@@ -79,9 +79,11 @@ public class ServerCollectionServiceImpl implements PluginScopedServerCollection
 
     @Override
     public List<CollectionDataView> listGlobalCollections(String pluginModId) {
-        return operationService.getAllGlobalCollections().stream()
-                .map(ApiConverters::fromCollection)
-                .toList();
+        List<CollectionDataView> collections = new java.util.ArrayList<>();
+        for (CollectionData collection : operationService.iterateGlobalCollections()) {
+            collections.add(ApiConverters.fromCollection(collection));
+        }
+        return List.copyOf(collections);
     }
 
     @Override

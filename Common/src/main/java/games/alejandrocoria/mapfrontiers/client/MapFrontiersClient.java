@@ -158,10 +158,11 @@ public class MapFrontiersClient {
 
     private static void updateOverlayManagers() {
         ClientTerritoryRuntime runtime = requireTerritoryRuntime();
+        runtime.tickPersistence();
         FrontiersOverlayManager frontiersOverlayManager = runtime.getGlobalFrontiersOverlayManager();
         FrontiersOverlayManager personalFrontiersOverlayManager = runtime.getPersonalFrontiersOverlayManager();
-        frontiersOverlayManager.updateAllOverlays(false);
-        personalFrontiersOverlayManager.updateAllOverlays(false);
+        frontiersOverlayManager.processDirtyOverlays();
+        personalFrontiersOverlayManager.processDirtyOverlays();
     }
 
     private static void tickHud() {
@@ -760,16 +761,20 @@ public class MapFrontiersClient {
 
     private static List<FrontierOverlay> collectHudActiveFrontiers(ResourceKey<Level> dimension, BlockPos pos) {
         List<FrontierOverlay> frontiers = new ArrayList<>();
-        appendQualifiedFrontiers(frontiers, getFrontiersOverlayManagerOrNull(true), dimension, pos, hudActiveFrontierIds, false);
-        appendQualifiedFrontiers(frontiers, getFrontiersOverlayManagerOrNull(false), dimension, pos, hudActiveFrontierIds, false);
+        appendHudQualifiedFrontiers(frontiers, getFrontiersOverlayManagerOrNull(true), dimension, pos, hudActiveFrontierIds,
+                getMaxPathActivationDistance());
+        appendHudQualifiedFrontiers(frontiers, getFrontiersOverlayManagerOrNull(false), dimension, pos, hudActiveFrontierIds,
+                getMaxPathActivationDistance());
         prioritizeActiveFrontiers(frontiers);
         return frontiers;
     }
 
     private static Map<UUID, FrontierOverlay> collectAnnouncementActiveFrontiers(ResourceKey<Level> dimension, BlockPos pos) {
         List<FrontierOverlay> frontiers = new ArrayList<>();
-        appendQualifiedFrontiers(frontiers, getFrontiersOverlayManagerOrNull(true), dimension, pos, announcementActiveFrontiers.keySet(), true);
-        appendQualifiedFrontiers(frontiers, getFrontiersOverlayManagerOrNull(false), dimension, pos, announcementActiveFrontiers.keySet(), true);
+        appendAnnouncementQualifiedFrontiers(frontiers, getFrontiersOverlayManagerOrNull(true), dimension, pos, announcementActiveFrontiers.keySet(),
+                getMaxPathActivationDistance());
+        appendAnnouncementQualifiedFrontiers(frontiers, getFrontiersOverlayManagerOrNull(false), dimension, pos, announcementActiveFrontiers.keySet(),
+                getMaxPathActivationDistance());
         prioritizeActiveFrontiers(frontiers);
 
         Map<UUID, FrontierOverlay> activeFrontiers = new HashMap<>();
@@ -779,47 +784,91 @@ public class MapFrontiersClient {
         return activeFrontiers;
     }
 
-    private static void appendQualifiedFrontiers(List<FrontierOverlay> target, @Nullable FrontiersOverlayManager manager,
-                                                 ResourceKey<Level> dimension, BlockPos pos, Set<UUID> currentlyActiveFrontierIds,
-                                                 boolean requireAnnouncementVisibility) {
+    private static void appendHudQualifiedFrontiers(List<FrontierOverlay> target, @Nullable FrontiersOverlayManager manager,
+                                                    ResourceKey<Level> dimension, BlockPos pos, Set<UUID> currentlyActiveFrontierIds,
+                                                    double maxPathActivationDistance) {
         if (manager == null) {
             return;
         }
 
-        for (FrontierOverlay frontier : manager.getAllFrontiers(dimension)) {
+        int activationRadius = (int) Math.ceil(Math.max(0.0, maxPathActivationDistance));
+        for (FrontierOverlay frontier : manager.getCandidateFrontiersInBounds(dimension,
+                pos.getX() - activationRadius, pos.getX() + activationRadius,
+                pos.getZ() - activationRadius, pos.getZ() + activationRadius)) {
             boolean alreadyActive = currentlyActiveFrontierIds.contains(frontier.getId());
-            if (qualifiesForHudOrAnnouncement(frontier, pos, alreadyActive, requireAnnouncementVisibility)) {
+            if (qualifiesForHud(frontier, pos, alreadyActive)) {
                 target.add(frontier);
             }
         }
     }
 
-    private static boolean qualifiesForHudOrAnnouncement(FrontierOverlay frontier, BlockPos pos, boolean alreadyActive,
-                                                         boolean requireAnnouncementVisibility) {
-        if (requireAnnouncementVisibility) {
-            boolean announceInChat = frontier.getVisibility(FrontierVisibility.AnnounceInChat);
-            boolean announceInTitle = frontier.getVisibility(FrontierVisibility.AnnounceInTitle);
-            if (!ClientConfig.resolveVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), announceInChat)
-                    && !ClientConfig.resolveVisibilityValue(ClientConfig.ANNOUNCE_IN_TITLE.get(), announceInTitle)) {
-                return false;
+    private static void appendAnnouncementQualifiedFrontiers(List<FrontierOverlay> target, @Nullable FrontiersOverlayManager manager,
+                                                             ResourceKey<Level> dimension, BlockPos pos,
+                                                             Set<UUID> currentlyActiveFrontierIds,
+                                                             double maxPathActivationDistance) {
+        if (manager == null) {
+            return;
+        }
+
+        int activationRadius = (int) Math.ceil(Math.max(0.0, maxPathActivationDistance));
+        for (FrontierOverlay frontier : manager.getCandidateFrontiersInBounds(dimension,
+                pos.getX() - activationRadius, pos.getX() + activationRadius,
+                pos.getZ() - activationRadius, pos.getZ() + activationRadius)) {
+            boolean alreadyActive = currentlyActiveFrontierIds.contains(frontier.getId());
+            if (qualifiesForAnnouncement(frontier, pos, alreadyActive)) {
+                target.add(frontier);
             }
-        } else if (!ClientConfig.resolveVisibilityValue(ClientConfig.FRONTIER_VISIBILITY.get(),
+        }
+    }
+
+    private static boolean qualifiesForHud(FrontierOverlay frontier, BlockPos pos, boolean alreadyActive) {
+        if (!ClientConfig.resolveVisibilityValue(ClientConfig.FRONTIER_VISIBILITY.get(),
                 frontier.getVisibility(FrontierVisibility.Frontier))) {
             return false;
         }
 
-        if (frontier.getShape() == FrontierShape.Path) {
-            if (frontier.getPoints().isEmpty()) {
-                return false;
-            }
-            return frontier.pointIsInside(pos, ClientConfig.getPathActivationDistance(alreadyActive));
+        return qualifiesForActivation(frontier, pos, alreadyActive);
+    }
+
+    private static boolean qualifiesForAnnouncement(FrontierOverlay frontier, BlockPos pos, boolean alreadyActive) {
+        boolean announceInChat = frontier.getVisibility(FrontierVisibility.AnnounceInChat);
+        boolean announceInTitle = frontier.getVisibility(FrontierVisibility.AnnounceInTitle);
+        if (!ClientConfig.resolveVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), announceInChat)
+                && !ClientConfig.resolveVisibilityValue(ClientConfig.ANNOUNCE_IN_TITLE.get(), announceInTitle)) {
+            return false;
         }
 
-        if (frontier.getShape() == FrontierShape.Vertex && frontier.getVertices().size() < 3) {
+        return qualifiesForActivation(frontier, pos, alreadyActive);
+    }
+
+    private static boolean qualifiesForActivation(FrontierOverlay frontier, BlockPos pos, boolean alreadyActive) {
+
+        if (frontier.getShape() == FrontierShape.Path) {
+            if (frontier.getPointCount() == 0) {
+                return false;
+            }
+
+            double activationDistance = ClientConfig.getPathActivationDistance(alreadyActive);
+            if (!frontier.isInsideBoundingBox(pos, activationDistance)) {
+                return false;
+            }
+
+            return frontier.pointIsInside(pos, activationDistance);
+        }
+
+        if (!frontier.isInsideBoundingBox(pos, 0.0)) {
+            return false;
+        }
+
+        if (frontier.getShape() == FrontierShape.Vertex && frontier.getVertexCount() < 3) {
             return false;
         }
 
         return frontier.pointIsInside(pos, 0.0);
+    }
+
+    private static double getMaxPathActivationDistance() {
+        return ClientConfig.getPathActivationDistance(true);
     }
 
     private static void prioritizeActiveFrontiers(List<FrontierOverlay> frontiers) {
@@ -828,7 +877,9 @@ public class MapFrontiersClient {
             frontiers.removeIf(frontier -> frontier.getShape() == FrontierShape.Path);
         }
 
-        frontiers.sort(Comparator.comparingDouble(frontier -> frontier.area));
+        frontiers.sort(Comparator
+                .comparingDouble((FrontierOverlay frontier) -> frontier.area)
+                .thenComparing(FrontierOverlay::getId));
     }
 
     private static void clearFrontierActivationState() {
@@ -851,12 +902,12 @@ public class MapFrontiersClient {
     private static void refreshCollectionPresentation(UUID collectionId) {
         FrontiersOverlayManager globalManager = getFrontiersOverlayManagerOrNull(false);
         if (globalManager != null) {
-            globalManager.markCollectionChanged(collectionId);
+            globalManager.markCollectionPresentationDirty(collectionId);
         }
 
         FrontiersOverlayManager personalManager = getFrontiersOverlayManagerOrNull(true);
         if (personalManager != null) {
-            personalManager.markCollectionChanged(collectionId);
+            personalManager.markCollectionPresentationDirty(collectionId);
         }
 
         if (hud != null) {

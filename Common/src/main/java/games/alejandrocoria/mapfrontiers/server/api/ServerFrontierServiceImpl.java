@@ -60,9 +60,12 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
             return Optional.empty();
         }
 
-        FrontierData payload = new FrontierData(frontier);
-        ApiConverters.applyMutation(payload, mutation);
-        ServerTerritoryOperationResult result = operationService.updateGlobalFrontier(frontierId.value(), FrontierChange.fromFrontierData(payload));
+        FrontierChange change = FrontierChange.fromMutation(frontier, mutation);
+        if (change.isEmpty()) {
+            return Optional.of(ApiConverters.fromFrontier(frontier));
+        }
+
+        ServerTerritoryOperationResult result = operationService.updateGlobalFrontier(frontierId.value(), change);
         if (!result.isSuccess()) {
             return Optional.empty();
         }

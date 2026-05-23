@@ -28,6 +28,7 @@ public class ClientTerritoryRuntime {
     private ClientSettingsProfileEvents settingsProfileEvents;
     private ClientTerritoryOperationService operationService;
     private ClientTerritorySyncService syncService;
+    private ClientLocalPersistenceCoordinator localPersistenceCoordinator;
     private FrontierLocalOverrides localOverrides;
     private CollectionUiStateStore collectionUiStateStore;
     private MapFrontiersClientAPIImpl clientApi;
@@ -69,16 +70,24 @@ public class ClientTerritoryRuntime {
             settingsProfileEvents = new ClientSettingsProfileEvents();
         }
 
+        if (localPersistenceCoordinator == null) {
+            localPersistenceCoordinator = new ClientLocalPersistenceCoordinator(
+                    personalFrontiersOverlayManager,
+                    collectionRuntime,
+                    localPersonalFrontierStore,
+                    localPersonalCollectionStore
+            );
+        }
+
         if (operationService == null) {
-            operationService = new ClientTerritoryOperationService(globalFrontiersOverlayManager, personalFrontiersOverlayManager,
-                    collectionRuntime, localPersonalFrontierStore, localPersonalCollectionStore, frontierEvents, collectionEvents);
+            operationService = new ClientTerritoryOperationService(this, globalFrontiersOverlayManager,
+                    personalFrontiersOverlayManager, collectionRuntime, frontierEvents, collectionEvents);
         }
 
         if (syncService == null) {
-            syncService = new ClientTerritorySyncService(globalFrontiersOverlayManager, personalFrontiersOverlayManager,
-                    collectionRuntime, localPersonalFrontierStore, localPersonalCollectionStore);
-            syncService.loadLocalPersonalFrontiers();
-            syncService.loadLocalPersonalCollections();
+            syncService = new ClientTerritorySyncService(this, globalFrontiersOverlayManager,
+                    personalFrontiersOverlayManager, collectionRuntime, localPersonalFrontierStore, localPersonalCollectionStore);
+            syncService.bootstrapLocalPersonalData();
         }
 
         if (localOverrides == null) {
@@ -153,20 +162,36 @@ public class ClientTerritoryRuntime {
         return clientApi;
     }
 
+    void markDirty() {
+        ensureInitialized();
+        localPersistenceCoordinator.markDirty();
+    }
+
+    public void tickPersistence() {
+        ensureInitialized();
+        localPersistenceCoordinator.tickPersistence();
+    }
+
     public void close() {
         FrontiersOverlayManager globalManager = globalFrontiersOverlayManager;
         FrontiersOverlayManager personalManager = personalFrontiersOverlayManager;
         ClientCollectionRuntime collections = collectionRuntime;
         ClientTerritorySyncService sync = syncService;
+        ClientLocalPersistenceCoordinator persistence = localPersistenceCoordinator;
         MapFrontiersClientAPIImpl api = clientApi;
         ClientFrontierEvents events = frontierEvents;
         ClientCollectionEvents collectionEventsState = collectionEvents;
         ClientSettingsProfileEvents settingsEvents = settingsProfileEvents;
 
+        if (persistence != null) {
+            closeStep("local persistence flush", this::flushPendingLocalPersistenceOnClose);
+        }
+
         globalFrontiersOverlayManager = null;
         personalFrontiersOverlayManager = null;
         collectionRuntime = null;
         syncService = null;
+        localPersistenceCoordinator = null;
         clientApi = null;
         frontierEvents = null;
         collectionEvents = null;
@@ -197,6 +222,11 @@ public class ClientTerritoryRuntime {
                 sync.close();
             }
         });
+        closeStep("local persistence coordinator", () -> {
+            if (persistence != null) {
+                persistence.reset();
+            }
+        });
         closeStep("client API", () -> {
             if (api != null) {
                 api.close();
@@ -217,6 +247,11 @@ public class ClientTerritoryRuntime {
                 settingsEvents.close();
             }
         });
+    }
+
+    private void flushPendingLocalPersistenceOnClose() {
+        ensureInitialized();
+        localPersistenceCoordinator.flushOnClose();
     }
 
     private static void closeStep(String name, Runnable action) {

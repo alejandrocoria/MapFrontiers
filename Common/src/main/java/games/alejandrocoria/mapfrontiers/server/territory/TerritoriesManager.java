@@ -9,6 +9,7 @@ import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierCreationFactory;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.util.DebouncedPersistenceController;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtFileHelper;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
@@ -28,8 +29,10 @@ import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
@@ -43,12 +46,13 @@ public class TerritoriesManager {
     private final ArrayList<CollectionData> globalCollections;
     private final HashMap<SettingsUser, HashMap<ResourceKey<Level>, ArrayList<FrontierData>>> usersDimensionsPersonalFrontiers;
     private final HashMap<SettingsUser, ArrayList<CollectionData>> usersPersonalCollections;
+    private final HashMap<UUID, LinkedHashSet<UUID>> frontierIdsByCollectionId;
+    private final HashMap<ResourceKey<Level>, LinkedHashSet<UUID>> globalFrontierIdsByDimension;
+    private final HashMap<SettingsUser, HashMap<ResourceKey<Level>, LinkedHashSet<UUID>>> knownPersonalFrontierIdsByUserAndDimension;
+    private final DebouncedPersistenceController persistenceController;
     private FrontierSettings frontierSettings;
     private File ModDir;
     private boolean frontierOwnersChecked = false;
-    private boolean territoriesDirty = false;
-    private long lastTerritoriesUpdateAt = 0L;
-    private long lastTerritoriesSaveAt = 0L;
 
     public TerritoriesManager() {
         allFrontiers = new HashMap<>();
@@ -57,13 +61,14 @@ public class TerritoriesManager {
         globalCollections = new ArrayList<>();
         usersDimensionsPersonalFrontiers = new HashMap<>();
         usersPersonalCollections = new HashMap<>();
+        frontierIdsByCollectionId = new HashMap<>();
+        globalFrontierIdsByDimension = new HashMap<>();
+        knownPersonalFrontierIdsByUserAndDimension = new HashMap<>();
+        persistenceController = new DebouncedPersistenceController(
+                TERRITORIES_UPDATE_SAVE_DEBOUNCE_MS,
+                TERRITORIES_UPDATE_SAVE_MAX_DELAY_MS
+        );
         frontierSettings = new FrontierSettings();
-    }
-
-    public void close() {
-        if (territoriesDirty) {
-            saveTerritoriesNow();
-        }
     }
 
     public void setSettings(FrontierSettings frontierSettings) {
@@ -75,16 +80,8 @@ public class TerritoriesManager {
         return frontierSettings;
     }
 
-    public Map<ResourceKey<Level>, ArrayList<FrontierData>> getAllGlobalFrontiers() {
-        return dimensionsGlobalFrontiers;
-    }
-
     public List<FrontierData> getAllGlobalFrontiers(ResourceKey<Level> dimension) {
         return dimensionsGlobalFrontiers.computeIfAbsent(dimension, k -> new ArrayList<>());
-    }
-
-    public Map<ResourceKey<Level>, ArrayList<FrontierData>> getAllPersonalFrontiers(SettingsUser user) {
-        return usersDimensionsPersonalFrontiers.computeIfAbsent(user, k -> new HashMap<>());
     }
 
     public List<FrontierData> getAllPersonalFrontiers(SettingsUser user, ResourceKey<Level> dimension) {
@@ -110,10 +107,33 @@ public class TerritoriesManager {
         return usersPersonalCollections.computeIfAbsent(user, k -> new ArrayList<>());
     }
 
+    public Iterable<FrontierData> iterateGlobalFrontiers() {
+        return iterateNestedFrontiers(dimensionsGlobalFrontiers);
+    }
+
+    public Iterable<FrontierData> iteratePersonalFrontiers(SettingsUser user) {
+        return iterateNestedFrontiers(usersDimensionsPersonalFrontiers.getOrDefault(user, new HashMap<>()));
+    }
+
+    public Iterable<CollectionData> iterateGlobalCollections() {
+        return globalCollections;
+    }
+
+    public Iterable<CollectionData> iteratePersonalCollections(SettingsUser user) {
+        List<CollectionData> collections = usersPersonalCollections.get(user);
+        return collections != null ? collections : List.of();
+    }
+
     public List<FrontierData> getFrontiersInCollection(UUID collectionId) {
+        LinkedHashSet<UUID> frontierIds = frontierIdsByCollectionId.get(collectionId);
+        if (frontierIds == null || frontierIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
         ArrayList<FrontierData> frontiers = new ArrayList<>();
-        for (FrontierData frontier : allFrontiers.values()) {
-            if (collectionId.equals(frontier.getCollectionId())) {
+        for (UUID frontierId : frontierIds) {
+            FrontierData frontier = allFrontiers.get(frontierId);
+            if (frontier != null && collectionId.equals(frontier.getCollectionId())) {
                 frontiers.add(frontier);
             }
         }
@@ -121,10 +141,16 @@ public class TerritoriesManager {
         return frontiers;
     }
 
-    public boolean userHasVisiblePersonalCollection(SettingsUser user, UUID collectionId) {
-        for (ArrayList<FrontierData> frontiers : getAllPersonalFrontiers(user).values()) {
-            for (FrontierData frontier : frontiers) {
-                if (collectionId.equals(frontier.getCollectionId())) {
+    public boolean userKnowsPersonalCollection(SettingsUser user, UUID collectionId) {
+        HashMap<ResourceKey<Level>, LinkedHashSet<UUID>> knownFrontierIdsByDimension = knownPersonalFrontierIdsByUserAndDimension.get(user);
+        if (knownFrontierIdsByDimension == null) {
+            return false;
+        }
+
+        for (LinkedHashSet<UUID> knownFrontierIds : knownFrontierIdsByDimension.values()) {
+            for (UUID frontierId : knownFrontierIds) {
+                FrontierData frontier = allFrontiers.get(frontierId);
+                if (frontier != null && collectionId.equals(frontier.getCollectionId())) {
                     return true;
                 }
             }
@@ -152,7 +178,8 @@ public class TerritoriesManager {
 
         frontiers.add(frontier);
         allFrontiers.put(frontier.getId(), frontier);
-        saveTerritoriesNow();
+        indexFrontier(frontier);
+        markDirty();
 
         return frontier;
     }
@@ -165,7 +192,8 @@ public class TerritoriesManager {
         List<FrontierData> frontiers = getAllPersonalFrontiers(frontier.getOwner(), frontier.getDimension());
         frontiers.add(frontier);
         allFrontiers.put(frontier.getId(), frontier);
-        markTerritoriesUpdated();
+        indexFrontier(frontier);
+        markDirty();
     }
 
     public void addGlobalCollection(CollectionData collection) {
@@ -175,7 +203,8 @@ public class TerritoriesManager {
 
         globalCollections.add(collection);
         allCollections.put(collection.getId(), collection);
-        saveTerritoriesNow();
+        ensureCollectionIndexEntry(collection.getId());
+        markDirty();
     }
 
     public void addPersonalCollection(CollectionData collection) {
@@ -185,7 +214,8 @@ public class TerritoriesManager {
 
         getAllPersonalCollections(collection.getOwner()).add(collection);
         allCollections.put(collection.getId(), collection);
-        saveTerritoriesNow();
+        ensureCollectionIndexEntry(collection.getId());
+        markDirty();
     }
 
     public void importPersonalCollection(CollectionData collection) {
@@ -196,13 +226,8 @@ public class TerritoriesManager {
         List<CollectionData> collections = getAllPersonalCollections(collection.getOwner());
         collections.add(collection);
         allCollections.put(collection.getId(), collection);
-        markTerritoriesUpdated();
-    }
-
-    public void addPersonalFrontier(SettingsUser user, FrontierData frontier) {
-        List<FrontierData> frontiers = this.getAllPersonalFrontiers(user, frontier.getDimension());
-        frontiers.add(frontier);
-        saveTerritoriesNow();
+        ensureCollectionIndexEntry(collection.getId());
+        markDirty();
     }
 
     public boolean deleteGlobalFrontier(ResourceKey<Level> dimension, UUID id) {
@@ -211,17 +236,125 @@ public class TerritoriesManager {
             return false;
         }
 
+        FrontierData frontier = allFrontiers.get(id);
         boolean deleted = frontiers.removeIf(x -> x.getId().equals(id));
         deleted |= allFrontiers.remove(id) != null;
 
         if (deleted) {
-            saveTerritoriesNow();
+            if (frontier != null) {
+                deindexFrontier(frontier);
+            }
+            markDirty();
         }
 
         return deleted;
     }
 
-    public boolean deletePersonalFrontier(SettingsUser user, ResourceKey<Level> dimension, UUID id) {
+    public boolean deleteOwnedPersonalFrontier(SettingsUser owner, ResourceKey<Level> dimension, UUID id) {
+        FrontierData frontier = allFrontiers.get(id);
+        if (frontier == null || !frontier.getPersonal() || !frontier.getOwner().equals(owner)) {
+            return false;
+        }
+
+        if (!deletePersonalFrontierInternal(owner, dimension, id, false)) {
+            return false;
+        }
+
+        if (frontier.getUsersShared() != null) {
+            for (SettingsUserShared userShared : frontier.getUsersShared()) {
+                deletePersonalFrontierInternal(userShared.getUser(), dimension, id, false);
+            }
+        }
+
+        markDirty();
+        return true;
+    }
+
+    public boolean addPendingPersonalFrontierShare(UUID frontierId, SettingsUserShared userShared) {
+        FrontierData frontier = allFrontiers.get(frontierId);
+        if (frontier == null || !frontier.getPersonal()) {
+            return false;
+        }
+
+        userShared.setPending(true);
+        frontier.addUserShared(userShared);
+        markDirty();
+        return true;
+    }
+
+    public boolean updatePersonalFrontierShare(UUID frontierId, SettingsUserShared userShared) {
+        FrontierData frontier = allFrontiers.get(frontierId);
+        if (frontier == null || !frontier.getPersonal()) {
+            return false;
+        }
+
+        SettingsUserShared currentUserShared = frontier.getUserShared(userShared.getUser());
+        if (currentUserShared == null) {
+            return false;
+        }
+
+        currentUserShared.setActions(userShared.getActions());
+        markDirty();
+        return true;
+    }
+
+    public boolean removePersonalFrontierShare(UUID frontierId, SettingsUser targetUser) {
+        FrontierData frontier = allFrontiers.get(frontierId);
+        if (frontier == null || !frontier.getPersonal()) {
+            return false;
+        }
+
+        SettingsUserShared userShared = frontier.getUserShared(targetUser);
+        if (userShared == null || userShared.getUser().equals(frontier.getOwner())) {
+            return false;
+        }
+
+        frontier.removeUserShared(targetUser);
+        if (!userShared.isPending()) {
+            deletePersonalFrontierInternal(targetUser, frontier.getDimension(), frontierId, false);
+        }
+
+        markDirty();
+        return true;
+    }
+
+    public boolean acceptPendingPersonalFrontierShare(SettingsUser user, UUID frontierId) {
+        FrontierData frontier = allFrontiers.get(frontierId);
+        if (frontier == null || !frontier.getPersonal()) {
+            return false;
+        }
+
+        SettingsUserShared userShared = frontier.getUserShared(user);
+        if (userShared == null || !userShared.isPending()) {
+            return false;
+        }
+
+        if (!hasPersonalFrontier(user, frontierId)) {
+            addPersonalFrontierReference(user, frontier);
+        }
+
+        userShared.setPending(false);
+        markDirty();
+        return true;
+    }
+
+    public boolean expirePendingPersonalFrontierShare(UUID frontierId, SettingsUser targetUser) {
+        FrontierData frontier = allFrontiers.get(frontierId);
+        if (frontier == null || !frontier.getPersonal()) {
+            return false;
+        }
+
+        SettingsUserShared userShared = frontier.getUserShared(targetUser);
+        if (userShared == null || !userShared.isPending()) {
+            return false;
+        }
+
+        frontier.removeUserShared(targetUser);
+        markDirty();
+        return true;
+    }
+
+    private boolean deletePersonalFrontierInternal(SettingsUser user, ResourceKey<Level> dimension, UUID id, boolean markDirtyIfDeleted) {
         Map<ResourceKey<Level>, ArrayList<FrontierData>> dimensionsPersonalFrontiers = usersDimensionsPersonalFrontiers.get(user);
         if (dimensionsPersonalFrontiers == null) {
             return false;
@@ -232,14 +365,19 @@ public class TerritoriesManager {
             return false;
         }
 
-        if (allFrontiers.get(id).getOwner().equals(user)) {
+        FrontierData frontier = allFrontiers.get(id);
+        if (frontier != null && frontier.getOwner().equals(user)) {
             allFrontiers.remove(id);
+            deindexFrontierCollection(frontier);
         }
 
         boolean deleted = frontiers.removeIf(x -> x.getId().equals(id));
 
         if (deleted) {
-            saveTerritoriesNow();
+            deindexKnownPersonalFrontier(user, dimension, id);
+            if (markDirtyIfDeleted) {
+                markDirty();
+            }
         }
 
         return deleted;
@@ -251,10 +389,12 @@ public class TerritoriesManager {
             return false;
         }
 
+        FrontierIndexSnapshot previousState = captureFrontierIndexSnapshot(frontier);
         frontier.setModified(new Date());
         change.setModifiedTime(frontier.getModified().getTime());
         frontier.applyChange(change);
-        markTerritoriesUpdated();
+        reindexFrontierAfterMutation(frontier, previousState);
+        markDirty();
         return true;
     }
 
@@ -274,10 +414,12 @@ public class TerritoriesManager {
             return false;
         }
 
+        FrontierIndexSnapshot previousState = captureFrontierIndexSnapshot(frontier);
         frontier.setModified(new Date());
         change.setModifiedTime(frontier.getModified().getTime());
         frontier.applyChange(change);
-        markTerritoriesUpdated();
+        reindexFrontierAfterMutation(frontier, previousState);
+        markDirty();
         return true;
     }
 
@@ -295,6 +437,7 @@ public class TerritoriesManager {
         boolean deleted = frontiers.removeIf(x -> x.getId().equals(id));
         if (deleted) {
             FrontierData frontier = allFrontiers.get(id);
+            FrontierIndexSnapshot previousState = captureFrontierIndexSnapshot(frontier);
             if (frontier.getOwner().equals(user)) {
                 if (frontier.getUsersShared() != null) {
                     for (SettingsUserShared userShared : frontier.getUsersShared()) {
@@ -306,7 +449,8 @@ public class TerritoriesManager {
                 frontier.setModified(new Date());
                 frontier.removeAllUserShared();
                 getAllGlobalFrontiers(dimension).add(frontier);
-                saveTerritoriesNow();
+                reindexFrontierAfterMutation(frontier, previousState);
+                markDirty();
             }
         }
 
@@ -323,23 +467,23 @@ public class TerritoriesManager {
         boolean deleted = frontiers.removeIf(x -> x.getId().equals(id));
         if (deleted) {
             FrontierData frontier = allFrontiers.get(id);
+            FrontierIndexSnapshot previousState = captureFrontierIndexSnapshot(frontier);
             frontier.setPersonal(true);
             frontier.setCollectionId(null);
             frontier.setModified(new Date());
             frontier.setOwner(newOwner);
             getAllPersonalFrontiers(newOwner, dimension).add(frontier);
-            saveTerritoriesNow();
+            reindexFrontierAfterMutation(frontier, previousState);
+            markDirty();
         }
 
         return deleted;
     }
 
     public boolean hasPersonalFrontier(SettingsUser user, UUID frontierID) {
-        for (List<FrontierData> frontiers : getAllPersonalFrontiers(user).values()) {
-            for (FrontierData frontier : frontiers) {
-                if (frontier.getId().equals(frontierID)) {
-                    return true;
-                }
+        for (FrontierData frontier : iteratePersonalFrontiers(user)) {
+            if (frontier.getId().equals(frontierID)) {
+                return true;
             }
         }
 
@@ -443,6 +587,7 @@ public class TerritoriesManager {
                     needBackup = true;
                 }
             }
+
         } catch (Exception e) {
             MapFrontiers.LOGGER.warn("Failed to read frontiers.dat: {}", e.getMessage());
             return true;
@@ -500,16 +645,18 @@ public class TerritoriesManager {
 
             CompoundTag nbtFrontiers = loadFile("frontiers.dat");
             if (nbtFrontiers.isEmpty()) {
-                writeToNBT(nbtFrontiers);
-                saveFile("frontiers.dat", nbtFrontiers);
-                lastTerritoriesSaveAt = System.currentTimeMillis();
+                saveTerritoriesSnapshot();
+                persistenceController.markPersisted(System.currentTimeMillis());
+                rebuildDerivedIndexes();
             } else {
                 if (readFromNBT(nbtFrontiers)) {
                     NbtFileHelper.createBackup(ModDir, "frontiers.dat");
-                    saveTerritoriesNow();
+                    flushNow();
                 } else {
-                    lastTerritoriesSaveAt = System.currentTimeMillis();
+                    persistenceController.markPersisted(System.currentTimeMillis());
                 }
+
+                rebuildDerivedIndexes();
             }
 
             CompoundTag nbtSettings = loadFile("settings.dat");
@@ -528,32 +675,23 @@ public class TerritoriesManager {
         }
     }
 
-    public void markTerritoriesUpdated() {
-        territoriesDirty = true;
-        lastTerritoriesUpdateAt = System.currentTimeMillis();
+    public void tickPersistence() {
+        flushPendingScheduledTerritoriesSave();
     }
 
-    public void flushPendingTerritoriesUpdates() {
-        if (!territoriesDirty) {
-            return;
-        }
+    public void markDirty() {
+        persistenceController.markDirty(System.currentTimeMillis());
+    }
 
-        long now = System.currentTimeMillis();
-        boolean debounceElapsed = now - lastTerritoriesUpdateAt >= TERRITORIES_UPDATE_SAVE_DEBOUNCE_MS;
-        boolean maxDelayElapsed = lastTerritoriesSaveAt == 0L
-                || now - lastTerritoriesSaveAt >= TERRITORIES_UPDATE_SAVE_MAX_DELAY_MS;
-
-        if (debounceElapsed || maxDelayElapsed) {
-            saveTerritoriesNow();
+    public void flushTerritoriesOnShutdown() {
+        if (persistenceController.hasPendingChanges()) {
+            flushNow();
         }
     }
 
-    public void saveTerritoriesNow() {
-        CompoundTag nbtFrontiers = new CompoundTag();
-        writeToNBT(nbtFrontiers);
-        saveFile("frontiers.dat", nbtFrontiers);
-        territoriesDirty = false;
-        lastTerritoriesSaveAt = System.currentTimeMillis();
+    public void flushNow() {
+        saveTerritoriesSnapshot();
+        persistenceController.markPersisted(System.currentTimeMillis());
     }
 
     public @Nullable CollectionData removeCollection(UUID collectionId) {
@@ -568,8 +706,248 @@ public class TerritoriesManager {
             globalCollections.removeIf(existing -> existing.getId().equals(collectionId));
         }
 
-        saveTerritoriesNow();
+        pruneCollectionIndexIfEmpty(collectionId);
+
+        markDirty();
         return collection;
+    }
+
+    public void rebuildDerivedIndexes() {
+        frontierIdsByCollectionId.clear();
+        globalFrontierIdsByDimension.clear();
+        knownPersonalFrontierIdsByUserAndDimension.clear();
+
+        for (CollectionData collection : allCollections.values()) {
+            ensureCollectionIndexEntry(collection.getId());
+        }
+
+        for (FrontierData frontier : allFrontiers.values()) {
+            indexFrontier(frontier);
+        }
+    }
+
+    private void indexFrontier(FrontierData frontier) {
+        indexFrontierCollection(frontier);
+        if (frontier.getPersonal()) {
+            indexKnownUsers(frontier, collectKnownPersonalUsers(frontier));
+        } else {
+            indexGlobalFrontier(frontier);
+        }
+    }
+
+    private void deindexFrontier(FrontierData frontier) {
+        deindexFrontierCollection(frontier);
+        if (frontier.getPersonal()) {
+            deindexKnownUsers(frontier.getDimension(), frontier.getId(), collectKnownPersonalUsers(frontier));
+        } else {
+            deindexGlobalFrontier(frontier);
+        }
+    }
+
+    private void indexFrontierCollection(FrontierData frontier) {
+        if (!frontier.hasCollection()) {
+            return;
+        }
+
+        frontierIdsByCollectionId.computeIfAbsent(frontier.getCollectionId(), key -> new LinkedHashSet<>()).add(frontier.getId());
+    }
+
+    private void deindexFrontierCollection(FrontierData frontier) {
+        if (!frontier.hasCollection()) {
+            return;
+        }
+
+        LinkedHashSet<UUID> frontierIds = frontierIdsByCollectionId.get(frontier.getCollectionId());
+        if (frontierIds == null) {
+            return;
+        }
+
+        frontierIds.remove(frontier.getId());
+        pruneCollectionIndexIfEmpty(frontier.getCollectionId());
+    }
+
+    private void ensureCollectionIndexEntry(UUID collectionId) {
+        frontierIdsByCollectionId.computeIfAbsent(collectionId, key -> new LinkedHashSet<>());
+    }
+
+    private void pruneCollectionIndexIfEmpty(UUID collectionId) {
+        LinkedHashSet<UUID> frontierIds = frontierIdsByCollectionId.get(collectionId);
+        if (frontierIds != null && frontierIds.isEmpty()) {
+            frontierIdsByCollectionId.remove(collectionId);
+        }
+    }
+
+    private void indexGlobalFrontier(FrontierData frontier) {
+        globalFrontierIdsByDimension.computeIfAbsent(frontier.getDimension(), key -> new LinkedHashSet<>()).add(frontier.getId());
+    }
+
+    private void deindexGlobalFrontier(FrontierData frontier) {
+        LinkedHashSet<UUID> frontierIds = globalFrontierIdsByDimension.get(frontier.getDimension());
+        if (frontierIds == null) {
+            return;
+        }
+
+        frontierIds.remove(frontier.getId());
+        if (frontierIds.isEmpty()) {
+            globalFrontierIdsByDimension.remove(frontier.getDimension());
+        }
+    }
+
+    private void indexKnownPersonalFrontier(SettingsUser user, FrontierData frontier) {
+        knownPersonalFrontierIdsByUserAndDimension
+                .computeIfAbsent(user, key -> new HashMap<>())
+                .computeIfAbsent(frontier.getDimension(), key -> new LinkedHashSet<>())
+                .add(frontier.getId());
+    }
+
+    private void addPersonalFrontierReference(SettingsUser user, FrontierData frontier) {
+        List<FrontierData> frontiers = getAllPersonalFrontiers(user, frontier.getDimension());
+        frontiers.add(frontier);
+        indexKnownPersonalFrontier(user, frontier);
+    }
+
+    private void deindexKnownPersonalFrontier(SettingsUser user, ResourceKey<Level> dimension, UUID frontierId) {
+        HashMap<ResourceKey<Level>, LinkedHashSet<UUID>> dimensionsFrontierIds = knownPersonalFrontierIdsByUserAndDimension.get(user);
+        if (dimensionsFrontierIds == null) {
+            return;
+        }
+
+        LinkedHashSet<UUID> frontierIds = dimensionsFrontierIds.get(dimension);
+        if (frontierIds == null) {
+            return;
+        }
+
+        frontierIds.remove(frontierId);
+        if (frontierIds.isEmpty()) {
+            dimensionsFrontierIds.remove(dimension);
+        }
+
+        if (dimensionsFrontierIds.isEmpty()) {
+            knownPersonalFrontierIdsByUserAndDimension.remove(user);
+        }
+    }
+
+    private void indexKnownUsers(FrontierData frontier, LinkedHashSet<SettingsUser> knownUsers) {
+        for (SettingsUser knownUser : knownUsers) {
+            indexKnownPersonalFrontier(knownUser, frontier);
+        }
+    }
+
+    private void deindexKnownUsers(ResourceKey<Level> dimension, UUID frontierId, LinkedHashSet<SettingsUser> knownUsers) {
+        for (SettingsUser knownUser : knownUsers) {
+            deindexKnownPersonalFrontier(knownUser, dimension, frontierId);
+        }
+    }
+
+    private FrontierIndexSnapshot captureFrontierIndexSnapshot(FrontierData frontier) {
+        return new FrontierIndexSnapshot(
+                frontier.getCollectionId(),
+                frontier.getDimension(),
+                frontier.getPersonal(),
+                collectKnownPersonalUsers(frontier)
+        );
+    }
+
+    private void reindexFrontierAfterMutation(FrontierData frontier, FrontierIndexSnapshot previousState) {
+        UUID previousCollectionId = previousState.collectionId();
+        UUID currentCollectionId = frontier.getCollectionId();
+        if (!Objects.equals(previousCollectionId, currentCollectionId)) {
+            if (previousCollectionId != null) {
+                LinkedHashSet<UUID> frontierIds = frontierIdsByCollectionId.get(previousCollectionId);
+                if (frontierIds != null) {
+                    frontierIds.remove(frontier.getId());
+                    pruneCollectionIndexIfEmpty(previousCollectionId);
+                }
+            }
+
+            if (currentCollectionId != null) {
+                ensureCollectionIndexEntry(currentCollectionId);
+                frontierIdsByCollectionId.get(currentCollectionId).add(frontier.getId());
+            }
+        }
+
+        if (previousState.personal()) {
+            LinkedHashSet<SettingsUser> currentKnownUsers = frontier.getPersonal()
+                    ? collectKnownPersonalUsers(frontier)
+                    : new LinkedHashSet<>();
+            boolean knowledgeChanged = !previousState.dimension().equals(frontier.getDimension())
+                    || previousState.personal() != frontier.getPersonal()
+                    || !previousState.knownUsers().equals(currentKnownUsers);
+            if (knowledgeChanged) {
+                deindexKnownUsers(previousState.dimension(), frontier.getId(), previousState.knownUsers());
+                if (frontier.getPersonal()) {
+                    indexKnownUsers(frontier, currentKnownUsers);
+                } else {
+                    indexGlobalFrontier(frontier);
+                }
+            }
+            return;
+        }
+
+        if (frontier.getPersonal()) {
+            deindexGlobalFrontier(previousState.dimension(), frontier.getId());
+            indexKnownUsers(frontier, collectKnownPersonalUsers(frontier));
+            return;
+        }
+
+        if (!previousState.dimension().equals(frontier.getDimension())) {
+            deindexGlobalFrontier(previousState.dimension(), frontier.getId());
+            indexGlobalFrontier(frontier);
+        }
+    }
+
+    private LinkedHashSet<SettingsUser> collectKnownPersonalUsers(FrontierData frontier) {
+        LinkedHashSet<SettingsUser> knownUsers = new LinkedHashSet<>();
+        if (!frontier.getPersonal()) {
+            return knownUsers;
+        }
+
+        knownUsers.add(frontier.getOwner());
+        if (frontier.getUsersShared() != null) {
+            for (SettingsUserShared userShared : frontier.getUsersShared()) {
+                if (!userShared.isPending()) {
+                    knownUsers.add(userShared.getUser());
+                }
+            }
+        }
+
+        return knownUsers;
+    }
+
+    private void deindexGlobalFrontier(ResourceKey<Level> dimension, UUID frontierId) {
+        LinkedHashSet<UUID> frontierIds = globalFrontierIdsByDimension.get(dimension);
+        if (frontierIds == null) {
+            return;
+        }
+
+        frontierIds.remove(frontierId);
+        if (frontierIds.isEmpty()) {
+            globalFrontierIdsByDimension.remove(dimension);
+        }
+    }
+
+    private record FrontierIndexSnapshot(@Nullable UUID collectionId,
+                                         ResourceKey<Level> dimension,
+                                         boolean personal,
+                                         LinkedHashSet<SettingsUser> knownUsers) {
+    }
+
+    private static Iterable<FrontierData> iterateNestedFrontiers(Map<ResourceKey<Level>, ? extends List<FrontierData>> frontiersByDimension) {
+        return () -> frontiersByDimension.values().stream().flatMap(List::stream).iterator();
+    }
+
+    private void flushPendingScheduledTerritoriesSave() {
+        long now = System.currentTimeMillis();
+        if (persistenceController.shouldFlushOnTick(now)) {
+            saveTerritoriesSnapshot();
+            persistenceController.markPersisted(now);
+        }
+    }
+
+    private void saveTerritoriesSnapshot() {
+        CompoundTag nbtFrontiers = new CompoundTag();
+        writeToNBT(nbtFrontiers);
+        saveFile("frontiers.dat", nbtFrontiers);
     }
 
     private void saveSettingsData() {
@@ -594,4 +972,5 @@ public class TerritoriesManager {
     private void saveFile(String filename, CompoundTag nbt) {
         NbtFileHelper.saveCompressedNbtSafely(ModDir, filename, nbt);
     }
+
 }

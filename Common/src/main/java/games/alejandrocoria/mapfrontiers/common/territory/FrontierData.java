@@ -9,6 +9,7 @@ import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import games.alejandrocoria.mapfrontiers.common.util.SourcePluginIdHelper;
 import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
@@ -35,8 +36,9 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -47,10 +49,14 @@ import java.util.stream.Collectors;
 @ParametersAreNonnullByDefault
 public class FrontierData {
     public static final int MAX_NAME_CHARACTERS = 48;
+    private static final long FNV64_OFFSET_BASIS = 0xcbf29ce484222325L;
+    private static final long FNV64_PRIME = 0x100000001b3L;
+    private static final Comparator<ChunkPos> CHUNK_SYNC_HASH_ORDER = Comparator
+            .comparingLong((ChunkPos chunk) -> chunk.pack());
 
     protected UUID id;
     protected final List<BlockPos> vertices = new ArrayList<>();
-    protected final Set<ChunkPos> chunks = new HashSet<>();
+    protected final Set<ChunkPos> chunks = new ObjectOpenHashSet<>();
     protected final List<BlockPos> points = new ArrayList<>();
     protected FrontierShape frontierShape = FrontierShape.Vertex;
     protected String name1 = "New";
@@ -69,6 +75,10 @@ public class FrontierData {
     protected PathStyle pathStyle;
     protected Date created;
     protected Date modified;
+    private boolean syncHashDirty = true;
+    private long cachedSyncHash;
+    private boolean chunksSyncHashDirty = true;
+    private long cachedChunksSyncHash;
 
     public FrontierData() {
         id = new UUID(0, 0);
@@ -115,6 +125,7 @@ public class FrontierData {
 
         validateTypeAndLifetime(personal, lifetime);
         sanitizeSharedUsers();
+        invalidateSyncHash();
     }
 
     public void updateFromData(FrontierData other) {
@@ -151,6 +162,7 @@ public class FrontierData {
 
         validateTypeAndLifetime(personal, lifetime);
         sanitizeSharedUsers();
+        invalidateSyncHash();
     }
 
     public void applyChange(FrontierChange change) {
@@ -188,18 +200,24 @@ public class FrontierData {
         if (change.hasModifiedTime()) {
             modified = new Date(change.getModifiedTime());
         }
+
+        invalidateSyncHash();
     }
 
     public void applySharingChange(FrontierSharingChange sharingChange) {
         usersShared = sharingChange.getUsersShared();
         sanitizeSharedUsers();
+        invalidateSyncHash();
     }
 
     public void setOwner(SettingsUser owner) {
         this.owner = owner;
+        invalidateSyncHash();
     }
 
     public void ensureOwner(MinecraftServer server) {
+        String previousUsername = owner.username;
+        UUID previousUuid = owner.uuid;
         if (owner.isEmpty()) {
             //noinspection StatementWithEmptyBody
             if (server.isDedicatedServer()) {
@@ -214,6 +232,9 @@ public class FrontierData {
         } else {
             owner.fillMissingInfo(false, server);
         }
+        if (!Objects.equals(previousUsername, owner.username) || !Objects.equals(previousUuid, owner.uuid)) {
+            invalidateSyncHash();
+        }
     }
 
     public SettingsUser getOwner() {
@@ -222,6 +243,7 @@ public class FrontierData {
 
     public void setId(UUID id) {
         this.id = id;
+        invalidateSyncHash();
     }
 
     public UUID getId() {
@@ -242,18 +264,18 @@ public class FrontierData {
         synchronized (vertices) {
             vertices.clear();
         }
+        invalidateSyncHash();
     }
 
     protected void addVertex(BlockPos pos, int index) {
         synchronized (vertices) {
             vertices.add(index, pos.atY(70));
         }
+        invalidateSyncHash();
     }
 
     public void addVertex(BlockPos pos) {
-        synchronized (vertices) {
-            addVertex(pos, vertices.size());
-        }
+        addVertex(pos, vertices.size());
     }
 
     public void removeVertex(int index) {
@@ -264,6 +286,7 @@ public class FrontierData {
         synchronized (vertices) {
             vertices.remove(index);
         }
+        invalidateSyncHash();
     }
 
     protected void moveVertex(BlockPos pos, int index) {
@@ -274,12 +297,14 @@ public class FrontierData {
         synchronized (vertices) {
             vertices.set(index, pos);
         }
+        invalidateSyncHash();
     }
 
     public void moveAllVertices(BlockPos delta) {
         synchronized (vertices) {
             vertices.replaceAll(blockPos -> blockPos.offset(delta));
         }
+        invalidateSyncHash();
     }
 
     public int getPointCount() {
@@ -296,18 +321,18 @@ public class FrontierData {
         synchronized (points) {
             points.clear();
         }
+        invalidateSyncHash();
     }
 
     protected void addPoint(BlockPos pos, int index) {
         synchronized (points) {
             points.add(index, pos.atY(70));
         }
+        invalidateSyncHash();
     }
 
     public void addPoint(BlockPos pos) {
-        synchronized (points) {
-            addPoint(pos, points.size());
-        }
+        addPoint(pos, points.size());
     }
 
     public void removePoint(int index) {
@@ -318,6 +343,7 @@ public class FrontierData {
         synchronized (points) {
             points.remove(index);
         }
+        invalidateSyncHash();
     }
 
     protected void movePoint(BlockPos pos, int index) {
@@ -328,12 +354,14 @@ public class FrontierData {
         synchronized (points) {
             points.set(index, pos);
         }
+        invalidateSyncHash();
     }
 
     public void moveAllPoints(BlockPos delta) {
         synchronized (points) {
             points.replaceAll(blockPos -> blockPos.offset(delta));
         }
+        invalidateSyncHash();
     }
 
     public boolean toggleChunk(ChunkPos chunk) {
@@ -344,12 +372,14 @@ public class FrontierData {
                 added = true;
             }
         }
+        invalidateChunksSyncHash();
         return added;
     }
 
     public boolean addChunk(ChunkPos chunk) {
         synchronized (chunks) {
             if (chunks.add(chunk)) {
+                invalidateChunksSyncHash();
                 return true;
             }
         }
@@ -360,6 +390,7 @@ public class FrontierData {
     public boolean removeChunk(ChunkPos chunk) {
         synchronized (chunks) {
             if (chunks.remove(chunk)) {
+                invalidateChunksSyncHash();
                 return true;
             }
         }
@@ -373,7 +404,7 @@ public class FrontierData {
 
     public Set<ChunkPos> getChunks() {
         synchronized (chunks) {
-            return new HashSet<>(chunks);
+            return new ObjectOpenHashSet<>(chunks);
         }
     }
 
@@ -381,20 +412,23 @@ public class FrontierData {
         synchronized (chunks) {
             chunks.clear();
         }
+        invalidateChunksSyncHash();
     }
 
     public void moveAllChunks(ChunkPos delta) {
         synchronized (chunks) {
             Set<ChunkPos> movedChunks = chunks.stream()
                     .map(chunk -> new ChunkPos(chunk.x() + delta.x(), chunk.z() + delta.z()))
-                    .collect(Collectors.toSet());
+                    .collect(Collectors.toCollection(ObjectOpenHashSet::new));
             chunks.clear();
             chunks.addAll(movedChunks);
         }
+        invalidateChunksSyncHash();
     }
 
     public void setShape(FrontierShape frontierShape) {
         this.frontierShape = frontierShape;
+        invalidateSyncHash();
     }
 
     public FrontierShape getShape() {
@@ -403,6 +437,7 @@ public class FrontierData {
 
     public void setPathStyle(PathStyle pathStyle) {
         this.pathStyle = new PathStyle(pathStyle);
+        invalidateSyncHash();
     }
 
     public PathStyle getPathStyle() {
@@ -411,6 +446,7 @@ public class FrontierData {
 
     public void setName1(String name) {
         name1 = name;
+        invalidateSyncHash();
     }
 
     public String getName1() {
@@ -419,6 +455,7 @@ public class FrontierData {
 
     public void setName2(String name) {
         name2 = name;
+        invalidateSyncHash();
     }
 
     public String getName2() {
@@ -431,10 +468,12 @@ public class FrontierData {
 
     public void setVisibility(FrontierVisibility visibility, boolean enable) {
         this.visibilityData.setValue(visibility, enable);
+        invalidateSyncHash();
     }
 
     public void toggleVisibility(FrontierVisibility visibility) {
         this.visibilityData.setValue(visibility, !this.visibilityData.getValue(visibility));
+        invalidateSyncHash();
     }
 
     public boolean getVisibility(FrontierVisibility visibility) {
@@ -443,6 +482,7 @@ public class FrontierData {
 
     public void setVisibilityData(VisibilityData visibilityData) {
         this.visibilityData = visibilityData;
+        invalidateSyncHash();
     }
 
     public VisibilityData getVisibilityData() {
@@ -451,6 +491,7 @@ public class FrontierData {
 
     public void setColor(int color) {
         this.color = color;
+        invalidateSyncHash();
     }
 
     public int getColor() {
@@ -459,6 +500,7 @@ public class FrontierData {
 
     public void setDimension(ResourceKey<Level> dimension) {
         this.dimension = dimension;
+        invalidateSyncHash();
     }
 
     public ResourceKey<Level> getDimension() {
@@ -471,10 +513,12 @@ public class FrontierData {
         } else {
             banner = new BannerData(itemBanner);
         }
+        invalidateSyncHash();
     }
 
     public void setBanner(DyeColor base, BannerPatternLayers bannerPatterns) {
         banner = new BannerData(base, bannerPatterns);
+        invalidateSyncHash();
     }
 
     public boolean hasBanner() {
@@ -487,6 +531,7 @@ public class FrontierData {
         } else {
             banner = new BannerData(bannerData);
         }
+        invalidateSyncHash();
     }
 
     public BannerData getbannerData() {
@@ -495,6 +540,7 @@ public class FrontierData {
 
     public void setBannerRotation(int rotation) {
         banner.rotation = rotation;
+        invalidateSyncHash();
     }
 
     public int getBannerRotation() {
@@ -511,6 +557,7 @@ public class FrontierData {
         }
         this.personal = personal;
         sanitizeSharedUsers();
+        invalidateSyncHash();
     }
 
     public boolean getPersonal() {
@@ -522,6 +569,7 @@ public class FrontierData {
         validateTypeAndLifetime(personal, checkedLifetime);
         this.lifetime = checkedLifetime;
         sanitizeSharedUsers();
+        invalidateSyncHash();
     }
 
     public TerritoryLifetime getLifetime() {
@@ -546,6 +594,7 @@ public class FrontierData {
         }
 
         usersShared.add(userShared);
+        invalidateSyncHash();
     }
 
     public void removeUserShared(SettingsUser user) {
@@ -554,6 +603,7 @@ public class FrontierData {
         }
 
         usersShared.removeIf(x -> x.getUser().equals(user));
+        invalidateSyncHash();
     }
 
     public void removeAllUserShared() {
@@ -562,6 +612,7 @@ public class FrontierData {
         }
 
         usersShared = null;
+        invalidateSyncHash();
     }
 
     public void removePendingUsersShared() {
@@ -571,6 +622,7 @@ public class FrontierData {
 
         usersShared.removeIf(SettingsUserShared::isPending);
         sanitizeSharedUsers();
+        invalidateSyncHash();
     }
 
     public List<SettingsUserShared> getUsersShared() {
@@ -618,6 +670,7 @@ public class FrontierData {
     public void setCreated(Date created) {
         this.created = created;
         modified = created;
+        invalidateSyncHash();
     }
 
     public Date getCreated() {
@@ -630,6 +683,7 @@ public class FrontierData {
 
     public void removeCopiedFromInfo() {
         copiedFrom = null;
+        invalidateSyncHash();
     }
 
     public void setCopiedFromId(UUID id) {
@@ -637,6 +691,7 @@ public class FrontierData {
             copiedFrom = new CopiedFromInfo();
         }
         copiedFrom.id = id;
+        invalidateSyncHash();
     }
 
     public UUID getCopiedFromId() {
@@ -651,6 +706,7 @@ public class FrontierData {
             copiedFrom = new CopiedFromInfo();
         }
         copiedFrom.user = user;
+        invalidateSyncHash();
     }
 
     public SettingsUser getCopiedFromUser() {
@@ -662,6 +718,7 @@ public class FrontierData {
 
     public void setModified(Date modified) {
         this.modified = modified;
+        invalidateSyncHash();
     }
 
     public Date getModified() {
@@ -670,6 +727,7 @@ public class FrontierData {
 
     public void setCollectionId(@Nullable UUID collectionId) {
         this.collectionId = collectionId;
+        invalidateSyncHash();
     }
 
     public @Nullable UUID getCollectionId() {
@@ -682,6 +740,38 @@ public class FrontierData {
 
     public void setSourcePluginId(@Nullable String sourcePluginId) {
         this.sourcePluginId = SourcePluginIdHelper.normalize(sourcePluginId);
+        invalidateSyncHash();
+    }
+
+    public long computeSyncHash() {
+        if (syncHashDirty) {
+            long hash = FNV64_OFFSET_BASIS;
+            hash = mixUuid(hash, id);
+            hash = mixEnum(hash, frontierShape);
+            hash = mixBoolean(hash, personal);
+            hash = mixEnum(hash, lifetime);
+            hash = mixIdentifier(hash, dimension == null ? null : dimension.identifier());
+            hash = mixSettingsUser(hash, owner);
+            hash = mixString(hash, name1);
+            hash = mixString(hash, name2);
+            hash = mixInt(hash, color);
+            hash = mixVisibilityData(hash, visibilityData);
+            hash = mixBannerData(hash, banner);
+            hash = mixUuid(hash, collectionId);
+            hash = mixString(hash, sourcePluginId);
+            switch (frontierShape) {
+                case Vertex -> hash = mixVertices(hash, vertices);
+                case Chunk -> hash = mixLong(hash, getOrComputeChunksSyncHash());
+                case Path -> {
+                    hash = mixPoints(hash, points);
+                    hash = mixPathStyle(hash, pathStyle);
+                }
+            }
+            cachedSyncHash = hash;
+            syncHashDirty = false;
+        }
+
+        return cachedSyncHash;
     }
 
     public @Nullable String getSourcePluginId() {
@@ -819,6 +909,7 @@ public class FrontierData {
 
         normalizeDataForMode();
         sanitizeSharedUsers();
+        invalidateSyncHash();
     }
 
     public void writeToNBT(CompoundTag nbt) {
@@ -1016,6 +1107,7 @@ public class FrontierData {
 
         normalizeDataForMode();
         sanitizeSharedUsers();
+        invalidateSyncHash();
     }
 
     public void toBytes(FriendlyByteBuf buf) {
@@ -1133,6 +1225,7 @@ public class FrontierData {
                 }
             }
         }
+        invalidateSyncHash();
     }
 
     private void normalizeDataForMode() {
@@ -1166,6 +1259,187 @@ public class FrontierData {
         if (!canHaveSharedUsers()) {
             usersShared = null;
         }
+    }
+
+    private void invalidateSyncHash() {
+        syncHashDirty = true;
+    }
+
+    private void invalidateChunksSyncHash() {
+        chunksSyncHashDirty = true;
+        syncHashDirty = true;
+    }
+
+    private long getOrComputeChunksSyncHash() {
+        if (chunksSyncHashDirty) {
+            List<ChunkPos> orderedChunks;
+            synchronized (chunks) {
+                orderedChunks = new ArrayList<>(chunks);
+            }
+            orderedChunks.sort(CHUNK_SYNC_HASH_ORDER);
+            long hash = FNV64_OFFSET_BASIS;
+            hash = mixInt(hash, orderedChunks.size());
+            for (ChunkPos chunk : orderedChunks) {
+                hash = mixLong(hash, chunk.pack());
+            }
+            cachedChunksSyncHash = hash;
+            chunksSyncHashDirty = false;
+        }
+
+        return cachedChunksSyncHash;
+    }
+
+    private static long mixVertices(long hash, List<BlockPos> vertices) {
+        hash = mixInt(hash, vertices.size());
+        for (BlockPos vertex : vertices) {
+            hash = mixLong(hash, vertex.asLong());
+        }
+        return hash;
+    }
+
+    private static long mixPoints(long hash, List<BlockPos> points) {
+        hash = mixInt(hash, points.size());
+        for (BlockPos point : points) {
+            hash = mixLong(hash, point.asLong());
+        }
+        return hash;
+    }
+
+    private static long mixVisibilityData(long hash, @Nullable VisibilityData visibilityData) {
+        if (visibilityData == null) {
+            return mixBoolean(hash, false);
+        }
+        hash = mixBoolean(hash, true);
+        for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
+            hash = mixBoolean(hash, visibilityData.getValue(visibility));
+        }
+        return hash;
+    }
+
+    private static long mixBannerData(long hash, @Nullable BannerData banner) {
+        if (banner == null) {
+            return mixBoolean(hash, false);
+        }
+
+        hash = mixBoolean(hash, true);
+        hash = mixInt(hash, banner.baseColor.getId());
+        hash = mixInt(hash, banner.rotation);
+        return mixTag(hash, banner.patterns);
+    }
+
+    private static long mixPathStyle(long hash, @Nullable PathStyle pathStyle) {
+        if (pathStyle == null) {
+            return mixBoolean(hash, false);
+        }
+
+        hash = mixBoolean(hash, true);
+        hash = mixIdentifier(hash, pathStyle.startMarker);
+        hash = mixIdentifier(hash, pathStyle.innerMarker);
+        hash = mixIdentifier(hash, pathStyle.endMarker);
+        hash = mixIdentifier(hash, pathStyle.segmentMarker);
+        hash = mixBoolean(hash, pathStyle.labelAtStart);
+        hash = mixBoolean(hash, pathStyle.labelAtMiddle);
+        hash = mixBoolean(hash, pathStyle.labelAtEnd);
+        return hash;
+    }
+
+    private static long mixSettingsUser(long hash, @Nullable SettingsUser user) {
+        if (user == null) {
+            return mixBoolean(hash, false);
+        }
+
+        hash = mixBoolean(hash, true);
+        hash = mixString(hash, user.username);
+        return mixUuid(hash, user.uuid);
+    }
+
+    private static long mixTag(long hash, @Nullable Tag tag) {
+        if (tag == null) {
+            return mixBoolean(hash, false);
+        }
+
+        hash = mixBoolean(hash, true);
+        hash = mixInt(hash, tag.getId());
+        if (tag instanceof CompoundTag compoundTag) {
+            List<String> keys = new ArrayList<>(compoundTag.keySet());
+            Collections.sort(keys);
+            long mixedHash = mixInt(hash, keys.size());
+            for (String key : keys) {
+                mixedHash = mixString(mixedHash, key);
+                mixedHash = mixTag(mixedHash, compoundTag.get(key));
+            }
+            return mixedHash;
+        }
+        if (tag instanceof ListTag listTag) {
+            long mixedHash = mixInt(hash, listTag.size());
+            for (Tag child : listTag) {
+                mixedHash = mixTag(mixedHash, child);
+            }
+            return mixedHash;
+        }
+        return mixString(hash, tag.toString());
+    }
+
+    private static long mixIdentifier(long hash, @Nullable Identifier identifier) {
+        return mixString(hash, identifier == null ? null : identifier.toString());
+    }
+
+    private static long mixEnum(long hash, @Nullable Enum<?> value) {
+        if (value == null) {
+            return mixInt(hash, -1);
+        }
+        return mixInt(hash, value.ordinal());
+    }
+
+    private static long mixUuid(long hash, @Nullable UUID value) {
+        if (value == null) {
+            hash = mixBoolean(hash, false);
+            return hash;
+        }
+
+        hash = mixBoolean(hash, true);
+        hash = mixLong(hash, value.getMostSignificantBits());
+        return mixLong(hash, value.getLeastSignificantBits());
+    }
+
+    private static long mixString(long hash, @Nullable String value) {
+        if (value == null) {
+            return mixBoolean(hash, false);
+        }
+
+        hash = mixBoolean(hash, true);
+        hash = mixInt(hash, value.length());
+        for (int i = 0; i < value.length(); ++i) {
+            hash = mixInt(hash, value.charAt(i));
+        }
+        return hash;
+    }
+
+    private static long mixBoolean(long hash, boolean value) {
+        return mixByte(hash, value ? 1 : 0);
+    }
+
+    private static long mixInt(long hash, int value) {
+        hash = mixByte(hash, value);
+        hash = mixByte(hash, value >>> 8);
+        hash = mixByte(hash, value >>> 16);
+        return mixByte(hash, value >>> 24);
+    }
+
+    private static long mixLong(long hash, long value) {
+        hash = mixByte(hash, (int) value);
+        hash = mixByte(hash, (int) (value >>> 8));
+        hash = mixByte(hash, (int) (value >>> 16));
+        hash = mixByte(hash, (int) (value >>> 24));
+        hash = mixByte(hash, (int) (value >>> 32));
+        hash = mixByte(hash, (int) (value >>> 40));
+        hash = mixByte(hash, (int) (value >>> 48));
+        return mixByte(hash, (int) (value >>> 56));
+    }
+
+    private static long mixByte(long hash, int value) {
+        hash ^= value & 0xffL;
+        return hash * FNV64_PRIME;
     }
 
     private static TerritoryLifetime readLifetimeFromNbt(CompoundTag nbt) {
