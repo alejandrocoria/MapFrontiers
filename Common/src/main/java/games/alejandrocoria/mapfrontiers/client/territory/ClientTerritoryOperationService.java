@@ -704,7 +704,9 @@ public class ClientTerritoryOperationService {
 
     public void applyCollectionCreated(CollectionData collection) {
         collectionRuntime.onCollectionUpserted(collection);
-        collectionIdsWithPendingCreatedMembershipSync.add(collection.getId());
+        if (mc.player == null || !collection.getOwner().equals(new SettingsUser(mc.player))) {
+            collectionIdsWithPendingCreatedMembershipSync.add(collection.getId());
+        }
         if (collection.getPersonal()) {
             markLocalPersonalDataDirty();
         }
