@@ -98,6 +98,15 @@ public final class ClientConfig {
     public static final DoubleConfigEntry BANNER_OPACITY = register(doubleEntry(1.0, 0.0, 1.0, "appearance", "banner", "opacity")
             .comment("Transparency of the frontier banner. 0.0 is fully transparent and 1.0 is opaque.")
             .translation(translation("appearance", "banner", "opacity")));
+    public static final DoubleConfigEntry COLLECTION_FILL_OPACITY = register(doubleEntry(0.4, 0.0, 1.0, "appearance", "collection", "fill", "opacity")
+            .comment("Transparency of collection polygons in collection view. 0.0 is fully transparent and 1.0 is opaque.")
+            .translation(translation("appearance", "collection", "fill", "opacity")));
+    public static final IntConfigEntry COLLECTION_BORDER_WIDTH = register(intEntry(0, 0, 64, "appearance", "collection", "border", "width")
+            .comment("Width of collection borders in collection view.")
+            .translation(translation("appearance", "collection", "border", "width")));
+    public static final DoubleConfigEntry COLLECTION_BORDER_OPACITY = register(doubleEntry(1.0, 0.0, 1.0, "appearance", "collection", "border", "opacity")
+            .comment("Transparency of collection borders in collection view. 0.0 is fully transparent and 1.0 is opaque.")
+            .translation(translation("appearance", "collection", "border", "opacity")));
     public static final StringConfigEntry PATH_DEFAULT_STYLE_START = register(stringEntry(FrontierData.PathStyle.BIG_DOT.toString(), "path", "defaultStyle", "start")
             .comment("Marker identifier used by default for the start of new path frontiers."));
     public static final StringConfigEntry PATH_DEFAULT_STYLE_INNER = register(stringEntry(FrontierData.PathStyle.NONE.toString(), "path", "defaultStyle", "inner")

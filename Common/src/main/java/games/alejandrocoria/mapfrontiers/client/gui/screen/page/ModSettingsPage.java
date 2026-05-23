@@ -24,6 +24,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.HUDSettingsScreen;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.CollectionAppearanceDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationSettingsDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.CollectionAppearanceDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.FrontierAppearanceDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.PathStyleDialog;
@@ -95,6 +96,7 @@ public class ModSettingsPage extends PageScreen {
     private static final String KEY_HINT_KEY = "mapfrontiers.key.open_settings.hint";
     private static final Component FRONTIERS_LABEL = Component.translatable("mapfrontiers.frontiers");
     private static final Component FRONTIER_APPEARANCE_LABEL = Component.translatable("mapfrontiers.frontier_appearance");
+    private static final Component COLLECTION_APPEARANCE_LABEL = Component.translatable("mapfrontiers.collection_appearance");
     private static final Component DEFAULT_PATH_STYLE_LABEL = Component.translatable("mapfrontiers.default_path_style");
     private static final Component FORCED_VISIBILITY_LABEL = Component.translatable("mapfrontiers.forced_visibility");
     private static final Component GUI_LABEL = Component.translatable("mapfrontiers.gui");
@@ -138,6 +140,7 @@ public class ModSettingsPage extends PageScreen {
     private FrontierSettings settings;
     private TabbedBox tabbedBox;
     private SimpleButton buttonFrontierAppearance;
+    private SimpleButton buttonCollectionAppearance;
     private SimpleButton buttonDefaultPathStyle;
     private SimpleButton buttonConfirmationDialogs;
     private SimpleButton buttonEditHUD;
@@ -281,12 +284,16 @@ public class ModSettingsPage extends PageScreen {
         row = addIntSettingRow(settingsGrid, row, ClientConfig.PATH_PROXIMITY_EXIT_DISTANCE, DEFAULT_TEXTBOX_WIDTH, 3);
 
         int frontierButtonWidth = ScreenHelper.getPaddedMaxTextWidth(font, LayoutConstants.PAGE_BUTTON_WIDTH,
-                BUTTON_HORIZONTAL_PADDING, FRONTIER_APPEARANCE_LABEL, DEFAULT_PATH_STYLE_LABEL,
+                BUTTON_HORIZONTAL_PADDING, FRONTIER_APPEARANCE_LABEL, COLLECTION_APPEARANCE_LABEL, DEFAULT_PATH_STYLE_LABEL,
                 FORCED_VISIBILITY_LABEL);
 
         buttonFrontierAppearance = createWideSimpleButton(frontierButtonWidth, FRONTIER_APPEARANCE_LABEL,
                 b -> onFrontierAppearancePressed());
         settingsGrid.addChild(buttonFrontierAppearance, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
+
+        buttonCollectionAppearance = createWideSimpleButton(frontierButtonWidth, COLLECTION_APPEARANCE_LABEL,
+                b -> onCollectionAppearancePressed());
+        settingsGrid.addChild(buttonCollectionAppearance, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
 
         buttonDefaultPathStyle = createWideSimpleButton(frontierButtonWidth, DEFAULT_PATH_STYLE_LABEL,
                 b -> onDefaultPathStylePressed());
@@ -508,6 +515,10 @@ public class ModSettingsPage extends PageScreen {
 
     private void onFrontierAppearancePressed() {
         new FrontierAppearanceDialog().display();
+    }
+
+    private void onCollectionAppearancePressed() {
+        new CollectionAppearanceDialog().display();
     }
 
     private void onDefaultPathStylePressed() {

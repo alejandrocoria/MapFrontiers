@@ -123,6 +123,8 @@ public class FrontierOverlay extends FrontierData {
     private final BannerRenderer bannerRenderer = new BannerRenderer();
     private int previewTextSize = -1;
     private int previewBannerSize = -1;
+    private boolean previewCollectionStyleEnabled = false;
+    private int previewCollectionColor = ColorConstants.WHITE;
 
     private int hash;
     private boolean hashDirty = true;
@@ -262,6 +264,18 @@ public class FrontierOverlay extends FrontierData {
         previewTextSize = Math.max(1, textSize);
         previewBannerSize = Math.max(1, bannerSize);
         invalidateLabels();
+    }
+
+    public void setPreviewCollectionStyle(@Nullable Integer collectionColor) {
+        boolean enabled = collectionColor != null;
+        int resolvedColor = collectionColor == null ? ColorConstants.WHITE : collectionColor;
+        if (previewCollectionStyleEnabled == enabled && (!enabled || previewCollectionColor == resolvedColor)) {
+            return;
+        }
+
+        previewCollectionStyleEnabled = enabled;
+        previewCollectionColor = resolvedColor;
+        invalidateBasePresentation();
     }
 
     public void processDirtyOverlay() {
@@ -1748,13 +1762,22 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private ShapeProperties createBaseShapeProperties() {
+        int baseColor = previewCollectionStyleEnabled ? previewCollectionColor : color;
+        int borderWidth = previewCollectionStyleEnabled ? ClientConfig.COLLECTION_BORDER_WIDTH.get() : ClientConfig.BORDER_WIDTH.get();
+        float borderOpacity = previewCollectionStyleEnabled
+                ? ClientConfig.COLLECTION_BORDER_OPACITY.get().floatValue()
+                : ClientConfig.BORDER_OPACITY.get().floatValue();
+        float fillOpacity = previewCollectionStyleEnabled
+                ? ClientConfig.COLLECTION_FILL_OPACITY.get().floatValue()
+                : ClientConfig.POLYGONS_OPACITY.get().floatValue();
+
         return new ShapeProperties()
-                .setStrokeWidth(ClientConfig.BORDER_WIDTH.get())
-                .setStrokeColor(color)
-                .setStrokeOpacity(ClientConfig.BORDER_OPACITY.get().floatValue())
+                .setStrokeWidth(borderWidth)
+                .setStrokeColor(baseColor)
+                .setStrokeOpacity(borderOpacity)
                 .setStrokePosition(ShapeProperties.StrokePosition.INSIDE)
-                .setFillColor(color)
-                .setFillOpacity(ClientConfig.POLYGONS_OPACITY.get().floatValue());
+                .setFillColor(baseColor)
+                .setFillOpacity(fillOpacity);
     }
 
     private void hidePolygonOverlays(List<PolygonOverlay> overlays) {
