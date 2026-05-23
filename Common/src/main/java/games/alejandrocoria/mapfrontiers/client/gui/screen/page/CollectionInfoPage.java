@@ -702,7 +702,7 @@ public class CollectionInfoPage extends PageScreen {
     }
 
     private static Component formatCollectionViewZoomLabel(int zoom) {
-        if (zoom == CollectionData.COLLECTION_VIEW_DISABLED_ZOOM) {
+        if (!CollectionData.isCollectionViewEnabled(zoom)) {
             return DISABLED_LABEL;
         }
 

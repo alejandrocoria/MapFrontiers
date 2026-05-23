@@ -284,8 +284,25 @@ public class CollectionData {
         this.collectionViewZoom = normalizeCollectionViewZoom(collectionViewZoom);
     }
 
+    public boolean isCollectionViewEnabled() {
+        return isCollectionViewEnabled(collectionViewZoom);
+    }
+
     public static List<Integer> getCollectionViewZoomLevels() {
         return COLLECTION_VIEW_ZOOM_LEVELS;
+    }
+
+    public static boolean isCollectionViewEnabled(int zoom) {
+        return zoom > COLLECTION_VIEW_DISABLED_ZOOM;
+    }
+
+    public static int getCollectionViewTransitionMinZoom(int zoom) {
+        int currentIndex = COLLECTION_VIEW_ZOOM_LEVELS.indexOf(zoom);
+        if (currentIndex < 0 || currentIndex >= COLLECTION_VIEW_ZOOM_LEVELS.size() - 1) {
+            return 32768;
+        }
+
+        return COLLECTION_VIEW_ZOOM_LEVELS.get(currentIndex + 1);
     }
 
     public void setSourcePluginId(@Nullable String sourcePluginId) {

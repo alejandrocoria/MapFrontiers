@@ -1630,8 +1630,7 @@ public class FrontierOverlay extends FrontierData {
 
     private void rebuildCollectionBaseOverlays() {
         if (frontierShape == FrontierShape.Path || previewCollectionStyleEnabled) {
-            hidePolygonOverlays(collectionPolygonOverlays);
-            collectionPolygonOverlays.clear();
+            clearCollectionPolygonOverlays();
             return;
         }
 
@@ -1674,8 +1673,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private void rebuildPolygonCollectionOverlays() {
-        hidePolygonOverlays(collectionPolygonOverlays);
-        collectionPolygonOverlays.clear();
+        clearCollectionPolygonOverlays();
 
         PolygonUiPlanCache polygonUiPlan = ensurePolygonUiPlanCache();
         if (polygonUiPlan == null || polygonUiPlan.entries().isEmpty()) {
@@ -1718,6 +1716,11 @@ public class FrontierOverlay extends FrontierData {
         if (isFrontierVisible()) {
             showMarkerOverlaysQuietly(labelOverlays);
         }
+    }
+
+    private void clearCollectionPolygonOverlays() {
+        hidePolygonOverlays(collectionPolygonOverlays);
+        collectionPolygonOverlays.clear();
     }
 
     private void rebuildPolygonHighlightOverlays() {
@@ -2469,7 +2472,7 @@ public class FrontierOverlay extends FrontierData {
         }
 
         CollectionData collection = getCollection();
-        return collection != null && collection.getCollectionViewZoom() > CollectionData.COLLECTION_VIEW_DISABLED_ZOOM;
+        return collection != null && collection.isCollectionViewEnabled();
     }
 
     private int resolveCollectionViewMaxZoom() {
@@ -2482,7 +2485,7 @@ public class FrontierOverlay extends FrontierData {
             return entry.minZoom();
         }
 
-        return Math.max(entry.minZoom(), getNextZoomLevel(resolveCollectionViewMaxZoom()));
+        return Math.max(entry.minZoom(), CollectionData.getCollectionViewTransitionMinZoom(resolveCollectionViewMaxZoom()));
     }
 
     private @Nullable String getCollectionName() {
@@ -2598,16 +2601,6 @@ public class FrontierOverlay extends FrontierData {
         mapImage.setDisplayHeight(1);
         mapImage.setOpacity(0.f);
         return mapImage;
-    }
-
-    private int getNextZoomLevel(int zoom) {
-        List<Integer> zoomLevels = CollectionData.getCollectionViewZoomLevels();
-        int currentIndex = zoomLevels.indexOf(zoom);
-        if (currentIndex < 0 || currentIndex >= zoomLevels.size() - 1) {
-            return 32768;
-        }
-
-        return zoomLevels.get(currentIndex + 1);
     }
 
     private void updateBounds() {
