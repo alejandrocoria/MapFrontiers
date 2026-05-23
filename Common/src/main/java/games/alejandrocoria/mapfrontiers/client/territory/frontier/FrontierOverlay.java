@@ -114,6 +114,7 @@ public class FrontierOverlay extends FrontierData {
 
     private final IClientAPI jmAPI;
     private final List<PolygonOverlay> polygonOverlays = new ArrayList<>();
+    private final List<PolygonOverlay> collectionPolygonOverlays = new ArrayList<>();
     private final List<PolygonOverlay> highlightPolygonOverlays = new ArrayList<>();
     private final List<PolygonRenderGeometry> polygonRenderGeometries = new ArrayList<>();
     private Area polygonArea;
@@ -136,6 +137,7 @@ public class FrontierOverlay extends FrontierData {
     private boolean visualConfigDirty = true;
     private boolean polygonUiPlanDirty = true;
     private boolean baseOverlaysDirty = true;
+    private boolean collectionBaseOverlaysDirty = true;
     private boolean labelsDirty = true;
     private boolean highlightStructureDirty = true;
     private boolean highlightVisibilityDirty = true;
@@ -245,7 +247,10 @@ public class FrontierOverlay extends FrontierData {
 
     public void markCollectionPresentationDirty() {
         hashDirty = true;
-        invalidateLabels();
+        baseOverlaysDirty = true;
+        collectionBaseOverlaysDirty = true;
+        labelsDirty = true;
+        invalidateOverlayRefresh();
     }
 
     public List<PolygonOverlay> getPolygonOverlays() {
@@ -307,6 +312,11 @@ public class FrontierOverlay extends FrontierData {
             baseOverlaysDirty = false;
         }
 
+        if (collectionBaseOverlaysDirty) {
+            rebuildCollectionBaseOverlays();
+            collectionBaseOverlaysDirty = false;
+        }
+
         if (labelsDirty) {
             rebuildLabels();
             labelsDirty = false;
@@ -342,6 +352,7 @@ public class FrontierOverlay extends FrontierData {
         polygonUiPlanDirty = true;
         polygonUiPlanCache = null;
         baseOverlaysDirty = true;
+        collectionBaseOverlaysDirty = true;
         labelsDirty = true;
         highlightStructureDirty = true;
         highlightVisibilityDirty = true;
@@ -355,6 +366,7 @@ public class FrontierOverlay extends FrontierData {
         polygonUiPlanDirty = true;
         polygonUiPlanCache = null;
         baseOverlaysDirty = true;
+        collectionBaseOverlaysDirty = true;
         labelsDirty = true;
         highlightStructureDirty = true;
         invalidateOverlayRefresh();
@@ -364,6 +376,7 @@ public class FrontierOverlay extends FrontierData {
         pathLayoutDirty = true;
         pathLayoutCache = null;
         baseOverlaysDirty = true;
+        collectionBaseOverlaysDirty = false;
         labelsDirty = true;
         highlightStructureDirty = true;
         invalidateOverlayRefresh();
@@ -375,6 +388,7 @@ public class FrontierOverlay extends FrontierData {
         polygonUiPlanDirty = true;
         polygonUiPlanCache = null;
         baseOverlaysDirty = true;
+        collectionBaseOverlaysDirty = true;
         labelsDirty = true;
         invalidateOverlayRefresh();
     }
@@ -444,6 +458,10 @@ public class FrontierOverlay extends FrontierData {
                 removePolygonOverlay(polygon);
             }
 
+            for (PolygonOverlay polygon : collectionPolygonOverlays) {
+                removePolygonOverlay(polygon);
+            }
+
             for (PolygonOverlay polygon : highlightPolygonOverlays) {
                 removePolygonOverlay(polygon);
             }
@@ -461,6 +479,7 @@ public class FrontierOverlay extends FrontierData {
             }
         } finally {
             polygonOverlays.clear();
+            collectionPolygonOverlays.clear();
             highlightPolygonOverlays.clear();
             markerOverlays.clear();
             highlightMarkerOverlays.clear();
@@ -1609,6 +1628,16 @@ public class FrontierOverlay extends FrontierData {
         }
     }
 
+    private void rebuildCollectionBaseOverlays() {
+        if (frontierShape == FrontierShape.Path || previewCollectionStyleEnabled) {
+            hidePolygonOverlays(collectionPolygonOverlays);
+            collectionPolygonOverlays.clear();
+            return;
+        }
+
+        rebuildPolygonCollectionOverlays();
+    }
+
     private void rebuildLabels() {
         if (frontierShape == FrontierShape.Path) {
             rebuildPathLabels();
@@ -1636,11 +1665,39 @@ public class FrontierOverlay extends FrontierData {
 
         ShapeProperties shapeProps = createBaseShapeProperties();
         for (PolygonUiPlanEntry entry : polygonUiPlan.entries()) {
-            polygonOverlays.add(createPolygonOverlay(shapeProps, entry));
+            polygonOverlays.add(createPolygonOverlay(shapeProps, entry, resolveCollectionNormalMinZoom(entry), 0));
         }
 
         if (isFrontierVisible()) {
             showPolygonOverlaysQuietly(polygonOverlays);
+        }
+    }
+
+    private void rebuildPolygonCollectionOverlays() {
+        hidePolygonOverlays(collectionPolygonOverlays);
+        collectionPolygonOverlays.clear();
+
+        PolygonUiPlanCache polygonUiPlan = ensurePolygonUiPlanCache();
+        if (polygonUiPlan == null || polygonUiPlan.entries().isEmpty()) {
+            return;
+        }
+
+        int collectionMaxZoom = resolveCollectionViewMaxZoom();
+        if (collectionMaxZoom <= 0) {
+            return;
+        }
+
+        ShapeProperties shapeProps = createCollectionShapeProperties();
+        for (PolygonUiPlanEntry entry : polygonUiPlan.entries()) {
+            if (!shouldRenderCollectionView(entry.ui())) {
+                continue;
+            }
+
+            collectionPolygonOverlays.add(createPolygonOverlay(shapeProps, entry, entry.minZoom(), collectionMaxZoom));
+        }
+
+        if (isFrontierVisible()) {
+            showPolygonOverlaysQuietly(collectionPolygonOverlays);
         }
     }
 
@@ -1780,6 +1837,18 @@ public class FrontierOverlay extends FrontierData {
                 .setFillOpacity(fillOpacity);
     }
 
+    private ShapeProperties createCollectionShapeProperties() {
+        CollectionData collection = getCollection();
+        int collectionColor = collection == null ? color : collection.getColor();
+        return new ShapeProperties()
+                .setStrokeWidth(ClientConfig.COLLECTION_BORDER_WIDTH.get())
+                .setStrokeColor(collectionColor)
+                .setStrokeOpacity(ClientConfig.COLLECTION_BORDER_OPACITY.get().floatValue())
+                .setStrokePosition(ShapeProperties.StrokePosition.INSIDE)
+                .setFillColor(collectionColor)
+                .setFillOpacity(ClientConfig.COLLECTION_FILL_OPACITY.get().floatValue());
+    }
+
     private void hidePolygonOverlays(List<PolygonOverlay> overlays) {
         for (PolygonOverlay polygon : overlays) {
             removePolygonOverlay(polygon);
@@ -1819,7 +1888,8 @@ public class FrontierOverlay extends FrontierData {
                         labelVisibility.ownerVisible(), labelVisibility.bannerVisible()),
                 entry.overlayArea(),
                 getLabelSolverPrecision(),
-                placementCache);
+                placementCache,
+                resolveCollectionNormalMinZoom(entry));
     }
 
     private static ShapeProperties createHighlightShapeProperties() {
@@ -1832,12 +1902,19 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private PolygonOverlay createPolygonOverlay(ShapeProperties shapeProps, PolygonUiPlanEntry entry) {
+        return createPolygonOverlay(shapeProps, entry, entry.minZoom(), 0);
+    }
+
+    private PolygonOverlay createPolygonOverlay(ShapeProperties shapeProps, PolygonUiPlanEntry entry, int minZoom, int maxZoom) {
         PolygonRenderGeometry geometry = entry.geometry();
         PolygonOverlay overlay = new PolygonOverlay(MapFrontiers.MODID, dimension, shapeProps, geometry.polygon(), geometry.holes());
         overlay.setActiveUIs(entry.ui());
         overlay.setActiveMapTypes(entry.activeMapTypes());
-        if (entry.minZoom() > 0) {
-            overlay.setMinZoom(entry.minZoom());
+        if (minZoom > 0) {
+            overlay.setMinZoom(minZoom);
+        }
+        if (maxZoom > 0) {
+            overlay.setMaxZoom(maxZoom);
         }
         return overlay;
     }
@@ -2189,7 +2266,8 @@ public class FrontierOverlay extends FrontierData {
                                  LabelContentMetrics metrics,
                                  Area overlayArea,
                                  double labelSolverPrecision,
-                                 Map<LabelPlacementKey, FrontierLabelPlacementSolver.LabelPlacement> placementCache) {
+                                 Map<LabelPlacementKey, FrontierLabelPlacementSolver.LabelPlacement> placementCache,
+                                 int minZoomOverride) {
         if (!metrics.hasText() && !metrics.hasBanner()) {
             return;
         }
@@ -2204,6 +2282,10 @@ public class FrontierOverlay extends FrontierData {
 
         if (ClientConfig.HIDE_NAMES_THAT_DONT_FIT.get()) {
             applyMinZoom(textProps, placement);
+        }
+
+        if (minZoomOverride > 0) {
+            textProps.setMinZoom(Math.max(textProps.getMinZoom(), minZoomOverride));
         }
 
         BlockPos anchor = BlockPos.containing(placement.centerX(), OVERLAY_Y, placement.centerZ());
@@ -2381,6 +2463,28 @@ public class FrontierOverlay extends FrontierData {
         return collectionId == null ? null : MapFrontiersClient.getCollection(collectionId);
     }
 
+    private boolean shouldRenderCollectionView(Context.UI ui) {
+        if (previewCollectionStyleEnabled || ui != Context.UI.Fullscreen || frontierShape == FrontierShape.Path) {
+            return false;
+        }
+
+        CollectionData collection = getCollection();
+        return collection != null && collection.getCollectionViewZoom() > CollectionData.COLLECTION_VIEW_DISABLED_ZOOM;
+    }
+
+    private int resolveCollectionViewMaxZoom() {
+        CollectionData collection = getCollection();
+        return collection == null ? CollectionData.COLLECTION_VIEW_DISABLED_ZOOM : collection.getCollectionViewZoom();
+    }
+
+    private int resolveCollectionNormalMinZoom(PolygonUiPlanEntry entry) {
+        if (!shouldRenderCollectionView(entry.ui())) {
+            return entry.minZoom();
+        }
+
+        return Math.max(entry.minZoom(), getNextZoomLevel(resolveCollectionViewMaxZoom()));
+    }
+
     private @Nullable String getCollectionName() {
         CollectionData collection = getCollection();
         if (collection == null) {
@@ -2494,6 +2598,16 @@ public class FrontierOverlay extends FrontierData {
         mapImage.setDisplayHeight(1);
         mapImage.setOpacity(0.f);
         return mapImage;
+    }
+
+    private int getNextZoomLevel(int zoom) {
+        List<Integer> zoomLevels = CollectionData.getCollectionViewZoomLevels();
+        int currentIndex = zoomLevels.indexOf(zoom);
+        if (currentIndex < 0 || currentIndex >= zoomLevels.size() - 1) {
+            return 32768;
+        }
+
+        return zoomLevels.get(currentIndex + 1);
     }
 
     private void updateBounds() {
