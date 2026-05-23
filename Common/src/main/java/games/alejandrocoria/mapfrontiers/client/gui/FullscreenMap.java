@@ -67,9 +67,8 @@ public class FullscreenMap {
 
         MapFrontiersClient.getFrontierEvents().subscribeDeleted(this, frontierID -> {
             if (frontierHighlighted != null && frontierHighlighted.getId().equals(frontierID)) {
+                cancelEditing();
                 frontierHighlighted = null;
-                editing = false;
-                shapeDirty = false;
                 relocating = false;
                 updateButtons();
             }
@@ -77,10 +76,9 @@ public class FullscreenMap {
 
         MapFrontiersClient.getFrontierEvents().subscribeUpdated(this, (frontierOverlay, playerID) -> {
             if (frontierHighlighted != null && frontierHighlighted.getId().equals(frontierOverlay.getId())) {
+                cancelEditing();
                 frontierHighlighted = frontierOverlay;
                 frontierHighlighted.setHighlighted(true);
-                editing = false;
-                shapeDirty = false;
                 relocating = false;
                 updateButtons();
             }
@@ -196,17 +194,26 @@ public class FullscreenMap {
     }
 
     public void stopEditing() {
+        finishEditing(true);
+    }
+
+    private void cancelEditing() {
+        finishEditing(false);
+    }
+
+    private void finishEditing(boolean persistShapeChanges) {
         if (editing) {
+            frontierHighlighted.endInteractiveEdit();
             editing = false;
             relocating = false;
             frontierHighlighted.clearSelectedEditablePoint();
-            if (shapeDirty) {
+            if (shapeDirty && persistShapeChanges) {
                 FrontierChange change = new FrontierChange();
                 change.setShape(frontierHighlighted.getVertices(), frontierHighlighted.getChunks(), frontierHighlighted.getPoints(),
                         frontierHighlighted.getShape());
                 MapFrontiersClient.getOperationService().updateFrontier(frontierHighlighted, change);
-                shapeDirty = false;
             }
+            shapeDirty = false;
         }
 
         if (buttonEdit != null) {
@@ -282,7 +289,9 @@ public class FullscreenMap {
 
     private void buttonVisibleToggled() {
         frontierHighlighted.setVisibility(FrontierVisibility.Frontier, !frontierHighlighted.getVisibility(FrontierVisibility.Frontier));
-        MapFrontiersClient.getOperationService().updateFrontier(frontierHighlighted);
+        FrontierChange change = new FrontierChange();
+        change.setVisibility(frontierHighlighted.getVisibilityData());
+        MapFrontiersClient.getOperationService().updateFrontier(frontierHighlighted, change);
 
         updateButtons();
     }
@@ -471,6 +480,7 @@ public class FullscreenMap {
         shapeDirty = false;
         relocating = false;
         drawingChunk = ChunkDrawing.Nothing;
+        frontierHighlighted.beginInteractiveEdit();
         frontierHighlighted.clearSelectedEditablePoint();
 
         if (buttonEdit != null) {

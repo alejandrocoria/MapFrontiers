@@ -79,9 +79,9 @@ public class ServerFrontierShareService {
         SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
         int shareMessageId = createPendingShare(userShared.getUser(), frontier.getId());
 
-        userShared.setPending(true);
-        frontier.addUserShared(userShared);
-        territoriesManager.saveTerritoriesNow();
+        if (!territoriesManager.addPendingPersonalFrontierShare(frontierId, userShared)) {
+            return ServerTerritoryOperationResult.ignored(frontier);
+        }
 
         ServerTerritoryOperationResult result = ServerTerritoryOperationResult.success(frontier);
         result.addNetworkAction(() -> PacketHandler.sendTo(new PacketPersonalFrontierShared(shareMessageId, playerUser,
@@ -105,8 +105,9 @@ public class ServerFrontierShareService {
             return ServerTerritoryOperationResult.ignored(frontier);
         }
 
-        currentUserShared.setActions(userShared.getActions());
-        territoriesManager.saveTerritoriesNow();
+        if (!territoriesManager.updatePersonalFrontierShare(frontierId, userShared)) {
+            return ServerTerritoryOperationResult.ignored(frontier);
+        }
 
         PacketFrontierSharingUpdated frontierSharingUpdatedPacket = createSharingUpdatedPacket(frontier, player.getId());
 
@@ -140,8 +141,9 @@ public class ServerFrontierShareService {
             return ServerTerritoryOperationResult.ignored(frontier);
         }
 
-        frontier.removeUserShared(targetUser);
-        territoriesManager.saveTerritoriesNow();
+        if (!territoriesManager.removePersonalFrontierShare(frontierId, targetUser)) {
+            return ServerTerritoryOperationResult.ignored(frontier);
+        }
 
         PacketFrontierSharingUpdated frontierSharingUpdatedPacket = createSharingUpdatedPacket(frontier, player.getId());
 
@@ -149,8 +151,6 @@ public class ServerFrontierShareService {
         if (userShared.isPending()) {
             removePendingSharesForTarget(targetUser);
         } else {
-            territoriesManager.deletePersonalFrontier(targetUser, frontier.getDimension(), frontierId);
-
             ServerPlayer targetPlayer = server.getPlayerList().getPlayer(targetUser.uuid);
             if (targetPlayer != null) {
                 result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierDeleted(frontier.getDimension(), frontierId, true, -1), targetPlayer));
@@ -189,10 +189,10 @@ public class ServerFrontierShareService {
         }
 
         boolean targetAlreadySeesCollection = frontier.hasCollection()
-                && territoriesManager.userHasVisiblePersonalCollection(pending.targetUser, frontier.getCollectionId());
-        territoriesManager.addPersonalFrontier(pending.targetUser, frontier);
-        userShared.setPending(false);
-        territoriesManager.saveTerritoriesNow();
+                && territoriesManager.userKnowsPersonalCollection(pending.targetUser, frontier.getCollectionId());
+        if (!territoriesManager.acceptPendingPersonalFrontierShare(pending.targetUser, pending.frontierID)) {
+            return ServerTerritoryOperationResult.ignored(ServerTerritoryOperationResult.Reason.SharedUserMissing, frontier);
+        }
         removePendingShare(messageId);
 
         PacketFrontierSharingUpdated frontierSharingUpdatedPacket = createSharingUpdatedPacket(frontier);
@@ -227,12 +227,8 @@ public class ServerFrontierShareService {
             }
 
             FrontierData frontier = territoriesManager.getFrontierFromID(pending.frontierID);
-            if (frontier != null && frontier.getUsersShared() != null) {
-                boolean removed = frontier.getUsersShared().removeIf(x -> x.getUser().equals(pending.targetUser));
-                if (removed) {
-                    territoriesManager.saveTerritoriesNow();
-                    PacketHandler.sendToUsersWithAccess(createSharingUpdatedPacket(frontier), frontier, server);
-                }
+            if (frontier != null && territoriesManager.expirePendingPersonalFrontierShare(pending.frontierID, pending.targetUser)) {
+                PacketHandler.sendToUsersWithAccess(createSharingUpdatedPacket(frontier), frontier, server);
             }
 
             expiredMessageIds.add(entry.getKey());

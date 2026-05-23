@@ -17,10 +17,8 @@ import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientCollectionEvents;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientCollectionRuntime;
-import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientLocalPersonalCollectionStore;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionScope;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientFrontierEvents;
-import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientLocalPersonalFrontierStore;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
@@ -32,6 +30,7 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketDeleteCollection;
 import games.alejandrocoria.mapfrontiers.common.network.PacketDeleteFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketRemoveSharedUserPersonalFrontier;
+import games.alejandrocoria.mapfrontiers.common.network.PacketRequestFrontierResync;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSharePersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateCollection;
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateFrontier;
@@ -56,9 +55,9 @@ import net.minecraft.world.level.Level;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -68,13 +67,13 @@ import java.util.UUID;
 public class ClientTerritoryOperationService {
     private static final Minecraft mc = Minecraft.getInstance();
 
+    private final ClientTerritoryRuntime runtime;
     private final FrontiersOverlayManager globalManager;
     private final FrontiersOverlayManager personalManager;
     private final ClientCollectionRuntime collectionRuntime;
-    private final ClientLocalPersonalFrontierStore localPersonalStore;
-    private final ClientLocalPersonalCollectionStore localPersonalCollectionStore;
     private final ClientFrontierEvents frontierEvents;
     private final ClientCollectionEvents collectionEvents;
+    private final Set<UUID> collectionIdsWithPendingCreatedMembershipSync = new HashSet<>();
 
     private static class SharingActionContext {
         private final @Nullable FrontierOverlay frontier;
@@ -86,18 +85,16 @@ public class ClientTerritoryOperationService {
         }
     }
 
-    public ClientTerritoryOperationService(FrontiersOverlayManager globalManager,
+    public ClientTerritoryOperationService(ClientTerritoryRuntime runtime,
+                                           FrontiersOverlayManager globalManager,
                                            FrontiersOverlayManager personalManager,
                                            ClientCollectionRuntime collectionRuntime,
-                                           ClientLocalPersonalFrontierStore localPersonalStore,
-                                           ClientLocalPersonalCollectionStore localPersonalCollectionStore,
                                            ClientFrontierEvents frontierEvents,
                                            ClientCollectionEvents collectionEvents) {
+        this.runtime = runtime;
         this.globalManager = globalManager;
         this.personalManager = personalManager;
         this.collectionRuntime = collectionRuntime;
-        this.localPersonalStore = localPersonalStore;
-        this.localPersonalCollectionStore = localPersonalCollectionStore;
         this.frontierEvents = frontierEvents;
         this.collectionEvents = collectionEvents;
     }
@@ -120,8 +117,9 @@ public class ClientTerritoryOperationService {
 
         FrontierData frontier = FrontierCreationFactory.createFrontier(createSpec);
         FrontierOverlay frontierOverlay = personalManager.addFrontier(frontier);
-        refreshCollectionRuntime();
-        persistLocalPersonalDataIfPersistent(frontierOverlay);
+        collectionRuntime.onFrontierAdded(frontierOverlay);
+        postAffectedCollectionsUpdated(frontierOverlay.getCollectionId());
+        markLocalPersonalDataDirtyIfPersistent(frontierOverlay);
         frontierEvents.postCreated(frontierOverlay, mc.player.getId());
         return frontierOverlay;
     }
@@ -175,14 +173,15 @@ public class ClientTerritoryOperationService {
             return;
         }
 
-        personalManager.deleteFrontier(frontier.getDimension(), frontier.getId());
-        refreshCollectionRuntime();
-        persistLocalPersonalDataIfPersistent(frontier);
-        frontierEvents.postDeleted(frontier.getId());
-    }
+        FrontierOverlay deletedFrontier = personalManager.deleteFrontier(frontier.getDimension(), frontier.getId());
+        if (deletedFrontier == null) {
+            return;
+        }
 
-    public void updateFrontier(FrontierOverlay frontier) {
-        updateFrontier(frontier, FrontierChange.fromFrontierData(frontier));
+        collectionRuntime.onFrontierRemoved(deletedFrontier);
+        postAffectedCollectionsUpdated(deletedFrontier.getCollectionId());
+        markLocalPersonalDataDirtyIfPersistent(frontier);
+        frontierEvents.postDeleted(frontier.getId());
     }
 
     public void updateFrontier(FrontierOverlay frontier, FrontierChange change) {
@@ -196,7 +195,9 @@ public class ClientTerritoryOperationService {
         MapFrontiersClient.markFrontierActivationDirty();
 
         if (usesAuthoritativeMutationFlow(frontier)) {
-            PacketHandler.sendToServer(new PacketUpdateFrontier(frontier.getId(), change));
+            FrontierData expectedFrontier = new FrontierData(frontier);
+            expectedFrontier.applyChange(change);
+            PacketHandler.sendToServer(new PacketUpdateFrontier(frontier.getId(), change, expectedFrontier.computeSyncHash()));
             return;
         }
 
@@ -204,9 +205,12 @@ public class ClientTerritoryOperationService {
             return;
         }
 
+        ClientCollectionRuntime.FrontierIndexState previousState = collectionRuntime.snapshotFrontier(frontier);
         frontier.applyChange(change);
-        refreshCollectionRuntime();
-        persistLocalPersonalDataIfPersistent(frontier);
+        getManager(frontier.getPersonal()).refreshFrontierDerivedIndexes(frontier);
+        collectionRuntime.onFrontierUpdated(previousState, frontier);
+        postAffectedCollectionsUpdated(previousState.collectionId(), frontier.getCollectionId());
+        markLocalPersonalDataDirtyIfPersistent(frontier);
         frontierEvents.postUpdated(frontier, mc.player.getId());
     }
 
@@ -255,7 +259,20 @@ public class ClientTerritoryOperationService {
     }
 
     public List<CollectionDataView> listCollectionsAction(boolean personal) {
-        return collectionRuntime.getCollections(personal).stream().map(ApiConverters::fromCollection).toList();
+        if (!personal) {
+            return collectionRuntime.getCollections(CollectionScope.GLOBAL_PERSISTENT).stream()
+                    .map(ApiConverters::fromCollection)
+                    .toList();
+        }
+
+        ArrayList<CollectionDataView> collections = new ArrayList<>();
+        collections.addAll(collectionRuntime.getCollections(CollectionScope.PERSONAL_PERSISTENT).stream()
+                .map(ApiConverters::fromCollection)
+                .toList());
+        collections.addAll(collectionRuntime.getCollections(CollectionScope.PERSONAL_SESSION).stream()
+                .map(ApiConverters::fromCollection)
+                .toList());
+        return List.copyOf(collections);
     }
 
     public CollectionActionResult createCollectionAction(boolean personal, String pluginModId, CollectionCreateRequest request) {
@@ -343,19 +360,25 @@ public class ClientTerritoryOperationService {
             return FrontierActionResult.notFound(frontierId);
         }
 
-        FrontierData payload = new FrontierData(frontier);
-        ApiConverters.applyMutation(payload, mutation);
-        FrontierChange change = FrontierChange.fromFrontierData(payload);
+        FrontierChange change = FrontierChange.fromMutation(frontier, mutation);
+        if (change.isEmpty()) {
+            return FrontierActionResult.applied(ApiConverters.fromFrontier(frontier));
+        }
+        UUID updatedCollectionId = change.hasCollectionIdChange()
+                ? change.getCollectionIdChange().getCollectionId()
+                : frontier.getCollectionId();
 
         if (usesAuthoritativeMutationFlow(frontier)) {
-            if (!isValidLocalCollectionAssignment(payload.getPersonal(), payload.getLifetime(), payload.getOwner(), payload.getCollectionId())) {
+            if (!isValidLocalCollectionAssignment(frontier.getPersonal(), frontier.getLifetime(), frontier.getOwner(), updatedCollectionId)) {
                 return FrontierActionResult.rejected();
             }
-            PacketHandler.sendToServer(new PacketUpdateFrontier(frontierId.value(), change));
+            FrontierData expectedFrontier = new FrontierData(frontier);
+            expectedFrontier.applyChange(change);
+            PacketHandler.sendToServer(new PacketUpdateFrontier(frontierId.value(), change, expectedFrontier.computeSyncHash()));
             return FrontierActionResult.acceptedAsync(frontierId);
         }
 
-        if (!isValidLocalCollectionAssignment(payload.getPersonal(), payload.getLifetime(), payload.getOwner(), payload.getCollectionId())) {
+        if (!isValidLocalCollectionAssignment(frontier.getPersonal(), frontier.getLifetime(), frontier.getOwner(), updatedCollectionId)) {
             return FrontierActionResult.rejected();
         }
 
@@ -488,14 +511,18 @@ public class ClientTerritoryOperationService {
     public FrontierOverlay acceptCopiedFrontier(FrontierData receivedFrontier,
                                                 @Nullable CollectionData receivedCollection,
                                                 @Nullable FrontierOverlay currentFrontier) {
-        if (currentFrontier != null && mc.player != null) {
+        if (currentFrontier != null) {
             currentFrontier.removeCopiedFromInfo();
-            frontierEvents.postUpdated(currentFrontier, mc.player.getId());
+            personalManager.refreshFrontierDerivedIndexes(currentFrontier);
+            if (mc.player != null) {
+                frontierEvents.postUpdated(currentFrontier, mc.player.getId());
+            }
         }
 
         FrontierOverlay frontierOverlay = personalManager.addFrontier(resolveCopiedFrontier(receivedFrontier, receivedCollection));
-        refreshCollectionRuntime();
-        persistLocalPersonalData();
+        collectionRuntime.onFrontierAdded(frontierOverlay);
+        postAffectedCollectionsUpdated(frontierOverlay.getCollectionId());
+        markLocalPersonalDataDirty();
         if (mc.player != null) {
             frontierEvents.postCreated(frontierOverlay, mc.player.getId());
         }
@@ -505,13 +532,18 @@ public class ClientTerritoryOperationService {
     public FrontierOverlay acceptCopiedFrontierAndReplace(FrontierData receivedFrontier,
                                                           @Nullable CollectionData receivedCollection,
                                                           FrontierOverlay currentFrontier) {
-        personalManager.deleteFrontier(currentFrontier.getDimension(), currentFrontier.getId());
+        UUID previousCollectionId = currentFrontier.getCollectionId();
+        FrontierOverlay deletedFrontier = personalManager.deleteFrontier(currentFrontier.getDimension(), currentFrontier.getId());
+        if (deletedFrontier != null) {
+            collectionRuntime.onFrontierRemoved(deletedFrontier);
+        }
         frontierEvents.postDeleted(currentFrontier.getId());
 
         FrontierOverlay frontierOverlay = personalManager.addFrontier(resolveCopiedFrontier(receivedFrontier, receivedCollection));
-        refreshCollectionRuntime();
+        collectionRuntime.onFrontierAdded(frontierOverlay);
+        postAffectedCollectionsUpdated(previousCollectionId, frontierOverlay.getCollectionId());
         if (currentFrontier.isPersistent() || frontierOverlay.isPersistent() || receivedCollection != null) {
-            persistLocalPersonalData();
+            markLocalPersonalDataDirty();
         }
         if (mc.player != null) {
             frontierEvents.postCreated(frontierOverlay, mc.player.getId());
@@ -521,9 +553,10 @@ public class ClientTerritoryOperationService {
 
     public void applyFrontierCreated(FrontierData frontier, int playerId) {
         FrontierOverlay frontierOverlay = getManager(frontier.getPersonal()).addFrontier(frontier);
-        refreshCollectionRuntime();
+        collectionRuntime.onFrontierAdded(frontierOverlay);
+        postAffectedCollectionsUpdated(frontierOverlay.getCollectionId());
         if (frontier.getPersonal() && frontier.isPersistent()) {
-            persistLocalPersonalData();
+            markLocalPersonalDataDirty();
         }
         frontierEvents.postCreated(frontierOverlay, playerId);
     }
@@ -532,14 +565,77 @@ public class ClientTerritoryOperationService {
                                      UUID frontierId,
                                      boolean personal,
                                      FrontierChange change,
+                                     long authoritativeSyncHash,
                                      int playerId) {
-        FrontierOverlay frontierOverlay = getManager(personal).applyFrontierChange(dimension, frontierId, change);
+        FrontiersOverlayManager manager = getManager(personal);
+        FrontierOverlay existingFrontier = manager.getFrontier(frontierId);
+        ClientCollectionRuntime.FrontierIndexState previousState = existingFrontier == null
+                ? null
+                : collectionRuntime.snapshotFrontier(existingFrontier);
+        FrontierOverlay frontierOverlay = manager.applyFrontierChange(dimension, frontierId, change);
         if (frontierOverlay != null) {
-            refreshCollectionRuntime();
+            long localSyncHash = frontierOverlay.computeSyncHash();
+            if (localSyncHash != authoritativeSyncHash) {
+                MapFrontiers.LOGGER.warn(
+                        "Frontier sync hash mismatch after client update apply. frontierId={}, personal={}, expectedHash={}, localHash={}",
+                        frontierId, personal, authoritativeSyncHash, localSyncHash
+                );
+                PacketHandler.sendToServer(new PacketRequestFrontierResync(frontierId));
+            }
+            if (previousState != null) {
+                collectionRuntime.onFrontierUpdated(previousState, frontierOverlay);
+                postAffectedCollectionsUpdated(previousState.collectionId(), frontierOverlay.getCollectionId());
+            }
             if (personal && frontierOverlay.isPersistent()) {
-                persistLocalPersonalData();
+                markLocalPersonalDataDirty();
             }
             frontierEvents.postUpdated(frontierOverlay, playerId);
+        }
+    }
+
+    public void applyFrontierResync(FrontierData frontier) {
+        FrontiersOverlayManager targetManager = getManager(frontier.getPersonal());
+        FrontiersOverlayManager otherManager = getManager(!frontier.getPersonal());
+        FrontierOverlay currentFrontier = targetManager.getFrontier(frontier.getId());
+        boolean frontierExisted = currentFrontier != null;
+        UUID previousCollectionId = currentFrontier == null ? null : currentFrontier.getCollectionId();
+
+        if (!frontierExisted) {
+            FrontierOverlay staleFrontier = otherManager.deleteFrontier(frontier.getId());
+            if (staleFrontier != null) {
+                previousCollectionId = staleFrontier.getCollectionId();
+                collectionRuntime.onFrontierRemoved(staleFrontier);
+                frontierExisted = true;
+            }
+        }
+
+        FrontierOverlay appliedFrontier;
+        if (currentFrontier != null && currentFrontier.getDimension().equals(frontier.getDimension())) {
+            ClientCollectionRuntime.FrontierIndexState previousState = collectionRuntime.snapshotFrontier(currentFrontier);
+            currentFrontier.updateFromData(frontier);
+            targetManager.refreshFrontierDerivedIndexes(currentFrontier);
+            collectionRuntime.onFrontierUpdated(previousState, currentFrontier);
+            postAffectedCollectionsUpdated(previousState.collectionId(), currentFrontier.getCollectionId());
+            appliedFrontier = currentFrontier;
+        } else {
+            if (currentFrontier != null) {
+                targetManager.deleteFrontier(currentFrontier.getDimension(), currentFrontier.getId());
+                collectionRuntime.onFrontierRemoved(currentFrontier);
+            }
+
+            appliedFrontier = targetManager.addFrontier(frontier);
+            collectionRuntime.onFrontierAdded(appliedFrontier);
+            postAffectedCollectionsUpdated(previousCollectionId, appliedFrontier.getCollectionId());
+        }
+
+        if (frontier.getPersonal() && frontier.isPersistent()) {
+            markLocalPersonalDataDirty();
+        }
+
+        if (frontierExisted) {
+            frontierEvents.postUpdated(appliedFrontier, -1);
+        } else {
+            frontierEvents.postCreated(appliedFrontier, -1);
         }
     }
 
@@ -550,7 +646,7 @@ public class ClientTerritoryOperationService {
         FrontierOverlay updatedFrontier = personalManager.applyFrontierSharingChange(dimension, frontierId, sharingChange);
         if (updatedFrontier != null) {
             if (updatedFrontier.isPersistent()) {
-                persistLocalPersonalData();
+                markLocalPersonalDataDirty();
             }
             frontierEvents.postUpdated(updatedFrontier, playerId);
         }
@@ -559,9 +655,10 @@ public class ClientTerritoryOperationService {
     public void applyFrontierDeleted(ResourceKey<Level> dimension, UUID frontierId, boolean personal) {
         FrontierOverlay deletedFrontier = getManager(personal).deleteFrontier(dimension, frontierId);
         if (deletedFrontier != null) {
-            refreshCollectionRuntime();
+            collectionRuntime.onFrontierRemoved(deletedFrontier);
+            postAffectedCollectionsUpdated(deletedFrontier.getCollectionId());
             if (personal && deletedFrontier.isPersistent()) {
-                persistLocalPersonalData();
+                markLocalPersonalDataDirty();
             }
             frontierEvents.postDeleted(frontierId);
         }
@@ -572,6 +669,7 @@ public class ClientTerritoryOperationService {
         if (frontierOverlay == null) {
             return;
         }
+        collectionRuntime.onFrontierRemoved(frontierOverlay);
         frontierOverlay.setPersonal(false);
         if (modified != null) {
             frontierOverlay.setModified(modified);
@@ -579,10 +677,10 @@ public class ClientTerritoryOperationService {
         frontierOverlay.removeAllUserShared();
         frontierOverlay.recreateBannerRenderer();
         globalManager.addFrontier(frontierOverlay);
-        refreshCollectionRuntime();
-        persistLocalPersonalData();
+        collectionRuntime.onFrontierAdded(frontierOverlay);
+        markLocalPersonalDataDirty();
         frontierEvents.postUpdated(frontierOverlay, -1);
-        frontierOverlay.updateOverlay();
+        frontierOverlay.rebuildOverlayNow();
     }
 
     public void applyFrontierChangeToPersonal(UUID frontierId, @Nullable Date modified) {
@@ -590,6 +688,7 @@ public class ClientTerritoryOperationService {
         if (frontierOverlay == null) {
             return;
         }
+        collectionRuntime.onFrontierRemoved(frontierOverlay);
         frontierOverlay.setPersonal(true);
         if (modified != null) {
             frontierOverlay.setModified(modified);
@@ -597,34 +696,38 @@ public class ClientTerritoryOperationService {
         frontierOverlay.setCurrentPlayerAsOwner();
         frontierOverlay.recreateBannerRenderer();
         personalManager.addFrontier(frontierOverlay);
-        refreshCollectionRuntime();
-        persistLocalPersonalData();
+        collectionRuntime.onFrontierAdded(frontierOverlay);
+        markLocalPersonalDataDirty();
         frontierEvents.postUpdated(frontierOverlay, -1);
-        frontierOverlay.updateOverlay();
+        frontierOverlay.rebuildOverlayNow();
     }
 
     public void applyCollectionCreated(CollectionData collection) {
-        collectionRuntime.addOrUpdateCollection(collection);
+        collectionRuntime.onCollectionUpserted(collection);
+        if (mc.player == null || !collection.getOwner().equals(new SettingsUser(mc.player))) {
+            collectionIdsWithPendingCreatedMembershipSync.add(collection.getId());
+        }
         if (collection.getPersonal()) {
-            persistLocalPersonalCollections();
+            markLocalPersonalDataDirty();
         }
         collectionEvents.postCreated(collection);
     }
 
     public void applyCollectionUpdated(CollectionData collection) {
-        collectionRuntime.addOrUpdateCollection(collection);
+        collectionRuntime.onCollectionUpserted(collection);
+        collectionIdsWithPendingCreatedMembershipSync.remove(collection.getId());
         if (collection.getPersonal()) {
-            persistLocalPersonalCollections();
+            markLocalPersonalDataDirty();
         }
         collectionEvents.postUpdated(collection);
     }
 
     public void applyCollectionDeleted(UUID collectionId) {
         CollectionData existing = collectionRuntime.getCollection(collectionId);
-        collectionRuntime.deleteCollection(collectionId);
-        refreshCollectionRuntime();
+        collectionRuntime.onCollectionDeleted(collectionId);
+        collectionIdsWithPendingCreatedMembershipSync.remove(collectionId);
         if (existing != null && existing.getPersonal()) {
-            persistLocalPersonalCollections();
+            markLocalPersonalDataDirty();
         }
         collectionEvents.postDeleted(collectionId);
     }
@@ -633,22 +736,12 @@ public class ClientTerritoryOperationService {
         frontierEvents.postUpdated(frontierOverlay, -1);
     }
 
-    private void persistLocalPersonalData() {
+    private void markLocalPersonalDataDirty() {
         if (mc.isLocalServer() || mc.player == null) {
             return;
         }
 
-        SettingsUser currentPlayer = new SettingsUser(mc.player);
-        localPersonalStore.saveOwnedFrontierMirror(getPersistablePersonalFrontiers(), currentPlayer);
-        localPersonalCollectionStore.saveOwnedCollectionMirror(getPersistentPersonalCollections(), currentPlayer);
-    }
-
-    private void persistLocalPersonalCollections() {
-        if (mc.isLocalServer() || mc.player == null) {
-            return;
-        }
-
-        localPersonalCollectionStore.saveOwnedCollectionMirror(getPersistentPersonalCollections(), new SettingsUser(mc.player));
+        runtime.markDirty();
     }
 
     private void createLocalCollection(CollectionData collection) {
@@ -657,9 +750,9 @@ public class ClientTerritoryOperationService {
         createdCollection.setOwner(new SettingsUser(mc.player));
         createdCollection.setCreated(now);
         createdCollection.setModified(now);
-        collectionRuntime.addOrUpdateCollection(createdCollection);
+        collectionRuntime.onCollectionUpserted(createdCollection);
         if (createdCollection.isPersistent()) {
-            persistLocalPersonalCollections();
+            markLocalPersonalDataDirty();
         }
         collectionEvents.postCreated(createdCollection);
     }
@@ -668,9 +761,9 @@ public class ClientTerritoryOperationService {
         CollectionData updatedCollection = new CollectionData(collection);
         updatedCollection.setOwner(new SettingsUser(mc.player));
         updatedCollection.setModified(new Date());
-        collectionRuntime.addOrUpdateCollection(updatedCollection);
+        collectionRuntime.onCollectionUpserted(updatedCollection);
         if (updatedCollection.isPersistent()) {
-            persistLocalPersonalCollections();
+            markLocalPersonalDataDirty();
         }
         collectionEvents.postUpdated(updatedCollection);
     }
@@ -678,13 +771,15 @@ public class ClientTerritoryOperationService {
     private void deleteLocalCollection(CollectionData collection) {
         List<FrontierOverlay> affectedFrontiers = new ArrayList<>(collectionRuntime.getFrontiersInCollection(collection.getId()));
         for (FrontierOverlay frontier : affectedFrontiers) {
+            ClientCollectionRuntime.FrontierIndexState previousState = collectionRuntime.snapshotFrontier(frontier);
             frontier.setCollectionId(null);
+            getManager(frontier.getPersonal()).refreshFrontierDerivedIndexes(frontier);
+            collectionRuntime.onFrontierUpdated(previousState, frontier);
         }
 
-        collectionRuntime.deleteCollection(collection.getId());
-        refreshCollectionRuntime();
+        collectionRuntime.onCollectionDeleted(collection.getId());
         if (collection.isPersistent()) {
-            persistLocalPersonalData();
+            markLocalPersonalDataDirty();
         }
         for (FrontierOverlay frontier : affectedFrontiers) {
             frontierEvents.postUpdated(frontier, -1);
@@ -692,34 +787,39 @@ public class ClientTerritoryOperationService {
         collectionEvents.postDeleted(collection.getId());
     }
 
-    private void persistLocalPersonalDataIfPersistent(FrontierData frontier) {
+    private void markLocalPersonalDataDirtyIfPersistent(FrontierData frontier) {
         if (frontier.isPersistent()) {
-            persistLocalPersonalData();
+            markLocalPersonalDataDirty();
         }
     }
 
-    private Collection<FrontierOverlay> getAllPersonalFrontiers() {
-        return personalManager.getAllFrontiers().values().stream()
-                .flatMap(List::stream)
-                .toList();
+    private void postAffectedCollectionsUpdated(@Nullable UUID collectionId) {
+        if (collectionId == null) {
+            return;
+        }
+
+        if (collectionIdsWithPendingCreatedMembershipSync.remove(collectionId)) {
+            return;
+        }
+
+        CollectionData collection = collectionRuntime.getCollection(collectionId);
+        if (collection != null) {
+            collectionEvents.postUpdated(collection);
+        }
     }
 
-    private Collection<FrontierData> getPersistablePersonalFrontiers() {
-        return getAllPersonalFrontiers().stream()
-                .map(frontier -> sanitizePersistentPersonalFrontierForStorage(new FrontierData(frontier)))
-                .toList();
-    }
+    private void postAffectedCollectionsUpdated(@Nullable UUID previousCollectionId, @Nullable UUID currentCollectionId) {
+        if (previousCollectionId != null && previousCollectionId.equals(currentCollectionId)) {
+            postAffectedCollectionsUpdated(previousCollectionId);
+            return;
+        }
 
-    private Collection<CollectionData> getPersistentPersonalCollections() {
-        return collectionRuntime.getCollections(CollectionScope.PERSONAL_PERSISTENT);
+        postAffectedCollectionsUpdated(previousCollectionId);
+        postAffectedCollectionsUpdated(currentCollectionId);
     }
 
     private FrontiersOverlayManager getManager(boolean personal) {
         return personal ? personalManager : globalManager;
-    }
-
-    private void refreshCollectionRuntime() {
-        collectionRuntime.refreshFromFrontiers(globalManager, personalManager);
     }
 
     private CollectionData createCollectionData(boolean personal, String pluginModId, CollectionCreateRequest request) {
@@ -837,25 +937,6 @@ public class ClientTerritoryOperationService {
                 change.getCollectionIdChange().getCollectionId());
     }
 
-    private FrontierData sanitizePersistentPersonalFrontierForStorage(FrontierData frontier) {
-        if (!frontier.isPersistent()) {
-            return frontier;
-        }
-
-        UUID collectionId = frontier.getCollectionId();
-        if (collectionId == null) {
-            return frontier;
-        }
-
-        CollectionData collection = collectionRuntime.getCollection(collectionId);
-        if (collection == null || !collection.isPersistent()
-                || !isValidLocalCollectionAssignment(frontier.getPersonal(), frontier.getLifetime(), frontier.getOwner(), collectionId)) {
-            frontier.setCollectionId(null);
-        }
-
-        return frontier;
-    }
-
     private FrontierData resolveCopiedFrontier(FrontierData receivedFrontier, @Nullable CollectionData receivedCollection) {
         FrontierData resolvedFrontier = new FrontierData(receivedFrontier);
         CollectionData resolvedCollection = resolveCopiedCollection(receivedCollection);
@@ -874,7 +955,7 @@ public class ClientTerritoryOperationService {
 
         CollectionData existing = collectionRuntime.getPersonalCollectionCopiedFrom(receivedCollection.getCopiedFromId());
         if (existing == null) {
-            collectionRuntime.addOrUpdateCollection(receivedCollection);
+            collectionRuntime.onCollectionUpserted(receivedCollection);
             return receivedCollection;
         }
 
@@ -882,7 +963,7 @@ public class ClientTerritoryOperationService {
         updatedCollection.setId(existing.getId());
         updatedCollection.setOwner(existing.getOwner());
         updatedCollection.setPersonal(true);
-        collectionRuntime.addOrUpdateCollection(updatedCollection);
+        collectionRuntime.onCollectionUpserted(updatedCollection);
         return updatedCollection;
     }
 

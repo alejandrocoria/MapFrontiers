@@ -3,7 +3,6 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
 import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationResult;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -16,51 +15,40 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class PacketUpdateFrontier {
-    public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_update_frontier");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketUpdateFrontier> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketUpdateFrontier::encode, PacketUpdateFrontier::new);
+public class PacketRequestFrontierResync {
+    public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_request_frontier_resync");
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketRequestFrontierResync> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketRequestFrontierResync::encode, PacketRequestFrontierResync::new);
 
     private UUID frontierId = new UUID(0, 0);
-    private FrontierChange change = new FrontierChange();
-    private long expectedSyncHash;
 
-    public PacketUpdateFrontier(UUID frontierId, FrontierChange change, long expectedSyncHash) {
+    public PacketRequestFrontierResync(UUID frontierId) {
         this.frontierId = frontierId;
-        this.change = change;
-        this.expectedSyncHash = expectedSyncHash;
     }
 
     public static CustomPacketPayload.Type<CustomPacketPayload> type() {
         return new CustomPacketPayload.Type<>(CHANNEL);
     }
 
-    public PacketUpdateFrontier(FriendlyByteBuf buf) {
+    public PacketRequestFrontierResync(FriendlyByteBuf buf) {
         if (buf.readableBytes() > 1) {
-            this.frontierId = buf.readUUID();
-            this.change = new FrontierChange(buf);
-            this.expectedSyncHash = buf.readLong();
+            frontierId = buf.readUUID();
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
         buf.writeUUID(frontierId);
-        change.toBytes(buf);
-        buf.writeLong(expectedSyncHash);
     }
 
-    public static void handle(PacketContext<PacketUpdateFrontier> ctx) {
+    public static void handle(PacketContext<PacketRequestFrontierResync> ctx) {
         if (Side.SERVER.equals(ctx.side())) {
-            PacketUpdateFrontier message = ctx.message();
+            PacketRequestFrontierResync message = ctx.message();
             ServerPlayer player = ctx.sender();
-            if (player == null) {
-                return;
-            }
-            if (MapFrontiers.getServerRuntime() == null) {
+            if (player == null || MapFrontiers.getServerRuntime() == null) {
                 return;
             }
 
             ServerTerritoryOperationResult result = MapFrontiers.getServerRuntime().getOperationService()
-                    .updateFrontier(player, message.frontierId, message.change, message.expectedSyncHash);
+                    .requestFrontierResync(player, message.frontierId);
             result.dispatchNetworkActions();
         }
     }

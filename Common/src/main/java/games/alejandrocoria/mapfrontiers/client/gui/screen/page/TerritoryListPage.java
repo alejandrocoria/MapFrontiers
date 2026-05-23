@@ -481,7 +481,9 @@ public class TerritoryListPage extends PageScreen {
 
     private void onFrontierVisibilityPressed(FrontierOverlay frontier) {
         frontier.toggleVisibility(FrontierVisibility.Frontier);
-        MapFrontiersClient.getOperationService().updateFrontier(frontier);
+        FrontierChange change = new FrontierChange();
+        change.setVisibility(frontier.getVisibilityData());
+        MapFrontiersClient.getOperationService().updateFrontier(frontier, change);
     }
 
     private void onFrontierDeletePressed(FrontierOverlay frontier) {

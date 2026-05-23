@@ -14,7 +14,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -66,7 +65,11 @@ public class ServerTerritoryRuntime {
 
     public void onServerTick() {
         shareService.tickPendingInvitations();
-        territoriesManager.flushPendingTerritoriesUpdates();
+        territoriesManager.tickPersistence();
+    }
+
+    public void onServerStopping() {
+        territoriesManager.flushTerritoriesOnShutdown();
     }
 
     public PacketSettingsProfile createSettingsProfilePacket(ServerPlayer player) {
@@ -78,14 +81,16 @@ public class ServerTerritoryRuntime {
         SettingsUser playerUser = new SettingsUser(player);
         Set<UUID> includedPersonalCollectionIds = new HashSet<>();
 
-        for (ArrayList<FrontierData> frontiers : territoriesManager.getAllGlobalFrontiers().values()) {
-            packetTerritoriesSnapshot.addGlobalFrontiers(frontiers);
+        for (FrontierData frontier : territoriesManager.iterateGlobalFrontiers()) {
+            packetTerritoriesSnapshot.addGlobalFrontier(frontier);
         }
-        packetTerritoriesSnapshot.addGlobalCollections(territoriesManager.getAllGlobalCollections().stream()
-                .filter(CollectionData::isPersistent)
-                .toList());
+        for (CollectionData collection : territoriesManager.iterateGlobalCollections()) {
+            if (collection.isPersistent()) {
+                packetTerritoriesSnapshot.addGlobalCollection(collection);
+            }
+        }
 
-        for (CollectionData collection : territoriesManager.getAllPersonalCollections(playerUser)) {
+        for (CollectionData collection : territoriesManager.iteratePersonalCollections(playerUser)) {
             if (!collection.isPersistent()) {
                 continue;
             }
@@ -94,17 +99,15 @@ public class ServerTerritoryRuntime {
             }
         }
 
-        for (ArrayList<FrontierData> frontiers : territoriesManager.getAllPersonalFrontiers(playerUser).values()) {
-            packetTerritoriesSnapshot.addPersonalFrontiers(frontiers);
-            for (FrontierData frontier : frontiers) {
-                if (!frontier.hasCollection()) {
-                    continue;
-                }
+        for (FrontierData frontier : territoriesManager.iteratePersonalFrontiers(playerUser)) {
+            packetTerritoriesSnapshot.addPersonalFrontier(frontier);
+            if (!frontier.hasCollection()) {
+                continue;
+            }
 
-                CollectionData collection = territoriesManager.getCollectionFromID(frontier.getCollectionId());
-                if (collection != null && collection.isPersistent() && includedPersonalCollectionIds.add(collection.getId())) {
-                    packetTerritoriesSnapshot.addPersonalCollection(collection);
-                }
+            CollectionData collection = territoriesManager.getCollectionFromID(frontier.getCollectionId());
+            if (collection != null && collection.isPersistent() && includedPersonalCollectionIds.add(collection.getId())) {
+                packetTerritoriesSnapshot.addPersonalCollection(collection);
             }
         }
 
@@ -115,6 +118,5 @@ public class ServerTerritoryRuntime {
         serverApi.close();
         frontierEvents.close();
         collectionEvents.close();
-        territoriesManager.close();
     }
 }

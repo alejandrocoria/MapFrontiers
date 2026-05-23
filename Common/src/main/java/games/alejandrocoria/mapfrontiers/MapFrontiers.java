@@ -36,6 +36,7 @@ public class MapFrontiers {
 
         ServerGlobalEvents.subscribeServerStoppingEvent(MapFrontiers.class, server -> {
             if (serverRuntime != null) {
+                serverRuntime.onServerStopping();
                 serverRuntime.close();
             }
             MapFrontiersAPIBootstrap.clearServerAPI();

@@ -5,7 +5,6 @@ import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -27,29 +26,16 @@ public class PacketFrontierUpdated {
     private ResourceKey<Level> dimension = Level.OVERWORLD;
     private boolean personal;
     private FrontierChange change = new FrontierChange();
+    private long authoritativeSyncHash;
     private int playerID = -1;
 
-    public PacketFrontierUpdated(UUID frontierId, ResourceKey<Level> dimension, boolean personal, FrontierChange change) {
-        this(frontierId, dimension, personal, change, -1);
-    }
-
-    public PacketFrontierUpdated(UUID frontierId, ResourceKey<Level> dimension, boolean personal, FrontierChange change, int playerID) {
+    public PacketFrontierUpdated(UUID frontierId, ResourceKey<Level> dimension, boolean personal, FrontierChange change, long authoritativeSyncHash,
+                                 int playerID) {
         this.frontierId = frontierId;
         this.dimension = dimension;
         this.personal = personal;
         this.change = change;
-        this.playerID = playerID;
-    }
-
-    public PacketFrontierUpdated(FrontierData frontier) {
-        this(frontier, -1);
-    }
-
-    public PacketFrontierUpdated(FrontierData frontier, int playerID) {
-        frontierId = frontier.getId();
-        dimension = frontier.getDimension();
-        personal = frontier.getPersonal();
-        change = FrontierChange.fromFrontierData(frontier, true);
+        this.authoritativeSyncHash = authoritativeSyncHash;
         this.playerID = playerID;
     }
 
@@ -63,6 +49,7 @@ public class PacketFrontierUpdated {
             this.dimension = ResourceKey.create(Registries.DIMENSION, buf.readIdentifier());
             this.personal = buf.readBoolean();
             this.change = new FrontierChange(buf);
+            this.authoritativeSyncHash = buf.readLong();
             this.playerID = buf.readInt();
         }
     }
@@ -72,6 +59,7 @@ public class PacketFrontierUpdated {
         buf.writeIdentifier(dimension.identifier());
         buf.writeBoolean(personal);
         change.toBytes(buf);
+        buf.writeLong(authoritativeSyncHash);
         buf.writeInt(playerID);
     }
 
@@ -82,7 +70,7 @@ public class PacketFrontierUpdated {
             }
             PacketFrontierUpdated message = ctx.message();
             MapFrontiersClient.getOperationService().applyFrontierUpdated(message.dimension, message.frontierId, message.personal, message.change,
-                    message.playerID);
+                    message.authoritativeSyncHash, message.playerID);
         }
     }
 }

@@ -1,3 +1,6 @@
+**Beta 5:**
+* Changed: Significant performance optimizations were made to the server, client, and network.
+
 **Beta 4:**
 * Added: Frontier collections, including grouped sections and per-collection actions in the frontier list.
 * Added: HUD now supports a fourth slot and includes Collection by default (Name, Collection, Owner, Banner).
