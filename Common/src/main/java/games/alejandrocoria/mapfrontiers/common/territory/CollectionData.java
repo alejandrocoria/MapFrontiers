@@ -13,12 +13,17 @@ import net.minecraft.network.FriendlyByteBuf;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class CollectionData {
     public static final int MAX_NAME_CHARACTERS = 48;
+    public static final int COLLECTION_VIEW_DISABLED_ZOOM = 0;
+    private static final List<Integer> COLLECTION_VIEW_ZOOM_LEVELS = List.of(
+            COLLECTION_VIEW_DISABLED_ZOOM, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384
+    );
 
     protected UUID id;
     protected boolean personal;
@@ -26,6 +31,7 @@ public class CollectionData {
     protected SettingsUser owner = new SettingsUser();
     protected String name = "";
     protected int color = ColorConstants.WHITE;
+    protected int collectionViewZoom = COLLECTION_VIEW_DISABLED_ZOOM;
     protected @Nullable String sourcePluginId;
     protected @Nullable CopiedFromInfo copiedFrom;
     protected @Nullable Date created;
@@ -42,6 +48,7 @@ public class CollectionData {
         owner = other.owner;
         name = other.name;
         color = other.color;
+        collectionViewZoom = normalizeCollectionViewZoom(other.collectionViewZoom);
         sourcePluginId = other.sourcePluginId;
         copiedFrom = other.copiedFrom == null ? null : new CopiedFromInfo(other.copiedFrom);
         created = other.created;
@@ -61,6 +68,7 @@ public class CollectionData {
         owner = other.owner;
         name = other.name;
         color = other.color;
+        collectionViewZoom = normalizeCollectionViewZoom(other.collectionViewZoom);
         sourcePluginId = other.sourcePluginId;
         copiedFrom = other.copiedFrom == null ? null : new CopiedFromInfo(other.copiedFrom);
         created = other.created;
@@ -82,6 +90,7 @@ public class CollectionData {
         owner.readFromNBT(nbt.getCompoundOrEmpty("owner"));
         name = nbt.getStringOr("name", "");
         color = NbtReadHelper.requireInt(nbt, "color");
+        collectionViewZoom = normalizeCollectionViewZoom(nbt.getIntOr("collectionViewZoom", COLLECTION_VIEW_DISABLED_ZOOM));
         setSourcePluginId(nbt.getStringOr("sourcePluginId", null));
 
         if (nbt.contains("copiedFrom")) {
@@ -117,6 +126,7 @@ public class CollectionData {
 
         nbt.putString("name", name);
         nbt.putInt("color", color);
+        nbt.putInt("collectionViewZoom", collectionViewZoom);
         if (sourcePluginId != null) {
             nbt.putString("sourcePluginId", sourcePluginId);
         }
@@ -145,6 +155,7 @@ public class CollectionData {
         owner.fromBytes(buf);
         name = buf.readUtf(MAX_NAME_CHARACTERS);
         color = buf.readInt();
+        collectionViewZoom = normalizeCollectionViewZoom(buf.readInt());
         setSourcePluginId(buf.readBoolean() ? buf.readUtf() : null);
 
         if (buf.readBoolean()) {
@@ -176,6 +187,7 @@ public class CollectionData {
         owner.toBytes(buf);
         buf.writeUtf(name, MAX_NAME_CHARACTERS);
         buf.writeInt(color);
+        buf.writeInt(collectionViewZoom);
         if (sourcePluginId == null) {
             buf.writeBoolean(false);
         } else {
@@ -264,6 +276,18 @@ public class CollectionData {
         this.color = color;
     }
 
+    public int getCollectionViewZoom() {
+        return collectionViewZoom;
+    }
+
+    public void setCollectionViewZoom(int collectionViewZoom) {
+        this.collectionViewZoom = normalizeCollectionViewZoom(collectionViewZoom);
+    }
+
+    public static List<Integer> getCollectionViewZoomLevels() {
+        return COLLECTION_VIEW_ZOOM_LEVELS;
+    }
+
     public void setSourcePluginId(@Nullable String sourcePluginId) {
         this.sourcePluginId = SourcePluginIdHelper.normalize(sourcePluginId);
     }
@@ -329,6 +353,10 @@ public class CollectionData {
         if (!personal && lifetime == TerritoryLifetime.SESSION_ONLY) {
             throw new IllegalArgumentException("SESSION_ONLY collections must be personal");
         }
+    }
+
+    private static int normalizeCollectionViewZoom(int zoom) {
+        return COLLECTION_VIEW_ZOOM_LEVELS.contains(zoom) ? zoom : COLLECTION_VIEW_DISABLED_ZOOM;
     }
 
     private static TerritoryLifetime readLifetimeFromNbt(CompoundTag nbt) {

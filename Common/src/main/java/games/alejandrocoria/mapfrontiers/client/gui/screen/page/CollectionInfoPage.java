@@ -8,6 +8,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPaletteWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPicker;
 import games.alejandrocoria.mapfrontiers.client.gui.component.PluginSourceBadge;
+import games.alejandrocoria.mapfrontiers.client.gui.component.SimpleSlider;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
@@ -48,6 +49,7 @@ import java.util.function.IntUnaryOperator;
 
 @ParametersAreNonnullByDefault
 public class CollectionInfoPage extends PageScreen {
+    private static final String COLLECTION_VIEW_ZOOM_KEY = "mapfrontiers.collection_view_zoom";
     private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_collection_info");
     private static final Component NAME_LABEL = Component.translatable("mapfrontiers.name");
     private static final Component DONE_LABEL = Component.translatable("gui.done");
@@ -75,8 +77,10 @@ public class CollectionInfoPage extends PageScreen {
     private static final Tooltip REDO_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.redo.tooltip"));
     private static final Component PASTE_NAME_LABEL = Component.translatable("mapfrontiers.paste_name");
     private static final Component PASTE_COLOR_LABEL = Component.translatable("mapfrontiers.paste_color");
+    private static final Component PASTE_COLLECTION_VIEW_ZOOM_LABEL = Component.translatable("mapfrontiers.paste_collection_view_zoom");
     private static final Component ON_LABEL = Component.translatable("options.on");
     private static final Component OFF_LABEL = Component.translatable("options.off");
+    private static final Component DISABLED_LABEL = Component.translatable("mapfrontiers.disabled");
     private static final int SECTION_WIDTH = 146;
     private static final int NAME_SECTION_WIDTH = SECTION_WIDTH * 2 + LayoutConstants.SPACING_MEDIUM;
     private static final int DEFAULT_TEXTBOX_HEIGHT = 17;
@@ -98,6 +102,7 @@ public class CollectionInfoPage extends PageScreen {
     private TextBoxInt textRed;
     private TextBoxInt textGreen;
     private TextBoxInt textBlue;
+    private SimpleSlider sliderCollectionViewZoom;
     private ColorPicker colorPicker;
     private ColorPaletteWidget colorPalette;
     private SimpleButton buttonRandomColor;
@@ -108,10 +113,12 @@ public class CollectionInfoPage extends PageScreen {
     private IconButton buttonRedo;
     private OptionButton buttonPasteName;
     private OptionButton buttonPasteColor;
+    private OptionButton buttonPasteCollectionViewZoom;
     private SimpleButton buttonDelete;
     private SimpleButton buttonDone;
     private StringWidget labelPasteName;
     private StringWidget labelPasteColor;
+    private StringWidget labelPasteCollectionViewZoom;
     private StringWidget ownerLabel;
     private StringWidget typeLabel;
     private StringWidget frontiersCountLabel;
@@ -180,6 +187,11 @@ public class CollectionInfoPage extends PageScreen {
         textName.setValueChangedCallback(this::onNameChanged);
         textName.setLostFocusCallback(value -> addCurrentStateToUndo());
         overviewColumn.addChild(textName);
+
+        sliderCollectionViewZoom = new SimpleSlider(font, NAME_SECTION_WIDTH, COLLECTION_VIEW_ZOOM_KEY,
+                CollectionData.getCollectionViewZoomLevels(), collection.getCollectionViewZoom(),
+                this::onCollectionViewZoomChanged, CollectionInfoPage::formatCollectionViewZoomLabel);
+        overviewColumn.addChild(sliderCollectionViewZoom);
     }
 
     private void buildInfoSection(GridLayout mainLayout) {
@@ -247,8 +259,12 @@ public class CollectionInfoPage extends PageScreen {
         labelPasteColor = editColumn.addChild(new StringWidget(PASTE_COLOR_LABEL, font).setColor(ColorConstants.TEXT), 1, 0);
         buttonPasteColor = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_COLOR.get(), ClientConfig.PASTE_COLOR::set), 1, 1);
 
+        labelPasteCollectionViewZoom = editColumn.addChild(new StringWidget(PASTE_COLLECTION_VIEW_ZOOM_LABEL, font).setColor(ColorConstants.TEXT), 2, 0);
+        buttonPasteCollectionViewZoom = editColumn.addChild(
+                createBinaryOptionButton(ClientConfig.PASTE_COLLECTION_VIEW_ZOOM.get(), ClientConfig.PASTE_COLLECTION_VIEW_ZOOM::set), 2, 1);
+
         LinearLayout editButtons = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
-        editColumn.addChild(editButtons, 2, 0);
+        editColumn.addChild(editButtons, 3, 0);
 
         buttonCopy = editButtons.addChild(new IconButton(IconButton.Type.Copy, b -> onCopyPressed()));
         buttonCopy.setTooltip(COPY_TOOLTIP);
@@ -310,7 +326,10 @@ public class CollectionInfoPage extends PageScreen {
             return;
         }
 
-        boolean changed = applyEditableMetadata(clipboard, ClientConfig.PASTE_NAME.get(), ClientConfig.PASTE_COLOR.get());
+        boolean changed = applyEditableMetadata(clipboard,
+                ClientConfig.PASTE_NAME.get(),
+                ClientConfig.PASTE_COLOR.get(),
+                ClientConfig.PASTE_COLLECTION_VIEW_ZOOM.get());
         if (!changed) {
             return;
         }
@@ -346,6 +365,17 @@ public class CollectionInfoPage extends PageScreen {
         applyColorChange(ColorHelper.getRandomColor(), true);
     }
 
+    private void onCollectionViewZoomChanged(int zoom, boolean dragging) {
+        if (syncingWidgets || collection.getCollectionViewZoom() == zoom) {
+            return;
+        }
+
+        collection.setCollectionViewZoom(zoom);
+        if (!dragging) {
+            addCurrentStateToUndo();
+        }
+    }
+
     private void applyColorChange(int color, boolean trackUndo) {
         if (syncingWidgets) {
             return;
@@ -377,7 +407,7 @@ public class CollectionInfoPage extends PageScreen {
         }
     }
 
-    private boolean applyEditableMetadata(CollectionData source, boolean pasteName, boolean pasteColor) {
+    private boolean applyEditableMetadata(CollectionData source, boolean pasteName, boolean pasteColor, boolean pasteCollectionViewZoom) {
         boolean changed = false;
         syncingWidgets = true;
         try {
@@ -391,6 +421,12 @@ public class CollectionInfoPage extends PageScreen {
                 collection.setColor(source.getColor());
                 colorPicker.setColor(source.getColor());
                 syncColorWidgets(source.getColor());
+                changed = true;
+            }
+
+            if (pasteCollectionViewZoom && collection.getCollectionViewZoom() != source.getCollectionViewZoom()) {
+                collection.setCollectionViewZoom(source.getCollectionViewZoom());
+                sliderCollectionViewZoom.setValue(source.getCollectionViewZoom());
                 changed = true;
             }
         } finally {
@@ -454,6 +490,7 @@ public class CollectionInfoPage extends PageScreen {
         colorPicker.active = editable;
         colorPalette.active = editable;
         buttonRandomColor.active = editable;
+        sliderCollectionViewZoom.active = editable;
         buttonDelete.active = canDeleteCollection();
         updatePasteOptionsVisibility(editable);
         updateUndoRedoVisibility(editable);
@@ -466,6 +503,8 @@ public class CollectionInfoPage extends PageScreen {
                 picker.finishSelection();
             }
         }
+
+        sliderCollectionViewZoom.mouseReleased();
 
         return super.mouseReleased(event);
     }
@@ -506,6 +545,7 @@ public class CollectionInfoPage extends PageScreen {
             textName.setValue(collection.getName());
             colorPicker.setColor(collection.getColor());
             syncColorWidgets(collection.getColor());
+            sliderCollectionViewZoom.setValue(collection.getCollectionViewZoom());
         } finally {
             syncingWidgets = false;
         }
@@ -520,7 +560,7 @@ public class CollectionInfoPage extends PageScreen {
         }
 
         redoStack.push(undoStack.pop());
-        applyEditableMetadata(undoStack.peek(), true, true);
+        applyEditableMetadata(undoStack.peek(), true, true, true);
         refreshViewState();
         if (minecraft.getLastInputType().isKeyboard()) {
             setInitialFocus(undoStack.size() == 1 ? buttonRedo : buttonUndo);
@@ -533,7 +573,7 @@ public class CollectionInfoPage extends PageScreen {
         }
 
         CollectionData snapshot = redoStack.pop();
-        applyEditableMetadata(snapshot, true, true);
+        applyEditableMetadata(snapshot, true, true, true);
         undoStack.push(new CollectionData(snapshot));
         refreshViewState();
         if (minecraft.getLastInputType().isKeyboard()) {
@@ -566,6 +606,8 @@ public class CollectionInfoPage extends PageScreen {
         buttonPasteName.visible = optionsVisible;
         labelPasteColor.visible = optionsVisible;
         buttonPasteColor.visible = optionsVisible;
+        labelPasteCollectionViewZoom.visible = optionsVisible;
+        buttonPasteCollectionViewZoom.visible = optionsVisible;
     }
 
     private void updateUndoRedoVisibility(boolean editable) {
@@ -579,6 +621,7 @@ public class CollectionInfoPage extends PageScreen {
         CollectionData snapshot = new CollectionData(collection);
         snapshot.setName(collection.getName());
         snapshot.setColor(collection.getColor());
+        snapshot.setCollectionViewZoom(collection.getCollectionViewZoom());
         return snapshot;
     }
 
@@ -586,6 +629,7 @@ public class CollectionInfoPage extends PageScreen {
         CollectionData snapshot = new CollectionData();
         snapshot.setName(collection.getName());
         snapshot.setColor(collection.getColor());
+        snapshot.setCollectionViewZoom(collection.getCollectionViewZoom());
         return snapshot;
     }
 
@@ -594,7 +638,9 @@ public class CollectionInfoPage extends PageScreen {
     }
 
     private static boolean sameEditableMetadata(CollectionData first, CollectionData second) {
-        return Objects.equals(first.getName(), second.getName()) && first.getColor() == second.getColor();
+        return Objects.equals(first.getName(), second.getName())
+                && first.getColor() == second.getColor()
+                && first.getCollectionViewZoom() == second.getCollectionViewZoom();
     }
 
     private boolean canUpdateCollection() {
@@ -653,5 +699,13 @@ public class CollectionInfoPage extends PageScreen {
 
     private static String formatMeasurement(float value) {
         return String.format(Locale.ROOT, "%.2f", value);
+    }
+
+    private static Component formatCollectionViewZoomLabel(int zoom) {
+        if (zoom == CollectionData.COLLECTION_VIEW_DISABLED_ZOOM) {
+            return DISABLED_LABEL;
+        }
+
+        return Component.literal(Integer.toString(zoom));
     }
 }

@@ -9,6 +9,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class SimpleSlider extends AbstractSliderButton {
@@ -23,6 +24,8 @@ public class SimpleSlider extends AbstractSliderButton {
     private final int minValue;
     private final int maxValue;
     private final ValueChanged callback;
+    private final ValueTextFormatter valueTextFormatter;
+    private final List<Integer> discreteValues;
     private boolean dragging = false;
 
     private final String translationKey;
@@ -31,52 +34,113 @@ public class SimpleSlider extends AbstractSliderButton {
         void onChanged(int value, boolean dragging);
     }
 
+    public interface ValueTextFormatter {
+        Component format(int value);
+    }
+
     public SimpleSlider(Font font, int width, String translationKey, int minValue, int maxValue, int initialValue, ValueChanged callback) {
+        this(font, width, translationKey, minValue, maxValue, initialValue, callback, value -> Component.literal(String.valueOf(value)));
+    }
+
+    public SimpleSlider(Font font,
+                        int width,
+                        String translationKey,
+                        int minValue,
+                        int maxValue,
+                        int initialValue,
+                        ValueChanged callback,
+                        ValueTextFormatter valueTextFormatter) {
         super(0, 0, width, DEFAULT_HEIGHT, Component.literal(String.valueOf(initialValue)), normalize(initialValue, minValue, maxValue));
         this.font = font;
         this.minValue = minValue;
         this.maxValue = maxValue;
         this.callback = callback;
+        this.valueTextFormatter = valueTextFormatter;
+        this.discreteValues = List.of();
+
+        this.translationKey = translationKey;
+        updateMessage();
+    }
+
+    public SimpleSlider(Font font,
+                        int width,
+                        String translationKey,
+                        List<Integer> discreteValues,
+                        int initialValue,
+                        ValueChanged callback,
+                        ValueTextFormatter valueTextFormatter) {
+        super(0, 0, width, DEFAULT_HEIGHT, Component.literal(String.valueOf(initialValue)),
+                normalize(resolveDiscreteIndex(discreteValues, initialValue), 0, discreteValues.size() - 1));
+        this.font = font;
+        this.minValue = 0;
+        this.maxValue = discreteValues.size() - 1;
+        this.callback = callback;
+        this.valueTextFormatter = valueTextFormatter;
+        this.discreteValues = List.copyOf(discreteValues);
 
         this.translationKey = translationKey;
         updateMessage();
     }
 
     private static double normalize(int value, int min, int max) {
+        if (max <= min) {
+            return 0.0;
+        }
         return (value - min) / (double)(max - min);
     }
 
-    private int denormalize(double value) {
+    private static int resolveDiscreteIndex(List<Integer> discreteValues, int value) {
+        int index = discreteValues.indexOf(value);
+        return index >= 0 ? index : 0;
+    }
+
+    private boolean usesDiscreteValues() {
+        return !discreteValues.isEmpty();
+    }
+
+    private int denormalizeInternal(double value) {
         return (int) Math.round(minValue + value * (maxValue - minValue));
+    }
+
+    private int getResolvedValue() {
+        int internalValue = denormalizeInternal(value);
+        if (usesDiscreteValues()) {
+            return discreteValues.get(internalValue);
+        }
+        return internalValue;
     }
 
     @Override
     protected void updateMessage() {
-        setMessage(Component.translatable(translationKey, denormalize(value)));
+        setMessage(Component.translatable(translationKey, valueTextFormatter.format(getResolvedValue())));
     }
 
     @Override
     protected void applyValue() {
-        int val = denormalize(value);
-        callback.onChanged(val, dragging);
+        callback.onChanged(getResolvedValue(), dragging);
     }
 
     public void setValue(int value) {
-        this.value = normalize(value, minValue, maxValue);
+        int internalValue = usesDiscreteValues() ? resolveDiscreteIndex(discreteValues, value) : value;
+        this.value = normalize(internalValue, minValue, maxValue);
         updateMessage();
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
         if (visible && isHovered) {
-            int val = denormalize(value);
+            int val = denormalizeInternal(value);
             if (vDelta > 0) {
                 val = Math.min(val + 1, maxValue);
             } else {
                 val = Math.max(val - 1, minValue);
             }
 
-            setValue(val);
+            if (usesDiscreteValues()) {
+                setValue(discreteValues.get(val));
+            } else {
+                setValue(val);
+            }
             applyValue();
 
             return true;
