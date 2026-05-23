@@ -21,6 +21,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.HUDSettingsScreen;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.CollectionAppearanceDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationSettingsDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
