@@ -70,8 +70,6 @@ public class CollectionAppearanceDialog extends PanelDialog {
             previewWidget.configUpdated();
         });
 
-        addSectionSpacing(settingsLayout, row++);
-
         StringWidget labelBorderWidth = settingsLayout.addChild(new StringWidget(BORDER_WIDTH_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
         labelBorderWidth.setTooltip(BORDER_WIDTH_TOOLTIP);
         TextBoxInt textBorderWidth = settingsLayout.addChild(createIntConfigTextBox(ClientConfig.COLLECTION_BORDER_WIDTH), row++, 1);

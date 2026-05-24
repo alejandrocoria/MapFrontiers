@@ -80,7 +80,7 @@ public class CollectionInfoPage extends PageScreen {
     private static final Component PASTE_COLLECTION_VIEW_ZOOM_LABEL = Component.translatable("mapfrontiers.paste_collection_view_zoom");
     private static final Component ON_LABEL = Component.translatable("options.on");
     private static final Component OFF_LABEL = Component.translatable("options.off");
-    private static final Component DISABLED_LABEL = Component.translatable("mapfrontiers.disabled");
+    private static final Component NOT_VISIBLE_LABEL = Component.translatable("mapfrontiers.not_visible");
     private static final int SECTION_WIDTH = 146;
     private static final int NAME_SECTION_WIDTH = SECTION_WIDTH * 2 + LayoutConstants.SPACING_MEDIUM;
     private static final int DEFAULT_TEXTBOX_HEIGHT = 17;
@@ -703,7 +703,7 @@ public class CollectionInfoPage extends PageScreen {
 
     private static Component formatCollectionViewZoomLabel(int zoom) {
         if (!CollectionData.isCollectionViewEnabled(zoom)) {
-            return DISABLED_LABEL;
+            return NOT_VISIBLE_LABEL;
         }
 
         return Component.literal(Integer.toString(zoom));

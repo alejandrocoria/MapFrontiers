@@ -1860,7 +1860,7 @@ public class FrontierOverlay extends FrontierData {
                 .setStrokeWidth(borderWidth)
                 .setStrokeColor(baseColor)
                 .setStrokeOpacity(borderOpacity)
-                .setStrokePosition(ShapeProperties.StrokePosition.INSIDE)
+                .setStrokePosition(previewCollectionStyleEnabled ? ShapeProperties.StrokePosition.CENTER : ShapeProperties.StrokePosition.INSIDE)
                 .setFillColor(baseColor)
                 .setFillOpacity(fillOpacity);
     }
@@ -1872,7 +1872,7 @@ public class FrontierOverlay extends FrontierData {
                 .setStrokeWidth(ClientConfig.COLLECTION_BORDER_WIDTH.get())
                 .setStrokeColor(collectionColor)
                 .setStrokeOpacity(ClientConfig.COLLECTION_BORDER_OPACITY.get().floatValue())
-                .setStrokePosition(ShapeProperties.StrokePosition.INSIDE)
+                .setStrokePosition(ShapeProperties.StrokePosition.CENTER)
                 .setFillColor(collectionColor)
                 .setFillOpacity(ClientConfig.COLLECTION_FILL_OPACITY.get().floatValue());
     }

@@ -320,7 +320,7 @@ public final class ClientConfig {
     public static final BooleanConfigEntry PASTE_COLOR = register(boolEntry(true, "paste", "color")
             .comment("Paste the color when pasting info."));
     public static final BooleanConfigEntry PASTE_COLLECTION_VIEW_ZOOM = register(boolEntry(true, "paste", "collectionViewZoom")
-            .comment("Paste the collection view zoom when pasting collection info."));
+            .comment("Paste the zoom when pasting collection info."));
     public static final BooleanConfigEntry PASTE_BANNER = register(boolEntry(true, "paste", "banner")
             .comment("Paste the frontier banner when pasting info."));
     public static final BooleanConfigEntry PASTE_OPTIONS_VISIBLE = register(boolEntry(false, "paste", "optionsVisible")
