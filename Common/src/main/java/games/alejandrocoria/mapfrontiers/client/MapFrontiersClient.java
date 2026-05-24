@@ -377,6 +377,7 @@ public class MapFrontiersClient {
             territoryRuntime.getCollectionEvents().subscribeCreated(MapFrontiersClient.class, collection -> refreshCollectionPresentation(collection.getId()));
             territoryRuntime.getCollectionEvents().subscribeUpdated(MapFrontiersClient.class, collection -> refreshCollectionPresentation(collection.getId()));
             territoryRuntime.getCollectionEvents().subscribeDeleted(MapFrontiersClient.class, collectionId -> {
+                refreshCollectionPresentation(collectionId);
                 if (hud != null) {
                     hud.frontierChanged();
                 }
@@ -897,6 +898,8 @@ public class MapFrontiersClient {
     }
 
     private static void refreshCollectionPresentation(UUID collectionId) {
+        ClientTerritoryRuntime runtime = ensureTerritoryRuntime();
+
         FrontiersOverlayManager globalManager = getFrontiersOverlayManagerOrNull(false);
         if (globalManager != null) {
             globalManager.markCollectionPresentationDirty(collectionId);
@@ -905,6 +908,10 @@ public class MapFrontiersClient {
         FrontiersOverlayManager personalManager = getFrontiersOverlayManagerOrNull(true);
         if (personalManager != null) {
             personalManager.markCollectionPresentationDirty(collectionId);
+        }
+
+        if (runtime != null) {
+            runtime.getCollectionOverlayManager().markCollectionDirty(collectionId);
         }
 
         if (hud != null) {

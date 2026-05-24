@@ -177,6 +177,7 @@ public class ClientTerritorySyncService {
 
     private void replaceCollectionRuntimeFrontierIndexes() {
         collectionRuntime.replaceFrontierIndexes(globalManager, personalManager);
+        runtime.getCollectionOverlayManager().syncFromCurrentRuntime();
     }
 
     private void markOwnedPersonalDataDirty() {
