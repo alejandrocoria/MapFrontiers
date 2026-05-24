@@ -115,6 +115,12 @@ public class CollectionOverlay {
         refreshOverlay();
     }
 
+    void markGeometryDirty() {
+        geometryDirty = true;
+        labelsDirty = true;
+        invalidateOverlayRefresh();
+    }
+
     public void deleted() {
         hideMarkerOverlays(labelOverlays);
         labelOverlays.clear();

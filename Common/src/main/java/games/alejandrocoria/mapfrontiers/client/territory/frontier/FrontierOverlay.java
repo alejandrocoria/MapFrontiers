@@ -392,6 +392,9 @@ public class FrontierOverlay extends FrontierData {
         labelsDirty = true;
         highlightStructureDirty = true;
         invalidateOverlayRefresh();
+        if (jmAPI != null) {
+            MapFrontiersClient.notifyCollectionOverlayFrontierGeometryChanged(this);
+        }
     }
 
     private void invalidateFromDiscretization() {

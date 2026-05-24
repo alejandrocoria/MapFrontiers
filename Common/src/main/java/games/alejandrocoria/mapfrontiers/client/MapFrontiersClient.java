@@ -560,6 +560,19 @@ public class MapFrontiersClient {
         return runtime.getOperationService();
     }
 
+    public static void notifyCollectionOverlayFrontierGeometryChanged(FrontierOverlay frontier) {
+        if (frontier.getCollectionId() == null) {
+            return;
+        }
+
+        ClientTerritoryRuntime runtime = ensureTerritoryRuntime();
+        if (runtime == null) {
+            return;
+        }
+
+        runtime.getCollectionOverlayManager().markFrontierGeometryDirty(frontier, frontier.getCollectionId());
+    }
+
     public static ClientFrontierEvents getFrontierEvents() {
         ClientTerritoryRuntime runtime = requireTerritoryRuntime();
         return runtime.getFrontierEvents();

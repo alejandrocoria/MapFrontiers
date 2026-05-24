@@ -90,7 +90,12 @@ public class CollectionOverlayManager {
         ResourceKey<Level> dimension = frontier.getDimension();
 
         if (currentCollectionId != null) {
-            refreshCollectionOverlay(currentCollectionId, dimension);
+            CollectionOverlay currentOverlay = overlaysByKey.get(new CollectionOverlayKey(currentCollectionId, dimension));
+            if (currentOverlay != null) {
+                currentOverlay.markGeometryDirty();
+            } else {
+                refreshCollectionOverlay(currentCollectionId, dimension);
+            }
         }
 
         if (previousCollectionId != null && !previousCollectionId.equals(currentCollectionId)) {
