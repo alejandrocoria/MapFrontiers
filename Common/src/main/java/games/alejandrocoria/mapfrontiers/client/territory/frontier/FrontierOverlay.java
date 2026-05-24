@@ -279,12 +279,12 @@ public class FrontierOverlay extends FrontierData {
             return null;
         }
 
-        List<CollectionGeometryRegionSnapshot> regions = new ArrayList<>();
+        List<CollectionGeometryIslandSnapshot> islands = new ArrayList<>();
         for (PolygonRenderGeometry geometry : polygonRenderGeometries) {
-            regions.add(new CollectionGeometryRegionSnapshot(buildOverlayArea(geometry.polygon(), geometry.holes()), geometry.minZoom()));
+            islands.add(new CollectionGeometryIslandSnapshot(buildOverlayArea(geometry.polygon(), geometry.holes()), geometry.minZoom()));
         }
 
-        return regions.isEmpty() ? null : new CollectionGeometrySnapshot(regions);
+        return islands.isEmpty() ? null : new CollectionGeometrySnapshot(islands);
     }
 
     public void setPreviewLabelSizes(int textSize, int bannerSize) {
@@ -3217,26 +3217,26 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public static final class CollectionGeometrySnapshot {
-        private final List<CollectionGeometryRegionSnapshot> regions;
+        private final List<CollectionGeometryIslandSnapshot> islands;
 
-        public CollectionGeometrySnapshot(List<CollectionGeometryRegionSnapshot> regions) {
-            this.regions = List.copyOf(regions);
+        public CollectionGeometrySnapshot(List<CollectionGeometryIslandSnapshot> islands) {
+            this.islands = List.copyOf(islands);
         }
 
-        public List<CollectionGeometryRegionSnapshot> getRegions() {
-            return regions;
+        public List<CollectionGeometryIslandSnapshot> getIslands() {
+            return islands;
         }
 
         public boolean isEmpty() {
-            return regions.isEmpty();
+            return islands.isEmpty();
         }
     }
 
-    public static final class CollectionGeometryRegionSnapshot {
+    public static final class CollectionGeometryIslandSnapshot {
         private final Area effectiveArea;
         private final int minZoom;
 
-        public CollectionGeometryRegionSnapshot(Area effectiveArea, int minZoom) {
+        public CollectionGeometryIslandSnapshot(Area effectiveArea, int minZoom) {
             this.effectiveArea = new Area(effectiveArea);
             this.minZoom = minZoom;
         }

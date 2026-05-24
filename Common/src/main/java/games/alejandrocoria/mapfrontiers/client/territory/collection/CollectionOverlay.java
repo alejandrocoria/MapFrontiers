@@ -205,10 +205,10 @@ public class CollectionOverlay {
         CollectionLabelContentMetrics metrics = buildLabelContentMetrics(effectiveName);
         int collectionMaxZoom = collection.getCollectionViewZoom();
         for (CollectionVisibilityVariant variant : visibleVariants) {
-            for (CollectionGeometryRegion region : variant.getRegions()) {
-                CollectionLabelPlacementKey placementKey = new CollectionLabelPlacementKey(region, metrics.contentWidthPx(), metrics.contentHeightPx());
+            for (CollectionGeometryIsland island : variant.getIslands()) {
+                CollectionLabelPlacementKey placementKey = new CollectionLabelPlacementKey(island, metrics.contentWidthPx(), metrics.contentHeightPx());
                 FrontierLabelPlacementSolver.LabelPlacement placement = placementCache.computeIfAbsent(placementKey,
-                        ignored -> FrontierLabelPlacementSolver.solve(region.copyEffectiveArea(),
+                        ignored -> FrontierLabelPlacementSolver.solve(island.copyEffectiveArea(),
                                 metrics.contentWidthPx(),
                                 metrics.contentHeightPx(),
                                 LABEL_SOLVER_PRECISION));
@@ -216,17 +216,17 @@ public class CollectionOverlay {
                     continue;
                 }
 
-                addLabelOverlay(variant.getMapTypes().toArray(Context.MapType[]::new), metrics, region, placement, collectionMaxZoom);
+                addLabelOverlay(variant.getMapTypes().toArray(Context.MapType[]::new), metrics, island, placement, collectionMaxZoom);
             }
         }
         showMarkerOverlaysQuietly(labelOverlays);
     }
 
-    private void addLabelOverlay(Context.MapType[] mapTypes, CollectionLabelContentMetrics metrics, CollectionGeometryRegion region,
+    private void addLabelOverlay(Context.MapType[] mapTypes, CollectionLabelContentMetrics metrics, CollectionGeometryIsland island,
                                  FrontierLabelPlacementSolver.LabelPlacement placement,
                                  int collectionMaxZoom) {
         TextProperties textProperties = createBaseTextProperties();
-        int minZoom = Math.max(2, region.getMinZoom());
+        int minZoom = Math.max(2, island.getMinZoom());
         BlockPos anchor = BlockPos.containing(placement.centerX(), OVERLAY_Y, placement.centerZ());
         MarkerOverlay labelOverlay = new MarkerOverlay(MapFrontiers.MODID, anchor, transparentLabelMarker);
         labelOverlay.setActiveUIs(Context.UI.Fullscreen);
@@ -338,14 +338,14 @@ public class CollectionOverlay {
                 continue;
             }
 
-            List<FrontierOverlay.CollectionGeometryRegionSnapshot> visibleRegions = snapshot.getRegions().stream()
-                    .filter(region -> region.getMinZoom() <= collectionMaxZoom)
+            List<FrontierOverlay.CollectionGeometryIslandSnapshot> visibleIslands = snapshot.getIslands().stream()
+                    .filter(island -> island.getMinZoom() <= collectionMaxZoom)
                     .toList();
-            if (visibleRegions.isEmpty()) {
+            if (visibleIslands.isEmpty()) {
                 continue;
             }
 
-            visibleMembers.add(new VisibleMemberGeometry(frontier, visibleRegions));
+            visibleMembers.add(new VisibleMemberGeometry(frontier, visibleIslands));
         }
 
         return List.copyOf(visibleMembers);
@@ -353,26 +353,26 @@ public class CollectionOverlay {
 
     private @Nullable CollectionVisibilityVariant buildVisibleVariant(VisibleVariantBuilder builder) {
         Area unionArea = new Area();
-        List<CollectionSourceRegion> sourceRegions = new ArrayList<>();
+        List<CollectionSourceIsland> sourceIslands = new ArrayList<>();
 
         for (VisibleMemberGeometry memberGeometry : builder.visibleMemberGeometries()) {
-            for (FrontierOverlay.CollectionGeometryRegionSnapshot regionSnapshot : memberGeometry.regions()) {
-                Area regionArea = regionSnapshot.copyEffectiveArea();
-                if (regionArea.isEmpty()) {
+            for (FrontierOverlay.CollectionGeometryIslandSnapshot islandSnapshot : memberGeometry.islands()) {
+                Area islandArea = islandSnapshot.copyEffectiveArea();
+                if (islandArea.isEmpty()) {
                     continue;
                 }
 
-                unionArea.add(new Area(regionArea));
-                sourceRegions.add(new CollectionSourceRegion(regionArea, regionSnapshot.getMinZoom()));
+                unionArea.add(new Area(islandArea));
+                sourceIslands.add(new CollectionSourceIsland(islandArea, islandSnapshot.getMinZoom()));
             }
         }
 
-        if (unionArea.isEmpty() || sourceRegions.isEmpty()) {
+        if (unionArea.isEmpty() || sourceIslands.isEmpty()) {
             return null;
         }
 
-        List<CollectionGeometryRegion> regions = extractGeometryRegions(unionArea, sourceRegions);
-        return new CollectionVisibilityVariant(builder.mapTypes(), regions);
+        List<CollectionGeometryIsland> islands = extractGeometryIslands(unionArea, sourceIslands);
+        return new CollectionVisibilityVariant(builder.mapTypes(), islands);
     }
 
     private static VisibleVariantBuilder findVariantBuilder(List<VisibleVariantBuilder> builders, List<FrontierOverlay> visibleFrontiers) {
@@ -385,9 +385,9 @@ public class CollectionOverlay {
         return null;
     }
 
-    private static List<CollectionGeometryRegion> extractGeometryRegions(Area unionArea, List<CollectionSourceRegion> sourceRegions) {
+    private static List<CollectionGeometryIsland> extractGeometryIslands(Area unionArea, List<CollectionSourceIsland> sourceIslands) {
         List<Area> extractedAreas = extractRegionAreas(unionArea);
-        List<CollectionGeometryRegion> regions = new ArrayList<>();
+        List<CollectionGeometryIsland> islands = new ArrayList<>();
 
         for (Area extractedArea : extractedAreas) {
             if (extractedArea.isEmpty()) {
@@ -395,18 +395,18 @@ public class CollectionOverlay {
             }
 
             int minZoom = Integer.MAX_VALUE;
-            for (CollectionSourceRegion sourceRegion : sourceRegions) {
-                if (intersects(extractedArea, sourceRegion.effectiveArea())) {
-                    minZoom = Math.min(minZoom, sourceRegion.minZoom());
+            for (CollectionSourceIsland sourceIsland : sourceIslands) {
+                if (intersects(extractedArea, sourceIsland.effectiveArea())) {
+                    minZoom = Math.min(minZoom, sourceIsland.minZoom());
                 }
             }
 
             if (minZoom != Integer.MAX_VALUE) {
-                regions.add(new CollectionGeometryRegion(extractedArea, minZoom));
+                islands.add(new CollectionGeometryIsland(extractedArea, minZoom));
             }
         }
 
-        return List.copyOf(regions);
+        return List.copyOf(islands);
     }
 
     private static List<Area> extractRegionAreas(Area area) {
@@ -416,15 +416,15 @@ public class CollectionOverlay {
         }
 
         double outerSign = resolveOuterRingSign(rings);
-        List<Area> regionAreas = new ArrayList<>();
+        List<Area> islandAreas = new ArrayList<>();
 
         for (RingPath ring : rings) {
             if (!hasSameSign(ring.signedArea(), outerSign)) {
                 continue;
             }
 
-            Area regionArea = new Area(ring.path());
-            Rectangle2D outerBounds = regionArea.getBounds2D();
+            Area islandArea = new Area(ring.path());
+            Rectangle2D outerBounds = islandArea.getBounds2D();
             for (RingPath holeCandidate : rings) {
                 if (hasSameSign(holeCandidate.signedArea(), outerSign)) {
                     continue;
@@ -432,16 +432,16 @@ public class CollectionOverlay {
 
                 Rectangle2D holeBounds = holeCandidate.area().getBounds2D();
                 if (outerBounds.contains(holeBounds)) {
-                    regionArea.subtract(new Area(holeCandidate.path()));
+                    islandArea.subtract(new Area(holeCandidate.path()));
                 }
             }
 
-            if (!regionArea.isEmpty()) {
-                regionAreas.add(regionArea);
+            if (!islandArea.isEmpty()) {
+                islandAreas.add(islandArea);
             }
         }
 
-        return List.copyOf(regionAreas);
+        return List.copyOf(islandAreas);
     }
 
     private static List<RingPath> extractRingPaths(Area area) {
@@ -549,27 +549,27 @@ public class CollectionOverlay {
 
     private static final class CollectionVisibilityVariant {
         private final List<Context.MapType> mapTypes;
-        private final List<CollectionGeometryRegion> regions;
+        private final List<CollectionGeometryIsland> islands;
 
-        public CollectionVisibilityVariant(List<Context.MapType> mapTypes, List<CollectionGeometryRegion> regions) {
+        public CollectionVisibilityVariant(List<Context.MapType> mapTypes, List<CollectionGeometryIsland> islands) {
             this.mapTypes = List.copyOf(mapTypes);
-            this.regions = List.copyOf(regions);
+            this.islands = List.copyOf(islands);
         }
 
         public List<Context.MapType> getMapTypes() {
             return mapTypes;
         }
 
-        public List<CollectionGeometryRegion> getRegions() {
-            return regions;
+        public List<CollectionGeometryIsland> getIslands() {
+            return islands;
         }
     }
 
-    private static final class CollectionGeometryRegion {
+    private static final class CollectionGeometryIsland {
         private final Area effectiveArea;
         private final int minZoom;
 
-        public CollectionGeometryRegion(Area effectiveArea, int minZoom) {
+        public CollectionGeometryIsland(Area effectiveArea, int minZoom) {
             this.effectiveArea = new Area(effectiveArea);
             this.minZoom = minZoom;
         }
@@ -583,16 +583,16 @@ public class CollectionOverlay {
         }
     }
 
-    private record VisibleMemberGeometry(FrontierOverlay frontier, List<FrontierOverlay.CollectionGeometryRegionSnapshot> regions) {
+    private record VisibleMemberGeometry(FrontierOverlay frontier, List<FrontierOverlay.CollectionGeometryIslandSnapshot> islands) {
     }
 
-    private record CollectionSourceRegion(Area effectiveArea, int minZoom) {
+    private record CollectionSourceIsland(Area effectiveArea, int minZoom) {
     }
 
     private record RingPath(Path2D.Double path, Area area, double signedArea) {
     }
 
-    private record CollectionLabelPlacementKey(CollectionGeometryRegion region,
+    private record CollectionLabelPlacementKey(CollectionGeometryIsland island,
                                                int contentWidthPx,
                                                int contentHeightPx) {
     }
