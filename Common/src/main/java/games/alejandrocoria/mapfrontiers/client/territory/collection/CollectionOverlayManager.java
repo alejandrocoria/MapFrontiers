@@ -4,6 +4,7 @@ import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
+import journeymap.api.v2.client.IClientAPI;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 
@@ -17,11 +18,13 @@ import java.util.UUID;
 @ParametersAreNonnullByDefault
 public class CollectionOverlayManager {
     private final ClientCollectionRuntime collectionRuntime;
+    private final @Nullable IClientAPI journeyMapApi;
     private final LinkedHashMap<CollectionOverlayKey, CollectionOverlay> overlaysByKey = new LinkedHashMap<>();
     private final LinkedHashSet<CollectionOverlay> dirtyOverlays = new LinkedHashSet<>();
 
-    public CollectionOverlayManager(ClientCollectionRuntime collectionRuntime) {
+    public CollectionOverlayManager(ClientCollectionRuntime collectionRuntime, @Nullable IClientAPI journeyMapApi) {
         this.collectionRuntime = collectionRuntime;
+        this.journeyMapApi = journeyMapApi;
         ClientGlobalEvents.subscribeUpdatedConfigEvent(this, this::rebuildAllOverlaysNow);
     }
 
@@ -95,7 +98,7 @@ public class CollectionOverlayManager {
         }
     }
 
-    public void refreshCollectionOverlay(UUID collectionId, ResourceKey<Level> dimension) {
+    private void refreshCollectionOverlay(UUID collectionId, ResourceKey<Level> dimension) {
         CollectionOverlayKey key = new CollectionOverlayKey(collectionId, dimension);
         CollectionData collection = collectionRuntime.getCollection(collectionId);
         List<FrontierOverlay> eligibleMembers = getEligibleMembers(collectionId, dimension);
@@ -107,7 +110,7 @@ public class CollectionOverlayManager {
 
         CollectionOverlay overlay = overlaysByKey.get(key);
         if (overlay == null) {
-            overlay = new CollectionOverlay(key, collection, eligibleMembers);
+            overlay = new CollectionOverlay(key, journeyMapApi, collection, eligibleMembers);
             registerOverlay(overlay);
             overlay.rebuildOverlayNow();
             return;

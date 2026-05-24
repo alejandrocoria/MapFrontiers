@@ -16,8 +16,8 @@ import games.alejandrocoria.mapfrontiers.api.model.FrontierSharePermission;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientCollectionEvents;
-import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientCollectionRuntime;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionScope;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientFrontierEvents;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
@@ -683,6 +683,7 @@ public class ClientTerritoryOperationService {
         if (frontierOverlay == null) {
             return;
         }
+        UUID previousCollectionId = frontierOverlay.getCollectionId();
         collectionRuntime.onFrontierRemoved(frontierOverlay);
         frontierOverlay.setPersonal(false);
         if (modified != null) {
@@ -692,6 +693,7 @@ public class ClientTerritoryOperationService {
         frontierOverlay.recreateBannerRenderer();
         globalManager.addFrontier(frontierOverlay);
         collectionRuntime.onFrontierAdded(frontierOverlay);
+        notifyCollectionOverlayFrontierUpdated(previousCollectionId, frontierOverlay);
         markLocalPersonalDataDirty();
         frontierEvents.postUpdated(frontierOverlay, -1);
         frontierOverlay.rebuildOverlayNow();
@@ -702,6 +704,7 @@ public class ClientTerritoryOperationService {
         if (frontierOverlay == null) {
             return;
         }
+        UUID previousCollectionId = frontierOverlay.getCollectionId();
         collectionRuntime.onFrontierRemoved(frontierOverlay);
         frontierOverlay.setPersonal(true);
         if (modified != null) {
@@ -711,6 +714,7 @@ public class ClientTerritoryOperationService {
         frontierOverlay.recreateBannerRenderer();
         personalManager.addFrontier(frontierOverlay);
         collectionRuntime.onFrontierAdded(frontierOverlay);
+        notifyCollectionOverlayFrontierUpdated(previousCollectionId, frontierOverlay);
         markLocalPersonalDataDirty();
         frontierEvents.postUpdated(frontierOverlay, -1);
         frontierOverlay.rebuildOverlayNow();

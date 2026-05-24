@@ -231,7 +231,7 @@ public class FabricJourneyMapHelper implements IJourneyMapHelper {
         }
 
         @Override
-        public void setFrontiers(List<FrontierOverlay> frontierOverlays) {
+        public void setFrontiers(List<FrontierOverlay> frontierOverlays, List<MarkerOverlay> extraMarkerOverlays) {
             polygonDrawSteps.clear();
             overlayDrawSteps.clear();
 
@@ -245,6 +245,10 @@ public class FabricJourneyMapHelper implements IJourneyMapHelper {
                 for (MarkerOverlay label : frontierOverlay.getLabelOverlays()) {
                     overlayDrawSteps.add(new DrawMarkerStep(label));
                 }
+            }
+
+            for (MarkerOverlay marker : extraMarkerOverlays) {
+                overlayDrawSteps.add(new DrawMarkerStep(marker));
             }
         }
 

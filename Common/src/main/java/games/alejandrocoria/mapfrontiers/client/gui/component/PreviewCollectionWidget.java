@@ -1,7 +1,10 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionOverlay;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionOverlayKey;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
 import net.minecraft.client.Minecraft;
@@ -19,6 +22,7 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class PreviewCollectionWidget extends AbstractWidgetNoNarration {
@@ -28,6 +32,8 @@ public class PreviewCollectionWidget extends AbstractWidgetNoNarration {
 
     private final FrontierPreviewPanel previewPanel;
     private final List<FrontierOverlay> previewFrontiers = new ArrayList<>();
+    private final CollectionData previewCollectionData;
+    private final CollectionOverlay previewCollectionOverlay;
     private float scaleFactor = 1.f;
 
     public PreviewCollectionWidget() {
@@ -36,6 +42,9 @@ public class PreviewCollectionWidget extends AbstractWidgetNoNarration {
 
         SettingsUser owner = new SettingsUser();
         owner.username = "Player";
+        previewCollectionData = createPreviewCollection(owner);
+        previewCollectionOverlay = new CollectionOverlay(new CollectionOverlayKey(previewCollectionData.getId(), OVERWORLD), null,
+                previewCollectionData, List.of());
 
         previewFrontiers.add(createPreviewFrontier(owner,
                 new BlockPos(30, 70, 45),
@@ -61,6 +70,9 @@ public class PreviewCollectionWidget extends AbstractWidgetNoNarration {
             frontier.setPreviewCollectionStyle(PREVIEW_COLLECTION_COLOR);
         }
         previewPanel.recalculateAndSetFrontiers(previewFrontiers);
+        previewCollectionOverlay.refreshMembersAndCollection(previewCollectionData, previewFrontiers);
+        previewCollectionOverlay.rebuildOverlayNow();
+        previewPanel.setAdditionalMarkerOverlays(previewCollectionOverlay.getLabelOverlays());
     }
 
     public void setScaleFactor(float scaleFactor) {
@@ -104,5 +116,15 @@ public class PreviewCollectionWidget extends AbstractWidgetNoNarration {
         }
 
         return new FrontierOverlay(frontierData, null);
+    }
+
+    private static CollectionData createPreviewCollection(SettingsUser owner) {
+        CollectionData collection = new CollectionData();
+        collection.setId(UUID.randomUUID());
+        collection.setOwner(owner);
+        collection.setName(Component.translatable("mapfrontiers.preview_collection").getString());
+        collection.setColor(PREVIEW_COLLECTION_COLOR);
+        collection.setCollectionViewZoom(512);
+        return collection;
     }
 }

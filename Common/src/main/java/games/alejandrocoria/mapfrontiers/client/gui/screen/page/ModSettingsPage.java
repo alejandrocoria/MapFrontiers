@@ -24,7 +24,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.HUDSettingsScreen;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.CollectionAppearanceDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationSettingsDialog;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.CollectionAppearanceDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.FrontierAppearanceDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.PathStyleDialog;

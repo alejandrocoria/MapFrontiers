@@ -4,9 +4,9 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.api.MapFrontiersClientAPIImpl;
 import games.alejandrocoria.mapfrontiers.client.settings.ClientSettingsProfileEvents;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientCollectionEvents;
-import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientCollectionRuntime;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientLocalPersonalCollectionStore;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionUiStateStore;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientFrontierEvents;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientLocalPersonalFrontierStore;
@@ -53,7 +53,7 @@ public class ClientTerritoryRuntime {
         }
 
         if (collectionOverlayManager == null) {
-            collectionOverlayManager = new CollectionOverlayManager(collectionRuntime);
+            collectionOverlayManager = new CollectionOverlayManager(collectionRuntime, journeyMapApi);
         }
 
         if (localPersonalFrontierStore == null) {

@@ -107,6 +107,16 @@ public final class ClientConfig {
     public static final DoubleConfigEntry COLLECTION_BORDER_OPACITY = register(doubleEntry(1.0, 0.0, 1.0, "appearance", "collection", "border", "opacity")
             .comment("Transparency of collection borders in collection view. 0.0 is fully transparent and 1.0 is opaque.")
             .translation(translation("appearance", "collection", "border", "opacity")));
+    public static final IntConfigEntry COLLECTION_TEXT_SIZE = register(intEntry(2, 1, 5, "appearance", "collection", "text", "size")
+            .comment("Size of the collection text.")
+            .translation(translation("appearance", "collection", "text", "size")));
+    public static final DoubleConfigEntry COLLECTION_TEXT_OPACITY = register(doubleEntry(1.0, 0.0, 1.0, "appearance", "collection", "text", "opacity")
+            .comment("Transparency of the collection text. 0.0 is fully transparent and 1.0 is opaque.")
+            .translation(translation("appearance", "collection", "text", "opacity")));
+    public static final EnumConfigEntry<TextColor> COLLECTION_TEXT_COLOR = register(enumEntry(TextColor.class, TextColor.FrontierColor,
+                    "appearance", "collection", "text", "color")
+            .comment("Color of the collection text. Collection uses the collection color. Bright uses the same color at maximum brightness.")
+            .translation(translation("appearance", "collection", "text", "color")));
     public static final StringConfigEntry PATH_DEFAULT_STYLE_START = register(stringEntry(FrontierData.PathStyle.BIG_DOT.toString(), "path", "defaultStyle", "start")
             .comment("Marker identifier used by default for the start of new path frontiers."));
     public static final StringConfigEntry PATH_DEFAULT_STYLE_INNER = register(stringEntry(FrontierData.PathStyle.NONE.toString(), "path", "defaultStyle", "inner")

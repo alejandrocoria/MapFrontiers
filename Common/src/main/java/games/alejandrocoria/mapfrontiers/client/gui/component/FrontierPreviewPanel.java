@@ -5,6 +5,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import games.alejandrocoria.mapfrontiers.platform.services.IJourneyMapHelper;
+import journeymap.api.v2.client.display.MarkerOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -25,6 +26,7 @@ public class FrontierPreviewPanel {
 
     private final IJourneyMapHelper.ICustomPreviewRenderer customPreviewRenderer;
     private List<FrontierOverlay> frontiers = List.of();
+    private List<MarkerOverlay> extraMarkerOverlays = List.of();
 
     public FrontierPreviewPanel() {
         customPreviewRenderer = Services.JOURNEYMAP.createCustomPreviewRenderer();
@@ -39,7 +41,7 @@ public class FrontierPreviewPanel {
     }
 
     public void refreshRenderer() {
-        customPreviewRenderer.setFrontiers(frontiers);
+        customPreviewRenderer.setFrontiers(frontiers, extraMarkerOverlays);
     }
 
     public void drawPanelBackground(GuiGraphicsExtractor graphics, int x, int y, int width, int height, int sourceSize) {
@@ -57,6 +59,11 @@ public class FrontierPreviewPanel {
 
     private void setFrontiers(List<FrontierOverlay> frontiers) {
         this.frontiers = List.copyOf(frontiers);
-        customPreviewRenderer.setFrontiers(this.frontiers);
+        customPreviewRenderer.setFrontiers(this.frontiers, extraMarkerOverlays);
+    }
+
+    public void setAdditionalMarkerOverlays(List<MarkerOverlay> markerOverlays) {
+        extraMarkerOverlays = List.copyOf(markerOverlays);
+        customPreviewRenderer.setFrontiers(frontiers, extraMarkerOverlays);
     }
 }

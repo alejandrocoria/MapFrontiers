@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.platform.services;
 
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
+import journeymap.api.v2.client.display.MarkerOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -41,9 +42,13 @@ public interface IJourneyMapHelper {
     interface ICustomPreviewRenderer {
         /**
          * Receives frontiers whose overlays were already recalculated by the preview widget.
-         * Implementations should render the normal map overlays: polygons, path/incomplete markers, and labels.
+         * Implementations should render the normal map overlays plus any extra marker overlays supplied by the widget.
          */
-        void setFrontiers(List<FrontierOverlay> frontierOverlays);
+        default void setFrontiers(List<FrontierOverlay> frontierOverlays) {
+            setFrontiers(frontierOverlays, List.of());
+        }
+
+        void setFrontiers(List<FrontierOverlay> frontierOverlays, List<MarkerOverlay> extraMarkerOverlays);
 
         /**
          * Draws a JourneyMap-based preview. The size is expressed in map pixels; scaleFactor compensates GUI scaling.
