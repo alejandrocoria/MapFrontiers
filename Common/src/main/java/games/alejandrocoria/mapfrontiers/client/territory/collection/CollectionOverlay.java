@@ -205,8 +205,6 @@ public class CollectionOverlay {
         CollectionLabelContentMetrics metrics = buildLabelContentMetrics(effectiveName);
         int collectionMaxZoom = collection.getCollectionViewZoom();
         for (CollectionVisibilityVariant variant : visibleVariants) {
-            PlacedRegionCandidate bestCandidate = null;
-
             for (CollectionGeometryRegion region : variant.getRegions()) {
                 CollectionLabelPlacementKey placementKey = new CollectionLabelPlacementKey(region, metrics.contentWidthPx(), metrics.contentHeightPx());
                 FrontierLabelPlacementSolver.LabelPlacement placement = placementCache.computeIfAbsent(placementKey,
@@ -214,29 +212,22 @@ public class CollectionOverlay {
                                 metrics.contentWidthPx(),
                                 metrics.contentHeightPx(),
                                 LABEL_SOLVER_PRECISION));
-
-                if (bestCandidate == null
-                        || placement.availableWidthBlocks() > bestCandidate.placement().availableWidthBlocks()
-                        || placement.availableWidthBlocks() == bestCandidate.placement().availableWidthBlocks()
-                        && placement.availableHeightBlocks() > bestCandidate.placement().availableHeightBlocks()) {
-                    bestCandidate = new PlacedRegionCandidate(region, placement);
+                if (placement.availableWidthBlocks() <= 0.0 || placement.availableHeightBlocks() <= 0.0) {
+                    continue;
                 }
-            }
 
-            if (bestCandidate == null) {
-                continue;
+                addLabelOverlay(variant.getMapTypes().toArray(Context.MapType[]::new), metrics, region, placement, collectionMaxZoom);
             }
-
-            addLabelOverlay(variant.getMapTypes().toArray(Context.MapType[]::new), metrics, bestCandidate, collectionMaxZoom);
         }
         showMarkerOverlaysQuietly(labelOverlays);
     }
 
-    private void addLabelOverlay(Context.MapType[] mapTypes, CollectionLabelContentMetrics metrics, PlacedRegionCandidate candidate,
+    private void addLabelOverlay(Context.MapType[] mapTypes, CollectionLabelContentMetrics metrics, CollectionGeometryRegion region,
+                                 FrontierLabelPlacementSolver.LabelPlacement placement,
                                  int collectionMaxZoom) {
         TextProperties textProperties = createBaseTextProperties();
-        int minZoom = Math.max(2, candidate.region().getMinZoom());
-        BlockPos anchor = BlockPos.containing(candidate.placement().centerX(), OVERLAY_Y, candidate.placement().centerZ());
+        int minZoom = Math.max(2, region.getMinZoom());
+        BlockPos anchor = BlockPos.containing(placement.centerX(), OVERLAY_Y, placement.centerZ());
         MarkerOverlay labelOverlay = new MarkerOverlay(MapFrontiers.MODID, anchor, transparentLabelMarker);
         labelOverlay.setActiveUIs(Context.UI.Fullscreen);
         labelOverlay.setActiveMapTypes(mapTypes);
@@ -609,10 +600,6 @@ public class CollectionOverlay {
     private record CollectionLabelContentMetrics(String label,
                                                  int contentWidthPx,
                                                  int contentHeightPx) {
-    }
-
-    private record PlacedRegionCandidate(CollectionGeometryRegion region,
-                                         FrontierLabelPlacementSolver.LabelPlacement placement) {
     }
 
     private static final class VisibleVariantBuilder {
