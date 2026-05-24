@@ -172,6 +172,12 @@ public class ClientTerritoryRuntime {
         localPersistenceCoordinator.tickPersistence();
     }
 
+    public void processOverlayManagers() {
+        ensureInitialized();
+        globalFrontiersOverlayManager.processDirtyOverlays();
+        personalFrontiersOverlayManager.processDirtyOverlays();
+    }
+
     public void close() {
         FrontiersOverlayManager globalManager = globalFrontiersOverlayManager;
         FrontiersOverlayManager personalManager = personalFrontiersOverlayManager;

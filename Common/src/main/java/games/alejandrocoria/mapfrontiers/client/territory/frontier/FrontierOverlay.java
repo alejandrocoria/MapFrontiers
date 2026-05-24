@@ -265,6 +265,28 @@ public class FrontierOverlay extends FrontierData {
         return labelOverlays;
     }
 
+    public @Nullable CollectionGeometrySnapshot getCollectionGeometrySnapshot() {
+        if (frontierShape == FrontierShape.Path || frontierShape == FrontierShape.Vertex && getVertexCount() < 3) {
+            return null;
+        }
+
+        if (geometryCacheDirty) {
+            rebuildGeometryCache();
+            geometryCacheDirty = false;
+        }
+
+        if (polygonRenderGeometries.isEmpty()) {
+            return null;
+        }
+
+        List<CollectionGeometryRegionSnapshot> regions = new ArrayList<>();
+        for (PolygonRenderGeometry geometry : polygonRenderGeometries) {
+            regions.add(new CollectionGeometryRegionSnapshot(buildOverlayArea(geometry.polygon(), geometry.holes()), geometry.minZoom()));
+        }
+
+        return regions.isEmpty() ? null : new CollectionGeometrySnapshot(regions);
+    }
+
     public void setPreviewLabelSizes(int textSize, int bannerSize) {
         previewTextSize = Math.max(1, textSize);
         previewBannerSize = Math.max(1, bannerSize);
@@ -3188,6 +3210,40 @@ public class FrontierOverlay extends FrontierData {
 
         public int getRotation() {
             return rotation;
+        }
+    }
+
+    public static final class CollectionGeometrySnapshot {
+        private final List<CollectionGeometryRegionSnapshot> regions;
+
+        public CollectionGeometrySnapshot(List<CollectionGeometryRegionSnapshot> regions) {
+            this.regions = List.copyOf(regions);
+        }
+
+        public List<CollectionGeometryRegionSnapshot> getRegions() {
+            return regions;
+        }
+
+        public boolean isEmpty() {
+            return regions.isEmpty();
+        }
+    }
+
+    public static final class CollectionGeometryRegionSnapshot {
+        private final Area effectiveArea;
+        private final int minZoom;
+
+        public CollectionGeometryRegionSnapshot(Area effectiveArea, int minZoom) {
+            this.effectiveArea = new Area(effectiveArea);
+            this.minZoom = minZoom;
+        }
+
+        public Area copyEffectiveArea() {
+            return new Area(effectiveArea);
+        }
+
+        public int getMinZoom() {
+            return minZoom;
         }
     }
 }

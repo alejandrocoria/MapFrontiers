@@ -159,10 +159,7 @@ public class MapFrontiersClient {
     private static void updateOverlayManagers() {
         ClientTerritoryRuntime runtime = requireTerritoryRuntime();
         runtime.tickPersistence();
-        FrontiersOverlayManager frontiersOverlayManager = runtime.getGlobalFrontiersOverlayManager();
-        FrontiersOverlayManager personalFrontiersOverlayManager = runtime.getPersonalFrontiersOverlayManager();
-        frontiersOverlayManager.processDirtyOverlays();
-        personalFrontiersOverlayManager.processDirtyOverlays();
+        runtime.processOverlayManagers();
     }
 
     private static void tickHud() {

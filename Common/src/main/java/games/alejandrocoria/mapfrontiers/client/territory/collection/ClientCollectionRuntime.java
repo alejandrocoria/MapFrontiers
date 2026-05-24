@@ -6,6 +6,8 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
 import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -138,6 +140,22 @@ public class ClientCollectionRuntime {
     public List<FrontierOverlay> getFrontiersInCollection(UUID collectionId) {
         List<FrontierOverlay> frontiers = indexedFrontiersByCollectionId.get(collectionId);
         return frontiers == null ? List.of() : List.copyOf(frontiers);
+    }
+
+    public List<FrontierOverlay> getFrontiersInCollection(UUID collectionId, ResourceKey<Level> dimension) {
+        List<FrontierOverlay> frontiers = indexedFrontiersByCollectionId.get(collectionId);
+        if (frontiers == null) {
+            return List.of();
+        }
+
+        List<FrontierOverlay> filteredFrontiers = new ArrayList<>();
+        for (FrontierOverlay frontier : frontiers) {
+            if (frontier.getDimension().equals(dimension)) {
+                filteredFrontiers.add(frontier);
+            }
+        }
+
+        return List.copyOf(filteredFrontiers);
     }
 
     public List<FrontierOverlay> getFrontiersWithoutCollection(CollectionScope scope) {
