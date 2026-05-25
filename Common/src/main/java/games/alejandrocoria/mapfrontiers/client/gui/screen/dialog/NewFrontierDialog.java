@@ -16,6 +16,7 @@ import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverl
 import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
@@ -464,7 +465,7 @@ public class NewFrontierDialog extends PanelDialog {
         SettingsUser owner = new SettingsUser(minecraft.player);
         UUID frontierId = UUID.randomUUID();
         VisibilityData visibility = new VisibilityData(defaults.getVisibilityData());
-        FrontierData.BannerData banner = defaults.getbannerData() == null ? null : new FrontierData.BannerData(defaults.getbannerData());
+        BannerData banner = defaults.getBannerData() == null ? null : new BannerData(defaults.getBannerData());
         FrontierData.PathStyle pathStyle = ClientConfig.NEW_FRONTIER_SHAPE.get() == FrontierShape.Path
                 ? ClientConfig.getDefaultPathStyle()
                 : defaults.getPathStyle();

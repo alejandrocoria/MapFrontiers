@@ -35,6 +35,10 @@ public class CollectionAppearanceDialog extends PanelDialog {
     private static final Tooltip TEXT_OPACITY_TOOLTIP = ScreenHelper.tooltip(ClientConfig.COLLECTION_TEXT_OPACITY);
     private static final Component TEXT_COLOR_LABEL = ClientConfig.COLLECTION_TEXT_COLOR.translatedName();
     private static final Tooltip TEXT_COLOR_TOOLTIP = ScreenHelper.tooltip(ClientConfig.COLLECTION_TEXT_COLOR);
+    private static final Component BANNER_SIZE_LABEL = ClientConfig.COLLECTION_BANNER_SIZE.translatedName();
+    private static final Tooltip BANNER_SIZE_TOOLTIP = ScreenHelper.tooltip(ClientConfig.COLLECTION_BANNER_SIZE);
+    private static final Component BANNER_OPACITY_LABEL = ClientConfig.COLLECTION_BANNER_OPACITY.translatedName();
+    private static final Tooltip BANNER_OPACITY_TOOLTIP = ScreenHelper.tooltip(ClientConfig.COLLECTION_BANNER_OPACITY);
     private static final Component SAVE_LABEL = Component.translatable("mapfrontiers.save");
     private static final Component COLLECTION_COLOR_LABEL = Component.translatable("mapfrontiers.collection");
 
@@ -119,7 +123,25 @@ public class CollectionAppearanceDialog extends PanelDialog {
         buttonTextColor.addOption(ClientConfig.getTranslatedEnum(TextColor.White));
         buttonTextColor.setSelected(ClientConfig.COLLECTION_TEXT_COLOR.get().ordinal());
 
-        addSectionSpacing(settingsLayout, row);
+        addSectionSpacing(settingsLayout, row++);
+
+        StringWidget labelBannerSize = settingsLayout.addChild(new StringWidget(BANNER_SIZE_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        labelBannerSize.setTooltip(BANNER_SIZE_TOOLTIP);
+        TextBoxInt textBannerSize = settingsLayout.addChild(createIntConfigTextBox(ClientConfig.COLLECTION_BANNER_SIZE), row++, 1);
+        textBannerSize.setMaxLength(2);
+        textBannerSize.setValueChangedCallback(value -> {
+            ClientConfig.COLLECTION_BANNER_SIZE.set(value);
+            previewWidget.configUpdated();
+        });
+
+        StringWidget labelBannerOpacity = settingsLayout.addChild(new StringWidget(BANNER_OPACITY_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        labelBannerOpacity.setTooltip(BANNER_OPACITY_TOOLTIP);
+        TextBoxDouble textBannerOpacity = settingsLayout.addChild(createDoubleConfigTextBox(ClientConfig.COLLECTION_BANNER_OPACITY), row++, 1);
+        textBannerOpacity.setMaxLength(6);
+        textBannerOpacity.setValueChangedCallback(value -> {
+            ClientConfig.COLLECTION_BANNER_OPACITY.set(value);
+            previewWidget.configUpdated();
+        });
 
         previewWidget = columnsLayout.addChild(new PreviewCollectionWidget());
         previewWidget.configUpdated();
@@ -174,7 +196,9 @@ public class CollectionAppearanceDialog extends PanelDialog {
                                       double borderOpacity,
                                       int textSize,
                                       double textOpacity,
-                                      TextColor textColor) {
+                                      TextColor textColor,
+                                      int bannerSize,
+                                      double bannerOpacity) {
         private static AppearanceSnapshot capture() {
             return new AppearanceSnapshot(
                     ClientConfig.COLLECTION_FILL_OPACITY.get(),
@@ -182,7 +206,9 @@ public class CollectionAppearanceDialog extends PanelDialog {
                     ClientConfig.COLLECTION_BORDER_OPACITY.get(),
                     ClientConfig.COLLECTION_TEXT_SIZE.get(),
                     ClientConfig.COLLECTION_TEXT_OPACITY.get(),
-                    ClientConfig.COLLECTION_TEXT_COLOR.get()
+                    ClientConfig.COLLECTION_TEXT_COLOR.get(),
+                    ClientConfig.COLLECTION_BANNER_SIZE.get(),
+                    ClientConfig.COLLECTION_BANNER_OPACITY.get()
             );
         }
 
@@ -193,6 +219,8 @@ public class CollectionAppearanceDialog extends PanelDialog {
             ClientConfig.COLLECTION_TEXT_SIZE.set(textSize);
             ClientConfig.COLLECTION_TEXT_OPACITY.set(textOpacity);
             ClientConfig.COLLECTION_TEXT_COLOR.set(textColor);
+            ClientConfig.COLLECTION_BANNER_SIZE.set(bannerSize);
+            ClientConfig.COLLECTION_BANNER_OPACITY.set(bannerOpacity);
         }
     }
 }

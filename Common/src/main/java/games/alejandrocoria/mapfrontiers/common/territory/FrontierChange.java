@@ -44,7 +44,7 @@ public class FrontierChange {
             color = new ColorChange(other.color.color);
         }
         if (other.banner != null) {
-            banner = new BannerChange(other.banner.banner == null ? null : new FrontierData.BannerData(other.banner.banner));
+            banner = new BannerChange(other.banner.banner == null ? null : new BannerData(other.banner.banner), other.banner.inheritCollectionBanner);
         }
         if (other.shape != null) {
             shape = new ShapeChange(other.shape.vertices, other.shape.chunks, other.shape.points, other.shape.frontierShape);
@@ -74,12 +74,12 @@ public class FrontierChange {
         }
 
         if (buf.readBoolean()) {
-            FrontierData.BannerData bannerData = null;
+            BannerData bannerData = null;
             if (buf.readBoolean()) {
-                bannerData = new FrontierData.BannerData();
+                bannerData = new BannerData();
                 bannerData.fromBytes(buf);
             }
-            banner = new BannerChange(bannerData);
+            banner = new BannerChange(bannerData, buf.readBoolean());
         }
 
         if (buf.readBoolean()) {
@@ -198,14 +198,14 @@ public class FrontierChange {
         }
 
         if (mutation.clearBanner()) {
-            if (frontier.getbannerData() != null) {
-                change.setBanner(null);
+            if (frontier.getBannerData() != null) {
+                change.setBanner(null, frontier.getInheritCollectionBanner());
             }
         } else {
             mutation.banner().ifPresent(banner -> {
-                FrontierData.BannerData resolvedBanner = FrontierMutationApplier.toBanner(banner);
-                if (!Objects.equals(frontier.getbannerData(), resolvedBanner)) {
-                    change.setBanner(resolvedBanner);
+                BannerData resolvedBanner = FrontierMutationApplier.toBanner(banner);
+                if (!Objects.equals(frontier.getBannerData(), resolvedBanner)) {
+                    change.setBanner(resolvedBanner, frontier.getInheritCollectionBanner());
                 }
             });
         }
@@ -257,6 +257,7 @@ public class FrontierChange {
                 buf.writeBoolean(true);
                 banner.banner.toBytes(buf);
             }
+            buf.writeBoolean(banner.inheritCollectionBanner);
         }
 
         buf.writeBoolean(shape != null);
@@ -387,8 +388,8 @@ public class FrontierChange {
         this.color = new ColorChange(color);
     }
 
-    public void setBanner(@Nullable FrontierData.BannerData banner) {
-        this.banner = new BannerChange(banner == null ? null : new FrontierData.BannerData(banner));
+    public void setBanner(@Nullable BannerData banner, boolean inheritCollectionBanner) {
+        this.banner = new BannerChange(banner == null ? null : new BannerData(banner), inheritCollectionBanner);
     }
 
     public void setShape(List<BlockPos> vertices, Set<ChunkPos> chunks, List<BlockPos> points, FrontierShape frontierShape) {
@@ -450,14 +451,20 @@ public class FrontierChange {
     }
 
     public static class BannerChange {
-        private final @Nullable FrontierData.BannerData banner;
+        private final @Nullable BannerData banner;
+        private final boolean inheritCollectionBanner;
 
-        private BannerChange(@Nullable FrontierData.BannerData banner) {
+        private BannerChange(@Nullable BannerData banner, boolean inheritCollectionBanner) {
             this.banner = banner;
+            this.inheritCollectionBanner = inheritCollectionBanner;
         }
 
-        public @Nullable FrontierData.BannerData getBanner() {
-            return banner == null ? null : new FrontierData.BannerData(banner);
+        public @Nullable BannerData getBanner() {
+            return banner == null ? null : new BannerData(banner);
+        }
+
+        public boolean inheritCollectionBanner() {
+            return inheritCollectionBanner;
         }
     }
 

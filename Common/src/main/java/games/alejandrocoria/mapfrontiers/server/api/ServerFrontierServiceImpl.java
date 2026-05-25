@@ -11,6 +11,7 @@ import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
@@ -120,9 +121,9 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
         VisibilityData visibility = request.visibility()
                 .map(ApiConverters::toVisibility)
                 .orElseGet(defaults::getVisibilityData);
-        FrontierData.BannerData banner = request.banner()
+        BannerData banner = request.banner()
                 .map(ApiConverters::toBanner)
-                .orElseGet(defaults::getbannerData);
+                .orElseGet(defaults::getBannerData);
         boolean pathShape = switch (request.shape().type()) {
             case PATH -> true;
             default -> false;

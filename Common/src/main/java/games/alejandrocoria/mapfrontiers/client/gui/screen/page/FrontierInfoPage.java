@@ -20,6 +20,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDi
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteFrontierConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.PathStyleDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.VisibilityDialog;
+import games.alejandrocoria.mapfrontiers.client.territory.BannerDataHelper;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
@@ -72,6 +73,7 @@ public class FrontierInfoPage extends PageScreen {
     private static final Component ASSIGN_BANNER_LABEL = Component.translatable("mapfrontiers.assign_banner");
     private static final Component ASSIGN_BANNER_WARN_LABEL = ASSIGN_BANNER_LABEL.copy().append(Component.literal(ColorConstants.WARNING + " !"));
     private static final Component REMOVE_BANNER_LABEL = Component.translatable("mapfrontiers.remove_banner");
+    private static final Component COLLECTION_BANNER_LABEL = Component.translatable("mapfrontiers.collection_banner");
     private static final String BANNER_ROTATION_KEY = "mapfrontiers.banner_rotation";
     private static final Component NAME_LABEL = Component.translatable("mapfrontiers.name");
     private static final Component PERSONAL_LABEL = Component.translatable("mapfrontiers.personal_type");
@@ -168,7 +170,9 @@ public class FrontierInfoPage extends PageScreen {
     private SimpleButton buttonDelete;
     private SimpleButton buttonDone;
     private SimpleButton buttonBanner;
-    private SimpleSlider sliderBannerRotation;
+    private @Nullable SimpleSlider sliderBannerRotation;
+    private @Nullable OptionButton buttonCollectionBanner;
+    private @Nullable StringWidget labelCollectionBanner;
 
     private StringWidget modifiedLabel;
 
@@ -244,8 +248,29 @@ public class FrontierInfoPage extends PageScreen {
         buttonBanner = new SimpleButton(font, SECTION_WIDTH, ASSIGN_BANNER_LABEL, b -> onBannerButtonPressed());
         bannerColumn.addChild(buttonBanner);
 
-        sliderBannerRotation = new SimpleSlider(font, SECTION_WIDTH, BANNER_ROTATION_KEY, 0, 360, frontier.getBannerRotation(), this::onBannerRotationChanged);
-        bannerColumn.addChild(sliderBannerRotation);
+        sliderBannerRotation = null;
+        buttonCollectionBanner = null;
+        labelCollectionBanner = null;
+
+        if (frontier.hasBanner()) {
+            sliderBannerRotation = new SimpleSlider(font, SECTION_WIDTH, BANNER_ROTATION_KEY, 0, 360, frontier.getBannerRotation(),
+                    this::onBannerRotationChanged);
+            bannerColumn.addChild(sliderBannerRotation);
+        } else if (frontier.hasCollection()) {
+            LinearLayout collectionBannerRow = LinearLayout.horizontal();
+            collectionBannerRow.defaultCellSetting().alignVerticallyMiddle();
+            bannerColumn.addChild(collectionBannerRow);
+
+            labelCollectionBanner = collectionBannerRow.addChild(new StringWidget(COLLECTION_BANNER_LABEL, font).setColor(ColorConstants.TEXT));
+            int spacerWidth = Math.max(0, SECTION_WIDTH - font.width(COLLECTION_BANNER_LABEL.getVisualOrderText())
+                    - LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH);
+            collectionBannerRow.addChild(SpacerElement.width(spacerWidth));
+
+            buttonCollectionBanner = collectionBannerRow.addChild(
+                    new OptionButton(font, LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH, b -> onInheritCollectionBannerChanged(b.getSelected() == 0)));
+            buttonCollectionBanner.addOption(ON_LABEL);
+            buttonCollectionBanner.addOption(OFF_LABEL);
+        }
     }
 
     private void buildOverviewSection(GridLayout mainLayout) {
@@ -500,16 +525,22 @@ public class FrontierInfoPage extends PageScreen {
     }
 
     private void onBannerButtonPressed() {
+        boolean hadOwnBanner = frontier.hasBanner();
         if (!frontier.hasBanner()) {
             ItemStack heldBanner = getHeldBanner(minecraft);
             if (heldBanner != null) {
-                frontier.setBanner(heldBanner);
+                frontier.setBannerData(BannerDataHelper.fromBannerItem(heldBanner));
             }
         } else {
-            frontier.setBanner(null);
+            frontier.setBannerData(null);
         }
 
-        updateBannerButton();
+        if (hadOwnBanner != frontier.hasBanner()) {
+            rebuildWidgets();
+            repositionElements();
+        } else {
+            updateBannerButton();
+        }
         sendBannerChangeToServer();
     }
 
@@ -518,6 +549,16 @@ public class FrontierInfoPage extends PageScreen {
         if (!dragging) {
             sendBannerChangeToServer();
         }
+    }
+
+    private void onInheritCollectionBannerChanged(boolean inheritCollectionBanner) {
+        if (frontier.getInheritCollectionBanner() == inheritCollectionBanner) {
+            return;
+        }
+
+        frontier.setInheritCollectionBanner(inheritCollectionBanner);
+        updateBannerButton();
+        sendBannerChangeToServer();
     }
 
     private void onChangePersonalGlobalPressed() {
@@ -707,7 +748,10 @@ public class FrontierInfoPage extends PageScreen {
     @Override
     protected void renderScaledScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         if (frontier.getBannerRenderer().hasBanner()) {
-            frontier.getBannerRenderer().renderBanner(graphics, buttonBanner.getX() + buttonBanner.getWidth() / 2, sliderBannerRotation.getY() + 25, 3);
+            int previewAnchorY = sliderBannerRotation != null ? sliderBannerRotation.getY()
+                    : buttonCollectionBanner != null ? buttonCollectionBanner.getY()
+                    : buttonBanner.getY();
+            frontier.getBannerRenderer().renderBanner(graphics, buttonBanner.getX() + buttonBanner.getWidth() / 2, previewAnchorY + 25, 3);
         }
     }
 
@@ -719,7 +763,9 @@ public class FrontierInfoPage extends PageScreen {
             }
         }
 
-        sliderBannerRotation.mouseReleased();
+        if (sliderBannerRotation != null) {
+            sliderBannerRotation.mouseReleased();
+        }
 
         return super.mouseReleased(event);
     }
@@ -834,7 +880,8 @@ public class FrontierInfoPage extends PageScreen {
             frontier.setColor(other.getColor());
         }
         if (banner) {
-            frontier.setBannerData(other.getbannerData());
+            frontier.setBannerData(other.getBannerData());
+            frontier.setInheritCollectionBanner(other.getInheritCollectionBanner());
         }
     }
 
@@ -847,11 +894,13 @@ public class FrontierInfoPage extends PageScreen {
                 buttonBanner.setMessage(ASSIGN_BANNER_WARN_LABEL);
                 buttonBanner.setTooltip(ASSIGN_BANNER_WARN_TOOLTIP);
             }
-            sliderBannerRotation.visible = false;
         } else {
             buttonBanner.setMessage(REMOVE_BANNER_LABEL);
             buttonBanner.setTooltip(null);
-            sliderBannerRotation.visible = true;
+        }
+
+        if (buttonCollectionBanner != null) {
+            buttonCollectionBanner.setSelected(frontier.getInheritCollectionBanner() ? 0 : 1);
         }
     }
 
@@ -921,7 +970,16 @@ public class FrontierInfoPage extends PageScreen {
         }
         buttonDelete.active = actions.canDelete;
         buttonBanner.visible = actions.canUpdate;
-        sliderBannerRotation.visible = actions.canUpdate && frontier.hasBanner();
+        if (buttonCollectionBanner != null) {
+            buttonCollectionBanner.active = actions.canUpdate;
+            buttonCollectionBanner.visible = actions.canUpdate;
+        }
+        if (labelCollectionBanner != null) {
+            labelCollectionBanner.visible = actions.canUpdate;
+        }
+        if (sliderBannerRotation != null) {
+            sliderBannerRotation.visible = actions.canUpdate;
+        }
         UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
         buttonSelect.active = uiState != null && frontier.getDimension().equals(uiState.dimension);
         if (MapFrontiersClient.isModOnServer()) {
@@ -985,7 +1043,7 @@ public class FrontierInfoPage extends PageScreen {
 
     private void sendBannerChangeToServer() {
         FrontierChange change = new FrontierChange();
-        change.setBanner(frontier.getbannerData());
+        change.setBanner(frontier.getBannerData(), frontier.getInheritCollectionBanner());
         sendChangeToServer(change);
     }
 
@@ -1000,7 +1058,7 @@ public class FrontierInfoPage extends PageScreen {
         change.setName(frontier.getName1(), frontier.getName2());
         change.setVisibility(frontier.getVisibilityData());
         change.setColor(frontier.getColor());
-        change.setBanner(frontier.getbannerData());
+        change.setBanner(frontier.getBannerData(), frontier.getInheritCollectionBanner());
         if (hasPathStyle) {
             change.setPathStyle(frontier.getPathStyle());
         }
@@ -1033,7 +1091,8 @@ public class FrontierInfoPage extends PageScreen {
                     || !Objects.equals(u.getName2(), frontier.getName2())
                     || !Objects.equals(u.getVisibilityData(), frontier.getVisibilityData())
                     || u.getColor() != frontier.getColor()
-                    || !Objects.equals(u.getbannerData(), frontier.getbannerData())
+                    || !Objects.equals(u.getBannerData(), frontier.getBannerData())
+                    || u.getInheritCollectionBanner() != frontier.getInheritCollectionBanner()
                     || (u.getShape() == FrontierShape.Path && frontier.getShape() == FrontierShape.Path
                     && !Objects.equals(u.getPathStyle(), frontier.getPathStyle()))) {
                 add = true;

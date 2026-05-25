@@ -32,6 +32,7 @@ public class CollectionData {
     protected String name = "";
     protected int color = ColorConstants.WHITE;
     protected int collectionViewZoom = COLLECTION_VIEW_DISABLED_ZOOM;
+    protected @Nullable BannerData banner;
     protected @Nullable String sourcePluginId;
     protected @Nullable CopiedFromInfo copiedFrom;
     protected @Nullable Date created;
@@ -49,6 +50,7 @@ public class CollectionData {
         name = other.name;
         color = other.color;
         collectionViewZoom = normalizeCollectionViewZoom(other.collectionViewZoom);
+        banner = other.banner == null ? null : new BannerData(other.banner);
         sourcePluginId = other.sourcePluginId;
         copiedFrom = other.copiedFrom == null ? null : new CopiedFromInfo(other.copiedFrom);
         created = other.created;
@@ -69,6 +71,7 @@ public class CollectionData {
         name = other.name;
         color = other.color;
         collectionViewZoom = normalizeCollectionViewZoom(other.collectionViewZoom);
+        banner = other.banner == null ? null : new BannerData(other.banner);
         sourcePluginId = other.sourcePluginId;
         copiedFrom = other.copiedFrom == null ? null : new CopiedFromInfo(other.copiedFrom);
         created = other.created;
@@ -91,6 +94,12 @@ public class CollectionData {
         name = nbt.getStringOr("name", "");
         color = NbtReadHelper.requireInt(nbt, "color");
         collectionViewZoom = normalizeCollectionViewZoom(nbt.getIntOr("collectionViewZoom", COLLECTION_VIEW_DISABLED_ZOOM));
+        if (nbt.contains("banner")) {
+            banner = new BannerData();
+            banner.readFromNBT(NbtReadHelper.requireCompound(nbt, "banner"));
+        } else {
+            banner = null;
+        }
         setSourcePluginId(nbt.getStringOr("sourcePluginId", null));
 
         if (nbt.contains("copiedFrom")) {
@@ -127,6 +136,11 @@ public class CollectionData {
         nbt.putString("name", name);
         nbt.putInt("color", color);
         nbt.putInt("collectionViewZoom", collectionViewZoom);
+        if (banner != null) {
+            CompoundTag bannerTag = new CompoundTag();
+            banner.writeToNBT(bannerTag);
+            nbt.put("banner", bannerTag);
+        }
         if (sourcePluginId != null) {
             nbt.putString("sourcePluginId", sourcePluginId);
         }
@@ -156,6 +170,12 @@ public class CollectionData {
         name = buf.readUtf(MAX_NAME_CHARACTERS);
         color = buf.readInt();
         collectionViewZoom = normalizeCollectionViewZoom(buf.readInt());
+        if (buf.readBoolean()) {
+            banner = new BannerData();
+            banner.fromBytes(buf);
+        } else {
+            banner = null;
+        }
         setSourcePluginId(buf.readBoolean() ? buf.readUtf() : null);
 
         if (buf.readBoolean()) {
@@ -188,6 +208,12 @@ public class CollectionData {
         buf.writeUtf(name, MAX_NAME_CHARACTERS);
         buf.writeInt(color);
         buf.writeInt(collectionViewZoom);
+        if (banner == null) {
+            buf.writeBoolean(false);
+        } else {
+            buf.writeBoolean(true);
+            banner.toBytes(buf);
+        }
         if (sourcePluginId == null) {
             buf.writeBoolean(false);
         } else {
@@ -274,6 +300,28 @@ public class CollectionData {
 
     public void setColor(int color) {
         this.color = color;
+    }
+
+    public boolean hasBanner() {
+        return banner != null;
+    }
+
+    public void setBannerData(@Nullable BannerData bannerData) {
+        banner = bannerData == null ? null : new BannerData(bannerData);
+    }
+
+    public @Nullable BannerData getBannerData() {
+        return banner;
+    }
+
+    public void setBannerRotation(int rotation) {
+        if (banner != null) {
+            banner.rotation = rotation;
+        }
+    }
+
+    public int getBannerRotation() {
+        return banner == null ? 0 : banner.rotation;
     }
 
     public int getCollectionViewZoom() {

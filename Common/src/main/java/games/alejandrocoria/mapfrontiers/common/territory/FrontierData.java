@@ -10,26 +10,18 @@ import games.alejandrocoria.mapfrontiers.common.util.SourcePluginIdHelper;
 import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.BannerItem;
-import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BannerPatternLayers;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nullable;
@@ -41,7 +33,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -66,6 +57,7 @@ public class FrontierData {
     protected ResourceKey<Level> dimension;
     protected SettingsUser owner = new SettingsUser();
     protected BannerData banner;
+    protected boolean inheritCollectionBanner = true;
     protected boolean personal = false;
     protected TerritoryLifetime lifetime = TerritoryLifetime.PERSISTENT;
     protected List<SettingsUserShared> usersShared;
@@ -104,6 +96,7 @@ public class FrontierData {
         } else {
             banner = new BannerData(other.banner);
         }
+        inheritCollectionBanner = other.inheritCollectionBanner;
 
         usersShared = other.usersShared;
 
@@ -143,6 +136,7 @@ public class FrontierData {
         name1 = other.name1;
         name2 = other.name2;
         banner = other.banner == null ? null : new BannerData(other.banner);
+        inheritCollectionBanner = other.inheritCollectionBanner;
         usersShared = other.usersShared;
         vertices.clear();
         vertices.addAll(other.vertices);
@@ -180,8 +174,9 @@ public class FrontierData {
         }
 
         if (change.hasBannerChange()) {
-            FrontierData.BannerData bannerData = change.getBanner().getBanner();
+            BannerData bannerData = change.getBanner().getBanner();
             banner = bannerData == null ? null : new BannerData(bannerData);
+            inheritCollectionBanner = change.getBanner().inheritCollectionBanner();
         }
 
         if (change.hasShapeChange()) {
@@ -507,20 +502,6 @@ public class FrontierData {
         return dimension;
     }
 
-    public void setBanner(@Nullable ItemStack itemBanner) {
-        if (itemBanner == null) {
-            banner = null;
-        } else {
-            banner = new BannerData(itemBanner);
-        }
-        invalidateSyncHash();
-    }
-
-    public void setBanner(DyeColor base, BannerPatternLayers bannerPatterns) {
-        banner = new BannerData(base, bannerPatterns);
-        invalidateSyncHash();
-    }
-
     public boolean hasBanner() {
         return banner != null;
     }
@@ -534,8 +515,17 @@ public class FrontierData {
         invalidateSyncHash();
     }
 
-    public BannerData getbannerData() {
+    public BannerData getBannerData() {
         return banner;
+    }
+
+    public boolean getInheritCollectionBanner() {
+        return inheritCollectionBanner;
+    }
+
+    public void setInheritCollectionBanner(boolean inheritCollectionBanner) {
+        this.inheritCollectionBanner = inheritCollectionBanner;
+        invalidateSyncHash();
     }
 
     public void setBannerRotation(int rotation) {
@@ -757,6 +747,7 @@ public class FrontierData {
             hash = mixInt(hash, color);
             hash = mixVisibilityData(hash, visibilityData);
             hash = mixBannerData(hash, banner);
+            hash = mixBoolean(hash, inheritCollectionBanner);
             hash = mixUuid(hash, collectionId);
             hash = mixString(hash, sourcePluginId);
             switch (frontierShape) {
@@ -786,6 +777,7 @@ public class FrontierData {
         copiedFrom = null;
         usersShared = null;
         banner = null;
+        inheritCollectionBanner = true;
 
         id = UUID.fromString(NbtReadHelper.requireString(nbt, "id"));
         color = NbtReadHelper.requireInt(nbt, "color");
@@ -816,6 +808,7 @@ public class FrontierData {
             banner = new BannerData();
             banner.readFromNBT(NbtReadHelper.requireCompound(nbt, "banner"));
         }
+        inheritCollectionBanner = nbt.getBooleanOr("inheritCollectionBanner", true);
 
         if (personal) {
             ListTag usersSharedTagList = nbt.getListOrEmpty("usersShared");
@@ -938,6 +931,7 @@ public class FrontierData {
             banner.writeToNBT(nbtBanner);
             nbt.put("banner", nbtBanner);
         }
+        nbt.putBoolean("inheritCollectionBanner", inheritCollectionBanner);
 
         if (personal && usersShared != null) {
             ListTag usersSharedTagList = new ListTag();
@@ -1043,6 +1037,7 @@ public class FrontierData {
         } else {
             banner = null;
         }
+        inheritCollectionBanner = buf.readBoolean();
 
         if (buf.readBoolean()) {
             usersShared = new ArrayList<>();
@@ -1136,6 +1131,7 @@ public class FrontierData {
             buf.writeBoolean(true);
             banner.toBytes(buf);
         }
+        buf.writeBoolean(inheritCollectionBanner);
 
         if (personal && usersShared != null) {
             buf.writeBoolean(true);
@@ -1477,117 +1473,6 @@ public class FrontierData {
     private static String idFromTag(CompoundTag nbt) {
         return nbt.getStringOr("id", "<unknown>");
     }
-
-
-    public static class BannerData {
-        public DyeColor baseColor;
-        public ListTag patterns;
-        public int rotation;
-
-        public static @Nullable ListTag normalizePatterns(@Nullable ListTag patterns) {
-            if (patterns == null || patterns.isEmpty()) {
-                return null;
-            }
-
-            return patterns;
-        }
-
-        public BannerData() {
-            baseColor = DyeColor.WHITE;
-            rotation = 0;
-        }
-
-        public BannerData(BannerData other) {
-            baseColor = other.baseColor;
-            patterns = normalizePatterns(other.patterns == null ? null : other.patterns.copy());
-            rotation = other.rotation;
-        }
-
-        public BannerData(ItemStack item) {
-            this(getDyeColor(item), getBannerPatternLayers(item));
-        }
-
-        public BannerData(DyeColor base, BannerPatternLayers bannerPatterns) {
-            baseColor = base;
-            ClientLevel level = Minecraft.getInstance().level;
-            Optional<Tag> patternsOptional = BannerPatternLayers.CODEC.encodeStart(level.registryAccess().createSerializationContext(NbtOps.INSTANCE), bannerPatterns).result();
-            patternsOptional.ifPresent(tag -> {
-                if (tag.getType().equals(ListTag.TYPE)) {
-                    patterns = normalizePatterns((ListTag) tag.copy());
-                }
-            });
-            rotation = 0;
-        }
-
-        private static DyeColor getDyeColor(ItemStack item) {
-            if (item.getItem() instanceof BannerItem itemBanner) {
-                return itemBanner.getColor();
-            }
-            return DyeColor.BLACK;
-        }
-
-        private static BannerPatternLayers getBannerPatternLayers(ItemStack item) {
-            if (item.getComponents().has(DataComponents.BANNER_PATTERNS)) {
-                return item.getComponents().get(DataComponents.BANNER_PATTERNS);
-            }
-            return BannerPatternLayers.EMPTY;
-        }
-
-        public void readFromNBT(CompoundTag nbt) {
-            baseColor = DyeColor.byId(NbtReadHelper.requireInt(nbt, "Base"));
-            patterns = normalizePatterns(nbt.getListOrEmpty("Patterns"));
-            rotation = nbt.getIntOr("Rotation", 0);
-        }
-
-        public void writeToNBT(CompoundTag nbt) {
-            nbt.putInt("Base", baseColor.getId());
-
-            if (patterns != null) {
-                nbt.put("Patterns", patterns);
-            }
-
-            nbt.putInt("Rotation", rotation);
-        }
-
-        public void fromBytes(FriendlyByteBuf buf) {
-            baseColor = DyeColor.byId(buf.readInt());
-
-            CompoundTag nbt = buf.readNbt();
-            if (nbt != null) {
-                patterns = normalizePatterns(nbt.getListOrEmpty("Patterns"));
-            }
-
-            rotation = buf.readInt();
-        }
-
-        public void toBytes(FriendlyByteBuf buf) {
-            buf.writeInt(baseColor.getId());
-
-            if (patterns == null) {
-                buf.writeNbt(null);
-            } else {
-                CompoundTag nbt = new CompoundTag();
-                nbt.put("Patterns", patterns);
-                buf.writeNbt(nbt);
-            }
-
-            buf.writeInt(rotation);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (!(o instanceof BannerData that)) {
-                return false;
-            }
-            return rotation == that.rotation && baseColor == that.baseColor && Objects.equals(patterns, that.patterns);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(baseColor, patterns, rotation);
-        }
-    }
-
     public static class PathStyle {
         public static final Identifier NONE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "none");
         public static final Identifier BIG_DOT = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "big_dot");

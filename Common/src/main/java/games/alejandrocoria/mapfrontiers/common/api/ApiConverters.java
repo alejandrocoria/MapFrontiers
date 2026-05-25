@@ -21,6 +21,7 @@ import games.alejandrocoria.mapfrontiers.api.model.SharedUserAccess;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierMutationApplier;
@@ -68,12 +69,12 @@ public final class ApiConverters {
         return FrontierMutationApplier.toVisibility(visibilityFlags);
     }
 
-    public static FrontierBanner fromBanner(FrontierData.BannerData bannerData) {
+    public static FrontierBanner fromBanner(BannerData bannerData) {
         if (bannerData == null) {
             return null;
         }
 
-        ListTag patterns = FrontierData.BannerData.normalizePatterns(bannerData.patterns);
+        ListTag patterns = BannerData.normalizePatterns(bannerData.patterns);
 
         return new FrontierBanner(
                 bannerData.baseColor.getId(),
@@ -82,7 +83,7 @@ public final class ApiConverters {
         );
     }
 
-    public static FrontierData.BannerData toBanner(@Nullable FrontierBanner banner) {
+    public static BannerData toBanner(@Nullable FrontierBanner banner) {
         return FrontierMutationApplier.toBanner(banner);
     }
 
@@ -145,7 +146,7 @@ public final class ApiConverters {
                 frontier.getName2(),
                 toShape(frontier),
                 fromVisibility(frontier.getVisibilityData()),
-                fromBanner(frontier.getbannerData()),
+                fromBanner(frontier.getBannerData()),
                 frontier.getShape() == games.alejandrocoria.mapfrontiers.common.territory.FrontierShape.Path ? Optional.of(fromPathStyle(frontier.getPathStyle())) : Optional.empty(),
                 Optional.ofNullable(frontier.getCollectionId()).map(CollectionId::new),
                 Optional.ofNullable(frontier.getSourcePluginId()),

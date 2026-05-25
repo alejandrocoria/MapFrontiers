@@ -117,6 +117,12 @@ public final class ClientConfig {
                     "appearance", "collection", "text", "color")
             .comment("Color of the collection text. Collection uses the collection color. Bright uses the same color at maximum brightness.")
             .translation(translation("appearance", "collection", "text", "color")));
+    public static final IntConfigEntry COLLECTION_BANNER_SIZE = register(intEntry(1, 1, 5, "appearance", "collection", "banner", "size")
+            .comment("Size of the collection banner.")
+            .translation(translation("appearance", "collection", "banner", "size")));
+    public static final DoubleConfigEntry COLLECTION_BANNER_OPACITY = register(doubleEntry(1.0, 0.0, 1.0, "appearance", "collection", "banner", "opacity")
+            .comment("Transparency of the collection banner. 0.0 is fully transparent and 1.0 is opaque.")
+            .translation(translation("appearance", "collection", "banner", "opacity")));
     public static final StringConfigEntry PATH_DEFAULT_STYLE_START = register(stringEntry(FrontierData.PathStyle.BIG_DOT.toString(), "path", "defaultStyle", "start")
             .comment("Marker identifier used by default for the start of new path frontiers."));
     public static final StringConfigEntry PATH_DEFAULT_STYLE_INNER = register(stringEntry(FrontierData.PathStyle.NONE.toString(), "path", "defaultStyle", "inner")
@@ -321,6 +327,8 @@ public final class ClientConfig {
             .comment("Paste the color when pasting info."));
     public static final BooleanConfigEntry PASTE_COLLECTION_VIEW_ZOOM = register(boolEntry(true, "paste", "collectionViewZoom")
             .comment("Paste the zoom when pasting collection info."));
+    public static final BooleanConfigEntry PASTE_COLLECTION_BANNER = register(boolEntry(true, "paste", "collectionBanner")
+            .comment("Paste the collection banner when pasting collection info."));
     public static final BooleanConfigEntry PASTE_BANNER = register(boolEntry(true, "paste", "banner")
             .comment("Paste the frontier banner when pasting info."));
     public static final BooleanConfigEntry PASTE_OPTIONS_VISIBLE = register(boolEntry(false, "paste", "optionsVisible")

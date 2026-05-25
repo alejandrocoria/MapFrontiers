@@ -5,6 +5,7 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.config.TextColor;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.territory.BannerRenderer;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierLabelPlacementSolver;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
@@ -34,8 +35,11 @@ import java.util.Map;
 @ParametersAreNonnullByDefault
 public class CollectionOverlay {
     private static final int OVERLAY_Y = 70;
+    private static final int BANNER_BASE_WIDTH_PX = 20;
+    private static final int BANNER_BASE_HEIGHT_PX = 40;
     private static final int TEXT_LINE_HEIGHT_PX = 9;
     private static final int LABEL_CONTENT_PADDING_PX = 6;
+    private static final int BANNER_SINGLE_LINE_TEXT_OFFSET_Y = 5;
     private static final double LABEL_SOLVER_PRECISION = 2.0;
     private static final Context.MapType[] FULLSCREEN_MAP_TYPES = {
             Context.MapType.Day,
@@ -58,6 +62,7 @@ public class CollectionOverlay {
     private List<CollectionVisibilityVariant> visibleVariants = List.of();
     private final List<MarkerOverlay> labelOverlays = new ArrayList<>();
     private final Map<CollectionLabelPlacementKey, FrontierLabelPlacementSolver.LabelPlacement> placementCache = new HashMap<>();
+    private final BannerRenderer bannerRenderer = new BannerRenderer();
     private @Nullable Runnable dirtyOverlayListener;
 
     public CollectionOverlay(CollectionOverlayKey key, @Nullable IClientAPI jmAPI, CollectionData collection, List<FrontierOverlay> members) {
@@ -65,6 +70,7 @@ public class CollectionOverlay {
         this.jmAPI = jmAPI;
         this.collection = collection;
         memberFrontiers = List.copyOf(members);
+        refreshBannerRenderer();
     }
 
     public CollectionOverlayKey getKey() {
@@ -80,6 +86,7 @@ public class CollectionOverlay {
 
         if (this.collection != collection) {
             this.collection = collection;
+            refreshBannerRenderer();
             geometryDirty = true;
             labelsDirty = true;
             labelVisibilityDirty = true;
@@ -126,6 +133,7 @@ public class CollectionOverlay {
         labelOverlays.clear();
         placementCache.clear();
         visibleVariants = List.of();
+        bannerRenderer.releaseTexture();
         dirtyOverlayListener = null;
     }
 
@@ -225,10 +233,10 @@ public class CollectionOverlay {
     private void addLabelOverlay(Context.MapType[] mapTypes, CollectionLabelContentMetrics metrics, CollectionGeometryIsland island,
                                  FrontierLabelPlacementSolver.LabelPlacement placement,
                                  int collectionMaxZoom) {
-        TextProperties textProperties = createBaseTextProperties();
+        TextProperties textProperties = createBaseTextProperties().setOffsetY(metrics.textOffsetY());
         int minZoom = Math.max(2, island.getMinZoom());
         BlockPos anchor = BlockPos.containing(placement.centerX(), OVERLAY_Y, placement.centerZ());
-        MarkerOverlay labelOverlay = new MarkerOverlay(MapFrontiers.MODID, anchor, transparentLabelMarker);
+        MarkerOverlay labelOverlay = new MarkerOverlay(MapFrontiers.MODID, anchor, createLabelAnchorIcon(metrics));
         labelOverlay.setActiveUIs(Context.UI.Fullscreen);
         labelOverlay.setActiveMapTypes(mapTypes);
         labelOverlay.setDimension(key.dimension());
@@ -250,12 +258,32 @@ public class CollectionOverlay {
 
     private CollectionLabelContentMetrics buildLabelContentMetrics(String effectiveName) {
         String label = ChatFormatting.BOLD + effectiveName + ChatFormatting.RESET;
+        boolean hasBanner = bannerRenderer.hasBanner();
         int textSize = ClientConfig.COLLECTION_TEXT_SIZE.get();
+        int bannerSize = getBannerSize();
         int textWidthPx = Minecraft.getInstance().font.width(Component.literal(effectiveName).withStyle(ChatFormatting.BOLD)) * textSize;
         int textHeightPx = TEXT_LINE_HEIGHT_PX * textSize;
-        int paddedWidthPx = textWidthPx + LABEL_CONTENT_PADDING_PX;
-        int paddedHeightPx = textHeightPx + LABEL_CONTENT_PADDING_PX;
-        return new CollectionLabelContentMetrics(label, paddedWidthPx, paddedHeightPx);
+        int bannerWidthPx = hasBanner ? BANNER_BASE_WIDTH_PX * bannerSize : 0;
+        int bannerHeightPx = hasBanner ? BANNER_BASE_HEIGHT_PX * bannerSize : 0;
+        int bannerPlacementWidthPx = hasBanner ? bannerHeightPx : 0;
+        int rawContentWidthPx = Math.max(textWidthPx, bannerPlacementWidthPx);
+        int rawContentHeightPx = textHeightPx + bannerHeightPx;
+        int textOffsetY;
+        int bannerOffsetY = 0;
+
+        if (hasBanner) {
+            int topOffset = rawContentHeightPx / 2;
+            textOffsetY = topOffset - textHeightPx / 2 + BANNER_SINGLE_LINE_TEXT_OFFSET_Y;
+            bannerOffsetY = topOffset - textHeightPx;
+        } else {
+            textOffsetY = 0;
+        }
+
+        return new CollectionLabelContentMetrics(label, hasBanner,
+                bannerWidthPx, bannerHeightPx,
+                rawContentWidthPx + LABEL_CONTENT_PADDING_PX,
+                rawContentHeightPx + LABEL_CONTENT_PADDING_PX,
+                textOffsetY, bannerOffsetY);
     }
 
     private TextProperties createBaseTextProperties() {
@@ -270,6 +298,31 @@ public class CollectionOverlay {
             case TextColor.White -> textProperties.setColor(ColorConstants.WHITE);
         }
         return textProperties;
+    }
+
+    private MapImage createLabelAnchorIcon(CollectionLabelContentMetrics metrics) {
+        if (!metrics.hasBanner()) {
+            return transparentLabelMarker;
+        }
+
+        MapImage bannerIcon = bannerRenderer.createJourneyMapImage(
+                metrics.bannerWidthPx() / 2.0,
+                metrics.bannerOffsetY(),
+                metrics.bannerWidthPx(),
+                metrics.bannerHeightPx(),
+                ClientConfig.COLLECTION_BANNER_OPACITY.get().floatValue());
+        return bannerIcon == null ? transparentLabelMarker : bannerIcon;
+    }
+
+    private int getBannerSize() {
+        return ClientConfig.COLLECTION_BANNER_SIZE.get();
+    }
+
+    private void refreshBannerRenderer() {
+        bannerRenderer.releaseTexture();
+        if (collection != null && collection.getBannerData() != null) {
+            bannerRenderer.createTexture(collection.getId(), collection.getBannerData());
+        }
     }
 
     private void hideMarkerOverlays(List<MarkerOverlay> overlays) {
@@ -598,8 +651,13 @@ public class CollectionOverlay {
     }
 
     private record CollectionLabelContentMetrics(String label,
+                                                 boolean hasBanner,
+                                                 int bannerWidthPx,
+                                                 int bannerHeightPx,
                                                  int contentWidthPx,
-                                                 int contentHeightPx) {
+                                                 int contentHeightPx,
+                                                 int textOffsetY,
+                                                 int bannerOffsetY) {
     }
 
     private static final class VisibleVariantBuilder {

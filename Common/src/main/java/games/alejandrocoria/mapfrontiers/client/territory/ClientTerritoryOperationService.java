@@ -38,6 +38,7 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateSharedUserPersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierCreateSpec;
@@ -898,9 +899,9 @@ public class ClientTerritoryOperationService {
         VisibilityData visibility = request.visibility()
                 .map(ApiConverters::toVisibility)
                 .orElseGet(defaults::getVisibilityData);
-        FrontierData.BannerData banner = request.banner()
+        BannerData banner = request.banner()
                 .map(ApiConverters::toBanner)
-                .orElseGet(defaults::getbannerData);
+                .orElseGet(defaults::getBannerData);
         boolean pathShape = switch (request.shape().type()) {
             case PATH -> true;
             default -> false;

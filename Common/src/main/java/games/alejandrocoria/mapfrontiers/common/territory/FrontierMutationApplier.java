@@ -112,17 +112,17 @@ public final class FrontierMutationApplier {
         return visibilityData;
     }
 
-    public static FrontierData.BannerData toBanner(@Nullable FrontierBanner banner) {
+    public static BannerData toBanner(@Nullable FrontierBanner banner) {
         if (banner == null) {
             return null;
         }
 
-        FrontierData.BannerData data = new FrontierData.BannerData();
+        BannerData data = new BannerData();
         data.baseColor = DyeColor.byId(banner.baseColorId());
         try {
             Object parsed = TagParser.create(NbtOps.INSTANCE).parseFully(banner.patternsNbt());
             if (parsed instanceof ListTag listTag) {
-                data.patterns = FrontierData.BannerData.normalizePatterns(listTag);
+                data.patterns = BannerData.normalizePatterns(listTag);
             }
         } catch (Exception ignored) {
         }
