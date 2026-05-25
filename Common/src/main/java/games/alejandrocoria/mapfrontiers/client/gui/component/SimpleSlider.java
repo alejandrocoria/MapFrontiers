@@ -5,6 +5,7 @@ import games.alejandrocoria.mapfrontiers.mixin.client.AbstractSliderButtonAccess
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractSliderButton;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
@@ -147,6 +148,34 @@ public class SimpleSlider extends AbstractSliderButton {
         }
 
         return false;
+    }
+
+    @Override
+    public boolean keyPressed(KeyEvent event) {
+        if (!usesDiscreteValues()) {
+            return super.keyPressed(event);
+        }
+
+        AbstractSliderButtonAccessor accessor = (AbstractSliderButtonAccessor) this;
+        if (event.isSelection()) {
+            accessor.setCanChangeValue(!accessor.getCanChangeValue());
+            return true;
+        }
+
+        if (!accessor.getCanChangeValue()) {
+            return false;
+        }
+
+        boolean left = event.isLeft();
+        boolean right = event.isRight();
+        if (!left && !right) {
+            return false;
+        }
+
+        int internalValue = denormalizeInternal(value);
+        internalValue = left ? Math.max(internalValue - 1, minValue) : Math.min(internalValue + 1, maxValue);
+        setValue(discreteValues.get(internalValue));
+        return true;
     }
 
     @Override

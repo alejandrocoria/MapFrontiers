@@ -8,4 +8,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface AbstractSliderButtonAccessor {
     @Accessor
     boolean getCanChangeValue();
+
+    @Accessor
+    void setCanChangeValue(boolean canChangeValue);
 }
