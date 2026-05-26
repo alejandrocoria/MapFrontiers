@@ -124,7 +124,8 @@ public class PreviewCollectionWidget extends AbstractWidgetNoNarration {
         collection.setOwner(owner);
         collection.setName(Component.translatable("mapfrontiers.preview_collection").getString());
         collection.setColor(PREVIEW_COLLECTION_COLOR);
-        collection.setCollectionViewZoom(512);
+        collection.getVisibilityData().setVisible(true);
+        collection.getVisibilityData().setFullscreenZoom(512);
         PreviewFrontierHelper.setPreviewBanner(collection);
         return collection;
     }

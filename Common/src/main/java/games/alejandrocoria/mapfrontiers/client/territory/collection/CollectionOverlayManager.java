@@ -1,9 +1,12 @@
 package games.alejandrocoria.mapfrontiers.client.territory.collection;
 
+import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
+import it.unimi.dsi.fastutil.Pair;
 import journeymap.api.v2.client.IClientAPI;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
@@ -107,8 +110,10 @@ public class CollectionOverlayManager {
         CollectionOverlayKey key = new CollectionOverlayKey(collectionId, dimension);
         CollectionData collection = collectionRuntime.getCollection(collectionId);
         List<FrontierOverlay> eligibleMembers = getEligibleMembers(collectionId, dimension);
+        Pair<CollectionVisibilityData, CollectionVisibilityMask> visibilityOverride =
+                MapFrontiersClient.getCollectionLocalOverrides().getVisibility(collectionId);
 
-        if (collection == null || !collection.isCollectionViewEnabled() || eligibleMembers.isEmpty()) {
+        if (collection == null || eligibleMembers.isEmpty()) {
             deleteOverlay(key);
             return;
         }
@@ -117,11 +122,13 @@ public class CollectionOverlayManager {
         if (overlay == null) {
             overlay = new CollectionOverlay(key, journeyMapApi, collection, eligibleMembers);
             registerOverlay(overlay);
+            overlay.setVisibilityOverride(visibilityOverride);
             overlay.rebuildOverlayNow();
             return;
         }
 
         overlay.refreshMembersAndCollection(collection, eligibleMembers);
+        overlay.setVisibilityOverride(visibilityOverride);
     }
 
     private void refreshCollectionDimensions(UUID collectionId) {

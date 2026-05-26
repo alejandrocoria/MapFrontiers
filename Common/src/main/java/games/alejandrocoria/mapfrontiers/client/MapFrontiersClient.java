@@ -12,6 +12,7 @@ import games.alejandrocoria.mapfrontiers.client.settings.ClientSettingsProfileEv
 import games.alejandrocoria.mapfrontiers.client.territory.ClientTerritoryOperationService;
 import games.alejandrocoria.mapfrontiers.client.territory.ClientTerritoryRuntime;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientCollectionEvents;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionLocalOverrides;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionScope;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionUiStateStore;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientFrontierEvents;
@@ -555,6 +556,11 @@ public class MapFrontiersClient {
         return runtime.getCollectionUiStateStore();
     }
 
+    public static CollectionLocalOverrides getCollectionLocalOverrides() {
+        ClientTerritoryRuntime runtime = requireTerritoryRuntime();
+        return runtime.getCollectionLocalOverrides();
+    }
+
     public static ClientTerritoryOperationService getOperationService() {
         ClientTerritoryRuntime runtime = requireTerritoryRuntime();
         return runtime.getOperationService();
@@ -571,6 +577,10 @@ public class MapFrontiersClient {
         }
 
         runtime.getCollectionOverlayManager().markFrontierGeometryDirty(frontier, frontier.getCollectionId());
+    }
+
+    public static void refreshCollectionVisibilityOverride(UUID collectionId) {
+        refreshCollectionPresentation(collectionId);
     }
 
     public static ClientFrontierEvents getFrontierEvents() {

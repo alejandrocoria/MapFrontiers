@@ -9,10 +9,12 @@ import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.config.TextColor;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.territory.BannerRenderer;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionVisibilityMask;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
@@ -1665,7 +1667,7 @@ public class FrontierOverlay extends FrontierData {
             return;
         }
 
-        int collectionMaxZoom = resolveCollectionViewMaxZoom();
+        int collectionMaxZoom = resolveCollectionFullscreenMaxZoom();
         if (collectionMaxZoom <= 0) {
             return;
         }
@@ -2491,13 +2493,42 @@ public class FrontierOverlay extends FrontierData {
             return false;
         }
 
-        CollectionData collection = getCollection();
-        return collection != null && collection.isCollectionViewEnabled();
+        return resolveCollectionFullscreenVisibility() && CollectionVisibilityData.isZoomEnabled(resolveCollectionFullscreenMaxZoom());
     }
 
-    private int resolveCollectionViewMaxZoom() {
+    private int resolveCollectionFullscreenMaxZoom() {
         CollectionData collection = getCollection();
-        return collection == null ? CollectionData.COLLECTION_VIEW_DISABLED_ZOOM : collection.getCollectionViewZoom();
+        if (collection == null) {
+            return CollectionVisibilityData.COLLECTION_VIEW_DISABLED_ZOOM;
+        }
+
+        int fullscreenZoom = collection.getVisibilityData().getFullscreenZoom();
+        Pair<CollectionVisibilityData, CollectionVisibilityMask> visibilityOverride =
+                MapFrontiersClient.getCollectionLocalOverrides().getVisibility(collection.getId());
+        if (visibilityOverride.second().getFullscreenZoom()) {
+            fullscreenZoom = visibilityOverride.first().getFullscreenZoom();
+        }
+        if (ClientConfig.COLLECTION_FULLSCREEN_ZOOM_FORCED.get()) {
+            return CollectionVisibilityData.normalizeZoom(ClientConfig.COLLECTION_FULLSCREEN_ZOOM.get());
+        }
+
+        return fullscreenZoom;
+    }
+
+    private boolean resolveCollectionFullscreenVisibility() {
+        CollectionData collection = getCollection();
+        if (collection == null) {
+            return false;
+        }
+
+        boolean visible = collection.getVisibilityData().isVisible();
+        Pair<CollectionVisibilityData, CollectionVisibilityMask> visibilityOverride =
+                MapFrontiersClient.getCollectionLocalOverrides().getVisibility(collection.getId());
+        if (visibilityOverride.second().isVisible()) {
+            visible = visibilityOverride.first().isVisible();
+        }
+
+        return ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_VISIBILITY.get(), visible);
     }
 
     private int resolveCollectionNormalMinZoom(PolygonUiPlanEntry entry) {
@@ -2505,7 +2536,7 @@ public class FrontierOverlay extends FrontierData {
             return entry.minZoom();
         }
 
-        return Math.max(entry.minZoom(), CollectionData.getCollectionViewTransitionMinZoom(resolveCollectionViewMaxZoom()));
+        return Math.max(entry.minZoom(), CollectionVisibilityData.getZoomTransitionMinZoom(resolveCollectionFullscreenMaxZoom()));
     }
 
     private @Nullable String getCollectionName() {

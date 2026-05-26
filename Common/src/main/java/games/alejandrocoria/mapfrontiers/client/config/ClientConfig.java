@@ -11,6 +11,7 @@ import games.alejandrocoria.mapfrontiers.common.config.EnumConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.StringConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.StringListConfigEntry;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
 import games.alejandrocoria.mapfrontiers.platform.Services;
@@ -247,6 +248,49 @@ public final class ClientConfig {
             "Force all frontiers to be shown or hidden on the biome webmap. In Custom, you can decide for each frontier.",
             "visibility", "webmap", "biome");
 
+    public static final EnumConfigEntry<FrontierDisplayVisibility> COLLECTION_VISIBILITY = collectionVisibilityEntry(
+            "Force all collections to be shown or hidden. In Custom, you can decide for each collection.",
+            "visibility", "collection");
+    public static final EnumConfigEntry<FrontierDisplayVisibility> COLLECTION_FULLSCREEN_NAME_VISIBILITY = collectionVisibilityEntry(
+            "Force all collection names to be shown or hidden on the fullscreen map. In Custom, you can decide for each collection.",
+            "visibility", "collection", "fullscreen", "name");
+    public static final EnumConfigEntry<FrontierDisplayVisibility> COLLECTION_FULLSCREEN_OWNER_VISIBILITY = collectionVisibilityEntry(
+            "Force all collection owners to be shown or hidden on the fullscreen map. In Custom, you can decide for each collection.",
+            "visibility", "collection", "fullscreen", "owner");
+    public static final EnumConfigEntry<FrontierDisplayVisibility> COLLECTION_FULLSCREEN_BANNER_VISIBILITY = collectionVisibilityEntry(
+            "Force all collection banners to be shown or hidden on the fullscreen map. In Custom, you can decide for each collection.",
+            "visibility", "collection", "fullscreen", "banner");
+    public static final BooleanConfigEntry COLLECTION_FULLSCREEN_ZOOM_FORCED = register(boolEntry(false, "visibility", "collection", "fullscreen", "zoomForced")
+            .comment("Force collection zoom on the fullscreen map instead of using each collection."));
+    public static final IntConfigEntry COLLECTION_FULLSCREEN_ZOOM = register(intEntry(256, 0, 16384, "visibility", "collection", "fullscreen", "zoom")
+            .comment("Forced collection zoom on the fullscreen map. 0 disables collection view."));
+    public static final EnumConfigEntry<FrontierDisplayVisibility> COLLECTION_MINIMAP_NAME_VISIBILITY = collectionVisibilityEntry(
+            "Force all collection names to be shown or hidden on the minimap. In Custom, you can decide for each collection.",
+            "visibility", "collection", "minimap", "name");
+    public static final EnumConfigEntry<FrontierDisplayVisibility> COLLECTION_MINIMAP_OWNER_VISIBILITY = collectionVisibilityEntry(
+            "Force all collection owners to be shown or hidden on the minimap. In Custom, you can decide for each collection.",
+            "visibility", "collection", "minimap", "owner");
+    public static final EnumConfigEntry<FrontierDisplayVisibility> COLLECTION_MINIMAP_BANNER_VISIBILITY = collectionVisibilityEntry(
+            "Force all collection banners to be shown or hidden on the minimap. In Custom, you can decide for each collection.",
+            "visibility", "collection", "minimap", "banner");
+    public static final BooleanConfigEntry COLLECTION_MINIMAP_ZOOM_FORCED = register(boolEntry(false, "visibility", "collection", "minimap", "zoomForced")
+            .comment("Force collection zoom on the minimap instead of using each collection."));
+    public static final IntConfigEntry COLLECTION_MINIMAP_ZOOM = register(intEntry(256, 0, 16384, "visibility", "collection", "minimap", "zoom")
+            .comment("Forced collection zoom on the minimap. 0 disables collection view."));
+    public static final EnumConfigEntry<FrontierDisplayVisibility> COLLECTION_WEBMAP_NAME_VISIBILITY = collectionVisibilityEntry(
+            "Force all collection names to be shown or hidden on the webmap. In Custom, you can decide for each collection.",
+            "visibility", "collection", "webmap", "name");
+    public static final EnumConfigEntry<FrontierDisplayVisibility> COLLECTION_WEBMAP_OWNER_VISIBILITY = collectionVisibilityEntry(
+            "Force all collection owners to be shown or hidden on the webmap. In Custom, you can decide for each collection.",
+            "visibility", "collection", "webmap", "owner");
+    public static final EnumConfigEntry<FrontierDisplayVisibility> COLLECTION_WEBMAP_BANNER_VISIBILITY = collectionVisibilityEntry(
+            "Force all collection banners to be shown or hidden on the webmap. In Custom, you can decide for each collection.",
+            "visibility", "collection", "webmap", "banner");
+    public static final BooleanConfigEntry COLLECTION_WEBMAP_ZOOM_FORCED = register(boolEntry(false, "visibility", "collection", "webmap", "zoomForced")
+            .comment("Force collection zoom on the webmap instead of using each collection."));
+    public static final IntConfigEntry COLLECTION_WEBMAP_ZOOM = register(intEntry(256, 0, 16384, "visibility", "collection", "webmap", "zoom")
+            .comment("Forced collection zoom on the webmap. 0 disables collection view."));
+
     public static final BooleanConfigEntry FULLSCREEN_BUTTONS = register(boolEntry(true, "gui", "fullscreenButtons")
             .comment("Show buttons on the fullscreen map.")
             .translation(translation("gui", "fullscreenButtons")));
@@ -325,12 +369,8 @@ public final class ClientConfig {
             .comment("Paste the frontier path style when pasting info."));
     public static final BooleanConfigEntry PASTE_COLOR = register(boolEntry(true, "paste", "color")
             .comment("Paste the color when pasting info."));
-    public static final BooleanConfigEntry PASTE_COLLECTION_VIEW_ZOOM = register(boolEntry(true, "paste", "collectionViewZoom")
-            .comment("Paste the zoom when pasting collection info."));
-    public static final BooleanConfigEntry PASTE_COLLECTION_BANNER = register(boolEntry(true, "paste", "collectionBanner")
-            .comment("Paste the collection banner when pasting collection info."));
     public static final BooleanConfigEntry PASTE_BANNER = register(boolEntry(true, "paste", "banner")
-            .comment("Paste the frontier banner when pasting info."));
+            .comment("Paste the banner when pasting info."));
     public static final BooleanConfigEntry PASTE_OPTIONS_VISIBLE = register(boolEntry(false, "paste", "optionsVisible")
             .comment("Whether paste options are currently expanded."));
 
@@ -358,6 +398,7 @@ public final class ClientConfig {
         dirty |= validateHUDSlots();
         dirty |= validateDefaultPathStyle();
         dirty |= validatePathActivationDistances();
+        dirty |= validateCollectionVisibilityZooms();
         dirty |= validateSorting();
         return dirty;
     }
@@ -365,6 +406,7 @@ public final class ClientConfig {
     public static void save() {
         validateHUDSlots();
         validatePathActivationDistances();
+        validateCollectionVisibilityZooms();
         validateSorting();
         FILE.save();
     }
@@ -501,6 +543,23 @@ public final class ClientConfig {
         if (dirty) {
             PATH_PROXIMITY_ENTER_DISTANCE.set(enterDistance);
             PATH_PROXIMITY_EXIT_DISTANCE.set(exitDistance);
+        }
+
+        return dirty;
+    }
+
+    private static boolean validateCollectionVisibilityZooms() {
+        int fullscreenZoom = CollectionVisibilityData.normalizeZoom(COLLECTION_FULLSCREEN_ZOOM.get());
+        int minimapZoom = CollectionVisibilityData.normalizeZoom(COLLECTION_MINIMAP_ZOOM.get());
+        int webmapZoom = CollectionVisibilityData.normalizeZoom(COLLECTION_WEBMAP_ZOOM.get());
+        boolean dirty = COLLECTION_FULLSCREEN_ZOOM.get() != fullscreenZoom
+                || COLLECTION_MINIMAP_ZOOM.get() != minimapZoom
+                || COLLECTION_WEBMAP_ZOOM.get() != webmapZoom;
+
+        if (dirty) {
+            COLLECTION_FULLSCREEN_ZOOM.set(fullscreenZoom);
+            COLLECTION_MINIMAP_ZOOM.set(minimapZoom);
+            COLLECTION_WEBMAP_ZOOM.set(webmapZoom);
         }
 
         return dirty;
@@ -650,6 +709,11 @@ public final class ClientConfig {
     }
 
     private static EnumConfigEntry<FrontierDisplayVisibility> frontierVisibilityEntry(String comment, String... path) {
+        return register(enumEntry(FrontierDisplayVisibility.class, FrontierDisplayVisibility.Custom, path)
+                .comment(comment));
+    }
+
+    private static EnumConfigEntry<FrontierDisplayVisibility> collectionVisibilityEntry(String comment, String... path) {
         return register(enumEntry(FrontierDisplayVisibility.class, FrontierDisplayVisibility.Custom, path)
                 .comment(comment));
     }

@@ -15,17 +15,21 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButto
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.CollectionVisibilityDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteCollectionConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.territory.BannerDataHelper;
 import games.alejandrocoria.mapfrontiers.client.territory.BannerRenderer;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionVisibilityMask;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
+import it.unimi.dsi.fastutil.Pair;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -56,7 +60,6 @@ import java.util.function.IntUnaryOperator;
 
 @ParametersAreNonnullByDefault
 public class CollectionInfoPage extends PageScreen {
-    private static final String COLLECTION_VIEW_ZOOM_KEY = "mapfrontiers.collection_view_zoom";
     private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_collection_info");
     private static final Component NAME_LABEL = Component.translatable("mapfrontiers.name");
     private static final Component DONE_LABEL = Component.translatable("gui.done");
@@ -77,6 +80,8 @@ public class CollectionInfoPage extends PageScreen {
     private static final String LENGTH_KEY = "mapfrontiers.length";
     private static final String CREATED_KEY = "mapfrontiers.created";
     private static final String MODIFIED_KEY = "mapfrontiers.modified";
+    private static final Component VISIBILITY_LABEL = Component.translatable("mapfrontiers.visibility");
+    private static final Component VISIBILITY_OVERRIDE_LABEL = Component.translatable("mapfrontiers.visibility_override");
     private static final Component R_LABEL = Component.literal("R");
     private static final Component G_LABEL = Component.literal("G");
     private static final Component B_LABEL = Component.literal("B");
@@ -88,13 +93,14 @@ public class CollectionInfoPage extends PageScreen {
     private static final Tooltip REDO_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.redo.tooltip"));
     private static final Tooltip ASSIGN_BANNER_WARN_TOOLTIP = Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET)
             .append(Component.translatable("mapfrontiers.assign_banner_warn.tooltip")));
+    private static final Tooltip VISIBILITY_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.collection_visibility.tooltip"));
+    private static final Tooltip VISIBILITY_OVERRIDE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.collection_visibility_override.tooltip"));
     private static final Component PASTE_NAME_LABEL = Component.translatable("mapfrontiers.paste_name");
     private static final Component PASTE_COLOR_LABEL = Component.translatable("mapfrontiers.paste_color");
     private static final Component PASTE_BANNER_LABEL = Component.translatable("mapfrontiers.paste_banner");
-    private static final Component PASTE_COLLECTION_VIEW_ZOOM_LABEL = Component.translatable("mapfrontiers.paste_collection_view_zoom");
+    private static final Component PASTE_VISIBILITY_LABEL = Component.translatable("mapfrontiers.paste_visibility");
     private static final Component ON_LABEL = Component.translatable("options.on");
     private static final Component OFF_LABEL = Component.translatable("options.off");
-    private static final Component NOT_VISIBLE_LABEL = Component.translatable("mapfrontiers.not_visible");
     private static final int SECTION_WIDTH = 146;
     private static final int NAME_SECTION_WIDTH = SECTION_WIDTH * 2 + LayoutConstants.SPACING_MEDIUM;
     private static final int DEFAULT_TEXTBOX_HEIGHT = 17;
@@ -114,12 +120,13 @@ public class CollectionInfoPage extends PageScreen {
     private boolean syncingWidgets = false;
 
     private TextBox textName;
+    private SimpleButton buttonVisibility;
+    private SimpleButton buttonVisibilityOverride;
     private SimpleButton buttonBanner;
     private SimpleSlider sliderBannerRotation;
     private TextBoxInt textRed;
     private TextBoxInt textGreen;
     private TextBoxInt textBlue;
-    private SimpleSlider sliderCollectionViewZoom;
     private ColorPicker colorPicker;
     private ColorPaletteWidget colorPalette;
     private SimpleButton buttonRandomColor;
@@ -130,14 +137,14 @@ public class CollectionInfoPage extends PageScreen {
     private IconButton buttonRedo;
     private OptionButton buttonPasteName;
     private OptionButton buttonPasteColor;
+    private OptionButton buttonPasteVisibility;
     private OptionButton buttonPasteBanner;
-    private OptionButton buttonPasteCollectionViewZoom;
     private SimpleButton buttonDelete;
     private SimpleButton buttonDone;
     private StringWidget labelPasteName;
     private StringWidget labelPasteColor;
+    private StringWidget labelPasteVisibility;
     private StringWidget labelPasteBanner;
-    private StringWidget labelPasteCollectionViewZoom;
     private StringWidget ownerLabel;
     private StringWidget typeLabel;
     private StringWidget frontiersCountLabel;
@@ -221,10 +228,18 @@ public class CollectionInfoPage extends PageScreen {
         textName.setLostFocusCallback(value -> addCurrentStateToUndo());
         overviewColumn.addChild(textName);
 
-        sliderCollectionViewZoom = new SimpleSlider(font, NAME_SECTION_WIDTH, COLLECTION_VIEW_ZOOM_KEY,
-                CollectionData.getCollectionViewZoomLevels(), collection.getCollectionViewZoom(),
-                this::onCollectionViewZoomChanged, CollectionInfoPage::formatCollectionViewZoomLabel);
-        overviewColumn.addChild(sliderCollectionViewZoom);
+        LinearLayout visibilityRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_MEDIUM);
+        visibilityRow.defaultCellSetting().alignVerticallyMiddle();
+        overviewColumn.addChild(visibilityRow);
+
+        buttonVisibility = new SimpleButton(font, SECTION_WIDTH, VISIBILITY_LABEL, b -> onVisibilityButtonPressed());
+        buttonVisibility.setTooltip(VISIBILITY_TOOLTIP);
+        visibilityRow.addChild(buttonVisibility);
+
+        buttonVisibilityOverride = new SimpleButton(font, SECTION_WIDTH, VISIBILITY_OVERRIDE_LABEL,
+                b -> onVisibilityOverrideButtonPressed());
+        buttonVisibilityOverride.setTooltip(VISIBILITY_OVERRIDE_TOOLTIP);
+        visibilityRow.addChild(buttonVisibilityOverride);
     }
 
     private void buildInfoSection(GridLayout mainLayout) {
@@ -292,12 +307,11 @@ public class CollectionInfoPage extends PageScreen {
         labelPasteColor = editColumn.addChild(new StringWidget(PASTE_COLOR_LABEL, font).setColor(ColorConstants.TEXT), 1, 0);
         buttonPasteColor = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_COLOR.get(), ClientConfig.PASTE_COLOR::set), 1, 1);
 
-        labelPasteBanner = editColumn.addChild(new StringWidget(PASTE_BANNER_LABEL, font).setColor(ColorConstants.TEXT), 2, 0);
-        buttonPasteBanner = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_COLLECTION_BANNER.get(), ClientConfig.PASTE_COLLECTION_BANNER::set), 2, 1);
+        labelPasteVisibility = editColumn.addChild(new StringWidget(PASTE_VISIBILITY_LABEL, font).setColor(ColorConstants.TEXT), 2, 0);
+        buttonPasteVisibility = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_VISIBILITY.get(), ClientConfig.PASTE_VISIBILITY::set), 2, 1);
 
-        labelPasteCollectionViewZoom = editColumn.addChild(new StringWidget(PASTE_COLLECTION_VIEW_ZOOM_LABEL, font).setColor(ColorConstants.TEXT), 3, 0);
-        buttonPasteCollectionViewZoom = editColumn.addChild(
-                createBinaryOptionButton(ClientConfig.PASTE_COLLECTION_VIEW_ZOOM.get(), ClientConfig.PASTE_COLLECTION_VIEW_ZOOM::set), 3, 1);
+        labelPasteBanner = editColumn.addChild(new StringWidget(PASTE_BANNER_LABEL, font).setColor(ColorConstants.TEXT), 3, 0);
+        buttonPasteBanner = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_BANNER.get(), ClientConfig.PASTE_BANNER::set), 3, 1);
 
         LinearLayout editButtons = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         editColumn.addChild(editButtons, 4, 0);
@@ -365,8 +379,8 @@ public class CollectionInfoPage extends PageScreen {
         boolean changed = applyEditableMetadata(clipboard,
                 ClientConfig.PASTE_NAME.get(),
                 ClientConfig.PASTE_COLOR.get(),
-                ClientConfig.PASTE_COLLECTION_BANNER.get(),
-                ClientConfig.PASTE_COLLECTION_VIEW_ZOOM.get());
+                ClientConfig.PASTE_BANNER.get(),
+                ClientConfig.PASTE_VISIBILITY.get());
         if (!changed) {
             return;
         }
@@ -436,17 +450,6 @@ public class CollectionInfoPage extends PageScreen {
         }
     }
 
-    private void onCollectionViewZoomChanged(int zoom, boolean dragging) {
-        if (syncingWidgets || collection.getCollectionViewZoom() == zoom) {
-            return;
-        }
-
-        collection.setCollectionViewZoom(zoom);
-        if (!dragging) {
-            addCurrentStateToUndo();
-        }
-    }
-
     private void applyColorChange(int color, boolean trackUndo) {
         if (syncingWidgets) {
             return;
@@ -479,7 +482,7 @@ public class CollectionInfoPage extends PageScreen {
     }
 
     private boolean applyEditableMetadata(CollectionData source, boolean pasteName, boolean pasteColor, boolean pasteBanner,
-                                         boolean pasteCollectionViewZoom) {
+                                         boolean pasteVisibility) {
         boolean changed = false;
         syncingWidgets = true;
         try {
@@ -503,9 +506,8 @@ public class CollectionInfoPage extends PageScreen {
                 changed = true;
             }
 
-            if (pasteCollectionViewZoom && collection.getCollectionViewZoom() != source.getCollectionViewZoom()) {
-                collection.setCollectionViewZoom(source.getCollectionViewZoom());
-                sliderCollectionViewZoom.setValue(source.getCollectionViewZoom());
+            if (pasteVisibility && !collection.getVisibilityData().equals(source.getVisibilityData())) {
+                collection.setVisibilityData(source.getVisibilityData());
                 changed = true;
             }
         } finally {
@@ -570,7 +572,8 @@ public class CollectionInfoPage extends PageScreen {
         colorPicker.active = editable;
         colorPalette.active = editable;
         buttonRandomColor.active = editable;
-        sliderCollectionViewZoom.active = editable;
+        buttonVisibility.active = editable;
+        buttonVisibilityOverride.active = true;
         buttonBanner.active = editable;
         buttonBanner.visible = editable;
         sliderBannerRotation.active = editable;
@@ -596,7 +599,6 @@ public class CollectionInfoPage extends PageScreen {
         }
 
         sliderBannerRotation.mouseReleased();
-        sliderCollectionViewZoom.mouseReleased();
 
         return super.mouseReleased(event);
     }
@@ -640,7 +642,6 @@ public class CollectionInfoPage extends PageScreen {
             syncColorWidgets(collection.getColor());
             syncBannerRenderer();
             sliderBannerRotation.setValue(collection.getBannerRotation());
-            sliderCollectionViewZoom.setValue(collection.getCollectionViewZoom());
         } finally {
             syncingWidgets = false;
         }
@@ -701,10 +702,10 @@ public class CollectionInfoPage extends PageScreen {
         buttonPasteName.visible = optionsVisible;
         labelPasteColor.visible = optionsVisible;
         buttonPasteColor.visible = optionsVisible;
+        labelPasteVisibility.visible = optionsVisible;
+        buttonPasteVisibility.visible = optionsVisible;
         labelPasteBanner.visible = optionsVisible;
         buttonPasteBanner.visible = optionsVisible;
-        labelPasteCollectionViewZoom.visible = optionsVisible;
-        buttonPasteCollectionViewZoom.visible = optionsVisible;
     }
 
     private void updateUndoRedoVisibility(boolean editable) {
@@ -719,7 +720,7 @@ public class CollectionInfoPage extends PageScreen {
         snapshot.setName(collection.getName());
         snapshot.setColor(collection.getColor());
         snapshot.setBannerData(collection.getBannerData());
-        snapshot.setCollectionViewZoom(collection.getCollectionViewZoom());
+        snapshot.setVisibilityData(collection.getVisibilityData());
         return snapshot;
     }
 
@@ -728,7 +729,7 @@ public class CollectionInfoPage extends PageScreen {
         snapshot.setName(collection.getName());
         snapshot.setColor(collection.getColor());
         snapshot.setBannerData(collection.getBannerData());
-        snapshot.setCollectionViewZoom(collection.getCollectionViewZoom());
+        snapshot.setVisibilityData(collection.getVisibilityData());
         return snapshot;
     }
 
@@ -740,7 +741,37 @@ public class CollectionInfoPage extends PageScreen {
         return Objects.equals(first.getName(), second.getName())
                 && first.getColor() == second.getColor()
                 && Objects.equals(first.getBannerData(), second.getBannerData())
-                && first.getCollectionViewZoom() == second.getCollectionViewZoom();
+                && first.getVisibilityData().equals(second.getVisibilityData());
+    }
+
+    private void onVisibilityButtonPressed() {
+        CollectionVisibilityData baseVisibilityData = collection.getVisibilityData();
+        new CollectionVisibilityDialog(baseVisibilityData, (newVisibilityData, newVisibilityMask) -> {
+            if (newVisibilityData.equals(baseVisibilityData)) {
+                return;
+            }
+            if (newVisibilityData.equals(collection.getVisibilityData())) {
+                return;
+            }
+
+            collection.setVisibilityData(newVisibilityData);
+            addCurrentStateToUndo();
+            refreshViewState();
+        }).display();
+    }
+
+    private void onVisibilityOverrideButtonPressed() {
+        Pair<CollectionVisibilityData, CollectionVisibilityMask> override =
+                MapFrontiersClient.getCollectionLocalOverrides().getVisibility(collectionId);
+        CollectionVisibilityData baseVisibilityData = override.second().hasSome() ? override.first() : collection.getVisibilityData();
+        new CollectionVisibilityDialog(baseVisibilityData, override.second(), (newVisibilityData, newVisibilityMask) -> {
+            if (!newVisibilityData.equals(override.first()) || !newVisibilityMask.equals(override.second())) {
+                Pair<CollectionVisibilityData, CollectionVisibilityMask> newOverride =
+                        Pair.of(new CollectionVisibilityData(newVisibilityData), new CollectionVisibilityMask(newVisibilityMask));
+                MapFrontiersClient.getCollectionLocalOverrides().setVisibility(collectionId, newOverride);
+                MapFrontiersClient.refreshCollectionVisibilityOverride(collectionId);
+            }
+        }).display();
     }
 
     private boolean canUpdateCollection() {
@@ -843,11 +874,4 @@ public class CollectionInfoPage extends PageScreen {
         return String.format(Locale.ROOT, "%.2f", value);
     }
 
-    private static Component formatCollectionViewZoomLabel(int zoom) {
-        if (!CollectionData.isCollectionViewEnabled(zoom)) {
-            return NOT_VISIBLE_LABEL;
-        }
-
-        return Component.literal(Integer.toString(zoom));
-    }
 }

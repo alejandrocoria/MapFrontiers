@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.client.settings.ClientSettingsProfileEv
 import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientCollectionEvents;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientCollectionRuntime;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientLocalPersonalCollectionStore;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionLocalOverrides;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionUiStateStore;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientFrontierEvents;
@@ -32,6 +33,7 @@ public class ClientTerritoryRuntime {
     private ClientTerritorySyncService syncService;
     private ClientLocalPersistenceCoordinator localPersistenceCoordinator;
     private FrontierLocalOverrides localOverrides;
+    private CollectionLocalOverrides collectionLocalOverrides;
     private CollectionUiStateStore collectionUiStateStore;
     private MapFrontiersClientAPIImpl clientApi;
 
@@ -100,6 +102,10 @@ public class ClientTerritoryRuntime {
             localOverrides = new FrontierLocalOverrides();
         }
 
+        if (collectionLocalOverrides == null) {
+            collectionLocalOverrides = new CollectionLocalOverrides();
+        }
+
         if (collectionUiStateStore == null) {
             collectionUiStateStore = new CollectionUiStateStore();
         }
@@ -127,6 +133,11 @@ public class ClientTerritoryRuntime {
     public ClientCollectionRuntime getCollectionRuntime() {
         ensureInitialized();
         return collectionRuntime;
+    }
+
+    public CollectionLocalOverrides getCollectionLocalOverrides() {
+        ensureInitialized();
+        return collectionLocalOverrides;
     }
 
     public ClientTerritoryOperationService getOperationService() {
@@ -220,6 +231,7 @@ public class ClientTerritoryRuntime {
         localPersonalFrontierStore = null;
         localPersonalCollectionStore = null;
         localOverrides = null;
+        collectionLocalOverrides = null;
         collectionUiStateStore = null;
 
         closeStep("global frontier overlays", () -> {

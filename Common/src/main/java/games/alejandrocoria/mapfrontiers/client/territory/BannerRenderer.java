@@ -32,8 +32,12 @@ import net.minecraft.world.level.block.entity.BannerPatternLayers;
 import javax.annotation.Nullable;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class BannerRenderer {
+    private static final AtomicInteger NEXT_TEXTURE_INSTANCE_ID = new AtomicInteger();
+
+    private final int textureInstanceId = NEXT_TEXTURE_INSTANCE_ID.incrementAndGet();
     private Identifier textureLocation;
     private int rotation;
 
@@ -99,7 +103,7 @@ public class BannerRenderer {
                 generateBannerLayer(tempBannerImage, flagUV, sprite.contents(), layer.color());
             }
 
-            textureLocation = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, id.toString());
+            textureLocation = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "banner/" + id + "/" + textureInstanceId);
             DynamicTexture texture = new DynamicTexture(() -> textureLocation.toString(), tempBannerImage.mappedCopy(ARGB::opaque));
             mc.getTextureManager().register(textureLocation, texture);
         } finally {

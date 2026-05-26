@@ -149,7 +149,7 @@ public class ServerTerritoryOperationService {
 
         collection.setName(collectionData.getName());
         collection.setColor(collectionData.getColor());
-        collection.setCollectionViewZoom(collectionData.getCollectionViewZoom());
+        collection.setVisibilityData(collectionData.getVisibilityData());
         collection.setBannerData(collectionData.getBannerData());
         collection.setModified(new Date());
         territoriesManager.markDirty();
@@ -164,7 +164,7 @@ public class ServerTerritoryOperationService {
 
         collection.setName(collectionData.getName());
         collection.setColor(collectionData.getColor());
-        collection.setCollectionViewZoom(collectionData.getCollectionViewZoom());
+        collection.setVisibilityData(collectionData.getVisibilityData());
         collection.setBannerData(collectionData.getBannerData());
         collection.setModified(new Date());
         territoriesManager.markDirty();

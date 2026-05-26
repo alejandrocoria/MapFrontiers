@@ -13,25 +13,19 @@ import net.minecraft.network.FriendlyByteBuf;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Date;
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class CollectionData {
     public static final int MAX_NAME_CHARACTERS = 48;
-    public static final int COLLECTION_VIEW_DISABLED_ZOOM = 0;
-    private static final List<Integer> COLLECTION_VIEW_ZOOM_LEVELS = List.of(
-            COLLECTION_VIEW_DISABLED_ZOOM, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384
-    );
-
     protected UUID id;
     protected boolean personal;
     protected TerritoryLifetime lifetime = TerritoryLifetime.PERSISTENT;
     protected SettingsUser owner = new SettingsUser();
     protected String name = "";
     protected int color = ColorConstants.WHITE;
-    protected int collectionViewZoom = COLLECTION_VIEW_DISABLED_ZOOM;
+    protected CollectionVisibilityData visibilityData = new CollectionVisibilityData();
     protected @Nullable BannerData banner;
     protected @Nullable String sourcePluginId;
     protected @Nullable CopiedFromInfo copiedFrom;
@@ -49,7 +43,7 @@ public class CollectionData {
         owner = other.owner;
         name = other.name;
         color = other.color;
-        collectionViewZoom = normalizeCollectionViewZoom(other.collectionViewZoom);
+        visibilityData = new CollectionVisibilityData(other.visibilityData);
         banner = other.banner == null ? null : new BannerData(other.banner);
         sourcePluginId = other.sourcePluginId;
         copiedFrom = other.copiedFrom == null ? null : new CopiedFromInfo(other.copiedFrom);
@@ -70,7 +64,7 @@ public class CollectionData {
         owner = other.owner;
         name = other.name;
         color = other.color;
-        collectionViewZoom = normalizeCollectionViewZoom(other.collectionViewZoom);
+        visibilityData = new CollectionVisibilityData(other.visibilityData);
         banner = other.banner == null ? null : new BannerData(other.banner);
         sourcePluginId = other.sourcePluginId;
         copiedFrom = other.copiedFrom == null ? null : new CopiedFromInfo(other.copiedFrom);
@@ -93,7 +87,8 @@ public class CollectionData {
         owner.readFromNBT(nbt.getCompoundOrEmpty("owner"));
         name = nbt.getStringOr("name", "");
         color = NbtReadHelper.requireInt(nbt, "color");
-        collectionViewZoom = normalizeCollectionViewZoom(nbt.getIntOr("collectionViewZoom", COLLECTION_VIEW_DISABLED_ZOOM));
+        visibilityData = new CollectionVisibilityData();
+        visibilityData.readFromNBT(nbt.getCompoundOrEmpty("visibility"));
         if (nbt.contains("banner")) {
             banner = new BannerData();
             banner.readFromNBT(NbtReadHelper.requireCompound(nbt, "banner"));
@@ -135,7 +130,9 @@ public class CollectionData {
 
         nbt.putString("name", name);
         nbt.putInt("color", color);
-        nbt.putInt("collectionViewZoom", collectionViewZoom);
+        CompoundTag visibilityTag = new CompoundTag();
+        visibilityData.writeToNBT(visibilityTag);
+        nbt.put("visibility", visibilityTag);
         if (banner != null) {
             CompoundTag bannerTag = new CompoundTag();
             banner.writeToNBT(bannerTag);
@@ -169,7 +166,8 @@ public class CollectionData {
         owner.fromBytes(buf);
         name = buf.readUtf(MAX_NAME_CHARACTERS);
         color = buf.readInt();
-        collectionViewZoom = normalizeCollectionViewZoom(buf.readInt());
+        visibilityData = new CollectionVisibilityData();
+        visibilityData.fromBytes(buf);
         if (buf.readBoolean()) {
             banner = new BannerData();
             banner.fromBytes(buf);
@@ -207,7 +205,7 @@ public class CollectionData {
         owner.toBytes(buf);
         buf.writeUtf(name, MAX_NAME_CHARACTERS);
         buf.writeInt(color);
-        buf.writeInt(collectionViewZoom);
+        visibilityData.toBytes(buf);
         if (banner == null) {
             buf.writeBoolean(false);
         } else {
@@ -324,33 +322,12 @@ public class CollectionData {
         return banner == null ? 0 : banner.rotation;
     }
 
-    public int getCollectionViewZoom() {
-        return collectionViewZoom;
+    public void setVisibilityData(CollectionVisibilityData visibilityData) {
+        this.visibilityData = new CollectionVisibilityData(visibilityData);
     }
 
-    public void setCollectionViewZoom(int collectionViewZoom) {
-        this.collectionViewZoom = normalizeCollectionViewZoom(collectionViewZoom);
-    }
-
-    public boolean isCollectionViewEnabled() {
-        return isCollectionViewEnabled(collectionViewZoom);
-    }
-
-    public static List<Integer> getCollectionViewZoomLevels() {
-        return COLLECTION_VIEW_ZOOM_LEVELS;
-    }
-
-    public static boolean isCollectionViewEnabled(int zoom) {
-        return zoom > COLLECTION_VIEW_DISABLED_ZOOM;
-    }
-
-    public static int getCollectionViewTransitionMinZoom(int zoom) {
-        int currentIndex = COLLECTION_VIEW_ZOOM_LEVELS.indexOf(zoom);
-        if (currentIndex < 0 || currentIndex >= COLLECTION_VIEW_ZOOM_LEVELS.size() - 1) {
-            return 32768;
-        }
-
-        return COLLECTION_VIEW_ZOOM_LEVELS.get(currentIndex + 1);
+    public CollectionVisibilityData getVisibilityData() {
+        return visibilityData;
     }
 
     public void setSourcePluginId(@Nullable String sourcePluginId) {
@@ -418,10 +395,6 @@ public class CollectionData {
         if (!personal && lifetime == TerritoryLifetime.SESSION_ONLY) {
             throw new IllegalArgumentException("SESSION_ONLY collections must be personal");
         }
-    }
-
-    private static int normalizeCollectionViewZoom(int zoom) {
-        return COLLECTION_VIEW_ZOOM_LEVELS.contains(zoom) ? zoom : COLLECTION_VIEW_DISABLED_ZOOM;
     }
 
     private static TerritoryLifetime readLifetimeFromNbt(CompoundTag nbt) {

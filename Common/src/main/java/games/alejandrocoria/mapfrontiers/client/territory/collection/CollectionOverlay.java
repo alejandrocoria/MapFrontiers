@@ -8,7 +8,10 @@ import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.territory.BannerRenderer;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierLabelPlacementSolver;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
+import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityData;
+import it.unimi.dsi.fastutil.Pair;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.display.MarkerOverlay;
@@ -54,6 +57,9 @@ public class CollectionOverlay {
     private final @Nullable IClientAPI jmAPI;
     private @Nullable CollectionData collection;
     private List<FrontierOverlay> memberFrontiers;
+    private CollectionVisibilityData effectiveVisibilityData = new CollectionVisibilityData();
+    private CollectionVisibilityData visibilityOverrideData = new CollectionVisibilityData();
+    private CollectionVisibilityMask visibilityOverrideMask = new CollectionVisibilityMask();
     private boolean needUpdateOverlay = true;
     private boolean membershipDirty = true;
     private boolean geometryDirty = true;
@@ -70,6 +76,7 @@ public class CollectionOverlay {
         this.jmAPI = jmAPI;
         this.collection = collection;
         memberFrontiers = List.copyOf(members);
+        refreshEffectiveVisibility();
         refreshBannerRenderer();
     }
 
@@ -86,6 +93,7 @@ public class CollectionOverlay {
 
         if (this.collection != collection) {
             this.collection = collection;
+            refreshEffectiveVisibility();
             refreshBannerRenderer();
             geometryDirty = true;
             labelsDirty = true;
@@ -108,6 +116,23 @@ public class CollectionOverlay {
         }
     }
 
+    public void setVisibilityOverride(Pair<CollectionVisibilityData, CollectionVisibilityMask> visibilityOverride) {
+        CollectionVisibilityData newOverrideData = new CollectionVisibilityData(visibilityOverride.first());
+        CollectionVisibilityMask newOverrideMask = new CollectionVisibilityMask(visibilityOverride.second());
+        if (visibilityOverrideData.equals(newOverrideData) && visibilityOverrideMask.equals(newOverrideMask)) {
+            return;
+        }
+
+        visibilityOverrideData = newOverrideData;
+        visibilityOverrideMask = newOverrideMask;
+        refreshEffectiveVisibility();
+        refreshBannerRenderer();
+        geometryDirty = true;
+        labelsDirty = true;
+        labelVisibilityDirty = true;
+        invalidateOverlayRefresh();
+    }
+
     public void processDirtyOverlay() {
         if (needUpdateOverlay) {
             refreshOverlay();
@@ -119,6 +144,7 @@ public class CollectionOverlay {
         geometryDirty = true;
         labelsDirty = true;
         labelVisibilityDirty = true;
+        refreshBannerRenderer();
         refreshOverlay();
     }
 
@@ -159,13 +185,18 @@ public class CollectionOverlay {
 
     private void rebuildVisibleVariants() {
         placementCache.clear();
-        if (collection == null || !collection.isCollectionViewEnabled() || memberFrontiers.isEmpty()) {
+        if (collection == null || !resolveFullscreenVisibility() || memberFrontiers.isEmpty()) {
             visibleVariants = List.of();
             labelsDirty = true;
             return;
         }
 
-        int collectionMaxZoom = collection.getCollectionViewZoom();
+        int collectionMaxZoom = resolveFullscreenZoom();
+        if (!CollectionVisibilityData.isZoomEnabled(collectionMaxZoom)) {
+            visibleVariants = List.of();
+            labelsDirty = true;
+            return;
+        }
         List<CollectionVisibilityVariant> rebuiltVariants = new ArrayList<>();
         List<VisibleVariantBuilder> variantBuilders = new ArrayList<>();
 
@@ -201,17 +232,16 @@ public class CollectionOverlay {
         hideMarkerOverlays(labelOverlays);
         labelOverlays.clear();
 
-        if (collection == null || !collection.isCollectionViewEnabled() || visibleVariants.isEmpty()) {
+        if (collection == null || !resolveFullscreenVisibility() || visibleVariants.isEmpty()) {
             return;
         }
 
-        String effectiveName = getEffectiveCollectionName();
-        if (effectiveName == null) {
+        CollectionLabelContentMetrics metrics = buildLabelContentMetrics();
+        if (metrics.isEmpty()) {
             return;
         }
 
-        CollectionLabelContentMetrics metrics = buildLabelContentMetrics(effectiveName);
-        int collectionMaxZoom = collection.getCollectionViewZoom();
+        int collectionMaxZoom = resolveFullscreenZoom();
         for (CollectionVisibilityVariant variant : visibleVariants) {
             for (CollectionGeometryIsland island : variant.getIslands()) {
                 CollectionLabelPlacementKey placementKey = new CollectionLabelPlacementKey(island, metrics.contentWidthPx(), metrics.contentHeightPx());
@@ -256,13 +286,42 @@ public class CollectionOverlay {
         return name.isEmpty() ? null : name;
     }
 
-    private CollectionLabelContentMetrics buildLabelContentMetrics(String effectiveName) {
-        String label = ChatFormatting.BOLD + effectiveName + ChatFormatting.RESET;
-        boolean hasBanner = bannerRenderer.hasBanner();
+    private CollectionLabelContentMetrics buildLabelContentMetrics() {
+        boolean nameVisible = resolveFullscreenNameVisibility();
+        boolean ownerVisible = resolveFullscreenOwnerVisibility();
+        boolean bannerVisible = resolveFullscreenBannerVisibility();
+        String effectiveName = nameVisible ? getEffectiveCollectionName() : null;
+        String effectiveOwner = ownerVisible && collection != null ? SettingsUserFormatter.getDisplayName(collection.getOwner(), "") : "";
+        boolean hasName = effectiveName != null;
+        boolean hasOwner = !effectiveOwner.isEmpty();
+        boolean hasBanner = bannerVisible && bannerRenderer.hasBanner();
+        if (!hasName && !hasOwner && !hasBanner) {
+            return CollectionLabelContentMetrics.empty();
+        }
+
+        StringBuilder labelBuilder = new StringBuilder();
+        int lines = 0;
+        int textWidthPx = 0;
+
+        if (hasName) {
+            ++lines;
+            labelBuilder.append(ChatFormatting.BOLD).append(effectiveName).append(ChatFormatting.RESET);
+            textWidthPx = Math.max(textWidthPx,
+                    Minecraft.getInstance().font.width(Component.literal(effectiveName).withStyle(ChatFormatting.BOLD)));
+        }
+        if (hasOwner) {
+            ++lines;
+            if (!labelBuilder.isEmpty()) {
+                labelBuilder.append('\n');
+            }
+            labelBuilder.append(ChatFormatting.ITALIC).append(effectiveOwner);
+            textWidthPx = Math.max(textWidthPx, Minecraft.getInstance().font.width(effectiveOwner));
+        }
+
         int textSize = ClientConfig.COLLECTION_TEXT_SIZE.get();
         int bannerSize = getBannerSize();
-        int textWidthPx = Minecraft.getInstance().font.width(Component.literal(effectiveName).withStyle(ChatFormatting.BOLD)) * textSize;
-        int textHeightPx = TEXT_LINE_HEIGHT_PX * textSize;
+        textWidthPx *= textSize;
+        int textHeightPx = lines * TEXT_LINE_HEIGHT_PX * textSize;
         int bannerWidthPx = hasBanner ? BANNER_BASE_WIDTH_PX * bannerSize : 0;
         int bannerHeightPx = hasBanner ? BANNER_BASE_HEIGHT_PX * bannerSize : 0;
         int bannerPlacementWidthPx = hasBanner ? bannerHeightPx : 0;
@@ -273,13 +332,16 @@ public class CollectionOverlay {
 
         if (hasBanner) {
             int topOffset = rawContentHeightPx / 2;
-            textOffsetY = topOffset - textHeightPx / 2 + BANNER_SINGLE_LINE_TEXT_OFFSET_Y;
+            textOffsetY = topOffset - textHeightPx / 2;
             bannerOffsetY = topOffset - textHeightPx;
+            if (lines == 1) {
+                textOffsetY += BANNER_SINGLE_LINE_TEXT_OFFSET_Y;
+            }
         } else {
-            textOffsetY = 0;
+            textOffsetY = lines > 1 ? -(TEXT_LINE_HEIGHT_PX * textSize) / 2 : 0;
         }
 
-        return new CollectionLabelContentMetrics(label, hasBanner,
+        return new CollectionLabelContentMetrics(labelBuilder.toString(), hasBanner,
                 bannerWidthPx, bannerHeightPx,
                 rawContentWidthPx + LABEL_CONTENT_PADDING_PX,
                 rawContentHeightPx + LABEL_CONTENT_PADDING_PX,
@@ -320,9 +382,92 @@ public class CollectionOverlay {
 
     private void refreshBannerRenderer() {
         bannerRenderer.releaseTexture();
-        if (collection != null && collection.getBannerData() != null) {
+        if (resolveFullscreenBannerVisibility() && collection != null && collection.getBannerData() != null) {
             bannerRenderer.createTexture(collection.getId(), collection.getBannerData());
         }
+    }
+
+    private void refreshEffectiveVisibility() {
+        CollectionVisibilityData collectionVisibility = collection == null ? new CollectionVisibilityData() : collection.getVisibilityData();
+        CollectionVisibilityData updatedVisibility = new CollectionVisibilityData(collectionVisibility);
+        if (visibilityOverrideMask.isVisible()) {
+            updatedVisibility.setVisible(visibilityOverrideData.isVisible());
+        }
+        if (visibilityOverrideMask.getFullscreenZoom()) {
+            updatedVisibility.setFullscreenZoom(visibilityOverrideData.getFullscreenZoom());
+        }
+        if (visibilityOverrideMask.getMinimapZoom()) {
+            updatedVisibility.setMinimapZoom(visibilityOverrideData.getMinimapZoom());
+        }
+        if (visibilityOverrideMask.getWebmapZoom()) {
+            updatedVisibility.setWebmapZoom(visibilityOverrideData.getWebmapZoom());
+        }
+        if (visibilityOverrideMask.getFullscreenName()) {
+            updatedVisibility.setFullscreenName(visibilityOverrideData.getFullscreenName());
+        }
+        if (visibilityOverrideMask.getFullscreenOwner()) {
+            updatedVisibility.setFullscreenOwner(visibilityOverrideData.getFullscreenOwner());
+        }
+        if (visibilityOverrideMask.getFullscreenBanner()) {
+            updatedVisibility.setFullscreenBanner(visibilityOverrideData.getFullscreenBanner());
+        }
+        if (visibilityOverrideMask.getMinimapName()) {
+            updatedVisibility.setMinimapName(visibilityOverrideData.getMinimapName());
+        }
+        if (visibilityOverrideMask.getMinimapOwner()) {
+            updatedVisibility.setMinimapOwner(visibilityOverrideData.getMinimapOwner());
+        }
+        if (visibilityOverrideMask.getMinimapBanner()) {
+            updatedVisibility.setMinimapBanner(visibilityOverrideData.getMinimapBanner());
+        }
+        if (visibilityOverrideMask.getWebmapName()) {
+            updatedVisibility.setWebmapName(visibilityOverrideData.getWebmapName());
+        }
+        if (visibilityOverrideMask.getWebmapOwner()) {
+            updatedVisibility.setWebmapOwner(visibilityOverrideData.getWebmapOwner());
+        }
+        if (visibilityOverrideMask.getWebmapBanner()) {
+            updatedVisibility.setWebmapBanner(visibilityOverrideData.getWebmapBanner());
+        }
+        effectiveVisibilityData = updatedVisibility;
+    }
+
+    private boolean resolveFullscreenVisibility() {
+        if (jmAPI == null) {
+            return effectiveVisibilityData.isVisible();
+        }
+        return ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_VISIBILITY.get(), effectiveVisibilityData.isVisible());
+    }
+
+    private int resolveFullscreenZoom() {
+        if (jmAPI == null) {
+            return effectiveVisibilityData.getFullscreenZoom();
+        }
+        if (ClientConfig.COLLECTION_FULLSCREEN_ZOOM_FORCED.get()) {
+            return CollectionVisibilityData.normalizeZoom(ClientConfig.COLLECTION_FULLSCREEN_ZOOM.get());
+        }
+        return effectiveVisibilityData.getFullscreenZoom();
+    }
+
+    private boolean resolveFullscreenNameVisibility() {
+        if (jmAPI == null) {
+            return effectiveVisibilityData.getFullscreenName();
+        }
+        return ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_FULLSCREEN_NAME_VISIBILITY.get(), effectiveVisibilityData.getFullscreenName());
+    }
+
+    private boolean resolveFullscreenOwnerVisibility() {
+        if (jmAPI == null) {
+            return effectiveVisibilityData.getFullscreenOwner();
+        }
+        return ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_FULLSCREEN_OWNER_VISIBILITY.get(), effectiveVisibilityData.getFullscreenOwner());
+    }
+
+    private boolean resolveFullscreenBannerVisibility() {
+        if (jmAPI == null) {
+            return effectiveVisibilityData.getFullscreenBanner();
+        }
+        return ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_FULLSCREEN_BANNER_VISIBILITY.get(), effectiveVisibilityData.getFullscreenBanner());
     }
 
     private void hideMarkerOverlays(List<MarkerOverlay> overlays) {
@@ -658,6 +803,13 @@ public class CollectionOverlay {
                                                  int contentHeightPx,
                                                  int textOffsetY,
                                                  int bannerOffsetY) {
+        private static CollectionLabelContentMetrics empty() {
+            return new CollectionLabelContentMetrics("", false, 0, 0, 0, 0, 0, 0);
+        }
+
+        private boolean isEmpty() {
+            return label.isEmpty() && !hasBanner;
+        }
     }
 
     private static final class VisibleVariantBuilder {
