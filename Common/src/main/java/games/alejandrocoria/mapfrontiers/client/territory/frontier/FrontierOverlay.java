@@ -975,21 +975,50 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public boolean isVisibleOnFullscreenMap(Context.MapType mapType) {
+        return isVisibleOnMap(Context.UI.Fullscreen, mapType);
+    }
+
+    public boolean isVisibleOnMap(Context.UI ui, Context.MapType mapType) {
         if (!isFrontierVisible()) {
             return false;
         }
 
-        if (!ClientConfig.resolveVisibilityValue(ClientConfig.FULLSCREEN_VISIBILITY.get(), getVisibility(FrontierVisibility.Fullscreen))) {
+        boolean uiVisible = switch (ui) {
+            case Fullscreen -> ClientConfig.resolveVisibilityValue(ClientConfig.FULLSCREEN_VISIBILITY.get(), getVisibility(FrontierVisibility.Fullscreen));
+            case Minimap -> ClientConfig.resolveVisibilityValue(ClientConfig.MINIMAP_VISIBILITY.get(), getVisibility(FrontierVisibility.Minimap));
+            case Webmap -> ClientConfig.resolveVisibilityValue(ClientConfig.WEBMAP_VISIBILITY.get(), getVisibility(FrontierVisibility.Webmap));
+            default -> false;
+        };
+        if (!uiVisible) {
             return false;
         }
 
-        return switch (mapType) {
-            case Day -> ClientConfig.resolveVisibilityValue(ClientConfig.FULLSCREEN_DAY_VISIBILITY.get(), getVisibility(FrontierVisibility.FullscreenDay));
-            case Night -> ClientConfig.resolveVisibilityValue(ClientConfig.FULLSCREEN_NIGHT_VISIBILITY.get(), getVisibility(FrontierVisibility.FullscreenNight));
-            case Underground -> ClientConfig.resolveVisibilityValue(ClientConfig.FULLSCREEN_UNDERGROUND_VISIBILITY.get(),
-                    getVisibility(FrontierVisibility.FullscreenUnderground));
-            case Topo -> ClientConfig.resolveVisibilityValue(ClientConfig.FULLSCREEN_TOPO_VISIBILITY.get(), getVisibility(FrontierVisibility.FullscreenTopo));
-            case Biome -> ClientConfig.resolveVisibilityValue(ClientConfig.FULLSCREEN_BIOME_VISIBILITY.get(), getVisibility(FrontierVisibility.FullscreenBiome));
+        return switch (ui) {
+            case Fullscreen -> switch (mapType) {
+                case Day -> ClientConfig.resolveVisibilityValue(ClientConfig.FULLSCREEN_DAY_VISIBILITY.get(), getVisibility(FrontierVisibility.FullscreenDay));
+                case Night -> ClientConfig.resolveVisibilityValue(ClientConfig.FULLSCREEN_NIGHT_VISIBILITY.get(), getVisibility(FrontierVisibility.FullscreenNight));
+                case Underground -> ClientConfig.resolveVisibilityValue(ClientConfig.FULLSCREEN_UNDERGROUND_VISIBILITY.get(),
+                        getVisibility(FrontierVisibility.FullscreenUnderground));
+                case Topo -> ClientConfig.resolveVisibilityValue(ClientConfig.FULLSCREEN_TOPO_VISIBILITY.get(), getVisibility(FrontierVisibility.FullscreenTopo));
+                case Biome -> ClientConfig.resolveVisibilityValue(ClientConfig.FULLSCREEN_BIOME_VISIBILITY.get(), getVisibility(FrontierVisibility.FullscreenBiome));
+            };
+            case Minimap -> switch (mapType) {
+                case Day -> ClientConfig.resolveVisibilityValue(ClientConfig.MINIMAP_DAY_VISIBILITY.get(), getVisibility(FrontierVisibility.MinimapDay));
+                case Night -> ClientConfig.resolveVisibilityValue(ClientConfig.MINIMAP_NIGHT_VISIBILITY.get(), getVisibility(FrontierVisibility.MinimapNight));
+                case Underground -> ClientConfig.resolveVisibilityValue(ClientConfig.MINIMAP_UNDERGROUND_VISIBILITY.get(),
+                        getVisibility(FrontierVisibility.MinimapUnderground));
+                case Topo -> ClientConfig.resolveVisibilityValue(ClientConfig.MINIMAP_TOPO_VISIBILITY.get(), getVisibility(FrontierVisibility.MinimapTopo));
+                case Biome -> ClientConfig.resolveVisibilityValue(ClientConfig.MINIMAP_BIOME_VISIBILITY.get(), getVisibility(FrontierVisibility.MinimapBiome));
+            };
+            case Webmap -> switch (mapType) {
+                case Day -> ClientConfig.resolveVisibilityValue(ClientConfig.WEBMAP_DAY_VISIBILITY.get(), getVisibility(FrontierVisibility.WebmapDay));
+                case Night -> ClientConfig.resolveVisibilityValue(ClientConfig.WEBMAP_NIGHT_VISIBILITY.get(), getVisibility(FrontierVisibility.WebmapNight));
+                case Underground -> ClientConfig.resolveVisibilityValue(ClientConfig.WEBMAP_UNDERGROUND_VISIBILITY.get(),
+                        getVisibility(FrontierVisibility.WebmapUnderground));
+                case Topo -> ClientConfig.resolveVisibilityValue(ClientConfig.WEBMAP_TOPO_VISIBILITY.get(), getVisibility(FrontierVisibility.WebmapTopo));
+                case Biome -> ClientConfig.resolveVisibilityValue(ClientConfig.WEBMAP_BIOME_VISIBILITY.get(), getVisibility(FrontierVisibility.WebmapBiome));
+            };
+            default -> false;
         };
     }
 
@@ -1667,14 +1696,14 @@ public class FrontierOverlay extends FrontierData {
             return;
         }
 
-        int collectionMaxZoom = resolveCollectionFullscreenMaxZoom();
-        if (collectionMaxZoom <= 0) {
-            return;
-        }
-
         ShapeProperties shapeProps = createCollectionShapeProperties();
         for (PolygonUiPlanEntry entry : polygonUiPlan.entries()) {
             if (!shouldRenderCollectionView(entry.ui())) {
+                continue;
+            }
+
+            int collectionMaxZoom = resolveCollectionMaxZoom(entry.ui());
+            if (collectionMaxZoom <= 0) {
                 continue;
             }
 
@@ -2489,33 +2518,59 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private boolean shouldRenderCollectionView(Context.UI ui) {
-        if (previewCollectionStyleEnabled || ui != Context.UI.Fullscreen || frontierShape == FrontierShape.Path) {
+        if (previewCollectionStyleEnabled || frontierShape == FrontierShape.Path) {
             return false;
         }
 
-        return resolveCollectionFullscreenVisibility() && CollectionVisibilityData.isZoomEnabled(resolveCollectionFullscreenMaxZoom());
+        return resolveCollectionVisibility(ui) && CollectionVisibilityData.isZoomEnabled(resolveCollectionMaxZoom(ui));
     }
 
-    private int resolveCollectionFullscreenMaxZoom() {
+    private int resolveCollectionMaxZoom(Context.UI ui) {
         CollectionData collection = getCollection();
         if (collection == null) {
             return CollectionVisibilityData.COLLECTION_VIEW_DISABLED_ZOOM;
         }
 
-        int fullscreenZoom = collection.getVisibilityData().getFullscreenZoom();
+        int zoom = switch (ui) {
+            case Fullscreen -> collection.getVisibilityData().getFullscreenZoom();
+            case Minimap -> collection.getVisibilityData().getMinimapZoom();
+            case Webmap -> collection.getVisibilityData().getWebmapZoom();
+        };
+
         Pair<CollectionVisibilityData, CollectionVisibilityMask> visibilityOverride =
                 MapFrontiersClient.getCollectionLocalOverrides().getVisibility(collection.getId());
-        if (visibilityOverride.second().getFullscreenZoom()) {
-            fullscreenZoom = visibilityOverride.first().getFullscreenZoom();
-        }
-        if (ClientConfig.COLLECTION_FULLSCREEN_ZOOM_FORCED.get()) {
-            return CollectionVisibilityData.normalizeZoom(ClientConfig.COLLECTION_FULLSCREEN_ZOOM.get());
+        switch (ui) {
+            case Fullscreen -> {
+                if (visibilityOverride.second().getFullscreenZoom()) {
+                    zoom = visibilityOverride.first().getFullscreenZoom();
+                }
+            }
+            case Minimap -> {
+                if (visibilityOverride.second().getMinimapZoom()) {
+                    zoom = visibilityOverride.first().getMinimapZoom();
+                }
+            }
+            case Webmap -> {
+                if (visibilityOverride.second().getWebmapZoom()) {
+                    zoom = visibilityOverride.first().getWebmapZoom();
+                }
+            }
         }
 
-        return fullscreenZoom;
+        return switch (ui) {
+            case Fullscreen -> ClientConfig.COLLECTION_FULLSCREEN_ZOOM_FORCED.get()
+                    ? CollectionVisibilityData.normalizeZoom(ClientConfig.COLLECTION_FULLSCREEN_ZOOM.get())
+                    : zoom;
+            case Minimap -> ClientConfig.COLLECTION_MINIMAP_ZOOM_FORCED.get()
+                    ? CollectionVisibilityData.normalizeZoom(ClientConfig.COLLECTION_MINIMAP_ZOOM.get())
+                    : zoom;
+            case Webmap -> ClientConfig.COLLECTION_WEBMAP_ZOOM_FORCED.get()
+                    ? CollectionVisibilityData.normalizeZoom(ClientConfig.COLLECTION_WEBMAP_ZOOM.get())
+                    : zoom;
+        };
     }
 
-    private boolean resolveCollectionFullscreenVisibility() {
+    private boolean resolveCollectionVisibility(Context.UI ui) {
         CollectionData collection = getCollection();
         if (collection == null) {
             return false;
@@ -2536,7 +2591,7 @@ public class FrontierOverlay extends FrontierData {
             return entry.minZoom();
         }
 
-        return Math.max(entry.minZoom(), CollectionVisibilityData.getZoomTransitionMinZoom(resolveCollectionFullscreenMaxZoom()));
+        return Math.max(entry.minZoom(), CollectionVisibilityData.getZoomTransitionMinZoom(resolveCollectionMaxZoom(entry.ui())));
     }
 
     private @Nullable String getCollectionName() {

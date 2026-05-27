@@ -44,7 +44,7 @@ public class CollectionOverlay {
     private static final int LABEL_CONTENT_PADDING_PX = 6;
     private static final int BANNER_SINGLE_LINE_TEXT_OFFSET_Y = 5;
     private static final double LABEL_SOLVER_PRECISION = 2.0;
-    private static final Context.MapType[] FULLSCREEN_MAP_TYPES = {
+    private static final Context.MapType[] ALL_MAP_TYPES = {
             Context.MapType.Day,
             Context.MapType.Night,
             Context.MapType.Underground,
@@ -185,42 +185,46 @@ public class CollectionOverlay {
 
     private void rebuildVisibleVariants() {
         placementCache.clear();
-        if (collection == null || !resolveFullscreenVisibility() || memberFrontiers.isEmpty()) {
+        if (collection == null || memberFrontiers.isEmpty()) {
             visibleVariants = List.of();
             labelsDirty = true;
             return;
         }
 
-        int collectionMaxZoom = resolveFullscreenZoom();
-        if (!CollectionVisibilityData.isZoomEnabled(collectionMaxZoom)) {
-            visibleVariants = List.of();
-            labelsDirty = true;
-            return;
-        }
         List<CollectionVisibilityVariant> rebuiltVariants = new ArrayList<>();
-        List<VisibleVariantBuilder> variantBuilders = new ArrayList<>();
-
-        for (Context.MapType mapType : FULLSCREEN_MAP_TYPES) {
-            List<VisibleMemberGeometry> visibleMembers = resolveVisibleMemberGeometries(mapType, collectionMaxZoom);
-            if (visibleMembers.isEmpty()) {
+        for (Context.UI ui : getSupportedUis()) {
+            if (!resolveVisibility(ui)) {
                 continue;
             }
 
-            List<FrontierOverlay> visibleFrontiers = visibleMembers.stream()
-                    .map(VisibleMemberGeometry::frontier)
-                    .toList();
-            VisibleVariantBuilder existingVariant = findVariantBuilder(variantBuilders, visibleFrontiers);
-            if (existingVariant == null) {
-                variantBuilders.add(new VisibleVariantBuilder(List.copyOf(visibleFrontiers), List.copyOf(visibleMembers), mapType));
-            } else {
-                existingVariant.addMapType(mapType);
+            int collectionMaxZoom = resolveZoom(ui);
+            if (!CollectionVisibilityData.isZoomEnabled(collectionMaxZoom)) {
+                continue;
             }
-        }
 
-        for (VisibleVariantBuilder builder : variantBuilders) {
-            CollectionVisibilityVariant variant = buildVisibleVariant(builder);
-            if (variant != null) {
-                rebuiltVariants.add(variant);
+            List<VisibleVariantBuilder> variantBuilders = new ArrayList<>();
+            for (Context.MapType mapType : getMapTypesForUi(ui)) {
+                List<VisibleMemberGeometry> visibleMembers = resolveVisibleMemberGeometries(ui, mapType, collectionMaxZoom);
+                if (visibleMembers.isEmpty()) {
+                    continue;
+                }
+
+                List<FrontierOverlay> visibleFrontiers = visibleMembers.stream()
+                        .map(VisibleMemberGeometry::frontier)
+                        .toList();
+                VisibleVariantBuilder existingVariant = findVariantBuilder(variantBuilders, ui, visibleFrontiers);
+                if (existingVariant == null) {
+                    variantBuilders.add(new VisibleVariantBuilder(ui, List.copyOf(visibleFrontiers), List.copyOf(visibleMembers), mapType));
+                } else {
+                    existingVariant.addMapType(mapType);
+                }
+            }
+
+            for (VisibleVariantBuilder builder : variantBuilders) {
+                CollectionVisibilityVariant variant = buildVisibleVariant(builder);
+                if (variant != null) {
+                    rebuiltVariants.add(variant);
+                }
             }
         }
 
@@ -232,17 +236,17 @@ public class CollectionOverlay {
         hideMarkerOverlays(labelOverlays);
         labelOverlays.clear();
 
-        if (collection == null || !resolveFullscreenVisibility() || visibleVariants.isEmpty()) {
+        if (collection == null || visibleVariants.isEmpty()) {
             return;
         }
 
-        CollectionLabelContentMetrics metrics = buildLabelContentMetrics();
-        if (metrics.isEmpty()) {
-            return;
-        }
-
-        int collectionMaxZoom = resolveFullscreenZoom();
         for (CollectionVisibilityVariant variant : visibleVariants) {
+            CollectionLabelContentMetrics metrics = buildLabelContentMetrics(variant.getUi());
+            if (metrics.isEmpty()) {
+                continue;
+            }
+
+            int collectionMaxZoom = resolveZoom(variant.getUi());
             for (CollectionGeometryIsland island : variant.getIslands()) {
                 CollectionLabelPlacementKey placementKey = new CollectionLabelPlacementKey(island, metrics.contentWidthPx(), metrics.contentHeightPx());
                 FrontierLabelPlacementSolver.LabelPlacement placement = placementCache.computeIfAbsent(placementKey,
@@ -254,20 +258,20 @@ public class CollectionOverlay {
                     continue;
                 }
 
-                addLabelOverlay(variant.getMapTypes().toArray(Context.MapType[]::new), metrics, island, placement, collectionMaxZoom);
+                addLabelOverlay(variant.getUi(), variant.getMapTypes().toArray(Context.MapType[]::new), metrics, island, placement, collectionMaxZoom);
             }
         }
         showMarkerOverlaysQuietly(labelOverlays);
     }
 
-    private void addLabelOverlay(Context.MapType[] mapTypes, CollectionLabelContentMetrics metrics, CollectionGeometryIsland island,
+    private void addLabelOverlay(Context.UI ui, Context.MapType[] mapTypes, CollectionLabelContentMetrics metrics, CollectionGeometryIsland island,
                                  FrontierLabelPlacementSolver.LabelPlacement placement,
                                  int collectionMaxZoom) {
         TextProperties textProperties = createBaseTextProperties().setOffsetY(metrics.textOffsetY());
         int minZoom = Math.max(2, island.getMinZoom());
         BlockPos anchor = BlockPos.containing(placement.centerX(), OVERLAY_Y, placement.centerZ());
         MarkerOverlay labelOverlay = new MarkerOverlay(MapFrontiers.MODID, anchor, createLabelAnchorIcon(metrics));
-        labelOverlay.setActiveUIs(Context.UI.Fullscreen);
+        labelOverlay.setActiveUIs(ui);
         labelOverlay.setActiveMapTypes(mapTypes);
         labelOverlay.setDimension(key.dimension());
         labelOverlay.setMinZoom(minZoom);
@@ -286,10 +290,10 @@ public class CollectionOverlay {
         return name.isEmpty() ? null : name;
     }
 
-    private CollectionLabelContentMetrics buildLabelContentMetrics() {
-        boolean nameVisible = resolveFullscreenNameVisibility();
-        boolean ownerVisible = resolveFullscreenOwnerVisibility();
-        boolean bannerVisible = resolveFullscreenBannerVisibility();
+    private CollectionLabelContentMetrics buildLabelContentMetrics(Context.UI ui) {
+        boolean nameVisible = resolveNameVisibility(ui);
+        boolean ownerVisible = resolveOwnerVisibility(ui);
+        boolean bannerVisible = resolveBannerVisibility(ui);
         String effectiveName = nameVisible ? getEffectiveCollectionName() : null;
         String effectiveOwner = ownerVisible && collection != null ? SettingsUserFormatter.getDisplayName(collection.getOwner(), "") : "";
         boolean hasName = effectiveName != null;
@@ -382,7 +386,7 @@ public class CollectionOverlay {
 
     private void refreshBannerRenderer() {
         bannerRenderer.releaseTexture();
-        if (resolveFullscreenBannerVisibility() && collection != null && collection.getBannerData() != null) {
+        if (hasVisibleBannerOnAnyUi() && collection != null && collection.getBannerData() != null) {
             bannerRenderer.createTexture(collection.getId(), collection.getBannerData());
         }
     }
@@ -432,42 +436,165 @@ public class CollectionOverlay {
         effectiveVisibilityData = updatedVisibility;
     }
 
-    private boolean resolveFullscreenVisibility() {
+    private boolean resolveVisibility(Context.UI ui) {
         if (jmAPI == null) {
             return effectiveVisibilityData.isVisible();
         }
         return ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_VISIBILITY.get(), effectiveVisibilityData.isVisible());
     }
 
-    private int resolveFullscreenZoom() {
+    private int resolveZoom(Context.UI ui) {
         if (jmAPI == null) {
-            return effectiveVisibilityData.getFullscreenZoom();
+            return getZoom(ui);
         }
-        if (ClientConfig.COLLECTION_FULLSCREEN_ZOOM_FORCED.get()) {
-            return CollectionVisibilityData.normalizeZoom(ClientConfig.COLLECTION_FULLSCREEN_ZOOM.get());
-        }
-        return effectiveVisibilityData.getFullscreenZoom();
+
+        return switch (ui) {
+            case Fullscreen -> ClientConfig.COLLECTION_FULLSCREEN_ZOOM_FORCED.get()
+                    ? CollectionVisibilityData.normalizeZoom(ClientConfig.COLLECTION_FULLSCREEN_ZOOM.get())
+                    : effectiveVisibilityData.getFullscreenZoom();
+            case Minimap -> ClientConfig.COLLECTION_MINIMAP_ZOOM_FORCED.get()
+                    ? CollectionVisibilityData.normalizeZoom(ClientConfig.COLLECTION_MINIMAP_ZOOM.get())
+                    : effectiveVisibilityData.getMinimapZoom();
+            case Webmap -> ClientConfig.COLLECTION_WEBMAP_ZOOM_FORCED.get()
+                    ? CollectionVisibilityData.normalizeZoom(ClientConfig.COLLECTION_WEBMAP_ZOOM.get())
+                    : effectiveVisibilityData.getWebmapZoom();
+            default -> CollectionVisibilityData.COLLECTION_VIEW_DISABLED_ZOOM;
+        };
     }
 
-    private boolean resolveFullscreenNameVisibility() {
+    private boolean resolveNameVisibility(Context.UI ui) {
         if (jmAPI == null) {
-            return effectiveVisibilityData.getFullscreenName();
+            return getNameVisibility(ui);
         }
-        return ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_FULLSCREEN_NAME_VISIBILITY.get(), effectiveVisibilityData.getFullscreenName());
+
+        return switch (ui) {
+            case Fullscreen -> ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_FULLSCREEN_NAME_VISIBILITY.get(), effectiveVisibilityData.getFullscreenName());
+            case Minimap -> ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_MINIMAP_NAME_VISIBILITY.get(), effectiveVisibilityData.getMinimapName());
+            case Webmap -> ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_WEBMAP_NAME_VISIBILITY.get(), effectiveVisibilityData.getWebmapName());
+            default -> false;
+        };
     }
 
-    private boolean resolveFullscreenOwnerVisibility() {
+    private boolean resolveOwnerVisibility(Context.UI ui) {
         if (jmAPI == null) {
-            return effectiveVisibilityData.getFullscreenOwner();
+            return getOwnerVisibility(ui);
         }
-        return ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_FULLSCREEN_OWNER_VISIBILITY.get(), effectiveVisibilityData.getFullscreenOwner());
+
+        return switch (ui) {
+            case Fullscreen -> ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_FULLSCREEN_OWNER_VISIBILITY.get(), effectiveVisibilityData.getFullscreenOwner());
+            case Minimap -> ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_MINIMAP_OWNER_VISIBILITY.get(), effectiveVisibilityData.getMinimapOwner());
+            case Webmap -> ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_WEBMAP_OWNER_VISIBILITY.get(), effectiveVisibilityData.getWebmapOwner());
+            default -> false;
+        };
     }
 
-    private boolean resolveFullscreenBannerVisibility() {
+    private boolean resolveBannerVisibility(Context.UI ui) {
         if (jmAPI == null) {
-            return effectiveVisibilityData.getFullscreenBanner();
+            return getBannerVisibility(ui);
         }
-        return ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_FULLSCREEN_BANNER_VISIBILITY.get(), effectiveVisibilityData.getFullscreenBanner());
+
+        return switch (ui) {
+            case Fullscreen -> ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_FULLSCREEN_BANNER_VISIBILITY.get(), effectiveVisibilityData.getFullscreenBanner());
+            case Minimap -> ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_MINIMAP_BANNER_VISIBILITY.get(), effectiveVisibilityData.getMinimapBanner());
+            case Webmap -> ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_WEBMAP_BANNER_VISIBILITY.get(), effectiveVisibilityData.getWebmapBanner());
+            default -> false;
+        };
+    }
+
+    private int getZoom(Context.UI ui) {
+        return switch (ui) {
+            case Fullscreen -> effectiveVisibilityData.getFullscreenZoom();
+            case Minimap -> effectiveVisibilityData.getMinimapZoom();
+            case Webmap -> effectiveVisibilityData.getWebmapZoom();
+            default -> CollectionVisibilityData.COLLECTION_VIEW_DISABLED_ZOOM;
+        };
+    }
+
+    private boolean getNameVisibility(Context.UI ui) {
+        return switch (ui) {
+            case Fullscreen -> effectiveVisibilityData.getFullscreenName();
+            case Minimap -> effectiveVisibilityData.getMinimapName();
+            case Webmap -> effectiveVisibilityData.getWebmapName();
+            default -> false;
+        };
+    }
+
+    private boolean getOwnerVisibility(Context.UI ui) {
+        return switch (ui) {
+            case Fullscreen -> effectiveVisibilityData.getFullscreenOwner();
+            case Minimap -> effectiveVisibilityData.getMinimapOwner();
+            case Webmap -> effectiveVisibilityData.getWebmapOwner();
+            default -> false;
+        };
+    }
+
+    private boolean getBannerVisibility(Context.UI ui) {
+        return switch (ui) {
+            case Fullscreen -> effectiveVisibilityData.getFullscreenBanner();
+            case Minimap -> effectiveVisibilityData.getMinimapBanner();
+            case Webmap -> effectiveVisibilityData.getWebmapBanner();
+            default -> false;
+        };
+    }
+
+    private boolean hasVisibleBannerOnAnyUi() {
+        for (Context.UI ui : getSupportedUis()) {
+            if (resolveVisibility(ui) && resolveBannerVisibility(ui)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private List<Context.MapType> getMapTypesForUi(Context.UI ui) {
+        List<Context.MapType> mapTypes = new ArrayList<>(ALL_MAP_TYPES.length);
+        for (Context.MapType mapType : ALL_MAP_TYPES) {
+            if (isMapTypeEnabledOnUi(ui, mapType)) {
+                mapTypes.add(mapType);
+            }
+        }
+
+        return List.copyOf(mapTypes);
+    }
+
+    private boolean isMapTypeEnabledOnUi(Context.UI ui, Context.MapType mapType) {
+        if (jmAPI == null) {
+            return true;
+        }
+
+        return switch (ui) {
+            case Fullscreen -> switch (mapType) {
+                case Day -> ClientConfig.resolveVisibilityValue(ClientConfig.FULLSCREEN_DAY_VISIBILITY.get(), true);
+                case Night -> ClientConfig.resolveVisibilityValue(ClientConfig.FULLSCREEN_NIGHT_VISIBILITY.get(), true);
+                case Underground -> ClientConfig.resolveVisibilityValue(ClientConfig.FULLSCREEN_UNDERGROUND_VISIBILITY.get(), true);
+                case Topo -> ClientConfig.resolveVisibilityValue(ClientConfig.FULLSCREEN_TOPO_VISIBILITY.get(), true);
+                case Biome -> ClientConfig.resolveVisibilityValue(ClientConfig.FULLSCREEN_BIOME_VISIBILITY.get(), true);
+            };
+            case Minimap -> switch (mapType) {
+                case Day -> ClientConfig.resolveVisibilityValue(ClientConfig.MINIMAP_DAY_VISIBILITY.get(), true);
+                case Night -> ClientConfig.resolveVisibilityValue(ClientConfig.MINIMAP_NIGHT_VISIBILITY.get(), true);
+                case Underground -> ClientConfig.resolveVisibilityValue(ClientConfig.MINIMAP_UNDERGROUND_VISIBILITY.get(), true);
+                case Topo -> ClientConfig.resolveVisibilityValue(ClientConfig.MINIMAP_TOPO_VISIBILITY.get(), true);
+                case Biome -> ClientConfig.resolveVisibilityValue(ClientConfig.MINIMAP_BIOME_VISIBILITY.get(), true);
+            };
+            case Webmap -> switch (mapType) {
+                case Day -> ClientConfig.resolveVisibilityValue(ClientConfig.WEBMAP_DAY_VISIBILITY.get(), true);
+                case Night -> ClientConfig.resolveVisibilityValue(ClientConfig.WEBMAP_NIGHT_VISIBILITY.get(), true);
+                case Underground -> ClientConfig.resolveVisibilityValue(ClientConfig.WEBMAP_UNDERGROUND_VISIBILITY.get(), true);
+                case Topo -> ClientConfig.resolveVisibilityValue(ClientConfig.WEBMAP_TOPO_VISIBILITY.get(), true);
+                case Biome -> ClientConfig.resolveVisibilityValue(ClientConfig.WEBMAP_BIOME_VISIBILITY.get(), true);
+            };
+            default -> false;
+        };
+    }
+
+    private Context.UI[] getSupportedUis() {
+        if (jmAPI == null) {
+            return new Context.UI[]{Context.UI.Fullscreen};
+        }
+
+        return new Context.UI[]{Context.UI.Fullscreen, Context.UI.Minimap, Context.UI.Webmap};
     }
 
     private void hideMarkerOverlays(List<MarkerOverlay> overlays) {
@@ -523,11 +650,11 @@ public class CollectionOverlay {
         return mapImage;
     }
 
-    private List<VisibleMemberGeometry> resolveVisibleMemberGeometries(Context.MapType mapType, int collectionMaxZoom) {
+    private List<VisibleMemberGeometry> resolveVisibleMemberGeometries(Context.UI ui, Context.MapType mapType, int collectionMaxZoom) {
         List<VisibleMemberGeometry> visibleMembers = new ArrayList<>();
 
         for (FrontierOverlay frontier : memberFrontiers) {
-            if (!frontier.isVisibleOnFullscreenMap(mapType)) {
+            if (!frontier.isVisibleOnMap(ui, mapType)) {
                 continue;
             }
 
@@ -570,12 +697,12 @@ public class CollectionOverlay {
         }
 
         List<CollectionGeometryIsland> islands = extractGeometryIslands(unionArea, sourceIslands);
-        return new CollectionVisibilityVariant(builder.mapTypes(), islands);
+        return new CollectionVisibilityVariant(builder.ui(), builder.mapTypes(), islands);
     }
 
-    private static VisibleVariantBuilder findVariantBuilder(List<VisibleVariantBuilder> builders, List<FrontierOverlay> visibleFrontiers) {
+    private static VisibleVariantBuilder findVariantBuilder(List<VisibleVariantBuilder> builders, Context.UI ui, List<FrontierOverlay> visibleFrontiers) {
         for (VisibleVariantBuilder builder : builders) {
-            if (builder.visibleFrontiers().equals(visibleFrontiers)) {
+            if (builder.ui() == ui && builder.visibleFrontiers().equals(visibleFrontiers)) {
                 return builder;
             }
         }
@@ -746,12 +873,18 @@ public class CollectionOverlay {
     }
 
     private static final class CollectionVisibilityVariant {
+        private final Context.UI ui;
         private final List<Context.MapType> mapTypes;
         private final List<CollectionGeometryIsland> islands;
 
-        public CollectionVisibilityVariant(List<Context.MapType> mapTypes, List<CollectionGeometryIsland> islands) {
+        public CollectionVisibilityVariant(Context.UI ui, List<Context.MapType> mapTypes, List<CollectionGeometryIsland> islands) {
+            this.ui = ui;
             this.mapTypes = List.copyOf(mapTypes);
             this.islands = List.copyOf(islands);
+        }
+
+        public Context.UI getUi() {
+            return ui;
         }
 
         public List<Context.MapType> getMapTypes() {
@@ -813,15 +946,21 @@ public class CollectionOverlay {
     }
 
     private static final class VisibleVariantBuilder {
+        private final Context.UI ui;
         private final List<FrontierOverlay> visibleFrontiers;
         private final List<VisibleMemberGeometry> visibleMemberGeometries;
         private final List<Context.MapType> mapTypes = new ArrayList<>();
 
-        private VisibleVariantBuilder(List<FrontierOverlay> visibleFrontiers, List<VisibleMemberGeometry> visibleMemberGeometries,
+        private VisibleVariantBuilder(Context.UI ui, List<FrontierOverlay> visibleFrontiers, List<VisibleMemberGeometry> visibleMemberGeometries,
                                       Context.MapType initialMapType) {
+            this.ui = ui;
             this.visibleFrontiers = visibleFrontiers;
             this.visibleMemberGeometries = visibleMemberGeometries;
             mapTypes.add(initialMapType);
+        }
+
+        public Context.UI ui() {
+            return ui;
         }
 
         public List<FrontierOverlay> visibleFrontiers() {
