@@ -15,7 +15,10 @@ import it.unimi.dsi.fastutil.Pair;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.display.MarkerOverlay;
+import journeymap.api.v2.client.display.PolygonOverlay;
 import journeymap.api.v2.client.model.MapImage;
+import journeymap.api.v2.client.model.MapPolygon;
+import journeymap.api.v2.client.model.ShapeProperties;
 import journeymap.api.v2.client.model.TextProperties;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -44,6 +47,7 @@ public class CollectionOverlay {
     private static final int LABEL_CONTENT_PADDING_PX = 6;
     private static final int BANNER_SINGLE_LINE_TEXT_OFFSET_Y = 5;
     private static final double LABEL_SOLVER_PRECISION = 2.0;
+    private static final int HIGHLIGHT_STROKE_WIDTH = 4;
     private static final Context.MapType[] ALL_MAP_TYPES = {
             Context.MapType.Day,
             Context.MapType.Night,
@@ -65,8 +69,13 @@ public class CollectionOverlay {
     private boolean geometryDirty = true;
     private boolean labelsDirty = true;
     private boolean labelVisibilityDirty = true;
+    private boolean highlighted = false;
+    private boolean highlightStructureDirty = true;
+    private boolean highlightVisibilityDirty = true;
     private List<CollectionVisibilityVariant> visibleVariants = List.of();
     private final List<MarkerOverlay> labelOverlays = new ArrayList<>();
+    private final List<PolygonOverlay> highlightPolygonOverlays = new ArrayList<>();
+    private List<CollectionHighlightRenderGeometry> highlightRenderGeometries = List.of();
     private final Map<CollectionLabelPlacementKey, FrontierLabelPlacementSolver.LabelPlacement> placementCache = new HashMap<>();
     private final BannerRenderer bannerRenderer = new BannerRenderer();
     private @Nullable Runnable dirtyOverlayListener;
@@ -108,6 +117,7 @@ public class CollectionOverlay {
             geometryDirty = true;
             labelsDirty = true;
             labelVisibilityDirty = true;
+            highlightStructureDirty = true;
             dirty = true;
         }
 
@@ -144,6 +154,8 @@ public class CollectionOverlay {
         geometryDirty = true;
         labelsDirty = true;
         labelVisibilityDirty = true;
+        highlightStructureDirty = true;
+        highlightVisibilityDirty = true;
         refreshBannerRenderer();
         refreshOverlay();
     }
@@ -151,12 +163,21 @@ public class CollectionOverlay {
     void markGeometryDirty() {
         geometryDirty = true;
         labelsDirty = true;
+        highlightStructureDirty = true;
         invalidateOverlayRefresh();
+    }
+
+    public void setHighlighted(boolean highlighted) {
+        this.highlighted = highlighted;
+        invalidateHighlightVisibility();
     }
 
     public void deleted() {
         hideMarkerOverlays(labelOverlays);
+        hidePolygonOverlays(highlightPolygonOverlays);
         labelOverlays.clear();
+        highlightPolygonOverlays.clear();
+        highlightRenderGeometries = List.of();
         placementCache.clear();
         visibleVariants = List.of();
         bannerRenderer.releaseTexture();
@@ -175,6 +196,15 @@ public class CollectionOverlay {
 
         if (labelsDirty || labelVisibilityDirty) {
             rebuildLabelOverlays();
+        }
+
+        if (highlighted && highlightStructureDirty) {
+            rebuildHighlightOverlays();
+            highlightStructureDirty = false;
+            highlightVisibilityDirty = false;
+        } else if (highlightVisibilityDirty) {
+            refreshHighlightVisibility();
+            highlightVisibilityDirty = false;
         }
 
         membershipDirty = false;
@@ -230,6 +260,30 @@ public class CollectionOverlay {
 
         visibleVariants = List.copyOf(rebuiltVariants);
         labelsDirty = true;
+    }
+
+    private void rebuildHighlightOverlays() {
+        hidePolygonOverlays(highlightPolygonOverlays);
+        highlightPolygonOverlays.clear();
+        highlightRenderGeometries = rebuildHighlightRenderGeometries();
+
+        if (!highlighted) {
+            return;
+        }
+
+        ShapeProperties highlightShapeProperties = createHighlightShapeProperties();
+        for (CollectionHighlightRenderGeometry geometry : highlightRenderGeometries) {
+            PolygonOverlay overlay = new PolygonOverlay(MapFrontiers.MODID, key.dimension(),
+                    highlightShapeProperties, geometry.polygon(), geometry.holes());
+            overlay.setActiveUIs(Context.UI.Fullscreen);
+            overlay.setActiveMapTypes(ALL_MAP_TYPES);
+            if (geometry.minZoom() > 0) {
+                overlay.setMinZoom(geometry.minZoom());
+            }
+            highlightPolygonOverlays.add(overlay);
+        }
+
+        showPolygonOverlaysQuietly(highlightPolygonOverlays);
     }
 
     private void rebuildLabelOverlays() {
@@ -389,6 +443,15 @@ public class CollectionOverlay {
         if (hasVisibleBannerOnAnyUi() && collection != null && collection.getBannerData() != null) {
             bannerRenderer.createTexture(collection.getId(), collection.getBannerData());
         }
+    }
+
+    private static ShapeProperties createHighlightShapeProperties() {
+        return new ShapeProperties()
+                .setStrokeWidth(HIGHLIGHT_STROKE_WIDTH)
+                .setStrokeColor(ColorConstants.WHITE)
+                .setStrokeOpacity(1.f)
+                .setStrokePosition(ShapeProperties.StrokePosition.OUTSIDE)
+                .setFillOpacity(0.f);
     }
 
     private void refreshEffectiveVisibility() {
@@ -621,6 +684,42 @@ public class CollectionOverlay {
         }
     }
 
+    private void hidePolygonOverlays(List<PolygonOverlay> overlays) {
+        for (PolygonOverlay polygon : overlays) {
+            removePolygonOverlay(polygon);
+        }
+    }
+
+    private void showPolygonOverlaysQuietly(List<PolygonOverlay> overlays) {
+        try {
+            showPolygonOverlays(overlays);
+        } catch (Exception e) {
+            MapFrontiers.LOGGER.error("Error showing collection highlight overlays", e);
+        }
+    }
+
+    private void showPolygonOverlays(List<PolygonOverlay> overlays) throws Exception {
+        if (jmAPI == null) {
+            return;
+        }
+
+        for (PolygonOverlay polygon : overlays) {
+            jmAPI.show(polygon);
+        }
+    }
+
+    private void removePolygonOverlay(PolygonOverlay polygon) {
+        if (jmAPI == null) {
+            return;
+        }
+
+        try {
+            jmAPI.remove(polygon);
+        } catch (Throwable t) {
+            MapFrontiers.LOGGER.error("Failed to remove collection highlight overlay for {}", key, t);
+        }
+    }
+
     private void removeMarkerOverlay(MarkerOverlay marker) {
         if (jmAPI == null) {
             return;
@@ -700,6 +799,47 @@ public class CollectionOverlay {
         return new CollectionVisibilityVariant(builder.ui(), builder.mapTypes(), islands);
     }
 
+    private List<CollectionHighlightRenderGeometry> rebuildHighlightRenderGeometries() {
+        if (collection == null || memberFrontiers.isEmpty()) {
+            return List.of();
+        }
+
+        Area unionArea = new Area();
+        List<CollectionSourceIsland> sourceIslands = new ArrayList<>();
+
+        for (FrontierOverlay frontier : memberFrontiers) {
+            FrontierOverlay.CollectionGeometrySnapshot snapshot = frontier.getCollectionGeometrySnapshot();
+            if (snapshot == null || snapshot.isEmpty()) {
+                continue;
+            }
+
+            for (FrontierOverlay.CollectionGeometryIslandSnapshot islandSnapshot : snapshot.getIslands()) {
+                Area islandArea = islandSnapshot.copyEffectiveArea();
+                if (islandArea.isEmpty()) {
+                    continue;
+                }
+
+                unionArea.add(new Area(islandArea));
+                sourceIslands.add(new CollectionSourceIsland(islandArea, islandSnapshot.getMinZoom()));
+            }
+        }
+
+        if (unionArea.isEmpty() || sourceIslands.isEmpty()) {
+            return List.of();
+        }
+
+        List<CollectionGeometryIsland> islands = extractGeometryIslands(unionArea, sourceIslands);
+        List<CollectionHighlightRenderGeometry> geometries = new ArrayList<>(islands.size());
+        for (CollectionGeometryIsland island : islands) {
+            CollectionHighlightRenderGeometry geometry = buildHighlightRenderGeometry(island);
+            if (geometry != null) {
+                geometries.add(geometry);
+            }
+        }
+
+        return List.copyOf(geometries);
+    }
+
     private static VisibleVariantBuilder findVariantBuilder(List<VisibleVariantBuilder> builders, Context.UI ui, List<FrontierOverlay> visibleFrontiers) {
         for (VisibleVariantBuilder builder : builders) {
             if (builder.ui() == ui && builder.visibleFrontiers().equals(visibleFrontiers)) {
@@ -769,6 +909,41 @@ public class CollectionOverlay {
         return List.copyOf(islandAreas);
     }
 
+    private static @Nullable CollectionHighlightRenderGeometry buildHighlightRenderGeometry(CollectionGeometryIsland island) {
+        List<RingPath> rings = extractRingPaths(island.copyEffectiveArea());
+        if (rings.isEmpty()) {
+            return null;
+        }
+
+        double outerSign = resolveOuterRingSign(rings);
+        RingPath outerRing = null;
+        List<MapPolygon> holes = new ArrayList<>();
+
+        for (RingPath ring : rings) {
+            if (hasSameSign(ring.signedArea(), outerSign)) {
+                if (outerRing == null || Math.abs(ring.signedArea()) > Math.abs(outerRing.signedArea())) {
+                    outerRing = ring;
+                }
+            } else {
+                MapPolygon holePolygon = toMapPolygon(ring.points());
+                if (holePolygon != null) {
+                    holes.add(holePolygon);
+                }
+            }
+        }
+
+        if (outerRing == null) {
+            return null;
+        }
+
+        MapPolygon outerPolygon = toMapPolygon(outerRing.points());
+        if (outerPolygon == null) {
+            return null;
+        }
+
+        return new CollectionHighlightRenderGeometry(outerPolygon, holes.isEmpty() ? null : List.copyOf(holes), island.getMinZoom());
+    }
+
     private static List<RingPath> extractRingPaths(Area area) {
         List<RingPath> rings = new ArrayList<>();
         PathIterator pathIterator = area.getPathIterator(null);
@@ -826,7 +1001,7 @@ public class CollectionOverlay {
             return;
         }
 
-        rings.add(new RingPath((Path2D.Double) path.clone(), new Area(path), computeSignedArea(points)));
+        rings.add(new RingPath((Path2D.Double) path.clone(), new Area(path), List.copyOf(points), computeSignedArea(points)));
     }
 
     private static double resolveOuterRingSign(List<RingPath> rings) {
@@ -863,6 +1038,30 @@ public class CollectionOverlay {
         Area intersection = new Area(first);
         intersection.intersect(second);
         return !intersection.isEmpty();
+    }
+
+    private void refreshHighlightVisibility() {
+        hidePolygonOverlays(highlightPolygonOverlays);
+        if (!highlighted) {
+            return;
+        }
+
+        showPolygonOverlaysQuietly(highlightPolygonOverlays);
+    }
+
+    private void invalidateHighlightVisibility() {
+        highlightVisibilityDirty = true;
+        invalidateOverlayRefresh();
+    }
+
+    private static @Nullable MapPolygon toMapPolygon(List<Point2D.Double> points) {
+        if (points.size() < 3) {
+            return null;
+        }
+
+        return new MapPolygon(points.stream()
+                .map(point -> new BlockPos((int) Math.round(point.x), OVERLAY_Y, (int) Math.round(point.y)))
+                .toList());
     }
 
     private void invalidateOverlayRefresh() {
@@ -920,7 +1119,12 @@ public class CollectionOverlay {
     private record CollectionSourceIsland(Area effectiveArea, int minZoom) {
     }
 
-    private record RingPath(Path2D.Double path, Area area, double signedArea) {
+    private record RingPath(Path2D.Double path, Area area, List<Point2D.Double> points, double signedArea) {
+    }
+
+    private record CollectionHighlightRenderGeometry(MapPolygon polygon,
+                                                     @Nullable List<MapPolygon> holes,
+                                                     int minZoom) {
     }
 
     private record CollectionLabelPlacementKey(CollectionGeometryIsland island,

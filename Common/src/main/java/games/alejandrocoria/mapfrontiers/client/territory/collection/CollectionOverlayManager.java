@@ -106,6 +106,13 @@ public class CollectionOverlayManager {
         }
     }
 
+    public void setHighlighted(UUID collectionId, ResourceKey<Level> dimension, boolean highlighted) {
+        CollectionOverlay overlay = overlaysByKey.get(new CollectionOverlayKey(collectionId, dimension));
+        if (overlay != null) {
+            overlay.setHighlighted(highlighted);
+        }
+    }
+
     private void refreshCollectionOverlay(UUID collectionId, ResourceKey<Level> dimension) {
         CollectionOverlayKey key = new CollectionOverlayKey(collectionId, dimension);
         CollectionData collection = collectionRuntime.getCollection(collectionId);

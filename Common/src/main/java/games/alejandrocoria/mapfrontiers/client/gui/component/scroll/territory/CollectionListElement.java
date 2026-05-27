@@ -254,7 +254,7 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
         graphics.fill(x + width - 2, y + 2, x + width, y + height, color);
 
         collapseToggleButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
-        renderTexts(graphics, mouseX, mouseY, partialTicks);
+        renderTexts(graphics, mouseX, mouseY, partialTicks, selected);
         renderMarkedCount(graphics);
         renderActionButtons(graphics, mouseX, mouseY, partialTicks, focused);
         renderCheckBox(graphics, mouseX, mouseY, partialTicks, focused);
@@ -271,10 +271,13 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
         graphics.outline(left, top, width - 4, height - 2, ColorConstants.WHITE);
     }
 
-    private void renderTexts(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+    private void renderTexts(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks, boolean selected) {
         int titleColor = ColorConstants.TEXT;
         if (virtualRow) {
             titleColor = ColorConstants.VIRTUAL_COLLECTION;
+        }
+        if (selected) {
+            titleColor = ColorConstants.TEXT_HIGHLIGHT;
         }
 
         int titleX = getTitleX();

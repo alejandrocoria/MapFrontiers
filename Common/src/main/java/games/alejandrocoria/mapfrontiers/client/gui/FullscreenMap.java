@@ -7,14 +7,18 @@ import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.config.FrontierDisplayVisibility;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteCollectionConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteFrontierConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.NewFrontierDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.page.CollectionInfoPage;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.page.FrontierInfoPage;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.page.TerritoryListPage;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
@@ -28,6 +32,7 @@ import journeymap.api.v2.client.util.UIState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.player.Player;
@@ -36,7 +41,11 @@ import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class FullscreenMap {
@@ -44,9 +53,20 @@ public class FullscreenMap {
         Nothing, Adding, Removing
     }
 
+    private sealed interface SelectionCandidate permits FrontierSelectionCandidate, CollectionSelectionCandidate {
+    }
+
+    private record FrontierSelectionCandidate(FrontierOverlay frontier) implements SelectionCandidate {
+    }
+
+    private record CollectionSelectionCandidate(CollectionData collection) implements SelectionCandidate {
+    }
+
     private final IClientAPI jmAPI;
 
     private FrontierOverlay frontierHighlighted;
+    private @Nullable CollectionData selectedCollection;
+    private @Nullable ResourceKey<Level> selectedCollectionHighlightDimension;
 
     private IThemeButton buttonFrontiers;
     private IThemeButton buttonNew;
@@ -68,9 +88,11 @@ public class FullscreenMap {
         MapFrontiersClient.getFrontierEvents().subscribeDeleted(this, frontierID -> {
             if (frontierHighlighted != null && frontierHighlighted.getId().equals(frontierID)) {
                 cancelEditing();
-                frontierHighlighted = null;
+                clearSelection();
                 relocating = false;
                 updateButtons();
+            } else if (selectedCollection != null) {
+                validateSelectedCollectionAvailability();
             }
         });
 
@@ -81,6 +103,21 @@ public class FullscreenMap {
                 frontierHighlighted.setHighlighted(true);
                 relocating = false;
                 updateButtons();
+            } else if (selectedCollection != null) {
+                validateSelectedCollectionAvailability();
+            }
+        });
+
+        MapFrontiersClient.getCollectionEvents().subscribeDeleted(this, collectionId -> {
+            if (selectedCollection != null && selectedCollection.getId().equals(collectionId)) {
+                clearSelection();
+                updateButtons();
+            }
+        });
+
+        MapFrontiersClient.getCollectionEvents().subscribeUpdated(this, collection -> {
+            if (selectedCollection != null && selectedCollection.getId().equals(collection.getId())) {
+                selectCollection(collection);
             }
         });
 
@@ -106,10 +143,9 @@ public class FullscreenMap {
     }
 
     public void close() {
-        if (frontierHighlighted != null) {
-            frontierHighlighted.setHighlighted(false);
-        }
+        clearSelection();
         MapFrontiersClient.getFrontierEvents().unsubscribe(this);
+        MapFrontiersClient.getCollectionEvents().unsubscribe(this);
         MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
         ClientGlobalEvents.unsubscribeAllEvents(this);
     }
@@ -172,23 +208,35 @@ public class FullscreenMap {
 
             SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
             SettingsUser playerUser = new SettingsUser(player);
-            SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerUser);
 
             ModPopupMenu subMenu = popupMenu.createSubItemList("MapFrontiers");
             subMenu.addMenuItem(I18n.get("mapfrontiers.button_mapfrontiers"), p -> buttonFrontiersPressed());
-            subMenu.addMenuItem(I18n.get("mapfrontiers.button_new_frontier"), p -> buttonNewPressed(p));
-            if (frontierHighlighted != null) {
+            if (selectedCollection == null || canCreateFrontierInCollection(selectedCollection, playerUser)) {
+                subMenu.addMenuItem(I18n.get("mapfrontiers.button_new_frontier"), p -> buttonNewPressed(p));
+            }
+            if (selectedCollection != null) {
+                subMenu.addMenuItem(I18n.get("mapfrontiers.button_collection_info"), p -> buttonInfoPressed());
+                if (canUpdateSelectedCollection(playerUser)) {
+                    subMenu.addMenuItem(selectedCollection.getVisibilityData().isVisible()
+                            ? I18n.get("mapfrontiers.button_hide_collection")
+                            : I18n.get("mapfrontiers.button_show_collection"), p -> buttonVisibleToggled());
+                }
+                if (canDeleteSelectedCollection(playerUser)) {
+                    subMenu.addMenuItem(I18n.get("mapfrontiers.button_delete_collection"), p -> buttonDelete());
+                }
+            } else if (frontierHighlighted != null) {
+                SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerUser);
                 subMenu.addMenuItem(I18n.get("mapfrontiers.button_frontier_info"), p -> buttonInfoPressed());
-            }
-            if (actions.canUpdate && frontierHighlighted.getVisibility(FrontierVisibility.Frontier)
-                    && frontierHighlighted.getVisibility(FrontierVisibility.Fullscreen)) {
-                subMenu.addMenuItem(I18n.get("mapfrontiers.button_edit_frontier"), p -> buttonEditToggled());
-            }
-            if (actions.canUpdate) {
-                subMenu.addMenuItem(I18n.get("mapfrontiers.button_hide_frontier"), p -> buttonVisibleToggled());
-            }
-            if (actions.canUpdate) {
-                subMenu.addMenuItem(I18n.get("mapfrontiers.button_delete_frontier"), p -> buttonDelete());
+                if (actions.canUpdate && frontierHighlighted.getVisibility(FrontierVisibility.Frontier)
+                        && frontierHighlighted.getVisibility(FrontierVisibility.Fullscreen)) {
+                    subMenu.addMenuItem(I18n.get("mapfrontiers.button_edit_frontier"), p -> buttonEditToggled());
+                }
+                if (actions.canUpdate) {
+                    subMenu.addMenuItem(I18n.get("mapfrontiers.button_hide_frontier"), p -> buttonVisibleToggled());
+                }
+                if (actions.canUpdate) {
+                    subMenu.addMenuItem(I18n.get("mapfrontiers.button_delete_frontier"), p -> buttonDelete());
+                }
             }
         }
     }
@@ -239,21 +287,41 @@ public class FullscreenMap {
 
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
         SettingsUser playerUser = new SettingsUser(player);
-        SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerUser);
         UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
         boolean selectedFrontierVisible = frontierHighlighted != null
                 && uiState != null
                 && frontierHighlighted.getDimension().equals(uiState.dimension)
                 && frontierHighlighted.isVisibleOnFullscreenMap(uiState.mapType);
+        boolean hasSelection = frontierHighlighted != null || selectedCollection != null;
+        boolean canCreateInSelectedCollection = selectedCollection != null && canCreateFrontierInCollection(selectedCollection, playerUser);
+        boolean canUpdateSelectedCollection = selectedCollection != null && canUpdateSelectedCollection(playerUser);
+        boolean canDeleteSelectedCollection = selectedCollection != null && canDeleteSelectedCollection(playerUser);
 
         buttonFrontiers.setEnabled(!editing);
-        buttonNew.setEnabled(!editing);
-        buttonInfo.setEnabled(frontierHighlighted != null && !editing);
-        buttonEdit.setEnabled(actions.canUpdate && selectedFrontierVisible);
-        buttonVisible.setEnabled(actions.canUpdate && !editing);
-        buttonDelete.setEnabled(actions.canDelete && !editing);
+        buttonNew.setEnabled(!editing && (selectedCollection == null || canCreateInSelectedCollection));
+        buttonInfo.setEnabled(hasSelection && !editing);
+        buttonEdit.setEnabled(frontierHighlighted != null && SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerUser).canUpdate
+                && selectedFrontierVisible);
+        buttonVisible.setEnabled(!editing && ((frontierHighlighted != null
+                && SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerUser).canUpdate)
+                || canUpdateSelectedCollection));
+        buttonDelete.setEnabled(!editing && ((frontierHighlighted != null
+                && SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerUser).canDelete)
+                || canDeleteSelectedCollection));
 
-        if (frontierHighlighted != null) {
+        if (selectedCollection != null) {
+            buttonInfo.getButton().setMessage(Component.translatable("mapfrontiers.button_collection_info"));
+            buttonVisible.setLabels(I18n.get("mapfrontiers.button_hide_collection"), I18n.get("mapfrontiers.button_show_collection"));
+            buttonDelete.getButton().setMessage(Component.translatable("mapfrontiers.button_delete_collection"));
+        } else {
+            buttonInfo.getButton().setMessage(Component.translatable("mapfrontiers.button_frontier_info"));
+            buttonVisible.setLabels(I18n.get("mapfrontiers.button_hide_frontier"), I18n.get("mapfrontiers.button_show_frontier"));
+            buttonDelete.getButton().setMessage(Component.translatable("mapfrontiers.button_delete_frontier"));
+        }
+
+        if (selectedCollection != null) {
+            buttonVisible.setToggled(selectedCollection.getVisibilityData().isVisible());
+        } else if (frontierHighlighted != null) {
             buttonVisible.setToggled(frontierHighlighted.getVisibility(FrontierVisibility.Frontier) && frontierHighlighted.getVisibility(FrontierVisibility.Fullscreen));
         } else {
             buttonVisible.setToggled(false);
@@ -265,18 +333,28 @@ public class FullscreenMap {
     }
 
     private void buttonNewPressed(BlockPos centerPos) {
+        @Nullable CollectionData targetCollection = selectedCollection;
+        @Nullable UUID targetCollectionId = targetCollection == null ? null : targetCollection.getId();
+        @Nullable Boolean personal = targetCollection == null ? null : targetCollection.getPersonal();
+        TerritoryLifetime lifetime = targetCollection != null && targetCollection.isSessionOnly()
+                ? TerritoryLifetime.SESSION_ONLY
+                : TerritoryLifetime.PERSISTENT;
         if (frontierHighlighted != null) {
             frontierHighlighted.setHighlighted(false);
             frontierHighlighted = null;
         }
 
-        new NewFrontierDialog(jmAPI, centerPos, null, TerritoryLifetime.PERSISTENT, null, createNewFrontierResultHandler()).display();
+        new NewFrontierDialog(jmAPI, centerPos, personal, lifetime, targetCollectionId, createNewFrontierResultHandler()).display();
 
         updateButtons();
     }
 
     private void buttonInfoPressed() {
-        openFrontierInfo(frontierHighlighted);
+        if (selectedCollection != null) {
+            openCollectionInfo(selectedCollection);
+        } else if (frontierHighlighted != null) {
+            openFrontierInfo(frontierHighlighted);
+        }
     }
 
     private void buttonEditToggled() {
@@ -288,25 +366,48 @@ public class FullscreenMap {
     }
 
     private void buttonVisibleToggled() {
-        frontierHighlighted.setVisibility(FrontierVisibility.Frontier, !frontierHighlighted.getVisibility(FrontierVisibility.Frontier));
-        FrontierChange change = new FrontierChange();
-        change.setVisibility(frontierHighlighted.getVisibilityData());
-        MapFrontiersClient.getOperationService().updateFrontier(frontierHighlighted, change);
+        if (selectedCollection != null) {
+            CollectionVisibilityData visibilityData = new CollectionVisibilityData(selectedCollection.getVisibilityData());
+            visibilityData.setVisible(!visibilityData.isVisible());
+            selectedCollection.setVisibilityData(visibilityData);
+            MapFrontiersClient.getOperationService().updateCollection(selectedCollection);
+        } else if (frontierHighlighted != null) {
+            frontierHighlighted.setVisibility(FrontierVisibility.Frontier, !frontierHighlighted.getVisibility(FrontierVisibility.Frontier));
+            FrontierChange change = new FrontierChange();
+            change.setVisibility(frontierHighlighted.getVisibilityData());
+            MapFrontiersClient.getOperationService().updateFrontier(frontierHighlighted, change);
+        }
 
         updateButtons();
     }
 
     private void buttonDelete() {
-        if (ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.get()) {
-            new DeleteFrontierConfirmationDialog(frontierHighlighted, response -> {
-                if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                    ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.set(false);
-                    ClientGlobalEvents.postUpdatedConfigEvent();
-                }
+        if (selectedCollection != null) {
+            if (ClientConfig.ASK_CONFIRMATION_COLLECTION_DELETE.get()) {
+                new DeleteCollectionConfirmationDialog(selectedCollection, response -> {
+                    if (response == ConfirmationDialog.Response.ConfirmAlternative) {
+                        ClientConfig.ASK_CONFIRMATION_COLLECTION_DELETE.set(false);
+                        ClientGlobalEvents.postUpdatedConfigEvent();
+                    }
+                    deleteCollection();
+                }).display();
+            } else {
+                deleteCollection();
+            }
+        } else if (frontierHighlighted != null) {
+            if (ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.get()) {
+                new DeleteFrontierConfirmationDialog(frontierHighlighted, response -> {
+                    if (response == ConfirmationDialog.Response.ConfirmAlternative) {
+                        ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.set(false);
+                        ClientGlobalEvents.postUpdatedConfigEvent();
+                    }
+                    deleteFrontier();
+                }).display();
+            } else {
                 deleteFrontier();
-            }).display();
+            }
         } else {
-            deleteFrontier();
+            updateButtons();
         }
     }
 
@@ -315,7 +416,17 @@ public class FullscreenMap {
             stopEditing();
         }
         MapFrontiersClient.getOperationService().deleteFrontier(frontierHighlighted);
-        frontierHighlighted = null;
+        clearSelection();
+        updateButtons();
+    }
+
+    private void deleteCollection() {
+        if (selectedCollection == null) {
+            return;
+        }
+
+        MapFrontiersClient.getOperationService().deleteCollection(selectedCollection);
+        clearSelection();
         updateButtons();
     }
 
@@ -417,6 +528,10 @@ public class FullscreenMap {
         return frontierHighlighted;
     }
 
+    public @Nullable CollectionData getSelectedCollection() {
+        return selectedCollection;
+    }
+
     public void showCreatedFrontier(FrontierOverlay frontier) {
         stopEditing();
         selectFrontier(frontier);
@@ -455,16 +570,29 @@ public class FullscreenMap {
         UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
         if (uiState != null && frontier != null && frontier.getDimension().equals(uiState.dimension)) {
             if (frontierHighlighted != frontier) {
-                if (frontierHighlighted != null) {
-                    frontierHighlighted.setHighlighted(false);
-                }
-
+                clearSelection();
                 frontierHighlighted = frontier;
                 frontierHighlighted.setHighlighted(true);
             }
-        } else if (frontierHighlighted != null) {
-            frontierHighlighted.setHighlighted(false);
-            frontierHighlighted = null;
+        } else {
+            clearSelection();
+        }
+
+        updateButtons();
+    }
+
+    public void selectCollection(@Nullable CollectionData collection) {
+        UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
+        if (uiState != null && collection != null && isCollectionAvailableInDimension(collection.getId(), uiState.dimension)) {
+            clearSelection();
+            selectedCollection = MapFrontiersClient.getCollection(collection.getId());
+            if (selectedCollection == null) {
+                selectedCollection = collection;
+            }
+            selectedCollectionHighlightDimension = uiState.dimension;
+            MapFrontiersClient.setCollectionHighlighted(selectedCollection.getId(), uiState.dimension, true);
+        } else {
+            clearSelection();
         }
 
         updateButtons();
@@ -526,19 +654,22 @@ public class FullscreenMap {
         }
 
         if (ClientConfig.FRONTIER_VISIBILITY.get() == FrontierDisplayVisibility.Never) {
-            selectFrontier(null);
+            clearSelection();
+            updateButtons();
             return false;
         }
 
         List<FrontierOverlay> frontiers = MapFrontiersClient.getFrontiersInPosition(dimension, position, maxDistanceToClosest, uiState.mapType);
-        if (frontiers.isEmpty()) {
-            selectFrontier(null);
-        } else if (frontiers.size() == 1 || frontierHighlighted == null) {
-            selectFrontier(frontiers.getFirst());
+        List<SelectionCandidate> candidates = buildSelectionCandidates(frontiers, uiState);
+        if (candidates.isEmpty()) {
+            clearSelection();
+            updateButtons();
+        } else if (candidates.size() == 1 || getCurrentSelectionCandidate() == null) {
+            selectCandidate(candidates.getFirst());
         } else {
-            int i = frontiers.indexOf(frontierHighlighted);
-            i = (i + 1) % frontiers.size();
-            selectFrontier(frontiers.get(i));
+            int i = indexOfCurrentSelection(candidates);
+            i = (i + 1) % candidates.size();
+            selectCandidate(candidates.get(i));
         }
 
         return false;
@@ -624,5 +755,206 @@ public class FullscreenMap {
             frontierHighlighted.removeChunk(chunk);
         }
         shapeDirty = true;
+    }
+
+    private void openCollectionInfo(CollectionData collection) {
+        selectCollection(collection);
+        new CollectionInfoPage(collection).display();
+    }
+
+    private void clearSelection() {
+        if (frontierHighlighted != null) {
+            frontierHighlighted.setHighlighted(false);
+            frontierHighlighted = null;
+        }
+        if (selectedCollection != null && selectedCollectionHighlightDimension != null) {
+            MapFrontiersClient.setCollectionHighlighted(selectedCollection.getId(), selectedCollectionHighlightDimension, false);
+        }
+        selectedCollection = null;
+        selectedCollectionHighlightDimension = null;
+    }
+
+    private void validateSelectedCollectionAvailability() {
+        if (selectedCollection == null) {
+            return;
+        }
+
+        UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
+        if (uiState == null || !isCollectionAvailableInDimension(selectedCollection.getId(), uiState.dimension)) {
+            clearSelection();
+            updateButtons();
+        }
+    }
+
+    private @Nullable SelectionCandidate getCurrentSelectionCandidate() {
+        if (selectedCollection != null) {
+            return new CollectionSelectionCandidate(selectedCollection);
+        }
+        if (frontierHighlighted != null) {
+            return new FrontierSelectionCandidate(frontierHighlighted);
+        }
+        return null;
+    }
+
+    private void selectCandidate(SelectionCandidate candidate) {
+        if (candidate instanceof CollectionSelectionCandidate collectionCandidate) {
+            selectCollection(collectionCandidate.collection());
+        } else if (candidate instanceof FrontierSelectionCandidate frontierCandidate) {
+            selectFrontier(frontierCandidate.frontier());
+        }
+    }
+
+    private int indexOfCurrentSelection(List<SelectionCandidate> candidates) {
+        SelectionCandidate currentSelection = getCurrentSelectionCandidate();
+        if (currentSelection == null) {
+            return -1;
+        }
+
+        for (int i = 0; i < candidates.size(); ++i) {
+            if (matchesSelection(candidates.get(i), currentSelection)) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private static boolean matchesSelection(SelectionCandidate left, SelectionCandidate right) {
+        if (left instanceof FrontierSelectionCandidate leftFrontier && right instanceof FrontierSelectionCandidate rightFrontier) {
+            return leftFrontier.frontier().getId().equals(rightFrontier.frontier().getId());
+        }
+        if (left instanceof CollectionSelectionCandidate leftCollection && right instanceof CollectionSelectionCandidate rightCollection) {
+            return leftCollection.collection().getId().equals(rightCollection.collection().getId());
+        }
+        return false;
+    }
+
+    private List<SelectionCandidate> buildSelectionCandidates(List<FrontierOverlay> frontiers, UIState uiState) {
+        if (frontiers.isEmpty()) {
+            return List.of();
+        }
+
+        LinkedHashMap<UUID, CollectionData> collectionsById = new LinkedHashMap<>();
+        for (FrontierOverlay frontier : frontiers) {
+            if (frontier.getShape() == FrontierShape.Path || frontier.getCollectionId() == null) {
+                continue;
+            }
+
+            CollectionData collection = MapFrontiersClient.getCollection(frontier.getCollectionId());
+            if (collection != null && isCollectionAvailableInDimension(collection.getId(), uiState.dimension)) {
+                collectionsById.putIfAbsent(collection.getId(), collection);
+            }
+        }
+
+        if (collectionsById.isEmpty()) {
+            return new ArrayList<>(frontiers.stream().map(FrontierSelectionCandidate::new).toList());
+        }
+
+        List<CollectionData> visibleCollections = new ArrayList<>();
+        List<CollectionData> hiddenCollections = new ArrayList<>();
+        for (CollectionData collection : collectionsById.values()) {
+            if (isCollectionVisibleAtCurrentZoom(collection, uiState)) {
+                visibleCollections.add(collection);
+            } else {
+                hiddenCollections.add(collection);
+            }
+        }
+
+        Comparator<CollectionData> byArea = Comparator.comparingDouble(collection -> resolveCollectionArea(collection, uiState.dimension));
+        visibleCollections.sort(byArea);
+        hiddenCollections.sort(byArea);
+
+        List<SelectionCandidate> candidates = new ArrayList<>(visibleCollections.size() + frontiers.size() + hiddenCollections.size());
+        visibleCollections.forEach(collection -> candidates.add(new CollectionSelectionCandidate(collection)));
+        frontiers.forEach(frontier -> candidates.add(new FrontierSelectionCandidate(frontier)));
+        hiddenCollections.forEach(collection -> candidates.add(new CollectionSelectionCandidate(collection)));
+        return candidates;
+    }
+
+    private boolean isCollectionVisibleAtCurrentZoom(CollectionData collection, UIState uiState) {
+        if (!resolveCollectionVisibility(collection)) {
+            return false;
+        }
+
+        int zoom = resolveCollectionMaxZoom(collection);
+        return CollectionVisibilityData.isZoomEnabled(zoom) && uiState.zoom <= zoom;
+    }
+
+    private int resolveCollectionMaxZoom(CollectionData collection) {
+        int zoom = collection.getVisibilityData().getFullscreenZoom();
+        var visibilityOverride = MapFrontiersClient.getCollectionLocalOverrides().getVisibility(collection.getId());
+        if (visibilityOverride.second().getFullscreenZoom()) {
+            zoom = visibilityOverride.first().getFullscreenZoom();
+        }
+
+        return ClientConfig.COLLECTION_FULLSCREEN_ZOOM_FORCED.get()
+                ? CollectionVisibilityData.normalizeZoom(ClientConfig.COLLECTION_FULLSCREEN_ZOOM.get())
+                : zoom;
+    }
+
+    private boolean resolveCollectionVisibility(CollectionData collection) {
+        boolean visible = collection.getVisibilityData().isVisible();
+        var visibilityOverride = MapFrontiersClient.getCollectionLocalOverrides().getVisibility(collection.getId());
+        if (visibilityOverride.second().isVisible()) {
+            visible = visibilityOverride.first().isVisible();
+        }
+
+        return ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_VISIBILITY.get(), visible);
+    }
+
+    private double resolveCollectionArea(CollectionData collection, ResourceKey<Level> dimension) {
+        double totalArea = 0.0;
+        for (FrontierOverlay frontier : MapFrontiersClient.getFrontiersInCollection(collection.getId(), dimension)) {
+            if (frontier.getShape() != FrontierShape.Path) {
+                totalArea += frontier.area;
+            }
+        }
+        return totalArea;
+    }
+
+    private boolean isCollectionAvailableInDimension(UUID collectionId, ResourceKey<Level> dimension) {
+        for (FrontierOverlay frontier : MapFrontiersClient.getFrontiersInCollection(collectionId, dimension)) {
+            if (frontier.getShape() != FrontierShape.Path) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean canCreateFrontierInCollection(CollectionData collection, SettingsUser playerUser) {
+        if (collection.getPersonal()) {
+            return collection.getOwner().equals(playerUser);
+        }
+
+        SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
+        return profile != null && profile.createFrontier == SettingsProfile.State.Enabled;
+    }
+
+    private boolean canUpdateSelectedCollection(SettingsUser playerUser) {
+        if (selectedCollection == null) {
+            return false;
+        }
+
+        if (selectedCollection.getPersonal()) {
+            return selectedCollection.getOwner().equals(playerUser);
+        }
+
+        SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
+        return profile != null && (profile.updateFrontier == SettingsProfile.State.Enabled
+                || (profile.updateFrontier == SettingsProfile.State.Owner && selectedCollection.getOwner().equals(playerUser)));
+    }
+
+    private boolean canDeleteSelectedCollection(SettingsUser playerUser) {
+        if (selectedCollection == null) {
+            return false;
+        }
+
+        if (selectedCollection.getPersonal()) {
+            return selectedCollection.getOwner().equals(playerUser);
+        }
+
+        SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
+        return profile != null && (profile.deleteFrontier == SettingsProfile.State.Enabled
+                || (profile.deleteFrontier == SettingsProfile.State.Owner && selectedCollection.getOwner().equals(playerUser)));
     }
 }

@@ -364,6 +364,10 @@ public class MapFrontiersClient {
         jmAPI = newJmAPI;
     }
 
+    public static @Nullable IClientAPI getJmAPI() {
+        return jmAPI;
+    }
+
     public static boolean isJourneyMapPluginAvailable() {
         return jmAPI != null;
     }
@@ -503,6 +507,15 @@ public class MapFrontiersClient {
         return runtime.getCollectionRuntime().getFrontiersInCollection(collectionId);
     }
 
+    public static List<FrontierOverlay> getFrontiersInCollection(UUID collectionId, ResourceKey<Level> dimension) {
+        ClientTerritoryRuntime runtime = ensureTerritoryRuntime();
+        if (runtime == null) {
+            return List.of();
+        }
+
+        return runtime.getCollectionRuntime().getFrontiersInCollection(collectionId, dimension);
+    }
+
     public static List<FrontierOverlay> getFrontiersWithoutCollection(CollectionScope scope) {
         ClientTerritoryRuntime runtime = ensureTerritoryRuntime();
         if (runtime == null) {
@@ -577,6 +590,15 @@ public class MapFrontiersClient {
         }
 
         runtime.getCollectionOverlayManager().markFrontierGeometryDirty(frontier, frontier.getCollectionId());
+    }
+
+    public static void setCollectionHighlighted(UUID collectionId, ResourceKey<Level> dimension, boolean highlighted) {
+        ClientTerritoryRuntime runtime = ensureTerritoryRuntime();
+        if (runtime == null) {
+            return;
+        }
+
+        runtime.getCollectionOverlayManager().setHighlighted(collectionId, dimension, highlighted);
     }
 
     public static void refreshCollectionVisibilityOverride(UUID collectionId) {

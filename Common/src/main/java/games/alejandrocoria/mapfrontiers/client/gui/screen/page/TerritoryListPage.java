@@ -409,6 +409,8 @@ public class TerritoryListPage extends PageScreen {
         if (element instanceof CollectionListElement collectionElement) {
             CollectionData collection = collectionElement.getCollection();
             if (collection != null) {
+                fullscreenMap.selectCollection(collection);
+                syncSelectedRowWithMapSelection();
                 new CollectionInfoPage(collection).display();
             }
         }
@@ -560,6 +562,10 @@ public class TerritoryListPage extends PageScreen {
 
     private void deleteCollection(CollectionData collection) {
         MapFrontiersClient.getOperationService().deleteCollection(collection);
+        CollectionData selectedCollection = fullscreenMap.getSelectedCollection();
+        if (selectedCollection != null && selectedCollection.getId().equals(collection.getId())) {
+            fullscreenMap.selectCollection(null);
+        }
         rebuildTerritories();
     }
 
@@ -699,6 +705,15 @@ public class TerritoryListPage extends PageScreen {
     }
 
     private void syncSelectedRowWithMapSelection() {
+        CollectionData selectedCollection = fullscreenMap.getSelectedCollection();
+        if (selectedCollection != null) {
+            UUID selectedCollectionId = selectedCollection.getId();
+            territories.setSelectedElementIf(element -> element instanceof CollectionListElement collectionElement
+                    && collectionElement.getCollection() != null
+                    && collectionElement.getCollection().getId().equals(selectedCollectionId));
+            return;
+        }
+
         FrontierOverlay selectedFrontier = fullscreenMap.getSelected();
         if (selectedFrontier == null) {
             territories.clearSelection();

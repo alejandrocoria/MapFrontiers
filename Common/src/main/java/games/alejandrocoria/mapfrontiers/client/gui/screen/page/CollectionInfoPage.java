@@ -29,7 +29,10 @@ import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
+import games.alejandrocoria.mapfrontiers.platform.Services;
 import it.unimi.dsi.fastutil.Pair;
+import journeymap.api.v2.client.display.Context;
+import journeymap.api.v2.client.util.UIState;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -41,6 +44,7 @@ import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -62,6 +66,7 @@ import java.util.function.IntUnaryOperator;
 public class CollectionInfoPage extends PageScreen {
     private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_collection_info");
     private static final Component NAME_LABEL = Component.translatable("mapfrontiers.name");
+    private static final Component SELECT_IN_MAP_LABEL = Component.translatable("mapfrontiers.select_in_map");
     private static final Component DONE_LABEL = Component.translatable("gui.done");
     private static final Component DELETE_LABEL = Component.translatable("mapfrontiers.delete");
     private static final Component RANDOM_COLOR_LABEL = Component.translatable("mapfrontiers.random_color");
@@ -139,6 +144,7 @@ public class CollectionInfoPage extends PageScreen {
     private OptionButton buttonPasteColor;
     private OptionButton buttonPasteVisibility;
     private OptionButton buttonPasteBanner;
+    private SimpleButton buttonSelect;
     private SimpleButton buttonDelete;
     private SimpleButton buttonDone;
     private StringWidget labelPasteName;
@@ -336,6 +342,7 @@ public class CollectionInfoPage extends PageScreen {
     }
 
     private void buildBottomButtons() {
+        buttonSelect = addBottomButton(new SimpleButton(font, SECTION_WIDTH, SELECT_IN_MAP_LABEL, b -> onSelectInMapPressed()));
         buttonDelete = addBottomButton(new SimpleButton(font, SECTION_WIDTH, DELETE_LABEL, b -> onDeletePressed()));
         buttonDelete.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
         buttonDone = addBottomButton(new SimpleButton(font, SECTION_WIDTH, DONE_LABEL, b -> onClose()));
@@ -410,6 +417,16 @@ public class CollectionInfoPage extends PageScreen {
         } else {
             deleteCollection();
         }
+    }
+
+    private void onSelectInMapPressed() {
+        BlockPos center = getCollectionCenterInCurrentFullscreenDimension();
+        if (center == null) {
+            return;
+        }
+
+        closeAndReturnToFullscreenMap();
+        Services.JOURNEYMAP.fullscreenMapCenterOn(center.getX(), center.getZ());
     }
 
     private void onRandomColorPressed() {
@@ -577,6 +594,7 @@ public class CollectionInfoPage extends PageScreen {
         buttonBanner.active = editable;
         buttonBanner.visible = editable;
         sliderBannerRotation.active = editable;
+        buttonSelect.active = getCollectionCenterInCurrentFullscreenDimension() != null;
         buttonDelete.active = canDeleteCollection();
         updateBannerButton();
         updatePasteOptionsVisibility(editable);
@@ -872,6 +890,42 @@ public class CollectionInfoPage extends PageScreen {
 
     private static String formatMeasurement(float value) {
         return String.format(Locale.ROOT, "%.2f", value);
+    }
+
+    private @Nullable BlockPos getCollectionCenterInCurrentFullscreenDimension() {
+        var jmApi = MapFrontiersClient.getJmAPI();
+        if (jmApi == null) {
+            return null;
+        }
+
+        UIState uiState = jmApi.getUIState(Context.UI.Fullscreen);
+        if (uiState == null) {
+            return null;
+        }
+
+        int minX = Integer.MAX_VALUE;
+        int minZ = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+        int maxZ = Integer.MIN_VALUE;
+        boolean hasAreaFrontier = false;
+
+        for (FrontierOverlay frontier : MapFrontiersClient.getFrontiersInCollection(collectionId, uiState.dimension)) {
+            if (frontier.getShape() == FrontierShape.Path) {
+                continue;
+            }
+
+            hasAreaFrontier = true;
+            minX = Math.min(minX, frontier.topLeft.getX());
+            minZ = Math.min(minZ, frontier.topLeft.getZ());
+            maxX = Math.max(maxX, frontier.bottomRight.getX());
+            maxZ = Math.max(maxZ, frontier.bottomRight.getZ());
+        }
+
+        if (!hasAreaFrontier) {
+            return null;
+        }
+
+        return new BlockPos((minX + maxX) / 2, 70, (minZ + maxZ) / 2);
     }
 
 }
