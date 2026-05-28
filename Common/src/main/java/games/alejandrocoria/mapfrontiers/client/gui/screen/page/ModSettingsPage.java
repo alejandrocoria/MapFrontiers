@@ -97,11 +97,10 @@ public class ModSettingsPage extends PageScreen {
     private static final Component VERSION_LABEL = Component.literal(Services.PLATFORM.getModVersion());
     private static final String KEY_HINT_KEY = "mapfrontiers.key.open_settings.hint";
     private static final Component FRONTIERS_LABEL = Component.translatable("mapfrontiers.frontiers");
-    private static final Component FRONTIER_APPEARANCE_LABEL = Component.translatable("mapfrontiers.frontier_appearance");
-    private static final Component COLLECTION_APPEARANCE_LABEL = Component.translatable("mapfrontiers.collection_appearance");
+    private static final Component COLLECTIONS_LABEL = Component.translatable("mapfrontiers.collections");
+    private static final Component APPEARANCE_LABEL = Component.translatable("mapfrontiers.appearance");
     private static final Component DEFAULT_PATH_STYLE_LABEL = Component.translatable("mapfrontiers.default_path_style");
     private static final Component FORCED_VISIBILITY_LABEL = Component.translatable("mapfrontiers.forced_visibility");
-    private static final Component FORCED_COLLECTION_VISIBILITY_LABEL = Component.translatable("mapfrontiers.forced_collection_visibility");
     private static final Component GUI_LABEL = Component.translatable("mapfrontiers.gui");
     private static final Component CONFIRMATION_DIALOGS_LABEL = Component.translatable("mapfrontiers.confirmation_dialogs");
     private static final Component HUD_LABEL = Component.translatable("mapfrontiers.hud");
@@ -272,6 +271,7 @@ public class ModSettingsPage extends PageScreen {
 
         int row = 0;
         row = buildFrontiersSection(settingsGrid, row);
+        row = buildCollectionsSection(settingsGrid, row);
         row = buildGuiSection(settingsGrid, row);
         buildHudSection(generalLayout, settingsGrid, row);
     }
@@ -286,26 +286,37 @@ public class ModSettingsPage extends PageScreen {
         row = addIntSettingRow(settingsGrid, row, ClientConfig.PATH_PROXIMITY_ENTER_DISTANCE, DEFAULT_TEXTBOX_WIDTH, 3);
         row = addIntSettingRow(settingsGrid, row, ClientConfig.PATH_PROXIMITY_EXIT_DISTANCE, DEFAULT_TEXTBOX_WIDTH, 3);
 
-        int frontierButtonWidth = ScreenHelper.getPaddedMaxTextWidth(font, LayoutConstants.PAGE_BUTTON_WIDTH,
-                BUTTON_HORIZONTAL_PADDING, FRONTIER_APPEARANCE_LABEL, COLLECTION_APPEARANCE_LABEL, DEFAULT_PATH_STYLE_LABEL,
-                FORCED_VISIBILITY_LABEL, FORCED_COLLECTION_VISIBILITY_LABEL);
+        int buttonWidth = ScreenHelper.getPaddedMaxTextWidth(font, LayoutConstants.PAGE_BUTTON_WIDTH,
+                BUTTON_HORIZONTAL_PADDING, APPEARANCE_LABEL, DEFAULT_PATH_STYLE_LABEL, FORCED_VISIBILITY_LABEL);
 
-        buttonFrontierAppearance = createWideSimpleButton(frontierButtonWidth, FRONTIER_APPEARANCE_LABEL,
+        buttonFrontierAppearance = createWideSimpleButton(buttonWidth, APPEARANCE_LABEL,
                 b -> onFrontierAppearancePressed());
         settingsGrid.addChild(buttonFrontierAppearance, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
 
-        buttonCollectionAppearance = createWideSimpleButton(frontierButtonWidth, COLLECTION_APPEARANCE_LABEL,
-                b -> onCollectionAppearancePressed());
-        settingsGrid.addChild(buttonCollectionAppearance, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
-
-        buttonDefaultPathStyle = createWideSimpleButton(frontierButtonWidth, DEFAULT_PATH_STYLE_LABEL,
+        buttonDefaultPathStyle = createWideSimpleButton(buttonWidth, DEFAULT_PATH_STYLE_LABEL,
                 b -> onDefaultPathStylePressed());
         settingsGrid.addChild(buttonDefaultPathStyle, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
 
-        settingsGrid.addChild(createWideSimpleButton(frontierButtonWidth, FORCED_VISIBILITY_LABEL,
+        settingsGrid.addChild(createWideSimpleButton(buttonWidth, FORCED_VISIBILITY_LABEL,
                 b -> onForcedVisibilityPressed()), row++, 0, 1, 2,
                 LayoutSettings.defaults().alignHorizontallyCenter());
-        settingsGrid.addChild(createWideSimpleButton(frontierButtonWidth, FORCED_COLLECTION_VISIBILITY_LABEL,
+
+        return row;
+    }
+
+    private int buildCollectionsSection(GridLayout settingsGrid, int row) {
+        settingsGrid.addChild(SpacerElement.height(LayoutConstants.SPACING_SMALL), row++, 0);
+        settingsGrid.addChild(new StringWidget(COLLECTIONS_LABEL, font).setColor(ColorConstants.TEXT_HIGHLIGHT), row++, 0, 1, 2,
+                LayoutSettings.defaults().alignHorizontallyCenter());
+
+        int buttonWidth = ScreenHelper.getPaddedMaxTextWidth(font, LayoutConstants.PAGE_BUTTON_WIDTH,
+                BUTTON_HORIZONTAL_PADDING, APPEARANCE_LABEL, FORCED_VISIBILITY_LABEL);
+
+        buttonCollectionAppearance = createWideSimpleButton(buttonWidth, APPEARANCE_LABEL,
+                b -> onCollectionAppearancePressed());
+        settingsGrid.addChild(buttonCollectionAppearance, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
+
+        settingsGrid.addChild(createWideSimpleButton(buttonWidth, FORCED_VISIBILITY_LABEL,
                 b -> onForcedCollectionVisibilityPressed()), row++, 0, 1, 2,
                 LayoutSettings.defaults().alignHorizontallyCenter());
 
