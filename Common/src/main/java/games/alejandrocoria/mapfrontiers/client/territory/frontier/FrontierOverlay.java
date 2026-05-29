@@ -1845,7 +1845,7 @@ public class FrontierOverlay extends FrontierData {
                 : ClientConfig.BORDER_OPACITY.get().floatValue();
         float fillOpacity = previewCollectionStyleEnabled
                 ? ClientConfig.COLLECTION_FILL_OPACITY.get().floatValue()
-                : ClientConfig.POLYGONS_OPACITY.get().floatValue();
+                : ClientConfig.FILL_OPACITY.get().floatValue();
 
         return new ShapeProperties()
                 .setStrokeWidth(borderWidth)
