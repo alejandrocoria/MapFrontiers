@@ -1839,7 +1839,7 @@ public class FrontierOverlay extends FrontierData {
 
     private ShapeProperties createBaseShapeProperties() {
         int baseColor = previewCollectionStyleEnabled ? previewCollectionColor : color;
-        int borderWidth = previewCollectionStyleEnabled ? ClientConfig.COLLECTION_BORDER_WIDTH.get() : ClientConfig.BORDER_WIDTH.get();
+        float borderWidth = previewCollectionStyleEnabled ? ClientConfig.COLLECTION_BORDER_WIDTH.get() / 2.f : ClientConfig.BORDER_WIDTH.get();
         float borderOpacity = previewCollectionStyleEnabled
                 ? ClientConfig.COLLECTION_BORDER_OPACITY.get().floatValue()
                 : ClientConfig.BORDER_OPACITY.get().floatValue();
@@ -1851,7 +1851,7 @@ public class FrontierOverlay extends FrontierData {
                 .setStrokeWidth(borderWidth)
                 .setStrokeColor(baseColor)
                 .setStrokeOpacity(borderOpacity)
-                .setStrokePosition(previewCollectionStyleEnabled ? ShapeProperties.StrokePosition.CENTER : ShapeProperties.StrokePosition.INSIDE)
+                .setStrokePosition(ShapeProperties.StrokePosition.INSIDE)
                 .setFillColor(baseColor)
                 .setFillOpacity(fillOpacity);
     }
@@ -1860,10 +1860,10 @@ public class FrontierOverlay extends FrontierData {
         CollectionData collection = getCollection();
         int collectionColor = collection == null ? color : collection.getColor();
         return new ShapeProperties()
-                .setStrokeWidth(ClientConfig.COLLECTION_BORDER_WIDTH.get())
+                .setStrokeWidth(ClientConfig.COLLECTION_BORDER_WIDTH.get() / 2.f)
                 .setStrokeColor(collectionColor)
                 .setStrokeOpacity(ClientConfig.COLLECTION_BORDER_OPACITY.get().floatValue())
-                .setStrokePosition(ShapeProperties.StrokePosition.CENTER)
+                .setStrokePosition(ShapeProperties.StrokePosition.INSIDE)
                 .setFillColor(collectionColor)
                 .setFillOpacity(ClientConfig.COLLECTION_FILL_OPACITY.get().floatValue());
     }

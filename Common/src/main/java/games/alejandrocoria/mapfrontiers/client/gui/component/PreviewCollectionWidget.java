@@ -69,10 +69,9 @@ public class PreviewCollectionWidget extends AbstractWidgetNoNarration {
         for (FrontierOverlay frontier : previewFrontiers) {
             frontier.setPreviewCollectionStyle(PREVIEW_COLLECTION_COLOR);
         }
-        previewPanel.recalculateAndSetFrontiers(previewFrontiers);
         previewCollectionOverlay.refreshMembersAndCollection(previewCollectionData, previewFrontiers);
         previewCollectionOverlay.rebuildOverlayNow();
-        previewPanel.setAdditionalMarkerOverlays(previewCollectionOverlay.getLabelOverlays());
+        previewPanel.recalculateAndSetTerritories(previewFrontiers, List.of(previewCollectionOverlay));
     }
 
     public void setScaleFactor(float scaleFactor) {

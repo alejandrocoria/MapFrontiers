@@ -74,6 +74,7 @@ public class CollectionOverlay {
     private boolean highlightVisibilityDirty = true;
     private List<CollectionVisibilityVariant> visibleVariants = List.of();
     private final List<MarkerOverlay> labelOverlays = new ArrayList<>();
+    private final List<PolygonOverlay> borderPolygonOverlays = new ArrayList<>();
     private final List<PolygonOverlay> highlightPolygonOverlays = new ArrayList<>();
     private List<CollectionHighlightRenderGeometry> highlightRenderGeometries = List.of();
     private final Map<CollectionLabelPlacementKey, FrontierLabelPlacementSolver.LabelPlacement> placementCache = new HashMap<>();
@@ -95,6 +96,10 @@ public class CollectionOverlay {
 
     public List<MarkerOverlay> getLabelOverlays() {
         return labelOverlays;
+    }
+
+    public List<PolygonOverlay> getBorderPolygonOverlays() {
+        return borderPolygonOverlays;
     }
 
     public void refreshMembersAndCollection(CollectionData collection, List<FrontierOverlay> members) {
@@ -174,8 +179,10 @@ public class CollectionOverlay {
 
     public void deleted() {
         hideMarkerOverlays(labelOverlays);
+        hidePolygonOverlays(borderPolygonOverlays);
         hidePolygonOverlays(highlightPolygonOverlays);
         labelOverlays.clear();
+        borderPolygonOverlays.clear();
         highlightPolygonOverlays.clear();
         highlightRenderGeometries = List.of();
         placementCache.clear();
@@ -192,6 +199,7 @@ public class CollectionOverlay {
         needUpdateOverlay = false;
         if (membershipDirty || geometryDirty) {
             rebuildVisibleVariants();
+            rebuildBorderOverlays();
         }
 
         if (labelsDirty || labelVisibilityDirty) {
@@ -260,6 +268,42 @@ public class CollectionOverlay {
 
         visibleVariants = List.copyOf(rebuiltVariants);
         labelsDirty = true;
+    }
+
+    private void rebuildBorderOverlays() {
+        hidePolygonOverlays(borderPolygonOverlays);
+        borderPolygonOverlays.clear();
+
+        if (collection == null || visibleVariants.isEmpty()) {
+            return;
+        }
+
+        ShapeProperties borderShapeProperties = createCollectionBorderShapeProperties();
+        for (CollectionVisibilityVariant variant : visibleVariants) {
+            int collectionMaxZoom = resolveZoom(variant.getUi());
+            if (!CollectionVisibilityData.isZoomEnabled(collectionMaxZoom)) {
+                continue;
+            }
+
+            for (CollectionGeometryIsland island : variant.getIslands()) {
+                CollectionIslandRenderGeometry geometry = buildIslandRenderGeometry(island);
+                if (geometry == null) {
+                    continue;
+                }
+
+                PolygonOverlay overlay = new PolygonOverlay(MapFrontiers.MODID, key.dimension(),
+                        borderShapeProperties, geometry.polygon(), geometry.holes());
+                overlay.setActiveUIs(variant.getUi());
+                overlay.setActiveMapTypes(variant.getMapTypes().toArray(Context.MapType[]::new));
+                if (island.getMinZoom() > 0) {
+                    overlay.setMinZoom(island.getMinZoom());
+                }
+                overlay.setMaxZoom(collectionMaxZoom);
+                borderPolygonOverlays.add(overlay);
+            }
+        }
+
+        showPolygonOverlaysQuietly(borderPolygonOverlays);
     }
 
     private void rebuildHighlightOverlays() {
@@ -450,6 +494,16 @@ public class CollectionOverlay {
                 .setStrokeWidth(HIGHLIGHT_STROKE_WIDTH)
                 .setStrokeColor(ColorConstants.WHITE)
                 .setStrokeOpacity(1.f)
+                .setStrokePosition(ShapeProperties.StrokePosition.OUTSIDE)
+                .setFillOpacity(0.f);
+    }
+
+    private ShapeProperties createCollectionBorderShapeProperties() {
+        int collectionColor = collection == null ? ColorConstants.WHITE : collection.getColor();
+        return new ShapeProperties()
+                .setStrokeWidth(ClientConfig.COLLECTION_BORDER_WIDTH.get() / 2.f)
+                .setStrokeColor(collectionColor)
+                .setStrokeOpacity(ClientConfig.COLLECTION_BORDER_OPACITY.get().floatValue())
                 .setStrokePosition(ShapeProperties.StrokePosition.OUTSIDE)
                 .setFillOpacity(0.f);
     }
@@ -910,6 +964,15 @@ public class CollectionOverlay {
     }
 
     private static @Nullable CollectionHighlightRenderGeometry buildHighlightRenderGeometry(CollectionGeometryIsland island) {
+        CollectionIslandRenderGeometry geometry = buildIslandRenderGeometry(island);
+        if (geometry == null) {
+            return null;
+        }
+
+        return new CollectionHighlightRenderGeometry(geometry.polygon(), geometry.holes(), island.getMinZoom());
+    }
+
+    private static @Nullable CollectionIslandRenderGeometry buildIslandRenderGeometry(CollectionGeometryIsland island) {
         List<RingPath> rings = extractRingPaths(island.copyEffectiveArea());
         if (rings.isEmpty()) {
             return null;
@@ -941,7 +1004,7 @@ public class CollectionOverlay {
             return null;
         }
 
-        return new CollectionHighlightRenderGeometry(outerPolygon, holes.isEmpty() ? null : List.copyOf(holes), island.getMinZoom());
+        return new CollectionIslandRenderGeometry(outerPolygon, holes.isEmpty() ? null : List.copyOf(holes));
     }
 
     private static List<RingPath> extractRingPaths(Area area) {
@@ -1125,6 +1188,10 @@ public class CollectionOverlay {
     private record CollectionHighlightRenderGeometry(MapPolygon polygon,
                                                      @Nullable List<MapPolygon> holes,
                                                      int minZoom) {
+    }
+
+    private record CollectionIslandRenderGeometry(MapPolygon polygon,
+                                                  @Nullable List<MapPolygon> holes) {
     }
 
     private record CollectionLabelPlacementKey(CollectionGeometryIsland island,
