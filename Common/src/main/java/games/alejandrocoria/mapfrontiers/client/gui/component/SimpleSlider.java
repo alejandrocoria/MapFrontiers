@@ -14,12 +14,11 @@ import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class SimpleSlider extends AbstractSliderButton {
-    private static final int DEFAULT_HEIGHT = 15;
+    private static final int DEFAULT_HEIGHT = 13;
     private static final int HANDLE_WIDTH = 4;
-    private static final int HANDLE_RANGE_PADDING = 6;
-    private static final int HANDLE_X_OFFSET = 1;
+    private static final int TRACK_INSET = 1;
     private static final int HANDLE_VERTICAL_INSET = 1;
-    private static final int LABEL_Y_OFFSET = 4;
+    private static final int LABEL_Y_OFFSET = 3;
 
     private final Font font;
     private final int minValue;
@@ -71,7 +70,7 @@ public class SimpleSlider extends AbstractSliderButton {
                         ValueChanged callback,
                         ValueTextFormatter valueTextFormatter) {
         super(0, 0, width, DEFAULT_HEIGHT, Component.literal(String.valueOf(initialValue)),
-                normalize(resolveDiscreteIndex(discreteValues, initialValue), 0, discreteValues.size() - 1));
+                normalizeDiscreteIndex(resolveDiscreteIndex(discreteValues, initialValue), discreteValues.size()));
         this.font = font;
         this.minValue = 0;
         this.maxValue = discreteValues.size() - 1;
@@ -99,12 +98,58 @@ public class SimpleSlider extends AbstractSliderButton {
         return !discreteValues.isEmpty();
     }
 
+    private static double normalizeDiscreteIndex(int index, int stepCount) {
+        if (stepCount <= 1) {
+            return 0.5;
+        }
+
+        return (index + 0.5) / (double) stepCount;
+    }
+
+    private int resolveDiscreteStep(double value) {
+        int stepCount = discreteValues.size();
+        if (stepCount <= 1) {
+            return 0;
+        }
+
+        return Math.clamp((int) Math.floor(value * stepCount), 0, stepCount - 1);
+    }
+
+    private double snapNormalizedValue(double value) {
+        if (!usesDiscreteValues()) {
+            return value;
+        }
+
+        return normalizeDiscreteIndex(resolveDiscreteStep(value), discreteValues.size());
+    }
+
+    private void snapHandleToDiscreteStep() {
+        value = snapNormalizedValue(value);
+    }
+
+    private int getTrackStartX() {
+        return getX() + TRACK_INSET;
+    }
+
+    private int getTrackWidth() {
+        return Math.max(0, width - TRACK_INSET * 2);
+    }
+
+    private int getContinuousHandleX(double value) {
+        return getTrackStartX() + (int) (value * Math.max(0, getTrackWidth() - HANDLE_WIDTH));
+    }
+
+    private int getDiscreteBoundaryX(int lowerStepIndex, int lastStepIndex) {
+        int stepCount = lastStepIndex + 1;
+        return getTrackStartX() + (int) Math.round((lowerStepIndex + 1) * (getTrackWidth() / (double) stepCount));
+    }
+
     private int denormalizeInternal(double value) {
         return (int) Math.round(minValue + value * (maxValue - minValue));
     }
 
     private int getResolvedValue() {
-        int internalValue = denormalizeInternal(value);
+        int internalValue = usesDiscreteValues() ? resolveDiscreteStep(value) : denormalizeInternal(value);
         if (usesDiscreteValues()) {
             return discreteValues.get(internalValue);
         }
@@ -118,19 +163,22 @@ public class SimpleSlider extends AbstractSliderButton {
 
     @Override
     protected void applyValue() {
+        snapHandleToDiscreteStep();
         callback.onChanged(getResolvedValue(), dragging);
     }
 
     public void setValue(int value) {
         int internalValue = usesDiscreteValues() ? resolveDiscreteIndex(discreteValues, value) : value;
-        this.value = normalize(internalValue, minValue, maxValue);
+        this.value = usesDiscreteValues()
+                ? normalizeDiscreteIndex(internalValue, discreteValues.size())
+                : normalize(internalValue, minValue, maxValue);
         updateMessage();
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
         if (visible && isHovered) {
-            int val = denormalizeInternal(value);
+            int val = usesDiscreteValues() ? resolveDiscreteStep(value) : denormalizeInternal(value);
             if (vDelta > 0) {
                 val = Math.min(val + 1, maxValue);
             } else {
@@ -172,7 +220,7 @@ public class SimpleSlider extends AbstractSliderButton {
             return false;
         }
 
-        int internalValue = denormalizeInternal(value);
+        int internalValue = resolveDiscreteStep(value);
         internalValue = left ? Math.max(internalValue - 1, minValue) : Math.min(internalValue + 1, maxValue);
         setValue(discreteValues.get(internalValue));
         return true;
@@ -182,6 +230,7 @@ public class SimpleSlider extends AbstractSliderButton {
     protected void onDrag(MouseButtonEvent event, double dragX, double dragY) {
         dragging = true;
         super.onDrag(event, dragX, dragY);
+        snapHandleToDiscreteStep();
     }
 
     // Custom mouseReleased to be called from the Screen.
@@ -197,10 +246,30 @@ public class SimpleSlider extends AbstractSliderButton {
         int lineColor = ((AbstractSliderButtonAccessor) this).getCanChangeValue() ? ColorConstants.SIMPLE_BUTTON_BORDER_FOCUSED : ColorConstants.SIMPLE_BUTTON_BORDER;
         graphics.outline(getX(), getY(), width, height, lineColor);
 
-        int handleX = getX() + (int)(value * (width - HANDLE_RANGE_PADDING)) + HANDLE_X_OFFSET;
-        graphics.fill(handleX, getY() + HANDLE_VERTICAL_INSET, handleX + HANDLE_WIDTH,
-                getY() + height - HANDLE_VERTICAL_INSET,
-                isHoveredOrFocused() ? ColorConstants.SLIDER_HANDLER_FOCUSED : ColorConstants.SLIDER_HANDLER);
+        int handleColor = isHoveredOrFocused() ? ColorConstants.SLIDER_HANDLER_FOCUSED : ColorConstants.SLIDER_HANDLER;
+        if (usesDiscreteValues()) {
+            int stepIndex = resolveDiscreteStep(snapNormalizedValue(value));
+            int lastStepIndex = discreteValues.size() - 1;
+            int handleX;
+            int handleRight;
+
+            if (lastStepIndex <= 0) {
+                handleX = getTrackStartX();
+                handleRight = getTrackStartX() + getTrackWidth();
+            } else {
+                handleX = stepIndex == 0 ? getTrackStartX() : getDiscreteBoundaryX(stepIndex - 1, lastStepIndex);
+                handleRight = stepIndex == lastStepIndex
+                        ? getTrackStartX() + getTrackWidth()
+                        : getDiscreteBoundaryX(stepIndex, lastStepIndex);
+            }
+
+            graphics.fill(handleX, getY() + HANDLE_VERTICAL_INSET, handleRight,
+                    getY() + height - HANDLE_VERTICAL_INSET, handleColor);
+        } else {
+            int handleX = getContinuousHandleX(value);
+            graphics.fill(handleX, getY() + HANDLE_VERTICAL_INSET, handleX + HANDLE_WIDTH,
+                    getY() + height - HANDLE_VERTICAL_INSET, handleColor);
+        }
 
         graphics.centeredText(font, getMessage(), getX() + width / 2, getY() + LABEL_Y_OFFSET,
                 isHovered ? ColorConstants.SIMPLE_BUTTON_TEXT_HIGHLIGHT : ColorConstants.SIMPLE_BUTTON_TEXT);

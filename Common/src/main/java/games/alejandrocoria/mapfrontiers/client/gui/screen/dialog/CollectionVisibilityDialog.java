@@ -37,6 +37,7 @@ public class CollectionVisibilityDialog extends PanelDialog {
     private static final Component OFF_LABEL = Component.translatable("options.off");
     private static final Component NOT_VISIBLE_LABEL = Component.translatable("mapfrontiers.not_visible");
     private static final int COLUMN_SPACING = 6;
+    private static final int VISIBILITY_ZOOM_SLIDER_WIDTH = 92;
 
     private final CollectionVisibilityData visibilityData;
     private final @Nullable CollectionVisibilityMask visibilityMask;
@@ -151,7 +152,7 @@ public class CollectionVisibilityDialog extends PanelDialog {
         zoomRow.defaultCellSetting().alignVerticallyMiddle();
         zoomContainer.addChild(zoomRow);
 
-        SimpleSlider slider = new SimpleSlider(font, LayoutConstants.PANEL_BUTTON_WIDTH, "mapfrontiers.zoom",
+        SimpleSlider slider = new SimpleSlider(font, VISIBILITY_ZOOM_SLIDER_WIDTH, "mapfrontiers.zoom",
                 CollectionVisibilityData.getZoomLevels(), getter.getAsInt(), (zoom, dragging) -> {
             setter.accept(zoom);
         }, CollectionVisibilityDialog::formatZoomLabel);
