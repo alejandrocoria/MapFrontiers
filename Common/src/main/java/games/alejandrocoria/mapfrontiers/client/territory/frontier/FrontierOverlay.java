@@ -1920,10 +1920,6 @@ public class FrontierOverlay extends FrontierData {
                 .setFillOpacity(0);
     }
 
-    private PolygonOverlay createPolygonOverlay(ShapeProperties shapeProps, PolygonUiPlanEntry entry) {
-        return createPolygonOverlay(shapeProps, entry, entry.minZoom(), 0);
-    }
-
     private PolygonOverlay createPolygonOverlay(ShapeProperties shapeProps, PolygonUiPlanEntry entry, int minZoom, int maxZoom) {
         PolygonRenderGeometry geometry = entry.geometry();
         PolygonOverlay overlay = new PolygonOverlay(MapFrontiers.MODID, dimension, shapeProps, geometry.polygon(), geometry.holes());
@@ -2070,7 +2066,7 @@ public class FrontierOverlay extends FrontierData {
 
         for (int i = 0; i < layoutCache.segmentLayouts().size(); ++i) {
             PathSegmentLayout segmentLayout = layoutCache.segmentLayouts().get(i);
-            addRepeatedMarkers(segmentLayout, uiArray, mapTypesArray,
+            addRepeatedMarkers(markerOverlays, segmentLayout, uiArray, mapTypesArray,
                     resolvePathMarkerImage(segmentLayout.segmentMarkerId(), segmentLayout.rotation()), 99);
 
             PathPointLayout pointLayout = layoutCache.pointLayouts().get(i);
@@ -2487,11 +2483,6 @@ public class FrontierOverlay extends FrontierData {
         return collectionId == null ? null : MapFrontiersClient.getCollection(collectionId);
     }
 
-    public boolean usesCollectionBanner() {
-        CollectionData collection = getCollection();
-        return !hasBanner() && getInheritCollectionBanner() && collection != null && collection.getBannerData() != null;
-    }
-
     private boolean hasEffectiveBanner() {
         return getEffectiveBannerData() != null;
     }
@@ -2522,7 +2513,7 @@ public class FrontierOverlay extends FrontierData {
             return false;
         }
 
-        return resolveCollectionVisibility(ui) && CollectionVisibilityData.isZoomEnabled(resolveCollectionMaxZoom(ui));
+        return resolveCollectionVisibility() && CollectionVisibilityData.isZoomEnabled(resolveCollectionMaxZoom(ui));
     }
 
     private int resolveCollectionMaxZoom(Context.UI ui) {
@@ -2570,7 +2561,7 @@ public class FrontierOverlay extends FrontierData {
         };
     }
 
-    private boolean resolveCollectionVisibility(Context.UI ui) {
+    private boolean resolveCollectionVisibility() {
         CollectionData collection = getCollection();
         if (collection == null) {
             return false;
@@ -2791,32 +2782,10 @@ public class FrontierOverlay extends FrontierData {
         }
     }
 
-    private void addRepeatedMarkers(BlockPos from, BlockPos to, Context.UI uiArray, Context.MapType[] mapTypesArray,
-                                    @Nullable MapImage markerImage, int displayOrder, double spacingMultiplier) {
-        addRepeatedMarkers(markerOverlays, from, to, uiArray, mapTypesArray, markerImage, displayOrder, spacingMultiplier);
-    }
-
-    private void addRepeatedMarkers(PathSegmentLayout segmentLayout, Context.UI uiArray, Context.MapType[] mapTypesArray,
-                                    @Nullable MapImage markerImage, int displayOrder) {
-        addRepeatedMarkers(markerOverlays, segmentLayout, uiArray, mapTypesArray, markerImage, displayOrder);
-    }
-
     private void addRepeatedMarkers(List<MarkerOverlay> overlays, PathSegmentLayout segmentLayout, Context.UI uiArray, Context.MapType[] mapTypesArray,
                                     @Nullable MapImage markerImage, int displayOrder) {
         addRepeatedMarkers(overlays, segmentLayout.repeatedMarkerPositions(), segmentLayout.length(), uiArray, mapTypesArray,
                 markerImage, displayOrder, segmentLayout.segmentSpacingMultiplier());
-    }
-
-    private void addRepeatedMarkers(List<MarkerOverlay> overlays, BlockPos from, BlockPos to, Context.UI uiArray, Context.MapType[] mapTypesArray,
-                                    @Nullable MapImage markerImage, int displayOrder, double spacingMultiplier) {
-        int dx = to.getX() - from.getX();
-        int dz = to.getZ() - from.getZ();
-        double length = Math.hypot(dx, dz);
-        if (length <= 1.0) {
-            return;
-        }
-
-        addRepeatedMarkers(overlays, getDiscreteInteriorLinePositions(from, to), length, uiArray, mapTypesArray, markerImage, displayOrder, spacingMultiplier);
     }
 
     private void addRepeatedMarkers(List<MarkerOverlay> overlays, List<BlockPos> repeatedMarkerPositions, double length, Context.UI uiArray,
@@ -3051,15 +3020,6 @@ public class FrontierOverlay extends FrontierData {
                                         UiVisualConfig webmap) {
         private List<UiVisualConfig> uiConfigs() {
             return List.of(fullscreen, minimap, webmap);
-        }
-
-        private UiVisualConfig get(Context.UI ui) {
-            return switch (ui) {
-                case Fullscreen -> fullscreen;
-                case Minimap -> minimap;
-                case Webmap -> webmap;
-                default -> throw new IllegalArgumentException("Unsupported UI: " + ui);
-            };
         }
     }
 
