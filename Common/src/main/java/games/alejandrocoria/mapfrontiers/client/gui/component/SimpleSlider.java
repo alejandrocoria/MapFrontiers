@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component;
 
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.mixin.client.AbstractSliderButtonAccessor;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractSliderButton;
@@ -177,7 +178,7 @@ public class SimpleSlider extends AbstractSliderButton {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
-        if (visible && isHovered) {
+        if (visible && active && isHovered) {
             int val = usesDiscreteValues() ? resolveDiscreteStep(value) : denormalizeInternal(value);
             if (vDelta > 0) {
                 val = Math.min(val + 1, maxValue);
@@ -200,6 +201,10 @@ public class SimpleSlider extends AbstractSliderButton {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
+        if (!visible || !active) {
+            return false;
+        }
+
         if (!usesDiscreteValues()) {
             return super.keyPressed(event);
         }
@@ -241,12 +246,29 @@ public class SimpleSlider extends AbstractSliderButton {
         }
     }
 
+    private boolean isKeyboardFocused() {
+        return isFocused() && Minecraft.getInstance().getLastInputType().isKeyboard();
+    }
+
     @Override
     public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        int lineColor = ((AbstractSliderButtonAccessor) this).getCanChangeValue() ? ColorConstants.SIMPLE_BUTTON_BORDER_FOCUSED : ColorConstants.SIMPLE_BUTTON_BORDER;
+        AbstractSliderButtonAccessor accessor = (AbstractSliderButtonAccessor) this;
+        boolean canChangeValue = accessor.getCanChangeValue();
+        boolean keyboardFocused = isKeyboardFocused();
+
+        int lineColor = !active ? ColorConstants.SIMPLE_BUTTON_BORDER_DISABLED
+                : keyboardFocused ? ColorConstants.SIMPLE_BUTTON_BORDER_FOCUSED : ColorConstants.SIMPLE_BUTTON_BORDER;
         graphics.outline(getX(), getY(), width, height, lineColor);
 
-        int handleColor = isHoveredOrFocused() ? ColorConstants.SLIDER_HANDLER_FOCUSED : ColorConstants.SLIDER_HANDLER;
+        int handleColor;
+        if (!active) {
+            handleColor = ColorConstants.SLIDER_HANDLER_DISABLED;
+        } else if (isHovered || (keyboardFocused && canChangeValue)) {
+            handleColor = ColorConstants.SLIDER_HANDLER_FOCUSED;
+        } else {
+            handleColor = ColorConstants.SLIDER_HANDLER;
+        }
+
         if (usesDiscreteValues()) {
             int stepIndex = resolveDiscreteStep(snapNormalizedValue(value));
             int lastStepIndex = discreteValues.size() - 1;
@@ -272,6 +294,7 @@ public class SimpleSlider extends AbstractSliderButton {
         }
 
         graphics.centeredText(font, getMessage(), getX() + width / 2, getY() + LABEL_Y_OFFSET,
-                isHovered ? ColorConstants.SIMPLE_BUTTON_TEXT_HIGHLIGHT : ColorConstants.SIMPLE_BUTTON_TEXT);
+                !active ? ColorConstants.SIMPLE_BUTTON_TEXT_INACTIVE
+                        : isHovered || keyboardFocused ? ColorConstants.SIMPLE_BUTTON_TEXT_HIGHLIGHT : ColorConstants.SIMPLE_BUTTON_TEXT);
     }
 }

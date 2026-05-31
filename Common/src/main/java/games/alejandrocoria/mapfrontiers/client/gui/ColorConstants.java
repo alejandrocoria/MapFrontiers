@@ -47,6 +47,7 @@ public final class ColorConstants {
     public static final int SIMPLE_BUTTON_TEXT_HIGHLIGHT = 0xFFFFFFFF;
     public static final int SIMPLE_BUTTON_TEXT_INACTIVE = 0xFF303030;
     public static final int SLIDER_HANDLER = 0xFFAAAAAA;
+    public static final int SLIDER_HANDLER_DISABLED = 0xFF444444;
     public static final int SLIDER_HANDLER_FOCUSED = 0xFFFFFFFF;
     public static final int TAB_BORDER = 0xFF777777;
     public static final int TAB_BORDER_FOCUSED = 0xFFFFFFFF;
