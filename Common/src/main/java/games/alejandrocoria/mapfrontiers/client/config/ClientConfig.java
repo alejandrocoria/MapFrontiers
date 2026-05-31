@@ -521,6 +521,18 @@ public final class ClientConfig {
         return alreadyActive ? PATH_PROXIMITY_EXIT_DISTANCE.get() : PATH_PROXIMITY_ENTER_DISTANCE.get();
     }
 
+    public static int getNormalizedCollectionFullscreenZoom() {
+        return CollectionVisibilityData.normalizeZoomToNearest(COLLECTION_FULLSCREEN_ZOOM.get());
+    }
+
+    public static int getNormalizedCollectionMinimapZoom() {
+        return CollectionVisibilityData.normalizeZoomToNearest(COLLECTION_MINIMAP_ZOOM.get());
+    }
+
+    public static int getNormalizedCollectionWebmapZoom() {
+        return CollectionVisibilityData.normalizeZoomToNearest(COLLECTION_WEBMAP_ZOOM.get());
+    }
+
     private static boolean validateDefaultPathStyle() {
         FrontierData.PathStyle normalized = getDefaultPathStyle();
         boolean dirty = !PATH_DEFAULT_STYLE_START.get().equals(normalized.startMarker.toString())
@@ -553,17 +565,33 @@ public final class ClientConfig {
     }
 
     private static boolean validateCollectionVisibilityZooms() {
-        int fullscreenZoom = CollectionVisibilityData.normalizeZoom(COLLECTION_FULLSCREEN_ZOOM.get());
-        int minimapZoom = CollectionVisibilityData.normalizeZoom(COLLECTION_MINIMAP_ZOOM.get());
-        int webmapZoom = CollectionVisibilityData.normalizeZoom(COLLECTION_WEBMAP_ZOOM.get());
-        boolean dirty = COLLECTION_FULLSCREEN_ZOOM.get() != fullscreenZoom
-                || COLLECTION_MINIMAP_ZOOM.get() != minimapZoom
-                || COLLECTION_WEBMAP_ZOOM.get() != webmapZoom;
+        int previousFullscreenZoom = COLLECTION_FULLSCREEN_ZOOM.get();
+        int previousMinimapZoom = COLLECTION_MINIMAP_ZOOM.get();
+        int previousWebmapZoom = COLLECTION_WEBMAP_ZOOM.get();
+        int fullscreenZoom = CollectionVisibilityData.normalizeZoomToNearest(previousFullscreenZoom);
+        int minimapZoom = CollectionVisibilityData.normalizeZoomToNearest(previousMinimapZoom);
+        int webmapZoom = CollectionVisibilityData.normalizeZoomToNearest(previousWebmapZoom);
+        boolean dirty = previousFullscreenZoom != fullscreenZoom
+                || previousMinimapZoom != minimapZoom
+                || previousWebmapZoom != webmapZoom;
 
         if (dirty) {
+            List<String> correctedEntries = new ArrayList<>(3);
+            if (previousFullscreenZoom != fullscreenZoom) {
+                correctedEntries.add("fullscreen " + previousFullscreenZoom + " -> " + fullscreenZoom);
+            }
+            if (previousMinimapZoom != minimapZoom) {
+                correctedEntries.add("minimap " + previousMinimapZoom + " -> " + minimapZoom);
+            }
+            if (previousWebmapZoom != webmapZoom) {
+                correctedEntries.add("webmap " + previousWebmapZoom + " -> " + webmapZoom);
+            }
+
             COLLECTION_FULLSCREEN_ZOOM.set(fullscreenZoom);
             COLLECTION_MINIMAP_ZOOM.set(minimapZoom);
             COLLECTION_WEBMAP_ZOOM.set(webmapZoom);
+            MapFrontiers.LOGGER.warn("Corrected invalid collection forced zoom config values to nearest supported zooms: {}",
+                    String.join(", ", correctedEntries));
         }
 
         return dirty;

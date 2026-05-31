@@ -266,4 +266,23 @@ public class CollectionVisibilityData {
     public static int normalizeZoom(int zoom) {
         return ZOOM_LEVELS.contains(zoom) ? zoom : COLLECTION_VIEW_DISABLED_ZOOM;
     }
+
+    public static int normalizeZoomToNearest(int zoom) {
+        if (ZOOM_LEVELS.contains(zoom)) {
+            return zoom;
+        }
+
+        int nearestZoom = ZOOM_LEVELS.getFirst();
+        int nearestDistance = Math.abs(zoom - nearestZoom);
+        for (int i = 1; i < ZOOM_LEVELS.size(); ++i) {
+            int candidateZoom = ZOOM_LEVELS.get(i);
+            int candidateDistance = Math.abs(zoom - candidateZoom);
+            if (candidateDistance < nearestDistance) {
+                nearestZoom = candidateZoom;
+                nearestDistance = candidateDistance;
+            }
+        }
+
+        return nearestZoom;
+    }
 }

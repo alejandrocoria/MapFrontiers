@@ -909,9 +909,9 @@ public class ModSettingsPage extends PageScreen {
     private CollectionVisibilityData createForcedCollectionVisibility() {
         CollectionVisibilityData visibilityData = new CollectionVisibilityData();
         visibilityData.setVisible(getForcedCollectionVisibilityValue(ClientConfig.COLLECTION_VISIBILITY.get(), false));
-        visibilityData.setFullscreenZoom(CollectionVisibilityData.normalizeZoom(ClientConfig.COLLECTION_FULLSCREEN_ZOOM.get()));
-        visibilityData.setMinimapZoom(CollectionVisibilityData.normalizeZoom(ClientConfig.COLLECTION_MINIMAP_ZOOM.get()));
-        visibilityData.setWebmapZoom(CollectionVisibilityData.normalizeZoom(ClientConfig.COLLECTION_WEBMAP_ZOOM.get()));
+        visibilityData.setFullscreenZoom(ClientConfig.getNormalizedCollectionFullscreenZoom());
+        visibilityData.setMinimapZoom(ClientConfig.getNormalizedCollectionMinimapZoom());
+        visibilityData.setWebmapZoom(ClientConfig.getNormalizedCollectionWebmapZoom());
         visibilityData.setFullscreenName(getForcedCollectionVisibilityValue(ClientConfig.COLLECTION_FULLSCREEN_NAME_VISIBILITY.get(), true));
         visibilityData.setFullscreenOwner(getForcedCollectionVisibilityValue(ClientConfig.COLLECTION_FULLSCREEN_OWNER_VISIBILITY.get(), false));
         visibilityData.setFullscreenBanner(getForcedCollectionVisibilityValue(ClientConfig.COLLECTION_FULLSCREEN_BANNER_VISIBILITY.get(), true));

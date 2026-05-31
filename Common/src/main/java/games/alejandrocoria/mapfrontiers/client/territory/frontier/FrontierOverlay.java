@@ -2559,13 +2559,13 @@ public class FrontierOverlay extends FrontierData {
 
         return switch (ui) {
             case Fullscreen -> ClientConfig.COLLECTION_FULLSCREEN_ZOOM_FORCED.get()
-                    ? CollectionVisibilityData.normalizeZoom(ClientConfig.COLLECTION_FULLSCREEN_ZOOM.get())
+                    ? ClientConfig.getNormalizedCollectionFullscreenZoom()
                     : zoom;
             case Minimap -> ClientConfig.COLLECTION_MINIMAP_ZOOM_FORCED.get()
-                    ? CollectionVisibilityData.normalizeZoom(ClientConfig.COLLECTION_MINIMAP_ZOOM.get())
+                    ? ClientConfig.getNormalizedCollectionMinimapZoom()
                     : zoom;
             case Webmap -> ClientConfig.COLLECTION_WEBMAP_ZOOM_FORCED.get()
-                    ? CollectionVisibilityData.normalizeZoom(ClientConfig.COLLECTION_WEBMAP_ZOOM.get())
+                    ? ClientConfig.getNormalizedCollectionWebmapZoom()
                     : zoom;
         };
     }

@@ -888,7 +888,7 @@ public class FullscreenMap {
         }
 
         return ClientConfig.COLLECTION_FULLSCREEN_ZOOM_FORCED.get()
-                ? CollectionVisibilityData.normalizeZoom(ClientConfig.COLLECTION_FULLSCREEN_ZOOM.get())
+                ? ClientConfig.getNormalizedCollectionFullscreenZoom()
                 : zoom;
     }
 

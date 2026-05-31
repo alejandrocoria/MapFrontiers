@@ -567,13 +567,13 @@ public class CollectionOverlay {
 
         return switch (ui) {
             case Fullscreen -> ClientConfig.COLLECTION_FULLSCREEN_ZOOM_FORCED.get()
-                    ? CollectionVisibilityData.normalizeZoom(ClientConfig.COLLECTION_FULLSCREEN_ZOOM.get())
+                    ? ClientConfig.getNormalizedCollectionFullscreenZoom()
                     : effectiveVisibilityData.getFullscreenZoom();
             case Minimap -> ClientConfig.COLLECTION_MINIMAP_ZOOM_FORCED.get()
-                    ? CollectionVisibilityData.normalizeZoom(ClientConfig.COLLECTION_MINIMAP_ZOOM.get())
+                    ? ClientConfig.getNormalizedCollectionMinimapZoom()
                     : effectiveVisibilityData.getMinimapZoom();
             case Webmap -> ClientConfig.COLLECTION_WEBMAP_ZOOM_FORCED.get()
-                    ? CollectionVisibilityData.normalizeZoom(ClientConfig.COLLECTION_WEBMAP_ZOOM.get())
+                    ? ClientConfig.getNormalizedCollectionWebmapZoom()
                     : effectiveVisibilityData.getWebmapZoom();
             default -> CollectionVisibilityData.COLLECTION_VIEW_DISABLED_ZOOM;
         };
