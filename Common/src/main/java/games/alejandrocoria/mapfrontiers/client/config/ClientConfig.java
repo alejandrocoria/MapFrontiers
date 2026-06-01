@@ -249,10 +249,10 @@ public final class ClientConfig {
     public static final DoubleConfigEntry COLLECTION_FILL_OPACITY = register(doubleEntry(0.4, 0.0, 1.0, "collection", "appearance", "fill", "opacity")
             .comment("Transparency of the collection fill in collection view. 0.0 is fully transparent and 1.0 is opaque.")
             .translation(translation("collection", "appearance", "fill", "opacity")));
-    public static final IntConfigEntry COLLECTION_BORDER_WIDTH = register(intEntry(0, 0, 64, "collection", "appearance", "border", "width")
+    public static final IntConfigEntry COLLECTION_BORDER_WIDTH = register(intEntry(4, 0, 64, "collection", "appearance", "border", "width")
             .comment("Width of collection borders in collection view.")
             .translation(translation("collection", "appearance", "border", "width")));
-    public static final DoubleConfigEntry COLLECTION_BORDER_OPACITY = register(doubleEntry(1.0, 0.0, 1.0, "collection", "appearance", "border", "opacity")
+    public static final DoubleConfigEntry COLLECTION_BORDER_OPACITY = register(doubleEntry(0.8, 0.0, 1.0, "collection", "appearance", "border", "opacity")
             .comment("Transparency of collection borders in collection view. 0.0 is fully transparent and 1.0 is opaque.")
             .translation(translation("collection", "appearance", "border", "opacity")));
     public static final IntConfigEntry COLLECTION_TEXT_SIZE = register(intEntry(2, 1, 5, "collection", "appearance", "text", "size")
