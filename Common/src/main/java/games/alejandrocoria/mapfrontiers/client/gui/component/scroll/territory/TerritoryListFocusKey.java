@@ -4,7 +4,8 @@ public enum TerritoryListFocusKey {
     COLLAPSE,
     SOURCE_PLUGIN,
     MAIN,
-    PRIMARY_ACTION,
-    SECONDARY_ACTION,
+    ADD_ACTION,
+    VISIBILITY_ACTION,
+    CONTEXT_ACTION,
     MARK
 }

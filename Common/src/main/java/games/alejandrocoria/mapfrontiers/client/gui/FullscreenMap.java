@@ -322,7 +322,7 @@ public class FullscreenMap {
         if (selectedCollection != null) {
             buttonVisible.setToggled(selectedCollection.getVisibilityData().isVisible());
         } else if (frontierHighlighted != null) {
-            buttonVisible.setToggled(frontierHighlighted.getVisibility(FrontierVisibility.Frontier) && frontierHighlighted.getVisibility(FrontierVisibility.Fullscreen));
+            buttonVisible.setToggled(frontierHighlighted.getVisibilityData().getValue(FrontierVisibility.Frontier));
         } else {
             buttonVisible.setToggled(false);
         }
@@ -372,7 +372,8 @@ public class FullscreenMap {
             selectedCollection.setVisibilityData(visibilityData);
             MapFrontiersClient.getOperationService().updateCollection(selectedCollection);
         } else if (frontierHighlighted != null) {
-            frontierHighlighted.setVisibility(FrontierVisibility.Frontier, !frontierHighlighted.getVisibility(FrontierVisibility.Frontier));
+            frontierHighlighted.setVisibility(FrontierVisibility.Frontier,
+                    !frontierHighlighted.getVisibilityData().getValue(FrontierVisibility.Frontier));
             FrontierChange change = new FrontierChange();
             change.setVisibility(frontierHighlighted.getVisibilityData());
             MapFrontiersClient.getOperationService().updateFrontier(frontierHighlighted, change);

@@ -79,6 +79,7 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
     private final FocusTarget mainFocusTarget;
     private final List<GuiEventListener> children;
     private final @Nullable IconButton createButton;
+    private final @Nullable IconButton visibilityButton;
     private final @Nullable IconButton moveHereButton;
     private final @Nullable IconButton deleteButton;
     private final CheckBoxButton checkBoxButton;
@@ -87,6 +88,7 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
     private boolean collapseToggleRequested;
     private boolean markToggleRequested;
     private boolean createRequested;
+    private boolean visibilityRequested;
     private boolean moveHereRequested;
     private boolean deleteRequested;
 
@@ -104,6 +106,7 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
                                  int markedCount,
                                  int eligibleCount,
                                  ActionState actionState,
+                                 boolean visibilityEnabled,
                                  boolean deleteEnabled,
                                  List<UUID> eligibleFrontierIds,
                                  int width) {
@@ -128,6 +131,11 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
         if (createButton != null) {
             createButton.active = true;
             createButton.setTooltip(getCreateTooltip(scope, virtualRow));
+        }
+        visibilityButton = visibilityEnabled ? new IconButton(getVisibilityButtonType(), (button) -> requestVisibility()) : null;
+        if (visibilityButton != null) {
+            visibilityButton.active = true;
+            visibilityButton.setTooltip(getVisibilityTooltip());
         }
         moveHereButton = actionState == ActionState.MOVE_HERE_ENABLED || actionState == ActionState.MOVE_HERE_DISABLED
                 ? new IconButton(IconButton.Type.MoveHere, (button) -> requestMoveHere())
@@ -159,6 +167,9 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
         if (createButton != null) {
             createButton.setX(getCreateLeft());
         }
+        if (visibilityButton != null) {
+            visibilityButton.setX(getVisibilityLeft());
+        }
         if (moveHereButton != null) {
             moveHereButton.setX(getMoveHereLeft());
         }
@@ -177,6 +188,9 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
         collapseToggleButton.setY(this.y + RAIL_CONTENT_Y);
         if (createButton != null) {
             createButton.setY(this.y + RAIL_CONTENT_Y);
+        }
+        if (visibilityButton != null) {
+            visibilityButton.setY(this.y + RAIL_CONTENT_Y);
         }
         if (moveHereButton != null) {
             moveHereButton.setY(this.y + RAIL_CONTENT_Y);
@@ -225,6 +239,12 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
     public boolean consumeCreateRequested() {
         boolean requested = createRequested;
         createRequested = false;
+        return requested;
+    }
+
+    public boolean consumeVisibilityRequested() {
+        boolean requested = visibilityRequested;
+        visibilityRequested = false;
         return requested;
     }
 
@@ -319,6 +339,11 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
         if (createButton != null) {
             createButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         }
+        if (visibilityButton != null && (focused || isHovered || !isCollectionVisible())) {
+            visibilityButton.setType(getVisibilityButtonType());
+            visibilityButton.setTooltip(getVisibilityTooltip());
+            visibilityButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
+        }
         if (moveHereButton != null) {
             moveHereButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         }
@@ -349,6 +374,10 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
         return isHovered && moveHereButton != null && moveHereButton.isMouseOver(mouseX, mouseY);
     }
 
+    private boolean isVisibilityHovered(int mouseX, int mouseY) {
+        return isHovered && visibilityButton != null && visibilityButton.isMouseOver(mouseX, mouseY);
+    }
+
     private boolean isDeleteHovered(int mouseX, int mouseY) {
         return isHovered && deleteButton != null && deleteButton.isMouseOver(mouseX, mouseY);
     }
@@ -366,27 +395,35 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
     }
 
     private int getRailLeft() {
-        return getPrimarySlotLeft();
+        return getAddSlotLeft();
     }
 
     private int getDeleteLeft() {
-        return getDeleteSlotLeft();
+        return getContextSlotLeft();
     }
 
     private int getMoveHereLeft() {
-        return getDeleteSlotLeft();
+        return getContextSlotLeft();
+    }
+
+    private int getVisibilityLeft() {
+        return getVisibilitySlotLeft();
     }
 
     private int getCreateLeft() {
-        return getPrimarySlotLeft();
+        return getAddSlotLeft();
     }
 
-    private int getDeleteSlotLeft() {
+    private int getContextSlotLeft() {
         return getCheckBoxX() - ACTION_GAP - ACTION_BUTTON_WIDTH;
     }
 
-    private int getPrimarySlotLeft() {
-        return getDeleteSlotLeft() - ACTION_GAP - ACTION_BUTTON_WIDTH;
+    private int getVisibilitySlotLeft() {
+        return getContextSlotLeft() - ACTION_GAP - ACTION_BUTTON_WIDTH;
+    }
+
+    private int getAddSlotLeft() {
+        return getVisibilitySlotLeft() - ACTION_GAP - ACTION_BUTTON_WIDTH;
     }
 
     private int getRightZoneStart() {
@@ -504,6 +541,11 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
             return ScrollBox.ScrollElement.Action.Handled;
         }
 
+        if (isVisibilityHovered((int) event.x(), (int) event.y())) {
+            requestVisibility();
+            return ScrollBox.ScrollElement.Action.Handled;
+        }
+
         if (isCreateHovered((int) event.x(), (int) event.y())) {
             requestCreate();
             return ScrollBox.ScrollElement.Action.Handled;
@@ -546,8 +588,9 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
             case COLLAPSE -> focusPathForListener(collapseToggleButton);
             case SOURCE_PLUGIN -> focusPathForListener(sourcePluginWidget);
             case MAIN -> focusPathForListener(mainFocusTarget);
-            case PRIMARY_ACTION -> focusPathForListener(createButton);
-            case SECONDARY_ACTION -> {
+            case ADD_ACTION -> focusPathForListener(createButton);
+            case VISIBILITY_ACTION -> focusPathForListener(visibilityButton);
+            case CONTEXT_ACTION -> {
                 ComponentPath path = focusPathForListener(moveHereButton);
                 yield path != null ? path : focusPathForListener(deleteButton);
             }
@@ -571,8 +614,9 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
                 TerritoryListFocusKey.COLLAPSE,
                 TerritoryListFocusKey.SOURCE_PLUGIN,
                 TerritoryListFocusKey.MAIN,
-                TerritoryListFocusKey.PRIMARY_ACTION,
-                TerritoryListFocusKey.SECONDARY_ACTION,
+                TerritoryListFocusKey.ADD_ACTION,
+                TerritoryListFocusKey.VISIBILITY_ACTION,
+                TerritoryListFocusKey.CONTEXT_ACTION,
                 TerritoryListFocusKey.MARK
         };
 
@@ -598,6 +642,10 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
 
     private void requestCreate() {
         createRequested = true;
+    }
+
+    private void requestVisibility() {
+        visibilityRequested = true;
     }
 
     private void requestMoveHere() {
@@ -628,6 +676,9 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
         if (createButton != null) {
             children.add(createButton);
         }
+        if (visibilityButton != null) {
+            children.add(visibilityButton);
+        }
         if (moveHereButton != null) {
             children.add(moveHereButton);
         }
@@ -653,10 +704,13 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
             return TerritoryListFocusKey.MARK;
         }
         if (moveHereButton != null || deleteButton != null) {
-            return TerritoryListFocusKey.SECONDARY_ACTION;
+            return TerritoryListFocusKey.CONTEXT_ACTION;
+        }
+        if (visibilityButton != null) {
+            return TerritoryListFocusKey.VISIBILITY_ACTION;
         }
         if (createButton != null) {
-            return TerritoryListFocusKey.PRIMARY_ACTION;
+            return TerritoryListFocusKey.ADD_ACTION;
         }
         if (sourcePluginWidget != null) {
             return TerritoryListFocusKey.SOURCE_PLUGIN;
@@ -675,10 +729,13 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
             return TerritoryListFocusKey.MAIN;
         }
         if (listener == createButton) {
-            return TerritoryListFocusKey.PRIMARY_ACTION;
+            return TerritoryListFocusKey.ADD_ACTION;
+        }
+        if (listener == visibilityButton) {
+            return TerritoryListFocusKey.VISIBILITY_ACTION;
         }
         if (listener == moveHereButton || listener == deleteButton) {
-            return TerritoryListFocusKey.SECONDARY_ACTION;
+            return TerritoryListFocusKey.CONTEXT_ACTION;
         }
         if (listener == checkBoxButton) {
             return TerritoryListFocusKey.MARK;
@@ -699,6 +756,18 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
         int left = x + LEFT_PADDING + collapseToggleButton.getWidth() + ACTION_GAP;
         int right = getSelectionRightBound();
         return new ScreenRectangle(left, y, Math.max(1, right - left), height);
+    }
+
+    private boolean isCollectionVisible() {
+        return collection == null || collection.getVisibilityData().isVisible();
+    }
+
+    private IconButton.Type getVisibilityButtonType() {
+        return isCollectionVisible() ? IconButton.Type.Hide : IconButton.Type.Show;
+    }
+
+    private Tooltip getVisibilityTooltip() {
+        return Tooltip.create(Component.translatable(isCollectionVisible() ? "mapfrontiers.hide.tooltip" : "mapfrontiers.show.tooltip"));
     }
 
     private static int indexOf(TerritoryListFocusKey[] order, TerritoryListFocusKey key) {

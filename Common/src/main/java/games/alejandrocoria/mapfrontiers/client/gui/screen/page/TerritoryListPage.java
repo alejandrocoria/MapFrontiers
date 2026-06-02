@@ -372,6 +372,14 @@ public class TerritoryListPage extends PageScreen {
                 return;
             }
 
+            if (collectionElement.consumeVisibilityRequested()) {
+                CollectionData collection = collectionElement.getCollection();
+                if (collection != null) {
+                    onCollectionVisibilityPressed(collection);
+                }
+                return;
+            }
+
             if (collectionElement.consumeDeleteRequested()) {
                 CollectionData collection = collectionElement.getCollection();
                 if (collection != null) {
@@ -486,6 +494,11 @@ public class TerritoryListPage extends PageScreen {
         FrontierChange change = new FrontierChange();
         change.setVisibility(frontier.getVisibilityData());
         MapFrontiersClient.getOperationService().updateFrontier(frontier, change);
+    }
+
+    private void onCollectionVisibilityPressed(CollectionData collection) {
+        collection.getVisibilityData().setVisible(!collection.getVisibilityData().isVisible());
+        MapFrontiersClient.getOperationService().updateCollection(collection);
     }
 
     private void onFrontierDeletePressed(FrontierOverlay frontier) {
@@ -770,6 +783,7 @@ public class TerritoryListPage extends PageScreen {
                 .toList();
         boolean canMarkGroup = canMarkCollectionGroup(group, eligibleFrontierIds);
         CollectionListElement.ActionState actionState = getCollectionActionState(group);
+        boolean canChangeVisibility = !isMarkedModeActive() && group.collection != null && canUpdateSelectedCollection(group.collection);
         boolean canDelete = !isMarkedModeActive() && group.collection != null && canDeleteSelectedCollection(group.collection);
 
         return new CollectionListElement(group.rowId, font, group.collection, group.virtualRow, group.scope, group.title,
@@ -781,6 +795,7 @@ public class TerritoryListPage extends PageScreen {
                 countMarkedFrontiers(eligibleFrontierIds),
                 eligibleFrontierIds.size(),
                 actionState,
+                canChangeVisibility,
                 canDelete,
                 eligibleFrontierIds,
                 TERRITORIES_WIDTH);
@@ -1340,6 +1355,21 @@ public class TerritoryListPage extends PageScreen {
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
         return profile != null && (profile.deleteFrontier == SettingsProfile.State.Enabled
                 || (profile.deleteFrontier == SettingsProfile.State.Owner && collection.getOwner().equals(playerUser)));
+    }
+
+    private boolean canUpdateSelectedCollection(CollectionData collection) {
+        if (minecraft.player == null) {
+            return false;
+        }
+
+        SettingsUser playerUser = new SettingsUser(minecraft.player);
+        if (collection.getPersonal()) {
+            return collection.getOwner().equals(playerUser);
+        }
+
+        SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
+        return profile != null && (profile.updateFrontier == SettingsProfile.State.Enabled
+                || (profile.updateFrontier == SettingsProfile.State.Owner && collection.getOwner().equals(playerUser)));
     }
 
     private static int getShapeCount(FrontierOverlay frontier) {
