@@ -34,8 +34,7 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
         super(0, 0, SIZE, SIZE, Component.empty());
         previewPanel = new FrontierPreviewPanel();
 
-        SettingsUser owner = new SettingsUser();
-        owner.username = "Player";
+        SettingsUser owner = PreviewFrontierHelper.createPreviewOwner();
         previewFrontiers.add(new FrontierOverlay(createBannerFrontier(owner), null));
         previewFrontiers.add(new FrontierOverlay(createLongNameFrontier(owner), null));
         previewFrontiers.add(new FrontierOverlay(createPathFrontier(owner), null));
@@ -72,8 +71,8 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
     private static FrontierData createBannerFrontier(SettingsUser owner) {
         FrontierData frontierData = new FrontierData();
         frontierData.setOwner(owner);
-        frontierData.setName1("Preview");
-        frontierData.setName2("Frontier");
+        frontierData.setName1(PreviewFrontierHelper.translate("mapfrontiers.preview_name_1"));
+        frontierData.setName2(PreviewFrontierHelper.translate("mapfrontiers.preview_name_2"));
         frontierData.setColor(0xFFAACC60);
         PreviewFrontierHelper.setPreviewBanner(frontierData);
         frontierData.setDimension(OVERWORLD);
@@ -83,16 +82,16 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
         frontierData.setVisibility(FrontierVisibility.FullscreenBanner, true);
         frontierData.addVertex(new BlockPos(10, 70, 10));
         frontierData.addVertex(new BlockPos(10, 70, 410));
-        frontierData.addVertex(new BlockPos(270, 70, 410));
-        frontierData.addVertex(new BlockPos(270, 70, 10));
+        frontierData.addVertex(new BlockPos(300, 70, 410));
+        frontierData.addVertex(new BlockPos(300, 70, 10));
         return frontierData;
     }
 
     private static FrontierData createLongNameFrontier(SettingsUser owner) {
         FrontierData frontierData = new FrontierData();
         frontierData.setOwner(owner);
-        frontierData.setName1("Long name");
-        frontierData.setName2("12345678901234567");
+        frontierData.setName1(PreviewFrontierHelper.translate("mapfrontiers.preview_long_name_1"));
+        frontierData.setName2(PreviewFrontierHelper.translate("mapfrontiers.preview_long_name_2"));
         frontierData.setColor(0xFFA0A0FF);
         frontierData.setDimension(OVERWORLD);
         frontierData.setVisibility(FrontierVisibility.FullscreenDay, true);
@@ -112,8 +111,8 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
         FrontierData frontierData = new FrontierData();
         frontierData.setShape(FrontierShape.Path);
         frontierData.setOwner(owner);
-        frontierData.setName1("Path");
-        frontierData.setName2("Preview");
+        frontierData.setName1(PreviewFrontierHelper.translate("mapfrontiers.preview_path_name_1"));
+        frontierData.setName2("");
         frontierData.setColor(0xFFFFC04D);
         frontierData.setDimension(OVERWORLD);
         frontierData.setVisibility(FrontierVisibility.FullscreenDay, true);

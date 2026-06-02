@@ -40,8 +40,7 @@ public class PreviewCollectionWidget extends AbstractWidgetNoNarration {
         super(0, 0, SIZE, SIZE, Component.empty());
         previewPanel = new FrontierPreviewPanel();
 
-        SettingsUser owner = new SettingsUser();
-        owner.username = "Player";
+        SettingsUser owner = PreviewFrontierHelper.createPreviewOwner();
         previewCollectionData = createPreviewCollection(owner);
         previewCollectionOverlay = new CollectionOverlay(new CollectionOverlayKey(previewCollectionData.getId(), OVERWORLD), null,
                 previewCollectionData, List.of());
@@ -53,14 +52,14 @@ public class PreviewCollectionWidget extends AbstractWidgetNoNarration {
                 new BlockPos(175, 70, 45)));
         previewFrontiers.add(createPreviewFrontier(owner,
                 new BlockPos(175, 70, 45),
-                new BlockPos(175, 70, 175),
-                new BlockPos(335, 70, 175),
+                new BlockPos(175, 70, 155),
+                new BlockPos(335, 70, 155),
                 new BlockPos(335, 70, 45)));
         previewFrontiers.add(createPreviewFrontier(owner,
-                new BlockPos(175, 70, 175),
+                new BlockPos(175, 70, 155),
                 new BlockPos(175, 70, 335),
                 new BlockPos(375, 70, 335),
-                new BlockPos(375, 70, 175)));
+                new BlockPos(375, 70, 155)));
 
         configUpdated();
     }
@@ -100,7 +99,8 @@ public class PreviewCollectionWidget extends AbstractWidgetNoNarration {
     private static FrontierOverlay createPreviewFrontier(SettingsUser owner, BlockPos... vertices) {
         FrontierData frontierData = new FrontierData();
         frontierData.setOwner(owner);
-        frontierData.setName1("Preview");
+        frontierData.setName1(PreviewFrontierHelper.translate("mapfrontiers.preview_name_1"));
+        frontierData.setName2(PreviewFrontierHelper.translate("mapfrontiers.preview_name_2"));
         frontierData.setColor(0xFFAACC60);
         frontierData.setDimension(OVERWORLD);
         frontierData.setVisibility(FrontierVisibility.Frontier, true);
@@ -121,7 +121,7 @@ public class PreviewCollectionWidget extends AbstractWidgetNoNarration {
         CollectionData collection = new CollectionData();
         collection.setId(UUID.randomUUID());
         collection.setOwner(owner);
-        collection.setName(Component.translatable("mapfrontiers.preview_collection").getString());
+        collection.setName(PreviewFrontierHelper.translate("mapfrontiers.preview_collection"));
         collection.setColor(PREVIEW_COLLECTION_COLOR);
         collection.getVisibilityData().setVisible(true);
         collection.getVisibilityData().setFullscreenZoom(512);

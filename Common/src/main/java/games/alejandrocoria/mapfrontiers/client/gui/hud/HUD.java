@@ -51,16 +51,10 @@ public class HUD {
         hud.previewMode = true;
 
         FrontierData frontierData = new FrontierData();
-        SettingsUser owner = new SettingsUser();
-        if (mc.player != null) {
-            owner.username = mc.player.getName().getString();
-            owner.uuid = mc.player.getUUID();
-        } else {
-            owner.username = "Player";
-        }
+        SettingsUser owner = PreviewFrontierHelper.createPreviewOwner();
         frontierData.setOwner(owner);
-        frontierData.setName1("Preview Frontier");
-        frontierData.setName2("-----------------");
+        frontierData.setName1(PreviewFrontierHelper.translate("mapfrontiers.preview_name_1"));
+        frontierData.setName2(PreviewFrontierHelper.translate("mapfrontiers.preview_name_2"));
         PreviewFrontierHelper.setPreviewBanner(frontierData);
 
         hud.frontier = new FrontierOverlay(frontierData, null);
@@ -480,7 +474,7 @@ public class HUD {
 
     private @Nullable String getCollectionName() {
         if (previewMode) {
-            return Component.translatable("mapfrontiers.preview_collection").getString();
+            return PreviewFrontierHelper.translate("mapfrontiers.preview_collection");
         }
 
         if (frontier == null || frontier.getCollectionId() == null) {

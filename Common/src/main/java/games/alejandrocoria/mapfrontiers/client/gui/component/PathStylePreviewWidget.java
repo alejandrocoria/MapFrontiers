@@ -91,13 +91,12 @@ public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
     }
 
     private static FrontierData createPreviewFrontierData() {
-        SettingsUser owner = new SettingsUser();
-        owner.username = "Player";
+        SettingsUser owner = PreviewFrontierHelper.createPreviewOwner();
 
         FrontierData frontierData = new FrontierData();
         frontierData.setShape(FrontierShape.Path);
         frontierData.setOwner(owner);
-        frontierData.setName1("Preview");
+        frontierData.setName1(PreviewFrontierHelper.translate("mapfrontiers.preview_path_name_1"));
         frontierData.setName2("");
         frontierData.setColor(0xFF60DDCC);
         frontierData.setDimension(OVERWORLD);
