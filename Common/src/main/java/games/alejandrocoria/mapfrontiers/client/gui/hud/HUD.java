@@ -414,8 +414,11 @@ public class HUD {
         @Override
         public PreparedSlot prepare(int offsetY) {
             int bannerX = posX + hudWidth / 2;
-            int bannerY = posY + offsetY + 2;
-            int[] bannerBounds = frontier.getBannerBounds(bannerX - 11 * bannerScale, bannerY, bannerScale);
+            int slotTop = posY + offsetY;
+            int bannerLeft = bannerX - 11 * bannerScale;
+            int[] localBounds = frontier.getBannerBounds(bannerLeft, 0, bannerScale);
+            int bannerY = slotTop + 2 - localBounds[1];
+            int[] bannerBounds = frontier.getBannerBounds(bannerLeft, bannerY, bannerScale);
             return new BannerPreparedSlot(getHeight(), bannerX, bannerY, bannerBounds);
         }
     }
