@@ -4,6 +4,8 @@ import games.alejandrocoria.mapfrontiers.api.model.ChunkCoord;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionDataView;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionId;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionMutation;
+import games.alejandrocoria.mapfrontiers.api.model.CollectionVisibilityFlag;
+import games.alejandrocoria.mapfrontiers.api.model.CollectionVisibilitySettings;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
 import games.alejandrocoria.mapfrontiers.api.model.EntityLifetime;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierBanner;
@@ -23,6 +25,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierMutationApplier;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
@@ -115,6 +118,60 @@ public final class ApiConverters {
         return new SharedUserAccess(fromUser(userShared.getUser()), permissions, userShared.isPending());
     }
 
+    public static CollectionVisibilitySettings fromCollectionVisibility(CollectionVisibilityData visibilityData) {
+        return CollectionVisibilitySettings.builder()
+                .visible(visibilityData.isVisible())
+                .fullscreenZoom(visibilityData.getFullscreenZoom())
+                .minimapZoom(visibilityData.getMinimapZoom())
+                .webmapZoom(visibilityData.getWebmapZoom())
+                .fullscreenName(visibilityData.getFullscreenName())
+                .fullscreenOwner(visibilityData.getFullscreenOwner())
+                .fullscreenBanner(visibilityData.getFullscreenBanner())
+                .minimapName(visibilityData.getMinimapName())
+                .minimapOwner(visibilityData.getMinimapOwner())
+                .minimapBanner(visibilityData.getMinimapBanner())
+                .webmapName(visibilityData.getWebmapName())
+                .webmapOwner(visibilityData.getWebmapOwner())
+                .webmapBanner(visibilityData.getWebmapBanner())
+                .build();
+    }
+
+    public static CollectionVisibilityData toCollectionVisibility(CollectionVisibilitySettings visibility) {
+        CollectionVisibilityData visibilityData = new CollectionVisibilityData();
+        visibilityData.setVisible(visibility.visible());
+        visibilityData.setFullscreenZoom(visibility.fullscreenZoom());
+        visibilityData.setMinimapZoom(visibility.minimapZoom());
+        visibilityData.setWebmapZoom(visibility.webmapZoom());
+        visibilityData.setFullscreenName(visibility.fullscreenName());
+        visibilityData.setFullscreenOwner(visibility.fullscreenOwner());
+        visibilityData.setFullscreenBanner(visibility.fullscreenBanner());
+        visibilityData.setMinimapName(visibility.minimapName());
+        visibilityData.setMinimapOwner(visibility.minimapOwner());
+        visibilityData.setMinimapBanner(visibility.minimapBanner());
+        visibilityData.setWebmapName(visibility.webmapName());
+        visibilityData.setWebmapOwner(visibility.webmapOwner());
+        visibilityData.setWebmapBanner(visibility.webmapBanner());
+        return visibilityData;
+    }
+
+    public static CollectionVisibilityData defaultCollectionVisibility() {
+        return new CollectionData().getVisibilityData();
+    }
+
+    public static BannerData defaultCollectionBanner() {
+        return new CollectionData().getBannerData();
+    }
+
+    private static void addCollectionVisibilityFlags(CollectionVisibilityData visibilityData,
+                                                     Set<CollectionVisibilityFlag> visibilityFlags) {
+        setCollectionVisibilityFlags(visibilityData, visibilityFlags, true);
+    }
+
+    private static void removeCollectionVisibilityFlags(CollectionVisibilityData visibilityData,
+                                                        Set<CollectionVisibilityFlag> visibilityFlags) {
+        setCollectionVisibilityFlags(visibilityData, visibilityFlags, false);
+    }
+
     public static CollectionDataView fromCollection(CollectionData collection) {
         return new CollectionDataView(
                 new CollectionId(collection.getId()),
@@ -123,6 +180,8 @@ public final class ApiConverters {
                 fromUser(collection.getOwner()),
                 collection.getName(),
                 collection.getColor(),
+                fromCollectionVisibility(collection.getVisibilityData()),
+                fromBanner(collection.getBannerData()),
                 Optional.ofNullable(collection.getSourcePluginId())
         );
     }
@@ -188,6 +247,45 @@ public final class ApiConverters {
     public static void applyCollectionMutation(CollectionData collection, CollectionMutation mutation) {
         mutation.name().ifPresent(collection::setName);
         mutation.color().ifPresent(collection::setColor);
+        if (mutation.visibility().isPresent()) {
+            collection.setVisibilityData(toCollectionVisibility(mutation.visibility().get()));
+        } else if (!mutation.visibilityToAdd().isEmpty()
+                || !mutation.visibilityToRemove().isEmpty()
+                || mutation.fullscreenZoom().isPresent()
+                || mutation.minimapZoom().isPresent()
+                || mutation.webmapZoom().isPresent()) {
+            CollectionVisibilityData visibilityData = new CollectionVisibilityData(collection.getVisibilityData());
+            addCollectionVisibilityFlags(visibilityData, mutation.visibilityToAdd());
+            removeCollectionVisibilityFlags(visibilityData, mutation.visibilityToRemove());
+            mutation.fullscreenZoom().ifPresent(visibilityData::setFullscreenZoom);
+            mutation.minimapZoom().ifPresent(visibilityData::setMinimapZoom);
+            mutation.webmapZoom().ifPresent(visibilityData::setWebmapZoom);
+            collection.setVisibilityData(visibilityData);
+        }
+        if (mutation.clearBanner()) {
+            collection.setBannerData(null);
+        } else {
+            mutation.banner().ifPresent(value -> collection.setBannerData(toBanner(value)));
+        }
+    }
+
+    private static void setCollectionVisibilityFlags(CollectionVisibilityData visibilityData,
+                                                     Set<CollectionVisibilityFlag> visibilityFlags,
+                                                     boolean enabled) {
+        for (CollectionVisibilityFlag visibilityFlag : visibilityFlags) {
+            switch (visibilityFlag) {
+                case Visible -> visibilityData.setVisible(enabled);
+                case FullscreenName -> visibilityData.setFullscreenName(enabled);
+                case FullscreenOwner -> visibilityData.setFullscreenOwner(enabled);
+                case FullscreenBanner -> visibilityData.setFullscreenBanner(enabled);
+                case MinimapName -> visibilityData.setMinimapName(enabled);
+                case MinimapOwner -> visibilityData.setMinimapOwner(enabled);
+                case MinimapBanner -> visibilityData.setMinimapBanner(enabled);
+                case WebmapName -> visibilityData.setWebmapName(enabled);
+                case WebmapOwner -> visibilityData.setWebmapOwner(enabled);
+                case WebmapBanner -> visibilityData.setWebmapBanner(enabled);
+            }
+        }
     }
 
     private ApiConverters() {

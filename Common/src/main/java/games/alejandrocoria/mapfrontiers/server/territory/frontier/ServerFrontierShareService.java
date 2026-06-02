@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.server.territory.frontier;
 
 import games.alejandrocoria.mapfrontiers.common.network.PacketCollectionCreated;
+import games.alejandrocoria.mapfrontiers.common.network.PacketCollectionDeleted;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierCreated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierDeleted;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSharingUpdated;
@@ -154,6 +155,9 @@ public class ServerFrontierShareService {
             ServerPlayer targetPlayer = server.getPlayerList().getPlayer(targetUser.uuid);
             if (targetPlayer != null) {
                 result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierDeleted(frontier.getDimension(), frontierId, true, -1), targetPlayer));
+                if (frontier.hasCollection() && !territoriesManager.userKnowsPersonalCollection(targetUser, frontier.getCollectionId())) {
+                    result.addNetworkAction(() -> PacketHandler.sendTo(new PacketCollectionDeleted(frontier.getCollectionId()), targetPlayer));
+                }
             }
         }
 

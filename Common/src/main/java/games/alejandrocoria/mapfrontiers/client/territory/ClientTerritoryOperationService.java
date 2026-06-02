@@ -40,6 +40,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierCreationFactory;
@@ -871,9 +872,16 @@ public class ClientTerritoryOperationService {
         collection.removeCopiedFromInfo();
         request.name().ifPresent(collection::setName);
         request.color().ifPresent(collection::setColor);
+        CollectionVisibilityData visibility = request.visibility()
+                .map(ApiConverters::toCollectionVisibility)
+                .orElseGet(ApiConverters::defaultCollectionVisibility);
+        BannerData banner = request.banner()
+                .map(ApiConverters::toBanner)
+                .orElseGet(ApiConverters::defaultCollectionBanner);
+        collection.setVisibilityData(visibility);
+        collection.setBannerData(banner);
         Date now = new Date();
         collection.setCreated(now);
-        collection.setModified(now);
         return collection;
     }
 

@@ -8,7 +8,9 @@ import games.alejandrocoria.mapfrontiers.api.model.CollectionId;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionMutation;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
+import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityData;
 import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationResult;
 import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationService;
 
@@ -103,9 +105,16 @@ public class ServerCollectionServiceImpl implements PluginScopedServerCollection
         collection.setSourcePluginId(pluginModId);
         request.name().ifPresent(collection::setName);
         request.color().ifPresent(collection::setColor);
+        CollectionVisibilityData visibility = request.visibility()
+                .map(ApiConverters::toCollectionVisibility)
+                .orElseGet(ApiConverters::defaultCollectionVisibility);
+        BannerData banner = request.banner()
+                .map(ApiConverters::toBanner)
+                .orElseGet(ApiConverters::defaultCollectionBanner);
+        collection.setVisibilityData(visibility);
+        collection.setBannerData(banner);
         Date now = new Date();
         collection.setCreated(now);
-        collection.setModified(now);
         collection.removeCopiedFromInfo();
         return collection;
     }
