@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common.settings;
 
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
 import io.netty.buffer.ByteBuf;
 
@@ -98,6 +99,15 @@ public class SettingsProfile {
         }
 
         return actions;
+    }
+
+    public static boolean canUpdateCollection(@Nullable SettingsProfile profile, CollectionData collection, SettingsUser playerUser) {
+        if (collection.getPersonal()) {
+            return collection.getOwner().equals(playerUser);
+        }
+
+        return profile != null && (profile.updateFrontier == State.Enabled
+                || (profile.updateFrontier == State.Owner && collection.getOwner().equals(playerUser)));
     }
 
     public static class AvailableActions {

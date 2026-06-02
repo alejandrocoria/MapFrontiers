@@ -936,13 +936,7 @@ public class FullscreenMap {
             return false;
         }
 
-        if (selectedCollection.getPersonal()) {
-            return selectedCollection.getOwner().equals(playerUser);
-        }
-
-        SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
-        return profile != null && (profile.updateFrontier == SettingsProfile.State.Enabled
-                || (profile.updateFrontier == SettingsProfile.State.Owner && selectedCollection.getOwner().equals(playerUser)));
+        return SettingsProfile.canUpdateCollection(MapFrontiersClient.getSettingsProfile(), selectedCollection, playerUser);
     }
 
     private boolean canDeleteSelectedCollection(SettingsUser playerUser) {

@@ -797,14 +797,7 @@ public class CollectionInfoPage extends PageScreen {
             return false;
         }
 
-        SettingsUser playerUser = new SettingsUser(minecraft.player);
-        if (collection.getPersonal()) {
-            return canManageLocalPersonalCollection(playerUser);
-        }
-
-        SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
-        return profile != null && (profile.updateFrontier == SettingsProfile.State.Enabled
-                || (profile.updateFrontier == SettingsProfile.State.Owner && collection.getOwner().equals(playerUser)));
+        return SettingsProfile.canUpdateCollection(MapFrontiersClient.getSettingsProfile(), collection, new SettingsUser(minecraft.player));
     }
 
     private boolean canDeleteCollection() {
