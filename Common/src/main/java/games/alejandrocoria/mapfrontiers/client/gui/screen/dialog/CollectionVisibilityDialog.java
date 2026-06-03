@@ -17,7 +17,6 @@ import net.minecraft.network.chat.Style;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
@@ -42,10 +41,10 @@ public class CollectionVisibilityDialog extends PanelDialog {
 
     private final CollectionVisibilityData visibilityData;
     private final @Nullable CollectionVisibilityMask visibilityMask;
-    private final BiConsumer<CollectionVisibilityData, CollectionVisibilityMask> saveCallback;
+    private final SaveCallback saveCallback;
 
     public CollectionVisibilityDialog(CollectionVisibilityData visibilityData,
-                                      BiConsumer<CollectionVisibilityData, CollectionVisibilityMask> saveCallback) {
+                                      SaveCallback saveCallback) {
         super();
         this.visibilityData = new CollectionVisibilityData(visibilityData);
         visibilityMask = null;
@@ -53,7 +52,7 @@ public class CollectionVisibilityDialog extends PanelDialog {
     }
 
     public CollectionVisibilityDialog(CollectionVisibilityData visibilityData, CollectionVisibilityMask visibilityMask,
-                                      BiConsumer<CollectionVisibilityData, CollectionVisibilityMask> saveCallback) {
+                                      SaveCallback saveCallback) {
         super();
         this.visibilityData = new CollectionVisibilityData(visibilityData);
         this.visibilityMask = new CollectionVisibilityMask(visibilityMask);
@@ -221,5 +220,10 @@ public class CollectionVisibilityDialog extends PanelDialog {
     }
 
     private record BooleanMaskBinding(Supplier<Boolean> getter, Consumer<Boolean> setter) {
+    }
+
+    @FunctionalInterface
+    public interface SaveCallback {
+        void accept(CollectionVisibilityData visibilityData, @Nullable CollectionVisibilityMask visibilityMask);
     }
 }

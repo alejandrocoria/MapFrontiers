@@ -16,7 +16,6 @@ import net.minecraft.network.chat.Style;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.function.BiConsumer;
 
 @ParametersAreNonnullByDefault
 public class VisibilityDialog extends PanelDialog {
@@ -45,9 +44,9 @@ public class VisibilityDialog extends PanelDialog {
     private final VisibilityData visibilityData;
     @Nullable
     private final FrontierVisibilityMask visibilityMask;
-    private final BiConsumer<VisibilityData, FrontierVisibilityMask> saveCallback;
+    private final SaveCallback saveCallback;
 
-    public VisibilityDialog(VisibilityData visibilityData, BiConsumer<VisibilityData, FrontierVisibilityMask> saveCallback) {
+    public VisibilityDialog(VisibilityData visibilityData, SaveCallback saveCallback) {
         super();
         this.visibilityData = new VisibilityData(visibilityData);
         this.visibilityMask = null;
@@ -55,7 +54,7 @@ public class VisibilityDialog extends PanelDialog {
     }
 
     public VisibilityDialog(VisibilityData visibilityData, FrontierVisibilityMask visibilityDataMask,
-                            BiConsumer<VisibilityData, FrontierVisibilityMask> saveCallback) {
+                            SaveCallback saveCallback) {
         super();
         this.visibilityData = new VisibilityData(visibilityData);
         this.visibilityMask = new FrontierVisibilityMask(visibilityDataMask);
@@ -179,5 +178,10 @@ public class VisibilityDialog extends PanelDialog {
     private void saveAndClose() {
         super.onClose();
         saveCallback.accept(visibilityData, visibilityMask);
+    }
+
+    @FunctionalInterface
+    public interface SaveCallback {
+        void accept(VisibilityData visibilityData, @Nullable FrontierVisibilityMask visibilityMask);
     }
 }
