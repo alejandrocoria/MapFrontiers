@@ -5,6 +5,7 @@ import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityMask;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
 import it.unimi.dsi.fastutil.Pair;
 import journeymap.api.v2.client.IClientAPI;

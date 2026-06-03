@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.territory.collection;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.territory.ClientMapFrontiersStorageHelper;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityMask;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtFileHelper;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;

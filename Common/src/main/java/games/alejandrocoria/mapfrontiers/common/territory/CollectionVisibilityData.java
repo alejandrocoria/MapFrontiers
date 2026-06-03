@@ -3,46 +3,36 @@ package games.alejandrocoria.mapfrontiers.common.territory;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 
 public class CollectionVisibilityData {
     public static final int COLLECTION_VIEW_DISABLED_ZOOM = 0;
+    private static final int DEFAULT_ZOOM = 256;
     private static final List<Integer> ZOOM_LEVELS = List.of(
             COLLECTION_VIEW_DISABLED_ZOOM, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384
     );
 
-    private boolean visible = false;
-    private int fullscreenZoom = 256;
-    private int minimapZoom = 256;
-    private int webmapZoom = 256;
-    private boolean fullscreenName = true;
-    private boolean fullscreenOwner = false;
-    private boolean fullscreenBanner = true;
-    private boolean minimapName = true;
-    private boolean minimapOwner = false;
-    private boolean minimapBanner = true;
-    private boolean webmapName = true;
-    private boolean webmapOwner = false;
-    private boolean webmapBanner = true;
+    private final EnumSet<CollectionVisibilityField> booleanValues;
+    private int fullscreenZoom = DEFAULT_ZOOM;
+    private int minimapZoom = DEFAULT_ZOOM;
+    private int webmapZoom = DEFAULT_ZOOM;
 
     public CollectionVisibilityData() {
+        booleanValues = EnumSet.noneOf(CollectionVisibilityField.class);
+        for (CollectionVisibilityField field : CollectionVisibilityField.BOOLEAN_VALUES) {
+            if (field.getDefaultBooleanValue()) {
+                booleanValues.add(field);
+            }
+        }
     }
 
     public CollectionVisibilityData(CollectionVisibilityData other) {
-        visible = other.visible;
+        booleanValues = other.booleanValues.clone();
         fullscreenZoom = other.fullscreenZoom;
         minimapZoom = other.minimapZoom;
         webmapZoom = other.webmapZoom;
-        fullscreenName = other.fullscreenName;
-        fullscreenOwner = other.fullscreenOwner;
-        fullscreenBanner = other.fullscreenBanner;
-        minimapName = other.minimapName;
-        minimapOwner = other.minimapOwner;
-        minimapBanner = other.minimapBanner;
-        webmapName = other.webmapName;
-        webmapOwner = other.webmapOwner;
-        webmapBanner = other.webmapBanner;
     }
 
     @Override
@@ -55,195 +45,254 @@ public class CollectionVisibilityData {
             return false;
         }
 
-        return visible == otherVisibilityData.visible
+        return booleanValues.equals(otherVisibilityData.booleanValues)
                 && fullscreenZoom == otherVisibilityData.fullscreenZoom
                 && minimapZoom == otherVisibilityData.minimapZoom
-                && webmapZoom == otherVisibilityData.webmapZoom
-                && fullscreenName == otherVisibilityData.fullscreenName
-                && fullscreenOwner == otherVisibilityData.fullscreenOwner
-                && fullscreenBanner == otherVisibilityData.fullscreenBanner
-                && minimapName == otherVisibilityData.minimapName
-                && minimapOwner == otherVisibilityData.minimapOwner
-                && minimapBanner == otherVisibilityData.minimapBanner
-                && webmapName == otherVisibilityData.webmapName
-                && webmapOwner == otherVisibilityData.webmapOwner
-                && webmapBanner == otherVisibilityData.webmapBanner;
+                && webmapZoom == otherVisibilityData.webmapZoom;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(visible, fullscreenZoom, minimapZoom, webmapZoom,
-                fullscreenName, fullscreenOwner, fullscreenBanner,
-                minimapName, minimapOwner, minimapBanner,
-                webmapName, webmapOwner, webmapBanner);
+        return Objects.hash(booleanValues, fullscreenZoom, minimapZoom, webmapZoom);
+    }
+
+    public void setBoolean(CollectionVisibilityField field, boolean enabled) {
+        requireBooleanField(field);
+
+        if (enabled) {
+            booleanValues.add(field);
+        } else {
+            booleanValues.remove(field);
+        }
+    }
+
+    public boolean getBoolean(CollectionVisibilityField field) {
+        requireBooleanField(field);
+        return booleanValues.contains(field);
+    }
+
+    public void setZoom(CollectionVisibilityField field, int zoom) {
+        int normalizedZoom = normalizeZoom(zoom);
+        switch (field) {
+            case FullscreenZoom -> fullscreenZoom = normalizedZoom;
+            case MinimapZoom -> minimapZoom = normalizedZoom;
+            case WebmapZoom -> webmapZoom = normalizedZoom;
+            default -> throw new IllegalArgumentException("Field " + field + " is not a zoom field");
+        }
+    }
+
+    public int getZoom(CollectionVisibilityField field) {
+        return switch (field) {
+            case FullscreenZoom -> fullscreenZoom;
+            case MinimapZoom -> minimapZoom;
+            case WebmapZoom -> webmapZoom;
+            default -> throw new IllegalArgumentException("Field " + field + " is not a zoom field");
+        };
     }
 
     public boolean isVisible() {
-        return visible;
+        return getBoolean(CollectionVisibilityField.Visible);
     }
 
     public void setVisible(boolean visible) {
-        this.visible = visible;
+        setBoolean(CollectionVisibilityField.Visible, visible);
     }
 
     public int getFullscreenZoom() {
-        return fullscreenZoom;
+        return getZoom(CollectionVisibilityField.FullscreenZoom);
     }
 
     public void setFullscreenZoom(int fullscreenZoom) {
-        this.fullscreenZoom = normalizeZoom(fullscreenZoom);
+        setZoom(CollectionVisibilityField.FullscreenZoom, fullscreenZoom);
     }
 
     public int getMinimapZoom() {
-        return minimapZoom;
+        return getZoom(CollectionVisibilityField.MinimapZoom);
     }
 
     public void setMinimapZoom(int minimapZoom) {
-        this.minimapZoom = normalizeZoom(minimapZoom);
+        setZoom(CollectionVisibilityField.MinimapZoom, minimapZoom);
     }
 
     public int getWebmapZoom() {
-        return webmapZoom;
+        return getZoom(CollectionVisibilityField.WebmapZoom);
     }
 
     public void setWebmapZoom(int webmapZoom) {
-        this.webmapZoom = normalizeZoom(webmapZoom);
+        setZoom(CollectionVisibilityField.WebmapZoom, webmapZoom);
     }
 
     public boolean getFullscreenName() {
-        return fullscreenName;
+        return getBoolean(CollectionVisibilityField.FullscreenName);
     }
 
     public void setFullscreenName(boolean fullscreenName) {
-        this.fullscreenName = fullscreenName;
+        setBoolean(CollectionVisibilityField.FullscreenName, fullscreenName);
     }
 
     public boolean getFullscreenOwner() {
-        return fullscreenOwner;
+        return getBoolean(CollectionVisibilityField.FullscreenOwner);
     }
 
     public void setFullscreenOwner(boolean fullscreenOwner) {
-        this.fullscreenOwner = fullscreenOwner;
+        setBoolean(CollectionVisibilityField.FullscreenOwner, fullscreenOwner);
     }
 
     public boolean getFullscreenBanner() {
-        return fullscreenBanner;
+        return getBoolean(CollectionVisibilityField.FullscreenBanner);
     }
 
     public void setFullscreenBanner(boolean fullscreenBanner) {
-        this.fullscreenBanner = fullscreenBanner;
+        setBoolean(CollectionVisibilityField.FullscreenBanner, fullscreenBanner);
     }
 
     public boolean getMinimapName() {
-        return minimapName;
+        return getBoolean(CollectionVisibilityField.MinimapName);
     }
 
     public void setMinimapName(boolean minimapName) {
-        this.minimapName = minimapName;
+        setBoolean(CollectionVisibilityField.MinimapName, minimapName);
     }
 
     public boolean getMinimapOwner() {
-        return minimapOwner;
+        return getBoolean(CollectionVisibilityField.MinimapOwner);
     }
 
     public void setMinimapOwner(boolean minimapOwner) {
-        this.minimapOwner = minimapOwner;
+        setBoolean(CollectionVisibilityField.MinimapOwner, minimapOwner);
     }
 
     public boolean getMinimapBanner() {
-        return minimapBanner;
+        return getBoolean(CollectionVisibilityField.MinimapBanner);
     }
 
     public void setMinimapBanner(boolean minimapBanner) {
-        this.minimapBanner = minimapBanner;
+        setBoolean(CollectionVisibilityField.MinimapBanner, minimapBanner);
     }
 
     public boolean getWebmapName() {
-        return webmapName;
+        return getBoolean(CollectionVisibilityField.WebmapName);
     }
 
     public void setWebmapName(boolean webmapName) {
-        this.webmapName = webmapName;
+        setBoolean(CollectionVisibilityField.WebmapName, webmapName);
     }
 
     public boolean getWebmapOwner() {
-        return webmapOwner;
+        return getBoolean(CollectionVisibilityField.WebmapOwner);
     }
 
     public void setWebmapOwner(boolean webmapOwner) {
-        this.webmapOwner = webmapOwner;
+        setBoolean(CollectionVisibilityField.WebmapOwner, webmapOwner);
     }
 
     public boolean getWebmapBanner() {
-        return webmapBanner;
+        return getBoolean(CollectionVisibilityField.WebmapBanner);
     }
 
     public void setWebmapBanner(boolean webmapBanner) {
-        this.webmapBanner = webmapBanner;
+        setBoolean(CollectionVisibilityField.WebmapBanner, webmapBanner);
+    }
+
+    public void applyOverride(CollectionVisibilityData override, CollectionVisibilityMask mask) {
+        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
+            if (!mask.has(field)) {
+                continue;
+            }
+
+            if (field.isBoolean()) {
+                setBoolean(field, override.getBoolean(field));
+            } else {
+                setZoom(field, override.getZoom(field));
+            }
+        }
+    }
+
+    public boolean equalsMasked(CollectionVisibilityData other, CollectionVisibilityMask mask) {
+        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
+            if (!mask.has(field)) {
+                continue;
+            }
+
+            if (field.isBoolean()) {
+                if (getBoolean(field) != other.getBoolean(field)) {
+                    return false;
+                }
+            } else if (getZoom(field) != other.getZoom(field)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public void readSparseNbt(CompoundTag nbt, CollectionVisibilityMask mask) {
+        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
+            if (!nbt.contains(field.getNbtKey())) {
+                continue;
+            }
+
+            if (field.isBoolean()) {
+                setBoolean(field, nbt.getBooleanOr(field.getNbtKey(), false));
+            } else {
+                setZoom(field, nbt.getIntOr(field.getNbtKey(), COLLECTION_VIEW_DISABLED_ZOOM));
+            }
+            mask.set(field, true);
+        }
+    }
+
+    public void writeSparseNbt(CompoundTag nbt, CollectionVisibilityMask mask) {
+        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
+            if (!mask.has(field)) {
+                continue;
+            }
+
+            if (field.isBoolean()) {
+                nbt.putBoolean(field.getNbtKey(), getBoolean(field));
+            } else {
+                nbt.putInt(field.getNbtKey(), getZoom(field));
+            }
+        }
     }
 
     public void readFromNBT(CompoundTag nbt) {
-        visible = nbt.getBooleanOr("visible", false);
-        fullscreenZoom = normalizeZoom(nbt.getIntOr("fullscreenZoom", 256));
-        minimapZoom = normalizeZoom(nbt.getIntOr("minimapZoom", 256));
-        webmapZoom = normalizeZoom(nbt.getIntOr("webmapZoom", 256));
-        fullscreenName = nbt.getBooleanOr("fullscreenName", true);
-        fullscreenOwner = nbt.getBooleanOr("fullscreenOwner", false);
-        fullscreenBanner = nbt.getBooleanOr("fullscreenBanner", true);
-        minimapName = nbt.getBooleanOr("minimapName", true);
-        minimapOwner = nbt.getBooleanOr("minimapOwner", false);
-        minimapBanner = nbt.getBooleanOr("minimapBanner", true);
-        webmapName = nbt.getBooleanOr("webmapName", true);
-        webmapOwner = nbt.getBooleanOr("webmapOwner", false);
-        webmapBanner = nbt.getBooleanOr("webmapBanner", true);
+        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
+            if (field.isBoolean()) {
+                setBoolean(field, nbt.getBooleanOr(field.getNbtKey(), field.getDefaultBooleanValue()));
+            } else {
+                setZoom(field, nbt.getIntOr(field.getNbtKey(), DEFAULT_ZOOM));
+            }
+        }
     }
 
     public void writeToNBT(CompoundTag nbt) {
-        nbt.putBoolean("visible", visible);
-        nbt.putInt("fullscreenZoom", fullscreenZoom);
-        nbt.putInt("minimapZoom", minimapZoom);
-        nbt.putInt("webmapZoom", webmapZoom);
-        nbt.putBoolean("fullscreenName", fullscreenName);
-        nbt.putBoolean("fullscreenOwner", fullscreenOwner);
-        nbt.putBoolean("fullscreenBanner", fullscreenBanner);
-        nbt.putBoolean("minimapName", minimapName);
-        nbt.putBoolean("minimapOwner", minimapOwner);
-        nbt.putBoolean("minimapBanner", minimapBanner);
-        nbt.putBoolean("webmapName", webmapName);
-        nbt.putBoolean("webmapOwner", webmapOwner);
-        nbt.putBoolean("webmapBanner", webmapBanner);
+        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
+            if (field.isBoolean()) {
+                nbt.putBoolean(field.getNbtKey(), getBoolean(field));
+            } else {
+                nbt.putInt(field.getNbtKey(), getZoom(field));
+            }
+        }
     }
 
     public void fromBytes(FriendlyByteBuf buf) {
-        visible = buf.readBoolean();
-        fullscreenZoom = normalizeZoom(buf.readInt());
-        minimapZoom = normalizeZoom(buf.readInt());
-        webmapZoom = normalizeZoom(buf.readInt());
-        fullscreenName = buf.readBoolean();
-        fullscreenOwner = buf.readBoolean();
-        fullscreenBanner = buf.readBoolean();
-        minimapName = buf.readBoolean();
-        minimapOwner = buf.readBoolean();
-        minimapBanner = buf.readBoolean();
-        webmapName = buf.readBoolean();
-        webmapOwner = buf.readBoolean();
-        webmapBanner = buf.readBoolean();
+        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
+            if (field.isBoolean()) {
+                setBoolean(field, buf.readBoolean());
+            } else {
+                setZoom(field, buf.readInt());
+            }
+        }
     }
 
     public void toBytes(FriendlyByteBuf buf) {
-        buf.writeBoolean(visible);
-        buf.writeInt(fullscreenZoom);
-        buf.writeInt(minimapZoom);
-        buf.writeInt(webmapZoom);
-        buf.writeBoolean(fullscreenName);
-        buf.writeBoolean(fullscreenOwner);
-        buf.writeBoolean(fullscreenBanner);
-        buf.writeBoolean(minimapName);
-        buf.writeBoolean(minimapOwner);
-        buf.writeBoolean(minimapBanner);
-        buf.writeBoolean(webmapName);
-        buf.writeBoolean(webmapOwner);
-        buf.writeBoolean(webmapBanner);
+        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
+            if (field.isBoolean()) {
+                buf.writeBoolean(getBoolean(field));
+            } else {
+                buf.writeInt(getZoom(field));
+            }
+        }
     }
 
     public static List<Integer> getZoomLevels() {
@@ -284,5 +333,11 @@ public class CollectionVisibilityData {
         }
 
         return nearestZoom;
+    }
+
+    private static void requireBooleanField(CollectionVisibilityField field) {
+        if (!field.isBoolean()) {
+            throw new IllegalArgumentException("Field " + field + " is not a boolean field");
+        }
     }
 }
