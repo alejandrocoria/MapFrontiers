@@ -74,24 +74,15 @@ public class CollectionLocalOverrides {
         boolean needBackup = false;
         try {
             int version = nbt.getIntOr("Version", 0);
-            if (version == 0) {
-                MapFrontiers.LOGGER.warn("Data version in {} not found, expected {}", FILENAME, COLLECTION_OVERRIDES_DATA_VERSION);
-                needBackup = true;
+            if (version < COLLECTION_OVERRIDES_DATA_VERSION) {
+                MapFrontiers.LOGGER.warn("Unsupported legacy data version in {}: {}. The mod uses {}", FILENAME, version, COLLECTION_OVERRIDES_DATA_VERSION);
+                return true;
             } else if (version > COLLECTION_OVERRIDES_DATA_VERSION) {
                 MapFrontiers.LOGGER.warn("Data version in {} higher than expected. The mod uses {}", FILENAME, COLLECTION_OVERRIDES_DATA_VERSION);
                 needBackup = true;
             }
 
-            ListTag overridesTagList;
-            if (version < COLLECTION_OVERRIDES_DATA_VERSION) {
-                overridesTagList = migrateLegacyOverrides(nbt.getListOrEmpty("overrides"));
-                nbt.put("overrides", overridesTagList);
-                nbt.putInt("Version", COLLECTION_OVERRIDES_DATA_VERSION);
-                needBackup = true;
-            } else {
-                overridesTagList = nbt.getListOrEmpty("overrides");
-            }
-
+            ListTag overridesTagList = nbt.getListOrEmpty("overrides");
             for (int i = 0; i < overridesTagList.size(); ++i) {
                 try {
                     CompoundTag overrideTag = NbtReadHelper.requireCompound(overridesTagList, i, "overrides");
@@ -202,37 +193,6 @@ public class CollectionLocalOverrides {
         }
 
         return new CompoundTag();
-    }
-
-    private ListTag migrateLegacyOverrides(ListTag legacyOverridesTagList) {
-        ListTag migratedOverridesTagList = new ListTag();
-        for (int i = 0; i < legacyOverridesTagList.size(); ++i) {
-            try {
-                CompoundTag legacyOverrideTag = NbtReadHelper.requireCompound(legacyOverridesTagList, i, "overrides");
-                UUID id = UUID.fromString(NbtReadHelper.requireString(legacyOverrideTag, "id"));
-
-                CompoundTag legacyDataTag = NbtReadHelper.requireCompound(legacyOverrideTag, "data");
-                CollectionVisibilityData legacyData = new CollectionVisibilityData();
-                legacyData.readFromNBT(legacyDataTag);
-
-                CompoundTag legacyMaskTag = NbtReadHelper.requireCompound(legacyOverrideTag, "mask");
-                CollectionVisibilityMask legacyMask = new CollectionVisibilityMask();
-                legacyMask.readFromNBT(legacyMaskTag);
-
-                if (!legacyMask.hasSome()) {
-                    continue;
-                }
-
-                CompoundTag migratedOverrideTag = new CompoundTag();
-                migratedOverrideTag.putString("id", id.toString());
-                migratedOverrideTag.put("visibility", writeSparseOverrideData(legacyData, legacyMask));
-                migratedOverridesTagList.add(migratedOverrideTag);
-            } catch (InvalidNbtFormatException e) {
-                MapFrontiers.LOGGER.warn("Skipping invalid collection override at overrides[{}]: {}", i, e.getMessage());
-            }
-        }
-
-        return migratedOverridesTagList;
     }
 
     private Pair<CollectionVisibilityData, CollectionVisibilityMask> readSparseOverrideData(CompoundTag dataTag) {
