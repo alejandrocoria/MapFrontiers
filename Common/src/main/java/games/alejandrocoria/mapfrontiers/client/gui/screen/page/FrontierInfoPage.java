@@ -21,6 +21,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteFrontier
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.PathStyleDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.VisibilityDialog;
 import games.alejandrocoria.mapfrontiers.client.territory.BannerDataHelper;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierLocalOverrides;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
@@ -619,8 +620,11 @@ public class FrontierInfoPage extends PageScreen {
 
     private void onVisibilityOverrideButtonPressed() {
         Pair<VisibilityData, VisibilityData> override = MapFrontiersClient.getLocalOverrides().getVisibility(frontier.getId());
-        new VisibilityDialog(override.first(), override.second(), (newVisibilityData, newVisibilityMask) -> {
-            if (!newVisibilityData.equals(override.first()) || !newVisibilityMask.equals(override.second())) {
+        VisibilityData baseVisibilityData = FrontierLocalOverrides.resolveVisibility(frontier.getVisibilityData(), override);
+        VisibilityData initialVisibilityData = new VisibilityData(baseVisibilityData);
+        VisibilityData initialVisibilityMask = new VisibilityData(override.second());
+        new VisibilityDialog(baseVisibilityData, override.second(), (newVisibilityData, newVisibilityMask) -> {
+            if (!newVisibilityData.equals(initialVisibilityData) || !newVisibilityMask.equals(initialVisibilityMask)) {
                 Pair<VisibilityData, VisibilityData> newOverride = Pair.of(newVisibilityData, newVisibilityMask);
                 MapFrontiersClient.getLocalOverrides().setVisibility(frontier.getId(), newOverride);
                 frontier.setVisibilityOverride(newOverride);

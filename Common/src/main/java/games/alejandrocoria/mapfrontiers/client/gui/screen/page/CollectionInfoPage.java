@@ -20,6 +20,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDi
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteCollectionConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.territory.BannerDataHelper;
 import games.alejandrocoria.mapfrontiers.client.territory.BannerRenderer;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionLocalOverrides;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionVisibilityMask;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
@@ -781,9 +782,11 @@ public class CollectionInfoPage extends PageScreen {
     private void onVisibilityOverrideButtonPressed() {
         Pair<CollectionVisibilityData, CollectionVisibilityMask> override =
                 MapFrontiersClient.getCollectionLocalOverrides().getVisibility(collectionId);
-        CollectionVisibilityData baseVisibilityData = override.second().hasSome() ? override.first() : collection.getVisibilityData();
+        CollectionVisibilityData baseVisibilityData = CollectionLocalOverrides.resolveVisibility(collection.getVisibilityData(), override);
+        CollectionVisibilityData initialVisibilityData = new CollectionVisibilityData(baseVisibilityData);
+        CollectionVisibilityMask initialVisibilityMask = new CollectionVisibilityMask(override.second());
         new CollectionVisibilityDialog(baseVisibilityData, override.second(), (newVisibilityData, newVisibilityMask) -> {
-            if (!newVisibilityData.equals(override.first()) || !newVisibilityMask.equals(override.second())) {
+            if (!newVisibilityData.equals(initialVisibilityData) || !newVisibilityMask.equals(initialVisibilityMask)) {
                 Pair<CollectionVisibilityData, CollectionVisibilityMask> newOverride =
                         Pair.of(new CollectionVisibilityData(newVisibilityData), new CollectionVisibilityMask(newVisibilityMask));
                 MapFrontiersClient.getCollectionLocalOverrides().setVisibility(collectionId, newOverride);

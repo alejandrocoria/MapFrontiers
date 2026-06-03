@@ -21,6 +21,7 @@ import java.util.UUID;
 
 public class CollectionLocalOverrides {
     private static final String FILENAME = "collection_overrides.dat";
+    private static final int COLLECTION_OVERRIDES_DATA_VERSION = 13;
 
     private final Map<UUID, Pair<CollectionVisibilityData, CollectionVisibilityMask>> overrides = new HashMap<>();
     private File ModDir;
@@ -46,34 +47,61 @@ public class CollectionLocalOverrides {
         saveData();
     }
 
+    public static CollectionVisibilityData resolveVisibility(CollectionVisibilityData baseVisibility,
+                                                             Pair<CollectionVisibilityData, CollectionVisibilityMask> visibilityOverride) {
+        CollectionVisibilityData resolvedVisibility = new CollectionVisibilityData(baseVisibility);
+        CollectionVisibilityData overrideVisibility = visibilityOverride.first();
+        CollectionVisibilityMask overrideMask = visibilityOverride.second();
+
+        applyMaskedBoolean(overrideMask.isVisible(), overrideVisibility.isVisible(), resolvedVisibility::setVisible);
+        applyMaskedInt(overrideMask.getFullscreenZoom(), overrideVisibility.getFullscreenZoom(), resolvedVisibility::setFullscreenZoom);
+        applyMaskedInt(overrideMask.getMinimapZoom(), overrideVisibility.getMinimapZoom(), resolvedVisibility::setMinimapZoom);
+        applyMaskedInt(overrideMask.getWebmapZoom(), overrideVisibility.getWebmapZoom(), resolvedVisibility::setWebmapZoom);
+        applyMaskedBoolean(overrideMask.getFullscreenName(), overrideVisibility.getFullscreenName(), resolvedVisibility::setFullscreenName);
+        applyMaskedBoolean(overrideMask.getFullscreenOwner(), overrideVisibility.getFullscreenOwner(), resolvedVisibility::setFullscreenOwner);
+        applyMaskedBoolean(overrideMask.getFullscreenBanner(), overrideVisibility.getFullscreenBanner(), resolvedVisibility::setFullscreenBanner);
+        applyMaskedBoolean(overrideMask.getMinimapName(), overrideVisibility.getMinimapName(), resolvedVisibility::setMinimapName);
+        applyMaskedBoolean(overrideMask.getMinimapOwner(), overrideVisibility.getMinimapOwner(), resolvedVisibility::setMinimapOwner);
+        applyMaskedBoolean(overrideMask.getMinimapBanner(), overrideVisibility.getMinimapBanner(), resolvedVisibility::setMinimapBanner);
+        applyMaskedBoolean(overrideMask.getWebmapName(), overrideVisibility.getWebmapName(), resolvedVisibility::setWebmapName);
+        applyMaskedBoolean(overrideMask.getWebmapOwner(), overrideVisibility.getWebmapOwner(), resolvedVisibility::setWebmapOwner);
+        applyMaskedBoolean(overrideMask.getWebmapBanner(), overrideVisibility.getWebmapBanner(), resolvedVisibility::setWebmapBanner);
+
+        return resolvedVisibility;
+    }
+
     private boolean readFromNBT(CompoundTag nbt) {
         boolean needBackup = false;
         try {
             int version = nbt.getIntOr("Version", 0);
             if (version == 0) {
-                MapFrontiers.LOGGER.warn("Data version in {} not found, expected {}", FILENAME, MapFrontiers.FRONTIER_DATA_VERSION);
+                MapFrontiers.LOGGER.warn("Data version in {} not found, expected {}", FILENAME, COLLECTION_OVERRIDES_DATA_VERSION);
                 needBackup = true;
-            } else if (version > MapFrontiers.FRONTIER_DATA_VERSION) {
-                MapFrontiers.LOGGER.warn("Data version in {} higher than expected. The mod uses {}", FILENAME, MapFrontiers.FRONTIER_DATA_VERSION);
+            } else if (version > COLLECTION_OVERRIDES_DATA_VERSION) {
+                MapFrontiers.LOGGER.warn("Data version in {} higher than expected. The mod uses {}", FILENAME, COLLECTION_OVERRIDES_DATA_VERSION);
                 needBackup = true;
             }
 
-            ListTag overridesTagList = nbt.getListOrEmpty("overrides");
+            ListTag overridesTagList;
+            if (version < COLLECTION_OVERRIDES_DATA_VERSION) {
+                overridesTagList = migrateLegacyOverrides(nbt.getListOrEmpty("overrides"));
+                nbt.put("overrides", overridesTagList);
+                nbt.putInt("Version", COLLECTION_OVERRIDES_DATA_VERSION);
+                needBackup = true;
+            } else {
+                overridesTagList = nbt.getListOrEmpty("overrides");
+            }
+
             for (int i = 0; i < overridesTagList.size(); ++i) {
                 try {
                     CompoundTag overrideTag = NbtReadHelper.requireCompound(overridesTagList, i, "overrides");
                     UUID id = UUID.fromString(NbtReadHelper.requireString(overrideTag, "id"));
 
-                    CompoundTag dataTag = NbtReadHelper.requireCompound(overrideTag, "data");
-                    CollectionVisibilityData data = new CollectionVisibilityData();
-                    data.readFromNBT(dataTag);
-
-                    CompoundTag maskTag = NbtReadHelper.requireCompound(overrideTag, "mask");
-                    CollectionVisibilityMask mask = new CollectionVisibilityMask();
-                    mask.readFromNBT(maskTag);
-
+                    CompoundTag visibilityTag = NbtReadHelper.requireCompound(overrideTag, "visibility");
+                    Pair<CollectionVisibilityData, CollectionVisibilityMask> override = readSparseOverrideData(visibilityTag);
+                    CollectionVisibilityMask mask = override.second();
                     if (mask.hasSome()) {
-                        overrides.put(id, Pair.of(data, mask));
+                        overrides.put(id, override);
                     }
                 } catch (InvalidNbtFormatException e) {
                     MapFrontiers.LOGGER.warn("Skipping invalid collection override at overrides[{}]: {}", i, e.getMessage());
@@ -91,21 +119,20 @@ public class CollectionLocalOverrides {
     private void writeToNBT(CompoundTag nbt) {
         ListTag overridesTagList = new ListTag();
         for (Map.Entry<UUID, Pair<CollectionVisibilityData, CollectionVisibilityMask>> override : overrides.entrySet()) {
+            if (!override.getValue().second().hasSome()) {
+                continue;
+            }
+
             CompoundTag overrideTag = new CompoundTag();
             overrideTag.putString("id", override.getKey().toString());
 
-            CompoundTag dataTag = new CompoundTag();
-            override.getValue().first().writeToNBT(dataTag);
-            overrideTag.put("data", dataTag);
-
-            CompoundTag maskTag = new CompoundTag();
-            override.getValue().second().writeToNBT(maskTag);
-            overrideTag.put("mask", maskTag);
+            CompoundTag visibilityTag = writeSparseOverrideData(override.getValue().first(), override.getValue().second());
+            overrideTag.put("visibility", visibilityTag);
 
             overridesTagList.add(overrideTag);
         }
         nbt.put("overrides", overridesTagList);
-        nbt.putInt("Version", MapFrontiers.FRONTIER_DATA_VERSION);
+        nbt.putInt("Version", COLLECTION_OVERRIDES_DATA_VERSION);
     }
 
     private void loadData() {
@@ -175,5 +202,127 @@ public class CollectionLocalOverrides {
         }
 
         return new CompoundTag();
+    }
+
+    private ListTag migrateLegacyOverrides(ListTag legacyOverridesTagList) {
+        ListTag migratedOverridesTagList = new ListTag();
+        for (int i = 0; i < legacyOverridesTagList.size(); ++i) {
+            try {
+                CompoundTag legacyOverrideTag = NbtReadHelper.requireCompound(legacyOverridesTagList, i, "overrides");
+                UUID id = UUID.fromString(NbtReadHelper.requireString(legacyOverrideTag, "id"));
+
+                CompoundTag legacyDataTag = NbtReadHelper.requireCompound(legacyOverrideTag, "data");
+                CollectionVisibilityData legacyData = new CollectionVisibilityData();
+                legacyData.readFromNBT(legacyDataTag);
+
+                CompoundTag legacyMaskTag = NbtReadHelper.requireCompound(legacyOverrideTag, "mask");
+                CollectionVisibilityMask legacyMask = new CollectionVisibilityMask();
+                legacyMask.readFromNBT(legacyMaskTag);
+
+                if (!legacyMask.hasSome()) {
+                    continue;
+                }
+
+                CompoundTag migratedOverrideTag = new CompoundTag();
+                migratedOverrideTag.putString("id", id.toString());
+                migratedOverrideTag.put("visibility", writeSparseOverrideData(legacyData, legacyMask));
+                migratedOverridesTagList.add(migratedOverrideTag);
+            } catch (InvalidNbtFormatException e) {
+                MapFrontiers.LOGGER.warn("Skipping invalid collection override at overrides[{}]: {}", i, e.getMessage());
+            }
+        }
+
+        return migratedOverridesTagList;
+    }
+
+    private Pair<CollectionVisibilityData, CollectionVisibilityMask> readSparseOverrideData(CompoundTag dataTag) {
+        CollectionVisibilityData data = new CollectionVisibilityData();
+        CollectionVisibilityMask mask = new CollectionVisibilityMask();
+
+        readSparseBooleanValue(dataTag, "visible", data::setVisible, mask::setVisible);
+        readSparseIntValue(dataTag, "fullscreenZoom", data::setFullscreenZoom, mask::setFullscreenZoom);
+        readSparseIntValue(dataTag, "minimapZoom", data::setMinimapZoom, mask::setMinimapZoom);
+        readSparseIntValue(dataTag, "webmapZoom", data::setWebmapZoom, mask::setWebmapZoom);
+        readSparseBooleanValue(dataTag, "fullscreenName", data::setFullscreenName, mask::setFullscreenName);
+        readSparseBooleanValue(dataTag, "fullscreenOwner", data::setFullscreenOwner, mask::setFullscreenOwner);
+        readSparseBooleanValue(dataTag, "fullscreenBanner", data::setFullscreenBanner, mask::setFullscreenBanner);
+        readSparseBooleanValue(dataTag, "minimapName", data::setMinimapName, mask::setMinimapName);
+        readSparseBooleanValue(dataTag, "minimapOwner", data::setMinimapOwner, mask::setMinimapOwner);
+        readSparseBooleanValue(dataTag, "minimapBanner", data::setMinimapBanner, mask::setMinimapBanner);
+        readSparseBooleanValue(dataTag, "webmapName", data::setWebmapName, mask::setWebmapName);
+        readSparseBooleanValue(dataTag, "webmapOwner", data::setWebmapOwner, mask::setWebmapOwner);
+        readSparseBooleanValue(dataTag, "webmapBanner", data::setWebmapBanner, mask::setWebmapBanner);
+
+        return Pair.of(data, mask);
+    }
+
+    private CompoundTag writeSparseOverrideData(CollectionVisibilityData data, CollectionVisibilityMask mask) {
+        CompoundTag dataTag = new CompoundTag();
+
+        writeSparseBooleanValue(dataTag, "visible", data.isVisible(), mask.isVisible());
+        writeSparseIntValue(dataTag, "fullscreenZoom", data.getFullscreenZoom(), mask.getFullscreenZoom());
+        writeSparseIntValue(dataTag, "minimapZoom", data.getMinimapZoom(), mask.getMinimapZoom());
+        writeSparseIntValue(dataTag, "webmapZoom", data.getWebmapZoom(), mask.getWebmapZoom());
+        writeSparseBooleanValue(dataTag, "fullscreenName", data.getFullscreenName(), mask.getFullscreenName());
+        writeSparseBooleanValue(dataTag, "fullscreenOwner", data.getFullscreenOwner(), mask.getFullscreenOwner());
+        writeSparseBooleanValue(dataTag, "fullscreenBanner", data.getFullscreenBanner(), mask.getFullscreenBanner());
+        writeSparseBooleanValue(dataTag, "minimapName", data.getMinimapName(), mask.getMinimapName());
+        writeSparseBooleanValue(dataTag, "minimapOwner", data.getMinimapOwner(), mask.getMinimapOwner());
+        writeSparseBooleanValue(dataTag, "minimapBanner", data.getMinimapBanner(), mask.getMinimapBanner());
+        writeSparseBooleanValue(dataTag, "webmapName", data.getWebmapName(), mask.getWebmapName());
+        writeSparseBooleanValue(dataTag, "webmapOwner", data.getWebmapOwner(), mask.getWebmapOwner());
+        writeSparseBooleanValue(dataTag, "webmapBanner", data.getWebmapBanner(), mask.getWebmapBanner());
+
+        return dataTag;
+    }
+
+    private void readSparseBooleanValue(CompoundTag dataTag, String key,
+                                        java.util.function.Consumer<Boolean> dataSetter,
+                                        java.util.function.Consumer<Boolean> maskSetter) {
+        if (!dataTag.contains(key)) {
+            return;
+        }
+
+        dataSetter.accept(dataTag.getBooleanOr(key, false));
+        maskSetter.accept(true);
+    }
+
+    private void readSparseIntValue(CompoundTag dataTag, String key,
+                                    java.util.function.IntConsumer dataSetter,
+                                    java.util.function.Consumer<Boolean> maskSetter) {
+        if (!dataTag.contains(key)) {
+            return;
+        }
+
+        dataSetter.accept(dataTag.getIntOr(key, CollectionVisibilityData.COLLECTION_VIEW_DISABLED_ZOOM));
+        maskSetter.accept(true);
+    }
+
+    private void writeSparseBooleanValue(CompoundTag dataTag, String key, boolean value, boolean masked) {
+        if (!masked) {
+            return;
+        }
+
+        dataTag.putBoolean(key, value);
+    }
+
+    private void writeSparseIntValue(CompoundTag dataTag, String key, int value, boolean masked) {
+        if (!masked) {
+            return;
+        }
+
+        dataTag.putInt(key, value);
+    }
+
+    private static void applyMaskedBoolean(boolean masked, boolean value, java.util.function.Consumer<Boolean> setter) {
+        if (masked) {
+            setter.accept(value);
+        }
+    }
+
+    private static void applyMaskedInt(boolean masked, int value, java.util.function.IntConsumer setter) {
+        if (masked) {
+            setter.accept(value);
+        }
     }
 }
