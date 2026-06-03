@@ -26,6 +26,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityField;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierMutationApplier;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
@@ -273,19 +274,23 @@ public final class ApiConverters {
                                                      Set<CollectionVisibilityFlag> visibilityFlags,
                                                      boolean enabled) {
         for (CollectionVisibilityFlag visibilityFlag : visibilityFlags) {
-            switch (visibilityFlag) {
-                case Visible -> visibilityData.setVisible(enabled);
-                case FullscreenName -> visibilityData.setFullscreenName(enabled);
-                case FullscreenOwner -> visibilityData.setFullscreenOwner(enabled);
-                case FullscreenBanner -> visibilityData.setFullscreenBanner(enabled);
-                case MinimapName -> visibilityData.setMinimapName(enabled);
-                case MinimapOwner -> visibilityData.setMinimapOwner(enabled);
-                case MinimapBanner -> visibilityData.setMinimapBanner(enabled);
-                case WebmapName -> visibilityData.setWebmapName(enabled);
-                case WebmapOwner -> visibilityData.setWebmapOwner(enabled);
-                case WebmapBanner -> visibilityData.setWebmapBanner(enabled);
-            }
+            visibilityData.setBoolean(toCollectionVisibilityField(visibilityFlag), enabled);
         }
+    }
+
+    private static CollectionVisibilityField toCollectionVisibilityField(CollectionVisibilityFlag visibilityFlag) {
+        return switch (visibilityFlag) {
+            case Visible -> CollectionVisibilityField.Visible;
+            case FullscreenName -> CollectionVisibilityField.FullscreenName;
+            case FullscreenOwner -> CollectionVisibilityField.FullscreenOwner;
+            case FullscreenBanner -> CollectionVisibilityField.FullscreenBanner;
+            case MinimapName -> CollectionVisibilityField.MinimapName;
+            case MinimapOwner -> CollectionVisibilityField.MinimapOwner;
+            case MinimapBanner -> CollectionVisibilityField.MinimapBanner;
+            case WebmapName -> CollectionVisibilityField.WebmapName;
+            case WebmapOwner -> CollectionVisibilityField.WebmapOwner;
+            case WebmapBanner -> CollectionVisibilityField.WebmapBanner;
+        };
     }
 
     private ApiConverters() {

@@ -40,7 +40,7 @@ public class CollectionLocalOverrides {
     }
 
     public void setVisibility(UUID id, Pair<CollectionVisibilityData, CollectionVisibilityMask> visibility) {
-        if (visibility.second().hasSome()) {
+        if (visibility.second().hasAny()) {
             overrides.put(id, visibility);
         } else {
             overrides.remove(id);
@@ -51,23 +51,7 @@ public class CollectionLocalOverrides {
     public static CollectionVisibilityData resolveVisibility(CollectionVisibilityData baseVisibility,
                                                              Pair<CollectionVisibilityData, CollectionVisibilityMask> visibilityOverride) {
         CollectionVisibilityData resolvedVisibility = new CollectionVisibilityData(baseVisibility);
-        CollectionVisibilityData overrideVisibility = visibilityOverride.first();
-        CollectionVisibilityMask overrideMask = visibilityOverride.second();
-
-        applyMaskedBoolean(overrideMask.isVisible(), overrideVisibility.isVisible(), resolvedVisibility::setVisible);
-        applyMaskedInt(overrideMask.getFullscreenZoom(), overrideVisibility.getFullscreenZoom(), resolvedVisibility::setFullscreenZoom);
-        applyMaskedInt(overrideMask.getMinimapZoom(), overrideVisibility.getMinimapZoom(), resolvedVisibility::setMinimapZoom);
-        applyMaskedInt(overrideMask.getWebmapZoom(), overrideVisibility.getWebmapZoom(), resolvedVisibility::setWebmapZoom);
-        applyMaskedBoolean(overrideMask.getFullscreenName(), overrideVisibility.getFullscreenName(), resolvedVisibility::setFullscreenName);
-        applyMaskedBoolean(overrideMask.getFullscreenOwner(), overrideVisibility.getFullscreenOwner(), resolvedVisibility::setFullscreenOwner);
-        applyMaskedBoolean(overrideMask.getFullscreenBanner(), overrideVisibility.getFullscreenBanner(), resolvedVisibility::setFullscreenBanner);
-        applyMaskedBoolean(overrideMask.getMinimapName(), overrideVisibility.getMinimapName(), resolvedVisibility::setMinimapName);
-        applyMaskedBoolean(overrideMask.getMinimapOwner(), overrideVisibility.getMinimapOwner(), resolvedVisibility::setMinimapOwner);
-        applyMaskedBoolean(overrideMask.getMinimapBanner(), overrideVisibility.getMinimapBanner(), resolvedVisibility::setMinimapBanner);
-        applyMaskedBoolean(overrideMask.getWebmapName(), overrideVisibility.getWebmapName(), resolvedVisibility::setWebmapName);
-        applyMaskedBoolean(overrideMask.getWebmapOwner(), overrideVisibility.getWebmapOwner(), resolvedVisibility::setWebmapOwner);
-        applyMaskedBoolean(overrideMask.getWebmapBanner(), overrideVisibility.getWebmapBanner(), resolvedVisibility::setWebmapBanner);
-
+        resolvedVisibility.applyOverride(visibilityOverride.first(), visibilityOverride.second());
         return resolvedVisibility;
     }
 
@@ -92,7 +76,7 @@ public class CollectionLocalOverrides {
                     CompoundTag visibilityTag = NbtReadHelper.requireCompound(overrideTag, "visibility");
                     Pair<CollectionVisibilityData, CollectionVisibilityMask> override = readSparseOverrideData(visibilityTag);
                     CollectionVisibilityMask mask = override.second();
-                    if (mask.hasSome()) {
+                    if (mask.hasAny()) {
                         overrides.put(id, override);
                     }
                 } catch (InvalidNbtFormatException e) {
@@ -111,7 +95,7 @@ public class CollectionLocalOverrides {
     private void writeToNBT(CompoundTag nbt) {
         ListTag overridesTagList = new ListTag();
         for (Map.Entry<UUID, Pair<CollectionVisibilityData, CollectionVisibilityMask>> override : overrides.entrySet()) {
-            if (!override.getValue().second().hasSome()) {
+            if (!override.getValue().second().hasAny()) {
                 continue;
             }
 
@@ -199,91 +183,13 @@ public class CollectionLocalOverrides {
     private Pair<CollectionVisibilityData, CollectionVisibilityMask> readSparseOverrideData(CompoundTag dataTag) {
         CollectionVisibilityData data = new CollectionVisibilityData();
         CollectionVisibilityMask mask = new CollectionVisibilityMask();
-
-        readSparseBooleanValue(dataTag, "visible", data::setVisible, mask::setVisible);
-        readSparseIntValue(dataTag, "fullscreenZoom", data::setFullscreenZoom, mask::setFullscreenZoom);
-        readSparseIntValue(dataTag, "minimapZoom", data::setMinimapZoom, mask::setMinimapZoom);
-        readSparseIntValue(dataTag, "webmapZoom", data::setWebmapZoom, mask::setWebmapZoom);
-        readSparseBooleanValue(dataTag, "fullscreenName", data::setFullscreenName, mask::setFullscreenName);
-        readSparseBooleanValue(dataTag, "fullscreenOwner", data::setFullscreenOwner, mask::setFullscreenOwner);
-        readSparseBooleanValue(dataTag, "fullscreenBanner", data::setFullscreenBanner, mask::setFullscreenBanner);
-        readSparseBooleanValue(dataTag, "minimapName", data::setMinimapName, mask::setMinimapName);
-        readSparseBooleanValue(dataTag, "minimapOwner", data::setMinimapOwner, mask::setMinimapOwner);
-        readSparseBooleanValue(dataTag, "minimapBanner", data::setMinimapBanner, mask::setMinimapBanner);
-        readSparseBooleanValue(dataTag, "webmapName", data::setWebmapName, mask::setWebmapName);
-        readSparseBooleanValue(dataTag, "webmapOwner", data::setWebmapOwner, mask::setWebmapOwner);
-        readSparseBooleanValue(dataTag, "webmapBanner", data::setWebmapBanner, mask::setWebmapBanner);
-
+        data.readSparseNbt(dataTag, mask);
         return Pair.of(data, mask);
     }
 
     private CompoundTag writeSparseOverrideData(CollectionVisibilityData data, CollectionVisibilityMask mask) {
         CompoundTag dataTag = new CompoundTag();
-
-        writeSparseBooleanValue(dataTag, "visible", data.isVisible(), mask.isVisible());
-        writeSparseIntValue(dataTag, "fullscreenZoom", data.getFullscreenZoom(), mask.getFullscreenZoom());
-        writeSparseIntValue(dataTag, "minimapZoom", data.getMinimapZoom(), mask.getMinimapZoom());
-        writeSparseIntValue(dataTag, "webmapZoom", data.getWebmapZoom(), mask.getWebmapZoom());
-        writeSparseBooleanValue(dataTag, "fullscreenName", data.getFullscreenName(), mask.getFullscreenName());
-        writeSparseBooleanValue(dataTag, "fullscreenOwner", data.getFullscreenOwner(), mask.getFullscreenOwner());
-        writeSparseBooleanValue(dataTag, "fullscreenBanner", data.getFullscreenBanner(), mask.getFullscreenBanner());
-        writeSparseBooleanValue(dataTag, "minimapName", data.getMinimapName(), mask.getMinimapName());
-        writeSparseBooleanValue(dataTag, "minimapOwner", data.getMinimapOwner(), mask.getMinimapOwner());
-        writeSparseBooleanValue(dataTag, "minimapBanner", data.getMinimapBanner(), mask.getMinimapBanner());
-        writeSparseBooleanValue(dataTag, "webmapName", data.getWebmapName(), mask.getWebmapName());
-        writeSparseBooleanValue(dataTag, "webmapOwner", data.getWebmapOwner(), mask.getWebmapOwner());
-        writeSparseBooleanValue(dataTag, "webmapBanner", data.getWebmapBanner(), mask.getWebmapBanner());
-
+        data.writeSparseNbt(dataTag, mask);
         return dataTag;
-    }
-
-    private void readSparseBooleanValue(CompoundTag dataTag, String key,
-                                        java.util.function.Consumer<Boolean> dataSetter,
-                                        java.util.function.Consumer<Boolean> maskSetter) {
-        if (!dataTag.contains(key)) {
-            return;
-        }
-
-        dataSetter.accept(dataTag.getBooleanOr(key, false));
-        maskSetter.accept(true);
-    }
-
-    private void readSparseIntValue(CompoundTag dataTag, String key,
-                                    java.util.function.IntConsumer dataSetter,
-                                    java.util.function.Consumer<Boolean> maskSetter) {
-        if (!dataTag.contains(key)) {
-            return;
-        }
-
-        dataSetter.accept(dataTag.getIntOr(key, CollectionVisibilityData.COLLECTION_VIEW_DISABLED_ZOOM));
-        maskSetter.accept(true);
-    }
-
-    private void writeSparseBooleanValue(CompoundTag dataTag, String key, boolean value, boolean masked) {
-        if (!masked) {
-            return;
-        }
-
-        dataTag.putBoolean(key, value);
-    }
-
-    private void writeSparseIntValue(CompoundTag dataTag, String key, int value, boolean masked) {
-        if (!masked) {
-            return;
-        }
-
-        dataTag.putInt(key, value);
-    }
-
-    private static void applyMaskedBoolean(boolean masked, boolean value, java.util.function.Consumer<Boolean> setter) {
-        if (masked) {
-            setter.accept(value);
-        }
-    }
-
-    private static void applyMaskedInt(boolean masked, int value, java.util.function.IntConsumer setter) {
-        if (masked) {
-            setter.accept(value);
-        }
     }
 }

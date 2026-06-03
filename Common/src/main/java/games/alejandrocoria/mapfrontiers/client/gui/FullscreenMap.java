@@ -13,6 +13,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.NewFrontierDia
 import games.alejandrocoria.mapfrontiers.client.gui.screen.page.CollectionInfoPage;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.page.FrontierInfoPage;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.page.TerritoryListPage;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionLocalOverrides;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
@@ -882,25 +883,18 @@ public class FullscreenMap {
     }
 
     private int resolveCollectionMaxZoom(CollectionData collection) {
-        int zoom = collection.getVisibilityData().getFullscreenZoom();
         var visibilityOverride = MapFrontiersClient.getCollectionLocalOverrides().getVisibility(collection.getId());
-        if (visibilityOverride.second().getFullscreenZoom()) {
-            zoom = visibilityOverride.first().getFullscreenZoom();
-        }
+        CollectionVisibilityData resolvedVisibility = CollectionLocalOverrides.resolveVisibility(collection.getVisibilityData(), visibilityOverride);
 
         return ClientConfig.COLLECTION_FULLSCREEN_ZOOM_FORCED.get()
                 ? ClientConfig.getNormalizedCollectionFullscreenZoom()
-                : zoom;
+                : resolvedVisibility.getFullscreenZoom();
     }
 
     private boolean resolveCollectionVisibility(CollectionData collection) {
-        boolean visible = collection.getVisibilityData().isVisible();
         var visibilityOverride = MapFrontiersClient.getCollectionLocalOverrides().getVisibility(collection.getId());
-        if (visibilityOverride.second().isVisible()) {
-            visible = visibilityOverride.first().isVisible();
-        }
-
-        return ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_VISIBILITY.get(), visible);
+        CollectionVisibilityData resolvedVisibility = CollectionLocalOverrides.resolveVisibility(collection.getVisibilityData(), visibilityOverride);
+        return ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_VISIBILITY.get(), resolvedVisibility.isVisible());
     }
 
     private double resolveCollectionArea(CollectionData collection, ResourceKey<Level> dimension) {

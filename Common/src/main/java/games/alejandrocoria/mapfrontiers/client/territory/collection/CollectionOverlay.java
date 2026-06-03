@@ -512,45 +512,7 @@ public class CollectionOverlay {
     private void refreshEffectiveVisibility() {
         CollectionVisibilityData collectionVisibility = collection == null ? new CollectionVisibilityData() : collection.getVisibilityData();
         CollectionVisibilityData updatedVisibility = new CollectionVisibilityData(collectionVisibility);
-        if (visibilityOverrideMask.isVisible()) {
-            updatedVisibility.setVisible(visibilityOverrideData.isVisible());
-        }
-        if (visibilityOverrideMask.getFullscreenZoom()) {
-            updatedVisibility.setFullscreenZoom(visibilityOverrideData.getFullscreenZoom());
-        }
-        if (visibilityOverrideMask.getMinimapZoom()) {
-            updatedVisibility.setMinimapZoom(visibilityOverrideData.getMinimapZoom());
-        }
-        if (visibilityOverrideMask.getWebmapZoom()) {
-            updatedVisibility.setWebmapZoom(visibilityOverrideData.getWebmapZoom());
-        }
-        if (visibilityOverrideMask.getFullscreenName()) {
-            updatedVisibility.setFullscreenName(visibilityOverrideData.getFullscreenName());
-        }
-        if (visibilityOverrideMask.getFullscreenOwner()) {
-            updatedVisibility.setFullscreenOwner(visibilityOverrideData.getFullscreenOwner());
-        }
-        if (visibilityOverrideMask.getFullscreenBanner()) {
-            updatedVisibility.setFullscreenBanner(visibilityOverrideData.getFullscreenBanner());
-        }
-        if (visibilityOverrideMask.getMinimapName()) {
-            updatedVisibility.setMinimapName(visibilityOverrideData.getMinimapName());
-        }
-        if (visibilityOverrideMask.getMinimapOwner()) {
-            updatedVisibility.setMinimapOwner(visibilityOverrideData.getMinimapOwner());
-        }
-        if (visibilityOverrideMask.getMinimapBanner()) {
-            updatedVisibility.setMinimapBanner(visibilityOverrideData.getMinimapBanner());
-        }
-        if (visibilityOverrideMask.getWebmapName()) {
-            updatedVisibility.setWebmapName(visibilityOverrideData.getWebmapName());
-        }
-        if (visibilityOverrideMask.getWebmapOwner()) {
-            updatedVisibility.setWebmapOwner(visibilityOverrideData.getWebmapOwner());
-        }
-        if (visibilityOverrideMask.getWebmapBanner()) {
-            updatedVisibility.setWebmapBanner(visibilityOverrideData.getWebmapBanner());
-        }
+        updatedVisibility.applyOverride(visibilityOverrideData, visibilityOverrideMask);
         effectiveVisibilityData = updatedVisibility;
     }
 

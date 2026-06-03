@@ -42,6 +42,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityField;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityMask;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
@@ -909,37 +910,21 @@ public class ModSettingsPage extends PageScreen {
 
     private CollectionVisibilityData createForcedCollectionVisibility() {
         CollectionVisibilityData visibilityData = new CollectionVisibilityData();
-        visibilityData.setVisible(getForcedCollectionVisibilityValue(ClientConfig.COLLECTION_VISIBILITY.get(), false));
-        visibilityData.setFullscreenZoom(ClientConfig.getNormalizedCollectionFullscreenZoom());
-        visibilityData.setMinimapZoom(ClientConfig.getNormalizedCollectionMinimapZoom());
-        visibilityData.setWebmapZoom(ClientConfig.getNormalizedCollectionWebmapZoom());
-        visibilityData.setFullscreenName(getForcedCollectionVisibilityValue(ClientConfig.COLLECTION_FULLSCREEN_NAME_VISIBILITY.get(), true));
-        visibilityData.setFullscreenOwner(getForcedCollectionVisibilityValue(ClientConfig.COLLECTION_FULLSCREEN_OWNER_VISIBILITY.get(), false));
-        visibilityData.setFullscreenBanner(getForcedCollectionVisibilityValue(ClientConfig.COLLECTION_FULLSCREEN_BANNER_VISIBILITY.get(), true));
-        visibilityData.setMinimapName(getForcedCollectionVisibilityValue(ClientConfig.COLLECTION_MINIMAP_NAME_VISIBILITY.get(), true));
-        visibilityData.setMinimapOwner(getForcedCollectionVisibilityValue(ClientConfig.COLLECTION_MINIMAP_OWNER_VISIBILITY.get(), false));
-        visibilityData.setMinimapBanner(getForcedCollectionVisibilityValue(ClientConfig.COLLECTION_MINIMAP_BANNER_VISIBILITY.get(), true));
-        visibilityData.setWebmapName(getForcedCollectionVisibilityValue(ClientConfig.COLLECTION_WEBMAP_NAME_VISIBILITY.get(), true));
-        visibilityData.setWebmapOwner(getForcedCollectionVisibilityValue(ClientConfig.COLLECTION_WEBMAP_OWNER_VISIBILITY.get(), false));
-        visibilityData.setWebmapBanner(getForcedCollectionVisibilityValue(ClientConfig.COLLECTION_WEBMAP_BANNER_VISIBILITY.get(), true));
+        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
+            if (field.isBoolean()) {
+                visibilityData.setBoolean(field, getForcedCollectionBooleanValue(field));
+            } else {
+                visibilityData.setZoom(field, getForcedCollectionZoomValue(field));
+            }
+        }
         return visibilityData;
     }
 
     private CollectionVisibilityMask createForcedCollectionVisibilityMask() {
         CollectionVisibilityMask visibilityMask = new CollectionVisibilityMask();
-        visibilityMask.setVisible(ClientConfig.COLLECTION_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityMask.setFullscreenZoom(ClientConfig.COLLECTION_FULLSCREEN_ZOOM_FORCED.get());
-        visibilityMask.setMinimapZoom(ClientConfig.COLLECTION_MINIMAP_ZOOM_FORCED.get());
-        visibilityMask.setWebmapZoom(ClientConfig.COLLECTION_WEBMAP_ZOOM_FORCED.get());
-        visibilityMask.setFullscreenName(ClientConfig.COLLECTION_FULLSCREEN_NAME_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityMask.setFullscreenOwner(ClientConfig.COLLECTION_FULLSCREEN_OWNER_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityMask.setFullscreenBanner(ClientConfig.COLLECTION_FULLSCREEN_BANNER_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityMask.setMinimapName(ClientConfig.COLLECTION_MINIMAP_NAME_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityMask.setMinimapOwner(ClientConfig.COLLECTION_MINIMAP_OWNER_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityMask.setMinimapBanner(ClientConfig.COLLECTION_MINIMAP_BANNER_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityMask.setWebmapName(ClientConfig.COLLECTION_WEBMAP_NAME_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityMask.setWebmapOwner(ClientConfig.COLLECTION_WEBMAP_OWNER_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityMask.setWebmapBanner(ClientConfig.COLLECTION_WEBMAP_BANNER_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
+            visibilityMask.set(field, isForcedCollectionVisibilityField(field));
+        }
         return visibilityMask;
     }
 
@@ -981,24 +966,9 @@ public class ModSettingsPage extends PageScreen {
     }
 
     private void setForcedCollectionVisibility(CollectionVisibilityData visibilityData, CollectionVisibilityMask visibilityMask) {
-        ClientConfig.COLLECTION_VISIBILITY.set(getVisibilityValue(visibilityData.isVisible(), visibilityMask.isVisible()));
-        ClientConfig.COLLECTION_FULLSCREEN_ZOOM_FORCED.set(visibilityMask.getFullscreenZoom());
-        ClientConfig.COLLECTION_FULLSCREEN_ZOOM.set(visibilityData.getFullscreenZoom());
-        ClientConfig.COLLECTION_FULLSCREEN_NAME_VISIBILITY.set(getVisibilityValue(visibilityData.getFullscreenName(), visibilityMask.getFullscreenName()));
-        ClientConfig.COLLECTION_FULLSCREEN_OWNER_VISIBILITY.set(getVisibilityValue(visibilityData.getFullscreenOwner(), visibilityMask.getFullscreenOwner()));
-        ClientConfig.COLLECTION_FULLSCREEN_BANNER_VISIBILITY.set(getVisibilityValue(visibilityData.getFullscreenBanner(), visibilityMask.getFullscreenBanner()));
-
-        ClientConfig.COLLECTION_MINIMAP_ZOOM_FORCED.set(visibilityMask.getMinimapZoom());
-        ClientConfig.COLLECTION_MINIMAP_ZOOM.set(visibilityData.getMinimapZoom());
-        ClientConfig.COLLECTION_MINIMAP_NAME_VISIBILITY.set(getVisibilityValue(visibilityData.getMinimapName(), visibilityMask.getMinimapName()));
-        ClientConfig.COLLECTION_MINIMAP_OWNER_VISIBILITY.set(getVisibilityValue(visibilityData.getMinimapOwner(), visibilityMask.getMinimapOwner()));
-        ClientConfig.COLLECTION_MINIMAP_BANNER_VISIBILITY.set(getVisibilityValue(visibilityData.getMinimapBanner(), visibilityMask.getMinimapBanner()));
-
-        ClientConfig.COLLECTION_WEBMAP_ZOOM_FORCED.set(visibilityMask.getWebmapZoom());
-        ClientConfig.COLLECTION_WEBMAP_ZOOM.set(visibilityData.getWebmapZoom());
-        ClientConfig.COLLECTION_WEBMAP_NAME_VISIBILITY.set(getVisibilityValue(visibilityData.getWebmapName(), visibilityMask.getWebmapName()));
-        ClientConfig.COLLECTION_WEBMAP_OWNER_VISIBILITY.set(getVisibilityValue(visibilityData.getWebmapOwner(), visibilityMask.getWebmapOwner()));
-        ClientConfig.COLLECTION_WEBMAP_BANNER_VISIBILITY.set(getVisibilityValue(visibilityData.getWebmapBanner(), visibilityMask.getWebmapBanner()));
+        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
+            setForcedCollectionVisibilityField(visibilityData, visibilityMask, field);
+        }
     }
 
     private FrontierDisplayVisibility getVisibilityValue(VisibilityData visibilityData, FrontierVisibilityMask visibilityDataMask,
@@ -1022,6 +992,90 @@ public class ModSettingsPage extends PageScreen {
             return value ? FrontierDisplayVisibility.Always : FrontierDisplayVisibility.Never;
         }
         return FrontierDisplayVisibility.Custom;
+    }
+
+    private boolean getForcedCollectionBooleanValue(CollectionVisibilityField field) {
+        return getForcedCollectionVisibilityValue(getForcedCollectionVisibilitySetting(field), field.getDefaultBooleanValue());
+    }
+
+    private int getForcedCollectionZoomValue(CollectionVisibilityField field) {
+        return switch (field) {
+            case FullscreenZoom -> ClientConfig.getNormalizedCollectionFullscreenZoom();
+            case MinimapZoom -> ClientConfig.getNormalizedCollectionMinimapZoom();
+            case WebmapZoom -> ClientConfig.getNormalizedCollectionWebmapZoom();
+            default -> throw new IllegalArgumentException("Field " + field + " is not a zoom field");
+        };
+    }
+
+    private boolean isForcedCollectionVisibilityField(CollectionVisibilityField field) {
+        return switch (field) {
+            case Visible,
+                 FullscreenName,
+                 FullscreenOwner,
+                 FullscreenBanner,
+                 MinimapName,
+                 MinimapOwner,
+                 MinimapBanner,
+                 WebmapName,
+                 WebmapOwner,
+                 WebmapBanner -> getForcedCollectionVisibilitySetting(field) != FrontierDisplayVisibility.Custom;
+            case FullscreenZoom -> ClientConfig.COLLECTION_FULLSCREEN_ZOOM_FORCED.get();
+            case MinimapZoom -> ClientConfig.COLLECTION_MINIMAP_ZOOM_FORCED.get();
+            case WebmapZoom -> ClientConfig.COLLECTION_WEBMAP_ZOOM_FORCED.get();
+        };
+    }
+
+    private FrontierDisplayVisibility getForcedCollectionVisibilitySetting(CollectionVisibilityField field) {
+        return switch (field) {
+            case Visible -> ClientConfig.COLLECTION_VISIBILITY.get();
+            case FullscreenName -> ClientConfig.COLLECTION_FULLSCREEN_NAME_VISIBILITY.get();
+            case FullscreenOwner -> ClientConfig.COLLECTION_FULLSCREEN_OWNER_VISIBILITY.get();
+            case FullscreenBanner -> ClientConfig.COLLECTION_FULLSCREEN_BANNER_VISIBILITY.get();
+            case MinimapName -> ClientConfig.COLLECTION_MINIMAP_NAME_VISIBILITY.get();
+            case MinimapOwner -> ClientConfig.COLLECTION_MINIMAP_OWNER_VISIBILITY.get();
+            case MinimapBanner -> ClientConfig.COLLECTION_MINIMAP_BANNER_VISIBILITY.get();
+            case WebmapName -> ClientConfig.COLLECTION_WEBMAP_NAME_VISIBILITY.get();
+            case WebmapOwner -> ClientConfig.COLLECTION_WEBMAP_OWNER_VISIBILITY.get();
+            case WebmapBanner -> ClientConfig.COLLECTION_WEBMAP_BANNER_VISIBILITY.get();
+            default -> throw new IllegalArgumentException("Field " + field + " is not a boolean visibility field");
+        };
+    }
+
+    private void setForcedCollectionVisibilityField(CollectionVisibilityData visibilityData, CollectionVisibilityMask visibilityMask,
+                                                    CollectionVisibilityField field) {
+        switch (field) {
+            case Visible -> ClientConfig.COLLECTION_VISIBILITY.set(getVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+            case FullscreenZoom -> {
+                ClientConfig.COLLECTION_FULLSCREEN_ZOOM_FORCED.set(visibilityMask.has(field));
+                ClientConfig.COLLECTION_FULLSCREEN_ZOOM.set(visibilityData.getZoom(field));
+            }
+            case MinimapZoom -> {
+                ClientConfig.COLLECTION_MINIMAP_ZOOM_FORCED.set(visibilityMask.has(field));
+                ClientConfig.COLLECTION_MINIMAP_ZOOM.set(visibilityData.getZoom(field));
+            }
+            case WebmapZoom -> {
+                ClientConfig.COLLECTION_WEBMAP_ZOOM_FORCED.set(visibilityMask.has(field));
+                ClientConfig.COLLECTION_WEBMAP_ZOOM.set(visibilityData.getZoom(field));
+            }
+            case FullscreenName -> ClientConfig.COLLECTION_FULLSCREEN_NAME_VISIBILITY
+                    .set(getVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+            case FullscreenOwner -> ClientConfig.COLLECTION_FULLSCREEN_OWNER_VISIBILITY
+                    .set(getVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+            case FullscreenBanner -> ClientConfig.COLLECTION_FULLSCREEN_BANNER_VISIBILITY
+                    .set(getVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+            case MinimapName -> ClientConfig.COLLECTION_MINIMAP_NAME_VISIBILITY
+                    .set(getVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+            case MinimapOwner -> ClientConfig.COLLECTION_MINIMAP_OWNER_VISIBILITY
+                    .set(getVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+            case MinimapBanner -> ClientConfig.COLLECTION_MINIMAP_BANNER_VISIBILITY
+                    .set(getVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+            case WebmapName -> ClientConfig.COLLECTION_WEBMAP_NAME_VISIBILITY
+                    .set(getVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+            case WebmapOwner -> ClientConfig.COLLECTION_WEBMAP_OWNER_VISIBILITY
+                    .set(getVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+            case WebmapBanner -> ClientConfig.COLLECTION_WEBMAP_BANNER_VISIBILITY
+                    .set(getVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+        }
     }
 
     private void newGroupPressed() {

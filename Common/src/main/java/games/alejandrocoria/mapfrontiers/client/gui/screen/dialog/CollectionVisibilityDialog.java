@@ -7,6 +7,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityField;
 import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityMask;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
@@ -72,55 +73,55 @@ public class CollectionVisibilityDialog extends PanelDialog {
         GridLayout generalGrid = createGrid(generalColumn);
         createBooleanWidgets(generalGrid, 1, SHOW_COLLECTION_LABEL,
                 visibilityData::isVisible, visibilityData::setVisible,
-                visibilityMask == null ? null : new BooleanMaskBinding(visibilityMask::isVisible, visibilityMask::setVisible));
+                createMaskBinding(CollectionVisibilityField.Visible));
 
         LinearLayout fullscreenColumn = createColumn(mainColumns, FULLSCREEN_LABEL);
         createZoomRow(fullscreenColumn,
                 visibilityData::getFullscreenZoom, visibilityData::setFullscreenZoom,
-                visibilityMask == null ? null : new BooleanMaskBinding(visibilityMask::getFullscreenZoom, visibilityMask::setFullscreenZoom));
+                createMaskBinding(CollectionVisibilityField.FullscreenZoom));
         GridLayout fullscreenGrid = createGrid(fullscreenColumn);
         int row = 1;
         createBooleanWidgets(fullscreenGrid, row++, SHOW_NAME_LABEL,
                 visibilityData::getFullscreenName, visibilityData::setFullscreenName,
-                visibilityMask == null ? null : new BooleanMaskBinding(visibilityMask::getFullscreenName, visibilityMask::setFullscreenName));
+                createMaskBinding(CollectionVisibilityField.FullscreenName));
         createBooleanWidgets(fullscreenGrid, row++, SHOW_OWNER_LABEL,
                 visibilityData::getFullscreenOwner, visibilityData::setFullscreenOwner,
-                visibilityMask == null ? null : new BooleanMaskBinding(visibilityMask::getFullscreenOwner, visibilityMask::setFullscreenOwner));
+                createMaskBinding(CollectionVisibilityField.FullscreenOwner));
         createBooleanWidgets(fullscreenGrid, row, SHOW_BANNER_LABEL,
                 visibilityData::getFullscreenBanner, visibilityData::setFullscreenBanner,
-                visibilityMask == null ? null : new BooleanMaskBinding(visibilityMask::getFullscreenBanner, visibilityMask::setFullscreenBanner));
+                createMaskBinding(CollectionVisibilityField.FullscreenBanner));
 
         LinearLayout minimapColumn = createColumn(mainColumns, MINIMAP_LABEL);
         createZoomRow(minimapColumn,
                 visibilityData::getMinimapZoom, visibilityData::setMinimapZoom,
-                visibilityMask == null ? null : new BooleanMaskBinding(visibilityMask::getMinimapZoom, visibilityMask::setMinimapZoom));
+                createMaskBinding(CollectionVisibilityField.MinimapZoom));
         GridLayout minimapGrid = createGrid(minimapColumn);
         row = 1;
         createBooleanWidgets(minimapGrid, row++, SHOW_NAME_LABEL,
                 visibilityData::getMinimapName, visibilityData::setMinimapName,
-                visibilityMask == null ? null : new BooleanMaskBinding(visibilityMask::getMinimapName, visibilityMask::setMinimapName));
+                createMaskBinding(CollectionVisibilityField.MinimapName));
         createBooleanWidgets(minimapGrid, row++, SHOW_OWNER_LABEL,
                 visibilityData::getMinimapOwner, visibilityData::setMinimapOwner,
-                visibilityMask == null ? null : new BooleanMaskBinding(visibilityMask::getMinimapOwner, visibilityMask::setMinimapOwner));
+                createMaskBinding(CollectionVisibilityField.MinimapOwner));
         createBooleanWidgets(minimapGrid, row, SHOW_BANNER_LABEL,
                 visibilityData::getMinimapBanner, visibilityData::setMinimapBanner,
-                visibilityMask == null ? null : new BooleanMaskBinding(visibilityMask::getMinimapBanner, visibilityMask::setMinimapBanner));
+                createMaskBinding(CollectionVisibilityField.MinimapBanner));
 
         LinearLayout webmapColumn = createColumn(mainColumns, WEBMAP_LABEL);
         createZoomRow(webmapColumn,
                 visibilityData::getWebmapZoom, visibilityData::setWebmapZoom,
-                visibilityMask == null ? null : new BooleanMaskBinding(visibilityMask::getWebmapZoom, visibilityMask::setWebmapZoom));
+                createMaskBinding(CollectionVisibilityField.WebmapZoom));
         GridLayout webmapGrid = createGrid(webmapColumn);
         row = 1;
         createBooleanWidgets(webmapGrid, row++, SHOW_NAME_LABEL,
                 visibilityData::getWebmapName, visibilityData::setWebmapName,
-                visibilityMask == null ? null : new BooleanMaskBinding(visibilityMask::getWebmapName, visibilityMask::setWebmapName));
+                createMaskBinding(CollectionVisibilityField.WebmapName));
         createBooleanWidgets(webmapGrid, row++, SHOW_OWNER_LABEL,
                 visibilityData::getWebmapOwner, visibilityData::setWebmapOwner,
-                visibilityMask == null ? null : new BooleanMaskBinding(visibilityMask::getWebmapOwner, visibilityMask::setWebmapOwner));
+                createMaskBinding(CollectionVisibilityField.WebmapOwner));
         createBooleanWidgets(webmapGrid, row, SHOW_BANNER_LABEL,
                 visibilityData::getWebmapBanner, visibilityData::setWebmapBanner,
-                visibilityMask == null ? null : new BooleanMaskBinding(visibilityMask::getWebmapBanner, visibilityMask::setWebmapBanner));
+                createMaskBinding(CollectionVisibilityField.WebmapBanner));
 
         addConfirmButton(SAVE_LABEL, b -> saveAndClose());
         addCancelButton();
@@ -196,6 +197,14 @@ public class CollectionVisibilityDialog extends PanelDialog {
         });
         layout.addChild(checkBox, row, 1);
         widget.active = checkBox.isChecked();
+    }
+
+    private @Nullable BooleanMaskBinding createMaskBinding(CollectionVisibilityField field) {
+        if (visibilityMask == null) {
+            return null;
+        }
+
+        return new BooleanMaskBinding(() -> visibilityMask.has(field), enabled -> visibilityMask.set(field, enabled));
     }
 
     private void saveAndClose() {

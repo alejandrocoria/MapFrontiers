@@ -7,6 +7,7 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.config.TextColor;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionLocalOverrides;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.territory.BannerRenderer;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -2519,31 +2520,14 @@ public class FrontierOverlay extends FrontierData {
             return CollectionVisibilityData.COLLECTION_VIEW_DISABLED_ZOOM;
         }
 
-        int zoom = switch (ui) {
-            case Fullscreen -> collection.getVisibilityData().getFullscreenZoom();
-            case Minimap -> collection.getVisibilityData().getMinimapZoom();
-            case Webmap -> collection.getVisibilityData().getWebmapZoom();
-        };
-
         Pair<CollectionVisibilityData, CollectionVisibilityMask> visibilityOverride =
                 MapFrontiersClient.getCollectionLocalOverrides().getVisibility(collection.getId());
-        switch (ui) {
-            case Fullscreen -> {
-                if (visibilityOverride.second().getFullscreenZoom()) {
-                    zoom = visibilityOverride.first().getFullscreenZoom();
-                }
-            }
-            case Minimap -> {
-                if (visibilityOverride.second().getMinimapZoom()) {
-                    zoom = visibilityOverride.first().getMinimapZoom();
-                }
-            }
-            case Webmap -> {
-                if (visibilityOverride.second().getWebmapZoom()) {
-                    zoom = visibilityOverride.first().getWebmapZoom();
-                }
-            }
-        }
+        CollectionVisibilityData resolvedVisibility = CollectionLocalOverrides.resolveVisibility(collection.getVisibilityData(), visibilityOverride);
+        int zoom = switch (ui) {
+            case Fullscreen -> resolvedVisibility.getFullscreenZoom();
+            case Minimap -> resolvedVisibility.getMinimapZoom();
+            case Webmap -> resolvedVisibility.getWebmapZoom();
+        };
 
         return switch (ui) {
             case Fullscreen -> ClientConfig.COLLECTION_FULLSCREEN_ZOOM_FORCED.get()
@@ -2564,14 +2548,10 @@ public class FrontierOverlay extends FrontierData {
             return false;
         }
 
-        boolean visible = collection.getVisibilityData().isVisible();
         Pair<CollectionVisibilityData, CollectionVisibilityMask> visibilityOverride =
                 MapFrontiersClient.getCollectionLocalOverrides().getVisibility(collection.getId());
-        if (visibilityOverride.second().isVisible()) {
-            visible = visibilityOverride.first().isVisible();
-        }
-
-        return ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_VISIBILITY.get(), visible);
+        CollectionVisibilityData resolvedVisibility = CollectionLocalOverrides.resolveVisibility(collection.getVisibilityData(), visibilityOverride);
+        return ClientConfig.resolveVisibilityValue(ClientConfig.COLLECTION_VISIBILITY.get(), resolvedVisibility.isVisible());
     }
 
     private int resolveCollectionNormalMinZoom(PolygonUiPlanEntry entry) {
