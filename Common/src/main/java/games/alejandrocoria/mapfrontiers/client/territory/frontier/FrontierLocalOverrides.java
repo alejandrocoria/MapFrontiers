@@ -2,7 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.territory.frontier;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.territory.ClientMapFrontiersStorageHelper;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibilityMask;
 import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtFileHelper;
@@ -50,12 +50,7 @@ public class FrontierLocalOverrides {
 
     public static VisibilityData resolveVisibility(VisibilityData baseVisibility, Pair<VisibilityData, VisibilityData> visibilityOverride) {
         VisibilityData resolvedVisibility = new VisibilityData(baseVisibility);
-        for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
-            if (visibilityOverride.second().getValue(visibility)) {
-                resolvedVisibility.setValue(visibility, visibilityOverride.first().getValue(visibility));
-            }
-        }
-
+        resolvedVisibility.applyOverride(visibilityOverride.first(), new FrontierVisibilityMask(visibilityOverride.second()));
         return resolvedVisibility;
     }
 
@@ -227,103 +222,14 @@ public class FrontierLocalOverrides {
 
     private Pair<VisibilityData, VisibilityData> readSparseOverrideData(CompoundTag dataTag) {
         VisibilityData data = new VisibilityData();
-        VisibilityData mask = new VisibilityData(false);
-
-        readSparseVisibilityValue(dataTag, "visible", FrontierVisibility.Frontier, data, mask);
-        readSparseVisibilityValue(dataTag, "announceInChat", FrontierVisibility.AnnounceInChat, data, mask);
-        readSparseVisibilityValue(dataTag, "announceInTitle", FrontierVisibility.AnnounceInTitle, data, mask);
-        readSparseVisibilityValue(dataTag, "mentionCollection", FrontierVisibility.MentionCollection, data, mask);
-        readSparseVisibilityValue(dataTag, "fullscreenVisible", FrontierVisibility.Fullscreen, data, mask);
-        readSparseVisibilityValue(dataTag, "fullscreenNameVisible", FrontierVisibility.FullscreenName, data, mask);
-        readSparseVisibilityValue(dataTag, "fullscreenCollectionVisible", FrontierVisibility.FullscreenCollection, data, mask);
-        readSparseVisibilityValue(dataTag, "fullscreenOwnerVisible", FrontierVisibility.FullscreenOwner, data, mask);
-        readSparseVisibilityValue(dataTag, "fullscreenBannerVisible", FrontierVisibility.FullscreenBanner, data, mask);
-        readSparseVisibilityValue(dataTag, "fullscreenDay", FrontierVisibility.FullscreenDay, data, mask);
-        readSparseVisibilityValue(dataTag, "fullscreenNight", FrontierVisibility.FullscreenNight, data, mask);
-        readSparseVisibilityValue(dataTag, "fullscreenUnderground", FrontierVisibility.FullscreenUnderground, data, mask);
-        readSparseVisibilityValue(dataTag, "fullscreenTopo", FrontierVisibility.FullscreenTopo, data, mask);
-        readSparseVisibilityValue(dataTag, "fullscreenBiome", FrontierVisibility.FullscreenBiome, data, mask);
-        readSparseVisibilityValue(dataTag, "minimapVisible", FrontierVisibility.Minimap, data, mask);
-        readSparseVisibilityValue(dataTag, "minimapNameVisible", FrontierVisibility.MinimapName, data, mask);
-        readSparseVisibilityValue(dataTag, "minimapCollectionVisible", FrontierVisibility.MinimapCollection, data, mask);
-        readSparseVisibilityValue(dataTag, "minimapOwnerVisible", FrontierVisibility.MinimapOwner, data, mask);
-        readSparseVisibilityValue(dataTag, "minimapBannerVisible", FrontierVisibility.MinimapBanner, data, mask);
-        readSparseVisibilityValue(dataTag, "minimapDay", FrontierVisibility.MinimapDay, data, mask);
-        readSparseVisibilityValue(dataTag, "minimapNight", FrontierVisibility.MinimapNight, data, mask);
-        readSparseVisibilityValue(dataTag, "minimapUnderground", FrontierVisibility.MinimapUnderground, data, mask);
-        readSparseVisibilityValue(dataTag, "minimapTopo", FrontierVisibility.MinimapTopo, data, mask);
-        readSparseVisibilityValue(dataTag, "minimapBiome", FrontierVisibility.MinimapBiome, data, mask);
-        readSparseVisibilityValue(dataTag, "webmapVisible", FrontierVisibility.Webmap, data, mask);
-        readSparseVisibilityValue(dataTag, "webmapNameVisible", FrontierVisibility.WebmapName, data, mask);
-        readSparseVisibilityValue(dataTag, "webmapCollectionVisible", FrontierVisibility.WebmapCollection, data, mask);
-        readSparseVisibilityValue(dataTag, "webmapOwnerVisible", FrontierVisibility.WebmapOwner, data, mask);
-        readSparseVisibilityValue(dataTag, "webmapBannerVisible", FrontierVisibility.WebmapBanner, data, mask);
-        readSparseVisibilityValue(dataTag, "webmapDay", FrontierVisibility.WebmapDay, data, mask);
-        readSparseVisibilityValue(dataTag, "webmapNight", FrontierVisibility.WebmapNight, data, mask);
-        readSparseVisibilityValue(dataTag, "webmapUnderground", FrontierVisibility.WebmapUnderground, data, mask);
-        readSparseVisibilityValue(dataTag, "webmapTopo", FrontierVisibility.WebmapTopo, data, mask);
-        readSparseVisibilityValue(dataTag, "webmapBiome", FrontierVisibility.WebmapBiome, data, mask);
-
-        return Pair.of(data, mask);
+        FrontierVisibilityMask mask = new FrontierVisibilityMask();
+        data.readSparseNbt(dataTag, mask);
+        return Pair.of(data, mask.toVisibilityData());
     }
 
     private CompoundTag writeSparseOverrideData(VisibilityData data, VisibilityData mask) {
         CompoundTag dataTag = new CompoundTag();
-
-        writeSparseVisibilityValue(dataTag, "visible", FrontierVisibility.Frontier, data, mask);
-        writeSparseVisibilityValue(dataTag, "announceInChat", FrontierVisibility.AnnounceInChat, data, mask);
-        writeSparseVisibilityValue(dataTag, "announceInTitle", FrontierVisibility.AnnounceInTitle, data, mask);
-        writeSparseVisibilityValue(dataTag, "mentionCollection", FrontierVisibility.MentionCollection, data, mask);
-        writeSparseVisibilityValue(dataTag, "fullscreenVisible", FrontierVisibility.Fullscreen, data, mask);
-        writeSparseVisibilityValue(dataTag, "fullscreenNameVisible", FrontierVisibility.FullscreenName, data, mask);
-        writeSparseVisibilityValue(dataTag, "fullscreenCollectionVisible", FrontierVisibility.FullscreenCollection, data, mask);
-        writeSparseVisibilityValue(dataTag, "fullscreenOwnerVisible", FrontierVisibility.FullscreenOwner, data, mask);
-        writeSparseVisibilityValue(dataTag, "fullscreenBannerVisible", FrontierVisibility.FullscreenBanner, data, mask);
-        writeSparseVisibilityValue(dataTag, "fullscreenDay", FrontierVisibility.FullscreenDay, data, mask);
-        writeSparseVisibilityValue(dataTag, "fullscreenNight", FrontierVisibility.FullscreenNight, data, mask);
-        writeSparseVisibilityValue(dataTag, "fullscreenUnderground", FrontierVisibility.FullscreenUnderground, data, mask);
-        writeSparseVisibilityValue(dataTag, "fullscreenTopo", FrontierVisibility.FullscreenTopo, data, mask);
-        writeSparseVisibilityValue(dataTag, "fullscreenBiome", FrontierVisibility.FullscreenBiome, data, mask);
-        writeSparseVisibilityValue(dataTag, "minimapVisible", FrontierVisibility.Minimap, data, mask);
-        writeSparseVisibilityValue(dataTag, "minimapNameVisible", FrontierVisibility.MinimapName, data, mask);
-        writeSparseVisibilityValue(dataTag, "minimapCollectionVisible", FrontierVisibility.MinimapCollection, data, mask);
-        writeSparseVisibilityValue(dataTag, "minimapOwnerVisible", FrontierVisibility.MinimapOwner, data, mask);
-        writeSparseVisibilityValue(dataTag, "minimapBannerVisible", FrontierVisibility.MinimapBanner, data, mask);
-        writeSparseVisibilityValue(dataTag, "minimapDay", FrontierVisibility.MinimapDay, data, mask);
-        writeSparseVisibilityValue(dataTag, "minimapNight", FrontierVisibility.MinimapNight, data, mask);
-        writeSparseVisibilityValue(dataTag, "minimapUnderground", FrontierVisibility.MinimapUnderground, data, mask);
-        writeSparseVisibilityValue(dataTag, "minimapTopo", FrontierVisibility.MinimapTopo, data, mask);
-        writeSparseVisibilityValue(dataTag, "minimapBiome", FrontierVisibility.MinimapBiome, data, mask);
-        writeSparseVisibilityValue(dataTag, "webmapVisible", FrontierVisibility.Webmap, data, mask);
-        writeSparseVisibilityValue(dataTag, "webmapNameVisible", FrontierVisibility.WebmapName, data, mask);
-        writeSparseVisibilityValue(dataTag, "webmapCollectionVisible", FrontierVisibility.WebmapCollection, data, mask);
-        writeSparseVisibilityValue(dataTag, "webmapOwnerVisible", FrontierVisibility.WebmapOwner, data, mask);
-        writeSparseVisibilityValue(dataTag, "webmapBannerVisible", FrontierVisibility.WebmapBanner, data, mask);
-        writeSparseVisibilityValue(dataTag, "webmapDay", FrontierVisibility.WebmapDay, data, mask);
-        writeSparseVisibilityValue(dataTag, "webmapNight", FrontierVisibility.WebmapNight, data, mask);
-        writeSparseVisibilityValue(dataTag, "webmapUnderground", FrontierVisibility.WebmapUnderground, data, mask);
-        writeSparseVisibilityValue(dataTag, "webmapTopo", FrontierVisibility.WebmapTopo, data, mask);
-        writeSparseVisibilityValue(dataTag, "webmapBiome", FrontierVisibility.WebmapBiome, data, mask);
-
+        data.writeSparseNbt(dataTag, new FrontierVisibilityMask(mask));
         return dataTag;
-    }
-
-    private void readSparseVisibilityValue(CompoundTag dataTag, String key, FrontierVisibility visibility,
-                                           VisibilityData data, VisibilityData mask) {
-        if (!dataTag.contains(key)) {
-            return;
-        }
-
-        data.setValue(visibility, dataTag.getBooleanOr(key, false));
-        mask.setValue(visibility, true);
-    }
-
-    private void writeSparseVisibilityValue(CompoundTag dataTag, String key, FrontierVisibility visibility,
-                                            VisibilityData data, VisibilityData mask) {
-        if (!mask.getValue(visibility)) {
-            return;
-        }
-
-        dataTag.putBoolean(key, data.getValue(visibility));
     }
 }

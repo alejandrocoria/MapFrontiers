@@ -10,38 +10,18 @@ public class VisibilityData {
     private final EnumSet<FrontierVisibility> values;
 
     public VisibilityData() {
-        values = EnumSet.of(
-                FrontierVisibility.Frontier,
-                FrontierVisibility.MentionCollection,
-                FrontierVisibility.Fullscreen,
-                FrontierVisibility.FullscreenName,
-                FrontierVisibility.FullscreenDay,
-                FrontierVisibility.FullscreenNight,
-                FrontierVisibility.FullscreenUnderground,
-                FrontierVisibility.FullscreenTopo,
-                FrontierVisibility.FullscreenBiome,
-                FrontierVisibility.Minimap,
-                FrontierVisibility.MinimapName,
-                FrontierVisibility.MinimapDay,
-                FrontierVisibility.MinimapNight,
-                FrontierVisibility.MinimapUnderground,
-                FrontierVisibility.MinimapTopo,
-                FrontierVisibility.MinimapBiome,
-                FrontierVisibility.Webmap,
-                FrontierVisibility.WebmapName,
-                FrontierVisibility.WebmapDay,
-                FrontierVisibility.WebmapNight,
-                FrontierVisibility.WebmapUnderground,
-                FrontierVisibility.WebmapTopo,
-                FrontierVisibility.WebmapBiome
-        );
+        values = EnumSet.noneOf(FrontierVisibility.class);
+        for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
+            if (visibility.getDefaultValue()) {
+                values.add(visibility);
+            }
+        }
     }
 
     public VisibilityData(boolean setAll) {
         if (setAll) {
             values = EnumSet.allOf(FrontierVisibility.class);
-        }
-        else {
+        } else {
             values = EnumSet.noneOf(FrontierVisibility.class);
         }
     }
@@ -69,205 +49,437 @@ public class VisibilityData {
     }
 
     public void setValue(FrontierVisibility value, boolean set) {
-        if (set) {
-            values.add(value);
-        }
-        else {
-            values.remove(value);
-        }
+        set(value, set);
     }
 
     public boolean getValue(FrontierVisibility value) {
-        return values.contains(value);
+        return get(value);
+    }
+
+    public void set(FrontierVisibility visibility, boolean enabled) {
+        if (enabled) {
+            values.add(visibility);
+        } else {
+            values.remove(visibility);
+        }
+    }
+
+    public boolean get(FrontierVisibility visibility) {
+        return values.contains(visibility);
     }
 
     public boolean hasSome() {
         return !values.isEmpty();
     }
 
-    public void readFromLegacyNBT(CompoundTag nbt) {
-        setValue(FrontierVisibility.Frontier, NbtReadHelper.requireBoolean(nbt, "visible"));
-        setValue(FrontierVisibility.Fullscreen, NbtReadHelper.requireBoolean(nbt, "visible"));
-        setValue(FrontierVisibility.FullscreenName, NbtReadHelper.requireBoolean(nbt, "visible"));
-        setValue(FrontierVisibility.FullscreenCollection, false);
-        setValue(FrontierVisibility.FullscreenOwner, NbtReadHelper.requireBoolean(nbt, "nameVisible"));
-        setValue(FrontierVisibility.FullscreenBanner, false);
-        setValue(FrontierVisibility.FullscreenDay, NbtReadHelper.requireBoolean(nbt, "visible"));
-        setValue(FrontierVisibility.FullscreenNight, NbtReadHelper.requireBoolean(nbt, "visible"));
-        setValue(FrontierVisibility.FullscreenUnderground, NbtReadHelper.requireBoolean(nbt, "visible"));
-        setValue(FrontierVisibility.FullscreenTopo, NbtReadHelper.requireBoolean(nbt, "visible"));
-        setValue(FrontierVisibility.FullscreenBiome, NbtReadHelper.requireBoolean(nbt, "visible"));
-        setValue(FrontierVisibility.Minimap, NbtReadHelper.requireBoolean(nbt, "visible"));
-        setValue(FrontierVisibility.MinimapName, NbtReadHelper.requireBoolean(nbt, "nameVisible"));
-        setValue(FrontierVisibility.MinimapCollection, false);
-        setValue(FrontierVisibility.MinimapOwner, NbtReadHelper.requireBoolean(nbt, "ownerVisible"));
-        setValue(FrontierVisibility.MinimapBanner, false);
-        setValue(FrontierVisibility.MinimapDay, NbtReadHelper.requireBoolean(nbt, "visible"));
-        setValue(FrontierVisibility.MinimapNight, NbtReadHelper.requireBoolean(nbt, "visible"));
-        setValue(FrontierVisibility.MinimapUnderground, NbtReadHelper.requireBoolean(nbt, "visible"));
-        setValue(FrontierVisibility.MinimapTopo, NbtReadHelper.requireBoolean(nbt, "visible"));
-        setValue(FrontierVisibility.MinimapBiome, NbtReadHelper.requireBoolean(nbt, "visible"));
-        setValue(FrontierVisibility.Webmap, NbtReadHelper.requireBoolean(nbt, "visible"));
-        setValue(FrontierVisibility.WebmapName, NbtReadHelper.requireBoolean(nbt, "nameVisible"));
-        setValue(FrontierVisibility.WebmapCollection, false);
-        setValue(FrontierVisibility.WebmapOwner, NbtReadHelper.requireBoolean(nbt, "ownerVisible"));
-        setValue(FrontierVisibility.WebmapBanner, false);
-        setValue(FrontierVisibility.WebmapDay, NbtReadHelper.requireBoolean(nbt, "visible"));
-        setValue(FrontierVisibility.WebmapNight, NbtReadHelper.requireBoolean(nbt, "visible"));
-        setValue(FrontierVisibility.WebmapUnderground, NbtReadHelper.requireBoolean(nbt, "visible"));
-        setValue(FrontierVisibility.WebmapTopo, NbtReadHelper.requireBoolean(nbt, "visible"));
-        setValue(FrontierVisibility.WebmapBiome, NbtReadHelper.requireBoolean(nbt, "visible"));
+    public boolean getFrontier() {
+        return get(FrontierVisibility.Frontier);
+    }
 
-        setValue(FrontierVisibility.AnnounceInChat, NbtReadHelper.getBooleanOrDefault(nbt, "announceInChat", false));
-        setValue(FrontierVisibility.AnnounceInTitle, NbtReadHelper.getBooleanOrDefault(nbt, "announceInTitle", false));
-        setValue(FrontierVisibility.MentionCollection, true);
+    public void setFrontier(boolean enabled) {
+        set(FrontierVisibility.Frontier, enabled);
+    }
+
+    public boolean getAnnounceInChat() {
+        return get(FrontierVisibility.AnnounceInChat);
+    }
+
+    public void setAnnounceInChat(boolean enabled) {
+        set(FrontierVisibility.AnnounceInChat, enabled);
+    }
+
+    public boolean getAnnounceInTitle() {
+        return get(FrontierVisibility.AnnounceInTitle);
+    }
+
+    public void setAnnounceInTitle(boolean enabled) {
+        set(FrontierVisibility.AnnounceInTitle, enabled);
+    }
+
+    public boolean getMentionCollection() {
+        return get(FrontierVisibility.MentionCollection);
+    }
+
+    public void setMentionCollection(boolean enabled) {
+        set(FrontierVisibility.MentionCollection, enabled);
+    }
+
+    public boolean getFullscreen() {
+        return get(FrontierVisibility.Fullscreen);
+    }
+
+    public void setFullscreen(boolean enabled) {
+        set(FrontierVisibility.Fullscreen, enabled);
+    }
+
+    public boolean getFullscreenName() {
+        return get(FrontierVisibility.FullscreenName);
+    }
+
+    public void setFullscreenName(boolean enabled) {
+        set(FrontierVisibility.FullscreenName, enabled);
+    }
+
+    public boolean getFullscreenCollection() {
+        return get(FrontierVisibility.FullscreenCollection);
+    }
+
+    public void setFullscreenCollection(boolean enabled) {
+        set(FrontierVisibility.FullscreenCollection, enabled);
+    }
+
+    public boolean getFullscreenOwner() {
+        return get(FrontierVisibility.FullscreenOwner);
+    }
+
+    public void setFullscreenOwner(boolean enabled) {
+        set(FrontierVisibility.FullscreenOwner, enabled);
+    }
+
+    public boolean getFullscreenBanner() {
+        return get(FrontierVisibility.FullscreenBanner);
+    }
+
+    public void setFullscreenBanner(boolean enabled) {
+        set(FrontierVisibility.FullscreenBanner, enabled);
+    }
+
+    public boolean getFullscreenDay() {
+        return get(FrontierVisibility.FullscreenDay);
+    }
+
+    public void setFullscreenDay(boolean enabled) {
+        set(FrontierVisibility.FullscreenDay, enabled);
+    }
+
+    public boolean getFullscreenNight() {
+        return get(FrontierVisibility.FullscreenNight);
+    }
+
+    public void setFullscreenNight(boolean enabled) {
+        set(FrontierVisibility.FullscreenNight, enabled);
+    }
+
+    public boolean getFullscreenUnderground() {
+        return get(FrontierVisibility.FullscreenUnderground);
+    }
+
+    public void setFullscreenUnderground(boolean enabled) {
+        set(FrontierVisibility.FullscreenUnderground, enabled);
+    }
+
+    public boolean getFullscreenTopo() {
+        return get(FrontierVisibility.FullscreenTopo);
+    }
+
+    public void setFullscreenTopo(boolean enabled) {
+        set(FrontierVisibility.FullscreenTopo, enabled);
+    }
+
+    public boolean getFullscreenBiome() {
+        return get(FrontierVisibility.FullscreenBiome);
+    }
+
+    public void setFullscreenBiome(boolean enabled) {
+        set(FrontierVisibility.FullscreenBiome, enabled);
+    }
+
+    public boolean getMinimap() {
+        return get(FrontierVisibility.Minimap);
+    }
+
+    public void setMinimap(boolean enabled) {
+        set(FrontierVisibility.Minimap, enabled);
+    }
+
+    public boolean getMinimapName() {
+        return get(FrontierVisibility.MinimapName);
+    }
+
+    public void setMinimapName(boolean enabled) {
+        set(FrontierVisibility.MinimapName, enabled);
+    }
+
+    public boolean getMinimapCollection() {
+        return get(FrontierVisibility.MinimapCollection);
+    }
+
+    public void setMinimapCollection(boolean enabled) {
+        set(FrontierVisibility.MinimapCollection, enabled);
+    }
+
+    public boolean getMinimapOwner() {
+        return get(FrontierVisibility.MinimapOwner);
+    }
+
+    public void setMinimapOwner(boolean enabled) {
+        set(FrontierVisibility.MinimapOwner, enabled);
+    }
+
+    public boolean getMinimapBanner() {
+        return get(FrontierVisibility.MinimapBanner);
+    }
+
+    public void setMinimapBanner(boolean enabled) {
+        set(FrontierVisibility.MinimapBanner, enabled);
+    }
+
+    public boolean getMinimapDay() {
+        return get(FrontierVisibility.MinimapDay);
+    }
+
+    public void setMinimapDay(boolean enabled) {
+        set(FrontierVisibility.MinimapDay, enabled);
+    }
+
+    public boolean getMinimapNight() {
+        return get(FrontierVisibility.MinimapNight);
+    }
+
+    public void setMinimapNight(boolean enabled) {
+        set(FrontierVisibility.MinimapNight, enabled);
+    }
+
+    public boolean getMinimapUnderground() {
+        return get(FrontierVisibility.MinimapUnderground);
+    }
+
+    public void setMinimapUnderground(boolean enabled) {
+        set(FrontierVisibility.MinimapUnderground, enabled);
+    }
+
+    public boolean getMinimapTopo() {
+        return get(FrontierVisibility.MinimapTopo);
+    }
+
+    public void setMinimapTopo(boolean enabled) {
+        set(FrontierVisibility.MinimapTopo, enabled);
+    }
+
+    public boolean getMinimapBiome() {
+        return get(FrontierVisibility.MinimapBiome);
+    }
+
+    public void setMinimapBiome(boolean enabled) {
+        set(FrontierVisibility.MinimapBiome, enabled);
+    }
+
+    public boolean getWebmap() {
+        return get(FrontierVisibility.Webmap);
+    }
+
+    public void setWebmap(boolean enabled) {
+        set(FrontierVisibility.Webmap, enabled);
+    }
+
+    public boolean getWebmapName() {
+        return get(FrontierVisibility.WebmapName);
+    }
+
+    public void setWebmapName(boolean enabled) {
+        set(FrontierVisibility.WebmapName, enabled);
+    }
+
+    public boolean getWebmapCollection() {
+        return get(FrontierVisibility.WebmapCollection);
+    }
+
+    public void setWebmapCollection(boolean enabled) {
+        set(FrontierVisibility.WebmapCollection, enabled);
+    }
+
+    public boolean getWebmapOwner() {
+        return get(FrontierVisibility.WebmapOwner);
+    }
+
+    public void setWebmapOwner(boolean enabled) {
+        set(FrontierVisibility.WebmapOwner, enabled);
+    }
+
+    public boolean getWebmapBanner() {
+        return get(FrontierVisibility.WebmapBanner);
+    }
+
+    public void setWebmapBanner(boolean enabled) {
+        set(FrontierVisibility.WebmapBanner, enabled);
+    }
+
+    public boolean getWebmapDay() {
+        return get(FrontierVisibility.WebmapDay);
+    }
+
+    public void setWebmapDay(boolean enabled) {
+        set(FrontierVisibility.WebmapDay, enabled);
+    }
+
+    public boolean getWebmapNight() {
+        return get(FrontierVisibility.WebmapNight);
+    }
+
+    public void setWebmapNight(boolean enabled) {
+        set(FrontierVisibility.WebmapNight, enabled);
+    }
+
+    public boolean getWebmapUnderground() {
+        return get(FrontierVisibility.WebmapUnderground);
+    }
+
+    public void setWebmapUnderground(boolean enabled) {
+        set(FrontierVisibility.WebmapUnderground, enabled);
+    }
+
+    public boolean getWebmapTopo() {
+        return get(FrontierVisibility.WebmapTopo);
+    }
+
+    public void setWebmapTopo(boolean enabled) {
+        set(FrontierVisibility.WebmapTopo, enabled);
+    }
+
+    public boolean getWebmapBiome() {
+        return get(FrontierVisibility.WebmapBiome);
+    }
+
+    public void setWebmapBiome(boolean enabled) {
+        set(FrontierVisibility.WebmapBiome, enabled);
+    }
+
+    public void applyOverride(VisibilityData override, FrontierVisibilityMask mask) {
+        for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
+            if (mask.has(visibility)) {
+                set(visibility, override.get(visibility));
+            }
+        }
+    }
+
+    public boolean equalsMasked(VisibilityData other, FrontierVisibilityMask mask) {
+        for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
+            if (mask.has(visibility) && get(visibility) != other.get(visibility)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public void readSparseNbt(CompoundTag nbt, FrontierVisibilityMask mask) {
+        for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
+            if (!nbt.contains(visibility.getNbtKey())) {
+                continue;
+            }
+
+            set(visibility, nbt.getBooleanOr(visibility.getNbtKey(), false));
+            mask.set(visibility, true);
+        }
+    }
+
+    public void writeSparseNbt(CompoundTag nbt, FrontierVisibilityMask mask) {
+        for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
+            if (!mask.has(visibility)) {
+                continue;
+            }
+
+            nbt.putBoolean(visibility.getNbtKey(), get(visibility));
+        }
+    }
+
+    public void readFromLegacyNBT(CompoundTag nbt) {
+        setFrontier(NbtReadHelper.requireBoolean(nbt, "visible"));
+        setFullscreen(NbtReadHelper.requireBoolean(nbt, "visible"));
+        setFullscreenName(NbtReadHelper.requireBoolean(nbt, "visible"));
+        setFullscreenCollection(false);
+        setFullscreenOwner(NbtReadHelper.requireBoolean(nbt, "nameVisible"));
+        setFullscreenBanner(false);
+        setFullscreenDay(NbtReadHelper.requireBoolean(nbt, "visible"));
+        setFullscreenNight(NbtReadHelper.requireBoolean(nbt, "visible"));
+        setFullscreenUnderground(NbtReadHelper.requireBoolean(nbt, "visible"));
+        setFullscreenTopo(NbtReadHelper.requireBoolean(nbt, "visible"));
+        setFullscreenBiome(NbtReadHelper.requireBoolean(nbt, "visible"));
+        setMinimap(NbtReadHelper.requireBoolean(nbt, "visible"));
+        setMinimapName(NbtReadHelper.requireBoolean(nbt, "nameVisible"));
+        setMinimapCollection(false);
+        setMinimapOwner(NbtReadHelper.requireBoolean(nbt, "ownerVisible"));
+        setMinimapBanner(false);
+        setMinimapDay(NbtReadHelper.requireBoolean(nbt, "visible"));
+        setMinimapNight(NbtReadHelper.requireBoolean(nbt, "visible"));
+        setMinimapUnderground(NbtReadHelper.requireBoolean(nbt, "visible"));
+        setMinimapTopo(NbtReadHelper.requireBoolean(nbt, "visible"));
+        setMinimapBiome(NbtReadHelper.requireBoolean(nbt, "visible"));
+        setWebmap(NbtReadHelper.requireBoolean(nbt, "visible"));
+        setWebmapName(NbtReadHelper.requireBoolean(nbt, "nameVisible"));
+        setWebmapCollection(false);
+        setWebmapOwner(NbtReadHelper.requireBoolean(nbt, "ownerVisible"));
+        setWebmapBanner(false);
+        setWebmapDay(NbtReadHelper.requireBoolean(nbt, "visible"));
+        setWebmapNight(NbtReadHelper.requireBoolean(nbt, "visible"));
+        setWebmapUnderground(NbtReadHelper.requireBoolean(nbt, "visible"));
+        setWebmapTopo(NbtReadHelper.requireBoolean(nbt, "visible"));
+        setWebmapBiome(NbtReadHelper.requireBoolean(nbt, "visible"));
+        setAnnounceInChat(NbtReadHelper.getBooleanOrDefault(nbt, FrontierVisibility.AnnounceInChat.getNbtKey(), false));
+        setAnnounceInTitle(NbtReadHelper.getBooleanOrDefault(nbt, FrontierVisibility.AnnounceInTitle.getNbtKey(), false));
+        setMentionCollection(true);
     }
 
     public void readFromNBT(CompoundTag nbt) {
-        setValue(FrontierVisibility.Frontier, NbtReadHelper.requireBoolean(nbt, "visible"));
-        setValue(FrontierVisibility.Fullscreen, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenVisible", true));
-        setValue(FrontierVisibility.FullscreenName, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenNameVisible", true));
-        setValue(FrontierVisibility.FullscreenCollection, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenCollectionVisible", false));
-        setValue(FrontierVisibility.FullscreenOwner, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenOwnerVisible", false));
-        setValue(FrontierVisibility.FullscreenBanner, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenBannerVisible", false));
-        setValue(FrontierVisibility.FullscreenDay, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenDay", true));
-        setValue(FrontierVisibility.FullscreenNight, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenNight", true));
-        setValue(FrontierVisibility.FullscreenUnderground, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenUnderground", true));
-        setValue(FrontierVisibility.FullscreenTopo, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenTopo", true));
-        setValue(FrontierVisibility.FullscreenBiome, NbtReadHelper.getBooleanOrDefault(nbt, "fullscreenBiome", true));
-        setValue(FrontierVisibility.Minimap, NbtReadHelper.getBooleanOrDefault(nbt, "minimapVisible", true));
-        setValue(FrontierVisibility.MinimapName, NbtReadHelper.getBooleanOrDefault(nbt, "minimapNameVisible", true));
-        setValue(FrontierVisibility.MinimapCollection, NbtReadHelper.getBooleanOrDefault(nbt, "minimapCollectionVisible", false));
-        setValue(FrontierVisibility.MinimapOwner, NbtReadHelper.getBooleanOrDefault(nbt, "minimapOwnerVisible", false));
-        setValue(FrontierVisibility.MinimapBanner, NbtReadHelper.getBooleanOrDefault(nbt, "minimapBannerVisible", false));
-        setValue(FrontierVisibility.MinimapDay, NbtReadHelper.getBooleanOrDefault(nbt, "minimapDay", true));
-        setValue(FrontierVisibility.MinimapNight, NbtReadHelper.getBooleanOrDefault(nbt, "minimapNight", true));
-        setValue(FrontierVisibility.MinimapUnderground, NbtReadHelper.getBooleanOrDefault(nbt, "minimapUnderground", true));
-        setValue(FrontierVisibility.MinimapTopo, NbtReadHelper.getBooleanOrDefault(nbt, "minimapTopo", true));
-        setValue(FrontierVisibility.MinimapBiome, NbtReadHelper.getBooleanOrDefault(nbt, "minimapBiome", true));
-        setValue(FrontierVisibility.Webmap, NbtReadHelper.getBooleanOrDefault(nbt, "webmapVisible", getValue(FrontierVisibility.Minimap)));
-        setValue(FrontierVisibility.WebmapName, NbtReadHelper.getBooleanOrDefault(nbt, "webmapNameVisible", getValue(FrontierVisibility.MinimapName)));
-        setValue(FrontierVisibility.WebmapCollection, NbtReadHelper.getBooleanOrDefault(nbt, "webmapCollectionVisible", getValue(FrontierVisibility.MinimapCollection)));
-        setValue(FrontierVisibility.WebmapOwner, NbtReadHelper.getBooleanOrDefault(nbt, "webmapOwnerVisible", getValue(FrontierVisibility.MinimapOwner)));
-        setValue(FrontierVisibility.WebmapBanner, NbtReadHelper.getBooleanOrDefault(nbt, "webmapBannerVisible", getValue(FrontierVisibility.MinimapBanner)));
-        setValue(FrontierVisibility.WebmapDay, NbtReadHelper.getBooleanOrDefault(nbt, "webmapDay", getValue(FrontierVisibility.MinimapDay)));
-        setValue(FrontierVisibility.WebmapNight, NbtReadHelper.getBooleanOrDefault(nbt, "webmapNight", getValue(FrontierVisibility.MinimapNight)));
-        setValue(FrontierVisibility.WebmapUnderground, NbtReadHelper.getBooleanOrDefault(nbt, "webmapUnderground", getValue(FrontierVisibility.MinimapUnderground)));
-        setValue(FrontierVisibility.WebmapTopo, NbtReadHelper.getBooleanOrDefault(nbt, "webmapTopo", getValue(FrontierVisibility.MinimapTopo)));
-        setValue(FrontierVisibility.WebmapBiome, NbtReadHelper.getBooleanOrDefault(nbt, "webmapBiome", getValue(FrontierVisibility.MinimapBiome)));
-        setValue(FrontierVisibility.AnnounceInChat, NbtReadHelper.getBooleanOrDefault(nbt, "announceInChat", false));
-        setValue(FrontierVisibility.AnnounceInTitle, NbtReadHelper.getBooleanOrDefault(nbt, "announceInTitle", false));
-        setValue(FrontierVisibility.MentionCollection, NbtReadHelper.getBooleanOrDefault(nbt, "mentionCollection", true));
+        setFrontier(NbtReadHelper.requireBoolean(nbt, FrontierVisibility.Frontier.getNbtKey()));
+        setFullscreen(readNbtValue(nbt, FrontierVisibility.Fullscreen));
+        setFullscreenName(readNbtValue(nbt, FrontierVisibility.FullscreenName));
+        setFullscreenCollection(readNbtValue(nbt, FrontierVisibility.FullscreenCollection));
+        setFullscreenOwner(readNbtValue(nbt, FrontierVisibility.FullscreenOwner));
+        setFullscreenBanner(readNbtValue(nbt, FrontierVisibility.FullscreenBanner));
+        setFullscreenDay(readNbtValue(nbt, FrontierVisibility.FullscreenDay));
+        setFullscreenNight(readNbtValue(nbt, FrontierVisibility.FullscreenNight));
+        setFullscreenUnderground(readNbtValue(nbt, FrontierVisibility.FullscreenUnderground));
+        setFullscreenTopo(readNbtValue(nbt, FrontierVisibility.FullscreenTopo));
+        setFullscreenBiome(readNbtValue(nbt, FrontierVisibility.FullscreenBiome));
+        setMinimap(readNbtValue(nbt, FrontierVisibility.Minimap));
+        setMinimapName(readNbtValue(nbt, FrontierVisibility.MinimapName));
+        setMinimapCollection(readNbtValue(nbt, FrontierVisibility.MinimapCollection));
+        setMinimapOwner(readNbtValue(nbt, FrontierVisibility.MinimapOwner));
+        setMinimapBanner(readNbtValue(nbt, FrontierVisibility.MinimapBanner));
+        setMinimapDay(readNbtValue(nbt, FrontierVisibility.MinimapDay));
+        setMinimapNight(readNbtValue(nbt, FrontierVisibility.MinimapNight));
+        setMinimapUnderground(readNbtValue(nbt, FrontierVisibility.MinimapUnderground));
+        setMinimapTopo(readNbtValue(nbt, FrontierVisibility.MinimapTopo));
+        setMinimapBiome(readNbtValue(nbt, FrontierVisibility.MinimapBiome));
+        setWebmap(readNbtValue(nbt, FrontierVisibility.Webmap, getMinimap()));
+        setWebmapName(readNbtValue(nbt, FrontierVisibility.WebmapName, getMinimapName()));
+        setWebmapCollection(readNbtValue(nbt, FrontierVisibility.WebmapCollection, getMinimapCollection()));
+        setWebmapOwner(readNbtValue(nbt, FrontierVisibility.WebmapOwner, getMinimapOwner()));
+        setWebmapBanner(readNbtValue(nbt, FrontierVisibility.WebmapBanner, getMinimapBanner()));
+        setWebmapDay(readNbtValue(nbt, FrontierVisibility.WebmapDay, getMinimapDay()));
+        setWebmapNight(readNbtValue(nbt, FrontierVisibility.WebmapNight, getMinimapNight()));
+        setWebmapUnderground(readNbtValue(nbt, FrontierVisibility.WebmapUnderground, getMinimapUnderground()));
+        setWebmapTopo(readNbtValue(nbt, FrontierVisibility.WebmapTopo, getMinimapTopo()));
+        setWebmapBiome(readNbtValue(nbt, FrontierVisibility.WebmapBiome, getMinimapBiome()));
+        setAnnounceInChat(readNbtValue(nbt, FrontierVisibility.AnnounceInChat));
+        setAnnounceInTitle(readNbtValue(nbt, FrontierVisibility.AnnounceInTitle));
+        setMentionCollection(readNbtValue(nbt, FrontierVisibility.MentionCollection));
     }
 
     public void writeToNBT(CompoundTag nbt) {
-        nbt.putBoolean("visible", getValue(FrontierVisibility.Frontier));
-        nbt.putBoolean("announceInChat", getValue(FrontierVisibility.AnnounceInChat));
-        nbt.putBoolean("announceInTitle", getValue(FrontierVisibility.AnnounceInTitle));
-        nbt.putBoolean("mentionCollection", getValue(FrontierVisibility.MentionCollection));
-        nbt.putBoolean("fullscreenVisible", getValue(FrontierVisibility.Fullscreen));
-        nbt.putBoolean("fullscreenNameVisible", getValue(FrontierVisibility.FullscreenName));
-        nbt.putBoolean("fullscreenCollectionVisible", getValue(FrontierVisibility.FullscreenCollection));
-        nbt.putBoolean("fullscreenOwnerVisible", getValue(FrontierVisibility.FullscreenOwner));
-        nbt.putBoolean("fullscreenBannerVisible", getValue(FrontierVisibility.FullscreenBanner));
-        nbt.putBoolean("fullscreenDay", getValue(FrontierVisibility.FullscreenDay));
-        nbt.putBoolean("fullscreenNight", getValue(FrontierVisibility.FullscreenNight));
-        nbt.putBoolean("fullscreenUnderground", getValue(FrontierVisibility.FullscreenUnderground));
-        nbt.putBoolean("fullscreenTopo", getValue(FrontierVisibility.FullscreenTopo));
-        nbt.putBoolean("fullscreenBiome", getValue(FrontierVisibility.FullscreenBiome));
-        nbt.putBoolean("minimapVisible", getValue(FrontierVisibility.Minimap));
-        nbt.putBoolean("minimapNameVisible", getValue(FrontierVisibility.MinimapName));
-        nbt.putBoolean("minimapCollectionVisible", getValue(FrontierVisibility.MinimapCollection));
-        nbt.putBoolean("minimapOwnerVisible", getValue(FrontierVisibility.MinimapOwner));
-        nbt.putBoolean("minimapBannerVisible", getValue(FrontierVisibility.MinimapBanner));
-        nbt.putBoolean("minimapDay", getValue(FrontierVisibility.MinimapDay));
-        nbt.putBoolean("minimapNight", getValue(FrontierVisibility.MinimapNight));
-        nbt.putBoolean("minimapUnderground", getValue(FrontierVisibility.MinimapUnderground));
-        nbt.putBoolean("minimapTopo", getValue(FrontierVisibility.MinimapTopo));
-        nbt.putBoolean("minimapBiome", getValue(FrontierVisibility.MinimapBiome));
-        nbt.putBoolean("webmapVisible", getValue(FrontierVisibility.Webmap));
-        nbt.putBoolean("webmapNameVisible", getValue(FrontierVisibility.WebmapName));
-        nbt.putBoolean("webmapCollectionVisible", getValue(FrontierVisibility.WebmapCollection));
-        nbt.putBoolean("webmapOwnerVisible", getValue(FrontierVisibility.WebmapOwner));
-        nbt.putBoolean("webmapBannerVisible", getValue(FrontierVisibility.WebmapBanner));
-        nbt.putBoolean("webmapDay", getValue(FrontierVisibility.WebmapDay));
-        nbt.putBoolean("webmapNight", getValue(FrontierVisibility.WebmapNight));
-        nbt.putBoolean("webmapUnderground", getValue(FrontierVisibility.WebmapUnderground));
-        nbt.putBoolean("webmapTopo", getValue(FrontierVisibility.WebmapTopo));
-        nbt.putBoolean("webmapBiome", getValue(FrontierVisibility.WebmapBiome));
+        for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
+            nbt.putBoolean(visibility.getNbtKey(), get(visibility));
+        }
     }
 
     public void fromBytes(FriendlyByteBuf buf) {
-        setValue(FrontierVisibility.Frontier, buf.readBoolean());
-        setValue(FrontierVisibility.AnnounceInChat, buf.readBoolean());
-        setValue(FrontierVisibility.AnnounceInTitle, buf.readBoolean());
-        setValue(FrontierVisibility.MentionCollection, buf.readBoolean());
-        setValue(FrontierVisibility.Fullscreen, buf.readBoolean());
-        setValue(FrontierVisibility.FullscreenName, buf.readBoolean());
-        setValue(FrontierVisibility.FullscreenCollection, buf.readBoolean());
-        setValue(FrontierVisibility.FullscreenOwner, buf.readBoolean());
-        setValue(FrontierVisibility.FullscreenBanner, buf.readBoolean());
-        setValue(FrontierVisibility.FullscreenDay, buf.readBoolean());
-        setValue(FrontierVisibility.FullscreenNight, buf.readBoolean());
-        setValue(FrontierVisibility.FullscreenUnderground, buf.readBoolean());
-        setValue(FrontierVisibility.FullscreenTopo, buf.readBoolean());
-        setValue(FrontierVisibility.FullscreenBiome, buf.readBoolean());
-        setValue(FrontierVisibility.Minimap, buf.readBoolean());
-        setValue(FrontierVisibility.MinimapName, buf.readBoolean());
-        setValue(FrontierVisibility.MinimapCollection, buf.readBoolean());
-        setValue(FrontierVisibility.MinimapOwner, buf.readBoolean());
-        setValue(FrontierVisibility.MinimapBanner, buf.readBoolean());
-        setValue(FrontierVisibility.MinimapDay, buf.readBoolean());
-        setValue(FrontierVisibility.MinimapNight, buf.readBoolean());
-        setValue(FrontierVisibility.MinimapUnderground, buf.readBoolean());
-        setValue(FrontierVisibility.MinimapTopo, buf.readBoolean());
-        setValue(FrontierVisibility.MinimapBiome, buf.readBoolean());
-        setValue(FrontierVisibility.Webmap, buf.readBoolean());
-        setValue(FrontierVisibility.WebmapName, buf.readBoolean());
-        setValue(FrontierVisibility.WebmapCollection, buf.readBoolean());
-        setValue(FrontierVisibility.WebmapOwner, buf.readBoolean());
-        setValue(FrontierVisibility.WebmapBanner, buf.readBoolean());
-        setValue(FrontierVisibility.WebmapDay, buf.readBoolean());
-        setValue(FrontierVisibility.WebmapNight, buf.readBoolean());
-        setValue(FrontierVisibility.WebmapUnderground, buf.readBoolean());
-        setValue(FrontierVisibility.WebmapTopo, buf.readBoolean());
-        setValue(FrontierVisibility.WebmapBiome, buf.readBoolean());
+        for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
+            set(visibility, buf.readBoolean());
+        }
     }
 
     public void toBytes(FriendlyByteBuf buf) {
-        buf.writeBoolean(getValue(FrontierVisibility.Frontier));
-        buf.writeBoolean(getValue(FrontierVisibility.AnnounceInChat));
-        buf.writeBoolean(getValue(FrontierVisibility.AnnounceInTitle));
-        buf.writeBoolean(getValue(FrontierVisibility.MentionCollection));
-        buf.writeBoolean(getValue(FrontierVisibility.Fullscreen));
-        buf.writeBoolean(getValue(FrontierVisibility.FullscreenName));
-        buf.writeBoolean(getValue(FrontierVisibility.FullscreenCollection));
-        buf.writeBoolean(getValue(FrontierVisibility.FullscreenOwner));
-        buf.writeBoolean(getValue(FrontierVisibility.FullscreenBanner));
-        buf.writeBoolean(getValue(FrontierVisibility.FullscreenDay));
-        buf.writeBoolean(getValue(FrontierVisibility.FullscreenNight));
-        buf.writeBoolean(getValue(FrontierVisibility.FullscreenUnderground));
-        buf.writeBoolean(getValue(FrontierVisibility.FullscreenTopo));
-        buf.writeBoolean(getValue(FrontierVisibility.FullscreenBiome));
-        buf.writeBoolean(getValue(FrontierVisibility.Minimap));
-        buf.writeBoolean(getValue(FrontierVisibility.MinimapName));
-        buf.writeBoolean(getValue(FrontierVisibility.MinimapCollection));
-        buf.writeBoolean(getValue(FrontierVisibility.MinimapOwner));
-        buf.writeBoolean(getValue(FrontierVisibility.MinimapBanner));
-        buf.writeBoolean(getValue(FrontierVisibility.MinimapDay));
-        buf.writeBoolean(getValue(FrontierVisibility.MinimapNight));
-        buf.writeBoolean(getValue(FrontierVisibility.MinimapUnderground));
-        buf.writeBoolean(getValue(FrontierVisibility.MinimapTopo));
-        buf.writeBoolean(getValue(FrontierVisibility.MinimapBiome));
-        buf.writeBoolean(getValue(FrontierVisibility.Webmap));
-        buf.writeBoolean(getValue(FrontierVisibility.WebmapName));
-        buf.writeBoolean(getValue(FrontierVisibility.WebmapCollection));
-        buf.writeBoolean(getValue(FrontierVisibility.WebmapOwner));
-        buf.writeBoolean(getValue(FrontierVisibility.WebmapBanner));
-        buf.writeBoolean(getValue(FrontierVisibility.WebmapDay));
-        buf.writeBoolean(getValue(FrontierVisibility.WebmapNight));
-        buf.writeBoolean(getValue(FrontierVisibility.WebmapUnderground));
-        buf.writeBoolean(getValue(FrontierVisibility.WebmapTopo));
-        buf.writeBoolean(getValue(FrontierVisibility.WebmapBiome));
+        for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
+            buf.writeBoolean(get(visibility));
+        }
+    }
+
+    private boolean readNbtValue(CompoundTag nbt, FrontierVisibility visibility) {
+        return readNbtValue(nbt, visibility, visibility.getDefaultValue());
+    }
+
+    private boolean readNbtValue(CompoundTag nbt, FrontierVisibility visibility, boolean fallback) {
+        return NbtReadHelper.getBooleanOrDefault(nbt, visibility.getNbtKey(), fallback);
     }
 }
