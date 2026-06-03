@@ -27,8 +27,8 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDi
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationSettingsDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.FrontierAppearanceDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.FrontierVisibilityDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.PathStyleDialog;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.VisibilityDialog;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.config.BooleanConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
@@ -41,13 +41,13 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings.Action
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityData;
-import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityField;
-import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityMask;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibilityMask;
-import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityField;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityMask;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityMask;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
@@ -300,7 +300,7 @@ public class ModSettingsPage extends PageScreen {
         settingsGrid.addChild(buttonDefaultPathStyle, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
 
         settingsGrid.addChild(createWideSimpleButton(buttonWidth, FORCED_VISIBILITY_LABEL,
-                b -> onForcedVisibilityPressed()), row++, 0, 1, 2,
+                b -> onForcedFrontierVisibilityPressed()), row++, 0, 1, 2,
                 LayoutSettings.defaults().alignHorizontallyCenter());
 
         return row;
@@ -550,8 +550,8 @@ public class ModSettingsPage extends PageScreen {
         }).display();
     }
 
-    private void onForcedVisibilityPressed() {
-        new VisibilityDialog(createForcedVisibility(), createForcedVisibilityMask(), this::setForcedVisibility).display();
+    private void onForcedFrontierVisibilityPressed() {
+        new FrontierVisibilityDialog(createForcedFrontierVisibility(), createForcedFrontierVisibilityMask(), this::setForcedFrontierVisibility).display();
     }
 
     private void onForcedCollectionVisibilityPressed() {
@@ -830,18 +830,18 @@ public class ModSettingsPage extends PageScreen {
         return super.mouseReleased(event);
     }
 
-    private VisibilityData createForcedVisibility() {
-        VisibilityData visibilityData = new VisibilityData();
+    private FrontierVisibilityData createForcedFrontierVisibility() {
+        FrontierVisibilityData visibilityData = new FrontierVisibilityData();
         for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
-            visibilityData.set(visibility, getForcedVisibilityValue(visibility));
+            visibilityData.set(visibility, getForcedFrontierVisibilityValue(visibility));
         }
         return visibilityData;
     }
 
-    private FrontierVisibilityMask createForcedVisibilityMask() {
+    private FrontierVisibilityMask createForcedFrontierVisibilityMask() {
         FrontierVisibilityMask visibilityMask = new FrontierVisibilityMask();
         for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
-            visibilityMask.set(visibility, getForcedVisibilitySetting(visibility).get() != FrontierDisplayVisibility.Custom);
+            visibilityMask.set(visibility, getForcedFrontierVisibilitySetting(visibility).get() != FrontierDisplayVisibility.Custom);
         }
         return visibilityMask;
     }
@@ -866,9 +866,9 @@ public class ModSettingsPage extends PageScreen {
         return visibilityMask;
     }
 
-    private void setForcedVisibility(VisibilityData visibilityData, FrontierVisibilityMask visibilityDataMask) {
+    private void setForcedFrontierVisibility(FrontierVisibilityData visibilityData, FrontierVisibilityMask visibilityDataMask) {
         for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
-            setForcedVisibilityField(visibilityData, visibilityDataMask, visibility);
+            setForcedFrontierVisibilityField(visibilityData, visibilityDataMask, visibility);
         }
     }
 
@@ -878,15 +878,15 @@ public class ModSettingsPage extends PageScreen {
         }
     }
 
-    private FrontierDisplayVisibility getVisibilityValue(VisibilityData visibilityData, FrontierVisibilityMask visibilityDataMask,
-                                                         FrontierVisibility visibility) {
+    private FrontierDisplayVisibility getFrontierVisibilityValue(FrontierVisibilityData visibilityData, FrontierVisibilityMask visibilityDataMask,
+                                                                 FrontierVisibility visibility) {
         if (visibilityDataMask.has(visibility)) {
             return visibilityData.get(visibility) ? FrontierDisplayVisibility.Always : FrontierDisplayVisibility.Never;
         }
         return FrontierDisplayVisibility.Custom;
     }
 
-    private boolean getForcedVisibilityValue(FrontierDisplayVisibility visibility, boolean customValue) {
+    private boolean getForcedFrontierVisibilityValue(FrontierDisplayVisibility visibility, boolean customValue) {
         return switch (visibility) {
             case Always -> true;
             case Never -> false;
@@ -894,18 +894,18 @@ public class ModSettingsPage extends PageScreen {
         };
     }
 
-    private FrontierDisplayVisibility getVisibilityValue(boolean value, boolean masked) {
+    private FrontierDisplayVisibility getFrontierVisibilityValue(boolean value, boolean masked) {
         if (masked) {
             return value ? FrontierDisplayVisibility.Always : FrontierDisplayVisibility.Never;
         }
         return FrontierDisplayVisibility.Custom;
     }
 
-    private boolean getForcedVisibilityValue(FrontierVisibility visibility) {
-        return getForcedVisibilityValue(getForcedVisibilitySetting(visibility).get(), visibility.getDefaultValue());
+    private boolean getForcedFrontierVisibilityValue(FrontierVisibility visibility) {
+        return getForcedFrontierVisibilityValue(getForcedFrontierVisibilitySetting(visibility).get(), visibility.getDefaultValue());
     }
 
-    private ConfigEntry<FrontierDisplayVisibility, ?> getForcedVisibilitySetting(FrontierVisibility visibility) {
+    private ConfigEntry<FrontierDisplayVisibility, ?> getForcedFrontierVisibilitySetting(FrontierVisibility visibility) {
         return switch (visibility) {
             case Frontier -> ClientConfig.FRONTIER_VISIBILITY;
             case AnnounceInChat -> ClientConfig.ANNOUNCE_IN_CHAT;
@@ -945,7 +945,7 @@ public class ModSettingsPage extends PageScreen {
     }
 
     private boolean getForcedCollectionBooleanValue(CollectionVisibilityField field) {
-        return getForcedVisibilityValue(getForcedCollectionVisibilitySetting(field), field.getDefaultBooleanValue());
+        return getForcedFrontierVisibilityValue(getForcedCollectionVisibilitySetting(field), field.getDefaultBooleanValue());
     }
 
     private int getForcedCollectionZoomValue(CollectionVisibilityField field) {
@@ -994,7 +994,7 @@ public class ModSettingsPage extends PageScreen {
     private void setForcedCollectionVisibilityField(CollectionVisibilityData visibilityData, CollectionVisibilityMask visibilityMask,
                                                     CollectionVisibilityField field) {
         switch (field) {
-            case Visible -> ClientConfig.COLLECTION_VISIBILITY.set(getVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+            case Visible -> ClientConfig.COLLECTION_VISIBILITY.set(getFrontierVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
             case FullscreenZoom -> {
                 ClientConfig.COLLECTION_FULLSCREEN_ZOOM_FORCED.set(visibilityMask.has(field));
                 ClientConfig.COLLECTION_FULLSCREEN_ZOOM.set(visibilityData.getZoom(field));
@@ -1008,29 +1008,29 @@ public class ModSettingsPage extends PageScreen {
                 ClientConfig.COLLECTION_WEBMAP_ZOOM.set(visibilityData.getZoom(field));
             }
             case FullscreenName -> ClientConfig.COLLECTION_FULLSCREEN_NAME_VISIBILITY
-                    .set(getVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+                    .set(getFrontierVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
             case FullscreenOwner -> ClientConfig.COLLECTION_FULLSCREEN_OWNER_VISIBILITY
-                    .set(getVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+                    .set(getFrontierVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
             case FullscreenBanner -> ClientConfig.COLLECTION_FULLSCREEN_BANNER_VISIBILITY
-                    .set(getVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+                    .set(getFrontierVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
             case MinimapName -> ClientConfig.COLLECTION_MINIMAP_NAME_VISIBILITY
-                    .set(getVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+                    .set(getFrontierVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
             case MinimapOwner -> ClientConfig.COLLECTION_MINIMAP_OWNER_VISIBILITY
-                    .set(getVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+                    .set(getFrontierVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
             case MinimapBanner -> ClientConfig.COLLECTION_MINIMAP_BANNER_VISIBILITY
-                    .set(getVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+                    .set(getFrontierVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
             case WebmapName -> ClientConfig.COLLECTION_WEBMAP_NAME_VISIBILITY
-                    .set(getVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+                    .set(getFrontierVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
             case WebmapOwner -> ClientConfig.COLLECTION_WEBMAP_OWNER_VISIBILITY
-                    .set(getVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+                    .set(getFrontierVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
             case WebmapBanner -> ClientConfig.COLLECTION_WEBMAP_BANNER_VISIBILITY
-                    .set(getVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+                    .set(getFrontierVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
         }
     }
 
-    private void setForcedVisibilityField(VisibilityData visibilityData, FrontierVisibilityMask visibilityMask,
-                                          FrontierVisibility visibility) {
-        getForcedVisibilitySetting(visibility).set(getVisibilityValue(visibilityData, visibilityMask, visibility));
+    private void setForcedFrontierVisibilityField(FrontierVisibilityData visibilityData, FrontierVisibilityMask visibilityMask,
+                                                  FrontierVisibility visibility) {
+        getForcedFrontierVisibilitySetting(visibility).set(getFrontierVisibilityValue(visibilityData, visibilityMask, visibility));
     }
 
     private void newGroupPressed() {

@@ -1,7 +1,4 @@
-package games.alejandrocoria.mapfrontiers.common.territory;
-
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
+package games.alejandrocoria.mapfrontiers.common.territory.collection;
 
 import java.util.EnumSet;
 
@@ -46,35 +43,7 @@ public class CollectionVisibilityMask {
         }
     }
 
-    public void clear() {
-        values.clear();
-    }
-
     public boolean hasAny() {
         return !values.isEmpty();
-    }
-
-    public void readFromNBT(CompoundTag nbt) {
-        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
-            set(field, nbt.getBooleanOr(field.getNbtKey(), false));
-        }
-    }
-
-    public void writeToNBT(CompoundTag nbt) {
-        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
-            nbt.putBoolean(field.getNbtKey(), has(field));
-        }
-    }
-
-    public void fromBytes(FriendlyByteBuf buf) {
-        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
-            set(field, buf.readBoolean());
-        }
-    }
-
-    public void toBytes(FriendlyByteBuf buf) {
-        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
-            buf.writeBoolean(has(field));
-        }
     }
 }

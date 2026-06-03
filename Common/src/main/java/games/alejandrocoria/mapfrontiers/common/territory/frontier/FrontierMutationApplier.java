@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.common.territory;
+package games.alejandrocoria.mapfrontiers.common.territory.frontier;
 
 import games.alejandrocoria.mapfrontiers.api.model.ChunkCoord;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierBanner;
@@ -7,6 +7,7 @@ import games.alejandrocoria.mapfrontiers.api.model.FrontierShape;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierVisibilityFlag;
 import games.alejandrocoria.mapfrontiers.api.model.PathStyle;
 import games.alejandrocoria.mapfrontiers.api.model.Point2i;
+import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
@@ -29,7 +30,7 @@ public final class FrontierMutationApplier {
 
         switch (shape.type()) {
             case VERTEX -> {
-                frontier.setShape(games.alejandrocoria.mapfrontiers.common.territory.FrontierShape.Vertex);
+                frontier.setShape(games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape.Vertex);
                 if (shape.vertices() != null) {
                     for (Point2i vertex : shape.vertices()) {
                         frontier.addVertex(new BlockPos(vertex.x(), 0, vertex.z()));
@@ -37,7 +38,7 @@ public final class FrontierMutationApplier {
                 }
             }
             case CHUNK -> {
-                frontier.setShape(games.alejandrocoria.mapfrontiers.common.territory.FrontierShape.Chunk);
+                frontier.setShape(games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape.Chunk);
                 if (shape.chunks() != null) {
                     for (ChunkCoord chunk : shape.chunks()) {
                         frontier.addChunk(new ChunkPos(chunk.x(), chunk.z()));
@@ -45,7 +46,7 @@ public final class FrontierMutationApplier {
                 }
             }
             case PATH -> {
-                frontier.setShape(games.alejandrocoria.mapfrontiers.common.territory.FrontierShape.Path);
+                frontier.setShape(games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape.Path);
                 if (shape.points() != null) {
                     for (Point2i point : shape.points()) {
                         frontier.addPoint(new BlockPos(point.x(), 0, point.z()));
@@ -87,14 +88,14 @@ public final class FrontierMutationApplier {
     }
 
     private static void applyPathStyle(FrontierData frontier, PathStyle pathStyle) {
-        if (frontier.getShape() != games.alejandrocoria.mapfrontiers.common.territory.FrontierShape.Path) {
+        if (frontier.getShape() != games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape.Path) {
             throw new IllegalArgumentException("Path style can only be applied to path frontiers");
         }
 
         frontier.setPathStyle(toPathStyle(pathStyle));
     }
 
-    public static Set<FrontierVisibilityFlag> fromVisibility(VisibilityData visibilityData) {
+    public static Set<FrontierVisibilityFlag> fromVisibility(FrontierVisibilityData visibilityData) {
         EnumSet<FrontierVisibilityFlag> visibility = EnumSet.noneOf(FrontierVisibilityFlag.class);
         for (FrontierVisibility value : FrontierVisibility.VALUES) {
             if (visibilityData.get(value)) {
@@ -104,8 +105,8 @@ public final class FrontierMutationApplier {
         return visibility;
     }
 
-    public static VisibilityData toVisibility(Set<FrontierVisibilityFlag> visibilityFlags) {
-        VisibilityData visibilityData = new VisibilityData(false);
+    public static FrontierVisibilityData toVisibility(Set<FrontierVisibilityFlag> visibilityFlags) {
+        FrontierVisibilityData visibilityData = new FrontierVisibilityData(false);
         for (FrontierVisibilityFlag flag : visibilityFlags) {
             visibilityData.set(FrontierVisibility.valueOf(flag.name()), true);
         }

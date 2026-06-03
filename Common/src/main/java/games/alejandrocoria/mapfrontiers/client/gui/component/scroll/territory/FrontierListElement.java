@@ -11,7 +11,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.util.SourcePluginUiHelper;
 import games.alejandrocoria.mapfrontiers.client.gui.util.TextEllipsizeHelper;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;

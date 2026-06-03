@@ -17,11 +17,11 @@ import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierCreateSpec;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
-import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreateSpec;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.Context;
@@ -464,7 +464,7 @@ public class NewFrontierDialog extends PanelDialog {
         FrontierData defaults = new FrontierData();
         SettingsUser owner = new SettingsUser(minecraft.player);
         UUID frontierId = UUID.randomUUID();
-        VisibilityData visibility = new VisibilityData(defaults.getVisibilityData());
+        FrontierVisibilityData visibility = new FrontierVisibilityData(defaults.getVisibilityData());
         BannerData banner = defaults.getBannerData() == null ? null : new BannerData(defaults.getBannerData());
         FrontierData.PathStyle pathStyle = ClientConfig.NEW_FRONTIER_SHAPE.get() == FrontierShape.Path
                 ? ClientConfig.getDefaultPathStyle()

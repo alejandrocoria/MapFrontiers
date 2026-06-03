@@ -5,9 +5,9 @@ import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibilityMask;
-import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityMask;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
@@ -18,7 +18,7 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-public class VisibilityDialog extends PanelDialog {
+public class FrontierVisibilityDialog extends PanelDialog {
     private static final Component GENERAL_LABEL = Component.translatable("mapfrontiers.general");
     private static final Component SHOW_FRONTIER_LABEL = Component.translatable("mapfrontiers.show_frontier");
     private static final Component ANNOUNCE_IN_CHAT_LABEL = Component.translatable("mapfrontiers.announce_in_chat");
@@ -41,22 +41,22 @@ public class VisibilityDialog extends PanelDialog {
     private static final Component OFF_LABEL = Component.translatable("options.off");
     private static final int COLUMN_SPACING = 6;
 
-    private final VisibilityData visibilityData;
+    private final FrontierVisibilityData visibilityData;
     @Nullable
     private final FrontierVisibilityMask visibilityMask;
     private final SaveCallback saveCallback;
 
-    public VisibilityDialog(VisibilityData visibilityData, SaveCallback saveCallback) {
+    public FrontierVisibilityDialog(FrontierVisibilityData visibilityData, SaveCallback saveCallback) {
         super();
-        this.visibilityData = new VisibilityData(visibilityData);
+        this.visibilityData = new FrontierVisibilityData(visibilityData);
         this.visibilityMask = null;
         this.saveCallback = saveCallback;
     }
 
-    public VisibilityDialog(VisibilityData visibilityData, FrontierVisibilityMask visibilityDataMask,
-                            SaveCallback saveCallback) {
+    public FrontierVisibilityDialog(FrontierVisibilityData visibilityData, FrontierVisibilityMask visibilityDataMask,
+                                    SaveCallback saveCallback) {
         super();
-        this.visibilityData = new VisibilityData(visibilityData);
+        this.visibilityData = new FrontierVisibilityData(visibilityData);
         this.visibilityMask = new FrontierVisibilityMask(visibilityDataMask);
         this.saveCallback = saveCallback;
     }
@@ -158,11 +158,11 @@ public class VisibilityDialog extends PanelDialog {
         layout.addChild(new StringWidget(label, font).setColor(ColorConstants.TEXT), row, 0);
 
         OptionButton button = new OptionButton(font, LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH, (b) -> {
-            visibilityData.setValue(visibility, b.getSelected() == 0);
+            visibilityData.set(visibility, b.getSelected() == 0);
         });
         button.addOption(ON_LABEL);
         button.addOption(OFF_LABEL);
-        button.setSelected(visibilityData.getValue(visibility) ? 0 : 1);
+        button.setSelected(visibilityData.get(visibility) ? 0 : 1);
         layout.addChild(button, row, 2);
 
         if (visibilityMask != null) {
@@ -182,6 +182,6 @@ public class VisibilityDialog extends PanelDialog {
 
     @FunctionalInterface
     public interface SaveCallback {
-        void accept(VisibilityData visibilityData, @Nullable FrontierVisibilityMask visibilityMask);
+        void accept(FrontierVisibilityData visibilityData, @Nullable FrontierVisibilityMask visibilityMask);
     }
 }

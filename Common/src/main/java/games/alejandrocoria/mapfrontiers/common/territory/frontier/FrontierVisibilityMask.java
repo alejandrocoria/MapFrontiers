@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.common.territory;
+package games.alejandrocoria.mapfrontiers.common.territory.frontier;
 
 import java.util.EnumSet;
 
@@ -9,19 +9,11 @@ public class FrontierVisibilityMask {
         values = EnumSet.noneOf(FrontierVisibility.class);
     }
 
-    public FrontierVisibilityMask(boolean setAll) {
-        if (setAll) {
-            values = EnumSet.allOf(FrontierVisibility.class);
-        } else {
-            values = EnumSet.noneOf(FrontierVisibility.class);
-        }
-    }
-
     public FrontierVisibilityMask(FrontierVisibilityMask other) {
         values = other.values.clone();
     }
 
-    public FrontierVisibilityMask(VisibilityData other) {
+    public FrontierVisibilityMask(FrontierVisibilityData other) {
         values = EnumSet.noneOf(FrontierVisibility.class);
         for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
             if (other.get(visibility)) {
@@ -58,10 +50,6 @@ public class FrontierVisibilityMask {
         } else {
             values.remove(visibility);
         }
-    }
-
-    public void clear() {
-        values.clear();
     }
 
     public boolean hasAny() {

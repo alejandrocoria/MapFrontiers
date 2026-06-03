@@ -1,9 +1,12 @@
-package games.alejandrocoria.mapfrontiers.common.territory;
+package games.alejandrocoria.mapfrontiers.common.territory.frontier;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
+import games.alejandrocoria.mapfrontiers.common.territory.CopiedFromInfo;
+import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import games.alejandrocoria.mapfrontiers.common.util.SourcePluginIdHelper;
@@ -52,7 +55,7 @@ public class FrontierData {
     protected FrontierShape frontierShape = FrontierShape.Vertex;
     protected String name1 = "New";
     protected String name2 = "Frontier";
-    protected VisibilityData visibilityData;
+    protected FrontierVisibilityData visibilityData;
     protected int color = ColorConstants.WHITE;
     protected ResourceKey<Level> dimension;
     protected SettingsUser owner = new SettingsUser();
@@ -74,7 +77,7 @@ public class FrontierData {
 
     public FrontierData() {
         id = new UUID(0, 0);
-        visibilityData = new VisibilityData();
+        visibilityData = new FrontierVisibilityData();
         pathStyle = new PathStyle();
     }
 
@@ -85,7 +88,7 @@ public class FrontierData {
         personal = other.personal;
         lifetime = other.lifetime;
 
-        visibilityData = new VisibilityData(other.visibilityData);
+        visibilityData = new FrontierVisibilityData(other.visibilityData);
         color = other.color;
 
         name1 = other.name1;
@@ -131,7 +134,7 @@ public class FrontierData {
         owner = other.owner;
         personal = other.personal;
         lifetime = other.lifetime;
-        visibilityData = new VisibilityData(other.visibilityData);
+        visibilityData = new FrontierVisibilityData(other.visibilityData);
         color = other.color;
         name1 = other.name1;
         name2 = other.name2;
@@ -462,25 +465,26 @@ public class FrontierData {
     }
 
     public void setVisibility(FrontierVisibility visibility, boolean enable) {
-        this.visibilityData.setValue(visibility, enable);
+        this.visibilityData.set(visibility, enable);
         invalidateSyncHash();
     }
 
     public void toggleVisibility(FrontierVisibility visibility) {
-        this.visibilityData.setValue(visibility, !this.visibilityData.getValue(visibility));
+        boolean set = !this.visibilityData.get(visibility);
+        this.visibilityData.set(visibility, set);
         invalidateSyncHash();
     }
 
     public boolean getVisibility(FrontierVisibility visibility) {
-        return visibilityData.getValue(visibility);
+        return visibilityData.get(visibility);
     }
 
-    public void setVisibilityData(VisibilityData visibilityData) {
+    public void setVisibilityData(FrontierVisibilityData visibilityData) {
         this.visibilityData = visibilityData;
         invalidateSyncHash();
     }
 
-    public VisibilityData getVisibilityData() {
+    public FrontierVisibilityData getVisibilityData() {
         return visibilityData;
     }
 
@@ -680,7 +684,7 @@ public class FrontierData {
         if (!wasCopied()) {
             copiedFrom = new CopiedFromInfo();
         }
-        copiedFrom.id = id;
+        copiedFrom.setId(id);
         invalidateSyncHash();
     }
 
@@ -688,14 +692,14 @@ public class FrontierData {
         if (copiedFrom == null) {
             return id;
         }
-        return copiedFrom.id;
+        return copiedFrom.getId();
     }
 
     public void setCopiedFromUser(SettingsUser user) {
         if (!wasCopied()) {
             copiedFrom = new CopiedFromInfo();
         }
-        copiedFrom.user = user;
+        copiedFrom.setUser(user);
         invalidateSyncHash();
     }
 
@@ -703,7 +707,7 @@ public class FrontierData {
         if (copiedFrom == null) {
             return owner;
         }
-        return copiedFrom.user;
+        return copiedFrom.getUser();
     }
 
     public void setModified(Date modified) {
@@ -1301,13 +1305,13 @@ public class FrontierData {
         return hash;
     }
 
-    private static long mixVisibilityData(long hash, @Nullable VisibilityData visibilityData) {
+    private static long mixVisibilityData(long hash, @Nullable FrontierVisibilityData visibilityData) {
         if (visibilityData == null) {
             return mixBoolean(hash, false);
         }
         hash = mixBoolean(hash, true);
         for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
-            hash = mixBoolean(hash, visibilityData.getValue(visibility));
+            hash = mixBoolean(hash, visibilityData.get(visibility));
         }
         return hash;
     }

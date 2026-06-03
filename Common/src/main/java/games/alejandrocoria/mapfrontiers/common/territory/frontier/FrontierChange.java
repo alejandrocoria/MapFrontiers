@@ -1,8 +1,9 @@
-package games.alejandrocoria.mapfrontiers.common.territory;
+package games.alejandrocoria.mapfrontiers.common.territory.frontier;
 
 import games.alejandrocoria.mapfrontiers.api.model.ChunkCoord;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.Point2i;
+import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -38,7 +39,7 @@ public class FrontierChange {
             name = new NameChange(other.name.name1, other.name.name2);
         }
         if (other.visibility != null) {
-            visibility = new VisibilityChange(new VisibilityData(other.visibility.visibilityData));
+            visibility = new VisibilityChange(new FrontierVisibilityData(other.visibility.visibilityData));
         }
         if (other.color != null) {
             color = new ColorChange(other.color.color);
@@ -64,7 +65,7 @@ public class FrontierChange {
         }
 
         if (buf.readBoolean()) {
-            VisibilityData visibilityData = new VisibilityData();
+            FrontierVisibilityData visibilityData = new FrontierVisibilityData();
             visibilityData.fromBytes(buf);
             visibility = new VisibilityChange(visibilityData);
         }
@@ -191,7 +192,7 @@ public class FrontierChange {
             );
             visibility.addAll(mutation.visibilityToAdd());
             visibility.removeAll(mutation.visibilityToRemove());
-            VisibilityData resolvedVisibility = FrontierMutationApplier.toVisibility(visibility);
+            FrontierVisibilityData resolvedVisibility = FrontierMutationApplier.toVisibility(visibility);
             if (!frontier.getVisibilityData().equals(resolvedVisibility)) {
                 change.setVisibility(resolvedVisibility);
             }
@@ -380,8 +381,8 @@ public class FrontierChange {
         name = new NameChange(name1, name2);
     }
 
-    public void setVisibility(VisibilityData visibilityData) {
-        visibility = new VisibilityChange(new VisibilityData(visibilityData));
+    public void setVisibility(FrontierVisibilityData visibilityData) {
+        visibility = new VisibilityChange(new FrontierVisibilityData(visibilityData));
     }
 
     public void setColor(int color) {
@@ -427,14 +428,14 @@ public class FrontierChange {
     }
 
     public static class VisibilityChange {
-        private final VisibilityData visibilityData;
+        private final FrontierVisibilityData visibilityData;
 
-        private VisibilityChange(VisibilityData visibilityData) {
+        private VisibilityChange(FrontierVisibilityData visibilityData) {
             this.visibilityData = visibilityData;
         }
 
-        public VisibilityData getVisibilityData() {
-            return new VisibilityData(visibilityData);
+        public FrontierVisibilityData getVisibilityData() {
+            return new FrontierVisibilityData(visibilityData);
         }
     }
 

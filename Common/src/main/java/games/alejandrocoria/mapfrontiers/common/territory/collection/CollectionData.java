@@ -1,8 +1,11 @@
-package games.alejandrocoria.mapfrontiers.common.territory;
+package games.alejandrocoria.mapfrontiers.common.territory.collection;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
+import games.alejandrocoria.mapfrontiers.common.territory.CopiedFromInfo;
+import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import games.alejandrocoria.mapfrontiers.common.util.SourcePluginIdHelper;
@@ -367,28 +370,28 @@ public class CollectionData {
         if (copiedFrom == null) {
             copiedFrom = new CopiedFromInfo();
         }
-        copiedFrom.id = id;
+        copiedFrom.setId(id);
     }
 
     public UUID getCopiedFromId() {
         if (copiedFrom == null) {
             return id;
         }
-        return copiedFrom.id;
+        return copiedFrom.getId();
     }
 
     public void setCopiedFromUser(SettingsUser user) {
         if (copiedFrom == null) {
             copiedFrom = new CopiedFromInfo();
         }
-        copiedFrom.user = user;
+        copiedFrom.setUser(user);
     }
 
     public SettingsUser getCopiedFromUser() {
         if (copiedFrom == null) {
             return owner;
         }
-        return copiedFrom.user;
+        return copiedFrom.getUser();
     }
 
     private static void validateTypeAndLifetime(boolean personal, TerritoryLifetime lifetime) {

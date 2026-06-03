@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.common.territory;
+package games.alejandrocoria.mapfrontiers.common.territory.collection;
 
 import java.util.ArrayList;
 import java.util.List;

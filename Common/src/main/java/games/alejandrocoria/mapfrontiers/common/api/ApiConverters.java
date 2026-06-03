@@ -24,13 +24,13 @@ import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
-import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
-import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityData;
-import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityField;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierMutationApplier;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
-import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityField;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierMutationApplier;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.resources.Identifier;
@@ -65,11 +65,11 @@ public final class ApiConverters {
         };
     }
 
-    public static Set<FrontierVisibilityFlag> fromVisibility(VisibilityData visibilityData) {
+    public static Set<FrontierVisibilityFlag> fromFrontierVisibility(FrontierVisibilityData visibilityData) {
         return FrontierMutationApplier.fromVisibility(visibilityData);
     }
 
-    public static VisibilityData toVisibility(Set<FrontierVisibilityFlag> visibilityFlags) {
+    public static FrontierVisibilityData toFrontierVisibility(Set<FrontierVisibilityFlag> visibilityFlags) {
         return FrontierMutationApplier.toVisibility(visibilityFlags);
     }
 
@@ -205,9 +205,9 @@ public final class ApiConverters {
                 frontier.getName1(),
                 frontier.getName2(),
                 toShape(frontier),
-                fromVisibility(frontier.getVisibilityData()),
+                fromFrontierVisibility(frontier.getVisibilityData()),
                 fromBanner(frontier.getBannerData()),
-                frontier.getShape() == games.alejandrocoria.mapfrontiers.common.territory.FrontierShape.Path ? Optional.of(fromPathStyle(frontier.getPathStyle())) : Optional.empty(),
+                frontier.getShape() == games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape.Path ? Optional.of(fromPathStyle(frontier.getPathStyle())) : Optional.empty(),
                 Optional.ofNullable(frontier.getCollectionId()).map(CollectionId::new),
                 Optional.ofNullable(frontier.getSourcePluginId()),
                 owner,

@@ -1,6 +1,8 @@
-package games.alejandrocoria.mapfrontiers.common.territory;
+package games.alejandrocoria.mapfrontiers.common.territory.frontier;
 
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
+import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.util.SourcePluginIdHelper;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.core.BlockPos;
@@ -31,7 +33,7 @@ public final class FrontierCreateSpec {
     private final String name1;
     private final String name2;
     private final int color;
-    private final VisibilityData visibility;
+    private final FrontierVisibilityData visibility;
     private final @Nullable BannerData banner;
     private final FrontierShape frontierShape;
     private final List<BlockPos> vertices;
@@ -49,7 +51,7 @@ public final class FrontierCreateSpec {
                                String name1,
                                String name2,
                                int color,
-                               VisibilityData visibility,
+                               FrontierVisibilityData visibility,
                                @Nullable BannerData banner,
                                FrontierShape frontierShape,
                                List<BlockPos> vertices,
@@ -66,7 +68,7 @@ public final class FrontierCreateSpec {
         this.name1 = Objects.requireNonNull(name1, "name1");
         this.name2 = Objects.requireNonNull(name2, "name2");
         this.color = color;
-        this.visibility = new VisibilityData(Objects.requireNonNull(visibility, "visibility"));
+        this.visibility = new FrontierVisibilityData(Objects.requireNonNull(visibility, "visibility"));
         this.banner = banner == null ? null : new BannerData(banner);
         this.frontierShape = Objects.requireNonNull(frontierShape, "mode");
         this.vertices = List.copyOf(Objects.requireNonNull(vertices, "vertices"));
@@ -88,7 +90,7 @@ public final class FrontierCreateSpec {
                                             String name1,
                                             String name2,
                                             int color,
-                                            VisibilityData visibility,
+                                            FrontierVisibilityData visibility,
                                             @Nullable BannerData banner,
                                             List<BlockPos> vertices,
                                             FrontierData.PathStyle pathStyle) {
@@ -106,7 +108,7 @@ public final class FrontierCreateSpec {
                                            String name1,
                                            String name2,
                                            int color,
-                                           VisibilityData visibility,
+                                           FrontierVisibilityData visibility,
                                            @Nullable BannerData banner,
                                            Set<ChunkPos> chunks,
                                            FrontierData.PathStyle pathStyle) {
@@ -124,7 +126,7 @@ public final class FrontierCreateSpec {
                                           String name1,
                                           String name2,
                                           int color,
-                                          VisibilityData visibility,
+                                          FrontierVisibilityData visibility,
                                           @Nullable BannerData banner,
                                           List<BlockPos> points,
                                           FrontierData.PathStyle pathStyle) {
@@ -172,8 +174,8 @@ public final class FrontierCreateSpec {
         return color;
     }
 
-    public VisibilityData getVisibility() {
-        return new VisibilityData(visibility);
+    public FrontierVisibilityData getVisibility() {
+        return new FrontierVisibilityData(visibility);
     }
 
     public @Nullable BannerData getBanner() {
@@ -277,7 +279,7 @@ public final class FrontierCreateSpec {
         String name2 = buf.readUtf(FrontierData.MAX_NAME_CHARACTERS);
         int color = buf.readInt();
 
-        VisibilityData visibility = new VisibilityData();
+        FrontierVisibilityData visibility = new FrontierVisibilityData();
         visibility.fromBytes(buf);
 
         BannerData banner = null;

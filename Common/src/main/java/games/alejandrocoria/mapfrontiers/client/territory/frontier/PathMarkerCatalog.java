@@ -2,7 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.territory.frontier;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.Identifier;

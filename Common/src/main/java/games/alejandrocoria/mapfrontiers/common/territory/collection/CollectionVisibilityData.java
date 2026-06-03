@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.common.territory;
+package games.alejandrocoria.mapfrontiers.common.territory.collection;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -206,24 +206,6 @@ public class CollectionVisibilityData {
                 setZoom(field, override.getZoom(field));
             }
         }
-    }
-
-    public boolean equalsMasked(CollectionVisibilityData other, CollectionVisibilityMask mask) {
-        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
-            if (!mask.has(field)) {
-                continue;
-            }
-
-            if (field.isBoolean()) {
-                if (getBoolean(field) != other.getBoolean(field)) {
-                    return false;
-                }
-            } else if (getZoom(field) != other.getZoom(field)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     public void readSparseNbt(CompoundTag nbt, CollectionVisibilityMask mask) {

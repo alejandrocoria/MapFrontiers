@@ -12,11 +12,11 @@ import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierCreateSpec;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
-import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreateSpec;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationResult;
 import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationService;
@@ -118,8 +118,8 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
         String name1 = request.name1().orElse(defaults.getName1());
         String name2 = request.name2().orElse(defaults.getName2());
         int color = request.color().orElseGet(ColorHelper::getRandomColor);
-        VisibilityData visibility = request.visibility()
-                .map(ApiConverters::toVisibility)
+        FrontierVisibilityData visibility = request.visibility()
+                .map(ApiConverters::toFrontierVisibility)
                 .orElseGet(defaults::getVisibilityData);
         BannerData banner = request.banner()
                 .map(ApiConverters::toBanner)

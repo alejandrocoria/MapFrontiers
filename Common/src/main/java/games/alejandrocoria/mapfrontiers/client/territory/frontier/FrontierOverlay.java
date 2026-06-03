@@ -13,16 +13,16 @@ import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionL
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
-import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
-import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityData;
-import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityMask;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierSharingChange;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibilityMask;
-import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityMask;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityMask;
 import it.unimi.dsi.fastutil.Pair;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.Context;
@@ -93,7 +93,7 @@ public class FrontierOverlay extends FrontierData {
     public float perimeter = 0.f;
     public float area = 0.f;
     private int selectedPointIndex = -1;
-    protected VisibilityData effectiveVisibilityData;
+    protected FrontierVisibilityData effectiveVisibilityData;
 
     private boolean highlighted = false;
 
@@ -960,8 +960,8 @@ public class FrontierOverlay extends FrontierData {
         markFrontierActivationDirty();
     }
 
-    public void setVisibilityOverride(Pair<VisibilityData, FrontierVisibilityMask> visibilityOverride) {
-        effectiveVisibilityData = new VisibilityData(visibilityData);
+    public void setVisibilityOverride(Pair<FrontierVisibilityData, FrontierVisibilityMask> visibilityOverride) {
+        effectiveVisibilityData = new FrontierVisibilityData(visibilityData);
         effectiveVisibilityData.applyOverride(visibilityOverride.first(), visibilityOverride.second());
         invalidateBasePresentation();
         markFrontierActivationDirty();
@@ -969,7 +969,7 @@ public class FrontierOverlay extends FrontierData {
 
     @Override
     public boolean getVisibility(FrontierVisibility visibility) {
-        return effectiveVisibilityData.getValue(visibility);
+        return effectiveVisibilityData.get(visibility);
     }
 
     public boolean isVisibleOnFullscreenMap(Context.MapType mapType) {
@@ -1020,7 +1020,7 @@ public class FrontierOverlay extends FrontierData {
         };
     }
 
-    public void setVisibilityData(VisibilityData visibilityData) {
+    public void setVisibilityData(FrontierVisibilityData visibilityData) {
         super.setVisibilityData(visibilityData);
         setVisibilityOverride(MapFrontiersClient.getLocalOverrides().getVisibility(id));
         hashDirty = true;

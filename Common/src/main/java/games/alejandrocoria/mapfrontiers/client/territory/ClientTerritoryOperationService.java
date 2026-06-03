@@ -39,15 +39,15 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateSharedUserPe
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
-import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
-import games.alejandrocoria.mapfrontiers.common.territory.CollectionVisibilityData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierCreateSpec;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierCreationFactory;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierSharingChange;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
-import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreateSpec;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreationFactory;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -904,8 +904,8 @@ public class ClientTerritoryOperationService {
         String name1 = request.name1().orElse(defaults.getName1());
         String name2 = request.name2().orElse(defaults.getName2());
         int color = request.color().orElseGet(ColorHelper::getRandomColor);
-        VisibilityData visibility = request.visibility()
-                .map(ApiConverters::toVisibility)
+        FrontierVisibilityData visibility = request.visibility()
+                .map(ApiConverters::toFrontierVisibility)
                 .orElseGet(defaults::getVisibilityData);
         BannerData banner = request.banner()
                 .map(ApiConverters::toBanner)
