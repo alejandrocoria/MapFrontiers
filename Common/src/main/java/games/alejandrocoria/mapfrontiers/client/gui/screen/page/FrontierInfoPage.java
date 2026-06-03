@@ -30,6 +30,7 @@ import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibilityMask;
 import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.platform.Services;
@@ -619,13 +620,13 @@ public class FrontierInfoPage extends PageScreen {
     }
 
     private void onVisibilityOverrideButtonPressed() {
-        Pair<VisibilityData, VisibilityData> override = MapFrontiersClient.getLocalOverrides().getVisibility(frontier.getId());
+        Pair<VisibilityData, FrontierVisibilityMask> override = MapFrontiersClient.getLocalOverrides().getVisibility(frontier.getId());
         VisibilityData baseVisibilityData = FrontierLocalOverrides.resolveVisibility(frontier.getVisibilityData(), override);
         VisibilityData initialVisibilityData = new VisibilityData(baseVisibilityData);
-        VisibilityData initialVisibilityMask = new VisibilityData(override.second());
+        FrontierVisibilityMask initialVisibilityMask = new FrontierVisibilityMask(override.second());
         new VisibilityDialog(baseVisibilityData, override.second(), (newVisibilityData, newVisibilityMask) -> {
             if (!newVisibilityData.equals(initialVisibilityData) || !newVisibilityMask.equals(initialVisibilityMask)) {
-                Pair<VisibilityData, VisibilityData> newOverride = Pair.of(newVisibilityData, newVisibilityMask);
+                Pair<VisibilityData, FrontierVisibilityMask> newOverride = Pair.of(newVisibilityData, newVisibilityMask);
                 MapFrontiersClient.getLocalOverrides().setVisibility(frontier.getId(), newOverride);
                 frontier.setVisibilityOverride(newOverride);
             }

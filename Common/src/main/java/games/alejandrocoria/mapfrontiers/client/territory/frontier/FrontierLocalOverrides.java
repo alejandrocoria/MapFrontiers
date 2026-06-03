@@ -24,23 +24,23 @@ public class FrontierLocalOverrides {
     private static final String FILENAME = "frontier_overrides.dat";
     private static final int FRONTIER_OVERRIDES_DATA_VERSION = 13;
 
-    private final Map<UUID, Pair<VisibilityData, VisibilityData>> overrides = new HashMap<>();
+    private final Map<UUID, Pair<VisibilityData, FrontierVisibilityMask>> overrides = new HashMap<>();
     private File ModDir;
 
     public FrontierLocalOverrides() {
         loadData();
     }
 
-    public Pair<VisibilityData, VisibilityData> getVisibility(UUID id) {
+    public Pair<VisibilityData, FrontierVisibilityMask> getVisibility(UUID id) {
         var override = overrides.get(id);
         if (override == null) {
-            return Pair.of(new VisibilityData(), new VisibilityData(false));
+            return Pair.of(new VisibilityData(), new FrontierVisibilityMask());
         }
         return override;
     }
 
-    public void setVisibility(UUID id, Pair<VisibilityData, VisibilityData> visibility) {
-        if (visibility.second().hasSome()) {
+    public void setVisibility(UUID id, Pair<VisibilityData, FrontierVisibilityMask> visibility) {
+        if (visibility.second().hasAny()) {
             overrides.put(id, visibility);
         } else {
             overrides.remove(id);
@@ -48,9 +48,9 @@ public class FrontierLocalOverrides {
         saveData();
     }
 
-    public static VisibilityData resolveVisibility(VisibilityData baseVisibility, Pair<VisibilityData, VisibilityData> visibilityOverride) {
+    public static VisibilityData resolveVisibility(VisibilityData baseVisibility, Pair<VisibilityData, FrontierVisibilityMask> visibilityOverride) {
         VisibilityData resolvedVisibility = new VisibilityData(baseVisibility);
-        resolvedVisibility.applyOverride(visibilityOverride.first(), new FrontierVisibilityMask(visibilityOverride.second()));
+        resolvedVisibility.applyOverride(visibilityOverride.first(), visibilityOverride.second());
         return resolvedVisibility;
     }
 
@@ -82,9 +82,9 @@ public class FrontierLocalOverrides {
                     UUID id = UUID.fromString(NbtReadHelper.requireString(overrideTag, "id"));
 
                     CompoundTag visibilityTag = NbtReadHelper.requireCompound(overrideTag, "visibility");
-                    Pair<VisibilityData, VisibilityData> override = readSparseOverrideData(visibilityTag);
-                    VisibilityData mask = override.second();
-                    if (mask.hasSome()) {
+                    Pair<VisibilityData, FrontierVisibilityMask> override = readSparseOverrideData(visibilityTag);
+                    FrontierVisibilityMask mask = override.second();
+                    if (mask.hasAny()) {
                         overrides.put(id, override);
                     }
                 } catch (InvalidNbtFormatException e) {
@@ -102,8 +102,8 @@ public class FrontierLocalOverrides {
 
     private void writeToNBT(CompoundTag nbt) {
         ListTag overridesTagList = new ListTag();
-        for (Map.Entry<UUID, Pair<VisibilityData, VisibilityData>> override : overrides.entrySet()) {
-            if (!override.getValue().second().hasSome()) {
+        for (Map.Entry<UUID, Pair<VisibilityData, FrontierVisibilityMask>> override : overrides.entrySet()) {
+            if (!override.getValue().second().hasAny()) {
                 continue;
             }
 
@@ -210,7 +210,7 @@ public class FrontierLocalOverrides {
 
                 CompoundTag migratedOverrideTag = new CompoundTag();
                 migratedOverrideTag.putString("id", id.toString());
-                migratedOverrideTag.put("visibility", writeSparseOverrideData(legacyData, legacyMask));
+                migratedOverrideTag.put("visibility", writeSparseOverrideData(legacyData, new FrontierVisibilityMask(legacyMask)));
                 migratedOverridesTagList.add(migratedOverrideTag);
             } catch (InvalidNbtFormatException e) {
                 MapFrontiers.LOGGER.warn("Skipping invalid frontier override at overrides[{}]: {}", i, e.getMessage());
@@ -220,16 +220,16 @@ public class FrontierLocalOverrides {
         return migratedOverridesTagList;
     }
 
-    private Pair<VisibilityData, VisibilityData> readSparseOverrideData(CompoundTag dataTag) {
+    private Pair<VisibilityData, FrontierVisibilityMask> readSparseOverrideData(CompoundTag dataTag) {
         VisibilityData data = new VisibilityData();
         FrontierVisibilityMask mask = new FrontierVisibilityMask();
         data.readSparseNbt(dataTag, mask);
-        return Pair.of(data, mask.toVisibilityData());
+        return Pair.of(data, mask);
     }
 
-    private CompoundTag writeSparseOverrideData(VisibilityData data, VisibilityData mask) {
+    private CompoundTag writeSparseOverrideData(VisibilityData data, FrontierVisibilityMask mask) {
         CompoundTag dataTag = new CompoundTag();
-        data.writeSparseNbt(dataTag, new FrontierVisibilityMask(mask));
+        data.writeSparseNbt(dataTag, mask);
         return dataTag;
     }
 }

@@ -20,6 +20,7 @@ import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierSharingChange;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
+import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibilityMask;
 import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
 import it.unimi.dsi.fastutil.Pair;
 import journeymap.api.v2.client.IClientAPI;
@@ -958,13 +959,9 @@ public class FrontierOverlay extends FrontierData {
         markFrontierActivationDirty();
     }
 
-    public void setVisibilityOverride(Pair<VisibilityData, VisibilityData> visibilityOverride) {
+    public void setVisibilityOverride(Pair<VisibilityData, FrontierVisibilityMask> visibilityOverride) {
         effectiveVisibilityData = new VisibilityData(visibilityData);
-        for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
-            if (visibilityOverride.second().getValue(visibility)) {
-                effectiveVisibilityData.setValue(visibility, visibilityOverride.first().getValue(visibility));
-            }
-        }
+        effectiveVisibilityData.applyOverride(visibilityOverride.first(), visibilityOverride.second());
         invalidateBasePresentation();
         markFrontierActivationDirty();
     }
