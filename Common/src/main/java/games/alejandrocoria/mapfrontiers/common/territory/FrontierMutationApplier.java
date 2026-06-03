@@ -97,7 +97,7 @@ public final class FrontierMutationApplier {
     public static Set<FrontierVisibilityFlag> fromVisibility(VisibilityData visibilityData) {
         EnumSet<FrontierVisibilityFlag> visibility = EnumSet.noneOf(FrontierVisibilityFlag.class);
         for (FrontierVisibility value : FrontierVisibility.VALUES) {
-            if (visibilityData.getValue(value)) {
+            if (visibilityData.get(value)) {
                 visibility.add(FrontierVisibilityFlag.valueOf(value.name()));
             }
         }
@@ -107,7 +107,7 @@ public final class FrontierMutationApplier {
     public static VisibilityData toVisibility(Set<FrontierVisibilityFlag> visibilityFlags) {
         VisibilityData visibilityData = new VisibilityData(false);
         for (FrontierVisibilityFlag flag : visibilityFlags) {
-            visibilityData.setValue(FrontierVisibility.valueOf(flag.name()), true);
+            visibilityData.set(FrontierVisibility.valueOf(flag.name()), true);
         }
         return visibilityData;
     }

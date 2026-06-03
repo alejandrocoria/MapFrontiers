@@ -24,7 +24,7 @@ public class FrontierVisibilityMask {
     public FrontierVisibilityMask(VisibilityData other) {
         values = EnumSet.noneOf(FrontierVisibility.class);
         for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
-            if (other.getValue(visibility)) {
+            if (other.get(visibility)) {
                 values.add(visibility);
             }
         }
@@ -66,13 +66,5 @@ public class FrontierVisibilityMask {
 
     public boolean hasAny() {
         return !values.isEmpty();
-    }
-
-    public VisibilityData toVisibilityData() {
-        VisibilityData mask = new VisibilityData(false);
-        for (FrontierVisibility visibility : values) {
-            mask.setValue(visibility, true);
-        }
-        return mask;
     }
 }

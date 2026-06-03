@@ -68,10 +68,6 @@ public class VisibilityData {
         return values.contains(visibility);
     }
 
-    public boolean hasSome() {
-        return !values.isEmpty();
-    }
-
     public boolean getFrontier() {
         return get(FrontierVisibility.Frontier);
     }

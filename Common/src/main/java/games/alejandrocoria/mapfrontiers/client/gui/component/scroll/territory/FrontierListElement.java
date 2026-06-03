@@ -12,7 +12,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.util.TextEllipsizeHelper;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
@@ -239,7 +238,7 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
     }
 
     private void renderActionButtons(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks, boolean focused) {
-        if (visibilityButton != null && (focused || isHovered || !frontier.getVisibilityData().getValue(FrontierVisibility.Frontier))) {
+        if (visibilityButton != null && (focused || isHovered || !frontier.getVisibilityData().getFrontier())) {
             visibilityButton.setType(getVisibilityButtonType());
             visibilityButton.setTooltip(getVisibilityTooltip());
             visibilityButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
@@ -504,12 +503,12 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
     }
 
     private IconButton.Type getVisibilityButtonType() {
-        return frontier.getVisibilityData().getValue(FrontierVisibility.Frontier) ? IconButton.Type.Hide : IconButton.Type.Show;
+        return frontier.getVisibilityData().getFrontier() ? IconButton.Type.Hide : IconButton.Type.Show;
     }
 
     private Tooltip getVisibilityTooltip() {
         return Tooltip.create(Component.translatable(
-                frontier.getVisibilityData().getValue(FrontierVisibility.Frontier) ? "mapfrontiers.hide.tooltip" : "mapfrontiers.show.tooltip"));
+                frontier.getVisibilityData().getFrontier() ? "mapfrontiers.hide.tooltip" : "mapfrontiers.show.tooltip"));
     }
 
     private @Nullable ComponentPath focusPathForListener(@Nullable GuiEventListener listener) {

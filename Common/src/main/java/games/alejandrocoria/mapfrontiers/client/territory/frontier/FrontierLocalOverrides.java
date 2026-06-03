@@ -203,14 +203,15 @@ public class FrontierLocalOverrides {
                 CompoundTag legacyMaskTag = NbtReadHelper.requireCompound(legacyOverrideTag, "mask");
                 VisibilityData legacyMask = new VisibilityData(false);
                 legacyMask.readFromNBT(legacyMaskTag);
+                FrontierVisibilityMask migratedMask = new FrontierVisibilityMask(legacyMask);
 
-                if (!legacyMask.hasSome()) {
+                if (!migratedMask.hasAny()) {
                     continue;
                 }
 
                 CompoundTag migratedOverrideTag = new CompoundTag();
                 migratedOverrideTag.putString("id", id.toString());
-                migratedOverrideTag.put("visibility", writeSparseOverrideData(legacyData, new FrontierVisibilityMask(legacyMask)));
+                migratedOverrideTag.put("visibility", writeSparseOverrideData(legacyData, migratedMask));
                 migratedOverridesTagList.add(migratedOverrideTag);
             } catch (InvalidNbtFormatException e) {
                 MapFrontiers.LOGGER.warn("Skipping invalid frontier override at overrides[{}]: {}", i, e.getMessage());
