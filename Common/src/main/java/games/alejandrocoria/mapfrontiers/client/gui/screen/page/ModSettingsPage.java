@@ -1143,6 +1143,7 @@ public class ModSettingsPage extends PageScreen {
     private void updateButtonsVisibility() {
         buttonEditHUD.visible = tabSelected == Tab.General && ClientConfig.HUD_ENABLED.get() && minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
         buttonFrontierAppearance.visible = tabSelected == Tab.General && minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
+        buttonCollectionAppearance.visible = tabSelected == Tab.General && minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
         buttonDefaultPathStyle.visible = tabSelected == Tab.General && minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
         buttonConfirmationDialogs.visible = tabSelected == Tab.General;
         textNewUser.visible = canAddNewUser();
