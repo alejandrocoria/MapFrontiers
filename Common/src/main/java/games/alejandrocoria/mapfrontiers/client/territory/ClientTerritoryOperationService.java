@@ -482,7 +482,7 @@ public class ClientTerritoryOperationService {
 
         EnumSet<FrontierSharePermission> permissions = EnumSet.noneOf(FrontierSharePermission.class);
         for (SettingsUserShared.Action action : currentSharedUser.getActions()) {
-            permissions.add(FrontierSharePermission.valueOf(action.name()));
+            permissions.add(ApiConverters.toFrontierSharePermission(action));
         }
         if (permissionsToAdd != null) {
             permissions.addAll(permissionsToAdd);
@@ -1070,7 +1070,7 @@ public class ClientTerritoryOperationService {
         EnumSet<SettingsUserShared.Action> actions = EnumSet.noneOf(SettingsUserShared.Action.class);
         if (permissions != null) {
             for (FrontierSharePermission permission : permissions) {
-                actions.add(SettingsUserShared.Action.valueOf(permission.name()));
+                actions.add(ApiConverters.toSharedUserAction(permission));
             }
         }
         sharedUser.setActions(actions);

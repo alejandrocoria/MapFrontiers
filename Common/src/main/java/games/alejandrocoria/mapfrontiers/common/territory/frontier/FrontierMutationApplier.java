@@ -99,7 +99,7 @@ public final class FrontierMutationApplier {
         EnumSet<FrontierVisibilityFlag> visibility = EnumSet.noneOf(FrontierVisibilityFlag.class);
         for (FrontierVisibility value : FrontierVisibility.VALUES) {
             if (visibilityData.get(value)) {
-                visibility.add(FrontierVisibilityFlag.valueOf(value.name()));
+                visibility.add(toVisibilityFlag(value));
             }
         }
         return visibility;
@@ -108,9 +108,87 @@ public final class FrontierMutationApplier {
     public static FrontierVisibilityData toVisibility(Set<FrontierVisibilityFlag> visibilityFlags) {
         FrontierVisibilityData visibilityData = new FrontierVisibilityData(false);
         for (FrontierVisibilityFlag flag : visibilityFlags) {
-            visibilityData.set(FrontierVisibility.valueOf(flag.name()), true);
+            visibilityData.set(toFrontierVisibility(flag), true);
         }
         return visibilityData;
+    }
+
+    private static FrontierVisibilityFlag toVisibilityFlag(FrontierVisibility visibility) {
+        return switch (visibility) {
+            case Frontier -> FrontierVisibilityFlag.Frontier;
+            case AnnounceInChat -> FrontierVisibilityFlag.AnnounceInChat;
+            case AnnounceInTitle -> FrontierVisibilityFlag.AnnounceInTitle;
+            case MentionCollection -> FrontierVisibilityFlag.MentionCollection;
+            case Fullscreen -> FrontierVisibilityFlag.Fullscreen;
+            case FullscreenName -> FrontierVisibilityFlag.FullscreenName;
+            case FullscreenCollection -> FrontierVisibilityFlag.FullscreenCollection;
+            case FullscreenOwner -> FrontierVisibilityFlag.FullscreenOwner;
+            case FullscreenBanner -> FrontierVisibilityFlag.FullscreenBanner;
+            case FullscreenDay -> FrontierVisibilityFlag.FullscreenDay;
+            case FullscreenNight -> FrontierVisibilityFlag.FullscreenNight;
+            case FullscreenUnderground -> FrontierVisibilityFlag.FullscreenUnderground;
+            case FullscreenTopo -> FrontierVisibilityFlag.FullscreenTopo;
+            case FullscreenBiome -> FrontierVisibilityFlag.FullscreenBiome;
+            case Minimap -> FrontierVisibilityFlag.Minimap;
+            case MinimapName -> FrontierVisibilityFlag.MinimapName;
+            case MinimapCollection -> FrontierVisibilityFlag.MinimapCollection;
+            case MinimapOwner -> FrontierVisibilityFlag.MinimapOwner;
+            case MinimapBanner -> FrontierVisibilityFlag.MinimapBanner;
+            case MinimapDay -> FrontierVisibilityFlag.MinimapDay;
+            case MinimapNight -> FrontierVisibilityFlag.MinimapNight;
+            case MinimapUnderground -> FrontierVisibilityFlag.MinimapUnderground;
+            case MinimapTopo -> FrontierVisibilityFlag.MinimapTopo;
+            case MinimapBiome -> FrontierVisibilityFlag.MinimapBiome;
+            case Webmap -> FrontierVisibilityFlag.Webmap;
+            case WebmapName -> FrontierVisibilityFlag.WebmapName;
+            case WebmapCollection -> FrontierVisibilityFlag.WebmapCollection;
+            case WebmapOwner -> FrontierVisibilityFlag.WebmapOwner;
+            case WebmapBanner -> FrontierVisibilityFlag.WebmapBanner;
+            case WebmapDay -> FrontierVisibilityFlag.WebmapDay;
+            case WebmapNight -> FrontierVisibilityFlag.WebmapNight;
+            case WebmapUnderground -> FrontierVisibilityFlag.WebmapUnderground;
+            case WebmapTopo -> FrontierVisibilityFlag.WebmapTopo;
+            case WebmapBiome -> FrontierVisibilityFlag.WebmapBiome;
+        };
+    }
+
+    private static FrontierVisibility toFrontierVisibility(FrontierVisibilityFlag visibilityFlag) {
+        return switch (visibilityFlag) {
+            case Frontier -> FrontierVisibility.Frontier;
+            case AnnounceInChat -> FrontierVisibility.AnnounceInChat;
+            case AnnounceInTitle -> FrontierVisibility.AnnounceInTitle;
+            case MentionCollection -> FrontierVisibility.MentionCollection;
+            case Fullscreen -> FrontierVisibility.Fullscreen;
+            case FullscreenName -> FrontierVisibility.FullscreenName;
+            case FullscreenCollection -> FrontierVisibility.FullscreenCollection;
+            case FullscreenOwner -> FrontierVisibility.FullscreenOwner;
+            case FullscreenBanner -> FrontierVisibility.FullscreenBanner;
+            case FullscreenDay -> FrontierVisibility.FullscreenDay;
+            case FullscreenNight -> FrontierVisibility.FullscreenNight;
+            case FullscreenUnderground -> FrontierVisibility.FullscreenUnderground;
+            case FullscreenTopo -> FrontierVisibility.FullscreenTopo;
+            case FullscreenBiome -> FrontierVisibility.FullscreenBiome;
+            case Minimap -> FrontierVisibility.Minimap;
+            case MinimapName -> FrontierVisibility.MinimapName;
+            case MinimapCollection -> FrontierVisibility.MinimapCollection;
+            case MinimapOwner -> FrontierVisibility.MinimapOwner;
+            case MinimapBanner -> FrontierVisibility.MinimapBanner;
+            case MinimapDay -> FrontierVisibility.MinimapDay;
+            case MinimapNight -> FrontierVisibility.MinimapNight;
+            case MinimapUnderground -> FrontierVisibility.MinimapUnderground;
+            case MinimapTopo -> FrontierVisibility.MinimapTopo;
+            case MinimapBiome -> FrontierVisibility.MinimapBiome;
+            case Webmap -> FrontierVisibility.Webmap;
+            case WebmapName -> FrontierVisibility.WebmapName;
+            case WebmapCollection -> FrontierVisibility.WebmapCollection;
+            case WebmapOwner -> FrontierVisibility.WebmapOwner;
+            case WebmapBanner -> FrontierVisibility.WebmapBanner;
+            case WebmapDay -> FrontierVisibility.WebmapDay;
+            case WebmapNight -> FrontierVisibility.WebmapNight;
+            case WebmapUnderground -> FrontierVisibility.WebmapUnderground;
+            case WebmapTopo -> FrontierVisibility.WebmapTopo;
+            case WebmapBiome -> FrontierVisibility.WebmapBiome;
+        };
     }
 
     public static BannerData toBanner(@Nullable FrontierBanner banner) {

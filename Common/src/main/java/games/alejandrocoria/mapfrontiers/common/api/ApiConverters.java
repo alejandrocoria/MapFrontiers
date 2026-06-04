@@ -113,7 +113,7 @@ public final class ApiConverters {
     public static SharedUserAccess fromSharedUser(SettingsUserShared userShared) {
         EnumSet<FrontierSharePermission> permissions = EnumSet.noneOf(FrontierSharePermission.class);
         for (SettingsUserShared.Action action : userShared.getActions()) {
-            permissions.add(FrontierSharePermission.valueOf(action.name()));
+            permissions.add(toFrontierSharePermission(action));
         }
 
         return new SharedUserAccess(fromUser(userShared.getUser()), permissions, userShared.isPending());
@@ -239,6 +239,20 @@ public final class ApiConverters {
         result.uuid = user.id();
         result.username = user.name() == null ? "" : user.name();
         return result;
+    }
+
+    public static FrontierSharePermission toFrontierSharePermission(SettingsUserShared.Action action) {
+        return switch (action) {
+            case UpdateFrontier -> FrontierSharePermission.UpdateFrontier;
+            case UpdateSettings -> FrontierSharePermission.UpdateSettings;
+        };
+    }
+
+    public static SettingsUserShared.Action toSharedUserAction(FrontierSharePermission permission) {
+        return switch (permission) {
+            case UpdateFrontier -> SettingsUserShared.Action.UpdateFrontier;
+            case UpdateSettings -> SettingsUserShared.Action.UpdateSettings;
+        };
     }
 
     public static void applyMutation(FrontierData frontier, FrontierMutation mutation) {
