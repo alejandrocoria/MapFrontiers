@@ -607,8 +607,14 @@ public class FrontierInfoPage extends PageScreen {
             if (newVisibilityData.equals(frontier.getVisibilityData())) {
                 return;
             }
+            if (!canApplyFrontierUpdateNow()) {
+                return;
+            }
 
             Runnable applyChange = () -> {
+                if (!canApplyFrontierUpdateNow()) {
+                    return;
+                }
                 frontier.setVisibilityData(newVisibilityData);
                 sendVisibilityChangeToServer();
             };
@@ -643,8 +649,14 @@ public class FrontierInfoPage extends PageScreen {
             if (newPathStyle.equals(frontier.getPathStyle())) {
                 return;
             }
+            if (!canApplyFrontierUpdateNow()) {
+                return;
+            }
 
             Runnable applyChange = () -> {
+                if (!canApplyFrontierUpdateNow()) {
+                    return;
+                }
                 frontier.setPathStyle(newPathStyle);
                 sendPathStyleChangeToServer();
             };
@@ -1085,6 +1097,17 @@ public class FrontierInfoPage extends PageScreen {
                 MapFrontiersClient.getOperationService().updateFrontier(frontier, change);
             }
         }
+    }
+
+    private boolean canApplyFrontierUpdateNow() {
+        if (minecraft.player == null) {
+            return false;
+        }
+
+        SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
+        SettingsUser playerUser = new SettingsUser(minecraft.player);
+        SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontier, playerUser);
+        return actions.canUpdate;
     }
 
     private void addToUndo(FrontierData frontier) {
