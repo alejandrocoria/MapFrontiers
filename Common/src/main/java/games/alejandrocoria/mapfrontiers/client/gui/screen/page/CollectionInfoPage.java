@@ -593,13 +593,12 @@ public class CollectionInfoPage extends PageScreen {
         buttonVisibility.active = editable;
         buttonVisibilityOverride.active = true;
         buttonBanner.active = editable;
-        buttonBanner.visible = editable;
         sliderBannerRotation.active = editable;
         buttonSelect.active = getCollectionCenterInCurrentFullscreenDimension() != null;
         buttonDelete.active = canDeleteCollection();
         updateBannerButton();
         updatePasteOptionsVisibility(editable);
-        updateUndoRedoVisibility(editable);
+        refreshUndoRedoState(editable);
     }
 
     @Override
@@ -709,14 +708,13 @@ public class CollectionInfoPage extends PageScreen {
 
     private void updatePasteOptionsVisibility(boolean editable) {
         boolean hasClipboard = MapFrontiersClient.getCollectionClipboard() != null;
-        buttonPaste.active = editable && hasClipboard;
-        buttonPaste.visible = buttonPaste.active;
-        buttonPasteOptions.active = editable && hasClipboard;
-        buttonPasteOptions.visible = buttonPaste.visible;
+        boolean canPaste = editable && hasClipboard;
+        buttonPaste.active = canPaste;
+        buttonPasteOptions.active = canPaste;
         buttonPasteOptions.setType(ClientConfig.PASTE_OPTIONS_VISIBLE.get() ? IconButton.Type.CollapseOptions : IconButton.Type.ExpandOptions);
         buttonPasteOptions.setTooltip(ClientConfig.PASTE_OPTIONS_VISIBLE.get() ? CLOSE_PASTE_TOOLTIP : OPEN_PASTE_TOOLTIP);
 
-        boolean optionsVisible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
+        boolean optionsVisible = canPaste && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
         labelPasteName.visible = optionsVisible;
         buttonPasteName.visible = optionsVisible;
         labelPasteColor.visible = optionsVisible;
@@ -727,11 +725,9 @@ public class CollectionInfoPage extends PageScreen {
         buttonPasteBanner.visible = optionsVisible;
     }
 
-    private void updateUndoRedoVisibility(boolean editable) {
+    private void refreshUndoRedoState(boolean editable) {
         buttonUndo.active = editable && undoStack.size() > 1;
         buttonRedo.active = editable && !redoStack.empty();
-        buttonUndo.visible = buttonUndo.active;
-        buttonRedo.visible = buttonRedo.active;
     }
 
     private CollectionData createMetadataSnapshot() {
@@ -856,7 +852,7 @@ public class CollectionInfoPage extends PageScreen {
         } else {
             buttonBanner.setMessage(REMOVE_BANNER_LABEL);
             buttonBanner.setTooltip(null);
-            sliderBannerRotation.visible = buttonBanner.visible;
+            sliderBannerRotation.visible = true;
         }
     }
 

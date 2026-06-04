@@ -182,6 +182,7 @@ public class FrontierInfoPage extends PageScreen {
     private final Stack<FrontierData> redoStack = new Stack<>();
 
     private boolean saveChangesOnClose = true;
+    private boolean canUpdateFrontierInfo = false;
 
     public FrontierInfoPage(IClientAPI jmAPI, FrontierOverlay frontier) {
         super(TITLE_LABEL);
@@ -747,7 +748,7 @@ public class FrontierInfoPage extends PageScreen {
         updateBannerButton();
         updateButtons();
         updatePasteOptionsVisibility();
-        updateUndoRedoVisibility();
+        refreshUndoRedoState();
     }
 
     @Override
@@ -833,7 +834,7 @@ public class FrontierInfoPage extends PageScreen {
     }
 
     private void undo() {
-        if (undoStack.size() == 1) {
+        if (!canUpdateFrontierInfo || undoStack.size() == 1) {
             return;
         }
 
@@ -852,7 +853,7 @@ public class FrontierInfoPage extends PageScreen {
     }
 
     private void redo() {
-        if (redoStack.empty()) {
+        if (!canUpdateFrontierInfo || redoStack.empty()) {
             return;
         }
 
@@ -941,12 +942,14 @@ public class FrontierInfoPage extends PageScreen {
 
     private void updateButtons() {
         if (minecraft.player == null) {
+            canUpdateFrontierInfo = false;
             return;
         }
 
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
         SettingsUser playerUser = new SettingsUser(minecraft.player);
         SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontier, playerUser);
+        canUpdateFrontierInfo = actions.canUpdate;
 
         textName1.setEditable(actions.canUpdate);
         textName2.setEditable(actions.canUpdate);
@@ -974,16 +977,12 @@ public class FrontierInfoPage extends PageScreen {
             buttonChangeToPersonalGlobal.visible = actions.canDelete;
         }
         buttonDelete.active = actions.canDelete;
-        buttonBanner.visible = actions.canUpdate;
+        buttonBanner.active = actions.canUpdate;
         if (buttonCollectionBanner != null) {
             buttonCollectionBanner.active = actions.canUpdate;
-            buttonCollectionBanner.visible = actions.canUpdate;
-        }
-        if (labelCollectionBanner != null) {
-            labelCollectionBanner.visible = actions.canUpdate;
         }
         if (sliderBannerRotation != null) {
-            sliderBannerRotation.visible = actions.canUpdate;
+            sliderBannerRotation.active = actions.canUpdate;
         }
         UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
         buttonSelect.active = uiState != null && frontier.getDimension().equals(uiState.dimension);
@@ -999,12 +998,12 @@ public class FrontierInfoPage extends PageScreen {
     private void updatePasteOptionsVisibility() {
         FrontierData clipboard = MapFrontiersClient.getFrontierClipboard();
         boolean hasClipboard = clipboard != null;
-        boolean showPaste = buttonPaste.active && hasClipboard;
-        boolean showPasteOptions = showPaste && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
+        boolean canPaste = canUpdateFrontierInfo && hasClipboard;
+        boolean showPasteOptions = canPaste && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
         boolean pathStyleOptionVisible = showPasteOptions && hasPathStyle && clipboard.getShape() == FrontierShape.Path;
 
-        buttonPaste.visible = showPaste;
-        buttonPasteOptions.visible = showPaste;
+        buttonPaste.active = canPaste;
+        buttonPasteOptions.active = canPaste;
         buttonPasteOptions.setType(ClientConfig.PASTE_OPTIONS_VISIBLE.get() ? IconButton.Type.CollapseOptions : IconButton.Type.ExpandOptions);
         buttonPasteOptions.setTooltip(ClientConfig.PASTE_OPTIONS_VISIBLE.get() ? CLOSE_PASTE_TOOLTIP : OPEN_PASTE_TOOLTIP);
         buttonPasteName.visible = showPasteOptions;
@@ -1023,9 +1022,9 @@ public class FrontierInfoPage extends PageScreen {
         labelPasteBanner.visible = showPasteOptions;
     }
 
-    private void updateUndoRedoVisibility() {
-        buttonUndo.visible = buttonPaste.active && undoStack.size() > 1;
-        buttonRedo.visible = buttonPaste.active && redoStack.size() > 0;
+    private void refreshUndoRedoState() {
+        buttonUndo.active = canUpdateFrontierInfo && undoStack.size() > 1;
+        buttonRedo.active = canUpdateFrontierInfo && redoStack.size() > 0;
     }
 
     private void sendNameChangeToServer() {
@@ -1111,7 +1110,7 @@ public class FrontierInfoPage extends PageScreen {
                 redoStack.clear();
             }
 
-            updateUndoRedoVisibility();
+            refreshUndoRedoState();
         }
     }
 

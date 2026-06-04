@@ -231,7 +231,7 @@ public class ModSettingsPage extends PageScreen {
             updateGroupsActions();
         }
 
-        updateButtonsVisibility();
+        refreshControlState();
     }
 
     private void onSettingsProfileUpdated() {
@@ -371,7 +371,7 @@ public class ModSettingsPage extends PageScreen {
                 GROUPS_SCROLL_WIDTH, GROUPS_ELEMENT_HEIGHT));
         groups.setElementClickedCallback(element -> {
             onGroupElementClicked((GroupElement) element);
-            updateButtonsVisibility();
+            refreshControlState();
         });
         groups.setElementDeletePressedCallback(this::onGroupDeletePressed);
     }
@@ -533,14 +533,23 @@ public class ModSettingsPage extends PageScreen {
     }
 
     private void onFrontierAppearancePressed() {
+        if (!areJourneyMapPreviewActionsAvailable()) {
+            return;
+        }
         new FrontierAppearanceDialog().display();
     }
 
     private void onCollectionAppearancePressed() {
+        if (!areJourneyMapPreviewActionsAvailable()) {
+            return;
+        }
         new CollectionAppearanceDialog().display();
     }
 
     private void onDefaultPathStylePressed() {
+        if (!areJourneyMapPreviewActionsAvailable()) {
+            return;
+        }
         new PathStyleDialog(ClientConfig.getDefaultPathStyle(), newPathStyle -> {
             FrontierData.PathStyle currentStyle = ClientConfig.getDefaultPathStyle();
             if (!currentStyle.equals(newPathStyle)) {
@@ -560,6 +569,9 @@ public class ModSettingsPage extends PageScreen {
     }
 
     private void onEditHUDPressed() {
+        if (!areJourneyMapPreviewActionsAvailable()) {
+            return;
+        }
         MapFrontiersClient.setLastSettingsTab(tabSelected);
         new HUDSettingsScreen().display();
     }
@@ -570,7 +582,7 @@ public class ModSettingsPage extends PageScreen {
 
     private void onHudEnabledChanged(boolean enabled) {
         ClientConfig.HUD_ENABLED.set(enabled);
-        updateButtonsVisibility();
+        refreshControlState();
     }
 
     private void onGroupElementClicked(GroupElement element) {
@@ -669,7 +681,7 @@ public class ModSettingsPage extends PageScreen {
 
     private void refreshViewState() {
         restoreInitialTabSelection();
-        updateButtonsVisibility();
+        refreshControlState();
     }
 
     private void refreshPermissionsState() {
@@ -685,7 +697,7 @@ public class ModSettingsPage extends PageScreen {
         }
 
         tabbedBox.setTabSelected(tabSelected.ordinal());
-        updateButtonsVisibility();
+        refreshControlState();
 
         if (canEditGroups) {
             if (settings != null) {
@@ -1119,7 +1131,7 @@ public class ModSettingsPage extends PageScreen {
         }
 
         updateGroupsActions();
-        updateButtonsVisibility();
+        refreshControlState();
 
         if (selectedElement != null) {
             groups.setSelectedElementIf(element -> ((GroupElement) element).getGroup().getName().equals(selectedElement.getGroup().getName()));
@@ -1140,14 +1152,16 @@ public class ModSettingsPage extends PageScreen {
         }
     }
 
-    private void updateButtonsVisibility() {
-        buttonEditHUD.visible = tabSelected == Tab.General && ClientConfig.HUD_ENABLED.get() && minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
-        buttonFrontierAppearance.visible = tabSelected == Tab.General && minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
-        buttonCollectionAppearance.visible = tabSelected == Tab.General && minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
-        buttonDefaultPathStyle.visible = tabSelected == Tab.General && minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
-        buttonConfirmationDialogs.visible = tabSelected == Tab.General;
-        textNewUser.visible = canAddNewUser();
-        buttonNewUser.visible = canAddNewUser();
+    private void refreshControlState() {
+        boolean previewActionsAvailable = areJourneyMapPreviewActionsAvailable();
+        buttonEditHUD.active = ClientConfig.HUD_ENABLED.get() && previewActionsAvailable;
+        buttonFrontierAppearance.active = previewActionsAvailable;
+        buttonCollectionAppearance.active = previewActionsAvailable;
+        buttonDefaultPathStyle.active = previewActionsAvailable;
+
+        boolean canAddUser = canAddNewUser();
+        textNewUser.setEditable(canAddUser);
+        buttonNewUser.active = canAddUser;
     }
 
     public void groupClicked(GroupElement element) {
@@ -1187,8 +1201,7 @@ public class ModSettingsPage extends PageScreen {
             }
         }
 
-        buttonNewUser.visible = canAddNewUser();
-        textNewUser.visible = canAddNewUser();
+        refreshControlState();
         ticksSinceLastUpdate = 100;
     }
 
@@ -1222,5 +1235,9 @@ public class ModSettingsPage extends PageScreen {
         }
 
         return false;
+    }
+
+    private boolean areJourneyMapPreviewActionsAvailable() {
+        return minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
     }
 }

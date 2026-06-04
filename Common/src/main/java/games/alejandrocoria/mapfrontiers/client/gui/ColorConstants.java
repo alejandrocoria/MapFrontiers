@@ -9,9 +9,12 @@ public final class ColorConstants {
     public static final int WHITE = 0xFFFFFFFF;
 
     public static final int CHECKBOX_BG = 0xFF000000;
+    public static final int CHECKBOX_BG_DISABLED = 0xFF000000;
     public static final int CHECKBOX_BORDER = 0xFF444444;
+    public static final int CHECKBOX_BORDER_DISABLED = 0xFF444444;
     public static final int CHECKBOX_BORDER_FOCUSED = 0xFFFFFFFF;
     public static final int CHECKBOX_CHECK = 0xFF666666;
+    public static final int CHECKBOX_CHECK_DISABLED = 0xFF444444;
     public static final int HUD_ANCHOR_DARK = 0xFF222222;
     public static final int HUD_ANCHOR_LIGHT = 0xFFDDDDDD;
     public static final int LABEL_R = 0xFFE84949;
@@ -23,6 +26,7 @@ public final class ColorConstants {
     public static final int OPTION_BORDER = 0xFFA0A0A0;
     public static final int OPTION_BORDER_DISABLED = 0xFF444444;
     public static final int OPTION_BORDER_FOCUSED = 0xFFFFFFFF;
+    public static final int OPTION_TEXT_DISABLED = 0xFF444444;
     public static final int PATH_MARKER_SELECTOR_BG = 0xFF666666;
     public static final int PATH_MARKER_SELECTED = 0xFFFFFFFF;
     public static final int PATH_MARKER_UNSELECTED = 0xFFCCCCCC;
@@ -45,7 +49,7 @@ public final class ColorConstants {
     public static final int SIMPLE_BUTTON_TEXT_DELETE = 0xFFFF7777;
     public static final int SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT = 0xFFFF0000;
     public static final int SIMPLE_BUTTON_TEXT_HIGHLIGHT = 0xFFFFFFFF;
-    public static final int SIMPLE_BUTTON_TEXT_INACTIVE = 0xFF303030;
+    public static final int SIMPLE_BUTTON_TEXT_INACTIVE = 0xFF444444;
     public static final int SLIDER_HANDLER = 0xFFAAAAAA;
     public static final int SLIDER_HANDLER_DISABLED = 0xFF444444;
     public static final int SLIDER_HANDLER_FOCUSED = 0xFFFFFFFF;

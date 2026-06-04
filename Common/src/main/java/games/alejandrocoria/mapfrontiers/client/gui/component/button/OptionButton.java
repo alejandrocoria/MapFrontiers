@@ -83,7 +83,7 @@ public class OptionButton extends ButtonBase {
     public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         int c = color;
         if (!active) {
-            c = ColorConstants.TEXT_DARK;
+            c = ColorConstants.OPTION_TEXT_DISABLED;
         } else if (isHoveredOrKeyboardFocused()) {
             c = highlightedColor;
         }

@@ -46,6 +46,15 @@ public class TextBoxDouble extends EditBox {
     }
 
     @Override
+    public void setEditable(boolean editable) {
+        super.setEditable(editable);
+        active = editable;
+        if (!editable) {
+            setFocused(false);
+        }
+    }
+
+    @Override
     public void insertText(String textToWrite) {
         if (textToWrite.equals("-") && getCursorPosition() == 0) {
             super.insertText(textToWrite);
@@ -88,7 +97,7 @@ public class TextBoxDouble extends EditBox {
     @Override
     public boolean charTyped(CharacterEvent event) {
         boolean res = false;
-        if (isHoveredOrFocused()) {
+        if (active && isHoveredOrFocused()) {
             res = super.charTyped(event);
             if (res) {
                 double current;
@@ -117,7 +126,7 @@ public class TextBoxDouble extends EditBox {
     @Override
     public boolean keyPressed(KeyEvent event) {
         boolean res = false;
-        if (isHoveredOrFocused()) {
+        if (active && isHoveredOrFocused()) {
             res = super.keyPressed(event);
 
             if (valueChangedCallback != null && (event.input() == GLFW.GLFW_KEY_BACKSPACE || event.input() == GLFW.GLFW_KEY_DELETE)) {
@@ -134,7 +143,7 @@ public class TextBoxDouble extends EditBox {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
-        if (visible && isHovered) {
+        if (visible && active && isHovered) {
             double current;
             try {
                 current = Double.parseDouble(getValue());

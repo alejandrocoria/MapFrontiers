@@ -27,6 +27,7 @@ public class SimpleSlider extends AbstractSliderButton {
     private final ValueChanged callback;
     private final ValueTextFormatter valueTextFormatter;
     private final List<Integer> discreteValues;
+    private final StringWidget label;
     private boolean dragging = false;
 
     private final String translationKey;
@@ -58,6 +59,7 @@ public class SimpleSlider extends AbstractSliderButton {
         this.callback = callback;
         this.valueTextFormatter = valueTextFormatter;
         this.discreteValues = List.of();
+        this.label = new StringWidget(Component.empty(), font, StringWidget.Align.Center);
 
         this.translationKey = translationKey;
         updateMessage();
@@ -78,6 +80,7 @@ public class SimpleSlider extends AbstractSliderButton {
         this.callback = callback;
         this.valueTextFormatter = valueTextFormatter;
         this.discreteValues = List.copyOf(discreteValues);
+        this.label = new StringWidget(Component.empty(), font, StringWidget.Align.Center);
 
         this.translationKey = translationKey;
         updateMessage();
@@ -160,6 +163,31 @@ public class SimpleSlider extends AbstractSliderButton {
     @Override
     protected void updateMessage() {
         setMessage(Component.translatable(translationKey, valueTextFormatter.format(getResolvedValue())));
+    }
+
+    @Override
+    public void setX(int x) {
+        super.setX(x);
+        if (label != null) {
+            label.setX(x + width / 2);
+        }
+    }
+
+    @Override
+    public void setY(int y) {
+        super.setY(y);
+        if (label != null) {
+            label.setY(y + LABEL_Y_OFFSET - 1);
+        }
+    }
+
+    @Override
+    public void setMessage(Component message) {
+        super.setMessage(message);
+        if (label != null) {
+            label.setMessage(message);
+            label.setX(getX() + width / 2);
+        }
     }
 
     @Override
@@ -293,8 +321,8 @@ public class SimpleSlider extends AbstractSliderButton {
                     getY() + height - HANDLE_VERTICAL_INSET, handleColor);
         }
 
-        graphics.centeredText(font, getMessage(), getX() + width / 2, getY() + LABEL_Y_OFFSET,
-                !active ? ColorConstants.SIMPLE_BUTTON_TEXT_INACTIVE
-                        : isHovered || keyboardFocused ? ColorConstants.SIMPLE_BUTTON_TEXT_HIGHLIGHT : ColorConstants.SIMPLE_BUTTON_TEXT);
+        label.setColor(!active ? ColorConstants.SIMPLE_BUTTON_TEXT_INACTIVE
+                : isHovered || keyboardFocused ? ColorConstants.SIMPLE_BUTTON_TEXT_HIGHLIGHT : ColorConstants.SIMPLE_BUTTON_TEXT);
+        label.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
 }
