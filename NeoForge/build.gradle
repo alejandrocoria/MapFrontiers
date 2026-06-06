@@ -50,7 +50,7 @@ neoForge {
         implementation "${project.api_group}:${project.api_artifact_id}:${project.api_version}"
         embeddedApi "${project.api_group}:${project.api_artifact_id}:${project.api_version}"
 
-        implementation "mysticdrew:common-networking-neoforge:${project.common_networking_version}-${project.journeymap_api_mc_version}"
+        implementation "mysticdrew:common-networking-neoforge:${project.common_networking_version}-${project.minecraft_version}"
         implementation "com.electronwill.night-config:core:${project.nightconfig_version}"
         implementation "com.electronwill.night-config:toml:${project.nightconfig_version}"
         jarJar "com.electronwill.night-config:core:${project.nightconfig_version}"
