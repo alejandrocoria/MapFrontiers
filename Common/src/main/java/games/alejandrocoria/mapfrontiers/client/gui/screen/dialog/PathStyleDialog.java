@@ -8,7 +8,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxIdentifier;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
@@ -184,7 +184,7 @@ public class PathStyleDialog extends PanelDialog {
         previewWidget.setPathStyle(workingStyle);
         warningWidget.setMessage(hasAnyLabelLocation()
                 ? Component.empty()
-                : LABELS_REQUIRED_LABEL.copy().withColor(ColorConstants.TEXT_ERROR));
+                : LABELS_REQUIRED_LABEL.copy().withColor(ColorConstants.TEXT_ERROR_NORMAL));
     }
 
     private boolean hasAnyLabelLocation() {

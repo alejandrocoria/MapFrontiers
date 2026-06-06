@@ -20,8 +20,8 @@ public class OptionButton extends ButtonBase {
     protected final Font font;
     private final List<Component> options;
     private int selected = 0;
-    private int color = ColorConstants.TEXT;
-    private int highlightedColor = ColorConstants.TEXT_HIGHLIGHT;
+    private int color = ColorConstants.OPTION_TEXT_NORMAL;
+    private int highlightedColor = ColorConstants.OPTION_TEXT_HIGHLIGHT;
 
     public OptionButton(Font font, int width, OnPress pressedAction) {
         super(0, 0, width, DEFAULT_HEIGHT, Component.empty(), (b) -> pressedAction.onPress((OptionButton) b), Button.DEFAULT_NARRATION);
@@ -83,12 +83,12 @@ public class OptionButton extends ButtonBase {
     public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         int c = color;
         if (!active) {
-            c = ColorConstants.TEXT_DARK;
+            c = ColorConstants.OPTION_TEXT_DISABLED;
         } else if (isHoveredOrKeyboardFocused()) {
             c = highlightedColor;
         }
 
-        int borderColor = isKeyboardFocused() ? ColorConstants.OPTION_BORDER_FOCUSED : active ? ColorConstants.OPTION_BORDER : ColorConstants.OPTION_BORDER_DISABLED;
+        int borderColor = isKeyboardFocused() ? ColorConstants.OPTION_BORDER_FOCUSED : active ? ColorConstants.OPTION_BORDER_NORMAL : ColorConstants.OPTION_BORDER_DISABLED;
         graphics.fill(getX(), getY(), getX() + width, getY() + height, borderColor);
         graphics.fill(getX() + 1, getY() + 1, getX() + width - 1, getY() + height - 1, ColorConstants.OPTION_BG);
 

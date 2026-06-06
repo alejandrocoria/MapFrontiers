@@ -100,7 +100,7 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
             }
         }
 
-        graphics.text(font, SettingsUserFormatter.getDisplayName(user.getUser()), x + 16, y + 4, ColorConstants.TEXT_HIGHLIGHT);
+        graphics.text(font, SettingsUserFormatter.getDisplayName(user.getUser()), x + 16, y + 4, ColorConstants.USER_SHARED_TEXT);
 
         updateFrontier.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         updateSettings.extractRenderState(graphics, mouseX, mouseY, partialTicks);

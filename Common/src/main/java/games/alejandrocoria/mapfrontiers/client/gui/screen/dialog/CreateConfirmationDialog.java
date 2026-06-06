@@ -25,9 +25,9 @@ public class CreateConfirmationDialog extends ConfirmationDialog {
     @Override
     protected void initScreen() {
         super.initScreen();
-        confirmButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM, ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM_HIGHLIGHT);
+        confirmButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM_NORMAL, ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM_HIGHLIGHT);
         if (confirmAlternativeButton != null) {
-            confirmAlternativeButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM, ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM_HIGHLIGHT);
+            confirmAlternativeButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM_NORMAL, ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM_HIGHLIGHT);
         }
     }
 }

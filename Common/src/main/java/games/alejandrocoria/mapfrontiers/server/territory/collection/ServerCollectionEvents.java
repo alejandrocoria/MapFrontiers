@@ -1,6 +1,6 @@
 package games.alejandrocoria.mapfrontiers.server.territory.collection;
 
-import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.HashMap;

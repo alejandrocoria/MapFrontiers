@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.server.territory.frontier;
 
 import games.alejandrocoria.mapfrontiers.common.network.PacketCollectionCreated;
+import games.alejandrocoria.mapfrontiers.common.network.PacketCollectionDeleted;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierCreated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierDeleted;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSharingUpdated;
@@ -8,9 +9,9 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketPersonalFrontierShared;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
-import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierSharingChange;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
 import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationResult;
 import games.alejandrocoria.mapfrontiers.server.territory.TerritoriesManager;
 import games.alejandrocoria.mapfrontiers.server.territory.TerritoryPermissionEvaluator;
@@ -154,6 +155,9 @@ public class ServerFrontierShareService {
             ServerPlayer targetPlayer = server.getPlayerList().getPlayer(targetUser.uuid);
             if (targetPlayer != null) {
                 result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierDeleted(frontier.getDimension(), frontierId, true, -1), targetPlayer));
+                if (frontier.hasCollection() && !territoriesManager.userKnowsPersonalCollection(targetUser, frontier.getCollectionId())) {
+                    result.addNetworkAction(() -> PacketHandler.sendTo(new PacketCollectionDeleted(frontier.getCollectionId()), targetPlayer));
+                }
             }
         }
 

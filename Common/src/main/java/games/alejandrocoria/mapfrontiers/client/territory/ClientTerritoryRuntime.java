@@ -6,6 +6,8 @@ import games.alejandrocoria.mapfrontiers.client.settings.ClientSettingsProfileEv
 import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientCollectionEvents;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientCollectionRuntime;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientLocalPersonalCollectionStore;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionLocalOverrides;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionUiStateStore;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientFrontierEvents;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientLocalPersonalFrontierStore;
@@ -20,6 +22,7 @@ public class ClientTerritoryRuntime {
     private final IClientAPI journeyMapApi;
     private FrontiersOverlayManager globalFrontiersOverlayManager;
     private FrontiersOverlayManager personalFrontiersOverlayManager;
+    private CollectionOverlayManager collectionOverlayManager;
     private ClientCollectionRuntime collectionRuntime;
     private ClientLocalPersonalFrontierStore localPersonalFrontierStore;
     private ClientLocalPersonalCollectionStore localPersonalCollectionStore;
@@ -30,6 +33,7 @@ public class ClientTerritoryRuntime {
     private ClientTerritorySyncService syncService;
     private ClientLocalPersistenceCoordinator localPersistenceCoordinator;
     private FrontierLocalOverrides localOverrides;
+    private CollectionLocalOverrides collectionLocalOverrides;
     private CollectionUiStateStore collectionUiStateStore;
     private MapFrontiersClientAPIImpl clientApi;
 
@@ -48,6 +52,10 @@ public class ClientTerritoryRuntime {
 
         if (collectionRuntime == null) {
             collectionRuntime = new ClientCollectionRuntime();
+        }
+
+        if (collectionOverlayManager == null) {
+            collectionOverlayManager = new CollectionOverlayManager(collectionRuntime, journeyMapApi);
         }
 
         if (localPersonalFrontierStore == null) {
@@ -94,6 +102,10 @@ public class ClientTerritoryRuntime {
             localOverrides = new FrontierLocalOverrides();
         }
 
+        if (collectionLocalOverrides == null) {
+            collectionLocalOverrides = new CollectionLocalOverrides();
+        }
+
         if (collectionUiStateStore == null) {
             collectionUiStateStore = new CollectionUiStateStore();
         }
@@ -123,9 +135,19 @@ public class ClientTerritoryRuntime {
         return collectionRuntime;
     }
 
+    public CollectionLocalOverrides getCollectionLocalOverrides() {
+        ensureInitialized();
+        return collectionLocalOverrides;
+    }
+
     public ClientTerritoryOperationService getOperationService() {
         ensureInitialized();
         return operationService;
+    }
+
+    public CollectionOverlayManager getCollectionOverlayManager() {
+        ensureInitialized();
+        return collectionOverlayManager;
     }
 
     public ClientFrontierEvents getFrontierEvents() {
@@ -172,9 +194,17 @@ public class ClientTerritoryRuntime {
         localPersistenceCoordinator.tickPersistence();
     }
 
+    public void processOverlayManagers() {
+        ensureInitialized();
+        globalFrontiersOverlayManager.processDirtyOverlays();
+        personalFrontiersOverlayManager.processDirtyOverlays();
+        collectionOverlayManager.processDirtyOverlays();
+    }
+
     public void close() {
         FrontiersOverlayManager globalManager = globalFrontiersOverlayManager;
         FrontiersOverlayManager personalManager = personalFrontiersOverlayManager;
+        CollectionOverlayManager collectionManager = collectionOverlayManager;
         ClientCollectionRuntime collections = collectionRuntime;
         ClientTerritorySyncService sync = syncService;
         ClientLocalPersistenceCoordinator persistence = localPersistenceCoordinator;
@@ -189,6 +219,7 @@ public class ClientTerritoryRuntime {
 
         globalFrontiersOverlayManager = null;
         personalFrontiersOverlayManager = null;
+        collectionOverlayManager = null;
         collectionRuntime = null;
         syncService = null;
         localPersistenceCoordinator = null;
@@ -200,6 +231,7 @@ public class ClientTerritoryRuntime {
         localPersonalFrontierStore = null;
         localPersonalCollectionStore = null;
         localOverrides = null;
+        collectionLocalOverrides = null;
         collectionUiStateStore = null;
 
         closeStep("global frontier overlays", () -> {
@@ -210,6 +242,11 @@ public class ClientTerritoryRuntime {
         closeStep("personal frontier overlays", () -> {
             if (personalManager != null) {
                 personalManager.close();
+            }
+        });
+        closeStep("collection overlays", () -> {
+            if (collectionManager != null) {
+                collectionManager.close();
             }
         });
         closeStep("client collection runtime", () -> {

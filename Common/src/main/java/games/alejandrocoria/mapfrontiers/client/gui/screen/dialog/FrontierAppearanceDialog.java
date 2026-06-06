@@ -25,8 +25,8 @@ import javax.annotation.ParametersAreNonnullByDefault;
 public class FrontierAppearanceDialog extends PanelDialog {
     private static final Component HIDE_NAMES_THAT_DONT_FIT_LABEL = ClientConfig.HIDE_NAMES_THAT_DONT_FIT.translatedName();
     private static final Tooltip HIDE_NAMES_THAT_DONT_FIT_TOOLTIP = ScreenHelper.tooltip(ClientConfig.HIDE_NAMES_THAT_DONT_FIT);
-    private static final Component POLYGONS_OPACITY_LABEL = ClientConfig.POLYGONS_OPACITY.translatedName();
-    private static final Tooltip POLYGONS_OPACITY_TOOLTIP = ScreenHelper.tooltip(ClientConfig.POLYGONS_OPACITY);
+    private static final Component FILL_OPACITY_LABEL = ClientConfig.FILL_OPACITY.translatedName();
+    private static final Tooltip FILL_OPACITY_TOOLTIP = ScreenHelper.tooltip(ClientConfig.FILL_OPACITY);
     private static final Component BORDER_WIDTH_LABEL = ClientConfig.BORDER_WIDTH.translatedName();
     private static final Tooltip BORDER_WIDTH_TOOLTIP = ScreenHelper.tooltip(ClientConfig.BORDER_WIDTH);
     private static final Component BORDER_OPACITY_LABEL = ClientConfig.BORDER_OPACITY.translatedName();
@@ -51,7 +51,7 @@ public class FrontierAppearanceDialog extends PanelDialog {
 
     private final AppearanceSnapshot initialSnapshot;
     private StringWidget labelHideNamesThatDontFit;
-    private StringWidget labelPolygonsOpacity;
+    private StringWidget labelFillOpacity;
     private StringWidget labelBorderWidth;
     private StringWidget labelBorderOpacity;
     private StringWidget labelPathMarkerSize;
@@ -62,7 +62,7 @@ public class FrontierAppearanceDialog extends PanelDialog {
     private StringWidget labelBannerSize;
     private StringWidget labelBannerOpacity;
     private OptionButton buttonHideNamesThatDontFit;
-    private TextBoxDouble textPolygonsOpacity;
+    private TextBoxDouble textFillOpacity;
     private TextBoxInt textBorderWidth;
     private TextBoxDouble textBorderOpacity;
     private TextBoxInt textPathMarkerSize;
@@ -106,12 +106,12 @@ public class FrontierAppearanceDialog extends PanelDialog {
 
         addSectionSpacing(settingsLayout, row++);
 
-        labelPolygonsOpacity = settingsLayout.addChild(new StringWidget(POLYGONS_OPACITY_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
-        labelPolygonsOpacity.setTooltip(POLYGONS_OPACITY_TOOLTIP);
-        textPolygonsOpacity = settingsLayout.addChild(createDoubleConfigTextBox(ClientConfig.POLYGONS_OPACITY), row++, 1);
-        textPolygonsOpacity.setMaxLength(6);
-        textPolygonsOpacity.setValueChangedCallback(value -> {
-            ClientConfig.POLYGONS_OPACITY.set(value);
+        labelFillOpacity = settingsLayout.addChild(new StringWidget(FILL_OPACITY_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        labelFillOpacity.setTooltip(FILL_OPACITY_TOOLTIP);
+        textFillOpacity = settingsLayout.addChild(createDoubleConfigTextBox(ClientConfig.FILL_OPACITY), row++, 1);
+        textFillOpacity.setMaxLength(6);
+        textFillOpacity.setValueChangedCallback(value -> {
+            ClientConfig.FILL_OPACITY.set(value);
             previewFrontiers.configUpdated();
         });
 
@@ -252,7 +252,7 @@ public class FrontierAppearanceDialog extends PanelDialog {
     }
 
     private record AppearanceSnapshot(boolean hideNamesThatDontFit,
-                                      double polygonsOpacity,
+                                      double fillOpacity,
                                       int borderWidth,
                                       double borderOpacity,
                                       int pathMarkerSize,
@@ -265,7 +265,7 @@ public class FrontierAppearanceDialog extends PanelDialog {
         private static AppearanceSnapshot capture() {
             return new AppearanceSnapshot(
                     ClientConfig.HIDE_NAMES_THAT_DONT_FIT.get(),
-                    ClientConfig.POLYGONS_OPACITY.get(),
+                    ClientConfig.FILL_OPACITY.get(),
                     ClientConfig.BORDER_WIDTH.get(),
                     ClientConfig.BORDER_OPACITY.get(),
                     ClientConfig.PATH_MARKER_SIZE.get(),
@@ -280,7 +280,7 @@ public class FrontierAppearanceDialog extends PanelDialog {
 
         private void apply() {
             ClientConfig.HIDE_NAMES_THAT_DONT_FIT.set(hideNamesThatDontFit);
-            ClientConfig.POLYGONS_OPACITY.set(polygonsOpacity);
+            ClientConfig.FILL_OPACITY.set(fillOpacity);
             ClientConfig.BORDER_WIDTH.set(borderWidth);
             ClientConfig.BORDER_OPACITY.set(borderOpacity);
             ClientConfig.PATH_MARKER_SIZE.set(pathMarkerSize);

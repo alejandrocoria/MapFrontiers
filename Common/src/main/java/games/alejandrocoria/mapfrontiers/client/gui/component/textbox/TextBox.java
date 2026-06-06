@@ -58,6 +58,15 @@ public class TextBox extends EditBox {
     }
 
     @Override
+    public void setEditable(boolean editable) {
+        super.setEditable(editable);
+        active = editable;
+        if (!editable) {
+            setFocused(false);
+        }
+    }
+
+    @Override
     public boolean charTyped(CharacterEvent event) {
         boolean res = false;
         if (active && isHoveredOrFocused()) {

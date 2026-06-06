@@ -1,6 +1,8 @@
-package games.alejandrocoria.mapfrontiers.common.territory;
+package games.alejandrocoria.mapfrontiers.common.territory.frontier;
 
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
+import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.util.SourcePluginIdHelper;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.core.BlockPos;
@@ -31,8 +33,8 @@ public final class FrontierCreateSpec {
     private final String name1;
     private final String name2;
     private final int color;
-    private final VisibilityData visibility;
-    private final @Nullable FrontierData.BannerData banner;
+    private final FrontierVisibilityData visibility;
+    private final @Nullable BannerData banner;
     private final FrontierShape frontierShape;
     private final List<BlockPos> vertices;
     private final Set<ChunkPos> chunks;
@@ -49,8 +51,8 @@ public final class FrontierCreateSpec {
                                String name1,
                                String name2,
                                int color,
-                               VisibilityData visibility,
-                               @Nullable FrontierData.BannerData banner,
+                               FrontierVisibilityData visibility,
+                               @Nullable BannerData banner,
                                FrontierShape frontierShape,
                                List<BlockPos> vertices,
                                Set<ChunkPos> chunks,
@@ -66,8 +68,8 @@ public final class FrontierCreateSpec {
         this.name1 = Objects.requireNonNull(name1, "name1");
         this.name2 = Objects.requireNonNull(name2, "name2");
         this.color = color;
-        this.visibility = new VisibilityData(Objects.requireNonNull(visibility, "visibility"));
-        this.banner = banner == null ? null : new FrontierData.BannerData(banner);
+        this.visibility = new FrontierVisibilityData(Objects.requireNonNull(visibility, "visibility"));
+        this.banner = banner == null ? null : new BannerData(banner);
         this.frontierShape = Objects.requireNonNull(frontierShape, "mode");
         this.vertices = List.copyOf(Objects.requireNonNull(vertices, "vertices"));
         this.chunks = Set.copyOf(Objects.requireNonNull(chunks, "chunks"));
@@ -88,8 +90,8 @@ public final class FrontierCreateSpec {
                                             String name1,
                                             String name2,
                                             int color,
-                                            VisibilityData visibility,
-                                            @Nullable FrontierData.BannerData banner,
+                                            FrontierVisibilityData visibility,
+                                            @Nullable BannerData banner,
                                             List<BlockPos> vertices,
                                             FrontierData.PathStyle pathStyle) {
         return new FrontierCreateSpec(frontierId, owner, personal, dimension, lifetime, collectionId, sourcePluginId,
@@ -106,8 +108,8 @@ public final class FrontierCreateSpec {
                                            String name1,
                                            String name2,
                                            int color,
-                                           VisibilityData visibility,
-                                           @Nullable FrontierData.BannerData banner,
+                                           FrontierVisibilityData visibility,
+                                           @Nullable BannerData banner,
                                            Set<ChunkPos> chunks,
                                            FrontierData.PathStyle pathStyle) {
         return new FrontierCreateSpec(frontierId, owner, personal, dimension, lifetime, collectionId, sourcePluginId,
@@ -124,8 +126,8 @@ public final class FrontierCreateSpec {
                                           String name1,
                                           String name2,
                                           int color,
-                                          VisibilityData visibility,
-                                          @Nullable FrontierData.BannerData banner,
+                                          FrontierVisibilityData visibility,
+                                          @Nullable BannerData banner,
                                           List<BlockPos> points,
                                           FrontierData.PathStyle pathStyle) {
         return new FrontierCreateSpec(frontierId, owner, personal, dimension, lifetime, collectionId, sourcePluginId,
@@ -172,12 +174,12 @@ public final class FrontierCreateSpec {
         return color;
     }
 
-    public VisibilityData getVisibility() {
-        return new VisibilityData(visibility);
+    public FrontierVisibilityData getVisibility() {
+        return new FrontierVisibilityData(visibility);
     }
 
-    public @Nullable FrontierData.BannerData getBanner() {
-        return banner == null ? null : new FrontierData.BannerData(banner);
+    public @Nullable BannerData getBanner() {
+        return banner == null ? null : new BannerData(banner);
     }
 
     public FrontierShape getMode() {
@@ -277,12 +279,12 @@ public final class FrontierCreateSpec {
         String name2 = buf.readUtf(FrontierData.MAX_NAME_CHARACTERS);
         int color = buf.readInt();
 
-        VisibilityData visibility = new VisibilityData();
+        FrontierVisibilityData visibility = new FrontierVisibilityData();
         visibility.fromBytes(buf);
 
-        FrontierData.BannerData banner = null;
+        BannerData banner = null;
         if (buf.readBoolean()) {
-            banner = new FrontierData.BannerData();
+            banner = new BannerData();
             banner.fromBytes(buf);
         }
 

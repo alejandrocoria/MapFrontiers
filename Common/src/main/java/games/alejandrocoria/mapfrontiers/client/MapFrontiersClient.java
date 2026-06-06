@@ -12,6 +12,7 @@ import games.alejandrocoria.mapfrontiers.client.settings.ClientSettingsProfileEv
 import games.alejandrocoria.mapfrontiers.client.territory.ClientTerritoryOperationService;
 import games.alejandrocoria.mapfrontiers.client.territory.ClientTerritoryRuntime;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientCollectionEvents;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionLocalOverrides;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionScope;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionUiStateStore;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientFrontierEvents;
@@ -22,10 +23,10 @@ import games.alejandrocoria.mapfrontiers.common.api.MapFrontiersApiLogAdapter;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
-import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.Context;
@@ -159,10 +160,7 @@ public class MapFrontiersClient {
     private static void updateOverlayManagers() {
         ClientTerritoryRuntime runtime = requireTerritoryRuntime();
         runtime.tickPersistence();
-        FrontiersOverlayManager frontiersOverlayManager = runtime.getGlobalFrontiersOverlayManager();
-        FrontiersOverlayManager personalFrontiersOverlayManager = runtime.getPersonalFrontiersOverlayManager();
-        frontiersOverlayManager.processDirtyOverlays();
-        personalFrontiersOverlayManager.processDirtyOverlays();
+        runtime.processOverlayManagers();
     }
 
     private static void tickHud() {
@@ -366,6 +364,10 @@ public class MapFrontiersClient {
         jmAPI = newJmAPI;
     }
 
+    public static @Nullable IClientAPI getJmAPI() {
+        return jmAPI;
+    }
+
     public static boolean isJourneyMapPluginAvailable() {
         return jmAPI != null;
     }
@@ -380,6 +382,7 @@ public class MapFrontiersClient {
             territoryRuntime.getCollectionEvents().subscribeCreated(MapFrontiersClient.class, collection -> refreshCollectionPresentation(collection.getId()));
             territoryRuntime.getCollectionEvents().subscribeUpdated(MapFrontiersClient.class, collection -> refreshCollectionPresentation(collection.getId()));
             territoryRuntime.getCollectionEvents().subscribeDeleted(MapFrontiersClient.class, collectionId -> {
+                refreshCollectionPresentation(collectionId);
                 if (hud != null) {
                     hud.frontierChanged();
                 }
@@ -504,6 +507,15 @@ public class MapFrontiersClient {
         return runtime.getCollectionRuntime().getFrontiersInCollection(collectionId);
     }
 
+    public static List<FrontierOverlay> getFrontiersInCollection(UUID collectionId, ResourceKey<Level> dimension) {
+        ClientTerritoryRuntime runtime = ensureTerritoryRuntime();
+        if (runtime == null) {
+            return List.of();
+        }
+
+        return runtime.getCollectionRuntime().getFrontiersInCollection(collectionId, dimension);
+    }
+
     public static List<FrontierOverlay> getFrontiersWithoutCollection(CollectionScope scope) {
         ClientTerritoryRuntime runtime = ensureTerritoryRuntime();
         if (runtime == null) {
@@ -557,9 +569,40 @@ public class MapFrontiersClient {
         return runtime.getCollectionUiStateStore();
     }
 
+    public static CollectionLocalOverrides getCollectionLocalOverrides() {
+        ClientTerritoryRuntime runtime = requireTerritoryRuntime();
+        return runtime.getCollectionLocalOverrides();
+    }
+
     public static ClientTerritoryOperationService getOperationService() {
         ClientTerritoryRuntime runtime = requireTerritoryRuntime();
         return runtime.getOperationService();
+    }
+
+    public static void notifyCollectionOverlayFrontierGeometryChanged(FrontierOverlay frontier) {
+        if (frontier.getCollectionId() == null) {
+            return;
+        }
+
+        ClientTerritoryRuntime runtime = ensureTerritoryRuntime();
+        if (runtime == null) {
+            return;
+        }
+
+        runtime.getCollectionOverlayManager().markFrontierGeometryDirty(frontier, frontier.getCollectionId());
+    }
+
+    public static void setCollectionHighlighted(UUID collectionId, ResourceKey<Level> dimension, boolean highlighted) {
+        ClientTerritoryRuntime runtime = ensureTerritoryRuntime();
+        if (runtime == null) {
+            return;
+        }
+
+        runtime.getCollectionOverlayManager().setHighlighted(collectionId, dimension, highlighted);
+    }
+
+    public static void refreshCollectionVisibilityOverride(UUID collectionId) {
+        refreshCollectionPresentation(collectionId);
     }
 
     public static ClientFrontierEvents getFrontierEvents() {
@@ -900,6 +943,8 @@ public class MapFrontiersClient {
     }
 
     private static void refreshCollectionPresentation(UUID collectionId) {
+        ClientTerritoryRuntime runtime = ensureTerritoryRuntime();
+
         FrontiersOverlayManager globalManager = getFrontiersOverlayManagerOrNull(false);
         if (globalManager != null) {
             globalManager.markCollectionPresentationDirty(collectionId);
@@ -908,6 +953,10 @@ public class MapFrontiersClient {
         FrontiersOverlayManager personalManager = getFrontiersOverlayManagerOrNull(true);
         if (personalManager != null) {
             personalManager.markCollectionPresentationDirty(collectionId);
+        }
+
+        if (runtime != null) {
+            runtime.getCollectionOverlayManager().markCollectionDirty(collectionId);
         }
 
         if (hud != null) {

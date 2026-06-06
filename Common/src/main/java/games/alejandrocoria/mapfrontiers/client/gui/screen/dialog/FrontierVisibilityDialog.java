@@ -5,8 +5,9 @@ import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
-import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityMask;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
@@ -15,10 +16,9 @@ import net.minecraft.network.chat.Style;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.function.BiConsumer;
 
 @ParametersAreNonnullByDefault
-public class VisibilityDialog extends PanelDialog {
+public class FrontierVisibilityDialog extends PanelDialog {
     private static final Component GENERAL_LABEL = Component.translatable("mapfrontiers.general");
     private static final Component SHOW_FRONTIER_LABEL = Component.translatable("mapfrontiers.show_frontier");
     private static final Component ANNOUNCE_IN_CHAT_LABEL = Component.translatable("mapfrontiers.announce_in_chat");
@@ -41,22 +41,23 @@ public class VisibilityDialog extends PanelDialog {
     private static final Component OFF_LABEL = Component.translatable("options.off");
     private static final int COLUMN_SPACING = 6;
 
-    private final VisibilityData visibilityData;
+    private final FrontierVisibilityData visibilityData;
     @Nullable
-    private final VisibilityData visibilityMask;
-    private final BiConsumer<VisibilityData, VisibilityData> saveCallback;
+    private final FrontierVisibilityMask visibilityMask;
+    private final SaveCallback saveCallback;
 
-    public VisibilityDialog(VisibilityData visibilityData, BiConsumer<VisibilityData, VisibilityData> saveCallback) {
+    public FrontierVisibilityDialog(FrontierVisibilityData visibilityData, SaveCallback saveCallback) {
         super();
-        this.visibilityData = new VisibilityData(visibilityData);
+        this.visibilityData = new FrontierVisibilityData(visibilityData);
         this.visibilityMask = null;
         this.saveCallback = saveCallback;
     }
 
-    public VisibilityDialog(VisibilityData visibilityData, VisibilityData visibilityDataMask, BiConsumer<VisibilityData, VisibilityData> saveCallback) {
+    public FrontierVisibilityDialog(FrontierVisibilityData visibilityData, FrontierVisibilityMask visibilityDataMask,
+                                    SaveCallback saveCallback) {
         super();
-        this.visibilityData = new VisibilityData(visibilityData);
-        this.visibilityMask = new VisibilityData(visibilityDataMask);
+        this.visibilityData = new FrontierVisibilityData(visibilityData);
+        this.visibilityMask = new FrontierVisibilityMask(visibilityDataMask);
         this.saveCallback = saveCallback;
     }
 
@@ -157,16 +158,16 @@ public class VisibilityDialog extends PanelDialog {
         layout.addChild(new StringWidget(label, font).setColor(ColorConstants.TEXT), row, 0);
 
         OptionButton button = new OptionButton(font, LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH, (b) -> {
-            visibilityData.setValue(visibility, b.getSelected() == 0);
+            visibilityData.set(visibility, b.getSelected() == 0);
         });
         button.addOption(ON_LABEL);
         button.addOption(OFF_LABEL);
-        button.setSelected(visibilityData.getValue(visibility) ? 0 : 1);
+        button.setSelected(visibilityData.get(visibility) ? 0 : 1);
         layout.addChild(button, row, 2);
 
         if (visibilityMask != null) {
-            CheckBoxButton checkBox = new CheckBoxButton(visibilityMask.getValue(visibility), (b) -> {
-                visibilityMask.setValue(visibility, b.isChecked());
+            CheckBoxButton checkBox = new CheckBoxButton(visibilityMask.has(visibility), (b) -> {
+                visibilityMask.set(visibility, b.isChecked());
                 button.active = b.isChecked();
             });
             layout.addChild(checkBox, row, 1);
@@ -177,5 +178,10 @@ public class VisibilityDialog extends PanelDialog {
     private void saveAndClose() {
         super.onClose();
         saveCallback.accept(visibilityData, visibilityMask);
+    }
+
+    @FunctionalInterface
+    public interface SaveCallback {
+        void accept(FrontierVisibilityData visibilityData, @Nullable FrontierVisibilityMask visibilityMask);
     }
 }

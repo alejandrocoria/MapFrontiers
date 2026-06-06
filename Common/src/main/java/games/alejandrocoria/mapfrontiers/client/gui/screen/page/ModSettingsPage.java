@@ -22,12 +22,13 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.HUDSettingsScreen;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.CollectionAppearanceDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.CollectionVisibilityDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationSettingsDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.FrontierAppearanceDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.FrontierVisibilityDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.PathStyleDialog;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.VisibilityDialog;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.config.BooleanConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
@@ -40,9 +41,13 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings.Action
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
-import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityField;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityMask;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityMask;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
@@ -94,7 +99,8 @@ public class ModSettingsPage extends PageScreen {
     private static final Component VERSION_LABEL = Component.literal(Services.PLATFORM.getModVersion());
     private static final String KEY_HINT_KEY = "mapfrontiers.key.open_settings.hint";
     private static final Component FRONTIERS_LABEL = Component.translatable("mapfrontiers.frontiers");
-    private static final Component FRONTIER_APPEARANCE_LABEL = Component.translatable("mapfrontiers.frontier_appearance");
+    private static final Component COLLECTIONS_LABEL = Component.translatable("mapfrontiers.collections");
+    private static final Component APPEARANCE_LABEL = Component.translatable("mapfrontiers.appearance");
     private static final Component DEFAULT_PATH_STYLE_LABEL = Component.translatable("mapfrontiers.default_path_style");
     private static final Component FORCED_VISIBILITY_LABEL = Component.translatable("mapfrontiers.forced_visibility");
     private static final Component GUI_LABEL = Component.translatable("mapfrontiers.gui");
@@ -138,6 +144,7 @@ public class ModSettingsPage extends PageScreen {
     private FrontierSettings settings;
     private TabbedBox tabbedBox;
     private SimpleButton buttonFrontierAppearance;
+    private SimpleButton buttonCollectionAppearance;
     private SimpleButton buttonDefaultPathStyle;
     private SimpleButton buttonConfirmationDialogs;
     private SimpleButton buttonEditHUD;
@@ -224,7 +231,7 @@ public class ModSettingsPage extends PageScreen {
             updateGroupsActions();
         }
 
-        updateButtonsVisibility();
+        refreshControlState();
     }
 
     private void onSettingsProfileUpdated() {
@@ -266,6 +273,7 @@ public class ModSettingsPage extends PageScreen {
 
         int row = 0;
         row = buildFrontiersSection(settingsGrid, row);
+        row = buildCollectionsSection(settingsGrid, row);
         row = buildGuiSection(settingsGrid, row);
         buildHudSection(generalLayout, settingsGrid, row);
     }
@@ -280,20 +288,38 @@ public class ModSettingsPage extends PageScreen {
         row = addIntSettingRow(settingsGrid, row, ClientConfig.PATH_PROXIMITY_ENTER_DISTANCE, DEFAULT_TEXTBOX_WIDTH, 3);
         row = addIntSettingRow(settingsGrid, row, ClientConfig.PATH_PROXIMITY_EXIT_DISTANCE, DEFAULT_TEXTBOX_WIDTH, 3);
 
-        int frontierButtonWidth = ScreenHelper.getPaddedMaxTextWidth(font, LayoutConstants.PAGE_BUTTON_WIDTH,
-                BUTTON_HORIZONTAL_PADDING, FRONTIER_APPEARANCE_LABEL, DEFAULT_PATH_STYLE_LABEL,
-                FORCED_VISIBILITY_LABEL);
+        int buttonWidth = ScreenHelper.getPaddedMaxTextWidth(font, LayoutConstants.PAGE_BUTTON_WIDTH,
+                BUTTON_HORIZONTAL_PADDING, APPEARANCE_LABEL, DEFAULT_PATH_STYLE_LABEL, FORCED_VISIBILITY_LABEL);
 
-        buttonFrontierAppearance = createWideSimpleButton(frontierButtonWidth, FRONTIER_APPEARANCE_LABEL,
+        buttonFrontierAppearance = createWideSimpleButton(buttonWidth, APPEARANCE_LABEL,
                 b -> onFrontierAppearancePressed());
         settingsGrid.addChild(buttonFrontierAppearance, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
 
-        buttonDefaultPathStyle = createWideSimpleButton(frontierButtonWidth, DEFAULT_PATH_STYLE_LABEL,
+        buttonDefaultPathStyle = createWideSimpleButton(buttonWidth, DEFAULT_PATH_STYLE_LABEL,
                 b -> onDefaultPathStylePressed());
         settingsGrid.addChild(buttonDefaultPathStyle, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
 
-        settingsGrid.addChild(createWideSimpleButton(frontierButtonWidth, FORCED_VISIBILITY_LABEL,
-                b -> onForcedVisibilityPressed()), row++, 0, 1, 2,
+        settingsGrid.addChild(createWideSimpleButton(buttonWidth, FORCED_VISIBILITY_LABEL,
+                b -> onForcedFrontierVisibilityPressed()), row++, 0, 1, 2,
+                LayoutSettings.defaults().alignHorizontallyCenter());
+
+        return row;
+    }
+
+    private int buildCollectionsSection(GridLayout settingsGrid, int row) {
+        settingsGrid.addChild(SpacerElement.height(LayoutConstants.SPACING_SMALL), row++, 0);
+        settingsGrid.addChild(new StringWidget(COLLECTIONS_LABEL, font).setColor(ColorConstants.TEXT_HIGHLIGHT), row++, 0, 1, 2,
+                LayoutSettings.defaults().alignHorizontallyCenter());
+
+        int buttonWidth = ScreenHelper.getPaddedMaxTextWidth(font, LayoutConstants.PAGE_BUTTON_WIDTH,
+                BUTTON_HORIZONTAL_PADDING, APPEARANCE_LABEL, FORCED_VISIBILITY_LABEL);
+
+        buttonCollectionAppearance = createWideSimpleButton(buttonWidth, APPEARANCE_LABEL,
+                b -> onCollectionAppearancePressed());
+        settingsGrid.addChild(buttonCollectionAppearance, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
+
+        settingsGrid.addChild(createWideSimpleButton(buttonWidth, FORCED_VISIBILITY_LABEL,
+                b -> onForcedCollectionVisibilityPressed()), row++, 0, 1, 2,
                 LayoutSettings.defaults().alignHorizontallyCenter());
 
         return row;
@@ -345,7 +371,7 @@ public class ModSettingsPage extends PageScreen {
                 GROUPS_SCROLL_WIDTH, GROUPS_ELEMENT_HEIGHT));
         groups.setElementClickedCallback(element -> {
             onGroupElementClicked((GroupElement) element);
-            updateButtonsVisibility();
+            refreshControlState();
         });
         groups.setElementDeletePressedCallback(this::onGroupDeletePressed);
     }
@@ -507,10 +533,23 @@ public class ModSettingsPage extends PageScreen {
     }
 
     private void onFrontierAppearancePressed() {
+        if (!areJourneyMapPreviewActionsAvailable()) {
+            return;
+        }
         new FrontierAppearanceDialog().display();
     }
 
+    private void onCollectionAppearancePressed() {
+        if (!areJourneyMapPreviewActionsAvailable()) {
+            return;
+        }
+        new CollectionAppearanceDialog().display();
+    }
+
     private void onDefaultPathStylePressed() {
+        if (!areJourneyMapPreviewActionsAvailable()) {
+            return;
+        }
         new PathStyleDialog(ClientConfig.getDefaultPathStyle(), newPathStyle -> {
             FrontierData.PathStyle currentStyle = ClientConfig.getDefaultPathStyle();
             if (!currentStyle.equals(newPathStyle)) {
@@ -520,11 +559,19 @@ public class ModSettingsPage extends PageScreen {
         }).display();
     }
 
-    private void onForcedVisibilityPressed() {
-        new VisibilityDialog(createForcedVisibility(), createForcedVisibilityMask(), this::setForcedVisibility).display();
+    private void onForcedFrontierVisibilityPressed() {
+        new FrontierVisibilityDialog(createForcedFrontierVisibility(), createForcedFrontierVisibilityMask(), this::setForcedFrontierVisibility).display();
+    }
+
+    private void onForcedCollectionVisibilityPressed() {
+        new CollectionVisibilityDialog(createForcedCollectionVisibility(), createForcedCollectionVisibilityMask(),
+                this::setForcedCollectionVisibility).display();
     }
 
     private void onEditHUDPressed() {
+        if (!areJourneyMapPreviewActionsAvailable()) {
+            return;
+        }
         MapFrontiersClient.setLastSettingsTab(tabSelected);
         new HUDSettingsScreen().display();
     }
@@ -535,7 +582,7 @@ public class ModSettingsPage extends PageScreen {
 
     private void onHudEnabledChanged(boolean enabled) {
         ClientConfig.HUD_ENABLED.set(enabled);
-        updateButtonsVisibility();
+        refreshControlState();
     }
 
     private void onGroupElementClicked(GroupElement element) {
@@ -634,7 +681,7 @@ public class ModSettingsPage extends PageScreen {
 
     private void refreshViewState() {
         restoreInitialTabSelection();
-        updateButtonsVisibility();
+        refreshControlState();
     }
 
     private void refreshPermissionsState() {
@@ -650,7 +697,7 @@ public class ModSettingsPage extends PageScreen {
         }
 
         tabbedBox.setTabSelected(tabSelected.ordinal());
-        updateButtonsVisibility();
+        refreshControlState();
 
         if (canEditGroups) {
             if (settings != null) {
@@ -795,126 +842,207 @@ public class ModSettingsPage extends PageScreen {
         return super.mouseReleased(event);
     }
 
-    private VisibilityData createForcedVisibility() {
-        VisibilityData visibilityData = new VisibilityData();
-        visibilityData.setValue(FrontierVisibility.Frontier, ClientConfig.FRONTIER_VISIBILITY.get() != FrontierDisplayVisibility.Never);
-        visibilityData.setValue(FrontierVisibility.AnnounceInChat, ClientConfig.ANNOUNCE_IN_CHAT.get() == FrontierDisplayVisibility.Always);
-        visibilityData.setValue(FrontierVisibility.AnnounceInTitle, ClientConfig.ANNOUNCE_IN_TITLE.get() == FrontierDisplayVisibility.Always);
-        visibilityData.setValue(FrontierVisibility.MentionCollection, ClientConfig.MENTION_COLLECTION.get() != FrontierDisplayVisibility.Never);
-        visibilityData.setValue(FrontierVisibility.Fullscreen, ClientConfig.FULLSCREEN_VISIBILITY.get() != FrontierDisplayVisibility.Never);
-        visibilityData.setValue(FrontierVisibility.FullscreenName, ClientConfig.FULLSCREEN_NAME_VISIBILITY.get() != FrontierDisplayVisibility.Never);
-        visibilityData.setValue(FrontierVisibility.FullscreenCollection, ClientConfig.FULLSCREEN_COLLECTION_VISIBILITY.get() == FrontierDisplayVisibility.Always);
-        visibilityData.setValue(FrontierVisibility.FullscreenOwner, ClientConfig.FULLSCREEN_OWNER_VISIBILITY.get() == FrontierDisplayVisibility.Always);
-        visibilityData.setValue(FrontierVisibility.FullscreenBanner, ClientConfig.FULLSCREEN_BANNER_VISIBILITY.get() == FrontierDisplayVisibility.Always);
-        visibilityData.setValue(FrontierVisibility.FullscreenDay, ClientConfig.FULLSCREEN_DAY_VISIBILITY.get() != FrontierDisplayVisibility.Never);
-        visibilityData.setValue(FrontierVisibility.FullscreenNight, ClientConfig.FULLSCREEN_NIGHT_VISIBILITY.get() != FrontierDisplayVisibility.Never);
-        visibilityData.setValue(FrontierVisibility.FullscreenUnderground, ClientConfig.FULLSCREEN_UNDERGROUND_VISIBILITY.get() != FrontierDisplayVisibility.Never);
-        visibilityData.setValue(FrontierVisibility.FullscreenTopo, ClientConfig.FULLSCREEN_TOPO_VISIBILITY.get() != FrontierDisplayVisibility.Never);
-        visibilityData.setValue(FrontierVisibility.FullscreenBiome, ClientConfig.FULLSCREEN_BIOME_VISIBILITY.get() != FrontierDisplayVisibility.Never);
-        visibilityData.setValue(FrontierVisibility.Minimap, ClientConfig.MINIMAP_VISIBILITY.get() != FrontierDisplayVisibility.Never);
-        visibilityData.setValue(FrontierVisibility.MinimapName, ClientConfig.MINIMAP_NAME_VISIBILITY.get() != FrontierDisplayVisibility.Never);
-        visibilityData.setValue(FrontierVisibility.MinimapCollection, ClientConfig.MINIMAP_COLLECTION_VISIBILITY.get() == FrontierDisplayVisibility.Always);
-        visibilityData.setValue(FrontierVisibility.MinimapOwner, ClientConfig.MINIMAP_OWNER_VISIBILITY.get() == FrontierDisplayVisibility.Always);
-        visibilityData.setValue(FrontierVisibility.MinimapBanner, ClientConfig.MINIMAP_BANNER_VISIBILITY.get() == FrontierDisplayVisibility.Always);
-        visibilityData.setValue(FrontierVisibility.MinimapDay, ClientConfig.MINIMAP_DAY_VISIBILITY.get() != FrontierDisplayVisibility.Never);
-        visibilityData.setValue(FrontierVisibility.MinimapNight, ClientConfig.MINIMAP_NIGHT_VISIBILITY.get() != FrontierDisplayVisibility.Never);
-        visibilityData.setValue(FrontierVisibility.MinimapUnderground, ClientConfig.MINIMAP_UNDERGROUND_VISIBILITY.get() != FrontierDisplayVisibility.Never);
-        visibilityData.setValue(FrontierVisibility.MinimapTopo, ClientConfig.MINIMAP_TOPO_VISIBILITY.get() != FrontierDisplayVisibility.Never);
-        visibilityData.setValue(FrontierVisibility.MinimapBiome, ClientConfig.MINIMAP_BIOME_VISIBILITY.get() != FrontierDisplayVisibility.Never);
-        visibilityData.setValue(FrontierVisibility.Webmap, ClientConfig.WEBMAP_VISIBILITY.get() != FrontierDisplayVisibility.Never);
-        visibilityData.setValue(FrontierVisibility.WebmapName, ClientConfig.WEBMAP_NAME_VISIBILITY.get() != FrontierDisplayVisibility.Never);
-        visibilityData.setValue(FrontierVisibility.WebmapCollection, ClientConfig.WEBMAP_COLLECTION_VISIBILITY.get() == FrontierDisplayVisibility.Always);
-        visibilityData.setValue(FrontierVisibility.WebmapOwner, ClientConfig.WEBMAP_OWNER_VISIBILITY.get() == FrontierDisplayVisibility.Always);
-        visibilityData.setValue(FrontierVisibility.WebmapBanner, ClientConfig.WEBMAP_BANNER_VISIBILITY.get() == FrontierDisplayVisibility.Always);
-        visibilityData.setValue(FrontierVisibility.WebmapDay, ClientConfig.WEBMAP_DAY_VISIBILITY.get() != FrontierDisplayVisibility.Never);
-        visibilityData.setValue(FrontierVisibility.WebmapNight, ClientConfig.WEBMAP_NIGHT_VISIBILITY.get() != FrontierDisplayVisibility.Never);
-        visibilityData.setValue(FrontierVisibility.WebmapUnderground, ClientConfig.WEBMAP_UNDERGROUND_VISIBILITY.get() != FrontierDisplayVisibility.Never);
-        visibilityData.setValue(FrontierVisibility.WebmapTopo, ClientConfig.WEBMAP_TOPO_VISIBILITY.get() != FrontierDisplayVisibility.Never);
-        visibilityData.setValue(FrontierVisibility.WebmapBiome, ClientConfig.WEBMAP_BIOME_VISIBILITY.get() != FrontierDisplayVisibility.Never);
+    private FrontierVisibilityData createForcedFrontierVisibility() {
+        FrontierVisibilityData visibilityData = new FrontierVisibilityData();
+        for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
+            visibilityData.set(visibility, getForcedFrontierVisibilityValue(visibility));
+        }
         return visibilityData;
     }
 
-    private VisibilityData createForcedVisibilityMask() {
-        VisibilityData visibilityData = new VisibilityData();
-        visibilityData.setValue(FrontierVisibility.Frontier, ClientConfig.FRONTIER_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.AnnounceInChat, ClientConfig.ANNOUNCE_IN_CHAT.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.AnnounceInTitle, ClientConfig.ANNOUNCE_IN_TITLE.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.MentionCollection, ClientConfig.MENTION_COLLECTION.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.Fullscreen, ClientConfig.FULLSCREEN_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.FullscreenName, ClientConfig.FULLSCREEN_NAME_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.FullscreenCollection, ClientConfig.FULLSCREEN_COLLECTION_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.FullscreenOwner, ClientConfig.FULLSCREEN_OWNER_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.FullscreenBanner, ClientConfig.FULLSCREEN_BANNER_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.FullscreenDay, ClientConfig.FULLSCREEN_DAY_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.FullscreenNight, ClientConfig.FULLSCREEN_NIGHT_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.FullscreenUnderground, ClientConfig.FULLSCREEN_UNDERGROUND_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.FullscreenTopo, ClientConfig.FULLSCREEN_TOPO_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.FullscreenBiome, ClientConfig.FULLSCREEN_BIOME_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.Minimap, ClientConfig.MINIMAP_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.MinimapName, ClientConfig.MINIMAP_NAME_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.MinimapCollection, ClientConfig.MINIMAP_COLLECTION_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.MinimapOwner, ClientConfig.MINIMAP_OWNER_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.MinimapBanner, ClientConfig.MINIMAP_BANNER_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.MinimapDay, ClientConfig.MINIMAP_DAY_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.MinimapNight, ClientConfig.MINIMAP_NIGHT_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.MinimapUnderground, ClientConfig.MINIMAP_UNDERGROUND_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.MinimapTopo, ClientConfig.MINIMAP_TOPO_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.MinimapBiome, ClientConfig.MINIMAP_BIOME_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.Webmap, ClientConfig.WEBMAP_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.WebmapName, ClientConfig.WEBMAP_NAME_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.WebmapCollection, ClientConfig.WEBMAP_COLLECTION_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.WebmapOwner, ClientConfig.WEBMAP_OWNER_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.WebmapBanner, ClientConfig.WEBMAP_BANNER_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.WebmapDay, ClientConfig.WEBMAP_DAY_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.WebmapNight, ClientConfig.WEBMAP_NIGHT_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.WebmapUnderground, ClientConfig.WEBMAP_UNDERGROUND_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.WebmapTopo, ClientConfig.WEBMAP_TOPO_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
-        visibilityData.setValue(FrontierVisibility.WebmapBiome, ClientConfig.WEBMAP_BIOME_VISIBILITY.get() != FrontierDisplayVisibility.Custom);
+    private FrontierVisibilityMask createForcedFrontierVisibilityMask() {
+        FrontierVisibilityMask visibilityMask = new FrontierVisibilityMask();
+        for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
+            visibilityMask.set(visibility, getForcedFrontierVisibilitySetting(visibility).get() != FrontierDisplayVisibility.Custom);
+        }
+        return visibilityMask;
+    }
+
+    private CollectionVisibilityData createForcedCollectionVisibility() {
+        CollectionVisibilityData visibilityData = new CollectionVisibilityData();
+        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
+            if (field.isBoolean()) {
+                visibilityData.setBoolean(field, getForcedCollectionBooleanValue(field));
+            } else {
+                visibilityData.setZoom(field, getForcedCollectionZoomValue(field));
+            }
+        }
         return visibilityData;
     }
 
-    private void setForcedVisibility(VisibilityData visibilityData, VisibilityData visibilityDataMask) {
-        ClientConfig.FRONTIER_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.Frontier));
-        ClientConfig.ANNOUNCE_IN_CHAT.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.AnnounceInChat));
-        ClientConfig.ANNOUNCE_IN_TITLE.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.AnnounceInTitle));
-        ClientConfig.MENTION_COLLECTION.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.MentionCollection));
-        ClientConfig.FULLSCREEN_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.Fullscreen));
-        ClientConfig.FULLSCREEN_NAME_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.FullscreenName));
-        ClientConfig.FULLSCREEN_COLLECTION_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.FullscreenCollection));
-        ClientConfig.FULLSCREEN_OWNER_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.FullscreenOwner));
-        ClientConfig.FULLSCREEN_BANNER_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.FullscreenBanner));
-        ClientConfig.FULLSCREEN_DAY_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.FullscreenDay));
-        ClientConfig.FULLSCREEN_NIGHT_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.FullscreenNight));
-        ClientConfig.FULLSCREEN_UNDERGROUND_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.FullscreenUnderground));
-        ClientConfig.FULLSCREEN_TOPO_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.FullscreenTopo));
-        ClientConfig.FULLSCREEN_BIOME_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.FullscreenBiome));
-        ClientConfig.MINIMAP_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.Minimap));
-        ClientConfig.MINIMAP_NAME_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.MinimapName));
-        ClientConfig.MINIMAP_COLLECTION_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.MinimapCollection));
-        ClientConfig.MINIMAP_OWNER_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.MinimapOwner));
-        ClientConfig.MINIMAP_BANNER_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.MinimapBanner));
-        ClientConfig.MINIMAP_DAY_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.MinimapDay));
-        ClientConfig.MINIMAP_NIGHT_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.MinimapNight));
-        ClientConfig.MINIMAP_UNDERGROUND_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.MinimapUnderground));
-        ClientConfig.MINIMAP_TOPO_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.MinimapTopo));
-        ClientConfig.MINIMAP_BIOME_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.MinimapBiome));
-        ClientConfig.WEBMAP_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.Webmap));
-        ClientConfig.WEBMAP_NAME_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.WebmapName));
-        ClientConfig.WEBMAP_COLLECTION_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.WebmapCollection));
-        ClientConfig.WEBMAP_OWNER_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.WebmapOwner));
-        ClientConfig.WEBMAP_BANNER_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.WebmapBanner));
-        ClientConfig.WEBMAP_DAY_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.WebmapDay));
-        ClientConfig.WEBMAP_NIGHT_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.WebmapNight));
-        ClientConfig.WEBMAP_UNDERGROUND_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.WebmapUnderground));
-        ClientConfig.WEBMAP_TOPO_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.WebmapTopo));
-        ClientConfig.WEBMAP_BIOME_VISIBILITY.set(getVisibilityValue(visibilityData, visibilityDataMask, FrontierVisibility.WebmapBiome));
+    private CollectionVisibilityMask createForcedCollectionVisibilityMask() {
+        CollectionVisibilityMask visibilityMask = new CollectionVisibilityMask();
+        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
+            visibilityMask.set(field, isForcedCollectionVisibilityField(field));
+        }
+        return visibilityMask;
     }
 
-    private FrontierDisplayVisibility getVisibilityValue(VisibilityData visibilityData, VisibilityData visibilityDataMask, FrontierVisibility visibility) {
-        if (visibilityDataMask.getValue(visibility)) {
-            return visibilityData.getValue(visibility) ? FrontierDisplayVisibility.Always : FrontierDisplayVisibility.Never;
+    private void setForcedFrontierVisibility(FrontierVisibilityData visibilityData, FrontierVisibilityMask visibilityDataMask) {
+        for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
+            setForcedFrontierVisibilityField(visibilityData, visibilityDataMask, visibility);
+        }
+    }
+
+    private void setForcedCollectionVisibility(CollectionVisibilityData visibilityData, CollectionVisibilityMask visibilityMask) {
+        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
+            setForcedCollectionVisibilityField(visibilityData, visibilityMask, field);
+        }
+    }
+
+    private FrontierDisplayVisibility getFrontierVisibilityValue(FrontierVisibilityData visibilityData, FrontierVisibilityMask visibilityDataMask,
+                                                                 FrontierVisibility visibility) {
+        if (visibilityDataMask.has(visibility)) {
+            return visibilityData.get(visibility) ? FrontierDisplayVisibility.Always : FrontierDisplayVisibility.Never;
         }
         return FrontierDisplayVisibility.Custom;
+    }
+
+    private boolean getForcedFrontierVisibilityValue(FrontierDisplayVisibility visibility, boolean customValue) {
+        return switch (visibility) {
+            case Always -> true;
+            case Never -> false;
+            case Custom -> customValue;
+        };
+    }
+
+    private FrontierDisplayVisibility getFrontierVisibilityValue(boolean value, boolean masked) {
+        if (masked) {
+            return value ? FrontierDisplayVisibility.Always : FrontierDisplayVisibility.Never;
+        }
+        return FrontierDisplayVisibility.Custom;
+    }
+
+    private boolean getForcedFrontierVisibilityValue(FrontierVisibility visibility) {
+        return getForcedFrontierVisibilityValue(getForcedFrontierVisibilitySetting(visibility).get(), visibility.getDefaultValue());
+    }
+
+    private ConfigEntry<FrontierDisplayVisibility, ?> getForcedFrontierVisibilitySetting(FrontierVisibility visibility) {
+        return switch (visibility) {
+            case Frontier -> ClientConfig.FRONTIER_VISIBILITY;
+            case AnnounceInChat -> ClientConfig.ANNOUNCE_IN_CHAT;
+            case AnnounceInTitle -> ClientConfig.ANNOUNCE_IN_TITLE;
+            case MentionCollection -> ClientConfig.MENTION_COLLECTION;
+            case Fullscreen -> ClientConfig.FULLSCREEN_VISIBILITY;
+            case FullscreenName -> ClientConfig.FULLSCREEN_NAME_VISIBILITY;
+            case FullscreenCollection -> ClientConfig.FULLSCREEN_COLLECTION_VISIBILITY;
+            case FullscreenOwner -> ClientConfig.FULLSCREEN_OWNER_VISIBILITY;
+            case FullscreenBanner -> ClientConfig.FULLSCREEN_BANNER_VISIBILITY;
+            case FullscreenDay -> ClientConfig.FULLSCREEN_DAY_VISIBILITY;
+            case FullscreenNight -> ClientConfig.FULLSCREEN_NIGHT_VISIBILITY;
+            case FullscreenUnderground -> ClientConfig.FULLSCREEN_UNDERGROUND_VISIBILITY;
+            case FullscreenTopo -> ClientConfig.FULLSCREEN_TOPO_VISIBILITY;
+            case FullscreenBiome -> ClientConfig.FULLSCREEN_BIOME_VISIBILITY;
+            case Minimap -> ClientConfig.MINIMAP_VISIBILITY;
+            case MinimapName -> ClientConfig.MINIMAP_NAME_VISIBILITY;
+            case MinimapCollection -> ClientConfig.MINIMAP_COLLECTION_VISIBILITY;
+            case MinimapOwner -> ClientConfig.MINIMAP_OWNER_VISIBILITY;
+            case MinimapBanner -> ClientConfig.MINIMAP_BANNER_VISIBILITY;
+            case MinimapDay -> ClientConfig.MINIMAP_DAY_VISIBILITY;
+            case MinimapNight -> ClientConfig.MINIMAP_NIGHT_VISIBILITY;
+            case MinimapUnderground -> ClientConfig.MINIMAP_UNDERGROUND_VISIBILITY;
+            case MinimapTopo -> ClientConfig.MINIMAP_TOPO_VISIBILITY;
+            case MinimapBiome -> ClientConfig.MINIMAP_BIOME_VISIBILITY;
+            case Webmap -> ClientConfig.WEBMAP_VISIBILITY;
+            case WebmapName -> ClientConfig.WEBMAP_NAME_VISIBILITY;
+            case WebmapCollection -> ClientConfig.WEBMAP_COLLECTION_VISIBILITY;
+            case WebmapOwner -> ClientConfig.WEBMAP_OWNER_VISIBILITY;
+            case WebmapBanner -> ClientConfig.WEBMAP_BANNER_VISIBILITY;
+            case WebmapDay -> ClientConfig.WEBMAP_DAY_VISIBILITY;
+            case WebmapNight -> ClientConfig.WEBMAP_NIGHT_VISIBILITY;
+            case WebmapUnderground -> ClientConfig.WEBMAP_UNDERGROUND_VISIBILITY;
+            case WebmapTopo -> ClientConfig.WEBMAP_TOPO_VISIBILITY;
+            case WebmapBiome -> ClientConfig.WEBMAP_BIOME_VISIBILITY;
+        };
+    }
+
+    private boolean getForcedCollectionBooleanValue(CollectionVisibilityField field) {
+        return getForcedFrontierVisibilityValue(getForcedCollectionVisibilitySetting(field), field.getDefaultBooleanValue());
+    }
+
+    private int getForcedCollectionZoomValue(CollectionVisibilityField field) {
+        return switch (field) {
+            case FullscreenZoom -> ClientConfig.getNormalizedCollectionFullscreenZoom();
+            case MinimapZoom -> ClientConfig.getNormalizedCollectionMinimapZoom();
+            case WebmapZoom -> ClientConfig.getNormalizedCollectionWebmapZoom();
+            default -> throw new IllegalArgumentException("Field " + field + " is not a zoom field");
+        };
+    }
+
+    private boolean isForcedCollectionVisibilityField(CollectionVisibilityField field) {
+        return switch (field) {
+            case Visible,
+                 FullscreenName,
+                 FullscreenOwner,
+                 FullscreenBanner,
+                 MinimapName,
+                 MinimapOwner,
+                 MinimapBanner,
+                 WebmapName,
+                 WebmapOwner,
+                 WebmapBanner -> getForcedCollectionVisibilitySetting(field) != FrontierDisplayVisibility.Custom;
+            case FullscreenZoom -> ClientConfig.COLLECTION_FULLSCREEN_ZOOM_FORCED.get();
+            case MinimapZoom -> ClientConfig.COLLECTION_MINIMAP_ZOOM_FORCED.get();
+            case WebmapZoom -> ClientConfig.COLLECTION_WEBMAP_ZOOM_FORCED.get();
+        };
+    }
+
+    private FrontierDisplayVisibility getForcedCollectionVisibilitySetting(CollectionVisibilityField field) {
+        return switch (field) {
+            case Visible -> ClientConfig.COLLECTION_VISIBILITY.get();
+            case FullscreenName -> ClientConfig.COLLECTION_FULLSCREEN_NAME_VISIBILITY.get();
+            case FullscreenOwner -> ClientConfig.COLLECTION_FULLSCREEN_OWNER_VISIBILITY.get();
+            case FullscreenBanner -> ClientConfig.COLLECTION_FULLSCREEN_BANNER_VISIBILITY.get();
+            case MinimapName -> ClientConfig.COLLECTION_MINIMAP_NAME_VISIBILITY.get();
+            case MinimapOwner -> ClientConfig.COLLECTION_MINIMAP_OWNER_VISIBILITY.get();
+            case MinimapBanner -> ClientConfig.COLLECTION_MINIMAP_BANNER_VISIBILITY.get();
+            case WebmapName -> ClientConfig.COLLECTION_WEBMAP_NAME_VISIBILITY.get();
+            case WebmapOwner -> ClientConfig.COLLECTION_WEBMAP_OWNER_VISIBILITY.get();
+            case WebmapBanner -> ClientConfig.COLLECTION_WEBMAP_BANNER_VISIBILITY.get();
+            default -> throw new IllegalArgumentException("Field " + field + " is not a boolean visibility field");
+        };
+    }
+
+    private void setForcedCollectionVisibilityField(CollectionVisibilityData visibilityData, CollectionVisibilityMask visibilityMask,
+                                                    CollectionVisibilityField field) {
+        switch (field) {
+            case Visible -> ClientConfig.COLLECTION_VISIBILITY.set(getFrontierVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+            case FullscreenZoom -> {
+                ClientConfig.COLLECTION_FULLSCREEN_ZOOM_FORCED.set(visibilityMask.has(field));
+                ClientConfig.COLLECTION_FULLSCREEN_ZOOM.set(visibilityData.getZoom(field));
+            }
+            case MinimapZoom -> {
+                ClientConfig.COLLECTION_MINIMAP_ZOOM_FORCED.set(visibilityMask.has(field));
+                ClientConfig.COLLECTION_MINIMAP_ZOOM.set(visibilityData.getZoom(field));
+            }
+            case WebmapZoom -> {
+                ClientConfig.COLLECTION_WEBMAP_ZOOM_FORCED.set(visibilityMask.has(field));
+                ClientConfig.COLLECTION_WEBMAP_ZOOM.set(visibilityData.getZoom(field));
+            }
+            case FullscreenName -> ClientConfig.COLLECTION_FULLSCREEN_NAME_VISIBILITY
+                    .set(getFrontierVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+            case FullscreenOwner -> ClientConfig.COLLECTION_FULLSCREEN_OWNER_VISIBILITY
+                    .set(getFrontierVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+            case FullscreenBanner -> ClientConfig.COLLECTION_FULLSCREEN_BANNER_VISIBILITY
+                    .set(getFrontierVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+            case MinimapName -> ClientConfig.COLLECTION_MINIMAP_NAME_VISIBILITY
+                    .set(getFrontierVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+            case MinimapOwner -> ClientConfig.COLLECTION_MINIMAP_OWNER_VISIBILITY
+                    .set(getFrontierVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+            case MinimapBanner -> ClientConfig.COLLECTION_MINIMAP_BANNER_VISIBILITY
+                    .set(getFrontierVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+            case WebmapName -> ClientConfig.COLLECTION_WEBMAP_NAME_VISIBILITY
+                    .set(getFrontierVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+            case WebmapOwner -> ClientConfig.COLLECTION_WEBMAP_OWNER_VISIBILITY
+                    .set(getFrontierVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+            case WebmapBanner -> ClientConfig.COLLECTION_WEBMAP_BANNER_VISIBILITY
+                    .set(getFrontierVisibilityValue(visibilityData.getBoolean(field), visibilityMask.has(field)));
+        }
+    }
+
+    private void setForcedFrontierVisibilityField(FrontierVisibilityData visibilityData, FrontierVisibilityMask visibilityMask,
+                                                  FrontierVisibility visibility) {
+        getForcedFrontierVisibilitySetting(visibility).set(getFrontierVisibilityValue(visibilityData, visibilityMask, visibility));
     }
 
     private void newGroupPressed() {
@@ -1003,7 +1131,7 @@ public class ModSettingsPage extends PageScreen {
         }
 
         updateGroupsActions();
-        updateButtonsVisibility();
+        refreshControlState();
 
         if (selectedElement != null) {
             groups.setSelectedElementIf(element -> ((GroupElement) element).getGroup().getName().equals(selectedElement.getGroup().getName()));
@@ -1024,13 +1152,16 @@ public class ModSettingsPage extends PageScreen {
         }
     }
 
-    private void updateButtonsVisibility() {
-        buttonEditHUD.visible = tabSelected == Tab.General && ClientConfig.HUD_ENABLED.get() && minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
-        buttonFrontierAppearance.visible = tabSelected == Tab.General && minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
-        buttonDefaultPathStyle.visible = tabSelected == Tab.General && minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
-        buttonConfirmationDialogs.visible = tabSelected == Tab.General;
-        textNewUser.visible = canAddNewUser();
-        buttonNewUser.visible = canAddNewUser();
+    private void refreshControlState() {
+        boolean previewActionsAvailable = areJourneyMapPreviewActionsAvailable();
+        buttonEditHUD.active = ClientConfig.HUD_ENABLED.get() && previewActionsAvailable;
+        buttonFrontierAppearance.active = previewActionsAvailable;
+        buttonCollectionAppearance.active = previewActionsAvailable;
+        buttonDefaultPathStyle.active = previewActionsAvailable;
+
+        boolean canAddUser = canAddNewUser();
+        textNewUser.setEditable(canAddUser);
+        buttonNewUser.active = canAddUser;
     }
 
     public void groupClicked(GroupElement element) {
@@ -1070,8 +1201,7 @@ public class ModSettingsPage extends PageScreen {
             }
         }
 
-        buttonNewUser.visible = canAddNewUser();
-        textNewUser.visible = canAddNewUser();
+        refreshControlState();
         ticksSinceLastUpdate = 100;
     }
 
@@ -1105,5 +1235,9 @@ public class ModSettingsPage extends PageScreen {
         }
 
         return false;
+    }
+
+    private boolean areJourneyMapPreviewActionsAvailable() {
+        return minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
     }
 }

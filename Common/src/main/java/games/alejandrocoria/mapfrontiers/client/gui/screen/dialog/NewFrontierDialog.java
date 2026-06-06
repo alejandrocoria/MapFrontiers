@@ -13,14 +13,16 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.PathShapePr
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.VertexShapePresetSelector;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
+import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierCreateSpec;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
+import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
-import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreateSpec;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.Context;
@@ -64,6 +66,9 @@ public class NewFrontierDialog extends PanelDialog {
     private static final String CONTEXTUAL_HINT_TEMPORARY_KEY = "mapfrontiers.new_frontier_contextual_hint_temporary";
     private static final String CONTEXTUAL_HINT_IN_COLLECTION_KEY = "mapfrontiers.new_frontier_contextual_hint_in_collection";
     private static final String CONTEXTUAL_HINT_TEMPORARY_IN_COLLECTION_KEY = "mapfrontiers.new_frontier_contextual_hint_temporary_in_collection";
+    private static final int OPTION_BUTTON_MIN_WIDTH = 64;
+    private static final int TEXTBOX_MIN_WIDTH = 64;
+    private static final int OPTION_BUTTON_HORIZONTAL_PADDING = 8;
 
     private enum FrontierTypeOption {
         GLOBAL,
@@ -123,7 +128,17 @@ public class NewFrontierDialog extends PanelDialog {
         LayoutSettings rightColumnSettings = LayoutSettings.defaults().alignHorizontallyLeft();
         LayoutSettings centerColumnSettings = LayoutSettings.defaults().alignHorizontallyCenter();
 
-        buttonFrontierType = createFrontierTypeButton();
+        Component vertexLabel = ClientConfig.getTranslatedEnum(FrontierShape.Vertex);
+        Component chunkLabel = ClientConfig.getTranslatedEnum(FrontierShape.Chunk);
+        Component pathLabel = ClientConfig.getTranslatedEnum(FrontierShape.Path);
+        Component infoScreenLabel = ClientConfig.getTranslatedEnum(AfterCreatingFrontier.InfoScreen);
+        Component editShapeLabel = ClientConfig.getTranslatedEnum(AfterCreatingFrontier.EditShape);
+        Component doNothingLabel = ClientConfig.getTranslatedEnum(AfterCreatingFrontier.DoNothing);
+        int optionButtonWidth = ScreenHelper.getPaddedMaxTextWidth(font, OPTION_BUTTON_MIN_WIDTH,
+                OPTION_BUTTON_HORIZONTAL_PADDING, GLOBAL_LABEL, PERSONAL_LABEL, vertexLabel, chunkLabel, pathLabel,
+                infoScreenLabel, editShapeLabel, doNothingLabel);
+
+        buttonFrontierType = createFrontierTypeButton(optionButtonWidth);
         if (shouldShowContextualHint()) {
             boolean personal = resolvePersonalSelection();
             Component contextualHint = createContextualTypeHint(personal).copy().withColor(ColorConstants.TEXT);
@@ -135,22 +150,22 @@ public class NewFrontierDialog extends PanelDialog {
         }
 
         mainLayout.addChild(new StringWidget(FRONTIER_SHAPE_LABEL, font).setColor(ColorConstants.TEXT), 1, 0, leftColumnSettings);
-        buttonFrontierShape = new OptionButton(font, 130, (b) -> {
+        buttonFrontierShape = new OptionButton(font, optionButtonWidth, (b) -> {
                     ClientConfig.NEW_FRONTIER_SHAPE.set(FrontierShape.VALUES[b.getSelected()]);
                     shapePresetUpdated();
         });
-        buttonFrontierShape.addOption(ClientConfig.getTranslatedEnum(FrontierShape.Vertex));
-        buttonFrontierShape.addOption(ClientConfig.getTranslatedEnum(FrontierShape.Chunk));
-        buttonFrontierShape.addOption(ClientConfig.getTranslatedEnum(FrontierShape.Path));
+        buttonFrontierShape.addOption(vertexLabel);
+        buttonFrontierShape.addOption(chunkLabel);
+        buttonFrontierShape.addOption(pathLabel);
         buttonFrontierShape.setSelected(ClientConfig.NEW_FRONTIER_SHAPE.get().ordinal());
         mainLayout.addChild(buttonFrontierShape, 1, 1, rightColumnSettings);
 
         mainLayout.addChild(new StringWidget(AFTER_CREATING_LABEL, font).setColor(ColorConstants.TEXT), 2, 0, leftColumnSettings);
-        buttonAfterCreate = new OptionButton(font, 130,
+        buttonAfterCreate = new OptionButton(font, optionButtonWidth,
                 (b) -> ClientConfig.AFTER_CREATING_FRONTIER.set(AfterCreatingFrontier.values()[b.getSelected()]));
-        buttonAfterCreate.addOption(ClientConfig.getTranslatedEnum(AfterCreatingFrontier.InfoScreen));
-        buttonAfterCreate.addOption(ClientConfig.getTranslatedEnum(AfterCreatingFrontier.EditShape));
-        buttonAfterCreate.addOption(ClientConfig.getTranslatedEnum(AfterCreatingFrontier.DoNothing));
+        buttonAfterCreate.addOption(infoScreenLabel);
+        buttonAfterCreate.addOption(editShapeLabel);
+        buttonAfterCreate.addOption(doNothingLabel);
         buttonAfterCreate.setSelected(ClientConfig.AFTER_CREATING_FRONTIER.get().ordinal());
         mainLayout.addChild(buttonAfterCreate, 2, 1, rightColumnSettings);
 
@@ -161,16 +176,16 @@ public class NewFrontierDialog extends PanelDialog {
         pathShapePresetSelector = new PathShapePresetSelector(font, ClientConfig.NEW_FRONTIER_PATH_SHAPE.get(), (s) -> shapePresetUpdated());
         mainLayout.addChild(pathShapePresetSelector, 3, 0, 1, 2, centerColumnSettings);
 
-        labelCount = mainLayout.addChild(new StringWidget(VERTEX_COUNT_LABEL, font).setColor(ColorConstants.WHITE), 4, 0, leftColumnSettings);
-        textCount = new TextBoxInt(ClientConfig.NEW_FRONTIER_VERTEX_COUNT, font, 64);
+        labelCount = mainLayout.addChild(new StringWidget(VERTEX_COUNT_LABEL, font).setColor(ColorConstants.NEW_FRONTIER_DETAILS_TEXT), 4, 0, leftColumnSettings);
+        textCount = new TextBoxInt(ClientConfig.NEW_FRONTIER_VERTEX_COUNT, font, TEXTBOX_MIN_WIDTH);
         textCount.setValue(String.valueOf(ClientConfig.NEW_FRONTIER_VERTEX_COUNT.get()));
         textCount.setValueChangedCallback(ClientConfig.NEW_FRONTIER_VERTEX_COUNT::set);
         mainLayout.addChild(textCount, 4, 1, rightColumnSettings);
 
-        labelCountInfo = mainLayout.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.WHITE), 4, 0, 1, 2, centerColumnSettings);
+        labelCountInfo = mainLayout.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.NEW_FRONTIER_DETAILS_TEXT), 4, 0, 1, 2, centerColumnSettings);
 
-        labelSize = mainLayout.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.WHITE), 5, 0, leftColumnSettings);
-        textSize = new TextBoxInt(ClientConfig.NEW_FRONTIER_PATH_SEGMENT_LENGTH, font, 64);
+        labelSize = mainLayout.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.NEW_FRONTIER_DETAILS_TEXT), 5, 0, leftColumnSettings);
+        textSize = new TextBoxInt(ClientConfig.NEW_FRONTIER_PATH_SEGMENT_LENGTH, font, TEXTBOX_MIN_WIDTH);
         textSize.setValueChangedCallback(value -> {
             IntConfigEntry entry = activeSizeConfigEntry();
             if (entry != null) {
@@ -187,7 +202,7 @@ public class NewFrontierDialog extends PanelDialog {
         });
         mainLayout.addChild(textSize, 5, 1, rightColumnSettings);
 
-        labelSizeInfo = mainLayout.addChild(new StringWidget(SIZE_INFO_LABEL, font).setColor(ColorConstants.WHITE), 5, 0, 1, 2, centerColumnSettings);
+        labelSizeInfo = mainLayout.addChild(new StringWidget(SIZE_INFO_LABEL, font).setColor(ColorConstants.NEW_FRONTIER_DETAILS_TEXT), 5, 0, 1, 2, centerColumnSettings);
 
         addConfirmButton(CREATE_LABEL, (b) -> {
             boolean personal = resolvePersonalSelection();
@@ -346,8 +361,8 @@ public class NewFrontierDialog extends PanelDialog {
         repositionElements();
     }
 
-    private OptionButton createFrontierTypeButton() {
-        OptionButton button = new OptionButton(font, 130, OptionButton.DO_NOTHING);
+    private OptionButton createFrontierTypeButton(int width) {
+        OptionButton button = new OptionButton(font, width, OptionButton.DO_NOTHING);
         button.addOption(GLOBAL_LABEL);
         button.addOption(PERSONAL_LABEL);
         button.setSelected(FrontierTypeOption.GLOBAL.ordinal());
@@ -463,8 +478,8 @@ public class NewFrontierDialog extends PanelDialog {
         FrontierData defaults = new FrontierData();
         SettingsUser owner = new SettingsUser(minecraft.player);
         UUID frontierId = UUID.randomUUID();
-        VisibilityData visibility = new VisibilityData(defaults.getVisibilityData());
-        FrontierData.BannerData banner = defaults.getbannerData() == null ? null : new FrontierData.BannerData(defaults.getbannerData());
+        FrontierVisibilityData visibility = new FrontierVisibilityData(defaults.getVisibilityData());
+        BannerData banner = defaults.getBannerData() == null ? null : new BannerData(defaults.getBannerData());
         FrontierData.PathStyle pathStyle = ClientConfig.NEW_FRONTIER_SHAPE.get() == FrontierShape.Path
                 ? ClientConfig.getDefaultPathStyle()
                 : defaults.getPathStyle();

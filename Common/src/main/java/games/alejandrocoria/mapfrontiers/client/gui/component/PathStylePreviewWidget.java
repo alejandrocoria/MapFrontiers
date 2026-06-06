@@ -2,9 +2,9 @@ package games.alejandrocoria.mapfrontiers.client.gui.component;
 
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -91,13 +91,12 @@ public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
     }
 
     private static FrontierData createPreviewFrontierData() {
-        SettingsUser owner = new SettingsUser();
-        owner.username = "Player";
+        SettingsUser owner = PreviewFrontierHelper.createPreviewOwner();
 
         FrontierData frontierData = new FrontierData();
         frontierData.setShape(FrontierShape.Path);
         frontierData.setOwner(owner);
-        frontierData.setName1("Preview");
+        frontierData.setName1(PreviewFrontierHelper.translate("mapfrontiers.preview_path_name_1"));
         frontierData.setName2("");
         frontierData.setColor(0xFF60DDCC);
         frontierData.setDimension(OVERWORLD);

@@ -10,8 +10,8 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.PreviewFrontierHel
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -51,16 +51,10 @@ public class HUD {
         hud.previewMode = true;
 
         FrontierData frontierData = new FrontierData();
-        SettingsUser owner = new SettingsUser();
-        if (mc.player != null) {
-            owner.username = mc.player.getName().getString();
-            owner.uuid = mc.player.getUUID();
-        } else {
-            owner.username = "Player";
-        }
+        SettingsUser owner = PreviewFrontierHelper.createPreviewOwner();
         frontierData.setOwner(owner);
-        frontierData.setName1("Preview Frontier");
-        frontierData.setName2("-----------------");
+        frontierData.setName1(PreviewFrontierHelper.translate("mapfrontiers.preview_name_1"));
+        frontierData.setName2(PreviewFrontierHelper.translate("mapfrontiers.preview_name_2"));
         PreviewFrontierHelper.setPreviewBanner(frontierData);
 
         hud.frontier = new FrontierOverlay(frontierData, null);
@@ -414,8 +408,11 @@ public class HUD {
         @Override
         public PreparedSlot prepare(int offsetY) {
             int bannerX = posX + hudWidth / 2;
-            int bannerY = posY + offsetY + 2;
-            int[] bannerBounds = frontier.getBannerBounds(bannerX - 11 * bannerScale, bannerY, bannerScale);
+            int slotTop = posY + offsetY;
+            int bannerLeft = bannerX - 11 * bannerScale;
+            int[] localBounds = frontier.getBannerBounds(bannerLeft, 0, bannerScale);
+            int bannerY = slotTop + 2 - localBounds[1];
+            int[] bannerBounds = frontier.getBannerBounds(bannerLeft, bannerY, bannerScale);
             return new BannerPreparedSlot(getHeight(), bannerX, bannerY, bannerBounds);
         }
     }
@@ -477,7 +474,7 @@ public class HUD {
 
     private @Nullable String getCollectionName() {
         if (previewMode) {
-            return Component.translatable("mapfrontiers.preview_collection").getString();
+            return PreviewFrontierHelper.translate("mapfrontiers.preview_collection");
         }
 
         if (frontier == null || frontier.getCollectionId() == null) {

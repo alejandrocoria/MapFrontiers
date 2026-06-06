@@ -48,7 +48,7 @@ abstract class ShapePresetSelector extends AbstractWidgetNoNarration {
         this.selected = clampSelected(selected);
         this.focusedIndex = this.selected;
         labelShapes = new StringWidget(Component.translatable("mapfrontiers.initial_shape"), font, StringWidget.Align.Center)
-                .setColor(ColorConstants.WHITE);
+                .setColor(ColorConstants.SHAPE_PRESET_SELECTOR_LABEL);
     }
 
     public int getSelected() {
@@ -137,10 +137,10 @@ abstract class ShapePresetSelector extends AbstractWidgetNoNarration {
             graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x, y, texX, texY, BUTTON_SIZE, BUTTON_SIZE,
                     TEXTURE_WIDTH, TEXTURE_HEIGHT);
             if (i == selected) {
-                graphics.fill(x, y, x + BUTTON_SIZE, y + 1, ColorConstants.WHITE);
-                graphics.fill(x, y + BUTTON_SIZE - 1, x + BUTTON_SIZE, y + BUTTON_SIZE, ColorConstants.WHITE);
-                graphics.fill(x, y, x + 1, y + BUTTON_SIZE, ColorConstants.WHITE);
-                graphics.fill(x + BUTTON_SIZE - 1, y, x + BUTTON_SIZE, y + BUTTON_SIZE, ColorConstants.WHITE);
+                graphics.fill(x, y, x + BUTTON_SIZE, y + 1, ColorConstants.SHAPE_PRESET_SELECTOR_SELECTION_BORDER);
+                graphics.fill(x, y + BUTTON_SIZE - 1, x + BUTTON_SIZE, y + BUTTON_SIZE, ColorConstants.SHAPE_PRESET_SELECTOR_SELECTION_BORDER);
+                graphics.fill(x, y, x + 1, y + BUTTON_SIZE, ColorConstants.SHAPE_PRESET_SELECTOR_SELECTION_BORDER);
+                graphics.fill(x + BUTTON_SIZE - 1, y, x + BUTTON_SIZE, y + BUTTON_SIZE, ColorConstants.SHAPE_PRESET_SELECTOR_SELECTION_BORDER);
             }
         }
 
@@ -149,7 +149,7 @@ abstract class ShapePresetSelector extends AbstractWidgetNoNarration {
             int row = focusedIndex / columns;
             int x = getX() + col * BUTTON_SPACING;
             int y = getY() + row * BUTTON_SPACING + BUTTON_Y_OFFSET;
-            graphics.outline(x - 1, y - 1, BUTTON_SIZE + 2, BUTTON_SIZE + 2, ColorConstants.WHITE);
+            graphics.outline(x - 1, y - 1, BUTTON_SIZE + 2, BUTTON_SIZE + 2, ColorConstants.SHAPE_PRESET_SELECTOR_FOCUS_OUTLINE);
         }
 
         labelShapes.extractRenderState(graphics, mouseX, mouseY, partialTicks);

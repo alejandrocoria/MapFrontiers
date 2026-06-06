@@ -1,8 +1,11 @@
-package games.alejandrocoria.mapfrontiers.common.territory;
+package games.alejandrocoria.mapfrontiers.common.territory.collection;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
+import games.alejandrocoria.mapfrontiers.common.territory.CopiedFromInfo;
+import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import games.alejandrocoria.mapfrontiers.common.util.SourcePluginIdHelper;
@@ -19,13 +22,14 @@ import java.util.UUID;
 @ParametersAreNonnullByDefault
 public class CollectionData {
     public static final int MAX_NAME_CHARACTERS = 48;
-
     protected UUID id;
     protected boolean personal;
     protected TerritoryLifetime lifetime = TerritoryLifetime.PERSISTENT;
     protected SettingsUser owner = new SettingsUser();
     protected String name = "";
     protected int color = ColorConstants.WHITE;
+    protected CollectionVisibilityData visibilityData = new CollectionVisibilityData();
+    protected @Nullable BannerData banner;
     protected @Nullable String sourcePluginId;
     protected @Nullable CopiedFromInfo copiedFrom;
     protected @Nullable Date created;
@@ -42,6 +46,8 @@ public class CollectionData {
         owner = other.owner;
         name = other.name;
         color = other.color;
+        visibilityData = new CollectionVisibilityData(other.visibilityData);
+        banner = other.banner == null ? null : new BannerData(other.banner);
         sourcePluginId = other.sourcePluginId;
         copiedFrom = other.copiedFrom == null ? null : new CopiedFromInfo(other.copiedFrom);
         created = other.created;
@@ -61,6 +67,8 @@ public class CollectionData {
         owner = other.owner;
         name = other.name;
         color = other.color;
+        visibilityData = new CollectionVisibilityData(other.visibilityData);
+        banner = other.banner == null ? null : new BannerData(other.banner);
         sourcePluginId = other.sourcePluginId;
         copiedFrom = other.copiedFrom == null ? null : new CopiedFromInfo(other.copiedFrom);
         created = other.created;
@@ -82,6 +90,14 @@ public class CollectionData {
         owner.readFromNBT(nbt.getCompoundOrEmpty("owner"));
         name = nbt.getStringOr("name", "");
         color = NbtReadHelper.requireInt(nbt, "color");
+        visibilityData = new CollectionVisibilityData();
+        visibilityData.readFromNBT(nbt.getCompoundOrEmpty("visibility"));
+        if (nbt.contains("banner")) {
+            banner = new BannerData();
+            banner.readFromNBT(NbtReadHelper.requireCompound(nbt, "banner"));
+        } else {
+            banner = null;
+        }
         setSourcePluginId(nbt.getStringOr("sourcePluginId", null));
 
         if (nbt.contains("copiedFrom")) {
@@ -117,6 +133,14 @@ public class CollectionData {
 
         nbt.putString("name", name);
         nbt.putInt("color", color);
+        CompoundTag visibilityTag = new CompoundTag();
+        visibilityData.writeToNBT(visibilityTag);
+        nbt.put("visibility", visibilityTag);
+        if (banner != null) {
+            CompoundTag bannerTag = new CompoundTag();
+            banner.writeToNBT(bannerTag);
+            nbt.put("banner", bannerTag);
+        }
         if (sourcePluginId != null) {
             nbt.putString("sourcePluginId", sourcePluginId);
         }
@@ -145,6 +169,14 @@ public class CollectionData {
         owner.fromBytes(buf);
         name = buf.readUtf(MAX_NAME_CHARACTERS);
         color = buf.readInt();
+        visibilityData = new CollectionVisibilityData();
+        visibilityData.fromBytes(buf);
+        if (buf.readBoolean()) {
+            banner = new BannerData();
+            banner.fromBytes(buf);
+        } else {
+            banner = null;
+        }
         setSourcePluginId(buf.readBoolean() ? buf.readUtf() : null);
 
         if (buf.readBoolean()) {
@@ -176,6 +208,13 @@ public class CollectionData {
         owner.toBytes(buf);
         buf.writeUtf(name, MAX_NAME_CHARACTERS);
         buf.writeInt(color);
+        visibilityData.toBytes(buf);
+        if (banner == null) {
+            buf.writeBoolean(false);
+        } else {
+            buf.writeBoolean(true);
+            banner.toBytes(buf);
+        }
         if (sourcePluginId == null) {
             buf.writeBoolean(false);
         } else {
@@ -264,6 +303,36 @@ public class CollectionData {
         this.color = color;
     }
 
+    public boolean hasBanner() {
+        return banner != null;
+    }
+
+    public void setBannerData(@Nullable BannerData bannerData) {
+        banner = bannerData == null ? null : new BannerData(bannerData);
+    }
+
+    public @Nullable BannerData getBannerData() {
+        return banner;
+    }
+
+    public void setBannerRotation(int rotation) {
+        if (banner != null) {
+            banner.rotation = rotation;
+        }
+    }
+
+    public int getBannerRotation() {
+        return banner == null ? 0 : banner.rotation;
+    }
+
+    public void setVisibilityData(CollectionVisibilityData visibilityData) {
+        this.visibilityData = new CollectionVisibilityData(visibilityData);
+    }
+
+    public CollectionVisibilityData getVisibilityData() {
+        return visibilityData;
+    }
+
     public void setSourcePluginId(@Nullable String sourcePluginId) {
         this.sourcePluginId = SourcePluginIdHelper.normalize(sourcePluginId);
     }
@@ -301,28 +370,28 @@ public class CollectionData {
         if (copiedFrom == null) {
             copiedFrom = new CopiedFromInfo();
         }
-        copiedFrom.id = id;
+        copiedFrom.setId(id);
     }
 
     public UUID getCopiedFromId() {
         if (copiedFrom == null) {
             return id;
         }
-        return copiedFrom.id;
+        return copiedFrom.getId();
     }
 
     public void setCopiedFromUser(SettingsUser user) {
         if (copiedFrom == null) {
             copiedFrom = new CopiedFromInfo();
         }
-        copiedFrom.user = user;
+        copiedFrom.setUser(user);
     }
 
     public SettingsUser getCopiedFromUser() {
         if (copiedFrom == null) {
             return owner;
         }
-        return copiedFrom.user;
+        return copiedFrom.getUser();
     }
 
     private static void validateTypeAndLifetime(boolean personal, TerritoryLifetime lifetime) {

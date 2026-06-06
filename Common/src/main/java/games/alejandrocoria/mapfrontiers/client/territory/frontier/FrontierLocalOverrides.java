@@ -2,7 +2,8 @@ package games.alejandrocoria.mapfrontiers.client.territory.frontier;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.territory.ClientMapFrontiersStorageHelper;
-import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityMask;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtFileHelper;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
@@ -21,24 +22,25 @@ import java.util.UUID;
 
 public class FrontierLocalOverrides {
     private static final String FILENAME = "frontier_overrides.dat";
+    private static final int FRONTIER_OVERRIDES_DATA_VERSION = 13;
 
-    private final Map<UUID, Pair<VisibilityData, VisibilityData>> overrides = new HashMap<>();
+    private final Map<UUID, Pair<FrontierVisibilityData, FrontierVisibilityMask>> overrides = new HashMap<>();
     private File ModDir;
 
     public FrontierLocalOverrides() {
         loadData();
     }
 
-    public Pair<VisibilityData, VisibilityData> getVisibility(UUID id) {
+    public Pair<FrontierVisibilityData, FrontierVisibilityMask> getVisibility(UUID id) {
         var override = overrides.get(id);
         if (override == null) {
-            return Pair.of(new VisibilityData(), new VisibilityData(false));
+            return Pair.of(new FrontierVisibilityData(), new FrontierVisibilityMask());
         }
         return override;
     }
 
-    public void setVisibility(UUID id, Pair<VisibilityData, VisibilityData> visibility) {
-        if (visibility.second().hasSome()) {
+    public void setVisibility(UUID id, Pair<FrontierVisibilityData, FrontierVisibilityMask> visibility) {
+        if (visibility.second().hasAny()) {
             overrides.put(id, visibility);
         } else {
             overrides.remove(id);
@@ -46,34 +48,44 @@ public class FrontierLocalOverrides {
         saveData();
     }
 
+    public static FrontierVisibilityData resolveVisibility(FrontierVisibilityData baseVisibility, Pair<FrontierVisibilityData, FrontierVisibilityMask> visibilityOverride) {
+        FrontierVisibilityData resolvedVisibility = new FrontierVisibilityData(baseVisibility);
+        resolvedVisibility.applyOverride(visibilityOverride.first(), visibilityOverride.second());
+        return resolvedVisibility;
+    }
+
     private boolean readFromNBT(CompoundTag nbt) {
         boolean needBackup = false;
         try {
             int version = nbt.getIntOr("Version", 0);
             if (version == 0) {
-                MapFrontiers.LOGGER.warn("Data version in {} not found, expected {}", FILENAME, MapFrontiers.FRONTIER_DATA_VERSION);
+                MapFrontiers.LOGGER.warn("Data version in {} not found, expected {}", FILENAME, FRONTIER_OVERRIDES_DATA_VERSION);
                 needBackup = true;
-            } else if (version > MapFrontiers.FRONTIER_DATA_VERSION) {
-                MapFrontiers.LOGGER.warn("Data version in {} higher than expected. The mod uses {}", FILENAME, MapFrontiers.FRONTIER_DATA_VERSION);
+            } else if (version > FRONTIER_OVERRIDES_DATA_VERSION) {
+                MapFrontiers.LOGGER.warn("Data version in {} higher than expected. The mod uses {}", FILENAME, FRONTIER_OVERRIDES_DATA_VERSION);
                 needBackup = true;
             }
 
-            ListTag overridesTagList = nbt.getListOrEmpty("overrides");
+            ListTag overridesTagList;
+            if (version < FRONTIER_OVERRIDES_DATA_VERSION) {
+                overridesTagList = migrateLegacyOverrides(nbt.getListOrEmpty("overrides"));
+                nbt.put("overrides", overridesTagList);
+                nbt.putInt("Version", FRONTIER_OVERRIDES_DATA_VERSION);
+                needBackup = true;
+            } else {
+                overridesTagList = nbt.getListOrEmpty("overrides");
+            }
+
             for (int i = 0; i < overridesTagList.size(); ++i) {
                 try {
                     CompoundTag overrideTag = NbtReadHelper.requireCompound(overridesTagList, i, "overrides");
                     UUID id = UUID.fromString(NbtReadHelper.requireString(overrideTag, "id"));
 
-                    CompoundTag dataTag = NbtReadHelper.requireCompound(overrideTag, "data");
-                    VisibilityData data = new VisibilityData();
-                    data.readFromNBT(dataTag);
-
-                    CompoundTag maskTag = NbtReadHelper.requireCompound(overrideTag, "mask");
-                    VisibilityData mask = new VisibilityData(false);
-                    mask.readFromNBT(maskTag);
-
-                    if (mask.hasSome()) {
-                        overrides.put(id, Pair.of(data, mask));
+                    CompoundTag visibilityTag = NbtReadHelper.requireCompound(overrideTag, "visibility");
+                    Pair<FrontierVisibilityData, FrontierVisibilityMask> override = readSparseOverrideData(visibilityTag);
+                    FrontierVisibilityMask mask = override.second();
+                    if (mask.hasAny()) {
+                        overrides.put(id, override);
                     }
                 } catch (InvalidNbtFormatException e) {
                     MapFrontiers.LOGGER.warn("Skipping invalid frontier override at overrides[{}]: {}", i, e.getMessage());
@@ -90,23 +102,22 @@ public class FrontierLocalOverrides {
 
     private void writeToNBT(CompoundTag nbt) {
         ListTag overridesTagList = new ListTag();
-        for (Map.Entry<UUID, Pair<VisibilityData, VisibilityData>> override : overrides.entrySet()) {
+        for (Map.Entry<UUID, Pair<FrontierVisibilityData, FrontierVisibilityMask>> override : overrides.entrySet()) {
+            if (!override.getValue().second().hasAny()) {
+                continue;
+            }
+
             CompoundTag overrideTag = new CompoundTag();
             overrideTag.putString("id", override.getKey().toString());
 
-            CompoundTag dataTag = new CompoundTag();
-            override.getValue().first().writeToNBT(dataTag);
-            overrideTag.put("data", dataTag);
-
-            CompoundTag maskTag = new CompoundTag();
-            override.getValue().second().writeToNBT(maskTag);
-            overrideTag.put("mask", maskTag);
+            CompoundTag visibilityTag = writeSparseOverrideData(override.getValue().first(), override.getValue().second());
+            overrideTag.put("visibility", visibilityTag);
 
             overridesTagList.add(overrideTag);
         }
         nbt.put("overrides", overridesTagList);
 
-        nbt.putInt("Version", MapFrontiers.FRONTIER_DATA_VERSION);
+        nbt.putInt("Version", FRONTIER_OVERRIDES_DATA_VERSION);
     }
 
     private void loadData() {
@@ -176,5 +187,50 @@ public class FrontierLocalOverrides {
         }
 
         return new CompoundTag();
+    }
+
+    private ListTag migrateLegacyOverrides(ListTag legacyOverridesTagList) {
+        ListTag migratedOverridesTagList = new ListTag();
+        for (int i = 0; i < legacyOverridesTagList.size(); ++i) {
+            try {
+                CompoundTag legacyOverrideTag = NbtReadHelper.requireCompound(legacyOverridesTagList, i, "overrides");
+                UUID id = UUID.fromString(NbtReadHelper.requireString(legacyOverrideTag, "id"));
+
+                CompoundTag legacyDataTag = NbtReadHelper.requireCompound(legacyOverrideTag, "data");
+                FrontierVisibilityData legacyData = new FrontierVisibilityData();
+                legacyData.readFromNBT(legacyDataTag);
+
+                CompoundTag legacyMaskTag = NbtReadHelper.requireCompound(legacyOverrideTag, "mask");
+                FrontierVisibilityData legacyMask = new FrontierVisibilityData(false);
+                legacyMask.readFromNBT(legacyMaskTag);
+                FrontierVisibilityMask migratedMask = new FrontierVisibilityMask(legacyMask);
+
+                if (!migratedMask.hasAny()) {
+                    continue;
+                }
+
+                CompoundTag migratedOverrideTag = new CompoundTag();
+                migratedOverrideTag.putString("id", id.toString());
+                migratedOverrideTag.put("visibility", writeSparseOverrideData(legacyData, migratedMask));
+                migratedOverridesTagList.add(migratedOverrideTag);
+            } catch (InvalidNbtFormatException e) {
+                MapFrontiers.LOGGER.warn("Skipping invalid frontier override at overrides[{}]: {}", i, e.getMessage());
+            }
+        }
+
+        return migratedOverridesTagList;
+    }
+
+    private Pair<FrontierVisibilityData, FrontierVisibilityMask> readSparseOverrideData(CompoundTag dataTag) {
+        FrontierVisibilityData data = new FrontierVisibilityData();
+        FrontierVisibilityMask mask = new FrontierVisibilityMask();
+        data.readSparseNbt(dataTag, mask);
+        return Pair.of(data, mask);
+    }
+
+    private CompoundTag writeSparseOverrideData(FrontierVisibilityData data, FrontierVisibilityMask mask) {
+        CompoundTag dataTag = new CompoundTag();
+        data.writeSparseNbt(dataTag, mask);
+        return dataTag;
     }
 }

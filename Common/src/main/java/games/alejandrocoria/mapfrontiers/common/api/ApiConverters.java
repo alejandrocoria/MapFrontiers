@@ -4,6 +4,8 @@ import games.alejandrocoria.mapfrontiers.api.model.ChunkCoord;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionDataView;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionId;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionMutation;
+import games.alejandrocoria.mapfrontiers.api.model.CollectionVisibilityFlag;
+import games.alejandrocoria.mapfrontiers.api.model.CollectionVisibilitySettings;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
 import games.alejandrocoria.mapfrontiers.api.model.EntityLifetime;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierBanner;
@@ -21,11 +23,14 @@ import games.alejandrocoria.mapfrontiers.api.model.SharedUserAccess;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
-import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierMutationApplier;
+import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
-import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityField;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierMutationApplier;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.resources.Identifier;
@@ -60,20 +65,20 @@ public final class ApiConverters {
         };
     }
 
-    public static Set<FrontierVisibilityFlag> fromVisibility(VisibilityData visibilityData) {
+    public static Set<FrontierVisibilityFlag> fromFrontierVisibility(FrontierVisibilityData visibilityData) {
         return FrontierMutationApplier.fromVisibility(visibilityData);
     }
 
-    public static VisibilityData toVisibility(Set<FrontierVisibilityFlag> visibilityFlags) {
+    public static FrontierVisibilityData toFrontierVisibility(Set<FrontierVisibilityFlag> visibilityFlags) {
         return FrontierMutationApplier.toVisibility(visibilityFlags);
     }
 
-    public static FrontierBanner fromBanner(FrontierData.BannerData bannerData) {
+    public static FrontierBanner fromBanner(BannerData bannerData) {
         if (bannerData == null) {
             return null;
         }
 
-        ListTag patterns = FrontierData.BannerData.normalizePatterns(bannerData.patterns);
+        ListTag patterns = BannerData.normalizePatterns(bannerData.patterns);
 
         return new FrontierBanner(
                 bannerData.baseColor.getId(),
@@ -82,7 +87,7 @@ public final class ApiConverters {
         );
     }
 
-    public static FrontierData.BannerData toBanner(@Nullable FrontierBanner banner) {
+    public static BannerData toBanner(@Nullable FrontierBanner banner) {
         return FrontierMutationApplier.toBanner(banner);
     }
 
@@ -108,10 +113,64 @@ public final class ApiConverters {
     public static SharedUserAccess fromSharedUser(SettingsUserShared userShared) {
         EnumSet<FrontierSharePermission> permissions = EnumSet.noneOf(FrontierSharePermission.class);
         for (SettingsUserShared.Action action : userShared.getActions()) {
-            permissions.add(FrontierSharePermission.valueOf(action.name()));
+            permissions.add(toFrontierSharePermission(action));
         }
 
         return new SharedUserAccess(fromUser(userShared.getUser()), permissions, userShared.isPending());
+    }
+
+    public static CollectionVisibilitySettings fromCollectionVisibility(CollectionVisibilityData visibilityData) {
+        return CollectionVisibilitySettings.builder()
+                .visible(visibilityData.isVisible())
+                .fullscreenZoom(visibilityData.getFullscreenZoom())
+                .minimapZoom(visibilityData.getMinimapZoom())
+                .webmapZoom(visibilityData.getWebmapZoom())
+                .fullscreenName(visibilityData.getFullscreenName())
+                .fullscreenOwner(visibilityData.getFullscreenOwner())
+                .fullscreenBanner(visibilityData.getFullscreenBanner())
+                .minimapName(visibilityData.getMinimapName())
+                .minimapOwner(visibilityData.getMinimapOwner())
+                .minimapBanner(visibilityData.getMinimapBanner())
+                .webmapName(visibilityData.getWebmapName())
+                .webmapOwner(visibilityData.getWebmapOwner())
+                .webmapBanner(visibilityData.getWebmapBanner())
+                .build();
+    }
+
+    public static CollectionVisibilityData toCollectionVisibility(CollectionVisibilitySettings visibility) {
+        CollectionVisibilityData visibilityData = new CollectionVisibilityData();
+        visibilityData.setVisible(visibility.visible());
+        visibilityData.setFullscreenZoom(visibility.fullscreenZoom());
+        visibilityData.setMinimapZoom(visibility.minimapZoom());
+        visibilityData.setWebmapZoom(visibility.webmapZoom());
+        visibilityData.setFullscreenName(visibility.fullscreenName());
+        visibilityData.setFullscreenOwner(visibility.fullscreenOwner());
+        visibilityData.setFullscreenBanner(visibility.fullscreenBanner());
+        visibilityData.setMinimapName(visibility.minimapName());
+        visibilityData.setMinimapOwner(visibility.minimapOwner());
+        visibilityData.setMinimapBanner(visibility.minimapBanner());
+        visibilityData.setWebmapName(visibility.webmapName());
+        visibilityData.setWebmapOwner(visibility.webmapOwner());
+        visibilityData.setWebmapBanner(visibility.webmapBanner());
+        return visibilityData;
+    }
+
+    public static CollectionVisibilityData defaultCollectionVisibility() {
+        return new CollectionData().getVisibilityData();
+    }
+
+    public static BannerData defaultCollectionBanner() {
+        return new CollectionData().getBannerData();
+    }
+
+    private static void addCollectionVisibilityFlags(CollectionVisibilityData visibilityData,
+                                                     Set<CollectionVisibilityFlag> visibilityFlags) {
+        setCollectionVisibilityFlags(visibilityData, visibilityFlags, true);
+    }
+
+    private static void removeCollectionVisibilityFlags(CollectionVisibilityData visibilityData,
+                                                        Set<CollectionVisibilityFlag> visibilityFlags) {
+        setCollectionVisibilityFlags(visibilityData, visibilityFlags, false);
     }
 
     public static CollectionDataView fromCollection(CollectionData collection) {
@@ -122,6 +181,8 @@ public final class ApiConverters {
                 fromUser(collection.getOwner()),
                 collection.getName(),
                 collection.getColor(),
+                fromCollectionVisibility(collection.getVisibilityData()),
+                fromBanner(collection.getBannerData()),
                 Optional.ofNullable(collection.getSourcePluginId())
         );
     }
@@ -144,9 +205,9 @@ public final class ApiConverters {
                 frontier.getName1(),
                 frontier.getName2(),
                 toShape(frontier),
-                fromVisibility(frontier.getVisibilityData()),
-                fromBanner(frontier.getbannerData()),
-                frontier.getShape() == games.alejandrocoria.mapfrontiers.common.territory.FrontierShape.Path ? Optional.of(fromPathStyle(frontier.getPathStyle())) : Optional.empty(),
+                fromFrontierVisibility(frontier.getVisibilityData()),
+                fromBanner(frontier.getBannerData()),
+                frontier.getShape() == games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape.Path ? Optional.of(fromPathStyle(frontier.getPathStyle())) : Optional.empty(),
                 Optional.ofNullable(frontier.getCollectionId()).map(CollectionId::new),
                 Optional.ofNullable(frontier.getSourcePluginId()),
                 owner,
@@ -180,6 +241,20 @@ public final class ApiConverters {
         return result;
     }
 
+    public static FrontierSharePermission toFrontierSharePermission(SettingsUserShared.Action action) {
+        return switch (action) {
+            case UpdateFrontier -> FrontierSharePermission.UpdateFrontier;
+            case UpdateSettings -> FrontierSharePermission.UpdateSettings;
+        };
+    }
+
+    public static SettingsUserShared.Action toSharedUserAction(FrontierSharePermission permission) {
+        return switch (permission) {
+            case UpdateFrontier -> SettingsUserShared.Action.UpdateFrontier;
+            case UpdateSettings -> SettingsUserShared.Action.UpdateSettings;
+        };
+    }
+
     public static void applyMutation(FrontierData frontier, FrontierMutation mutation) {
         FrontierMutationApplier.applyMutation(frontier, mutation);
     }
@@ -187,6 +262,49 @@ public final class ApiConverters {
     public static void applyCollectionMutation(CollectionData collection, CollectionMutation mutation) {
         mutation.name().ifPresent(collection::setName);
         mutation.color().ifPresent(collection::setColor);
+        if (mutation.visibility().isPresent()) {
+            collection.setVisibilityData(toCollectionVisibility(mutation.visibility().get()));
+        } else if (!mutation.visibilityToAdd().isEmpty()
+                || !mutation.visibilityToRemove().isEmpty()
+                || mutation.fullscreenZoom().isPresent()
+                || mutation.minimapZoom().isPresent()
+                || mutation.webmapZoom().isPresent()) {
+            CollectionVisibilityData visibilityData = new CollectionVisibilityData(collection.getVisibilityData());
+            addCollectionVisibilityFlags(visibilityData, mutation.visibilityToAdd());
+            removeCollectionVisibilityFlags(visibilityData, mutation.visibilityToRemove());
+            mutation.fullscreenZoom().ifPresent(visibilityData::setFullscreenZoom);
+            mutation.minimapZoom().ifPresent(visibilityData::setMinimapZoom);
+            mutation.webmapZoom().ifPresent(visibilityData::setWebmapZoom);
+            collection.setVisibilityData(visibilityData);
+        }
+        if (mutation.clearBanner()) {
+            collection.setBannerData(null);
+        } else {
+            mutation.banner().ifPresent(value -> collection.setBannerData(toBanner(value)));
+        }
+    }
+
+    private static void setCollectionVisibilityFlags(CollectionVisibilityData visibilityData,
+                                                     Set<CollectionVisibilityFlag> visibilityFlags,
+                                                     boolean enabled) {
+        for (CollectionVisibilityFlag visibilityFlag : visibilityFlags) {
+            visibilityData.setBoolean(toCollectionVisibilityField(visibilityFlag), enabled);
+        }
+    }
+
+    private static CollectionVisibilityField toCollectionVisibilityField(CollectionVisibilityFlag visibilityFlag) {
+        return switch (visibilityFlag) {
+            case Visible -> CollectionVisibilityField.Visible;
+            case FullscreenName -> CollectionVisibilityField.FullscreenName;
+            case FullscreenOwner -> CollectionVisibilityField.FullscreenOwner;
+            case FullscreenBanner -> CollectionVisibilityField.FullscreenBanner;
+            case MinimapName -> CollectionVisibilityField.MinimapName;
+            case MinimapOwner -> CollectionVisibilityField.MinimapOwner;
+            case MinimapBanner -> CollectionVisibilityField.MinimapBanner;
+            case WebmapName -> CollectionVisibilityField.WebmapName;
+            case WebmapOwner -> CollectionVisibilityField.WebmapOwner;
+            case WebmapBanner -> CollectionVisibilityField.WebmapBanner;
+        };
     }
 
     private ApiConverters() {
