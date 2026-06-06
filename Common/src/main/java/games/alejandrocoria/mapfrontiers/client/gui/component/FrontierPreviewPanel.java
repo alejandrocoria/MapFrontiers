@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionOverlay;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import games.alejandrocoria.mapfrontiers.platform.services.IJourneyMapHelper;
@@ -25,21 +26,28 @@ public class FrontierPreviewPanel {
 
     private final IJourneyMapHelper.ICustomPreviewRenderer customPreviewRenderer;
     private List<FrontierOverlay> frontiers = List.of();
+    private List<CollectionOverlay> collections = List.of();
 
     public FrontierPreviewPanel() {
         customPreviewRenderer = Services.JOURNEYMAP.createCustomPreviewRenderer();
     }
 
     public void recalculateAndSetFrontiers(List<FrontierOverlay> frontiers) {
+        recalculateAndSetTerritories(frontiers, List.of());
+    }
+
+    public void recalculateAndSetTerritories(List<FrontierOverlay> frontiers, List<CollectionOverlay> collections) {
         for (FrontierOverlay frontier : frontiers) {
             frontier.recalculateOverlays();
         }
 
-        setFrontiers(frontiers);
+        this.frontiers = List.copyOf(frontiers);
+        this.collections = List.copyOf(collections);
+        refreshRenderer();
     }
 
     public void refreshRenderer() {
-        customPreviewRenderer.setFrontiers(frontiers);
+        customPreviewRenderer.setTerritories(frontiers, collections);
     }
 
     public void drawPanelBackground(GuiGraphics graphics, int x, int y, int width, int height, int sourceSize) {
@@ -48,15 +56,10 @@ public class FrontierPreviewPanel {
     }
 
     public void drawPanelBorder(GuiGraphics graphics, int x, int y, int width, int height) {
-        graphics.renderOutline(x, y, width, height, ColorConstants.OPTION_BORDER);
+        graphics.renderOutline(x, y, width, height, ColorConstants.PREVIEW_PANEL_BORDER);
     }
 
     public void drawPreview(GuiGraphics graphics, int x, int y, int size, float scaleFactor) {
         customPreviewRenderer.draw(graphics, Minecraft.getInstance().renderBuffers().bufferSource(), x, y, size, scaleFactor);
-    }
-
-    private void setFrontiers(List<FrontierOverlay> frontiers) {
-        this.frontiers = List.copyOf(frontiers);
-        customPreviewRenderer.setFrontiers(this.frontiers);
     }
 }

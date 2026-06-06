@@ -24,7 +24,7 @@ public abstract class PanelDialog extends AutoScaledScreen {
 
     protected SimpleButton addConfirmButton(Component label, SimpleButton.OnPress onPress) {
         SimpleButton confirmButton = addBottomButton(new SimpleButton(font, LayoutConstants.PANEL_BUTTON_WIDTH, label, onPress));
-        confirmButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM, ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM_HIGHLIGHT);
+        confirmButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM_NORMAL, ColorConstants.SIMPLE_BUTTON_TEXT_CONFIRM_HIGHLIGHT);
         return confirmButton;
     }
 

@@ -8,22 +8,35 @@ import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPaletteWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPicker;
 import games.alejandrocoria.mapfrontiers.client.gui.component.PluginSourceBadge;
+import games.alejandrocoria.mapfrontiers.client.gui.component.SimpleSlider;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.CollectionVisibilityDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteCollectionConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.territory.BannerDataHelper;
+import games.alejandrocoria.mapfrontiers.client.territory.BannerRenderer;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionLocalOverrides;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityMask;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
+import games.alejandrocoria.mapfrontiers.platform.Services;
+import it.unimi.dsi.fastutil.Pair;
+import journeymap.api.v2.client.display.Context;
+import journeymap.api.v2.client.util.UIState;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.GridLayout;
@@ -32,8 +45,12 @@ import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.BannerItem;
+import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
@@ -50,9 +67,14 @@ import java.util.function.IntUnaryOperator;
 public class CollectionInfoPage extends PageScreen {
     private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_collection_info");
     private static final Component NAME_LABEL = Component.translatable("mapfrontiers.name");
+    private static final Component SELECT_IN_MAP_LABEL = Component.translatable("mapfrontiers.select_in_map");
     private static final Component DONE_LABEL = Component.translatable("gui.done");
     private static final Component DELETE_LABEL = Component.translatable("mapfrontiers.delete");
     private static final Component RANDOM_COLOR_LABEL = Component.translatable("mapfrontiers.random_color");
+    private static final Component ASSIGN_BANNER_LABEL = Component.translatable("mapfrontiers.assign_banner");
+    private static final Component ASSIGN_BANNER_WARN_LABEL = ASSIGN_BANNER_LABEL.copy().append(Component.literal(ColorConstants.WARNING + " !"));
+    private static final Component REMOVE_BANNER_LABEL = Component.translatable("mapfrontiers.remove_banner");
+    private static final String BANNER_ROTATION_KEY = "mapfrontiers.banner_rotation";
     private static final Component PERSONAL_LABEL = Component.translatable("mapfrontiers.personal_type");
     private static final Component GLOBAL_LABEL = Component.translatable("mapfrontiers.global_type");
     private static final String TYPE_KEY = "mapfrontiers.type";
@@ -64,6 +86,8 @@ public class CollectionInfoPage extends PageScreen {
     private static final String LENGTH_KEY = "mapfrontiers.length";
     private static final String CREATED_KEY = "mapfrontiers.created";
     private static final String MODIFIED_KEY = "mapfrontiers.modified";
+    private static final Component VISIBILITY_LABEL = Component.translatable("mapfrontiers.visibility");
+    private static final Component VISIBILITY_OVERRIDE_LABEL = Component.translatable("mapfrontiers.visibility_override");
     private static final Component R_LABEL = Component.literal("R");
     private static final Component G_LABEL = Component.literal("G");
     private static final Component B_LABEL = Component.literal("B");
@@ -73,8 +97,14 @@ public class CollectionInfoPage extends PageScreen {
     private static final Tooltip CLOSE_PASTE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.close_paste_options.tooltip"));
     private static final Tooltip UNDO_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.undo.tooltip"));
     private static final Tooltip REDO_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.redo.tooltip"));
+    private static final Tooltip ASSIGN_BANNER_WARN_TOOLTIP = Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET)
+            .append(Component.translatable("mapfrontiers.assign_banner_warn.tooltip")));
+    private static final Tooltip VISIBILITY_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.collection_visibility.tooltip"));
+    private static final Tooltip VISIBILITY_OVERRIDE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.collection_visibility_override.tooltip"));
     private static final Component PASTE_NAME_LABEL = Component.translatable("mapfrontiers.paste_name");
     private static final Component PASTE_COLOR_LABEL = Component.translatable("mapfrontiers.paste_color");
+    private static final Component PASTE_BANNER_LABEL = Component.translatable("mapfrontiers.paste_banner");
+    private static final Component PASTE_VISIBILITY_LABEL = Component.translatable("mapfrontiers.paste_visibility");
     private static final Component ON_LABEL = Component.translatable("options.on");
     private static final Component OFF_LABEL = Component.translatable("options.off");
     private static final int SECTION_WIDTH = 146;
@@ -91,10 +121,15 @@ public class CollectionInfoPage extends PageScreen {
     private final CollectionData collection;
     private final Stack<CollectionData> undoStack = new Stack<>();
     private final Stack<CollectionData> redoStack = new Stack<>();
+    private final BannerRenderer bannerRenderer = new BannerRenderer();
     private boolean saveChangesOnClose = true;
     private boolean syncingWidgets = false;
 
     private TextBox textName;
+    private SimpleButton buttonVisibility;
+    private SimpleButton buttonVisibilityOverride;
+    private SimpleButton buttonBanner;
+    private SimpleSlider sliderBannerRotation;
     private TextBoxInt textRed;
     private TextBoxInt textGreen;
     private TextBoxInt textBlue;
@@ -108,10 +143,15 @@ public class CollectionInfoPage extends PageScreen {
     private IconButton buttonRedo;
     private OptionButton buttonPasteName;
     private OptionButton buttonPasteColor;
+    private OptionButton buttonPasteVisibility;
+    private OptionButton buttonPasteBanner;
+    private SimpleButton buttonSelect;
     private SimpleButton buttonDelete;
     private SimpleButton buttonDone;
     private StringWidget labelPasteName;
     private StringWidget labelPasteColor;
+    private StringWidget labelPasteVisibility;
+    private StringWidget labelPasteBanner;
     private StringWidget ownerLabel;
     private StringWidget typeLabel;
     private StringWidget frontiersCountLabel;
@@ -125,6 +165,7 @@ public class CollectionInfoPage extends PageScreen {
         this.collectionId = collection.getId();
         this.originalCollection = new CollectionData(collection);
         this.collection = new CollectionData(collection);
+        syncBannerRenderer();
         undoStack.push(createMetadataSnapshot());
 
         MapFrontiersClient.getCollectionEvents().subscribeDeleted(this, deletedId -> {
@@ -148,6 +189,7 @@ public class CollectionInfoPage extends PageScreen {
         GridLayout mainLayout = new GridLayout().spacing(LayoutConstants.SPACING_MEDIUM);
         content.addChild(mainLayout);
 
+        buildBannerSection(mainLayout);
         buildOverviewSection(mainLayout);
         buildInfoSection(mainLayout);
         buildColorSection(mainLayout);
@@ -159,13 +201,25 @@ public class CollectionInfoPage extends PageScreen {
         setInitialFocus(buttonDone);
     }
 
+    private void buildBannerSection(GridLayout mainLayout) {
+        LinearLayout bannerColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
+        bannerColumn.defaultCellSetting().alignHorizontallyCenter();
+        mainLayout.addChild(bannerColumn, 0, 0);
+
+        buttonBanner = new SimpleButton(font, SECTION_WIDTH, ASSIGN_BANNER_LABEL, b -> onBannerButtonPressed());
+        bannerColumn.addChild(buttonBanner);
+
+        sliderBannerRotation = new SimpleSlider(font, SECTION_WIDTH, BANNER_ROTATION_KEY, 0, 360, collection.getBannerRotation(), this::onBannerRotationChanged);
+        bannerColumn.addChild(sliderBannerRotation);
+    }
+
     private void buildOverviewSection(GridLayout mainLayout) {
         LinearLayout overviewColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         overviewColumn.defaultCellSetting().alignHorizontallyLeft();
-        mainLayout.addChild(overviewColumn, 0, 0, 1, 2);
+        mainLayout.addChild(overviewColumn, 0, 1, 1, 2);
 
         LinearLayout headerRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
-        headerRow.addChild(new StringWidget(NAME_LABEL, font).setColor(ColorConstants.WHITE));
+        headerRow.addChild(new StringWidget(NAME_LABEL, font).setColor(ColorConstants.COLLECTION_INFO_TEXT));
         PluginSourceBadge sourceBadge = new PluginSourceBadge(font, collection.getSourcePluginId(), true);
         int sourceWidth = sourceBadge.getWidth();
         headerRow.addChild(SpacerElement.width(Math.max(0,
@@ -180,33 +234,46 @@ public class CollectionInfoPage extends PageScreen {
         textName.setValueChangedCallback(this::onNameChanged);
         textName.setLostFocusCallback(value -> addCurrentStateToUndo());
         overviewColumn.addChild(textName);
+
+        LinearLayout visibilityRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_MEDIUM);
+        visibilityRow.defaultCellSetting().alignVerticallyMiddle();
+        overviewColumn.addChild(visibilityRow);
+
+        buttonVisibility = new SimpleButton(font, SECTION_WIDTH, VISIBILITY_LABEL, b -> onVisibilityButtonPressed());
+        buttonVisibility.setTooltip(VISIBILITY_TOOLTIP);
+        visibilityRow.addChild(buttonVisibility);
+
+        buttonVisibilityOverride = new SimpleButton(font, SECTION_WIDTH, VISIBILITY_OVERRIDE_LABEL,
+                b -> onVisibilityOverrideButtonPressed());
+        buttonVisibilityOverride.setTooltip(VISIBILITY_OVERRIDE_TOOLTIP);
+        visibilityRow.addChild(buttonVisibilityOverride);
     }
 
     private void buildInfoSection(GridLayout mainLayout) {
         LinearLayout infoColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_TINY);
-        mainLayout.addChild(infoColumn, 0, 2, LayoutSettings.defaults().alignHorizontallyLeft());
+        mainLayout.addChild(infoColumn, 0, 3, LayoutSettings.defaults().alignHorizontallyLeft());
 
-        ownerLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.WHITE));
-        typeLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.WHITE));
-        frontiersCountLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.WHITE));
-        areaLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.WHITE));
-        lengthLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.WHITE));
+        ownerLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.COLLECTION_INFO_TEXT));
+        typeLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.COLLECTION_INFO_TEXT));
+        frontiersCountLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.COLLECTION_INFO_TEXT));
+        areaLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.COLLECTION_INFO_TEXT));
+        lengthLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.COLLECTION_INFO_TEXT));
 
         if (collection.getCreated() != null) {
-            createdLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.WHITE));
+            createdLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.COLLECTION_INFO_TEXT));
         }
         if (collection.getModified() != null) {
-            modifiedLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.WHITE));
+            modifiedLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.COLLECTION_INFO_TEXT));
         }
     }
 
     private void buildColorSection(GridLayout mainLayout) {
         colorPicker = new ColorPicker(collection.getColor(), this::onColorPicked);
-        mainLayout.addChild(colorPicker, 1, 0, LayoutSettings.defaults().alignVerticallyBottom().alignHorizontallyCenter());
+        mainLayout.addChild(colorPicker, 1, 1, LayoutSettings.defaults().alignVerticallyBottom().alignHorizontallyCenter());
 
         LinearLayout colorColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         colorColumn.defaultCellSetting().alignHorizontallyCenter();
-        mainLayout.addChild(colorColumn, 1, 1, LayoutSettings.defaults().alignVerticallyBottom());
+        mainLayout.addChild(colorColumn, 1, 2, LayoutSettings.defaults().alignVerticallyBottom());
 
         LinearLayout rgbRow = LinearLayout.horizontal().spacing(RGB_INLINE_SPACING);
         rgbRow.defaultCellSetting().alignVerticallyMiddle();
@@ -239,7 +306,7 @@ public class CollectionInfoPage extends PageScreen {
         GridLayout editColumn = new GridLayout().rowSpacing(LayoutConstants.SPACING_SMALL);
         editColumn.defaultCellSetting().alignHorizontallyLeft();
         editColumn.addChild(SpacerElement.width(CLIPBOARD_SPACER_WIDTH), 0, 0);
-        mainLayout.addChild(editColumn, 1, 2, LayoutSettings.defaults().alignVerticallyBottom().alignHorizontallyLeft());
+        mainLayout.addChild(editColumn, 1, 3, LayoutSettings.defaults().alignVerticallyBottom().alignHorizontallyLeft());
 
         labelPasteName = editColumn.addChild(new StringWidget(PASTE_NAME_LABEL, font).setColor(ColorConstants.TEXT), 0, 0);
         buttonPasteName = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_NAME.get(), ClientConfig.PASTE_NAME::set), 0, 1);
@@ -247,8 +314,14 @@ public class CollectionInfoPage extends PageScreen {
         labelPasteColor = editColumn.addChild(new StringWidget(PASTE_COLOR_LABEL, font).setColor(ColorConstants.TEXT), 1, 0);
         buttonPasteColor = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_COLOR.get(), ClientConfig.PASTE_COLOR::set), 1, 1);
 
+        labelPasteVisibility = editColumn.addChild(new StringWidget(PASTE_VISIBILITY_LABEL, font).setColor(ColorConstants.TEXT), 2, 0);
+        buttonPasteVisibility = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_VISIBILITY.get(), ClientConfig.PASTE_VISIBILITY::set), 2, 1);
+
+        labelPasteBanner = editColumn.addChild(new StringWidget(PASTE_BANNER_LABEL, font).setColor(ColorConstants.TEXT), 3, 0);
+        buttonPasteBanner = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_BANNER.get(), ClientConfig.PASTE_BANNER::set), 3, 1);
+
         LinearLayout editButtons = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
-        editColumn.addChild(editButtons, 2, 0);
+        editColumn.addChild(editButtons, 4, 0);
 
         buttonCopy = editButtons.addChild(new IconButton(IconButton.Type.Copy, b -> onCopyPressed()));
         buttonCopy.setTooltip(COPY_TOOLTIP);
@@ -270,8 +343,9 @@ public class CollectionInfoPage extends PageScreen {
     }
 
     private void buildBottomButtons() {
+        buttonSelect = addBottomButton(new SimpleButton(font, SECTION_WIDTH, SELECT_IN_MAP_LABEL, b -> onSelectInMapPressed()));
         buttonDelete = addBottomButton(new SimpleButton(font, SECTION_WIDTH, DELETE_LABEL, b -> onDeletePressed()));
-        buttonDelete.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
+        buttonDelete.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_NORMAL, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
         buttonDone = addBottomButton(new SimpleButton(font, SECTION_WIDTH, DONE_LABEL, b -> onClose()));
     }
 
@@ -310,7 +384,11 @@ public class CollectionInfoPage extends PageScreen {
             return;
         }
 
-        boolean changed = applyEditableMetadata(clipboard, ClientConfig.PASTE_NAME.get(), ClientConfig.PASTE_COLOR.get());
+        boolean changed = applyEditableMetadata(clipboard,
+                ClientConfig.PASTE_NAME.get(),
+                ClientConfig.PASTE_COLOR.get(),
+                ClientConfig.PASTE_BANNER.get(),
+                ClientConfig.PASTE_VISIBILITY.get());
         if (!changed) {
             return;
         }
@@ -342,8 +420,52 @@ public class CollectionInfoPage extends PageScreen {
         }
     }
 
+    private void onSelectInMapPressed() {
+        BlockPos center = getCollectionCenterInCurrentFullscreenDimension();
+        if (center == null) {
+            return;
+        }
+
+        closeAndReturnToFullscreenMap();
+        Services.JOURNEYMAP.fullscreenMapCenterOn(center.getX(), center.getZ());
+    }
+
     private void onRandomColorPressed() {
         applyColorChange(ColorHelper.getRandomColor(), true);
+    }
+
+    private void onBannerButtonPressed() {
+        if (!collection.hasBanner()) {
+            ItemStack heldBanner = getHeldBanner(minecraft);
+            if (heldBanner == null) {
+                return;
+            }
+            collection.setBannerData(BannerDataHelper.fromBannerItem(heldBanner));
+        } else {
+            collection.setBannerData(null);
+        }
+
+        syncingWidgets = true;
+        try {
+            sliderBannerRotation.setValue(collection.getBannerRotation());
+        } finally {
+            syncingWidgets = false;
+        }
+        syncBannerRenderer();
+        updateBannerButton();
+        addCurrentStateToUndo();
+    }
+
+    private void onBannerRotationChanged(int angle, boolean dragging) {
+        if (syncingWidgets || collection.getBannerRotation() == angle) {
+            return;
+        }
+
+        collection.setBannerRotation(angle);
+        bannerRenderer.setRotation(angle);
+        if (!dragging) {
+            addCurrentStateToUndo();
+        }
     }
 
     private void applyColorChange(int color, boolean trackUndo) {
@@ -377,7 +499,8 @@ public class CollectionInfoPage extends PageScreen {
         }
     }
 
-    private boolean applyEditableMetadata(CollectionData source, boolean pasteName, boolean pasteColor) {
+    private boolean applyEditableMetadata(CollectionData source, boolean pasteName, boolean pasteColor, boolean pasteBanner,
+                                         boolean pasteVisibility) {
         boolean changed = false;
         syncingWidgets = true;
         try {
@@ -393,10 +516,23 @@ public class CollectionInfoPage extends PageScreen {
                 syncColorWidgets(source.getColor());
                 changed = true;
             }
+
+            if (pasteBanner && !Objects.equals(collection.getBannerData(), source.getBannerData())) {
+                collection.setBannerData(source.getBannerData());
+                syncBannerRenderer();
+                sliderBannerRotation.setValue(collection.getBannerRotation());
+                changed = true;
+            }
+
+            if (pasteVisibility && !collection.getVisibilityData().equals(source.getVisibilityData())) {
+                collection.setVisibilityData(source.getVisibilityData());
+                changed = true;
+            }
         } finally {
             syncingWidgets = false;
         }
 
+        updateBannerButton();
         return changed;
     }
 
@@ -454,9 +590,22 @@ public class CollectionInfoPage extends PageScreen {
         colorPicker.active = editable;
         colorPalette.active = editable;
         buttonRandomColor.active = editable;
+        buttonVisibility.active = editable;
+        buttonVisibilityOverride.active = true;
+        buttonBanner.active = editable;
+        sliderBannerRotation.active = editable;
+        buttonSelect.active = getCollectionCenterInCurrentFullscreenDimension() != null;
         buttonDelete.active = canDeleteCollection();
+        updateBannerButton();
         updatePasteOptionsVisibility(editable);
-        updateUndoRedoVisibility(editable);
+        refreshUndoRedoState(editable);
+    }
+
+    @Override
+    protected void renderScaledScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        if (bannerRenderer.hasBanner()) {
+            bannerRenderer.renderBanner(graphics, buttonBanner.getX() + buttonBanner.getWidth() / 2, sliderBannerRotation.getY() + 25, 3);
+        }
     }
 
     @Override
@@ -466,6 +615,8 @@ public class CollectionInfoPage extends PageScreen {
                 picker.finishSelection();
             }
         }
+
+        sliderBannerRotation.mouseReleased();
 
         return super.mouseReleased(event);
     }
@@ -489,6 +640,7 @@ public class CollectionInfoPage extends PageScreen {
             MapFrontiersClient.getOperationService().updateCollection(collection);
         }
 
+        bannerRenderer.releaseTexture();
         MapFrontiersClient.getCollectionEvents().unsubscribe(this);
         MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
         super.onClose();
@@ -506,6 +658,8 @@ public class CollectionInfoPage extends PageScreen {
             textName.setValue(collection.getName());
             colorPicker.setColor(collection.getColor());
             syncColorWidgets(collection.getColor());
+            syncBannerRenderer();
+            sliderBannerRotation.setValue(collection.getBannerRotation());
         } finally {
             syncingWidgets = false;
         }
@@ -520,7 +674,7 @@ public class CollectionInfoPage extends PageScreen {
         }
 
         redoStack.push(undoStack.pop());
-        applyEditableMetadata(undoStack.peek(), true, true);
+        applyEditableMetadata(undoStack.peek(), true, true, true, true);
         refreshViewState();
         if (minecraft.getLastInputType().isKeyboard()) {
             setInitialFocus(undoStack.size() == 1 ? buttonRedo : buttonUndo);
@@ -533,7 +687,7 @@ public class CollectionInfoPage extends PageScreen {
         }
 
         CollectionData snapshot = redoStack.pop();
-        applyEditableMetadata(snapshot, true, true);
+        applyEditableMetadata(snapshot, true, true, true, true);
         undoStack.push(new CollectionData(snapshot));
         refreshViewState();
         if (minecraft.getLastInputType().isKeyboard()) {
@@ -554,31 +708,34 @@ public class CollectionInfoPage extends PageScreen {
 
     private void updatePasteOptionsVisibility(boolean editable) {
         boolean hasClipboard = MapFrontiersClient.getCollectionClipboard() != null;
-        buttonPaste.active = editable && hasClipboard;
-        buttonPaste.visible = buttonPaste.active;
-        buttonPasteOptions.active = editable && hasClipboard;
-        buttonPasteOptions.visible = buttonPaste.visible;
+        boolean canPaste = editable && hasClipboard;
+        buttonPaste.active = canPaste;
+        buttonPasteOptions.active = canPaste;
         buttonPasteOptions.setType(ClientConfig.PASTE_OPTIONS_VISIBLE.get() ? IconButton.Type.CollapseOptions : IconButton.Type.ExpandOptions);
         buttonPasteOptions.setTooltip(ClientConfig.PASTE_OPTIONS_VISIBLE.get() ? CLOSE_PASTE_TOOLTIP : OPEN_PASTE_TOOLTIP);
 
-        boolean optionsVisible = buttonPaste.visible && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
+        boolean optionsVisible = canPaste && ClientConfig.PASTE_OPTIONS_VISIBLE.get();
         labelPasteName.visible = optionsVisible;
         buttonPasteName.visible = optionsVisible;
         labelPasteColor.visible = optionsVisible;
         buttonPasteColor.visible = optionsVisible;
+        labelPasteVisibility.visible = optionsVisible;
+        buttonPasteVisibility.visible = optionsVisible;
+        labelPasteBanner.visible = optionsVisible;
+        buttonPasteBanner.visible = optionsVisible;
     }
 
-    private void updateUndoRedoVisibility(boolean editable) {
+    private void refreshUndoRedoState(boolean editable) {
         buttonUndo.active = editable && undoStack.size() > 1;
         buttonRedo.active = editable && !redoStack.empty();
-        buttonUndo.visible = buttonUndo.active;
-        buttonRedo.visible = buttonRedo.active;
     }
 
     private CollectionData createMetadataSnapshot() {
         CollectionData snapshot = new CollectionData(collection);
         snapshot.setName(collection.getName());
         snapshot.setColor(collection.getColor());
+        snapshot.setBannerData(collection.getBannerData());
+        snapshot.setVisibilityData(collection.getVisibilityData());
         return snapshot;
     }
 
@@ -586,6 +743,8 @@ public class CollectionInfoPage extends PageScreen {
         CollectionData snapshot = new CollectionData();
         snapshot.setName(collection.getName());
         snapshot.setColor(collection.getColor());
+        snapshot.setBannerData(collection.getBannerData());
+        snapshot.setVisibilityData(collection.getVisibilityData());
         return snapshot;
     }
 
@@ -594,7 +753,42 @@ public class CollectionInfoPage extends PageScreen {
     }
 
     private static boolean sameEditableMetadata(CollectionData first, CollectionData second) {
-        return Objects.equals(first.getName(), second.getName()) && first.getColor() == second.getColor();
+        return Objects.equals(first.getName(), second.getName())
+                && first.getColor() == second.getColor()
+                && Objects.equals(first.getBannerData(), second.getBannerData())
+                && first.getVisibilityData().equals(second.getVisibilityData());
+    }
+
+    private void onVisibilityButtonPressed() {
+        CollectionVisibilityData baseVisibilityData = collection.getVisibilityData();
+        new CollectionVisibilityDialog(baseVisibilityData, (newVisibilityData, newVisibilityMask) -> {
+            if (newVisibilityData.equals(baseVisibilityData)) {
+                return;
+            }
+            if (newVisibilityData.equals(collection.getVisibilityData())) {
+                return;
+            }
+
+            collection.setVisibilityData(newVisibilityData);
+            addCurrentStateToUndo();
+            refreshViewState();
+        }).display();
+    }
+
+    private void onVisibilityOverrideButtonPressed() {
+        Pair<CollectionVisibilityData, CollectionVisibilityMask> override =
+                MapFrontiersClient.getCollectionLocalOverrides().getVisibility(collectionId);
+        CollectionVisibilityData baseVisibilityData = CollectionLocalOverrides.resolveVisibility(collection.getVisibilityData(), override);
+        CollectionVisibilityData initialVisibilityData = new CollectionVisibilityData(baseVisibilityData);
+        CollectionVisibilityMask initialVisibilityMask = new CollectionVisibilityMask(override.second());
+        new CollectionVisibilityDialog(baseVisibilityData, override.second(), (newVisibilityData, newVisibilityMask) -> {
+            if (!newVisibilityData.equals(initialVisibilityData) || !newVisibilityMask.equals(initialVisibilityMask)) {
+                Pair<CollectionVisibilityData, CollectionVisibilityMask> newOverride =
+                        Pair.of(new CollectionVisibilityData(newVisibilityData), new CollectionVisibilityMask(newVisibilityMask));
+                MapFrontiersClient.getCollectionLocalOverrides().setVisibility(collectionId, newOverride);
+                MapFrontiersClient.refreshCollectionVisibilityOverride(collectionId);
+            }
+        }).display();
     }
 
     private boolean canUpdateCollection() {
@@ -602,14 +796,7 @@ public class CollectionInfoPage extends PageScreen {
             return false;
         }
 
-        SettingsUser playerUser = new SettingsUser(minecraft.player);
-        if (collection.getPersonal()) {
-            return canManageLocalPersonalCollection(playerUser);
-        }
-
-        SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
-        return profile != null && (profile.updateFrontier == SettingsProfile.State.Enabled
-                || (profile.updateFrontier == SettingsProfile.State.Owner && collection.getOwner().equals(playerUser)));
+        return SettingsProfile.canUpdateCollection(MapFrontiersClient.getSettingsProfile(), collection, new SettingsUser(minecraft.player));
     }
 
     private boolean canDeleteCollection() {
@@ -645,13 +832,92 @@ public class CollectionInfoPage extends PageScreen {
         }
 
         saveChangesOnClose = false;
+        bannerRenderer.releaseTexture();
         MapFrontiersClient.getCollectionEvents().unsubscribe(this);
         MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
         MapFrontiersClient.getOperationService().deleteCollection(collection);
         super.onClose();
     }
 
+    private void updateBannerButton() {
+        if (!collection.hasBanner()) {
+            if (getHeldBanner(minecraft) != null) {
+                buttonBanner.setMessage(ASSIGN_BANNER_LABEL);
+                buttonBanner.setTooltip(null);
+            } else {
+                buttonBanner.setMessage(ASSIGN_BANNER_WARN_LABEL);
+                buttonBanner.setTooltip(ASSIGN_BANNER_WARN_TOOLTIP);
+            }
+            sliderBannerRotation.visible = false;
+        } else {
+            buttonBanner.setMessage(REMOVE_BANNER_LABEL);
+            buttonBanner.setTooltip(null);
+            sliderBannerRotation.visible = true;
+        }
+    }
+
+    private void syncBannerRenderer() {
+        bannerRenderer.releaseTexture();
+        if (collection.getBannerData() != null) {
+            bannerRenderer.createTexture(collection.getId(), collection.getBannerData());
+        }
+    }
+
+    private static @Nullable ItemStack getHeldBanner(@Nullable Minecraft minecraft) {
+        if (minecraft == null || minecraft.player == null) {
+            return null;
+        }
+
+        ItemStack mainhand = minecraft.player.getItemBySlot(EquipmentSlot.MAINHAND);
+        ItemStack offhand = minecraft.player.getItemBySlot(EquipmentSlot.OFFHAND);
+        if (mainhand.getItem() instanceof BannerItem) {
+            return mainhand;
+        }
+        if (offhand.getItem() instanceof BannerItem) {
+            return offhand;
+        }
+
+        return null;
+    }
+
     private static String formatMeasurement(float value) {
         return String.format(Locale.ROOT, "%.2f", value);
     }
+
+    private @Nullable BlockPos getCollectionCenterInCurrentFullscreenDimension() {
+        var jmApi = MapFrontiersClient.getJmAPI();
+        if (jmApi == null) {
+            return null;
+        }
+
+        UIState uiState = jmApi.getUIState(Context.UI.Fullscreen);
+        if (uiState == null) {
+            return null;
+        }
+
+        int minX = Integer.MAX_VALUE;
+        int minZ = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+        int maxZ = Integer.MIN_VALUE;
+        boolean hasAreaFrontier = false;
+
+        for (FrontierOverlay frontier : MapFrontiersClient.getFrontiersInCollection(collectionId, uiState.dimension)) {
+            if (frontier.getShape() == FrontierShape.Path) {
+                continue;
+            }
+
+            hasAreaFrontier = true;
+            minX = Math.min(minX, frontier.topLeft.getX());
+            minZ = Math.min(minZ, frontier.topLeft.getZ());
+            maxX = Math.max(maxX, frontier.bottomRight.getX());
+            maxZ = Math.max(maxZ, frontier.bottomRight.getZ());
+        }
+
+        if (!hasAreaFrontier) {
+            return null;
+        }
+
+        return new BlockPos((minX + maxX) / 2, 70, (minZ + maxZ) / 2);
+    }
+
 }

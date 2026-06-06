@@ -24,8 +24,6 @@ public class ColorPaletteWidget extends AbstractWidgetNoNarration {
     private static final int CELL_PITCH = CELL_SIZE + CELL_GAP;
     private static final int WIDTH = COLUMNS * CELL_SIZE + (COLUMNS - 1) * CELL_GAP;
     private static final int HEIGHT = ROWS * CELL_SIZE + (ROWS - 1) * CELL_GAP;
-    private static final int BORDER_COLOR = 0xFF404040;
-    private static final int SELECTED_COLOR = 0xFFFFFFFF;
     private static final int FOCUS_OUTLINE_INSET = 1;
 
     private static final int[] PALETTE_COLORS = {
@@ -125,9 +123,9 @@ public class ColorPaletteWidget extends AbstractWidgetNoNarration {
             int x = getX() + col * CELL_PITCH;
             int y = getY() + row * CELL_PITCH;
             if (active && c == color) {
-                graphics.fill(x, y, x + CELL_SIZE, y + CELL_SIZE, SELECTED_COLOR);
+                graphics.fill(x, y, x + CELL_SIZE, y + CELL_SIZE, ColorConstants.WHITE);
             } else {
-                graphics.fill(x, y, x + CELL_SIZE, y + CELL_SIZE, BORDER_COLOR);
+                graphics.fill(x, y, x + CELL_SIZE, y + CELL_SIZE, ColorConstants.COLOR_PALETTE_BORDER);
             }
             graphics.fill(x + CELL_INSET, y + CELL_INSET, x + CELL_SIZE - CELL_INSET,
                     y + CELL_SIZE - CELL_INSET, c);
@@ -142,7 +140,7 @@ public class ColorPaletteWidget extends AbstractWidgetNoNarration {
             int x = getX() + (focusedIndex % COLUMNS) * CELL_PITCH;
             int y = getY() + (focusedIndex / COLUMNS) * CELL_PITCH;
             graphics.renderOutline(x - FOCUS_OUTLINE_INSET, y - FOCUS_OUTLINE_INSET,
-                    CELL_SIZE + 2 * FOCUS_OUTLINE_INSET, CELL_SIZE + 2 * FOCUS_OUTLINE_INSET, ColorConstants.WHITE);
+                    CELL_SIZE + 2 * FOCUS_OUTLINE_INSET, CELL_SIZE + 2 * FOCUS_OUTLINE_INSET, ColorConstants.COLOR_PALETTE_FOCUS_OUTLINE);
         }
     }
 

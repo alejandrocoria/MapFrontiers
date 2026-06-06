@@ -74,7 +74,7 @@ public class SharedAccessPage extends PageScreen {
                 this.frontier = frontierOverlay;
                 updateCanUpdate();
                 updateUsers();
-                updateButtonsVisibility();
+                refreshControlState();
             }
         });
     }
@@ -129,13 +129,13 @@ public class SharedAccessPage extends PageScreen {
 
         buttonNewUser = new IconButton(IconButton.Type.Add, (b) -> buttonNewUserPressed());
         buttonNewUser.setTooltip(ADD_TOOLTIP);
-        buttonNewUser.visible = false;
+        buttonNewUser.active = false;
         newUserLayout.addChild(buttonNewUser);
 
         addBottomButton(new SimpleButton(font, LayoutConstants.PAGE_BUTTON_WIDTH, DONE_LABEL, (b) -> onClose()));
 
         updateCanUpdate();
-        updateButtonsVisibility();
+        refreshControlState();
         updateUsers();
     }
 
@@ -313,9 +313,9 @@ public class SharedAccessPage extends PageScreen {
         }
     }
 
-    private void updateButtonsVisibility() {
-        buttonNewUser.visible = canUpdate;
-        textNewUser.visible = canUpdate;
+    private void refreshControlState() {
+        buttonNewUser.active = canUpdate;
+        textNewUser.setEditable(canUpdate);
     }
 
     private void actionChanged(SettingsUserShared user, SettingsUserShared.Action action, boolean checked) {
@@ -333,7 +333,7 @@ public class SharedAccessPage extends PageScreen {
             if (action == SettingsUserShared.Action.UpdateSettings) {
                 updateCanUpdate();
                 updateUsers();
-                updateButtonsVisibility();
+                refreshControlState();
             }
 
             frontier.setModified(new Date());

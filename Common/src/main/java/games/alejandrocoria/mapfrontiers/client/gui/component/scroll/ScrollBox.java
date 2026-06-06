@@ -573,7 +573,7 @@ public class ScrollBox extends AbstractContainerWidget {
                             && mouseX < getX() + width
                             && mouseY < getY() + height;
 
-            int barColor = ColorConstants.SCROLLBAR;
+            int barColor = ColorConstants.SCROLLBAR_NORMAL;
             if (scrollBarGrabbed) {
                 barColor = ColorConstants.SCROLLBAR_GRABBED;
             } else if (scrollBarHovered) {
@@ -1270,7 +1270,7 @@ public class ScrollBox extends AbstractContainerWidget {
         }
 
         protected void drawFocusOutline(GuiGraphics graphics) {
-            graphics.renderOutline(x, y, width, height, ColorConstants.WHITE);
+            graphics.renderOutline(x, y, width, height, ColorConstants.SCROLLBOX_FOCUS_OUTLINE);
         }
 
         protected Action mousePressed(MouseButtonEvent event, boolean doubleClick) {

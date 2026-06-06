@@ -11,8 +11,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.util.SourcePluginUiHelper;
 import games.alejandrocoria.mapfrontiers.client.gui.util.TextEllipsizeHelper;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
@@ -63,7 +62,6 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
     private static final int NAME_LINE_BG_TOP_OFFSET = -1;
     private static final int NAME_LINE_BG_BOTTOM_OFFSET = 9;
     private static final int NAME_LINE_BG_FADE_WIDTH = 6;
-    private static final int RAIL_HOVER_COLOR = 0xA0202020;
     private static final Tooltip DELETE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.delete"));
     private final Font font;
     private final FrontierOverlay frontier;
@@ -187,11 +185,10 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
         int selectionRightBound = getSelectionRightBound();
         if (isHovered) {
             graphics.fill(x, y, selectionRightBound, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
-            graphics.fill(selectionRightBound, y, x + width, y + height, RAIL_HOVER_COLOR);
+            graphics.fill(selectionRightBound, y, x + width, y + height, ColorConstants.TERRITORY_LIST_RAIL_HOVER_BG);
         }
 
         int rowContentX = x + LEFT_PADDING;
-        int hiddenColor = ColorConstants.TEXT_DARK;
         int nameX = getNameX();
         int maxNameWidth = METADATA_X - nameX - NAME_METADATA_SPACING;
         String visibleName1 = ellipsize(name1, maxNameWidth);
@@ -209,9 +206,9 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
 
         int nameColor = selected ? ColorConstants.TEXT_HIGHLIGHT : ColorConstants.TEXT;
         drawNameLine(graphics, name1, visibleName1, name1Truncated, showExpandedNames, NAME_LINE_1_Y,
-                frontier.getVisibility(FrontierVisibility.Frontier), nameColor, hiddenColor, rowContentX, nameX);
+                nameColor, rowContentX, nameX);
         drawNameLine(graphics, name2, visibleName2, name2Truncated, showExpandedNames, NAME_LINE_2_Y,
-                frontier.getVisibility(FrontierVisibility.Frontier), nameColor, hiddenColor, rowContentX, nameX);
+                nameColor, rowContentX, nameX);
 
         drawShapeBadge(graphics, selected, rowContentX);
         renderActionButtons(graphics, mouseX, mouseY, partialTicks, focused);
@@ -226,7 +223,7 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
 
         int left = x + 2;
         int top = y;
-        graphics.renderOutline(left, top, width - 4, height, ColorConstants.WHITE);
+        graphics.renderOutline(left, top, width - 4, height, ColorConstants.FRONTIER_LIST_ROW_OUTLINE);
     }
 
     private void renderCheckBox(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks, boolean focused) {
@@ -240,7 +237,7 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
     }
 
     private void renderActionButtons(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks, boolean focused) {
-        if (visibilityButton != null && (focused || isHovered || !frontier.getVisibility(FrontierVisibility.Frontier))) {
+        if (visibilityButton != null && (focused || isHovered || !frontier.getVisibilityData().getFrontier())) {
             visibilityButton.setType(getVisibilityButtonType());
             visibilityButton.setTooltip(getVisibilityTooltip());
             visibilityButton.render(graphics, mouseX, mouseY, partialTicks);
@@ -283,7 +280,7 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
         int iconY = y + SHAPE_BADGE_ICON_Y;
         graphics.blit(RenderPipelines.GUI_TEXTURED, fillTexture, iconX, iconY, 0, 0, SHAPE_BADGE_ICON_WIDTH,
                 SHAPE_BADGE_ICON_HEIGHT, SHAPE_BADGE_ICON_WIDTH, SHAPE_BADGE_ICON_HEIGHT, frontier.getColor() | 0xFF000000);
-        int outlineColor = selected ? ColorConstants.WHITE : ColorConstants.TEXT_DARK;
+        int outlineColor = selected ? ColorConstants.SHAPE_BADGE_OUTLINE_SELECTED : ColorConstants.SHAPE_BADGE_OUTLINE_NORMAL;
         graphics.blit(RenderPipelines.GUI_TEXTURED, outlineTexture, iconX, iconY, 0, 0, SHAPE_BADGE_ICON_WIDTH,
                 SHAPE_BADGE_ICON_HEIGHT, SHAPE_BADGE_ICON_WIDTH, SHAPE_BADGE_ICON_HEIGHT, outlineColor);
 
@@ -298,9 +295,7 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
                               boolean truncated,
                               boolean showExpandedNames,
                               int lineY,
-                              boolean visible,
-                              int visibleColor,
-                              int hiddenColor,
+                              int textColor,
                               int rowContentX,
                               int nameX) {
         String renderedName = showExpandedNames && truncated ? fullName : visibleName;
@@ -315,11 +310,7 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
                     NAME_LINE_BG_BOTTOM_OFFSET - NAME_LINE_BG_TOP_OFFSET, ColorConstants.SCROLL_ELEMENT_SELECTED);
         }
 
-        if (visible) {
-            graphics.drawString(font, renderedName, rowContentX + nameX, y + lineY, visibleColor);
-        } else {
-            graphics.drawString(font, ChatFormatting.STRIKETHROUGH + renderedName, rowContentX + nameX, y + lineY, hiddenColor);
-        }
+        graphics.drawString(font, renderedName, rowContentX + nameX, y + lineY, textColor);
     }
 
     private String ellipsize(String text, int maxWidth) {
@@ -440,8 +431,9 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
         return switch (focusKey) {
             case SOURCE_PLUGIN -> focusPathForListener(sourcePluginWidget);
             case MAIN -> focusPathForListener(mainFocusTarget);
-            case PRIMARY_ACTION -> focusPathForListener(visibilityButton);
-            case SECONDARY_ACTION -> focusPathForListener(deleteButton);
+            case ADD_ACTION -> null;
+            case VISIBILITY_ACTION -> focusPathForListener(visibilityButton);
+            case CONTEXT_ACTION -> focusPathForListener(deleteButton);
             case MARK -> checkboxVisible || checkboxVisibleOnHover ? focusPathForListener(checkBoxButton) : null;
             case COLLAPSE -> null;
         };
@@ -462,8 +454,8 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
         TerritoryListFocusKey[] order = {
                 TerritoryListFocusKey.SOURCE_PLUGIN,
                 TerritoryListFocusKey.MAIN,
-                TerritoryListFocusKey.PRIMARY_ACTION,
-                TerritoryListFocusKey.SECONDARY_ACTION,
+                TerritoryListFocusKey.VISIBILITY_ACTION,
+                TerritoryListFocusKey.CONTEXT_ACTION,
                 TerritoryListFocusKey.MARK
         };
 
@@ -510,12 +502,12 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
     }
 
     private IconButton.Type getVisibilityButtonType() {
-        return frontier.getVisibility(FrontierVisibility.Frontier) ? IconButton.Type.Hide : IconButton.Type.Show;
+        return frontier.getVisibilityData().getFrontier() ? IconButton.Type.Hide : IconButton.Type.Show;
     }
 
     private Tooltip getVisibilityTooltip() {
         return Tooltip.create(Component.translatable(
-                frontier.getVisibility(FrontierVisibility.Frontier) ? "mapfrontiers.hide.tooltip" : "mapfrontiers.show.tooltip"));
+                frontier.getVisibilityData().getFrontier() ? "mapfrontiers.hide.tooltip" : "mapfrontiers.show.tooltip"));
     }
 
     private @Nullable ComponentPath focusPathForListener(@Nullable GuiEventListener listener) {
@@ -531,10 +523,10 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
             return TerritoryListFocusKey.MARK;
         }
         if (deleteButton != null) {
-            return TerritoryListFocusKey.SECONDARY_ACTION;
+            return TerritoryListFocusKey.CONTEXT_ACTION;
         }
         if (visibilityButton != null) {
-            return TerritoryListFocusKey.PRIMARY_ACTION;
+            return TerritoryListFocusKey.VISIBILITY_ACTION;
         }
         if (sourcePluginWidget != null) {
             return TerritoryListFocusKey.SOURCE_PLUGIN;
@@ -550,10 +542,10 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
             return TerritoryListFocusKey.MAIN;
         }
         if (listener == visibilityButton) {
-            return TerritoryListFocusKey.PRIMARY_ACTION;
+            return TerritoryListFocusKey.VISIBILITY_ACTION;
         }
         if (listener == deleteButton) {
-            return TerritoryListFocusKey.SECONDARY_ACTION;
+            return TerritoryListFocusKey.CONTEXT_ACTION;
         }
         if (listener == checkBoxButton) {
             return TerritoryListFocusKey.MARK;

@@ -53,21 +53,25 @@ public class CheckBoxButton extends ButtonBase {
 
     @Override
     public void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        if (!visible || !active) {
+        if (!visible) {
             return;
         }
 
+        int borderColor = !active ? ColorConstants.CHECKBOX_BORDER_DISABLED
+                : isHoveredOrKeyboardFocused() ? ColorConstants.CHECKBOX_BORDER_FOCUSED : ColorConstants.CHECKBOX_BORDER_NORMAL;
+        int checkColor = active ? ColorConstants.CHECKBOX_CHECK_NORMAL : ColorConstants.CHECKBOX_CHECK_DISABLED;
+
         graphics.fill(getX(), getY(), getX() + SIZE, getY() + SIZE,
-                isHoveredOrKeyboardFocused() ? ColorConstants.CHECKBOX_BORDER_FOCUSED : ColorConstants.CHECKBOX_BORDER);
+                borderColor);
         graphics.fill(getX() + BORDER_INSET, getY() + BORDER_INSET, getX() + SIZE - BORDER_INSET, getY() + SIZE - BORDER_INSET, ColorConstants.CHECKBOX_BG);
 
         if (state == State.CHECKED) {
             graphics.fill(getX() + CHECK_INSET, getY() + CHECK_INSET, getX() + SIZE - CHECK_INSET, getY() + SIZE - CHECK_INSET,
-                    ColorConstants.CHECKBOX_CHECK);
+                    checkColor);
         } else if (state == State.PARTIAL) {
             int partialX = getX() + (SIZE - PARTIAL_WIDTH) / 2;
             int partialY = getY() + (SIZE - PARTIAL_HEIGHT) / 2;
-            graphics.fill(partialX, partialY, partialX + PARTIAL_WIDTH, partialY + PARTIAL_HEIGHT, ColorConstants.CHECKBOX_CHECK);
+            graphics.fill(partialX, partialY, partialX + PARTIAL_WIDTH, partialY + PARTIAL_HEIGHT, checkColor);
         }
     }
 

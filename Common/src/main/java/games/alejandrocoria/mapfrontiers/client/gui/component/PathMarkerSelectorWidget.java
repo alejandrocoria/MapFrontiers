@@ -112,7 +112,7 @@ public class PathMarkerSelectorWidget extends AbstractWidgetNoNarration {
             boolean selected = entry.id().equals(selectedId);
             boolean hovered = hoveredIndex >= 0 && PathMarkerCatalog.BUILT_INS.get(hoveredIndex) == entry;
 
-            int borderColor = selected ? ColorConstants.WHITE : hovered ? ColorConstants.OPTION_BORDER : ColorConstants.CHECKBOX_BORDER;
+            int borderColor = selected ? ColorConstants.PATH_MARKER_SELECTOR_BORDER_SELECTED : hovered ? ColorConstants.PATH_MARKER_SELECTOR_BORDER_HOVERED : ColorConstants.PATH_MARKER_SELECTOR_BORDER_NORMAL;
             graphics.fill(x, getY(), x + CELL_SIZE, getY() + CELL_SIZE, borderColor);
             graphics.fill(x + 1, getY() + 1, x + CELL_SIZE - 1, getY() + CELL_SIZE - 1, ColorConstants.PATH_MARKER_SELECTOR_BG);
 
@@ -128,7 +128,7 @@ public class PathMarkerSelectorWidget extends AbstractWidgetNoNarration {
             }
 
             if (isKeyboardFocused() && focusedIndex == i) {
-                graphics.renderOutline(x - 1, getY() - 1, CELL_SIZE + 2, CELL_SIZE + 2, ColorConstants.WHITE);
+                graphics.renderOutline(x - 1, getY() - 1, CELL_SIZE + 2, CELL_SIZE + 2, ColorConstants.PATH_MARKER_SELECTOR_FOCUS_OUTLINE);
             }
 
             x += CELL_SIZE + CELL_SPACING;

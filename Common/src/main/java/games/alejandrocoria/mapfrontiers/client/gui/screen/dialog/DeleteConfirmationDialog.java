@@ -25,9 +25,9 @@ public class DeleteConfirmationDialog extends ConfirmationDialog {
     @Override
     protected void initScreen() {
         super.initScreen();
-        confirmButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
+        confirmButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_NORMAL, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
         if (confirmAlternativeButton != null) {
-            confirmAlternativeButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
+            confirmAlternativeButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_NORMAL, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
         }
     }
 }

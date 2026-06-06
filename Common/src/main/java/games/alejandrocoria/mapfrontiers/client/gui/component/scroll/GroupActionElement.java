@@ -35,19 +35,27 @@ public class GroupActionElement extends ScrollBox.ScrollElement {
         super(430, 15);
         this.font = font;
         this.group = group;
+
         createFrontier = new CheckBoxButton(group.hasAction(FrontierSettings.Action.CreateGlobalFrontier),
                 (b) -> actionChangedCallback.accept(group, FrontierSettings.Action.CreateGlobalFrontier, b.isChecked()));
         createFrontier.active = !ownersGroup;
+        createFrontier.visible = !ownersGroup;
+
         deleteFrontier = new CheckBoxButton(group.hasAction(FrontierSettings.Action.DeleteGlobalFrontier),
                 (b) -> actionChangedCallback.accept(group, FrontierSettings.Action.DeleteGlobalFrontier, b.isChecked()));
+
         updateFrontier = new CheckBoxButton(group.hasAction(FrontierSettings.Action.UpdateGlobalFrontier),
                 (b) -> actionChangedCallback.accept(group, FrontierSettings.Action.UpdateGlobalFrontier, b.isChecked()));
+
         updateSettings = new CheckBoxButton(group.hasAction(FrontierSettings.Action.UpdateSettings),
                 (b) -> actionChangedCallback.accept(group, FrontierSettings.Action.UpdateSettings, b.isChecked()));
         updateSettings.active = !ownersGroup;
+        updateSettings.visible = !ownersGroup;
+
         personalFrontier = new CheckBoxButton(group.hasAction(FrontierSettings.Action.SharePersonalFrontier),
                 (b) -> actionChangedCallback.accept(group, FrontierSettings.Action.SharePersonalFrontier, b.isChecked()));
         personalFrontier.active = !ownersGroup;
+        personalFrontier.visible = !ownersGroup;
 
         children = List.of(createFrontier, deleteFrontier, updateFrontier, updateSettings, personalFrontier);
     }
@@ -83,7 +91,7 @@ public class GroupActionElement extends ScrollBox.ScrollElement {
             text = I18n.get("mapfrontiers.unnamed", ChatFormatting.ITALIC);
         }
 
-        graphics.drawString(font, text, x + 4, y + 4, ColorConstants.TEXT_HIGHLIGHT);
+        graphics.drawString(font, text, x + 4, y + 4, ColorConstants.GROUP_ACTION_TEXT);
 
         createFrontier.render(graphics, mouseX, mouseY, partialTicks);
         deleteFrontier.render(graphics, mouseX, mouseY, partialTicks);

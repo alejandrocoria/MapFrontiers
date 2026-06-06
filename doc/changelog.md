@@ -1,4 +1,5 @@
 **Beta 5:**
+* Added: Collections can now be shown on maps with their own labels, banners, and visibility settings.
 * Changed: Significant performance optimizations were made to the server, client, and network.
 
 **Beta 4:**

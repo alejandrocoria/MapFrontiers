@@ -181,7 +181,7 @@ public abstract class AutoScaledScreen extends LayeredScreen {
             if (((GuiRenderStateAccessor) ((GuiGraphicsAccessor) graphics).mapfrontiers$getGuiRenderState()).mapfrontiers$setFirstStratumAfterBlur() == Integer.MAX_VALUE) {
                 graphics.blurBeforeThisStratum();
             } else {
-                graphics.fill(0, 0, width, height, 0xBF000000);
+                graphics.fill(0, 0, width, height, ColorConstants.SCREEN_POPUP_OVERLAY_BG);
             }
         }
     }
@@ -197,7 +197,7 @@ public abstract class AutoScaledScreen extends LayeredScreen {
         }
 
         if (title.getContents() != PlainTextContents.EMPTY) {
-            graphics.drawCenteredString(font, title, this.actualWidth / 2, 12, ColorConstants.WHITE);
+            graphics.drawCenteredString(font, title, this.actualWidth / 2, 12, ColorConstants.SCREEN_TITLE_TEXT);
         }
 
         renderScaledBackgroundScreen(graphics, mouseX, mouseY, partialTicks);
@@ -282,8 +282,8 @@ public abstract class AutoScaledScreen extends LayeredScreen {
         int x2 = (actualWidth + width) / 2 - 1;
         int y1 = (actualHeight - height) / 2;
         int y2 = (actualHeight + height) / 2 - 1;
-        graphics.fill(x1, y1, x2, y2, ColorConstants.SCREEN_BG);
-        graphics.renderOutline(x1, y1, x2 - x1 + 1, y2 - y1 + 1, ColorConstants.TAB_BORDER);
+        graphics.fill(x1, y1, x2, y2, ColorConstants.SCREEN_FRAME_BG);
+        graphics.renderOutline(x1, y1, x2 - x1 + 1, y2 - y1 + 1, ColorConstants.TAB_BORDER_NORMAL);
     }
 
     protected void drawCenteredBoxBackground(GuiGraphics graphics) {

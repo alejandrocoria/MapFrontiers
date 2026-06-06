@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.platform;
 
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionOverlay;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.ReflectionHelper;
 import games.alejandrocoria.mapfrontiers.platform.services.IJourneyMapHelper;
@@ -231,7 +232,7 @@ public class ForgeJourneyMapHelper implements IJourneyMapHelper {
         }
 
         @Override
-        public void setFrontiers(List<FrontierOverlay> frontierOverlays) {
+        public void setTerritories(List<FrontierOverlay> frontierOverlays, List<CollectionOverlay> collectionOverlays) {
             polygonDrawSteps.clear();
             overlayDrawSteps.clear();
 
@@ -244,6 +245,15 @@ public class ForgeJourneyMapHelper implements IJourneyMapHelper {
                 }
                 for (MarkerOverlay label : frontierOverlay.getLabelOverlays()) {
                     overlayDrawSteps.add(new DrawMarkerStep(label));
+                }
+            }
+
+            for (CollectionOverlay collectionOverlay : collectionOverlays) {
+                for (PolygonOverlay polygon : collectionOverlay.getBorderPolygonOverlays()) {
+                    polygonDrawSteps.add(new DrawPolygonStep(polygon));
+                }
+                for (MarkerOverlay marker : collectionOverlay.getLabelOverlays()) {
+                    overlayDrawSteps.add(new DrawMarkerStep(marker));
                 }
             }
         }

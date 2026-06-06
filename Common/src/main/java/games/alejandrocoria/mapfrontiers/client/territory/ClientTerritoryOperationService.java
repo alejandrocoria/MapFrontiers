@@ -17,6 +17,7 @@ import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientCollectionEvents;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientCollectionRuntime;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionScope;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientFrontierEvents;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
@@ -37,14 +38,16 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateSharedUserPersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
-import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierCreateSpec;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierCreationFactory;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierSharingChange;
+import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
-import games.alejandrocoria.mapfrontiers.common.territory.VisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreateSpec;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreationFactory;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -118,6 +121,7 @@ public class ClientTerritoryOperationService {
         FrontierData frontier = FrontierCreationFactory.createFrontier(createSpec);
         FrontierOverlay frontierOverlay = personalManager.addFrontier(frontier);
         collectionRuntime.onFrontierAdded(frontierOverlay);
+        notifyCollectionOverlayFrontierMembershipDirty(frontierOverlay);
         postAffectedCollectionsUpdated(frontierOverlay.getCollectionId());
         markLocalPersonalDataDirtyIfPersistent(frontierOverlay);
         frontierEvents.postCreated(frontierOverlay, mc.player.getId());
@@ -179,6 +183,7 @@ public class ClientTerritoryOperationService {
         }
 
         collectionRuntime.onFrontierRemoved(deletedFrontier);
+        notifyCollectionOverlayFrontierMembershipDirty(deletedFrontier);
         postAffectedCollectionsUpdated(deletedFrontier.getCollectionId());
         markLocalPersonalDataDirtyIfPersistent(frontier);
         frontierEvents.postDeleted(frontier.getId());
@@ -209,6 +214,7 @@ public class ClientTerritoryOperationService {
         frontier.applyChange(change);
         getManager(frontier.getPersonal()).refreshFrontierDerivedIndexes(frontier);
         collectionRuntime.onFrontierUpdated(previousState, frontier);
+        notifyCollectionOverlayFrontierUpdated(previousState.collectionId(), frontier);
         postAffectedCollectionsUpdated(previousState.collectionId(), frontier.getCollectionId());
         markLocalPersonalDataDirtyIfPersistent(frontier);
         frontierEvents.postUpdated(frontier, mc.player.getId());
@@ -476,7 +482,7 @@ public class ClientTerritoryOperationService {
 
         EnumSet<FrontierSharePermission> permissions = EnumSet.noneOf(FrontierSharePermission.class);
         for (SettingsUserShared.Action action : currentSharedUser.getActions()) {
-            permissions.add(FrontierSharePermission.valueOf(action.name()));
+            permissions.add(ApiConverters.toFrontierSharePermission(action));
         }
         if (permissionsToAdd != null) {
             permissions.addAll(permissionsToAdd);
@@ -521,6 +527,7 @@ public class ClientTerritoryOperationService {
 
         FrontierOverlay frontierOverlay = personalManager.addFrontier(resolveCopiedFrontier(receivedFrontier, receivedCollection));
         collectionRuntime.onFrontierAdded(frontierOverlay);
+        notifyCollectionOverlayFrontierMembershipDirty(frontierOverlay);
         postAffectedCollectionsUpdated(frontierOverlay.getCollectionId());
         markLocalPersonalDataDirty();
         if (mc.player != null) {
@@ -536,11 +543,13 @@ public class ClientTerritoryOperationService {
         FrontierOverlay deletedFrontier = personalManager.deleteFrontier(currentFrontier.getDimension(), currentFrontier.getId());
         if (deletedFrontier != null) {
             collectionRuntime.onFrontierRemoved(deletedFrontier);
+            notifyCollectionOverlayFrontierMembershipDirty(deletedFrontier);
         }
         frontierEvents.postDeleted(currentFrontier.getId());
 
         FrontierOverlay frontierOverlay = personalManager.addFrontier(resolveCopiedFrontier(receivedFrontier, receivedCollection));
         collectionRuntime.onFrontierAdded(frontierOverlay);
+        notifyCollectionOverlayFrontierMembershipDirty(frontierOverlay);
         postAffectedCollectionsUpdated(previousCollectionId, frontierOverlay.getCollectionId());
         if (currentFrontier.isPersistent() || frontierOverlay.isPersistent() || receivedCollection != null) {
             markLocalPersonalDataDirty();
@@ -554,6 +563,7 @@ public class ClientTerritoryOperationService {
     public void applyFrontierCreated(FrontierData frontier, int playerId) {
         FrontierOverlay frontierOverlay = getManager(frontier.getPersonal()).addFrontier(frontier);
         collectionRuntime.onFrontierAdded(frontierOverlay);
+        notifyCollectionOverlayFrontierMembershipDirty(frontierOverlay);
         postAffectedCollectionsUpdated(frontierOverlay.getCollectionId());
         if (frontier.getPersonal() && frontier.isPersistent()) {
             markLocalPersonalDataDirty();
@@ -584,6 +594,7 @@ public class ClientTerritoryOperationService {
             }
             if (previousState != null) {
                 collectionRuntime.onFrontierUpdated(previousState, frontierOverlay);
+                notifyCollectionOverlayFrontierUpdated(previousState.collectionId(), frontierOverlay);
                 postAffectedCollectionsUpdated(previousState.collectionId(), frontierOverlay.getCollectionId());
             }
             if (personal && frontierOverlay.isPersistent()) {
@@ -605,6 +616,7 @@ public class ClientTerritoryOperationService {
             if (staleFrontier != null) {
                 previousCollectionId = staleFrontier.getCollectionId();
                 collectionRuntime.onFrontierRemoved(staleFrontier);
+                notifyCollectionOverlayFrontierMembershipDirty(staleFrontier);
                 frontierExisted = true;
             }
         }
@@ -615,16 +627,19 @@ public class ClientTerritoryOperationService {
             currentFrontier.updateFromData(frontier);
             targetManager.refreshFrontierDerivedIndexes(currentFrontier);
             collectionRuntime.onFrontierUpdated(previousState, currentFrontier);
+            notifyCollectionOverlayFrontierUpdated(previousState.collectionId(), currentFrontier);
             postAffectedCollectionsUpdated(previousState.collectionId(), currentFrontier.getCollectionId());
             appliedFrontier = currentFrontier;
         } else {
             if (currentFrontier != null) {
                 targetManager.deleteFrontier(currentFrontier.getDimension(), currentFrontier.getId());
                 collectionRuntime.onFrontierRemoved(currentFrontier);
+                notifyCollectionOverlayFrontierMembershipDirty(currentFrontier);
             }
 
             appliedFrontier = targetManager.addFrontier(frontier);
             collectionRuntime.onFrontierAdded(appliedFrontier);
+            notifyCollectionOverlayFrontierMembershipDirty(appliedFrontier);
             postAffectedCollectionsUpdated(previousCollectionId, appliedFrontier.getCollectionId());
         }
 
@@ -656,6 +671,7 @@ public class ClientTerritoryOperationService {
         FrontierOverlay deletedFrontier = getManager(personal).deleteFrontier(dimension, frontierId);
         if (deletedFrontier != null) {
             collectionRuntime.onFrontierRemoved(deletedFrontier);
+            notifyCollectionOverlayFrontierMembershipDirty(deletedFrontier);
             postAffectedCollectionsUpdated(deletedFrontier.getCollectionId());
             if (personal && deletedFrontier.isPersistent()) {
                 markLocalPersonalDataDirty();
@@ -669,6 +685,7 @@ public class ClientTerritoryOperationService {
         if (frontierOverlay == null) {
             return;
         }
+        UUID previousCollectionId = frontierOverlay.getCollectionId();
         collectionRuntime.onFrontierRemoved(frontierOverlay);
         frontierOverlay.setPersonal(false);
         if (modified != null) {
@@ -678,6 +695,7 @@ public class ClientTerritoryOperationService {
         frontierOverlay.recreateBannerRenderer();
         globalManager.addFrontier(frontierOverlay);
         collectionRuntime.onFrontierAdded(frontierOverlay);
+        notifyCollectionOverlayFrontierUpdated(previousCollectionId, frontierOverlay);
         markLocalPersonalDataDirty();
         frontierEvents.postUpdated(frontierOverlay, -1);
         frontierOverlay.rebuildOverlayNow();
@@ -688,6 +706,7 @@ public class ClientTerritoryOperationService {
         if (frontierOverlay == null) {
             return;
         }
+        UUID previousCollectionId = frontierOverlay.getCollectionId();
         collectionRuntime.onFrontierRemoved(frontierOverlay);
         frontierOverlay.setPersonal(true);
         if (modified != null) {
@@ -697,6 +716,7 @@ public class ClientTerritoryOperationService {
         frontierOverlay.recreateBannerRenderer();
         personalManager.addFrontier(frontierOverlay);
         collectionRuntime.onFrontierAdded(frontierOverlay);
+        notifyCollectionOverlayFrontierUpdated(previousCollectionId, frontierOverlay);
         markLocalPersonalDataDirty();
         frontierEvents.postUpdated(frontierOverlay, -1);
         frontierOverlay.rebuildOverlayNow();
@@ -775,6 +795,7 @@ public class ClientTerritoryOperationService {
             frontier.setCollectionId(null);
             getManager(frontier.getPersonal()).refreshFrontierDerivedIndexes(frontier);
             collectionRuntime.onFrontierUpdated(previousState, frontier);
+            notifyCollectionOverlayFrontierUpdated(previousState.collectionId(), frontier);
         }
 
         collectionRuntime.onCollectionDeleted(collection.getId());
@@ -822,6 +843,18 @@ public class ClientTerritoryOperationService {
         return personal ? personalManager : globalManager;
     }
 
+    private CollectionOverlayManager getCollectionOverlayManager() {
+        return runtime.getCollectionOverlayManager();
+    }
+
+    private void notifyCollectionOverlayFrontierMembershipDirty(FrontierOverlay frontier) {
+        getCollectionOverlayManager().markFrontierMembershipDirty(frontier);
+    }
+
+    private void notifyCollectionOverlayFrontierUpdated(@Nullable UUID previousCollectionId, FrontierOverlay frontier) {
+        getCollectionOverlayManager().markFrontierGeometryDirty(frontier, previousCollectionId);
+    }
+
     private CollectionData createCollectionData(boolean personal, String pluginModId, CollectionCreateRequest request) {
         return createCollectionData(personal, pluginModId, TerritoryLifetime.PERSISTENT, request);
     }
@@ -839,9 +872,16 @@ public class ClientTerritoryOperationService {
         collection.removeCopiedFromInfo();
         request.name().ifPresent(collection::setName);
         request.color().ifPresent(collection::setColor);
+        CollectionVisibilityData visibility = request.visibility()
+                .map(ApiConverters::toCollectionVisibility)
+                .orElseGet(ApiConverters::defaultCollectionVisibility);
+        BannerData banner = request.banner()
+                .map(ApiConverters::toBanner)
+                .orElseGet(ApiConverters::defaultCollectionBanner);
+        collection.setVisibilityData(visibility);
+        collection.setBannerData(banner);
         Date now = new Date();
         collection.setCreated(now);
-        collection.setModified(now);
         return collection;
     }
 
@@ -864,12 +904,12 @@ public class ClientTerritoryOperationService {
         String name1 = request.name1().orElse(defaults.getName1());
         String name2 = request.name2().orElse(defaults.getName2());
         int color = request.color().orElseGet(ColorHelper::getRandomColor);
-        VisibilityData visibility = request.visibility()
-                .map(ApiConverters::toVisibility)
+        FrontierVisibilityData visibility = request.visibility()
+                .map(ApiConverters::toFrontierVisibility)
                 .orElseGet(defaults::getVisibilityData);
-        FrontierData.BannerData banner = request.banner()
+        BannerData banner = request.banner()
                 .map(ApiConverters::toBanner)
-                .orElseGet(defaults::getbannerData);
+                .orElseGet(defaults::getBannerData);
         boolean pathShape = switch (request.shape().type()) {
             case PATH -> true;
             default -> false;
@@ -1030,7 +1070,7 @@ public class ClientTerritoryOperationService {
         EnumSet<SettingsUserShared.Action> actions = EnumSet.noneOf(SettingsUserShared.Action.class);
         if (permissions != null) {
             for (FrontierSharePermission permission : permissions) {
-                actions.add(SettingsUserShared.Action.valueOf(permission.name()));
+                actions.add(ApiConverters.toSharedUserAction(permission));
             }
         }
         sharedUser.setActions(actions);

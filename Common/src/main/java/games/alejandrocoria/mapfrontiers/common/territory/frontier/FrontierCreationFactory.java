@@ -1,4 +1,4 @@
-package games.alejandrocoria.mapfrontiers.common.territory;
+package games.alejandrocoria.mapfrontiers.common.territory.frontier;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;

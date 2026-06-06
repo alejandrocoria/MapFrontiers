@@ -18,7 +18,7 @@ public class StringWidget extends net.minecraft.client.gui.components.StringWidg
 
     private float scale = 1.f;
     private final Align align;
-    private int color = ColorConstants.WHITE;
+    private int color = ColorConstants.STRING_WIDGET_TEXT_DEFAULT;
 
     public StringWidget(Component message, Font font) {
         this(message, font, 12, Align.Left);

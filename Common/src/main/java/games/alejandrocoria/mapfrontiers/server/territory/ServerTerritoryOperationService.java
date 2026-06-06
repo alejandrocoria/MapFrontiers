@@ -14,12 +14,12 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierUpdated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
-import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierCreateSpec;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierSharingChange;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreateSpec;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
 import games.alejandrocoria.mapfrontiers.server.territory.collection.ServerCollectionEvents;
 import games.alejandrocoria.mapfrontiers.server.territory.frontier.ServerFrontierEvents;
 import net.minecraft.resources.ResourceKey;
@@ -149,7 +149,8 @@ public class ServerTerritoryOperationService {
 
         collection.setName(collectionData.getName());
         collection.setColor(collectionData.getColor());
-        collection.setCollectionViewZoom(collectionData.getCollectionViewZoom());
+        collection.setVisibilityData(collectionData.getVisibilityData());
+        collection.setBannerData(collectionData.getBannerData());
         collection.setModified(new Date());
         territoriesManager.markDirty();
         return updatedCollection(collection, null, true);
@@ -163,7 +164,8 @@ public class ServerTerritoryOperationService {
 
         collection.setName(collectionData.getName());
         collection.setColor(collectionData.getColor());
-        collection.setCollectionViewZoom(collectionData.getCollectionViewZoom());
+        collection.setVisibilityData(collectionData.getVisibilityData());
+        collection.setBannerData(collectionData.getBannerData());
         collection.setModified(new Date());
         territoriesManager.markDirty();
         return updatedCollection(collection, null, true);
@@ -582,6 +584,9 @@ public class ServerTerritoryOperationService {
             ServerTerritoryOperationResult result = ServerTerritoryOperationResult.success(frontier);
             result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierDeleted(frontier.getDimension(), frontier.getId(),
                     frontier.getPersonal(), player.getId()), player));
+            if (frontier.hasCollection() && !territoriesManager.userKnowsPersonalCollection(playerUser, frontier.getCollectionId())) {
+                result.addNetworkAction(() -> PacketHandler.sendTo(new PacketCollectionDeleted(frontier.getCollectionId()), player));
+            }
             result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(frontierSharingUpdatedPacket, frontier, server));
             frontierEvents.postUpdated(frontier);
             return result;
@@ -833,6 +838,7 @@ public class ServerTerritoryOperationService {
         Set<UUID> recipientsAfter = getCollectionRecipientIds(collection);
         LinkedHashSet<UUID> recipientsForCreate = new LinkedHashSet<>();
         LinkedHashSet<UUID> recipientsForUpdate = new LinkedHashSet<>();
+        LinkedHashSet<UUID> recipientsForDelete = new LinkedHashSet<>();
         if (metadataChanged && recipientsBefore == null) {
             recipientsForUpdate.addAll(recipientsAfter);
         } else {
@@ -844,6 +850,13 @@ public class ServerTerritoryOperationService {
                 }
             }
         }
+        if (recipientsBefore != null) {
+            for (UUID recipientId : recipientsBefore) {
+                if (!recipientsAfter.contains(recipientId)) {
+                    recipientsForDelete.add(recipientId);
+                }
+            }
+        }
 
         CollectionData payload = new CollectionData(collection);
         if (!recipientsForCreate.isEmpty()) {
@@ -851,6 +864,10 @@ public class ServerTerritoryOperationService {
         }
         if (!recipientsForUpdate.isEmpty()) {
             result.addNetworkAction(() -> sendCollectionUpdatedToUsers(payload, recipientsForUpdate));
+        }
+        if (!recipientsForDelete.isEmpty()) {
+            UUID collectionId = collection.getId();
+            result.addNetworkAction(() -> sendCollectionDeletedToUsers(collectionId, recipientsForDelete));
         }
     }
 

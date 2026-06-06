@@ -69,7 +69,7 @@ public class TextBoxIdentifier extends TextBox {
 
     @Override
     public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        setTextColor(invalid ? ColorConstants.TEXT_ERROR : ColorConstants.TEXTBOX_TEXT);
+        setTextColor(invalid ? ColorConstants.TEXT_ERROR_NORMAL : ColorConstants.TEXTBOX_TEXT);
         super.renderWidget(graphics, mouseX, mouseY, partialTicks);
     }
 }

@@ -246,7 +246,7 @@ public class HUDSettingsScreen extends AutoScaledScreen {
         positionLayout.addChild(textPositionX);
 
         positionLayout.addChild(SpacerElement.width(3));
-        positionLayout.addChild(new StringWidget(POSITION_SEPARATOR_LABEL, font).setColor(ColorConstants.TEXT_DARK));
+        positionLayout.addChild(new StringWidget(POSITION_SEPARATOR_LABEL, font).setColor(ColorConstants.POSITION_SEPARATOR_TEXT));
         positionLayout.addChild(SpacerElement.width(2));
 
         textPositionY = createPositionTextBox(ClientConfig.HUD_Y_POSITION, 62);
@@ -364,7 +364,7 @@ public class HUDSettingsScreen extends AutoScaledScreen {
 
     private void updateSlotsStyle() {
         for (int i = 0; i < slotButtons.size(); ++i) {
-            slotButtons.get(i).setColor(ColorConstants.TEXT, ColorConstants.TEXT_HIGHLIGHT);
+            slotButtons.get(i).setColor(ColorConstants.OPTION_TEXT_NORMAL, ColorConstants.OPTION_TEXT_HIGHLIGHT);
         }
 
         for (int i = 0; i < slotButtons.size(); ++i) {
@@ -375,8 +375,8 @@ public class HUDSettingsScreen extends AutoScaledScreen {
 
             for (int j = i + 1; j < slotButtons.size(); ++j) {
                 if (leftSlot == getSelectedSlot(slotButtons.get(j))) {
-                    slotButtons.get(i).setColor(ColorConstants.TEXT_ERROR, ColorConstants.TEXT_ERROR_HIGHLIGHT);
-                    slotButtons.get(j).setColor(ColorConstants.TEXT_ERROR, ColorConstants.TEXT_ERROR_HIGHLIGHT);
+                    slotButtons.get(i).setColor(ColorConstants.TEXT_ERROR_NORMAL, ColorConstants.TEXT_ERROR_HIGHLIGHT);
+                    slotButtons.get(j).setColor(ColorConstants.TEXT_ERROR_NORMAL, ColorConstants.TEXT_ERROR_HIGHLIGHT);
                 }
             }
         }

@@ -34,12 +34,12 @@ import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverl
 import games.alejandrocoria.mapfrontiers.common.config.EnumConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.territory.CollectionData;
-import games.alejandrocoria.mapfrontiers.common.territory.CollectionVirtualIds;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierChange;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierShape;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierVisibility;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVirtualIds;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import journeymap.api.v2.client.IClientAPI;
@@ -372,6 +372,14 @@ public class TerritoryListPage extends PageScreen {
                 return;
             }
 
+            if (collectionElement.consumeVisibilityRequested()) {
+                CollectionData collection = collectionElement.getCollection();
+                if (collection != null) {
+                    onCollectionVisibilityPressed(collection);
+                }
+                return;
+            }
+
             if (collectionElement.consumeDeleteRequested()) {
                 CollectionData collection = collectionElement.getCollection();
                 if (collection != null) {
@@ -409,6 +417,8 @@ public class TerritoryListPage extends PageScreen {
         if (element instanceof CollectionListElement collectionElement) {
             CollectionData collection = collectionElement.getCollection();
             if (collection != null) {
+                fullscreenMap.selectCollection(collection);
+                syncSelectedRowWithMapSelection();
                 new CollectionInfoPage(collection).display();
             }
         }
@@ -486,6 +496,11 @@ public class TerritoryListPage extends PageScreen {
         MapFrontiersClient.getOperationService().updateFrontier(frontier, change);
     }
 
+    private void onCollectionVisibilityPressed(CollectionData collection) {
+        collection.getVisibilityData().setVisible(!collection.getVisibilityData().isVisible());
+        MapFrontiersClient.getOperationService().updateCollection(collection);
+    }
+
     private void onFrontierDeletePressed(FrontierOverlay frontier) {
         if (ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.get()) {
             showDeleteFrontierConfirmation(frontier);
@@ -560,6 +575,10 @@ public class TerritoryListPage extends PageScreen {
 
     private void deleteCollection(CollectionData collection) {
         MapFrontiersClient.getOperationService().deleteCollection(collection);
+        CollectionData selectedCollection = fullscreenMap.getSelectedCollection();
+        if (selectedCollection != null && selectedCollection.getId().equals(collection.getId())) {
+            fullscreenMap.selectCollection(null);
+        }
         rebuildTerritories();
     }
 
@@ -699,6 +718,15 @@ public class TerritoryListPage extends PageScreen {
     }
 
     private void syncSelectedRowWithMapSelection() {
+        CollectionData selectedCollection = fullscreenMap.getSelectedCollection();
+        if (selectedCollection != null) {
+            UUID selectedCollectionId = selectedCollection.getId();
+            territories.setSelectedElementIf(element -> element instanceof CollectionListElement collectionElement
+                    && collectionElement.getCollection() != null
+                    && collectionElement.getCollection().getId().equals(selectedCollectionId));
+            return;
+        }
+
         FrontierOverlay selectedFrontier = fullscreenMap.getSelected();
         if (selectedFrontier == null) {
             territories.clearSelection();
@@ -721,13 +749,13 @@ public class TerritoryListPage extends PageScreen {
 
         TerritoryGroupModel virtualGroup = buildVirtualGroup(scope);
         String headerText = getHeaderText(scope);
-        rows.add(new SectionHeaderListElement(getHeaderRowId(scope), font, headerText, TERRITORIES_WIDTH, ColorConstants.SCROLL_HEADER,
+        rows.add(new SectionHeaderListElement(getHeaderRowId(scope), font, headerText, TERRITORIES_WIDTH, ColorConstants.SECTION_HEADER_TEXT,
                 !isMarkedModeActive() && canCreateCollection(scope), getCreateCollectionTooltip(scope)));
-        rows.add(createCollectionRowElement(virtualGroup, ColorConstants.VIRTUAL_COLLECTION));
+        rows.add(createCollectionRowElement(virtualGroup, ColorConstants.VIRTUAL_COLLECTION_COLOR));
         if (!virtualGroup.collapsed) {
-            addFrontierChildren(rows, virtualGroup.filteredFrontiers, visibleFilteredFrontiers, ColorConstants.VIRTUAL_COLLECTION);
+            addFrontierChildren(rows, virtualGroup.filteredFrontiers, visibleFilteredFrontiers, ColorConstants.VIRTUAL_COLLECTION_COLOR);
         }
-        rows.add(new CollectionBorderCapListElement(TERRITORIES_WIDTH, ColorConstants.VIRTUAL_COLLECTION));
+        rows.add(new CollectionBorderCapListElement(TERRITORIES_WIDTH, ColorConstants.VIRTUAL_COLLECTION_COLOR));
 
         collectionGroups.sort(this::compareCollectionGroups);
         for (TerritoryGroupModel group : collectionGroups) {
@@ -755,6 +783,7 @@ public class TerritoryListPage extends PageScreen {
                 .toList();
         boolean canMarkGroup = canMarkCollectionGroup(group, eligibleFrontierIds);
         CollectionListElement.ActionState actionState = getCollectionActionState(group);
+        boolean canChangeVisibility = !isMarkedModeActive() && group.collection != null && canUpdateSelectedCollection(group.collection);
         boolean canDelete = !isMarkedModeActive() && group.collection != null && canDeleteSelectedCollection(group.collection);
 
         return new CollectionListElement(group.rowId, font, group.collection, group.virtualRow, group.scope, group.title,
@@ -766,6 +795,7 @@ public class TerritoryListPage extends PageScreen {
                 countMarkedFrontiers(eligibleFrontierIds),
                 eligibleFrontierIds.size(),
                 actionState,
+                canChangeVisibility,
                 canDelete,
                 eligibleFrontierIds,
                 TERRITORIES_WIDTH);
@@ -1325,6 +1355,14 @@ public class TerritoryListPage extends PageScreen {
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
         return profile != null && (profile.deleteFrontier == SettingsProfile.State.Enabled
                 || (profile.deleteFrontier == SettingsProfile.State.Owner && collection.getOwner().equals(playerUser)));
+    }
+
+    private boolean canUpdateSelectedCollection(CollectionData collection) {
+        if (minecraft.player == null) {
+            return false;
+        }
+
+        return SettingsProfile.canUpdateCollection(MapFrontiersClient.getSettingsProfile(), collection, new SettingsUser(minecraft.player));
     }
 
     private static int getShapeCount(FrontierOverlay frontier) {

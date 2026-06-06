@@ -123,7 +123,7 @@ public class TextBoxUser extends TextBox {
         if (error == null) {
             setTextColor(ColorConstants.TEXTBOX_TEXT);
         } else {
-            setTextColor(ColorConstants.TEXT_ERROR);
+            setTextColor(ColorConstants.TEXT_ERROR_NORMAL);
         }
 
         super.renderWidget(graphics, mouseX, mouseY, partialTicks);
@@ -135,24 +135,24 @@ public class TextBoxUser extends TextBox {
 
             graphics.fill(getX() - POPUP_BORDER, getY() - popupHeight - POPUP_PADDING - POPUP_BORDER,
                     getX() + maxErrorWidth + POPUP_PADDING * 2 + POPUP_BORDER, getY() - POPUP_BORDER,
-                    ColorConstants.TEXTBOX_EXTRA_BORDER);
+                    ColorConstants.TEXTBOX_POPUP_BORDER);
             graphics.fill(getX(), getY() - popupHeight - POPUP_PADDING,
-                    getX() + maxErrorWidth + POPUP_PADDING * 2, getY() - POPUP_BORDER, ColorConstants.TEXTBOX_EXTRA_BG);
+                    getX() + maxErrorWidth + POPUP_PADDING * 2, getY() - POPUP_BORDER, ColorConstants.TEXTBOX_POPUP_BG);
 
             int posX = getX() + POPUP_PADDING;
             int posY = getY() - popupHeight;
             for (FormattedCharSequence e : errorList) {
-                graphics.drawString(font, e, posX, posY, ColorConstants.TEXT_HIGHLIGHT);
+                graphics.drawString(font, e, posX, posY, ColorConstants.TEXTBOX_POPUP_TEXT);
                 posY += POPUP_LINE_HEIGHT;
             }
         } else if (!suggestionsToDraw.isEmpty()) {
             int popupHeight = suggestionsToDraw.size() * POPUP_LINE_HEIGHT;
             graphics.fill(getX() - POPUP_BORDER, getY() - popupHeight - POPUP_PADDING - POPUP_BORDER,
                     getX() + maxSuggestionWidth + POPUP_PADDING * 2 + POPUP_BORDER, getY() - POPUP_BORDER,
-                    ColorConstants.TEXTBOX_EXTRA_BORDER);
+                    ColorConstants.TEXTBOX_POPUP_BORDER);
             graphics.fill(getX(), getY() - popupHeight - POPUP_PADDING,
                     getX() + maxSuggestionWidth + POPUP_PADDING * 2, getY() - POPUP_BORDER,
-                    ColorConstants.TEXTBOX_EXTRA_BG);
+                    ColorConstants.TEXTBOX_POPUP_BG);
 
             int posX = getX() + POPUP_PADDING;
             int posY = getY() - POPUP_LINE_HEIGHT;
@@ -162,11 +162,11 @@ public class TextBoxUser extends TextBox {
                 // that are added to suggestions and suggestionsToDraw
                 //noinspection StringEquality
                 if (suggestionsToDraw.get(i) == suggestions.get(suggestionIndex)) {
-                    graphics.drawString(font, t, posX, posY, ColorConstants.TEXT_HIGHLIGHT);
+                    graphics.drawString(font, t, posX, posY, ColorConstants.TEXTBOX_POPUP_TEXT);
                 } else {
                     String suffix = t.substring(0, partialText.length());
                     String rest = t.substring(partialText.length());
-                    graphics.drawString(font, suffix, posX, posY, ColorConstants.TEXT_HIGHLIGHT);
+                    graphics.drawString(font, suffix, posX, posY, ColorConstants.TEXTBOX_POPUP_TEXT);
                     graphics.drawString(font, rest, posX + font.width(suffix), posY,
                             ColorConstants.TEXT_MEDIUM);
                 }

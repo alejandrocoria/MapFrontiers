@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
@@ -403,9 +404,10 @@ public class ColorPicker extends AbstractWidgetNoNarration {
 
     private void renderVBackground(GuiGraphics graphics) {
         graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, getX() + V_X, getY(), V_BACKGROUND_U, V_BACKGROUND_V,
-                V_WIDTH, V_HEIGHT, TEXTURE_WIDTH, TEXTURE_HEIGHT, active ? colorFullBrightness : 0xFF8D8D8D);
+                V_WIDTH, V_HEIGHT, TEXTURE_WIDTH, TEXTURE_HEIGHT,
+                active ? colorFullBrightness : ColorConstants.COLOR_PICKER_VALUE_DISABLED_TINT);
         graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, getX() + V_X, getY(), V_BORDER_U, V_BORDER_V,
-                V_WIDTH, V_HEIGHT, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0xFFFFFFFF);
+                V_WIDTH, V_HEIGHT, TEXTURE_WIDTH, TEXTURE_HEIGHT, ColorConstants.WHITE);
     }
 
     private void renderSelectedMarkers(GuiGraphics graphics) {

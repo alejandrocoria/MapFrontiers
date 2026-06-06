@@ -10,8 +10,8 @@ import java.util.Objects;
 import java.util.UUID;
 
 public class CopiedFromInfo {
-    protected UUID id;
-    protected SettingsUser user = new SettingsUser();
+    private UUID id;
+    private SettingsUser user = new SettingsUser();
 
     public CopiedFromInfo() {
     }
@@ -19,6 +19,22 @@ public class CopiedFromInfo {
     public CopiedFromInfo(CopiedFromInfo other) {
         id = other.id;
         user = other.user;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public SettingsUser getUser() {
+        return user;
+    }
+
+    public void setUser(SettingsUser user) {
+        this.user = user;
     }
 
     public void readFromNBT(CompoundTag nbt, int version) {

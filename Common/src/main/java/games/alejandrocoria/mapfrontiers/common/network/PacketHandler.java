@@ -4,7 +4,7 @@ import commonnetwork.CommonNetworkMod;
 import commonnetwork.api.Dispatcher;
 import commonnetwork.api.Network;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
-import games.alejandrocoria.mapfrontiers.common.territory.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 

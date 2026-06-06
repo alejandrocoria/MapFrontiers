@@ -98,6 +98,83 @@ public final class ClientConfigMigrations implements ConfigMigrations {
             // chatSharing
             {"sendCommand", "chatSharing.sendCommand"}
     };
+    private static final String[][] PATH_MOVES_V2_TO_V3 = {
+            {"announcement.title.duration", "frontier.announcement.title.duration"},
+            {"announcement.title.timeout", "frontier.announcement.title.timeout"},
+            {"announcement.title.aboveHotbar", "frontier.announcement.title.aboveHotbar"},
+            {"announcement.announceUnnamed", "frontier.announcement.announceUnnamed"},
+
+            {"editing.snapDistance", "frontier.editing.snapDistance"},
+
+            {"appearance.hideNamesThatDontFit", "frontier.appearance.hideNamesThatDontFit"},
+            {"appearance.polygons.opacity", "frontier.appearance.fill.opacity"},
+            {"appearance.border.width", "frontier.appearance.border.width"},
+            {"appearance.border.opacity", "frontier.appearance.border.opacity"},
+            {"appearance.pathMarkers.size", "frontier.appearance.pathMarkers.size"},
+            {"appearance.pathMarkers.opacity", "frontier.appearance.pathMarkers.opacity"},
+            {"appearance.text.size", "frontier.appearance.text.size"},
+            {"appearance.text.opacity", "frontier.appearance.text.opacity"},
+            {"appearance.text.color", "frontier.appearance.text.color"},
+            {"appearance.banner.size", "frontier.appearance.banner.size"},
+            {"appearance.banner.opacity", "frontier.appearance.banner.opacity"},
+
+            {"path.defaultStyle.start", "frontier.path.defaultStyle.start"},
+            {"path.defaultStyle.inner", "frontier.path.defaultStyle.inner"},
+            {"path.defaultStyle.end", "frontier.path.defaultStyle.end"},
+            {"path.defaultStyle.segment", "frontier.path.defaultStyle.segment"},
+            {"path.defaultStyle.labelAtStart", "frontier.path.defaultStyle.labelAtStart"},
+            {"path.defaultStyle.labelAtMiddle", "frontier.path.defaultStyle.labelAtMiddle"},
+            {"path.defaultStyle.labelAtEnd", "frontier.path.defaultStyle.labelAtEnd"},
+            {"path.proximity.enterDistance", "frontier.path.proximity.enterDistance"},
+            {"path.proximity.exitDistance", "frontier.path.proximity.exitDistance"},
+
+            {"visibility.frontier", "frontier.visibility.visible"},
+            {"visibility.announceInChat", "frontier.visibility.announce.chat"},
+            {"visibility.announceInTitle", "frontier.visibility.announce.title"},
+            {"visibility.mentionCollection", "frontier.visibility.announce.mentionCollection"},
+            {"visibility.fullscreen.frontier", "frontier.visibility.fullscreen.visible"},
+            {"visibility.fullscreen.name", "frontier.visibility.fullscreen.name"},
+            {"visibility.fullscreen.collection", "frontier.visibility.fullscreen.collection"},
+            {"visibility.fullscreen.owner", "frontier.visibility.fullscreen.owner"},
+            {"visibility.fullscreen.banner", "frontier.visibility.fullscreen.banner"},
+            {"visibility.fullscreen.day", "frontier.visibility.fullscreen.day"},
+            {"visibility.fullscreen.night", "frontier.visibility.fullscreen.night"},
+            {"visibility.fullscreen.underground", "frontier.visibility.fullscreen.underground"},
+            {"visibility.fullscreen.topo", "frontier.visibility.fullscreen.topo"},
+            {"visibility.fullscreen.biome", "frontier.visibility.fullscreen.biome"},
+            {"visibility.minimap.frontier", "frontier.visibility.minimap.visible"},
+            {"visibility.minimap.name", "frontier.visibility.minimap.name"},
+            {"visibility.minimap.collection", "frontier.visibility.minimap.collection"},
+            {"visibility.minimap.owner", "frontier.visibility.minimap.owner"},
+            {"visibility.minimap.banner", "frontier.visibility.minimap.banner"},
+            {"visibility.minimap.day", "frontier.visibility.minimap.day"},
+            {"visibility.minimap.night", "frontier.visibility.minimap.night"},
+            {"visibility.minimap.underground", "frontier.visibility.minimap.underground"},
+            {"visibility.minimap.topo", "frontier.visibility.minimap.topo"},
+            {"visibility.minimap.biome", "frontier.visibility.minimap.biome"},
+            {"visibility.webmap.frontier", "frontier.visibility.webmap.visible"},
+            {"visibility.webmap.name", "frontier.visibility.webmap.name"},
+            {"visibility.webmap.collection", "frontier.visibility.webmap.collection"},
+            {"visibility.webmap.owner", "frontier.visibility.webmap.owner"},
+            {"visibility.webmap.banner", "frontier.visibility.webmap.banner"},
+            {"visibility.webmap.day", "frontier.visibility.webmap.day"},
+            {"visibility.webmap.night", "frontier.visibility.webmap.night"},
+            {"visibility.webmap.underground", "frontier.visibility.webmap.underground"},
+            {"visibility.webmap.topo", "frontier.visibility.webmap.topo"},
+            {"visibility.webmap.biome", "frontier.visibility.webmap.biome"},
+
+            {"newFrontier.shape", "frontier.new.shape"},
+            {"newFrontier.afterCreation", "frontier.new.afterCreation"},
+            {"newFrontier.vertexShape", "frontier.new.vertexShape"},
+            {"newFrontier.vertexCount", "frontier.new.vertexCount"},
+            {"newFrontier.vertexShapeWidth", "frontier.new.vertexShapeWidth"},
+            {"newFrontier.vertexShapeRadius", "frontier.new.vertexShapeRadius"},
+            {"newFrontier.chunkShape", "frontier.new.chunkShape"},
+            {"newFrontier.chunkShapeWidth", "frontier.new.chunkShapeWidth"},
+            {"newFrontier.chunkShapeLength", "frontier.new.chunkShapeLength"},
+            {"newFrontier.pathShape", "frontier.new.pathShape"},
+            {"newFrontier.pathSegmentLength", "frontier.new.pathSegmentLength"}
+    };
 
     public static final ClientConfigMigrations INSTANCE = new ClientConfigMigrations();
 
@@ -110,6 +187,7 @@ public final class ClientConfigMigrations implements ConfigMigrations {
         return switch (fromVersion) {
             case 0 -> this::migrateFrom0To1;
             case 1 -> this::migrateFrom1To2;
+            case 2 -> this::migrateFrom2To3;
             default -> null;
         };
     }
@@ -142,6 +220,10 @@ public final class ClientConfigMigrations implements ConfigMigrations {
     private void migrateFrom1To2(CommentedConfig config) {
         migrateHudSlotsToList(config);
         migrateNewFrontierShapeConfig(config);
+    }
+
+    private void migrateFrom2To3(CommentedConfig config) {
+        moveAll(config, PATH_MOVES_V2_TO_V3);
     }
 
     private static void migrateHudSlotsToList(CommentedConfig config) {

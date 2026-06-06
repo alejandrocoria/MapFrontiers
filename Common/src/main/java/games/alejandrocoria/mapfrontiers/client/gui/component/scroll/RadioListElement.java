@@ -25,7 +25,7 @@ public class RadioListElement<T> extends ScrollBox.ScrollElement {
 
     public RadioListElement(Font font, Component text, T value) {
         super(200, 15);
-        this.label = new StringWidget(text, font).setColor(ColorConstants.SIMPLE_BUTTON_TEXT);
+        this.label = new StringWidget(text, font).setColor(ColorConstants.RADIO_LIST_TEXT);
         this.value = value;
     }
 
