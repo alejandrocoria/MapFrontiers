@@ -19,9 +19,8 @@ public class SimpleSlider extends AbstractSliderButton {
     private static final int HANDLE_WIDTH = 4;
     private static final int TRACK_INSET = 1;
     private static final int HANDLE_VERTICAL_INSET = 1;
-    private static final int LABEL_Y_OFFSET = 3;
+    private static final int LABEL_Y_OFFSET = -5;
 
-    private final Font font;
     private final int minValue;
     private final int maxValue;
     private final ValueChanged callback;
@@ -53,7 +52,6 @@ public class SimpleSlider extends AbstractSliderButton {
                         ValueChanged callback,
                         ValueTextFormatter valueTextFormatter) {
         super(0, 0, width, DEFAULT_HEIGHT, Component.literal(String.valueOf(initialValue)), normalize(initialValue, minValue, maxValue));
-        this.font = font;
         this.minValue = minValue;
         this.maxValue = maxValue;
         this.callback = callback;
@@ -74,7 +72,6 @@ public class SimpleSlider extends AbstractSliderButton {
                         ValueTextFormatter valueTextFormatter) {
         super(0, 0, width, DEFAULT_HEIGHT, Component.literal(String.valueOf(initialValue)),
                 normalizeDiscreteIndex(resolveDiscreteIndex(discreteValues, initialValue), discreteValues.size()));
-        this.font = font;
         this.minValue = 0;
         this.maxValue = discreteValues.size() - 1;
         this.callback = callback;
@@ -177,7 +174,7 @@ public class SimpleSlider extends AbstractSliderButton {
     public void setY(int y) {
         super.setY(y);
         if (label != null) {
-            label.setY(y + LABEL_Y_OFFSET - 1);
+            label.setY(y + height / 2 + LABEL_Y_OFFSET);
         }
     }
 
@@ -284,8 +281,8 @@ public class SimpleSlider extends AbstractSliderButton {
         boolean canChangeValue = accessor.getCanChangeValue();
         boolean keyboardFocused = isKeyboardFocused();
 
-        int lineColor = !active ? ColorConstants.SIMPLE_BUTTON_BORDER_DISABLED
-                : keyboardFocused ? ColorConstants.SIMPLE_BUTTON_BORDER_FOCUSED : ColorConstants.SIMPLE_BUTTON_BORDER;
+        int lineColor = !active ? ColorConstants.SLIDER_BORDER_DISABLED
+                : keyboardFocused ? ColorConstants.SLIDER_BORDER_FOCUSED : ColorConstants.SLIDER_BORDER_NORMAL;
         graphics.outline(getX(), getY(), width, height, lineColor);
 
         int handleColor;
@@ -294,7 +291,7 @@ public class SimpleSlider extends AbstractSliderButton {
         } else if (isHovered || (keyboardFocused && canChangeValue)) {
             handleColor = ColorConstants.SLIDER_HANDLER_FOCUSED;
         } else {
-            handleColor = ColorConstants.SLIDER_HANDLER;
+            handleColor = ColorConstants.SLIDER_HANDLER_NORMAL;
         }
 
         if (usesDiscreteValues()) {
@@ -321,8 +318,8 @@ public class SimpleSlider extends AbstractSliderButton {
                     getY() + height - HANDLE_VERTICAL_INSET, handleColor);
         }
 
-        label.setColor(!active ? ColorConstants.SIMPLE_BUTTON_TEXT_INACTIVE
-                : isHovered || keyboardFocused ? ColorConstants.SIMPLE_BUTTON_TEXT_HIGHLIGHT : ColorConstants.SIMPLE_BUTTON_TEXT);
+        label.setColor(!active ? ColorConstants.SLIDER_TEXT_DISABLED
+                : isHovered || keyboardFocused ? ColorConstants.SLIDER_TEXT_HIGHLIGHT : ColorConstants.SLIDER_TEXT_NORMAL);
         label.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
 }

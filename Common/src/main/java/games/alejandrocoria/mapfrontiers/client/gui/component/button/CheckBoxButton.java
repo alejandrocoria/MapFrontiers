@@ -58,13 +58,12 @@ public class CheckBoxButton extends ButtonBase {
         }
 
         int borderColor = !active ? ColorConstants.CHECKBOX_BORDER_DISABLED
-                : isHoveredOrKeyboardFocused() ? ColorConstants.CHECKBOX_BORDER_FOCUSED : ColorConstants.CHECKBOX_BORDER;
-        int backgroundColor = active ? ColorConstants.CHECKBOX_BG : ColorConstants.CHECKBOX_BG_DISABLED;
-        int checkColor = active ? ColorConstants.CHECKBOX_CHECK : ColorConstants.CHECKBOX_CHECK_DISABLED;
+                : isHoveredOrKeyboardFocused() ? ColorConstants.CHECKBOX_BORDER_FOCUSED : ColorConstants.CHECKBOX_BORDER_NORMAL;
+        int checkColor = active ? ColorConstants.CHECKBOX_CHECK_NORMAL : ColorConstants.CHECKBOX_CHECK_DISABLED;
 
         graphics.fill(getX(), getY(), getX() + SIZE, getY() + SIZE,
                 borderColor);
-        graphics.fill(getX() + BORDER_INSET, getY() + BORDER_INSET, getX() + SIZE - BORDER_INSET, getY() + SIZE - BORDER_INSET, backgroundColor);
+        graphics.fill(getX() + BORDER_INSET, getY() + BORDER_INSET, getX() + SIZE - BORDER_INSET, getY() + SIZE - BORDER_INSET, ColorConstants.CHECKBOX_BG);
 
         if (state == State.CHECKED) {
             graphics.fill(getX() + CHECK_INSET, getY() + CHECK_INSET, getX() + SIZE - CHECK_INSET, getY() + SIZE - CHECK_INSET,

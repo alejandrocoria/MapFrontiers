@@ -184,7 +184,7 @@ public class PathStyleDialog extends PanelDialog {
         previewWidget.setPathStyle(workingStyle);
         warningWidget.setMessage(hasAnyLabelLocation()
                 ? Component.empty()
-                : LABELS_REQUIRED_LABEL.copy().withColor(ColorConstants.TEXT_ERROR));
+                : LABELS_REQUIRED_LABEL.copy().withColor(ColorConstants.TEXT_ERROR_NORMAL));
     }
 
     private boolean hasAnyLabelLocation() {

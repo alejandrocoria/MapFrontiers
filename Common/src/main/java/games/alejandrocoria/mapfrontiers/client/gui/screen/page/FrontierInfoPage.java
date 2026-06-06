@@ -282,7 +282,7 @@ public class FrontierInfoPage extends PageScreen {
         mainLayout.addChild(nameColumn, 0, 1, 1, 2);
 
         LinearLayout headerRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
-        headerRow.addChild(new StringWidget(NAME_LABEL, font).setColor(ColorConstants.WHITE));
+        headerRow.addChild(new StringWidget(NAME_LABEL, font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
         PluginSourceBadge sourceBadge = new PluginSourceBadge(font, frontier.getSourcePluginId(), true);
         int sourceWidth = sourceBadge.getWidth();
         headerRow.addChild(SpacerElement.width(Math.max(0,
@@ -316,7 +316,7 @@ public class FrontierInfoPage extends PageScreen {
         boolean hasCollection = frontier.hasCollection();
         if (hasCollection) {
             Component collectionLabel = Component.translatable(COLLECTION_KEY);
-            collectionHeaderRow.addChild(new StringWidget(collectionLabel, font).setColor(ColorConstants.WHITE));
+            collectionHeaderRow.addChild(new StringWidget(collectionLabel, font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
             int collectionLabelWidth = font.width(collectionLabel.getVisualOrderText());
             collectionHeaderRow.addChild(SpacerElement.width(Math.max(0,
                     NAME_SECTION_WIDTH - collectionLabelWidth - dimensionWidth - LayoutConstants.SPACING_TINY * 2)));
@@ -333,7 +333,7 @@ public class FrontierInfoPage extends PageScreen {
                         ? Component.translatable("mapfrontiers.unnamed", ChatFormatting.ITALIC)
                         : Component.literal(collection.getName());
             }
-            collectionInfoColumn.addChild(new StringWidget(collectionName, font).setColor(ColorConstants.WHITE));
+            collectionInfoColumn.addChild(new StringWidget(collectionName, font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
         }
 
         LinearLayout visibilityRow = LinearLayout.horizontal().spacing(MAIN_LAYOUT_SPACING);
@@ -377,7 +377,7 @@ public class FrontierInfoPage extends PageScreen {
         if (frontier.wasCopied()) {
             owner.append(Component.literal(ColorConstants.WARNING + " !"));
         }
-        StringWidget ownerWidget = infoColumn.addChild(new StringWidget(owner, font).setColor(ColorConstants.WHITE));
+        StringWidget ownerWidget = infoColumn.addChild(new StringWidget(owner, font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
         if (frontier.wasCopied()) {
             Tooltip ownerTooltip = Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET)
                     .append(Component.translatable(ORIGINAL_OWNER_KEY, SettingsUserFormatter.getDisplayName(frontier.getCopiedFromUser()))));
@@ -387,7 +387,7 @@ public class FrontierInfoPage extends PageScreen {
         LinearLayout identityRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         infoColumn.addChild(identityRow);
 
-        identityRow.addChild(new StringWidget(getFrontierTypeLabel(), font).setColor(ColorConstants.WHITE));
+        identityRow.addChild(new StringWidget(getFrontierTypeLabel(), font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
         buttonChangeToPersonalGlobal = identityRow.addChild(new IconButton(IconButton.Type.Swap, b -> onChangePersonalGlobalPressed()));
         buttonChangeToPersonalGlobal.setTooltip(frontier.getPersonal() ? CHANGE_TO_GLOBAL_TOOLTIP : CHANGE_TO_PERSONAL_TOOLTIP);
 
@@ -396,21 +396,21 @@ public class FrontierInfoPage extends PageScreen {
             case Chunk -> Component.translatable(CHUNKS_KEY, frontier.getChunkCount());
             case Path -> Component.translatable(POINTS_KEY, frontier.getPointCount());
         };
-        infoColumn.addChild(new StringWidget(shapeSummary, font).setColor(ColorConstants.WHITE));
+        infoColumn.addChild(new StringWidget(shapeSummary, font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
 
         if (frontier.getShape() != FrontierShape.Path) {
-            infoColumn.addChild(new StringWidget(Component.translatable(AREA_KEY, formatMeasurement(frontier.area)), font).setColor(ColorConstants.WHITE));
-            infoColumn.addChild(new StringWidget(Component.translatable(PERIMETER_KEY, formatMeasurement(frontier.perimeter)), font).setColor(ColorConstants.WHITE));
+            infoColumn.addChild(new StringWidget(Component.translatable(AREA_KEY, formatMeasurement(frontier.area)), font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
+            infoColumn.addChild(new StringWidget(Component.translatable(PERIMETER_KEY, formatMeasurement(frontier.perimeter)), font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
         } else {
-            infoColumn.addChild(new StringWidget(Component.translatable(LENGTH_KEY, formatMeasurement(frontier.perimeter)), font).setColor(ColorConstants.WHITE));
+            infoColumn.addChild(new StringWidget(Component.translatable(LENGTH_KEY, formatMeasurement(frontier.perimeter)), font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
         }
 
         if (frontier.getCreated() != null) {
-            infoColumn.addChild(new StringWidget(Component.translatable(CREATED_KEY, DATE_FORMAT.format(frontier.getCreated())), font).setColor(ColorConstants.WHITE));
+            infoColumn.addChild(new StringWidget(Component.translatable(CREATED_KEY, DATE_FORMAT.format(frontier.getCreated())), font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
         }
 
         if (frontier.getModified() != null) {
-            modifiedLabel = infoColumn.addChild(new StringWidget(Component.translatable(MODIFIED_KEY, DATE_FORMAT.format(frontier.getModified())), font).setColor(ColorConstants.WHITE));
+            modifiedLabel = infoColumn.addChild(new StringWidget(Component.translatable(MODIFIED_KEY, DATE_FORMAT.format(frontier.getModified())), font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
         }
     }
 
@@ -502,7 +502,7 @@ public class FrontierInfoPage extends PageScreen {
         buttonSelect = addBottomButton(new SimpleButton(font, SECTION_WIDTH, SELECT_IN_MAP_LABEL, b -> onSelectInMapPressed()));
         buttonSharedAccess = addBottomButton(new SimpleButton(font, SECTION_WIDTH, SHARED_ACCESS_LABEL, b -> onSharedAccessPressed()));
         buttonDelete = addBottomButton(new SimpleButton(font, SECTION_WIDTH, DELETE_LABEL, b -> onDeletePressed()));
-        buttonDelete.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
+        buttonDelete.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_NORMAL, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
         buttonDone = addBottomButton(new SimpleButton(font, SECTION_WIDTH, DONE_LABEL, b -> onClose()));
     }
 

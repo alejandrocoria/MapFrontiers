@@ -2955,7 +2955,7 @@ public class FrontierOverlay extends FrontierData {
             return null;
         }
 
-        MapImage markerImage = createMarkerImage(texture, ColorConstants.WHITE, 1.f);
+        MapImage markerImage = createMarkerImage(texture, ColorConstants.TEXTURE_TINT_NONE, 1.f);
         PathMarkerCatalog.Entry entry = PathMarkerCatalog.get(markerId);
         if (entry != null && entry.directional()) {
             markerImage.setRotation(Math.round(rotation));

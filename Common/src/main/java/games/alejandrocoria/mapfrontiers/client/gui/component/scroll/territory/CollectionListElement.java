@@ -59,7 +59,6 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
     private static final int MARKED_BADGE_TEXT_LEFT = 3;
     private static final int MARKED_BADGE_WIDTH_EXTRA = 5;
     private static final int MARKED_BADGE_GAP = 4;
-    private static final int RAIL_HOVER_COLOR = 0xA0202020;
     private static final Tooltip COLLAPSE_COLLECTION_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.collapse_collection.tooltip"));
     private static final Tooltip EXPAND_COLLECTION_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.expand_collection.tooltip"));
     private static final Tooltip MOVE_HERE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.move_here.tooltip"));
@@ -266,7 +265,7 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
         int selectionRightBound = getSelectionRightBound();
         if (isHovered) {
             graphics.fill(x, y, selectionRightBound, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
-            graphics.fill(selectionRightBound, y, x + width, y + height, RAIL_HOVER_COLOR);
+            graphics.fill(selectionRightBound, y, x + width, y + height, ColorConstants.TERRITORY_LIST_RAIL_HOVER_BG);
         }
 
         graphics.fill(x, y, x + width, y + 2, color);
@@ -288,13 +287,13 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
 
         int left = x + 2;
         int top = y + 2;
-        graphics.outline(left, top, width - 4, height - 2, ColorConstants.WHITE);
+        graphics.outline(left, top, width - 4, height - 2, ColorConstants.COLLECTION_LIST_ROW_OUTLINE);
     }
 
     private void renderTexts(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks, boolean selected) {
         int titleColor = ColorConstants.TEXT;
         if (virtualRow) {
-            titleColor = ColorConstants.VIRTUAL_COLLECTION;
+            titleColor = ColorConstants.VIRTUAL_COLLECTION_COLOR;
         }
         if (selected) {
             titleColor = ColorConstants.TEXT_HIGHLIGHT;
@@ -331,8 +330,8 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
         int badgeLeft = badgeRight - badgeWidth;
         int badgeTop = y + RAIL_CONTENT_Y;
 
-        graphics.outline(badgeLeft, badgeTop, badgeWidth, MARKED_BADGE_HEIGHT, ColorConstants.WHITE);
-        graphics.text(font, markedText, badgeLeft + MARKED_BADGE_TEXT_LEFT, y + TITLE_Y, ColorConstants.TEXT_HIGHLIGHT);
+        graphics.outline(badgeLeft, badgeTop, badgeWidth, MARKED_BADGE_HEIGHT, ColorConstants.MARKED_BADGE_OUTLINE);
+        graphics.text(font, markedText, badgeLeft + MARKED_BADGE_TEXT_LEFT, y + TITLE_Y, ColorConstants.MARKED_BADGE_TEXT);
     }
 
     private void renderActionButtons(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks, boolean focused) {

@@ -37,7 +37,7 @@ public class AcceptFrontierCopyConfirmationDialog extends ConfirmationDialog {
     protected void initScreen() {
         super.initScreen();
         if (confirmAlternativeButton != null) {
-            confirmButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
+            confirmButton.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_NORMAL, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
         }
     }
 

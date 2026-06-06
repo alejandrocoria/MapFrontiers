@@ -62,7 +62,6 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
     private static final int NAME_LINE_BG_TOP_OFFSET = -1;
     private static final int NAME_LINE_BG_BOTTOM_OFFSET = 9;
     private static final int NAME_LINE_BG_FADE_WIDTH = 6;
-    private static final int RAIL_HOVER_COLOR = 0xA0202020;
     private static final Tooltip DELETE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.delete"));
     private final Font font;
     private final FrontierOverlay frontier;
@@ -186,7 +185,7 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
         int selectionRightBound = getSelectionRightBound();
         if (isHovered) {
             graphics.fill(x, y, selectionRightBound, y + height, ColorConstants.SCROLL_ELEMENT_HOVERED);
-            graphics.fill(selectionRightBound, y, x + width, y + height, RAIL_HOVER_COLOR);
+            graphics.fill(selectionRightBound, y, x + width, y + height, ColorConstants.TERRITORY_LIST_RAIL_HOVER_BG);
         }
 
         int rowContentX = x + LEFT_PADDING;
@@ -224,7 +223,7 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
 
         int left = x + 2;
         int top = y;
-        graphics.outline(left, top, width - 4, height, ColorConstants.WHITE);
+        graphics.outline(left, top, width - 4, height, ColorConstants.FRONTIER_LIST_ROW_OUTLINE);
     }
 
     private void renderCheckBox(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks, boolean focused) {
@@ -281,7 +280,7 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
         int iconY = y + SHAPE_BADGE_ICON_Y;
         graphics.blit(RenderPipelines.GUI_TEXTURED, fillTexture, iconX, iconY, 0, 0, SHAPE_BADGE_ICON_WIDTH,
                 SHAPE_BADGE_ICON_HEIGHT, SHAPE_BADGE_ICON_WIDTH, SHAPE_BADGE_ICON_HEIGHT, frontier.getColor() | 0xFF000000);
-        int outlineColor = selected ? ColorConstants.WHITE : ColorConstants.TEXT_DARK;
+        int outlineColor = selected ? ColorConstants.SHAPE_BADGE_OUTLINE_SELECTED : ColorConstants.SHAPE_BADGE_OUTLINE_NORMAL;
         graphics.blit(RenderPipelines.GUI_TEXTURED, outlineTexture, iconX, iconY, 0, 0, SHAPE_BADGE_ICON_WIDTH,
                 SHAPE_BADGE_ICON_HEIGHT, SHAPE_BADGE_ICON_WIDTH, SHAPE_BADGE_ICON_HEIGHT, outlineColor);
 

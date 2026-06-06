@@ -197,19 +197,19 @@ public class TabbedBox implements Layout {
     public void renderBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         int backgroundWidth = getWidth();
         int backgroundHeight = getHeight();
-        graphics.fill(getX(), getY() + 16, getX() + backgroundWidth - 1, getY() + backgroundHeight - 1, ColorConstants.SCREEN_BG);
+        graphics.fill(getX(), getY() + 16, getX() + backgroundWidth - 1, getY() + backgroundHeight - 1, ColorConstants.SCREEN_FRAME_BG);
 
         if (selected == -1) {
-            graphics.horizontalLine(getX(), getX() + backgroundWidth - 1, getY() + 16, ColorConstants.TAB_BORDER);
+            graphics.horizontalLine(getX(), getX() + backgroundWidth - 1, getY() + 16, ColorConstants.TAB_BORDER_NORMAL);
         } else {
             Tab tab = tabs.get(selected);
-            graphics.horizontalLine(getX(), tab.getX(), getY() + 16, ColorConstants.TAB_BORDER);
-            graphics.horizontalLine(tab.getX() + tab.getWidth(), getX() + backgroundWidth - 1, getY() + 16, ColorConstants.TAB_BORDER);
+            graphics.horizontalLine(getX(), tab.getX(), getY() + 16, ColorConstants.TAB_BORDER_NORMAL);
+            graphics.horizontalLine(tab.getX() + tab.getWidth(), getX() + backgroundWidth - 1, getY() + 16, ColorConstants.TAB_BORDER_NORMAL);
         }
 
-        graphics.horizontalLine(getX(), getX() + backgroundWidth - 1, getY() + backgroundHeight - 1, ColorConstants.TAB_BORDER);
-        graphics.verticalLine(getX(), getY() + 16, getY() + backgroundHeight - 1, ColorConstants.TAB_BORDER);
-        graphics.verticalLine(getX() + backgroundWidth - 1, getY() + 16, getY() + backgroundHeight - 1, ColorConstants.TAB_BORDER);
+        graphics.horizontalLine(getX(), getX() + backgroundWidth - 1, getY() + backgroundHeight - 1, ColorConstants.TAB_BORDER_NORMAL);
+        graphics.verticalLine(getX(), getY() + 16, getY() + backgroundHeight - 1, ColorConstants.TAB_BORDER_NORMAL);
+        graphics.verticalLine(getX() + backgroundWidth - 1, getY() + 16, getY() + backgroundHeight - 1, ColorConstants.TAB_BORDER_NORMAL);
     }
 
     private int findNextEnabledTab(int startIndex, boolean forward) {
@@ -303,13 +303,13 @@ public class TabbedBox implements Layout {
 
         @Override
         public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
-            graphics.fill(getX(), getY(), getX() + getWidth(), getY() + getHeight(), ColorConstants.SCREEN_BG);
+            graphics.fill(getX(), getY(), getX() + getWidth(), getY() + getHeight(), ColorConstants.SCREEN_FRAME_BG);
 
-            graphics.horizontalLine(getX(), getX() + getWidth(), getY(), isKeyboardFocused() ? ColorConstants.TAB_BORDER_FOCUSED : ColorConstants.TAB_BORDER);
-            graphics.verticalLine(getX(), getY(), getY() + getHeight(), ColorConstants.TAB_BORDER);
-            graphics.verticalLine(getX() + getWidth(), getY(), getY() + getHeight(), ColorConstants.TAB_BORDER);
+            graphics.horizontalLine(getX(), getX() + getWidth(), getY(), isKeyboardFocused() ? ColorConstants.TAB_BORDER_FOCUSED : ColorConstants.TAB_BORDER_NORMAL);
+            graphics.verticalLine(getX(), getY(), getY() + getHeight(), ColorConstants.TAB_BORDER_NORMAL);
+            graphics.verticalLine(getX() + getWidth(), getY(), getY() + getHeight(), ColorConstants.TAB_BORDER_NORMAL);
 
-            int labelColor = ColorConstants.TAB_TEXT;
+            int labelColor = ColorConstants.TAB_TEXT_NORMAL;
             if (!active) {
                 labelColor = ColorConstants.TAB_TEXT_DISABLED;
             } else if (selected || isHoveredOrKeyboardFocused()) {

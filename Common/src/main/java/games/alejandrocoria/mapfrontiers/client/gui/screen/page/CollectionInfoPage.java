@@ -219,7 +219,7 @@ public class CollectionInfoPage extends PageScreen {
         mainLayout.addChild(overviewColumn, 0, 1, 1, 2);
 
         LinearLayout headerRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
-        headerRow.addChild(new StringWidget(NAME_LABEL, font).setColor(ColorConstants.WHITE));
+        headerRow.addChild(new StringWidget(NAME_LABEL, font).setColor(ColorConstants.COLLECTION_INFO_TEXT));
         PluginSourceBadge sourceBadge = new PluginSourceBadge(font, collection.getSourcePluginId(), true);
         int sourceWidth = sourceBadge.getWidth();
         headerRow.addChild(SpacerElement.width(Math.max(0,
@@ -253,17 +253,17 @@ public class CollectionInfoPage extends PageScreen {
         LinearLayout infoColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_TINY);
         mainLayout.addChild(infoColumn, 0, 3, LayoutSettings.defaults().alignHorizontallyLeft());
 
-        ownerLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.WHITE));
-        typeLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.WHITE));
-        frontiersCountLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.WHITE));
-        areaLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.WHITE));
-        lengthLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.WHITE));
+        ownerLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.COLLECTION_INFO_TEXT));
+        typeLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.COLLECTION_INFO_TEXT));
+        frontiersCountLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.COLLECTION_INFO_TEXT));
+        areaLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.COLLECTION_INFO_TEXT));
+        lengthLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.COLLECTION_INFO_TEXT));
 
         if (collection.getCreated() != null) {
-            createdLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.WHITE));
+            createdLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.COLLECTION_INFO_TEXT));
         }
         if (collection.getModified() != null) {
-            modifiedLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.WHITE));
+            modifiedLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.COLLECTION_INFO_TEXT));
         }
     }
 
@@ -345,7 +345,7 @@ public class CollectionInfoPage extends PageScreen {
     private void buildBottomButtons() {
         buttonSelect = addBottomButton(new SimpleButton(font, SECTION_WIDTH, SELECT_IN_MAP_LABEL, b -> onSelectInMapPressed()));
         buttonDelete = addBottomButton(new SimpleButton(font, SECTION_WIDTH, DELETE_LABEL, b -> onDeletePressed()));
-        buttonDelete.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
+        buttonDelete.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_NORMAL, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
         buttonDone = addBottomButton(new SimpleButton(font, SECTION_WIDTH, DONE_LABEL, b -> onClose()));
     }
 

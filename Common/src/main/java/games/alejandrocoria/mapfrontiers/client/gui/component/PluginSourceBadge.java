@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
 import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
+import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.util.SourcePluginUiHelper;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -45,7 +46,7 @@ public class PluginSourceBadge extends AbstractWidgetNoNarration {
         }
 
         int textY = getY() + (getHeight() - 8) / 2;
-        graphics.text(font, getMessage(), getX(), textY, 0xFFFFFFFF);
+        graphics.text(font, getMessage(), getX(), textY, ColorConstants.WHITE);
     }
 
     private static int resolveWidth(Font font, @Nullable String sourcePluginId, boolean showLabel) {

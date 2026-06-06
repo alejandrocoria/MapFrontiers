@@ -69,9 +69,9 @@ public class IconButton extends ButtonBase {
     @Override
     public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         int stateIndex = 0;
-        int color = ColorConstants.WHITE;
+        int color = ColorConstants.ICON_COLOR_NORMAL;
         if (!active) {
-            color = 0xFF7F7F7F;
+            color = ColorConstants.ICON_COLOR_DISABLED;
         } else if (isFocused() && Minecraft.getInstance().getLastInputType().isKeyboard()) {
             stateIndex = 2;
         } else if (isHovered()) {

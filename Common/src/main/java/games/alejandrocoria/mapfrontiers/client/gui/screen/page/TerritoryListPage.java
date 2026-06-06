@@ -749,13 +749,13 @@ public class TerritoryListPage extends PageScreen {
 
         TerritoryGroupModel virtualGroup = buildVirtualGroup(scope);
         String headerText = getHeaderText(scope);
-        rows.add(new SectionHeaderListElement(getHeaderRowId(scope), font, headerText, TERRITORIES_WIDTH, ColorConstants.SCROLL_HEADER,
+        rows.add(new SectionHeaderListElement(getHeaderRowId(scope), font, headerText, TERRITORIES_WIDTH, ColorConstants.SECTION_HEADER_TEXT,
                 !isMarkedModeActive() && canCreateCollection(scope), getCreateCollectionTooltip(scope)));
-        rows.add(createCollectionRowElement(virtualGroup, ColorConstants.VIRTUAL_COLLECTION));
+        rows.add(createCollectionRowElement(virtualGroup, ColorConstants.VIRTUAL_COLLECTION_COLOR));
         if (!virtualGroup.collapsed) {
-            addFrontierChildren(rows, virtualGroup.filteredFrontiers, visibleFilteredFrontiers, ColorConstants.VIRTUAL_COLLECTION);
+            addFrontierChildren(rows, virtualGroup.filteredFrontiers, visibleFilteredFrontiers, ColorConstants.VIRTUAL_COLLECTION_COLOR);
         }
-        rows.add(new CollectionBorderCapListElement(TERRITORIES_WIDTH, ColorConstants.VIRTUAL_COLLECTION));
+        rows.add(new CollectionBorderCapListElement(TERRITORIES_WIDTH, ColorConstants.VIRTUAL_COLLECTION_COLOR));
 
         collectionGroups.sort(this::compareCollectionGroups);
         for (TerritoryGroupModel group : collectionGroups) {

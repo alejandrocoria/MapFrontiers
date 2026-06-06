@@ -60,7 +60,7 @@ public class ConfirmationDialog extends AutoScaledScreen {
         LinearLayout titleRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
         titleRow.defaultCellSetting().alignVerticallyMiddle();
         titleRow.addChild(new StringWidget(Component.translatable(titleKey).withStyle(Style.EMPTY.withBold(true)), font)
-                .setColor(ColorConstants.WHITE));
+                .setColor(ColorConstants.DIALOG_TITLE_TEXT));
         AbstractWidget titleSuffixWidget = createTitleSuffixWidget();
         if (titleSuffixWidget != null) {
             titleRow.addChild(titleSuffixWidget);

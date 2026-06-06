@@ -56,7 +56,7 @@ public class FrontierPreviewPanel {
     }
 
     public void drawPanelBorder(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
-        graphics.outline(x, y, width, height, ColorConstants.OPTION_BORDER);
+        graphics.outline(x, y, width, height, ColorConstants.PREVIEW_PANEL_BORDER);
     }
 
     public void drawPreview(GuiGraphicsExtractor graphics, int x, int y, int size, float scaleFactor) {

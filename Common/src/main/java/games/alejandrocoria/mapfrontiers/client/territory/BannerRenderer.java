@@ -173,7 +173,7 @@ public class BannerRenderer {
         graphics.pose().rotate((float) Math.toRadians(rotation));
         graphics.pose().translate(-centerX, -centerY);
 
-        ((GuiGraphicsAccessor) graphics).innerBlitInvoker(RenderPipelines.GUI_TEXTURED, textureLocation, x, x + width, y, y + height, 0, 1, 0, 1, ColorConstants.WHITE);
+        ((GuiGraphicsAccessor) graphics).innerBlitInvoker(RenderPipelines.GUI_TEXTURED, textureLocation, x, x + width, y, y + height, 0, 1, 0, 1, ColorConstants.TEXTURE_TINT_NONE);
 
         graphics.pose().popMatrix();
     }
@@ -187,7 +187,7 @@ public class BannerRenderer {
             return null;
         }
 
-        MapImage bannerIcon = new MapImage(textureLocation, 0, 0, 20, 40, ColorConstants.WHITE, opacity);
+        MapImage bannerIcon = new MapImage(textureLocation, 0, 0, 20, 40, ColorConstants.TEXTURE_TINT_NONE, opacity);
         bannerIcon.setBlur(false);
         bannerIcon.setAnchorX(anchorX);
         bannerIcon.setAnchorY(anchorY);
