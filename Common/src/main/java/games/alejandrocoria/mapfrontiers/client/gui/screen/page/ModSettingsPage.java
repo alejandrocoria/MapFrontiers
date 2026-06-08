@@ -18,7 +18,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox.ScrollElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.UserElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
-import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.HUDSettingsScreen;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.CollectionAppearanceDialog;
@@ -27,12 +26,12 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDi
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationSettingsDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.FrontierAppearanceDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.FrontierBehaviorDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.FrontierVisibilityDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.PathStyleDialog;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.config.BooleanConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
-import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketRequestFrontierSettings;
@@ -100,6 +99,7 @@ public class ModSettingsPage extends PageScreen {
     private static final String KEY_HINT_KEY = "mapfrontiers.key.open_settings.hint";
     private static final Component FRONTIERS_LABEL = Component.translatable("mapfrontiers.frontiers");
     private static final Component COLLECTIONS_LABEL = Component.translatable("mapfrontiers.collections");
+    private static final Component BEHAVIOR_LABEL = Component.translatable("mapfrontiers.behavior");
     private static final Component APPEARANCE_LABEL = Component.translatable("mapfrontiers.appearance");
     private static final Component DEFAULT_PATH_STYLE_LABEL = Component.translatable("mapfrontiers.default_path_style");
     private static final Component FORCED_VISIBILITY_LABEL = Component.translatable("mapfrontiers.forced_visibility");
@@ -119,11 +119,7 @@ public class ModSettingsPage extends PageScreen {
     private static final Component SHARE_PERSONAL_FRONTIER_LABEL = Component.translatable("mapfrontiers.share_personal_frontier");
     private static final Component DONE_LABEL = Component.translatable("gui.done");
     private static final Tooltip ADD_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.add.tooltip"));
-    private static final int DEFAULT_OPTION_WIDTH = 40;
-    private static final int DEFAULT_TEXTBOX_WIDTH = 40;
     private static final int BUTTON_HORIZONTAL_PADDING = 8;
-    private static final int WIDE_BUTTON_EXTRA_WIDTH = 100;
-    private static final int WIDE_TEXTBOX_EXTRA_WIDTH = 300;
     private static final int WIDE_LINK_EXTRA_WIDTH = 200;
     private static final int GROUPS_SCROLL_WIDTH = 160;
     private static final int USERS_SCROLL_WIDTH = 258;
@@ -279,27 +275,22 @@ public class ModSettingsPage extends PageScreen {
     }
 
     private int buildFrontiersSection(GridLayout settingsGrid, int row) {
-        row = addIntSettingRow(settingsGrid, row, ClientConfig.TITLE_ANNOUNCEMENT_DURATION,
-                createWideIntConfigTextBox(ClientConfig.TITLE_ANNOUNCEMENT_DURATION, DEFAULT_TEXTBOX_WIDTH, 4));
-        row = addIntSettingRow(settingsGrid, row, ClientConfig.TITLE_ANNOUNCEMENT_TIMEOUT, DEFAULT_TEXTBOX_WIDTH, 4);
-        row = addOptionSettingRow(settingsGrid, row, ClientConfig.TITLE_ANNOUNCEMENT_ABOVE_HOTBAR);
-        row = addOptionSettingRow(settingsGrid, row, ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS);
-        row = addIntSettingRow(settingsGrid, row, ClientConfig.SNAP_DISTANCE, DEFAULT_TEXTBOX_WIDTH, 2);
-        row = addIntSettingRow(settingsGrid, row, ClientConfig.PATH_PROXIMITY_ENTER_DISTANCE, DEFAULT_TEXTBOX_WIDTH, 3);
-        row = addIntSettingRow(settingsGrid, row, ClientConfig.PATH_PROXIMITY_EXIT_DISTANCE, DEFAULT_TEXTBOX_WIDTH, 3);
-
         int buttonWidth = ScreenHelper.getPaddedMaxTextWidth(font, LayoutConstants.PAGE_BUTTON_WIDTH,
-                BUTTON_HORIZONTAL_PADDING, APPEARANCE_LABEL, DEFAULT_PATH_STYLE_LABEL, FORCED_VISIBILITY_LABEL);
+                BUTTON_HORIZONTAL_PADDING, BEHAVIOR_LABEL, APPEARANCE_LABEL, DEFAULT_PATH_STYLE_LABEL, FORCED_VISIBILITY_LABEL);
 
-        buttonFrontierAppearance = createWideSimpleButton(buttonWidth, APPEARANCE_LABEL,
+        settingsGrid.addChild(new SimpleButton(font, buttonWidth, BEHAVIOR_LABEL,
+                b -> onFrontierBehaviorPressed()), row++, 0, 1, 2,
+                LayoutSettings.defaults().alignHorizontallyCenter());
+
+        buttonFrontierAppearance = new SimpleButton(font, buttonWidth, APPEARANCE_LABEL,
                 b -> onFrontierAppearancePressed());
         settingsGrid.addChild(buttonFrontierAppearance, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
 
-        buttonDefaultPathStyle = createWideSimpleButton(buttonWidth, DEFAULT_PATH_STYLE_LABEL,
+        buttonDefaultPathStyle = new SimpleButton(font, buttonWidth, DEFAULT_PATH_STYLE_LABEL,
                 b -> onDefaultPathStylePressed());
         settingsGrid.addChild(buttonDefaultPathStyle, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
 
-        settingsGrid.addChild(createWideSimpleButton(buttonWidth, FORCED_VISIBILITY_LABEL,
+        settingsGrid.addChild(new SimpleButton(font, buttonWidth, FORCED_VISIBILITY_LABEL,
                 b -> onForcedFrontierVisibilityPressed()), row++, 0, 1, 2,
                 LayoutSettings.defaults().alignHorizontallyCenter());
 
@@ -314,11 +305,11 @@ public class ModSettingsPage extends PageScreen {
         int buttonWidth = ScreenHelper.getPaddedMaxTextWidth(font, LayoutConstants.PAGE_BUTTON_WIDTH,
                 BUTTON_HORIZONTAL_PADDING, APPEARANCE_LABEL, FORCED_VISIBILITY_LABEL);
 
-        buttonCollectionAppearance = createWideSimpleButton(buttonWidth, APPEARANCE_LABEL,
+        buttonCollectionAppearance = new SimpleButton(font, buttonWidth, APPEARANCE_LABEL,
                 b -> onCollectionAppearancePressed());
         settingsGrid.addChild(buttonCollectionAppearance, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
 
-        settingsGrid.addChild(createWideSimpleButton(buttonWidth, FORCED_VISIBILITY_LABEL,
+        settingsGrid.addChild(new SimpleButton(font, buttonWidth, FORCED_VISIBILITY_LABEL,
                 b -> onForcedCollectionVisibilityPressed()), row++, 0, 1, 2,
                 LayoutSettings.defaults().alignHorizontallyCenter());
 
@@ -331,7 +322,7 @@ public class ModSettingsPage extends PageScreen {
                 LayoutSettings.defaults().alignHorizontallyCenter());
 
         row = addOptionSettingRow(settingsGrid, row, ClientConfig.FULLSCREEN_BUTTONS);
-        buttonConfirmationDialogs = createWideSimpleButton(LayoutConstants.PAGE_BUTTON_WIDTH, CONFIRMATION_DIALOGS_LABEL,
+        buttonConfirmationDialogs = new SimpleButton(font, LayoutConstants.PAGE_BUTTON_WIDTH, CONFIRMATION_DIALOGS_LABEL,
                 b -> onConfirmationDialogsPressed());
         settingsGrid.addChild(buttonConfirmationDialogs, row, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
         return row + 1;
@@ -345,7 +336,8 @@ public class ModSettingsPage extends PageScreen {
         addOptionSettingRow(settingsGrid, row, ClientConfig.HUD_ENABLED, createOnOffOptionButton(ClientConfig.HUD_ENABLED,
                 this::onHudEnabledChanged));
 
-        buttonEditHUD = generalLayout.addChild(createWideSimpleButton(LayoutConstants.PAGE_BUTTON_WIDTH, EDIT_HUD_LABEL, b -> onEditHUDPressed()));
+        buttonEditHUD = generalLayout.addChild(new SimpleButton(font, LayoutConstants.PAGE_BUTTON_WIDTH, EDIT_HUD_LABEL,
+                b -> onEditHUDPressed()));
     }
 
     private void buildGroupsTab() {
@@ -451,58 +443,17 @@ public class ModSettingsPage extends PageScreen {
         };
     }
 
-    private SimpleButton createWideSimpleButton(int width, Component label, SimpleButton.OnPress onPress) {
-        return new SimpleButton(font, width, label, onPress) {
-            @Override
-            public @NotNull ScreenRectangle getRectangle() {
-                return new ScreenRectangle(this.getX(), this.getY(), getWidth() + WIDE_BUTTON_EXTRA_WIDTH,
-                        this.getHeight());
-            }
-        };
-    }
-
     private OptionButton createOnOffOptionButton(BooleanConfigEntry entry) {
         return createOnOffOptionButton(entry, entry::set);
     }
 
     private OptionButton createOnOffOptionButton(BooleanConfigEntry entry, Consumer<Boolean> consumer) {
-        OptionButton button = new OptionButton(font, DEFAULT_OPTION_WIDTH, b -> consumer.accept(b.getSelected() == 0));
+        OptionButton button = new OptionButton(font, LayoutConstants.SETTING_CONTROL_WIDTH,
+                b -> consumer.accept(b.getSelected() == 0));
         button.addOption(ON_LABEL);
         button.addOption(OFF_LABEL);
         button.setSelected(entry.get() ? 0 : 1);
         return button;
-    }
-
-    private TextBoxInt createIntConfigTextBox(IntConfigEntry entry, int width, int maxLength) {
-        TextBoxInt textBox = new TextBoxInt(entry.defaultValue(), entry.minValue(), entry.maxValue(), font, width);
-        textBox.setValue(String.valueOf(entry.get()));
-        textBox.setMaxLength(maxLength);
-        textBox.setValueChangedCallback(entry::set);
-        return textBox;
-    }
-
-    private TextBoxInt createWideIntConfigTextBox(IntConfigEntry entry, int width, int maxLength) {
-        TextBoxInt textBox = new TextBoxInt(entry.defaultValue(), entry.minValue(), entry.maxValue(), font, width) {
-            @Override
-            public @NotNull ScreenRectangle getRectangle() {
-                return new ScreenRectangle(this.getX() - WIDE_TEXTBOX_EXTRA_WIDTH, this.getY(),
-                        this.getWidth() + WIDE_TEXTBOX_EXTRA_WIDTH, this.getHeight());
-            }
-        };
-        textBox.setValue(String.valueOf(entry.get()));
-        textBox.setMaxLength(maxLength);
-        textBox.setValueChangedCallback(entry::set);
-        return textBox;
-    }
-
-    private int addIntSettingRow(GridLayout settingsGrid, int row, IntConfigEntry entry, int width, int maxLength) {
-        return addIntSettingRow(settingsGrid, row, entry, createIntConfigTextBox(entry, width, maxLength));
-    }
-
-    private int addIntSettingRow(GridLayout settingsGrid, int row, IntConfigEntry entry, TextBoxInt textBox) {
-        settingsGrid.addChild(createConfigLabel(entry), row, 0);
-        settingsGrid.addChild(textBox, row, 1);
-        return row + 1;
     }
 
     private int addOptionSettingRow(GridLayout settingsGrid, int row, BooleanConfigEntry entry) {
@@ -537,6 +488,10 @@ public class ModSettingsPage extends PageScreen {
             return;
         }
         new FrontierAppearanceDialog().display();
+    }
+
+    private void onFrontierBehaviorPressed() {
+        new FrontierBehaviorDialog().display();
     }
 
     private void onCollectionAppearancePressed() {
