@@ -20,7 +20,6 @@ public class ConfirmationSettingsDialog extends PanelDialog {
     private static final Component SAVE_LABEL = Component.translatable("mapfrontiers.save");
     private static final Component ON_LABEL = Component.translatable("options.on");
     private static final Component OFF_LABEL = Component.translatable("options.off");
-    private static final int OPTION_WIDTH = 40;
 
     private final ConfirmationSnapshot initialSnapshot;
     private boolean saved = false;
@@ -79,7 +78,7 @@ public class ConfirmationSettingsDialog extends PanelDialog {
     }
 
     private OptionButton createOnOffOptionButton(BooleanConfigEntry entry) {
-        OptionButton button = new OptionButton(font, OPTION_WIDTH, b -> entry.set(b.getSelected() == 0));
+        OptionButton button = new OptionButton(font, LayoutConstants.SETTING_CONTROL_WIDTH, b -> entry.set(b.getSelected() == 0));
         button.addOption(ON_LABEL);
         button.addOption(OFF_LABEL);
         button.setSelected(entry.get() ? 0 : 1);
