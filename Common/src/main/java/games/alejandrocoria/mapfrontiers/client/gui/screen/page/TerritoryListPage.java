@@ -607,6 +607,7 @@ public class TerritoryListPage extends PageScreen {
                 ? TerritoryLifetime.SESSION_ONLY
                 : TerritoryLifetime.PERSISTENT);
         collection.setOwner(new SettingsUser(minecraft.player));
+        ClientConfig.applyDefaultCollectionValues(collection);
 
         MapFrontiersClient.getOperationService().createCollection(collection);
         new CollectionInfoPage(collection).display();

@@ -17,6 +17,8 @@ import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionV
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -671,7 +673,43 @@ public final class ClientConfig {
         TERRITORY_LIST_SORTING_DIRECTION.set(direction);
     }
 
-    public static FrontierData.PathStyle getDefaultPathStyle() {
+    public static FrontierVisibilityData getDefaultFrontierVisibility() {
+        FrontierVisibilityData visibilityData = new FrontierVisibilityData();
+        for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
+            visibilityData.set(visibility, getDefaultFrontierVisibilityEntry(visibility).get());
+        }
+        return visibilityData;
+    }
+
+    public static void setDefaultFrontierVisibility(FrontierVisibilityData visibilityData) {
+        for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
+            getDefaultFrontierVisibilityEntry(visibility).set(visibilityData.get(visibility));
+        }
+    }
+
+    public static CollectionVisibilityData getDefaultCollectionVisibility() {
+        CollectionVisibilityData visibilityData = new CollectionVisibilityData();
+        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
+            if (field.isBoolean()) {
+                visibilityData.setBoolean(field, getDefaultCollectionBooleanVisibilityEntry(field).get());
+            } else {
+                visibilityData.setZoom(field, getDefaultCollectionZoomVisibilityEntry(field).get());
+            }
+        }
+        return visibilityData;
+    }
+
+    public static void setDefaultCollectionVisibility(CollectionVisibilityData visibilityData) {
+        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
+            if (field.isBoolean()) {
+                getDefaultCollectionBooleanVisibilityEntry(field).set(visibilityData.getBoolean(field));
+            } else {
+                getDefaultCollectionZoomVisibilityEntry(field).set(visibilityData.getZoom(field));
+            }
+        }
+    }
+
+    public static FrontierData.PathStyle getDefaultFrontierPathStyle() {
         FrontierData.PathStyle pathStyle = new FrontierData.PathStyle();
         pathStyle.startMarker = parsePathMarker(FRONTIER_DEFAULT_PATH_STYLE_START.get(), FrontierData.PathStyle.BIG_DOT);
         pathStyle.innerMarker = parsePathMarker(FRONTIER_DEFAULT_PATH_STYLE_INNER.get(), FrontierData.PathStyle.NONE);
@@ -684,7 +722,7 @@ public final class ClientConfig {
         return pathStyle;
     }
 
-    public static void setDefaultPathStyle(FrontierData.PathStyle pathStyle) {
+    public static void setDefaultFrontierPathStyle(FrontierData.PathStyle pathStyle) {
         FrontierData.PathStyle normalized = normalizeDefaultPathStyle(pathStyle);
         FRONTIER_DEFAULT_PATH_STYLE_START.set(normalized.startMarker.toString());
         FRONTIER_DEFAULT_PATH_STYLE_INNER.set(normalized.innerMarker.toString());
@@ -693,6 +731,44 @@ public final class ClientConfig {
         FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_START.set(normalized.labelAtStart);
         FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_MIDDLE.set(normalized.labelAtMiddle);
         FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_END.set(normalized.labelAtEnd);
+    }
+
+    public static FrontierData.PathStyle getDefaultPathStyle() {
+        return getDefaultFrontierPathStyle();
+    }
+
+    public static void setDefaultPathStyle(FrontierData.PathStyle pathStyle) {
+        setDefaultFrontierPathStyle(pathStyle);
+    }
+
+    public static int resolveNewFrontierColor() {
+        if (FRONTIER_DEFAULT_RANDOM_COLOR.get()) {
+            return ColorHelper.getRandomColor();
+        }
+        return normalizeOpaqueColor(FRONTIER_DEFAULT_COLOR.get());
+    }
+
+    public static int resolveNewCollectionColor() {
+        if (COLLECTION_DEFAULT_RANDOM_COLOR.get()) {
+            return ColorHelper.getRandomColor();
+        }
+        return normalizeOpaqueColor(COLLECTION_DEFAULT_COLOR.get());
+    }
+
+    public static void applyDefaultFrontierValues(FrontierData frontier) {
+        frontier.setName1(normalizeName(FRONTIER_DEFAULT_NAME_1.get(), FrontierData.MAX_NAME_CHARACTERS));
+        frontier.setName2(normalizeName(FRONTIER_DEFAULT_NAME_2.get(), FrontierData.MAX_NAME_CHARACTERS));
+        frontier.setColor(resolveNewFrontierColor());
+        frontier.setVisibilityData(getDefaultFrontierVisibility());
+        if (frontier.getShape() == FrontierShape.Path) {
+            frontier.setPathStyle(getDefaultFrontierPathStyle());
+        }
+    }
+
+    public static void applyDefaultCollectionValues(CollectionData collection) {
+        collection.setName(normalizeName(COLLECTION_DEFAULT_NAME.get(), CollectionData.MAX_NAME_CHARACTERS));
+        collection.setColor(resolveNewCollectionColor());
+        collection.setVisibilityData(getDefaultCollectionVisibility());
     }
 
     public static double getPathActivationDistance(boolean alreadyActive) {
@@ -712,7 +788,7 @@ public final class ClientConfig {
     }
 
     private static boolean validateDefaultPathStyle() {
-        FrontierData.PathStyle normalized = getDefaultPathStyle();
+        FrontierData.PathStyle normalized = getDefaultFrontierPathStyle();
         boolean dirty = !FRONTIER_DEFAULT_PATH_STYLE_START.get().equals(normalized.startMarker.toString())
                 || !FRONTIER_DEFAULT_PATH_STYLE_INNER.get().equals(normalized.innerMarker.toString())
                 || !FRONTIER_DEFAULT_PATH_STYLE_END.get().equals(normalized.endMarker.toString())
@@ -722,7 +798,7 @@ public final class ClientConfig {
                 || FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_END.get() != normalized.labelAtEnd;
 
         if (dirty) {
-            setDefaultPathStyle(normalized);
+            setDefaultFrontierPathStyle(normalized);
         }
 
         return dirty;
@@ -950,6 +1026,70 @@ public final class ClientConfig {
         normalized.segmentMarker = normalized.segmentMarker == null ? FrontierData.PathStyle.SMALL_DOT : normalized.segmentMarker;
         normalized.normalizeForPersistence();
         return normalized;
+    }
+
+    private static BooleanConfigEntry getDefaultFrontierVisibilityEntry(FrontierVisibility visibility) {
+        return switch (visibility) {
+            case Frontier -> FRONTIER_DEFAULT_VISIBLE;
+            case AnnounceInChat -> FRONTIER_DEFAULT_ANNOUNCE_IN_CHAT;
+            case AnnounceInTitle -> FRONTIER_DEFAULT_ANNOUNCE_IN_TITLE;
+            case MentionCollection -> FRONTIER_DEFAULT_MENTION_COLLECTION;
+            case Fullscreen -> FRONTIER_DEFAULT_FULLSCREEN_VISIBLE;
+            case FullscreenName -> FRONTIER_DEFAULT_FULLSCREEN_NAME;
+            case FullscreenCollection -> FRONTIER_DEFAULT_FULLSCREEN_COLLECTION;
+            case FullscreenOwner -> FRONTIER_DEFAULT_FULLSCREEN_OWNER;
+            case FullscreenBanner -> FRONTIER_DEFAULT_FULLSCREEN_BANNER;
+            case FullscreenDay -> FRONTIER_DEFAULT_FULLSCREEN_DAY;
+            case FullscreenNight -> FRONTIER_DEFAULT_FULLSCREEN_NIGHT;
+            case FullscreenUnderground -> FRONTIER_DEFAULT_FULLSCREEN_UNDERGROUND;
+            case FullscreenTopo -> FRONTIER_DEFAULT_FULLSCREEN_TOPO;
+            case FullscreenBiome -> FRONTIER_DEFAULT_FULLSCREEN_BIOME;
+            case Minimap -> FRONTIER_DEFAULT_MINIMAP_VISIBLE;
+            case MinimapName -> FRONTIER_DEFAULT_MINIMAP_NAME;
+            case MinimapCollection -> FRONTIER_DEFAULT_MINIMAP_COLLECTION;
+            case MinimapOwner -> FRONTIER_DEFAULT_MINIMAP_OWNER;
+            case MinimapBanner -> FRONTIER_DEFAULT_MINIMAP_BANNER;
+            case MinimapDay -> FRONTIER_DEFAULT_MINIMAP_DAY;
+            case MinimapNight -> FRONTIER_DEFAULT_MINIMAP_NIGHT;
+            case MinimapUnderground -> FRONTIER_DEFAULT_MINIMAP_UNDERGROUND;
+            case MinimapTopo -> FRONTIER_DEFAULT_MINIMAP_TOPO;
+            case MinimapBiome -> FRONTIER_DEFAULT_MINIMAP_BIOME;
+            case Webmap -> FRONTIER_DEFAULT_WEBMAP_VISIBLE;
+            case WebmapName -> FRONTIER_DEFAULT_WEBMAP_NAME;
+            case WebmapCollection -> FRONTIER_DEFAULT_WEBMAP_COLLECTION;
+            case WebmapOwner -> FRONTIER_DEFAULT_WEBMAP_OWNER;
+            case WebmapBanner -> FRONTIER_DEFAULT_WEBMAP_BANNER;
+            case WebmapDay -> FRONTIER_DEFAULT_WEBMAP_DAY;
+            case WebmapNight -> FRONTIER_DEFAULT_WEBMAP_NIGHT;
+            case WebmapUnderground -> FRONTIER_DEFAULT_WEBMAP_UNDERGROUND;
+            case WebmapTopo -> FRONTIER_DEFAULT_WEBMAP_TOPO;
+            case WebmapBiome -> FRONTIER_DEFAULT_WEBMAP_BIOME;
+        };
+    }
+
+    private static BooleanConfigEntry getDefaultCollectionBooleanVisibilityEntry(CollectionVisibilityField field) {
+        return switch (field) {
+            case Visible -> COLLECTION_DEFAULT_VISIBLE;
+            case FullscreenName -> COLLECTION_DEFAULT_FULLSCREEN_NAME;
+            case FullscreenOwner -> COLLECTION_DEFAULT_FULLSCREEN_OWNER;
+            case FullscreenBanner -> COLLECTION_DEFAULT_FULLSCREEN_BANNER;
+            case MinimapName -> COLLECTION_DEFAULT_MINIMAP_NAME;
+            case MinimapOwner -> COLLECTION_DEFAULT_MINIMAP_OWNER;
+            case MinimapBanner -> COLLECTION_DEFAULT_MINIMAP_BANNER;
+            case WebmapName -> COLLECTION_DEFAULT_WEBMAP_NAME;
+            case WebmapOwner -> COLLECTION_DEFAULT_WEBMAP_OWNER;
+            case WebmapBanner -> COLLECTION_DEFAULT_WEBMAP_BANNER;
+            default -> throw new IllegalArgumentException("Field " + field + " is not a default collection boolean visibility field");
+        };
+    }
+
+    private static IntConfigEntry getDefaultCollectionZoomVisibilityEntry(CollectionVisibilityField field) {
+        return switch (field) {
+            case FullscreenZoom -> COLLECTION_DEFAULT_FULLSCREEN_ZOOM;
+            case MinimapZoom -> COLLECTION_DEFAULT_MINIMAP_ZOOM;
+            case WebmapZoom -> COLLECTION_DEFAULT_WEBMAP_ZOOM;
+            default -> throw new IllegalArgumentException("Field " + field + " is not a default collection zoom visibility field");
+        };
     }
 
     private static Identifier parsePathMarker(String value, Identifier fallback) {
