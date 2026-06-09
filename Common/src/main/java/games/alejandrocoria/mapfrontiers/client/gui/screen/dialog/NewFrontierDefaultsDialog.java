@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen.dialog;
 
+import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
@@ -12,6 +13,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButto
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.client.gui.layouts.LinearLayout;
@@ -50,11 +52,15 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
     private TextBoxInt textBlue;
     private ColorPicker colorPicker;
     private ColorPaletteWidget colorPalette;
+    private FrontierVisibilityData visibilityData;
+    private FrontierData.PathStyle pathStyle;
     private int fixedColor;
     private boolean syncingWidgets = false;
 
     @Override
     protected void initScreen() {
+        visibilityData = ClientConfig.getDefaultFrontierVisibility();
+        pathStyle = ClientConfig.getDefaultFrontierPathStyle();
         fixedColor = ClientConfig.FRONTIER_DEFAULT_COLOR.get() | 0xFF000000;
 
         LinearLayout layout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
@@ -90,9 +96,7 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
         visibilityRow.defaultCellSetting().alignVerticallyMiddle();
         overviewColumn.addChild(visibilityRow);
 
-        buttonVisibility = new SimpleButton(font, SECTION_WIDTH, DEFAULT_VISIBILITY_LABEL, b -> {
-        });
-        buttonVisibility.active = false;
+        buttonVisibility = new SimpleButton(font, SECTION_WIDTH, DEFAULT_VISIBILITY_LABEL, b -> onVisibilityPressed());
         visibilityRow.addChild(buttonVisibility);
         visibilityRow.addChild(SpacerElement.width(SECTION_WIDTH));
 
@@ -100,9 +104,8 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
         pathStyleRow.defaultCellSetting().alignVerticallyMiddle();
         overviewColumn.addChild(pathStyleRow);
 
-        buttonPathStyle = new SimpleButton(font, SECTION_WIDTH, DEFAULT_PATH_STYLE_LABEL, b -> {
-        });
-        buttonPathStyle.active = false;
+        buttonPathStyle = new SimpleButton(font, SECTION_WIDTH, DEFAULT_PATH_STYLE_LABEL, b -> onPathStylePressed());
+        buttonPathStyle.active = areJourneyMapPreviewActionsAvailable();
         pathStyleRow.addChild(buttonPathStyle);
         pathStyleRow.addChild(SpacerElement.width(SECTION_WIDTH));
     }
@@ -226,6 +229,22 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
         textBlue.setFocused(false);
     }
 
+    private void onVisibilityPressed() {
+        new FrontierVisibilityDialog(visibilityData, (newVisibilityData, newVisibilityMask) -> {
+            visibilityData = new FrontierVisibilityData(newVisibilityData);
+            ClientConfig.setDefaultFrontierVisibility(visibilityData);
+            ClientGlobalEvents.postUpdatedConfigEvent();
+        }).display();
+    }
+
+    private void onPathStylePressed() {
+        new PathStyleDialog(pathStyle, newPathStyle -> {
+            pathStyle = new FrontierData.PathStyle(newPathStyle);
+            ClientConfig.setDefaultFrontierPathStyle(pathStyle);
+            ClientGlobalEvents.postUpdatedConfigEvent();
+        }).display();
+    }
+
     private void saveAndClose() {
         clearTextBoxFocus();
 
@@ -249,5 +268,9 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
         }
 
         return value.substring(0, maxLength);
+    }
+
+    private boolean areJourneyMapPreviewActionsAvailable() {
+        return minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
     }
 }

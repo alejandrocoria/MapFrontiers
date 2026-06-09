@@ -12,6 +12,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButto
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.client.gui.layouts.LinearLayout;
@@ -47,11 +48,13 @@ public class NewCollectionDefaultsDialog extends PanelDialog {
     private TextBoxInt textBlue;
     private ColorPicker colorPicker;
     private ColorPaletteWidget colorPalette;
+    private CollectionVisibilityData visibilityData;
     private int fixedColor;
     private boolean syncingWidgets = false;
 
     @Override
     protected void initScreen() {
+        visibilityData = ClientConfig.getDefaultCollectionVisibility();
         fixedColor = ClientConfig.COLLECTION_DEFAULT_COLOR.get() | 0xFF000000;
 
         LinearLayout layout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
@@ -87,9 +90,7 @@ public class NewCollectionDefaultsDialog extends PanelDialog {
         visibilityRow.defaultCellSetting().alignVerticallyMiddle();
         overviewColumn.addChild(visibilityRow);
 
-        buttonVisibility = new SimpleButton(font, SECTION_WIDTH, DEFAULT_VISIBILITY_LABEL, b -> {
-        });
-        buttonVisibility.active = false;
+        buttonVisibility = new SimpleButton(font, SECTION_WIDTH, DEFAULT_VISIBILITY_LABEL, b -> onVisibilityPressed());
         visibilityRow.addChild(buttonVisibility);
         visibilityRow.addChild(SpacerElement.width(SECTION_WIDTH));
     }
@@ -202,6 +203,14 @@ public class NewCollectionDefaultsDialog extends PanelDialog {
         textRed.setFocused(false);
         textGreen.setFocused(false);
         textBlue.setFocused(false);
+    }
+
+    private void onVisibilityPressed() {
+        new CollectionVisibilityDialog(visibilityData, (newVisibilityData, newVisibilityMask) -> {
+            visibilityData = new CollectionVisibilityData(newVisibilityData);
+            ClientConfig.setDefaultCollectionVisibility(visibilityData);
+            ClientGlobalEvents.postUpdatedConfigEvent();
+        }).display();
     }
 
     private void saveAndClose() {
