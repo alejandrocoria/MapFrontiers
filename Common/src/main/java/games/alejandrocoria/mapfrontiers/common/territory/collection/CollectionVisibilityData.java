@@ -15,9 +15,9 @@ public class CollectionVisibilityData {
     );
 
     private final EnumSet<CollectionVisibilityField> booleanValues;
-    private int fullscreenZoom = DEFAULT_ZOOM;
-    private int minimapZoom = DEFAULT_ZOOM;
-    private int webmapZoom = DEFAULT_ZOOM;
+    private int fullscreenZoom = getDefaultFullscreenZoom();
+    private int minimapZoom = getDefaultMinimapZoom();
+    private int webmapZoom = getDefaultWebmapZoom();
 
     public CollectionVisibilityData() {
         booleanValues = EnumSet.noneOf(CollectionVisibilityField.class);
@@ -242,7 +242,7 @@ public class CollectionVisibilityData {
             if (field.isBoolean()) {
                 setBoolean(field, nbt.getBooleanOr(field.getNbtKey(), field.getDefaultBooleanValue()));
             } else {
-                setZoom(field, nbt.getIntOr(field.getNbtKey(), DEFAULT_ZOOM));
+                setZoom(field, nbt.getIntOr(field.getNbtKey(), getDefaultZoom(field)));
             }
         }
     }
@@ -279,6 +279,18 @@ public class CollectionVisibilityData {
 
     public static List<Integer> getZoomLevels() {
         return ZOOM_LEVELS;
+    }
+
+    public static int getDefaultFullscreenZoom() {
+        return DEFAULT_ZOOM;
+    }
+
+    public static int getDefaultMinimapZoom() {
+        return DEFAULT_ZOOM;
+    }
+
+    public static int getDefaultWebmapZoom() {
+        return DEFAULT_ZOOM;
     }
 
     public static boolean isZoomEnabled(int zoom) {
@@ -321,5 +333,14 @@ public class CollectionVisibilityData {
         if (!field.isBoolean()) {
             throw new IllegalArgumentException("Field " + field + " is not a boolean field");
         }
+    }
+
+    private static int getDefaultZoom(CollectionVisibilityField field) {
+        return switch (field) {
+            case FullscreenZoom -> getDefaultFullscreenZoom();
+            case MinimapZoom -> getDefaultMinimapZoom();
+            case WebmapZoom -> getDefaultWebmapZoom();
+            default -> throw new IllegalArgumentException("Field " + field + " is not a zoom field");
+        };
     }
 }

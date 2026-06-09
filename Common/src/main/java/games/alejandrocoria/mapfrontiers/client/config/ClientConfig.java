@@ -11,9 +11,12 @@ import games.alejandrocoria.mapfrontiers.common.config.EnumConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.StringConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.StringListConfigEntry;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityField;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -25,7 +28,7 @@ import java.util.EnumSet;
 import java.util.List;
 
 public final class ClientConfig {
-    public static final int CURRENT_VERSION = 3;
+    public static final int CURRENT_VERSION = 4;
 
     private static final Path CONFIG_PATH = Services.PLATFORM.getConfigDirectory().resolve(MapFrontiers.MODID + "-client.toml");
     private static final ConfigFile FILE = new ConfigFile(CONFIG_PATH, CURRENT_VERSION, ClientConfigMigrations.INSTANCE);
@@ -47,6 +50,10 @@ public final class ClientConfig {
     private static final int HUD_SLOT_COUNT = 4;
     private static final List<HUDSlot> DEFAULT_HUD_SLOTS = List.of(HUDSlot.Name, HUDSlot.Collection, HUDSlot.Owner, HUDSlot.Banner);
     private static final List<String> DEFAULT_HUD_SLOT_NAMES = DEFAULT_HUD_SLOTS.stream().map(Enum::name).toList();
+    private static final String DEFAULT_FRONTIER_NAME_1_VALUE = "New";
+    private static final String DEFAULT_FRONTIER_NAME_2_VALUE = "Frontier";
+    private static final String DEFAULT_COLLECTION_NAME_VALUE = "New Collection";
+    private static final int DEFAULT_NEW_TERRITORY_COLOR = 0xFFE0E0E0;
 
 
     public static final BooleanConfigEntry ANNOUNCE_UNNAMED_FRONTIERS = register(boolEntry(false, "frontier", "announcement", "announceUnnamed")
@@ -99,19 +106,138 @@ public final class ClientConfig {
     public static final DoubleConfigEntry BANNER_OPACITY = register(doubleEntry(1.0, 0.0, 1.0, "frontier", "appearance", "banner", "opacity")
             .comment("Transparency of the frontier banner. 0.0 is fully transparent and 1.0 is opaque.")
             .translation(translation("frontier", "appearance", "banner", "opacity")));
-    public static final StringConfigEntry PATH_DEFAULT_STYLE_START = register(stringEntry(FrontierData.PathStyle.BIG_DOT.toString(), "frontier", "path", "defaultStyle", "start")
+
+    public static final StringConfigEntry FRONTIER_DEFAULT_NAME_1 = register(stringEntry(DEFAULT_FRONTIER_NAME_1_VALUE, "frontier", "default", "name1")
+            .comment("Default first name line for new frontiers."));
+    public static final StringConfigEntry FRONTIER_DEFAULT_NAME_2 = register(stringEntry(DEFAULT_FRONTIER_NAME_2_VALUE, "frontier", "default", "name2")
+            .comment("Default second name line for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_RANDOM_COLOR = register(boolEntry(true, "frontier", "default", "randomColor")
+            .comment("Use a random color for new frontiers by default."));
+    public static final IntConfigEntry FRONTIER_DEFAULT_COLOR = register(intEntry(DEFAULT_NEW_TERRITORY_COLOR, Integer.MIN_VALUE, Integer.MAX_VALUE,
+                    "frontier", "default", "color")
+            .comment("Fallback fixed color for new frontiers when random color is disabled."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_VISIBLE = register(boolEntry(FrontierVisibility.Frontier.getDefaultValue(),
+                    "frontier", "default", "visibility", "visible")
+            .comment("Default visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_ANNOUNCE_IN_CHAT = register(boolEntry(FrontierVisibility.AnnounceInChat.getDefaultValue(),
+                    "frontier", "default", "visibility", "announce", "chat")
+            .comment("Default chat announcement visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_ANNOUNCE_IN_TITLE = register(boolEntry(FrontierVisibility.AnnounceInTitle.getDefaultValue(),
+                    "frontier", "default", "visibility", "announce", "title")
+            .comment("Default title announcement visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_MENTION_COLLECTION = register(boolEntry(FrontierVisibility.MentionCollection.getDefaultValue(),
+                    "frontier", "default", "visibility", "announce", "mentionCollection")
+            .comment("Default collection mention visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_FULLSCREEN_VISIBLE = register(boolEntry(FrontierVisibility.Fullscreen.getDefaultValue(),
+                    "frontier", "default", "visibility", "fullscreen", "visible")
+            .comment("Default fullscreen visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_FULLSCREEN_NAME = register(boolEntry(FrontierVisibility.FullscreenName.getDefaultValue(),
+                    "frontier", "default", "visibility", "fullscreen", "name")
+            .comment("Default fullscreen name visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_FULLSCREEN_COLLECTION = register(boolEntry(FrontierVisibility.FullscreenCollection.getDefaultValue(),
+                    "frontier", "default", "visibility", "fullscreen", "collection")
+            .comment("Default fullscreen collection visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_FULLSCREEN_OWNER = register(boolEntry(FrontierVisibility.FullscreenOwner.getDefaultValue(),
+                    "frontier", "default", "visibility", "fullscreen", "owner")
+            .comment("Default fullscreen owner visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_FULLSCREEN_BANNER = register(boolEntry(FrontierVisibility.FullscreenBanner.getDefaultValue(),
+                    "frontier", "default", "visibility", "fullscreen", "banner")
+            .comment("Default fullscreen banner visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_FULLSCREEN_DAY = register(boolEntry(FrontierVisibility.FullscreenDay.getDefaultValue(),
+                    "frontier", "default", "visibility", "fullscreen", "day")
+            .comment("Default fullscreen day visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_FULLSCREEN_NIGHT = register(boolEntry(FrontierVisibility.FullscreenNight.getDefaultValue(),
+                    "frontier", "default", "visibility", "fullscreen", "night")
+            .comment("Default fullscreen night visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_FULLSCREEN_UNDERGROUND = register(boolEntry(FrontierVisibility.FullscreenUnderground.getDefaultValue(),
+                    "frontier", "default", "visibility", "fullscreen", "underground")
+            .comment("Default fullscreen underground visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_FULLSCREEN_TOPO = register(boolEntry(FrontierVisibility.FullscreenTopo.getDefaultValue(),
+                    "frontier", "default", "visibility", "fullscreen", "topo")
+            .comment("Default fullscreen topo visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_FULLSCREEN_BIOME = register(boolEntry(FrontierVisibility.FullscreenBiome.getDefaultValue(),
+                    "frontier", "default", "visibility", "fullscreen", "biome")
+            .comment("Default fullscreen biome visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_MINIMAP_VISIBLE = register(boolEntry(FrontierVisibility.Minimap.getDefaultValue(),
+                    "frontier", "default", "visibility", "minimap", "visible")
+            .comment("Default minimap visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_MINIMAP_NAME = register(boolEntry(FrontierVisibility.MinimapName.getDefaultValue(),
+                    "frontier", "default", "visibility", "minimap", "name")
+            .comment("Default minimap name visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_MINIMAP_COLLECTION = register(boolEntry(FrontierVisibility.MinimapCollection.getDefaultValue(),
+                    "frontier", "default", "visibility", "minimap", "collection")
+            .comment("Default minimap collection visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_MINIMAP_OWNER = register(boolEntry(FrontierVisibility.MinimapOwner.getDefaultValue(),
+                    "frontier", "default", "visibility", "minimap", "owner")
+            .comment("Default minimap owner visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_MINIMAP_BANNER = register(boolEntry(FrontierVisibility.MinimapBanner.getDefaultValue(),
+                    "frontier", "default", "visibility", "minimap", "banner")
+            .comment("Default minimap banner visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_MINIMAP_DAY = register(boolEntry(FrontierVisibility.MinimapDay.getDefaultValue(),
+                    "frontier", "default", "visibility", "minimap", "day")
+            .comment("Default minimap day visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_MINIMAP_NIGHT = register(boolEntry(FrontierVisibility.MinimapNight.getDefaultValue(),
+                    "frontier", "default", "visibility", "minimap", "night")
+            .comment("Default minimap night visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_MINIMAP_UNDERGROUND = register(boolEntry(FrontierVisibility.MinimapUnderground.getDefaultValue(),
+                    "frontier", "default", "visibility", "minimap", "underground")
+            .comment("Default minimap underground visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_MINIMAP_TOPO = register(boolEntry(FrontierVisibility.MinimapTopo.getDefaultValue(),
+                    "frontier", "default", "visibility", "minimap", "topo")
+            .comment("Default minimap topo visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_MINIMAP_BIOME = register(boolEntry(FrontierVisibility.MinimapBiome.getDefaultValue(),
+                    "frontier", "default", "visibility", "minimap", "biome")
+            .comment("Default minimap biome visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_WEBMAP_VISIBLE = register(boolEntry(FrontierVisibility.Webmap.getDefaultValue(),
+                    "frontier", "default", "visibility", "webmap", "visible")
+            .comment("Default webmap visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_WEBMAP_NAME = register(boolEntry(FrontierVisibility.WebmapName.getDefaultValue(),
+                    "frontier", "default", "visibility", "webmap", "name")
+            .comment("Default webmap name visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_WEBMAP_COLLECTION = register(boolEntry(FrontierVisibility.WebmapCollection.getDefaultValue(),
+                    "frontier", "default", "visibility", "webmap", "collection")
+            .comment("Default webmap collection visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_WEBMAP_OWNER = register(boolEntry(FrontierVisibility.WebmapOwner.getDefaultValue(),
+                    "frontier", "default", "visibility", "webmap", "owner")
+            .comment("Default webmap owner visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_WEBMAP_BANNER = register(boolEntry(FrontierVisibility.WebmapBanner.getDefaultValue(),
+                    "frontier", "default", "visibility", "webmap", "banner")
+            .comment("Default webmap banner visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_WEBMAP_DAY = register(boolEntry(FrontierVisibility.WebmapDay.getDefaultValue(),
+                    "frontier", "default", "visibility", "webmap", "day")
+            .comment("Default webmap day visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_WEBMAP_NIGHT = register(boolEntry(FrontierVisibility.WebmapNight.getDefaultValue(),
+                    "frontier", "default", "visibility", "webmap", "night")
+            .comment("Default webmap night visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_WEBMAP_UNDERGROUND = register(boolEntry(FrontierVisibility.WebmapUnderground.getDefaultValue(),
+                    "frontier", "default", "visibility", "webmap", "underground")
+            .comment("Default webmap underground visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_WEBMAP_TOPO = register(boolEntry(FrontierVisibility.WebmapTopo.getDefaultValue(),
+                    "frontier", "default", "visibility", "webmap", "topo")
+            .comment("Default webmap topo visibility for new frontiers."));
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_WEBMAP_BIOME = register(boolEntry(FrontierVisibility.WebmapBiome.getDefaultValue(),
+                    "frontier", "default", "visibility", "webmap", "biome")
+            .comment("Default webmap biome visibility for new frontiers."));
+    public static final StringConfigEntry FRONTIER_DEFAULT_PATH_STYLE_START = register(stringEntry(FrontierData.PathStyle.BIG_DOT.toString(),
+                    "frontier", "default", "pathStyle", "start")
             .comment("Marker identifier used by default for the start of new path frontiers."));
-    public static final StringConfigEntry PATH_DEFAULT_STYLE_INNER = register(stringEntry(FrontierData.PathStyle.NONE.toString(), "frontier", "path", "defaultStyle", "inner")
+    public static final StringConfigEntry FRONTIER_DEFAULT_PATH_STYLE_INNER = register(stringEntry(FrontierData.PathStyle.NONE.toString(),
+                    "frontier", "default", "pathStyle", "inner")
             .comment("Marker identifier used by default for inner points of new path frontiers."));
-    public static final StringConfigEntry PATH_DEFAULT_STYLE_END = register(stringEntry(FrontierData.PathStyle.BIG_DOT.toString(), "frontier", "path", "defaultStyle", "end")
+    public static final StringConfigEntry FRONTIER_DEFAULT_PATH_STYLE_END = register(stringEntry(FrontierData.PathStyle.BIG_DOT.toString(),
+                    "frontier", "default", "pathStyle", "end")
             .comment("Marker identifier used by default for the end of new path frontiers."));
-    public static final StringConfigEntry PATH_DEFAULT_STYLE_SEGMENT = register(stringEntry(FrontierData.PathStyle.SMALL_DOT.toString(), "frontier", "path", "defaultStyle", "segment")
+    public static final StringConfigEntry FRONTIER_DEFAULT_PATH_STYLE_SEGMENT = register(stringEntry(FrontierData.PathStyle.SMALL_DOT.toString(),
+                    "frontier", "default", "pathStyle", "segment")
             .comment("Marker identifier used by default for segments of new path frontiers."));
-    public static final BooleanConfigEntry PATH_DEFAULT_STYLE_LABEL_AT_START = register(boolEntry(true, "frontier", "path", "defaultStyle", "labelAtStart")
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_START = register(boolEntry(true,
+                    "frontier", "default", "pathStyle", "labelAtStart")
             .comment("Show path labels and banner at the start by default."));
-    public static final BooleanConfigEntry PATH_DEFAULT_STYLE_LABEL_AT_MIDDLE = register(boolEntry(false, "frontier", "path", "defaultStyle", "labelAtMiddle")
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_MIDDLE = register(boolEntry(false,
+                    "frontier", "default", "pathStyle", "labelAtMiddle")
             .comment("Show path labels and banner at the midpoint by default."));
-    public static final BooleanConfigEntry PATH_DEFAULT_STYLE_LABEL_AT_END = register(boolEntry(false, "frontier", "path", "defaultStyle", "labelAtEnd")
+    public static final BooleanConfigEntry FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_END = register(boolEntry(false,
+                    "frontier", "default", "pathStyle", "labelAtEnd")
             .comment("Show path labels and banner at the end by default."));
     public static final IntConfigEntry PATH_PROXIMITY_ENTER_DISTANCE = register(intEntry(8, 0, 128, "frontier", "path", "proximity", "enterDistance")
             .comment("Distance in blocks used to activate Path frontiers for HUD and announcements.")
@@ -272,6 +398,53 @@ public final class ClientConfig {
             .comment("Transparency of the collection banner. 0.0 is fully transparent and 1.0 is opaque.")
             .translation(translation("collection", "appearance", "banner", "opacity")));
 
+    public static final StringConfigEntry COLLECTION_DEFAULT_NAME = register(stringEntry(DEFAULT_COLLECTION_NAME_VALUE, "collection", "default", "name")
+            .comment("Default name for new collections."));
+    public static final BooleanConfigEntry COLLECTION_DEFAULT_RANDOM_COLOR = register(boolEntry(true, "collection", "default", "randomColor")
+            .comment("Use a random color for new collections by default."));
+    public static final IntConfigEntry COLLECTION_DEFAULT_COLOR = register(intEntry(DEFAULT_NEW_TERRITORY_COLOR, Integer.MIN_VALUE, Integer.MAX_VALUE,
+                    "collection", "default", "color")
+            .comment("Fallback fixed color for new collections when random color is disabled."));
+    public static final BooleanConfigEntry COLLECTION_DEFAULT_VISIBLE = register(boolEntry(CollectionVisibilityField.Visible.getDefaultBooleanValue(),
+                    "collection", "default", "visibility", "visible")
+            .comment("Default visibility for new collections."));
+    public static final IntConfigEntry COLLECTION_DEFAULT_FULLSCREEN_ZOOM = register(intEntry(CollectionVisibilityData.getDefaultFullscreenZoom(), 0, 16384,
+                    "collection", "default", "visibility", "fullscreen", "zoom")
+            .comment("Default fullscreen collection zoom for new collections. 0 disables collection view."));
+    public static final BooleanConfigEntry COLLECTION_DEFAULT_FULLSCREEN_NAME = register(boolEntry(CollectionVisibilityField.FullscreenName.getDefaultBooleanValue(),
+                    "collection", "default", "visibility", "fullscreen", "name")
+            .comment("Default fullscreen name visibility for new collections."));
+    public static final BooleanConfigEntry COLLECTION_DEFAULT_FULLSCREEN_OWNER = register(boolEntry(CollectionVisibilityField.FullscreenOwner.getDefaultBooleanValue(),
+                    "collection", "default", "visibility", "fullscreen", "owner")
+            .comment("Default fullscreen owner visibility for new collections."));
+    public static final BooleanConfigEntry COLLECTION_DEFAULT_FULLSCREEN_BANNER = register(boolEntry(CollectionVisibilityField.FullscreenBanner.getDefaultBooleanValue(),
+                    "collection", "default", "visibility", "fullscreen", "banner")
+            .comment("Default fullscreen banner visibility for new collections."));
+    public static final IntConfigEntry COLLECTION_DEFAULT_MINIMAP_ZOOM = register(intEntry(CollectionVisibilityData.getDefaultMinimapZoom(), 0, 16384,
+                    "collection", "default", "visibility", "minimap", "zoom")
+            .comment("Default minimap collection zoom for new collections. 0 disables collection view."));
+    public static final BooleanConfigEntry COLLECTION_DEFAULT_MINIMAP_NAME = register(boolEntry(CollectionVisibilityField.MinimapName.getDefaultBooleanValue(),
+                    "collection", "default", "visibility", "minimap", "name")
+            .comment("Default minimap name visibility for new collections."));
+    public static final BooleanConfigEntry COLLECTION_DEFAULT_MINIMAP_OWNER = register(boolEntry(CollectionVisibilityField.MinimapOwner.getDefaultBooleanValue(),
+                    "collection", "default", "visibility", "minimap", "owner")
+            .comment("Default minimap owner visibility for new collections."));
+    public static final BooleanConfigEntry COLLECTION_DEFAULT_MINIMAP_BANNER = register(boolEntry(CollectionVisibilityField.MinimapBanner.getDefaultBooleanValue(),
+                    "collection", "default", "visibility", "minimap", "banner")
+            .comment("Default minimap banner visibility for new collections."));
+    public static final IntConfigEntry COLLECTION_DEFAULT_WEBMAP_ZOOM = register(intEntry(CollectionVisibilityData.getDefaultWebmapZoom(), 0, 16384,
+                    "collection", "default", "visibility", "webmap", "zoom")
+            .comment("Default webmap collection zoom for new collections. 0 disables collection view."));
+    public static final BooleanConfigEntry COLLECTION_DEFAULT_WEBMAP_NAME = register(boolEntry(CollectionVisibilityField.WebmapName.getDefaultBooleanValue(),
+                    "collection", "default", "visibility", "webmap", "name")
+            .comment("Default webmap name visibility for new collections."));
+    public static final BooleanConfigEntry COLLECTION_DEFAULT_WEBMAP_OWNER = register(boolEntry(CollectionVisibilityField.WebmapOwner.getDefaultBooleanValue(),
+                    "collection", "default", "visibility", "webmap", "owner")
+            .comment("Default webmap owner visibility for new collections."));
+    public static final BooleanConfigEntry COLLECTION_DEFAULT_WEBMAP_BANNER = register(boolEntry(CollectionVisibilityField.WebmapBanner.getDefaultBooleanValue(),
+                    "collection", "default", "visibility", "webmap", "banner")
+            .comment("Default webmap banner visibility for new collections."));
+
     public static final EnumConfigEntry<FrontierDisplayVisibility> COLLECTION_VISIBILITY = collectionVisibilityEntry(
             "Force all collections to be shown or hidden. In Custom, you can decide for each collection.",
             "collection", "visibility", "visible");
@@ -401,16 +574,21 @@ public final class ClientConfig {
         boolean dirty = FILE.load();
         dirty |= validateHUDSlots();
         dirty |= validateDefaultPathStyle();
+        dirty |= validateDefaultTerritoryNamesAndColors();
         dirty |= validatePathActivationDistances();
         dirty |= validateCollectionVisibilityZooms();
+        dirty |= validateDefaultCollectionVisibilityZooms();
         dirty |= validateSorting();
         return dirty;
     }
 
     public static void save() {
         validateHUDSlots();
+        validateDefaultPathStyle();
+        validateDefaultTerritoryNamesAndColors();
         validatePathActivationDistances();
         validateCollectionVisibilityZooms();
+        validateDefaultCollectionVisibilityZooms();
         validateSorting();
         FILE.save();
     }
@@ -495,26 +673,26 @@ public final class ClientConfig {
 
     public static FrontierData.PathStyle getDefaultPathStyle() {
         FrontierData.PathStyle pathStyle = new FrontierData.PathStyle();
-        pathStyle.startMarker = parsePathMarker(PATH_DEFAULT_STYLE_START.get(), FrontierData.PathStyle.BIG_DOT);
-        pathStyle.innerMarker = parsePathMarker(PATH_DEFAULT_STYLE_INNER.get(), FrontierData.PathStyle.NONE);
-        pathStyle.endMarker = parsePathMarker(PATH_DEFAULT_STYLE_END.get(), FrontierData.PathStyle.BIG_DOT);
-        pathStyle.segmentMarker = parsePathMarker(PATH_DEFAULT_STYLE_SEGMENT.get(), FrontierData.PathStyle.SMALL_DOT);
-        pathStyle.labelAtStart = PATH_DEFAULT_STYLE_LABEL_AT_START.get();
-        pathStyle.labelAtMiddle = PATH_DEFAULT_STYLE_LABEL_AT_MIDDLE.get();
-        pathStyle.labelAtEnd = PATH_DEFAULT_STYLE_LABEL_AT_END.get();
+        pathStyle.startMarker = parsePathMarker(FRONTIER_DEFAULT_PATH_STYLE_START.get(), FrontierData.PathStyle.BIG_DOT);
+        pathStyle.innerMarker = parsePathMarker(FRONTIER_DEFAULT_PATH_STYLE_INNER.get(), FrontierData.PathStyle.NONE);
+        pathStyle.endMarker = parsePathMarker(FRONTIER_DEFAULT_PATH_STYLE_END.get(), FrontierData.PathStyle.BIG_DOT);
+        pathStyle.segmentMarker = parsePathMarker(FRONTIER_DEFAULT_PATH_STYLE_SEGMENT.get(), FrontierData.PathStyle.SMALL_DOT);
+        pathStyle.labelAtStart = FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_START.get();
+        pathStyle.labelAtMiddle = FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_MIDDLE.get();
+        pathStyle.labelAtEnd = FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_END.get();
         pathStyle.normalizeForPersistence();
         return pathStyle;
     }
 
     public static void setDefaultPathStyle(FrontierData.PathStyle pathStyle) {
         FrontierData.PathStyle normalized = normalizeDefaultPathStyle(pathStyle);
-        PATH_DEFAULT_STYLE_START.set(normalized.startMarker.toString());
-        PATH_DEFAULT_STYLE_INNER.set(normalized.innerMarker.toString());
-        PATH_DEFAULT_STYLE_END.set(normalized.endMarker.toString());
-        PATH_DEFAULT_STYLE_SEGMENT.set(normalized.segmentMarker.toString());
-        PATH_DEFAULT_STYLE_LABEL_AT_START.set(normalized.labelAtStart);
-        PATH_DEFAULT_STYLE_LABEL_AT_MIDDLE.set(normalized.labelAtMiddle);
-        PATH_DEFAULT_STYLE_LABEL_AT_END.set(normalized.labelAtEnd);
+        FRONTIER_DEFAULT_PATH_STYLE_START.set(normalized.startMarker.toString());
+        FRONTIER_DEFAULT_PATH_STYLE_INNER.set(normalized.innerMarker.toString());
+        FRONTIER_DEFAULT_PATH_STYLE_END.set(normalized.endMarker.toString());
+        FRONTIER_DEFAULT_PATH_STYLE_SEGMENT.set(normalized.segmentMarker.toString());
+        FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_START.set(normalized.labelAtStart);
+        FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_MIDDLE.set(normalized.labelAtMiddle);
+        FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_END.set(normalized.labelAtEnd);
     }
 
     public static double getPathActivationDistance(boolean alreadyActive) {
@@ -535,16 +713,52 @@ public final class ClientConfig {
 
     private static boolean validateDefaultPathStyle() {
         FrontierData.PathStyle normalized = getDefaultPathStyle();
-        boolean dirty = !PATH_DEFAULT_STYLE_START.get().equals(normalized.startMarker.toString())
-                || !PATH_DEFAULT_STYLE_INNER.get().equals(normalized.innerMarker.toString())
-                || !PATH_DEFAULT_STYLE_END.get().equals(normalized.endMarker.toString())
-                || !PATH_DEFAULT_STYLE_SEGMENT.get().equals(normalized.segmentMarker.toString())
-                || PATH_DEFAULT_STYLE_LABEL_AT_START.get() != normalized.labelAtStart
-                || PATH_DEFAULT_STYLE_LABEL_AT_MIDDLE.get() != normalized.labelAtMiddle
-                || PATH_DEFAULT_STYLE_LABEL_AT_END.get() != normalized.labelAtEnd;
+        boolean dirty = !FRONTIER_DEFAULT_PATH_STYLE_START.get().equals(normalized.startMarker.toString())
+                || !FRONTIER_DEFAULT_PATH_STYLE_INNER.get().equals(normalized.innerMarker.toString())
+                || !FRONTIER_DEFAULT_PATH_STYLE_END.get().equals(normalized.endMarker.toString())
+                || !FRONTIER_DEFAULT_PATH_STYLE_SEGMENT.get().equals(normalized.segmentMarker.toString())
+                || FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_START.get() != normalized.labelAtStart
+                || FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_MIDDLE.get() != normalized.labelAtMiddle
+                || FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_END.get() != normalized.labelAtEnd;
 
         if (dirty) {
             setDefaultPathStyle(normalized);
+        }
+
+        return dirty;
+    }
+
+    private static boolean validateDefaultTerritoryNamesAndColors() {
+        boolean dirty = false;
+
+        String frontierName1 = normalizeName(FRONTIER_DEFAULT_NAME_1.get(), FrontierData.MAX_NAME_CHARACTERS);
+        if (!FRONTIER_DEFAULT_NAME_1.get().equals(frontierName1)) {
+            FRONTIER_DEFAULT_NAME_1.set(frontierName1);
+            dirty = true;
+        }
+
+        String frontierName2 = normalizeName(FRONTIER_DEFAULT_NAME_2.get(), FrontierData.MAX_NAME_CHARACTERS);
+        if (!FRONTIER_DEFAULT_NAME_2.get().equals(frontierName2)) {
+            FRONTIER_DEFAULT_NAME_2.set(frontierName2);
+            dirty = true;
+        }
+
+        String collectionName = normalizeName(COLLECTION_DEFAULT_NAME.get(), CollectionData.MAX_NAME_CHARACTERS);
+        if (!COLLECTION_DEFAULT_NAME.get().equals(collectionName)) {
+            COLLECTION_DEFAULT_NAME.set(collectionName);
+            dirty = true;
+        }
+
+        int frontierColor = normalizeOpaqueColor(FRONTIER_DEFAULT_COLOR.get());
+        if (FRONTIER_DEFAULT_COLOR.get() != frontierColor) {
+            FRONTIER_DEFAULT_COLOR.set(frontierColor);
+            dirty = true;
+        }
+
+        int collectionColor = normalizeOpaqueColor(COLLECTION_DEFAULT_COLOR.get());
+        if (COLLECTION_DEFAULT_COLOR.get() != collectionColor) {
+            COLLECTION_DEFAULT_COLOR.set(collectionColor);
+            dirty = true;
         }
 
         return dirty;
@@ -592,6 +806,28 @@ public final class ClientConfig {
             COLLECTION_WEBMAP_ZOOM.set(webmapZoom);
             MapFrontiers.LOGGER.warn("Corrected invalid collection forced zoom config values to nearest supported zooms: {}",
                     String.join(", ", correctedEntries));
+        }
+
+        return dirty;
+    }
+
+    private static boolean validateDefaultCollectionVisibilityZooms() {
+        int previousFullscreenZoom = COLLECTION_DEFAULT_FULLSCREEN_ZOOM.get();
+        int previousMinimapZoom = COLLECTION_DEFAULT_MINIMAP_ZOOM.get();
+        int previousWebmapZoom = COLLECTION_DEFAULT_WEBMAP_ZOOM.get();
+        int fullscreenZoom = CollectionVisibilityData.normalizeZoomToNearest(previousFullscreenZoom);
+        int minimapZoom = CollectionVisibilityData.normalizeZoomToNearest(previousMinimapZoom);
+        int webmapZoom = CollectionVisibilityData.normalizeZoomToNearest(previousWebmapZoom);
+        boolean dirty = previousFullscreenZoom != fullscreenZoom
+                || previousMinimapZoom != minimapZoom
+                || previousWebmapZoom != webmapZoom;
+
+        if (dirty) {
+            COLLECTION_DEFAULT_FULLSCREEN_ZOOM.set(fullscreenZoom);
+            COLLECTION_DEFAULT_MINIMAP_ZOOM.set(minimapZoom);
+            COLLECTION_DEFAULT_WEBMAP_ZOOM.set(webmapZoom);
+            MapFrontiers.LOGGER.warn("Corrected invalid collection default visibility zoom config values to nearest supported zooms: fullscreen {} -> {}, minimap {} -> {}, webmap {} -> {}",
+                    previousFullscreenZoom, fullscreenZoom, previousMinimapZoom, minimapZoom, previousWebmapZoom, webmapZoom);
         }
 
         return dirty;
@@ -692,6 +928,18 @@ public final class ClientConfig {
 
     private static String translation(String... path) {
         return MapFrontiers.MODID + ".config." + String.join(".", path);
+    }
+
+    private static String normalizeName(String value, int maxCharacters) {
+        String normalized = value == null ? "" : value;
+        if (normalized.length() > maxCharacters) {
+            normalized = normalized.substring(0, maxCharacters);
+        }
+        return normalized;
+    }
+
+    private static int normalizeOpaqueColor(int color) {
+        return color | 0xFF000000;
     }
 
     private static FrontierData.PathStyle normalizeDefaultPathStyle(FrontierData.PathStyle pathStyle) {
