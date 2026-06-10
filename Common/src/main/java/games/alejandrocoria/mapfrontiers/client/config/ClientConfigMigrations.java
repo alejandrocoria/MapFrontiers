@@ -175,6 +175,15 @@ public final class ClientConfigMigrations implements ConfigMigrations {
             {"newFrontier.pathShape", "frontier.new.pathShape"},
             {"newFrontier.pathSegmentLength", "frontier.new.pathSegmentLength"}
     };
+    private static final String[][] PATH_MOVES_V3_TO_V4 = {
+            {"frontier.path.defaultStyle.start", "frontier.default.pathStyle.start"},
+            {"frontier.path.defaultStyle.inner", "frontier.default.pathStyle.inner"},
+            {"frontier.path.defaultStyle.end", "frontier.default.pathStyle.end"},
+            {"frontier.path.defaultStyle.segment", "frontier.default.pathStyle.segment"},
+            {"frontier.path.defaultStyle.labelAtStart", "frontier.default.pathStyle.labelAtStart"},
+            {"frontier.path.defaultStyle.labelAtMiddle", "frontier.default.pathStyle.labelAtMiddle"},
+            {"frontier.path.defaultStyle.labelAtEnd", "frontier.default.pathStyle.labelAtEnd"}
+    };
 
     public static final ClientConfigMigrations INSTANCE = new ClientConfigMigrations();
 
@@ -188,6 +197,7 @@ public final class ClientConfigMigrations implements ConfigMigrations {
             case 0 -> this::migrateFrom0To1;
             case 1 -> this::migrateFrom1To2;
             case 2 -> this::migrateFrom2To3;
+            case 3 -> this::migrateFrom3To4;
             default -> null;
         };
     }
@@ -224,6 +234,10 @@ public final class ClientConfigMigrations implements ConfigMigrations {
 
     private void migrateFrom2To3(CommentedConfig config) {
         moveAll(config, PATH_MOVES_V2_TO_V3);
+    }
+
+    private void migrateFrom3To4(CommentedConfig config) {
+        moveAll(config, PATH_MOVES_V3_TO_V4);
     }
 
     private static void migrateHudSlotsToList(CommentedConfig config) {

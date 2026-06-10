@@ -293,11 +293,11 @@ public class CollectionInfoPage extends PageScreen {
         textBlue = createRgbTextBox(value -> (collection.getColor() & 0xFFFFFF00) | value);
         rgbRow.addChild(textBlue);
 
-        buttonRandomColor = new SimpleButton(font, SECTION_WIDTH, RANDOM_COLOR_LABEL, b -> onRandomColorPressed());
-        colorColumn.addChild(buttonRandomColor);
-
         colorPalette = new ColorPaletteWidget(collection.getColor(), color -> applyColorChange(color, true));
         colorColumn.addChild(colorPalette);
+
+        buttonRandomColor = new SimpleButton(font, SECTION_WIDTH, RANDOM_COLOR_LABEL, b -> onRandomColorPressed());
+        colorColumn.addChild(buttonRandomColor);
 
         syncColorWidgets(collection.getColor());
     }

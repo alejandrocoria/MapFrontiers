@@ -108,7 +108,7 @@ public class FrontierBehaviorDialog extends PanelDialog {
     }
 
     private void saveAndClose() {
-        blurTextBoxes();
+        clearTextBoxFocus();
 
         int titleAnnouncementDuration = textTitleAnnouncementDuration.clamped();
         int titleAnnouncementTimeout = textTitleAnnouncementTimeout.clamped();
@@ -130,7 +130,7 @@ public class FrontierBehaviorDialog extends PanelDialog {
         super.onClose();
     }
 
-    private void blurTextBoxes() {
+    private void clearTextBoxFocus() {
         textTitleAnnouncementDuration.setFocused(false);
         textTitleAnnouncementTimeout.setFocused(false);
         textSnapDistance.setFocused(false);

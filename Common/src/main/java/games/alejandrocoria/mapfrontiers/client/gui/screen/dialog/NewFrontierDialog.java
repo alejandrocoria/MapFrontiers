@@ -23,7 +23,6 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreat
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
-import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.util.UIState;
@@ -476,14 +475,14 @@ public class NewFrontierDialog extends PanelDialog {
         }
 
         FrontierData defaults = new FrontierData();
+        defaults.setShape(ClientConfig.NEW_FRONTIER_SHAPE.get());
+        ClientConfig.applyDefaultFrontierValues(defaults);
         SettingsUser owner = new SettingsUser(minecraft.player);
         UUID frontierId = UUID.randomUUID();
         FrontierVisibilityData visibility = new FrontierVisibilityData(defaults.getVisibilityData());
         BannerData banner = defaults.getBannerData() == null ? null : new BannerData(defaults.getBannerData());
-        FrontierData.PathStyle pathStyle = ClientConfig.NEW_FRONTIER_SHAPE.get() == FrontierShape.Path
-                ? ClientConfig.getDefaultPathStyle()
-                : defaults.getPathStyle();
-        int color = ColorHelper.getRandomColor();
+        FrontierData.PathStyle pathStyle = defaults.getPathStyle();
+        int color = defaults.getColor();
         TerritoryLifetime lifetime = frontierLifetime == null ? TerritoryLifetime.PERSISTENT : frontierLifetime;
 
         if (ClientConfig.NEW_FRONTIER_SHAPE.get() == FrontierShape.Path) {

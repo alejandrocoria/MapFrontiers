@@ -440,14 +440,14 @@ public class FrontierInfoPage extends PageScreen {
         textBlue = createRgbTextBox(value -> (frontier.getColor() & 0xFFFFFF00) | value);
         rgbRow.addChild(textBlue);
 
-        buttonRandomColor = new SimpleButton(font, SECTION_WIDTH, RANDOM_COLOR_LABEL, b -> onRandomColorPressed());
-        colorColumn.addChild(buttonRandomColor);
-
         colorPalette = new ColorPaletteWidget(frontier.getColor(), color -> {
             colorPicker.setColor(color);
             onColorPicked(color, false);
         });
         colorColumn.addChild(colorPalette);
+
+        buttonRandomColor = new SimpleButton(font, SECTION_WIDTH, RANDOM_COLOR_LABEL, b -> onRandomColorPressed());
+        colorColumn.addChild(buttonRandomColor);
 
         syncColorWidgets(frontier.getColor());
     }
