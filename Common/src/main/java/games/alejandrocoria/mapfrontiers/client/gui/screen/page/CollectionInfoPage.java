@@ -599,6 +599,7 @@ public class CollectionInfoPage extends PageScreen {
         updateBannerButton();
         updatePasteOptionsVisibility(editable);
         refreshUndoRedoState(editable);
+        repositionElements();
     }
 
     @Override

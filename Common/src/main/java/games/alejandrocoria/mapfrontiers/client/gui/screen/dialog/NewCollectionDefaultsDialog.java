@@ -70,8 +70,6 @@ public class NewCollectionDefaultsDialog extends PanelDialog {
 
         addConfirmButton(SAVE_LABEL, b -> saveAndClose());
         addCancelButton();
-
-        refreshManualColorWidgets();
     }
 
     private void buildOverviewSection(GridLayout mainLayout) {
@@ -122,10 +120,7 @@ public class NewCollectionDefaultsDialog extends PanelDialog {
         textBlue = createRgbTextBox(value -> (fixedColor & 0xFFFFFF00) | value);
         rgbRow.addChild(textBlue);
 
-        colorPalette = new ColorPaletteWidget(fixedColor, color -> {
-            colorPicker.setColor(color);
-            applyColorChange(color);
-        });
+        colorPalette = new ColorPaletteWidget(fixedColor, this::applyColorChange);
         colorColumn.addChild(colorPalette);
 
         LinearLayout randomColorRow = LinearLayout.horizontal();
@@ -138,6 +133,7 @@ public class NewCollectionDefaultsDialog extends PanelDialog {
         randomColorRow.addChild(buttonRandomColor);
 
         syncColorWidgets(fixedColor);
+        refreshManualColorWidgets();
     }
 
     private TextBoxInt createRgbTextBox(java.util.function.IntUnaryOperator colorComposer) {

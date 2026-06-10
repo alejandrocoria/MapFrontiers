@@ -176,13 +176,21 @@ public class FrontierInfoPage extends PageScreen {
     private @Nullable OptionButton buttonCollectionBanner;
     private @Nullable StringWidget labelCollectionBanner;
 
-    private StringWidget modifiedLabel;
+    private StringWidget ownerLabel;
+    private StringWidget typeLabel;
+    private StringWidget shapeSummaryLabel;
+    private @Nullable StringWidget areaLabel;
+    private @Nullable StringWidget perimeterLabel;
+    private @Nullable StringWidget lengthLabel;
+    private @Nullable StringWidget createdLabel;
+    private @Nullable StringWidget modifiedLabel;
 
     private final Stack<FrontierData> undoStack = new Stack<>();
     private final Stack<FrontierData> redoStack = new Stack<>();
 
     private boolean saveChangesOnClose = true;
     private boolean canUpdateFrontierInfo = false;
+    private boolean syncingWidgets = false;
 
     public FrontierInfoPage(IClientAPI jmAPI, FrontierOverlay frontier) {
         super(TITLE_LABEL);
@@ -201,24 +209,11 @@ public class FrontierInfoPage extends PageScreen {
 
         MapFrontiersClient.getFrontierEvents().subscribeUpdated(this, (frontierOverlay, playerID) -> {
             if (minecraft.player != null && frontier.getId().equals(frontierOverlay.getId())) {
-                addToUndo(new FrontierData(frontierOverlay));
-                if (playerID != minecraft.player.getId()) {
-                    rebuildWidgets();
-                    repositionElements();
-                } else {
-                    if (frontier.getModified() != null) {
-                        Component modified = Component.translatable("mapfrontiers.modified", DATE_FORMAT.format(frontier.getModified()));
-                        modifiedLabel.setMessage(modified);
-                    }
-                }
-                frontierSyncHash = frontier.computeSyncHash();
+                applyFrontierUpdated(frontierOverlay, playerID);
             }
         });
 
-        MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> {
-            updateButtons();
-            updateBannerButton();
-        });
+        MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> refreshViewState());
     }
 
     @Override
@@ -233,6 +228,7 @@ public class FrontierInfoPage extends PageScreen {
 
         buildBottomButtons();
 
+        refreshInfoLabelsFromFrontier();
         refreshViewState();
         setInitialFocus(buttonDone);
     }
@@ -290,18 +286,10 @@ public class FrontierInfoPage extends PageScreen {
         headerRow.addChild(sourceBadge);
         nameColumn.addChild(headerRow);
 
-        textName1 = createNameTextBox(frontier.getName1(), value -> {
-            if (!frontier.getName1().equals(value)) {
-                frontier.setName1(value);
-            }
-        });
+        textName1 = createNameTextBox(frontier.getName1(), this::onName1Changed);
         nameColumn.addChild(textName1);
 
-        textName2 = createNameTextBox(frontier.getName2(), value -> {
-            if (!frontier.getName2().equals(value)) {
-                frontier.setName2(value);
-            }
-        });
+        textName2 = createNameTextBox(frontier.getName2(), this::onName2Changed);
         nameColumn.addChild(textName2);
 
         LinearLayout collectionInfoColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_TINY);
@@ -364,7 +352,11 @@ public class FrontierInfoPage extends PageScreen {
         textBox.setMaxLength(FrontierData.MAX_NAME_CHARACTERS);
         textBox.setHeight(DEFAULT_TEXTBOX_HEIGHT);
         textBox.setValue(initialValue);
-        textBox.setLostFocusCallback(value -> sendNameChangeToServer());
+        textBox.setLostFocusCallback(value -> {
+            if (!syncingWidgets) {
+                sendNameChangeToServer();
+            }
+        });
         textBox.setValueChangedCallback(setter);
         return textBox;
     }
@@ -373,44 +365,37 @@ public class FrontierInfoPage extends PageScreen {
         LinearLayout infoColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_TINY);
         mainLayout.addChild(infoColumn, 0, 3, 1, 1, LayoutSettings.defaults().alignHorizontallyLeft());
 
-        MutableComponent owner = Component.translatable(OWNER_KEY, SettingsUserFormatter.getDisplayName(frontier.getOwner()));
-        if (frontier.wasCopied()) {
-            owner.append(Component.literal(ColorConstants.WARNING + " !"));
-        }
-        StringWidget ownerWidget = infoColumn.addChild(new StringWidget(owner, font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
-        if (frontier.wasCopied()) {
-            Tooltip ownerTooltip = Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET)
-                    .append(Component.translatable(ORIGINAL_OWNER_KEY, SettingsUserFormatter.getDisplayName(frontier.getCopiedFromUser()))));
-            ownerWidget.setTooltip(ownerTooltip);
-        }
+        ownerLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
 
         LinearLayout identityRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         infoColumn.addChild(identityRow);
 
-        identityRow.addChild(new StringWidget(getFrontierTypeLabel(), font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
+        typeLabel = identityRow.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
         buttonChangeToPersonalGlobal = identityRow.addChild(new IconButton(IconButton.Type.Swap, b -> onChangePersonalGlobalPressed()));
         buttonChangeToPersonalGlobal.setTooltip(frontier.getPersonal() ? CHANGE_TO_GLOBAL_TOOLTIP : CHANGE_TO_PERSONAL_TOOLTIP);
 
-        Component shapeSummary = switch (frontier.getShape()) {
-            case Vertex -> Component.translatable(VERTICES_KEY, frontier.getVertexCount());
-            case Chunk -> Component.translatable(CHUNKS_KEY, frontier.getChunkCount());
-            case Path -> Component.translatable(POINTS_KEY, frontier.getPointCount());
-        };
-        infoColumn.addChild(new StringWidget(shapeSummary, font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
+        shapeSummaryLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
 
         if (frontier.getShape() != FrontierShape.Path) {
-            infoColumn.addChild(new StringWidget(Component.translatable(AREA_KEY, formatMeasurement(frontier.area)), font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
-            infoColumn.addChild(new StringWidget(Component.translatable(PERIMETER_KEY, formatMeasurement(frontier.perimeter)), font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
+            areaLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
+            perimeterLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
+            lengthLabel = null;
         } else {
-            infoColumn.addChild(new StringWidget(Component.translatable(LENGTH_KEY, formatMeasurement(frontier.perimeter)), font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
+            lengthLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
+            areaLabel = null;
+            perimeterLabel = null;
         }
 
         if (frontier.getCreated() != null) {
-            infoColumn.addChild(new StringWidget(Component.translatable(CREATED_KEY, DATE_FORMAT.format(frontier.getCreated())), font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
+            createdLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
+        } else {
+            createdLabel = null;
         }
 
         if (frontier.getModified() != null) {
-            modifiedLabel = infoColumn.addChild(new StringWidget(Component.translatable(MODIFIED_KEY, DATE_FORMAT.format(frontier.getModified())), font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
+            modifiedLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
+        } else {
+            modifiedLabel = null;
         }
     }
 
@@ -440,10 +425,7 @@ public class FrontierInfoPage extends PageScreen {
         textBlue = createRgbTextBox(value -> (frontier.getColor() & 0xFFFFFF00) | value);
         rgbRow.addChild(textBlue);
 
-        colorPalette = new ColorPaletteWidget(frontier.getColor(), color -> {
-            colorPicker.setColor(color);
-            onColorPicked(color, false);
-        });
+        colorPalette = new ColorPaletteWidget(frontier.getColor(), this::applyColorChange);
         colorColumn.addChild(colorPalette);
 
         buttonRandomColor = new SimpleButton(font, SECTION_WIDTH, RANDOM_COLOR_LABEL, b -> onRandomColorPressed());
@@ -528,7 +510,7 @@ public class FrontierInfoPage extends PageScreen {
     }
 
     private void onBannerButtonPressed() {
-        boolean hadOwnBanner = frontier.hasBanner();
+        FrontierData previousState = new FrontierData(frontier);
         if (!frontier.hasBanner()) {
             ItemStack heldBanner = getHeldBanner(minecraft);
             if (heldBanner != null) {
@@ -538,16 +520,15 @@ public class FrontierInfoPage extends PageScreen {
             frontier.setBannerData(null);
         }
 
-        if (hadOwnBanner != frontier.hasBanner()) {
-            rebuildWidgets();
-            repositionElements();
-        } else {
-            updateBannerButton();
-        }
+        refreshAfterFrontierDataChange(previousState);
         sendBannerChangeToServer();
     }
 
     private void onBannerRotationChanged(int angle, boolean dragging) {
+        if (syncingWidgets || frontier.getBannerRotation() == angle) {
+            return;
+        }
+
         frontier.setBannerRotation(angle);
         if (!dragging) {
             sendBannerChangeToServer();
@@ -680,6 +661,14 @@ public class FrontierInfoPage extends PageScreen {
     }
 
     private void onColorPicked(int color, boolean dragging) {
+        if (syncingWidgets) {
+            return;
+        }
+
+        if (color == frontier.getColor()) {
+            return;
+        }
+
         frontier.setColor(color);
         syncColorWidgets(color);
 
@@ -706,11 +695,11 @@ public class FrontierInfoPage extends PageScreen {
                     && clipboard.getShape() == FrontierShape.Path;
             if (ClientConfig.PASTE_NAME.get() || ClientConfig.PASTE_VISIBILITY.get()
                     || pastePathStyleEnabled || ClientConfig.PASTE_COLOR.get() || ClientConfig.PASTE_BANNER.get()) {
+                FrontierData previousState = new FrontierData(frontier);
                 setFrontier(clipboard, ClientConfig.PASTE_NAME.get(), ClientConfig.PASTE_VISIBILITY.get(),
                         pastePathStyleEnabled, ClientConfig.PASTE_COLOR.get(), ClientConfig.PASTE_BANNER.get());
                 sendCurrentInfoChangesToServer();
-                rebuildWidgets();
-                repositionElements();
+                refreshAfterFrontierDataChange(previousState);
                 if (minecraft.getLastInputType().isKeyboard()) {
                     setInitialFocus(buttonPaste);
                 }
@@ -761,6 +750,7 @@ public class FrontierInfoPage extends PageScreen {
         updateButtons();
         updatePasteOptionsVisibility();
         refreshUndoRedoState();
+        repositionElements();
     }
 
     @Override
@@ -825,7 +815,7 @@ public class FrontierInfoPage extends PageScreen {
     }
 
     private void applyColorChange(int color) {
-        if (color == frontier.getColor()) {
+        if (syncingWidgets || color == frontier.getColor()) {
             return;
         }
 
@@ -837,11 +827,11 @@ public class FrontierInfoPage extends PageScreen {
     }
 
     private void syncColorWidgets(int color) {
-        textRed.setValue((color & 0xFF0000) >> 16);
-        textGreen.setValue((color & 0x00FF00) >> 8);
-        textBlue.setValue(color & 0x0000FF);
-        if (colorPalette != null) {
-            colorPalette.setColor(color);
+        syncingWidgets = true;
+        try {
+            syncColorWidgetsInternal(color);
+        } finally {
+            syncingWidgets = false;
         }
     }
 
@@ -850,11 +840,11 @@ public class FrontierInfoPage extends PageScreen {
             return;
         }
 
+        FrontierData previousState = new FrontierData(frontier);
         redoStack.push(undoStack.pop());
         setFrontier(undoStack.peek(), true, true, true, true, true);
         sendCurrentInfoChangesToServer();
-        rebuildWidgets();
-        repositionElements();
+        refreshAfterFrontierDataChange(previousState);
         if (minecraft.getLastInputType().isKeyboard()) {
             if (undoStack.size() == 1) {
                 setInitialFocus(buttonRedo);
@@ -869,11 +859,11 @@ public class FrontierInfoPage extends PageScreen {
             return;
         }
 
+        FrontierData previousState = new FrontierData(frontier);
         setFrontier(redoStack.peek(), true, true, true, true, true);
         undoStack.push(redoStack.pop());
         sendCurrentInfoChangesToServer();
-        rebuildWidgets();
-        repositionElements();
+        refreshAfterFrontierDataChange(previousState);
         if (minecraft.getLastInputType().isKeyboard()) {
             if (redoStack.empty()) {
                 setInitialFocus(buttonUndo);
@@ -922,6 +912,127 @@ public class FrontierInfoPage extends PageScreen {
         }
     }
 
+    private void onName1Changed(String value) {
+        if (syncingWidgets || Objects.equals(frontier.getName1(), value)) {
+            return;
+        }
+
+        frontier.setName1(value);
+    }
+
+    private void onName2Changed(String value) {
+        if (syncingWidgets || Objects.equals(frontier.getName2(), value)) {
+            return;
+        }
+
+        frontier.setName2(value);
+    }
+
+    private void syncWidgetsFromFrontier() {
+        syncingWidgets = true;
+        try {
+            textName1.setValue(frontier.getName1());
+            textName2.setValue(frontier.getName2());
+            colorPicker.setColor(frontier.getColor());
+            syncColorWidgetsInternal(frontier.getColor());
+            if (sliderBannerRotation != null && frontier.hasBanner()) {
+                sliderBannerRotation.setValue(frontier.getBannerRotation());
+            }
+        } finally {
+            syncingWidgets = false;
+        }
+    }
+
+    private void refreshInfoLabelsFromFrontier() {
+        MutableComponent owner = Component.translatable(OWNER_KEY, SettingsUserFormatter.getDisplayName(frontier.getOwner()));
+        if (frontier.wasCopied()) {
+            owner.append(Component.literal(ColorConstants.WARNING + " !"));
+            ownerLabel.setTooltip(Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET)
+                    .append(Component.translatable(ORIGINAL_OWNER_KEY, SettingsUserFormatter.getDisplayName(frontier.getCopiedFromUser())))));
+        } else {
+            ownerLabel.setTooltip(null);
+        }
+        ownerLabel.setMessage(owner);
+        typeLabel.setMessage(getFrontierTypeLabel());
+        buttonChangeToPersonalGlobal.setTooltip(frontier.getPersonal() ? CHANGE_TO_GLOBAL_TOOLTIP : CHANGE_TO_PERSONAL_TOOLTIP);
+
+        Component shapeSummary = switch (frontier.getShape()) {
+            case Vertex -> Component.translatable(VERTICES_KEY, frontier.getVertexCount());
+            case Chunk -> Component.translatable(CHUNKS_KEY, frontier.getChunkCount());
+            case Path -> Component.translatable(POINTS_KEY, frontier.getPointCount());
+        };
+        shapeSummaryLabel.setMessage(shapeSummary);
+
+        if (areaLabel != null) {
+            areaLabel.setMessage(Component.translatable(AREA_KEY, formatMeasurement(frontier.area)));
+        }
+        if (perimeterLabel != null) {
+            perimeterLabel.setMessage(Component.translatable(PERIMETER_KEY, formatMeasurement(frontier.perimeter)));
+        }
+        if (lengthLabel != null) {
+            lengthLabel.setMessage(Component.translatable(LENGTH_KEY, formatMeasurement(frontier.perimeter)));
+        }
+        if (createdLabel != null && frontier.getCreated() != null) {
+            createdLabel.setMessage(Component.translatable(CREATED_KEY, DATE_FORMAT.format(frontier.getCreated())));
+        }
+        if (modifiedLabel != null && frontier.getModified() != null) {
+            modifiedLabel.setMessage(Component.translatable(MODIFIED_KEY, DATE_FORMAT.format(frontier.getModified())));
+        }
+    }
+
+    private void applyFrontierUpdated(FrontierOverlay updatedFrontier, int playerID) {
+        FrontierData previousState = new FrontierData(undoStack.empty() ? frontier : undoStack.peek());
+        addToUndo(new FrontierData(updatedFrontier));
+
+        if (minecraft.player != null && playerID == minecraft.player.getId()) {
+            refreshInfoLabelsFromFrontier();
+            refreshViewState();
+            frontierSyncHash = frontier.computeSyncHash();
+            return;
+        }
+
+        refreshAfterFrontierDataChange(previousState);
+        if (previousState.getPersonal() != frontier.getPersonal()) {
+            resetUndoHistoryToCurrentFrontier();
+        }
+        frontierSyncHash = frontier.computeSyncHash();
+    }
+
+    private void refreshAfterFrontierDataChange(FrontierData previousState) {
+        if (requiresStructuralRebuild(previousState, frontier)) {
+            rebuildWidgets();
+            repositionElements();
+            return;
+        }
+
+        syncWidgetsFromFrontier();
+        refreshInfoLabelsFromFrontier();
+        updateBannerButton();
+        refreshViewState();
+    }
+
+    private static boolean requiresStructuralRebuild(FrontierData previousState, FrontierData currentState) {
+        return previousState.hasBanner() != currentState.hasBanner()
+                || previousState.hasCollection() != currentState.hasCollection()
+                || !Objects.equals(previousState.getCollectionId(), currentState.getCollectionId())
+                || previousState.getShape() != currentState.getShape()
+                || !Objects.equals(previousState.getDimension(), currentState.getDimension());
+    }
+
+    private void syncColorWidgetsInternal(int color) {
+        textRed.setValue((color & 0xFF0000) >> 16);
+        textGreen.setValue((color & 0x00FF00) >> 8);
+        textBlue.setValue(color & 0x0000FF);
+        colorPalette.setColor(color);
+    }
+
+    private void resetUndoHistoryToCurrentFrontier() {
+        undoStack.clear();
+        redoStack.clear();
+        undoStack.push(new FrontierData(frontier));
+        refreshUndoRedoState();
+    }
+
     private static ItemStack getHeldBanner(@Nullable Minecraft minecraft) {
         if (minecraft == null || minecraft.player == null) {
             return null;
@@ -941,14 +1052,10 @@ public class FrontierInfoPage extends PageScreen {
     }
 
     private void changeToGlobal() {
-        undoStack.clear();
-        redoStack.clear();
         MapFrontiersClient.getOperationService().changeToGlobalAction(new FrontierId(frontier.getId()));
     }
 
     private void changeToPersonal() {
-        undoStack.clear();
-        redoStack.clear();
         MapFrontiersClient.getOperationService().changeToPersonalAction(new FrontierId(frontier.getId()));
     }
 
