@@ -1,3 +1,6 @@
+**Beta 6:**
+* Added: Configurable default names, colors, visibility, and Path frontier styles for new frontiers and collections.
+
 **Beta 5:**
 * Added: Collections can now be shown on maps with their own labels, banners, and visibility settings.
 * Changed: Significant performance optimizations were made to the server, client, and network.
