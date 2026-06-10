@@ -4,6 +4,7 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.common.config.BooleanConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.BooleanListConfigEntry;
+import games.alejandrocoria.mapfrontiers.common.config.ColorConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigFile;
 import games.alejandrocoria.mapfrontiers.common.config.DoubleConfigEntry;
@@ -115,7 +116,7 @@ public final class ClientConfig {
             .comment("Default second name line for new frontiers."));
     public static final BooleanConfigEntry FRONTIER_DEFAULT_RANDOM_COLOR = register(boolEntry(true, "frontier", "default", "randomColor")
             .comment("Use a random color for new frontiers by default."));
-    public static final IntConfigEntry FRONTIER_DEFAULT_COLOR = register(intEntry(DEFAULT_NEW_TERRITORY_COLOR, Integer.MIN_VALUE, Integer.MAX_VALUE,
+    public static final ColorConfigEntry FRONTIER_DEFAULT_COLOR = register(colorEntry(DEFAULT_NEW_TERRITORY_COLOR,
                     "frontier", "default", "color")
             .comment("Fallback fixed color for new frontiers when random color is disabled."));
     public static final BooleanConfigEntry FRONTIER_DEFAULT_VISIBLE = register(boolEntry(FrontierVisibility.Frontier.getDefaultValue(),
@@ -404,7 +405,7 @@ public final class ClientConfig {
             .comment("Default name for new collections."));
     public static final BooleanConfigEntry COLLECTION_DEFAULT_RANDOM_COLOR = register(boolEntry(true, "collection", "default", "randomColor")
             .comment("Use a random color for new collections by default."));
-    public static final IntConfigEntry COLLECTION_DEFAULT_COLOR = register(intEntry(DEFAULT_NEW_TERRITORY_COLOR, Integer.MIN_VALUE, Integer.MAX_VALUE,
+    public static final ColorConfigEntry COLLECTION_DEFAULT_COLOR = register(colorEntry(DEFAULT_NEW_TERRITORY_COLOR,
                     "collection", "default", "color")
             .comment("Fallback fixed color for new collections when random color is disabled."));
     public static final BooleanConfigEntry COLLECTION_DEFAULT_VISIBLE = register(boolEntry(CollectionVisibilityField.Visible.getDefaultBooleanValue(),
@@ -1106,6 +1107,10 @@ public final class ClientConfig {
 
     private static IntConfigEntry intEntry(int defaultValue, int minValue, int maxValue, String... path) {
         return new IntConfigEntry(defaultValue, minValue, maxValue, path);
+    }
+
+    private static ColorConfigEntry colorEntry(int defaultValue, String... path) {
+        return new ColorConfigEntry(defaultValue, path);
     }
 
     private static DoubleConfigEntry doubleEntry(double defaultValue, double minValue, double maxValue, String... path) {

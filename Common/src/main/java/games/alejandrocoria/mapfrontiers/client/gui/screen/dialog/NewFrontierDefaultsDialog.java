@@ -41,6 +41,7 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
     private static final int RGB_TEXTBOX_WIDTH = 33;
     private static final int RGB_ROW_SPACER_WIDTH = 4;
     private static final int RGB_INLINE_SPACING = 3;
+    private static final int RANDOM_COLOR_ROW_WIDTH = SECTION_WIDTH;
 
     private TextBox textName1;
     private TextBox textName2;
@@ -84,7 +85,7 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
         overviewColumn.defaultCellSetting().alignHorizontallyLeft();
         mainLayout.addChild(overviewColumn, 0, 0, 1, 2);
 
-        overviewColumn.addChild(new StringWidget(DEFAULT_NAME_LABEL, font).setColor(ColorConstants.TEXT));
+        overviewColumn.addChild(new StringWidget(DEFAULT_NAME_LABEL, font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
 
         textName1 = createNameTextBox(ClientConfig.FRONTIER_DEFAULT_NAME_1.get());
         overviewColumn.addChild(textName1);
@@ -136,19 +137,20 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
         textBlue = createRgbTextBox(value -> (fixedColor & 0xFFFFFF00) | value);
         rgbRow.addChild(textBlue);
 
-        LinearLayout randomColorRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_MEDIUM);
-        randomColorRow.defaultCellSetting().alignVerticallyMiddle();
-        colorColumn.addChild(randomColorRow);
-
-        randomColorRow.addChild(new StringWidget(USE_RANDOM_COLOR_LABEL, font).setColor(ColorConstants.TEXT));
-        buttonRandomColor = createOnOffOptionButton(ClientConfig.FRONTIER_DEFAULT_RANDOM_COLOR.get(), this::onRandomColorChanged);
-        randomColorRow.addChild(buttonRandomColor);
-
         colorPalette = new ColorPaletteWidget(fixedColor, color -> {
             colorPicker.setColor(color);
             applyColorChange(color);
         });
         colorColumn.addChild(colorPalette);
+
+        LinearLayout randomColorRow = LinearLayout.horizontal();
+        randomColorRow.defaultCellSetting().alignVerticallyMiddle();
+        colorColumn.addChild(randomColorRow, LayoutSettings.defaults().alignHorizontallyLeft());
+
+        randomColorRow.addChild(new StringWidget(USE_RANDOM_COLOR_LABEL, font).setColor(ColorConstants.TEXT));
+        randomColorRow.addChild(SpacerElement.width(getRandomColorSpacerWidth()));
+        buttonRandomColor = createOnOffOptionButton(ClientConfig.FRONTIER_DEFAULT_RANDOM_COLOR.get(), this::onRandomColorChanged);
+        randomColorRow.addChild(buttonRandomColor);
 
         syncColorWidgets(fixedColor);
     }
@@ -169,7 +171,7 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
     }
 
     private OptionButton createOnOffOptionButton(boolean value, java.util.function.Consumer<Boolean> consumer) {
-        OptionButton button = new OptionButton(font, LayoutConstants.SETTING_CONTROL_WIDTH, b -> consumer.accept(b.getSelected() == 0));
+        OptionButton button = new OptionButton(font, LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH, b -> consumer.accept(b.getSelected() == 0));
         button.addOption(ON_LABEL);
         button.addOption(OFF_LABEL);
         button.setSelected(value ? 0 : 1);
@@ -272,5 +274,9 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
 
     private boolean areJourneyMapPreviewActionsAvailable() {
         return minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
+    }
+
+    private int getRandomColorSpacerWidth() {
+        return Math.max(0, RANDOM_COLOR_ROW_WIDTH - font.width(USE_RANDOM_COLOR_LABEL) - LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH);
     }
 }

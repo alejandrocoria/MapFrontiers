@@ -101,8 +101,7 @@ public class ModSettingsPage extends PageScreen {
     private static final Component COLLECTIONS_LABEL = Component.translatable("mapfrontiers.collections");
     private static final Component BEHAVIOR_LABEL = Component.translatable("mapfrontiers.behavior");
     private static final Component APPEARANCE_LABEL = Component.translatable("mapfrontiers.appearance");
-    private static final Component NEW_FRONTIER_DEFAULTS_LABEL = Component.translatable("mapfrontiers.new_frontier_defaults");
-    private static final Component NEW_COLLECTION_DEFAULTS_LABEL = Component.translatable("mapfrontiers.new_collection_defaults");
+    private static final Component DEFAULTS_LABEL = Component.translatable("mapfrontiers.defaults");
     private static final Component FORCED_VISIBILITY_LABEL = Component.translatable("mapfrontiers.forced_visibility");
     private static final Component GUI_LABEL = Component.translatable("mapfrontiers.gui");
     private static final Component CONFIRMATION_DIALOGS_LABEL = Component.translatable("mapfrontiers.confirmation_dialogs");
@@ -276,7 +275,7 @@ public class ModSettingsPage extends PageScreen {
 
     private int buildFrontiersSection(GridLayout settingsGrid, int row) {
         int buttonWidth = ScreenHelper.getPaddedMaxTextWidth(font, LayoutConstants.PAGE_BUTTON_WIDTH,
-                BUTTON_HORIZONTAL_PADDING, BEHAVIOR_LABEL, APPEARANCE_LABEL, NEW_FRONTIER_DEFAULTS_LABEL, FORCED_VISIBILITY_LABEL);
+                BUTTON_HORIZONTAL_PADDING, BEHAVIOR_LABEL, APPEARANCE_LABEL, DEFAULTS_LABEL, FORCED_VISIBILITY_LABEL);
 
         settingsGrid.addChild(new SimpleButton(font, buttonWidth, BEHAVIOR_LABEL,
                 b -> onFrontierBehaviorPressed()), row++, 0, 1, 2,
@@ -286,7 +285,7 @@ public class ModSettingsPage extends PageScreen {
                 b -> onFrontierAppearancePressed());
         settingsGrid.addChild(buttonFrontierAppearance, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
 
-        settingsGrid.addChild(new SimpleButton(font, buttonWidth, NEW_FRONTIER_DEFAULTS_LABEL,
+        settingsGrid.addChild(new SimpleButton(font, buttonWidth, DEFAULTS_LABEL,
                 b -> onNewFrontierDefaultsPressed()), row++, 0, 1, 2,
                 LayoutSettings.defaults().alignHorizontallyCenter());
 
@@ -303,13 +302,13 @@ public class ModSettingsPage extends PageScreen {
                 LayoutSettings.defaults().alignHorizontallyCenter());
 
         int buttonWidth = ScreenHelper.getPaddedMaxTextWidth(font, LayoutConstants.PAGE_BUTTON_WIDTH,
-                BUTTON_HORIZONTAL_PADDING, APPEARANCE_LABEL, NEW_COLLECTION_DEFAULTS_LABEL, FORCED_VISIBILITY_LABEL);
+                BUTTON_HORIZONTAL_PADDING, APPEARANCE_LABEL, DEFAULTS_LABEL, FORCED_VISIBILITY_LABEL);
 
         buttonCollectionAppearance = new SimpleButton(font, buttonWidth, APPEARANCE_LABEL,
                 b -> onCollectionAppearancePressed());
         settingsGrid.addChild(buttonCollectionAppearance, row++, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
 
-        settingsGrid.addChild(new SimpleButton(font, buttonWidth, NEW_COLLECTION_DEFAULTS_LABEL,
+        settingsGrid.addChild(new SimpleButton(font, buttonWidth, DEFAULTS_LABEL,
                 b -> onNewCollectionDefaultsPressed()), row++, 0, 1, 2,
                 LayoutSettings.defaults().alignHorizontallyCenter());
 
