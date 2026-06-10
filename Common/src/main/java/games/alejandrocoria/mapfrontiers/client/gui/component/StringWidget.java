@@ -51,6 +51,12 @@ public class StringWidget extends net.minecraft.client.gui.components.StringWidg
     }
 
     @Override
+    public void setMessage(Component message) {
+        super.setMessage(message);
+        setWidth(getFont().width(message.getVisualOrderText()));
+    }
+
+    @Override
     public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         if (scale != 1.f) {
             guiGraphics.pose().pushMatrix();

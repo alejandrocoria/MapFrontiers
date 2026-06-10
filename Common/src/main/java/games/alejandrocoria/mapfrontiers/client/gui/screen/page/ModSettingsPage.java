@@ -1133,6 +1133,7 @@ public class ModSettingsPage extends PageScreen {
         } else {
             labelGroupDesc.setMessage(Component.empty());
         }
+        repositionElements();
 
         updateUsers();
     }
