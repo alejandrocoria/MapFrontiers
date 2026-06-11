@@ -23,16 +23,20 @@ import java.util.function.IntConsumer;
 
 @ParametersAreNonnullByDefault
 public class TabbedBox implements Layout {
-    private static final int CONTENT_HEIGHT_OFFSET = 32;
+    private static final int TAB_HEIGHT = 16;
+    private static final int DEFAULT_CONTENT_TOP_SPACING = 16;
+    private static final int CONTENT_TOP_BORDER_HEIGHT = 1;
 
     private final Font font;
     private final IntConsumer tabChanged;
     private boolean sizeToContent = true;
     private int width;
     private int height;
+    private int contentTopSpacing = DEFAULT_CONTENT_TOP_SPACING;
+    private boolean interactive = true;
     private final List<Tab> tabs = new ArrayList<>();
     private final List<FrameLayout> contents = new ArrayList<>();
-    private final LinearLayout mainLayout = LinearLayout.vertical().spacing(16);
+    private final LinearLayout mainLayout = LinearLayout.vertical().spacing(DEFAULT_CONTENT_TOP_SPACING);
     private final LinearLayout tabLayouts = LinearLayout.horizontal();
     private final FrameLayout contentLayouts = new FrameLayout();
     private int selected;
@@ -47,7 +51,11 @@ public class TabbedBox implements Layout {
     }
 
     public void addTab(Component text, boolean enabled) {
-        tabs.add(new Tab(this, font, text, tabs.size(), enabled, this::setTabSelected));
+        addTab(text, enabled, 70);
+    }
+
+    public void addTab(Component text, boolean enabled, int width) {
+        tabs.add(new Tab(this, font, text, tabs.size(), width, enabled, this::setTabSelected));
         tabLayouts.addChild(tabs.getLast());
 
         FrameLayout content = new FrameLayout();
@@ -60,6 +68,22 @@ public class TabbedBox implements Layout {
         if (selected == -1) {
             selected = 0;
         }
+    }
+
+    public void setInteractive(boolean interactive) {
+        this.interactive = interactive;
+    }
+
+    public void setContentTopSpacing(int contentTopSpacing) {
+        this.contentTopSpacing = contentTopSpacing;
+        mainLayout.spacing(contentTopSpacing + CONTENT_TOP_BORDER_HEIGHT);
+        if (!sizeToContent) {
+            contentLayouts.setMinDimensions(width, contentHeight());
+            for (FrameLayout content : contents) {
+                content.setMinDimensions(width, contentHeight());
+            }
+        }
+        arrangeElements();
     }
 
     public void setTabSelected(int tab) {
@@ -105,6 +129,10 @@ public class TabbedBox implements Layout {
         return tabs.get(tab).isEnabled();
     }
 
+    public boolean isInteractive() {
+        return interactive;
+    }
+
     private int findFirstEnabledTab() {
         for (int i = 0; i < tabs.size(); ++i) {
             if (tabs.get(i).isEnabled()) {
@@ -143,7 +171,7 @@ public class TabbedBox implements Layout {
     }
 
     private int contentHeight() {
-        return Math.max(0, height - CONTENT_HEIGHT_OFFSET);
+        return Math.max(0, height - (TAB_HEIGHT + contentTopSpacing + CONTENT_TOP_BORDER_HEIGHT));
     }
 
     public <T extends LayoutElement> T addChild(T layoutElement, int tab) {
@@ -197,19 +225,19 @@ public class TabbedBox implements Layout {
     public void renderBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         int backgroundWidth = getWidth();
         int backgroundHeight = getHeight();
-        graphics.fill(getX(), getY() + 16, getX() + backgroundWidth - 1, getY() + backgroundHeight - 1, ColorConstants.SCREEN_FRAME_BG);
+        graphics.fill(getX(), getY() + TAB_HEIGHT, getX() + backgroundWidth - 1, getY() + backgroundHeight - 1, ColorConstants.SCREEN_FRAME_BG);
 
         if (selected == -1) {
-            graphics.horizontalLine(getX(), getX() + backgroundWidth - 1, getY() + 16, ColorConstants.TAB_BORDER_NORMAL);
+            graphics.horizontalLine(getX(), getX() + backgroundWidth - 1, getY() + TAB_HEIGHT, ColorConstants.TAB_BORDER_NORMAL);
         } else {
             Tab tab = tabs.get(selected);
-            graphics.horizontalLine(getX(), tab.getX(), getY() + 16, ColorConstants.TAB_BORDER_NORMAL);
-            graphics.horizontalLine(tab.getX() + tab.getWidth(), getX() + backgroundWidth - 1, getY() + 16, ColorConstants.TAB_BORDER_NORMAL);
+            graphics.horizontalLine(getX(), tab.getX(), getY() + TAB_HEIGHT, ColorConstants.TAB_BORDER_NORMAL);
+            graphics.horizontalLine(tab.getX() + tab.getWidth(), getX() + backgroundWidth - 1, getY() + TAB_HEIGHT, ColorConstants.TAB_BORDER_NORMAL);
         }
 
         graphics.horizontalLine(getX(), getX() + backgroundWidth - 1, getY() + backgroundHeight - 1, ColorConstants.TAB_BORDER_NORMAL);
-        graphics.verticalLine(getX(), getY() + 16, getY() + backgroundHeight - 1, ColorConstants.TAB_BORDER_NORMAL);
-        graphics.verticalLine(getX() + backgroundWidth - 1, getY() + 16, getY() + backgroundHeight - 1, ColorConstants.TAB_BORDER_NORMAL);
+        graphics.verticalLine(getX(), getY() + TAB_HEIGHT, getY() + backgroundHeight - 1, ColorConstants.TAB_BORDER_NORMAL);
+        graphics.verticalLine(getX() + backgroundWidth - 1, getY() + TAB_HEIGHT, getY() + backgroundHeight - 1, ColorConstants.TAB_BORDER_NORMAL);
     }
 
     private int findNextEnabledTab(int startIndex, boolean forward) {
@@ -245,13 +273,14 @@ public class TabbedBox implements Layout {
         private final TabbedBox parent;
         private final int index;
         private boolean selected = false;
+        private boolean enabled;
 
-        public Tab(TabbedBox parent, Font font, Component text, int index, boolean enabled, Consumer<Integer> onPress) {
-            super(0, 0, 70, 16, text, (b) -> onPress.accept(index), Button.DEFAULT_NARRATION);
+        public Tab(TabbedBox parent, Font font, Component text, int index, int width, boolean enabled, Consumer<Integer> onPress) {
+            super(0, 0, width, TAB_HEIGHT, text, (b) -> onPress.accept(index), Button.DEFAULT_NARRATION);
             this.parent = parent;
             this.index = index;
             this.font = font;
-            this.active = enabled;
+            this.enabled = enabled;
         }
 
         public void setSelected(boolean selected) {
@@ -259,16 +288,20 @@ public class TabbedBox implements Layout {
         }
 
         public void setEnabled(boolean enabled) {
-            this.active = enabled;
+            this.enabled = enabled;
         }
 
         public boolean isEnabled() {
-            return active;
+            return enabled;
+        }
+
+        private boolean isInteractive() {
+            return enabled && parent.isInteractive();
         }
 
         @Override
         public ComponentPath nextFocusPath(FocusNavigationEvent navigationEvent) {
-            if (!visible || !active) {
+            if (!visible || !isInteractive()) {
                 return null;
             }
 
@@ -310,13 +343,18 @@ public class TabbedBox implements Layout {
             graphics.verticalLine(getX() + getWidth(), getY(), getY() + getHeight(), ColorConstants.TAB_BORDER_NORMAL);
 
             int labelColor = ColorConstants.TAB_TEXT_NORMAL;
-            if (!active) {
+            if (!isInteractive()) {
                 labelColor = ColorConstants.TAB_TEXT_DISABLED;
             } else if (selected || isHoveredOrKeyboardFocused()) {
                 labelColor = ColorConstants.TAB_TEXT_HIGHLIGHT;
             }
 
-            graphics.centeredText(font, getMessage(), getX() + getWidth() / 2, getY() + 5, labelColor);
+            graphics.centeredText(font, getMessage(), getX() + (getWidth() + 1) / 2, getY() + 5, labelColor);
+        }
+
+        @Override
+        public boolean isActive() {
+            return isInteractive();
         }
     }
 }

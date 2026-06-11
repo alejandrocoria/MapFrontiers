@@ -158,10 +158,6 @@ public final class ColorConstants {
     public static final int HUD_ANCHOR_DARK = 0xFF222222;
     public static final int HUD_ANCHOR_LIGHT = 0xFFDDDDDD;
 
-    public static final int LABEL_R = 0xFFE84949;
-    public static final int LABEL_G = 0xFF52F152;
-    public static final int LABEL_B = 0xFF4343E2;
-
     public static final int PING_BAR = WHITE;
     public static final int VIRTUAL_COLLECTION_COLOR = 0xFF666666;
 

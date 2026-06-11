@@ -5,15 +5,16 @@ import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
+import games.alejandrocoria.mapfrontiers.client.gui.component.ColorInputTabsWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPaletteWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPicker;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
-import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.client.gui.layouts.LinearLayout;
@@ -31,26 +32,16 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
     private static final Component USE_RANDOM_COLOR_LABEL = Component.translatable("mapfrontiers.use_random_color");
     private static final Component ON_LABEL = Component.translatable("options.on");
     private static final Component OFF_LABEL = Component.translatable("options.off");
-    private static final Component R_LABEL = Component.literal("R");
-    private static final Component G_LABEL = Component.literal("G");
-    private static final Component B_LABEL = Component.literal("B");
     private static final int SECTION_WIDTH = 146;
     private static final int NAME_SECTION_WIDTH = SECTION_WIDTH * 2 + LayoutConstants.SPACING_MEDIUM;
     private static final int DEFAULT_TEXTBOX_HEIGHT = 17;
-    private static final int RGB_LABEL_HEIGHT = 8;
-    private static final int RGB_TEXTBOX_WIDTH = 33;
-    private static final int RGB_ROW_SPACER_WIDTH = 4;
-    private static final int RGB_INLINE_SPACING = 3;
-    private static final int RANDOM_COLOR_ROW_WIDTH = SECTION_WIDTH;
 
     private TextBox textName1;
     private TextBox textName2;
     private SimpleButton buttonVisibility;
     private SimpleButton buttonPathStyle;
     private OptionButton buttonRandomColor;
-    private TextBoxInt textRed;
-    private TextBoxInt textGreen;
-    private TextBoxInt textBlue;
+    private ColorInputTabsWidget colorInputs;
     private ColorPicker colorPicker;
     private ColorPaletteWidget colorPalette;
     private FrontierVisibilityData visibilityData;
@@ -106,7 +97,15 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
         buttonPathStyle = new SimpleButton(font, SECTION_WIDTH, DEFAULT_PATH_STYLE_LABEL, b -> onPathStylePressed());
         buttonPathStyle.active = areJourneyMapPreviewActionsAvailable();
         pathStyleRow.addChild(buttonPathStyle);
-        pathStyleRow.addChild(SpacerElement.width(SECTION_WIDTH));
+
+        LinearLayout randomColorRow = LinearLayout.horizontal();
+        randomColorRow.defaultCellSetting().alignVerticallyMiddle();
+        pathStyleRow.addChild(randomColorRow);
+
+        randomColorRow.addChild(new StringWidget(USE_RANDOM_COLOR_LABEL, font).setColor(ColorConstants.TEXT));
+        randomColorRow.addChild(SpacerElement.width(getRandomColorSpacerWidth()));
+        buttonRandomColor = createOnOffOptionButton(ClientConfig.FRONTIER_DEFAULT_RANDOM_COLOR.get(), this::onRandomColorChanged);
+        randomColorRow.addChild(buttonRandomColor);
     }
 
     private void buildColorSection(GridLayout mainLayout) {
@@ -117,38 +116,22 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
         colorColumn.defaultCellSetting().alignHorizontallyCenter();
         mainLayout.addChild(colorColumn, 1, 1, LayoutSettings.defaults().alignVerticallyBottom());
 
-        LinearLayout rgbRow = LinearLayout.horizontal().spacing(RGB_INLINE_SPACING);
-        rgbRow.defaultCellSetting().alignVerticallyMiddle();
-        colorColumn.addChild(rgbRow);
-
-        rgbRow.addChild(new StringWidget(R_LABEL, font, RGB_LABEL_HEIGHT).setColor(ColorConstants.LABEL_R));
-        textRed = createRgbTextBox(value -> (fixedColor & 0xFF00FFFF) | (value << 16));
-        rgbRow.addChild(textRed);
-        rgbRow.addChild(SpacerElement.width(RGB_ROW_SPACER_WIDTH));
-
-        rgbRow.addChild(new StringWidget(G_LABEL, font, RGB_LABEL_HEIGHT).setColor(ColorConstants.LABEL_G));
-        textGreen = createRgbTextBox(value -> (fixedColor & 0xFFFF00FF) | (value << 8));
-        rgbRow.addChild(textGreen);
-        rgbRow.addChild(SpacerElement.width(RGB_ROW_SPACER_WIDTH));
-
-        rgbRow.addChild(new StringWidget(B_LABEL, font, RGB_LABEL_HEIGHT).setColor(ColorConstants.LABEL_B));
-        textBlue = createRgbTextBox(value -> (fixedColor & 0xFFFFFF00) | value);
-        rgbRow.addChild(textBlue);
+        colorInputs = new ColorInputTabsWidget(font, fixedColor, this::applyColorChange);
+        colorColumn.addChild(colorInputs);
 
         colorPalette = new ColorPaletteWidget(fixedColor, this::applyColorChange);
         colorColumn.addChild(colorPalette);
 
-        LinearLayout randomColorRow = LinearLayout.horizontal();
-        randomColorRow.defaultCellSetting().alignVerticallyMiddle();
-        colorColumn.addChild(randomColorRow, LayoutSettings.defaults().alignHorizontallyLeft());
-
-        randomColorRow.addChild(new StringWidget(USE_RANDOM_COLOR_LABEL, font).setColor(ColorConstants.TEXT));
-        randomColorRow.addChild(SpacerElement.width(getRandomColorSpacerWidth()));
-        buttonRandomColor = createOnOffOptionButton(ClientConfig.FRONTIER_DEFAULT_RANDOM_COLOR.get(), this::onRandomColorChanged);
-        randomColorRow.addChild(buttonRandomColor);
-
         syncColorWidgets(fixedColor);
         refreshManualColorWidgets();
+    }
+
+    @Override
+    protected void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        super.renderScaledBackgroundScreen(graphics, mouseX, mouseY, partialTicks);
+        if (colorInputs != null) {
+            colorInputs.renderTabbedBoxBackground(graphics, mouseX, mouseY, partialTicks);
+        }
     }
 
     private TextBox createNameTextBox(String value) {
@@ -156,13 +139,6 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
         textBox.setMaxLength(FrontierData.MAX_NAME_CHARACTERS);
         textBox.setHeight(DEFAULT_TEXTBOX_HEIGHT);
         textBox.setValue(value);
-        return textBox;
-    }
-
-    private TextBoxInt createRgbTextBox(java.util.function.IntUnaryOperator colorComposer) {
-        TextBoxInt textBox = new TextBoxInt(0, 0, 255, font, RGB_TEXTBOX_WIDTH);
-        textBox.setHeight(DEFAULT_TEXTBOX_HEIGHT);
-        textBox.setValueChangedCallback(value -> applyColorChange(colorComposer.applyAsInt(value)));
         return textBox;
     }
 
@@ -200,9 +176,7 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
 
     private void refreshManualColorWidgets() {
         boolean manualEnabled = buttonRandomColor.getSelected() != 0;
-        textRed.setEditable(manualEnabled);
-        textGreen.setEditable(manualEnabled);
-        textBlue.setEditable(manualEnabled);
+        colorInputs.setEditable(manualEnabled);
         colorPicker.active = manualEnabled;
         colorPalette.active = manualEnabled;
     }
@@ -210,9 +184,7 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
     private void syncColorWidgets(int color) {
         syncingWidgets = true;
         try {
-            textRed.setValue((color & 0xFF0000) >> 16);
-            textGreen.setValue((color & 0x00FF00) >> 8);
-            textBlue.setValue(color & 0x0000FF);
+            colorInputs.setColor(color);
             colorPalette.setColor(color);
         } finally {
             syncingWidgets = false;
@@ -222,9 +194,7 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
     private void clearTextBoxFocus() {
         textName1.setFocused(false);
         textName2.setFocused(false);
-        textRed.setFocused(false);
-        textGreen.setFocused(false);
-        textBlue.setFocused(false);
+        colorInputs.clearFocus();
     }
 
     private void onVisibilityPressed() {
@@ -246,7 +216,6 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
     private void saveAndClose() {
         clearTextBoxFocus();
 
-        fixedColor = composeOpaqueColor();
         ClientConfig.FRONTIER_DEFAULT_NAME_1.set(limitName(textName1.getValue(), FrontierData.MAX_NAME_CHARACTERS));
         ClientConfig.FRONTIER_DEFAULT_NAME_2.set(limitName(textName2.getValue(), FrontierData.MAX_NAME_CHARACTERS));
         ClientConfig.FRONTIER_DEFAULT_RANDOM_COLOR.set(buttonRandomColor.getSelected() == 0);
@@ -254,10 +223,6 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
 
         ClientGlobalEvents.postUpdatedConfigEvent();
         super.onClose();
-    }
-
-    private int composeOpaqueColor() {
-        return 0xFF000000 | (textRed.clamped() << 16) | (textGreen.clamped() << 8) | textBlue.clamped();
     }
 
     private static String limitName(String value, int maxLength) {
@@ -273,6 +238,6 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
     }
 
     private int getRandomColorSpacerWidth() {
-        return Math.max(0, RANDOM_COLOR_ROW_WIDTH - font.width(USE_RANDOM_COLOR_LABEL) - LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH);
+        return Math.max(0, SECTION_WIDTH - font.width(USE_RANDOM_COLOR_LABEL.getVisualOrderText()) - LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH);
     }
 }

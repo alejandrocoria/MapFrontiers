@@ -5,6 +5,7 @@ import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
+import games.alejandrocoria.mapfrontiers.client.gui.component.ColorInputTabsWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPaletteWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPicker;
 import games.alejandrocoria.mapfrontiers.client.gui.component.PluginSourceBadge;
@@ -14,7 +15,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
-import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.CollectionVisibilityDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteCollectionConfirmationDialog;
@@ -29,7 +29,6 @@ import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionD
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityMask;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
-import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import it.unimi.dsi.fastutil.Pair;
 import journeymap.api.v2.client.display.Context;
@@ -61,7 +60,6 @@ import java.util.Objects;
 import java.util.Stack;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.function.IntUnaryOperator;
 
 @ParametersAreNonnullByDefault
 public class CollectionInfoPage extends PageScreen {
@@ -70,7 +68,6 @@ public class CollectionInfoPage extends PageScreen {
     private static final Component SELECT_IN_MAP_LABEL = Component.translatable("mapfrontiers.select_in_map");
     private static final Component DONE_LABEL = Component.translatable("gui.done");
     private static final Component DELETE_LABEL = Component.translatable("mapfrontiers.delete");
-    private static final Component RANDOM_COLOR_LABEL = Component.translatable("mapfrontiers.random_color");
     private static final Component ASSIGN_BANNER_LABEL = Component.translatable("mapfrontiers.assign_banner");
     private static final Component ASSIGN_BANNER_WARN_LABEL = ASSIGN_BANNER_LABEL.copy().append(Component.literal(ColorConstants.WARNING + " !"));
     private static final Component REMOVE_BANNER_LABEL = Component.translatable("mapfrontiers.remove_banner");
@@ -88,9 +85,6 @@ public class CollectionInfoPage extends PageScreen {
     private static final String MODIFIED_KEY = "mapfrontiers.modified";
     private static final Component VISIBILITY_LABEL = Component.translatable("mapfrontiers.visibility");
     private static final Component VISIBILITY_OVERRIDE_LABEL = Component.translatable("mapfrontiers.visibility_override");
-    private static final Component R_LABEL = Component.literal("R");
-    private static final Component G_LABEL = Component.literal("G");
-    private static final Component B_LABEL = Component.literal("B");
     private static final Tooltip COPY_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.copy.tooltip"));
     private static final Tooltip PASTE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.paste.tooltip"));
     private static final Tooltip OPEN_PASTE_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.open_paste_options.tooltip"));
@@ -110,10 +104,6 @@ public class CollectionInfoPage extends PageScreen {
     private static final int SECTION_WIDTH = 146;
     private static final int NAME_SECTION_WIDTH = SECTION_WIDTH * 2 + LayoutConstants.SPACING_MEDIUM;
     private static final int DEFAULT_TEXTBOX_HEIGHT = 17;
-    private static final int RGB_LABEL_HEIGHT = 8;
-    private static final int RGB_TEXTBOX_WIDTH = 33;
-    private static final int RGB_ROW_SPACER_WIDTH = 4;
-    private static final int RGB_INLINE_SPACING = 3;
     private static final int CLIPBOARD_SPACER_WIDTH = SECTION_WIDTH - LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH;
 
     private final UUID collectionId;
@@ -130,12 +120,9 @@ public class CollectionInfoPage extends PageScreen {
     private SimpleButton buttonVisibilityOverride;
     private SimpleButton buttonBanner;
     private SimpleSlider sliderBannerRotation;
-    private TextBoxInt textRed;
-    private TextBoxInt textGreen;
-    private TextBoxInt textBlue;
+    private ColorInputTabsWidget colorInputs;
     private ColorPicker colorPicker;
     private ColorPaletteWidget colorPalette;
-    private SimpleButton buttonRandomColor;
     private IconButton buttonCopy;
     private IconButton buttonPaste;
     private IconButton buttonPasteOptions;
@@ -275,29 +262,11 @@ public class CollectionInfoPage extends PageScreen {
         colorColumn.defaultCellSetting().alignHorizontallyCenter();
         mainLayout.addChild(colorColumn, 1, 2, LayoutSettings.defaults().alignVerticallyBottom());
 
-        LinearLayout rgbRow = LinearLayout.horizontal().spacing(RGB_INLINE_SPACING);
-        rgbRow.defaultCellSetting().alignVerticallyMiddle();
-        colorColumn.addChild(rgbRow);
-
-        rgbRow.addChild(new StringWidget(R_LABEL, font, RGB_LABEL_HEIGHT).setColor(ColorConstants.LABEL_R));
-        textRed = createRgbTextBox(value -> (collection.getColor() & 0xFF00FFFF) | (value << 16));
-        rgbRow.addChild(textRed);
-        rgbRow.addChild(SpacerElement.width(RGB_ROW_SPACER_WIDTH));
-
-        rgbRow.addChild(new StringWidget(G_LABEL, font, RGB_LABEL_HEIGHT).setColor(ColorConstants.LABEL_G));
-        textGreen = createRgbTextBox(value -> (collection.getColor() & 0xFFFF00FF) | (value << 8));
-        rgbRow.addChild(textGreen);
-        rgbRow.addChild(SpacerElement.width(RGB_ROW_SPACER_WIDTH));
-
-        rgbRow.addChild(new StringWidget(B_LABEL, font, RGB_LABEL_HEIGHT).setColor(ColorConstants.LABEL_B));
-        textBlue = createRgbTextBox(value -> (collection.getColor() & 0xFFFFFF00) | value);
-        rgbRow.addChild(textBlue);
+        colorInputs = new ColorInputTabsWidget(font, collection.getColor(), color -> applyColorChange(color, true));
+        colorColumn.addChild(colorInputs);
 
         colorPalette = new ColorPaletteWidget(collection.getColor(), color -> applyColorChange(color, true));
         colorColumn.addChild(colorPalette);
-
-        buttonRandomColor = new SimpleButton(font, SECTION_WIDTH, RANDOM_COLOR_LABEL, b -> onRandomColorPressed());
-        colorColumn.addChild(buttonRandomColor);
 
         syncColorWidgets(collection.getColor());
     }
@@ -347,13 +316,6 @@ public class CollectionInfoPage extends PageScreen {
         buttonDelete = addBottomButton(new SimpleButton(font, SECTION_WIDTH, DELETE_LABEL, b -> onDeletePressed()));
         buttonDelete.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_NORMAL, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
         buttonDone = addBottomButton(new SimpleButton(font, SECTION_WIDTH, DONE_LABEL, b -> onClose()));
-    }
-
-    private TextBoxInt createRgbTextBox(IntUnaryOperator colorComposer) {
-        TextBoxInt textBox = new TextBoxInt(0, 0, 255, font, RGB_TEXTBOX_WIDTH);
-        textBox.setHeight(DEFAULT_TEXTBOX_HEIGHT);
-        textBox.setValueChangedCallback(value -> applyColorChange(colorComposer.applyAsInt(value), true));
-        return textBox;
     }
 
     private OptionButton createBinaryOptionButton(boolean defaultValue, Consumer<Boolean> consumer) {
@@ -428,10 +390,6 @@ public class CollectionInfoPage extends PageScreen {
 
         closeAndReturnToFullscreenMap();
         Services.JOURNEYMAP.fullscreenMapCenterOn(center.getX(), center.getZ());
-    }
-
-    private void onRandomColorPressed() {
-        applyColorChange(ColorHelper.getRandomColor(), true);
     }
 
     private void onBannerButtonPressed() {
@@ -539,9 +497,7 @@ public class CollectionInfoPage extends PageScreen {
     private void syncColorWidgets(int color) {
         syncingWidgets = true;
         try {
-            textRed.setValue((color & 0xFF0000) >> 16);
-            textGreen.setValue((color & 0x00FF00) >> 8);
-            textBlue.setValue(color & 0x0000FF);
+            colorInputs.setColor(color);
             colorPalette.setColor(color);
         } finally {
             syncingWidgets = false;
@@ -584,12 +540,9 @@ public class CollectionInfoPage extends PageScreen {
     private void refreshViewState() {
         boolean editable = canUpdateCollection();
         textName.setEditable(editable);
-        textRed.setEditable(editable);
-        textGreen.setEditable(editable);
-        textBlue.setEditable(editable);
+        colorInputs.setEditable(editable);
         colorPicker.active = editable;
         colorPalette.active = editable;
-        buttonRandomColor.active = editable;
         buttonVisibility.active = editable;
         buttonVisibilityOverride.active = true;
         buttonBanner.active = editable;
@@ -600,6 +553,14 @@ public class CollectionInfoPage extends PageScreen {
         updatePasteOptionsVisibility(editable);
         refreshUndoRedoState(editable);
         repositionElements();
+    }
+
+    @Override
+    protected void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        super.renderScaledBackgroundScreen(graphics, mouseX, mouseY, partialTicks);
+        if (colorInputs != null) {
+            colorInputs.renderTabbedBoxBackground(graphics, mouseX, mouseY, partialTicks);
+        }
     }
 
     @Override

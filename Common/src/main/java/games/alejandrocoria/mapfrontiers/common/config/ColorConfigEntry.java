@@ -48,7 +48,7 @@ public final class ColorConfigEntry extends ConfigEntry<Integer, ColorConfigEntr
 
     @Override
     protected String describeConstraints() {
-        return "Format: \"#RRGGBB\". Also accepts \"RRGGBB\", \"0xRRGGBB\", and \"0xAARRGGBB\".";
+        return "Format: \"RRGGBB\". Also accepts \"#RRGGBB\", \"0xRRGGBB\", and \"0xAARRGGBB\".";
     }
 
     private static Integer parseColor(String value) {
@@ -100,7 +100,7 @@ public final class ColorConfigEntry extends ConfigEntry<Integer, ColorConfigEntr
     }
 
     private static String formatColor(int color) {
-        return String.format("#%06X", color & 0x00FFFFFF);
+        return String.format("%06X", color & 0x00FFFFFF);
     }
 
     private static int normalizeOpaqueColor(int color) {

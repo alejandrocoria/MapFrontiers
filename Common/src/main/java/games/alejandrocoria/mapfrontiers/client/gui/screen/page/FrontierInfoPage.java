@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
+import games.alejandrocoria.mapfrontiers.client.gui.component.ColorInputTabsWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPaletteWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.ColorPicker;
 import games.alejandrocoria.mapfrontiers.client.gui.component.PluginSourceBadge;
@@ -15,7 +16,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
-import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteFrontierConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.FrontierVisibilityDialog;
@@ -32,7 +32,6 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityMask;
-import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import it.unimi.dsi.fastutil.Pair;
 import journeymap.api.v2.client.IClientAPI;
@@ -66,7 +65,6 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Stack;
 import java.util.function.Consumer;
-import java.util.function.IntUnaryOperator;
 
 @ParametersAreNonnullByDefault
 public class FrontierInfoPage extends PageScreen {
@@ -96,10 +94,6 @@ public class FrontierInfoPage extends PageScreen {
     private static final Component VISIBILITY_LABEL = Component.translatable("mapfrontiers.visibility");
     private static final Component VISIBILITY_OVERRIDE_LABEL = Component.translatable("mapfrontiers.visibility_override");
     private static final Component PATH_STYLE_LABEL = Component.translatable("mapfrontiers.path_style");
-    private static final Component R_LABEL = Component.literal("R");
-    private static final Component G_LABEL = Component.literal("G");
-    private static final Component B_LABEL = Component.literal("B");
-    private static final Component RANDOM_COLOR_LABEL = Component.translatable("mapfrontiers.random_color");
     private static final Component PASTE_NAME_LABEL = Component.translatable("mapfrontiers.paste_name");
     private static final Component PASTE_VISIBILITY_LABEL = Component.translatable("mapfrontiers.paste_visibility");
     private static final Component PASTE_PATH_STYLE_LABEL = Component.translatable("mapfrontiers.paste_path_style");
@@ -128,10 +122,6 @@ public class FrontierInfoPage extends PageScreen {
     private static final int SECTION_WIDTH = 146;
     private static final int NAME_SECTION_WIDTH = SECTION_WIDTH * 2 + MAIN_LAYOUT_SPACING;
     private static final int DEFAULT_TEXTBOX_HEIGHT = 17;
-    private static final int RGB_INLINE_SPACING = 3;
-    private static final int RGB_LABEL_HEIGHT = 8;
-    private static final int RGB_TEXTBOX_WIDTH = 33;
-    private static final int RGB_ROW_SPACER_WIDTH = 4;
     private static final int CLIPBOARD_SPACER_WIDTH = SECTION_WIDTH - LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH;
 
     private final IClientAPI jmAPI;
@@ -144,10 +134,7 @@ public class FrontierInfoPage extends PageScreen {
     private SimpleButton buttonVisibility;
     private SimpleButton buttonVisibilityOverride;
     private @Nullable SimpleButton buttonPathStyle;
-    private TextBoxInt textRed;
-    private TextBoxInt textGreen;
-    private TextBoxInt textBlue;
-    private SimpleButton buttonRandomColor;
+    private ColorInputTabsWidget colorInputs;
     private ColorPicker colorPicker;
     private ColorPaletteWidget colorPalette;
     private IconButton buttonCopy;
@@ -407,29 +394,11 @@ public class FrontierInfoPage extends PageScreen {
         colorColumn.defaultCellSetting().alignHorizontallyCenter();
         mainLayout.addChild(colorColumn, 1, 2, LayoutSettings.defaults().alignVerticallyBottom());
 
-        LinearLayout rgbRow = LinearLayout.horizontal().spacing(RGB_INLINE_SPACING);
-        rgbRow.defaultCellSetting().alignVerticallyMiddle();
-        colorColumn.addChild(rgbRow);
-
-        rgbRow.addChild(new StringWidget(R_LABEL, font, RGB_LABEL_HEIGHT).setColor(ColorConstants.LABEL_R));
-        textRed = createRgbTextBox(value -> (frontier.getColor() & 0xFF00FFFF) | (value << 16));
-        rgbRow.addChild(textRed);
-        rgbRow.addChild(SpacerElement.width(RGB_ROW_SPACER_WIDTH));
-
-        rgbRow.addChild(new StringWidget(G_LABEL, font, RGB_LABEL_HEIGHT).setColor(ColorConstants.LABEL_G));
-        textGreen = createRgbTextBox(value -> (frontier.getColor() & 0xFFFF00FF) | (value << 8));
-        rgbRow.addChild(textGreen);
-        rgbRow.addChild(SpacerElement.width(RGB_ROW_SPACER_WIDTH));
-
-        rgbRow.addChild(new StringWidget(B_LABEL, font, RGB_LABEL_HEIGHT).setColor(ColorConstants.LABEL_B));
-        textBlue = createRgbTextBox(value -> (frontier.getColor() & 0xFFFFFF00) | value);
-        rgbRow.addChild(textBlue);
+        colorInputs = new ColorInputTabsWidget(font, frontier.getColor(), this::applyColorChange);
+        colorColumn.addChild(colorInputs);
 
         colorPalette = new ColorPaletteWidget(frontier.getColor(), this::applyColorChange);
         colorColumn.addChild(colorPalette);
-
-        buttonRandomColor = new SimpleButton(font, SECTION_WIDTH, RANDOM_COLOR_LABEL, b -> onRandomColorPressed());
-        colorColumn.addChild(buttonRandomColor);
 
         syncColorWidgets(frontier.getColor());
     }
@@ -486,13 +455,6 @@ public class FrontierInfoPage extends PageScreen {
         buttonDelete = addBottomButton(new SimpleButton(font, SECTION_WIDTH, DELETE_LABEL, b -> onDeletePressed()));
         buttonDelete.setTextColors(ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_NORMAL, ColorConstants.SIMPLE_BUTTON_TEXT_DELETE_HIGHLIGHT);
         buttonDone = addBottomButton(new SimpleButton(font, SECTION_WIDTH, DONE_LABEL, b -> onClose()));
-    }
-
-    private TextBoxInt createRgbTextBox(IntUnaryOperator colorComposer) {
-        TextBoxInt textBox = new TextBoxInt(0, 0, 255, font, RGB_TEXTBOX_WIDTH);
-        textBox.setHeight(DEFAULT_TEXTBOX_HEIGHT);
-        textBox.setValueChangedCallback(value -> applyColorChange(colorComposer.applyAsInt(value)));
-        return textBox;
     }
 
     private static String formatMeasurement(float value) {
@@ -623,7 +585,7 @@ public class FrontierInfoPage extends PageScreen {
 
     private void onPathStyleButtonPressed() {
         FrontierData.PathStyle basePathStyle = frontier.getPathStyle();
-        new PathStyleDialog(basePathStyle, ClientConfig.getDefaultPathStyle(), newPathStyle -> {
+        new PathStyleDialog(basePathStyle, ClientConfig.getDefaultFrontierPathStyle(), newPathStyle -> {
             if (newPathStyle.equals(basePathStyle)) {
                 return;
             }
@@ -675,10 +637,6 @@ public class FrontierInfoPage extends PageScreen {
         if (!dragging) {
             sendColorChangeToServer();
         }
-    }
-
-    private void onRandomColorPressed() {
-        applyColorChange(ColorHelper.getRandomColor());
     }
 
     private void onCopyPressed() {
@@ -751,6 +709,14 @@ public class FrontierInfoPage extends PageScreen {
         updatePasteOptionsVisibility();
         refreshUndoRedoState();
         repositionElements();
+    }
+
+    @Override
+    protected void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        super.renderScaledBackgroundScreen(graphics, mouseX, mouseY, partialTicks);
+        if (colorInputs != null) {
+            colorInputs.renderTabbedBoxBackground(graphics, mouseX, mouseY, partialTicks);
+        }
     }
 
     @Override
@@ -1020,9 +986,7 @@ public class FrontierInfoPage extends PageScreen {
     }
 
     private void syncColorWidgetsInternal(int color) {
-        textRed.setValue((color & 0xFF0000) >> 16);
-        textGreen.setValue((color & 0x00FF00) >> 8);
-        textBlue.setValue(color & 0x0000FF);
+        colorInputs.setColor(color);
         colorPalette.setColor(color);
     }
 
@@ -1077,10 +1041,7 @@ public class FrontierInfoPage extends PageScreen {
             buttonPathStyle.visible = hasPathStyle;
             buttonPathStyle.active = actions.canUpdate && hasPathStyle;
         }
-        textRed.setEditable(actions.canUpdate);
-        textGreen.setEditable(actions.canUpdate);
-        textBlue.setEditable(actions.canUpdate);
-        buttonRandomColor.active = actions.canUpdate;
+        colorInputs.setEditable(actions.canUpdate);
         colorPicker.active = actions.canUpdate;
         colorPalette.active = actions.canUpdate;
         buttonPaste.active = actions.canUpdate;
