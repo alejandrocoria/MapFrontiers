@@ -3,10 +3,13 @@ package games.alejandrocoria.mapfrontiers.client.gui.component;
 import com.mojang.blaze3d.platform.InputConstants;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
+import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.gui.navigation.ScreenDirection;
 import net.minecraft.client.input.KeyEvent;
@@ -70,10 +73,14 @@ public class ColorPicker extends AbstractWidgetNoNarration {
     private static final int V_FOCUS_V = 129;
     private static final int V_FOCUS_WIDTH = 10;
     private static final int V_FOCUS_HEIGHT = 5;
+    private static final Tooltip RANDOM_COLOR_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.random_color"));
+    private static final int RANDOM_BUTTON_X = 0;
+    private static final int RANDOM_BUTTON_Y = HEIGHT - 17;
 
     private enum FocusPart {
         HS,
-        V
+        V,
+        RANDOM
     }
 
     private double hsX;
@@ -89,11 +96,28 @@ public class ColorPicker extends AbstractWidgetNoNarration {
     private boolean vGrabbed = false;
     private FocusPart focusedPart = FocusPart.HS;
     private final BiConsumer<Integer, Boolean> callbackColorUpdated;
+    private final IconButton randomButton;
 
     public ColorPicker(int color, BiConsumer<Integer, Boolean> callbackColorUpdated) {
         super(0, 0, WIDTH, HEIGHT, Component.empty());
         this.callbackColorUpdated = callbackColorUpdated;
+        randomButton = new IconButton(IconButton.Type.Random, b -> applyRandomColor());
+        randomButton.setTooltip(RANDOM_COLOR_TOOLTIP);
+        randomButton.setX(getX() + RANDOM_BUTTON_X);
+        randomButton.setY(getY() + RANDOM_BUTTON_Y);
         setColor(color);
+    }
+
+    @Override
+    public void setX(int x) {
+        super.setX(x);
+        randomButton.setX(x + RANDOM_BUTTON_X);
+    }
+
+    @Override
+    public void setY(int y) {
+        super.setY(y);
+        randomButton.setY(y + RANDOM_BUTTON_Y);
     }
 
     public void setColor(int newColor) {
@@ -127,6 +151,10 @@ public class ColorPicker extends AbstractWidgetNoNarration {
         if (navigationEvent instanceof FocusNavigationEvent.TabNavigation tabNavigation) {
             syncFocusedToSelection();
             if (tabNavigation.forward()) {
+                if (focusedPart == FocusPart.RANDOM) {
+                    focusedPart = FocusPart.HS;
+                    return ComponentPath.leaf(this);
+                }
                 if (focusedPart == FocusPart.HS) {
                     focusedPart = FocusPart.V;
                     return ComponentPath.leaf(this);
@@ -138,10 +166,21 @@ public class ColorPicker extends AbstractWidgetNoNarration {
                 focusedPart = FocusPart.HS;
                 return ComponentPath.leaf(this);
             }
+            if (focusedPart == FocusPart.HS) {
+                focusedPart = FocusPart.RANDOM;
+                return ComponentPath.leaf(this);
+            }
             return null;
         }
 
         if (navigationEvent instanceof FocusNavigationEvent.ArrowNavigation arrowNavigation) {
+            if (focusedPart == FocusPart.RANDOM) {
+                if (arrowNavigation.direction() == ScreenDirection.UP || arrowNavigation.direction() == ScreenDirection.RIGHT) {
+                    focusedPart = FocusPart.HS;
+                    return ComponentPath.leaf(this);
+                }
+                return null;
+            }
             return ComponentPath.leaf(this);
         }
 
@@ -152,6 +191,15 @@ public class ColorPicker extends AbstractWidgetNoNarration {
     public boolean keyPressed(KeyEvent event) {
         if (!isFocused() || !visible || !active) {
             return false;
+        }
+
+        if (focusedPart == FocusPart.RANDOM) {
+            if (!event.isSelection()) {
+                return false;
+            }
+
+            applyRandomColor();
+            return true;
         }
 
         if (focusedPart == FocusPart.V) {
@@ -175,8 +223,17 @@ public class ColorPicker extends AbstractWidgetNoNarration {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (!visible || !active) {
+            return false;
+        }
+
         hsGrabbed = false;
         vGrabbed = false;
+
+        if (randomButton.mouseClicked(event, doubleClick)) {
+            focusedPart = FocusPart.RANDOM;
+            return true;
+        }
 
         updateMouse(event.x(), event.y(), false);
 
@@ -185,6 +242,7 @@ public class ColorPicker extends AbstractWidgetNoNarration {
 
     @Override
     public void onRelease(MouseButtonEvent event) {
+        randomButton.onRelease(event);
         if (!hsGrabbed && !vGrabbed) {
             return;
         }
@@ -221,8 +279,12 @@ public class ColorPicker extends AbstractWidgetNoNarration {
     @Override
     public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         updateKeyboardMovement();
+        randomButton.active = active;
+        randomButton.visible = visible;
+        randomButton.setFocused(focusedPart == FocusPart.RANDOM && isKeyboardFocused());
         renderHsBackground(graphics);
         renderVBackground(graphics);
+        randomButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         renderSelectedMarkers(graphics);
         renderFocusedMarkers(graphics);
     }
@@ -290,25 +352,29 @@ public class ColorPicker extends AbstractWidgetNoNarration {
 
     private FocusPart getEntryFocusPart(FocusNavigationEvent navigationEvent) {
         if (navigationEvent instanceof FocusNavigationEvent.TabNavigation tabNavigation) {
-            return tabNavigation.forward() ? FocusPart.HS : FocusPart.V;
+            return tabNavigation.forward() ? FocusPart.RANDOM : FocusPart.V;
         }
 
         if (navigationEvent instanceof FocusNavigationEvent.ArrowNavigation arrowNavigation) {
             return switch (arrowNavigation.direction()) {
+                case RIGHT, UP -> FocusPart.RANDOM;
+                case DOWN -> FocusPart.HS;
                 case LEFT -> FocusPart.V;
-                case RIGHT -> FocusPart.HS;
-                case UP, DOWN -> focusedPart;
             };
         }
 
         return switch (navigationEvent.getVerticalDirectionForInitialFocus()) {
-            case UP, DOWN -> focusedPart;
+            case UP, RIGHT -> FocusPart.RANDOM;
+            case DOWN -> FocusPart.HS;
             case LEFT -> FocusPart.V;
-            case RIGHT -> FocusPart.HS;
         };
     }
 
     private void moveFocusedSelection(ScreenDirection direction, double amount) {
+        if (focusedPart == FocusPart.RANDOM) {
+            return;
+        }
+
         if (focusedPart == FocusPart.HS) {
             switch (direction) {
                 case LEFT -> setFocusedHs(focusedHsX - amount, focusedHsY);
@@ -433,6 +499,10 @@ public class ColorPicker extends AbstractWidgetNoNarration {
             return;
         }
 
+        if (focusedPart == FocusPart.RANDOM) {
+            return;
+        }
+
         if (focusedPart == FocusPart.HS) {
             graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE,
                     getX() + (int) focusedHsX + HS_CENTER - HS_FOCUS_OFFSET,
@@ -444,6 +514,11 @@ public class ColorPicker extends AbstractWidgetNoNarration {
         graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, getX() + V_SELECTION_X,
                 getY() + (int) focusedV - V_MARKER_OFFSET_Y, V_FOCUS_U, V_FOCUS_V,
                 V_FOCUS_WIDTH, V_FOCUS_HEIGHT, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+    }
+
+    private void applyRandomColor() {
+        setColor(ColorHelper.getRandomColor());
+        callbackColorUpdated.accept(color, false);
     }
 
     private boolean isKeyboardFocused() {

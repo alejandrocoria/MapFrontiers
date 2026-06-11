@@ -550,6 +550,8 @@ public final class ClientConfig {
             .comment("Paste the banner when pasting info."));
     public static final BooleanConfigEntry PASTE_OPTIONS_VISIBLE = register(boolEntry(false, "paste", "optionsVisible")
             .comment("Whether paste options are currently expanded."));
+    public static final EnumConfigEntry<ColorInputMode> COLOR_INPUT_MODE = register(enumEntry(ColorInputMode.class, ColorInputMode.RGB, "color", "inputMode")
+            .comment("Selected color input mode in color editors."));
 
     public static final StringListConfigEntry TERRITORY_LIST_SORTING = register(stringListEntry(DEFAULT_TERRITORY_LIST_SORTING, ClientConfig::isValidTerritoryListSorting, "list", "sorting", "priority")
             .comment("Order of the MapFrontiers list sorting modes."));
@@ -732,14 +734,6 @@ public final class ClientConfig {
         FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_START.set(normalized.labelAtStart);
         FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_MIDDLE.set(normalized.labelAtMiddle);
         FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_END.set(normalized.labelAtEnd);
-    }
-
-    public static FrontierData.PathStyle getDefaultPathStyle() {
-        return getDefaultFrontierPathStyle();
-    }
-
-    public static void setDefaultPathStyle(FrontierData.PathStyle pathStyle) {
-        setDefaultFrontierPathStyle(pathStyle);
     }
 
     public static int resolveNewFrontierColor() {
