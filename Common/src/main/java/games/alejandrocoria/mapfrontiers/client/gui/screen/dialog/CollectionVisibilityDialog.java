@@ -6,10 +6,12 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.SimpleSlider;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
+import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityField;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityMask;
 import net.minecraft.client.gui.layouts.GridLayout;
+import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.network.chat.Component;
@@ -17,6 +19,7 @@ import net.minecraft.network.chat.Style;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.EnumMap;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
@@ -33,29 +36,43 @@ public class CollectionVisibilityDialog extends PanelDialog {
     private static final Component SHOW_OWNER_LABEL = Component.translatable("mapfrontiers.show_owner");
     private static final Component SHOW_BANNER_LABEL = Component.translatable("mapfrontiers.show_banner");
     private static final Component SAVE_LABEL = Component.translatable("mapfrontiers.save");
+    private static final Component DEFAULT_VISIBILITY_LABEL = Component.translatable("mapfrontiers.replace_with_default_visibility");
     private static final Component ON_LABEL = Component.translatable("options.on");
     private static final Component OFF_LABEL = Component.translatable("options.off");
     private static final Component NOT_VISIBLE_LABEL = Component.translatable("mapfrontiers.not_visible");
     private static final int COLUMN_SPACING = 6;
     private static final int VISIBILITY_ZOOM_SLIDER_WIDTH = 92;
+    private static final int BUTTON_HORIZONTAL_PADDING = 16;
 
-    private final CollectionVisibilityData visibilityData;
+    private final CollectionVisibilityData workingVisibilityData;
+    @Nullable
+    private final CollectionVisibilityData defaultVisibilityData;
     private final @Nullable CollectionVisibilityMask visibilityMask;
     private final SaveCallback saveCallback;
+    private final EnumMap<CollectionVisibilityField, OptionButton> booleanButtons = new EnumMap<>(CollectionVisibilityField.class);
+    private final EnumMap<CollectionVisibilityField, SimpleSlider> zoomSliders = new EnumMap<>(CollectionVisibilityField.class);
 
     public CollectionVisibilityDialog(CollectionVisibilityData visibilityData,
                                       SaveCallback saveCallback) {
-        super();
-        this.visibilityData = new CollectionVisibilityData(visibilityData);
-        visibilityMask = null;
-        this.saveCallback = saveCallback;
+        this(visibilityData, null, null, saveCallback);
+    }
+
+    public CollectionVisibilityDialog(CollectionVisibilityData visibilityData, CollectionVisibilityData defaultVisibilityData,
+                                      SaveCallback saveCallback) {
+        this(visibilityData, defaultVisibilityData, null, saveCallback);
     }
 
     public CollectionVisibilityDialog(CollectionVisibilityData visibilityData, CollectionVisibilityMask visibilityMask,
                                       SaveCallback saveCallback) {
+        this(visibilityData, null, visibilityMask, saveCallback);
+    }
+
+    private CollectionVisibilityDialog(CollectionVisibilityData visibilityData, @Nullable CollectionVisibilityData defaultVisibilityData,
+                                       @Nullable CollectionVisibilityMask visibilityMask, SaveCallback saveCallback) {
         super();
-        this.visibilityData = new CollectionVisibilityData(visibilityData);
-        this.visibilityMask = new CollectionVisibilityMask(visibilityMask);
+        this.workingVisibilityData = new CollectionVisibilityData(visibilityData);
+        this.defaultVisibilityData = defaultVisibilityData == null ? null : new CollectionVisibilityData(defaultVisibilityData);
+        this.visibilityMask = visibilityMask == null ? null : new CollectionVisibilityMask(visibilityMask);
         this.saveCallback = saveCallback;
     }
 
@@ -70,57 +87,64 @@ public class CollectionVisibilityDialog extends PanelDialog {
 
         LinearLayout generalColumn = createColumn(mainColumns, GENERAL_LABEL);
         GridLayout generalGrid = createGrid(generalColumn);
-        createBooleanWidgets(generalGrid, 1, SHOW_COLLECTION_LABEL,
-                visibilityData::isVisible, visibilityData::setVisible,
+        createBooleanWidgets(generalGrid, 1, SHOW_COLLECTION_LABEL, CollectionVisibilityField.Visible,
+                workingVisibilityData::isVisible, workingVisibilityData::setVisible,
                 createMaskBinding(CollectionVisibilityField.Visible));
 
         LinearLayout fullscreenColumn = createColumn(mainColumns, FULLSCREEN_LABEL);
-        createZoomRow(fullscreenColumn,
-                visibilityData::getFullscreenZoom, visibilityData::setFullscreenZoom,
+        createZoomRow(fullscreenColumn, CollectionVisibilityField.FullscreenZoom,
+                workingVisibilityData::getFullscreenZoom, workingVisibilityData::setFullscreenZoom,
                 createMaskBinding(CollectionVisibilityField.FullscreenZoom));
         GridLayout fullscreenGrid = createGrid(fullscreenColumn);
         int row = 1;
-        createBooleanWidgets(fullscreenGrid, row++, SHOW_NAME_LABEL,
-                visibilityData::getFullscreenName, visibilityData::setFullscreenName,
+        createBooleanWidgets(fullscreenGrid, row++, SHOW_NAME_LABEL, CollectionVisibilityField.FullscreenName,
+                workingVisibilityData::getFullscreenName, workingVisibilityData::setFullscreenName,
                 createMaskBinding(CollectionVisibilityField.FullscreenName));
-        createBooleanWidgets(fullscreenGrid, row++, SHOW_OWNER_LABEL,
-                visibilityData::getFullscreenOwner, visibilityData::setFullscreenOwner,
+        createBooleanWidgets(fullscreenGrid, row++, SHOW_OWNER_LABEL, CollectionVisibilityField.FullscreenOwner,
+                workingVisibilityData::getFullscreenOwner, workingVisibilityData::setFullscreenOwner,
                 createMaskBinding(CollectionVisibilityField.FullscreenOwner));
-        createBooleanWidgets(fullscreenGrid, row, SHOW_BANNER_LABEL,
-                visibilityData::getFullscreenBanner, visibilityData::setFullscreenBanner,
+        createBooleanWidgets(fullscreenGrid, row, SHOW_BANNER_LABEL, CollectionVisibilityField.FullscreenBanner,
+                workingVisibilityData::getFullscreenBanner, workingVisibilityData::setFullscreenBanner,
                 createMaskBinding(CollectionVisibilityField.FullscreenBanner));
 
         LinearLayout minimapColumn = createColumn(mainColumns, MINIMAP_LABEL);
-        createZoomRow(minimapColumn,
-                visibilityData::getMinimapZoom, visibilityData::setMinimapZoom,
+        createZoomRow(minimapColumn, CollectionVisibilityField.MinimapZoom,
+                workingVisibilityData::getMinimapZoom, workingVisibilityData::setMinimapZoom,
                 createMaskBinding(CollectionVisibilityField.MinimapZoom));
         GridLayout minimapGrid = createGrid(minimapColumn);
         row = 1;
-        createBooleanWidgets(minimapGrid, row++, SHOW_NAME_LABEL,
-                visibilityData::getMinimapName, visibilityData::setMinimapName,
+        createBooleanWidgets(minimapGrid, row++, SHOW_NAME_LABEL, CollectionVisibilityField.MinimapName,
+                workingVisibilityData::getMinimapName, workingVisibilityData::setMinimapName,
                 createMaskBinding(CollectionVisibilityField.MinimapName));
-        createBooleanWidgets(minimapGrid, row++, SHOW_OWNER_LABEL,
-                visibilityData::getMinimapOwner, visibilityData::setMinimapOwner,
+        createBooleanWidgets(minimapGrid, row++, SHOW_OWNER_LABEL, CollectionVisibilityField.MinimapOwner,
+                workingVisibilityData::getMinimapOwner, workingVisibilityData::setMinimapOwner,
                 createMaskBinding(CollectionVisibilityField.MinimapOwner));
-        createBooleanWidgets(minimapGrid, row, SHOW_BANNER_LABEL,
-                visibilityData::getMinimapBanner, visibilityData::setMinimapBanner,
+        createBooleanWidgets(minimapGrid, row, SHOW_BANNER_LABEL, CollectionVisibilityField.MinimapBanner,
+                workingVisibilityData::getMinimapBanner, workingVisibilityData::setMinimapBanner,
                 createMaskBinding(CollectionVisibilityField.MinimapBanner));
 
         LinearLayout webmapColumn = createColumn(mainColumns, WEBMAP_LABEL);
-        createZoomRow(webmapColumn,
-                visibilityData::getWebmapZoom, visibilityData::setWebmapZoom,
+        createZoomRow(webmapColumn, CollectionVisibilityField.WebmapZoom,
+                workingVisibilityData::getWebmapZoom, workingVisibilityData::setWebmapZoom,
                 createMaskBinding(CollectionVisibilityField.WebmapZoom));
         GridLayout webmapGrid = createGrid(webmapColumn);
         row = 1;
-        createBooleanWidgets(webmapGrid, row++, SHOW_NAME_LABEL,
-                visibilityData::getWebmapName, visibilityData::setWebmapName,
+        createBooleanWidgets(webmapGrid, row++, SHOW_NAME_LABEL, CollectionVisibilityField.WebmapName,
+                workingVisibilityData::getWebmapName, workingVisibilityData::setWebmapName,
                 createMaskBinding(CollectionVisibilityField.WebmapName));
-        createBooleanWidgets(webmapGrid, row++, SHOW_OWNER_LABEL,
-                visibilityData::getWebmapOwner, visibilityData::setWebmapOwner,
+        createBooleanWidgets(webmapGrid, row++, SHOW_OWNER_LABEL, CollectionVisibilityField.WebmapOwner,
+                workingVisibilityData::getWebmapOwner, workingVisibilityData::setWebmapOwner,
                 createMaskBinding(CollectionVisibilityField.WebmapOwner));
-        createBooleanWidgets(webmapGrid, row, SHOW_BANNER_LABEL,
-                visibilityData::getWebmapBanner, visibilityData::setWebmapBanner,
+        createBooleanWidgets(webmapGrid, row, SHOW_BANNER_LABEL, CollectionVisibilityField.WebmapBanner,
+                workingVisibilityData::getWebmapBanner, workingVisibilityData::setWebmapBanner,
                 createMaskBinding(CollectionVisibilityField.WebmapBanner));
+
+        if (defaultVisibilityData != null) {
+            LinearLayout defaultActionRow = LinearLayout.horizontal();
+            defaultActionRow.addChild(new SimpleButton(font, font.width(DEFAULT_VISIBILITY_LABEL) + BUTTON_HORIZONTAL_PADDING,
+                    DEFAULT_VISIBILITY_LABEL, b -> replaceWithDefaultVisibility()));
+            mainLayout.addChild(defaultActionRow, LayoutSettings.defaults().alignHorizontallyCenter());
+        }
 
         addConfirmButton(SAVE_LABEL, b -> saveAndClose());
         addCancelButton();
@@ -141,7 +165,7 @@ public class CollectionVisibilityDialog extends PanelDialog {
         return grid;
     }
 
-    private void createZoomRow(LinearLayout column,
+    private void createZoomRow(LinearLayout column, CollectionVisibilityField field,
                                IntSupplier getter, IntConsumer setter,
                                @Nullable BooleanMaskBinding maskBinding) {
         LinearLayout zoomContainer = LinearLayout.vertical();
@@ -156,6 +180,7 @@ public class CollectionVisibilityDialog extends PanelDialog {
                 CollectionVisibilityData.getZoomLevels(), getter.getAsInt(), (zoom, dragging) -> {
             setter.accept(zoom);
         }, CollectionVisibilityDialog::formatZoomLabel);
+        zoomSliders.put(field, slider);
 
         if (maskBinding == null) {
             zoomRow.addChild(slider);
@@ -170,7 +195,7 @@ public class CollectionVisibilityDialog extends PanelDialog {
         }
     }
 
-    private void createBooleanWidgets(GridLayout layout, int row, Component label,
+    private void createBooleanWidgets(GridLayout layout, int row, Component label, CollectionVisibilityField field,
                                       Supplier<Boolean> getter, Consumer<Boolean> setter,
                                       @Nullable BooleanMaskBinding maskBinding) {
         layout.addChild(new StringWidget(label, font).setColor(ColorConstants.TEXT), row, 0);
@@ -180,6 +205,7 @@ public class CollectionVisibilityDialog extends PanelDialog {
         button.addOption(OFF_LABEL);
         button.setSelected(getter.get() ? 0 : 1);
         layout.addChild(button, row, 2);
+        booleanButtons.put(field, button);
 
         bindMask(layout, row, maskBinding, button);
     }
@@ -206,9 +232,41 @@ public class CollectionVisibilityDialog extends PanelDialog {
         return new BooleanMaskBinding(() -> visibilityMask.has(field), enabled -> visibilityMask.set(field, enabled));
     }
 
+    private void replaceWithDefaultVisibility() {
+        if (defaultVisibilityData == null) {
+            return;
+        }
+
+        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
+            if (field.isBoolean()) {
+                workingVisibilityData.setBoolean(field, defaultVisibilityData.getBoolean(field));
+            } else {
+                workingVisibilityData.setZoom(field, defaultVisibilityData.getZoom(field));
+            }
+        }
+        syncWidgetsFromVisibility();
+    }
+
+    private void syncWidgetsFromVisibility() {
+        for (CollectionVisibilityField field : CollectionVisibilityField.BOOLEAN_VALUES) {
+            OptionButton button = booleanButtons.get(field);
+            if (button != null) {
+                button.setSelected(workingVisibilityData.getBoolean(field) ? 0 : 1);
+            }
+        }
+
+        for (CollectionVisibilityField field : CollectionVisibilityField.ZOOM_VALUES) {
+            SimpleSlider slider = zoomSliders.get(field);
+            if (slider != null) {
+                slider.setValue(workingVisibilityData.getZoom(field));
+            }
+        }
+    }
+
     private void saveAndClose() {
         super.onClose();
-        saveCallback.accept(visibilityData, visibilityMask);
+        saveCallback.accept(new CollectionVisibilityData(workingVisibilityData),
+                visibilityMask == null ? null : new CollectionVisibilityMask(visibilityMask));
     }
 
     private static Component formatZoomLabel(int zoom) {

@@ -723,7 +723,7 @@ public class CollectionInfoPage extends PageScreen {
 
     private void onVisibilityButtonPressed() {
         CollectionVisibilityData baseVisibilityData = collection.getVisibilityData();
-        new CollectionVisibilityDialog(baseVisibilityData, (newVisibilityData, newVisibilityMask) -> {
+        new CollectionVisibilityDialog(baseVisibilityData, ClientConfig.getDefaultCollectionVisibility(), (newVisibilityData, newVisibilityMask) -> {
             if (newVisibilityData.equals(baseVisibilityData)) {
                 return;
             }
