@@ -5,10 +5,12 @@ import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
+import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityMask;
 import net.minecraft.client.gui.layouts.GridLayout;
+import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.network.chat.Component;
@@ -16,6 +18,7 @@ import net.minecraft.network.chat.Style;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.EnumMap;
 
 @ParametersAreNonnullByDefault
 public class FrontierVisibilityDialog extends PanelDialog {
@@ -37,27 +40,40 @@ public class FrontierVisibilityDialog extends PanelDialog {
     private static final Component TOPO_LABEL = Component.translatable("mapfrontiers.topo");
     private static final Component BIOME_LABEL = Component.translatable("mapfrontiers.biome");
     private static final Component SAVE_LABEL = Component.translatable("mapfrontiers.save");
+    private static final Component DEFAULT_VISIBILITY_LABEL = Component.translatable("mapfrontiers.replace_with_default_visibility");
     private static final Component ON_LABEL = Component.translatable("options.on");
     private static final Component OFF_LABEL = Component.translatable("options.off");
     private static final int COLUMN_SPACING = 6;
+    private static final int BUTTON_HORIZONTAL_PADDING = 16;
 
-    private final FrontierVisibilityData visibilityData;
+    private final FrontierVisibilityData workingVisibilityData;
+    @Nullable
+    private final FrontierVisibilityData defaultVisibilityData;
     @Nullable
     private final FrontierVisibilityMask visibilityMask;
     private final SaveCallback saveCallback;
+    private final EnumMap<FrontierVisibility, OptionButton> visibilityButtons = new EnumMap<>(FrontierVisibility.class);
 
     public FrontierVisibilityDialog(FrontierVisibilityData visibilityData, SaveCallback saveCallback) {
-        super();
-        this.visibilityData = new FrontierVisibilityData(visibilityData);
-        this.visibilityMask = null;
-        this.saveCallback = saveCallback;
+        this(visibilityData, null, null, saveCallback);
+    }
+
+    public FrontierVisibilityDialog(FrontierVisibilityData visibilityData, FrontierVisibilityData defaultVisibilityData,
+                                    SaveCallback saveCallback) {
+        this(visibilityData, defaultVisibilityData, null, saveCallback);
     }
 
     public FrontierVisibilityDialog(FrontierVisibilityData visibilityData, FrontierVisibilityMask visibilityDataMask,
                                     SaveCallback saveCallback) {
+        this(visibilityData, null, visibilityDataMask, saveCallback);
+    }
+
+    private FrontierVisibilityDialog(FrontierVisibilityData visibilityData, @Nullable FrontierVisibilityData defaultVisibilityData,
+                                     @Nullable FrontierVisibilityMask visibilityDataMask, SaveCallback saveCallback) {
         super();
-        this.visibilityData = new FrontierVisibilityData(visibilityData);
-        this.visibilityMask = new FrontierVisibilityMask(visibilityDataMask);
+        this.workingVisibilityData = new FrontierVisibilityData(visibilityData);
+        this.defaultVisibilityData = defaultVisibilityData == null ? null : new FrontierVisibilityData(defaultVisibilityData);
+        this.visibilityMask = visibilityDataMask == null ? null : new FrontierVisibilityMask(visibilityDataMask);
         this.saveCallback = saveCallback;
     }
 
@@ -150,6 +166,13 @@ public class FrontierVisibilityDialog extends PanelDialog {
         createWidgets(webmapGrid, row++, TOPO_LABEL, FrontierVisibility.WebmapTopo);
         createWidgets(webmapGrid, row++, BIOME_LABEL, FrontierVisibility.WebmapBiome);
 
+        if (defaultVisibilityData != null) {
+            LinearLayout defaultActionRow = LinearLayout.horizontal();
+            defaultActionRow.addChild(new SimpleButton(font, font.width(DEFAULT_VISIBILITY_LABEL) + BUTTON_HORIZONTAL_PADDING,
+                    DEFAULT_VISIBILITY_LABEL, b -> replaceWithDefaultVisibility()));
+            mainLayout.addChild(defaultActionRow, LayoutSettings.defaults().alignHorizontallyCenter());
+        }
+
         addConfirmButton(SAVE_LABEL, (b) -> saveAndClose());
         addCancelButton();
     }
@@ -158,12 +181,13 @@ public class FrontierVisibilityDialog extends PanelDialog {
         layout.addChild(new StringWidget(label, font).setColor(ColorConstants.TEXT), row, 0);
 
         OptionButton button = new OptionButton(font, LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH, (b) -> {
-            visibilityData.set(visibility, b.getSelected() == 0);
+            workingVisibilityData.set(visibility, b.getSelected() == 0);
         });
         button.addOption(ON_LABEL);
         button.addOption(OFF_LABEL);
-        button.setSelected(visibilityData.get(visibility) ? 0 : 1);
+        button.setSelected(workingVisibilityData.get(visibility) ? 0 : 1);
         layout.addChild(button, row, 2);
+        visibilityButtons.put(visibility, button);
 
         if (visibilityMask != null) {
             CheckBoxButton checkBox = new CheckBoxButton(visibilityMask.has(visibility), (b) -> {
@@ -175,9 +199,30 @@ public class FrontierVisibilityDialog extends PanelDialog {
         }
     }
 
+    private void replaceWithDefaultVisibility() {
+        if (defaultVisibilityData == null) {
+            return;
+        }
+
+        for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
+            workingVisibilityData.set(visibility, defaultVisibilityData.get(visibility));
+        }
+        syncWidgetsFromVisibility();
+    }
+
+    private void syncWidgetsFromVisibility() {
+        for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
+            OptionButton button = visibilityButtons.get(visibility);
+            if (button != null) {
+                button.setSelected(workingVisibilityData.get(visibility) ? 0 : 1);
+            }
+        }
+    }
+
     private void saveAndClose() {
         super.onClose();
-        saveCallback.accept(visibilityData, visibilityMask);
+        saveCallback.accept(new FrontierVisibilityData(workingVisibilityData),
+                visibilityMask == null ? null : new FrontierVisibilityMask(visibilityMask));
     }
 
     @FunctionalInterface

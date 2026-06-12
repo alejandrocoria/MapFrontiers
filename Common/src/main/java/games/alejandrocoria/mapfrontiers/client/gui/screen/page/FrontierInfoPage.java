@@ -543,7 +543,7 @@ public class FrontierInfoPage extends PageScreen {
 
     private void onVisibilityButtonPressed() {
         FrontierVisibilityData baseVisibilityData = frontier.getVisibilityData();
-        new FrontierVisibilityDialog(baseVisibilityData, (newVisibilityData, newVisibilityMask) -> {
+        new FrontierVisibilityDialog(baseVisibilityData, ClientConfig.getDefaultFrontierVisibility(), (newVisibilityData, newVisibilityMask) -> {
             if (newVisibilityData.equals(baseVisibilityData)) {
                 return;
             }
