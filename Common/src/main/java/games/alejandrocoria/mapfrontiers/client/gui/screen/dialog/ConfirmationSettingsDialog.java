@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
+import games.alejandrocoria.mapfrontiers.client.gui.util.DefaultValueBinding;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.config.BooleanConfigEntry;
 import net.minecraft.client.gui.layouts.GridLayout;
@@ -20,8 +21,15 @@ public class ConfirmationSettingsDialog extends PanelDialog {
     private static final Component SAVE_LABEL = Component.translatable("mapfrontiers.save");
     private static final Component ON_LABEL = Component.translatable("options.on");
     private static final Component OFF_LABEL = Component.translatable("options.off");
+    private static final Component RESTORE_DEFAULT_VALUE_LABEL = Component.translatable("mapfrontiers.restore_default_value");
 
     private final ConfirmationSnapshot initialSnapshot;
+    private DefaultValueBinding<Boolean> askFrontierDeleteBinding;
+    private DefaultValueBinding<Boolean> askCollectionDeleteBinding;
+    private DefaultValueBinding<Boolean> askGroupDeleteBinding;
+    private DefaultValueBinding<Boolean> askUserDeleteBinding;
+    private DefaultValueBinding<Boolean> askTemporaryFrontierCreateBinding;
+    private DefaultValueBinding<Boolean> askTemporaryCollectionCreateBinding;
     private boolean saved = false;
 
     public ConfirmationSettingsDialog() {
@@ -39,12 +47,12 @@ public class ConfirmationSettingsDialog extends PanelDialog {
         layout.addChild(settingsGrid, LayoutSettings.defaults().alignHorizontallyCenter());
 
         int row = 0;
-        row = addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE);
-        row = addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_COLLECTION_DELETE);
-        row = addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_GROUP_DELETE);
-        row = addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_USER_DELETE);
-        row = addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_TEMPORARY_FRONTIER_CREATE);
-        addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_TEMPORARY_COLLECTION_CREATE);
+        askFrontierDeleteBinding = addOptionSettingRow(settingsGrid, row++, ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE);
+        askCollectionDeleteBinding = addOptionSettingRow(settingsGrid, row++, ClientConfig.ASK_CONFIRMATION_COLLECTION_DELETE);
+        askGroupDeleteBinding = addOptionSettingRow(settingsGrid, row++, ClientConfig.ASK_CONFIRMATION_GROUP_DELETE);
+        askUserDeleteBinding = addOptionSettingRow(settingsGrid, row++, ClientConfig.ASK_CONFIRMATION_USER_DELETE);
+        askTemporaryFrontierCreateBinding = addOptionSettingRow(settingsGrid, row++, ClientConfig.ASK_CONFIRMATION_TEMPORARY_FRONTIER_CREATE);
+        askTemporaryCollectionCreateBinding = addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_TEMPORARY_COLLECTION_CREATE);
 
         addConfirmButton(SAVE_LABEL, b -> saveAndClose());
         addCancelButton();
@@ -65,10 +73,14 @@ public class ConfirmationSettingsDialog extends PanelDialog {
         super.onClose();
     }
 
-    private int addOptionSettingRow(GridLayout settingsGrid, int row, BooleanConfigEntry entry) {
+    private DefaultValueBinding<Boolean> addOptionSettingRow(GridLayout settingsGrid, int row, BooleanConfigEntry entry) {
+        OptionButton button = createOnOffOptionButton(entry);
+        DefaultValueBinding<Boolean> binding = DefaultValueBinding.forConfigEntry(RESTORE_DEFAULT_VALUE_LABEL, entry,
+                entry::get, entry::set, () -> syncOnOffButtonSelection(button, entry.get()));
         settingsGrid.addChild(createConfigLabel(entry), row, 0);
-        settingsGrid.addChild(createOnOffOptionButton(entry), row, 1);
-        return row + 1;
+        settingsGrid.addChild(button, row, 1);
+        settingsGrid.addChild(binding.button(), row, 2);
+        return binding;
     }
 
     private StringWidget createConfigLabel(BooleanConfigEntry entry) {
@@ -78,11 +90,27 @@ public class ConfirmationSettingsDialog extends PanelDialog {
     }
 
     private OptionButton createOnOffOptionButton(BooleanConfigEntry entry) {
-        OptionButton button = new OptionButton(font, LayoutConstants.SETTING_CONTROL_WIDTH, b -> entry.set(b.getSelected() == 0));
+        OptionButton button = new OptionButton(font, LayoutConstants.SETTING_CONTROL_WIDTH, b -> {
+            entry.set(b.getSelected() == 0);
+            refreshAllBindings();
+        });
         button.addOption(ON_LABEL);
         button.addOption(OFF_LABEL);
         button.setSelected(entry.get() ? 0 : 1);
         return button;
+    }
+
+    private void syncOnOffButtonSelection(OptionButton button, boolean value) {
+        button.setSelected(value ? 0 : 1);
+    }
+
+    private void refreshAllBindings() {
+        askFrontierDeleteBinding.refresh();
+        askCollectionDeleteBinding.refresh();
+        askGroupDeleteBinding.refresh();
+        askUserDeleteBinding.refresh();
+        askTemporaryFrontierCreateBinding.refresh();
+        askTemporaryCollectionCreateBinding.refresh();
     }
 
     private record ConfirmationSnapshot(

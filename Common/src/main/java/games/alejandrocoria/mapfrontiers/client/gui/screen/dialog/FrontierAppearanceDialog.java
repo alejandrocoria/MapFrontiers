@@ -10,7 +10,9 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxDouble;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
+import games.alejandrocoria.mapfrontiers.client.gui.util.DefaultValueBinding;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
+import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.DoubleConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
 import net.minecraft.client.gui.components.Tooltip;
@@ -48,6 +50,7 @@ public class FrontierAppearanceDialog extends PanelDialog {
     private static final Component SAVE_LABEL = Component.translatable("mapfrontiers.save");
     private static final Component ON_LABEL = Component.translatable("options.on");
     private static final Component OFF_LABEL = Component.translatable("options.off");
+    private static final Component RESTORE_DEFAULT_VALUE_LABEL = Component.translatable("mapfrontiers.restore_default_value");
 
     private final AppearanceSnapshot initialSnapshot;
     private StringWidget labelHideNamesThatDontFit;
@@ -58,7 +61,7 @@ public class FrontierAppearanceDialog extends PanelDialog {
     private StringWidget labelPathMarkerOpacity;
     private StringWidget labelTextSize;
     private StringWidget labelTextOpacity;
-    private StringWidget labelTextUsesCustomColor;
+    private StringWidget labelTextColor;
     private StringWidget labelBannerSize;
     private StringWidget labelBannerOpacity;
     private OptionButton buttonHideNamesThatDontFit;
@@ -69,11 +72,23 @@ public class FrontierAppearanceDialog extends PanelDialog {
     private TextBoxDouble textPathMarkerOpacity;
     private TextBoxInt textTextSize;
     private TextBoxDouble textTextOpacity;
-    private OptionButton buttonTextUsesCustomColor;
+    private OptionButton buttonTextColor;
     private TextBoxInt textBannerSize;
     private TextBoxDouble textBannerOpacity;
+    private DefaultValueBinding<Boolean> hideNamesThatDontFitBinding;
+    private DefaultValueBinding<Double> fillOpacityBinding;
+    private DefaultValueBinding<Integer> borderWidthBinding;
+    private DefaultValueBinding<Double> borderOpacityBinding;
+    private DefaultValueBinding<Integer> pathMarkerSizeBinding;
+    private DefaultValueBinding<Double> pathMarkerOpacityBinding;
+    private DefaultValueBinding<Integer> textSizeBinding;
+    private DefaultValueBinding<Double> textOpacityBinding;
+    private DefaultValueBinding<TextColor> textColorBinding;
+    private DefaultValueBinding<Integer> bannerSizeBinding;
+    private DefaultValueBinding<Double> bannerOpacityBinding;
     private PreviewFrontiersWidget previewFrontiers;
     private boolean saved = false;
+    private boolean syncingWidgets;
 
     public FrontierAppearanceDialog() {
         super();
@@ -96,13 +111,12 @@ public class FrontierAppearanceDialog extends PanelDialog {
 
         labelHideNamesThatDontFit = settingsLayout.addChild(new StringWidget(HIDE_NAMES_THAT_DONT_FIT_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
         labelHideNamesThatDontFit.setTooltip(HIDE_NAMES_THAT_DONT_FIT_TOOLTIP);
-        buttonHideNamesThatDontFit = settingsLayout.addChild(new OptionButton(font, 60, (b) -> {
-            ClientConfig.HIDE_NAMES_THAT_DONT_FIT.set(b.getSelected() == 0);
-            previewFrontiers.configUpdated();
-        }), row++, 1);
+        buttonHideNamesThatDontFit = settingsLayout.addChild(createOnOffOptionButton(this::setHideNamesThatDontFit), row, 1);
         buttonHideNamesThatDontFit.addOption(ON_LABEL);
         buttonHideNamesThatDontFit.addOption(OFF_LABEL);
         buttonHideNamesThatDontFit.setSelected(ClientConfig.HIDE_NAMES_THAT_DONT_FIT.get() ? 0 : 1);
+        hideNamesThatDontFitBinding = createConfigBinding(ClientConfig.HIDE_NAMES_THAT_DONT_FIT, this::syncHideNamesThatDontFitWidgets);
+        settingsLayout.addChild(hideNamesThatDontFitBinding.button(), row++, 2);
 
         addSectionSpacing(settingsLayout, row++);
 
@@ -111,27 +125,36 @@ public class FrontierAppearanceDialog extends PanelDialog {
         textFillOpacity = settingsLayout.addChild(createDoubleConfigTextBox(ClientConfig.FILL_OPACITY), row++, 1);
         textFillOpacity.setMaxLength(6);
         textFillOpacity.setValueChangedCallback(value -> {
-            ClientConfig.FILL_OPACITY.set(value);
-            previewFrontiers.configUpdated();
+            if (!syncingWidgets) {
+                setFillOpacity(value);
+            }
         });
+        fillOpacityBinding = createConfigBinding(ClientConfig.FILL_OPACITY, this::syncFillOpacityWidgets);
+        settingsLayout.addChild(fillOpacityBinding.button(), row - 1, 2);
 
         labelBorderWidth = settingsLayout.addChild(new StringWidget(BORDER_WIDTH_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
         labelBorderWidth.setTooltip(BORDER_WIDTH_TOOLTIP);
         textBorderWidth = settingsLayout.addChild(createIntConfigTextBox(ClientConfig.BORDER_WIDTH), row++, 1);
         textBorderWidth.setMaxLength(2);
         textBorderWidth.setValueChangedCallback(value -> {
-            ClientConfig.BORDER_WIDTH.set(value);
-            previewFrontiers.configUpdated();
+            if (!syncingWidgets) {
+                setBorderWidth(value);
+            }
         });
+        borderWidthBinding = createConfigBinding(ClientConfig.BORDER_WIDTH, this::syncBorderWidthWidgets);
+        settingsLayout.addChild(borderWidthBinding.button(), row - 1, 2);
 
         labelBorderOpacity = settingsLayout.addChild(new StringWidget(BORDER_OPACITY_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
         labelBorderOpacity.setTooltip(BORDER_OPACITY_TOOLTIP);
         textBorderOpacity = settingsLayout.addChild(createDoubleConfigTextBox(ClientConfig.BORDER_OPACITY), row++, 1);
         textBorderOpacity.setMaxLength(6);
         textBorderOpacity.setValueChangedCallback(value -> {
-            ClientConfig.BORDER_OPACITY.set(value);
-            previewFrontiers.configUpdated();
+            if (!syncingWidgets) {
+                setBorderOpacity(value);
+            }
         });
+        borderOpacityBinding = createConfigBinding(ClientConfig.BORDER_OPACITY, this::syncBorderOpacityWidgets);
+        settingsLayout.addChild(borderOpacityBinding.button(), row - 1, 2);
 
         addSectionSpacing(settingsLayout, row++);
 
@@ -140,18 +163,24 @@ public class FrontierAppearanceDialog extends PanelDialog {
         textPathMarkerSize = settingsLayout.addChild(createIntConfigTextBox(ClientConfig.PATH_MARKER_SIZE), row++, 1);
         textPathMarkerSize.setMaxLength(1);
         textPathMarkerSize.setValueChangedCallback(value -> {
-            ClientConfig.PATH_MARKER_SIZE.set(value);
-            previewFrontiers.configUpdated();
+            if (!syncingWidgets) {
+                setPathMarkerSize(value);
+            }
         });
+        pathMarkerSizeBinding = createConfigBinding(ClientConfig.PATH_MARKER_SIZE, this::syncPathMarkerSizeWidgets);
+        settingsLayout.addChild(pathMarkerSizeBinding.button(), row - 1, 2);
 
         labelPathMarkerOpacity = settingsLayout.addChild(new StringWidget(PATH_MARKER_OPACITY_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
         labelPathMarkerOpacity.setTooltip(PATH_MARKER_OPACITY_TOOLTIP);
         textPathMarkerOpacity = settingsLayout.addChild(createDoubleConfigTextBox(ClientConfig.PATH_MARKER_OPACITY), row++, 1);
         textPathMarkerOpacity.setMaxLength(6);
         textPathMarkerOpacity.setValueChangedCallback(value -> {
-            ClientConfig.PATH_MARKER_OPACITY.set(value);
-            previewFrontiers.configUpdated();
+            if (!syncingWidgets) {
+                setPathMarkerOpacity(value);
+            }
         });
+        pathMarkerOpacityBinding = createConfigBinding(ClientConfig.PATH_MARKER_OPACITY, this::syncPathMarkerOpacityWidgets);
+        settingsLayout.addChild(pathMarkerOpacityBinding.button(), row - 1, 2);
 
         addSectionSpacing(settingsLayout, row++);
 
@@ -160,29 +189,38 @@ public class FrontierAppearanceDialog extends PanelDialog {
         textTextSize = settingsLayout.addChild(createIntConfigTextBox(ClientConfig.TEXT_SIZE), row++, 1);
         textTextSize.setMaxLength(2);
         textTextSize.setValueChangedCallback(value -> {
-            ClientConfig.TEXT_SIZE.set(value);
-            previewFrontiers.configUpdated();
+            if (!syncingWidgets) {
+                setTextSize(value);
+            }
         });
+        textSizeBinding = createConfigBinding(ClientConfig.TEXT_SIZE, this::syncTextSizeWidgets);
+        settingsLayout.addChild(textSizeBinding.button(), row - 1, 2);
 
         labelTextOpacity = settingsLayout.addChild(new StringWidget(TEXT_OPACITY_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
         labelTextOpacity.setTooltip(TEXT_OPACITY_TOOLTIP);
         textTextOpacity = settingsLayout.addChild(createDoubleConfigTextBox(ClientConfig.TEXT_OPACITY), row++, 1);
         textTextOpacity.setMaxLength(6);
         textTextOpacity.setValueChangedCallback(value -> {
-            ClientConfig.TEXT_OPACITY.set(value);
-            previewFrontiers.configUpdated();
+            if (!syncingWidgets) {
+                setTextOpacity(value);
+            }
         });
+        textOpacityBinding = createConfigBinding(ClientConfig.TEXT_OPACITY, this::syncTextOpacityWidgets);
+        settingsLayout.addChild(textOpacityBinding.button(), row - 1, 2);
 
-        labelTextUsesCustomColor = settingsLayout.addChild(new StringWidget(TEXT_COLOR_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
-        labelTextUsesCustomColor.setTooltip(TEXT_COLOR_TOOLTIP);
-        buttonTextUsesCustomColor = settingsLayout.addChild(new OptionButton(font, 60, (b) -> {
-            ClientConfig.TEXT_COLOR.set(TextColor.values()[b.getSelected()]);
-            previewFrontiers.configUpdated();
+        labelTextColor = settingsLayout.addChild(new StringWidget(TEXT_COLOR_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
+        labelTextColor.setTooltip(TEXT_COLOR_TOOLTIP);
+        buttonTextColor = settingsLayout.addChild(new OptionButton(font, 60, (b) -> {
+            if (!syncingWidgets) {
+                setTextColor(TextColor.values()[b.getSelected()]);
+            }
         }), row++, 1);
-        buttonTextUsesCustomColor.addOption(ClientConfig.getTranslatedEnum(TextColor.FrontierColor));
-        buttonTextUsesCustomColor.addOption(ClientConfig.getTranslatedEnum(TextColor.FrontierColorBright));
-        buttonTextUsesCustomColor.addOption(ClientConfig.getTranslatedEnum(TextColor.White));
-        buttonTextUsesCustomColor.setSelected(ClientConfig.TEXT_COLOR.get().ordinal());
+        buttonTextColor.addOption(ClientConfig.getTranslatedEnum(TextColor.FrontierColor));
+        buttonTextColor.addOption(ClientConfig.getTranslatedEnum(TextColor.FrontierColorBright));
+        buttonTextColor.addOption(ClientConfig.getTranslatedEnum(TextColor.White));
+        buttonTextColor.setSelected(ClientConfig.TEXT_COLOR.get().ordinal());
+        textColorBinding = createConfigBinding(ClientConfig.TEXT_COLOR, this::syncTextColorWidgets);
+        settingsLayout.addChild(textColorBinding.button(), row - 1, 2);
 
         addSectionSpacing(settingsLayout, row++);
 
@@ -191,18 +229,24 @@ public class FrontierAppearanceDialog extends PanelDialog {
         textBannerSize = settingsLayout.addChild(createIntConfigTextBox(ClientConfig.BANNER_SIZE), row++, 1);
         textBannerSize.setMaxLength(2);
         textBannerSize.setValueChangedCallback(value -> {
-            ClientConfig.BANNER_SIZE.set(value);
-            previewFrontiers.configUpdated();
+            if (!syncingWidgets) {
+                setBannerSize(value);
+            }
         });
+        bannerSizeBinding = createConfigBinding(ClientConfig.BANNER_SIZE, this::syncBannerSizeWidgets);
+        settingsLayout.addChild(bannerSizeBinding.button(), row - 1, 2);
 
         labelBannerOpacity = settingsLayout.addChild(new StringWidget(BANNER_OPACITY_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
         labelBannerOpacity.setTooltip(BANNER_OPACITY_TOOLTIP);
         textBannerOpacity = settingsLayout.addChild(createDoubleConfigTextBox(ClientConfig.BANNER_OPACITY), row++, 1);
         textBannerOpacity.setMaxLength(6);
         textBannerOpacity.setValueChangedCallback(value -> {
-            ClientConfig.BANNER_OPACITY.set(value);
-            previewFrontiers.configUpdated();
+            if (!syncingWidgets) {
+                setBannerOpacity(value);
+            }
         });
+        bannerOpacityBinding = createConfigBinding(ClientConfig.BANNER_OPACITY, this::syncBannerOpacityWidgets);
+        settingsLayout.addChild(bannerOpacityBinding.button(), row - 1, 2);
 
         previewFrontiers = columnsLayout.addChild(new PreviewFrontiersWidget());
 
@@ -236,7 +280,15 @@ public class FrontierAppearanceDialog extends PanelDialog {
     }
 
     private static void addSectionSpacing(GridLayout layout, int row) {
-        layout.addChild(SpacerElement.height(4), row, 0, 1, 2);
+        layout.addChild(SpacerElement.height(4), row, 0, 1, 3);
+    }
+
+    private OptionButton createOnOffOptionButton(java.util.function.Consumer<Boolean> onValueChanged) {
+        return new OptionButton(font, 60, b -> {
+            if (!syncingWidgets) {
+                onValueChanged.accept(b.getSelected() == 0);
+            }
+        });
     }
 
     private TextBoxInt createIntConfigTextBox(IntConfigEntry entry) {
@@ -249,6 +301,146 @@ public class FrontierAppearanceDialog extends PanelDialog {
         TextBoxDouble textBox = new TextBoxDouble(entry, font, 60);
         textBox.setValue(String.valueOf(entry.get()));
         return textBox;
+    }
+
+    private <T> DefaultValueBinding<T> createConfigBinding(ConfigEntry<T, ?> entry, Runnable syncWidgetsFromState) {
+        return DefaultValueBinding.forConfigEntry(RESTORE_DEFAULT_VALUE_LABEL, entry, entry::get,
+                value -> setConfigValue(entry, value), syncWidgetsFromState);
+    }
+
+    private void setHideNamesThatDontFit(boolean value) {
+        setConfigValue(ClientConfig.HIDE_NAMES_THAT_DONT_FIT, value);
+        hideNamesThatDontFitBinding.refresh();
+    }
+
+    private void setFillOpacity(double value) {
+        setConfigValue(ClientConfig.FILL_OPACITY, value);
+        fillOpacityBinding.refresh();
+    }
+
+    private void setBorderWidth(int value) {
+        setConfigValue(ClientConfig.BORDER_WIDTH, value);
+        borderWidthBinding.refresh();
+    }
+
+    private void setBorderOpacity(double value) {
+        setConfigValue(ClientConfig.BORDER_OPACITY, value);
+        borderOpacityBinding.refresh();
+    }
+
+    private void setPathMarkerSize(int value) {
+        setConfigValue(ClientConfig.PATH_MARKER_SIZE, value);
+        pathMarkerSizeBinding.refresh();
+    }
+
+    private void setPathMarkerOpacity(double value) {
+        setConfigValue(ClientConfig.PATH_MARKER_OPACITY, value);
+        pathMarkerOpacityBinding.refresh();
+    }
+
+    private void setTextSize(int value) {
+        setConfigValue(ClientConfig.TEXT_SIZE, value);
+        textSizeBinding.refresh();
+    }
+
+    private void setTextOpacity(double value) {
+        setConfigValue(ClientConfig.TEXT_OPACITY, value);
+        textOpacityBinding.refresh();
+    }
+
+    private void setTextColor(TextColor value) {
+        setConfigValue(ClientConfig.TEXT_COLOR, value);
+        textColorBinding.refresh();
+    }
+
+    private void setBannerSize(int value) {
+        setConfigValue(ClientConfig.BANNER_SIZE, value);
+        bannerSizeBinding.refresh();
+    }
+
+    private void setBannerOpacity(double value) {
+        setConfigValue(ClientConfig.BANNER_OPACITY, value);
+        bannerOpacityBinding.refresh();
+    }
+
+    private <T> void setConfigValue(ConfigEntry<T, ?> entry, T value) {
+        entry.set(value);
+        previewFrontiers.configUpdated();
+    }
+
+    private void syncHideNamesThatDontFitWidgets() {
+        syncOnOffButtonSelection(buttonHideNamesThatDontFit, ClientConfig.HIDE_NAMES_THAT_DONT_FIT.get());
+    }
+
+    private void syncFillOpacityWidgets() {
+        syncTextBoxValue(textFillOpacity, ClientConfig.FILL_OPACITY.get());
+    }
+
+    private void syncBorderWidthWidgets() {
+        syncTextBoxValue(textBorderWidth, ClientConfig.BORDER_WIDTH.get());
+    }
+
+    private void syncBorderOpacityWidgets() {
+        syncTextBoxValue(textBorderOpacity, ClientConfig.BORDER_OPACITY.get());
+    }
+
+    private void syncPathMarkerSizeWidgets() {
+        syncTextBoxValue(textPathMarkerSize, ClientConfig.PATH_MARKER_SIZE.get());
+    }
+
+    private void syncPathMarkerOpacityWidgets() {
+        syncTextBoxValue(textPathMarkerOpacity, ClientConfig.PATH_MARKER_OPACITY.get());
+    }
+
+    private void syncTextSizeWidgets() {
+        syncTextBoxValue(textTextSize, ClientConfig.TEXT_SIZE.get());
+    }
+
+    private void syncTextOpacityWidgets() {
+        syncTextBoxValue(textTextOpacity, ClientConfig.TEXT_OPACITY.get());
+    }
+
+    private void syncTextColorWidgets() {
+        syncOptionButtonSelection(buttonTextColor, ClientConfig.TEXT_COLOR.get().ordinal());
+    }
+
+    private void syncBannerSizeWidgets() {
+        syncTextBoxValue(textBannerSize, ClientConfig.BANNER_SIZE.get());
+    }
+
+    private void syncBannerOpacityWidgets() {
+        syncTextBoxValue(textBannerOpacity, ClientConfig.BANNER_OPACITY.get());
+    }
+
+    private void syncOnOffButtonSelection(OptionButton button, boolean value) {
+        syncOptionButtonSelection(button, value ? 0 : 1);
+    }
+
+    private void syncOptionButtonSelection(OptionButton button, int selected) {
+        syncingWidgets = true;
+        try {
+            button.setSelected(selected);
+        } finally {
+            syncingWidgets = false;
+        }
+    }
+
+    private void syncTextBoxValue(TextBoxInt textBox, int value) {
+        syncingWidgets = true;
+        try {
+            textBox.setValue(value);
+        } finally {
+            syncingWidgets = false;
+        }
+    }
+
+    private void syncTextBoxValue(TextBoxDouble textBox, double value) {
+        syncingWidgets = true;
+        try {
+            textBox.setValue(value);
+        } finally {
+            syncingWidgets = false;
+        }
     }
 
     private record AppearanceSnapshot(boolean hideNamesThatDontFit,

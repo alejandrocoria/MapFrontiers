@@ -10,7 +10,9 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxDouble;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
+import games.alejandrocoria.mapfrontiers.client.gui.util.DefaultValueBinding;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
+import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.DoubleConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
 import net.minecraft.client.gui.components.Tooltip;
@@ -41,10 +43,21 @@ public class CollectionAppearanceDialog extends PanelDialog {
     private static final Tooltip BANNER_OPACITY_TOOLTIP = ScreenHelper.tooltip(ClientConfig.COLLECTION_BANNER_OPACITY);
     private static final Component SAVE_LABEL = Component.translatable("mapfrontiers.save");
     private static final Component COLLECTION_COLOR_LABEL = Component.translatable("mapfrontiers.collection");
+    private static final Component RESTORE_DEFAULT_VALUE_LABEL = Component.translatable("mapfrontiers.restore_default_value");
 
     private final AppearanceSnapshot initialSnapshot;
+    private DefaultValueBinding<Double> fillOpacityBinding;
+    private DefaultValueBinding<Integer> borderWidthBinding;
+    private DefaultValueBinding<Double> borderOpacityBinding;
+    private DefaultValueBinding<Integer> textSizeBinding;
+    private DefaultValueBinding<Double> textOpacityBinding;
+    private DefaultValueBinding<TextColor> textColorBinding;
+    private DefaultValueBinding<Integer> bannerSizeBinding;
+    private DefaultValueBinding<Double> bannerOpacityBinding;
+    private OptionButton buttonTextColor;
     private PreviewCollectionWidget previewWidget;
     private boolean saved = false;
+    private boolean syncingWidgets;
 
     public CollectionAppearanceDialog() {
         super();
@@ -70,27 +83,39 @@ public class CollectionAppearanceDialog extends PanelDialog {
         TextBoxDouble textFillOpacity = settingsLayout.addChild(createDoubleConfigTextBox(ClientConfig.COLLECTION_FILL_OPACITY), row++, 1);
         textFillOpacity.setMaxLength(6);
         textFillOpacity.setValueChangedCallback(value -> {
-            ClientConfig.COLLECTION_FILL_OPACITY.set(value);
-            previewWidget.configUpdated();
+            if (!syncingWidgets) {
+                setFillOpacity(value);
+            }
         });
+        fillOpacityBinding = createConfigBinding(ClientConfig.COLLECTION_FILL_OPACITY,
+                () -> syncTextBoxValue(textFillOpacity, ClientConfig.COLLECTION_FILL_OPACITY.get()));
+        settingsLayout.addChild(fillOpacityBinding.button(), row - 1, 2);
 
         StringWidget labelBorderWidth = settingsLayout.addChild(new StringWidget(BORDER_WIDTH_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
         labelBorderWidth.setTooltip(BORDER_WIDTH_TOOLTIP);
         TextBoxInt textBorderWidth = settingsLayout.addChild(createIntConfigTextBox(ClientConfig.COLLECTION_BORDER_WIDTH), row++, 1);
         textBorderWidth.setMaxLength(2);
         textBorderWidth.setValueChangedCallback(value -> {
-            ClientConfig.COLLECTION_BORDER_WIDTH.set(value);
-            previewWidget.configUpdated();
+            if (!syncingWidgets) {
+                setBorderWidth(value);
+            }
         });
+        borderWidthBinding = createConfigBinding(ClientConfig.COLLECTION_BORDER_WIDTH,
+                () -> syncTextBoxValue(textBorderWidth, ClientConfig.COLLECTION_BORDER_WIDTH.get()));
+        settingsLayout.addChild(borderWidthBinding.button(), row - 1, 2);
 
         StringWidget labelBorderOpacity = settingsLayout.addChild(new StringWidget(BORDER_OPACITY_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
         labelBorderOpacity.setTooltip(BORDER_OPACITY_TOOLTIP);
         TextBoxDouble textBorderOpacity = settingsLayout.addChild(createDoubleConfigTextBox(ClientConfig.COLLECTION_BORDER_OPACITY), row++, 1);
         textBorderOpacity.setMaxLength(6);
         textBorderOpacity.setValueChangedCallback(value -> {
-            ClientConfig.COLLECTION_BORDER_OPACITY.set(value);
-            previewWidget.configUpdated();
+            if (!syncingWidgets) {
+                setBorderOpacity(value);
+            }
         });
+        borderOpacityBinding = createConfigBinding(ClientConfig.COLLECTION_BORDER_OPACITY,
+                () -> syncTextBoxValue(textBorderOpacity, ClientConfig.COLLECTION_BORDER_OPACITY.get()));
+        settingsLayout.addChild(borderOpacityBinding.button(), row - 1, 2);
 
         addSectionSpacing(settingsLayout, row++);
 
@@ -99,29 +124,40 @@ public class CollectionAppearanceDialog extends PanelDialog {
         TextBoxInt textTextSize = settingsLayout.addChild(createIntConfigTextBox(ClientConfig.COLLECTION_TEXT_SIZE), row++, 1);
         textTextSize.setMaxLength(2);
         textTextSize.setValueChangedCallback(value -> {
-            ClientConfig.COLLECTION_TEXT_SIZE.set(value);
-            previewWidget.configUpdated();
+            if (!syncingWidgets) {
+                setTextSize(value);
+            }
         });
+        textSizeBinding = createConfigBinding(ClientConfig.COLLECTION_TEXT_SIZE,
+                () -> syncTextBoxValue(textTextSize, ClientConfig.COLLECTION_TEXT_SIZE.get()));
+        settingsLayout.addChild(textSizeBinding.button(), row - 1, 2);
 
         StringWidget labelTextOpacity = settingsLayout.addChild(new StringWidget(TEXT_OPACITY_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
         labelTextOpacity.setTooltip(TEXT_OPACITY_TOOLTIP);
         TextBoxDouble textTextOpacity = settingsLayout.addChild(createDoubleConfigTextBox(ClientConfig.COLLECTION_TEXT_OPACITY), row++, 1);
         textTextOpacity.setMaxLength(6);
         textTextOpacity.setValueChangedCallback(value -> {
-            ClientConfig.COLLECTION_TEXT_OPACITY.set(value);
-            previewWidget.configUpdated();
+            if (!syncingWidgets) {
+                setTextOpacity(value);
+            }
         });
+        textOpacityBinding = createConfigBinding(ClientConfig.COLLECTION_TEXT_OPACITY,
+                () -> syncTextBoxValue(textTextOpacity, ClientConfig.COLLECTION_TEXT_OPACITY.get()));
+        settingsLayout.addChild(textOpacityBinding.button(), row - 1, 2);
 
         StringWidget labelTextColor = settingsLayout.addChild(new StringWidget(TEXT_COLOR_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
         labelTextColor.setTooltip(TEXT_COLOR_TOOLTIP);
-        OptionButton buttonTextColor = settingsLayout.addChild(new OptionButton(font, 60, (b) -> {
-            ClientConfig.COLLECTION_TEXT_COLOR.set(TextColor.values()[b.getSelected()]);
-            previewWidget.configUpdated();
+        buttonTextColor = settingsLayout.addChild(new OptionButton(font, 60, (b) -> {
+            if (!syncingWidgets) {
+                setTextColor(TextColor.values()[b.getSelected()]);
+            }
         }), row++, 1);
         buttonTextColor.addOption(COLLECTION_COLOR_LABEL);
         buttonTextColor.addOption(ClientConfig.getTranslatedEnum(TextColor.FrontierColorBright));
         buttonTextColor.addOption(ClientConfig.getTranslatedEnum(TextColor.White));
         buttonTextColor.setSelected(ClientConfig.COLLECTION_TEXT_COLOR.get().ordinal());
+        textColorBinding = createConfigBinding(ClientConfig.COLLECTION_TEXT_COLOR, this::syncTextColorWidgets);
+        settingsLayout.addChild(textColorBinding.button(), row - 1, 2);
 
         addSectionSpacing(settingsLayout, row++);
 
@@ -130,18 +166,26 @@ public class CollectionAppearanceDialog extends PanelDialog {
         TextBoxInt textBannerSize = settingsLayout.addChild(createIntConfigTextBox(ClientConfig.COLLECTION_BANNER_SIZE), row++, 1);
         textBannerSize.setMaxLength(2);
         textBannerSize.setValueChangedCallback(value -> {
-            ClientConfig.COLLECTION_BANNER_SIZE.set(value);
-            previewWidget.configUpdated();
+            if (!syncingWidgets) {
+                setBannerSize(value);
+            }
         });
+        bannerSizeBinding = createConfigBinding(ClientConfig.COLLECTION_BANNER_SIZE,
+                () -> syncTextBoxValue(textBannerSize, ClientConfig.COLLECTION_BANNER_SIZE.get()));
+        settingsLayout.addChild(bannerSizeBinding.button(), row - 1, 2);
 
         StringWidget labelBannerOpacity = settingsLayout.addChild(new StringWidget(BANNER_OPACITY_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
         labelBannerOpacity.setTooltip(BANNER_OPACITY_TOOLTIP);
         TextBoxDouble textBannerOpacity = settingsLayout.addChild(createDoubleConfigTextBox(ClientConfig.COLLECTION_BANNER_OPACITY), row++, 1);
         textBannerOpacity.setMaxLength(6);
         textBannerOpacity.setValueChangedCallback(value -> {
-            ClientConfig.COLLECTION_BANNER_OPACITY.set(value);
-            previewWidget.configUpdated();
+            if (!syncingWidgets) {
+                setBannerOpacity(value);
+            }
         });
+        bannerOpacityBinding = createConfigBinding(ClientConfig.COLLECTION_BANNER_OPACITY,
+                () -> syncTextBoxValue(textBannerOpacity, ClientConfig.COLLECTION_BANNER_OPACITY.get()));
+        settingsLayout.addChild(bannerOpacityBinding.button(), row - 1, 2);
 
         previewWidget = columnsLayout.addChild(new PreviewCollectionWidget());
         previewWidget.configUpdated();
@@ -176,7 +220,7 @@ public class CollectionAppearanceDialog extends PanelDialog {
     }
 
     private static void addSectionSpacing(GridLayout layout, int row) {
-        layout.addChild(SpacerElement.height(4), row, 0, 1, 2);
+        layout.addChild(SpacerElement.height(4), row, 0, 1, 3);
     }
 
     private TextBoxInt createIntConfigTextBox(IntConfigEntry entry) {
@@ -189,6 +233,83 @@ public class CollectionAppearanceDialog extends PanelDialog {
         TextBoxDouble textBox = new TextBoxDouble(entry, font, 60);
         textBox.setValue(String.valueOf(entry.get()));
         return textBox;
+    }
+
+    private <T> DefaultValueBinding<T> createConfigBinding(ConfigEntry<T, ?> entry, Runnable syncWidgetsFromState) {
+        return DefaultValueBinding.forConfigEntry(RESTORE_DEFAULT_VALUE_LABEL, entry, entry::get,
+                value -> setConfigValue(entry, value), syncWidgetsFromState);
+    }
+
+    private void setFillOpacity(double value) {
+        setConfigValue(ClientConfig.COLLECTION_FILL_OPACITY, value);
+        fillOpacityBinding.refresh();
+    }
+
+    private void setBorderWidth(int value) {
+        setConfigValue(ClientConfig.COLLECTION_BORDER_WIDTH, value);
+        borderWidthBinding.refresh();
+    }
+
+    private void setBorderOpacity(double value) {
+        setConfigValue(ClientConfig.COLLECTION_BORDER_OPACITY, value);
+        borderOpacityBinding.refresh();
+    }
+
+    private void setTextSize(int value) {
+        setConfigValue(ClientConfig.COLLECTION_TEXT_SIZE, value);
+        textSizeBinding.refresh();
+    }
+
+    private void setTextOpacity(double value) {
+        setConfigValue(ClientConfig.COLLECTION_TEXT_OPACITY, value);
+        textOpacityBinding.refresh();
+    }
+
+    private void setTextColor(TextColor value) {
+        setConfigValue(ClientConfig.COLLECTION_TEXT_COLOR, value);
+        textColorBinding.refresh();
+    }
+
+    private void setBannerSize(int value) {
+        setConfigValue(ClientConfig.COLLECTION_BANNER_SIZE, value);
+        bannerSizeBinding.refresh();
+    }
+
+    private void setBannerOpacity(double value) {
+        setConfigValue(ClientConfig.COLLECTION_BANNER_OPACITY, value);
+        bannerOpacityBinding.refresh();
+    }
+
+    private <T> void setConfigValue(ConfigEntry<T, ?> entry, T value) {
+        entry.set(value);
+        previewWidget.configUpdated();
+    }
+
+    private void syncTextBoxValue(TextBoxInt textBox, int value) {
+        syncingWidgets = true;
+        try {
+            textBox.setValue(value);
+        } finally {
+            syncingWidgets = false;
+        }
+    }
+
+    private void syncTextBoxValue(TextBoxDouble textBox, double value) {
+        syncingWidgets = true;
+        try {
+            textBox.setValue(value);
+        } finally {
+            syncingWidgets = false;
+        }
+    }
+
+    private void syncTextColorWidgets() {
+        syncingWidgets = true;
+        try {
+            buttonTextColor.setSelected(ClientConfig.COLLECTION_TEXT_COLOR.get().ordinal());
+        } finally {
+            syncingWidgets = false;
+        }
     }
 
     private record AppearanceSnapshot(double fillOpacity,

@@ -1023,7 +1023,7 @@ public final class ClientConfig {
         return normalized;
     }
 
-    private static BooleanConfigEntry getDefaultFrontierVisibilityEntry(FrontierVisibility visibility) {
+    public static BooleanConfigEntry getDefaultFrontierVisibilityEntry(FrontierVisibility visibility) {
         return switch (visibility) {
             case Frontier -> FRONTIER_DEFAULT_VISIBLE;
             case AnnounceInChat -> FRONTIER_DEFAULT_ANNOUNCE_IN_CHAT;
@@ -1062,7 +1062,7 @@ public final class ClientConfig {
         };
     }
 
-    private static BooleanConfigEntry getDefaultCollectionBooleanVisibilityEntry(CollectionVisibilityField field) {
+    public static BooleanConfigEntry getDefaultCollectionBooleanVisibilityEntry(CollectionVisibilityField field) {
         return switch (field) {
             case Visible -> COLLECTION_DEFAULT_VISIBLE;
             case FullscreenName -> COLLECTION_DEFAULT_FULLSCREEN_NAME;
@@ -1078,7 +1078,7 @@ public final class ClientConfig {
         };
     }
 
-    private static IntConfigEntry getDefaultCollectionZoomVisibilityEntry(CollectionVisibilityField field) {
+    public static IntConfigEntry getDefaultCollectionZoomVisibilityEntry(CollectionVisibilityField field) {
         return switch (field) {
             case FullscreenZoom -> COLLECTION_DEFAULT_FULLSCREEN_ZOOM;
             case MinimapZoom -> COLLECTION_DEFAULT_MINIMAP_ZOOM;

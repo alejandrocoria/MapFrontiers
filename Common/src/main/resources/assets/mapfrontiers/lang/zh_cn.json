@@ -205,6 +205,7 @@
   "mapfrontiers.remove_connected_chunks": "移除相连区块",
   "mapfrontiers.remove_point": "删除点",
   "mapfrontiers.remove_vertex": "删除顶点",
+  "mapfrontiers.restore_default_value": "恢复默认值",
   "mapfrontiers.replace_with_default_visibility": "应用默认可见性",
   "mapfrontiers.replace_with_default_path_style": "应用默认路径样式",
   "mapfrontiers.segments": "线段",

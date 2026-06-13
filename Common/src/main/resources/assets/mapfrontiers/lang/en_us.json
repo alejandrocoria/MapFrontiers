@@ -205,6 +205,7 @@
   "mapfrontiers.remove_connected_chunks": "Remove connected chunks",
   "mapfrontiers.remove_point": "Remove point",
   "mapfrontiers.remove_vertex": "Remove vertex",
+  "mapfrontiers.restore_default_value": "Restore default value",
   "mapfrontiers.replace_with_default_visibility": "Apply default visibility",
   "mapfrontiers.replace_with_default_path_style": "Apply default path style",
   "mapfrontiers.segments": "Segments",
