@@ -32,7 +32,8 @@ public class IconButton extends ButtonBase {
         SortUp         (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/sort_up.png"),         21,  5),
         SortDown       (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/sort_down.png"),       21,  5),
         Collapsed      (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/collapsed.png"),       33, 11),
-        Expanded       (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/expanded.png"),        33, 11);
+        Expanded       (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/expanded.png"),        33, 11),
+        RestoreDefault (Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/restore_default.png"), 39, 13);
 
         final Identifier texture;
         final int textureWidth;

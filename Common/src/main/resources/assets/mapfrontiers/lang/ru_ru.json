@@ -205,6 +205,7 @@
   "mapfrontiers.remove_connected_chunks": "Удалить связанные чанки",
   "mapfrontiers.remove_point": "Удалить точку",
   "mapfrontiers.remove_vertex": "Удалить вершину",
+  "mapfrontiers.restore_default_value": "Восстановить значение по умолчанию",
   "mapfrontiers.replace_with_default_visibility": "Применить видимость по умолчанию",
   "mapfrontiers.replace_with_default_path_style": "Применить стиль пути по умолчанию",
   "mapfrontiers.segments": "Сегменты",

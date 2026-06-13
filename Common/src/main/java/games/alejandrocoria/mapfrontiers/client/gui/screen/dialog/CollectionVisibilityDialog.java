@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen.dialog;
 
+import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.SimpleSlider;
@@ -7,6 +8,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
+import games.alejandrocoria.mapfrontiers.client.gui.util.DefaultValueBinding;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityField;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityMask;
@@ -37,6 +39,7 @@ public class CollectionVisibilityDialog extends PanelDialog {
     private static final Component SHOW_BANNER_LABEL = Component.translatable("mapfrontiers.show_banner");
     private static final Component SAVE_LABEL = Component.translatable("mapfrontiers.save");
     private static final Component DEFAULT_VISIBILITY_LABEL = Component.translatable("mapfrontiers.replace_with_default_visibility");
+    private static final Component RESTORE_DEFAULT_VALUE_LABEL = Component.translatable("mapfrontiers.restore_default_value");
     private static final Component ON_LABEL = Component.translatable("options.on");
     private static final Component OFF_LABEL = Component.translatable("options.off");
     private static final Component NOT_VISIBLE_LABEL = Component.translatable("mapfrontiers.not_visible");
@@ -48,31 +51,40 @@ public class CollectionVisibilityDialog extends PanelDialog {
     @Nullable
     private final CollectionVisibilityData defaultVisibilityData;
     private final @Nullable CollectionVisibilityMask visibilityMask;
+    private final boolean restoreToClientDefaults;
     private final SaveCallback saveCallback;
     private final EnumMap<CollectionVisibilityField, OptionButton> booleanButtons = new EnumMap<>(CollectionVisibilityField.class);
     private final EnumMap<CollectionVisibilityField, SimpleSlider> zoomSliders = new EnumMap<>(CollectionVisibilityField.class);
+    private final EnumMap<CollectionVisibilityField, DefaultValueBinding<Boolean>> booleanRestoreBindings = new EnumMap<>(CollectionVisibilityField.class);
+    private final EnumMap<CollectionVisibilityField, DefaultValueBinding<Integer>> zoomRestoreBindings = new EnumMap<>(CollectionVisibilityField.class);
 
     public CollectionVisibilityDialog(CollectionVisibilityData visibilityData,
                                       SaveCallback saveCallback) {
-        this(visibilityData, null, null, saveCallback);
+        this(visibilityData, null, null, false, saveCallback);
     }
 
     public CollectionVisibilityDialog(CollectionVisibilityData visibilityData, CollectionVisibilityData defaultVisibilityData,
                                       SaveCallback saveCallback) {
-        this(visibilityData, defaultVisibilityData, null, saveCallback);
+        this(visibilityData, defaultVisibilityData, null, false, saveCallback);
     }
 
     public CollectionVisibilityDialog(CollectionVisibilityData visibilityData, CollectionVisibilityMask visibilityMask,
                                       SaveCallback saveCallback) {
-        this(visibilityData, null, visibilityMask, saveCallback);
+        this(visibilityData, null, visibilityMask, false, saveCallback);
+    }
+
+    public static CollectionVisibilityDialog forClientDefaults(CollectionVisibilityData visibilityData, SaveCallback saveCallback) {
+        return new CollectionVisibilityDialog(visibilityData, null, null, true, saveCallback);
     }
 
     private CollectionVisibilityDialog(CollectionVisibilityData visibilityData, @Nullable CollectionVisibilityData defaultVisibilityData,
-                                       @Nullable CollectionVisibilityMask visibilityMask, SaveCallback saveCallback) {
+                                       @Nullable CollectionVisibilityMask visibilityMask, boolean restoreToClientDefaults,
+                                       SaveCallback saveCallback) {
         super();
         this.workingVisibilityData = new CollectionVisibilityData(visibilityData);
         this.defaultVisibilityData = defaultVisibilityData == null ? null : new CollectionVisibilityData(defaultVisibilityData);
         this.visibilityMask = visibilityMask == null ? null : new CollectionVisibilityMask(visibilityMask);
+        this.restoreToClientDefaults = restoreToClientDefaults;
         this.saveCallback = saveCallback;
     }
 
@@ -176,14 +188,22 @@ public class CollectionVisibilityDialog extends PanelDialog {
         zoomRow.defaultCellSetting().alignVerticallyMiddle();
         zoomContainer.addChild(zoomRow);
 
+        DefaultValueBinding<Integer> restoreBinding = createZoomRestoreBinding(field);
         SimpleSlider slider = new SimpleSlider(font, VISIBILITY_ZOOM_SLIDER_WIDTH, "mapfrontiers.zoom",
                 CollectionVisibilityData.getZoomLevels(), getter.getAsInt(), (zoom, dragging) -> {
             setter.accept(zoom);
+            if (restoreBinding != null) {
+                restoreBinding.refresh();
+            }
         }, CollectionVisibilityDialog::formatZoomLabel);
         zoomSliders.put(field, slider);
 
         if (maskBinding == null) {
             zoomRow.addChild(slider);
+            if (restoreBinding != null) {
+                zoomRow.addChild(restoreBinding.button());
+                zoomRestoreBindings.put(field, restoreBinding);
+            }
         } else {
             CheckBoxButton checkBox = new CheckBoxButton(maskBinding.getter().get(), b -> {
                 maskBinding.setter().accept(b.isChecked());
@@ -200,13 +220,28 @@ public class CollectionVisibilityDialog extends PanelDialog {
                                       @Nullable BooleanMaskBinding maskBinding) {
         layout.addChild(new StringWidget(label, font).setColor(ColorConstants.TEXT), row, 0);
 
-        OptionButton button = new OptionButton(font, LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH, b -> setter.accept(b.getSelected() == 0));
+        DefaultValueBinding<Boolean> restoreBinding = createBooleanRestoreBinding(field);
+        OptionButton button = new OptionButton(font, LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH, b -> {
+            setter.accept(b.getSelected() == 0);
+            if (restoreBinding != null) {
+                restoreBinding.refresh();
+            }
+        });
         button.addOption(ON_LABEL);
         button.addOption(OFF_LABEL);
         button.setSelected(getter.get() ? 0 : 1);
-        layout.addChild(button, row, 2);
         booleanButtons.put(field, button);
 
+        if (maskBinding == null) {
+            layout.addChild(button, row, 1);
+            if (restoreBinding != null) {
+                layout.addChild(restoreBinding.button(), row, 2);
+                booleanRestoreBindings.put(field, restoreBinding);
+            }
+            return;
+        }
+
+        layout.addChild(button, row, 2);
         bindMask(layout, row, maskBinding, button);
     }
 
@@ -232,6 +267,28 @@ public class CollectionVisibilityDialog extends PanelDialog {
         return new BooleanMaskBinding(() -> visibilityMask.has(field), enabled -> visibilityMask.set(field, enabled));
     }
 
+    private @Nullable DefaultValueBinding<Boolean> createBooleanRestoreBinding(CollectionVisibilityField field) {
+        if (!restoreToClientDefaults) {
+            return null;
+        }
+
+        return DefaultValueBinding.forConfigEntry(RESTORE_DEFAULT_VALUE_LABEL, ClientConfig.getDefaultCollectionBooleanVisibilityEntry(field),
+                () -> workingVisibilityData.getBoolean(field),
+                value -> workingVisibilityData.setBoolean(field, value),
+                () -> syncBooleanWidget(field));
+    }
+
+    private @Nullable DefaultValueBinding<Integer> createZoomRestoreBinding(CollectionVisibilityField field) {
+        if (!restoreToClientDefaults) {
+            return null;
+        }
+
+        return DefaultValueBinding.forConfigEntry(RESTORE_DEFAULT_VALUE_LABEL, ClientConfig.getDefaultCollectionZoomVisibilityEntry(field),
+                () -> workingVisibilityData.getZoom(field),
+                value -> workingVisibilityData.setZoom(field, value),
+                () -> syncZoomWidget(field));
+    }
+
     private void replaceWithDefaultVisibility() {
         if (defaultVisibilityData == null) {
             return;
@@ -249,17 +306,35 @@ public class CollectionVisibilityDialog extends PanelDialog {
 
     private void syncWidgetsFromVisibility() {
         for (CollectionVisibilityField field : CollectionVisibilityField.BOOLEAN_VALUES) {
-            OptionButton button = booleanButtons.get(field);
-            if (button != null) {
-                button.setSelected(workingVisibilityData.getBoolean(field) ? 0 : 1);
-            }
+            syncBooleanWidget(field);
         }
 
         for (CollectionVisibilityField field : CollectionVisibilityField.ZOOM_VALUES) {
-            SimpleSlider slider = zoomSliders.get(field);
-            if (slider != null) {
-                slider.setValue(workingVisibilityData.getZoom(field));
-            }
+            syncZoomWidget(field);
+        }
+    }
+
+    private void syncBooleanWidget(CollectionVisibilityField field) {
+        OptionButton button = booleanButtons.get(field);
+        if (button != null) {
+            button.setSelected(workingVisibilityData.getBoolean(field) ? 0 : 1);
+        }
+
+        DefaultValueBinding<Boolean> restoreBinding = booleanRestoreBindings.get(field);
+        if (restoreBinding != null) {
+            restoreBinding.refresh();
+        }
+    }
+
+    private void syncZoomWidget(CollectionVisibilityField field) {
+        SimpleSlider slider = zoomSliders.get(field);
+        if (slider != null) {
+            slider.setValue(workingVisibilityData.getZoom(field));
+        }
+
+        DefaultValueBinding<Integer> restoreBinding = zoomRestoreBindings.get(field);
+        if (restoreBinding != null) {
+            restoreBinding.refresh();
         }
     }
 

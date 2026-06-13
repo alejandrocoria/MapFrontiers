@@ -11,6 +11,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
+import games.alejandrocoria.mapfrontiers.client.gui.util.DefaultValueBinding;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -28,6 +29,7 @@ public class NewCollectionDefaultsDialog extends PanelDialog {
     private static final Component DEFAULT_NAME_LABEL = Component.translatable("mapfrontiers.default_name");
     private static final Component DEFAULT_VISIBILITY_LABEL = Component.translatable("mapfrontiers.default_visibility");
     private static final Component USE_RANDOM_COLOR_LABEL = Component.translatable("mapfrontiers.use_random_color");
+    private static final Component RESTORE_DEFAULT_VALUE_LABEL = Component.translatable("mapfrontiers.restore_default_value");
     private static final Component ON_LABEL = Component.translatable("options.on");
     private static final Component OFF_LABEL = Component.translatable("options.off");
     private static final int SECTION_WIDTH = 146;
@@ -42,12 +44,15 @@ public class NewCollectionDefaultsDialog extends PanelDialog {
     private ColorPaletteWidget colorPalette;
     private CollectionVisibilityData visibilityData;
     private int fixedColor;
+    private boolean randomColorEnabled;
+    private DefaultValueBinding<Boolean> randomColorBinding;
     private boolean syncingWidgets = false;
 
     @Override
     protected void initScreen() {
         visibilityData = ClientConfig.getDefaultCollectionVisibility();
         fixedColor = ClientConfig.COLLECTION_DEFAULT_COLOR.get() | 0xFF000000;
+        randomColorEnabled = ClientConfig.COLLECTION_DEFAULT_RANDOM_COLOR.get();
 
         LinearLayout layout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
         layout.defaultCellSetting().alignHorizontallyCenter();
@@ -89,8 +94,11 @@ public class NewCollectionDefaultsDialog extends PanelDialog {
 
         randomColorRow.addChild(new StringWidget(USE_RANDOM_COLOR_LABEL, font).setColor(ColorConstants.TEXT));
         randomColorRow.addChild(SpacerElement.width(getRandomColorSpacerWidth()));
-        buttonRandomColor = createOnOffOptionButton(ClientConfig.COLLECTION_DEFAULT_RANDOM_COLOR.get(), this::onRandomColorChanged);
+        buttonRandomColor = createOnOffOptionButton(randomColorEnabled, this::setRandomColorEnabled);
         randomColorRow.addChild(buttonRandomColor);
+        randomColorBinding = DefaultValueBinding.forConfigEntry(RESTORE_DEFAULT_VALUE_LABEL, ClientConfig.COLLECTION_DEFAULT_RANDOM_COLOR,
+                () -> randomColorEnabled, this::setRandomColorEnabled, this::syncRandomColorWidgets);
+        randomColorRow.addChild(randomColorBinding.button());
     }
 
     private void buildColorSection(GridLayout mainLayout) {
@@ -147,15 +155,27 @@ public class NewCollectionDefaultsDialog extends PanelDialog {
         syncColorWidgets(fixedColor);
     }
 
-    private void onRandomColorChanged(boolean enabled) {
+    private void setRandomColorEnabled(boolean enabled) {
+        randomColorEnabled = enabled;
         refreshManualColorWidgets();
+        if (randomColorBinding != null) {
+            randomColorBinding.refresh();
+        }
     }
 
     private void refreshManualColorWidgets() {
-        boolean manualEnabled = buttonRandomColor.getSelected() != 0;
+        boolean manualEnabled = !randomColorEnabled;
         colorInputs.setEditable(manualEnabled);
         colorPicker.active = manualEnabled;
         colorPalette.active = manualEnabled;
+    }
+
+    private void syncRandomColorWidgets() {
+        buttonRandomColor.setSelected(randomColorEnabled ? 0 : 1);
+        refreshManualColorWidgets();
+        if (randomColorBinding != null) {
+            randomColorBinding.refresh();
+        }
     }
 
     private void syncColorWidgets(int color) {
@@ -174,7 +194,7 @@ public class NewCollectionDefaultsDialog extends PanelDialog {
     }
 
     private void onVisibilityPressed() {
-        new CollectionVisibilityDialog(visibilityData, (newVisibilityData, newVisibilityMask) -> {
+        CollectionVisibilityDialog.forClientDefaults(visibilityData, (newVisibilityData, newVisibilityMask) -> {
             visibilityData = new CollectionVisibilityData(newVisibilityData);
             ClientConfig.setDefaultCollectionVisibility(visibilityData);
             ClientGlobalEvents.postUpdatedConfigEvent();
@@ -185,7 +205,7 @@ public class NewCollectionDefaultsDialog extends PanelDialog {
         clearTextBoxFocus();
 
         ClientConfig.COLLECTION_DEFAULT_NAME.set(limitName(textName.getValue(), CollectionData.MAX_NAME_CHARACTERS));
-        ClientConfig.COLLECTION_DEFAULT_RANDOM_COLOR.set(buttonRandomColor.getSelected() == 0);
+        ClientConfig.COLLECTION_DEFAULT_RANDOM_COLOR.set(randomColorEnabled);
         ClientConfig.COLLECTION_DEFAULT_COLOR.set(fixedColor);
 
         ClientGlobalEvents.postUpdatedConfigEvent();

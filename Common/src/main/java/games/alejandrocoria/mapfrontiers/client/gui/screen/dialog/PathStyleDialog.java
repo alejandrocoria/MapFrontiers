@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen.dialog;
 
+import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.PathMarkerSelectorWidget;
@@ -8,6 +9,8 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxIdentifier;
+import games.alejandrocoria.mapfrontiers.client.gui.util.DefaultValueBinding;
+import games.alejandrocoria.mapfrontiers.common.config.StringConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.layouts.GridLayout;
@@ -31,12 +34,14 @@ public class PathStyleDialog extends PanelDialog {
     private static final Component SEGMENTS_LABEL = Component.translatable("mapfrontiers.segments");
     private static final Component LABELS_AND_BANNER_LABEL = Component.translatable("mapfrontiers.labels_and_banner");
     private static final Component LABELS_REQUIRED_LABEL = Component.translatable("mapfrontiers.path_style_labels_required");
+    private static final Component RESTORE_DEFAULT_VALUE_LABEL = Component.translatable("mapfrontiers.restore_default_value");
     private static final Component REPLACE_DEFAULT_LABEL = Component.translatable("mapfrontiers.replace_with_default_path_style");
     private static final Component SAVE_LABEL = Component.translatable("mapfrontiers.save");
     private static final int WARNING_WIDTH = 120;
     private static final int BUTTON_HORIZONTAL_PADDING = 16;
 
     private final @Nullable FrontierData.PathStyle defaultStyle;
+    private final boolean restoreToClientDefaults;
     private final Consumer<FrontierData.PathStyle> saveCallback;
     private FrontierData.PathStyle workingStyle;
 
@@ -49,18 +54,26 @@ public class PathStyleDialog extends PanelDialog {
     private MarkerRow innerRow;
     private MarkerRow endRow;
     private MarkerRow segmentRow;
+    private DefaultValueBinding<LabelLocationsState> labelLocationsBinding;
     private boolean syncingWidgets = false;
 
     public PathStyleDialog(FrontierData.PathStyle initialStyle, FrontierData.PathStyle defaultStyle, Consumer<FrontierData.PathStyle> saveCallback) {
-        super();
-        this.defaultStyle = new FrontierData.PathStyle(defaultStyle);
-        this.saveCallback = saveCallback;
-        this.workingStyle = new FrontierData.PathStyle(initialStyle);
+        this(initialStyle, defaultStyle, false, saveCallback);
     }
 
     public PathStyleDialog(FrontierData.PathStyle initialStyle, Consumer<FrontierData.PathStyle> saveCallback) {
+        this(initialStyle, null, false, saveCallback);
+    }
+
+    public static PathStyleDialog forClientDefaults(FrontierData.PathStyle initialStyle, Consumer<FrontierData.PathStyle> saveCallback) {
+        return new PathStyleDialog(initialStyle, null, true, saveCallback);
+    }
+
+    private PathStyleDialog(FrontierData.PathStyle initialStyle, @Nullable FrontierData.PathStyle defaultStyle,
+                            boolean restoreToClientDefaults, Consumer<FrontierData.PathStyle> saveCallback) {
         super();
-        this.defaultStyle = null;
+        this.defaultStyle = defaultStyle == null ? null : new FrontierData.PathStyle(defaultStyle);
+        this.restoreToClientDefaults = restoreToClientDefaults;
         this.saveCallback = saveCallback;
         this.workingStyle = new FrontierData.PathStyle(initialStyle);
     }
@@ -83,10 +96,14 @@ public class PathStyleDialog extends PanelDialog {
         mainLayout.addChild(markerGrid);
 
         int row = 0;
-        startRow = createMarkerRow(markerGrid, row++, START_LABEL, workingStyle.startMarker, value -> workingStyle.startMarker = value);
-        innerRow = createMarkerRow(markerGrid, row++, INNER_POINTS_LABEL, workingStyle.innerMarker, value -> workingStyle.innerMarker = value);
-        endRow = createMarkerRow(markerGrid, row++, END_LABEL, workingStyle.endMarker, value -> workingStyle.endMarker = value);
-        segmentRow = createMarkerRow(markerGrid, row, SEGMENTS_LABEL, workingStyle.segmentMarker, value -> workingStyle.segmentMarker = value);
+        startRow = createMarkerRow(markerGrid, row++, START_LABEL, workingStyle.startMarker,
+                ClientConfig.FRONTIER_DEFAULT_PATH_STYLE_START, () -> workingStyle.startMarker, value -> workingStyle.startMarker = value);
+        innerRow = createMarkerRow(markerGrid, row++, INNER_POINTS_LABEL, workingStyle.innerMarker,
+                ClientConfig.FRONTIER_DEFAULT_PATH_STYLE_INNER, () -> workingStyle.innerMarker, value -> workingStyle.innerMarker = value);
+        endRow = createMarkerRow(markerGrid, row++, END_LABEL, workingStyle.endMarker,
+                ClientConfig.FRONTIER_DEFAULT_PATH_STYLE_END, () -> workingStyle.endMarker, value -> workingStyle.endMarker = value);
+        segmentRow = createMarkerRow(markerGrid, row, SEGMENTS_LABEL, workingStyle.segmentMarker,
+                ClientConfig.FRONTIER_DEFAULT_PATH_STYLE_SEGMENT, () -> workingStyle.segmentMarker, value -> workingStyle.segmentMarker = value);
 
         LinearLayout lowerSection = LinearLayout.horizontal().spacing(12);
         lowerSection.defaultCellSetting().alignVerticallyTop();
@@ -94,7 +111,14 @@ public class PathStyleDialog extends PanelDialog {
 
         LinearLayout labelLocationsColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         lowerSection.addChild(labelLocationsColumn);
-        labelLocationsColumn.addChild(new StringWidget(LABELS_AND_BANNER_LABEL, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
+        LinearLayout labelLocationsHeader = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
+        labelLocationsHeader.defaultCellSetting().alignVerticallyMiddle();
+        labelLocationsColumn.addChild(labelLocationsHeader);
+        labelLocationsHeader.addChild(new StringWidget(LABELS_AND_BANNER_LABEL, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
+        labelLocationsBinding = createLabelLocationsBinding();
+        if (labelLocationsBinding != null) {
+            labelLocationsHeader.addChild(labelLocationsBinding.button());
+        }
 
         LinearLayout labelsColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         labelLocationsColumn.addChild(labelsColumn);
@@ -125,7 +149,9 @@ public class PathStyleDialog extends PanelDialog {
         updateWarningAndPreview();
     }
 
-    private MarkerRow createMarkerRow(GridLayout layout, int row, Component label, Identifier initialValue, Consumer<Identifier> setter) {
+    private MarkerRow createMarkerRow(GridLayout layout, int row, Component label, Identifier initialValue,
+                                      StringConfigEntry entry, java.util.function.Supplier<Identifier> getter,
+                                      Consumer<Identifier> setter) {
         layout.addChild(new StringWidget(label, font).setColor(ColorConstants.TEXT), row, 0);
 
         PathMarkerSelectorWidget selector = new PathMarkerSelectorWidget(initialValue, value -> { });
@@ -133,11 +159,15 @@ public class PathStyleDialog extends PanelDialog {
         textBox.setHeight(selector.getHeight());
         textBox.setMaxLength(100);
         textBox.setIdentifier(initialValue);
-        MarkerRow markerRow = new MarkerRow(selector, textBox, setter, initialValue);
+        MarkerRow markerRow = new MarkerRow(selector, textBox, getter, setter, initialValue);
         selector.setOnPress(markerRow::onSelectorChanged);
         textBox.setValueChangedCallback(markerRow::onTextChanged);
         layout.addChild(selector, row, 1);
         layout.addChild(textBox, row, 2, LayoutSettings.defaults().alignHorizontallyLeft());
+        markerRow.setRestoreBinding(createMarkerRestoreBinding(entry, markerRow));
+        if (markerRow.getRestoreBinding() != null) {
+            layout.addChild(markerRow.getRestoreBinding().button(), row, 3);
+        }
         return markerRow;
     }
 
@@ -153,9 +183,39 @@ public class PathStyleDialog extends PanelDialog {
 
             setter.accept(b.isChecked());
             updateWarningAndPreview();
+            if (labelLocationsBinding != null) {
+                labelLocationsBinding.refresh();
+            }
         }), LayoutSettings.defaults());
         row.addChild(new StringWidget(label, font).setColor(ColorConstants.TEXT));
         return checkBox;
+    }
+
+    private @Nullable DefaultValueBinding<Identifier> createMarkerRestoreBinding(StringConfigEntry entry, MarkerRow markerRow) {
+        if (!restoreToClientDefaults) {
+            return null;
+        }
+
+        return new DefaultValueBinding<>(markerRow::getCurrentValue,
+                () -> Identifier.parse(entry.defaultValue()),
+                markerRow::setCurrentValue,
+                () -> {
+                    markerRow.syncWidgetsFromState();
+                    updateWarningAndPreview();
+                },
+                DefaultValueBinding.createRestoreTooltip(RESTORE_DEFAULT_VALUE_LABEL, entry.defaultTooltipComponent()));
+    }
+
+    private @Nullable DefaultValueBinding<LabelLocationsState> createLabelLocationsBinding() {
+        if (!restoreToClientDefaults) {
+            return null;
+        }
+
+        LabelLocationsState defaultState = getDefaultLabelLocationsState();
+        return new DefaultValueBinding<>(this::getCurrentLabelLocationsState, () -> defaultState, this::applyLabelLocationsState,
+                this::syncLabelLocationWidgets,
+                DefaultValueBinding.createRestoreTooltip(RESTORE_DEFAULT_VALUE_LABEL,
+                        createDefaultLine(createLabelLocationsSummary(defaultState))));
     }
 
     private void replaceWithDefaultStyle() {
@@ -177,6 +237,13 @@ public class PathStyleDialog extends PanelDialog {
         setCheckBoxValue(checkLabelAtMiddle, workingStyle.labelAtMiddle);
         setCheckBoxValue(checkLabelAtEnd, workingStyle.labelAtEnd);
         syncingWidgets = false;
+        startRow.refreshRestoreBinding();
+        innerRow.refreshRestoreBinding();
+        endRow.refreshRestoreBinding();
+        segmentRow.refreshRestoreBinding();
+        if (labelLocationsBinding != null) {
+            labelLocationsBinding.refresh();
+        }
         updateWarningAndPreview();
     }
 
@@ -208,6 +275,54 @@ public class PathStyleDialog extends PanelDialog {
         }
     }
 
+    private LabelLocationsState getCurrentLabelLocationsState() {
+        return new LabelLocationsState(workingStyle.labelAtStart, workingStyle.labelAtMiddle, workingStyle.labelAtEnd);
+    }
+
+    private LabelLocationsState getDefaultLabelLocationsState() {
+        return new LabelLocationsState(
+                ClientConfig.FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_START.defaultValue(),
+                ClientConfig.FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_MIDDLE.defaultValue(),
+                ClientConfig.FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_END.defaultValue());
+    }
+
+    private void applyLabelLocationsState(LabelLocationsState state) {
+        workingStyle.labelAtStart = state.start();
+        workingStyle.labelAtMiddle = state.middle();
+        workingStyle.labelAtEnd = state.end();
+    }
+
+    private void syncLabelLocationWidgets() {
+        syncingWidgets = true;
+        setCheckBoxValue(checkLabelAtStart, workingStyle.labelAtStart);
+        setCheckBoxValue(checkLabelAtMiddle, workingStyle.labelAtMiddle);
+        setCheckBoxValue(checkLabelAtEnd, workingStyle.labelAtEnd);
+        syncingWidgets = false;
+        if (labelLocationsBinding != null) {
+            labelLocationsBinding.refresh();
+        }
+        updateWarningAndPreview();
+    }
+
+    private Component createDefaultLine(Component defaultValueComponent) {
+        return Component.translatable("mapfrontiers.default", defaultValueComponent)
+                .withStyle(net.minecraft.network.chat.Style.EMPTY.withBold(true));
+    }
+
+    private Component createLabelLocationsSummary(LabelLocationsState state) {
+        java.util.List<String> parts = new java.util.ArrayList<>(3);
+        if (state.start()) {
+            parts.add(START_LABEL.getString());
+        }
+        if (state.middle()) {
+            parts.add(MIDDLE_LABEL.getString());
+        }
+        if (state.end()) {
+            parts.add(END_LABEL.getString());
+        }
+        return Component.literal(String.join(", ", parts));
+    }
+
     @Override
     protected void resetContentToMinimumSize() {
         if (previewWidget != null) {
@@ -230,11 +345,15 @@ public class PathStyleDialog extends PanelDialog {
     private final class MarkerRow {
         private final PathMarkerSelectorWidget selector;
         private final TextBoxIdentifier textBox;
+        private final java.util.function.Supplier<Identifier> getter;
         private final Consumer<Identifier> setter;
+        private @Nullable DefaultValueBinding<Identifier> restoreBinding;
 
-        private MarkerRow(PathMarkerSelectorWidget selector, TextBoxIdentifier textBox, Consumer<Identifier> setter, Identifier initialValue) {
+        private MarkerRow(PathMarkerSelectorWidget selector, TextBoxIdentifier textBox, java.util.function.Supplier<Identifier> getter,
+                          Consumer<Identifier> setter, Identifier initialValue) {
             this.selector = selector;
             this.textBox = textBox;
+            this.getter = getter;
             this.setter = setter;
             selector.setSelectedId(initialValue);
         }
@@ -252,6 +371,7 @@ public class PathStyleDialog extends PanelDialog {
 
                 setter.accept(parsed);
                 selector.setSelectedId(parsed);
+                refreshRestoreBinding();
                 updateWarningAndPreview();
             }
         }
@@ -264,6 +384,7 @@ public class PathStyleDialog extends PanelDialog {
             setter.accept(value);
             selector.setSelectedId(value);
             textBox.setIdentifier(value);
+            refreshRestoreBinding();
             updateWarningAndPreview();
         }
 
@@ -272,5 +393,37 @@ public class PathStyleDialog extends PanelDialog {
             textBox.setIdentifier(value);
             setter.accept(value);
         }
+
+        private void setCurrentValue(Identifier value) {
+            setter.accept(value);
+        }
+
+        private Identifier getCurrentValue() {
+            return getter.get();
+        }
+
+        private void syncWidgetsFromState() {
+            Identifier value = getter.get();
+            selector.setSelectedId(value);
+            textBox.setIdentifier(value);
+            refreshRestoreBinding();
+        }
+
+        private void setRestoreBinding(@Nullable DefaultValueBinding<Identifier> restoreBinding) {
+            this.restoreBinding = restoreBinding;
+        }
+
+        private @Nullable DefaultValueBinding<Identifier> getRestoreBinding() {
+            return restoreBinding;
+        }
+
+        private void refreshRestoreBinding() {
+            if (restoreBinding != null) {
+                restoreBinding.refresh();
+            }
+        }
+    }
+
+    private record LabelLocationsState(boolean start, boolean middle, boolean end) {
     }
 }

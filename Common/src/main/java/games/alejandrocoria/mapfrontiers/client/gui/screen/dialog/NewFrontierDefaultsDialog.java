@@ -12,6 +12,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
+import games.alejandrocoria.mapfrontiers.client.gui.util.DefaultValueBinding;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -30,6 +31,7 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
     private static final Component DEFAULT_VISIBILITY_LABEL = Component.translatable("mapfrontiers.default_visibility");
     private static final Component DEFAULT_PATH_STYLE_LABEL = Component.translatable("mapfrontiers.default_path_style");
     private static final Component USE_RANDOM_COLOR_LABEL = Component.translatable("mapfrontiers.use_random_color");
+    private static final Component RESTORE_DEFAULT_VALUE_LABEL = Component.translatable("mapfrontiers.restore_default_value");
     private static final Component ON_LABEL = Component.translatable("options.on");
     private static final Component OFF_LABEL = Component.translatable("options.off");
     private static final int SECTION_WIDTH = 146;
@@ -47,6 +49,8 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
     private FrontierVisibilityData visibilityData;
     private FrontierData.PathStyle pathStyle;
     private int fixedColor;
+    private boolean randomColorEnabled;
+    private DefaultValueBinding<Boolean> randomColorBinding;
     private boolean syncingWidgets = false;
 
     @Override
@@ -54,6 +58,7 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
         visibilityData = ClientConfig.getDefaultFrontierVisibility();
         pathStyle = ClientConfig.getDefaultFrontierPathStyle();
         fixedColor = ClientConfig.FRONTIER_DEFAULT_COLOR.get() | 0xFF000000;
+        randomColorEnabled = ClientConfig.FRONTIER_DEFAULT_RANDOM_COLOR.get();
 
         LinearLayout layout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
         layout.defaultCellSetting().alignHorizontallyCenter();
@@ -104,8 +109,11 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
 
         randomColorRow.addChild(new StringWidget(USE_RANDOM_COLOR_LABEL, font).setColor(ColorConstants.TEXT));
         randomColorRow.addChild(SpacerElement.width(getRandomColorSpacerWidth()));
-        buttonRandomColor = createOnOffOptionButton(ClientConfig.FRONTIER_DEFAULT_RANDOM_COLOR.get(), this::onRandomColorChanged);
+        buttonRandomColor = createOnOffOptionButton(randomColorEnabled, this::setRandomColorEnabled);
         randomColorRow.addChild(buttonRandomColor);
+        randomColorBinding = DefaultValueBinding.forConfigEntry(RESTORE_DEFAULT_VALUE_LABEL, ClientConfig.FRONTIER_DEFAULT_RANDOM_COLOR,
+                () -> randomColorEnabled, this::setRandomColorEnabled, this::syncRandomColorWidgets);
+        randomColorRow.addChild(randomColorBinding.button());
     }
 
     private void buildColorSection(GridLayout mainLayout) {
@@ -170,15 +178,27 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
         syncColorWidgets(fixedColor);
     }
 
-    private void onRandomColorChanged(boolean enabled) {
+    private void setRandomColorEnabled(boolean enabled) {
+        randomColorEnabled = enabled;
         refreshManualColorWidgets();
+        if (randomColorBinding != null) {
+            randomColorBinding.refresh();
+        }
     }
 
     private void refreshManualColorWidgets() {
-        boolean manualEnabled = buttonRandomColor.getSelected() != 0;
+        boolean manualEnabled = !randomColorEnabled;
         colorInputs.setEditable(manualEnabled);
         colorPicker.active = manualEnabled;
         colorPalette.active = manualEnabled;
+    }
+
+    private void syncRandomColorWidgets() {
+        buttonRandomColor.setSelected(randomColorEnabled ? 0 : 1);
+        refreshManualColorWidgets();
+        if (randomColorBinding != null) {
+            randomColorBinding.refresh();
+        }
     }
 
     private void syncColorWidgets(int color) {
@@ -198,7 +218,7 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
     }
 
     private void onVisibilityPressed() {
-        new FrontierVisibilityDialog(visibilityData, (newVisibilityData, newVisibilityMask) -> {
+        FrontierVisibilityDialog.forClientDefaults(visibilityData, (newVisibilityData, newVisibilityMask) -> {
             visibilityData = new FrontierVisibilityData(newVisibilityData);
             ClientConfig.setDefaultFrontierVisibility(visibilityData);
             ClientGlobalEvents.postUpdatedConfigEvent();
@@ -206,7 +226,7 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
     }
 
     private void onPathStylePressed() {
-        new PathStyleDialog(pathStyle, newPathStyle -> {
+        PathStyleDialog.forClientDefaults(pathStyle, newPathStyle -> {
             pathStyle = new FrontierData.PathStyle(newPathStyle);
             ClientConfig.setDefaultFrontierPathStyle(pathStyle);
             ClientGlobalEvents.postUpdatedConfigEvent();
@@ -218,7 +238,7 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
 
         ClientConfig.FRONTIER_DEFAULT_NAME_1.set(limitName(textName1.getValue(), FrontierData.MAX_NAME_CHARACTERS));
         ClientConfig.FRONTIER_DEFAULT_NAME_2.set(limitName(textName2.getValue(), FrontierData.MAX_NAME_CHARACTERS));
-        ClientConfig.FRONTIER_DEFAULT_RANDOM_COLOR.set(buttonRandomColor.getSelected() == 0);
+        ClientConfig.FRONTIER_DEFAULT_RANDOM_COLOR.set(randomColorEnabled);
         ClientConfig.FRONTIER_DEFAULT_COLOR.set(fixedColor);
 
         ClientGlobalEvents.postUpdatedConfigEvent();

@@ -85,6 +85,10 @@ public abstract class ConfigEntry<T, SELF extends ConfigEntry<T, SELF>> {
         value = copyValue(defaultValue);
     }
 
+    public final boolean isDefault() {
+        return Objects.equals(value, defaultValue);
+    }
+
     public final boolean load(CommentedConfig config) {
         Object rawValue = config.get(pathString);
         if (rawValue == null) {
@@ -131,9 +135,13 @@ public abstract class ConfigEntry<T, SELF extends ConfigEntry<T, SELF>> {
 
         MutableComponent tooltipComponent = Component.translatable(translationKey + ".tooltip");
         tooltipComponent.append("\n\n");
-        tooltipComponent.append(Component.translatable("mapfrontiers.default", defaultValueComponent(defaultValue))
-                .withStyle(Style.EMPTY.withBold(true)));
+        tooltipComponent.append(defaultTooltipComponent());
         return tooltipComponent;
+    }
+
+    public final Component defaultTooltipComponent() {
+        return Component.translatable("mapfrontiers.default", defaultValueComponent(defaultValue))
+                .withStyle(Style.EMPTY.withBold(true));
     }
 
     @Nullable

@@ -1,11 +1,13 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen.dialog;
 
+import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
+import games.alejandrocoria.mapfrontiers.client.gui.util.DefaultValueBinding;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityMask;
@@ -41,6 +43,7 @@ public class FrontierVisibilityDialog extends PanelDialog {
     private static final Component BIOME_LABEL = Component.translatable("mapfrontiers.biome");
     private static final Component SAVE_LABEL = Component.translatable("mapfrontiers.save");
     private static final Component DEFAULT_VISIBILITY_LABEL = Component.translatable("mapfrontiers.replace_with_default_visibility");
+    private static final Component RESTORE_DEFAULT_VALUE_LABEL = Component.translatable("mapfrontiers.restore_default_value");
     private static final Component ON_LABEL = Component.translatable("options.on");
     private static final Component OFF_LABEL = Component.translatable("options.off");
     private static final int COLUMN_SPACING = 6;
@@ -51,29 +54,37 @@ public class FrontierVisibilityDialog extends PanelDialog {
     private final FrontierVisibilityData defaultVisibilityData;
     @Nullable
     private final FrontierVisibilityMask visibilityMask;
+    private final boolean restoreToClientDefaults;
     private final SaveCallback saveCallback;
     private final EnumMap<FrontierVisibility, OptionButton> visibilityButtons = new EnumMap<>(FrontierVisibility.class);
+    private final EnumMap<FrontierVisibility, DefaultValueBinding<Boolean>> restoreBindings = new EnumMap<>(FrontierVisibility.class);
 
     public FrontierVisibilityDialog(FrontierVisibilityData visibilityData, SaveCallback saveCallback) {
-        this(visibilityData, null, null, saveCallback);
+        this(visibilityData, null, null, false, saveCallback);
     }
 
     public FrontierVisibilityDialog(FrontierVisibilityData visibilityData, FrontierVisibilityData defaultVisibilityData,
                                     SaveCallback saveCallback) {
-        this(visibilityData, defaultVisibilityData, null, saveCallback);
+        this(visibilityData, defaultVisibilityData, null, false, saveCallback);
     }
 
     public FrontierVisibilityDialog(FrontierVisibilityData visibilityData, FrontierVisibilityMask visibilityDataMask,
                                     SaveCallback saveCallback) {
-        this(visibilityData, null, visibilityDataMask, saveCallback);
+        this(visibilityData, null, visibilityDataMask, false, saveCallback);
+    }
+
+    public static FrontierVisibilityDialog forClientDefaults(FrontierVisibilityData visibilityData, SaveCallback saveCallback) {
+        return new FrontierVisibilityDialog(visibilityData, null, null, true, saveCallback);
     }
 
     private FrontierVisibilityDialog(FrontierVisibilityData visibilityData, @Nullable FrontierVisibilityData defaultVisibilityData,
-                                     @Nullable FrontierVisibilityMask visibilityDataMask, SaveCallback saveCallback) {
+                                     @Nullable FrontierVisibilityMask visibilityDataMask, boolean restoreToClientDefaults,
+                                     SaveCallback saveCallback) {
         super();
         this.workingVisibilityData = new FrontierVisibilityData(visibilityData);
         this.defaultVisibilityData = defaultVisibilityData == null ? null : new FrontierVisibilityData(defaultVisibilityData);
         this.visibilityMask = visibilityDataMask == null ? null : new FrontierVisibilityMask(visibilityDataMask);
+        this.restoreToClientDefaults = restoreToClientDefaults;
         this.saveCallback = saveCallback;
     }
 
@@ -180,13 +191,16 @@ public class FrontierVisibilityDialog extends PanelDialog {
     private void createWidgets(GridLayout layout, int row, Component label, FrontierVisibility visibility) {
         layout.addChild(new StringWidget(label, font).setColor(ColorConstants.TEXT), row, 0);
 
-        OptionButton button = new OptionButton(font, LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH, (b) -> {
+        DefaultValueBinding<Boolean> restoreBinding = createRestoreBinding(visibility);
+        OptionButton button = new OptionButton(font, LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH, b -> {
             workingVisibilityData.set(visibility, b.getSelected() == 0);
+            if (restoreBinding != null) {
+                restoreBinding.refresh();
+            }
         });
         button.addOption(ON_LABEL);
         button.addOption(OFF_LABEL);
         button.setSelected(workingVisibilityData.get(visibility) ? 0 : 1);
-        layout.addChild(button, row, 2);
         visibilityButtons.put(visibility, button);
 
         if (visibilityMask != null) {
@@ -195,8 +209,27 @@ public class FrontierVisibilityDialog extends PanelDialog {
                 button.active = b.isChecked();
             });
             layout.addChild(checkBox, row, 1);
+            layout.addChild(button, row, 2);
             button.active = checkBox.isChecked();
+            return;
         }
+
+        layout.addChild(button, row, 1);
+        if (restoreBinding != null) {
+            layout.addChild(restoreBinding.button(), row, 2);
+            restoreBindings.put(visibility, restoreBinding);
+        }
+    }
+
+    private @Nullable DefaultValueBinding<Boolean> createRestoreBinding(FrontierVisibility visibility) {
+        if (!restoreToClientDefaults) {
+            return null;
+        }
+
+        return DefaultValueBinding.forConfigEntry(RESTORE_DEFAULT_VALUE_LABEL, ClientConfig.getDefaultFrontierVisibilityEntry(visibility),
+                () -> workingVisibilityData.get(visibility),
+                value -> workingVisibilityData.set(visibility, value),
+                () -> syncVisibilityWidget(visibility));
     }
 
     private void replaceWithDefaultVisibility() {
@@ -212,10 +245,19 @@ public class FrontierVisibilityDialog extends PanelDialog {
 
     private void syncWidgetsFromVisibility() {
         for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
-            OptionButton button = visibilityButtons.get(visibility);
-            if (button != null) {
-                button.setSelected(workingVisibilityData.get(visibility) ? 0 : 1);
-            }
+            syncVisibilityWidget(visibility);
+        }
+    }
+
+    private void syncVisibilityWidget(FrontierVisibility visibility) {
+        OptionButton button = visibilityButtons.get(visibility);
+        if (button != null) {
+            button.setSelected(workingVisibilityData.get(visibility) ? 0 : 1);
+        }
+
+        DefaultValueBinding<Boolean> restoreBinding = restoreBindings.get(visibility);
+        if (restoreBinding != null) {
+            restoreBinding.refresh();
         }
     }
 
