@@ -18,7 +18,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.client.gui.layouts.LinearLayout;
-import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.network.chat.Component;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -87,27 +86,26 @@ public class NewCollectionDefaultsDialog extends PanelDialog {
 
         buttonVisibility = new SimpleButton(font, SECTION_WIDTH, DEFAULT_VISIBILITY_LABEL, b -> onVisibilityPressed());
         visibilityRow.addChild(buttonVisibility);
+    }
 
-        LinearLayout randomColorRow = LinearLayout.horizontal();
+    private void buildColorSection(GridLayout mainLayout) {
+        LinearLayout randomColorRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         randomColorRow.defaultCellSetting().alignVerticallyMiddle();
-        visibilityRow.addChild(randomColorRow);
+        mainLayout.addChild(randomColorRow, 1, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyLeft());
 
         randomColorRow.addChild(new StringWidget(USE_RANDOM_COLOR_LABEL, font).setColor(ColorConstants.TEXT));
-        randomColorRow.addChild(SpacerElement.width(getRandomColorSpacerWidth()));
         buttonRandomColor = createOnOffOptionButton(randomColorEnabled, this::setRandomColorEnabled);
         randomColorRow.addChild(buttonRandomColor);
         randomColorBinding = DefaultValueBinding.forConfigEntry(RESTORE_DEFAULT_VALUE_LABEL, ClientConfig.COLLECTION_DEFAULT_RANDOM_COLOR,
                 () -> randomColorEnabled, this::setRandomColorEnabled, this::syncRandomColorWidgets);
         randomColorRow.addChild(randomColorBinding.button());
-    }
 
-    private void buildColorSection(GridLayout mainLayout) {
         colorPicker = new ColorPicker(fixedColor, this::onColorPicked);
-        mainLayout.addChild(colorPicker, 1, 0, LayoutSettings.defaults().alignVerticallyBottom().alignHorizontallyCenter());
+        mainLayout.addChild(colorPicker, 2, 0, LayoutSettings.defaults().alignVerticallyBottom().alignHorizontallyCenter());
 
         LinearLayout colorColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         colorColumn.defaultCellSetting().alignHorizontallyCenter();
-        mainLayout.addChild(colorColumn, 1, 1, LayoutSettings.defaults().alignVerticallyBottom());
+        mainLayout.addChild(colorColumn, 2, 1, LayoutSettings.defaults().alignVerticallyBottom());
 
         colorInputs = new ColorInputTabsWidget(font, fixedColor, this::applyColorChange);
         colorColumn.addChild(colorInputs);
@@ -218,9 +216,5 @@ public class NewCollectionDefaultsDialog extends PanelDialog {
         }
 
         return value.substring(0, maxLength);
-    }
-
-    private int getRandomColorSpacerWidth() {
-        return Math.max(0, SECTION_WIDTH - font.width(USE_RANDOM_COLOR_LABEL.getVisualOrderText()) - LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH);
     }
 }

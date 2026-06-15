@@ -102,27 +102,26 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
         buttonPathStyle = new SimpleButton(font, SECTION_WIDTH, DEFAULT_PATH_STYLE_LABEL, b -> onPathStylePressed());
         buttonPathStyle.active = areJourneyMapPreviewActionsAvailable();
         pathStyleRow.addChild(buttonPathStyle);
+    }
 
-        LinearLayout randomColorRow = LinearLayout.horizontal();
+    private void buildColorSection(GridLayout mainLayout) {
+        LinearLayout randomColorRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         randomColorRow.defaultCellSetting().alignVerticallyMiddle();
-        pathStyleRow.addChild(randomColorRow);
+        mainLayout.addChild(randomColorRow, 1, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyLeft());
 
         randomColorRow.addChild(new StringWidget(USE_RANDOM_COLOR_LABEL, font).setColor(ColorConstants.TEXT));
-        randomColorRow.addChild(SpacerElement.width(getRandomColorSpacerWidth()));
         buttonRandomColor = createOnOffOptionButton(randomColorEnabled, this::setRandomColorEnabled);
         randomColorRow.addChild(buttonRandomColor);
         randomColorBinding = DefaultValueBinding.forConfigEntry(RESTORE_DEFAULT_VALUE_LABEL, ClientConfig.FRONTIER_DEFAULT_RANDOM_COLOR,
                 () -> randomColorEnabled, this::setRandomColorEnabled, this::syncRandomColorWidgets);
         randomColorRow.addChild(randomColorBinding.button());
-    }
 
-    private void buildColorSection(GridLayout mainLayout) {
         colorPicker = new ColorPicker(fixedColor, this::onColorPicked);
-        mainLayout.addChild(colorPicker, 1, 0, LayoutSettings.defaults().alignVerticallyBottom().alignHorizontallyCenter());
+        mainLayout.addChild(colorPicker, 2, 0, LayoutSettings.defaults().alignVerticallyBottom().alignHorizontallyCenter());
 
         LinearLayout colorColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         colorColumn.defaultCellSetting().alignHorizontallyCenter();
-        mainLayout.addChild(colorColumn, 1, 1, LayoutSettings.defaults().alignVerticallyBottom());
+        mainLayout.addChild(colorColumn, 2, 1, LayoutSettings.defaults().alignVerticallyBottom());
 
         colorInputs = new ColorInputTabsWidget(font, fixedColor, this::applyColorChange);
         colorColumn.addChild(colorInputs);
@@ -255,9 +254,5 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
 
     private boolean areJourneyMapPreviewActionsAvailable() {
         return minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
-    }
-
-    private int getRandomColorSpacerWidth() {
-        return Math.max(0, SECTION_WIDTH - font.width(USE_RANDOM_COLOR_LABEL.getVisualOrderText()) - LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH);
     }
 }
