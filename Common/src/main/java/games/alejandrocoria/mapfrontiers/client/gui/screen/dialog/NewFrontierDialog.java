@@ -474,9 +474,7 @@ public class NewFrontierDialog extends PanelDialog {
             return null;
         }
 
-        FrontierData defaults = new FrontierData();
-        defaults.setShape(ClientConfig.NEW_FRONTIER_SHAPE.get());
-        ClientConfig.applyDefaultFrontierValues(defaults);
+        FrontierData defaults = ClientConfig.createConfiguredFrontierDefaults(ClientConfig.NEW_FRONTIER_SHAPE.get());
         SettingsUser owner = new SettingsUser(minecraft.player);
         UUID frontierId = UUID.randomUUID();
         FrontierVisibilityData visibility = new FrontierVisibilityData(defaults.getVisibilityData());

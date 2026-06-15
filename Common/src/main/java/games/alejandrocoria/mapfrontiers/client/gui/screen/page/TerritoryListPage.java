@@ -600,14 +600,13 @@ public class TerritoryListPage extends PageScreen {
             return;
         }
 
-        CollectionData collection = new CollectionData();
+        CollectionData collection = ClientConfig.createConfiguredCollectionDefaults();
         collection.setId(UUID.randomUUID());
         collection.setPersonal(scope != CollectionScope.GLOBAL_PERSISTENT);
         collection.setLifetime(scope == CollectionScope.PERSONAL_SESSION
                 ? TerritoryLifetime.SESSION_ONLY
                 : TerritoryLifetime.PERSISTENT);
         collection.setOwner(new SettingsUser(minecraft.player));
-        ClientConfig.applyDefaultCollectionValues(collection);
 
         MapFrontiersClient.getOperationService().createCollection(collection);
         new CollectionInfoPage(collection).display();

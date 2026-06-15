@@ -6,11 +6,13 @@ import games.alejandrocoria.mapfrontiers.api.model.CollectionCreateRequest;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionDataView;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionId;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionMutation;
+import games.alejandrocoria.mapfrontiers.api.model.DefaultValuesProfile;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationResult;
 import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationService;
 
@@ -98,19 +100,24 @@ public class ServerCollectionServiceImpl implements PluginScopedServerCollection
     }
 
     private static CollectionData createCollectionData(String pluginModId, UserRef owner, CollectionCreateRequest request) {
+        if (request.defaultValuesProfile() == DefaultValuesProfile.CONFIGURED) {
+            throw new IllegalArgumentException("CONFIGURED defaults are not supported by the server API");
+        }
+
+        CollectionData defaults = new CollectionData();
         CollectionData collection = new CollectionData();
         collection.setId(UUID.randomUUID());
         collection.setPersonal(false);
         collection.setOwner(ApiConverters.toUser(owner));
         collection.setSourcePluginId(pluginModId);
-        request.name().ifPresent(collection::setName);
-        request.color().ifPresent(collection::setColor);
+        collection.setName(request.name().orElse(defaults.getName()));
+        collection.setColor(request.color().orElseGet(ColorHelper::getRandomColor));
         CollectionVisibilityData visibility = request.visibility()
                 .map(ApiConverters::toCollectionVisibility)
-                .orElseGet(ApiConverters::defaultCollectionVisibility);
+                .orElseGet(defaults::getVisibilityData);
         BannerData banner = request.banner()
                 .map(ApiConverters::toBanner)
-                .orElseGet(ApiConverters::defaultCollectionBanner);
+                .orElseGet(defaults::getBannerData);
         collection.setVisibilityData(visibility);
         collection.setBannerData(banner);
         Date now = new Date();

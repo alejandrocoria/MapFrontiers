@@ -7,6 +7,7 @@ import games.alejandrocoria.mapfrontiers.api.model.CollectionCreateRequest;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionDataView;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionId;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionMutation;
+import games.alejandrocoria.mapfrontiers.api.model.DefaultValuesProfile;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierCreateRequest;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
@@ -15,6 +16,7 @@ import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierSharePermission;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
+import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientCollectionEvents;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientCollectionRuntime;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionOverlayManager;
@@ -41,14 +43,13 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
-import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreationFactory;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
-import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
@@ -863,7 +864,10 @@ public class ClientTerritoryOperationService {
                                                 String pluginModId,
                                                 TerritoryLifetime lifetime,
                                                 CollectionCreateRequest request) {
-        CollectionData collection = new CollectionData();
+        CollectionData defaults = request.defaultValuesProfile() == DefaultValuesProfile.CONFIGURED
+                ? ClientConfig.createConfiguredCollectionDefaults()
+                : ClientConfig.createBuiltinCollectionDefaults();
+        CollectionData collection = new CollectionData(defaults);
         collection.setId(UUID.randomUUID());
         collection.setPersonal(personal);
         collection.setLifetime(lifetime);
@@ -872,14 +876,12 @@ public class ClientTerritoryOperationService {
         collection.removeCopiedFromInfo();
         request.name().ifPresent(collection::setName);
         request.color().ifPresent(collection::setColor);
-        CollectionVisibilityData visibility = request.visibility()
+        request.visibility()
                 .map(ApiConverters::toCollectionVisibility)
-                .orElseGet(ApiConverters::defaultCollectionVisibility);
-        BannerData banner = request.banner()
+                .ifPresent(collection::setVisibilityData);
+        request.banner()
                 .map(ApiConverters::toBanner)
-                .orElseGet(ApiConverters::defaultCollectionBanner);
-        collection.setVisibilityData(visibility);
-        collection.setBannerData(banner);
+                .ifPresent(collection::setBannerData);
         Date now = new Date();
         collection.setCreated(now);
         return collection;
@@ -894,7 +896,14 @@ public class ClientTerritoryOperationService {
             return null;
         }
 
-        FrontierData defaults = new FrontierData();
+        FrontierShape frontierShape = switch (request.shape().type()) {
+            case VERTEX -> FrontierShape.Vertex;
+            case CHUNK -> FrontierShape.Chunk;
+            case PATH -> FrontierShape.Path;
+        };
+        FrontierData defaults = request.defaultValuesProfile() == DefaultValuesProfile.CONFIGURED
+                ? ClientConfig.createConfiguredFrontierDefaults(frontierShape)
+                : ClientConfig.createBuiltinFrontierDefaults(frontierShape);
         SettingsUser owner = new SettingsUser(mc.player);
         UUID collectionId = request.collectionId().map(CollectionId::value).orElse(null);
         UUID validatedCollectionId = resolveValidLocalCollectionId(personal, lifetime, owner, collectionId);
@@ -903,19 +912,15 @@ public class ClientTerritoryOperationService {
         }
         String name1 = request.name1().orElse(defaults.getName1());
         String name2 = request.name2().orElse(defaults.getName2());
-        int color = request.color().orElseGet(ColorHelper::getRandomColor);
+        int color = request.color().orElse(defaults.getColor());
         FrontierVisibilityData visibility = request.visibility()
                 .map(ApiConverters::toFrontierVisibility)
                 .orElseGet(defaults::getVisibilityData);
         BannerData banner = request.banner()
                 .map(ApiConverters::toBanner)
                 .orElseGet(defaults::getBannerData);
-        boolean pathShape = switch (request.shape().type()) {
-            case PATH -> true;
-            default -> false;
-        };
-        FrontierData.PathStyle pathStyle = pathShape
-                ? request.pathStyle().map(ApiConverters::toPathStyle).orElseGet(FrontierData.PathStyle::new)
+        FrontierData.PathStyle pathStyle = frontierShape == FrontierShape.Path
+                ? request.pathStyle().map(ApiConverters::toPathStyle).orElseGet(defaults::getPathStyle)
                 : new FrontierData.PathStyle();
 
         return switch (request.shape().type()) {

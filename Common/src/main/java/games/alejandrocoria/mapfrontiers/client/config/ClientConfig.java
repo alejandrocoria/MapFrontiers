@@ -736,21 +736,16 @@ public final class ClientConfig {
         FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_END.set(normalized.labelAtEnd);
     }
 
-    public static int resolveNewFrontierColor() {
-        if (FRONTIER_DEFAULT_RANDOM_COLOR.get()) {
-            return ColorHelper.getRandomColor();
-        }
-        return normalizeOpaqueColor(FRONTIER_DEFAULT_COLOR.get());
+    public static FrontierData createBuiltinFrontierDefaults(FrontierShape shape) {
+        FrontierData frontier = new FrontierData();
+        frontier.setShape(shape);
+        frontier.setColor(ColorHelper.getRandomColor());
+        return frontier;
     }
 
-    public static int resolveNewCollectionColor() {
-        if (COLLECTION_DEFAULT_RANDOM_COLOR.get()) {
-            return ColorHelper.getRandomColor();
-        }
-        return normalizeOpaqueColor(COLLECTION_DEFAULT_COLOR.get());
-    }
-
-    public static void applyDefaultFrontierValues(FrontierData frontier) {
+    public static FrontierData createConfiguredFrontierDefaults(FrontierShape shape) {
+        FrontierData frontier = new FrontierData();
+        frontier.setShape(shape);
         frontier.setName1(normalizeName(FRONTIER_DEFAULT_NAME_1.get(), FrontierData.MAX_NAME_CHARACTERS));
         frontier.setName2(normalizeName(FRONTIER_DEFAULT_NAME_2.get(), FrontierData.MAX_NAME_CHARACTERS));
         frontier.setColor(resolveNewFrontierColor());
@@ -758,12 +753,35 @@ public final class ClientConfig {
         if (frontier.getShape() == FrontierShape.Path) {
             frontier.setPathStyle(getDefaultFrontierPathStyle());
         }
+        return frontier;
     }
 
-    public static void applyDefaultCollectionValues(CollectionData collection) {
+    public static CollectionData createBuiltinCollectionDefaults() {
+        CollectionData collection = new CollectionData();
+        collection.setColor(ColorHelper.getRandomColor());
+        return collection;
+    }
+
+    public static CollectionData createConfiguredCollectionDefaults() {
+        CollectionData collection = new CollectionData();
         collection.setName(normalizeName(COLLECTION_DEFAULT_NAME.get(), CollectionData.MAX_NAME_CHARACTERS));
         collection.setColor(resolveNewCollectionColor());
         collection.setVisibilityData(getDefaultCollectionVisibility());
+        return collection;
+    }
+
+    private static int resolveNewFrontierColor() {
+        if (FRONTIER_DEFAULT_RANDOM_COLOR.get()) {
+            return ColorHelper.getRandomColor();
+        }
+        return normalizeOpaqueColor(FRONTIER_DEFAULT_COLOR.get());
+    }
+
+    private static int resolveNewCollectionColor() {
+        if (COLLECTION_DEFAULT_RANDOM_COLOR.get()) {
+            return ColorHelper.getRandomColor();
+        }
+        return normalizeOpaqueColor(COLLECTION_DEFAULT_COLOR.get());
     }
 
     public static double getPathActivationDistance(boolean alreadyActive) {
