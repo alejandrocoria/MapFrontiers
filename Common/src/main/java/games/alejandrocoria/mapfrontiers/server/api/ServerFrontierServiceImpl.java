@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.server.api;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedServerFrontierService;
 import games.alejandrocoria.mapfrontiers.api.model.CollectionId;
+import games.alejandrocoria.mapfrontiers.api.model.DefaultValuesProfile;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierCreateRequest;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
@@ -110,6 +111,10 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
     }
 
     private static FrontierCreateSpec createGlobalFrontierSpec(String pluginModId, UserRef owner, FrontierCreateRequest request) {
+        if (request.defaultValuesProfile() == DefaultValuesProfile.CONFIGURED) {
+            throw new IllegalArgumentException("CONFIGURED defaults are not supported by the server API");
+        }
+
         FrontierData defaults = new FrontierData();
         UUID frontierId = UUID.randomUUID();
         SettingsUser frontierOwner = ApiConverters.toUser(owner);
