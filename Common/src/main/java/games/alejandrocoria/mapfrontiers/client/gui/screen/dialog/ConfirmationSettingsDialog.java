@@ -90,7 +90,7 @@ public class ConfirmationSettingsDialog extends PanelDialog {
     }
 
     private OptionButton createOnOffOptionButton(BooleanConfigEntry entry) {
-        OptionButton button = new OptionButton(font, LayoutConstants.SETTING_CONTROL_WIDTH, b -> {
+        OptionButton button = new OptionButton(font, LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH, b -> {
             entry.set(b.getSelected() == 0);
             refreshAllBindings();
         });
