@@ -30,6 +30,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.FrontierBehavi
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.FrontierVisibilityDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.NewCollectionDefaultsDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.NewFrontierDefaultsDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.util.DefaultValueBinding;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.config.BooleanConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
@@ -108,6 +109,7 @@ public class ModSettingsPage extends PageScreen {
     private static final Component HUD_LABEL = Component.translatable("mapfrontiers.hud");
     private static final Component ON_LABEL = Component.translatable("options.on");
     private static final Component OFF_LABEL = Component.translatable("options.off");
+    private static final Component RESTORE_DEFAULT_VALUE_LABEL = Component.translatable("mapfrontiers.restore_default_value");
     private static final Component EDIT_HUD_LABEL = Component.translatable("mapfrontiers.edit_hud");
     private static final Component GROUP_OPS_DESC_LABEL = Component.translatable("mapfrontiers.group_ops_desc");
     private static final Component GROUP_OWNERS_DESC_LABEL = Component.translatable("mapfrontiers.group_owners_desc");
@@ -336,8 +338,7 @@ public class ModSettingsPage extends PageScreen {
         settingsGrid.addChild(new StringWidget(HUD_LABEL, font).setColor(ColorConstants.TEXT_HIGHLIGHT), row++, 0, 1, 2,
                 LayoutSettings.defaults().alignHorizontallyCenter());
 
-        addOptionSettingRow(settingsGrid, row, ClientConfig.HUD_ENABLED, createOnOffOptionButton(ClientConfig.HUD_ENABLED,
-                this::onHudEnabledChanged));
+        addOptionSettingRow(settingsGrid, row, ClientConfig.HUD_ENABLED, this::onHudEnabledChanged);
 
         buttonEditHUD = generalLayout.addChild(new SimpleButton(font, LayoutConstants.PAGE_BUTTON_WIDTH, EDIT_HUD_LABEL,
                 b -> onEditHUDPressed()));
@@ -447,12 +448,7 @@ public class ModSettingsPage extends PageScreen {
     }
 
     private OptionButton createOnOffOptionButton(BooleanConfigEntry entry) {
-        return createOnOffOptionButton(entry, entry::set);
-    }
-
-    private OptionButton createOnOffOptionButton(BooleanConfigEntry entry, Consumer<Boolean> consumer) {
-        OptionButton button = new OptionButton(font, LayoutConstants.SETTING_CONTROL_WIDTH,
-                b -> consumer.accept(b.getSelected() == 0));
+        OptionButton button = new OptionButton(font, LayoutConstants.COMPACT_ON_OFF_BUTTON_WIDTH, OptionButton.DO_NOTHING);
         button.addOption(ON_LABEL);
         button.addOption(OFF_LABEL);
         button.setSelected(entry.get() ? 0 : 1);
@@ -460,13 +456,28 @@ public class ModSettingsPage extends PageScreen {
     }
 
     private int addOptionSettingRow(GridLayout settingsGrid, int row, BooleanConfigEntry entry) {
-        return addOptionSettingRow(settingsGrid, row, entry, createOnOffOptionButton(entry));
+        return addOptionSettingRow(settingsGrid, row, entry, entry::set);
     }
 
-    private int addOptionSettingRow(GridLayout settingsGrid, int row, BooleanConfigEntry entry, OptionButton button) {
+    private int addOptionSettingRow(GridLayout settingsGrid, int row, BooleanConfigEntry entry, Consumer<Boolean> onChanged) {
+        OptionButton button = createOnOffOptionButton(entry);
+        DefaultValueBinding<Boolean> binding = DefaultValueBinding.forConfigEntry(RESTORE_DEFAULT_VALUE_LABEL, entry,
+                entry::get, onChanged, () -> syncOnOffButtonSelection(button, entry.get()));
+        button.setOnPress(b -> {
+            onChanged.accept(b.getSelected() == 0);
+            binding.refresh();
+        });
+        LinearLayout controls = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
+        controls.defaultCellSetting().alignVerticallyMiddle();
+        controls.addChild(button);
+        controls.addChild(binding.button());
         settingsGrid.addChild(createConfigLabel(entry), row, 0);
-        settingsGrid.addChild(button, row, 1);
+        settingsGrid.addChild(controls, row, 1);
         return row + 1;
+    }
+
+    private void syncOnOffButtonSelection(OptionButton button, boolean value) {
+        button.setSelected(value ? 0 : 1);
     }
 
     private StringWidget createConfigLabel(ConfigEntry<?, ?> entry) {

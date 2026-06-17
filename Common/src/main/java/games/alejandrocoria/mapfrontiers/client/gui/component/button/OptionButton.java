@@ -19,14 +19,16 @@ public class OptionButton extends ButtonBase {
 
     protected final Font font;
     private final List<Component> options;
+    private OnPress callback;
     private int selected = 0;
     private int color = ColorConstants.OPTION_TEXT_NORMAL;
     private int highlightedColor = ColorConstants.OPTION_TEXT_HIGHLIGHT;
 
     public OptionButton(Font font, int width, OnPress pressedAction) {
-        super(0, 0, width, DEFAULT_HEIGHT, Component.empty(), (b) -> pressedAction.onPress((OptionButton) b), Button.DEFAULT_NARRATION);
+        super(0, 0, width, DEFAULT_HEIGHT, Component.empty(), (b) -> ((OptionButton) b).callback.onPress((OptionButton) b), Button.DEFAULT_NARRATION);
         this.font = font;
         options = new ArrayList<>();
+        callback = pressedAction;
     }
 
     public void addOption(Component text) {
@@ -54,6 +56,10 @@ public class OptionButton extends ButtonBase {
 
     public int getColor() {
         return color;
+    }
+
+    public void setOnPress(OnPress callback) {
+        this.callback = callback;
     }
 
     @Override
