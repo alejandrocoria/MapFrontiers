@@ -29,14 +29,14 @@ dependencies {
     implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
     implementation 'com.google.code.findbugs:jsr305:3.0.1'
 
-    compileOnly("mysticdrew:common-networking-fabric:${project.common_networking_version}-${project.minecraft_version}") {
+    compileOnly("mysticdrew:common-networking-fabric:${project.minecraft_version}-${project.common_networking_version}") {
         changing = true
         transitive = false
     }
     include(implementation("com.electronwill.night-config:core:${project.nightconfig_version}"))
     include(implementation("com.electronwill.night-config:toml:${project.nightconfig_version}"))
     compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
-    compileOnly("info.journeymap:journeymap-api-fabric:${project.journeymap_api_version}-${project.journeymap_api_mc_version}-SNAPSHOT") {
+    compileOnly("info.journeymap:journeymap-api-fabric:${project.journeymap_api_mc_version}-${project.journeymap_api_version}-SNAPSHOT") {
         changing = true
         transitive = false
     }

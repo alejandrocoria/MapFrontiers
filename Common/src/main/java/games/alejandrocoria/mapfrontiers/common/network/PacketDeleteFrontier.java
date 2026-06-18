@@ -16,8 +16,9 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class PacketDeleteFrontier {
+public class PacketDeleteFrontier implements CustomPacketPayload {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_delete_frontier");
+    public static final CustomPacketPayload.Type<PacketDeleteFrontier> TYPE = new CustomPacketPayload.Type<>(CHANNEL);
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketDeleteFrontier> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketDeleteFrontier::encode, PacketDeleteFrontier::new);
 
     private UUID frontierID;
@@ -26,8 +27,9 @@ public class PacketDeleteFrontier {
         this.frontierID = frontierID;
     }
 
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
+    @Override
+    public CustomPacketPayload.Type<PacketDeleteFrontier> type() {
+        return TYPE;
     }
 
     public PacketDeleteFrontier(FriendlyByteBuf buf) {

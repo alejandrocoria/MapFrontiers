@@ -16,8 +16,9 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class PacketDeleteCollection {
+public class PacketDeleteCollection implements CustomPacketPayload {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_delete_collection");
+    public static final CustomPacketPayload.Type<PacketDeleteCollection> TYPE = new CustomPacketPayload.Type<>(CHANNEL);
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketDeleteCollection> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketDeleteCollection::encode, PacketDeleteCollection::new);
 
     private UUID collectionId;
@@ -26,8 +27,9 @@ public class PacketDeleteCollection {
         this.collectionId = collectionId;
     }
 
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
+    @Override
+    public CustomPacketPayload.Type<PacketDeleteCollection> type() {
+        return TYPE;
     }
 
     public PacketDeleteCollection(FriendlyByteBuf buf) {

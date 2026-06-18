@@ -193,6 +193,15 @@ public class TabbedBox implements Layout {
     }
 
     @Override
+    public void removeChildren() {
+        tabLayouts.removeChildren();
+        contentLayouts.removeChildren();
+        tabs.clear();
+        contents.clear();
+        selected = -1;
+    }
+
+    @Override
     public int getWidth() {
         return sizeToContent ? mainLayout.getWidth() : width;
     }

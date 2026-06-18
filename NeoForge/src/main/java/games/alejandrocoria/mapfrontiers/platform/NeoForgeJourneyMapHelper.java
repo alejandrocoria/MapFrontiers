@@ -4,9 +4,9 @@ import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionO
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.ReflectionHelper;
 import games.alejandrocoria.mapfrontiers.platform.services.IJourneyMapHelper;
-import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.display.MarkerOverlay;
 import journeymap.api.v2.client.display.PolygonOverlay;
+import journeymap.api.v2.common.Context;
 import journeymap.client.data.WorldData;
 import journeymap.client.io.FileHandler;
 import journeymap.client.io.ThemeLoader;
@@ -14,6 +14,9 @@ import journeymap.client.model.map.MapState;
 import journeymap.client.model.map.MapType;
 import journeymap.client.properties.MiniMapProperties;
 import journeymap.client.render.GuiRenderToTexture;
+import journeymap.client.render.JmMaskState;
+import journeymap.client.render.JmRenderCollector;
+import journeymap.client.render.JmRenderRouter;
 import journeymap.client.render.draw.DrawMarkerStep;
 import journeymap.client.render.draw.DrawPolygonStep;
 import journeymap.client.render.draw.DrawStep;
@@ -29,10 +32,10 @@ import journeymap.client.ui.theme.Theme;
 import journeymap.common.waypoint.WaypointStore;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import org.joml.Matrix3x2f;
 
 import java.awt.geom.Rectangle2D;
 import java.io.File;
@@ -259,21 +262,21 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
         }
 
         @Override
-        public void draw(GuiGraphicsExtractor graphics, MultiBufferSource.BufferSource buffers, int x, int y, int size, float scaleFactor) {
+        public void draw(GuiGraphicsExtractor graphics, int x, int y, int size, float scaleFactor) {
             if (polygonDrawSteps.isEmpty() && overlayDrawSteps.isEmpty()) {
                 return;
             }
 
             int guiScale = Math.max(1, (int) Math.round(JmUI.calculateScaleFactor()));
-            int width = graphics.guiWidth() * guiScale;
-            int height = graphics.guiHeight() * guiScale;
+            int guiPixelWidth = graphics.guiWidth() * guiScale;
+            int guiPixelHeight = graphics.guiHeight() * guiScale;
             double effectiveGuiScale = guiScale / scaleFactor;
             float mapScale = (float) (1.0 / effectiveGuiScale);
             int previewSize = Math.max(1, Math.round(size * mapScale));
-            double previewPhysicalX = Math.round(x * effectiveGuiScale);
-            double previewPhysicalY = Math.round(y * effectiveGuiScale);
-            float polygonTranslateX = (float) (previewPhysicalX + size / 2.0 - width / 2.0);
-            float polygonTranslateY = (float) (previewPhysicalY + size / 2.0 - height / 2.0);
+            double previewPixelX = Math.round(x * effectiveGuiScale);
+            double previewPixelY = Math.round(y * effectiveGuiScale);
+            float polygonTranslateX = (float) (previewPixelX + size / 2.0 - guiPixelWidth / 2.0);
+            float polygonTranslateY = (float) (previewPixelY + size / 2.0 - guiPixelHeight / 2.0);
             float overlayTranslateX = (float) (polygonTranslateX / effectiveGuiScale);
             float overlayTranslateY = (float) (polygonTranslateY / effectiveGuiScale);
 
@@ -281,23 +284,30 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
             mapRenderer.center(mapState.getWorldDir(), mapState.getMapType(), size / 2.0, size / 2.0, 512);
             mapRenderer.updateUIState(true);
 
+            if (!polygonDrawSteps.isEmpty()) {
+                polygonSurface.render(graphics, context -> {
+                    JmRenderCollector collector = JmRenderRouter.getActiveCollector();
+                    if (collector != null) {
+                        collector.setMask(JmMaskState.fullscreen(new Matrix3x2f(context.pose()), context.targetWidth(),
+                                context.targetHeight()));
+                    }
+
+                    GuiGraphicsExtractor polygonGraphics = context.graphics();
+                    var pose = context.pose();
+                    pose.pushMatrix();
+                    pose.translate(polygonTranslateX, polygonTranslateY);
+                    try {
+                        for (DrawPolygonStep drawPolygonStep : polygonDrawSteps) {
+                            drawPolygonStep.drawGeometry(polygonGraphics, pose, 0, 0, mapRenderer, 1, 0);
+                        }
+                    } finally {
+                        pose.popMatrix();
+                    }
+                });
+            }
+
             graphics.enableScissor(x, y, x + previewSize, y + previewSize);
             try {
-                if (!polygonDrawSteps.isEmpty()) {
-                    polygonSurface.render(graphics, context -> {
-                        var pose = context.pose();
-                        pose.pushMatrix();
-                        pose.translate(polygonTranslateX, polygonTranslateY);
-                        try {
-                            for (DrawPolygonStep drawPolygonStep : polygonDrawSteps) {
-                                drawPolygonStep.drawGeometry(graphics, pose, context.buffers(), 0, 0, mapRenderer, 1, 0);
-                            }
-                        } finally {
-                            pose.popMatrix();
-                        }
-                    });
-                }
-
                 graphics.pose().pushMatrix();
                 try {
                     graphics.pose().translate(overlayTranslateX, overlayTranslateY);
@@ -310,7 +320,6 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
                     for (DrawStep drawStep : overlayDrawSteps) {
                         drawStep.draw(graphics, 0, 0, mapRenderer, 1, 0);
                     }
-                    buffers.endBatch();
                 } finally {
                     graphics.pose().popMatrix();
                 }

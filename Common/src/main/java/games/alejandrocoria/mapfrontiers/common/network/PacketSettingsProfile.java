@@ -14,8 +14,9 @@ import net.minecraft.resources.Identifier;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-public class PacketSettingsProfile {
+public class PacketSettingsProfile implements CustomPacketPayload {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_settings_profile");
+    public static final CustomPacketPayload.Type<PacketSettingsProfile> TYPE = new CustomPacketPayload.Type<>(CHANNEL);
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketSettingsProfile> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketSettingsProfile::encode, PacketSettingsProfile::new);
 
     private final SettingsProfile profile;
@@ -24,8 +25,9 @@ public class PacketSettingsProfile {
         this.profile = profile;
     }
 
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
+    @Override
+    public CustomPacketPayload.Type<PacketSettingsProfile> type() {
+        return TYPE;
     }
 
     public PacketSettingsProfile(FriendlyByteBuf buf) {

@@ -14,8 +14,9 @@ import net.minecraft.resources.Identifier;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-public class PacketFrontierResync {
+public class PacketFrontierResync implements CustomPacketPayload {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_frontier_resync");
+    public static final CustomPacketPayload.Type<PacketFrontierResync> TYPE = new CustomPacketPayload.Type<>(CHANNEL);
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketFrontierResync> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketFrontierResync::encode, PacketFrontierResync::new);
 
     private final FrontierData frontier;
@@ -24,8 +25,9 @@ public class PacketFrontierResync {
         this.frontier = new FrontierData(frontier);
     }
 
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
+    @Override
+    public CustomPacketPayload.Type<PacketFrontierResync> type() {
+        return TYPE;
     }
 
     public PacketFrontierResync(FriendlyByteBuf buf) {

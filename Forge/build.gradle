@@ -33,8 +33,8 @@ dependencies {
     implementation minecraft.dependency("net.minecraftforge:forge:${minecraft_version}-${forge_version}")
     annotationProcessor 'net.minecraftforge:eventbus-validator:7.0-beta.10'
 
-    implementation "mysticdrew:common-networking-forge:${project.common_networking_version}-${project.minecraft_version}"
-    api("info.journeymap:journeymap-api-forge:${project.journeymap_api_version}-${project.journeymap_api_mc_version}-SNAPSHOT") {
+    implementation "mysticdrew:common-networking-forge:${project.minecraft_version}-${project.common_networking_version}"
+    api("info.journeymap:journeymap-api-forge:${project.journeymap_api_mc_version}-${project.journeymap_api_version}-SNAPSHOT") {
         changing = true
     }
     implementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_forge_file_id}"

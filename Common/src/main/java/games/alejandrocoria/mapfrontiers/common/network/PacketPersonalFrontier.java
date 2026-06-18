@@ -15,8 +15,9 @@ import net.minecraft.server.level.ServerPlayer;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-public class PacketPersonalFrontier {
+public class PacketPersonalFrontier implements CustomPacketPayload {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_personal_frontier");
+    public static final CustomPacketPayload.Type<PacketPersonalFrontier> TYPE = new CustomPacketPayload.Type<>(CHANNEL);
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketPersonalFrontier> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketPersonalFrontier::encode, PacketPersonalFrontier::new);
 
     private final FrontierData frontier;
@@ -25,8 +26,9 @@ public class PacketPersonalFrontier {
         this.frontier = frontier;
     }
 
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
+    @Override
+    public CustomPacketPayload.Type<PacketPersonalFrontier> type() {
+        return TYPE;
     }
 
     public PacketPersonalFrontier(FriendlyByteBuf buf) {

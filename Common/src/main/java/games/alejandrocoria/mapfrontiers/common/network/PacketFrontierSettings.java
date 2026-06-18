@@ -17,8 +17,9 @@ import net.minecraft.server.level.ServerPlayer;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-public class PacketFrontierSettings {
+public class PacketFrontierSettings implements CustomPacketPayload {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_frontier_settings");
+    public static final CustomPacketPayload.Type<PacketFrontierSettings> TYPE = new CustomPacketPayload.Type<>(CHANNEL);
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketFrontierSettings> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketFrontierSettings::encode, PacketFrontierSettings::new);
 
     private final FrontierSettings settings;
@@ -27,8 +28,9 @@ public class PacketFrontierSettings {
         this.settings = settings;
     }
 
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
+    @Override
+    public CustomPacketPayload.Type<PacketFrontierSettings> type() {
+        return TYPE;
     }
 
     public PacketFrontierSettings(FriendlyByteBuf buf) {
@@ -56,8 +58,8 @@ public class PacketFrontierSettings {
                     .updateSettings(player, message.settings);
             result.dispatchNetworkActions();
         } else if (Side.CLIENT.equals(ctx.side())) {
-            if (Minecraft.getInstance().screen instanceof ModSettingsPage) {
-                ((ModSettingsPage) Minecraft.getInstance().screen).setFrontierSettings(message.settings);
+            if (Minecraft.getInstance().gui.screen() instanceof ModSettingsPage) {
+                ((ModSettingsPage) Minecraft.getInstance().gui.screen()).setFrontierSettings(message.settings);
             }
         }
     }

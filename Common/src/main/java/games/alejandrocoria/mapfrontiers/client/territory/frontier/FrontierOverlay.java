@@ -25,7 +25,6 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisib
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityMask;
 import it.unimi.dsi.fastutil.Pair;
 import journeymap.api.v2.client.IClientAPI;
-import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.display.MarkerOverlay;
 import journeymap.api.v2.client.display.PolygonOverlay;
 import journeymap.api.v2.client.model.MapImage;
@@ -33,6 +32,7 @@ import journeymap.api.v2.client.model.MapPolygon;
 import journeymap.api.v2.client.model.ShapeProperties;
 import journeymap.api.v2.client.model.TextProperties;
 import journeymap.api.v2.client.util.PolygonHelper;
+import journeymap.api.v2.common.Context;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;

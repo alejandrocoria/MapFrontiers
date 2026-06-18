@@ -36,7 +36,7 @@ public class ClientCommandAccept {
 
         FrontierData receivedFrontier = receivedCopy.frontier();
         FrontierOverlay currentFrontier = MapFrontiersClient.getCopiedPersonalFrontier(receivedFrontier.getCopiedFromId());
-        Minecraft.getInstance().setScreen(null);
+        Minecraft.getInstance().gui.setScreen(null);
         Minecraft.getInstance().schedule(() -> new AcceptFrontierCopyConfirmationDialog(messageID, receivedCopy, currentFrontier).display());
 
         return messageID;

@@ -4,7 +4,6 @@ import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionO
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.Identifier;
 
 import java.io.File;
@@ -48,6 +47,6 @@ public interface IJourneyMapHelper {
         /**
          * Draws a JourneyMap-based preview. The size is expressed in map pixels; scaleFactor compensates GUI scaling.
          */
-        void draw(GuiGraphicsExtractor graphics, MultiBufferSource.BufferSource buffers, int x, int y, int size, float scaleFactor);
+        void draw(GuiGraphicsExtractor graphics, int x, int y, int size, float scaleFactor);
     }
 }

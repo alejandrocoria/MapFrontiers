@@ -1,6 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.scroll;
 
-import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
@@ -16,7 +15,6 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 
 @ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class GroupActionElement extends ScrollBox.ScrollElement {
     private final Font font;
     private final SettingsGroup group;

@@ -15,8 +15,9 @@ import net.minecraft.server.level.ServerPlayer;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-public class PacketUpdateCollection {
+public class PacketUpdateCollection implements CustomPacketPayload {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_update_collection");
+    public static final CustomPacketPayload.Type<PacketUpdateCollection> TYPE = new CustomPacketPayload.Type<>(CHANNEL);
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketUpdateCollection> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketUpdateCollection::encode, PacketUpdateCollection::new);
 
     private final CollectionData collection;
@@ -25,8 +26,9 @@ public class PacketUpdateCollection {
         this.collection = new CollectionData(collection);
     }
 
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
+    @Override
+    public CustomPacketPayload.Type<PacketUpdateCollection> type() {
+        return TYPE;
     }
 
     public PacketUpdateCollection(FriendlyByteBuf buf) {

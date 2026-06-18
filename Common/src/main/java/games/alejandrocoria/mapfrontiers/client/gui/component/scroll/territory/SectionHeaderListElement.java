@@ -1,6 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.scroll.territory;
 
-import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox;
 import net.minecraft.client.gui.ComponentPath;
@@ -16,7 +15,6 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 
 @ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class SectionHeaderListElement extends TerritoryListRowElement implements ScrollBox.KeyedFocusNavigation {
     private static final int HEIGHT = 12;
     private static final int TITLE_Y = 2;
@@ -154,4 +152,3 @@ public class SectionHeaderListElement extends TerritoryListRowElement implements
         addRequested = true;
     }
 }
-

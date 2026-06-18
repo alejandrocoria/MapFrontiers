@@ -17,8 +17,9 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class PacketRemoveSharedUserPersonalFrontier {
+public class PacketRemoveSharedUserPersonalFrontier implements CustomPacketPayload {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_remove_shared_user_personal_frontier");
+    public static final CustomPacketPayload.Type<PacketRemoveSharedUserPersonalFrontier> TYPE = new CustomPacketPayload.Type<>(CHANNEL);
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketRemoveSharedUserPersonalFrontier> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketRemoveSharedUserPersonalFrontier::encode, PacketRemoveSharedUserPersonalFrontier::new);
 
     private UUID frontierID;
@@ -29,8 +30,9 @@ public class PacketRemoveSharedUserPersonalFrontier {
         targetUser = user;
     }
 
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
+    @Override
+    public CustomPacketPayload.Type<PacketRemoveSharedUserPersonalFrontier> type() {
+        return TYPE;
     }
 
     public PacketRemoveSharedUserPersonalFrontier(FriendlyByteBuf buf) {

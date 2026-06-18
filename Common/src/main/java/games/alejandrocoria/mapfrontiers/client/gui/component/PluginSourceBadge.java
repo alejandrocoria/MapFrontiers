@@ -1,6 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
-import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.util.SourcePluginUiHelper;
 import net.minecraft.client.gui.Font;
@@ -12,7 +11,6 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class PluginSourceBadge extends AbstractWidgetNoNarration {
     private static final int DEFAULT_HEIGHT = 12;
     private final Font font;

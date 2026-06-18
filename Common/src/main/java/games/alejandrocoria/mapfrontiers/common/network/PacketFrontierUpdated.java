@@ -18,8 +18,9 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class PacketFrontierUpdated {
+public class PacketFrontierUpdated implements CustomPacketPayload {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_frontier_updated");
+    public static final CustomPacketPayload.Type<PacketFrontierUpdated> TYPE = new CustomPacketPayload.Type<>(CHANNEL);
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketFrontierUpdated> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketFrontierUpdated::encode, PacketFrontierUpdated::new);
 
     private UUID frontierId = new UUID(0, 0);
@@ -39,8 +40,9 @@ public class PacketFrontierUpdated {
         this.playerID = playerID;
     }
 
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
+    @Override
+    public CustomPacketPayload.Type<PacketFrontierUpdated> type() {
+        return TYPE;
     }
 
     public PacketFrontierUpdated(FriendlyByteBuf buf) {

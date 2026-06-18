@@ -19,8 +19,9 @@ import java.util.EnumSet;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class PacketSharePersonalFrontier {
+public class PacketSharePersonalFrontier implements CustomPacketPayload {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_share_personal_frontier");
+    public static final CustomPacketPayload.Type<PacketSharePersonalFrontier> TYPE = new CustomPacketPayload.Type<>(CHANNEL);
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketSharePersonalFrontier> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketSharePersonalFrontier::encode, PacketSharePersonalFrontier::new);
 
     private UUID frontierID;
@@ -39,8 +40,9 @@ public class PacketSharePersonalFrontier {
         this.userShared = userShared;
     }
 
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
+    @Override
+    public CustomPacketPayload.Type<PacketSharePersonalFrontier> type() {
+        return TYPE;
     }
 
     public PacketSharePersonalFrontier(FriendlyByteBuf buf) {

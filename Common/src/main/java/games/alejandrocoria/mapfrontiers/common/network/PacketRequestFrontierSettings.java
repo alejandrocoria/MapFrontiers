@@ -14,8 +14,9 @@ import net.minecraft.server.level.ServerPlayer;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-public class PacketRequestFrontierSettings {
+public class PacketRequestFrontierSettings implements CustomPacketPayload {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_request_frontier_settings");
+    public static final CustomPacketPayload.Type<PacketRequestFrontierSettings> TYPE = new CustomPacketPayload.Type<>(CHANNEL);
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketRequestFrontierSettings> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketRequestFrontierSettings::encode, PacketRequestFrontierSettings::new);
 
     private int changeCounter;
@@ -28,8 +29,9 @@ public class PacketRequestFrontierSettings {
         this.changeCounter = changeNonce;
     }
 
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
+    @Override
+    public CustomPacketPayload.Type<PacketRequestFrontierSettings> type() {
+        return TYPE;
     }
 
     public PacketRequestFrontierSettings(FriendlyByteBuf buf) {

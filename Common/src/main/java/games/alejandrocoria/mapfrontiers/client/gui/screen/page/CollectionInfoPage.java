@@ -31,8 +31,8 @@ import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionV
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import it.unimi.dsi.fastutil.Pair;
-import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.util.UIState;
+import journeymap.api.v2.common.Context;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;

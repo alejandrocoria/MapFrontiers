@@ -1,6 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.scroll.territory;
 
-import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.PluginSourceBadge;
@@ -32,7 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 @ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class FrontierListElement extends TerritoryListRowElement implements ScrollBox.KeyedFocusNavigation {
     private static final Identifier NAME_FADE_TEXTURE = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/territory_list/name_fade.png");
     private static final Identifier CHUNK_FILL_TEXTURE = frontierListTexture("chunk_fill.png");

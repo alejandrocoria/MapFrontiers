@@ -1,6 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.scroll;
 
-import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
@@ -12,7 +11,6 @@ import net.minecraft.client.input.MouseButtonEvent;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class UserElement extends ScrollBox.ScrollElement {
     private final Font font;
     private final SettingsUser user;

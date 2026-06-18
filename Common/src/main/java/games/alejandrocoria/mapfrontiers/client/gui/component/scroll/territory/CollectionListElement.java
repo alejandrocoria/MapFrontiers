@@ -1,6 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.scroll.territory;
 
-import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.PluginSourceBadge;
@@ -30,7 +29,6 @@ import java.util.List;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class CollectionListElement extends TerritoryListRowElement implements ScrollBox.KeyedFocusNavigation {
     public enum ActionState {
         NONE,

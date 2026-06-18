@@ -15,8 +15,9 @@ import net.minecraft.server.level.ServerPlayer;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-public class PacketPersonalCollection {
+public class PacketPersonalCollection implements CustomPacketPayload {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_personal_collection");
+    public static final CustomPacketPayload.Type<PacketPersonalCollection> TYPE = new CustomPacketPayload.Type<>(CHANNEL);
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketPersonalCollection> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketPersonalCollection::encode, PacketPersonalCollection::new);
 
     private final CollectionData collection;
@@ -25,8 +26,9 @@ public class PacketPersonalCollection {
         this.collection = new CollectionData(collection);
     }
 
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
+    @Override
+    public CustomPacketPayload.Type<PacketPersonalCollection> type() {
+        return TYPE;
     }
 
     public PacketPersonalCollection(FriendlyByteBuf buf) {

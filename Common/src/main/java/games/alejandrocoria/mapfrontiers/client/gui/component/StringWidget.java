@@ -1,6 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
-import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -9,7 +8,6 @@ import net.minecraft.util.Mth;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-@MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 public class StringWidget extends net.minecraft.client.gui.components.StringWidget {
     public enum Align {

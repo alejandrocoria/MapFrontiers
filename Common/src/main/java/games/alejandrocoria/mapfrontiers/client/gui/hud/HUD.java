@@ -158,11 +158,11 @@ public class HUD {
             return;
         }
 
-        if (mc.options.hideGui) {
+        if (mc.gui.hud.isHidden()) {
             return;
         }
 
-        if (mc.screen != null && !(mc.screen instanceof ChatScreen)) {
+        if (mc.gui.screen() != null && !(mc.gui.screen() instanceof ChatScreen)) {
             return;
         }
 

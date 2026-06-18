@@ -14,8 +14,9 @@ import net.minecraft.resources.Identifier;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-public class PacketCollectionUpdated {
+public class PacketCollectionUpdated implements CustomPacketPayload {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_collection_updated");
+    public static final CustomPacketPayload.Type<PacketCollectionUpdated> TYPE = new CustomPacketPayload.Type<>(CHANNEL);
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketCollectionUpdated> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketCollectionUpdated::encode, PacketCollectionUpdated::new);
 
     private final CollectionData collection;
@@ -24,8 +25,9 @@ public class PacketCollectionUpdated {
         this.collection = new CollectionData(collection);
     }
 
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
+    @Override
+    public CustomPacketPayload.Type<PacketCollectionUpdated> type() {
+        return TYPE;
     }
 
     public PacketCollectionUpdated(FriendlyByteBuf buf) {

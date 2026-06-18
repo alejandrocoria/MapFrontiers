@@ -6,7 +6,6 @@ import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionO
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import games.alejandrocoria.mapfrontiers.platform.services.IJourneyMapHelper;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
@@ -60,6 +59,6 @@ public class FrontierPreviewPanel {
     }
 
     public void drawPreview(GuiGraphicsExtractor graphics, int x, int y, int size, float scaleFactor) {
-        customPreviewRenderer.draw(graphics, Minecraft.getInstance().renderBuffers().bufferSource(), x, y, size, scaleFactor);
+        customPreviewRenderer.draw(graphics, x, y, size, scaleFactor);
     }
 }

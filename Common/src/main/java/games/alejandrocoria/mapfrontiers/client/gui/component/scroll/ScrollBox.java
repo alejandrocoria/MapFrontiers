@@ -1,6 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.scroll;
 
-import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
@@ -29,7 +28,6 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 @ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class ScrollBox extends AbstractContainerWidget {
     public enum HorizontalEdgeNavigation {
         EXIT_SCROLLBOX,

@@ -25,11 +25,11 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChang
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
 import journeymap.api.v2.client.IClientAPI;
-import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.fullscreen.IThemeButton;
 import journeymap.api.v2.client.fullscreen.ModPopupMenu;
 import journeymap.api.v2.client.fullscreen.ThemeButtonDisplay;
 import journeymap.api.v2.client.util.UIState;
+import journeymap.api.v2.common.Context;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.BlockPos;

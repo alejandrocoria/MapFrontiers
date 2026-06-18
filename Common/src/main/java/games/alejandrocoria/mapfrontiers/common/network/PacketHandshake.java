@@ -14,10 +14,11 @@ import net.minecraft.server.level.ServerPlayer;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-public class PacketHandshake {
+public class PacketHandshake implements CustomPacketPayload {
     private static final String VERSION = "1";
 
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_handshake");
+    public static final CustomPacketPayload.Type<PacketHandshake> TYPE = new CustomPacketPayload.Type<>(CHANNEL);
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketHandshake> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketHandshake::encode, PacketHandshake::new);
 
     private long nonce;
@@ -28,8 +29,9 @@ public class PacketHandshake {
         this.version = VERSION;
     }
 
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
+    @Override
+    public CustomPacketPayload.Type<PacketHandshake> type() {
+        return TYPE;
     }
 
     public PacketHandshake(FriendlyByteBuf buf) {

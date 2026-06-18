@@ -15,8 +15,9 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class PacketRequestFrontierResync {
+public class PacketRequestFrontierResync implements CustomPacketPayload {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_request_frontier_resync");
+    public static final CustomPacketPayload.Type<PacketRequestFrontierResync> TYPE = new CustomPacketPayload.Type<>(CHANNEL);
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketRequestFrontierResync> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketRequestFrontierResync::encode, PacketRequestFrontierResync::new);
 
     private UUID frontierId = new UUID(0, 0);
@@ -25,8 +26,9 @@ public class PacketRequestFrontierResync {
         this.frontierId = frontierId;
     }
 
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
+    @Override
+    public CustomPacketPayload.Type<PacketRequestFrontierResync> type() {
+        return TYPE;
     }
 
     public PacketRequestFrontierResync(FriendlyByteBuf buf) {

@@ -1,6 +1,5 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.scroll.territory;
 
-import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -11,7 +10,6 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.function.Supplier;
 
 @ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public abstract class TerritoryListRowElement extends ScrollBox.ScrollElement {
     private final String rowId;
 

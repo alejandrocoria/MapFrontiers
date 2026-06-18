@@ -29,7 +29,7 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
 import journeymap.api.v2.client.IClientAPI;
-import journeymap.api.v2.client.display.Context;
+import journeymap.api.v2.common.Context;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -221,12 +221,12 @@ public class MapFrontiersClient {
                 boolean frontierAnnounceInTitle = frontier.getVisibility(FrontierVisibility.AnnounceInTitle);
                 if (ClientConfig.resolveVisibilityValue(ClientConfig.ANNOUNCE_IN_TITLE.get(), frontierAnnounceInTitle)) {
                     if (ClientConfig.TITLE_ANNOUNCEMENT_ABOVE_HOTBAR.get()) {
-                        client.gui.setOverlayMessage(chatAndHotbarText, false);
+                        client.gui.hud.setOverlayMessage(chatAndHotbarText, false);
                     } else if (System.currentTimeMillis() >= lastTitleTime + ClientConfig.TITLE_ANNOUNCEMENT_TIMEOUT.get() / 20 * 1000L) {
                         lastTitleTime = System.currentTimeMillis();
-                        client.gui.setTimes(10, ClientConfig.TITLE_ANNOUNCEMENT_DURATION.get(), 20);
-                        client.gui.setTitle(titleText);
-                        client.gui.setSubtitle(subtitleText);
+                        client.gui.hud.setTimes(10, ClientConfig.TITLE_ANNOUNCEMENT_DURATION.get(), 20);
+                        client.gui.hud.setTitle(titleText);
+                        client.gui.hud.setSubtitle(subtitleText);
                     }
                 }
             }

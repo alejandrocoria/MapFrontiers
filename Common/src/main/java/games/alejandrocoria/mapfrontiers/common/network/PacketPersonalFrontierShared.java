@@ -21,8 +21,9 @@ import net.minecraft.resources.Identifier;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-public class PacketPersonalFrontierShared {
+public class PacketPersonalFrontierShared implements CustomPacketPayload {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_personal_frontier_shared");
+    public static final CustomPacketPayload.Type<PacketPersonalFrontierShared> TYPE = new CustomPacketPayload.Type<>(CHANNEL);
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketPersonalFrontierShared> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketPersonalFrontierShared::encode, PacketPersonalFrontierShared::new);
 
     private int shareMessageID;
@@ -40,8 +41,9 @@ public class PacketPersonalFrontierShared {
         this.name2 = name2;
     }
 
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
+    @Override
+    public CustomPacketPayload.Type<PacketPersonalFrontierShared> type() {
+        return TYPE;
     }
 
     public PacketPersonalFrontierShared(FriendlyByteBuf buf) {

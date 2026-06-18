@@ -176,7 +176,7 @@ public abstract class AutoScaledScreen extends LayeredScreen {
 
     @Override
     protected final void renderPopupScreenBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
-        if (minecraft.screen == this) {
+        if (minecraft.gui.screen() == this) {
             // Do not draw blur if it has already been drawn because Minecraft throws an exception for some reason.
             if (((GuiRenderStateAccessor) ((GuiGraphicsAccessor) graphics).mapfrontiers$getGuiRenderState()).mapfrontiers$setFirstStratumAfterBlur() == Integer.MAX_VALUE) {
                 graphics.blurBeforeThisStratum();
@@ -210,7 +210,7 @@ public abstract class AutoScaledScreen extends LayeredScreen {
 
         renderScaledScreen(graphics, mouseX, mouseY, partialTicks);
 
-        if (minecraft.screen == this) {
+        if (minecraft.gui.screen() == this) {
             graphics.extractDeferredElements(mouseX, mouseY, partialTicks);
         }
 
@@ -272,7 +272,7 @@ public abstract class AutoScaledScreen extends LayeredScreen {
         }
 
         onClose();
-        if (minecraft.screen != null && minecraft.screen instanceof AutoScaledScreen autoScaledScreen) {
+        if (minecraft.gui.screen() != null && minecraft.gui.screen() instanceof AutoScaledScreen autoScaledScreen) {
             autoScaledScreen.closeAndReturnToFullscreenMap();
         }
     }

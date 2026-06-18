@@ -19,8 +19,9 @@ import java.util.Date;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class PacketChangeFrontierToPersonal {
+public class PacketChangeFrontierToPersonal implements CustomPacketPayload {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_change_frontier_to_personal");
+    public static final CustomPacketPayload.Type<PacketChangeFrontierToPersonal> TYPE = new CustomPacketPayload.Type<>(CHANNEL);
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketChangeFrontierToPersonal> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketChangeFrontierToPersonal::encode, PacketChangeFrontierToPersonal::new);
 
     private UUID frontierID;
@@ -31,8 +32,9 @@ public class PacketChangeFrontierToPersonal {
         this.modified = modified;
     }
 
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
+    @Override
+    public CustomPacketPayload.Type<PacketChangeFrontierToPersonal> type() {
+        return TYPE;
     }
 
     public PacketChangeFrontierToPersonal(FriendlyByteBuf buf) {

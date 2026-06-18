@@ -19,8 +19,9 @@ import java.util.Date;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class PacketChangeFrontierToGlobal {
+public class PacketChangeFrontierToGlobal implements CustomPacketPayload {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_change_frontier_to_global");
+    public static final CustomPacketPayload.Type<PacketChangeFrontierToGlobal> TYPE = new CustomPacketPayload.Type<>(CHANNEL);
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketChangeFrontierToGlobal> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketChangeFrontierToGlobal::encode, PacketChangeFrontierToGlobal::new);
 
     private UUID frontierID;
@@ -31,8 +32,9 @@ public class PacketChangeFrontierToGlobal {
         this.modified = modified;
     }
 
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
+    @Override
+    public CustomPacketPayload.Type<PacketChangeFrontierToGlobal> type() {
+        return TYPE;
     }
 
     public PacketChangeFrontierToGlobal(FriendlyByteBuf buf) {

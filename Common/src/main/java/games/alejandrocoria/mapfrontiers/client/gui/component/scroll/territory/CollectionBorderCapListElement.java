@@ -1,13 +1,11 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.scroll.territory;
 
-import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class CollectionBorderCapListElement extends ScrollBox.ScrollElement {
     private static final int HEIGHT = 2;
 

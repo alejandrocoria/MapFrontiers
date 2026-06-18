@@ -147,6 +147,10 @@ public class ColorInputTabsWidget implements Layout {
     }
 
     @Override
+    public void removeChildren() {
+    }
+
+    @Override
     public int getWidth() {
         return tabbedBox.getWidth();
     }

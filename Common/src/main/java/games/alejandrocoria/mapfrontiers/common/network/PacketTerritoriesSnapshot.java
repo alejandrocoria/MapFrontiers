@@ -17,8 +17,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @ParametersAreNonnullByDefault
-public class PacketTerritoriesSnapshot {
+public class PacketTerritoriesSnapshot implements CustomPacketPayload {
     public static final Identifier CHANNEL = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "packet_territories_snapshot");
+    public static final CustomPacketPayload.Type<PacketTerritoriesSnapshot> TYPE = new CustomPacketPayload.Type<>(CHANNEL);
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketTerritoriesSnapshot> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketTerritoriesSnapshot::encode, PacketTerritoriesSnapshot::new);
 
     private final List<FrontierData> globalFrontiers;
@@ -33,8 +34,9 @@ public class PacketTerritoriesSnapshot {
         personalCollections = new ArrayList<>();
     }
 
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
+    @Override
+    public CustomPacketPayload.Type<PacketTerritoriesSnapshot> type() {
+        return TYPE;
     }
 
     public void addGlobalFrontier(FrontierData frontier) {
