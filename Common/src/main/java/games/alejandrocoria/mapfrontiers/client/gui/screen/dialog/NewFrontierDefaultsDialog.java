@@ -15,7 +15,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.util.DefaultValueBinding;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.client.gui.layouts.LinearLayout;
@@ -134,7 +134,7 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
     }
 
     @Override
-    protected void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+    protected void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         super.renderScaledBackgroundScreen(graphics, mouseX, mouseY, partialTicks);
         if (colorInputs != null) {
             colorInputs.renderTabbedBoxBackground(graphics, mouseX, mouseY, partialTicks);

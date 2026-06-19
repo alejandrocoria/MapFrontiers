@@ -236,8 +236,8 @@ public class TabbedBox implements Layout {
         }
 
         graphics.hLine(getX(), getX() + backgroundWidth - 1, getY() + backgroundHeight - 1, ColorConstants.TAB_BORDER_NORMAL);
-        graphics.hLine(getX(), getY() + TAB_HEIGHT, getY() + backgroundHeight - 1, ColorConstants.TAB_BORDER_NORMAL);
-        graphics.hLine(getX() + backgroundWidth - 1, getY() + TAB_HEIGHT, getY() + backgroundHeight - 1, ColorConstants.TAB_BORDER_NORMAL);
+        graphics.vLine(getX(), getY() + TAB_HEIGHT, getY() + backgroundHeight - 1, ColorConstants.TAB_BORDER_NORMAL);
+        graphics.vLine(getX() + backgroundWidth - 1, getY() + TAB_HEIGHT, getY() + backgroundHeight - 1, ColorConstants.TAB_BORDER_NORMAL);
     }
 
     private int findNextEnabledTab(int startIndex, boolean forward) {

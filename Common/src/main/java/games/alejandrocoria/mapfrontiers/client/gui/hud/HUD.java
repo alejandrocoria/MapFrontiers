@@ -442,7 +442,7 @@ public class HUD {
             int textColor = nameSlot ? textNameColor : textOwnerColor;
             for (StringWidget widget : widgets) {
                 widget.setColor(textColor);
-                widget.renderWidget(graphics, 0, 0, partialTicks);
+                widget.render(graphics, 0, 0, partialTicks);
             }
         }
     }

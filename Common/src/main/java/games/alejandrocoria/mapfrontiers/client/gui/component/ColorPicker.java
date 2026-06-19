@@ -284,7 +284,7 @@ public class ColorPicker extends AbstractWidgetNoNarration {
         randomButton.setFocused(focusedPart == FocusPart.RANDOM && isKeyboardFocused());
         renderHsBackground(graphics);
         renderVBackground(graphics);
-        randomButton.extractRenderState(graphics, mouseX, mouseY, partialTicks);
+        randomButton.render(graphics, mouseX, mouseY, partialTicks);
         renderSelectedMarkers(graphics);
         renderFocusedMarkers(graphics);
     }

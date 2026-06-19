@@ -6,7 +6,7 @@ import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.layouts.Layout;
 import net.minecraft.client.gui.layouts.LayoutElement;
 import net.minecraft.client.gui.layouts.LayoutSettings;
@@ -132,7 +132,7 @@ public class ColorInputTabsWidget implements Layout {
         textHex.setFocused(false);
     }
 
-    public void renderTabbedBoxBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+    public void renderTabbedBoxBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         tabbedBox.renderBackground(graphics, mouseX, mouseY, partialTicks);
     }
 

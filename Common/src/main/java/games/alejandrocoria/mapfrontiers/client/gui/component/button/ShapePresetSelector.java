@@ -152,7 +152,7 @@ abstract class ShapePresetSelector extends AbstractWidgetNoNarration {
             graphics.renderOutline(x - 1, y - 1, BUTTON_SIZE + 2, BUTTON_SIZE + 2, ColorConstants.SHAPE_PRESET_SELECTOR_FOCUS_OUTLINE);
         }
 
-        labelShapes.renderWidget(graphics, mouseX, mouseY, partialTicks);
+        labelShapes.render(graphics, mouseX, mouseY, partialTicks);
     }
 
     protected abstract void onSelectionChanged();

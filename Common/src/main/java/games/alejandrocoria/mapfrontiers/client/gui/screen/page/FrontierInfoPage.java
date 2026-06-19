@@ -712,7 +712,7 @@ public class FrontierInfoPage extends PageScreen {
     }
 
     @Override
-    protected void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+    protected void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         super.renderScaledBackgroundScreen(graphics, mouseX, mouseY, partialTicks);
         if (colorInputs != null) {
             colorInputs.renderTabbedBoxBackground(graphics, mouseX, mouseY, partialTicks);
