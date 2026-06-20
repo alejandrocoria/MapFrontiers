@@ -56,12 +56,13 @@ repositories {
         url = 'https://maven.blamejared.com'
     }
     exclusiveContent {
-        forRepository {
-            maven {
-                name = 'JourneyMap API and CommonNetworking'
-                url = 'https://jm.gserv.me/repository/maven-public/'
-            }
-        }
+        forRepositories(
+                mavenLocal(),
+                maven {
+                    name = 'JourneyMap API and CommonNetworking'
+                    url = 'https://jm.gserv.me/repository/maven-public/'
+                }
+        )
         filter {
             includeGroupAndSubgroups("info.journeymap")
             includeGroupAndSubgroups("mysticdrew")
