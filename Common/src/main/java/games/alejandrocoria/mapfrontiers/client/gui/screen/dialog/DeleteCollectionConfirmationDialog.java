@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.screen.dialog;
 
 import games.alejandrocoria.mapfrontiers.client.gui.component.PluginSourceBadge;
 import games.alejandrocoria.mapfrontiers.client.gui.util.SourcePluginUiHelper;
+import games.alejandrocoria.mapfrontiers.common.config.BooleanConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import net.minecraft.client.gui.components.AbstractWidget;
 
@@ -13,8 +14,8 @@ public class DeleteCollectionConfirmationDialog extends DeleteConfirmationDialog
     private static final String TEXT_KEY = "mapfrontiers.delete_collection_dialog_desc";
     private final @Nullable String sourcePluginId;
 
-    public DeleteCollectionConfirmationDialog(CollectionData collection, Consumer<Response> callback) {
-        super(TITLE_KEY, TEXT_KEY, callback);
+    public DeleteCollectionConfirmationDialog(CollectionData collection, @Nullable BooleanConfigEntry askConfirmationEntry, Consumer<Response> callback) {
+        super(TITLE_KEY, TEXT_KEY, askConfirmationEntry, callback);
         sourcePluginId = collection.getSourcePluginId();
     }
 

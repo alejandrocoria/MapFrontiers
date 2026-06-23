@@ -23,7 +23,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.territory.F
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.territory.SectionHeaderListElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.territory.TerritoryListRowElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.CreateConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteCollectionConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteFrontierConfirmationDialog;
@@ -502,39 +501,21 @@ public class TerritoryListPage extends PageScreen {
     }
 
     private void onFrontierDeletePressed(FrontierOverlay frontier) {
-        if (ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.get()) {
-            showDeleteFrontierConfirmation(frontier);
-        } else {
-            deleteFrontier(frontier);
-        }
+        showDeleteFrontierConfirmation(frontier);
     }
 
     private void onCollectionDeletePressed(CollectionData collection) {
-        if (ClientConfig.ASK_CONFIRMATION_COLLECTION_DELETE.get()) {
-            showDeleteCollectionConfirmation(collection);
-        } else {
-            deleteCollection(collection);
-        }
+        showDeleteCollectionConfirmation(collection);
     }
 
     private void showDeleteFrontierConfirmation(FrontierOverlay frontier) {
-        new DeleteFrontierConfirmationDialog(frontier, response -> {
-            if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.set(false);
-                ClientGlobalEvents.postUpdatedConfigEvent();
-            }
-            deleteFrontier(frontier);
-        }).display();
+        new DeleteFrontierConfirmationDialog(frontier, ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE,
+                response -> deleteFrontier(frontier)).display();
     }
 
     private void showDeleteCollectionConfirmation(CollectionData collection) {
-        new DeleteCollectionConfirmationDialog(collection, response -> {
-            if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                ClientConfig.ASK_CONFIRMATION_COLLECTION_DELETE.set(false);
-                ClientGlobalEvents.postUpdatedConfigEvent();
-            }
-            deleteCollection(collection);
-        }).display();
+        new DeleteCollectionConfirmationDialog(collection, ClientConfig.ASK_CONFIRMATION_COLLECTION_DELETE,
+                response -> deleteCollection(collection)).display();
     }
 
     private void onSettingsPressed() {
@@ -626,40 +607,20 @@ public class TerritoryListPage extends PageScreen {
     }
 
     private void showTemporaryFrontierCreateConfirmation(Runnable onConfirm) {
-        if (!ClientConfig.ASK_CONFIRMATION_TEMPORARY_FRONTIER_CREATE.get()) {
-            onConfirm.run();
-            return;
-        }
-
         new CreateConfirmationDialog(
                 "mapfrontiers.create_temporary_frontier_dialog",
                 "mapfrontiers.create_temporary_frontier_dialog_desc",
-                response -> {
-                    if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                        ClientConfig.ASK_CONFIRMATION_TEMPORARY_FRONTIER_CREATE.set(false);
-                        ClientGlobalEvents.postUpdatedConfigEvent();
-                    }
-                    onConfirm.run();
-                }
+                ClientConfig.ASK_CONFIRMATION_TEMPORARY_FRONTIER_CREATE,
+                response -> onConfirm.run()
         ).display();
     }
 
     private void showTemporaryCollectionCreateConfirmation(Runnable onConfirm) {
-        if (!ClientConfig.ASK_CONFIRMATION_TEMPORARY_COLLECTION_CREATE.get()) {
-            onConfirm.run();
-            return;
-        }
-
         new CreateConfirmationDialog(
                 "mapfrontiers.create_temporary_collection_dialog",
                 "mapfrontiers.create_temporary_collection_dialog_desc",
-                response -> {
-                    if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                        ClientConfig.ASK_CONFIRMATION_TEMPORARY_COLLECTION_CREATE.set(false);
-                        ClientGlobalEvents.postUpdatedConfigEvent();
-                    }
-                    onConfirm.run();
-                }
+                ClientConfig.ASK_CONFIRMATION_TEMPORARY_COLLECTION_CREATE,
+                response -> onConfirm.run()
         ).display();
     }
 

@@ -16,7 +16,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButto
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.CollectionVisibilityDialog;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteCollectionConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.territory.BannerDataHelper;
 import games.alejandrocoria.mapfrontiers.client.territory.BannerRenderer;
@@ -369,17 +368,8 @@ public class CollectionInfoPage extends PageScreen {
     }
 
     private void onDeletePressed() {
-        if (ClientConfig.ASK_CONFIRMATION_COLLECTION_DELETE.get()) {
-            new DeleteCollectionConfirmationDialog(collection, response -> {
-                if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                    ClientConfig.ASK_CONFIRMATION_COLLECTION_DELETE.set(false);
-                    ClientGlobalEvents.postUpdatedConfigEvent();
-                }
-                deleteCollection();
-            }).display();
-        } else {
-            deleteCollection();
-        }
+        new DeleteCollectionConfirmationDialog(collection, ClientConfig.ASK_CONFIRMATION_COLLECTION_DELETE,
+                response -> deleteCollection()).display();
     }
 
     private void onSelectInMapPressed() {

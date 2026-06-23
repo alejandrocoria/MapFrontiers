@@ -526,6 +526,7 @@ public class FrontierInfoPage extends PageScreen {
                 "mapfrontiers.change_to_global",
                 "gui.cancel",
                 null,
+                true,
                 response -> changeToGlobal()
         ).display();
     }
@@ -537,6 +538,7 @@ public class FrontierInfoPage extends PageScreen {
                 "mapfrontiers.change_to_personal",
                 "gui.cancel",
                 null,
+                true,
                 response -> changeToPersonal()
         ).display();
     }
@@ -690,17 +692,8 @@ public class FrontierInfoPage extends PageScreen {
     }
 
     private void onDeletePressed() {
-        if (ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.get()) {
-            new DeleteFrontierConfirmationDialog(frontier, response -> {
-                if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                    ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.set(false);
-                    ClientGlobalEvents.postUpdatedConfigEvent();
-                }
-                deleteFrontier();
-            }).display();
-        } else {
-            deleteFrontier();
-        }
+        new DeleteFrontierConfirmationDialog(frontier, ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE,
+                response -> deleteFrontier()).display();
     }
 
     private void refreshViewState() {

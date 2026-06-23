@@ -11,7 +11,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox.ScrollElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.UserSharedElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -101,20 +100,11 @@ public class SharedAccessPage extends PageScreen {
         users = new ScrollBox(ScrollBox.rowsToHeight(USERS_MIN_ROWS, USERS_ELEMENT_HEIGHT), USERS_WIDTH, USERS_ELEMENT_HEIGHT);
         users.setHorizontalEdgeNavigation(ScrollBox.HorizontalEdgeNavigation.KEEP_FOCUS);
         users.setElementDeletePressedCallback(element -> {
-            if (ClientConfig.ASK_CONFIRMATION_USER_DELETE.get()) {
-                new DeleteConfirmationDialog(
-                        "mapfrontiers.delete_user_dialog",
-                        response -> {
-                            if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                                ClientConfig.ASK_CONFIRMATION_USER_DELETE.set(false);
-                                ClientGlobalEvents.postUpdatedConfigEvent();
-                            }
-                            deleteUserPressed(element);
-                        }
-                ).display();
-            } else {
-                deleteUserPressed(element);
-            }
+            new DeleteConfirmationDialog(
+                    "mapfrontiers.delete_user_dialog",
+                    ClientConfig.ASK_CONFIRMATION_USER_DELETE,
+                    response -> deleteUserPressed(element)
+            ).display();
         });
         mainLayout.addChild(users);
 

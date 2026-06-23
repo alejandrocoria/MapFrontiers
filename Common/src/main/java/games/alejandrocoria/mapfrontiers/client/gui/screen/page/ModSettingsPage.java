@@ -22,7 +22,6 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUse
 import games.alejandrocoria.mapfrontiers.client.gui.screen.HUDSettingsScreen;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.CollectionAppearanceDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.CollectionVisibilityDialog;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationSettingsDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.FrontierAppearanceDialog;
@@ -562,23 +561,14 @@ public class ModSettingsPage extends PageScreen {
             groupClicked((GroupElement) element);
         }
 
-        if (ClientConfig.ASK_CONFIRMATION_GROUP_DELETE.get()) {
-            showDeleteGroupConfirmation(element);
-        } else {
-            deleteGroup(element);
-        }
+        showDeleteGroupConfirmation(element);
     }
 
     private void showDeleteGroupConfirmation(ScrollElement element) {
         new DeleteConfirmationDialog(
                 "mapfrontiers.delete_group_dialog",
-                response -> {
-                    if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                        ClientConfig.ASK_CONFIRMATION_GROUP_DELETE.set(false);
-                        ClientGlobalEvents.postUpdatedConfigEvent();
-                    }
-                    deleteGroup(element);
-                }
+                ClientConfig.ASK_CONFIRMATION_GROUP_DELETE,
+                response -> deleteGroup(element)
         ).display();
     }
 
@@ -599,23 +589,14 @@ public class ModSettingsPage extends PageScreen {
         }
 
         SettingsGroup group = selectedGroup.getGroup();
-        if (ClientConfig.ASK_CONFIRMATION_USER_DELETE.get()) {
-            showDeleteUserConfirmation(group, element);
-        } else {
-            deleteUser(group, element);
-        }
+        showDeleteUserConfirmation(group, element);
     }
 
     private void showDeleteUserConfirmation(SettingsGroup group, ScrollElement element) {
         new DeleteConfirmationDialog(
                 "mapfrontiers.delete_user_dialog",
-                response -> {
-                    if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                        ClientConfig.ASK_CONFIRMATION_USER_DELETE.set(false);
-                        ClientGlobalEvents.postUpdatedConfigEvent();
-                    }
-                    deleteUser(group, element);
-                }
+                ClientConfig.ASK_CONFIRMATION_USER_DELETE,
+                response -> deleteUser(group, element)
         ).display();
     }
 

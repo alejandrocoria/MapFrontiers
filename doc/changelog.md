@@ -1,3 +1,6 @@
+**Beta 7:**
+* Changed: Many confirmation dialogs can now be skipped by holding Shift while clicking the action button.
+
 **Beta 6:**
 * Added: Configurable default names, colors, visibility, and Path frontier styles for new frontiers and collections.
 * Added: Restore default buttons for individual client settings and default options.
