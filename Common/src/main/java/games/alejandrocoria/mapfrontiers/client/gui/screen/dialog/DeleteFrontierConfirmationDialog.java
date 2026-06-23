@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.screen.dialog;
 import games.alejandrocoria.mapfrontiers.client.gui.component.PluginSourceBadge;
 import games.alejandrocoria.mapfrontiers.client.gui.util.SourcePluginUiHelper;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
+import games.alejandrocoria.mapfrontiers.common.config.BooleanConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -15,8 +16,8 @@ public class DeleteFrontierConfirmationDialog extends DeleteConfirmationDialog {
     private static final String SHARED_DESC_KEY = "mapfrontiers.delete_frontier_dialog_desc_shared";
     private final @Nullable String sourcePluginId;
 
-    public DeleteFrontierConfirmationDialog(FrontierOverlay frontier, Consumer<Response> callback) {
-        super(TITLE_KEY, getDescKey(frontier), callback);
+    public DeleteFrontierConfirmationDialog(FrontierOverlay frontier, @Nullable BooleanConfigEntry askConfirmationEntry, Consumer<Response> callback) {
+        super(TITLE_KEY, getDescKey(frontier), askConfirmationEntry, callback);
         sourcePluginId = frontier.getSourcePluginId();
     }
 

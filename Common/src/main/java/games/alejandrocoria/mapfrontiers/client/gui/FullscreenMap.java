@@ -6,7 +6,6 @@ import games.alejandrocoria.mapfrontiers.client.config.AfterCreatingFrontier;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.config.FrontierDisplayVisibility;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
-import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteCollectionConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteFrontierConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.NewFrontierDialog;
@@ -385,29 +384,11 @@ public class FullscreenMap {
 
     private void buttonDelete() {
         if (selectedCollection != null) {
-            if (ClientConfig.ASK_CONFIRMATION_COLLECTION_DELETE.get()) {
-                new DeleteCollectionConfirmationDialog(selectedCollection, response -> {
-                    if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                        ClientConfig.ASK_CONFIRMATION_COLLECTION_DELETE.set(false);
-                        ClientGlobalEvents.postUpdatedConfigEvent();
-                    }
-                    deleteCollection();
-                }).display();
-            } else {
-                deleteCollection();
-            }
+            new DeleteCollectionConfirmationDialog(selectedCollection, ClientConfig.ASK_CONFIRMATION_COLLECTION_DELETE,
+                    response -> deleteCollection()).display();
         } else if (frontierHighlighted != null) {
-            if (ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.get()) {
-                new DeleteFrontierConfirmationDialog(frontierHighlighted, response -> {
-                    if (response == ConfirmationDialog.Response.ConfirmAlternative) {
-                        ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE.set(false);
-                        ClientGlobalEvents.postUpdatedConfigEvent();
-                    }
-                    deleteFrontier();
-                }).display();
-            } else {
-                deleteFrontier();
-            }
+            new DeleteFrontierConfirmationDialog(frontierHighlighted, ClientConfig.ASK_CONFIRMATION_FRONTIER_DELETE,
+                    response -> deleteFrontier()).display();
         } else {
             updateButtons();
         }
