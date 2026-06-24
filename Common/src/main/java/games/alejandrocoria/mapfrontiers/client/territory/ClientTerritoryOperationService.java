@@ -66,6 +66,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
 public class ClientTerritoryOperationService {
@@ -682,45 +683,17 @@ public class ClientTerritoryOperationService {
     }
 
     public void applyFrontierChangeToGlobal(UUID frontierId, @Nullable Date modified) {
-        FrontierOverlay frontierOverlay = personalManager.deleteFrontier(frontierId);
-        if (frontierOverlay == null) {
-            return;
-        }
-        UUID previousCollectionId = frontierOverlay.getCollectionId();
-        collectionRuntime.onFrontierRemoved(frontierOverlay);
-        frontierOverlay.setPersonal(false);
-        if (modified != null) {
-            frontierOverlay.setModified(modified);
-        }
-        frontierOverlay.removeAllUserShared();
-        frontierOverlay.recreateBannerRenderer();
-        globalManager.addFrontier(frontierOverlay);
-        collectionRuntime.onFrontierAdded(frontierOverlay);
-        notifyCollectionOverlayFrontierUpdated(previousCollectionId, frontierOverlay);
-        markLocalPersonalDataDirty();
-        frontierEvents.postUpdated(frontierOverlay, -1);
-        frontierOverlay.rebuildOverlayNow();
+        applyFrontierScopeChange(personalManager, globalManager, frontierId, modified, false, frontierOverlay -> {
+            frontierOverlay.removeAllUserShared();
+            frontierOverlay.recreateBannerRenderer();
+        });
     }
 
     public void applyFrontierChangeToPersonal(UUID frontierId, @Nullable Date modified) {
-        FrontierOverlay frontierOverlay = globalManager.deleteFrontier(frontierId);
-        if (frontierOverlay == null) {
-            return;
-        }
-        UUID previousCollectionId = frontierOverlay.getCollectionId();
-        collectionRuntime.onFrontierRemoved(frontierOverlay);
-        frontierOverlay.setPersonal(true);
-        if (modified != null) {
-            frontierOverlay.setModified(modified);
-        }
-        frontierOverlay.setCurrentPlayerAsOwner();
-        frontierOverlay.recreateBannerRenderer();
-        personalManager.addFrontier(frontierOverlay);
-        collectionRuntime.onFrontierAdded(frontierOverlay);
-        notifyCollectionOverlayFrontierUpdated(previousCollectionId, frontierOverlay);
-        markLocalPersonalDataDirty();
-        frontierEvents.postUpdated(frontierOverlay, -1);
-        frontierOverlay.rebuildOverlayNow();
+        applyFrontierScopeChange(globalManager, personalManager, frontierId, modified, true, frontierOverlay -> {
+            frontierOverlay.setCurrentPlayerAsOwner();
+            frontierOverlay.recreateBannerRenderer();
+        });
     }
 
     public void applyCollectionCreated(CollectionData collection) {
@@ -763,6 +736,36 @@ public class ClientTerritoryOperationService {
         }
 
         runtime.markDirty();
+    }
+
+    private void applyFrontierScopeChange(FrontiersOverlayManager sourceManager,
+                                          FrontiersOverlayManager targetManager,
+                                          UUID frontierId,
+                                          @Nullable Date modified,
+                                          boolean targetPersonal,
+                                          Consumer<FrontierOverlay> afterScopeChange) {
+        FrontierOverlay frontierOverlay = sourceManager.deleteFrontier(frontierId);
+        if (frontierOverlay == null) {
+            return;
+        }
+
+        UUID previousCollectionId = frontierOverlay.getCollectionId();
+        collectionRuntime.onFrontierRemoved(frontierOverlay);
+        // Remove the old collection membership before changing scope and re-adding the frontier so
+        // collection indexes, overlays, and affected collection pages all refresh from the new state.
+        frontierOverlay.setCollectionId(null);
+        frontierOverlay.setPersonal(targetPersonal);
+        if (modified != null) {
+            frontierOverlay.setModified(modified);
+        }
+        afterScopeChange.accept(frontierOverlay);
+        targetManager.addFrontier(frontierOverlay);
+        collectionRuntime.onFrontierAdded(frontierOverlay);
+        notifyCollectionOverlayFrontierUpdated(previousCollectionId, frontierOverlay);
+        postAffectedCollectionsUpdated(previousCollectionId, frontierOverlay.getCollectionId());
+        markLocalPersonalDataDirty();
+        frontierEvents.postUpdated(frontierOverlay, -1);
+        frontierOverlay.rebuildOverlayNow();
     }
 
     private void createLocalCollection(CollectionData collection) {

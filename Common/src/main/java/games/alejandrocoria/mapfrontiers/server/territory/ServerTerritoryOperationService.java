@@ -263,11 +263,12 @@ public class ServerTerritoryOperationService {
             if (serverSpec.getCollectionId() != null && targetCollection == null) {
                 return ServerTerritoryOperationResult.rejected(null);
             }
+            Set<UUID> targetCollectionRecipientsBefore = targetCollection == null ? null : getCollectionRecipientIds(targetCollection);
             FrontierData frontier = territoriesManager.createNewPersonalFrontier(serverSpec);
             if (targetCollection != null) {
                 touchCollection(targetCollection, frontier.getModified());
             }
-            return createdPersonalFrontier(frontier, player.getId(), null, targetCollection);
+            return createdPersonalFrontier(frontier, player.getId(), targetCollectionRecipientsBefore, targetCollection);
         }
 
         if (!permissionEvaluator.canCreateGlobalFrontier(player)) {
@@ -657,11 +658,6 @@ public class ServerTerritoryOperationService {
                     "Rejected changeFrontierToGlobal because session-only frontiers cannot exist on the server. frontierId={}, lifetime={}",
                     frontierId, frontier.getLifetime());
         }
-        if (sourceCollection != null) {
-            return rejectInvalidAuthoritativeFrontier(player, frontier,
-                    "Rejected changeFrontierToGlobal because frontiers in a collection cannot change scope without clearing collection membership first. frontierId={}, collectionId={}",
-                    frontierId, sourceCollection.getId());
-        }
 
         List<ServerPlayer> relevantPlayers = new ArrayList<>();
         relevantPlayers.add(player);
@@ -715,13 +711,9 @@ public class ServerTerritoryOperationService {
         if (!permissionEvaluator.canDeleteGlobalFrontier(player, frontier)) {
             return rejectedWithProfileRefresh(player, frontier);
         }
-        if (sourceCollection != null) {
-            return rejectInvalidAuthoritativeFrontier(player, frontier,
-                    "Rejected changeFrontierToPersonal because frontiers in a collection cannot change scope without clearing collection membership first. frontierId={}, collectionId={}",
-                    frontierId, sourceCollection.getId());
-        }
 
-        boolean changed = territoriesManager.changeGlobalFrontierToPersonal(frontier.getOwner(), frontier.getDimension(), frontier.getId());
+        boolean changed = territoriesManager.changeGlobalFrontierToPersonal(permissionEvaluator.getPlayerUser(player),
+                frontier.getDimension(), frontier.getId());
         if (!changed) {
             return ServerTerritoryOperationResult.notFound();
         }
@@ -839,11 +831,15 @@ public class ServerTerritoryOperationService {
         LinkedHashSet<UUID> recipientsForCreate = new LinkedHashSet<>();
         LinkedHashSet<UUID> recipientsForUpdate = new LinkedHashSet<>();
         LinkedHashSet<UUID> recipientsForDelete = new LinkedHashSet<>();
-        if (metadataChanged && recipientsBefore == null) {
-            recipientsForUpdate.addAll(recipientsAfter);
+        if (recipientsBefore == null) {
+            if (metadataChanged) {
+                recipientsForUpdate.addAll(recipientsAfter);
+            } else {
+                recipientsForCreate.addAll(recipientsAfter);
+            }
         } else {
             for (UUID recipientId : recipientsAfter) {
-                if (metadataChanged && recipientsBefore != null && recipientsBefore.contains(recipientId)) {
+                if (recipientsBefore.contains(recipientId)) {
                     recipientsForUpdate.add(recipientId);
                 } else {
                     recipientsForCreate.add(recipientId);
