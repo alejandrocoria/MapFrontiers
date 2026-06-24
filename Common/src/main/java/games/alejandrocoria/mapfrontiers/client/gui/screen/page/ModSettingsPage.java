@@ -992,7 +992,9 @@ public class ModSettingsPage extends PageScreen {
 
     private void newGroupPressed() {
         if (settings != null) {
-            SettingsGroup group = settings.createCustomGroup(textNewGroupName.getValue());
+            String groupName = textNewGroupName.getValue();
+            clearTextBoxFocus(textNewGroupName);
+            SettingsGroup group = settings.createCustomGroup(groupName);
             textNewGroupName.setValue("");
             GroupElement element = new GroupElement(font, group);
             groups.addElement(element);
@@ -1009,6 +1011,7 @@ public class ModSettingsPage extends PageScreen {
         SettingsUser user = new SettingsUser();
 
         String usernameOrUUID = textNewUser.getValue();
+        clearTextBoxFocus(textNewUser);
         if (StringUtils.isBlank(usernameOrUUID)) {
             return;
         } else if (usernameOrUUID.length() < 28) {
@@ -1047,6 +1050,12 @@ public class ModSettingsPage extends PageScreen {
         textNewUser.setValue("");
 
         sendChangesToServer();
+    }
+
+    private void clearTextBoxFocus(TextBox textBox) {
+        if (getFocused() == textBox) {
+            setFocused(null);
+        }
     }
 
     @Override

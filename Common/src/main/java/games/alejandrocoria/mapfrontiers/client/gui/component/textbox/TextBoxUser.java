@@ -19,6 +19,7 @@ import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class TextBoxUser extends TextBox {
+    private static final String AUTOCOMPLETE_HINT_KEY = "mapfrontiers.user_autocomplete_hint";
     private static final int MAX_VISIBLE_SUGGESTIONS = 7;
     private static final int SUGGESTION_WINDOW_OFFSET = 6;
     private static final int POPUP_LINE_HEIGHT = 12;
@@ -133,11 +134,7 @@ public class TextBoxUser extends TextBox {
             int maxErrorWidth = width - POPUP_PADDING * 2;
             int popupHeight = errorList.size() * POPUP_LINE_HEIGHT;
 
-            graphics.fill(getX() - POPUP_BORDER, getY() - popupHeight - POPUP_PADDING - POPUP_BORDER,
-                    getX() + maxErrorWidth + POPUP_PADDING * 2 + POPUP_BORDER, getY() - POPUP_BORDER,
-                    ColorConstants.TEXTBOX_POPUP_BORDER);
-            graphics.fill(getX(), getY() - popupHeight - POPUP_PADDING,
-                    getX() + maxErrorWidth + POPUP_PADDING * 2, getY() - POPUP_BORDER, ColorConstants.TEXTBOX_POPUP_BG);
+            drawPopupFrame(graphics, maxErrorWidth, popupHeight);
 
             int posX = getX() + POPUP_PADDING;
             int posY = getY() - popupHeight;
@@ -147,12 +144,7 @@ public class TextBoxUser extends TextBox {
             }
         } else if (!suggestionsToDraw.isEmpty()) {
             int popupHeight = suggestionsToDraw.size() * POPUP_LINE_HEIGHT;
-            graphics.fill(getX() - POPUP_BORDER, getY() - popupHeight - POPUP_PADDING - POPUP_BORDER,
-                    getX() + maxSuggestionWidth + POPUP_PADDING * 2 + POPUP_BORDER, getY() - POPUP_BORDER,
-                    ColorConstants.TEXTBOX_POPUP_BORDER);
-            graphics.fill(getX(), getY() - popupHeight - POPUP_PADDING,
-                    getX() + maxSuggestionWidth + POPUP_PADDING * 2, getY() - POPUP_BORDER,
-                    ColorConstants.TEXTBOX_POPUP_BG);
+            drawPopupFrame(graphics, maxSuggestionWidth, popupHeight);
 
             int posX = getX() + POPUP_PADDING;
             int posY = getY() - POPUP_LINE_HEIGHT;
@@ -167,11 +159,26 @@ public class TextBoxUser extends TextBox {
                     String suffix = t.substring(0, partialText.length());
                     String rest = t.substring(partialText.length());
                     graphics.drawString(font, suffix, posX, posY, ColorConstants.TEXTBOX_POPUP_TEXT);
-                    graphics.drawString(font, rest, posX + font.width(suffix), posY,
-                            ColorConstants.TEXT_MEDIUM);
+                    graphics.drawString(font, rest, posX + font.width(suffix), posY, ColorConstants.TEXT_MEDIUM);
                 }
 
                 posY -= POPUP_LINE_HEIGHT;
+            }
+        } else if (isFocused() && !StringUtils.isBlank(getValue())) {
+            Component hint = Component.translatable(AUTOCOMPLETE_HINT_KEY, "Alt");
+            String[] hintLines = hint.getString().split("\n");
+            int maxHintWidth = 0;
+            for (String line : hintLines) {
+                maxHintWidth = Math.max(maxHintWidth, font.width(line));
+            }
+
+            int popupHeight = hintLines.length * POPUP_LINE_HEIGHT;
+            drawPopupFrame(graphics, maxHintWidth, popupHeight);
+
+            int posY = getY() - popupHeight;
+            for (String line : hintLines) {
+                graphics.drawString(font, line, getX() + POPUP_PADDING, posY, ColorConstants.TEXT_HIGHLIGHT);
+                posY += POPUP_LINE_HEIGHT;
             }
         }
     }
@@ -186,5 +193,14 @@ public class TextBoxUser extends TextBox {
         } else {
             setError(null);
         }
+    }
+
+    private void drawPopupFrame(GuiGraphics graphics, int contentWidth, int popupHeight) {
+        graphics.fill(getX(), getY() - popupHeight - POPUP_PADDING,
+                getX() + contentWidth + POPUP_PADDING * 2, getY(),
+                ColorConstants.TEXTBOX_POPUP_BORDER);
+        graphics.fill(getX() + POPUP_BORDER, getY() - popupHeight - POPUP_PADDING + POPUP_BORDER,
+                getX() + contentWidth + POPUP_PADDING * 2 - POPUP_BORDER, getY(),
+                ColorConstants.TEXTBOX_POPUP_BG);
     }
 }
