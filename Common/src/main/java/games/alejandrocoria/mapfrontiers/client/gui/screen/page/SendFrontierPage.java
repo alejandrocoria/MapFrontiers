@@ -7,6 +7,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
+import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -95,7 +96,7 @@ public class SendFrontierPage extends PageScreen {
         SettingsUser user = new SettingsUser();
 
         String usernameOrUUID = textNewUser.getValue();
-        textNewUser.setFocused(false);
+        clearTextBoxFocus(textNewUser);
         if (StringUtils.isBlank(usernameOrUUID)) {
             return;
         } else if (usernameOrUUID.length() < 28) {
@@ -147,6 +148,12 @@ public class SendFrontierPage extends PageScreen {
         ChatFrontiers.sendFrontier(frontier, user);
 
         textNewUser.setValue("");
+    }
+
+    private void clearTextBoxFocus(TextBox textBox) {
+        if (getFocused() == textBox) {
+            setFocused(null);
+        }
     }
 
     @Override

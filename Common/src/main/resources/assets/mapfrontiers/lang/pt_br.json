@@ -136,6 +136,7 @@
   "mapfrontiers.send_description": "O mod não foi detectado no servidor, então você não pode compartilhar a fronteira.\nVocê pode enviar uma cópia a outros jogadores pelo chat e, se eles tiverem o mod, poderão aceitá-la.\nEles não verão as alterações que você fizer depois,\ne você terá que enviar a fronteira novamente se quiser que eles vejam essas alterações.",
   "mapfrontiers.shared_access": "Acesso compartilhado",
   "mapfrontiers.title_send": "Enviar fronteira",
+  "mapfrontiers.user_autocomplete_hint": "Você pode usar [%1$s]\npara autocompletar jogadores",
 
   "mapfrontiers.after_creating": "Depois de criar",
   "mapfrontiers.filter_dimension": "Dimensão:",

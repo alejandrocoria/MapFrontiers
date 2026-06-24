@@ -1,4 +1,5 @@
 **Beta 7:**
+* Added: A hint in player name fields indicating that Alt can be used for player autocompletion.
 * Changed: Many confirmation dialogs can now be skipped by holding Shift while clicking the action button.
 * Fixed: Changing a frontier between personal and global could do nothing when the frontier belonged to a collection.
 

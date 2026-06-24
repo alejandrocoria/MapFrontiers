@@ -136,6 +136,7 @@
   "mapfrontiers.send_description": "服务器未检测到此模组，因此你无法直接共享该领地。\n你可以通过聊天向其他玩家发送一份副本，如果他们安装了此模组，就能接受它。\n他们不会看到你之后所做的任何更改，\n如果你希望他们看到这些更改，就需要再次把领地发送给他们。",
   "mapfrontiers.shared_access": "共享访问",
   "mapfrontiers.title_send": "发送领地",
+  "mapfrontiers.user_autocomplete_hint": "你可以使用 [%1$s] 来自动补全玩家",
 
   "mapfrontiers.after_creating": "创建完成后",
   "mapfrontiers.filter_dimension": "维度：",

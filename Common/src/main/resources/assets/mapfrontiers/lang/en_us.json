@@ -136,6 +136,7 @@
   "mapfrontiers.send_description": "The mod wasn't detected on the server, so you can't share the frontier.\nYou can send a copy to other players via chat, and if they have the mod, they'll be able to accept it.\nThey won't see any changes you make afterward,\nand you'll have to send them the frontier again if you want them to see the changes.",
   "mapfrontiers.shared_access": "Shared access",
   "mapfrontiers.title_send": "Send frontier",
+  "mapfrontiers.user_autocomplete_hint": "You can use [%1$s] to autocomplete players",
 
   "mapfrontiers.after_creating": "After creating",
   "mapfrontiers.filter_dimension": "Dimension:",
