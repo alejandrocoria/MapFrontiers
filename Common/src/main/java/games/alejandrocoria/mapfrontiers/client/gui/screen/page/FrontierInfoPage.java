@@ -522,7 +522,9 @@ public class FrontierInfoPage extends PageScreen {
     private void showChangeToGlobalConfirmation() {
         new ConfirmationDialog(
                 "mapfrontiers.change_to_global_frontier_dialog",
-                "mapfrontiers.change_to_global_frontier_dialog_desc",
+                frontier.hasCollection()
+                        ? "mapfrontiers.change_to_global_frontier_dialog_desc_with_collection"
+                        : "mapfrontiers.change_to_global_frontier_dialog_desc",
                 "mapfrontiers.change_to_global",
                 "gui.cancel",
                 null,
@@ -534,7 +536,9 @@ public class FrontierInfoPage extends PageScreen {
     private void showChangeToPersonalConfirmation() {
         new ConfirmationDialog(
                 "mapfrontiers.change_to_personal_frontier_dialog",
-                "mapfrontiers.change_to_personal_frontier_dialog_desc",
+                frontier.hasCollection()
+                        ? "mapfrontiers.change_to_personal_frontier_dialog_desc_with_collection"
+                        : "mapfrontiers.change_to_personal_frontier_dialog_desc",
                 "mapfrontiers.change_to_personal",
                 "gui.cancel",
                 null,
