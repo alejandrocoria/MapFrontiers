@@ -10,6 +10,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButto
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox.ScrollElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.UserSharedElement;
+import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
@@ -219,7 +220,7 @@ public class SharedAccessPage extends PageScreen {
         SettingsUser user = new SettingsUser();
 
         String usernameOrUUID = textNewUser.getValue();
-        textNewUser.setFocused(false);
+        clearTextBoxFocus(textNewUser);
         if (StringUtils.isBlank(usernameOrUUID)) {
             return;
         } else if (usernameOrUUID.length() < 28) {
@@ -284,6 +285,12 @@ public class SharedAccessPage extends PageScreen {
 
         textNewUser.setValue("");
         resetLabels();
+    }
+
+    private void clearTextBoxFocus(TextBox textBox) {
+        if (getFocused() == textBox) {
+            setFocused(null);
+        }
     }
 
     @Override
