@@ -47,8 +47,14 @@ neoForge {
     }
 
     dependencies {
-        implementation "${project.api_group}:${project.api_artifact_id}:${project.api_version}"
-        embeddedApi "${project.api_group}:${project.api_artifact_id}:${project.api_version}"
+        def apiIsSnapshot = project.api_version.endsWith('-SNAPSHOT')
+
+        implementation("${project.api_group}:${project.api_artifact_id}:${project.api_version}") {
+            changing = apiIsSnapshot
+        }
+        embeddedApi("${project.api_group}:${project.api_artifact_id}:${project.api_version}") {
+            changing = apiIsSnapshot
+        }
 
         implementation "mysticdrew:common-networking-neoforge:${project.common_networking_version}-${project.minecraft_version}"
         implementation "com.electronwill.night-config:core:${project.nightconfig_version}"
