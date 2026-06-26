@@ -21,8 +21,14 @@ configurations {
 }
 
 dependencies {
-    implementation "${project.api_group}:${project.api_artifact_id}:${project.api_version}"
-    embeddedApi "${project.api_group}:${project.api_artifact_id}:${project.api_version}"
+    def apiIsSnapshot = project.api_version.endsWith('-SNAPSHOT')
+
+    implementation("${project.api_group}:${project.api_artifact_id}:${project.api_version}") {
+        changing = apiIsSnapshot
+    }
+    embeddedApi("${project.api_group}:${project.api_artifact_id}:${project.api_version}") {
+        changing = apiIsSnapshot
+    }
 
     minecraft "com.mojang:minecraft:${minecraft_version}"
     mappings loom.layered {
