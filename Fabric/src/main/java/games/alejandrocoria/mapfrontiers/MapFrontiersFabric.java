@@ -1,16 +1,12 @@
 package games.alejandrocoria.mapfrontiers;
 
-import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;
-import fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents;
-import games.alejandrocoria.mapfrontiers.common.Config;
-import games.alejandrocoria.mapfrontiers.common.command.CommandAccept;
-import games.alejandrocoria.mapfrontiers.common.event.EventHandler;
+import games.alejandrocoria.mapfrontiers.server.command.CommandAccept;
+import games.alejandrocoria.mapfrontiers.server.event.ServerGlobalEvents;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.neoforged.fml.config.ModConfig;
 
 public class MapFrontiersFabric extends MapFrontiers implements ModInitializer {
     public MapFrontiersFabric() {
@@ -18,16 +14,13 @@ public class MapFrontiersFabric extends MapFrontiers implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        ModConfigEvents.loading(MapFrontiers.MODID).register(config -> Config.bakeConfig());
-        ConfigRegistry.INSTANCE.register(MapFrontiersFabric.MODID, ModConfig.Type.CLIENT, Config.CLIENT_SPEC);
-
         init();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> CommandAccept.register(dispatcher));
-        ServerLifecycleEvents.SERVER_STARTED.register(EventHandler::postServerStartingEvent);
-        ServerLifecycleEvents.SERVER_STOPPING.register(EventHandler::postServerStoppingEvent);
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> EventHandler.postPlayerJoinedEvent(server, handler.player));
-        ServerTickEvents.START_SERVER_TICK.register(EventHandler::postServerTickEvent);
+        ServerLifecycleEvents.SERVER_STARTED.register(ServerGlobalEvents::postServerStartingEvent);
+        ServerLifecycleEvents.SERVER_STOPPING.register(ServerGlobalEvents::postServerStoppingEvent);
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> ServerGlobalEvents.postPlayerJoinedEvent(server, handler.player));
+        ServerTickEvents.START_SERVER_TICK.register(ServerGlobalEvents::postServerTickEvent);
 
         LOGGER.info("Fabric onInitialize done");
     }

@@ -4,7 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 
-public class ButtonBase extends Button {
+public abstract class ButtonBase extends Button {
     protected ButtonBase(int x, int y, int width, int height, Component message, OnPress onPress, CreateNarration createNarration) {
         super(x, y, width, height, message, onPress, createNarration);
     }

@@ -1,20 +1,16 @@
 package games.alejandrocoria.mapfrontiers;
 
-import fuzs.forgeconfigapiport.neoforge.api.v5.ForgeConfigRegistry;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClientNeoForge;
-import games.alejandrocoria.mapfrontiers.common.Config;
-import games.alejandrocoria.mapfrontiers.common.command.CommandAccept;
-import games.alejandrocoria.mapfrontiers.common.event.EventHandler;
+import games.alejandrocoria.mapfrontiers.server.command.CommandAccept;
+import games.alejandrocoria.mapfrontiers.server.event.ServerGlobalEvents;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.fml.event.lifecycle.FMLConstructModEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
@@ -23,35 +19,34 @@ public class MapFrontiersNeoForge extends MapFrontiers {
     public MapFrontiersNeoForge(IEventBus eventBus) {
         init();
 
-        eventBus.addListener((FMLConstructModEvent event) -> ForgeConfigRegistry.INSTANCE.register(MapFrontiersNeoForge.MODID, ModConfig.Type.CLIENT, Config.CLIENT_SPEC));
-        eventBus.addListener((FMLClientSetupEvent event) -> MapFrontiersClientNeoForge.clientSetup(event, eventBus));
-        NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::registerCommands);
-        NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::serverStarting);
-        NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::serverStopping);
-        NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::playerLoggedIn);
+        eventBus.addListener((FMLClientSetupEvent event) -> MapFrontiersClientNeoForge.onClientSetup(event, eventBus));
+        NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::onRegisterCommands);
+        NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::onServerStarted);
+        NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::onServerStopping);
+        NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(MapFrontiersNeoForge::onServerTick);
 
         LOGGER.info("NeoForge commonSetup done");
     }
 
-    public static void registerCommands(RegisterCommandsEvent event) {
+    public static void onRegisterCommands(RegisterCommandsEvent event) {
         CommandAccept.register(event.getDispatcher());
     }
 
-    public static void serverStarting(ServerStartingEvent event) {
-        EventHandler.postServerStartingEvent(event.getServer());
+    public static void onServerStarted(ServerStartedEvent event) {
+        ServerGlobalEvents.postServerStartingEvent(event.getServer());
     }
 
-    public static void serverStopping(ServerStoppingEvent event) {
-        EventHandler.postServerStoppingEvent(event.getServer());
+    public static void onServerStopping(ServerStoppingEvent event) {
+        ServerGlobalEvents.postServerStoppingEvent(event.getServer());
     }
 
-    public static void playerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+    public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         ServerPlayer player = (ServerPlayer) event.getEntity();
-        EventHandler.postPlayerJoinedEvent(player.level().getServer(), player);
+        ServerGlobalEvents.postPlayerJoinedEvent(player.level().getServer(), player);
     }
 
     public static void onServerTick(ServerTickEvent.Post event) {
-        EventHandler.postServerTickEvent(event.getServer());
+        ServerGlobalEvents.postServerTickEvent(event.getServer());
     }
 }

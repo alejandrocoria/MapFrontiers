@@ -1,8 +1,9 @@
 package games.alejandrocoria.mapfrontiers.platform;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.common.util.ReflectionHelper;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionOverlay;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
+import games.alejandrocoria.mapfrontiers.client.util.ReflectionHelper;
 import games.alejandrocoria.mapfrontiers.platform.services.IJourneyMapHelper;
 import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.display.MarkerOverlay;
@@ -20,6 +21,7 @@ import journeymap.client.render.draw.DrawStep;
 import journeymap.client.render.draw.DrawUtil;
 import journeymap.client.render.map.MapRenderer;
 import journeymap.client.render.pip.PolygonPipRenderState;
+import journeymap.client.texture.TextureCache;
 import journeymap.client.ui.UIManager;
 import journeymap.client.ui.minimap.DisplayVars;
 import journeymap.client.ui.minimap.MiniMap;
@@ -170,6 +172,11 @@ public class ForgeJourneyMapHelper implements IJourneyMapHelper {
         return new CustomPreviewRenderer();
     }
 
+    @Override
+    public void prepareMapTexture(ResourceLocation texture) {
+        TextureCache.getTexture(texture);
+    }
+
     private static int colorSpecToInt(Theme.ColorSpec colorSpec) {
         int color = colorSpec.getColor();
         color |= Math.round(colorSpec.alpha * 255) << 24;
@@ -225,15 +232,27 @@ public class ForgeJourneyMapHelper implements IJourneyMapHelper {
         }
 
         @Override
-        public void setFrontiers(List<FrontierOverlay> frontierOverlays) {
+        public void setTerritories(List<FrontierOverlay> frontierOverlays, List<CollectionOverlay> collectionOverlays) {
             drawSteps.clear();
 
             for (FrontierOverlay frontierOverlay : frontierOverlays) {
                 for (PolygonOverlay polygon : frontierOverlay.getPolygonOverlays()) {
                     drawSteps.add(new DrawPolygonStep(polygon));
                 }
-                for (MarkerOverlay banner : frontierOverlay.getBannerOverlays()) {
-                    drawSteps.add(new DrawMarkerStep(banner));
+                for (MarkerOverlay marker : frontierOverlay.getMarkerOverlays()) {
+                    drawSteps.add(new DrawMarkerStep(marker));
+                }
+                for (MarkerOverlay label : frontierOverlay.getLabelOverlays()) {
+                    drawSteps.add(new DrawMarkerStep(label));
+                }
+            }
+
+            for (CollectionOverlay collectionOverlay : collectionOverlays) {
+                for (PolygonOverlay polygon : collectionOverlay.getBorderPolygonOverlays()) {
+                    drawSteps.add(new DrawPolygonStep(polygon));
+                }
+                for (MarkerOverlay marker : collectionOverlay.getLabelOverlays()) {
+                    drawSteps.add(new DrawMarkerStep(marker));
                 }
             }
         }
@@ -249,11 +268,11 @@ public class ForgeJourneyMapHelper implements IJourneyMapHelper {
             double guiScale = Minecraft.getInstance().getWindow().getGuiScale();
 
             graphics.pose().pushMatrix();
-            graphics.pose().translate((float) (-width / guiScale / 2 * scaleFactor) + x, (float) (-height / guiScale / 2 * scaleFactor) + y);
+            graphics.pose().translate((float) (-width / guiScale / 2 * scaleFactor) + x,
+                    (float) (-height / guiScale / 2 * scaleFactor) + y);
             graphics.pose().scale((float) (1 / guiScale) * scaleFactor, (float) (1 / guiScale) * scaleFactor);
 
             mapRenderer.setViewPortBounds(new Rectangle2D.Double(0, 0, width * scaleFactor, height * scaleFactor));
-
 
             for (DrawStep drawStep : drawSteps) {
                 if (drawStep instanceof DrawPolygonStep) {
@@ -265,21 +284,33 @@ public class ForgeJourneyMapHelper implements IJourneyMapHelper {
             graphics.pose().popMatrix();
             graphics.nextStratum();
 
-            ((GuiRenderStateMixinAccess) ((GuiGraphicsAccessor) graphics).jm$GuiRenderStateAccessor()).jm$submitPicturesInPictureStateCurrentLayer(
-                    new PolygonPipRenderState(
+            ((GuiRenderStateMixinAccess) ((GuiGraphicsAccessor) graphics).jm$GuiRenderStateAccessor())
+                    .jm$submitPicturesInPictureStateCurrentLayer(new PolygonPipRenderState(
                             graphics,
                             Context.UI.Fullscreen,
-                            0, (buf, poseStack) -> {
-                        VertexConsumer maskBuffer = buffers.getBuffer(JMRenderTypes.MINIMAP_RECTANGLE_MASK_RENDER_TYPE);
-                        DrawUtil.drawQuad(poseStack, maskBuffer, 0xFFFFFF, 1, x * guiScale / scaleFactor + 1, y * guiScale / scaleFactor + 1, size - 1, size - 1, 0, false);
-                        drawSteps.forEach(drawStep -> {
-                            if (drawStep instanceof DrawPolygonStep drawPolygonStep) {
-                                poseStack.pushPose();
-                                drawPolygonStep.draw(graphics, poseStack, buf, (-width / 2 + x * guiScale / scaleFactor), (-height / 2 + y * guiScale / scaleFactor), mapRenderer, 1, 0);
-                                poseStack.popPose();
+                            0,
+                            (buf, poseStack) -> {
+                                VertexConsumer maskBuffer = buffers.getBuffer(JMRenderTypes.MINIMAP_RECTANGLE_MASK_RENDER_TYPE);
+                                DrawUtil.drawQuad(poseStack, maskBuffer, 0xFFFFFF, 1,
+                                        x * guiScale / scaleFactor + 1,
+                                        y * guiScale / scaleFactor + 1,
+                                        size - 1,
+                                        size - 1,
+                                        0,
+                                        false);
+                                drawSteps.forEach(drawStep -> {
+                                    if (drawStep instanceof DrawPolygonStep drawPolygonStep) {
+                                        poseStack.pushPose();
+                                        drawPolygonStep.draw(graphics, poseStack, buf,
+                                                (-width / 2 + x * guiScale / scaleFactor),
+                                                (-height / 2 + y * guiScale / scaleFactor),
+                                                mapRenderer,
+                                                1,
+                                                0);
+                                        poseStack.popPose();
+                                    }
+                                });
                             }
-                        });
-                    }
                     ));
         }
     }

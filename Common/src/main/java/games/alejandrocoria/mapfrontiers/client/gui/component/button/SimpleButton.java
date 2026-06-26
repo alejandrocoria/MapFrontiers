@@ -11,13 +11,16 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class SimpleButton extends ButtonBase {
+    private static final int DEFAULT_HEIGHT = 15;
+    private static final int LABEL_Y_OFFSET = -5;
+
     private final StringWidget label;
-    private int textColor = ColorConstants.SIMPLE_BUTTON_TEXT;
+    private int textColor = ColorConstants.SIMPLE_BUTTON_TEXT_NORMAL;
     private int textColorHighlight = ColorConstants.SIMPLE_BUTTON_TEXT_HIGHLIGHT;
-    private int textColorInactive = ColorConstants.SIMPLE_BUTTON_TEXT_INACTIVE;
+    private int textColorInactive = ColorConstants.SIMPLE_BUTTON_TEXT_DISABLED;
 
     public SimpleButton(Font font, int width, Component text, OnPress pressedAction) {
-        super(0, 0, width, 16, text, (b) -> pressedAction.onPress((SimpleButton) b), Button.DEFAULT_NARRATION);
+        super(0, 0, width, DEFAULT_HEIGHT, text, (b) -> pressedAction.onPress((SimpleButton) b), Button.DEFAULT_NARRATION);
         this.label = new StringWidget(text, font, StringWidget.Align.Center);
     }
 
@@ -30,7 +33,7 @@ public class SimpleButton extends ButtonBase {
     @Override
     public void setY(int y) {
         super.setY(y);
-        this.label.setY(y + 4);
+        this.label.setY(y + height / 2 + LABEL_Y_OFFSET);
     }
 
     @Override
@@ -49,12 +52,9 @@ public class SimpleButton extends ButtonBase {
             label.setColor(textColor);
         }
 
-        int borderColor = isKeyboardFocused() ? ColorConstants.SIMPLE_BUTTON_BORDER_FOCUSED : active ? ColorConstants.SIMPLE_BUTTON_BORDER : ColorConstants.SIMPLE_BUTTON_BORDER_DISABLED;
-        graphics.hLine(getX(), getX() + width - 1, getY(), borderColor);
-        graphics.hLine(getX(), getX() + width - 1, getY() + 15, borderColor);
-        graphics.vLine(getX(), getY(), getY() + 15, borderColor);
-        graphics.vLine(getX() + width - 1, getY(), getY() + 15, borderColor);
-        graphics.fill(getX() + 1, getY() + 1, getX() + width - 1, getY() + 15, ColorConstants.SIMPLE_BUTTON_BG);
+        int borderColor = isKeyboardFocused() ? ColorConstants.SIMPLE_BUTTON_BORDER_FOCUSED : active ? ColorConstants.SIMPLE_BUTTON_BORDER_NORMAL : ColorConstants.SIMPLE_BUTTON_BORDER_DISABLED;
+        graphics.submitOutline(getX(), getY(), width, height, borderColor);
+        graphics.fill(getX() + 1, getY() + 1, getX() + width - 1, getY() + height - 1, ColorConstants.SIMPLE_BUTTON_BG);
 
         label.render(graphics, mouseX, mouseY, partialTicks);
     }

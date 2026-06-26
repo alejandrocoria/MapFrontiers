@@ -1,9 +1,8 @@
 package games.alejandrocoria.mapfrontiers;
 
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClientForge;
-import games.alejandrocoria.mapfrontiers.common.Config;
-import games.alejandrocoria.mapfrontiers.common.command.CommandAccept;
-import games.alejandrocoria.mapfrontiers.common.event.EventHandler;
+import games.alejandrocoria.mapfrontiers.server.command.CommandAccept;
+import games.alejandrocoria.mapfrontiers.server.event.ServerGlobalEvents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.client.event.AddGuiOverlayLayersEvent;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
@@ -15,12 +14,9 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
-import net.minecraftforge.eventbus.api.listener.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -30,62 +26,52 @@ import net.minecraftforge.fml.loading.FMLEnvironment;
 @Mod(MapFrontiersForge.MODID)
 public class MapFrontiersForge extends MapFrontiers {
     public MapFrontiersForge(FMLJavaModLoadingContext context) {
-        context.registerConfig(ModConfig.Type.CLIENT, Config.CLIENT_SPEC);
+        FMLCommonSetupEvent.getBus(context.getModBusGroup()).addListener(MapFrontiersForge::onCommonSetup);
 
-        FMLCommonSetupEvent.getBus(context.getModBusGroup()).addListener(MapFrontiersForge::commonSetup);
-        ModConfigEvent.Loading.getBus(context.getModBusGroup()).addListener(MapFrontiersForge::onModConfigEvent);
-
-        RegisterCommandsEvent.BUS.addListener(MapFrontiersForge::registerCommands);
-        ServerStartingEvent.BUS.addListener(MapFrontiersForge::serverStarting);
-        ServerStoppingEvent.BUS.addListener(MapFrontiersForge::serverStopping);
-        PlayerEvent.PlayerLoggedInEvent.BUS.addListener(MapFrontiersForge::playerLoggedIn);
+        RegisterCommandsEvent.BUS.addListener(MapFrontiersForge::onRegisterCommands);
+        ServerStartedEvent.BUS.addListener(MapFrontiersForge::onServerStarted);
+        ServerStoppingEvent.BUS.addListener(MapFrontiersForge::onServerStopping);
+        PlayerEvent.PlayerLoggedInEvent.BUS.addListener(MapFrontiersForge::onPlayerLoggedIn);
         TickEvent.ServerTickEvent.Post.BUS.addListener(MapFrontiersForge::onServerTick);
 
         if (FMLEnvironment.dist.isClient()) {
-            FMLClientSetupEvent.getBus(context.getModBusGroup()).addListener(MapFrontiersClientForge::clientSetup);
+            FMLClientSetupEvent.getBus(context.getModBusGroup()).addListener(MapFrontiersClientForge::onClientSetup);
 
-            LivingEvent.LivingTickEvent.BUS.addListener(MapFrontiersClientForge::livingUpdateEvent);
-            TickEvent.ClientTickEvent.Pre.BUS.addListener(MapFrontiersClientForge::onRenderTick);
-            AddGuiOverlayLayersEvent.BUS.addListener(MapFrontiersClientForge::addGuiOverlayLayersEvent);
-            ClientPlayerNetworkEvent.LoggingIn.BUS.addListener(MapFrontiersClientForge::clientConnectedToServer);
-            ClientPlayerNetworkEvent.LoggingOut.BUS.addListener(MapFrontiersClientForge::clientDisconnectionFromServer);
-            InputEvent.MouseButton.Pre.BUS.addListener(MapFrontiersClientForge::mouseEvent);
-            RegisterKeyMappingsEvent.BUS.addListener(MapFrontiersClientForge::registerKeyMappingsEvent);
+            LivingEvent.LivingTickEvent.BUS.addListener(MapFrontiersClientForge::onLivingTick);
+            TickEvent.ClientTickEvent.Pre.BUS.addListener(MapFrontiersClientForge::onClientTickPre);
+            AddGuiOverlayLayersEvent.BUS.addListener(MapFrontiersClientForge::onAddGuiOverlayLayers);
+            ClientPlayerNetworkEvent.LoggingIn.BUS.addListener(MapFrontiersClientForge::onClientConnectedToServer);
+            ClientPlayerNetworkEvent.LoggingOut.BUS.addListener(MapFrontiersClientForge::onClientDisconnectedFromServer);
+            InputEvent.MouseButton.Pre.BUS.addListener(MapFrontiersClientForge::onMouseButtonPre);
+            RegisterKeyMappingsEvent.BUS.addListener(MapFrontiersClientForge::onRegisterKeyMappings);
             RegisterClientCommandsEvent.BUS.addListener(MapFrontiersClientForge::onRegisterClientCommands);
             ClientChatReceivedEvent.BUS.addListener(MapFrontiersClientForge::onClientChat);
         }
     }
 
-    public static void commonSetup(FMLCommonSetupEvent event) {
+    public static void onCommonSetup(FMLCommonSetupEvent event) {
         init();
         LOGGER.info("Forge commonSetup done");
     }
 
-    @SubscribeEvent
-    public static void onModConfigEvent(ModConfigEvent.Loading configEvent) {
-        if (configEvent.getConfig().getModId().equals(MapFrontiersForge.MODID) && configEvent.getConfig().getType() == ModConfig.Type.CLIENT) {
-            Config.bakeConfig();
-        }
-    }
-
-    public static void registerCommands(RegisterCommandsEvent event) {
+    public static void onRegisterCommands(RegisterCommandsEvent event) {
         CommandAccept.register(event.getDispatcher());
     }
 
-    public static void serverStarting(ServerStartingEvent event) {
-        EventHandler.postServerStartingEvent(event.getServer());
+    public static void onServerStarted(ServerStartedEvent event) {
+        ServerGlobalEvents.postServerStartingEvent(event.getServer());
     }
 
-    public static void serverStopping(ServerStoppingEvent event) {
-        EventHandler.postServerStoppingEvent(event.getServer());
+    public static void onServerStopping(ServerStoppingEvent event) {
+        ServerGlobalEvents.postServerStoppingEvent(event.getServer());
     }
 
-    public static void playerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+    public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         ServerPlayer player = (ServerPlayer) event.getEntity();
-        EventHandler.postPlayerJoinedEvent(player.level().getServer(), player);
+        ServerGlobalEvents.postPlayerJoinedEvent(player.level().getServer(), player);
     }
 
     public static void onServerTick(TickEvent.ServerTickEvent.Post event) {
-        EventHandler.postServerTickEvent(event.server());
+        ServerGlobalEvents.postServerTickEvent(event.server());
     }
 }

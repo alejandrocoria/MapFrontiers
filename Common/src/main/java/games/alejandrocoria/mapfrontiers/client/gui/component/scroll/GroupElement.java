@@ -1,10 +1,10 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.scroll;
 
+import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import net.minecraft.ChatFormatting;
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -20,7 +20,7 @@ public class GroupElement extends ScrollBox.ScrollElement {
     private IconButton buttonDelete;
 
     public GroupElement(Font font, SettingsGroup group) {
-        super(160, 16);
+        super(160, 15);
         this.font = font;
         this.group = group;
 
@@ -45,7 +45,7 @@ public class GroupElement extends ScrollBox.ScrollElement {
     protected void setY(int y) {
         super.setY(y);
         if (buttonDelete != null) {
-            buttonDelete.setY(this.y + 1);
+            buttonDelete.setY(this.y + 2);
         }
     }
 
@@ -87,6 +87,6 @@ public class GroupElement extends ScrollBox.ScrollElement {
 
     @Override
     protected boolean canBeDeleted() {
-        return true;
+        return !group.isSpecial();
     }
 }

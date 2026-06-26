@@ -12,7 +12,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
-public class UUIDHelper {
+public final class UUIDHelper {
     public static UUID getUUIDFromName(String username, @Nullable MinecraftServer server) {
         if (server != null) {
             ServerPlayer player = server.getPlayerList().getPlayer(username);
@@ -61,6 +61,5 @@ public class UUIDHelper {
     }
 
     private UUIDHelper() {
-
     }
 }

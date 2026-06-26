@@ -1,9 +1,11 @@
 package games.alejandrocoria.mapfrontiers.platform.services;
 
-import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionOverlay;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.resources.ResourceLocation;
 
 import java.io.File;
 import java.util.List;
@@ -24,6 +26,7 @@ public interface IJourneyMapHelper {
     int minimapLabelForegroundColor();
     boolean minimapPropertiesChanged();
     List<String> getDimensionList();
+    void prepareMapTexture(ResourceLocation texture);
     ICustomPreviewRenderer createCustomPreviewRenderer();
 
     enum JMPosition {
@@ -37,7 +40,14 @@ public interface IJourneyMapHelper {
     }
 
     interface ICustomPreviewRenderer {
-        void setFrontiers(List<FrontierOverlay> frontierOverlays);
+        /**
+         * Receives territories whose overlays were already recalculated by the preview widget.
+         */
+        void setTerritories(List<FrontierOverlay> frontierOverlays, List<CollectionOverlay> collectionOverlays);
+
+        /**
+         * Draws a JourneyMap-based preview. The size is expressed in map pixels; scaleFactor compensates GUI scaling.
+         */
         void draw(GuiGraphics graphics, MultiBufferSource.BufferSource buffers, int x, int y, int size, float scaleFactor);
     }
 }

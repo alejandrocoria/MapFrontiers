@@ -4,7 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.MapFrontiersForge;
 import games.alejandrocoria.mapfrontiers.client.command.ClientCommandAccept;
-import games.alejandrocoria.mapfrontiers.client.event.ClientEventHandler;
+import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -26,43 +26,43 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class MapFrontiersClientForge extends MapFrontiersClient {
-    public static void clientSetup(FMLClientSetupEvent event) {
+    public static void onClientSetup(FMLClientSetupEvent event) {
         init();
 
         MapFrontiersForge.LOGGER.info("Forge clientSetup done");
     }
 
-    public static void livingUpdateEvent(LivingEvent.LivingTickEvent event) {
+    public static void onLivingTick(LivingEvent.LivingTickEvent event) {
         Minecraft client = Minecraft.getInstance();
         if (event.getEntity() == client.player) {
             Player player = (Player) event.getEntity();
-            ClientEventHandler.postPlayerTickEvent(client, player);
+            ClientGlobalEvents.postPlayerTickEvent(client, player);
         }
     }
 
-    public static void onRenderTick(TickEvent.ClientTickEvent.Pre event) {
-        ClientEventHandler.postClientTickEvent(Minecraft.getInstance());
+    public static void onClientTickPre(TickEvent.ClientTickEvent.Pre event) {
+        ClientGlobalEvents.postClientTickEvent(Minecraft.getInstance());
     }
 
-    public static void addGuiOverlayLayersEvent(AddGuiOverlayLayersEvent event) {
-        event.getLayeredDraw().add(ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "hud"), ClientEventHandler::postHudRenderEvent);
+    public static void onAddGuiOverlayLayers(AddGuiOverlayLayersEvent event) {
+        event.getLayeredDraw().add(ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "hud"), ClientGlobalEvents::postHudRenderEvent);
     }
 
-    public static void clientConnectedToServer(ClientPlayerNetworkEvent.LoggingIn event) {
-        ClientEventHandler.postClientConnectedEvent();
+    public static void onClientConnectedToServer(ClientPlayerNetworkEvent.LoggingIn event) {
+        ClientGlobalEvents.postClientConnectedEvent();
     }
 
-    public static void clientDisconnectionFromServer(ClientPlayerNetworkEvent.LoggingOut event) {
-        ClientEventHandler.postClientDisconnectedEvent();
+    public static void onClientDisconnectedFromServer(ClientPlayerNetworkEvent.LoggingOut event) {
+        ClientGlobalEvents.postClientDisconnectedEvent();
     }
 
-    public static void mouseEvent(InputEvent.MouseButton.Pre event) {
+    public static void onMouseButtonPre(InputEvent.MouseButton.Pre event) {
         if (event.getAction() == GLFW.GLFW_RELEASE) {
-            ClientEventHandler.postMouseReleaseEvent(event.getButton());
+            ClientGlobalEvents.postMouseReleaseEvent(event.getButton());
         }
     }
 
-    public static void registerKeyMappingsEvent(RegisterKeyMappingsEvent event) {
+    public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         openSettingsKey = new KeyMapping("mapfrontiers.key.open_settings", KeyConflictContext.IN_GAME,
                 InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, MapFrontiersClient.registerKeyMappingCategory());
         event.register(openSettingsKey);

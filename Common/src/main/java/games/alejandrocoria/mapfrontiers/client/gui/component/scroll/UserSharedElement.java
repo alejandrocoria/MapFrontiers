@@ -1,12 +1,13 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.scroll;
 
+import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
+import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import net.minecraft.ChatFormatting;
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -29,7 +30,7 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
     private int pingBar = 0;
 
     public UserSharedElement(Font font, SettingsUserShared user, boolean enabled, boolean removable, ActionChangedConsumer actionChangedCallback) {
-        super(430, 16);
+        super(430, 15);
         this.font = font;
         this.user = user;
         updateFrontier = new CheckBoxButton(user.hasAction(SettingsUserShared.Action.UpdateFrontier),
@@ -50,6 +51,11 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
 
     public SettingsUser getUser() {
         return user.getUser();
+    }
+
+    @Override
+    public Object getFocusRestoreKey() {
+        return getUser();
     }
 
     public void setPingBar(int value) {
@@ -78,7 +84,7 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
         updateFrontier.setY(y + 2);
         updateSettings.setY(y + 2);
         if (buttonDelete != null) {
-            buttonDelete.setY(this.y + 1);
+            buttonDelete.setY(this.y + 2);
         }
     }
 
@@ -94,13 +100,13 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
             }
         }
 
-        graphics.drawString(font, user.getUser().toString(), x + 16, y + 4, ColorConstants.TEXT_HIGHLIGHT);
+        graphics.drawString(font, SettingsUserFormatter.getDisplayName(user.getUser()), x + 16, y + 4, ColorConstants.USER_SHARED_TEXT);
 
         updateFrontier.render(graphics, mouseX, mouseY, partialTicks);
         updateSettings.render(graphics, mouseX, mouseY, partialTicks);
 
         if (user.isPending()) {
-            graphics.drawString(font, I18n.get("mapfrontiers.pending", ChatFormatting.ITALIC), x + 350, y + 4, ColorConstants.TEXT_PENDING);
+            graphics.drawString(font, I18n.get("mapfrontiers.pending", ChatFormatting.ITALIC), x + 350, y + 3, ColorConstants.TEXT_PENDING);
         }
 
         if (pingBar > 0) {
@@ -129,7 +135,7 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
         if (enabled && visible && isHovered) {
             for (GuiEventListener checkBox : children) {
                 if (checkBox.mouseClicked(event, doubleClick)) {
-                    return ScrollBox.ScrollElement.Action.None;
+                    return ScrollBox.ScrollElement.Action.Handled;
                 }
             }
 

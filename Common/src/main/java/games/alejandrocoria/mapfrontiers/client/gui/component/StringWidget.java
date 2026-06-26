@@ -1,11 +1,11 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
+import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
+import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -33,6 +33,7 @@ public class StringWidget extends net.minecraft.client.gui.components.StringWidg
 
     public StringWidget(Component message, Font font, int height, Align align) {
         super(0, 0, font.width(message.getVisualOrderText()), height, message, font);
+        setColor(ColorConstants.STRING_WIDGET_TEXT_DEFAULT);
         this.align = align;
     }
 
@@ -40,10 +41,15 @@ public class StringWidget extends net.minecraft.client.gui.components.StringWidg
         this.scale = scale;
     }
 
-    @Override
-    public @NotNull StringWidget setColor(int color) {
+    public StringWidget setColor(int color) {
         super.setColor(color);
         return this;
+    }
+
+    @Override
+    public void setMessage(Component message) {
+        super.setMessage(message);
+        setWidth(getFont().width(message.getVisualOrderText()));
     }
 
     @Override
@@ -54,7 +60,7 @@ public class StringWidget extends net.minecraft.client.gui.components.StringWidg
         }
 
         int x = Mth.floor(this.getX() / scale);
-        int y = Mth.floor((this.getY() + (this.getHeight() - 10) / 2.f) / scale);
+        int y = Mth.floor((this.getY() + (this.getHeight() - 8) / 2.f) / scale);
 
         if (align == Align.Left) {
             guiGraphics.drawString(getFont(), this.getMessage(), x, y, this.getColor());

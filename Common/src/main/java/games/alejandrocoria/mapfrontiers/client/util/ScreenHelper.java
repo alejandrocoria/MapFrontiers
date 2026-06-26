@@ -1,15 +1,20 @@
 package games.alejandrocoria.mapfrontiers.client.util;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-public class ScreenHelper {
+public final class ScreenHelper {
     public static float getScaleFactorThatFit(Minecraft minecraft, Screen screen, int minWidth, int minHeight) {
         int windowScale = (int) minecraft.getWindow().getGuiScale();
 
@@ -40,7 +45,21 @@ public class ScreenHelper {
         return InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT) || InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_SHIFT);
     }
 
-    private ScreenHelper() {
+    public static int getPaddedMaxTextWidth(Font font, int minWidth, int padding, Component... labels) {
+        int width = minWidth;
+        for (Component label : labels) {
+            width = Math.max(width, font.width(label) + padding);
+        }
 
+        return width;
+    }
+
+    @Nullable
+    public static Tooltip tooltip(ConfigEntry<?, ?> entry) {
+        Component component = entry.tooltipComponent();
+        return component == null ? null : Tooltip.create(component);
+    }
+
+    private ScreenHelper() {
     }
 }

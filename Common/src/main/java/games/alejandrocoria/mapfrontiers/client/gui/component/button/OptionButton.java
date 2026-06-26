@@ -14,18 +14,21 @@ import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class OptionButton extends ButtonBase {
+    private static final int DEFAULT_HEIGHT = 13;
     public static final OnPress DO_NOTHING = (b) -> {};
 
     protected final Font font;
     private final List<Component> options;
+    private OnPress callback;
     private int selected = 0;
-    private int color = ColorConstants.TEXT;
-    private int highlightedColor = ColorConstants.TEXT_HIGHLIGHT;
+    private int color = ColorConstants.OPTION_TEXT_NORMAL;
+    private int highlightedColor = ColorConstants.OPTION_TEXT_HIGHLIGHT;
 
     public OptionButton(Font font, int width, OnPress pressedAction) {
-        super(0, 0, width, 12, Component.empty(), (b) -> pressedAction.onPress((OptionButton) b), Button.DEFAULT_NARRATION);
+        super(0, 0, width, DEFAULT_HEIGHT, Component.empty(), (b) -> ((OptionButton) b).callback.onPress((OptionButton) b), Button.DEFAULT_NARRATION);
         this.font = font;
         options = new ArrayList<>();
+        callback = pressedAction;
     }
 
     public void addOption(Component text) {
@@ -55,6 +58,10 @@ public class OptionButton extends ButtonBase {
         return color;
     }
 
+    public void setOnPress(OnPress callback) {
+        this.callback = callback;
+    }
+
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
         if (visible && isHovered) {
@@ -82,16 +89,16 @@ public class OptionButton extends ButtonBase {
     public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         int c = color;
         if (!active) {
-            c = ColorConstants.TEXT_DARK;
+            c = ColorConstants.OPTION_TEXT_DISABLED;
         } else if (isHoveredOrKeyboardFocused()) {
             c = highlightedColor;
         }
 
-        int borderColor = isKeyboardFocused() ? ColorConstants.OPTION_BORDER_FOCUSED : active ? ColorConstants.OPTION_BORDER : ColorConstants.OPTION_BORDER_DISABLED;
+        int borderColor = isKeyboardFocused() ? ColorConstants.OPTION_BORDER_FOCUSED : active ? ColorConstants.OPTION_BORDER_NORMAL : ColorConstants.OPTION_BORDER_DISABLED;
         graphics.fill(getX(), getY(), getX() + width, getY() + height, borderColor);
         graphics.fill(getX() + 1, getY() + 1, getX() + width - 1, getY() + height - 1, ColorConstants.OPTION_BG);
 
-        graphics.drawString(font, options.get(selected), getX() + 4, getY() + 2, c);
+        graphics.drawString(font, options.get(selected), getX() + 4, getY() + 3, c);
     }
 
     @Override

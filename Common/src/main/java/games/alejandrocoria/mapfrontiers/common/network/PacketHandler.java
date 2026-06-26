@@ -3,9 +3,8 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.CommonNetworkMod;
 import commonnetwork.api.Dispatcher;
 import commonnetwork.api.Network;
-import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -16,30 +15,38 @@ import java.util.List;
 public class PacketHandler {
     public static void init() {
         // server to client
-        CommonNetworkMod.registerPacket(PacketFrontiers.type(), PacketFrontiers.class, PacketFrontiers.STREAM_CODEC, PacketFrontiers::handle);
+        CommonNetworkMod.registerPacket(PacketTerritoriesSnapshot.type(), PacketTerritoriesSnapshot.class, PacketTerritoriesSnapshot.STREAM_CODEC, PacketTerritoriesSnapshot::handle);
+        CommonNetworkMod.registerPacket(PacketCollectionCreated.type(), PacketCollectionCreated.class, PacketCollectionCreated.STREAM_CODEC, PacketCollectionCreated::handle);
+        CommonNetworkMod.registerPacket(PacketCollectionUpdated.type(), PacketCollectionUpdated.class, PacketCollectionUpdated.STREAM_CODEC, PacketCollectionUpdated::handle);
+        CommonNetworkMod.registerPacket(PacketCollectionDeleted.type(), PacketCollectionDeleted.class, PacketCollectionDeleted.STREAM_CODEC, PacketCollectionDeleted::handle);
         CommonNetworkMod.registerPacket(PacketFrontierCreated.type(), PacketFrontierCreated.class, PacketFrontierCreated.STREAM_CODEC, PacketFrontierCreated::handle);
         CommonNetworkMod.registerPacket(PacketFrontierDeleted.type(), PacketFrontierDeleted.class, PacketFrontierDeleted.STREAM_CODEC, PacketFrontierDeleted::handle);
         CommonNetworkMod.registerPacket(PacketFrontierUpdated.type(), PacketFrontierUpdated.class, PacketFrontierUpdated.STREAM_CODEC, PacketFrontierUpdated::handle);
+        CommonNetworkMod.registerPacket(PacketFrontierResync.type(), PacketFrontierResync.class, PacketFrontierResync.STREAM_CODEC, PacketFrontierResync::handle);
+        CommonNetworkMod.registerPacket(PacketFrontierSharingUpdated.type(), PacketFrontierSharingUpdated.class, PacketFrontierSharingUpdated.STREAM_CODEC, PacketFrontierSharingUpdated::handle);
         CommonNetworkMod.registerPacket(PacketSettingsProfile.type(), PacketSettingsProfile.class, PacketSettingsProfile.STREAM_CODEC, PacketSettingsProfile::handle);
         CommonNetworkMod.registerPacket(PacketPersonalFrontierShared.type(), PacketPersonalFrontierShared.class, PacketPersonalFrontierShared.STREAM_CODEC, PacketPersonalFrontierShared::handle);
 
         // client to server
         CommonNetworkMod.registerPacket(PacketPersonalFrontier.type(), PacketPersonalFrontier.class, PacketPersonalFrontier.STREAM_CODEC, PacketPersonalFrontier::handle);
+        CommonNetworkMod.registerPacket(PacketPersonalCollection.type(), PacketPersonalCollection.class, PacketPersonalCollection.STREAM_CODEC, PacketPersonalCollection::handle);
+        CommonNetworkMod.registerPacket(PacketCreateCollection.type(), PacketCreateCollection.class, PacketCreateCollection.STREAM_CODEC, PacketCreateCollection::handle);
+        CommonNetworkMod.registerPacket(PacketUpdateCollection.type(), PacketUpdateCollection.class, PacketUpdateCollection.STREAM_CODEC, PacketUpdateCollection::handle);
+        CommonNetworkMod.registerPacket(PacketDeleteCollection.type(), PacketDeleteCollection.class, PacketDeleteCollection.STREAM_CODEC, PacketDeleteCollection::handle);
         CommonNetworkMod.registerPacket(PacketCreateFrontier.type(), PacketCreateFrontier.class, PacketCreateFrontier.STREAM_CODEC, PacketCreateFrontier::handle);
         CommonNetworkMod.registerPacket(PacketDeleteFrontier.type(), PacketDeleteFrontier.class, PacketDeleteFrontier.STREAM_CODEC, PacketDeleteFrontier::handle);
         CommonNetworkMod.registerPacket(PacketUpdateFrontier.type(), PacketUpdateFrontier.class, PacketUpdateFrontier.STREAM_CODEC, PacketUpdateFrontier::handle);
+        CommonNetworkMod.registerPacket(PacketRequestFrontierResync.type(), PacketRequestFrontierResync.class, PacketRequestFrontierResync.STREAM_CODEC, PacketRequestFrontierResync::handle);
         CommonNetworkMod.registerPacket(PacketRequestFrontierSettings.type(), PacketRequestFrontierSettings.class, PacketRequestFrontierSettings.STREAM_CODEC, PacketRequestFrontierSettings::handle);
         CommonNetworkMod.registerPacket(PacketSharePersonalFrontier.type(), PacketSharePersonalFrontier.class, PacketSharePersonalFrontier.STREAM_CODEC, PacketSharePersonalFrontier::handle);
         CommonNetworkMod.registerPacket(PacketRemoveSharedUserPersonalFrontier.type(), PacketRemoveSharedUserPersonalFrontier.class, PacketRemoveSharedUserPersonalFrontier.STREAM_CODEC, PacketRemoveSharedUserPersonalFrontier::handle);
         CommonNetworkMod.registerPacket(PacketUpdateSharedUserPersonalFrontier.type(), PacketUpdateSharedUserPersonalFrontier.class, PacketUpdateSharedUserPersonalFrontier.STREAM_CODEC, PacketUpdateSharedUserPersonalFrontier::handle);
-        CommonNetworkMod.registerPacket(PacketHandshake.type(), PacketHandshake.class, PacketHandshake.STREAM_CODEC, PacketHandshake::handle);
 
         // both
+        CommonNetworkMod.registerPacket(PacketHandshake.type(), PacketHandshake.class, PacketHandshake.STREAM_CODEC, PacketHandshake::handle);
         CommonNetworkMod.registerPacket(PacketFrontierSettings.type(), PacketFrontierSettings.class, PacketFrontierSettings.STREAM_CODEC, PacketFrontierSettings::handle);
         CommonNetworkMod.registerPacket(PacketChangeFrontierToGlobal.type(), PacketChangeFrontierToGlobal.class, PacketChangeFrontierToGlobal.STREAM_CODEC, PacketChangeFrontierToGlobal::handle);
         CommonNetworkMod.registerPacket(PacketChangeFrontierToPersonal.type(), PacketChangeFrontierToPersonal.class, PacketChangeFrontierToPersonal.STREAM_CODEC, PacketChangeFrontierToPersonal::handle);
-
-        MapFrontiers.LOGGER.info("PacketHandler init done");
     }
 
     public static <MSG> void sendToUsersWithAccess(MSG message, FrontierData frontier, MinecraftServer server) {
