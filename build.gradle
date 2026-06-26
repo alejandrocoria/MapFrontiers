@@ -4,3 +4,26 @@ plugins {
     // see https://projects.neoforged.net/neoforged/moddevgradle for new versions
     id 'net.neoforged.moddev' version '2.0.107' apply false
 }
+
+configurations.configureEach {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
+tasks.configureEach { task ->
+    if (task instanceof Copy || task instanceof AbstractArchiveTask) {
+        task.duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    }
+}
+
+tasks.register("publishMod") {
+    group = "release"
+    description = "Publishes Fabric, Forge, and NeoForge builds to CurseForge and Modrinth."
+    dependsOn(
+            ":Fabric:publishCurseForge",
+            ":Forge:publishCurseForge",
+            ":NeoForge:publishCurseForge",
+            ":Fabric:modrinth",
+            ":Forge:modrinth",
+            ":NeoForge:modrinth"
+    )
+}
