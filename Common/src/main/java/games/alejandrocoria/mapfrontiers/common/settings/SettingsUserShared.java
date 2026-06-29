@@ -1,11 +1,13 @@
 package games.alejandrocoria.mapfrontiers.common.settings;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
+import games.alejandrocoria.mapfrontiers.common.util.NbtCompat;
+import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -18,7 +20,7 @@ public class SettingsUserShared {
     public enum Action {
         UpdateFrontier, UpdateSettings;
 
-        public final static Action[] valuesArray = values();
+        public static final Action[] VALUES = values();
     }
 
     private final SettingsUser user;
@@ -71,12 +73,18 @@ public class SettingsUserShared {
 
     public void readFromNBT(CompoundTag nbt) {
         user.readFromNBT(nbt);
-        pending = nbt.getBoolean("pending");
+        pending = NbtCompat.getBooleanOr(nbt, "pending", false);
 
         actions.clear();
-        ListTag actionsTagList = nbt.getList("actions", Tag.TAG_STRING);
+        ListTag actionsTagList = NbtCompat.getListOrEmpty(nbt, "actions");
         for (int i = 0; i < actionsTagList.size(); ++i) {
-            String actionTag = actionsTagList.getString(i);
+            String actionTag;
+            try {
+                actionTag = NbtReadHelper.requireString(actionsTagList, i, "actions");
+            } catch (InvalidNbtFormatException e) {
+                MapFrontiers.LOGGER.warn("Skipping invalid shared-user action at actions[{}]: {}", i, e.getMessage());
+                continue;
+            }
 
             try {
                 Action action = Action.valueOf(actionTag);
@@ -87,10 +95,9 @@ public class SettingsUserShared {
                     userName = user.uuid.toString();
                 }
 
-                String availableActions = StringHelper.enumValuesToString(Arrays.asList(Action.values()));
+                String availableActions = StringHelper.enumValuesToString(Arrays.asList(Action.VALUES));
 
-                MapFrontiers.LOGGER.warn(String.format("Unknown action in user shared %1$s. Found: \"%2$s\". Expected: %3$s",
-                        userName, actionTag, availableActions));
+                MapFrontiers.LOGGER.warn("Unknown action in user shared {}. Found: \"{}\". Expected: {}", userName, actionTag, availableActions);
             }
         }
     }
@@ -117,7 +124,7 @@ public class SettingsUserShared {
         pending = buf.readBoolean();
 
         actions.clear();
-        for (Action action : Action.valuesArray) {
+        for (Action action : Action.VALUES) {
             if (buf.readBoolean()) {
                 actions.add(action);
             }
@@ -129,7 +136,7 @@ public class SettingsUserShared {
 
         buf.writeBoolean(pending);
 
-        for (Action action : Action.valuesArray) {
+        for (Action action : Action.VALUES) {
             buf.writeBoolean(actions.contains(action));
         }
     }

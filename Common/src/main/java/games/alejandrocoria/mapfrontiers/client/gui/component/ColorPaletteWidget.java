@@ -1,8 +1,12 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
+import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.navigation.CommonInputs;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
+import net.minecraft.client.gui.navigation.ScreenDirection;
 import net.minecraft.network.chat.Component;
 
 import javax.annotation.Nullable;
@@ -11,59 +15,199 @@ import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
 public class ColorPaletteWidget extends AbstractWidgetNoNarration {
-    private static final int[] palette = {
-            0xffff0000, 0xffff8000, 0xffffff00, 0xff80ff00, 0xff00ff00, 0xff00ff80,
-            0xff00ffff, 0xff0080ff, 0xff0000ff, 0xff8000ff, 0xffff00ff, 0xffff0080,
-            0xff572f07, 0xff000000, 0xff404040, 0xff808080, 0xffbfbfbf, 0xffffffff};
+    private static final int COLUMNS = 7;
+    private static final int ROWS = 4;
+    private static final int CELL_SIZE = 20;
+    private static final int CELL_GAP = 1;
+    private static final int CELL_INSET = 1;
+    private static final int CELL_PITCH = CELL_SIZE + CELL_GAP;
+    private static final int WIDTH = COLUMNS * CELL_SIZE + (COLUMNS - 1) * CELL_GAP;
+    private static final int HEIGHT = ROWS * CELL_SIZE + (ROWS - 1) * CELL_GAP;
+    private static final int FOCUS_OUTLINE_INSET = 1;
 
-    private static final int[] paletteInactive = {
-            0xff343434, 0xff595959, 0xff7e7e7e, 0xff6b6b6b, 0xff585858, 0xff5f5f5f,
-            0xff666666, 0xff424242, 0xff1c1c1c, 0xff2f2f2f, 0xff424242, 0xff3b3b3b,
-            0xff292929, 0xff0e0e0e, 0xff2e2e2e, 0xff4d4d4d, 0xff6d6d6d, 0xff8d8d8d};
+    private static final int[] PALETTE_COLORS = {
+            0xFFFF0000, 0xFFFF8000, 0xFFFFFF00, 0xFF80FF00, 0xFF00FF00, 0xFF00FF80, 0xFFFFFFFF,
+            0xFFD29292, 0xFFE4C5A5, 0xFFF7F7B8, 0xFFCEEEAE, 0xFFA5E4A5, 0xFFA8E8C8, 0xFFBFBFBF,
+            0xFF00FFFF, 0xFF0080FF, 0xFF0000FF, 0xFF8000FF, 0xFFFF00FF, 0xFFFF0080, 0xFF808080,
+            0xFFACEBEB, 0xFF99B9D9, 0xFF8686C6, 0xFFB090CF, 0xFFD999D9, 0xFFD596B6, 0xFF404040};
+
+    private static final int[] PALETTE_COLORS_INACTIVE = {
+            0xFF343434, 0xFF595959, 0xFF7E7E7E, 0xFF6B6B6B, 0xFF585858, 0xFFA4A4A4, 0xFFFFFFFF,
+            0xFFA5A5A5, 0xFFCBCBCB, 0xFFF0F0F0, 0xFFDDDDDD, 0xFFCACACA, 0xFFD1D1D1, 0xFFBFBFBF,
+            0xFF666666, 0xFF424242, 0xFF1C1C1C, 0xFF2F2F2F, 0xFF424242, 0xFF5B5B5B, 0xFF808080,
+            0xFFD8D8D8, 0xFFB3B3B3, 0xFF8D8D8D, 0xFFA1A1A1, 0xFFB3B3B3, 0xFFACACAC, 0xFF404040};
 
     private int color;
+    private int focusedIndex;
     private final Consumer<Integer> onPress;
 
     public ColorPaletteWidget(int color, Consumer<Integer> onPress) {
-        super(0, 0, 139, 70, Component.empty());
+        super(0, 0, WIDTH, HEIGHT, Component.empty());
         this.color = color;
+        focusedIndex = Math.max(0, findColorIndex(color));
         this.onPress = onPress;
     }
 
     public void setColor(int color) {
         this.color = color;
+        int colorIndex = findColorIndex(color);
+        if (colorIndex != -1) {
+            focusedIndex = colorIndex;
+        }
     }
 
     @Nullable
+    @Override
     public ComponentPath nextFocusPath(FocusNavigationEvent navigationEvent) {
-        return null;
+        if (!visible || !active) {
+            return null;
+        }
+
+        if (!isFocused()) {
+            int colorIndex = findColorIndex(color);
+            if (colorIndex != -1) {
+                focusedIndex = colorIndex;
+            } else {
+                focusedIndex = getEntryIndexForInitialFocus(navigationEvent);
+            }
+            return ComponentPath.leaf(this);
+        }
+
+        if (navigationEvent instanceof FocusNavigationEvent.TabNavigation) {
+            return null;
+        }
+
+        if (navigationEvent instanceof FocusNavigationEvent.ArrowNavigation arrowNavigation) {
+            int nextIndex = getNextFocusedIndex(arrowNavigation.direction());
+            if (nextIndex == -1) {
+                return null;
+            }
+
+            focusedIndex = nextIndex;
+            return ComponentPath.leaf(this);
+        }
+
+        return ComponentPath.leaf(this);
     }
 
     @Override
-    public void onClick(double mouseX, double mouseY) {
-        double paletteX = (mouseX - getX()) / 23.0;
-        double paletteY = (mouseY - getY()) / 23.0;
-        if (paletteX >= 0.0 && paletteX < 6.0 && paletteY >= 0.0 && paletteY < 3.0) {
-            color = palette[(int) paletteX + (int) paletteY * 6];
-            onPress.accept(color);
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (!isFocused() || !visible || !active || !CommonInputs.selected(keyCode)) {
+            return false;
         }
+
+        color = PALETTE_COLORS[focusedIndex];
+        onPress.accept(color);
+        return true;
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        int clickedIndex = getCellIndex(mouseX, mouseY);
+        if (clickedIndex == -1) {
+            return false;
+        }
+
+        focusedIndex = clickedIndex;
+        color = PALETTE_COLORS[clickedIndex];
+        onPress.accept(color);
+        return true;
     }
 
     @Override
     public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        graphics.fill(getX(), getY(), getX() + getWidth(), getY() + getHeight(), 0xff000000);
         int col = 0;
         int row = 0;
-        for (int c : (active ? palette : paletteInactive)) {
+        for (int c : (active ? PALETTE_COLORS : PALETTE_COLORS_INACTIVE)) {
+            int x = getX() + col * CELL_PITCH;
+            int y = getY() + row * CELL_PITCH;
             if (active && c == color) {
-                graphics.fill(getX() + col * 23, getY() + row * 23, getX() + 23 + col * 23, getY() + 23 + row * 23, 0xffffffff);
+                graphics.fill(x, y, x + CELL_SIZE, y + CELL_SIZE, ColorConstants.WHITE);
+            } else {
+                graphics.fill(x, y, x + CELL_SIZE, y + CELL_SIZE, ColorConstants.COLOR_PALETTE_BORDER);
             }
-            graphics.fill(getX() + 1 + col * 23, getY() + 1 + row * 23, getX() + 22 + col * 23, getY() + 22 + row * 23, c);
+            graphics.fill(x + CELL_INSET, y + CELL_INSET, x + CELL_SIZE - CELL_INSET,
+                    y + CELL_SIZE - CELL_INSET, c);
             ++col;
-            if (col == 6) {
+            if (col == COLUMNS) {
                 col = 0;
                 ++row;
             }
         }
+
+        if (isKeyboardFocused()) {
+            int x = getX() + (focusedIndex % COLUMNS) * CELL_PITCH;
+            int y = getY() + (focusedIndex / COLUMNS) * CELL_PITCH;
+            graphics.renderOutline(x - FOCUS_OUTLINE_INSET, y - FOCUS_OUTLINE_INSET,
+                    CELL_SIZE + 2 * FOCUS_OUTLINE_INSET, CELL_SIZE + 2 * FOCUS_OUTLINE_INSET, ColorConstants.COLOR_PALETTE_FOCUS_OUTLINE);
+        }
+    }
+
+    private int getCellIndex(double mouseX, double mouseY) {
+        int localX = (int) Math.floor(mouseX - getX());
+        int localY = (int) Math.floor(mouseY - getY());
+
+        if (localX < 0 || localX >= WIDTH || localY < 0 || localY >= HEIGHT) {
+            return -1;
+        }
+
+        int col = localX / CELL_PITCH;
+        int row = localY / CELL_PITCH;
+
+        if (localX % CELL_PITCH >= CELL_SIZE || localY % CELL_PITCH >= CELL_SIZE) {
+            return -1;
+        }
+
+        return col + row * COLUMNS;
+    }
+
+    private int findColorIndex(int color) {
+        for (int i = 0; i < PALETTE_COLORS.length; ++i) {
+            if (PALETTE_COLORS[i] == color) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private int getEntryIndexForInitialFocus(FocusNavigationEvent navigationEvent) {
+        if (navigationEvent instanceof FocusNavigationEvent.TabNavigation tabNavigation) {
+            return tabNavigation.forward() ? 0 : PALETTE_COLORS.length - 1;
+        }
+
+        ScreenDirection direction = navigationEvent.getVerticalDirectionForInitialFocus();
+        if (navigationEvent instanceof FocusNavigationEvent.ArrowNavigation arrowNavigation) {
+            direction = arrowNavigation.direction();
+        }
+
+        return projectFocusedIndexToEntryEdge(direction);
+    }
+
+    private int getNextFocusedIndex(ScreenDirection direction) {
+        int nextIndex = switch (direction) {
+            case LEFT -> focusedIndex % COLUMNS == 0 ? -1 : focusedIndex - 1;
+            case RIGHT -> focusedIndex % COLUMNS == COLUMNS - 1 ? -1 : focusedIndex + 1;
+            case UP -> focusedIndex - COLUMNS;
+            case DOWN -> focusedIndex + COLUMNS;
+        };
+
+        return nextIndex >= 0 && nextIndex < PALETTE_COLORS.length ? nextIndex : -1;
+    }
+
+    private int projectFocusedIndexToEntryEdge(ScreenDirection direction) {
+        int row = focusedIndex / COLUMNS;
+        int col = focusedIndex % COLUMNS;
+
+        return switch (direction) {
+            case UP -> (ROWS - 1) * COLUMNS + col;
+            case DOWN -> col;
+            case LEFT -> row * COLUMNS + (COLUMNS - 1);
+            case RIGHT -> row * COLUMNS;
+        };
+    }
+
+    private boolean isKeyboardFocused() {
+        return isFocused() && Minecraft.getInstance().getLastInputType().isKeyboard();
     }
 }

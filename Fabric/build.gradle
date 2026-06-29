@@ -1,31 +1,53 @@
 import com.modrinth.minotaur.dependencies.ModDependency
 import com.modrinth.minotaur.dependencies.VersionDependency
+import net.darkhax.curseforgegradle.TaskPublishCurseForge
 
 plugins {
     id 'multiloader-loader'
     id 'fabric-loom'
-    id 'net.darkhax.curseforgegradle' version '1.+'
-    id "com.modrinth.minotaur" version "2.+"
+    id 'idea'
+    id 'net.darkhax.curseforgegradle' version '1.1.28'
+    id "com.modrinth.minotaur" version "2.9.0"
 }
 
-base.archivesName = "${project.mod_name}-${project.minecraft_version}"
-remapJar.archiveClassifier = "fabric"
+base.archivesName = "${project.mod_name}-${project.minecraft_version}-fabric"
+
+configurations {
+    embeddedApi {
+        canBeConsumed = false
+        canBeResolved = true
+        transitive = false
+    }
+}
 
 dependencies {
-    implementation project(':Api')
+    def apiIsSnapshot = project.api_version.endsWith('-SNAPSHOT')
+
+    implementation("${project.api_group}:${project.api_artifact_id}:${project.api_version}") {
+        changing = apiIsSnapshot
+    }
+    embeddedApi("${project.api_group}:${project.api_artifact_id}:${project.api_version}") {
+        changing = apiIsSnapshot
+    }
+
     minecraft "com.mojang:minecraft:${minecraft_version}"
     mappings loom.layered {
         officialMojangMappings()
-        parchment("org.parchmentmc.data:parchment-${parchment_minecraft}:${parchment_version}@zip")
+        parchment("org.parchmentmc.data:parchment-${project.mappings_mc_version}:${project.mappings_date}@zip")
     }
     modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
-    implementation group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.1'
+    implementation 'com.google.code.findbugs:jsr305:3.0.1'
 
-    modImplementation group: 'mysticdrew', name: 'common-networking-fabric', version: project.common_networking_version, changing: true
-    modApi "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${forge_config_api_port_version}"
-    modImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
-    modApi group: 'info.journeymap', name: 'journeymap-api-fabric', version: project.journeymap_api_version, changing: true
+    modImplementation("mysticdrew:common-networking-fabric:${project.common_networking_version}") {
+        changing = true
+    }
+    include(implementation("com.electronwill.night-config:core:${project.nightconfig_version}"))
+    include(implementation("com.electronwill.night-config:toml:${project.nightconfig_version}"))
+    modApi "com.terraformersmc:modmenu:${project.modmenu_version}"
+    modApi("info.journeymap:journeymap-api-fabric:${project.journeymap_api_version}") {
+        changing = true
+    }
     modImplementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_fabric_file_id}"
 }
 
@@ -41,61 +63,60 @@ loom {
         client {
             client()
             setConfigName("Fabric Client")
+            property("mixin.debug.export", "true")
             ideConfigGenerated(true)
             runDir("runs/client")
             programArg("--username=Dev")
         }
         server {
             server()
-            serverWithGui()
             setConfigName("Fabric Server")
+            property("mixin.debug.export", "true")
             ideConfigGenerated(true)
             runDir("runs/server")
         }
     }
 }
 
+idea {
+    module {
+        excludeDirs += file('runs')
+    }
+}
+
 jar {
     dependsOn "processDocs"
-    dependsOn project(':Api').tasks.named('classes')
-    from project(':Api').sourceSets.main.output
-}
-
-task processDocs(type: Copy) {
-    // update docs
-    from(file("../doc/")) {
-        include '*.md'
-        expand 'loaderversion': fabric_version,
-                'loadername': "Fabric API",
-                'journeymap_doc_version': journeymap_doc_version,
-                'extra_doc_requirements': "* Forge Config API Port: ${forge_config_api_port_version}\n* Mod Menu (Optional): ${modmenu_version}"
+    from({
+        configurations.embeddedApi.collect { zipTree(it) }
+    }) {
+        exclude 'META-INF/MANIFEST.MF'
+        exclude 'META-INF/*.SF'
+        exclude 'META-INF/*.DSA'
+        exclude 'META-INF/*.RSA'
     }
-    into 'build/doc'
 }
 
-if (!project.hasProperty("curseForgeApiKey")) {
-    ext.curseForgeApiKey = project.findProperty("curseforge_api_key") ?: "notset"
-}
-if (!project.hasProperty("modrinthApiKey")) {
-    ext.modrinthApiKey = project.findProperty("modrinth_api_key") ?: "notset"
-}
 
-task publishCurseForge(type: net.darkhax.curseforgegradle.TaskPublishCurseForge) {
+registerProcessDocsTask(
+        "Fabric API",
+        fabric_version,
+        "* Mod Menu (Optional): ${modmenu_version}"
+)
+
+tasks.register('publishCurseForge', TaskPublishCurseForge) {
     apiToken = "${curseForgeApiKey}"
     def mainFile = upload(curseforge_project_id, remapJar)
-    mainFile.displayName = "${mod_name}-${minecraft_version}-${version}-fabric"
+    mainFile.displayName = "${minecraft_version}-${version}-fabric"
     mainFile.releaseType = release_type
     mainFile.addModLoader("Fabric", "Quilt")
     mainFile.addJavaVersion("Java 21")
     mainFile.addGameVersion("${minecraft_version}")
     mainFile.addEnvironment("Server", "Client")
-    mainFile.addRelations("requiredDependency", "fabric-api", "journeymap", "forge-config-api-port-fabric")
+    mainFile.addRelations("requiredDependency", "fabric-api", "journeymap")
     mainFile.addRelation("modmenu", "optionalDependency")
     mainFile.changelogType = "markdown"
     mainFile.changelog = file("$project.buildDir/doc/changelog.md")
 }
-
-tasks.modrinth.dependsOn(tasks.build)
 
 modrinth {
 //    debugMode.set(true)
@@ -110,15 +131,9 @@ modrinth {
     dependencies = [
             new ModDependency("fabric-api", "required"),
             new VersionDependency("journeymap", "${journeymap_doc_version}+fabric", "required"),
-            new VersionDependency("forge-config-api-port", "v${forge_config_api_port_version}-${minecraft_version}-Fabric", "required"),
             new VersionDependency("modmenu", "${modmenu_version}", "optional")
     ]
-    changelog = file("$project.buildDir/doc/changelog.md").exists() ? file("$project.buildDir/doc/changelog.md").text : null
-}
-
-project.afterEvaluate {
-    project.tasks.findAll { task -> (task.name.startsWith('curseforge') || task.name.startsWith('modrinth'))
-    }.each {
-        projectTask -> projectTask.dependsOn build
-    }
+    changelog.set(providers.provider {
+        file("$project.buildDir/doc/changelog.md").text
+    })
 }

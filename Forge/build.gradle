@@ -1,11 +1,16 @@
 import com.modrinth.minotaur.dependencies.VersionDependency
+import net.darkhax.curseforgegradle.TaskPublishCurseForge
 
 plugins {
     id 'multiloader-loader'
-    id 'net.minecraftforge.gradle' version '[7.0.2,8.0)'
-    id 'net.darkhax.curseforgegradle' version '1.+'
-    id "com.modrinth.minotaur" version "2.+"
+    id 'idea'
+    id 'net.minecraftforge.accesstransformers' version '5.0.2'
+    id 'net.minecraftforge.gradle' version "[7.0.0,8.0)"
+    id 'net.darkhax.curseforgegradle' version '1.1.28'
+    id "com.modrinth.minotaur" version "2.9.0"
 }
+
+base.archivesName = "${project.mod_name}-${project.minecraft_version}-forge"
 
 repositories {
     maven minecraft.mavenizer
@@ -18,81 +23,69 @@ repositories {
     mavenCentral()
 }
 
-base.archivesName = "${project.mod_name}-${project.minecraft_version}"
-jar.archiveClassifier = 'forge'
-
-java {
-    sourcesJar.enabled = false
-}
-
-jar {
-    manifest {
-        attributes["MixinConfigs"] = "${mod_id}.mixins.json,${mod_id}.forge.mixins.json"
+configurations {
+    embeddedApi {
+        canBeConsumed = false
+        canBeResolved = true
+        transitive = false
     }
 }
 
-minecraft {
-    mappings channel: 'official', version: minecraft_version
+dependencies {
+    def apiIsSnapshot = project.api_version.endsWith('-SNAPSHOT')
 
-    accessTransformers = files('src/main/resources/META-INF/accesstransformer.cfg')
+    implementation("${project.api_group}:${project.api_artifact_id}:${project.api_version}") {
+        changing = apiIsSnapshot
+    }
+    embeddedApi("${project.api_group}:${project.api_artifact_id}:${project.api_version}") {
+        changing = apiIsSnapshot
+    }
+
+    implementation minecraft.dependency("net.minecraftforge:forge:${forge_version}")
+    implementation "mysticdrew:common-networking-forge:${project.common_networking_version}"
+    api("info.journeymap:journeymap-api-forge:${project.journeymap_api_version}") {
+        changing = true
+    }
+    implementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_forge_file_id}"
+}
+
+minecraft {
+    mappings channel: "official", version: minecraft_version
+
+    def at = project(':Common').file('src/main/resources/META-INF/accesstransformer.cfg')
+    if (at.exists()) {
+        accessTransformers = files(at)
+    }
 
     runs {
         configureEach {
+            systemProperty 'forge.logging.console.level', 'debug'
+            systemProperty 'eventbus.api.strictRuntimeChecks', 'true'
             args "--mixin.config=${mod_id}.mixins.json"
             args "--mixin.config=${mod_id}.forge.mixins.json"
+            systemProperty "mixin.debug.export", "true"
+            systemProperty "mixin.env.remapRefMap", "true"
+            systemProperty "mixin.env.refMapRemappingFile", "${buildDir}/createSrgToMcp/output.srg"
         }
 
         client {
             workingDir.convention layout.projectDirectory.dir("runs/client")
-            systemProperty "mixin.debug.export", "true"
-            systemProperty "mixin.env.remapRefMap", "true"
-            systemProperty "mixin.env.refMapRemappingFile", "${buildDir}/createSrgToMcp/output.srg"
-            mods {
-                modClientRun {
-                    source sourceSets.main
-                }
-            }
         }
 
         server {
             workingDir.convention layout.projectDirectory.dir("runs/server")
-            systemProperty "mixin.debug.export", "true"
-            systemProperty "mixin.env.remapRefMap", "true"
-            systemProperty "mixin.env.refMapRemappingFile", "${buildDir}/createSrgToMcp/output.srg"
-            mods {
-                modServerRun {
-                    source sourceSets.main
-                }
-            }
-        }
-
-        data {
-            workingDir.convention layout.projectDirectory.dir("runs/data")
-            args '--mod', mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
-            systemProperty "mixin.debug.export", "true"
-            systemProperty "mixin.env.remapRefMap", "true"
-            systemProperty "mixin.env.refMapRemappingFile", "${buildDir}/createSrgToMcp/output.srg"
-            mods {
-                modDataRun {
-                    source sourceSets.main
-                }
-            }
+            args '--nogui'
         }
     }
 }
 
-sourceSets.main.resources { srcDir 'src/generated/resources' }
-
-dependencies {
-    implementation project(':Api')
-    implementation minecraft.dependency("net.minecraftforge:forge:${forge_version}")
-    // Forge's hack fix
-    implementation('net.sf.jopt-simple:jopt-simple:5.0.4') { version { strictly '5.0.4' } }
-
-    implementation group: 'mysticdrew', name: 'common-networking-forge', version: project.common_networking_version
-    api group: 'info.journeymap', name: 'journeymap-api-forge', version: project.journeymap_api_version, changing: true
-    implementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_forge_file_id}"
+idea {
+    module {
+        excludeDirs += file('runs')
+    }
 }
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 sourceSets.each {
     def dir = layout.buildDirectory.dir("sourcesSets/$it.name")
@@ -102,36 +95,34 @@ sourceSets.each {
 
 jar {
     dependsOn "processDocs"
-    dependsOn project(':Api').tasks.named('classes')
-    from project(':Api').sourceSets.main.output
+    from({
+        configurations.embeddedApi.collect { zipTree(it) }
+    }) {
+        exclude 'META-INF/MANIFEST.MF'
+        exclude 'META-INF/*.SF'
+        exclude 'META-INF/*.DSA'
+        exclude 'META-INF/*.RSA'
+    }
     manifest {
         attributes["MixinConfigs"] = "${mod_id}.mixins.json,${mod_id}.forge.mixins.json"
     }
 }
 
-task processDocs(type: Copy) {
-    // update docs
-    from(file("../doc/")) {
-        include '*.md'
-        expand 'loaderversion': forge_version,
-                'loadername': "Forge",
-                'journeymap_doc_version': journeymap_doc_version,
-                'extra_doc_requirements': ""
-    }
-    into 'build/doc'
+
+registerProcessDocsTask(
+        "Forge",
+        forge_version,
+        ""
+)
+
+tasks.processResources {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
-if (!project.hasProperty("curseForgeApiKey")) {
-    ext.curseForgeApiKey = project.findProperty("curseforge_api_key") ?: "notset"
-}
-if (!project.hasProperty("modrinthApiKey")) {
-    ext.modrinthApiKey = project.findProperty("modrinth_api_key") ?: "notset"
-}
-
-task publishCurseForge(type: net.darkhax.curseforgegradle.TaskPublishCurseForge) {
+tasks.register('publishCurseForge', TaskPublishCurseForge) {
     apiToken = "${curseForgeApiKey}"
     def mainFile = upload(curseforge_project_id, jar)
-    mainFile.displayName = "${mod_name}-${minecraft_version}-${version}-forge"
+    mainFile.displayName = "${minecraft_version}-${version}-forge"
     mainFile.releaseType = release_type
     mainFile.addModLoader("Forge")
     mainFile.addJavaVersion("Java 21")
@@ -141,8 +132,6 @@ task publishCurseForge(type: net.darkhax.curseforgegradle.TaskPublishCurseForge)
     mainFile.changelogType = "markdown"
     mainFile.changelog = file("$project.buildDir/doc/changelog.md")
 }
-
-tasks.modrinth.dependsOn(tasks.build)
 
 modrinth {
 //    debugMode.set(true)
@@ -157,12 +146,7 @@ modrinth {
     dependencies = [
             new VersionDependency("journeymap", "${journeymap_doc_version}+forge", "required")
     ]
-    changelog = file("$project.buildDir/doc/changelog.md").exists() ? file("$project.buildDir/doc/changelog.md").text : null
-}
-
-project.afterEvaluate {
-    project.tasks.findAll { task -> (task.name.startsWith('curseforge') || task.name.startsWith('modrinth'))
-    }.each {
-        projectTask -> projectTask.dependsOn build
-    }
+    changelog.set(providers.provider {
+        file("$project.buildDir/doc/changelog.md").text
+    })
 }

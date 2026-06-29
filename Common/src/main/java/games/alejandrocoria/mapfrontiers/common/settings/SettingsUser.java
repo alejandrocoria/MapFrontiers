@@ -1,9 +1,8 @@
 package games.alejandrocoria.mapfrontiers.common.settings;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.util.NbtCompat;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
-import net.minecraft.ChatFormatting;
-import net.minecraft.client.resources.language.I18n;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.MinecraftServer;
@@ -16,6 +15,7 @@ import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class SettingsUser implements Comparable<SettingsUser> {
+    private static final String DEFAULT_UNNAMED = "<Unnamed>";
     public String username;
     public UUID uuid;
 
@@ -50,9 +50,9 @@ public class SettingsUser implements Comparable<SettingsUser> {
     }
 
     public void readFromNBT(CompoundTag nbt) {
-        username = nbt.getString("username");
+        username = NbtCompat.getStringOr(nbt, "username", "");
         try {
-            uuid = UUID.fromString(nbt.getString("UUID"));
+            uuid = UUID.fromString(NbtCompat.getStringOr(nbt, "UUID", ""));
         } catch (Exception e) {
             MapFrontiers.LOGGER.error(e.getMessage(), e);
         }
@@ -121,7 +121,7 @@ public class SettingsUser implements Comparable<SettingsUser> {
 
     @Override
     public String toString() {
-        return toString(I18n.get("mapfrontiers.unnamed", ChatFormatting.ITALIC));
+        return toString(DEFAULT_UNNAMED);
     }
 
     public String toString(String blank) {

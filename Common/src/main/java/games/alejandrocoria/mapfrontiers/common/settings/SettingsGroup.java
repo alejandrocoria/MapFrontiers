@@ -1,11 +1,14 @@
 package games.alejandrocoria.mapfrontiers.common.settings;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
+import games.alejandrocoria.mapfrontiers.common.util.NbtCompat;
+import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
+import net.minecraft.SharedConstants;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -81,21 +84,31 @@ public class SettingsGroup {
 
     public void readFromNBT(CompoundTag nbt, int version) {
         if (!special) {
-            name = nbt.getString("name");
+            name = NbtCompat.getStringOr(nbt, "name", "");
             users.clear();
-            ListTag usersTagList = nbt.getList("users", Tag.TAG_COMPOUND);
+            ListTag usersTagList = NbtCompat.getListOrEmpty(nbt, "users");
             for (int i = 0; i < usersTagList.size(); ++i) {
-                SettingsUser user = new SettingsUser();
-                CompoundTag userTag = usersTagList.getCompound(i);
-                user.readFromNBT(userTag);
-                users.add(user);
+                try {
+                    SettingsUser user = new SettingsUser();
+                    user.readFromNBT(NbtReadHelper.requireCompound(usersTagList, i, "users"));
+                    users.add(user);
+                } catch (InvalidNbtFormatException e) {
+                    MapFrontiers.LOGGER.warn("Skipping invalid user in group {} at users[{}]: {}", name, i, e.getMessage());
+                }
             }
         }
 
         actions.clear();
-        ListTag actionsTagList = nbt.getList("actions", Tag.TAG_STRING);
+        ListTag actionsTagList = NbtCompat.getListOrEmpty(nbt, "actions");
         for (int i = 0; i < actionsTagList.size(); ++i) {
-            String actionTag = actionsTagList.getString(i);
+            String actionTag;
+            try {
+                actionTag = NbtReadHelper.requireString(actionsTagList, i, "actions");
+            } catch (InvalidNbtFormatException e) {
+                MapFrontiers.LOGGER.warn("Skipping invalid action in group {} at actions[{}]: {}", name, i, e.getMessage());
+                continue;
+            }
+
             List<FrontierSettings.Action> availableActions = FrontierSettings.getAvailableActions(name);
 
             try {
@@ -119,8 +132,7 @@ public class SettingsGroup {
                     availableActionsString = StringHelper.enumValuesToString(FrontierSettings.getAvailableActionsV3(name));
                 }
 
-                MapFrontiers.LOGGER.warn(String.format("Unknown action in group %1$s. Found: \"%2$s\". Expected: %3$s", name,
-                        actionTag, availableActionsString));
+                MapFrontiers.LOGGER.warn("Unknown action in group {}. Found: \"{}\". Expected: {}", name, actionTag, availableActionsString);
             }
         }
     }
@@ -149,7 +161,7 @@ public class SettingsGroup {
 
     public void fromBytes(FriendlyByteBuf buf) {
         if (!buf.readBoolean()) {
-            name = buf.readUtf(17);
+            name = buf.readUtf(SharedConstants.MAX_PLAYER_NAME_LENGTH);
 
             users = new ArrayList<>();
             int usersCount = buf.readInt();
@@ -161,7 +173,7 @@ public class SettingsGroup {
         }
 
         actions.clear();
-        for (FrontierSettings.Action action : FrontierSettings.Action.valuesArray) {
+        for (FrontierSettings.Action action : FrontierSettings.Action.VALUES) {
             if (buf.readBoolean()) {
                 actions.add(action);
             }
@@ -172,7 +184,7 @@ public class SettingsGroup {
         buf.writeBoolean(special);
 
         if (!special) {
-            buf.writeUtf(name, 17);
+            buf.writeUtf(name, SharedConstants.MAX_PLAYER_NAME_LENGTH);
 
             buf.writeInt(users.size());
             for (SettingsUser user : users) {
@@ -180,7 +192,7 @@ public class SettingsGroup {
             }
         }
 
-        for (FrontierSettings.Action action : FrontierSettings.Action.valuesArray) {
+        for (FrontierSettings.Action action : FrontierSettings.Action.VALUES) {
             buf.writeBoolean(actions.contains(action));
         }
     }

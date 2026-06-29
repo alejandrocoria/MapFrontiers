@@ -1,7 +1,8 @@
 package games.alejandrocoria.mapfrontiers.client.gui.hud;
 
+import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
+import games.alejandrocoria.mapfrontiers.client.config.HUDAnchor;
 import games.alejandrocoria.mapfrontiers.client.gui.component.AbstractWidgetNoNarration;
-import games.alejandrocoria.mapfrontiers.common.Config;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphics;
@@ -17,8 +18,8 @@ import java.util.function.Consumer;
 public class HUDWidget extends AbstractWidgetNoNarration {
     private final HUD hud;
     private final boolean minimapEnabled;
-    private Config.Point positionHUD = new Config.Point();
-    private final Config.Point grabOffset = new Config.Point();
+    private HUDPlacementHelper.Point positionHUD = new HUDPlacementHelper.Point();
+    private final HUDPlacementHelper.Point grabOffset = new HUDPlacementHelper.Point();
     private boolean grabbed = false;
     private final Consumer<HUDWidget> callbackHUDUpdated;
 
@@ -29,17 +30,8 @@ public class HUDWidget extends AbstractWidgetNoNarration {
         this.callbackHUDUpdated = callbackHUDUpdated;
     }
 
-    public void setPositionHUD(Config.Point positionHUD) {
+    public void setPositionHUD(HUDPlacementHelper.Point positionHUD) {
         this.positionHUD = positionHUD;
-    }
-
-    @Override
-    public boolean clicked(double mouseX, double mouseY) {
-        int factor = (int) Minecraft.getInstance().getWindow().getGuiScale();
-        int xScaled = (int) mouseX * factor;
-        int yScaled = (int) mouseY * factor;
-
-        return this.active && this.visible && hud.isInside(xScaled, yScaled);
     }
 
     @Nullable
@@ -49,17 +41,23 @@ public class HUDWidget extends AbstractWidgetNoNarration {
 
     @Override
     public boolean isMouseOver(double mouseX, double mouseY) {
-        return clicked(mouseX, mouseY);
+        int factor = (int) Minecraft.getInstance().getWindow().getGuiScale();
+        int xScaled = (int) mouseX * factor;
+        int yScaled = (int) mouseY * factor;
+
+        return this.active && this.visible && hud.isInside(xScaled, yScaled);
     }
 
     @Override
-    public void onClick(double mouseX, double mouseY) {
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
         int factor = (int) Minecraft.getInstance().getWindow().getGuiScale();
         int xScaled = (int) mouseX * factor;
         int yScaled = (int) mouseY * factor;
         grabOffset.x = xScaled - positionHUD.x;
         grabOffset.y = yScaled - positionHUD.y;
         grabbed = true;
+
+        return true;
     }
 
     @Override
@@ -72,27 +70,27 @@ public class HUDWidget extends AbstractWidgetNoNarration {
         if (grabbed) {
             Minecraft mc = Minecraft.getInstance();
             float factor = (float) mc.getWindow().getGuiScale();
-            mouseX *= factor;
-            mouseY *= factor;
+            double scaledMouseX = mouseX * factor;
+            double scaledMouseY = mouseY * factor;
 
-            positionHUD.x = (int) mouseX - grabOffset.x;
-            positionHUD.y = (int) mouseY - grabOffset.y;
+            positionHUD.x = (int) scaledMouseX - grabOffset.x;
+            positionHUD.y = (int) scaledMouseY - grabOffset.y;
 
-            Config.Point anchorPoint = Config.getHUDAnchor(Config.hudAnchor);
-            Config.Point originPoint = Config.getHUDOrigin(Config.hudAnchor, hud.getWidth(), hud.getHeight());
+            HUDPlacementHelper.Point anchorPoint = HUDPlacementHelper.getHUDAnchor(ClientConfig.HUD_ANCHOR.get());
+            HUDPlacementHelper.Point originPoint = HUDPlacementHelper.getHUDOrigin(ClientConfig.HUD_ANCHOR.get(), hud.getWidth(), hud.getHeight());
 
-            if (Config.hudAutoAdjustAnchor) {
-                Config.HUDAnchor closestAnchor = null;
+            if (ClientConfig.HUD_AUTO_ADJUST_ANCHOR.get()) {
+                HUDAnchor closestAnchor = null;
                 int closestDistance = 99999;
 
-                for (Config.HUDAnchor anchor : Config.HUDAnchor.values()) {
-                    if ((anchor == Config.HUDAnchor.Minimap || anchor == Config.HUDAnchor.MinimapHorizontal
-                            || anchor == Config.HUDAnchor.MinimapVertical) && !minimapEnabled) {
+                for (HUDAnchor anchor : HUDAnchor.VALUES) {
+                    if ((anchor == HUDAnchor.Minimap || anchor == HUDAnchor.MinimapHorizontal
+                            || anchor == HUDAnchor.MinimapVertical) && !minimapEnabled) {
                         continue;
                     }
 
-                    Config.Point anchorP = Config.getHUDAnchor(anchor);
-                    Config.Point originP = Config.getHUDOrigin(anchor, hud.getWidth(), hud.getHeight());
+                    HUDPlacementHelper.Point anchorP = HUDPlacementHelper.getHUDAnchor(anchor);
+                    HUDPlacementHelper.Point originP = HUDPlacementHelper.getHUDOrigin(anchor, hud.getWidth(), hud.getHeight());
 
                     int distance = Math.abs(anchorP.x - positionHUD.x - originP.x)
                             + Math.abs(anchorP.y - positionHUD.y - originP.y);
@@ -101,29 +99,29 @@ public class HUDWidget extends AbstractWidgetNoNarration {
                         closestAnchor = anchor;
                     }
                 }
-                if (closestAnchor != null && closestAnchor != Config.hudAnchor) {
-                    Config.hudAnchor = closestAnchor;
-                    anchorPoint = Config.getHUDAnchor(Config.hudAnchor);
-                    originPoint = Config.getHUDOrigin(Config.hudAnchor, hud.getWidth(), hud.getHeight());
+                if (closestAnchor != null && closestAnchor != ClientConfig.HUD_ANCHOR.get()) {
+                    ClientConfig.HUD_ANCHOR.set(closestAnchor);
+                    anchorPoint = HUDPlacementHelper.getHUDAnchor(ClientConfig.HUD_ANCHOR.get());
+                    originPoint = HUDPlacementHelper.getHUDOrigin(ClientConfig.HUD_ANCHOR.get(), hud.getWidth(), hud.getHeight());
                     callbackHUDUpdated.accept(this);
                 }
             }
 
-            Config.Point snapOffset = new Config.Point();
-            if (Config.hudSnapToBorder) {
+            HUDPlacementHelper.Point snapOffset = new HUDPlacementHelper.Point();
+            if (ClientConfig.HUD_SNAP_TO_BORDER.get()) {
                 snapOffset.x = 16;
                 snapOffset.y = 16;
-                for (Config.HUDAnchor anchor : Config.HUDAnchor.values()) {
-                    if (anchor == Config.HUDAnchor.MinimapHorizontal || anchor == Config.HUDAnchor.MinimapVertical) {
+                for (HUDAnchor anchor : HUDAnchor.VALUES) {
+                    if (anchor == HUDAnchor.MinimapHorizontal || anchor == HUDAnchor.MinimapVertical) {
                         continue;
                     }
 
-                    Config.Point anchorP = Config.getHUDAnchor(anchor);
-                    Config.Point originP = Config.getHUDOrigin(anchor, hud.getWidth(), hud.getHeight());
+                    HUDPlacementHelper.Point anchorP = HUDPlacementHelper.getHUDAnchor(anchor);
+                    HUDPlacementHelper.Point originP = HUDPlacementHelper.getHUDOrigin(anchor, hud.getWidth(), hud.getHeight());
                     int offsetX = positionHUD.x - anchorP.x + originP.x;
                     int offsetY = positionHUD.y - anchorP.y + originP.y;
 
-                    if (anchor == Config.HUDAnchor.Minimap) {
+                    if (anchor == HUDAnchor.Minimap) {
                         if (!minimapEnabled) {
                             continue;
                         }
@@ -160,8 +158,8 @@ public class HUDWidget extends AbstractWidgetNoNarration {
                 }
             }
 
-            Config.hudXPosition = positionHUD.x - anchorPoint.x + originPoint.x - snapOffset.x;
-            Config.hudYPosition = positionHUD.y - anchorPoint.y + originPoint.y - snapOffset.y;
+            ClientConfig.HUD_X_POSITION.set(positionHUD.x - anchorPoint.x + originPoint.x - snapOffset.x);
+            ClientConfig.HUD_Y_POSITION.set(positionHUD.y - anchorPoint.y + originPoint.y - snapOffset.y);
 
             // We don't fire the config update event on mouse drag because it would write the config to file every frame.
             hud.configUpdated();

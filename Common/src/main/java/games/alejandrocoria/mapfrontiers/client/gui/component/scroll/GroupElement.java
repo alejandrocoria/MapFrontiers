@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.scroll;
 
+import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
@@ -11,13 +12,14 @@ import net.minecraft.client.resources.language.I18n;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 public class GroupElement extends ScrollBox.ScrollElement {
     private final Font font;
     private final SettingsGroup group;
     private IconButton buttonDelete;
 
     public GroupElement(Font font, SettingsGroup group) {
-        super(160, 16);
+        super(160, 15);
         this.font = font;
         this.group = group;
 
@@ -42,7 +44,7 @@ public class GroupElement extends ScrollBox.ScrollElement {
     protected void setY(int y) {
         super.setY(y);
         if (buttonDelete != null) {
-            buttonDelete.setY(this.y + 1);
+            buttonDelete.setY(this.y + 2);
         }
     }
 
@@ -70,7 +72,7 @@ public class GroupElement extends ScrollBox.ScrollElement {
     }
 
     @Override
-    protected ScrollBox.ScrollElement.Action mousePressed(double mouseX, double mouseY) {
+    protected ScrollBox.ScrollElement.Action mousePressed(double mouseX, double mouseY, int button) {
         if (visible && isHovered) {
             if (buttonDelete != null && buttonDelete.isMouseOver(mouseX, mouseY)) {
                 return ScrollBox.ScrollElement.Action.Deleted;
@@ -84,6 +86,6 @@ public class GroupElement extends ScrollBox.ScrollElement {
 
     @Override
     protected boolean canBeDeleted() {
-        return true;
+        return !group.isSpecial();
     }
 }

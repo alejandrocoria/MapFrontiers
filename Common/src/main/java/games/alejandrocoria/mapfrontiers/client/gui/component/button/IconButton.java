@@ -1,62 +1,96 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.button;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.gui.util.GuiGraphicsHelper;
+import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class IconButton extends ButtonBase {
-    private static final ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/buttons.png");
-    private static final int textureSizeX = 34;
-    private static final int textureSizeY = 133;
+    private static final long RANDOM_ICON_SWAP_INTERVAL_MS = 200L;
+    private static final RandomSource RANDOM = RandomSource.create();
 
     public enum Type {
-        Add       ( 0,   0, 13,   0, 13, 13),
-        Remove    ( 0,  13, 13,  13, 13, 13),
-        Send      ( 0,  26, 13,  26, 13, 13),
-        Copy      ( 0,  39, 17,  39, 17, 17),
-        Paste     ( 0,  56, 17,  56, 17, 17),
-        ArrowUp   ( 0,  73,  8,  73,  8, 17),
-        ArrowDown (18,  73, 26,  73,  8, 17),
-        Undo      ( 0,  90, 17,  90, 17, 17),
-        Redo      ( 0, 107, 17, 107, 17, 17),
-        Swap      ( 0, 124,  9, 124,  9,  9),
-        SortUp    (27,   0, 27,   6,  7,  6),
-        SortDown  (27,  12, 27,  18,  7,  6);
+        Add            (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/add.png"),             33, 11),
+        Remove         (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/remove.png"),          33, 11),
+        Send           (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/send.png"),            33, 11),
+        MoveHere       (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/move_here.png"),       33, 11),
+        Show           (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/show.png"),            33, 11),
+        Hide           (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/hide.png"),            33, 11),
+        Random         (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/random.png"),          48, 96, 6),
+        Copy           (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/copy.png"),            51, 17),
+        Paste          (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/paste.png"),           51, 17),
+        ExpandOptions  (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/expand_options.png"),  24, 17),
+        CollapseOptions(ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/collapse_options.png"),24, 17),
+        Undo           (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/undo.png"),            51, 17),
+        Redo           (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/redo.png"),            51, 17),
+        Swap           (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/swap.png"),            27, 10),
+        SortUp         (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/sort_up.png"),         21,  5),
+        SortDown       (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/sort_down.png"),       21,  5),
+        Collapsed      (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/collapsed.png"),       33, 11),
+        Expanded       (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/expanded.png"),        33, 11),
+        RestoreDefault (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/restore_default.png"), 39, 13);
 
-        final int texX;
-        final int texY;
-        final int texHoverX;
-        final int texHoverY;
-        final int width;
-        final int height;
+        final ResourceLocation texture;
+        final int textureWidth;
+        final int textureHeight;
+        final int variantCount;
+        final int frameWidth;
+        final int frameHeight;
 
-        Type(int texX, int texY, int texHoverX, int texHoverY, int width, int height) {
-            this.texX = texX;
-            this.texY = texY;
-            this.texHoverX = texHoverX;
-            this.texHoverY = texHoverY;
-            this.width = width;
-            this.height = height;
+        Type(ResourceLocation texture, int textureWidth, int textureHeight) {
+            this(texture, textureWidth, textureHeight, 1);
+        }
+
+        Type(ResourceLocation texture, int textureWidth, int textureHeight, int variantCount) {
+            if (textureWidth % 3 != 0) {
+                throw new IllegalArgumentException("Icon texture width must be divisible by 3: " + textureWidth);
+            }
+            if (textureHeight % variantCount != 0) {
+                throw new IllegalArgumentException("Icon texture height must be divisible by variant count: " + textureHeight);
+            }
+            this.texture = texture;
+            this.textureWidth = textureWidth;
+            this.textureHeight = textureHeight;
+            this.variantCount = variantCount;
+            frameWidth = textureWidth / 3;
+            frameHeight = textureHeight / variantCount;
+        }
+
+        boolean hasVariants() {
+            return variantCount > 1;
+        }
+
+        boolean shouldSkipVariant(int currentVariant, int nextVariant) {
+            // Avoid opposite dice faces; with rows ordered as faces 1-6, opposite variant indexes sum to 5.
+            return nextVariant == currentVariant || this == Random && currentVariant + nextVariant == 5;
         }
     }
 
     private Type type;
+    private int currentVariant;
+    private long nextVariantChangeTime;
+    private boolean wasAnimating;
 
     public IconButton(Type type, OnPress pressedAction) {
-        super(0, 0, type.width, type.height, Component.empty(), pressedAction, Button.DEFAULT_NARRATION);
-        this.type = type;
+        super(0, 0, type.frameWidth, type.frameHeight, Component.empty(), pressedAction, Button.DEFAULT_NARRATION);
+        setType(type);
     }
 
     public void setType(Type type) {
         this.type = type;
-        setSize(type.width, type.height);
+        setSize(type.frameWidth, type.frameHeight);
+        currentVariant = randomVariant(type, -1);
+        nextVariantChangeTime = 0L;
+        wasAnimating = false;
     }
 
     @Override
@@ -66,12 +100,57 @@ public class IconButton extends ButtonBase {
 
     @Override
     public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        RenderSystem.setShaderColor(1.f, 1.f, 1.f, 1.f);
-
-        if (isHoveredOrKeyboardFocused()) {
-            graphics.blit(texture, getX(), getY(), type.texHoverX, type.texHoverY, width, height, textureSizeX, textureSizeY);
-        } else {
-            graphics.blit(texture, getX(), getY(), type.texX, type.texY, width, height, textureSizeX, textureSizeY);
+        int stateIndex = 0;
+        int color = ColorConstants.ICON_COLOR_NORMAL;
+        if (!active) {
+            color = ColorConstants.ICON_COLOR_DISABLED;
+        } else if (isKeyboardFocused()) {
+            stateIndex = 2;
+        } else if (isHovered()) {
+            stateIndex = 1;
         }
+
+        updateAnimatedVariant(active && isHoveredOrKeyboardFocused());
+
+        int u = type.frameWidth * stateIndex;
+        int v = type.frameHeight * currentVariant;
+        GuiGraphicsHelper.blitTinted(graphics, type.texture, getX(), getY(), u, v, width, height,
+                type.textureWidth, type.textureHeight, color);
+    }
+
+    private void updateAnimatedVariant(boolean animating) {
+        if (!type.hasVariants()) {
+            return;
+        }
+
+        if (!animating) {
+            wasAnimating = false;
+            return;
+        }
+
+        long currentTime = Util.getMillis();
+        if (!wasAnimating) {
+            nextVariantChangeTime = currentTime + RANDOM_ICON_SWAP_INTERVAL_MS;
+            wasAnimating = true;
+            return;
+        }
+
+        if (currentTime >= nextVariantChangeTime) {
+            currentVariant = randomVariant(type, currentVariant);
+            nextVariantChangeTime = currentTime + RANDOM_ICON_SWAP_INTERVAL_MS;
+        }
+    }
+
+    private static int randomVariant(Type type, int currentVariant) {
+        if (!type.hasVariants()) {
+            return 0;
+        }
+
+        int nextVariant;
+        do {
+            nextVariant = RANDOM.nextInt(type.variantCount);
+        } while (currentVariant >= 0 && type.shouldSkipVariant(currentVariant, nextVariant));
+
+        return nextVariant;
     }
 }

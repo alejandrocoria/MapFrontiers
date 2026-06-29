@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.textbox;
 
+import games.alejandrocoria.mapfrontiers.common.config.DoubleConfigEntry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.EditBox;
@@ -11,21 +12,44 @@ import java.util.function.DoubleConsumer;
 
 @ParametersAreNonnullByDefault
 public class TextBoxDouble extends EditBox {
-    private final double defaultValue;
-    private final double min;
-    private final double max;
+    private static final int DEFAULT_HEIGHT = 13;
+
+    private double defaultValue;
+    private double min;
+    private double max;
     private DoubleConsumer valueChangedCallback;
 
     public TextBoxDouble(double defaultValue, double min, double max, Font font, int width) {
-        super(font, 0, 0, width, 12, Component.empty());
+        super(font, 0, 0, width, DEFAULT_HEIGHT, Component.empty());
+        setRange(defaultValue, min, max);
+        this.setValue(defaultValue);
+    }
+
+    public TextBoxDouble(DoubleConfigEntry entry, Font font, int width) {
+        this(entry.defaultValue(), entry.minValue(), entry.maxValue(), font, width);
+    }
+
+    public void setRange(DoubleConfigEntry entry) {
+        setRange(entry.defaultValue(), entry.minValue(), entry.maxValue());
+    }
+
+    public void setRange(double defaultValue, double min, double max) {
         this.defaultValue = defaultValue;
         this.min = min;
         this.max = max;
-        this.setValue(defaultValue);
     }
 
     public void setValueChangedCallback(DoubleConsumer callback) {
         valueChangedCallback = callback;
+    }
+
+    @Override
+    public void setEditable(boolean editable) {
+        super.setEditable(editable);
+        active = editable;
+        if (!editable) {
+            setFocused(false);
+        }
     }
 
     @Override
@@ -69,10 +93,10 @@ public class TextBoxDouble extends EditBox {
     }
 
     @Override
-    public boolean charTyped(char c, int key) {
+    public boolean charTyped(char codePoint, int modifiers) {
         boolean res = false;
-        if (isHoveredOrFocused()) {
-            res = super.charTyped(c, key);
+        if (active && isHoveredOrFocused()) {
+            res = super.charTyped(codePoint, modifiers);
             if (res) {
                 double current;
                 try {
@@ -100,7 +124,7 @@ public class TextBoxDouble extends EditBox {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         boolean res = false;
-        if (isHoveredOrFocused()) {
+        if (active && isHoveredOrFocused()) {
             res = super.keyPressed(keyCode, scanCode, modifiers);
 
             if (valueChangedCallback != null && (keyCode == GLFW.GLFW_KEY_BACKSPACE || keyCode == GLFW.GLFW_KEY_DELETE)) {
@@ -117,7 +141,7 @@ public class TextBoxDouble extends EditBox {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
-        if (visible && isHovered) {
+        if (visible && active && isHovered) {
             double current;
             try {
                 current = Double.parseDouble(getValue());

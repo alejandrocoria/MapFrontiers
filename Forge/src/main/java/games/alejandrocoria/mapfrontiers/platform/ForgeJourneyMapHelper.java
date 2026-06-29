@@ -1,7 +1,8 @@
 package games.alejandrocoria.mapfrontiers.platform;
 
-import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.common.util.ReflectionHelper;
+import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionOverlay;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
+import games.alejandrocoria.mapfrontiers.client.util.ReflectionHelper;
 import games.alejandrocoria.mapfrontiers.platform.services.IJourneyMapHelper;
 import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.display.MarkerOverlay;
@@ -18,6 +19,7 @@ import journeymap.client.render.draw.DrawPolygonStep;
 import journeymap.client.render.draw.DrawStep;
 import journeymap.client.render.draw.DrawUtil;
 import journeymap.client.render.map.MapRenderer;
+import journeymap.client.texture.TextureCache;
 import journeymap.client.ui.UIManager;
 import journeymap.client.ui.minimap.DisplayVars;
 import journeymap.client.ui.minimap.MiniMap;
@@ -27,6 +29,7 @@ import journeymap.client.ui.theme.Theme;
 import journeymap.common.waypoint.WaypointStore;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -165,6 +168,11 @@ public class ForgeJourneyMapHelper implements IJourneyMapHelper {
         return new CustomPreviewRenderer();
     }
 
+    @Override
+    public void prepareMapTexture(ResourceLocation texture) {
+        TextureCache.getTexture(texture);
+    }
+
     private static int colorSpecToInt(Theme.ColorSpec colorSpec) {
         int color = colorSpec.getColor();
         color |= Math.round(colorSpec.alpha * 255) << 24;
@@ -220,21 +228,33 @@ public class ForgeJourneyMapHelper implements IJourneyMapHelper {
         }
 
         @Override
-        public void setFrontiers(List<FrontierOverlay> frontierOverlays) {
+        public void setTerritories(List<FrontierOverlay> frontierOverlays, List<CollectionOverlay> collectionOverlays) {
             drawSteps.clear();
 
             for (FrontierOverlay frontierOverlay : frontierOverlays) {
                 for (PolygonOverlay polygon : frontierOverlay.getPolygonOverlays()) {
                     drawSteps.add(new DrawPolygonStep(polygon));
                 }
-                for (MarkerOverlay banner : frontierOverlay.getBannerOverlays()) {
-                    drawSteps.add(new DrawMarkerStep(banner));
+                for (MarkerOverlay marker : frontierOverlay.getMarkerOverlays()) {
+                    drawSteps.add(new DrawMarkerStep(marker));
+                }
+                for (MarkerOverlay label : frontierOverlay.getLabelOverlays()) {
+                    drawSteps.add(new DrawMarkerStep(label));
+                }
+            }
+
+            for (CollectionOverlay collectionOverlay : collectionOverlays) {
+                for (PolygonOverlay polygon : collectionOverlay.getBorderPolygonOverlays()) {
+                    drawSteps.add(new DrawPolygonStep(polygon));
+                }
+                for (MarkerOverlay marker : collectionOverlay.getLabelOverlays()) {
+                    drawSteps.add(new DrawMarkerStep(marker));
                 }
             }
         }
 
         @Override
-        public void draw(GuiGraphics graphics, int x, int y, int size, float scaleFactor) {
+        public void draw(GuiGraphics graphics, MultiBufferSource.BufferSource buffers, int x, int y, int size, float scaleFactor) {
             if (drawSteps.isEmpty()) {
                 return;
             }
@@ -249,19 +269,14 @@ public class ForgeJourneyMapHelper implements IJourneyMapHelper {
             graphics.pose().scale(scaleFactor, scaleFactor, scaleFactor);
 
             mapRenderer.setViewPortBounds(new Rectangle2D.Double(0, 0, width * scaleFactor, height * scaleFactor));
-            graphics.fill(JMRenderTypes.MINIMAP_RECTANGLE_MASK_RENDER_TYPE, width / 2 + 1, height / 2 + 1, width / 2 + size - 1, height / 2 + size - 1, 0, 0xFFFFFFFF);
-
-            for(DrawStep.Pass pass : DrawStep.Pass.values()) {
-                int zLevel = 0;
-
-                for (DrawStep drawStep : drawSteps) {
-                    ++zLevel;
-                    graphics.pose().pushPose();
-                    graphics.pose().translate(0, 0, zLevel);
-                    drawStep.draw(graphics, graphics.bufferSource(), pass, 0, 0, mapRenderer, 1, 0);
-                    graphics.pose().popPose();
-                }
-            }
+            graphics.fill(JMRenderTypes.MINIMAP_RECTANGLE_MASK_RENDER_TYPE,
+                    width / 2 + 1,
+                    height / 2 + 1,
+                    width / 2 + size - 1,
+                    height / 2 + size - 1,
+                    0,
+                    0xFFFFFFFF);
+            mapRenderer.draw(graphics, buffers, drawSteps, 0, 0, 1, 0);
 
             graphics.pose().popPose();
 

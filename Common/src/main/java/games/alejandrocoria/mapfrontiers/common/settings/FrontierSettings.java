@@ -1,9 +1,9 @@
 package games.alejandrocoria.mapfrontiers.common.settings;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.util.NbtCompat;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -17,7 +17,7 @@ public class FrontierSettings {
     public enum Action {
         CreateGlobalFrontier, DeleteGlobalFrontier, UpdateGlobalFrontier, UpdateSettings, SharePersonalFrontier;
 
-        public final static Action[] valuesArray = values();
+        public static final Action[] VALUES = values();
     }
 
     public enum ActionV3 {
@@ -150,7 +150,7 @@ public class FrontierSettings {
     public boolean readFromNBT(CompoundTag nbt) {
         boolean needBackup = false;
         try {
-            int version = nbt.getInt("Version");
+            int version = NbtCompat.getIntOr(nbt, "Version", 0);
             if (version == 0) {
                 MapFrontiers.LOGGER.warn("Data version in settings not found, expected " + MapFrontiers.SETTINGS_DATA_VERSION);
                 needBackup = true;
@@ -162,20 +162,20 @@ public class FrontierSettings {
                 needBackup = true;
             }
 
-            CompoundTag OPsTag = nbt.getCompound("OPs");
+            CompoundTag OPsTag = NbtCompat.getCompoundOrEmpty(nbt, "OPs");
             OPs.readFromNBT(OPsTag, version);
 
-            CompoundTag ownersTag = nbt.getCompound("Owners");
+            CompoundTag ownersTag = NbtCompat.getCompoundOrEmpty(nbt, "Owners");
             owners.readFromNBT(ownersTag, version);
 
-            CompoundTag everyoneTag = nbt.getCompound("Everyone");
+            CompoundTag everyoneTag = NbtCompat.getCompoundOrEmpty(nbt, "Everyone");
             everyone.readFromNBT(everyoneTag, version);
 
             customGroups.clear();
-            ListTag customGroupsTagList = nbt.getList("customGroups", Tag.TAG_COMPOUND);
+            ListTag customGroupsTagList = NbtCompat.getListOrEmpty(nbt, "customGroups");
             for (int i = 0; i < customGroupsTagList.size(); ++i) {
                 SettingsGroup group = new SettingsGroup();
-                CompoundTag groupTag = customGroupsTagList.getCompound(i);
+                CompoundTag groupTag = NbtCompat.getCompoundOrEmpty(customGroupsTagList, i);
                 group.readFromNBT(groupTag, version);
                 customGroups.add(group);
             }

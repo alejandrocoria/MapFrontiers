@@ -1,68 +1,72 @@
 package games.alejandrocoria.mapfrontiers;
 
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClientForge;
-import games.alejandrocoria.mapfrontiers.common.Config;
-import games.alejandrocoria.mapfrontiers.common.command.CommandAccept;
-import games.alejandrocoria.mapfrontiers.common.event.EventHandler;
+import games.alejandrocoria.mapfrontiers.server.command.CommandAccept;
+import games.alejandrocoria.mapfrontiers.server.event.ServerGlobalEvents;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 
-@Mod.EventBusSubscriber
+//@Mod.EventBusSubscriber
 @Mod(MapFrontiersForge.MODID)
 public class MapFrontiersForge extends MapFrontiers {
-    public MapFrontiersForge() {
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, Config.CLIENT_SPEC);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(MapFrontiersForge::commonSetup);
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> MapFrontiersForge::addListenerClientSetup);
+    public MapFrontiersForge(FMLJavaModLoadingContext context) {
+        context.getModEventBus().addListener(MapFrontiersForge::onCommonSetup);
+
+        MinecraftForge.EVENT_BUS.addListener(MapFrontiersForge::onRegisterCommands);
+        MinecraftForge.EVENT_BUS.addListener(MapFrontiersForge::onServerStarted);
+        MinecraftForge.EVENT_BUS.addListener(MapFrontiersForge::onServerStopping);
+        MinecraftForge.EVENT_BUS.addListener(MapFrontiersForge::onPlayerLoggedIn);
+        MinecraftForge.EVENT_BUS.addListener(MapFrontiersForge::onServerTick);
+
+        if (FMLEnvironment.dist.isClient()) {
+            context.getModEventBus().addListener(MapFrontiersClientForge::onClientSetup);
+            context.getModEventBus().addListener(MapFrontiersClientForge::onRegisterKeyMappings);
+
+            MinecraftForge.EVENT_BUS.addListener(MapFrontiersClientForge::onLivingTick);
+            MinecraftForge.EVENT_BUS.addListener(MapFrontiersClientForge::onClientTickPre);
+            MinecraftForge.EVENT_BUS.addListener(MapFrontiersClientForge::onAddGuiOverlayLayers);
+            MinecraftForge.EVENT_BUS.addListener(MapFrontiersClientForge::onClientConnectedToServer);
+            MinecraftForge.EVENT_BUS.addListener(MapFrontiersClientForge::onClientDisconnectedFromServer);
+            MinecraftForge.EVENT_BUS.addListener(MapFrontiersClientForge::onMouseButtonPre);
+            MinecraftForge.EVENT_BUS.addListener(MapFrontiersClientForge::onRegisterClientCommands);
+            MinecraftForge.EVENT_BUS.addListener(MapFrontiersClientForge::onClientChat);
+        }
     }
 
-    @SubscribeEvent
-    public static void commonSetup(FMLCommonSetupEvent event) {
+    public static void onCommonSetup(FMLCommonSetupEvent event) {
         init();
         LOGGER.info("Forge commonSetup done");
     }
 
-    public static void addListenerClientSetup() {
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(MapFrontiersClientForge::clientSetup);
-    }
-
-    @SubscribeEvent
-    public static void registerCommands(RegisterCommandsEvent event) {
+    public static void onRegisterCommands(RegisterCommandsEvent event) {
         CommandAccept.register(event.getDispatcher());
     }
 
-    @SubscribeEvent
-    public static void serverStarting(ServerStartingEvent event) {
-        EventHandler.postServerStartingEvent(event.getServer());
+    public static void onServerStarted(ServerStartedEvent event) {
+        ServerGlobalEvents.postServerStartingEvent(event.getServer());
     }
 
-    @SubscribeEvent
-    public static void serverStopping(ServerStoppingEvent event) {
-        EventHandler.postServerStoppingEvent(event.getServer());
+    public static void onServerStopping(ServerStoppingEvent event) {
+        ServerGlobalEvents.postServerStoppingEvent(event.getServer());
     }
 
-    @SubscribeEvent
-    public static void playerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+    public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         ServerPlayer player = (ServerPlayer) event.getEntity();
-        EventHandler.postPlayerJoinedEvent(player.server, player);
+        ServerGlobalEvents.postPlayerJoinedEvent(player.level().getServer(), player);
     }
 
-    @SubscribeEvent
     public static void onServerTick(TickEvent.ServerTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
-            EventHandler.postServerTickEvent(event.getServer());
+            ServerGlobalEvents.postServerTickEvent(event.getServer());
         }
     }
 }

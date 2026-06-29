@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.textbox;
 
+import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.EditBox;
@@ -11,17 +12,31 @@ import java.util.function.IntConsumer;
 
 @ParametersAreNonnullByDefault
 public class TextBoxInt extends EditBox {
-    private final int defaultValue;
-    private final int min;
-    private final int max;
+    private static final int DEFAULT_HEIGHT = 13;
+
+    private int defaultValue;
+    private int min;
+    private int max;
     private IntConsumer valueChangedCallback;
 
     public TextBoxInt(int defaultValue, int min, int max, Font font, int width) {
-        super(font, 0, 0, width, 12, Component.empty());
+        super(font, 0, 0, width, DEFAULT_HEIGHT, Component.empty());
+        setRange(defaultValue, min, max);
+        this.setValue(defaultValue);
+    }
+
+    public TextBoxInt(IntConfigEntry entry, Font font, int width) {
+        this(entry.defaultValue(), entry.minValue(), entry.maxValue(), font, width);
+    }
+
+    public void setRange(IntConfigEntry entry) {
+        setRange(entry.defaultValue(), entry.minValue(), entry.maxValue());
+    }
+
+    public void setRange(int defaultValue, int min, int max) {
         this.defaultValue = defaultValue;
         this.min = min;
         this.max = max;
-        this.setValue(defaultValue);
     }
 
     public void setValueChangedCallback(IntConsumer callback) {
@@ -30,6 +45,15 @@ public class TextBoxInt extends EditBox {
 
     public void setHeight(int height) {
         this.height = height;
+    }
+
+    @Override
+    public void setEditable(boolean editable) {
+        super.setEditable(editable);
+        active = editable;
+        if (!editable) {
+            setFocused(false);
+        }
     }
 
     @Override
@@ -44,6 +68,7 @@ public class TextBoxInt extends EditBox {
 
         try {
             int current = Integer.parseInt(getValue());
+            current = Math.clamp(current, min, max);
             this.setValue(current);
         } catch (Exception e) {
             this.setValue(currentString);
@@ -63,10 +88,10 @@ public class TextBoxInt extends EditBox {
     }
 
     @Override
-    public boolean charTyped(char c, int key) {
+    public boolean charTyped(char codePoint, int modifiers) {
         boolean res = false;
-        if (isHoveredOrFocused()) {
-            res = super.charTyped(c, key);
+        if (active && isHoveredOrFocused()) {
+            res = super.charTyped(codePoint, modifiers);
             if (res) {
                 int current;
                 try {
@@ -94,7 +119,7 @@ public class TextBoxInt extends EditBox {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         boolean res = false;
-        if (isHoveredOrFocused()) {
+        if (active && isHoveredOrFocused()) {
             res = super.keyPressed(keyCode, scanCode, modifiers);
 
             if (valueChangedCallback != null && (keyCode == GLFW.GLFW_KEY_BACKSPACE || keyCode == GLFW.GLFW_KEY_DELETE)) {
@@ -111,7 +136,7 @@ public class TextBoxInt extends EditBox {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
-        if (visible && isHovered) {
+        if (visible && active && isHovered) {
             int current;
             try {
                 current = Integer.parseInt(getValue());

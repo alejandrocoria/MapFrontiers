@@ -15,21 +15,28 @@ neoForge {
         accessTransformers.from(at.absolutePath)
     }
     parchment {
-        minecraftVersion = parchment_minecraft
-        mappingsVersion = parchment_version
+        minecraftVersion = mappings_mc_version
+        mappingsVersion = mappings_date
     }
 }
 
 dependencies {
-    api project(':Api')
-    compileOnly group: 'org.spongepowered', name: 'mixin', version: '0.8.5'
-    // fabric and neoforge both bundle mixinextras, so it is safe to use it in common
-    compileOnly group: 'io.github.llamalad7', name: 'mixinextras-common', version: '0.3.5'
-    annotationProcessor group: 'io.github.llamalad7', name: 'mixinextras-common', version: '0.3.5'
+    def apiIsSnapshot = project.api_version.endsWith('-SNAPSHOT')
 
-    compileOnly group: 'mysticdrew', name: 'common-networking-common', version: project.common_networking_version
-    api "fuzs.forgeconfigapiport:forgeconfigapiport-common-forgeapi:${forge_config_api_port_version}"
-    compileOnly group: 'info.journeymap', name: 'journeymap-api-common', version: project.journeymap_api_version, changing: true
+    api("${project.api_group}:${project.api_artifact_id}:${project.api_version}") {
+        changing = apiIsSnapshot
+    }
+    compileOnly 'org.spongepowered:mixin:0.8.5'
+    // fabric and neoforge both bundle mixinextras, so it is safe to use it in common
+    compileOnly 'io.github.llamalad7:mixinextras-common:0.3.5'
+    annotationProcessor 'io.github.llamalad7:mixinextras-common:0.3.5'
+
+    compileOnly "mysticdrew:common-networking-common:${project.common_networking_version}"
+    api "com.electronwill.night-config:core:${project.nightconfig_version}"
+    api "com.electronwill.night-config:toml:${project.nightconfig_version}"
+    compileOnly("info.journeymap:journeymap-api-common:${project.journeymap_api_version}") {
+        changing = true
+    }
 }
 
 configurations {

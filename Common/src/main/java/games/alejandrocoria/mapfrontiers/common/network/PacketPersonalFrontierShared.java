@@ -3,7 +3,9 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
@@ -21,7 +23,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 public class PacketPersonalFrontierShared {
     public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_personal_frontier_shared");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketPersonalFrontierShared> STREAM_CODEC = StreamCodec.ofMember(PacketPersonalFrontierShared::encode, PacketPersonalFrontierShared::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketPersonalFrontierShared> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketPersonalFrontierShared::encode, PacketPersonalFrontierShared::new);
 
     private int shareMessageID;
     private final SettingsUser playerSharing;
@@ -45,30 +47,21 @@ public class PacketPersonalFrontierShared {
     public PacketPersonalFrontierShared(FriendlyByteBuf buf) {
         this.playerSharing = new SettingsUser();
         this.owner = new SettingsUser();
-
-        try {
-            if (buf.readableBytes() > 1) {
-                this.shareMessageID = buf.readInt();
-                this.playerSharing.fromBytes(buf);
-                this.owner.fromBytes(buf);
-                this.name1 = buf.readUtf(17);
-                this.name2 = buf.readUtf(17);
-            }
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to read message for PacketPersonalFrontierShared: %s", t));
+        if (buf.readableBytes() > 1) {
+            this.shareMessageID = buf.readInt();
+            this.playerSharing.fromBytes(buf);
+            this.owner.fromBytes(buf);
+            this.name1 = buf.readUtf(FrontierData.MAX_NAME_CHARACTERS);
+            this.name2 = buf.readUtf(FrontierData.MAX_NAME_CHARACTERS);
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
-        try {
-            buf.writeInt(shareMessageID);
-            playerSharing.toBytes(buf);
-            owner.toBytes(buf);
-            buf.writeUtf(name1);
-            buf.writeUtf(name2);
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error(String.format("Failed to write message for PacketPersonalFrontierShared: %s", t));
-        }
+        buf.writeInt(shareMessageID);
+        playerSharing.toBytes(buf);
+        owner.toBytes(buf);
+        buf.writeUtf(name1, FrontierData.MAX_NAME_CHARACTERS);
+        buf.writeUtf(name2, FrontierData.MAX_NAME_CHARACTERS);
     }
 
     public static void handle(PacketContext<PacketPersonalFrontierShared> ctx) {
@@ -94,18 +87,18 @@ public class PacketPersonalFrontierShared {
             button.withStyle(style -> style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
                     Component.literal("Click to accept or use command /mfaccept " + message.shareMessageID))));
             button.withStyle(style -> style.withBold(true));
-            button.withStyle(style -> style
-                    .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mapfrontiersaccept " + message.shareMessageID)));
+            button.withStyle(style -> style.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,
+                    "/mapfrontiersaccept " + message.shareMessageID)));
 
-            MutableComponent text = Component.literal(message.playerSharing.toString("User not found") + " ");
+            MutableComponent text = Component.literal(SettingsUserFormatter.getDisplayName(message.playerSharing, "User not found") + " ");
             if (message.playerSharing.equals(message.owner)) {
                 text.append("want to share a frontier with you: ");
             } else {
-                text.append("want to share a frontier of " + message.owner.toString("User not found") + " with you: ");
+                text.append("want to share a frontier of " + SettingsUserFormatter.getDisplayName(message.owner, "User not found") + " with you: ");
             }
 
             text.append(button);
-            player.sendSystemMessage(text);
+            player.displayClientMessage(text, false);
         }
     }
 }

@@ -1,25 +1,10 @@
 package games.alejandrocoria.mapfrontiers.common.util;
 
-import net.minecraft.client.gui.Font;
-
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 
 @ParametersAreNonnullByDefault
-public class StringHelper {
-    public static int getMaxWidth(Font font, String... strings) {
-        int maxWidth = 0;
-
-        for (String s : strings) {
-            int width = font.width(s);
-            if (width > maxWidth) {
-                maxWidth = width;
-            }
-        }
-
-        return maxWidth;
-    }
-
+public final class StringHelper {
     public static <E extends Enum<E>> String enumValuesToString(List<E> list) {
         if (list.isEmpty()) {
             return "";
@@ -41,6 +26,5 @@ public class StringHelper {
     }
 
     private StringHelper() {
-
     }
 }

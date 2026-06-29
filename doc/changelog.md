@@ -1,92 +1,63 @@
-**Beta 21:**
-* Added: API available soon.
-* Change: The copy button puts the frontier ID on the clipboard.
-* Fixed: HUD continues to display with F1.
-
-**Beta 20:**
-* Fixed: New shapes are the wrong size when using an odd width.
- 
-**Beta 19:**
-* Fixed: Crash occurs when opening the settings screen from the mod menu.
- 
-**Beta 17:**
-* Fixed: Server connection on Velocity servers (Thanks to Stikulzon for the fix).
- 
-**Beta 16:**
-* Fixed: Snapping acting weird.
- 
-**Beta 15:**
-* Fixed: [Forge] HUD not drawing.
- 
-**Beta 14:**
-* Added: banner rotation.
- 
-**Beta 13:**
-* Fixed: the banner disappears when a frontier is changed from personal to global or the other way around.
- 
-**Beta 12:**
-* Added: screen to send a copy of a frontier to another player via chat for when the server doesn't have the mod.
-* Added: setting to change HUD text size.
-* Changed: stopping drawing an empty line on the HUD with blank frontier names.
-* Changed: better handling of decimals when scrolling in a decimal text box.
-* Fixed: packets are sent to the server when nothing is changed in Frontier Info upon closing the screen.
-* Fixed: modifying personal frontiers when the server doesn't have the mod doesn't update the modification date.
- 
-**Beta 11:**
-* Fixed: crash when using JourneyMap's "Vault" theme or any theme that does not have the circle shape.
- 
-**Beta 10:**
-* Added: sort buttons to frontier list.
-* Added: search field to frontier list.
-* Added: setting to change the color of the frontier text.
-* Fixed: global forced announce in chat and title settings do not work.
- 
-**Beta 9:**
-* Fixed: bug when reading chunk frontiers from file.
- 
-**Beta 8:**
-* Fixed: error when opening frontiers from previous versions that are missing certain visibility parameters.
- 
 **Beta 7:**
-* Changed: optimized the frontier preview screen (caching JM drawsteps).
- 
+* Added: A hint in player name fields indicating that Alt can be used for player autocompletion.
+* Changed: Many confirmation dialogs can now be skipped by holding Shift while clicking the action button.
+* Fixed: Changing a frontier between personal and global could do nothing when the frontier belonged to a collection.
+
 **Beta 6:**
-* Added: frontier banners to maps.
-* Added: frontier appearance dialog with a preview example.
-* Added: settings button to frontier list screen.
-* Added: settings to change the duration and timeout of title announcements.
-* Added: tooltips to visibility buttons in Info screen.
-* Added: all mod buttons on the fullscreen map are now also available in the context menu.
-* Changed: Improved click selection of frontiers and prioritizing frontiers with smaller area.
-* Fixed: frontier area calculation.
- 
+* Added: Configurable default names, colors, visibility, and Path frontier styles for new frontiers and collections.
+* Added: Restore default buttons for individual client settings and default options.
+* Added: RGB, HSV, and Hex input modes to color editors.
+
 **Beta 5:**
-* Fixed: server side crash due to use of LocalPlayer.
- 
+* Added: Collections can now be shown on maps with their own labels, banners, and visibility settings.
+* Changed: Significant performance optimizations were made to the server, client, and network.
+
 **Beta 4:**
-* Added: button to toggle frontier between Personal and Global type.
-* Added: frontiers can now be moved in edit mode by holding Ctrl and right click.
- 
+* Added: Frontier collections, including grouped sections and per-collection actions in the frontier list.
+* Added: HUD now supports a fourth slot and includes Collection by default (Name, Collection, Owner, Banner).
+* Added: Temporary personal frontiers can now be created directly from the GUI for session-only use.
+* Added: Frontier info paste options now support copying Path style between Path frontiers.
+* Changed: Frontier creation from the frontier list now stays in the list unless shape editing is selected.
+* Changed: Renamed frontier mode to shape across the GUI and client config for clearer terminology.
+* Changed: Replaced the frontier list Type filter with a Shape filter (All, Vertex, Chunk, Path).
+* Changed: Improved keyboard navigation across many GUI screens and widgets, including tabs, scroll lists, group settings, the color palette, and the color picker.
+* Fixed: Changing frontier info paste options no longer sends unnecessary frontier updates to the server.
+* Fixed: OP permission changes from the server only applying after the player disconnected and reconnected.
+
 **Beta 3:**
-* Fixed: incorrect mixin configuration causes the game to crash.
- 
+* Added: More colors to the color palette.
+* Changed: Screens can now be closed with the configured inventory key, and settings can also be closed with the configured MapFrontiers settings key.
+* Changed: Screens and dialogs now scale and fit their contents more consistently at small window sizes.
+* Fixed: Filter reset not saving changes.
+* Fixed: Personal frontiers from a previous singleplayer world could be carried over into a newly opened world.
+
 **Beta 2:**
-* Added: menu for editing chunks by holding shift with buttons to remove connected chunks and to fill inner chunk region.
-* Added: webmap visibility options.
-* Fixed: incompatibility with Banner Text.
- 
+* API - Added: Temporary personal frontiers that exist only for the current session and are not saved, synchronized, or shareable.
+* Added: New Path frontier mode for open line-shaped frontiers, including editable points, marker styles, creation presets, and API support.
+* Added: Save and cancel buttons to dialogs.
+* Changed: Incomplete Vertex frontiers now have a distinct temporary look.
+* Changed: Frontier names now support up to 48 characters per line, and the frontier info and list screens were updated to display longer names more cleanly.
+* Changed: Frontier labels and banners now use improved shape-aware placement, keeping them better inside the frontier.
+* Changed: Selected frontiers now remain highlighted on the fullscreen map even when hidden by visibility settings.
+* Changed: Frontier lists now use mode icons to show each frontier mode and shape count more clearly.
+* Fixed: Strange behavior of the maximum limit of int text box.
+
 **Beta 1:**
-* Added: frontier visibility override options, which allow you to have different options just for you from those set on the frontier.
-* Added: visibility options for map types.
-* Added: confirmation dialog when deleting.
-* Added: option to change the number of vertices of a new frontier.
-* Added: default value to settings tooltips.
-* Added: automatic backups when something goes wrong when opening a file.
-* Changed: text boxes now submit with enter.
-* Changed: improved keyboard accessibility.
-* Fixed: HUD not showing the frontier you are on when logging in.
-* Fixed: snap option not having effect.
+* Added: API available soon.
+* Changed: Reorganized the client config file into grouped sections and removed the dependency on ForgeConfigApiPort, so it no longer needs to be installed just for this mod.
+* Changed: Existing client configs are now migrated automatically to the new layout, with backup/recovery when the client config file is invalid or unreadable.
+* Change: Reduced the number of times frontier changes are written to the file.
+* Change: The copy button puts the frontier ID on the clipboard.
+* Change: Improved several translations across existing languages. If you notice anything that sounds off, feedback and corrections from native speakers are very welcome.
+* Fixed: HUD continues to display with F1.
+* Fixed: owned personal frontiers disappear when reconnecting after the server no longer has the mod.
+* Fixed: MapFrontiers now fails gracefully when JourneyMap does not initialize its plugin. In-world features are disabled, but the mod no longer breaks.
+
+**To see previous changes, go to the changelog for version 2.7.0-beta.21**
  
+**Includes:**
+* MapFrontiers API: ${api_version}
+
 **Requirements:**
 * ${loadername}: ${loaderversion}
 * JourneyMap: ${journeymap_doc_version}

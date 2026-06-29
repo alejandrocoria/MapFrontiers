@@ -1,9 +1,14 @@
 package games.alejandrocoria.mapfrontiers.client;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.common.Config;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
+import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.util.NbtCompat;
+import net.minecraft.SharedConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.nbt.CompoundTag;
@@ -30,18 +35,20 @@ import java.util.Random;
 import java.util.UUID;
 
 public class ChatFrontiers {
-    private static int receivedId = -1;
+    public record ReceivedFrontierCopy(FrontierData frontier, @Nullable CollectionData collection) {
+    }
+
+    private static int currentReceivedMessageId = -1;
     private static final List<String> receivedData = new ArrayList<>();
-    private static final LinkedHashMap<Integer, FrontierData> receivedFrontiers = LinkedHashMap.newLinkedHashMap(3);
+    private static final LinkedHashMap<Integer, ReceivedFrontierCopy> receivedFrontiers = LinkedHashMap.newLinkedHashMap(3);
 
     public static void clear() {
-        receivedId = -1;
-        receivedData.clear();
+        resetReceivedMessageAssembly();
         receivedFrontiers.clear();
     }
 
     @Nullable
-    public static FrontierData getReceivedFrontier(int id) {
+    public static ReceivedFrontierCopy getReceivedFrontier(int id) {
         return receivedFrontiers.get(id);
     }
 
@@ -51,14 +58,37 @@ public class ChatFrontiers {
 
     public static void sendFrontier(FrontierOverlay frontier, SettingsUser user) {
         try {
+            if (frontier.isSessionOnly()) {
+                MapFrontiers.LOGGER.debug("Rejected sendFrontier because source frontier is SESSION_ONLY. frontierId={}, targetUser={}",
+                        frontier.getId(), user.username);
+                return;
+            }
+
+            LocalPlayer player = Minecraft.getInstance().player;
+            if (player == null) {
+                return;
+            }
+
             CompoundTag nbt = new CompoundTag();
-            frontier.writeToNBT(nbt);
+            CompoundTag frontierTag = new CompoundTag();
+            frontier.writeToNBT(frontierTag);
+            nbt.put("frontier", frontierTag);
+
+            if (frontier.hasCollection()) {
+                CollectionData collection = MapFrontiersClient.getCollection(frontier.getCollectionId());
+                if (collection != null) {
+                    CompoundTag collectionTag = new CompoundTag();
+                    collection.writeToNBT(collectionTag);
+                    nbt.put("collection", collectionTag);
+                }
+            }
+
             String encodedData = encodeNBT(nbt);
-            String command = Config.sendCommand + " " + user.username + " #MapFrontiers:";
+            String command = ClientConfig.SEND_COMMAND.get() + " " + user.username + " #MapFrontiers:";
             String format = "%d:%d:%d:%d:%s";
 
             List<String> dataList = new ArrayList<>();
-            int maxLength = 255 - command.length() - format.length();
+            int maxLength = SharedConstants.MAX_CHAT_LENGTH - 1 - command.length() - format.length();
             int dataLength = encodedData.length();
             for (int i = 0; i < dataLength; i += maxLength) {
                 int end = Math.min(dataLength, i + maxLength);
@@ -69,7 +99,7 @@ public class ChatFrontiers {
 
             for (int i = 0; i < dataList.size(); ++i) {
                 String message = command + String.format(format, MapFrontiers.FRONTIER_DATA_VERSION, RandomId, i + 1, dataList.size(), dataList.get(i));
-                Minecraft.getInstance().player.connection.sendCommand(message);
+                player.connection.sendCommand(message);
             }
 
         } catch (Throwable t) {
@@ -112,30 +142,39 @@ public class ChatFrontiers {
                 throw new IllegalArgumentException();
             }
 
-            if (id != receivedId || total != receivedData.size() || !StringUtil.isBlank(receivedData.get(index - 1))) {
-                receivedData.clear();
-                receivedData.addAll(Collections.nCopies(total, ""));
-                receivedId = id;
+            if (shouldStartNewMessageAssembly(id, index, total)) {
+                startReceivedMessageAssembly(id, total);
             }
 
             receivedData.set(index - 1, data);
 
             if (receivedData.stream().noneMatch(String::isBlank)) {
                 String encodedData = String.join("", receivedData);
-                FrontierData frontier = new FrontierData();
-                frontier.readFromNBT(decodeNBT(encodedData), version);
+                CompoundTag payload = decodeNBT(encodedData);
+                FrontierData frontier = readFrontier(payload, version);
+                CollectionData collection = readCollection(payload, version);
                 frontier.setCopiedFromId(frontier.getId());
                 frontier.setCopiedFromUser(frontier.getOwner());
                 frontier.setId(UUID.randomUUID());
                 frontier.setOwner(new SettingsUser(player));
                 frontier.setPersonal(true);
-                receivedFrontiers.remove(receivedId);
+                if (collection != null) {
+                    collection.setCopiedFromId(collection.getId());
+                    collection.setCopiedFromUser(collection.getOwner());
+                    collection.setId(UUID.randomUUID());
+                    collection.setOwner(new SettingsUser(player));
+                    collection.setPersonal(true);
+                    frontier.setCollectionId(collection.getId());
+                } else {
+                    frontier.setCollectionId(null);
+                }
+                receivedFrontiers.remove(currentReceivedMessageId);
                 if (receivedFrontiers.size() == 3) {
                     var iterator = receivedFrontiers.entrySet().iterator();
                     iterator.next();
                     iterator.remove();
                 }
-                receivedFrontiers.putLast(receivedId, frontier);
+                receivedFrontiers.putLast(currentReceivedMessageId, new ReceivedFrontierCopy(frontier, collection));
 
                 String frontierName;
                 if (frontier.getName1().isEmpty() && frontier.getName2().isEmpty()) {
@@ -149,26 +188,26 @@ public class ChatFrontiers {
                 }
 
                 MutableComponent button = Component.literal(frontierName);
-                button.withStyle(style -> style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("Click to accept or use command /mfacceptcopy " + receivedId))));
+                button.withStyle(style -> style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                        Component.literal("Click to accept or use command /mfacceptcopy " + currentReceivedMessageId))));
                 button.withStyle(style -> style.withBold(true));
-                button.withStyle(style -> style.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mapfrontiersacceptcopy " + receivedId)));
+                button.withStyle(style -> style.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,
+                        "/mapfrontiersacceptcopy " + currentReceivedMessageId)));
 
                 SettingsUser userSender = new SettingsUser();
                 userSender.uuid = sender;
                 userSender.fillMissingInfo(true, null);
-                MutableComponent text = Component.literal(userSender.toString("User not found") + " ");
+                MutableComponent text = Component.literal(SettingsUserFormatter.getDisplayName(userSender, "User not found") + " ");
                 if (userSender.equals(frontier.getCopiedFromUser())) {
                     text.append("want to send a frontier to you: ");
                 } else {
-                    text.append("want to send a frontier of " + frontier.getCopiedFromUser().toString("User not found") + " to you: ");
+                    text.append("want to send a frontier of " + SettingsUserFormatter.getDisplayName(frontier.getCopiedFromUser(), "User not found") + " to you: ");
                 }
 
                 text.append(button);
                 player.displayClientMessage(text, false);
 
-//                FrontierOverlay frontierOverlay = personalFrontiersOverlayManager.addFrontier(frontier);
-//                ClientEventHandler.postNewFrontierEvent(frontierOverlay, Minecraft.getInstance().player.getId());
-                receivedId = -1;
+                resetReceivedMessageAssembly();
             }
 
         } catch (Throwable t) {
@@ -193,5 +232,42 @@ public class ChatFrontiers {
         try (DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data))) {
             return NbtIo.readCompressed(dis, NbtAccounter.create(16384)); // 16KB ought to be enough for anybody
         }
+    }
+
+    private static FrontierData readFrontier(CompoundTag payload, int version) {
+        FrontierData frontier = new FrontierData();
+        if (payload.contains("frontier")) {
+            frontier.readFromNBT(NbtCompat.getCompoundOrEmpty(payload, "frontier"), version);
+        } else {
+            frontier.readFromNBT(payload, version);
+        }
+        return frontier;
+    }
+
+    private static @Nullable CollectionData readCollection(CompoundTag payload, int version) {
+        if (!payload.contains("collection")) {
+            return null;
+        }
+
+        CollectionData collection = new CollectionData();
+        collection.readFromNBT(NbtCompat.getCompoundOrEmpty(payload, "collection"), version);
+        return collection;
+    }
+
+    private static boolean shouldStartNewMessageAssembly(int messageId, int partIndex, int totalParts) {
+        return messageId != currentReceivedMessageId
+                || totalParts != receivedData.size()
+                || !StringUtil.isBlank(receivedData.get(partIndex - 1));
+    }
+
+    private static void startReceivedMessageAssembly(int messageId, int totalParts) {
+        resetReceivedMessageAssembly();
+        receivedData.addAll(Collections.nCopies(totalParts, ""));
+        currentReceivedMessageId = messageId;
+    }
+
+    private static void resetReceivedMessageAssembly() {
+        currentReceivedMessageId = -1;
+        receivedData.clear();
     }
 }

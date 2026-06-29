@@ -4,11 +4,10 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import games.alejandrocoria.mapfrontiers.client.ChatFrontiers;
-import games.alejandrocoria.mapfrontiers.client.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
-import games.alejandrocoria.mapfrontiers.client.gui.dialog.AcceptFrontierCopyDialog;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
+import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.AcceptFrontierCopyConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -29,16 +28,16 @@ public class ClientCommandAccept {
     }
 
     public static int acceptInvitation(CommandSourceStack source, int messageID) {
-        FrontierData receivedFrontier = ChatFrontiers.getReceivedFrontier(messageID);
-        if (receivedFrontier == null) {
+        ChatFrontiers.ReceivedFrontierCopy receivedCopy = ChatFrontiers.getReceivedFrontier(messageID);
+        if (receivedCopy == null) {
             source.sendFailure(Component.literal("The frontier no longer exists"));
             return messageID;
         }
 
-        FrontiersOverlayManager manager = MapFrontiersClient.getFrontiersOverlayManager(true);
-        FrontierOverlay currentFrontier = manager.getFrontierCopiedFrom(receivedFrontier.getCopiedFromId());
+        FrontierData receivedFrontier = receivedCopy.frontier();
+        FrontierOverlay currentFrontier = MapFrontiersClient.getCopiedPersonalFrontier(receivedFrontier.getCopiedFromId());
         Minecraft.getInstance().setScreen(null);
-        Minecraft.getInstance().tell(() -> new AcceptFrontierCopyDialog(messageID, receivedFrontier, currentFrontier).display());
+        Minecraft.getInstance().execute(() -> new AcceptFrontierCopyConfirmationDialog(messageID, receivedCopy, currentFrontier).display());
 
         return messageID;
     }

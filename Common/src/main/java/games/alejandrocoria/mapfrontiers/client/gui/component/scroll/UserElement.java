@@ -1,7 +1,9 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.scroll;
 
+import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
+import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -9,6 +11,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 public class UserElement extends ScrollBox.ScrollElement {
     private final Font font;
     private final SettingsUser user;
@@ -16,7 +19,7 @@ public class UserElement extends ScrollBox.ScrollElement {
     private int pingBar = 0;
 
     public UserElement(Font font, SettingsUser user) {
-        super(258, 16);
+        super(258, 15);
         this.font = font;
         this.user = user;
 
@@ -46,7 +49,7 @@ public class UserElement extends ScrollBox.ScrollElement {
     @Override
     protected void setY(int y) {
         super.setY(y);
-        buttonDelete.setY(this.y + 1);
+        buttonDelete.setY(this.y + 2);
     }
 
     @Override
@@ -64,7 +67,7 @@ public class UserElement extends ScrollBox.ScrollElement {
             buttonDelete.render(graphics, mouseX, mouseY, partialTicks);
         }
 
-        graphics.drawString(font, user.toString(), x + 16, y + 4, color);
+        graphics.drawString(font, SettingsUserFormatter.getDisplayName(user), x + 16, y + 3, color);
 
         if (pingBar > 0) {
             drawPingLine(graphics, x + 3, y + 11, 2);
@@ -88,7 +91,7 @@ public class UserElement extends ScrollBox.ScrollElement {
     }
 
     @Override
-    protected ScrollBox.ScrollElement.Action mousePressed(double mouseX, double mouseY) {
+    protected ScrollBox.ScrollElement.Action mousePressed(double mouseX, double mouseY, int button) {
         if (visible && isHovered) {
             if (buttonDelete.isMouseOver(mouseX, mouseY)) {
                 return ScrollBox.ScrollElement.Action.Deleted;

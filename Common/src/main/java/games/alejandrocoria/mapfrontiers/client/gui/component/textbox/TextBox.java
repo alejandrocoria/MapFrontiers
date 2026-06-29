@@ -11,6 +11,8 @@ import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
 public class TextBox extends EditBox {
+    private static final int DEFAULT_HEIGHT = 13;
+
     private final String defaultText;
     private Consumer<String> valueChangedCallback;
     private Consumer<String> lostFocusCallback;
@@ -21,7 +23,7 @@ public class TextBox extends EditBox {
     }
 
     public TextBox(Font font, int width, String defaultText) {
-        super(font, 0, 0, width, 12, Component.empty());
+        super(font, 0, 0, width, DEFAULT_HEIGHT, Component.empty());
         this.defaultText = defaultText;
         if (!StringUtils.isBlank(defaultText)) {
             setResponder((value) -> updateDefaultText());
@@ -54,10 +56,19 @@ public class TextBox extends EditBox {
     }
 
     @Override
-    public boolean charTyped(char c, int key) {
+    public void setEditable(boolean editable) {
+        super.setEditable(editable);
+        active = editable;
+        if (!editable) {
+            setFocused(false);
+        }
+    }
+
+    @Override
+    public boolean charTyped(char codePoint, int modifiers) {
         boolean res = false;
         if (active && isHoveredOrFocused()) {
-            res = super.charTyped(c, key);
+            res = super.charTyped(codePoint, modifiers);
             if (res && valueChangedCallback != null) {
                 valueChangedCallback.accept(getValue());
             }

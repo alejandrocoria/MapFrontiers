@@ -9,8 +9,6 @@ base {
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(java_version)
-    withSourcesJar()
-//    withJavadocJar()
 }
 
 repositories {
@@ -20,6 +18,15 @@ repositories {
     }
 
     mavenLocal()
+    if (api_version.endsWith('-SNAPSHOT')) {
+        maven {
+            name = 'Central Portal Snapshots'
+            url = 'https://central.sonatype.com/repository/maven-snapshots/'
+            content {
+                includeModule('games.alejandrocoria', 'mapfrontiers-api')
+            }
+        }
+    }
     mavenCentral()
     // https://docs.gradle.org/current/userguide/declaring_repositories.html#declaring_content_exclusively_found_in_one_repository
     exclusiveContent {
@@ -44,25 +51,19 @@ repositories {
         )
         filter { includeGroup('org.parchmentmc.data') }
     }
-    exclusiveContent {
-        forRepository {
-            maven {
-                name = 'JourneyMap API'
-                url = 'https://maven.blamejared.com'
-            }
-        }
-        filter {
-            includeGroupAndSubgroups("info.journeymap")
-        }
+    maven {
+        name = 'BlameJared'
+        url = 'https://maven.blamejared.com'
     }
     exclusiveContent {
         forRepository {
             maven {
-                name = 'CommonNetworking'
+                name = 'JourneyMap API and CommonNetworking'
                 url = 'https://jm.gserv.me/repository/maven-public/'
             }
         }
         filter {
+            includeGroupAndSubgroups("info.journeymap")
             includeGroupAndSubgroups("mysticdrew")
         }
     }
@@ -101,7 +102,11 @@ repositories {
 // Declare capabilities on the outgoing configurations.
 // Read more about capabilities here: https://docs.gradle.org/current/userguide/component_capabilities.html#sec:declaring-additional-capabilities-for-a-local-component
 ['apiElements', 'runtimeElements', 'sourcesElements'/*, 'javadocElements'*/].each { variant ->
-    configurations."$variant".outgoing {
+    def configuration = configurations.findByName(variant)
+    if (configuration == null) {
+        return
+    }
+    configuration.outgoing {
         capability("$group:${base.archivesName.get()}:$version")
         capability("$group:$mod_id-${project.name}-${minecraft_version}:$version")
         capability("$group:$mod_id:$version")
@@ -112,7 +117,6 @@ repositories {
 }
 
 jar {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
         attributes([
                 'Specification-Title'   : mod_name,
@@ -142,7 +146,6 @@ processResources {
             "mod_homepage":                         mod_homepage,
             "mod_issues":                           mod_issues,
             "mod_sources":                          mod_sources,
-            "mod_update_json":                      mod_update_json,
             "mod_credits":                          mod_credits,
             "mod_license":                          mod_license,
             "mod_logo":                             mod_logo,
@@ -153,9 +156,7 @@ processResources {
             "neoforge_version":                     neoforge_version,
             "neoforge_loader_version_range":        neoforge_loader_version_range,
             "journeymap_min_version":               journeymap_min_version,
-            "journeymap_version_range":             journeymap_version_range,
-            "forge_config_api_port_version":        forge_config_api_port_version,
-            "forge_config_api_port_version_range":  forge_config_api_port_version_range
+            "journeymap_version_range":             journeymap_version_range
     ]
 
     filesMatching(['pack.mcmeta', 'fabric.mod.json', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml', '*.mixins.json']) {
@@ -163,18 +164,3 @@ processResources {
     }
     inputs.properties(expandProps)
 }
-
-//publishing {
-//    publications {
-//        register('mavenJava', MavenPublication) {
-//            artifactId base.archivesName.get()
-//            from components.java
-//        }
-//    }
-//    repositories {
-//        maven {
-//            url System.getenv("local_maven_url")
-//        }
-//    }
-//}
-

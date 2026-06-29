@@ -1,34 +1,23 @@
 package games.alejandrocoria.mapfrontiers;
 
 import games.alejandrocoria.mapfrontiers.api.MapFrontiersAPIBootstrap;
-import games.alejandrocoria.mapfrontiers.common.FrontierData;
-import games.alejandrocoria.mapfrontiers.common.FrontiersManager;
-import games.alejandrocoria.mapfrontiers.common.api.server.MapFrontiersServerAPIImpl;
-import games.alejandrocoria.mapfrontiers.common.event.EventHandler;
-import games.alejandrocoria.mapfrontiers.common.network.PacketFrontiers;
+import games.alejandrocoria.mapfrontiers.common.api.MapFrontiersApiLogAdapter;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
-import games.alejandrocoria.mapfrontiers.common.network.PacketSettingsProfile;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.server.event.ServerGlobalEvents;
+import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryRuntime;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-
 public class MapFrontiers {
     public static final String MODID = "mapfrontiers";
     public static final Logger LOGGER = LogManager.getLogger("MapFrontiers");
-    public static final int FRONTIER_DATA_VERSION = 10;
+    public static final int FRONTIER_DATA_VERSION = 12;
     public static final int SETTINGS_DATA_VERSION = 4;
 
-    private static FrontiersManager frontiersManager;
-    private static MinecraftServer currentServer;
+    private static ServerTerritoryRuntime serverRuntime;
 
     public MapFrontiers() {
 
@@ -36,88 +25,66 @@ public class MapFrontiers {
 
     protected static void init() {
         PacketHandler.init();
+        MapFrontiersAPIBootstrap.setLogger(new MapFrontiersApiLogAdapter());
 
-        EventHandler.subscribeServerStartingEvent(MapFrontiers.class, server -> {
-            currentServer = server;
-            frontiersManager = new FrontiersManager();
-            frontiersManager.loadOrCreateData(server);
-            MapFrontiersAPIBootstrap.setServerAPI(new MapFrontiersServerAPIImpl(frontiersManager));
+        ServerGlobalEvents.subscribeServerStartingEvent(MapFrontiers.class, server -> {
+            serverRuntime = new ServerTerritoryRuntime(server);
+            MapFrontiersAPIBootstrap.setServerAPI(serverRuntime.getServerApi());
 
-            LOGGER.info("ServerStartingEvent done");
+            LOGGER.info("MapFrontiers server runtime initialized");
         });
 
-        EventHandler.subscribeServerStoppingEvent(MapFrontiers.class, server -> {
-            if (frontiersManager != null) {
-                frontiersManager.close();
+        ServerGlobalEvents.subscribeServerStoppingEvent(MapFrontiers.class, server -> {
+            if (serverRuntime != null) {
+                serverRuntime.onServerStopping();
+                serverRuntime.close();
             }
             MapFrontiersAPIBootstrap.clearServerAPI();
-            frontiersManager = null;
-            currentServer = null;
+            serverRuntime = null;
 
-            LOGGER.info("ServerStoppingEvent done");
+            LOGGER.info("MapFrontiers server runtime stopped");
         });
 
-        EventHandler.subscribePlayerJoinedEvent(MapFrontiers.class, (server, player) -> {
-            if (frontiersManager == null) {
+        ServerGlobalEvents.subscribePlayerJoinedEvent(MapFrontiers.class, (server, player) -> {
+            if (serverRuntime == null) {
                 return;
             }
 
-            frontiersManager.ensureOwners(server);
+            serverRuntime.onPlayerJoined();
 
-            LOGGER.info("PlayerJoinedEvent done (" + player.getStringUUID() + ")");
+        });
+
+        ServerGlobalEvents.subscribePlayerPermissionLevelUpdatedEvent(MapFrontiers.class, (server, player) -> {
+            if (serverRuntime == null) {
+                return;
+            }
+
+            PacketHandler.sendTo(serverRuntime.createSettingsProfilePacket(player), player);
+        });
+
+        ServerGlobalEvents.subscribeServerTickEvent(MapFrontiers.class, server -> {
+            if (serverRuntime != null) {
+                serverRuntime.onServerTick();
+            }
         });
     }
 
     public static void ReceiveHandshake(ServerPlayer player, long nonce) {
-        PacketHandler.sendTo(new PacketHandshake(nonce), player);
-        PacketHandler.sendTo(new PacketSettingsProfile(frontiersManager.getSettings().getProfile(player)), player);
-
-        PacketFrontiers packetFrontiers = new PacketFrontiers();
-        for (ArrayList<FrontierData> frontiers : frontiersManager.getAllGlobalFrontiers().values()) {
-            packetFrontiers.addGlobalFrontiers(frontiers);
-        }
-
-        for (ArrayList<FrontierData> frontiers : frontiersManager.getAllPersonalFrontiers(new SettingsUser(player)).values()) {
-            packetFrontiers.addPersonalFrontiers(frontiers);
-        }
-
-        PacketHandler.sendTo(packetFrontiers, player);
-    }
-
-    public static boolean isOPorHost(ServerPlayer player) {
-        MinecraftServer server = player.getServer();
-        if (server == null) {
-            return false;
-        }
-
-        return server.getPlayerList().isOp(player.getGameProfile());
-    }
-
-    public static MinecraftServer getCurrentServer() {
-        return currentServer;
-    }
-
-    public static void createBackup(File folder, String filename) {
-        File file = new File(folder, filename);
-        if (!file.exists()) {
+        if (serverRuntime == null) {
             return;
         }
 
-        Path folderPath = folder.toPath();
-        Path bakFile = folderPath.resolve(filename + ".bak1");
-        try {
-            for (int i = 10; i > 0; i--) {
-                Path oldBak = folderPath.resolve(filename + ".bak" + i);
-                if (Files.exists(oldBak)) {
-                    if (i >= 10)
-                        Files.delete(oldBak);
-                    else
-                        Files.move(oldBak, folderPath.resolve(filename + ".bak" + (i + 1)));
-                }
-            }
-            Files.copy(file.toPath(), bakFile);
-        } catch (IOException exception) {
-            LOGGER.warn("Failed to back up file {}", file.toPath(), exception);
-        }
+        PacketHandler.sendTo(new PacketHandshake(nonce), player);
+        PacketHandler.sendTo(serverRuntime.createSettingsProfilePacket(player), player);
+        PacketHandler.sendTo(serverRuntime.createTerritoriesSnapshot(player), player);
+    }
+
+    public static boolean isOPorHost(ServerPlayer player) {
+        MinecraftServer server = player.level().getServer();
+        return server.getPlayerList().isOp(player.getGameProfile());
+    }
+
+    public static ServerTerritoryRuntime getServerRuntime() {
+        return serverRuntime;
     }
 }
