@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.common.territory;
 
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.util.NbtCompat;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import net.minecraft.nbt.CompoundTag;
@@ -22,7 +23,17 @@ public class BannerData {
             return null;
         }
 
-        return patterns;
+        BannerPatternNbtCompatibility.NormalizationResult result = BannerPatternNbtCompatibility.normalize(patterns);
+        if (result.hasWarning()) {
+            MapFrontiers.LOGGER.warn("Failed to normalize banner patterns, dropping pattern layers: {}", result.warningMessage());
+            return null;
+        }
+
+        if (result.changed()) {
+            MapFrontiers.LOGGER.debug("Normalized banner patterns for persistence. layers={}", result.patterns().size());
+        }
+
+        return result.patterns();
     }
 
     public BannerData() {
@@ -32,20 +43,35 @@ public class BannerData {
 
     public BannerData(BannerData other) {
         baseColor = other.baseColor;
-        patterns = normalizePatterns(other.patterns == null ? null : other.patterns.copy());
+        patterns = normalizePatterns(other.patterns);
         rotation = other.rotation;
     }
 
     public BannerData(DyeColor baseColor, @Nullable ListTag patterns, int rotation) {
         this.baseColor = baseColor;
-        this.patterns = normalizePatterns(patterns == null ? null : patterns.copy());
+        this.patterns = normalizePatterns(patterns);
         this.rotation = rotation;
     }
 
-    public void readFromNBT(CompoundTag nbt) {
+    public boolean readFromNBT(CompoundTag nbt) {
         baseColor = DyeColor.byId(NbtReadHelper.requireInt(nbt, "Base"));
-        patterns = normalizePatterns(NbtCompat.getListOrEmpty(nbt, "Patterns"));
+        ListTag rawPatterns = NbtCompat.getListOrEmpty(nbt, "Patterns");
+        if (rawPatterns.isEmpty()) {
+            patterns = null;
+            rotation = NbtCompat.getIntOr(nbt, "Rotation", 0);
+            return false;
+        }
+
+        BannerPatternNbtCompatibility.NormalizationResult result = BannerPatternNbtCompatibility.normalize(rawPatterns);
+        if (result.hasWarning()) {
+            MapFrontiers.LOGGER.warn("Failed to normalize banner patterns while loading NBT, dropping pattern layers: {}", result.warningMessage());
+        } else if (result.changed()) {
+            MapFrontiers.LOGGER.debug("Normalized banner patterns while loading NBT. layers={}", result.patterns().size());
+        }
+
+        patterns = result.patterns();
         rotation = NbtCompat.getIntOr(nbt, "Rotation", 0);
+        return result.changed();
     }
 
     public void writeToNBT(CompoundTag nbt) {

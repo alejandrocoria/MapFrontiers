@@ -86,7 +86,7 @@ public class ClientLocalPersonalCollectionStore {
                 try {
                     CollectionData collection = new CollectionData();
                     CompoundTag collectionTag = NbtReadHelper.requireCompound(collectionsTagList, i, "collections");
-                    collection.readFromNBT(collectionTag, version);
+                    needBackup |= collection.readFromNBT(collectionTag, version);
                     if (!shouldPersist(collection)) {
                         needBackup = true;
                         continue;

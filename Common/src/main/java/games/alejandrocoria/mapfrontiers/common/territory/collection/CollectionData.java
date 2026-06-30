@@ -78,7 +78,8 @@ public class CollectionData {
         validateTypeAndLifetime(personal, lifetime);
     }
 
-    public void readFromNBT(CompoundTag nbt, int version) {
+    public boolean readFromNBT(CompoundTag nbt, int version) {
+        boolean changedDuringLoad = false;
         id = UUID.fromString(NbtReadHelper.requireString(nbt, "id"));
         personal = NbtCompat.getBooleanOr(nbt, "personal", true);
         lifetime = readLifetimeFromNbt(nbt);
@@ -95,7 +96,7 @@ public class CollectionData {
         visibilityData.readFromNBT(NbtCompat.getCompoundOrEmpty(nbt, "visibility"));
         if (nbt.contains("banner")) {
             banner = new BannerData();
-            banner.readFromNBT(NbtReadHelper.requireCompound(nbt, "banner"));
+            changedDuringLoad |= banner.readFromNBT(NbtReadHelper.requireCompound(nbt, "banner"));
         } else {
             banner = null;
         }
@@ -119,6 +120,8 @@ public class CollectionData {
         } else {
             modified = null;
         }
+
+        return changedDuringLoad;
     }
 
     public void writeToNBT(CompoundTag nbt) {

@@ -774,7 +774,8 @@ public class FrontierData {
         return sourcePluginId;
     }
 
-    public void readFromNBT(CompoundTag nbt, int version) {
+    public boolean readFromNBT(CompoundTag nbt, int version) {
+        boolean changedDuringLoad = false;
         vertices.clear();
         chunks.clear();
         points.clear();
@@ -811,7 +812,7 @@ public class FrontierData {
 
         if (nbt.contains("banner")) {
             banner = new BannerData();
-            banner.readFromNBT(NbtReadHelper.requireCompound(nbt, "banner"));
+            changedDuringLoad |= banner.readFromNBT(NbtReadHelper.requireCompound(nbt, "banner"));
         }
         inheritCollectionBanner = NbtCompat.getBooleanOr(nbt, "inheritCollectionBanner", true);
 
@@ -908,6 +909,7 @@ public class FrontierData {
         normalizeDataForMode();
         sanitizeSharedUsers();
         invalidateSyncHash();
+        return changedDuringLoad;
     }
 
     public void writeToNBT(CompoundTag nbt) {

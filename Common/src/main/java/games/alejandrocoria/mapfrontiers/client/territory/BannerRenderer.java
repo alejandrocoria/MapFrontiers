@@ -50,19 +50,20 @@ public class BannerRenderer {
             return;
         }
 
-        ListTag patterns = BannerData.normalizePatterns(bannerData.patterns);
+        ListTag patterns = bannerData.patterns;
         BannerPatternLayers patternLayers = BannerPatternLayers.EMPTY;
         if (patterns != null) {
             if (level.registryAccess().lookup(Registries.BANNER_PATTERN).isEmpty()) {
-                MapFrontiers.LOGGER.error("Error creating banner pattern layers");
+                MapFrontiers.LOGGER.error("Banner pattern registry is unavailable while creating a banner texture.");
                 return;
             }
+
             Optional<BannerPatternLayers> bannerPatterns = BannerPatternLayers.CODEC.parse(
                     level.registryAccess().createSerializationContext(NbtOps.INSTANCE), patterns).result();
             if (bannerPatterns.isPresent()) {
                 patternLayers = bannerPatterns.get();
             } else {
-                MapFrontiers.LOGGER.error("Error creating banner pattern layers");
+                MapFrontiers.LOGGER.error("Failed to parse normalized banner patterns while creating a banner texture. patterns={}", patterns);
                 return;
             }
         }
@@ -81,7 +82,7 @@ public class BannerRenderer {
         });
 
         if (flagUV[0] == flagUV[2] || flagUV[1] == flagUV[3]) {
-            MapFrontiers.LOGGER.error("Error creating banner pattern layers");
+            MapFrontiers.LOGGER.error("Failed to resolve banner flag UVs while creating a banner texture.");
             return;
         }
 

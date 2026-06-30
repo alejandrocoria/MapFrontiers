@@ -86,7 +86,7 @@ public class ClientLocalPersonalFrontierStore {
                 try {
                     FrontierData frontier = new FrontierData();
                     CompoundTag frontierTag = NbtReadHelper.requireCompound(frontiersTagList, i, "frontiers");
-                    frontier.readFromNBT(frontierTag, version);
+                    needBackup |= frontier.readFromNBT(frontierTag, version);
                     if (!shouldPersist(frontier)) {
                         needBackup = true;
                         continue;
