@@ -537,7 +537,7 @@ public class TerritoriesManager {
                 try {
                     CollectionData collection = new CollectionData();
                     CompoundTag collectionTag = NbtReadHelper.requireCompound(allCollectionsTagList, i, "collections");
-                    collection.readFromNBT(collectionTag, version);
+                    needBackup |= collection.readFromNBT(collectionTag, version);
                     allCollections.put(collection.getId(), collection);
 
                     if (collection.getPersonal()) {
@@ -556,7 +556,7 @@ public class TerritoriesManager {
                 try {
                     FrontierData frontier = new FrontierData();
                     CompoundTag frontierTag = NbtReadHelper.requireCompound(allFrontiersTagList, i, "frontiers");
-                    frontier.readFromNBT(frontierTag, version);
+                    needBackup |= frontier.readFromNBT(frontierTag, version);
                     frontier.removePendingUsersShared();
                     allFrontiers.put(frontier.getId(), frontier);
 
