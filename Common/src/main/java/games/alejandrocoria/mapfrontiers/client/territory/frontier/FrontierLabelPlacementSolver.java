@@ -16,8 +16,20 @@ public final class FrontierLabelPlacementSolver {
     private static final double SQRT_2 = Math.sqrt(2.0);
     private static final int CLEARANCE_ITERATIONS = 24;
     private static final double SQUARE_CONTAINS_EPSILON = 1.0e-4;
+    private static final int MAX_FALLBACK_SAMPLES = 4096;
+    private static final double FIRST_ADAPTIVE_SPAN_THRESHOLD = 32768.0;
+    private static final double SECOND_ADAPTIVE_SPAN_THRESHOLD = 131072.0;
+    private static final double THIRD_ADAPTIVE_SPAN_THRESHOLD = 524288.0;
 
     private FrontierLabelPlacementSolver() {
+    }
+
+    public static double getAdaptiveVertexPrecision(Area area, double basePrecision) {
+        return getAdaptivePrecision(area, basePrecision, 2.0, 8.0, 32.0);
+    }
+
+    public static double getAdaptiveChunkOrCollectionPrecision(Area area, double basePrecision) {
+        return getAdaptivePrecision(area, basePrecision, 4.0, 8.0, 16.0);
     }
 
     public static LabelPlacement solve(Area area, int contentWidthPx, int contentHeightPx, double precision) {
@@ -53,6 +65,26 @@ public final class FrontierLabelPlacementSolver {
                 availableHeightBlocks,
                 safeContentWidth,
                 safeContentHeight);
+    }
+
+    private static double getAdaptivePrecision(Area area,
+                                               double basePrecision,
+                                               double secondPrecision,
+                                               double thirdPrecision,
+                                               double fourthPrecision) {
+        Rectangle2D bounds = area.getBounds2D();
+        double maxSpan = Math.max(bounds.getWidth(), bounds.getHeight());
+        if (maxSpan <= FIRST_ADAPTIVE_SPAN_THRESHOLD) {
+            return basePrecision;
+        }
+        if (maxSpan <= SECOND_ADAPTIVE_SPAN_THRESHOLD) {
+            return secondPrecision;
+        }
+        if (maxSpan <= THIRD_ADAPTIVE_SPAN_THRESHOLD) {
+            return thirdPrecision;
+        }
+
+        return fourthPrecision;
     }
 
     private static TransformedGeometry buildTransformedGeometry(Area area, int contentWidthPx, int contentHeightPx) {
@@ -203,16 +235,62 @@ public final class FrontierLabelPlacementSolver {
             return new SolverPoint(centerX, centerZ, signedDistanceToBoundary(centerX, centerZ, geometry.area(), geometry.rings()));
         }
 
-        double step = Math.max(precision, 1.0);
-        for (double z = bounds.getMinY(); z <= bounds.getMaxY() + step * 0.5; z += step) {
-            for (double x = bounds.getMinX(); x <= bounds.getMaxX() + step * 0.5; x += step) {
+        double step = fitFallbackStepToSampleBudget(bounds, Math.max(precision, 1.0));
+        int rows = (int) getFallbackAxisSampleCount(bounds.getHeight(), step);
+        int cols = (int) getFallbackAxisSampleCount(bounds.getWidth(), step);
+        for (int row = 0; row < rows; ++row) {
+            double z = bounds.getMinY() + row * step;
+            for (int col = 0; col < cols; ++col) {
+                double x = bounds.getMinX() + col * step;
                 if (geometry.area().contains(x, z)) {
                     return new SolverPoint(x, z, signedDistanceToBoundary(x, z, geometry.area(), geometry.rings()));
                 }
             }
         }
 
-        return null;
+        return new SolverPoint(centerX, centerZ, signedDistanceToBoundary(centerX, centerZ, geometry.area(), geometry.rings()));
+    }
+
+    private static double fitFallbackStepToSampleBudget(Rectangle2D bounds, double baseStep) {
+        double step = baseStep;
+        for (int i = 0; i < 16; ++i) {
+            long sampleCount = getFallbackSampleCount(bounds, step);
+            if (sampleCount <= MAX_FALLBACK_SAMPLES) {
+                return step;
+            }
+
+            double scale = Math.sqrt(sampleCount / (double) MAX_FALLBACK_SAMPLES);
+            step *= Double.isFinite(scale) && scale > 1.0 ? scale : 2.0;
+        }
+
+        while (getFallbackSampleCount(bounds, step) > MAX_FALLBACK_SAMPLES && step < Double.MAX_VALUE * 0.5) {
+            step *= 2.0;
+        }
+
+        return step;
+    }
+
+    private static long getFallbackSampleCount(Rectangle2D bounds, double step) {
+        long cols = getFallbackAxisSampleCount(bounds.getWidth(), step);
+        long rows = getFallbackAxisSampleCount(bounds.getHeight(), step);
+        if (cols > Long.MAX_VALUE / rows) {
+            return Long.MAX_VALUE;
+        }
+
+        return cols * rows;
+    }
+
+    private static long getFallbackAxisSampleCount(double span, double step) {
+        if (!(span > 0.0) || !Double.isFinite(span) || !(step > 0.0) || !Double.isFinite(step)) {
+            return 1L;
+        }
+
+        double sampleCount = Math.floor(span / step + 0.5) + 1.0;
+        if (sampleCount >= Long.MAX_VALUE) {
+            return Long.MAX_VALUE;
+        }
+
+        return Math.max(1L, (long) sampleCount);
     }
 
     private static double computeCenteredSquareClearance(Area transformedArea, Rectangle2D bounds, double xPrime, double zPrime) {
