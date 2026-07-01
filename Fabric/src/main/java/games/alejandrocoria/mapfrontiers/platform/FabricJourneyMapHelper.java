@@ -219,7 +219,8 @@ public class FabricJourneyMapHelper implements IJourneyMapHelper {
 
     private static class CustomPreviewRenderer implements ICustomPreviewRenderer {
         private final MapRenderer mapRenderer;
-        private final List<DrawStep> drawSteps = new ArrayList<>();
+        private final List<DrawPolygonStep> polygonDrawSteps = new ArrayList<>();
+        private final List<DrawStep> overlayDrawSteps = new ArrayList<>();
 
         public CustomPreviewRenderer() {
             mapRenderer = new MapRenderer(Context.UI.Fullscreen);
@@ -233,85 +234,91 @@ public class FabricJourneyMapHelper implements IJourneyMapHelper {
 
         @Override
         public void setTerritories(List<FrontierOverlay> frontierOverlays, List<CollectionOverlay> collectionOverlays) {
-            drawSteps.clear();
+            polygonDrawSteps.clear();
+            overlayDrawSteps.clear();
 
             for (FrontierOverlay frontierOverlay : frontierOverlays) {
                 for (PolygonOverlay polygon : frontierOverlay.getPolygonOverlays()) {
-                    drawSteps.add(new DrawPolygonStep(polygon));
+                    polygonDrawSteps.add(new DrawPolygonStep(polygon));
                 }
                 for (MarkerOverlay marker : frontierOverlay.getMarkerOverlays()) {
-                    drawSteps.add(new DrawMarkerStep(marker));
+                    overlayDrawSteps.add(new DrawMarkerStep(marker));
                 }
                 for (MarkerOverlay label : frontierOverlay.getLabelOverlays()) {
-                    drawSteps.add(new DrawMarkerStep(label));
+                    overlayDrawSteps.add(new DrawMarkerStep(label));
                 }
             }
 
             for (CollectionOverlay collectionOverlay : collectionOverlays) {
                 for (PolygonOverlay polygon : collectionOverlay.getBorderPolygonOverlays()) {
-                    drawSteps.add(new DrawPolygonStep(polygon));
+                    polygonDrawSteps.add(new DrawPolygonStep(polygon));
                 }
                 for (MarkerOverlay marker : collectionOverlay.getLabelOverlays()) {
-                    drawSteps.add(new DrawMarkerStep(marker));
+                    overlayDrawSteps.add(new DrawMarkerStep(marker));
                 }
             }
         }
 
         @Override
         public void draw(GuiGraphics graphics, MultiBufferSource.BufferSource buffers, int x, int y, int size, float scaleFactor) {
-            if (drawSteps.isEmpty()) {
+            if (polygonDrawSteps.isEmpty() && overlayDrawSteps.isEmpty()) {
                 return;
             }
 
             int width = Minecraft.getInstance().getWindow().getScreenWidth();
             int height = Minecraft.getInstance().getWindow().getScreenHeight();
             double guiScale = Minecraft.getInstance().getWindow().getGuiScale();
-
-            graphics.pose().pushMatrix();
-            graphics.pose().translate((float) (-width / guiScale / 2 * scaleFactor) + x,
-                    (float) (-height / guiScale / 2 * scaleFactor) + y);
-            graphics.pose().scale((float) (1 / guiScale) * scaleFactor, (float) (1 / guiScale) * scaleFactor);
+            int previewSize = Math.max(1, (int) Math.round(size * scaleFactor / guiScale));
 
             mapRenderer.setViewPortBounds(new Rectangle2D.Double(0, 0, width * scaleFactor, height * scaleFactor));
-
-            for (DrawStep drawStep : drawSteps) {
-                if (drawStep instanceof DrawPolygonStep) {
-                    continue;
-                }
-                drawStep.draw(graphics, 0, 0, mapRenderer, 1, 0);
-            }
-
-            graphics.pose().popMatrix();
-            graphics.nextStratum();
-
-            ((GuiRenderStateMixinAccess) ((GuiGraphicsAccessor) graphics).jm$GuiRenderStateAccessor())
-                    .jm$submitPicturesInPictureStateCurrentLayer(new PolygonPipRenderState(
-                            graphics,
-                            Context.UI.Fullscreen,
-                            0,
-                            (buf, poseStack) -> {
-                                VertexConsumer maskBuffer = buffers.getBuffer(JMRenderTypes.MINIMAP_RECTANGLE_MASK_RENDER_TYPE);
-                                DrawUtil.drawQuad(poseStack, maskBuffer, 0xFFFFFF, 1,
-                                        x * guiScale / scaleFactor + 1,
-                                        y * guiScale / scaleFactor + 1,
-                                        size - 1,
-                                        size - 1,
-                                        0,
-                                        false);
-                                drawSteps.forEach(drawStep -> {
-                                    if (drawStep instanceof DrawPolygonStep drawPolygonStep) {
-                                        poseStack.pushPose();
-                                        drawPolygonStep.draw(graphics, poseStack, buf,
-                                                (-width / 2 + x * guiScale / scaleFactor),
-                                                (-height / 2 + y * guiScale / scaleFactor),
-                                                mapRenderer,
-                                                1,
-                                                0);
-                                        poseStack.popPose();
+            graphics.enableScissor(x, y, x + previewSize, y + previewSize);
+            try {
+                if (!polygonDrawSteps.isEmpty()) {
+                    ((GuiRenderStateMixinAccess) ((GuiGraphicsAccessor) graphics).jm$GuiRenderStateAccessor())
+                            .jm$submitPicturesInPictureStateCurrentLayer(new PolygonPipRenderState(
+                                    graphics,
+                                    Context.UI.Fullscreen,
+                                    0,
+                                    (buf, poseStack) -> {
+                                        VertexConsumer maskBuffer = buffers.getBuffer(JMRenderTypes.MINIMAP_RECTANGLE_MASK_RENDER_TYPE);
+                                        DrawUtil.drawQuad(poseStack, maskBuffer, 0xFFFFFF, 1,
+                                                x * guiScale / scaleFactor + 1,
+                                                y * guiScale / scaleFactor + 1,
+                                                size - 1,
+                                                size - 1,
+                                                0,
+                                                false);
+                                        for (DrawPolygonStep drawPolygonStep : polygonDrawSteps) {
+                                            poseStack.pushPose();
+                                            drawPolygonStep.draw(graphics, poseStack, buf,
+                                                    (-width / 2 + x * guiScale / scaleFactor),
+                                                    (-height / 2 + y * guiScale / scaleFactor),
+                                                    mapRenderer,
+                                                    1,
+                                                    0);
+                                            poseStack.popPose();
+                                        }
                                     }
-                                });
-                            }
-                    ));
+                            ));
+                    graphics.nextStratum();
+                }
+
+                if (!overlayDrawSteps.isEmpty()) {
+                    graphics.pose().pushMatrix();
+                    graphics.pose().translate((float) (-width / guiScale / 2 * scaleFactor) + x,
+                            (float) (-height / guiScale / 2 * scaleFactor) + y);
+                    graphics.pose().scale((float) (1 / guiScale) * scaleFactor, (float) (1 / guiScale) * scaleFactor);
+
+                    for (DrawStep drawStep : overlayDrawSteps) {
+                        drawStep.draw(graphics, 0, 0, mapRenderer, 1, 0);
+                    }
+
+                    graphics.pose().popMatrix();
+                    buffers.endBatch();
+                }
+            } finally {
+                graphics.disableScissor();
+            }
         }
     }
 }
