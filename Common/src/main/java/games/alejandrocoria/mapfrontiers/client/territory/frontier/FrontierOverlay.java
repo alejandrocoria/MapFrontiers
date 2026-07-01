@@ -2286,12 +2286,19 @@ public class FrontierOverlay extends FrontierData {
         }
 
         TextProperties textProps = createBaseTextProperties().setOffsetY(metrics.textOffsetY());
-        LabelPlacementKey placementKey = new LabelPlacementKey(entry, metrics.contentWidthPx(), metrics.contentHeightPx());
+        LabelPlacementKey placementKey = new LabelPlacementKey(overlayArea, metrics.contentWidthPx(), metrics.contentHeightPx());
         FrontierLabelPlacementSolver.LabelPlacement placement = placementCache.computeIfAbsent(placementKey,
-                ignored -> FrontierLabelPlacementSolver.solve(overlayArea,
-                        metrics.contentWidthPx(),
-                        metrics.contentHeightPx(),
-                        labelSolverPrecision));
+                ignored -> {
+                    double adaptiveLabelSolverPrecision = getAdaptiveLabelSolverPrecision(overlayArea, labelSolverPrecision);
+                    return FrontierLabelPlacementSolver.solve(overlayArea,
+                            metrics.contentWidthPx(),
+                            metrics.contentHeightPx(),
+                            adaptiveLabelSolverPrecision);
+                });
+
+        if (placement.availableWidthBlocks() <= 0.0 || placement.availableHeightBlocks() <= 0.0) {
+            return;
+        }
 
         if (ClientConfig.HIDE_NAMES_THAT_DONT_FIT.get()) {
             applyMinZoom(textProps, placement);
@@ -2433,6 +2440,14 @@ public class FrontierOverlay extends FrontierData {
 
     private double getLabelSolverPrecision() {
         return frontierShape == FrontierShape.Chunk ? CHUNK_LABEL_SOLVER_PRECISION : VERTEX_LABEL_SOLVER_PRECISION;
+    }
+
+    private double getAdaptiveLabelSolverPrecision(Area overlayArea, double basePrecision) {
+        if (frontierShape == FrontierShape.Chunk) {
+            return FrontierLabelPlacementSolver.getAdaptiveChunkOrCollectionPrecision(overlayArea, basePrecision);
+        }
+
+        return FrontierLabelPlacementSolver.getAdaptiveVertexPrecision(overlayArea, basePrecision);
     }
 
     private TextProperties createBaseTextProperties() {
@@ -2987,9 +3002,35 @@ public class FrontierOverlay extends FrontierData {
                                        int bannerOffsetY) {
     }
 
-    private record LabelPlacementKey(PolygonUiPlanEntry entry,
-                                     int contentWidthPx,
-                                     int contentHeightPx) {
+    private static final class LabelPlacementKey {
+        private final Area overlayArea;
+        private final int contentWidthPx;
+        private final int contentHeightPx;
+
+        private LabelPlacementKey(Area overlayArea, int contentWidthPx, int contentHeightPx) {
+            this.overlayArea = overlayArea;
+            this.contentWidthPx = contentWidthPx;
+            this.contentHeightPx = contentHeightPx;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof LabelPlacementKey other)) {
+                return false;
+            }
+
+            return overlayArea == other.overlayArea
+                    && contentWidthPx == other.contentWidthPx
+                    && contentHeightPx == other.contentHeightPx;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(System.identityHashCode(overlayArea), contentWidthPx, contentHeightPx);
+        }
     }
 
     private record VisualConfigSnapshot(UiVisualConfig fullscreen,
