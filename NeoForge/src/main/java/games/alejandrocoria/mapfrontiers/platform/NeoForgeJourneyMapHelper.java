@@ -14,9 +14,6 @@ import journeymap.client.model.map.MapState;
 import journeymap.client.model.map.MapType;
 import journeymap.client.properties.MiniMapProperties;
 import journeymap.client.render.GuiRenderToTexture;
-import journeymap.client.render.JmMaskState;
-import journeymap.client.render.JmRenderCollector;
-import journeymap.client.render.JmRenderRouter;
 import journeymap.client.render.draw.DrawMarkerStep;
 import journeymap.client.render.draw.DrawPolygonStep;
 import journeymap.client.render.draw.DrawStep;
@@ -35,7 +32,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import org.joml.Matrix3x2f;
 
 import java.awt.geom.Rectangle2D;
 import java.io.File;
@@ -286,12 +282,6 @@ public class NeoForgeJourneyMapHelper implements IJourneyMapHelper {
 
             if (!polygonDrawSteps.isEmpty()) {
                 polygonSurface.render(graphics, context -> {
-                    JmRenderCollector collector = JmRenderRouter.getActiveCollector();
-                    if (collector != null) {
-                        collector.setMask(JmMaskState.fullscreen(new Matrix3x2f(context.pose()), context.targetWidth(),
-                                context.targetHeight()));
-                    }
-
                     GuiGraphicsExtractor polygonGraphics = context.graphics();
                     var pose = context.pose();
                     pose.pushMatrix();
