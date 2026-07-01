@@ -349,10 +349,15 @@ public class CollectionOverlay {
             for (CollectionGeometryIsland island : variant.getIslands()) {
                 CollectionLabelPlacementKey placementKey = new CollectionLabelPlacementKey(island, metrics.contentWidthPx(), metrics.contentHeightPx());
                 FrontierLabelPlacementSolver.LabelPlacement placement = placementCache.computeIfAbsent(placementKey,
-                        ignored -> FrontierLabelPlacementSolver.solve(island.copyEffectiveArea(),
-                                metrics.contentWidthPx(),
-                                metrics.contentHeightPx(),
-                                LABEL_SOLVER_PRECISION));
+                        ignored -> {
+                            Area effectiveArea = island.copyEffectiveArea();
+                            double adaptiveLabelSolverPrecision = FrontierLabelPlacementSolver.getAdaptiveChunkOrCollectionPrecision(effectiveArea,
+                                    LABEL_SOLVER_PRECISION);
+                            return FrontierLabelPlacementSolver.solve(effectiveArea,
+                                    metrics.contentWidthPx(),
+                                    metrics.contentHeightPx(),
+                                    adaptiveLabelSolverPrecision);
+                        });
                 if (placement.availableWidthBlocks() <= 0.0 || placement.availableHeightBlocks() <= 0.0) {
                     continue;
                 }

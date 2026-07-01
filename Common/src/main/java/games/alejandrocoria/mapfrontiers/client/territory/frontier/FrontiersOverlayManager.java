@@ -29,6 +29,7 @@ import java.util.UUID;
 @ParametersAreNonnullByDefault
 public class FrontiersOverlayManager {
     private static final int REGION_BUCKET_SIZE_BLOCKS = 512;
+    private static final int MAX_REGION_BUCKETS_PER_FRONTIER = 4096;
 
     private final IClientAPI jmAPI;
     private final HashMap<ResourceKey<Level>, ArrayList<FrontierOverlay>> dimensionsFrontiers;
@@ -36,9 +37,11 @@ public class FrontiersOverlayManager {
     private final HashMap<UUID, FrontierOverlay> frontiersByCopiedFromId;
     private final HashMap<UUID, HashSet<FrontierOverlay>> frontiersByCollectionId;
     private final HashMap<ResourceKey<Level>, HashMap<Long, HashSet<FrontierOverlay>>> frontiersByRegionBucket;
+    private final HashMap<ResourceKey<Level>, LinkedHashSet<FrontierOverlay>> oversizedFrontiersByDimension;
     private final HashMap<UUID, UUID> frontierCopiedFromIdsById;
     private final HashMap<UUID, UUID> frontierCollectionIdsById;
     private final HashMap<UUID, Set<Long>> frontierRegionBucketsById;
+    private final HashMap<UUID, ResourceKey<Level>> oversizedFrontierDimensionsById;
     private final LinkedHashSet<FrontierOverlay> dirtyFrontiers;
     private final SelectedEditablePointMarker selectedEditablePointMarker;
 
@@ -49,9 +52,11 @@ public class FrontiersOverlayManager {
         frontiersByCopiedFromId = new HashMap<>();
         frontiersByCollectionId = new HashMap<>();
         frontiersByRegionBucket = new HashMap<>();
+        oversizedFrontiersByDimension = new HashMap<>();
         frontierCopiedFromIdsById = new HashMap<>();
         frontierCollectionIdsById = new HashMap<>();
         frontierRegionBucketsById = new HashMap<>();
+        oversizedFrontierDimensionsById = new HashMap<>();
         dirtyFrontiers = new LinkedHashSet<>();
         selectedEditablePointMarker = new SelectedEditablePointMarker(jmAPI);
 
@@ -159,33 +164,38 @@ public class FrontiersOverlayManager {
             frontiersByCopiedFromId.clear();
             frontiersByCollectionId.clear();
             frontiersByRegionBucket.clear();
+            oversizedFrontiersByDimension.clear();
             frontierCopiedFromIdsById.clear();
             frontierCollectionIdsById.clear();
             frontierRegionBucketsById.clear();
+            oversizedFrontierDimensionsById.clear();
             dirtyFrontiers.clear();
             MapFrontiersClient.markFrontierActivationDirty();
         }
     }
 
     public List<FrontierOverlay> getCandidateFrontiersInBounds(ResourceKey<Level> dimension, int minX, int maxX, int minZ, int maxZ) {
-        HashMap<Long, HashSet<FrontierOverlay>> regionBuckets = frontiersByRegionBucket.get(dimension);
-        if (regionBuckets == null) {
-            return List.of();
-        }
-
-        int minRegionX = Math.floorDiv(minX, REGION_BUCKET_SIZE_BLOCKS);
-        int maxRegionX = Math.floorDiv(maxX, REGION_BUCKET_SIZE_BLOCKS);
-        int minRegionZ = Math.floorDiv(minZ, REGION_BUCKET_SIZE_BLOCKS);
-        int maxRegionZ = Math.floorDiv(maxZ, REGION_BUCKET_SIZE_BLOCKS);
-
         LinkedHashSet<FrontierOverlay> candidates = new LinkedHashSet<>();
-        for (int regionX = minRegionX; regionX <= maxRegionX; ++regionX) {
-            for (int regionZ = minRegionZ; regionZ <= maxRegionZ; ++regionZ) {
-                HashSet<FrontierOverlay> frontiers = regionBuckets.get(getRegionBucketKey(regionX, regionZ));
-                if (frontiers != null) {
-                    candidates.addAll(frontiers);
+        HashMap<Long, HashSet<FrontierOverlay>> regionBuckets = frontiersByRegionBucket.get(dimension);
+        if (regionBuckets != null) {
+            int minRegionX = Math.floorDiv(minX, REGION_BUCKET_SIZE_BLOCKS);
+            int maxRegionX = Math.floorDiv(maxX, REGION_BUCKET_SIZE_BLOCKS);
+            int minRegionZ = Math.floorDiv(minZ, REGION_BUCKET_SIZE_BLOCKS);
+            int maxRegionZ = Math.floorDiv(maxZ, REGION_BUCKET_SIZE_BLOCKS);
+
+            for (int regionX = minRegionX; regionX <= maxRegionX; ++regionX) {
+                for (int regionZ = minRegionZ; regionZ <= maxRegionZ; ++regionZ) {
+                    HashSet<FrontierOverlay> frontiers = regionBuckets.get(getRegionBucketKey(regionX, regionZ));
+                    if (frontiers != null) {
+                        candidates.addAll(frontiers);
+                    }
                 }
             }
+        }
+
+        LinkedHashSet<FrontierOverlay> oversizedFrontiers = oversizedFrontiersByDimension.get(dimension);
+        if (oversizedFrontiers != null) {
+            candidates.addAll(oversizedFrontiers);
         }
 
         if (candidates.isEmpty()) {
@@ -328,7 +338,19 @@ public class FrontiersOverlayManager {
             frontierCollectionIdsById.put(frontierId, collectionId);
         }
 
-        Set<Long> regionBucketKeys = computeRegionBucketKeys(frontier);
+        RegionBucketCoverage regionBucketCoverage = computeRegionBucketCoverage(frontier);
+        if (regionBucketCoverage == null) {
+            return;
+        }
+
+        if (regionBucketCoverage.bucketCount() > MAX_REGION_BUCKETS_PER_FRONTIER) {
+            ResourceKey<Level> dimension = frontier.getDimension();
+            oversizedFrontiersByDimension.computeIfAbsent(dimension, key -> new LinkedHashSet<>()).add(frontier);
+            oversizedFrontierDimensionsById.put(frontierId, dimension);
+            return;
+        }
+
+        Set<Long> regionBucketKeys = computeRegionBucketKeys(regionBucketCoverage);
         frontierRegionBucketsById.put(frontierId, regionBucketKeys);
 
         HashMap<Long, HashSet<FrontierOverlay>> regionBuckets = frontiersByRegionBucket.computeIfAbsent(frontier.getDimension(), key -> new HashMap<>());
@@ -356,6 +378,18 @@ public class FrontiersOverlayManager {
             }
         }
 
+        ResourceKey<Level> oversizedDimension = oversizedFrontierDimensionsById.remove(frontierId);
+        if (oversizedDimension != null) {
+            LinkedHashSet<FrontierOverlay> frontiers = oversizedFrontiersByDimension.get(oversizedDimension);
+            if (frontiers != null) {
+                frontiers.remove(frontier);
+                if (frontiers.isEmpty()) {
+                    oversizedFrontiersByDimension.remove(oversizedDimension);
+                }
+            }
+            return;
+        }
+
         Set<Long> regionBucketKeys = frontierRegionBucketsById.remove(frontierId);
         if (regionBucketKeys == null || regionBucketKeys.isEmpty()) {
             return;
@@ -381,9 +415,10 @@ public class FrontiersOverlayManager {
         }
     }
 
-    private static Set<Long> computeRegionBucketKeys(FrontierOverlay frontier) {
+    @Nullable
+    private static RegionBucketCoverage computeRegionBucketCoverage(FrontierOverlay frontier) {
         if (frontier.topLeft == null || frontier.bottomRight == null) {
-            return Set.of();
+            return null;
         }
 
         int minX = frontier.topLeft.getX();
@@ -399,10 +434,15 @@ public class FrontiersOverlayManager {
         int maxRegionX = Math.floorDiv(maxX, REGION_BUCKET_SIZE_BLOCKS);
         int minRegionZ = Math.floorDiv(minZ, REGION_BUCKET_SIZE_BLOCKS);
         int maxRegionZ = Math.floorDiv(maxZ, REGION_BUCKET_SIZE_BLOCKS);
+        long bucketCount = (long) (maxRegionX - minRegionX + 1) * (maxRegionZ - minRegionZ + 1);
 
+        return new RegionBucketCoverage(minRegionX, maxRegionX, minRegionZ, maxRegionZ, bucketCount);
+    }
+
+    private static Set<Long> computeRegionBucketKeys(RegionBucketCoverage coverage) {
         HashSet<Long> regionBucketKeys = new HashSet<>();
-        for (int regionX = minRegionX; regionX <= maxRegionX; ++regionX) {
-            for (int regionZ = minRegionZ; regionZ <= maxRegionZ; ++regionZ) {
+        for (int regionX = coverage.minRegionX(); regionX <= coverage.maxRegionX(); ++regionX) {
+            for (int regionZ = coverage.minRegionZ(); regionZ <= coverage.maxRegionZ(); ++regionZ) {
                 regionBucketKeys.add(getRegionBucketKey(regionX, regionZ));
             }
         }
@@ -412,6 +452,13 @@ public class FrontiersOverlayManager {
 
     private static long getRegionBucketKey(int x, int z) {
         return ((long) x & 0xFFFFFFFFL) | (((long) z & 0xFFFFFFFFL) << 32);
+    }
+
+    private record RegionBucketCoverage(int minRegionX,
+                                        int maxRegionX,
+                                        int minRegionZ,
+                                        int maxRegionZ,
+                                        long bucketCount) {
     }
 
 }
