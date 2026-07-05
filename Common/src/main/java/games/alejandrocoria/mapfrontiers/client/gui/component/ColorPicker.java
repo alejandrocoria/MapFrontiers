@@ -223,7 +223,7 @@ public class ColorPicker extends AbstractWidgetNoNarration {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (!visible || !active) {
+        if (!visible || !active || !isValidClickButton(event.buttonInfo())) {
             return false;
         }
 
