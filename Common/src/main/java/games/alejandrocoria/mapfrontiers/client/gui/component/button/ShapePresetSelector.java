@@ -108,6 +108,10 @@ abstract class ShapePresetSelector extends AbstractWidgetNoNarration {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (!visible || !active || !isValidClickButton(button)) {
+            return false;
+        }
+
         int hovered = getButtonIndex(mouseX, mouseY);
         if (hovered == -1) {
             return false;

@@ -90,6 +90,10 @@ public class PathMarkerSelectorWidget extends AbstractWidgetNoNarration {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (!visible || !active || !isValidClickButton(button)) {
+            return false;
+        }
+
         int hoveredIndex = getHoveredIndex(mouseX, mouseY);
         if (hoveredIndex < 0 || hoveredIndex >= PathMarkerCatalog.BUILT_INS.size()) {
             return false;
