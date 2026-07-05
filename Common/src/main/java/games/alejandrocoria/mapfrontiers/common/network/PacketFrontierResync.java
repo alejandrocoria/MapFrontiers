@@ -6,26 +6,18 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class PacketFrontierResync {
-    public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_frontier_resync");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketFrontierResync> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketFrontierResync::encode, PacketFrontierResync::new);
+    public static final ResourceLocation CHANNEL = new ResourceLocation(MapFrontiers.MODID, "packet_frontier_resync");
 
     private final FrontierData frontier;
 
     public PacketFrontierResync(FrontierData frontier) {
         this.frontier = new FrontierData(frontier);
-    }
-
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
     }
 
     public PacketFrontierResync(FriendlyByteBuf buf) {

@@ -6,9 +6,6 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationResult;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -17,17 +14,12 @@ import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class PacketDeleteCollection {
-    public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_delete_collection");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketDeleteCollection> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketDeleteCollection::encode, PacketDeleteCollection::new);
+    public static final ResourceLocation CHANNEL = new ResourceLocation(MapFrontiers.MODID, "packet_delete_collection");
 
     private UUID collectionId;
 
     public PacketDeleteCollection(UUID collectionId) {
         this.collectionId = collectionId;
-    }
-
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
     }
 
     public PacketDeleteCollection(FriendlyByteBuf buf) {

@@ -6,15 +6,15 @@ import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.ButtonBase;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
+import games.alejandrocoria.mapfrontiers.client.gui.layout.MFLinearLayout;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.network.chat.Component;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-public class SortToolbar extends LinearLayout {
+public class SortToolbar extends MFLinearLayout {
     private SortButton selected;
     private Runnable onChange;
 
@@ -43,13 +43,13 @@ public class SortToolbar extends LinearLayout {
             java.util.List<Boolean> direction = new java.util.ArrayList<>(ClientConfig.getTerritoryListSortingDirectionValues());
             if (sortButton == selected) {
                 sortButton.changeDirection();
-                direction.set(0, !direction.getFirst());
+                direction.set(0, !direction.get(0));
             } else {
                 selected.setSelected(false);
 
                 int index = sorting.indexOf(sortButton.getSorting());
-                sorting.addFirst(sorting.remove(index));
-                direction.addFirst(direction.remove(index));
+                sorting.add(0, sorting.remove(index));
+                direction.add(0, direction.remove(index));
 
                 selected = sortButton;
                 selected.setSelected(true);
@@ -66,7 +66,7 @@ public class SortToolbar extends LinearLayout {
 
     @ParametersAreNonnullByDefault
     public static class SortButton extends ButtonBase {
-        private final LinearLayout layout = LinearLayout.horizontal();
+        private final MFLinearLayout layout = MFLinearLayout.horizontal();
         private boolean selected = false;
         private final TerritoryListSorting sorting;
         private boolean direction;
@@ -85,6 +85,8 @@ public class SortToolbar extends LinearLayout {
             iconButton = layout.addChild(new IconButton(direction ? IconButton.Type.SortUp : IconButton.Type.SortDown, (b) -> {}));
 
             layout.arrangeElements();
+            width = layout.getWidth();
+            height = layout.getHeight();
         }
 
         public void setSelected(boolean selected) {
@@ -102,7 +104,6 @@ public class SortToolbar extends LinearLayout {
             return sorting;
         }
 
-
         @Override
         public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
             if (isHoveredOrKeyboardFocused()) {
@@ -119,7 +120,6 @@ public class SortToolbar extends LinearLayout {
             }
         }
 
-
         @Override
         public void setX(int x) {
             super.setX(x);
@@ -130,16 +130,6 @@ public class SortToolbar extends LinearLayout {
         public void setY(int y) {
             super.setY(y);
             layout.setY(y);
-        }
-
-        @Override
-        public int getWidth() {
-            return layout.getWidth();
-        }
-
-        @Override
-        public int getHeight() {
-            return layout.getHeight();
         }
     }
 }

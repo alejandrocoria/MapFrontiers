@@ -57,7 +57,7 @@ public final class PathMarkerCatalog {
 
     private static Entry entry(ResourceLocation id, @Nullable String textureName, boolean directional, double segmentSpacingMultiplier) {
         ResourceLocation texture = textureName == null ? null
-                : ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/markers/path/" + textureName + ".png");
+                : new ResourceLocation(MapFrontiers.MODID, "textures/markers/path/" + textureName + ".png");
         return new Entry(id, texture, directional, segmentSpacingMultiplier);
     }
 
@@ -94,7 +94,7 @@ public final class PathMarkerCatalog {
         }
 
         private static ResourceLocation getHighlightTextureId(ResourceLocation sourceTexture) {
-            return ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID,
+            return new ResourceLocation(MapFrontiers.MODID,
                     "dynamic/path_marker_highlights/" + sourceTexture.getNamespace() + "/" + sourceTexture.getPath());
         }
 

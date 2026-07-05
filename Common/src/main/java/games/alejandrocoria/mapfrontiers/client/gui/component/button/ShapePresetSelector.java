@@ -21,7 +21,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 abstract class ShapePresetSelector extends AbstractWidgetNoNarration {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/shape_presets.png");
+    private static final ResourceLocation TEXTURE = new ResourceLocation(MapFrontiers.MODID, "textures/gui/shape_presets.png");
     private static final int TEXTURE_WIDTH = 1372;
     private static final int TEXTURE_HEIGHT = 98;
     private static final int BUTTON_SIZE = 49;

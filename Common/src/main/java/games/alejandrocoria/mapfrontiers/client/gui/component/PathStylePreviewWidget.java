@@ -25,7 +25,7 @@ public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
     private static final int MAP_SIZE = 240;
     private static final int PREVIEW_TEXT_SIZE = 2;
     private static final int PREVIEW_BANNER_SIZE = 1;
-    private static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld"));
+    private static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, new ResourceLocation("minecraft", "overworld"));
 
     private final FrontierPreviewPanel previewPanel;
     private final FrontierOverlay previewFrontier;
@@ -55,8 +55,8 @@ public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
     public void setScaleFactor(float scaleFactor) {
         this.scaleFactor = scaleFactor;
         double guiScale = Minecraft.getInstance().getWindow().getGuiScale() / scaleFactor;
-        setWidth((int) (MAP_SIZE / guiScale));
-        setHeight((int) (MAP_SIZE / guiScale));
+        width = (int) (MAP_SIZE / guiScale);
+        height = (int) (MAP_SIZE / guiScale);
 
         previewPanel.refreshRenderer();
     }

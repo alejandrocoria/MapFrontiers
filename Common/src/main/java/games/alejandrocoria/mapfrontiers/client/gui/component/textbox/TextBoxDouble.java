@@ -108,8 +108,8 @@ public class TextBoxDouble extends EditBox {
                 } catch (Exception e) {
                     return true;
                 } finally {
-                    moveCursorToStart(false);
-                    moveCursorToEnd(false);
+                    moveCursorToStart();
+                    moveCursorToEnd();
                 }
 
                 if (valueChangedCallback != null) {
@@ -140,7 +140,7 @@ public class TextBoxDouble extends EditBox {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double vDelta) {
         if (visible && active && isHovered) {
             double current;
             try {

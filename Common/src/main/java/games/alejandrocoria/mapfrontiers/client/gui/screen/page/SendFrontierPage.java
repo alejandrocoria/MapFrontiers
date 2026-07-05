@@ -9,14 +9,14 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
+import games.alejandrocoria.mapfrontiers.client.gui.layout.MFLinearLayout;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.StringUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -62,17 +62,17 @@ public class SendFrontierPage extends PageScreen {
             return;
         }
 
-        LinearLayout mainLayout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
+        MFLinearLayout mainLayout = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
         mainLayout.defaultCellSetting().alignHorizontallyCenter();
         content.addChild(mainLayout);
 
-        LinearLayout header = LinearLayout.horizontal();
+        MFLinearLayout header = MFLinearLayout.horizontal();
         mainLayout.addChild(header);
 
-        description = header.addChild(new MultiLineTextWidget(DESCRIPTION_LABEL.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
+        description = header.addChild(new MultiLineTextWidget(DESCRIPTION_LABEL.copy().withStyle(style -> style.withColor(ColorConstants.TEXT_HIGHLIGHT)), font));
         description.setCentered(true);
 
-        LinearLayout newUserLayout = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout newUserLayout = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         newUserLayout.defaultCellSetting().alignVerticallyMiddle();
         mainLayout.addChild(newUserLayout);
 
@@ -135,7 +135,7 @@ public class SendFrontierPage extends PageScreen {
             }
         }
 
-        if (StringUtil.isBlank(user.username)) {
+        if (StringHelper.isBlank(user.username)) {
             textNewUser.setError(ERROR_USER_NOT_FOUND_LABEL);
             return;
         }

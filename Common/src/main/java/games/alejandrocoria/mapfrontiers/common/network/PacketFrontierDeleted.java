@@ -7,9 +7,6 @@ import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
@@ -19,8 +16,7 @@ import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class PacketFrontierDeleted {
-    public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_frontier_deleted");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketFrontierDeleted> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketFrontierDeleted::encode, PacketFrontierDeleted::new);
+    public static final ResourceLocation CHANNEL = new ResourceLocation(MapFrontiers.MODID, "packet_frontier_deleted");
 
     private ResourceKey<Level> dimension = Level.OVERWORLD;
     private UUID frontierID;
@@ -32,10 +28,6 @@ public class PacketFrontierDeleted {
         this.frontierID = frontierID;
         this.personal = personal;
         this.playerID = playerID;
-    }
-
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
     }
 
     public PacketFrontierDeleted(FriendlyByteBuf buf) {

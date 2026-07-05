@@ -12,6 +12,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox.S
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.UserSharedElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
+import games.alejandrocoria.mapfrontiers.client.gui.layout.MFLinearLayout;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -20,7 +21,6 @@ import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
-import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
@@ -85,16 +85,16 @@ public class SharedAccessPage extends PageScreen {
             return;
         }
 
-        LinearLayout mainLayout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
+        MFLinearLayout mainLayout = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
         mainLayout.defaultCellSetting().alignHorizontallyCenter();
         content.addChild(mainLayout);
 
-        LinearLayout header = LinearLayout.horizontal();
+        MFLinearLayout header = MFLinearLayout.horizontal();
         mainLayout.addChild(header);
 
-        updateFrontier = header.addChild(new MultiLineTextWidget(UPDATE_FRONTIER_LABEL.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
+        updateFrontier = header.addChild(new MultiLineTextWidget(UPDATE_FRONTIER_LABEL.copy().withStyle(style -> style.withColor(ColorConstants.TEXT_HIGHLIGHT)), font));
         updateFrontier.setCentered(true);
-        updateSettings = header.addChild(new MultiLineTextWidget(UPDATE_SETTINGS_LABEL.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font));
+        updateSettings = header.addChild(new MultiLineTextWidget(UPDATE_SETTINGS_LABEL.copy().withStyle(style -> style.withColor(ColorConstants.TEXT_HIGHLIGHT)), font));
         updateSettings.setCentered(true);
 
         users = new ScrollBox(ScrollBox.rowsToHeight(USERS_MIN_ROWS, USERS_ELEMENT_HEIGHT), USERS_WIDTH, USERS_ELEMENT_HEIGHT);
@@ -108,7 +108,7 @@ public class SharedAccessPage extends PageScreen {
         });
         mainLayout.addChild(users);
 
-        LinearLayout newUserLayout = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout newUserLayout = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         newUserLayout.defaultCellSetting().alignVerticallyMiddle();
         mainLayout.addChild(newUserLayout);
 

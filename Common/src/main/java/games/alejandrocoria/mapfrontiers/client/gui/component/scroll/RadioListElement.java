@@ -14,7 +14,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class RadioListElement<T> extends ScrollBox.ScrollElement {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/radio_buttons.png");
+    private static final ResourceLocation TEXTURE = new ResourceLocation(MapFrontiers.MODID, "textures/gui/radio_buttons.png");
     private static final int TEXTURE_WIDTH = 22;
     private static final int TEXTURE_HEIGHT = 11;
 

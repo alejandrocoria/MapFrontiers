@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.screen;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
+import games.alejandrocoria.mapfrontiers.client.gui.layout.MFLinearLayout;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import journeymap.api.v2.client.ui.component.LayeredScreen;
 import net.minecraft.client.Minecraft;
@@ -10,9 +11,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
-import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.contents.PlainTextContents;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -32,8 +31,8 @@ public abstract class AutoScaledScreen extends LayeredScreen {
     protected int actualWidth;
     protected int actualHeight;
 
-    protected LinearLayout content;
-    private LinearLayout bottomButtons;
+    protected MFLinearLayout content;
+    private MFLinearLayout bottomButtons;
 
     public AutoScaledScreen(Component title) {
         this(title, BottomButtonsMode.None);
@@ -50,11 +49,11 @@ public abstract class AutoScaledScreen extends LayeredScreen {
         actualWidth = width;
         actualHeight = height;
 
-        content = LinearLayout.vertical().spacing(LayoutConstants.SCREEN_CONTENT_SPACING);
+        content = MFLinearLayout.vertical().spacing(LayoutConstants.SCREEN_CONTENT_SPACING);
         content.defaultCellSetting().alignHorizontallyCenter();
 
         if (bottomButtonsMode != BottomButtonsMode.None) {
-            bottomButtons = LinearLayout.horizontal();
+            bottomButtons = MFLinearLayout.horizontal();
             bottomButtons.spacing(LayoutConstants.BOTTOM_BUTTON_SPACING);
         } else {
             bottomButtons = null;
@@ -174,7 +173,7 @@ public abstract class AutoScaledScreen extends LayeredScreen {
     @Override
     protected final void renderPopupScreenBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         if (minecraft.screen == this) {
-            renderBlurredBackground(partialTicks);
+            graphics.fill(0, 0, width, height, ColorConstants.SCREEN_POPUP_OVERLAY_BG);
         }
     }
 
@@ -188,7 +187,7 @@ public abstract class AutoScaledScreen extends LayeredScreen {
             graphics.pose().scale(1.0f / scaleFactor, 1.0f / scaleFactor, 1.0f);
         }
 
-        if (title.getContents() != PlainTextContents.EMPTY) {
+        if (!title.getString().isEmpty()) {
             graphics.drawCenteredString(font, title, this.actualWidth / 2, 12, ColorConstants.SCREEN_TITLE_TEXT);
         }
 
@@ -244,8 +243,8 @@ public abstract class AutoScaledScreen extends LayeredScreen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
-        return super.mouseScrolled(mouseX * scaleFactor, mouseY * scaleFactor, hDelta, vDelta);
+    public boolean mouseScrolled(double mouseX, double mouseY, double vDelta) {
+        return super.mouseScrolled(mouseX * scaleFactor, mouseY * scaleFactor, vDelta);
     }
 
     @Override

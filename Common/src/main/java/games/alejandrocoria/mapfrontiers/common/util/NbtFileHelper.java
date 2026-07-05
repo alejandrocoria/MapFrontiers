@@ -17,7 +17,7 @@ public final class NbtFileHelper {
     public static File resolveServerRootDir(MinecraftServer server) {
         File mcDir;
         if (server.isDedicatedServer()) {
-            mcDir = server.getServerDirectory().toFile();
+            mcDir = server.getServerDirectory();
         } else {
             mcDir = server.getWorldPath(LevelResource.ROOT).toFile();
         }

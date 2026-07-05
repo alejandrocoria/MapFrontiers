@@ -5,12 +5,12 @@ import games.alejandrocoria.mapfrontiers.client.config.ColorInputMode;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
+import games.alejandrocoria.mapfrontiers.client.gui.layout.MFLinearLayout;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.layouts.Layout;
 import net.minecraft.client.gui.layouts.LayoutElement;
 import net.minecraft.client.gui.layouts.LayoutSettings;
-import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.network.chat.Component;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -33,8 +33,8 @@ public class ColorInputTabsWidget implements Layout {
 
     private final IntConsumer colorChanged;
     private final TabbedBox tabbedBox;
-    private final LinearLayout rgbRow = LinearLayout.horizontal().spacing(FIELD_SPACING);
-    private final LinearLayout hsvRow = LinearLayout.horizontal().spacing(FIELD_SPACING);
+    private final MFLinearLayout rgbRow = MFLinearLayout.horizontal().spacing(FIELD_SPACING);
+    private final MFLinearLayout hsvRow = MFLinearLayout.horizontal().spacing(FIELD_SPACING);
     private final TextBoxInt textRed;
     private final TextBoxInt textGreen;
     private final TextBoxInt textBlue;

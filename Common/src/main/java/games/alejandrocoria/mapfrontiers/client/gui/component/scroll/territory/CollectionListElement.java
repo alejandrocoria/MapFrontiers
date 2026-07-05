@@ -38,7 +38,7 @@ public class CollectionListElement extends TerritoryListRowElement implements Sc
         MOVE_HERE_DISABLED
     }
 
-    private static final ResourceLocation NAME_FADE_TEXTURE = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/territory_list/name_fade.png");
+    private static final ResourceLocation NAME_FADE_TEXTURE = new ResourceLocation(MapFrontiers.MODID, "textures/gui/territory_list/name_fade.png");
     private static final int TITLE_X = 15;
     private static final int TITLE_Y = 6;
     private static final int COUNTERS_GAP = 4;

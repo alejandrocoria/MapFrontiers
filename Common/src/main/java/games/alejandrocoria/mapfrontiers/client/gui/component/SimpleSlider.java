@@ -8,6 +8,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.navigation.CommonInputs;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
@@ -112,7 +113,7 @@ public class SimpleSlider extends AbstractSliderButton {
             return 0;
         }
 
-        return Math.clamp((int) Math.floor(value * stepCount), 0, stepCount - 1);
+        return Mth.clamp((int) Math.floor(value * stepCount), 0, stepCount - 1);
     }
 
     private double snapNormalizedValue(double value) {
@@ -201,7 +202,7 @@ public class SimpleSlider extends AbstractSliderButton {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double vDelta) {
         if (visible && active && isHovered) {
             int val = usesDiscreteValues() ? resolveDiscreteStep(value) : denormalizeInternal(value);
             if (vDelta > 0) {

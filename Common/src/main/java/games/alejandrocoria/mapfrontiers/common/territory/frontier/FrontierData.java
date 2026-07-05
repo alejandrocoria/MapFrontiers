@@ -225,7 +225,7 @@ public class FrontierData {
             } else {
                 List<ServerPlayer> playerList = server.getPlayerList().getPlayers();
                 if (!playerList.isEmpty()) {
-                    owner = new SettingsUser(playerList.getFirst());
+                    owner = new SettingsUser(playerList.get(0));
                 }
             }
         } else {
@@ -787,7 +787,7 @@ public class FrontierData {
 
         id = UUID.fromString(NbtReadHelper.requireString(nbt, "id"));
         color = NbtReadHelper.requireInt(nbt, "color");
-        dimension = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(NbtReadHelper.requireString(nbt, "dimension")));
+        dimension = ResourceKey.create(Registries.DIMENSION, new ResourceLocation(NbtReadHelper.requireString(nbt, "dimension")));
         name1 = NbtCompat.getStringOr(nbt, "name1", "");
         name2 = NbtCompat.getStringOr(nbt, "name2", "");
 
@@ -1481,17 +1481,17 @@ public class FrontierData {
         return NbtCompat.getStringOr(nbt, "id", "<unknown>");
     }
     public static class PathStyle {
-        public static final ResourceLocation NONE = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "none");
-        public static final ResourceLocation BIG_DOT = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "big_dot");
-        public static final ResourceLocation SMALL_DOT = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "small_dot");
-        public static final ResourceLocation RING = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "ring");
-        public static final ResourceLocation BIG_SQUARE = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "big_square");
-        public static final ResourceLocation SMALL_SQUARE = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "small_square");
-        public static final ResourceLocation DIAMOND = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "diamond");
-        public static final ResourceLocation TRIANGLE = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "triangle");
-        public static final ResourceLocation ARROW = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "arrow");
-        public static final ResourceLocation CHEVRON = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "chevron");
-        public static final ResourceLocation X_CROSS = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "x_cross");
+        public static final ResourceLocation NONE = new ResourceLocation(MapFrontiers.MODID, "none");
+        public static final ResourceLocation BIG_DOT = new ResourceLocation(MapFrontiers.MODID, "big_dot");
+        public static final ResourceLocation SMALL_DOT = new ResourceLocation(MapFrontiers.MODID, "small_dot");
+        public static final ResourceLocation RING = new ResourceLocation(MapFrontiers.MODID, "ring");
+        public static final ResourceLocation BIG_SQUARE = new ResourceLocation(MapFrontiers.MODID, "big_square");
+        public static final ResourceLocation SMALL_SQUARE = new ResourceLocation(MapFrontiers.MODID, "small_square");
+        public static final ResourceLocation DIAMOND = new ResourceLocation(MapFrontiers.MODID, "diamond");
+        public static final ResourceLocation TRIANGLE = new ResourceLocation(MapFrontiers.MODID, "triangle");
+        public static final ResourceLocation ARROW = new ResourceLocation(MapFrontiers.MODID, "arrow");
+        public static final ResourceLocation CHEVRON = new ResourceLocation(MapFrontiers.MODID, "chevron");
+        public static final ResourceLocation X_CROSS = new ResourceLocation(MapFrontiers.MODID, "x_cross");
 
         public ResourceLocation startMarker;
         public ResourceLocation innerMarker;
@@ -1579,7 +1579,7 @@ public class FrontierData {
         private static ResourceLocation readMarkerFromNBT(CompoundTag nbt, String key, ResourceLocation fallback) {
             String markerId = NbtCompat.getStringOr(nbt, key, fallback.toString());
             try {
-                return normalizeMarkerId(ResourceLocation.parse(markerId), fallback);
+                return normalizeMarkerId(new ResourceLocation(markerId), fallback);
             } catch (Exception ignored) {
                 return fallback;
             }

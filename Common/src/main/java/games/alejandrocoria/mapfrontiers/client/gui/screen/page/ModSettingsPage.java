@@ -19,6 +19,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.ScrollBox.S
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.UserElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
+import games.alejandrocoria.mapfrontiers.client.gui.layout.MFLinearLayout;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.HUDSettingsScreen;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.CollectionAppearanceDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.CollectionVisibilityDialog;
@@ -54,7 +55,6 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
-import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
@@ -234,7 +234,7 @@ public class ModSettingsPage extends PageScreen {
     }
 
     private void buildCreditsTab() {
-        LinearLayout creditsLayout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout creditsLayout = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         creditsLayout.defaultCellSetting().alignHorizontallyCenter();
         tabbedBox.addChild(creditsLayout, Tab.Credits.ordinal());
 
@@ -255,7 +255,7 @@ public class ModSettingsPage extends PageScreen {
     }
 
     private void buildGeneralTab() {
-        LinearLayout generalLayout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout generalLayout = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         generalLayout.defaultCellSetting().alignHorizontallyCenter();
         tabbedBox.addChild(generalLayout, Tab.General.ordinal());
 
@@ -330,7 +330,7 @@ public class ModSettingsPage extends PageScreen {
         return row + 1;
     }
 
-    private void buildHudSection(LinearLayout generalLayout, GridLayout settingsGrid, int row) {
+    private void buildHudSection(MFLinearLayout generalLayout, GridLayout settingsGrid, int row) {
         settingsGrid.addChild(SpacerElement.height(LayoutConstants.SPACING_SMALL), row++, 0);
         settingsGrid.addChild(new StringWidget(HUD_LABEL, font).setColor(ColorConstants.TEXT_HIGHLIGHT), row++, 0, 1, 2,
                 LayoutSettings.defaults().alignHorizontallyCenter());
@@ -342,24 +342,24 @@ public class ModSettingsPage extends PageScreen {
     }
 
     private void buildGroupsTab() {
-        LinearLayout groupsLayout = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout groupsLayout = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         groupsLayout.defaultCellSetting().alignHorizontallyLeft();
         tabbedBox.addChild(groupsLayout, Tab.Groups.ordinal());
 
-        LinearLayout groupsColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout groupsColumn = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         groupsColumn.defaultCellSetting().alignHorizontallyCenter();
         groupsLayout.addChild(groupsColumn);
         buildGroupsList(groupsColumn);
         buildNewGroupControls(groupsColumn);
 
-        LinearLayout usersColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout usersColumn = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         usersColumn.defaultCellSetting().alignHorizontallyLeft();
         groupsLayout.addChild(usersColumn);
         buildUsersPanel(usersColumn);
         buildNewUserControls(usersColumn);
     }
 
-    private void buildGroupsList(LinearLayout groupsColumn) {
+    private void buildGroupsList(MFLinearLayout groupsColumn) {
         groups = groupsColumn.addChild(new ScrollBox(ScrollBox.rowsToHeight(GROUPS_MIN_ROWS, GROUPS_ELEMENT_HEIGHT),
                 GROUPS_SCROLL_WIDTH, GROUPS_ELEMENT_HEIGHT));
         groups.setElementClickedCallback(element -> {
@@ -369,8 +369,8 @@ public class ModSettingsPage extends PageScreen {
         groups.setElementDeletePressedCallback(this::onGroupDeletePressed);
     }
 
-    private void buildNewGroupControls(LinearLayout groupsColumn) {
-        LinearLayout newGroupLayout = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
+    private void buildNewGroupControls(MFLinearLayout groupsColumn) {
+        MFLinearLayout newGroupLayout = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         newGroupLayout.defaultCellSetting().alignVerticallyMiddle();
         groupsColumn.addChild(newGroupLayout);
 
@@ -382,20 +382,20 @@ public class ModSettingsPage extends PageScreen {
         buttonNewGroup.setTooltip(ADD_TOOLTIP);
     }
 
-    private void buildUsersPanel(LinearLayout usersColumn) {
+    private void buildUsersPanel(MFLinearLayout usersColumn) {
         textGroupName = usersColumn.addChild(new TextBox(font, GROUP_NAME_WIDTH));
         textGroupName.setMaxLength(22);
         textGroupName.setLostFocusCallback(this::onGroupNameLostFocus);
 
-        labelGroupDesc = usersColumn.addChild(new MultiLineTextWidget(GROUP_OPS_DESC_LABEL.copy().withColor(ColorConstants.TEXT), font));
+        labelGroupDesc = usersColumn.addChild(new MultiLineTextWidget(GROUP_OPS_DESC_LABEL.copy().withStyle(style -> style.withColor(ColorConstants.TEXT)), font));
 
         users = usersColumn.addChild(new ScrollBox(ScrollBox.rowsToHeight(USERS_MIN_ROWS, USERS_ELEMENT_HEIGHT),
                 USERS_SCROLL_WIDTH, USERS_ELEMENT_HEIGHT));
         users.setElementDeletePressedCallback(this::onUserDeletePressed);
     }
 
-    private void buildNewUserControls(LinearLayout usersColumn) {
-        LinearLayout newUserLayout = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
+    private void buildNewUserControls(MFLinearLayout usersColumn) {
+        MFLinearLayout newUserLayout = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         newUserLayout.defaultCellSetting().alignVerticallyMiddle();
         usersColumn.addChild(newUserLayout);
 
@@ -408,11 +408,11 @@ public class ModSettingsPage extends PageScreen {
     }
 
     private void buildActionsTab() {
-        LinearLayout actionsLayout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
+        MFLinearLayout actionsLayout = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
         actionsLayout.defaultCellSetting().alignHorizontallyCenter();
         tabbedBox.addChild(actionsLayout, Tab.Actions.ordinal());
 
-        LinearLayout actionsHeader = LinearLayout.horizontal();
+        MFLinearLayout actionsHeader = MFLinearLayout.horizontal();
         actionsLayout.addChild(actionsHeader);
 
         labelCreateFrontier = actionsHeader.addChild(createActionsHeaderLabel(CREATE_GLOBAL_FRONTIER_LABEL));
@@ -464,7 +464,7 @@ public class ModSettingsPage extends PageScreen {
             onChanged.accept(b.getSelected() == 0);
             binding.refresh();
         });
-        LinearLayout controls = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout controls = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         controls.defaultCellSetting().alignVerticallyMiddle();
         controls.addChild(button);
         controls.addChild(binding.button());
@@ -484,14 +484,14 @@ public class ModSettingsPage extends PageScreen {
     }
 
     private MultiLineTextWidget createActionsHeaderLabel(Component label) {
-        MultiLineTextWidget widget = new MultiLineTextWidget(label.copy().withColor(ColorConstants.TEXT_HIGHLIGHT), font);
+        MultiLineTextWidget widget = new MultiLineTextWidget(label.copy().withStyle(style -> style.withColor(ColorConstants.TEXT_HIGHLIGHT)), font);
         widget.setCentered(true);
         return widget;
     }
 
     private void openExternalLink(String url) {
         MapFrontiersClient.setLastSettingsTab(tabSelected);
-        ConfirmLinkScreen.confirmLinkNow(this, url, false);
+        ConfirmLinkScreen.confirmLinkNow(url, this, false);
     }
 
     private void onFrontierAppearancePressed() {
@@ -1096,7 +1096,7 @@ public class ModSettingsPage extends PageScreen {
         }
 
         if (groups.getSelectedElement() == null && !groups.getElements().isEmpty()) {
-            groups.setSelectedElement(groups.getElements().getFirst());
+            groups.setSelectedElement(groups.getElements().get(0));
         }
 
         if (groups.getSelectedElement() != null) {

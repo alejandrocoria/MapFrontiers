@@ -15,6 +15,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
+import games.alejandrocoria.mapfrontiers.client.gui.layout.MFLinearLayout;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.CollectionVisibilityDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteCollectionConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.territory.BannerDataHelper;
@@ -30,8 +31,8 @@ import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionV
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import it.unimi.dsi.fastutil.Pair;
-import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.util.UIState;
+import journeymap.api.v2.common.Context;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -39,7 +40,6 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
-import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
@@ -187,7 +187,7 @@ public class CollectionInfoPage extends PageScreen {
     }
 
     private void buildBannerSection(GridLayout mainLayout) {
-        LinearLayout bannerColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout bannerColumn = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         bannerColumn.defaultCellSetting().alignHorizontallyCenter();
         mainLayout.addChild(bannerColumn, 0, 0);
 
@@ -199,11 +199,11 @@ public class CollectionInfoPage extends PageScreen {
     }
 
     private void buildOverviewSection(GridLayout mainLayout) {
-        LinearLayout overviewColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout overviewColumn = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         overviewColumn.defaultCellSetting().alignHorizontallyLeft();
         mainLayout.addChild(overviewColumn, 0, 1, 1, 2);
 
-        LinearLayout headerRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
+        MFLinearLayout headerRow = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
         headerRow.addChild(new StringWidget(NAME_LABEL, font).setColor(ColorConstants.COLLECTION_INFO_TEXT));
         PluginSourceBadge sourceBadge = new PluginSourceBadge(font, collection.getSourcePluginId(), true);
         int sourceWidth = sourceBadge.getWidth();
@@ -220,7 +220,7 @@ public class CollectionInfoPage extends PageScreen {
         textName.setLostFocusCallback(value -> addCurrentStateToUndo());
         overviewColumn.addChild(textName);
 
-        LinearLayout visibilityRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_MEDIUM);
+        MFLinearLayout visibilityRow = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_MEDIUM);
         visibilityRow.defaultCellSetting().alignVerticallyMiddle();
         overviewColumn.addChild(visibilityRow);
 
@@ -235,7 +235,7 @@ public class CollectionInfoPage extends PageScreen {
     }
 
     private void buildInfoSection(GridLayout mainLayout) {
-        LinearLayout infoColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_TINY);
+        MFLinearLayout infoColumn = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_TINY);
         mainLayout.addChild(infoColumn, 0, 3, LayoutSettings.defaults().alignHorizontallyLeft());
 
         ownerLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.COLLECTION_INFO_TEXT));
@@ -256,7 +256,7 @@ public class CollectionInfoPage extends PageScreen {
         colorPicker = new ColorPicker(collection.getColor(), this::onColorPicked);
         mainLayout.addChild(colorPicker, 1, 1, LayoutSettings.defaults().alignVerticallyBottom().alignHorizontallyCenter());
 
-        LinearLayout colorColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout colorColumn = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         colorColumn.defaultCellSetting().alignHorizontallyCenter();
         mainLayout.addChild(colorColumn, 1, 2, LayoutSettings.defaults().alignVerticallyBottom());
 
@@ -287,13 +287,13 @@ public class CollectionInfoPage extends PageScreen {
         labelPasteBanner = editColumn.addChild(new StringWidget(PASTE_BANNER_LABEL, font).setColor(ColorConstants.TEXT), 3, 0);
         buttonPasteBanner = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_BANNER.get(), ClientConfig.PASTE_BANNER::set), 3, 1);
 
-        LinearLayout editButtons = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout editButtons = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         editColumn.addChild(editButtons, 4, 0);
 
         buttonCopy = editButtons.addChild(new IconButton(IconButton.Type.Copy, b -> onCopyPressed()));
         buttonCopy.setTooltip(COPY_TOOLTIP);
 
-        LinearLayout pasteButtons = LinearLayout.horizontal();
+        MFLinearLayout pasteButtons = MFLinearLayout.horizontal();
         editButtons.addChild(pasteButtons);
 
         buttonPaste = pasteButtons.addChild(new IconButton(IconButton.Type.Paste, b -> onPastePressed()));

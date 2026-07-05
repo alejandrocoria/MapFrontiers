@@ -17,6 +17,7 @@ import net.minecraft.client.gui.navigation.ScreenDirection;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
@@ -26,7 +27,7 @@ import java.util.function.BiConsumer;
 
 @ParametersAreNonnullByDefault
 public class ColorPicker extends AbstractWidgetNoNarration {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/color_picker.png");
+    private static final ResourceLocation TEXTURE = new ResourceLocation(MapFrontiers.MODID, "textures/gui/color_picker.png");
     private static final int TEXTURE_WIDTH = 274;
     private static final int TEXTURE_HEIGHT = 135;
     private static final int WIDTH = 141;
@@ -322,7 +323,7 @@ public class ColorPicker extends AbstractWidgetNoNarration {
             }
 
             if (vGrabbed) {
-                v = Math.clamp(localY, 0.0, 127.99);
+                v = Mth.clamp(localY, 0.0, 127.99);
                 focusedV = v;
                 focusedPart = FocusPart.V;
                 updateColor(dragging);
@@ -386,7 +387,7 @@ public class ColorPicker extends AbstractWidgetNoNarration {
 
         if (direction == ScreenDirection.UP || direction == ScreenDirection.DOWN) {
             double nextV = direction == ScreenDirection.UP ? focusedV - amount : focusedV + amount;
-            focusedV = Math.clamp(nextV, 0.0, 127.99);
+            focusedV = Mth.clamp(nextV, 0.0, 127.99);
         }
     }
 

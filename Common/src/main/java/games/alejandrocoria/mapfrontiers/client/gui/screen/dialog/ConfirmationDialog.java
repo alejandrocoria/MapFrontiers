@@ -5,6 +5,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
+import games.alejandrocoria.mapfrontiers.client.gui.layout.MFLinearLayout;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.AutoScaledScreen;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.config.BooleanConfigEntry;
@@ -12,7 +13,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.layouts.GridLayout;
-import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 
@@ -102,11 +102,11 @@ public class ConfirmationDialog extends AutoScaledScreen {
 
     @Override
     protected void initScreen() {
-        LinearLayout mainLayout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
+        MFLinearLayout mainLayout = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
         mainLayout.defaultCellSetting().alignHorizontallyCenter();
         content.addChild(mainLayout);
 
-        LinearLayout titleRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
+        MFLinearLayout titleRow = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
         titleRow.defaultCellSetting().alignVerticallyMiddle();
         titleRow.addChild(new StringWidget(Component.translatable(titleKey).withStyle(Style.EMPTY.withBold(true)), font)
                 .setColor(ColorConstants.DIALOG_TITLE_TEXT));
@@ -135,13 +135,14 @@ public class ConfirmationDialog extends AutoScaledScreen {
                 handleResponse(Response.ConfirmAlternative);
             }), 1, 0, 1, 2);
         }
+
+        setInitialFocus();
     }
 
     protected @Nullable AbstractWidget createTitleSuffixWidget() {
         return null;
     }
 
-    @Override
     protected void setInitialFocus() {
         if (minecraft.getLastInputType().isKeyboard()) {
             setInitialFocus(cancelButton);

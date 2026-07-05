@@ -33,7 +33,7 @@ import java.util.List;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class FrontierListElement extends TerritoryListRowElement implements ScrollBox.KeyedFocusNavigation {
-    private static final ResourceLocation NAME_FADE_TEXTURE = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/territory_list/name_fade.png");
+    private static final ResourceLocation NAME_FADE_TEXTURE = new ResourceLocation(MapFrontiers.MODID, "textures/gui/territory_list/name_fade.png");
     private static final ResourceLocation CHUNK_FILL_TEXTURE = frontierListTexture("chunk_fill.png");
     private static final ResourceLocation CHUNK_OUTLINE_TEXTURE = frontierListTexture("chunk_outline.png");
     private static final ResourceLocation PATH_FILL_TEXTURE = frontierListTexture("path_fill.png");
@@ -374,7 +374,7 @@ public class FrontierListElement extends TerritoryListRowElement implements Scro
     }
 
     private static ResourceLocation frontierListTexture(String fileName) {
-        return ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/territory_list/" + fileName);
+        return new ResourceLocation(MapFrontiers.MODID, "textures/gui/territory_list/" + fileName);
     }
 
     @Override

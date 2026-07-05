@@ -109,7 +109,7 @@ tasks.register('publishCurseForge', TaskPublishCurseForge) {
     mainFile.displayName = "${minecraft_version}-${version}-fabric"
     mainFile.releaseType = release_type
     mainFile.addModLoader("Fabric", "Quilt")
-    mainFile.addJavaVersion("Java 21")
+    mainFile.addJavaVersion("Java 17")
     mainFile.addGameVersion("${minecraft_version}")
     mainFile.addEnvironment("Server", "Client")
     mainFile.addRelations("requiredDependency", "fabric-api", "journeymap")

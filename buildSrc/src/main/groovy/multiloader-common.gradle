@@ -56,12 +56,13 @@ repositories {
         url = 'https://maven.blamejared.com'
     }
     exclusiveContent {
-        forRepository {
-            maven {
-                name = 'JourneyMap API and CommonNetworking'
-                url = 'https://jm.gserv.me/repository/maven-public/'
-            }
-        }
+        forRepositories(
+                mavenLocal(),
+                maven {
+                    name = 'JourneyMap API and CommonNetworking'
+                    url = 'https://jm.gserv.me/repository/maven-public/'
+                }
+        )
         filter {
             includeGroupAndSubgroups("info.journeymap")
             includeGroupAndSubgroups("mysticdrew")
@@ -153,8 +154,6 @@ processResources {
             "fabric_loader_version":                fabric_loader_version,
             "forge_version":                        forge_version,
             "forge_loader_version_range":           forge_loader_version_range,
-            "neoforge_version":                     neoforge_version,
-            "neoforge_loader_version_range":        neoforge_loader_version_range,
             "journeymap_min_version":               journeymap_min_version,
             "journeymap_version_range":             journeymap_version_range
     ]

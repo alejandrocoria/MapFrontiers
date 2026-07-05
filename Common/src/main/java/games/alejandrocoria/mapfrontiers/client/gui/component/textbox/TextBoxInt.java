@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -68,7 +69,7 @@ public class TextBoxInt extends EditBox {
 
         try {
             int current = Integer.parseInt(getValue());
-            current = Math.clamp(current, min, max);
+            current = Mth.clamp(current, min, max);
             this.setValue(current);
         } catch (Exception e) {
             this.setValue(currentString);
@@ -103,8 +104,8 @@ public class TextBoxInt extends EditBox {
                 } catch (Exception e) {
                     return true;
                 } finally {
-                    moveCursorToStart(false);
-                    moveCursorToEnd(false);
+                    moveCursorToStart();
+                    moveCursorToEnd();
                 }
 
                 if (valueChangedCallback != null) {
@@ -135,7 +136,7 @@ public class TextBoxInt extends EditBox {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double vDelta) {
         if (visible && active && isHovered) {
             int current;
             try {

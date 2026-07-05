@@ -50,7 +50,7 @@ public final class ApiConverters {
     }
 
     public static ResourceKey<Level> toDimension(DimensionId dimension) {
-        return ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(dimension.value()));
+        return ResourceKey.create(Registries.DIMENSION, new ResourceLocation(dimension.value()));
     }
 
     public static FrontierShape toShape(FrontierData frontier) {

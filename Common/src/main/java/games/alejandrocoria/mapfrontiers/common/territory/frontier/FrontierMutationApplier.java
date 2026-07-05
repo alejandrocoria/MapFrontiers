@@ -212,10 +212,10 @@ public final class FrontierMutationApplier {
 
     public static FrontierData.PathStyle toPathStyle(PathStyle pathStyle) {
         FrontierData.PathStyle result = new FrontierData.PathStyle();
-        result.startMarker = ResourceLocation.parse(pathStyle.startMarker().value());
-        result.innerMarker = ResourceLocation.parse(pathStyle.innerMarker().value());
-        result.endMarker = ResourceLocation.parse(pathStyle.endMarker().value());
-        result.segmentMarker = ResourceLocation.parse(pathStyle.segmentMarker().value());
+        result.startMarker = new ResourceLocation(pathStyle.startMarker().value());
+        result.innerMarker = new ResourceLocation(pathStyle.innerMarker().value());
+        result.endMarker = new ResourceLocation(pathStyle.endMarker().value());
+        result.segmentMarker = new ResourceLocation(pathStyle.segmentMarker().value());
         result.labelAtStart = pathStyle.labelAtStart();
         result.labelAtMiddle = pathStyle.labelAtMiddle();
         result.labelAtEnd = pathStyle.labelAtEnd();

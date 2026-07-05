@@ -20,7 +20,7 @@ import java.util.List;
  */
 @ParametersAreNonnullByDefault
 public class FrontierPreviewPanel {
-    private static final ResourceLocation BACKGROUND_TEXTURE = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/frontier_preview_bg.png");
+    private static final ResourceLocation BACKGROUND_TEXTURE = new ResourceLocation(MapFrontiers.MODID, "textures/gui/frontier_preview_bg.png");
     private static final int BACKGROUND_TEXTURE_SIZE = 420;
 
     private final IJourneyMapHelper.ICustomPreviewRenderer customPreviewRenderer;

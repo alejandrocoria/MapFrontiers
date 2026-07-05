@@ -5,7 +5,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.AbstractContainerWidget;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.ContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -14,6 +14,7 @@ import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.gui.navigation.ScreenAxis;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
@@ -28,7 +29,7 @@ import java.util.function.Predicate;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public class ScrollBox extends AbstractContainerWidget {
+public class ScrollBox extends AbstractWidget implements ContainerEventHandler {
     public enum HorizontalEdgeNavigation {
         EXIT_SCROLLBOX,
         KEEP_FOCUS,
@@ -55,6 +56,8 @@ public class ScrollBox extends AbstractContainerWidget {
     private boolean scrollBarGrabbed = false;
     private int scrollBarGrabbedYPos = 0;
     private final List<ScrollElement> elements;
+    private boolean dragging;
+    private GuiEventListener focusedChild;
     private int selected;
     private int focused;
     private Consumer<ScrollElement> elementClickedCallback;
@@ -472,9 +475,8 @@ public class ScrollBox extends AbstractContainerWidget {
         updateScrollWindow();
     }
 
-    @Override
     public void setSize(int elementWidth, int height) {
-        super.setSize(elementWidth + SCROLLBAR_AREA_WIDTH, height);
+        setWidth(elementWidth);
         setHeight(height);
     }
 
@@ -483,10 +485,8 @@ public class ScrollBox extends AbstractContainerWidget {
         super.setWidth(elementWidth + SCROLLBAR_AREA_WIDTH);
     }
 
-    @Override
     public void setHeight(int height) {
-        super.setHeight(height);
-        this.height = Math.max(1, this.height);
+        this.height = Math.max(1, height);
         clampScrollOffset();
         updateScrollWindow();
         updateScrollBar();
@@ -510,7 +510,42 @@ public class ScrollBox extends AbstractContainerWidget {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
+    public boolean isDragging() {
+        return dragging;
+    }
+
+    @Override
+    public void setDragging(boolean dragging) {
+        this.dragging = dragging;
+    }
+
+    @Override
+    public @Nullable GuiEventListener getFocused() {
+        return focusedChild;
+    }
+
+    @Override
+    public void setFocused(@Nullable GuiEventListener guiEventListener) {
+        if (this.focusedChild != null) {
+            this.focusedChild.setFocused(false);
+        }
+
+        this.focusedChild = guiEventListener;
+        if (this.focusedChild != null) {
+            this.focusedChild.setFocused(true);
+        }
+    }
+
+    @Override
+    public void setFocused(boolean focused) {
+        super.setFocused(focused);
+        if (!focused) {
+            setFocused(null);
+        }
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double vDelta) {
         if (visible && (isHovered || scrollBarHovered) && !scrollBarGrabbed) {
             int amount = (int) -vDelta;
             if (amount < 0 && scrollOffset == 0) {
@@ -582,9 +617,9 @@ public class ScrollBox extends AbstractContainerWidget {
             if (scrollBarHeight > 0 && mouseX >= getX() + width - SCROLLBAR_WIDTH && mouseY >= getY()
                     && mouseX < getX() + width && mouseY < getY() + height) {
                 if (mouseY < getY() + scrollBarPos) {
-                    mouseScrolled(mouseX, mouseY, 0, 1);
+                    mouseScrolled(mouseX, mouseY, 1);
                 } else if (mouseY > getY() + scrollBarPos + scrollBarHeight) {
-                    mouseScrolled(mouseX, mouseY, 0, -1);
+                    mouseScrolled(mouseX, mouseY, -1);
                 } else {
                     scrollBarGrabbed = true;
                     scrollBarGrabbedYPos = (int) mouseY - getY() - scrollBarPos;
@@ -1343,7 +1378,7 @@ public class ScrollBox extends AbstractContainerWidget {
                 return null;
             }
 
-            int clampedStart = Math.clamp(index, 0, children.size() - 1);
+            int clampedStart = Mth.clamp(index, 0, children.size() - 1);
             for (int i = clampedStart; i >= 0 && i < children.size(); i += delta) {
                 ComponentPath path = children.get(i).nextFocusPath(navigationEvent);
                 if (path != null) {

@@ -7,9 +7,6 @@ import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -18,8 +15,7 @@ import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class PacketTerritoriesSnapshot {
-    public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_territories_snapshot");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketTerritoriesSnapshot> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketTerritoriesSnapshot::encode, PacketTerritoriesSnapshot::new);
+    public static final ResourceLocation CHANNEL = new ResourceLocation(MapFrontiers.MODID, "packet_territories_snapshot");
 
     private final List<FrontierData> globalFrontiers;
     private final List<FrontierData> personalFrontiers;
@@ -31,10 +27,6 @@ public class PacketTerritoriesSnapshot {
         personalFrontiers = new ArrayList<>();
         globalCollections = new ArrayList<>();
         personalCollections = new ArrayList<>();
-    }
-
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
     }
 
     public void addGlobalFrontier(FrontierData frontier) {

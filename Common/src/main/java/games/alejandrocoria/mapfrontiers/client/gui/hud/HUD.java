@@ -106,7 +106,7 @@ public class HUD {
             activeFrontiersRevision = currentActiveFrontiersRevision;
             List<FrontierOverlay> frontiers = MapFrontiersClient.getFrontiersForHUD();
             if (!frontiers.isEmpty()) {
-                FrontierOverlay newFrontier = frontiers.getFirst();
+                FrontierOverlay newFrontier = frontiers.get(0);
                 if (frontierHash != newFrontier.getHash()) {
                     frontier = newFrontier;
                     frontierHash = newFrontier.getHash();
@@ -140,7 +140,7 @@ public class HUD {
 
         List<FrontierOverlay> frontiers = MapFrontiersClient.getFrontiersForHUD();
         if (!frontiers.isEmpty()) {
-            FrontierOverlay newFrontier = frontiers.getFirst();
+            FrontierOverlay newFrontier = frontiers.get(0);
             if (frontierHash != newFrontier.getHash()) {
                 frontier = newFrontier;
                 frontierHash = newFrontier.getHash();

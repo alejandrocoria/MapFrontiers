@@ -1107,7 +1107,7 @@ public final class ClientConfig {
 
     private static ResourceLocation parsePathMarker(String value, ResourceLocation fallback) {
         try {
-            return ResourceLocation.parse(value);
+            return new ResourceLocation(value);
         } catch (Exception ignored) {
             return fallback;
         }

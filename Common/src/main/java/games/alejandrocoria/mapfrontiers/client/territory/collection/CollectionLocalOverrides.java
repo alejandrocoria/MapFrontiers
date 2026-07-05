@@ -12,7 +12,6 @@ import it.unimi.dsi.fastutil.Pair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
 
 import java.io.File;
@@ -172,7 +171,7 @@ public class CollectionLocalOverrides {
         File f = new File(ModDir, filename);
         if (f.exists()) {
             try (FileInputStream inputStream = new FileInputStream(f)) {
-                return NbtIo.readCompressed(inputStream, NbtAccounter.unlimitedHeap());
+                return NbtIo.readCompressed(inputStream);
             } catch (Exception e) {
                 MapFrontiers.LOGGER.error(e.getMessage(), e);
             }

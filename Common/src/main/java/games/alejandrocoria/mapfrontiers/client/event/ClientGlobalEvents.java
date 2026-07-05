@@ -2,7 +2,6 @@ package games.alejandrocoria.mapfrontiers.client.event;
 
 import journeymap.api.v2.client.fullscreen.ModPopupMenu;
 import journeymap.api.v2.client.fullscreen.ThemeButtonDisplay;
-import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.entity.player.Player;
@@ -101,9 +100,9 @@ public class ClientGlobalEvents {
         }
     }
 
-    public static void postHudRenderEvent(GuiGraphics graphics, DeltaTracker timer) {
+    public static void postHudRenderEvent(GuiGraphics graphics, float timer) {
         for (BiConsumer<GuiGraphics, Float> callback : hudRenderEventMap.values()) {
-            callback.accept(graphics, timer.getGameTimeDeltaTicks());
+            callback.accept(graphics, timer);
         }
     }
 

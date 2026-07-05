@@ -1,12 +1,12 @@
 package games.alejandrocoria.mapfrontiers.client.gui.util;
 
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.util.StringUtil;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -19,7 +19,7 @@ public final class SourcePluginUiHelper {
     private static final String SOURCE_PLUGIN_SYMBOL = "\uD83E\uDDE9";
 
     public static boolean hasSourcePlugin(@Nullable String sourcePluginId) {
-        return !StringUtil.isBlank(sourcePluginId);
+        return !StringHelper.isBlank(sourcePluginId);
     }
 
     public static @Nullable SourcePluginDisplay createDisplay(Font font, @Nullable String sourcePluginId, int maxWidth) {
@@ -28,7 +28,7 @@ public final class SourcePluginUiHelper {
             return null;
         }
 
-        String sourcePluginDisplay = !StringUtil.isBlank(sourcePluginInfo.displayName())
+        String sourcePluginDisplay = !StringHelper.isBlank(sourcePluginInfo.displayName())
                 ? sourcePluginInfo.displayName()
                 : sourcePluginInfo.id();
         int symbolWidth = font.width(SOURCE_PLUGIN_SYMBOL);
@@ -81,7 +81,7 @@ public final class SourcePluginUiHelper {
                 .append(Component.translatable(CREATED_BY_PLUGIN_KEY))
                 .append(Component.literal("\n"))
                 .append(Component.translatable(PLUGIN_ID_KEY, sourcePluginInfo.id()));
-        if (!StringUtil.isBlank(sourcePluginInfo.displayName())) {
+        if (!StringHelper.isBlank(sourcePluginInfo.displayName())) {
             tooltip.append(Component.literal("\n"))
                     .append(Component.translatable(PLUGIN_NAME_KEY, sourcePluginInfo.displayName()));
         }

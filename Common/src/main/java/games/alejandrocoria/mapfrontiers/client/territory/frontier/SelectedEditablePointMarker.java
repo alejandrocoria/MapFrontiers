@@ -113,7 +113,7 @@ public class SelectedEditablePointMarker {
 
     private static MapImage createFrameImage(String texturePath) {
         MapImage marker = new MapImage(
-                ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, texturePath), 0, 0,
+                new ResourceLocation(MapFrontiers.MODID, texturePath), 0, 0,
                 MarkerImageConstants.TEXTURE_SIZE, MarkerImageConstants.TEXTURE_SIZE, ColorConstants.TEXTURE_TINT_NONE, 0.f);
         MarkerImageConstants.applyMapDisplaySize(marker);
         marker.setRotation(0);

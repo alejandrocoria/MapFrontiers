@@ -14,6 +14,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt
 import games.alejandrocoria.mapfrontiers.client.gui.hud.HUD;
 import games.alejandrocoria.mapfrontiers.client.gui.hud.HUDPlacementHelper;
 import games.alejandrocoria.mapfrontiers.client.gui.hud.HUDWidget;
+import games.alejandrocoria.mapfrontiers.client.gui.layout.MFLinearLayout;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
@@ -23,7 +24,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
-import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -240,8 +240,8 @@ public class HUDSettingsScreen extends AutoScaledScreen {
         return button;
     }
 
-    private LinearLayout createPositionLayout() {
-        LinearLayout positionLayout = LinearLayout.horizontal();
+    private MFLinearLayout createPositionLayout() {
+        MFLinearLayout positionLayout = MFLinearLayout.horizontal();
 
         textPositionX = createPositionTextBox(ClientConfig.HUD_X_POSITION, 61);
         positionLayout.addChild(textPositionX);

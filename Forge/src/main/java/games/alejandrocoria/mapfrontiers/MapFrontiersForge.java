@@ -30,10 +30,10 @@ public class MapFrontiersForge extends MapFrontiers {
         if (FMLEnvironment.dist.isClient()) {
             context.getModEventBus().addListener(MapFrontiersClientForge::onClientSetup);
             context.getModEventBus().addListener(MapFrontiersClientForge::onRegisterKeyMappings);
+            context.getModEventBus().addListener(MapFrontiersClientForge::onRegisterGuiOverlays);
 
             MinecraftForge.EVENT_BUS.addListener(MapFrontiersClientForge::onLivingTick);
             MinecraftForge.EVENT_BUS.addListener(MapFrontiersClientForge::onClientTickPre);
-            MinecraftForge.EVENT_BUS.addListener(MapFrontiersClientForge::onAddGuiOverlayLayers);
             MinecraftForge.EVENT_BUS.addListener(MapFrontiersClientForge::onClientConnectedToServer);
             MinecraftForge.EVENT_BUS.addListener(MapFrontiersClientForge::onClientDisconnectedFromServer);
             MinecraftForge.EVENT_BUS.addListener(MapFrontiersClientForge::onMouseButtonPre);

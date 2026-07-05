@@ -4,9 +4,9 @@ import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionO
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.ReflectionHelper;
 import games.alejandrocoria.mapfrontiers.platform.services.IJourneyMapHelper;
-import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.display.MarkerOverlay;
 import journeymap.api.v2.client.display.PolygonOverlay;
+import journeymap.api.v2.common.Context;
 import journeymap.client.data.WorldData;
 import journeymap.client.io.FileHandler;
 import journeymap.client.io.ThemeLoader;
@@ -222,7 +222,7 @@ public class ForgeJourneyMapHelper implements IJourneyMapHelper {
             mapRenderer.setZoom(512);
             mapRenderer.setViewPortBounds(null);
             MapState mapState = new MapState();
-            mapState.setMapType(MapType.day(ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld"))));
+            mapState.setMapType(MapType.day(ResourceKey.create(Registries.DIMENSION, new ResourceLocation("minecraft", "overworld"))));
             mapRenderer.setContext(mapState);
             mapRenderer.center(mapState.getWorldDir(), mapState.getMapType(), 0, 0, 512);
         }

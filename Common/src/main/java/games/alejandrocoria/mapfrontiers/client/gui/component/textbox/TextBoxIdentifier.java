@@ -59,7 +59,7 @@ public class TextBoxIdentifier extends TextBox {
 
     private void validateIdentifier(String value) {
         try {
-            parsedValue = ResourceLocation.parse(value);
+            parsedValue = new ResourceLocation(value);
             invalid = false;
         } catch (Exception ignored) {
             parsedValue = null;

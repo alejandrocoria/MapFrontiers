@@ -1,8 +1,8 @@
 plugins {
     // see https://fabricmc.net/develop/ for new versions
-    id 'fabric-loom' version '1.14-SNAPSHOT' apply false
+    id 'fabric-loom' version '1.17-SNAPSHOT' apply false
     // see https://projects.neoforged.net/neoforged/moddevgradle for new versions
-    id 'net.neoforged.moddev' version '2.0.115' apply false
+    id 'net.neoforged.moddev.legacyforge' version '2.0.140' apply false
 }
 
 configurations.configureEach {
@@ -17,13 +17,11 @@ tasks.configureEach { task ->
 
 tasks.register("publishMod") {
     group = "release"
-    description = "Publishes Fabric, Forge, and NeoForge builds to CurseForge and Modrinth."
+    description = "Publishes Fabric and Forge builds to CurseForge and Modrinth."
     dependsOn(
             ":Fabric:publishCurseForge",
             ":Forge:publishCurseForge",
-            ":NeoForge:publishCurseForge",
             ":Fabric:modrinth",
-            ":Forge:modrinth",
-            ":NeoForge:modrinth"
+            ":Forge:modrinth"
     )
 }

@@ -5,7 +5,10 @@ plugins {
     id 'multiloader-loader'
     id 'idea'
     id 'net.minecraftforge.accesstransformers' version '5.0.2'
-    id 'net.minecraftforge.gradle' version "[7.0.0,8.0)"
+    id 'net.minecraftforge.gradle' version '[7.0.2,8.0)'
+    // Reobfuscates the shipped jar (classes + access transformers) to SRG names -
+    // required for Forge 1.20.1's SRG runtime. FG7 compiles against MOJMAP.
+    id 'net.minecraftforge.renamer' version '1.1.0'
     id 'net.darkhax.curseforgegradle' version '1.1.28'
     id "com.modrinth.minotaur" version "2.9.0"
 }
@@ -42,12 +45,14 @@ dependencies {
     }
 
     implementation minecraft.dependency("net.minecraftforge:forge:${forge_version}")
-    implementation "mysticdrew:common-networking-forge:${project.common_networking_version}"
+    implementation renamer.dependency("mysticdrew:common-networking-forge:${project.common_networking_version}")
     api("info.journeymap:journeymap-api-forge:${project.journeymap_api_version}") {
         changing = true
     }
-    implementation "curse.maven:journeymap-${project.jm_project_id}:${project.jm_forge_file_id}"
+    implementation renamer.dependency("curse.maven:journeymap-${project.jm_project_id}:${project.jm_forge_file_id}")
 }
+
+renamer.mappings.from minecraft.dependency.toSrgFile
 
 minecraft {
     mappings channel: "official", version: minecraft_version
@@ -125,7 +130,7 @@ tasks.register('publishCurseForge', TaskPublishCurseForge) {
     mainFile.displayName = "${minecraft_version}-${version}-forge"
     mainFile.releaseType = release_type
     mainFile.addModLoader("Forge")
-    mainFile.addJavaVersion("Java 21")
+    mainFile.addJavaVersion("Java 17")
     mainFile.addGameVersion("${minecraft_version}")
     mainFile.addEnvironment("Server", "Client")
     mainFile.addRelations("requiredDependency", "journeymap")

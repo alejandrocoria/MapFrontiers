@@ -6,7 +6,6 @@ import com.mojang.blaze3d.platform.NativeImage;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
-import games.alejandrocoria.mapfrontiers.client.config.TextColor;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.territory.BannerRenderer;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionLocalOverrides;
@@ -25,7 +24,6 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisib
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityMask;
 import it.unimi.dsi.fastutil.Pair;
 import journeymap.api.v2.client.IClientAPI;
-import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.display.MarkerOverlay;
 import journeymap.api.v2.client.display.PolygonOverlay;
 import journeymap.api.v2.client.model.MapImage;
@@ -33,6 +31,7 @@ import journeymap.api.v2.client.model.MapPolygon;
 import journeymap.api.v2.client.model.ShapeProperties;
 import journeymap.api.v2.client.model.TextProperties;
 import journeymap.api.v2.client.util.PolygonHelper;
+import journeymap.api.v2.common.Context;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -1353,8 +1352,8 @@ public class FrontierOverlay extends FrontierData {
                 }
             }
 
-            double startDistance = point.distanceToSqr(Vec3.atLowerCornerOf(points.getFirst().atY(y)));
-            double endDistance = point.distanceToSqr(Vec3.atLowerCornerOf(points.getLast().atY(y)));
+            double startDistance = point.distanceToSqr(Vec3.atLowerCornerOf(points.get(0).atY(y)));
+            double endDistance = point.distanceToSqr(Vec3.atLowerCornerOf(points.get(points.size() - 1).atY(y)));
             if (bestSegmentInsertIndex != -1 && bestSegmentDistance < Math.min(startDistance, endDistance)) {
                 return bestSegmentInsertIndex;
             }
@@ -1396,7 +1395,7 @@ public class FrontierOverlay extends FrontierData {
 
     public BlockPos getCenter() {
         if (frontierShape == FrontierShape.Path && points.size() == 1) {
-            return points.getFirst();
+            return points.get(0);
         }
 
         return new BlockPos((topLeft.getX() + bottomRight.getX()) / 2, 70, (topLeft.getZ() + bottomRight.getZ()) / 2);
@@ -1580,10 +1579,10 @@ public class FrontierOverlay extends FrontierData {
 
         if (pathPoints.size() == 1) {
             ResourceLocation markerId = getPathSinglePointMarkerId();
-            PathPointLayout pointLayout = new PathPointLayout(pathPoints.getFirst(), markerId, 0.f, getPathMarkerClearancePx(markerId));
+            PathPointLayout pointLayout = new PathPointLayout(pathPoints.get(0), markerId, 0.f, getPathMarkerClearancePx(markerId));
             List<PathLabelAnchor> labelAnchors = List.of();
             if (pathStyle.labelAtStart || pathStyle.labelAtMiddle || pathStyle.labelAtEnd) {
-                BlockPos point = pathPoints.getFirst();
+                BlockPos point = pathPoints.get(0);
                 labelAnchors = List.of(new PathLabelAnchor(point.getX(), point.getZ(), 0.0, 1.0, pointLayout.markerClearancePx()));
             }
             return new PathLayoutCache(List.of(pointLayout), List.of(), labelAnchors);
@@ -1610,7 +1609,7 @@ public class FrontierOverlay extends FrontierData {
             ResourceLocation markerId = getPathPointMarkerId(pathPoints.size(), i);
             float rotation = i < segmentLayouts.size()
                     ? segmentLayouts.get(i).rotation()
-                    : segmentLayouts.getLast().rotation();
+                    : segmentLayouts.get(segmentLayouts.size() - 1).rotation();
             pointLayouts.add(new PathPointLayout(pathPoints.get(i), markerId, rotation, getPathMarkerClearancePx(markerId)));
         }
 
@@ -1622,14 +1621,14 @@ public class FrontierOverlay extends FrontierData {
                                                         List<PathSegmentLayout> segmentLayouts) {
         List<PathLabelAnchor> anchors = new ArrayList<>();
         if (pathStyle.labelAtStart) {
-            anchors.add(getPathEndpointLabelAnchor(pathPoints.getFirst(), pathPoints.get(1), pointLayouts.getFirst().markerClearancePx()));
+            anchors.add(getPathEndpointLabelAnchor(pathPoints.get(0), pathPoints.get(1), pointLayouts.get(0).markerClearancePx()));
         }
         if (pathStyle.labelAtMiddle) {
             anchors.add(getPathMidpointLabelAnchor(pathPoints, segmentLayouts));
         }
         if (pathStyle.labelAtEnd) {
-            anchors.add(getPathEndpointLabelAnchor(pathPoints.getLast(), pathPoints.get(pathPoints.size() - 2),
-                    pointLayouts.getLast().markerClearancePx()));
+            anchors.add(getPathEndpointLabelAnchor(pathPoints.get(pathPoints.size() - 1), pathPoints.get(pathPoints.size() - 2),
+                    pointLayouts.get(pointLayouts.size() - 1).markerClearancePx()));
         }
         return List.copyOf(anchors);
     }
@@ -1755,7 +1754,7 @@ public class FrontierOverlay extends FrontierData {
     private void rebuildPathGeometryCache() {
         synchronized (points) {
             if (points.size() > 1) {
-                BlockPos last = points.getFirst();
+                BlockPos last = points.get(0);
                 for (int i = 1; i < points.size(); ++i) {
                     BlockPos point = points.get(i);
                     perimeter += (float) Math.sqrt(point.distSqr(last));
@@ -1949,7 +1948,7 @@ public class FrontierOverlay extends FrontierData {
                 polygonArea = PolygonHelper.toArea(polygon);
                 polygonRenderGeometries.add(new PolygonRenderGeometry(polygon, null, 0));
 
-                BlockPos last = vertices.getLast();
+                BlockPos last = vertices.get(vertices.size() - 1);
                 for (BlockPos vertex : vertices) {
                     area += last.getX() * vertex.getZ() - last.getZ() * vertex.getX();
                     last = vertex;
@@ -1960,7 +1959,7 @@ public class FrontierOverlay extends FrontierData {
             }
 
             if (vertices.size() > 1) {
-                BlockPos last = vertices.getLast();
+                BlockPos last = vertices.get(vertices.size() - 1);
                 for (BlockPos vertex : vertices) {
                     perimeter += (float) Math.sqrt(vertex.distSqr(last));
                     last = vertex;
@@ -1991,7 +1990,7 @@ public class FrontierOverlay extends FrontierData {
 
     private MapPolygon createIncompleteVertexPolygon() {
         if (vertices.size() == 1) {
-            return new MapPolygon(getBlockCorners(vertices.getFirst()));
+            return new MapPolygon(getBlockCorners(vertices.get(0)));
         }
 
         BlockPos start = vertices.get(0);
@@ -2057,7 +2056,7 @@ public class FrontierOverlay extends FrontierData {
         }
 
         if (layoutCache.segmentLayouts().isEmpty()) {
-            PathPointLayout pointLayout = layoutCache.pointLayouts().getFirst();
+            PathPointLayout pointLayout = layoutCache.pointLayouts().get(0);
             addSingleMarker(pointLayout.pos(), resolvePathMarkerImage(pointLayout.markerId(), pointLayout.rotation()), 100, uiArray, mapTypesArray);
             return;
         }
@@ -2071,7 +2070,7 @@ public class FrontierOverlay extends FrontierData {
             addSingleMarker(pointLayout.pos(), resolvePathMarkerImage(pointLayout.markerId(), pointLayout.rotation()), 100, uiArray, mapTypesArray);
         }
 
-        PathPointLayout lastPointLayout = layoutCache.pointLayouts().getLast();
+        PathPointLayout lastPointLayout = layoutCache.pointLayouts().get(layoutCache.pointLayouts().size() - 1);
         addSingleMarker(lastPointLayout.pos(), resolvePathMarkerImage(lastPointLayout.markerId(), lastPointLayout.rotation()), 100, uiArray, mapTypesArray);
     }
 
@@ -2081,7 +2080,7 @@ public class FrontierOverlay extends FrontierData {
         }
 
         if (layoutCache.segmentLayouts().isEmpty()) {
-            PathPointLayout pointLayout = layoutCache.pointLayouts().getFirst();
+            PathPointLayout pointLayout = layoutCache.pointLayouts().get(0);
             addSingleMarker(highlightMarkerOverlays, pointLayout.pos(), resolvePathMarkerHighlightImage(pointLayout.markerId(), pointLayout.rotation()), 101,
                     Context.UI.Fullscreen, HIGHLIGHT_MAP_TYPES);
             return;
@@ -2097,7 +2096,7 @@ public class FrontierOverlay extends FrontierData {
                     Context.UI.Fullscreen, HIGHLIGHT_MAP_TYPES);
         }
 
-        PathPointLayout lastPointLayout = layoutCache.pointLayouts().getLast();
+        PathPointLayout lastPointLayout = layoutCache.pointLayouts().get(layoutCache.pointLayouts().size() - 1);
         addSingleMarker(highlightMarkerOverlays, lastPointLayout.pos(), resolvePathMarkerHighlightImage(lastPointLayout.markerId(), lastPointLayout.rotation()), 101,
                 Context.UI.Fullscreen, HIGHLIGHT_MAP_TYPES);
     }
@@ -2172,11 +2171,11 @@ public class FrontierOverlay extends FrontierData {
             if (clockwise) {
                 outerPolygons.add(polygon);
             } else {
-                ChunkPos ray = polygon.getFirst();
+                ChunkPos ray = polygon.get(0);
                 ChunkPos outerFound = null;
                 for (int i = 0; i < 999; ++i) {
                     for (List<ChunkPos> outer : outerPolygons) {
-                        ChunkPos outerStart = outer.getFirst();
+                        ChunkPos outerStart = outer.get(0);
                         if (outer.contains(ray)) {
                             outerFound = outerStart;
                             break;
@@ -2204,14 +2203,14 @@ public class FrontierOverlay extends FrontierData {
                 if (outerFound != null) {
                     holesPolygons.put(outerFound, polygon);
                 } else {
-                    MapFrontiers.LOGGER.warn("Frontier {} is too large and the polygon corresponding to the hole {} could not be located", id, polygon.getFirst());
+                    MapFrontiers.LOGGER.warn("Frontier {} is too large and the polygon corresponding to the hole {} could not be located", id, polygon.get(0));
                 }
             }
         }
 
         for (List<ChunkPos> outer : outerPolygons) {
             removeCollinear(outer);
-            for (List<ChunkPos> hole : holesPolygons.get(outer.getFirst())) {
+            for (List<ChunkPos> hole : holesPolygons.get(outer.get(0))) {
                 removeCollinear(hole);
             }
         }
@@ -2220,9 +2219,9 @@ public class FrontierOverlay extends FrontierData {
             MapPolygon polygon = new MapPolygon(outer.stream().map(c -> new BlockPos(c.getMinBlockX(), 70, c.getMinBlockZ())).toList());
             List<MapPolygon> polygonHoles = null;
 
-            if (holesPolygons.containsKey(outer.getFirst())) {
+            if (holesPolygons.containsKey(outer.get(0))) {
                 polygonHoles = new ArrayList<>();
-                for (List<ChunkPos> hole : holesPolygons.get(outer.getFirst())) {
+                for (List<ChunkPos> hole : holesPolygons.get(outer.get(0))) {
                     polygonHoles.add(new MapPolygon(hole.stream().map(c -> new BlockPos(c.getMinBlockX(), 70, c.getMinBlockZ())).toList()));
                 }
             }
@@ -2244,7 +2243,7 @@ public class FrontierOverlay extends FrontierData {
             return;
         }
 
-        ChunkPos prev = chunks.getFirst();
+        ChunkPos prev = chunks.get(0);
         for (int i = chunks.size() - 1; i > 0; --i) {
             ChunkPos next = chunks.get(i - 1);
 
@@ -2456,9 +2455,9 @@ public class FrontierOverlay extends FrontierData {
                 .setScale(getTextSize())
                 .setBackgroundOpacity(0.f);
         switch (ClientConfig.TEXT_COLOR.get()) {
-            case TextColor.FrontierColor -> textProperties.setColor(color);
-            case TextColor.FrontierColorBright -> textProperties.setColor(colorMaxBrightness(color));
-            case TextColor.White -> textProperties.setColor(ColorConstants.WHITE);
+            case FrontierColor -> textProperties.setColor(color);
+            case FrontierColorBright -> textProperties.setColor(colorMaxBrightness(color));
+            case White -> textProperties.setColor(ColorConstants.WHITE);
         }
         return textProperties;
     }
@@ -2626,7 +2625,7 @@ public class FrontierOverlay extends FrontierData {
         }
 
         if (pathPoints.size() == 1) {
-            BlockPos point = pathPoints.getFirst();
+            BlockPos point = pathPoints.get(0);
             return new PathLabelAnchor(point.getX(), point.getZ(), 0.0, 0.0, 0.0);
         }
 
@@ -2636,7 +2635,7 @@ public class FrontierOverlay extends FrontierData {
         }
 
         if (totalLength < 0.0001) {
-            BlockPos point = pathPoints.getFirst();
+            BlockPos point = pathPoints.get(0);
             return new PathLabelAnchor(point.getX(), point.getZ(), 0.0, 0.0, 0.0);
         }
 
@@ -2655,7 +2654,7 @@ public class FrontierOverlay extends FrontierData {
             traversed += segmentLength;
         }
 
-        BlockPos point = pathPoints.getLast();
+        BlockPos point = pathPoints.get(pathPoints.size() - 1);
         return new PathLabelAnchor(point.getX(), point.getZ(), 0.0, 0.0, 0.0);
     }
 
@@ -2928,7 +2927,7 @@ public class FrontierOverlay extends FrontierData {
             int y = pos.getY();
 
             if (polyline.size() == 1) {
-                return point.distanceToSqr(Vec3.atLowerCornerOf(polyline.getFirst().atY(y)));
+                return point.distanceToSqr(Vec3.atLowerCornerOf(polyline.get(0).atY(y)));
             }
 
             double distance = Double.POSITIVE_INFINITY;

@@ -4,17 +4,11 @@ import games.alejandrocoria.mapfrontiers.client.territory.BannerDataHelper;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.level.block.entity.BannerPattern;
-import net.minecraft.world.level.block.entity.BannerPatternLayers;
-import net.minecraft.world.level.block.entity.BannerPatterns;
 
-import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
@@ -30,38 +24,29 @@ public final class PreviewFrontierHelper {
     }
 
     public static void setPreviewBanner(FrontierData frontierData) {
-        BannerPatternLayers patterns = createPreviewPatterns();
-        if (patterns != null) {
-            frontierData.setBannerData(BannerDataHelper.fromBanner(DyeColor.BLACK, patterns));
-        }
+        frontierData.setBannerData(BannerDataHelper.fromBanner(DyeColor.BLACK, createPreviewPatterns()));
     }
 
     public static void setPreviewBanner(CollectionData collectionData) {
-        BannerPatternLayers patterns = createPreviewPatterns();
-        if (patterns != null) {
-            collectionData.setBannerData(BannerDataHelper.fromBanner(DyeColor.BLACK, patterns));
-        }
+        collectionData.setBannerData(BannerDataHelper.fromBanner(DyeColor.BLACK, createPreviewPatterns()));
     }
 
-    private static @Nullable BannerPatternLayers createPreviewPatterns() {
-        try {
-            ClientLevel level = Minecraft.getInstance().level;
-            if (level == null) {
-                return null;
-            }
+    private static ListTag createPreviewPatterns() {
+        ListTag patterns = new ListTag();
+        addPattern(patterns, "flo", DyeColor.GREEN);
+        addPattern(patterns, "bri", DyeColor.LIGHT_GRAY);
+        addPattern(patterns, "bo", DyeColor.LIGHT_BLUE);
+        addPattern(patterns, "tt", DyeColor.LIGHT_BLUE);
+        addPattern(patterns, "bt", DyeColor.BLACK);
+        addPattern(patterns, "bs", DyeColor.GREEN);
+        return patterns;
+    }
 
-            HolderLookup<BannerPattern> patternRegistry = level.registryAccess().lookup(Registries.BANNER_PATTERN).orElseThrow();
-            return (new BannerPatternLayers.Builder())
-                    .add(patternRegistry.get(BannerPatterns.FLOWER).orElseThrow(), DyeColor.GREEN)
-                    .add(patternRegistry.get(BannerPatterns.BRICKS).orElseThrow(), DyeColor.LIGHT_GRAY)
-                    .add(patternRegistry.get(BannerPatterns.BORDER).orElseThrow(), DyeColor.LIGHT_BLUE)
-                    .add(patternRegistry.get(BannerPatterns.TRIANGLE_TOP).orElseThrow(), DyeColor.LIGHT_BLUE)
-                    .add(patternRegistry.get(BannerPatterns.TRIANGLE_BOTTOM).orElseThrow(), DyeColor.BLACK)
-                    .add(patternRegistry.get(BannerPatterns.STRIPE_BOTTOM).orElseThrow(), DyeColor.GREEN)
-                    .build();
-        } catch (Exception ignored) {
-            return null;
-        }
+    private static void addPattern(ListTag patterns, String pattern, DyeColor color) {
+        CompoundTag patternTag = new CompoundTag();
+        patternTag.putString("Pattern", pattern);
+        patternTag.putInt("Color", color.getId());
+        patterns.add(patternTag);
     }
 
     private PreviewFrontierHelper() {

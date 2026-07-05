@@ -7,13 +7,13 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
+import games.alejandrocoria.mapfrontiers.client.gui.layout.MFLinearLayout;
 import games.alejandrocoria.mapfrontiers.client.gui.util.DefaultValueBinding;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityMask;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
-import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
@@ -90,14 +90,14 @@ public class FrontierVisibilityDialog extends PanelDialog {
 
     @Override
     protected void initScreen() {
-        LinearLayout mainLayout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
+        MFLinearLayout mainLayout = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
         mainLayout.defaultCellSetting().alignHorizontallyCenter();
         content.addChild(mainLayout);
 
-        LinearLayout mainColumns = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_LARGE);
+        MFLinearLayout mainColumns = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_LARGE);
         mainLayout.addChild(mainColumns);
 
-        LinearLayout generalColumn = LinearLayout.vertical().spacing(COLUMN_SPACING);
+        MFLinearLayout generalColumn = MFLinearLayout.vertical().spacing(COLUMN_SPACING);
         generalColumn.defaultCellSetting().alignHorizontallyCenter();
         mainColumns.addChild(generalColumn);
         generalColumn.addChild(new StringWidget(GENERAL_LABEL.copy().withStyle(Style.EMPTY.withBold(true)), font).setColor(ColorConstants.TEXT));
@@ -111,7 +111,7 @@ public class FrontierVisibilityDialog extends PanelDialog {
         createWidgets(generalGrid, row++, ANNOUNCE_IN_TITLE_LABEL, FrontierVisibility.AnnounceInTitle);
         createWidgets(generalGrid, row++, MENTION_COLLECTION_LABEL, FrontierVisibility.MentionCollection);
 
-        LinearLayout fullscreenColumn = LinearLayout.vertical().spacing(COLUMN_SPACING);
+        MFLinearLayout fullscreenColumn = MFLinearLayout.vertical().spacing(COLUMN_SPACING);
         fullscreenColumn.defaultCellSetting().alignHorizontallyCenter();
         mainColumns.addChild(fullscreenColumn);
         fullscreenColumn.addChild(new StringWidget(FULLSCREEN_LABEL.copy().withStyle(Style.EMPTY.withBold(true)), font).setColor(ColorConstants.TEXT));
@@ -133,7 +133,7 @@ public class FrontierVisibilityDialog extends PanelDialog {
         createWidgets(fullscreenGrid, row++, TOPO_LABEL, FrontierVisibility.FullscreenTopo);
         createWidgets(fullscreenGrid, row++, BIOME_LABEL, FrontierVisibility.FullscreenBiome);
 
-        LinearLayout minimapColumn = LinearLayout.vertical().spacing(COLUMN_SPACING);
+        MFLinearLayout minimapColumn = MFLinearLayout.vertical().spacing(COLUMN_SPACING);
         minimapColumn.defaultCellSetting().alignHorizontallyCenter();
         mainColumns.addChild(minimapColumn);
         minimapColumn.addChild(new StringWidget(MINIMAP_LABEL.copy().withStyle(Style.EMPTY.withBold(true)), font).setColor(ColorConstants.TEXT));
@@ -155,7 +155,7 @@ public class FrontierVisibilityDialog extends PanelDialog {
         createWidgets(minimapGrid, row++, TOPO_LABEL, FrontierVisibility.MinimapTopo);
         createWidgets(minimapGrid, row++, BIOME_LABEL, FrontierVisibility.MinimapBiome);
 
-        LinearLayout webmapColumn = LinearLayout.vertical().spacing(COLUMN_SPACING);
+        MFLinearLayout webmapColumn = MFLinearLayout.vertical().spacing(COLUMN_SPACING);
         webmapColumn.defaultCellSetting().alignHorizontallyCenter();
         mainColumns.addChild(webmapColumn);
         webmapColumn.addChild(new StringWidget(WEBMAP_LABEL.copy().withStyle(Style.EMPTY.withBold(true)), font).setColor(ColorConstants.TEXT));
@@ -178,7 +178,7 @@ public class FrontierVisibilityDialog extends PanelDialog {
         createWidgets(webmapGrid, row++, BIOME_LABEL, FrontierVisibility.WebmapBiome);
 
         if (defaultVisibilityData != null) {
-            LinearLayout defaultActionRow = LinearLayout.horizontal();
+            MFLinearLayout defaultActionRow = MFLinearLayout.horizontal();
             defaultActionRow.addChild(new SimpleButton(font, font.width(DEFAULT_VISIBILITY_LABEL) + BUTTON_HORIZONTAL_PADDING,
                     DEFAULT_VISIBILITY_LABEL, b -> replaceWithDefaultVisibility()));
             mainLayout.addChild(defaultActionRow, LayoutSettings.defaults().alignHorizontallyCenter());

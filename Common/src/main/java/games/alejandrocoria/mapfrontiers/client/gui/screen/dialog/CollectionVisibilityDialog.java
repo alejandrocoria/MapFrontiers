@@ -8,13 +8,13 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
+import games.alejandrocoria.mapfrontiers.client.gui.layout.MFLinearLayout;
 import games.alejandrocoria.mapfrontiers.client.gui.util.DefaultValueBinding;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityField;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityMask;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
-import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
@@ -90,20 +90,20 @@ public class CollectionVisibilityDialog extends PanelDialog {
 
     @Override
     protected void initScreen() {
-        LinearLayout mainLayout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
+        MFLinearLayout mainLayout = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
         mainLayout.defaultCellSetting().alignHorizontallyCenter();
         content.addChild(mainLayout);
 
-        LinearLayout mainColumns = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_LARGE);
+        MFLinearLayout mainColumns = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_LARGE);
         mainLayout.addChild(mainColumns);
 
-        LinearLayout generalColumn = createColumn(mainColumns, GENERAL_LABEL);
+        MFLinearLayout generalColumn = createColumn(mainColumns, GENERAL_LABEL);
         GridLayout generalGrid = createGrid(generalColumn);
         createBooleanWidgets(generalGrid, 1, SHOW_COLLECTION_LABEL, CollectionVisibilityField.Visible,
                 workingVisibilityData::isVisible, workingVisibilityData::setVisible,
                 createMaskBinding(CollectionVisibilityField.Visible));
 
-        LinearLayout fullscreenColumn = createColumn(mainColumns, FULLSCREEN_LABEL);
+        MFLinearLayout fullscreenColumn = createColumn(mainColumns, FULLSCREEN_LABEL);
         createZoomRow(fullscreenColumn, CollectionVisibilityField.FullscreenZoom,
                 workingVisibilityData::getFullscreenZoom, workingVisibilityData::setFullscreenZoom,
                 createMaskBinding(CollectionVisibilityField.FullscreenZoom));
@@ -119,7 +119,7 @@ public class CollectionVisibilityDialog extends PanelDialog {
                 workingVisibilityData::getFullscreenBanner, workingVisibilityData::setFullscreenBanner,
                 createMaskBinding(CollectionVisibilityField.FullscreenBanner));
 
-        LinearLayout minimapColumn = createColumn(mainColumns, MINIMAP_LABEL);
+        MFLinearLayout minimapColumn = createColumn(mainColumns, MINIMAP_LABEL);
         createZoomRow(minimapColumn, CollectionVisibilityField.MinimapZoom,
                 workingVisibilityData::getMinimapZoom, workingVisibilityData::setMinimapZoom,
                 createMaskBinding(CollectionVisibilityField.MinimapZoom));
@@ -135,7 +135,7 @@ public class CollectionVisibilityDialog extends PanelDialog {
                 workingVisibilityData::getMinimapBanner, workingVisibilityData::setMinimapBanner,
                 createMaskBinding(CollectionVisibilityField.MinimapBanner));
 
-        LinearLayout webmapColumn = createColumn(mainColumns, WEBMAP_LABEL);
+        MFLinearLayout webmapColumn = createColumn(mainColumns, WEBMAP_LABEL);
         createZoomRow(webmapColumn, CollectionVisibilityField.WebmapZoom,
                 workingVisibilityData::getWebmapZoom, workingVisibilityData::setWebmapZoom,
                 createMaskBinding(CollectionVisibilityField.WebmapZoom));
@@ -152,7 +152,7 @@ public class CollectionVisibilityDialog extends PanelDialog {
                 createMaskBinding(CollectionVisibilityField.WebmapBanner));
 
         if (defaultVisibilityData != null) {
-            LinearLayout defaultActionRow = LinearLayout.horizontal();
+            MFLinearLayout defaultActionRow = MFLinearLayout.horizontal();
             defaultActionRow.addChild(new SimpleButton(font, font.width(DEFAULT_VISIBILITY_LABEL) + BUTTON_HORIZONTAL_PADDING,
                     DEFAULT_VISIBILITY_LABEL, b -> replaceWithDefaultVisibility()));
             mainLayout.addChild(defaultActionRow, LayoutSettings.defaults().alignHorizontallyCenter());
@@ -162,29 +162,29 @@ public class CollectionVisibilityDialog extends PanelDialog {
         addCancelButton();
     }
 
-    private LinearLayout createColumn(LinearLayout mainColumns, Component title) {
-        LinearLayout column = LinearLayout.vertical().spacing(COLUMN_SPACING);
+    private MFLinearLayout createColumn(MFLinearLayout mainColumns, Component title) {
+        MFLinearLayout column = MFLinearLayout.vertical().spacing(COLUMN_SPACING);
         column.defaultCellSetting().alignHorizontallyCenter();
         mainColumns.addChild(column);
         column.addChild(new StringWidget(title.copy().withStyle(Style.EMPTY.withBold(true)), font).setColor(ColorConstants.TEXT));
         return column;
     }
 
-    private GridLayout createGrid(LinearLayout column) {
+    private GridLayout createGrid(MFLinearLayout column) {
         GridLayout grid = new GridLayout().spacing(LayoutConstants.SPACING_SMALL);
         grid.defaultCellSetting().alignVerticallyMiddle();
         column.addChild(grid);
         return grid;
     }
 
-    private void createZoomRow(LinearLayout column, CollectionVisibilityField field,
+    private void createZoomRow(MFLinearLayout column, CollectionVisibilityField field,
                                IntSupplier getter, IntConsumer setter,
                                @Nullable BooleanMaskBinding maskBinding) {
-        LinearLayout zoomContainer = LinearLayout.vertical();
+        MFLinearLayout zoomContainer = MFLinearLayout.vertical();
         column.addChild(zoomContainer);
         zoomContainer.addChild(SpacerElement.height(LayoutConstants.SPACING_SMALL));
 
-        LinearLayout zoomRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout zoomRow = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         zoomRow.defaultCellSetting().alignVerticallyMiddle();
         zoomContainer.addChild(zoomRow);
 

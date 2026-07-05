@@ -62,7 +62,7 @@ public class OptionButton extends ButtonBase {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double hDelta, double vDelta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double vDelta) {
         if (visible && isHovered) {
             if (vDelta > 0) {
                 ++selected;

@@ -7,7 +7,6 @@ import games.alejandrocoria.mapfrontiers.common.util.NbtFileHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
@@ -129,7 +128,7 @@ public class CollectionUiStateStore {
         File file = new File(modDir, filename);
         if (file.exists()) {
             try (FileInputStream inputStream = new FileInputStream(file)) {
-                return NbtIo.readCompressed(inputStream, NbtAccounter.unlimitedHeap());
+                return NbtIo.readCompressed(inputStream);
             } catch (Exception e) {
                 MapFrontiers.LOGGER.error(e.getMessage(), e);
             }

@@ -12,13 +12,11 @@ import net.minecraft.SharedConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.util.StringUtil;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
@@ -40,7 +38,7 @@ public class ChatFrontiers {
 
     private static int currentReceivedMessageId = -1;
     private static final List<String> receivedData = new ArrayList<>();
-    private static final LinkedHashMap<Integer, ReceivedFrontierCopy> receivedFrontiers = LinkedHashMap.newLinkedHashMap(3);
+    private static final LinkedHashMap<Integer, ReceivedFrontierCopy> receivedFrontiers = new LinkedHashMap<>(3);
 
     public static void clear() {
         resetReceivedMessageAssembly();
@@ -174,7 +172,7 @@ public class ChatFrontiers {
                     iterator.next();
                     iterator.remove();
                 }
-                receivedFrontiers.putLast(currentReceivedMessageId, new ReceivedFrontierCopy(frontier, collection));
+                receivedFrontiers.put(currentReceivedMessageId, new ReceivedFrontierCopy(frontier, collection));
 
                 String frontierName;
                 if (frontier.getName1().isEmpty() && frontier.getName2().isEmpty()) {
@@ -230,7 +228,7 @@ public class ChatFrontiers {
     private static CompoundTag decodeNBT(String base64) throws IOException {
         byte[] data = Base64.getDecoder().decode(base64);
         try (DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data))) {
-            return NbtIo.readCompressed(dis, NbtAccounter.create(16384)); // 16KB ought to be enough for anybody
+            return NbtIo.readCompressed(dis); // 16KB ought to be enough for anybody
         }
     }
 
@@ -257,7 +255,7 @@ public class ChatFrontiers {
     private static boolean shouldStartNewMessageAssembly(int messageId, int partIndex, int totalParts) {
         return messageId != currentReceivedMessageId
                 || totalParts != receivedData.size()
-                || !StringUtil.isBlank(receivedData.get(partIndex - 1));
+                || !receivedData.get(partIndex - 1).isBlank();
     }
 
     private static void startReceivedMessageAssembly(int messageId, int totalParts) {

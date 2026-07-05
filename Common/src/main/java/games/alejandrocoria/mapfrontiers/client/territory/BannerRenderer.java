@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.territory;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.datafixers.util.Pair;
 import com.mojang.math.Axis;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
@@ -18,17 +19,19 @@ import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.core.registries.Registries;
+import net.minecraft.core.Holder;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtOps;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.level.block.entity.BannerPatternLayers;
+import net.minecraft.world.level.block.entity.BannerBlockEntity;
+import net.minecraft.world.level.block.entity.BannerPattern;
+import net.minecraft.world.level.block.entity.BannerPatterns;
 
 import javax.annotation.Nullable;
-import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -51,22 +54,7 @@ public class BannerRenderer {
         }
 
         ListTag patterns = bannerData.patterns;
-        BannerPatternLayers patternLayers = BannerPatternLayers.EMPTY;
-        if (patterns != null) {
-            if (level.registryAccess().lookup(Registries.BANNER_PATTERN).isEmpty()) {
-                MapFrontiers.LOGGER.error("Banner pattern registry is unavailable while creating a banner texture.");
-                return;
-            }
-
-            Optional<BannerPatternLayers> bannerPatterns = BannerPatternLayers.CODEC.parse(
-                    level.registryAccess().createSerializationContext(NbtOps.INSTANCE), patterns).result();
-            if (bannerPatterns.isPresent()) {
-                patternLayers = bannerPatterns.get();
-            } else {
-                MapFrontiers.LOGGER.error("Failed to parse normalized banner patterns while creating a banner texture. patterns={}", patterns);
-                return;
-            }
-        }
+        List<Pair<Holder<BannerPattern>, DyeColor>> patternLayers = BannerBlockEntity.createPatterns(bannerData.baseColor, patterns);
 
         ModelPart bannerModelPart = mc.getEntityModels().bakeLayer(ModelLayers.BANNER).getChild("flag");
         float[] flagUV = {0, 0, 0, 0};
@@ -86,7 +74,7 @@ public class BannerRenderer {
             return;
         }
 
-        TextureAtlasSprite base = Sheets.BANNER_BASE.sprite();
+        TextureAtlasSprite base = Sheets.getBannerMaterial(BannerPatterns.BASE).sprite();
         SpriteContents baseSprite = base.contents();
         int width = (int) (Math.abs(flagUV[0] - flagUV[2]) * baseSprite.width());
         int height = (int) (Math.abs(flagUV[1] - flagUV[3]) * baseSprite.height());
@@ -95,17 +83,20 @@ public class BannerRenderer {
         try {
             generateBannerLayer(bannerImage, flagUV, baseSprite, bannerData.baseColor);
 
-            for (int i = 0; i < patternLayers.layers().size(); ++i) {
-                BannerPatternLayers.Layer layer = patternLayers.layers().get(i);
-                ResourceLocation patternTextureLocation = layer.pattern().value().assetId().withPrefix("entity/banner/");
-                TextureAtlasSprite sprite = mc.getTextureAtlas(Sheets.BANNER_SHEET).apply(patternTextureLocation);
+            for (int i = 1; i < patternLayers.size(); ++i) {
+                Pair<Holder<BannerPattern>, DyeColor> layer = patternLayers.get(i);
+                ResourceKey<BannerPattern> patternKey = layer.getFirst().unwrapKey().orElse(null);
+                if (patternKey == null) {
+                    continue;
+                }
 
-                generateBannerLayer(bannerImage, flagUV, sprite.contents(), layer.color());
+                TextureAtlasSprite sprite = Sheets.getBannerMaterial(patternKey).sprite();
+                generateBannerLayer(bannerImage, flagUV, sprite.contents(), layer.getSecond());
             }
 
             bannerImage.applyToAllPixels(color -> color | 0xFF000000);
 
-            ResourceLocation newTextureLocation = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "banner/" + id + "/" + textureInstanceId);
+            ResourceLocation newTextureLocation = new ResourceLocation(MapFrontiers.MODID, "banner/" + id + "/" + textureInstanceId);
             texture = new DynamicTexture(bannerImage);
             bannerImage = null;
             mc.getTextureManager().register(newTextureLocation, texture);
@@ -127,10 +118,19 @@ public class BannerRenderer {
             for (int x = 0; x < bannerImage.getWidth(); ++x) {
                 int u = (int) (Mth.lerp((x + 0.5f) / bannerImage.getWidth(), flagUV[2], flagUV[0]) * sprite.width());
                 int v = (int) (Mth.lerp((y + 0.5f) / bannerImage.getHeight(), flagUV[1], flagUV[3]) * sprite.height());
-                int color = FastColor.ARGB32.multiply(spriteImage.getPixelRGBA(u, v), dye.getTextureDiffuseColor());
-                bannerImage.blendPixel(x, y, FastColor.ABGR32.fromArgb32(color));
+                int color = FastColor.ARGB32.multiply(spriteImage.getPixelRGBA(u, v), getTextureDiffuseColor(dye));
+                bannerImage.blendPixel(x, y, fromArgb32(color));
             }
         }
+    }
+
+    private static int getTextureDiffuseColor(DyeColor dye) {
+        float[] components = dye.getTextureDiffuseColors();
+        return FastColor.ARGB32.color(255, (int) (components[0] * 255.0f), (int) (components[1] * 255.0f), (int) (components[2] * 255.0f));
+    }
+
+    private static int fromArgb32(int color) {
+        return FastColor.ABGR32.color(FastColor.ARGB32.alpha(color), FastColor.ARGB32.blue(color), FastColor.ARGB32.green(color), FastColor.ARGB32.red(color));
     }
 
     public void renderBanner(GuiGraphics graphics, int centerX, int y, int scale) {

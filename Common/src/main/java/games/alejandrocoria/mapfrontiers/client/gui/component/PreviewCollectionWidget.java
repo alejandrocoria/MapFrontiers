@@ -28,7 +28,7 @@ import java.util.UUID;
 public class PreviewCollectionWidget extends AbstractWidgetNoNarration {
     private static final int SIZE = 420;
     private static final int PREVIEW_COLLECTION_COLOR = 0xFF60DDCC;
-    private static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld"));
+    private static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, new ResourceLocation("minecraft", "overworld"));
 
     private final FrontierPreviewPanel previewPanel;
     private final List<FrontierOverlay> previewFrontiers = new ArrayList<>();
@@ -76,8 +76,8 @@ public class PreviewCollectionWidget extends AbstractWidgetNoNarration {
     public void setScaleFactor(float scaleFactor) {
         this.scaleFactor = scaleFactor;
         double guiScale = Minecraft.getInstance().getWindow().getGuiScale() / scaleFactor;
-        setWidth((int) (SIZE / guiScale));
-        setHeight((int) (SIZE / guiScale));
+        width = (int) (SIZE / guiScale);
+        height = (int) (SIZE / guiScale);
 
         previewPanel.refreshRenderer();
     }

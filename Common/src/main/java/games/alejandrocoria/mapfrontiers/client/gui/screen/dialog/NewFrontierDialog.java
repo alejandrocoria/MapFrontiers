@@ -23,9 +23,10 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreat
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
+import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
 import journeymap.api.v2.client.IClientAPI;
-import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.util.UIState;
+import journeymap.api.v2.common.Context;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.layouts.GridLayout;
@@ -34,7 +35,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.util.StringUtil;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec2;
@@ -140,7 +140,7 @@ public class NewFrontierDialog extends PanelDialog {
         buttonFrontierType = createFrontierTypeButton(optionButtonWidth);
         if (shouldShowContextualHint()) {
             boolean personal = resolvePersonalSelection();
-            Component contextualHint = createContextualTypeHint(personal).copy().withColor(ColorConstants.TEXT);
+            Component contextualHint = createContextualTypeHint(personal).copy().withStyle(style -> style.withColor(ColorConstants.TEXT));
             MultiLineTextWidget hintWidget = new MultiLineTextWidget(contextualHint, font).setCentered(true);
             mainLayout.addChild(hintWidget, 0, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyCenter());
         } else {
@@ -425,7 +425,7 @@ public class NewFrontierDialog extends PanelDialog {
         }
 
         var collection = MapFrontiersClient.getCollection(collectionId);
-        if (collection == null || StringUtil.isBlank(collection.getName())) {
+        if (collection == null || StringHelper.isBlank(collection.getName())) {
             MutableComponent unnamed = Component.translatable("mapfrontiers.unnamed", ChatFormatting.ITALIC);
             unnamed.withStyle(style -> style.withItalic(true));
             return unnamed;

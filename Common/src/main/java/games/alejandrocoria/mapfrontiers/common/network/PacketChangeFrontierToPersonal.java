@@ -7,9 +7,6 @@ import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationResult;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -20,8 +17,7 @@ import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class PacketChangeFrontierToPersonal {
-    public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_change_frontier_to_personal");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketChangeFrontierToPersonal> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketChangeFrontierToPersonal::encode, PacketChangeFrontierToPersonal::new);
+    public static final ResourceLocation CHANNEL = new ResourceLocation(MapFrontiers.MODID, "packet_change_frontier_to_personal");
 
     private UUID frontierID;
     private Date modified;
@@ -29,10 +25,6 @@ public class PacketChangeFrontierToPersonal {
     public PacketChangeFrontierToPersonal(UUID frontierID, @Nullable Date modified) {
         this.frontierID = frontierID;
         this.modified = modified;
-    }
-
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
     }
 
     public PacketChangeFrontierToPersonal(FriendlyByteBuf buf) {

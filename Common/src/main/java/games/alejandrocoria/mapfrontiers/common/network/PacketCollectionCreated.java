@@ -6,26 +6,18 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class PacketCollectionCreated {
-    public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_collection_created");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketCollectionCreated> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketCollectionCreated::encode, PacketCollectionCreated::new);
+    public static final ResourceLocation CHANNEL = new ResourceLocation(MapFrontiers.MODID, "packet_collection_created");
 
     private final CollectionData collection;
 
     public PacketCollectionCreated(CollectionData collection) {
         this.collection = new CollectionData(collection);
-    }
-
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
     }
 
     public PacketCollectionCreated(FriendlyByteBuf buf) {

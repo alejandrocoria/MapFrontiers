@@ -116,7 +116,7 @@ public final class FrontierLabelPlacementSolver {
                         currentRing = new ArrayList<>();
                     }
                     Point2D.Double point = new Point2D.Double(coords[0], coords[1]);
-                    if (currentRing.isEmpty() || !samePoint(currentRing.getLast(), point)) {
+                    if (currentRing.isEmpty() || !samePoint(currentRing.get(currentRing.size() - 1), point)) {
                         currentRing.add(point);
                     }
                 }
@@ -139,8 +139,8 @@ public final class FrontierLabelPlacementSolver {
     }
 
     private static void addRing(List<List<Point2D.Double>> rings, List<Point2D.Double> ring) {
-        if (ring.size() > 1 && samePoint(ring.getFirst(), ring.getLast())) {
-            ring.removeLast();
+        if (ring.size() > 1 && samePoint(ring.get(0), ring.get(ring.size() - 1))) {
+            ring.remove(ring.size() - 1);
         }
         if (!ring.isEmpty()) {
             rings.add(List.copyOf(ring));
@@ -367,7 +367,7 @@ public final class FrontierLabelPlacementSolver {
 
         for (List<Point2D.Double> ring : rings) {
             if (ring.size() == 1) {
-                Point2D.Double point = ring.getFirst();
+                Point2D.Double point = ring.get(0);
                 distance = Math.min(distance, Point2D.distance(x, z, point.x, point.y));
                 continue;
             }

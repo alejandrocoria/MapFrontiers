@@ -19,25 +19,25 @@ public class IconButton extends ButtonBase {
     private static final RandomSource RANDOM = RandomSource.create();
 
     public enum Type {
-        Add            (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/add.png"),             33, 11),
-        Remove         (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/remove.png"),          33, 11),
-        Send           (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/send.png"),            33, 11),
-        MoveHere       (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/move_here.png"),       33, 11),
-        Show           (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/show.png"),            33, 11),
-        Hide           (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/hide.png"),            33, 11),
-        Random         (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/random.png"),          48, 96, 6),
-        Copy           (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/copy.png"),            51, 17),
-        Paste          (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/paste.png"),           51, 17),
-        ExpandOptions  (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/expand_options.png"),  24, 17),
-        CollapseOptions(ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/collapse_options.png"),24, 17),
-        Undo           (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/undo.png"),            51, 17),
-        Redo           (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/redo.png"),            51, 17),
-        Swap           (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/swap.png"),            27, 10),
-        SortUp         (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/sort_up.png"),         21,  5),
-        SortDown       (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/sort_down.png"),       21,  5),
-        Collapsed      (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/collapsed.png"),       33, 11),
-        Expanded       (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/expanded.png"),        33, 11),
-        RestoreDefault (ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "textures/gui/icon_buttons/restore_default.png"), 39, 13);
+        Add            (new ResourceLocation(MapFrontiers.MODID, "textures/gui/icon_buttons/add.png"),             33, 11),
+        Remove         (new ResourceLocation(MapFrontiers.MODID, "textures/gui/icon_buttons/remove.png"),          33, 11),
+        Send           (new ResourceLocation(MapFrontiers.MODID, "textures/gui/icon_buttons/send.png"),            33, 11),
+        MoveHere       (new ResourceLocation(MapFrontiers.MODID, "textures/gui/icon_buttons/move_here.png"),       33, 11),
+        Show           (new ResourceLocation(MapFrontiers.MODID, "textures/gui/icon_buttons/show.png"),            33, 11),
+        Hide           (new ResourceLocation(MapFrontiers.MODID, "textures/gui/icon_buttons/hide.png"),            33, 11),
+        Random         (new ResourceLocation(MapFrontiers.MODID, "textures/gui/icon_buttons/random.png"),          48, 96, 6),
+        Copy           (new ResourceLocation(MapFrontiers.MODID, "textures/gui/icon_buttons/copy.png"),            51, 17),
+        Paste          (new ResourceLocation(MapFrontiers.MODID, "textures/gui/icon_buttons/paste.png"),           51, 17),
+        ExpandOptions  (new ResourceLocation(MapFrontiers.MODID, "textures/gui/icon_buttons/expand_options.png"),  24, 17),
+        CollapseOptions(new ResourceLocation(MapFrontiers.MODID, "textures/gui/icon_buttons/collapse_options.png"),24, 17),
+        Undo           (new ResourceLocation(MapFrontiers.MODID, "textures/gui/icon_buttons/undo.png"),            51, 17),
+        Redo           (new ResourceLocation(MapFrontiers.MODID, "textures/gui/icon_buttons/redo.png"),            51, 17),
+        Swap           (new ResourceLocation(MapFrontiers.MODID, "textures/gui/icon_buttons/swap.png"),            27, 10),
+        SortUp         (new ResourceLocation(MapFrontiers.MODID, "textures/gui/icon_buttons/sort_up.png"),         21,  5),
+        SortDown       (new ResourceLocation(MapFrontiers.MODID, "textures/gui/icon_buttons/sort_down.png"),       21,  5),
+        Collapsed      (new ResourceLocation(MapFrontiers.MODID, "textures/gui/icon_buttons/collapsed.png"),       33, 11),
+        Expanded       (new ResourceLocation(MapFrontiers.MODID, "textures/gui/icon_buttons/expanded.png"),        33, 11),
+        RestoreDefault (new ResourceLocation(MapFrontiers.MODID, "textures/gui/icon_buttons/restore_default.png"), 39, 13);
 
         final ResourceLocation texture;
         final int textureWidth;
@@ -87,7 +87,8 @@ public class IconButton extends ButtonBase {
 
     public void setType(Type type) {
         this.type = type;
-        setSize(type.frameWidth, type.frameHeight);
+        width = type.frameWidth;
+        height = type.frameHeight;
         currentVariant = randomVariant(type, -1);
         nextVariantChangeTime = 0L;
         wasAnimating = false;

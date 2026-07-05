@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component;
 
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.ButtonBase;
+import games.alejandrocoria.mapfrontiers.client.gui.layout.MFLinearLayout;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -10,7 +11,6 @@ import net.minecraft.client.gui.layouts.FrameLayout;
 import net.minecraft.client.gui.layouts.Layout;
 import net.minecraft.client.gui.layouts.LayoutElement;
 import net.minecraft.client.gui.layouts.LayoutSettings;
-import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.gui.navigation.ScreenAxis;
 import net.minecraft.network.chat.Component;
@@ -36,8 +36,8 @@ public class TabbedBox implements Layout {
     private boolean interactive = true;
     private final List<Tab> tabs = new ArrayList<>();
     private final List<FrameLayout> contents = new ArrayList<>();
-    private final LinearLayout mainLayout = LinearLayout.vertical().spacing(DEFAULT_CONTENT_TOP_SPACING);
-    private final LinearLayout tabLayouts = LinearLayout.horizontal();
+    private final MFLinearLayout mainLayout = MFLinearLayout.vertical().spacing(DEFAULT_CONTENT_TOP_SPACING);
+    private final MFLinearLayout tabLayouts = MFLinearLayout.horizontal();
     private final FrameLayout contentLayouts = new FrameLayout();
     private int selected;
 
@@ -56,7 +56,7 @@ public class TabbedBox implements Layout {
 
     public void addTab(Component text, boolean enabled, int width) {
         tabs.add(new Tab(this, font, text, tabs.size(), width, enabled, this::setTabSelected));
-        tabLayouts.addChild(tabs.getLast());
+        tabLayouts.addChild(tabs.get(tabs.size() - 1));
 
         FrameLayout content = new FrameLayout();
         if (!sizeToContent) {

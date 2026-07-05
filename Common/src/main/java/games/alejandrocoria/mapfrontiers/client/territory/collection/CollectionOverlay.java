@@ -3,7 +3,6 @@ package games.alejandrocoria.mapfrontiers.client.territory.collection;
 import com.mojang.blaze3d.platform.NativeImage;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
-import games.alejandrocoria.mapfrontiers.client.config.TextColor;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.territory.BannerRenderer;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierLabelPlacementSolver;
@@ -14,13 +13,13 @@ import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionV
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityMask;
 import it.unimi.dsi.fastutil.Pair;
 import journeymap.api.v2.client.IClientAPI;
-import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.display.MarkerOverlay;
 import journeymap.api.v2.client.display.PolygonOverlay;
 import journeymap.api.v2.client.model.MapImage;
 import journeymap.api.v2.client.model.MapPolygon;
 import journeymap.api.v2.client.model.ShapeProperties;
 import journeymap.api.v2.client.model.TextProperties;
+import journeymap.api.v2.common.Context;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -463,9 +462,9 @@ public class CollectionOverlay {
                 .setBackgroundOpacity(0.f);
         int collectionColor = collection == null ? ColorConstants.WHITE : collection.getColor();
         switch (ClientConfig.COLLECTION_TEXT_COLOR.get()) {
-            case TextColor.FrontierColor -> textProperties.setColor(collectionColor);
-            case TextColor.FrontierColorBright -> textProperties.setColor(colorMaxBrightness(collectionColor));
-            case TextColor.White -> textProperties.setColor(ColorConstants.WHITE);
+            case FrontierColor -> textProperties.setColor(collectionColor);
+            case FrontierColorBright -> textProperties.setColor(colorMaxBrightness(collectionColor));
+            case White -> textProperties.setColor(ColorConstants.WHITE);
         }
         return textProperties;
     }
@@ -1036,7 +1035,7 @@ public class CollectionOverlay {
     }
 
     private static double resolveOuterRingSign(List<RingPath> rings) {
-        RingPath outerRing = rings.getFirst();
+        RingPath outerRing = rings.get(0);
         double maxAreaMagnitude = Math.abs(outerRing.signedArea());
 
         for (RingPath ring : rings) {

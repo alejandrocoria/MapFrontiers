@@ -12,13 +12,13 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
+import games.alejandrocoria.mapfrontiers.client.gui.layout.MFLinearLayout;
 import games.alejandrocoria.mapfrontiers.client.gui.util.DefaultValueBinding;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
-import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.network.chat.Component;
 
@@ -60,7 +60,7 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
         fixedColor = ClientConfig.FRONTIER_DEFAULT_COLOR.get() | 0xFF000000;
         randomColorEnabled = ClientConfig.FRONTIER_DEFAULT_RANDOM_COLOR.get();
 
-        LinearLayout layout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
+        MFLinearLayout layout = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
         layout.defaultCellSetting().alignHorizontallyCenter();
         content.addChild(layout);
 
@@ -75,7 +75,7 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
     }
 
     private void buildOverviewSection(GridLayout mainLayout) {
-        LinearLayout overviewColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout overviewColumn = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         overviewColumn.defaultCellSetting().alignHorizontallyLeft();
         mainLayout.addChild(overviewColumn, 0, 0, 1, 2);
 
@@ -87,7 +87,7 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
         textName2 = createNameTextBox(ClientConfig.FRONTIER_DEFAULT_NAME_2.get());
         overviewColumn.addChild(textName2);
 
-        LinearLayout visibilityRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_MEDIUM);
+        MFLinearLayout visibilityRow = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_MEDIUM);
         visibilityRow.defaultCellSetting().alignVerticallyMiddle();
         overviewColumn.addChild(visibilityRow);
 
@@ -95,7 +95,7 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
         visibilityRow.addChild(buttonVisibility);
         visibilityRow.addChild(SpacerElement.width(SECTION_WIDTH));
 
-        LinearLayout pathStyleRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_MEDIUM);
+        MFLinearLayout pathStyleRow = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_MEDIUM);
         pathStyleRow.defaultCellSetting().alignVerticallyMiddle();
         overviewColumn.addChild(pathStyleRow);
 
@@ -105,7 +105,7 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
     }
 
     private void buildColorSection(GridLayout mainLayout) {
-        LinearLayout randomColorRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout randomColorRow = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         randomColorRow.defaultCellSetting().alignVerticallyMiddle();
         mainLayout.addChild(randomColorRow, 1, 0, 1, 2, LayoutSettings.defaults().alignHorizontallyLeft());
 
@@ -119,7 +119,7 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
         colorPicker = new ColorPicker(fixedColor, this::onColorPicked);
         mainLayout.addChild(colorPicker, 2, 0, LayoutSettings.defaults().alignVerticallyBottom().alignHorizontallyCenter());
 
-        LinearLayout colorColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout colorColumn = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         colorColumn.defaultCellSetting().alignHorizontallyCenter();
         mainLayout.addChild(colorColumn, 2, 1, LayoutSettings.defaults().alignVerticallyBottom());
 

@@ -7,9 +7,6 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationResult;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -18,8 +15,7 @@ import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class PacketRemoveSharedUserPersonalFrontier {
-    public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_remove_shared_user_personal_frontier");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketRemoveSharedUserPersonalFrontier> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketRemoveSharedUserPersonalFrontier::encode, PacketRemoveSharedUserPersonalFrontier::new);
+    public static final ResourceLocation CHANNEL = new ResourceLocation(MapFrontiers.MODID, "packet_remove_shared_user_personal_frontier");
 
     private UUID frontierID;
     private final SettingsUser targetUser;
@@ -27,10 +23,6 @@ public class PacketRemoveSharedUserPersonalFrontier {
     public PacketRemoveSharedUserPersonalFrontier(UUID frontierID, SettingsUser user) {
         this.frontierID = frontierID;
         targetUser = user;
-    }
-
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
     }
 
     public PacketRemoveSharedUserPersonalFrontier(FriendlyByteBuf buf) {

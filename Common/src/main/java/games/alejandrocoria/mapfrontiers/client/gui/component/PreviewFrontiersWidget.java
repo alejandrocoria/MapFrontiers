@@ -24,7 +24,7 @@ import java.util.List;
 @ParametersAreNonnullByDefault
 public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
     private static final int SIZE = 420;
-    private static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld"));
+    private static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, new ResourceLocation("minecraft", "overworld"));
 
     private final FrontierPreviewPanel previewPanel;
     private final List<FrontierOverlay> previewFrontiers = new ArrayList<>();
@@ -49,8 +49,8 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
     public void setScaleFactor(float scaleFactor) {
         this.scaleFactor = scaleFactor;
         double guiScale = Minecraft.getInstance().getWindow().getGuiScale() / scaleFactor;
-        setWidth((int) (SIZE / guiScale));
-        setHeight((int) (SIZE / guiScale));
+        width = (int) (SIZE / guiScale);
+        height = (int) (SIZE / guiScale);
 
         previewPanel.refreshRenderer();
     }

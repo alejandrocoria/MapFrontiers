@@ -1,5 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common.util;
 
+import net.minecraft.util.Mth;
+
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.awt.Color;
 import java.util.Random;
@@ -16,7 +18,7 @@ public final class ColorHelper {
     }
 
     public static int ensureMinBrightness(int color, float minBrightness) {
-        minBrightness = Math.clamp(minBrightness, 0, 1);
+        minBrightness = Mth.clamp(minBrightness, 0, 1);
         float[] hsv = Color.RGBtoHSB((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, null);
         float brightness = Math.max(hsv[2], minBrightness);
         int newColor = Color.getHSBColor(hsv[0], hsv[1], brightness).getRGB();

@@ -23,6 +23,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.territory.F
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.territory.SectionHeaderListElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.territory.TerritoryListRowElement;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
+import games.alejandrocoria.mapfrontiers.client.gui.layout.MFLinearLayout;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.CreateConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteCollectionConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteFrontierConfirmationDialog;
@@ -40,6 +41,7 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChang
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
+import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import journeymap.api.v2.client.IClientAPI;
 import net.minecraft.ChatFormatting;
@@ -49,11 +51,9 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
-import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.StringUtil;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -210,7 +210,7 @@ public class TerritoryListPage extends PageScreen {
     }
 
     private void buildToolbar(GridLayout mainLayout) {
-        LinearLayout toolbar = LinearLayout.horizontal();
+        MFLinearLayout toolbar = MFLinearLayout.horizontal();
         toolbar.defaultCellSetting().alignVerticallyMiddle();
         mainLayout.addChild(toolbar, 0, 0, LayoutSettings.defaults().alignHorizontallyLeft());
 
@@ -233,7 +233,7 @@ public class TerritoryListPage extends PageScreen {
     private void buildFiltersColumn(GridLayout mainLayout) {
         mainLayout.addChild(createResetFiltersButton(), 0, 1, LayoutSettings.defaults().alignHorizontallyLeft());
 
-        LinearLayout filtersColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_TINY);
+        MFLinearLayout filtersColumn = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_TINY);
         filtersColumn.defaultCellSetting().alignHorizontallyLeft();
         mainLayout.addChild(filtersColumn, 1, 1, LayoutSettings.defaults().alignHorizontallyLeft());
 
@@ -244,7 +244,7 @@ public class TerritoryListPage extends PageScreen {
         buildDimensionFilter(filtersColumn);
     }
 
-    private void buildShapeFilter(LinearLayout column) {
+    private void buildShapeFilter(MFLinearLayout column) {
         column.addChild(createSectionLabel(FILTER_SHAPE_LABEL));
 
         filterShape = createFilterScrollBox(FILTER_SHAPE_MIN_ROWS);
@@ -253,7 +253,7 @@ public class TerritoryListPage extends PageScreen {
         column.addChild(filterShape);
     }
 
-    private void buildOwnerFilter(LinearLayout column) {
+    private void buildOwnerFilter(MFLinearLayout column) {
         column.addChild(createSectionLabel(FILTER_OWNER_LABEL));
 
         filterOwner = createFilterScrollBox(FILTER_OWNER_MIN_ROWS);
@@ -262,7 +262,7 @@ public class TerritoryListPage extends PageScreen {
         column.addChild(filterOwner);
     }
 
-    private void buildDimensionFilter(LinearLayout column) {
+    private void buildDimensionFilter(MFLinearLayout column) {
         column.addChild(createSectionLabel(FILTER_DIMENSION_LABEL));
 
         filterDimension = createFilterScrollBox(FILTER_DIMENSION_MIN_ROWS);
@@ -801,7 +801,7 @@ public class TerritoryListPage extends PageScreen {
             List<FrontierOverlay> allFrontiers = new ArrayList<>(MapFrontiersClient.getFrontiersInCollection(collection.getId()));
             List<FrontierOverlay> filteredFrontiers = filterFrontiers(allFrontiers);
             String title = collection.getName();
-            if (StringUtil.isBlank(title)) {
+            if (StringHelper.isBlank(title)) {
                 title = I18n.get("mapfrontiers.unnamed", ChatFormatting.ITALIC);
             }
 
@@ -869,7 +869,7 @@ public class TerritoryListPage extends PageScreen {
     }
 
     private boolean checkSearch(FrontierOverlay frontier) {
-        if (StringUtil.isBlank(searchBox.getValue())) {
+        if (StringHelper.isBlank(searchBox.getValue())) {
             return true;
         }
 
@@ -878,10 +878,10 @@ public class TerritoryListPage extends PageScreen {
         if (name.contains(searchText)) {
             return true;
         }
-        if (!StringUtil.isBlank(frontier.getOwner().username) && frontier.getOwner().username.toLowerCase().contains(searchText)) {
+        if (!StringHelper.isBlank(frontier.getOwner().username) && frontier.getOwner().username.toLowerCase().contains(searchText)) {
             return true;
         }
-        return !StringUtil.isBlank(frontier.getOwner().uuid.toString())
+        return !StringHelper.isBlank(frontier.getOwner().uuid.toString())
                 && frontier.getOwner().uuid.toString().toLowerCase().contains(searchText);
     }
 

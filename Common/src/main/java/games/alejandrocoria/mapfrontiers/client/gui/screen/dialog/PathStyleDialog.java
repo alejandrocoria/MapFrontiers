@@ -9,13 +9,13 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxIdentifier;
+import games.alejandrocoria.mapfrontiers.client.gui.layout.MFLinearLayout;
 import games.alejandrocoria.mapfrontiers.client.gui.util.DefaultValueBinding;
 import games.alejandrocoria.mapfrontiers.common.config.StringConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
-import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -80,12 +80,12 @@ public class PathStyleDialog extends PanelDialog {
 
     @Override
     protected void initScreen() {
-        LinearLayout mainLayout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
+        MFLinearLayout mainLayout = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
         content.addChild(mainLayout);
 
         if (defaultStyle == null) {
             MultiLineTextWidget description = mainLayout.addChild(
-                    new MultiLineTextWidget(DEFAULT_DESCRIPTION_LABEL.copy().withColor(ColorConstants.TEXT), font),
+                    new MultiLineTextWidget(DEFAULT_DESCRIPTION_LABEL.copy().withStyle(style -> style.withColor(ColorConstants.TEXT)), font),
                     LayoutSettings.defaults().alignHorizontallyCenter());
             description.setMaxWidth(700);
             description.setCentered(true);
@@ -105,13 +105,13 @@ public class PathStyleDialog extends PanelDialog {
         segmentRow = createMarkerRow(markerGrid, row, SEGMENTS_LABEL, workingStyle.segmentMarker,
                 ClientConfig.FRONTIER_DEFAULT_PATH_STYLE_SEGMENT, () -> workingStyle.segmentMarker, value -> workingStyle.segmentMarker = value);
 
-        LinearLayout lowerSection = LinearLayout.horizontal().spacing(12);
+        MFLinearLayout lowerSection = MFLinearLayout.horizontal().spacing(12);
         lowerSection.defaultCellSetting().alignVerticallyTop();
         mainLayout.addChild(lowerSection);
 
-        LinearLayout labelLocationsColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout labelLocationsColumn = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         lowerSection.addChild(labelLocationsColumn);
-        LinearLayout labelLocationsHeader = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout labelLocationsHeader = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         labelLocationsHeader.defaultCellSetting().alignVerticallyMiddle();
         labelLocationsColumn.addChild(labelLocationsHeader);
         labelLocationsHeader.addChild(new StringWidget(LABELS_AND_BANNER_LABEL, font).setColor(ColorConstants.TEXT_HIGHLIGHT));
@@ -120,7 +120,7 @@ public class PathStyleDialog extends PanelDialog {
             labelLocationsHeader.addChild(labelLocationsBinding.button());
         }
 
-        LinearLayout labelsColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout labelsColumn = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         labelLocationsColumn.addChild(labelsColumn);
 
         checkLabelAtStart = createLocationCheckBox(labelsColumn, START_LABEL, workingStyle.labelAtStart,
@@ -137,7 +137,7 @@ public class PathStyleDialog extends PanelDialog {
         previewWidget = lowerSection.addChild(new PathStylePreviewWidget());
 
         if (defaultStyle != null) {
-            LinearLayout defaultActionRow = LinearLayout.horizontal();
+            MFLinearLayout defaultActionRow = MFLinearLayout.horizontal();
             defaultActionRow.addChild(new SimpleButton(font, font.width(REPLACE_DEFAULT_LABEL) + BUTTON_HORIZONTAL_PADDING,
                     REPLACE_DEFAULT_LABEL, b -> replaceWithDefaultStyle()));
             mainLayout.addChild(defaultActionRow, LayoutSettings.defaults().alignHorizontallyCenter());
@@ -171,8 +171,8 @@ public class PathStyleDialog extends PanelDialog {
         return markerRow;
     }
 
-    private CheckBoxButton createLocationCheckBox(LinearLayout parent, Component label, boolean value, Consumer<Boolean> setter) {
-        LinearLayout row = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
+    private CheckBoxButton createLocationCheckBox(MFLinearLayout parent, Component label, boolean value, Consumer<Boolean> setter) {
+        MFLinearLayout row = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         row.defaultCellSetting().alignVerticallyBottom();
         parent.addChild(row);
 
@@ -197,7 +197,7 @@ public class PathStyleDialog extends PanelDialog {
         }
 
         return new DefaultValueBinding<>(markerRow::getCurrentValue,
-                () -> ResourceLocation.parse(entry.defaultValue()),
+                () -> new ResourceLocation(entry.defaultValue()),
                 markerRow::setCurrentValue,
                 () -> {
                     markerRow.syncWidgetsFromState();
@@ -251,7 +251,7 @@ public class PathStyleDialog extends PanelDialog {
         previewWidget.setPathStyle(workingStyle);
         warningWidget.setMessage(hasAnyLabelLocation()
                 ? Component.empty()
-                : LABELS_REQUIRED_LABEL.copy().withColor(ColorConstants.TEXT_ERROR_NORMAL));
+                : LABELS_REQUIRED_LABEL.copy().withStyle(style -> style.withColor(ColorConstants.TEXT_ERROR_NORMAL)));
     }
 
     private boolean hasAnyLabelLocation() {

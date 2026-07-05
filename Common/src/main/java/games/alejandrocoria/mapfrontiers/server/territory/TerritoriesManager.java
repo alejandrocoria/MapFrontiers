@@ -16,7 +16,6 @@ import games.alejandrocoria.mapfrontiers.common.util.NbtFileHelper;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -508,7 +507,7 @@ public class TerritoriesManager {
 
                 List<ServerPlayer> playerList = server.getPlayerList().getPlayers();
                 if (!playerList.isEmpty()) {
-                    collection.setOwner(new SettingsUser(playerList.getFirst()));
+                    collection.setOwner(new SettingsUser(playerList.get(0)));
                 }
             } else {
                 collection.getOwner().fillMissingInfo(false, server);
@@ -961,7 +960,7 @@ public class TerritoriesManager {
         File f = new File(ModDir, filename);
         if (f.exists()) {
             try (FileInputStream inputStream = new FileInputStream(f)) {
-                return NbtIo.readCompressed(inputStream, NbtAccounter.unlimitedHeap());
+                return NbtIo.readCompressed(inputStream);
             } catch (Exception e) {
                 MapFrontiers.LOGGER.error(e.getMessage(), e);
             }

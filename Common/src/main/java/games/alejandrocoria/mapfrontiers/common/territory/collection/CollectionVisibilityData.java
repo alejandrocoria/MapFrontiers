@@ -316,7 +316,7 @@ public class CollectionVisibilityData {
             return zoom;
         }
 
-        int nearestZoom = ZOOM_LEVELS.getFirst();
+        int nearestZoom = ZOOM_LEVELS.get(0);
         int nearestDistance = Math.abs(zoom - nearestZoom);
         for (int i = 1; i < ZOOM_LEVELS.size(); ++i) {
             int candidateZoom = ZOOM_LEVELS.get(i);

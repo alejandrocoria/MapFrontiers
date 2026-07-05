@@ -7,9 +7,6 @@ import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
@@ -19,8 +16,7 @@ import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class PacketFrontierSharingUpdated {
-    public static final ResourceLocation CHANNEL = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "packet_frontier_sharing_updated");
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketFrontierSharingUpdated> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketFrontierSharingUpdated::encode, PacketFrontierSharingUpdated::new);
+    public static final ResourceLocation CHANNEL = new ResourceLocation(MapFrontiers.MODID, "packet_frontier_sharing_updated");
 
     private UUID frontierId = new UUID(0, 0);
     private ResourceKey<Level> dimension = Level.OVERWORLD;
@@ -36,10 +32,6 @@ public class PacketFrontierSharingUpdated {
         this.dimension = dimension;
         this.sharingChange = sharingChange;
         this.playerId = playerId;
-    }
-
-    public static CustomPacketPayload.Type<CustomPacketPayload> type() {
-        return new CustomPacketPayload.Type<>(CHANNEL);
     }
 
     public PacketFrontierSharingUpdated(FriendlyByteBuf buf) {

@@ -16,6 +16,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
+import games.alejandrocoria.mapfrontiers.client.gui.layout.MFLinearLayout;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.ConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteFrontierConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.FrontierVisibilityDialog;
@@ -32,11 +33,12 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityMask;
+import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
 import games.alejandrocoria.mapfrontiers.platform.Services;
 import it.unimi.dsi.fastutil.Pair;
 import journeymap.api.v2.client.IClientAPI;
-import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.util.UIState;
+import journeymap.api.v2.common.Context;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -44,13 +46,11 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
-import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.util.StringUtil;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.BannerItem;
 import net.minecraft.world.item.ItemStack;
@@ -226,7 +226,7 @@ public class FrontierInfoPage extends PageScreen {
     }
 
     private void buildBannerSection(GridLayout mainLayout) {
-        LinearLayout bannerColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout bannerColumn = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         bannerColumn.defaultCellSetting().alignHorizontallyCenter();
         mainLayout.addChild(bannerColumn, 0, 0);
 
@@ -242,7 +242,7 @@ public class FrontierInfoPage extends PageScreen {
                     this::onBannerRotationChanged);
             bannerColumn.addChild(sliderBannerRotation);
         } else if (frontier.hasCollection()) {
-            LinearLayout collectionBannerRow = LinearLayout.horizontal();
+            MFLinearLayout collectionBannerRow = MFLinearLayout.horizontal();
             collectionBannerRow.defaultCellSetting().alignVerticallyMiddle();
             bannerColumn.addChild(collectionBannerRow);
 
@@ -259,11 +259,11 @@ public class FrontierInfoPage extends PageScreen {
     }
 
     private void buildOverviewSection(GridLayout mainLayout) {
-        LinearLayout nameColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout nameColumn = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         nameColumn.defaultCellSetting().alignHorizontallyLeft();
         mainLayout.addChild(nameColumn, 0, 1, 1, 2);
 
-        LinearLayout headerRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
+        MFLinearLayout headerRow = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
         headerRow.addChild(new StringWidget(NAME_LABEL, font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
         PluginSourceBadge sourceBadge = new PluginSourceBadge(font, frontier.getSourcePluginId(), true);
         int sourceWidth = sourceBadge.getWidth();
@@ -278,10 +278,10 @@ public class FrontierInfoPage extends PageScreen {
         textName2 = createNameTextBox(frontier.getName2(), this::onName2Changed);
         nameColumn.addChild(textName2);
 
-        LinearLayout collectionInfoColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_TINY);
+        MFLinearLayout collectionInfoColumn = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_TINY);
         nameColumn.addChild(collectionInfoColumn);
 
-        LinearLayout collectionHeaderRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
+        MFLinearLayout collectionHeaderRow = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_TINY);
         collectionHeaderRow.defaultCellSetting().alignVerticallyMiddle();
         collectionInfoColumn.addChild(collectionHeaderRow);
 
@@ -303,14 +303,14 @@ public class FrontierInfoPage extends PageScreen {
             Component collectionName = Component.empty();
             CollectionData collection = MapFrontiersClient.getCollection(frontier.getCollectionId());
             if (collection != null) {
-                collectionName = StringUtil.isBlank(collection.getName())
+                collectionName = StringHelper.isBlank(collection.getName())
                         ? Component.translatable("mapfrontiers.unnamed", ChatFormatting.ITALIC)
                         : Component.literal(collection.getName());
             }
             collectionInfoColumn.addChild(new StringWidget(collectionName, font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
         }
 
-        LinearLayout visibilityRow = LinearLayout.horizontal().spacing(MAIN_LAYOUT_SPACING);
+        MFLinearLayout visibilityRow = MFLinearLayout.horizontal().spacing(MAIN_LAYOUT_SPACING);
         visibilityRow.defaultCellSetting().alignVerticallyMiddle();
         nameColumn.addChild(visibilityRow);
 
@@ -323,7 +323,7 @@ public class FrontierInfoPage extends PageScreen {
         visibilityRow.addChild(buttonVisibilityOverride);
 
         if (hasPathStyle) {
-            LinearLayout pathStyleRow = LinearLayout.horizontal().spacing(MAIN_LAYOUT_SPACING);
+            MFLinearLayout pathStyleRow = MFLinearLayout.horizontal().spacing(MAIN_LAYOUT_SPACING);
             pathStyleRow.defaultCellSetting().alignVerticallyMiddle();
             nameColumn.addChild(pathStyleRow);
 
@@ -348,12 +348,12 @@ public class FrontierInfoPage extends PageScreen {
     }
 
     private void buildInfoSection(GridLayout mainLayout) {
-        LinearLayout infoColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_TINY);
+        MFLinearLayout infoColumn = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_TINY);
         mainLayout.addChild(infoColumn, 0, 3, 1, 1, LayoutSettings.defaults().alignHorizontallyLeft());
 
         ownerLabel = infoColumn.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
 
-        LinearLayout identityRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout identityRow = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         infoColumn.addChild(identityRow);
 
         typeLabel = identityRow.addChild(new StringWidget(Component.empty(), font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
@@ -389,7 +389,7 @@ public class FrontierInfoPage extends PageScreen {
         colorPicker = new ColorPicker(frontier.getColor(), this::onColorPicked);
         mainLayout.addChild(colorPicker, 1, 1, LayoutSettings.defaults().alignVerticallyBottom().alignHorizontallyCenter());
 
-        LinearLayout colorColumn = LinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout colorColumn = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_SMALL);
         colorColumn.defaultCellSetting().alignHorizontallyCenter();
         mainLayout.addChild(colorColumn, 1, 2, LayoutSettings.defaults().alignVerticallyBottom());
 
@@ -426,13 +426,13 @@ public class FrontierInfoPage extends PageScreen {
         labelPasteBanner = editColumn.addChild(new StringWidget(PASTE_BANNER_LABEL, font).setColor(ColorConstants.TEXT), row, 0);
         buttonPasteBanner = editColumn.addChild(createBinaryOptionButton(ClientConfig.PASTE_BANNER.get(), ClientConfig.PASTE_BANNER::set), row++, 1);
 
-        LinearLayout editButtons = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
+        MFLinearLayout editButtons = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_SMALL);
         editColumn.addChild(editButtons, row, 0);
 
         buttonCopy = editButtons.addChild(new IconButton(IconButton.Type.Copy, b -> onCopyPressed()));
         buttonCopy.setTooltip(COPY_TOOLTIP);
 
-        LinearLayout pasteButtons = LinearLayout.horizontal();
+        MFLinearLayout pasteButtons = MFLinearLayout.horizontal();
         editButtons.addChild(pasteButtons);
 
         buttonPaste = pasteButtons.addChild(new IconButton(IconButton.Type.Paste, b -> onPastePressed()));
