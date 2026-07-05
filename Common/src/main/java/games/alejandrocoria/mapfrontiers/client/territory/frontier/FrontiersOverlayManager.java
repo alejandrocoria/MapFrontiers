@@ -61,7 +61,7 @@ public class FrontiersOverlayManager {
         selectedEditablePointMarker = new SelectedEditablePointMarker(jmAPI);
 
         ClientGlobalEvents.subscribeClientTickEvent(this, client -> selectedEditablePointMarker.tick(
-                1.0f, MapFrontiersPlugin.isEditing()));
+                client.getDeltaFrameTime(), MapFrontiersPlugin.isEditing()));
         ClientGlobalEvents.subscribeUpdatedConfigEvent(this, () -> {
             selectedEditablePointMarker.configUpdated();
             rebuildAllOverlaysNow();
