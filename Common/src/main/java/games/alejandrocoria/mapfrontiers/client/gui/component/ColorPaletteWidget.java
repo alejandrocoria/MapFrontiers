@@ -103,6 +103,10 @@ public class ColorPaletteWidget extends AbstractWidgetNoNarration {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (!visible || !active || !isValidClickButton(button)) {
+            return false;
+        }
+
         int clickedIndex = getCellIndex(mouseX, mouseY);
         if (clickedIndex == -1) {
             return false;

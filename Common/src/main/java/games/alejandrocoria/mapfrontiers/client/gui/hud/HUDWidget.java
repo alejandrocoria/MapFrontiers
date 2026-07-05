@@ -50,6 +50,10 @@ public class HUDWidget extends AbstractWidgetNoNarration {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (!visible || !active || !isValidClickButton(button) || !isMouseOver(mouseX, mouseY)) {
+            return false;
+        }
+
         int factor = (int) Minecraft.getInstance().getWindow().getGuiScale();
         int xScaled = (int) mouseX * factor;
         int yScaled = (int) mouseY * factor;
