@@ -1,3 +1,7 @@
+**Beta 9:**
+* Fixed: The selected editable point marker animation could play much faster than intended.
+* Fixed: Some GUI widgets could react to mouse clicks even when hidden, inactive, or clicked outside their bounds.
+
 **Beta 8:**
 * Fixed: Very large frontiers could freeze the client when loading or connecting to a world.
 
