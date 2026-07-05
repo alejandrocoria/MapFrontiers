@@ -58,6 +58,7 @@ import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.resources.language.I18n;
@@ -163,9 +164,26 @@ public class ModSettingsPage extends PageScreen {
     private final boolean subscribeToSettingsProfileEvents;
 
     public ModSettingsPage(boolean showKeyHint) {
+        this(showKeyHint, true);
+    }
+
+    public ModSettingsPage(Screen parent, boolean showKeyHint) {
+        this(showKeyHint, true);
+        backgroundScreen = parent;
+    }
+
+    private ModSettingsPage() {
+        this(false, false);
+    }
+
+    public static ModSettingsPage createDummy() {
+        return new ModSettingsPage();
+    }
+
+    private ModSettingsPage(boolean showKeyHint, boolean registerListeners) {
         super(TITLE_LABEL);
         this.showKeyHint = showKeyHint;
-        subscribeToSettingsProfileEvents = MapFrontiersClient.isJourneyMapPluginAvailable();
+        subscribeToSettingsProfileEvents = registerListeners && MapFrontiersClient.isJourneyMapPluginAvailable();
 
         if (subscribeToSettingsProfileEvents) {
             MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> {
