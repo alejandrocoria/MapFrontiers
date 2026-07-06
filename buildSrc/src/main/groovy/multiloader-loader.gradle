@@ -66,6 +66,23 @@ tasks.matching { it.name == 'sourcesJar' }.configureEach {
     from(configurations.commonResources)
 }
 
+afterEvaluate {
+    // Declare capabilities on the outgoing loader variants after each loader sets its final archive name.
+    ['apiElements', 'runtimeElements', 'sourcesElements'/*, 'javadocElements'*/].each { variant ->
+        def configuration = configurations.findByName(variant)
+        if (configuration == null) {
+            return
+        }
+        configuration.outgoing {
+            capability("$group:${base.archivesName.get()}:$version")
+            capability("$group:$mod_id:$version")
+        }
+        publishing.publications.configureEach {
+            suppressPomMetadataWarningsFor(variant)
+        }
+    }
+}
+
 tasks.configureEach {
     if (name.startsWith('curseforge') || name.startsWith('modrinth')) {
         dependsOn(tasks.named('build'))

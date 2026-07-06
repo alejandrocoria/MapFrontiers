@@ -100,20 +100,14 @@ repositories {
     }
 }
 
-// Declare capabilities on the outgoing configurations.
-// Read more about capabilities here: https://docs.gradle.org/current/userguide/component_capabilities.html#sec:declaring-additional-capabilities-for-a-local-component
+// Common exposes the shared mod capability so loader projects can depend on it as a local project variant.
 ['apiElements', 'runtimeElements', 'sourcesElements'/*, 'javadocElements'*/].each { variant ->
     def configuration = configurations.findByName(variant)
     if (configuration == null) {
         return
     }
     configuration.outgoing {
-        capability("$group:${base.archivesName.get()}:$version")
-        capability("$group:$mod_id-${project.name}-${minecraft_version}:$version")
         capability("$group:$mod_id:$version")
-    }
-    publishing.publications.configureEach {
-        suppressPomMetadataWarningsFor(variant)
     }
 }
 
