@@ -50,9 +50,27 @@ dependencies {
         changing = true
     }
     implementation renamer.dependency("curse.maven:journeymap-${project.jm_project_id}:${project.jm_forge_file_id}")
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 
 renamer.mappings.from minecraft.dependency.toSrgFile
+
+renamer.enableMixinRefmaps { mixin ->
+    mixin.config "${mod_id}.mixins.json"
+    mixin.config "${mod_id}.forge.mixins.json"
+    mixin.source(sourceSets.main, "mapfrontiers")
+    mixin.jar(tasks.named('jar'))
+}
+
+def reobfJar = renamer.classes(tasks.named('jar')) {
+    map.setFrom renamer.mixin.generatedMappings.flatMap { it.output }
+    accessTransformers = true
+    output = tasks.named('jar').flatMap { it.archiveFile }
+}
+
+tasks.named('jar').configure {
+    finalizedBy reobfJar
+}
 
 minecraft {
     mappings channel: "official", version: minecraft_version

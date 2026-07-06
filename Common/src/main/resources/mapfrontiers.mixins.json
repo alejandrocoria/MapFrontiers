@@ -3,7 +3,7 @@
   "minVersion": "0.8",
   "package": "games.alejandrocoria.mapfrontiers.mixin",
   "compatibilityLevel": "JAVA_17",
-  "refmap": "mapfrontiers-refmap.json",
+  "refmap": "mapfrontiers.refmap.json",
   "client": [
     "client.AbstractSliderButtonAccessor",
     "client.CubeInvoker",
