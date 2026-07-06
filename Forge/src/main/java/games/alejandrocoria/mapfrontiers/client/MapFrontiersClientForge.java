@@ -38,8 +38,10 @@ public class MapFrontiersClientForge extends MapFrontiersClient {
         }
     }
 
-    public static void onClientTickPre(TickEvent.ClientTickEvent.Pre event) {
-        ClientGlobalEvents.postClientTickEvent(Minecraft.getInstance());
+    public static void onClientTickPre(TickEvent.ClientTickEvent event) {
+        if (event.phase == TickEvent.Phase.START) {
+            ClientGlobalEvents.postClientTickEvent(Minecraft.getInstance());
+        }
     }
 
     public static void onRegisterGuiOverlays(RegisterGuiOverlaysEvent event) {
