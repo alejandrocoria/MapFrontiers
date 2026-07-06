@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.layout;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.gui.layouts.AbstractLayout;
+import net.minecraft.client.gui.layouts.Layout;
 import net.minecraft.client.gui.layouts.LayoutElement;
 import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.client.gui.layouts.LinearLayout;
@@ -47,7 +48,7 @@ public class MFLinearLayout extends LinearLayout {
 
     @Override
     public void arrangeElements() {
-        super.arrangeElements();
+        arrangeChildLayouts();
         if (children.isEmpty()) {
             return;
         }
@@ -79,6 +80,14 @@ public class MFLinearLayout extends LinearLayout {
             case VERTICAL -> {
                 width = secondaryLength;
                 height = primaryLength;
+            }
+        }
+    }
+
+    private void arrangeChildLayouts() {
+        for (ChildContainer child : children) {
+            if (child.child instanceof Layout layout) {
+                layout.arrangeElements();
             }
         }
     }
