@@ -45,6 +45,10 @@ public class NewCollectionDefaultsDialog extends PanelDialog {
     private int fixedColor;
     private boolean randomColorEnabled;
     private DefaultValueBinding<Boolean> randomColorBinding;
+    private String initialName;
+    private int initialFixedColor;
+    private boolean initialRandomColorEnabled;
+    private SimpleButton saveButton;
     private boolean syncingWidgets = false;
 
     @Override
@@ -52,6 +56,9 @@ public class NewCollectionDefaultsDialog extends PanelDialog {
         visibilityData = ClientConfig.getDefaultCollectionVisibility();
         fixedColor = ClientConfig.COLLECTION_DEFAULT_COLOR.get() | 0xFF000000;
         randomColorEnabled = ClientConfig.COLLECTION_DEFAULT_RANDOM_COLOR.get();
+        initialName = ClientConfig.COLLECTION_DEFAULT_NAME.get();
+        initialFixedColor = fixedColor;
+        initialRandomColorEnabled = randomColorEnabled;
 
         LinearLayout layout = LinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
         layout.defaultCellSetting().alignHorizontallyCenter();
@@ -63,8 +70,9 @@ public class NewCollectionDefaultsDialog extends PanelDialog {
         buildOverviewSection(mainLayout);
         buildColorSection(mainLayout);
 
-        addConfirmButton(SAVE_LABEL, b -> saveAndClose());
+        saveButton = addConfirmButton(SAVE_LABEL, b -> saveAndClose());
         addCancelButton();
+        refreshSaveButton();
     }
 
     private void buildOverviewSection(GridLayout mainLayout) {
@@ -78,6 +86,7 @@ public class NewCollectionDefaultsDialog extends PanelDialog {
         textName.setMaxLength(CollectionData.MAX_NAME_CHARACTERS);
         textName.setHeight(DEFAULT_TEXTBOX_HEIGHT);
         textName.setValue(ClientConfig.COLLECTION_DEFAULT_NAME.get());
+        textName.setValueChangedCallback(value -> refreshSaveButton());
         overviewColumn.addChild(textName);
 
         LinearLayout visibilityRow = LinearLayout.horizontal().spacing(LayoutConstants.SPACING_MEDIUM);
@@ -137,6 +146,7 @@ public class NewCollectionDefaultsDialog extends PanelDialog {
         if (dragging) {
             fixedColor = color | 0xFF000000;
             syncColorWidgets(fixedColor);
+            refreshSaveButton();
             return;
         }
 
@@ -151,6 +161,7 @@ public class NewCollectionDefaultsDialog extends PanelDialog {
         fixedColor = color | 0xFF000000;
         colorPicker.setColor(fixedColor);
         syncColorWidgets(fixedColor);
+        refreshSaveButton();
     }
 
     private void setRandomColorEnabled(boolean enabled) {
@@ -159,6 +170,7 @@ public class NewCollectionDefaultsDialog extends PanelDialog {
         if (randomColorBinding != null) {
             randomColorBinding.refresh();
         }
+        refreshSaveButton();
     }
 
     private void refreshManualColorWidgets() {
@@ -216,5 +228,17 @@ public class NewCollectionDefaultsDialog extends PanelDialog {
         }
 
         return value.substring(0, maxLength);
+    }
+
+    private boolean hasChanges() {
+        return !initialName.equals(textName.getValue())
+                || initialFixedColor != fixedColor
+                || initialRandomColorEnabled != randomColorEnabled;
+    }
+
+    private void refreshSaveButton() {
+        if (saveButton != null) {
+            saveButton.active = hasChanges();
+        }
     }
 }
