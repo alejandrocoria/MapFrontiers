@@ -8,6 +8,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.PreviewCollectionWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
+import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxDouble;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.client.gui.util.DefaultValueBinding;
@@ -54,6 +55,7 @@ public class CollectionAppearanceDialog extends PanelDialog {
     private DefaultValueBinding<TextColor> textColorBinding;
     private DefaultValueBinding<Integer> bannerSizeBinding;
     private DefaultValueBinding<Double> bannerOpacityBinding;
+    private SimpleButton saveButton;
     private OptionButton buttonTextColor;
     private PreviewCollectionWidget previewWidget;
     private boolean saved = false;
@@ -190,8 +192,9 @@ public class CollectionAppearanceDialog extends PanelDialog {
         previewWidget = columnsLayout.addChild(new PreviewCollectionWidget());
         previewWidget.configUpdated();
 
-        addConfirmButton(SAVE_LABEL, b -> saveAndClose());
+        saveButton = addConfirmButton(SAVE_LABEL, b -> saveAndClose());
         addCancelButton();
+        refreshSaveButton();
     }
 
     @Override
@@ -206,16 +209,20 @@ public class CollectionAppearanceDialog extends PanelDialog {
 
     @Override
     public void onClose() {
-        if (!saved) {
+        boolean changed = hasChanges();
+        if (!saved && changed) {
             initialSnapshot.apply();
+            ClientGlobalEvents.postUpdatedConfigEvent();
         }
-        ClientGlobalEvents.postUpdatedConfigEvent();
         super.onClose();
     }
 
     private void saveAndClose() {
+        boolean changed = hasChanges();
         saved = true;
-        ClientGlobalEvents.postUpdatedConfigEvent();
+        if (changed) {
+            ClientGlobalEvents.postUpdatedConfigEvent();
+        }
         super.onClose();
     }
 
@@ -283,6 +290,7 @@ public class CollectionAppearanceDialog extends PanelDialog {
     private <T> void setConfigValue(ConfigEntry<T, ?> entry, T value) {
         entry.set(value);
         previewWidget.configUpdated();
+        refreshSaveButton();
     }
 
     private void syncTextBoxValue(TextBoxInt textBox, int value) {
@@ -309,6 +317,16 @@ public class CollectionAppearanceDialog extends PanelDialog {
             buttonTextColor.setSelected(ClientConfig.COLLECTION_TEXT_COLOR.get().ordinal());
         } finally {
             syncingWidgets = false;
+        }
+    }
+
+    private boolean hasChanges() {
+        return !initialSnapshot.equals(AppearanceSnapshot.capture());
+    }
+
+    private void refreshSaveButton() {
+        if (saveButton != null) {
+            saveButton.active = hasChanges();
         }
     }
 
