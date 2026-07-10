@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
+import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.util.DefaultValueBinding;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.config.BooleanConfigEntry;
@@ -30,6 +31,7 @@ public class ConfirmationSettingsDialog extends PanelDialog {
     private DefaultValueBinding<Boolean> askUserDeleteBinding;
     private DefaultValueBinding<Boolean> askTemporaryFrontierCreateBinding;
     private DefaultValueBinding<Boolean> askTemporaryCollectionCreateBinding;
+    private SimpleButton saveButton;
     private boolean saved = false;
 
     public ConfirmationSettingsDialog() {
@@ -54,22 +56,27 @@ public class ConfirmationSettingsDialog extends PanelDialog {
         askTemporaryFrontierCreateBinding = addOptionSettingRow(settingsGrid, row++, ClientConfig.ASK_CONFIRMATION_TEMPORARY_FRONTIER_CREATE);
         askTemporaryCollectionCreateBinding = addOptionSettingRow(settingsGrid, row, ClientConfig.ASK_CONFIRMATION_TEMPORARY_COLLECTION_CREATE);
 
-        addConfirmButton(SAVE_LABEL, b -> saveAndClose());
+        saveButton = addConfirmButton(SAVE_LABEL, b -> saveAndClose());
         addCancelButton();
+        refreshSaveButton();
     }
 
     @Override
     public void onClose() {
-        if (!saved) {
+        boolean changed = hasChanges();
+        if (!saved && changed) {
             initialSnapshot.apply();
+            ClientGlobalEvents.postUpdatedConfigEvent();
         }
-        ClientGlobalEvents.postUpdatedConfigEvent();
         super.onClose();
     }
 
     private void saveAndClose() {
+        boolean changed = hasChanges();
         saved = true;
-        ClientGlobalEvents.postUpdatedConfigEvent();
+        if (changed) {
+            ClientGlobalEvents.postUpdatedConfigEvent();
+        }
         super.onClose();
     }
 
@@ -111,6 +118,17 @@ public class ConfirmationSettingsDialog extends PanelDialog {
         askUserDeleteBinding.refresh();
         askTemporaryFrontierCreateBinding.refresh();
         askTemporaryCollectionCreateBinding.refresh();
+        refreshSaveButton();
+    }
+
+    private boolean hasChanges() {
+        return !initialSnapshot.equals(ConfirmationSnapshot.capture());
+    }
+
+    private void refreshSaveButton() {
+        if (saveButton != null) {
+            saveButton.active = hasChanges();
+        }
     }
 
     private record ConfirmationSnapshot(

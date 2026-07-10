@@ -21,6 +21,7 @@ import net.minecraft.network.chat.Style;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.EnumMap;
+import java.util.Objects;
 
 @ParametersAreNonnullByDefault
 public class FrontierVisibilityDialog extends PanelDialog {
@@ -49,6 +50,9 @@ public class FrontierVisibilityDialog extends PanelDialog {
     private static final int COLUMN_SPACING = 6;
     private static final int BUTTON_HORIZONTAL_PADDING = 16;
 
+    private final FrontierVisibilityData initialVisibilityData;
+    @Nullable
+    private final FrontierVisibilityMask initialVisibilityMask;
     private final FrontierVisibilityData workingVisibilityData;
     @Nullable
     private final FrontierVisibilityData defaultVisibilityData;
@@ -58,6 +62,7 @@ public class FrontierVisibilityDialog extends PanelDialog {
     private final SaveCallback saveCallback;
     private final EnumMap<FrontierVisibility, OptionButton> visibilityButtons = new EnumMap<>(FrontierVisibility.class);
     private final EnumMap<FrontierVisibility, DefaultValueBinding<Boolean>> restoreBindings = new EnumMap<>(FrontierVisibility.class);
+    private SimpleButton saveButton;
 
     public FrontierVisibilityDialog(FrontierVisibilityData visibilityData, SaveCallback saveCallback) {
         this(visibilityData, null, null, false, saveCallback);
@@ -81,6 +86,8 @@ public class FrontierVisibilityDialog extends PanelDialog {
                                      @Nullable FrontierVisibilityMask visibilityDataMask, boolean restoreToClientDefaults,
                                      SaveCallback saveCallback) {
         super();
+        this.initialVisibilityData = visibilityDataMask == null ? visibilityData.normalized() : visibilityData.normalized(visibilityDataMask);
+        this.initialVisibilityMask = visibilityDataMask == null ? null : new FrontierVisibilityMask(visibilityDataMask);
         this.workingVisibilityData = new FrontierVisibilityData(visibilityData);
         this.defaultVisibilityData = defaultVisibilityData == null ? null : new FrontierVisibilityData(defaultVisibilityData);
         this.visibilityMask = visibilityDataMask == null ? null : new FrontierVisibilityMask(visibilityDataMask);
@@ -184,8 +191,9 @@ public class FrontierVisibilityDialog extends PanelDialog {
             mainLayout.addChild(defaultActionRow, LayoutSettings.defaults().alignHorizontallyCenter());
         }
 
-        addConfirmButton(SAVE_LABEL, (b) -> saveAndClose());
+        saveButton = addConfirmButton(SAVE_LABEL, (b) -> saveAndClose());
         addCancelButton();
+        refreshSaveButton();
     }
 
     private void createWidgets(GridLayout layout, int row, Component label, FrontierVisibility visibility) {
@@ -197,6 +205,7 @@ public class FrontierVisibilityDialog extends PanelDialog {
             if (restoreBinding != null) {
                 restoreBinding.refresh();
             }
+            refreshSaveButton();
         });
         button.addOption(ON_LABEL);
         button.addOption(OFF_LABEL);
@@ -207,6 +216,7 @@ public class FrontierVisibilityDialog extends PanelDialog {
             CheckBoxButton checkBox = new CheckBoxButton(visibilityMask.has(visibility), (b) -> {
                 visibilityMask.set(visibility, b.isChecked());
                 button.active = b.isChecked();
+                refreshSaveButton();
             });
             layout.addChild(checkBox, row, 1);
             layout.addChild(button, row, 2);
@@ -259,12 +269,27 @@ public class FrontierVisibilityDialog extends PanelDialog {
         if (restoreBinding != null) {
             restoreBinding.refresh();
         }
+        refreshSaveButton();
+    }
+
+    private boolean hasChanges() {
+        return !initialVisibilityData.equals(getNormalizedVisibilityData()) || !Objects.equals(initialVisibilityMask, visibilityMask);
+    }
+
+    private void refreshSaveButton() {
+        if (saveButton != null) {
+            saveButton.active = hasChanges();
+        }
     }
 
     private void saveAndClose() {
         super.onClose();
-        saveCallback.accept(new FrontierVisibilityData(workingVisibilityData),
+        saveCallback.accept(getNormalizedVisibilityData(),
                 visibilityMask == null ? null : new FrontierVisibilityMask(visibilityMask));
+    }
+
+    private FrontierVisibilityData getNormalizedVisibilityData() {
+        return visibilityMask == null ? workingVisibilityData.normalized() : workingVisibilityData.normalized(visibilityMask);
     }
 
     @FunctionalInterface
