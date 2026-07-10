@@ -31,6 +31,20 @@ public class FrontierVisibilityData {
         values = other.values.clone();
     }
 
+    public FrontierVisibilityData normalized() {
+        return new FrontierVisibilityData(this);
+    }
+
+    public FrontierVisibilityData normalized(FrontierVisibilityMask mask) {
+        FrontierVisibilityData normalized = normalized();
+        for (FrontierVisibility visibility : FrontierVisibility.VALUES) {
+            if (!mask.has(visibility)) {
+                normalized.set(visibility, visibility.getDefaultValue());
+            }
+        }
+        return normalized;
+    }
+
     @Override
     public int hashCode() {
         return values.hashCode();

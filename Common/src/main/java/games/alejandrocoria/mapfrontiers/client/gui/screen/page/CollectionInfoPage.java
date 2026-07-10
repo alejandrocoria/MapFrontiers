@@ -730,8 +730,8 @@ public class CollectionInfoPage extends PageScreen {
         Pair<CollectionVisibilityData, CollectionVisibilityMask> override =
                 MapFrontiersClient.getCollectionLocalOverrides().getVisibility(collectionId);
         CollectionVisibilityData baseVisibilityData = CollectionLocalOverrides.resolveVisibility(collection.getVisibilityData(), override);
-        CollectionVisibilityData initialVisibilityData = new CollectionVisibilityData(baseVisibilityData);
         CollectionVisibilityMask initialVisibilityMask = new CollectionVisibilityMask(override.second());
+        CollectionVisibilityData initialVisibilityData = baseVisibilityData.normalized(initialVisibilityMask);
         new CollectionVisibilityDialog(baseVisibilityData, override.second(), (newVisibilityData, newVisibilityMask) -> {
             if (!newVisibilityData.equals(initialVisibilityData) || !newVisibilityMask.equals(initialVisibilityMask)) {
                 Pair<CollectionVisibilityData, CollectionVisibilityMask> newOverride =
