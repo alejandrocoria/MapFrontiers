@@ -40,6 +40,7 @@ public class PathStyleDialog extends PanelDialog {
     private static final int WARNING_WIDTH = 120;
     private static final int BUTTON_HORIZONTAL_PADDING = 16;
 
+    private final FrontierData.PathStyle initialPersistedStyle;
     private final @Nullable FrontierData.PathStyle defaultStyle;
     private final boolean restoreToClientDefaults;
     private final Consumer<FrontierData.PathStyle> saveCallback;
@@ -55,6 +56,7 @@ public class PathStyleDialog extends PanelDialog {
     private MarkerRow endRow;
     private MarkerRow segmentRow;
     private DefaultValueBinding<LabelLocationsState> labelLocationsBinding;
+    private SimpleButton saveButton;
     private boolean syncingWidgets = false;
 
     public PathStyleDialog(FrontierData.PathStyle initialStyle, FrontierData.PathStyle defaultStyle, Consumer<FrontierData.PathStyle> saveCallback) {
@@ -72,6 +74,7 @@ public class PathStyleDialog extends PanelDialog {
     private PathStyleDialog(FrontierData.PathStyle initialStyle, @Nullable FrontierData.PathStyle defaultStyle,
                             boolean restoreToClientDefaults, Consumer<FrontierData.PathStyle> saveCallback) {
         super();
+        this.initialPersistedStyle = normalizePersistedStyle(initialStyle);
         this.defaultStyle = defaultStyle == null ? null : new FrontierData.PathStyle(defaultStyle);
         this.restoreToClientDefaults = restoreToClientDefaults;
         this.saveCallback = saveCallback;
@@ -143,7 +146,7 @@ public class PathStyleDialog extends PanelDialog {
             mainLayout.addChild(defaultActionRow, LayoutSettings.defaults().alignHorizontallyCenter());
         }
 
-        addConfirmButton(SAVE_LABEL, (b) -> saveAndClose());
+        saveButton = addConfirmButton(SAVE_LABEL, (b) -> saveAndClose());
         addCancelButton();
 
         updateWarningAndPreview();
@@ -252,6 +255,7 @@ public class PathStyleDialog extends PanelDialog {
         warningWidget.setMessage(hasAnyLabelLocation()
                 ? Component.empty()
                 : LABELS_REQUIRED_LABEL.copy().withColor(ColorConstants.TEXT_ERROR_NORMAL));
+        refreshSaveButton();
     }
 
     private boolean hasAnyLabelLocation() {
@@ -259,14 +263,7 @@ public class PathStyleDialog extends PanelDialog {
     }
 
     private FrontierData.PathStyle getPersistedStyle() {
-        FrontierData.PathStyle persisted = new FrontierData.PathStyle(workingStyle);
-        if (!persisted.labelAtStart && !persisted.labelAtMiddle && !persisted.labelAtEnd) {
-            persisted.labelAtStart = true;
-            persisted.labelAtMiddle = false;
-            persisted.labelAtEnd = false;
-        }
-
-        return persisted;
+        return normalizePersistedStyle(workingStyle);
     }
 
     private static void setCheckBoxValue(CheckBoxButton button, boolean value) {
@@ -340,6 +337,22 @@ public class PathStyleDialog extends PanelDialog {
     private void saveAndClose() {
         super.onClose();
         saveCallback.accept(getPersistedStyle());
+    }
+
+    private boolean hasChanges() {
+        return !initialPersistedStyle.equals(getPersistedStyle());
+    }
+
+    private void refreshSaveButton() {
+        if (saveButton != null) {
+            saveButton.active = hasChanges();
+        }
+    }
+
+    private static FrontierData.PathStyle normalizePersistedStyle(FrontierData.PathStyle source) {
+        FrontierData.PathStyle persisted = new FrontierData.PathStyle(source);
+        persisted.normalizeForPersistence();
+        return persisted;
     }
 
     private final class MarkerRow {

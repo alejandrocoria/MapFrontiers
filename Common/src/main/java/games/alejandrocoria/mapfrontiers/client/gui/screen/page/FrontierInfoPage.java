@@ -578,8 +578,8 @@ public class FrontierInfoPage extends PageScreen {
     private void onVisibilityOverrideButtonPressed() {
         Pair<FrontierVisibilityData, FrontierVisibilityMask> override = MapFrontiersClient.getLocalOverrides().getVisibility(frontier.getId());
         FrontierVisibilityData baseVisibilityData = FrontierLocalOverrides.resolveVisibility(frontier.getVisibilityData(), override);
-        FrontierVisibilityData initialVisibilityData = new FrontierVisibilityData(baseVisibilityData);
         FrontierVisibilityMask initialVisibilityMask = new FrontierVisibilityMask(override.second());
+        FrontierVisibilityData initialVisibilityData = baseVisibilityData.normalized(initialVisibilityMask);
         new FrontierVisibilityDialog(baseVisibilityData, override.second(), (newVisibilityData, newVisibilityMask) -> {
             if (!newVisibilityData.equals(initialVisibilityData) || !newVisibilityMask.equals(initialVisibilityMask)) {
                 Pair<FrontierVisibilityData, FrontierVisibilityMask> newOverride = Pair.of(newVisibilityData, newVisibilityMask);
