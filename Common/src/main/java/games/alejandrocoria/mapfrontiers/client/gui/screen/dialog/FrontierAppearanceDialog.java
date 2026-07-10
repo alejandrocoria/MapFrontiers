@@ -8,6 +8,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.PreviewFrontiersWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
+import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxDouble;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.client.gui.layout.MFLinearLayout;
@@ -86,6 +87,7 @@ public class FrontierAppearanceDialog extends PanelDialog {
     private DefaultValueBinding<TextColor> textColorBinding;
     private DefaultValueBinding<Integer> bannerSizeBinding;
     private DefaultValueBinding<Double> bannerOpacityBinding;
+    private SimpleButton saveButton;
     private PreviewFrontiersWidget previewFrontiers;
     private boolean saved = false;
     private boolean syncingWidgets;
@@ -250,8 +252,9 @@ public class FrontierAppearanceDialog extends PanelDialog {
 
         previewFrontiers = columnsLayout.addChild(new PreviewFrontiersWidget());
 
-        addConfirmButton(SAVE_LABEL, (b) -> saveAndClose());
+        saveButton = addConfirmButton(SAVE_LABEL, (b) -> saveAndClose());
         addCancelButton();
+        refreshSaveButton();
     }
 
     @Override
@@ -266,16 +269,20 @@ public class FrontierAppearanceDialog extends PanelDialog {
 
     @Override
     public void onClose() {
-        if (!saved) {
+        boolean changed = hasChanges();
+        if (!saved && changed) {
             initialSnapshot.apply();
+            ClientGlobalEvents.postUpdatedConfigEvent();
         }
-        ClientGlobalEvents.postUpdatedConfigEvent();
         super.onClose();
     }
 
     private void saveAndClose() {
+        boolean changed = hasChanges();
         saved = true;
-        ClientGlobalEvents.postUpdatedConfigEvent();
+        if (changed) {
+            ClientGlobalEvents.postUpdatedConfigEvent();
+        }
         super.onClose();
     }
 
@@ -366,6 +373,7 @@ public class FrontierAppearanceDialog extends PanelDialog {
     private <T> void setConfigValue(ConfigEntry<T, ?> entry, T value) {
         entry.set(value);
         previewFrontiers.configUpdated();
+        refreshSaveButton();
     }
 
     private void syncHideNamesThatDontFitWidgets() {
@@ -440,6 +448,16 @@ public class FrontierAppearanceDialog extends PanelDialog {
             textBox.setValue(value);
         } finally {
             syncingWidgets = false;
+        }
+    }
+
+    private boolean hasChanges() {
+        return !initialSnapshot.equals(AppearanceSnapshot.capture());
+    }
+
+    private void refreshSaveButton() {
+        if (saveButton != null) {
+            saveButton.active = hasChanges();
         }
     }
 

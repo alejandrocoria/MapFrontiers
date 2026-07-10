@@ -36,6 +36,26 @@ public class CollectionVisibilityData {
         webmapZoom = other.webmapZoom;
     }
 
+    public CollectionVisibilityData normalized() {
+        return new CollectionVisibilityData(this);
+    }
+
+    public CollectionVisibilityData normalized(CollectionVisibilityMask mask) {
+        CollectionVisibilityData normalized = normalized();
+        for (CollectionVisibilityField field : CollectionVisibilityField.VALUES) {
+            if (mask.has(field)) {
+                continue;
+            }
+
+            if (field.isBoolean()) {
+                normalized.setBoolean(field, field.getDefaultBooleanValue());
+            } else {
+                normalized.setZoom(field, getDefaultZoom(field));
+            }
+        }
+        return normalized;
+    }
+
     @Override
     public boolean equals(Object other) {
         if (this == other) {

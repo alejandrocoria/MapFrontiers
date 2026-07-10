@@ -7,6 +7,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.OptionButton;
+import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt;
 import games.alejandrocoria.mapfrontiers.client.gui.layout.MFLinearLayout;
 import games.alejandrocoria.mapfrontiers.client.gui.util.DefaultValueBinding;
@@ -30,6 +31,7 @@ public class FrontierBehaviorDialog extends PanelDialog {
     private static final Component OFF_LABEL = Component.translatable("options.off");
     private static final Component RESTORE_DEFAULT_VALUE_LABEL = Component.translatable("mapfrontiers.restore_default_value");
 
+    private final BehaviorSnapshot initialSnapshot;
     private TextBoxInt textTitleAnnouncementDuration;
     private TextBoxInt textTitleAnnouncementTimeout;
     private OptionButton buttonTitleAnnouncementAboveHotbar;
@@ -51,7 +53,12 @@ public class FrontierBehaviorDialog extends PanelDialog {
     private int snapDistance;
     private int pathProximityEnterDistance;
     private int pathProximityExitDistance;
+    private SimpleButton saveButton;
     private boolean syncingWidgets;
+
+    public FrontierBehaviorDialog() {
+        initialSnapshot = BehaviorSnapshot.captureFromConfig();
+    }
 
     @Override
     protected void initScreen() {
@@ -102,8 +109,9 @@ public class FrontierBehaviorDialog extends PanelDialog {
         addIntSettingRow(settingsGrid, row, ClientConfig.PATH_PROXIMITY_EXIT_DISTANCE, textPathProximityExitDistance,
                 pathProximityExitDistanceBinding.button());
 
-        addConfirmButton(SAVE_LABEL, b -> saveAndClose());
+        saveButton = addConfirmButton(SAVE_LABEL, b -> saveAndClose());
         addCancelButton();
+        refreshSaveButton();
     }
 
     private void initializeState() {
@@ -175,6 +183,7 @@ public class FrontierBehaviorDialog extends PanelDialog {
         if (titleAnnouncementDurationBinding != null) {
             titleAnnouncementDurationBinding.refresh();
         }
+        refreshSaveButton();
     }
 
     private void setTitleAnnouncementTimeout(int value) {
@@ -182,6 +191,7 @@ public class FrontierBehaviorDialog extends PanelDialog {
         if (titleAnnouncementTimeoutBinding != null) {
             titleAnnouncementTimeoutBinding.refresh();
         }
+        refreshSaveButton();
     }
 
     private void setTitleAnnouncementAboveHotbar(boolean value) {
@@ -189,6 +199,7 @@ public class FrontierBehaviorDialog extends PanelDialog {
         if (titleAnnouncementAboveHotbarBinding != null) {
             titleAnnouncementAboveHotbarBinding.refresh();
         }
+        refreshSaveButton();
     }
 
     private void setAnnounceUnnamedFrontiers(boolean value) {
@@ -196,6 +207,7 @@ public class FrontierBehaviorDialog extends PanelDialog {
         if (announceUnnamedFrontiersBinding != null) {
             announceUnnamedFrontiersBinding.refresh();
         }
+        refreshSaveButton();
     }
 
     private void setSnapDistance(int value) {
@@ -203,6 +215,7 @@ public class FrontierBehaviorDialog extends PanelDialog {
         if (snapDistanceBinding != null) {
             snapDistanceBinding.refresh();
         }
+        refreshSaveButton();
     }
 
     private void setPathProximityEnterDistance(int value) {
@@ -222,6 +235,7 @@ public class FrontierBehaviorDialog extends PanelDialog {
         if (pathProximityExitDistanceBinding != null) {
             pathProximityExitDistanceBinding.refresh();
         }
+        refreshSaveButton();
     }
 
     private void syncTitleAnnouncementDurationWidgets() {
@@ -295,5 +309,41 @@ public class FrontierBehaviorDialog extends PanelDialog {
         textSnapDistance.setFocused(false);
         textPathProximityEnterDistance.setFocused(false);
         textPathProximityExitDistance.setFocused(false);
+    }
+
+    private boolean hasChanges() {
+        return !initialSnapshot.equals(getPersistedSnapshot());
+    }
+
+    private void refreshSaveButton() {
+        if (saveButton != null) {
+            saveButton.active = hasChanges();
+        }
+    }
+
+    private BehaviorSnapshot getPersistedSnapshot() {
+        return new BehaviorSnapshot(titleAnnouncementDuration, titleAnnouncementTimeout, titleAnnouncementAboveHotbar,
+                announceUnnamedFrontiers, snapDistance, pathProximityEnterDistance,
+                Math.max(pathProximityEnterDistance, pathProximityExitDistance));
+    }
+
+    private record BehaviorSnapshot(int titleAnnouncementDuration,
+                                    int titleAnnouncementTimeout,
+                                    boolean titleAnnouncementAboveHotbar,
+                                    boolean announceUnnamedFrontiers,
+                                    int snapDistance,
+                                    int pathProximityEnterDistance,
+                                    int pathProximityExitDistance) {
+        private static BehaviorSnapshot captureFromConfig() {
+            return new BehaviorSnapshot(
+                    ClientConfig.TITLE_ANNOUNCEMENT_DURATION.get(),
+                    ClientConfig.TITLE_ANNOUNCEMENT_TIMEOUT.get(),
+                    ClientConfig.TITLE_ANNOUNCEMENT_ABOVE_HOTBAR.get(),
+                    ClientConfig.ANNOUNCE_UNNAMED_FRONTIERS.get(),
+                    ClientConfig.SNAP_DISTANCE.get(),
+                    ClientConfig.PATH_PROXIMITY_ENTER_DISTANCE.get(),
+                    ClientConfig.PATH_PROXIMITY_EXIT_DISTANCE.get()
+            );
+        }
     }
 }

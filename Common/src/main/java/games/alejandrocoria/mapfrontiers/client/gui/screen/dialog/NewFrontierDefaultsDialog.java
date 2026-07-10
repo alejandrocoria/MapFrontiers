@@ -51,6 +51,11 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
     private int fixedColor;
     private boolean randomColorEnabled;
     private DefaultValueBinding<Boolean> randomColorBinding;
+    private String initialName1;
+    private String initialName2;
+    private int initialFixedColor;
+    private boolean initialRandomColorEnabled;
+    private SimpleButton saveButton;
     private boolean syncingWidgets = false;
 
     @Override
@@ -59,6 +64,10 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
         pathStyle = ClientConfig.getDefaultFrontierPathStyle();
         fixedColor = ClientConfig.FRONTIER_DEFAULT_COLOR.get() | 0xFF000000;
         randomColorEnabled = ClientConfig.FRONTIER_DEFAULT_RANDOM_COLOR.get();
+        initialName1 = ClientConfig.FRONTIER_DEFAULT_NAME_1.get();
+        initialName2 = ClientConfig.FRONTIER_DEFAULT_NAME_2.get();
+        initialFixedColor = fixedColor;
+        initialRandomColorEnabled = randomColorEnabled;
 
         MFLinearLayout layout = MFLinearLayout.vertical().spacing(LayoutConstants.SPACING_MEDIUM);
         layout.defaultCellSetting().alignHorizontallyCenter();
@@ -70,8 +79,9 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
         buildOverviewSection(mainLayout);
         buildColorSection(mainLayout);
 
-        addConfirmButton(SAVE_LABEL, b -> saveAndClose());
+        saveButton = addConfirmButton(SAVE_LABEL, b -> saveAndClose());
         addCancelButton();
+        refreshSaveButton();
     }
 
     private void buildOverviewSection(GridLayout mainLayout) {
@@ -82,9 +92,11 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
         overviewColumn.addChild(new StringWidget(DEFAULT_NAME_LABEL, font).setColor(ColorConstants.FRONTIER_INFO_TEXT));
 
         textName1 = createNameTextBox(ClientConfig.FRONTIER_DEFAULT_NAME_1.get());
+        textName1.setValueChangedCallback(value -> refreshSaveButton());
         overviewColumn.addChild(textName1);
 
         textName2 = createNameTextBox(ClientConfig.FRONTIER_DEFAULT_NAME_2.get());
+        textName2.setValueChangedCallback(value -> refreshSaveButton());
         overviewColumn.addChild(textName2);
 
         MFLinearLayout visibilityRow = MFLinearLayout.horizontal().spacing(LayoutConstants.SPACING_MEDIUM);
@@ -161,6 +173,7 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
         if (dragging) {
             fixedColor = color | 0xFF000000;
             syncColorWidgets(fixedColor);
+            refreshSaveButton();
             return;
         }
 
@@ -175,6 +188,7 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
         fixedColor = color | 0xFF000000;
         colorPicker.setColor(fixedColor);
         syncColorWidgets(fixedColor);
+        refreshSaveButton();
     }
 
     private void setRandomColorEnabled(boolean enabled) {
@@ -183,6 +197,7 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
         if (randomColorBinding != null) {
             randomColorBinding.refresh();
         }
+        refreshSaveButton();
     }
 
     private void refreshManualColorWidgets() {
@@ -254,5 +269,18 @@ public class NewFrontierDefaultsDialog extends PanelDialog {
 
     private boolean areJourneyMapPreviewActionsAvailable() {
         return minecraft.player != null && MapFrontiersClient.isJourneyMapPluginAvailable();
+    }
+
+    private boolean hasChanges() {
+        return !initialName1.equals(textName1.getValue())
+                || !initialName2.equals(textName2.getValue())
+                || initialFixedColor != fixedColor
+                || initialRandomColorEnabled != randomColorEnabled;
+    }
+
+    private void refreshSaveButton() {
+        if (saveButton != null) {
+            saveButton.active = hasChanges();
+        }
     }
 }

@@ -22,6 +22,7 @@ import net.minecraft.network.chat.Style;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.EnumMap;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
@@ -47,6 +48,9 @@ public class CollectionVisibilityDialog extends PanelDialog {
     private static final int VISIBILITY_ZOOM_SLIDER_WIDTH = 92;
     private static final int BUTTON_HORIZONTAL_PADDING = 16;
 
+    private final CollectionVisibilityData initialVisibilityData;
+    @Nullable
+    private final CollectionVisibilityMask initialVisibilityMask;
     private final CollectionVisibilityData workingVisibilityData;
     @Nullable
     private final CollectionVisibilityData defaultVisibilityData;
@@ -57,6 +61,7 @@ public class CollectionVisibilityDialog extends PanelDialog {
     private final EnumMap<CollectionVisibilityField, SimpleSlider> zoomSliders = new EnumMap<>(CollectionVisibilityField.class);
     private final EnumMap<CollectionVisibilityField, DefaultValueBinding<Boolean>> booleanRestoreBindings = new EnumMap<>(CollectionVisibilityField.class);
     private final EnumMap<CollectionVisibilityField, DefaultValueBinding<Integer>> zoomRestoreBindings = new EnumMap<>(CollectionVisibilityField.class);
+    private SimpleButton saveButton;
 
     public CollectionVisibilityDialog(CollectionVisibilityData visibilityData,
                                       SaveCallback saveCallback) {
@@ -81,6 +86,8 @@ public class CollectionVisibilityDialog extends PanelDialog {
                                        @Nullable CollectionVisibilityMask visibilityMask, boolean restoreToClientDefaults,
                                        SaveCallback saveCallback) {
         super();
+        this.initialVisibilityData = visibilityMask == null ? visibilityData.normalized() : visibilityData.normalized(visibilityMask);
+        this.initialVisibilityMask = visibilityMask == null ? null : new CollectionVisibilityMask(visibilityMask);
         this.workingVisibilityData = new CollectionVisibilityData(visibilityData);
         this.defaultVisibilityData = defaultVisibilityData == null ? null : new CollectionVisibilityData(defaultVisibilityData);
         this.visibilityMask = visibilityMask == null ? null : new CollectionVisibilityMask(visibilityMask);
@@ -158,8 +165,9 @@ public class CollectionVisibilityDialog extends PanelDialog {
             mainLayout.addChild(defaultActionRow, LayoutSettings.defaults().alignHorizontallyCenter());
         }
 
-        addConfirmButton(SAVE_LABEL, b -> saveAndClose());
+        saveButton = addConfirmButton(SAVE_LABEL, b -> saveAndClose());
         addCancelButton();
+        refreshSaveButton();
     }
 
     private MFLinearLayout createColumn(MFLinearLayout mainColumns, Component title) {
@@ -195,6 +203,7 @@ public class CollectionVisibilityDialog extends PanelDialog {
             if (restoreBinding != null) {
                 restoreBinding.refresh();
             }
+            refreshSaveButton();
         }, CollectionVisibilityDialog::formatZoomLabel);
         zoomSliders.put(field, slider);
 
@@ -208,6 +217,7 @@ public class CollectionVisibilityDialog extends PanelDialog {
             CheckBoxButton checkBox = new CheckBoxButton(maskBinding.getter().get(), b -> {
                 maskBinding.setter().accept(b.isChecked());
                 slider.active = b.isChecked();
+                refreshSaveButton();
             });
             zoomRow.addChild(checkBox);
             zoomRow.addChild(slider);
@@ -226,6 +236,7 @@ public class CollectionVisibilityDialog extends PanelDialog {
             if (restoreBinding != null) {
                 restoreBinding.refresh();
             }
+            refreshSaveButton();
         });
         button.addOption(ON_LABEL);
         button.addOption(OFF_LABEL);
@@ -254,6 +265,7 @@ public class CollectionVisibilityDialog extends PanelDialog {
         CheckBoxButton checkBox = new CheckBoxButton(maskBinding.getter().get(), b -> {
             maskBinding.setter().accept(b.isChecked());
             widget.active = b.isChecked();
+            refreshSaveButton();
         });
         layout.addChild(checkBox, row, 1);
         widget.active = checkBox.isChecked();
@@ -324,6 +336,7 @@ public class CollectionVisibilityDialog extends PanelDialog {
         if (restoreBinding != null) {
             restoreBinding.refresh();
         }
+        refreshSaveButton();
     }
 
     private void syncZoomWidget(CollectionVisibilityField field) {
@@ -336,11 +349,12 @@ public class CollectionVisibilityDialog extends PanelDialog {
         if (restoreBinding != null) {
             restoreBinding.refresh();
         }
+        refreshSaveButton();
     }
 
     private void saveAndClose() {
         super.onClose();
-        saveCallback.accept(new CollectionVisibilityData(workingVisibilityData),
+        saveCallback.accept(getNormalizedVisibilityData(),
                 visibilityMask == null ? null : new CollectionVisibilityMask(visibilityMask));
     }
 
@@ -353,6 +367,20 @@ public class CollectionVisibilityDialog extends PanelDialog {
     }
 
     private record BooleanMaskBinding(Supplier<Boolean> getter, Consumer<Boolean> setter) {
+    }
+
+    private boolean hasChanges() {
+        return !initialVisibilityData.equals(getNormalizedVisibilityData()) || !Objects.equals(initialVisibilityMask, visibilityMask);
+    }
+
+    private void refreshSaveButton() {
+        if (saveButton != null) {
+            saveButton.active = hasChanges();
+        }
+    }
+
+    private CollectionVisibilityData getNormalizedVisibilityData() {
+        return visibilityMask == null ? workingVisibilityData.normalized() : workingVisibilityData.normalized(visibilityMask);
     }
 
     @FunctionalInterface
