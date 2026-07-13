@@ -1,6 +1,6 @@
-# MapFrontiers
+# ![MapFrontiers](https://alejandrocoria.games/projects/MapFrontiers/github_readme_logo.png)
 
-MapFrontiers is an addon for Journey Map that allows you to divide the map into regions and assign them names and colors.
+MapFrontiers is an addon for JourneyMap that allows you to divide the map into regions and assign them names and colors.
 
 Download from [www.curseforge.com](https://www.curseforge.com/minecraft/mc-mods/mapfrontiers) or [modrinth.com](https://modrinth.com/mod/mapfrontiers)
 
