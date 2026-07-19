@@ -1,3 +1,6 @@
+**Beta 11:**
+* Fixed: Some lists could appear cut off or disappear when using larger GUI scale settings.
+
 **Beta 10:**
 * Changed: Dialog Save buttons are now enabled only for effective changes.
 
