@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component.scroll;
 
 import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.client.gui.util.GuiGraphicsHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphics;
@@ -544,7 +545,7 @@ public class ScrollBox extends AbstractContainerWidget {
         int clipBottom = getY() + height;
 
         if (!elements.isEmpty()) {
-            graphics.enableScissor(clipLeft, clipTop, clipRight, clipBottom);
+            GuiGraphicsHelper.enableTransformedScissor(graphics, clipLeft, clipTop, clipRight, clipBottom);
             try {
                 for (int i = 0; i < elements.size(); ++i) {
                     boolean isFocused = focused == i && isKeyboardFocused();
