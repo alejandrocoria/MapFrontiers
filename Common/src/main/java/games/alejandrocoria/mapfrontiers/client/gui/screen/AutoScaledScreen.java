@@ -162,6 +162,10 @@ public abstract class AutoScaledScreen extends LayeredScreen {
 
     protected abstract void initScreen();
 
+    public final float getScaleFactor() {
+        return scaleFactor;
+    }
+
     protected void renderScaledBackgroundScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {}
 
     protected void renderScaledScreen(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {}
