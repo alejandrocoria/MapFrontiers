@@ -262,6 +262,7 @@ public class FabricJourneyMapHelper implements IJourneyMapHelper {
             int width = Minecraft.getInstance().getWindow().getScreenWidth();
             int height = Minecraft.getInstance().getWindow().getScreenHeight();
             double guiScale = Minecraft.getInstance().getWindow().getGuiScale();
+            int previewSize = Math.max(1, (int) Math.round(size * scaleFactor / guiScale));
             DrawUtil.sizeDisplay(width, height);
 
             graphics.pose().pushPose();
@@ -269,18 +270,23 @@ public class FabricJourneyMapHelper implements IJourneyMapHelper {
             graphics.pose().scale(scaleFactor, scaleFactor, scaleFactor);
 
             mapRenderer.setViewPortBounds(new Rectangle2D.Double(0, 0, width * scaleFactor, height * scaleFactor));
-            graphics.fill(JMRenderTypes.MINIMAP_RECTANGLE_MASK_RENDER_TYPE,
-                    width / 2 + 1,
-                    height / 2 + 1,
-                    width / 2 + size - 1,
-                    height / 2 + size - 1,
-                    0,
-                    0xFFFFFFFF);
-            mapRenderer.draw(graphics, buffers, drawSteps, 0, 0, 1, 0);
+            graphics.enableScissor(x, y, x + previewSize, y + previewSize);
+            try {
+                graphics.fill(JMRenderTypes.MINIMAP_RECTANGLE_MASK_RENDER_TYPE,
+                        width / 2 + 1,
+                        height / 2 + 1,
+                        width / 2 + size - 1,
+                        height / 2 + size - 1,
+                        0,
+                        0xFFFFFFFF);
+                mapRenderer.draw(graphics, buffers, drawSteps, 0, 0, 1, 0);
 
-            graphics.pose().popPose();
+                graphics.pose().popPose();
 
-            DrawUtil.sizeDisplay(width / guiScale, height / guiScale);
+                DrawUtil.sizeDisplay(width / guiScale, height / guiScale);
+            } finally {
+                graphics.disableScissor();
+            }
         }
     }
 }
