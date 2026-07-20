@@ -8,6 +8,7 @@
     "client.AbstractSliderButtonAccessor",
     "client.CubeInvoker",
     "client.EditBoxMixin",
+    "client.GuiGraphicsMixin",
     "client.SpriteContentsInvoker"
   ],
   "server": [
