@@ -184,3 +184,7 @@ publishing {
         }
     }
 }
+
+tasks.named('generateMetadataFileForMavenModPublication') {
+    dependsOn tasks.named('renameJar')
+}
