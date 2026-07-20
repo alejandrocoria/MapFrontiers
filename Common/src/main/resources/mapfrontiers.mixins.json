@@ -9,6 +9,7 @@
     "client.CubeInvoker",
     "client.EditBoxMixin",
     "client.GuiGraphicsAccessor",
+    "client.GuiGraphicsMixin",
     "client.GuiRenderStateAccessor",
     "client.SpriteContentsInvoker"
   ],
