@@ -16,6 +16,12 @@ neoForge {
     }
 }
 
+neoForge.addModdingDependenciesTo(sourceSets["test"])
+
+tasks.named('test', Test).configure {
+    useJUnitPlatform()
+}
+
 dependencies {
     def apiIsSnapshot = project.api_version.endsWith('-SNAPSHOT')
 
@@ -31,6 +37,13 @@ dependencies {
     api "com.electronwill.night-config:core:${project.nightconfig_version}"
     api "com.electronwill.night-config:toml:${project.nightconfig_version}"
     compileOnly("info.journeymap:journeymap-api-common:${project.journeymap_api_version}-${project.journeymap_api_mc_version}-SNAPSHOT") {
+        changing = true
+    }
+
+    testImplementation platform('org.junit:junit-bom:5.13.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation("info.journeymap:journeymap-api-common:${project.journeymap_api_version}-${project.journeymap_api_mc_version}-SNAPSHOT") {
         changing = true
     }
 }
