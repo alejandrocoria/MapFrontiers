@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.platform;
 
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionOverlay;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.ReflectionHelper;
@@ -16,7 +17,6 @@ import journeymap.client.properties.MiniMapProperties;
 import journeymap.client.render.GuiRenderToTexture;
 import journeymap.client.render.draw.DrawMarkerStep;
 import journeymap.client.render.draw.DrawPolygonStep;
-import journeymap.client.render.draw.DrawStep;
 import journeymap.client.render.map.MapRenderer;
 import journeymap.client.texture.TextureCache;
 import journeymap.client.ui.UIManager;
@@ -214,11 +214,18 @@ public class FabricJourneyMapHelper implements IJourneyMapHelper {
 
 
     private static class CustomPreviewRenderer implements ICustomPreviewRenderer {
+        private static final Identifier TRANSPARENT_MARKER_TEXTURE = Identifier.fromNamespaceAndPath(
+                MapFrontiers.MODID, "textures/markers/path/small_dot.png");
+        // Custom previews bypass IClientAPI.show(); newer JourneyMap versions therefore require the draw step
+        // to adopt its texture and be disposed explicitly. Older loader artifacts still manage both internally.
+        private static final boolean EXPLICIT_DRAW_STEP_LIFECYCLE = ReflectionHelper.hasPublicMethod(
+                DrawMarkerStep.class, "setTextureSource", 2);
+
         private final MapRenderer mapRenderer;
         private final GuiRenderToTexture polygonSurface;
         private final MapState mapState;
         private final List<DrawPolygonStep> polygonDrawSteps = new ArrayList<>();
-        private final List<DrawStep> overlayDrawSteps = new ArrayList<>();
+        private final List<DrawMarkerStep> overlayDrawSteps = new ArrayList<>();
 
         public CustomPreviewRenderer() {
             mapRenderer = new MapRenderer(Context.UI.Fullscreen);
@@ -233,18 +240,17 @@ public class FabricJourneyMapHelper implements IJourneyMapHelper {
 
         @Override
         public void setTerritories(List<FrontierOverlay> frontierOverlays, List<CollectionOverlay> collectionOverlays) {
-            polygonDrawSteps.clear();
-            overlayDrawSteps.clear();
+            clearDrawSteps();
 
             for (FrontierOverlay frontierOverlay : frontierOverlays) {
                 for (PolygonOverlay polygon : frontierOverlay.getPolygonOverlays()) {
                     polygonDrawSteps.add(new DrawPolygonStep(polygon));
                 }
                 for (MarkerOverlay marker : frontierOverlay.getMarkerOverlays()) {
-                    overlayDrawSteps.add(new DrawMarkerStep(marker));
+                    overlayDrawSteps.add(createMarkerDrawStep(marker));
                 }
                 for (MarkerOverlay label : frontierOverlay.getLabelOverlays()) {
-                    overlayDrawSteps.add(new DrawMarkerStep(label));
+                    overlayDrawSteps.add(createMarkerDrawStep(label));
                 }
             }
 
@@ -253,9 +259,36 @@ public class FabricJourneyMapHelper implements IJourneyMapHelper {
                     polygonDrawSteps.add(new DrawPolygonStep(polygon));
                 }
                 for (MarkerOverlay marker : collectionOverlay.getLabelOverlays()) {
-                    overlayDrawSteps.add(new DrawMarkerStep(marker));
+                    overlayDrawSteps.add(createMarkerDrawStep(marker));
                 }
             }
+        }
+
+        private void clearDrawSteps() {
+            if (EXPLICIT_DRAW_STEP_LIFECYCLE) {
+                polygonDrawSteps.forEach(drawStep -> ReflectionHelper.invokePublicMethodIfPresent(drawStep, "dispose"));
+                overlayDrawSteps.forEach(drawStep -> ReflectionHelper.invokePublicMethodIfPresent(drawStep, "dispose"));
+            }
+            polygonDrawSteps.clear();
+            overlayDrawSteps.clear();
+        }
+
+        private static DrawMarkerStep createMarkerDrawStep(MarkerOverlay marker) {
+            DrawMarkerStep drawStep = new DrawMarkerStep(marker);
+            if (!EXPLICIT_DRAW_STEP_LIFECYCLE) {
+                return drawStep;
+            }
+
+            Identifier texture = marker.getIcon().getImageLocation();
+            if (texture == null) {
+                if (marker.getIcon().getOpacity() != 0.f) {
+                    throw new IllegalArgumentException("Preview markers with native images must be fully transparent");
+                }
+                texture = TRANSPARENT_MARKER_TEXTURE;
+            }
+
+            ReflectionHelper.invokePublicMethodIfPresent(drawStep, "setTextureSource", texture, null);
+            return drawStep;
         }
 
         @Override
@@ -307,7 +340,7 @@ public class FabricJourneyMapHelper implements IJourneyMapHelper {
                         drawPolygonStep.drawTextLayer(graphics, 0, 0, mapRenderer, 1, 0);
                     }
 
-                    for (DrawStep drawStep : overlayDrawSteps) {
+                    for (DrawMarkerStep drawStep : overlayDrawSteps) {
                         drawStep.draw(graphics, 0, 0, mapRenderer, 1, 0);
                     }
                     buffers.endBatch();
