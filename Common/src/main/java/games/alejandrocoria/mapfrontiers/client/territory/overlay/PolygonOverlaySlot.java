@@ -32,7 +32,8 @@ public final class PolygonOverlaySlot extends OverlaySlot<PolygonOverlay> {
             overlay.setOuterArea(state.getOuterArea());
             overlay.setHoles(state.getHoles());
             overlay.setShapeProperties(state.getShapeProperties());
-            state.getDisplayState().applyTo(overlay);
+            // JourneyMap's polygon renderer always dereferences TextProperties, even without a label.
+            state.getDisplayState().applyTo(overlay, true);
             desiredState = state;
         }
 
