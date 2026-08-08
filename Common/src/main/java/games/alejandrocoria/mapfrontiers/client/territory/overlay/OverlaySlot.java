@@ -41,6 +41,14 @@ public abstract class OverlaySlot<O extends Displayable> {
         }
     }
 
+    public final void reconcileVisibility(boolean visible, OverlayRefreshResult result, String layer) {
+        Objects.requireNonNull(result, "result");
+        Objects.requireNonNull(layer, "layer");
+        if (overlay != null) {
+            reconcilePublication(visible, false, result, layer);
+        }
+    }
+
     public final void retire(OverlayRefreshResult result, String layer) {
         if (overlay == null) {
             return;

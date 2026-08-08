@@ -40,6 +40,7 @@ public class BannerRenderer {
     private final int textureInstanceId = NEXT_TEXTURE_INSTANCE_ID.incrementAndGet();
     private Identifier textureLocation;
     private int rotation;
+    private long textureRevision;
 
     public void createTexture(UUID id, BannerData bannerData) {
         releaseTexture();
@@ -104,9 +105,11 @@ public class BannerRenderer {
                 generateBannerLayer(tempBannerImage, flagUV, sprite.contents(), layer.color());
             }
 
-            textureLocation = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "banner/" + id + "/" + textureInstanceId);
-            DynamicTexture texture = new DynamicTexture(() -> textureLocation.toString(), tempBannerImage.mappedCopy(ARGB::opaque));
-            mc.getTextureManager().register(textureLocation, texture);
+            Identifier newTextureLocation = Identifier.fromNamespaceAndPath(MapFrontiers.MODID, "banner/" + id + "/" + textureInstanceId);
+            DynamicTexture texture = new DynamicTexture(() -> newTextureLocation.toString(), tempBannerImage.mappedCopy(ARGB::opaque));
+            mc.getTextureManager().register(newTextureLocation, texture);
+            textureLocation = newTextureLocation;
+            textureRevision++;
         } finally {
             tempBannerImage.close();
         }
@@ -202,14 +205,23 @@ public class BannerRenderer {
         if (textureLocation != null) {
             Minecraft.getInstance().getTextureManager().release(textureLocation);
             textureLocation = null;
+            textureRevision++;
         }
     }
 
     public void setRotation(int rotation) {
+        if (this.rotation == rotation) {
+            return;
+        }
         this.rotation = rotation;
+        textureRevision++;
     }
 
     public int getRotation() {
         return rotation;
+    }
+
+    public long getTextureRevision() {
+        return textureRevision;
     }
 }
