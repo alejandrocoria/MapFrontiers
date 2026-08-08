@@ -49,6 +49,14 @@ public final class OverlayDisplayState {
     }
 
     void applyTo(Overlay overlay) {
+        applyTo(overlay, false);
+    }
+
+    void applyTo(Overlay overlay, boolean retainNeutralTextProperties) {
+        // JourneyMap mirrors several overlay values into TextProperties and expects an instance while doing so.
+        if (textProperties == null && (retainNeutralTextProperties || overlay.getTextProperties() == null)) {
+            overlay.setTextProperties(new TextProperties());
+        }
         overlay.setDimension(dimension);
         overlay.setActiveUIs(activation.getUis());
         overlay.setActiveMapTypes(activation.getMapTypes());
@@ -58,7 +66,9 @@ public final class OverlayDisplayState {
         overlay.setOverlayGroupName(groupName);
         overlay.setTitle(title);
         overlay.setLabel(label);
-        overlay.setTextProperties(textProperties);
+        if (textProperties != null || !retainNeutralTextProperties) {
+            overlay.setTextProperties(textProperties);
+        }
         overlay.setOverlayListener(listener);
     }
 

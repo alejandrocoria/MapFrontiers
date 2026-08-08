@@ -10,6 +10,14 @@ import games.alejandrocoria.mapfrontiers.client.config.TextColor;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.territory.BannerRenderer;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionLocalOverrides;
+import games.alejandrocoria.mapfrontiers.client.territory.overlay.OverlayActivation;
+import games.alejandrocoria.mapfrontiers.client.territory.overlay.OverlayDisplayState;
+import games.alejandrocoria.mapfrontiers.client.territory.overlay.OverlayPublisher;
+import games.alejandrocoria.mapfrontiers.client.territory.overlay.OverlayPublishers;
+import games.alejandrocoria.mapfrontiers.client.territory.overlay.OverlayRefreshResult;
+import games.alejandrocoria.mapfrontiers.client.territory.overlay.OverlayRetryLimiter;
+import games.alejandrocoria.mapfrontiers.client.territory.overlay.PolygonOverlayLayer;
+import games.alejandrocoria.mapfrontiers.client.territory.overlay.PolygonOverlayState;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
@@ -98,10 +106,14 @@ public class FrontierOverlay extends FrontierData {
     private boolean highlighted = false;
 
     private final IClientAPI jmAPI;
-    private final List<PolygonOverlay> polygonOverlays = new ArrayList<>();
-    private final List<PolygonOverlay> collectionPolygonOverlays = new ArrayList<>();
+    private final OverlayPublisher overlayPublisher;
+    private final PolygonOverlayLayer polygonBaseLayer;
+    private final PolygonOverlayLayer polygonCollectionLayer;
+    private final OverlayRetryLimiter overlayRetryLimiter = new OverlayRetryLimiter();
     private final List<PolygonOverlay> highlightPolygonOverlays = new ArrayList<>();
     private final List<PolygonRenderGeometry> polygonRenderGeometries = new ArrayList<>();
+    private long polygonGeometryRevision;
+    private @Nullable FrontierShape renderedBaseShape;
     private Area polygonArea;
     private final List<MarkerOverlay> markerOverlays = new ArrayList<>();
     private final List<MarkerOverlay> highlightMarkerOverlays = new ArrayList<>();
@@ -136,6 +148,9 @@ public class FrontierOverlay extends FrontierData {
     public FrontierOverlay(FrontierData data, @Nullable IClientAPI jmAPI) {
         super(data);
         this.jmAPI = jmAPI;
+        overlayPublisher = OverlayPublishers.create(jmAPI);
+        polygonBaseLayer = new PolygonOverlayLayer(MapFrontiers.MODID, "polygon-base", overlayPublisher);
+        polygonCollectionLayer = new PolygonOverlayLayer(MapFrontiers.MODID, "polygon-collection", overlayPublisher);
         setVisibilityOverride(MapFrontiersClient.getLocalOverrides().getVisibility(id));
         refreshEffectiveBannerRenderer();
         rebuildOverlayNow();
@@ -230,7 +245,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public List<PolygonOverlay> getPolygonOverlays() {
-        return polygonOverlays;
+        return polygonBaseLayer.getOverlays();
     }
 
     public List<MarkerOverlay> getMarkerOverlays() {
@@ -246,10 +261,7 @@ public class FrontierOverlay extends FrontierData {
             return null;
         }
 
-        if (geometryCacheDirty) {
-            rebuildGeometryCache();
-            geometryCacheDirty = false;
-        }
+        ensureGeometryCache();
 
         if (polygonRenderGeometries.isEmpty()) {
             return null;
@@ -300,19 +312,30 @@ public class FrontierOverlay extends FrontierData {
 
     private void refreshOverlay() {
         needUpdateOverlay = false;
-        if (geometryCacheDirty) {
-            rebuildGeometryCache();
-            geometryCacheDirty = false;
+        OverlayRefreshResult refreshResult = new OverlayRefreshResult();
+        boolean baseShapeChanged = (baseOverlaysDirty || collectionBaseOverlaysDirty)
+                && renderedBaseShape != frontierShape;
+        if (baseShapeChanged) {
+            polygonBaseLayer.clear(refreshResult);
+            polygonCollectionLayer.clear(refreshResult);
+            hideMarkerOverlays(markerOverlays);
+            markerOverlays.clear();
         }
 
+        ensureGeometryCache();
+
         if (baseOverlaysDirty) {
-            rebuildBaseOverlays();
+            rebuildBaseOverlays(refreshResult);
             baseOverlaysDirty = false;
         }
 
         if (collectionBaseOverlaysDirty) {
-            rebuildCollectionBaseOverlays();
+            rebuildCollectionBaseOverlays(refreshResult);
             collectionBaseOverlaysDirty = false;
+        }
+
+        if (baseShapeChanged) {
+            renderedBaseShape = frontierShape;
         }
 
         if (labelsDirty) {
@@ -328,9 +351,12 @@ public class FrontierOverlay extends FrontierData {
             refreshHighlightVisibility();
             highlightVisibilityDirty = false;
         }
+
+        finishOverlayRefresh(refreshResult);
     }
 
     private void invalidateOverlayRefresh() {
+        overlayRetryLimiter.resetForFunctionalInvalidation();
         if (!needUpdateOverlay && dirtyOverlayListener != null && !suppressDirtyOverlayListener) {
             dirtyOverlayListener.run();
         }
@@ -339,6 +365,30 @@ public class FrontierOverlay extends FrontierData {
 
     void setDirtyOverlayListener(@Nullable Runnable dirtyOverlayListener) {
         this.dirtyOverlayListener = dirtyOverlayListener;
+        if (dirtyOverlayListener != null && needUpdateOverlay) {
+            dirtyOverlayListener.run();
+        }
+    }
+
+    private void finishOverlayRefresh(OverlayRefreshResult result) {
+        if (!result.hasFailures()) {
+            return;
+        }
+
+        MapFrontiers.LOGGER.error("Failed to refresh JourneyMap overlays for frontier {}: {}",
+                id, result.getFailureSummaries(), result.getFirstFailure());
+        if (overlayRetryLimiter.consumeRetry(result)) {
+            scheduleOverlayRetry();
+        }
+    }
+
+    private void scheduleOverlayRetry() {
+        baseOverlaysDirty = true;
+        collectionBaseOverlaysDirty = true;
+        needUpdateOverlay = true;
+        if (dirtyOverlayListener != null) {
+            dirtyOverlayListener.run();
+        }
     }
 
     private void invalidateAllOverlayLayers() {
@@ -454,14 +504,10 @@ public class FrontierOverlay extends FrontierData {
     }
 
     private void removeOverlay() {
+        OverlayRefreshResult result = new OverlayRefreshResult();
         try {
-            for (PolygonOverlay polygon : polygonOverlays) {
-                removePolygonOverlay(polygon);
-            }
-
-            for (PolygonOverlay polygon : collectionPolygonOverlays) {
-                removePolygonOverlay(polygon);
-            }
+            polygonBaseLayer.clear(result);
+            polygonCollectionLayer.clear(result);
 
             for (PolygonOverlay polygon : highlightPolygonOverlays) {
                 removePolygonOverlay(polygon);
@@ -479,12 +525,16 @@ public class FrontierOverlay extends FrontierData {
                 removeMarkerOverlay(label);
             }
         } finally {
-            polygonOverlays.clear();
-            collectionPolygonOverlays.clear();
             highlightPolygonOverlays.clear();
             markerOverlays.clear();
             highlightMarkerOverlays.clear();
             labelOverlays.clear();
+            renderedBaseShape = null;
+        }
+
+        if (result.hasFailures()) {
+            MapFrontiers.LOGGER.error("Failed to remove JourneyMap overlays for frontier {}: {}",
+                    id, result.getFailureSummaries(), result.getFirstFailure());
         }
     }
 
@@ -1105,8 +1155,9 @@ public class FrontierOverlay extends FrontierData {
                 }
             }
         } else {
-            for (PolygonOverlay overlay : polygonOverlays) {
-                for (BlockPos v : overlay.getOuterArea().getPoints()) {
+            ensureGeometryCache();
+            for (PolygonRenderGeometry geometry : polygonRenderGeometries) {
+                for (BlockPos v : geometry.polygon().getPoints()) {
                     double distance = v.distSqr(vertex);
                     if (distance <= closestDistance) {
                         closestDistance = distance;
@@ -1114,8 +1165,8 @@ public class FrontierOverlay extends FrontierData {
                     }
                 }
 
-                if (overlay.getHoles() != null) {
-                    for (MapPolygon hole : overlay.getHoles()) {
+                if (geometry.holes() != null) {
+                    for (MapPolygon hole : geometry.holes()) {
                         for (BlockPos v : hole.getPoints()) {
                             double distance = v.distSqr(vertex);
                             if (distance <= closestDistance) {
@@ -1444,7 +1495,15 @@ public class FrontierOverlay extends FrontierData {
         rebuildOverlayNow();
     }
 
+    private void ensureGeometryCache() {
+        if (geometryCacheDirty) {
+            rebuildGeometryCache();
+            geometryCacheDirty = false;
+        }
+    }
+
     private void rebuildGeometryCache() {
+        polygonGeometryRevision++;
         polygonRenderGeometries.clear();
         updateBounds();
 
@@ -1459,6 +1518,11 @@ public class FrontierOverlay extends FrontierData {
         } else {
             rebuildChunkGeometryCache();
         }
+    }
+
+    private void addPolygonRenderGeometry(MapPolygon polygon, @Nullable List<MapPolygon> holes, int minZoom) {
+        PolygonGeometryKey geometryKey = new PolygonGeometryKey(polygonGeometryRevision, polygonRenderGeometries.size());
+        polygonRenderGeometries.add(new PolygonRenderGeometry(polygon, holes, minZoom, geometryKey));
     }
 
     private @Nullable PathLayoutCache ensurePathLayoutCache() {
@@ -1634,21 +1698,21 @@ public class FrontierOverlay extends FrontierData {
         return List.copyOf(anchors);
     }
 
-    private void rebuildBaseOverlays() {
+    private void rebuildBaseOverlays(OverlayRefreshResult result) {
         if (frontierShape == FrontierShape.Path) {
             rebuildPathBaseOverlays();
         } else {
-            rebuildPolygonBaseOverlays();
+            rebuildPolygonBaseOverlays(result);
         }
     }
 
-    private void rebuildCollectionBaseOverlays() {
+    private void rebuildCollectionBaseOverlays(OverlayRefreshResult result) {
         if (frontierShape == FrontierShape.Path || previewCollectionStyleEnabled) {
-            clearCollectionPolygonOverlays();
+            clearCollectionPolygonOverlays(result);
             return;
         }
 
-        rebuildPolygonCollectionOverlays();
+        rebuildPolygonCollectionOverlays(result);
     }
 
     private void rebuildLabels() {
@@ -1667,50 +1731,43 @@ public class FrontierOverlay extends FrontierData {
         }
     }
 
-    private void rebuildPolygonBaseOverlays() {
-        hidePolygonOverlays(polygonOverlays);
-        polygonOverlays.clear();
-
+    private void rebuildPolygonBaseOverlays(OverlayRefreshResult result) {
         PolygonUiPlanCache polygonUiPlan = ensurePolygonUiPlanCache();
-        if (polygonUiPlan == null || polygonUiPlan.entries().isEmpty()) {
-            return;
+        PolygonStyleKey styleKey = createBasePolygonStyleKey();
+        ShapeProperties shapeProperties = createShapeProperties(styleKey);
+        boolean visible = isFrontierVisible();
+        polygonBaseLayer.beginReconcile();
+        if (polygonUiPlan != null) {
+            for (PolygonUiPlanEntry entry : polygonUiPlan.entries()) {
+                polygonBaseLayer.reconcileNext(createPolygonOverlayState(shapeProperties, styleKey, entry,
+                        resolveCollectionNormalMinZoom(entry), 0), visible, result);
+            }
         }
-
-        ShapeProperties shapeProps = createBaseShapeProperties();
-        for (PolygonUiPlanEntry entry : polygonUiPlan.entries()) {
-            polygonOverlays.add(createPolygonOverlay(shapeProps, entry, resolveCollectionNormalMinZoom(entry), 0));
-        }
-
-        if (isFrontierVisible()) {
-            showPolygonOverlaysQuietly(polygonOverlays);
-        }
+        polygonBaseLayer.finishReconcile(result);
     }
 
-    private void rebuildPolygonCollectionOverlays() {
-        clearCollectionPolygonOverlays();
-
+    private void rebuildPolygonCollectionOverlays(OverlayRefreshResult result) {
         PolygonUiPlanCache polygonUiPlan = ensurePolygonUiPlanCache();
-        if (polygonUiPlan == null || polygonUiPlan.entries().isEmpty()) {
-            return;
-        }
+        PolygonStyleKey styleKey = createCollectionPolygonStyleKey();
+        ShapeProperties shapeProperties = createShapeProperties(styleKey);
+        boolean visible = isFrontierVisible();
+        polygonCollectionLayer.beginReconcile();
+        if (polygonUiPlan != null) {
+            for (PolygonUiPlanEntry entry : polygonUiPlan.entries()) {
+                if (!shouldRenderCollectionView(entry.ui())) {
+                    continue;
+                }
 
-        ShapeProperties shapeProps = createCollectionShapeProperties();
-        for (PolygonUiPlanEntry entry : polygonUiPlan.entries()) {
-            if (!shouldRenderCollectionView(entry.ui())) {
-                continue;
+                int collectionMaxZoom = resolveCollectionMaxZoom(entry.ui());
+                if (collectionMaxZoom <= 0) {
+                    continue;
+                }
+
+                polygonCollectionLayer.reconcileNext(createPolygonOverlayState(shapeProperties, styleKey, entry,
+                        entry.minZoom(), collectionMaxZoom), visible, result);
             }
-
-            int collectionMaxZoom = resolveCollectionMaxZoom(entry.ui());
-            if (collectionMaxZoom <= 0) {
-                continue;
-            }
-
-            collectionPolygonOverlays.add(createPolygonOverlay(shapeProps, entry, entry.minZoom(), collectionMaxZoom));
         }
-
-        if (isFrontierVisible()) {
-            showPolygonOverlaysQuietly(collectionPolygonOverlays);
-        }
+        polygonCollectionLayer.finishReconcile(result);
     }
 
     private void rebuildPolygonLabelsFromCurrentOverlays() {
@@ -1732,9 +1789,8 @@ public class FrontierOverlay extends FrontierData {
         }
     }
 
-    private void clearCollectionPolygonOverlays() {
-        hidePolygonOverlays(collectionPolygonOverlays);
-        collectionPolygonOverlays.clear();
+    private void clearCollectionPolygonOverlays(OverlayRefreshResult result) {
+        polygonCollectionLayer.clear(result);
     }
 
     private void rebuildPolygonHighlightOverlays() {
@@ -1835,7 +1891,7 @@ public class FrontierOverlay extends FrontierData {
         showMarkerOverlaysQuietly(highlightMarkerOverlays);
     }
 
-    private ShapeProperties createBaseShapeProperties() {
+    private PolygonStyleKey createBasePolygonStyleKey() {
         int baseColor = previewCollectionStyleEnabled ? previewCollectionColor : color;
         float borderWidth = previewCollectionStyleEnabled ? ClientConfig.COLLECTION_BORDER_WIDTH.get() / 2.f : ClientConfig.BORDER_WIDTH.get();
         float borderOpacity = previewCollectionStyleEnabled
@@ -1845,25 +1901,28 @@ public class FrontierOverlay extends FrontierData {
                 ? ClientConfig.COLLECTION_FILL_OPACITY.get().floatValue()
                 : ClientConfig.FILL_OPACITY.get().floatValue();
 
-        return new ShapeProperties()
-                .setStrokeWidth(borderWidth)
-                .setStrokeColor(baseColor)
-                .setStrokeOpacity(borderOpacity)
-                .setStrokePosition(ShapeProperties.StrokePosition.INSIDE)
-                .setFillColor(baseColor)
-                .setFillOpacity(fillOpacity);
+        return new PolygonStyleKey(baseColor, baseColor, borderWidth, borderOpacity, fillOpacity,
+                ShapeProperties.StrokePosition.INSIDE);
     }
 
-    private ShapeProperties createCollectionShapeProperties() {
+    private PolygonStyleKey createCollectionPolygonStyleKey() {
         CollectionData collection = getCollection();
         int collectionColor = collection == null ? color : collection.getColor();
+        return new PolygonStyleKey(collectionColor, collectionColor,
+                ClientConfig.COLLECTION_BORDER_WIDTH.get() / 2.f,
+                ClientConfig.COLLECTION_BORDER_OPACITY.get().floatValue(),
+                ClientConfig.COLLECTION_FILL_OPACITY.get().floatValue(),
+                ShapeProperties.StrokePosition.INSIDE);
+    }
+
+    private static ShapeProperties createShapeProperties(PolygonStyleKey styleKey) {
         return new ShapeProperties()
-                .setStrokeWidth(ClientConfig.COLLECTION_BORDER_WIDTH.get() / 2.f)
-                .setStrokeColor(collectionColor)
-                .setStrokeOpacity(ClientConfig.COLLECTION_BORDER_OPACITY.get().floatValue())
-                .setStrokePosition(ShapeProperties.StrokePosition.INSIDE)
-                .setFillColor(collectionColor)
-                .setFillOpacity(ClientConfig.COLLECTION_FILL_OPACITY.get().floatValue());
+                .setStrokeWidth(styleKey.strokeWidth())
+                .setStrokeColor(styleKey.strokeColor())
+                .setStrokeOpacity(styleKey.strokeOpacity())
+                .setStrokePosition(styleKey.strokePosition())
+                .setFillColor(styleKey.fillColor())
+                .setFillOpacity(styleKey.fillOpacity());
     }
 
     private void hidePolygonOverlays(List<PolygonOverlay> overlays) {
@@ -1918,18 +1977,14 @@ public class FrontierOverlay extends FrontierData {
                 .setFillOpacity(0);
     }
 
-    private PolygonOverlay createPolygonOverlay(ShapeProperties shapeProps, PolygonUiPlanEntry entry, int minZoom, int maxZoom) {
+    private PolygonOverlayState createPolygonOverlayState(ShapeProperties shapeProperties, PolygonStyleKey styleKey,
+                                                          PolygonUiPlanEntry entry, int minZoom, int maxZoom) {
         PolygonRenderGeometry geometry = entry.geometry();
-        PolygonOverlay overlay = new PolygonOverlay(MapFrontiers.MODID, dimension, shapeProps, geometry.polygon(), geometry.holes());
-        overlay.setActiveUIs(entry.ui());
-        overlay.setActiveMapTypes(entry.activeMapTypes());
-        if (minZoom > 0) {
-            overlay.setMinZoom(minZoom);
-        }
-        if (maxZoom > 0) {
-            overlay.setMaxZoom(maxZoom);
-        }
-        return overlay;
+        OverlayDisplayState displayState = new OverlayDisplayState(dimension,
+                OverlayActivation.of(entry.ui(), entry.activeMapTypes()), minZoom, maxZoom,
+                0, null, null, null, null, null, null);
+        return new PolygonOverlayState(geometry.polygon(), geometry.holes(), shapeProperties,
+                geometry.geometryKey(), styleKey, displayState);
     }
 
     private void addHighlightPolygonOverlay(ShapeProperties highlightShapeProps, PolygonRenderGeometry geometry) {
@@ -1947,7 +2002,7 @@ public class FrontierOverlay extends FrontierData {
             if (vertices.size() > 2) {
                 MapPolygon polygon = new MapPolygon(vertices);
                 polygonArea = PolygonHelper.toArea(polygon);
-                polygonRenderGeometries.add(new PolygonRenderGeometry(polygon, null, 0));
+                addPolygonRenderGeometry(polygon, null, 0);
 
                 BlockPos last = vertices.getLast();
                 for (BlockPos vertex : vertices) {
@@ -1956,7 +2011,7 @@ public class FrontierOverlay extends FrontierData {
                 }
                 area = abs(area / 2.f);
             } else if (!vertices.isEmpty()) {
-                polygonRenderGeometries.add(new PolygonRenderGeometry(createIncompleteVertexPolygon(), null, INCOMPLETE_VERTEX_FRONTIER_MIN_ZOOM));
+                addPolygonRenderGeometry(createIncompleteVertexPolygon(), null, INCOMPLETE_VERTEX_FRONTIER_MIN_ZOOM);
             }
 
             if (vertices.size() > 1) {
@@ -2227,7 +2282,7 @@ public class FrontierOverlay extends FrontierData {
                 }
             }
 
-            polygonRenderGeometries.add(new PolygonRenderGeometry(polygon, polygonHoles, 0));
+            addPolygonRenderGeometry(polygon, polygonHoles, 0);
         }
 
         area = chunks.size() * 256;
@@ -3068,7 +3123,19 @@ public class FrontierOverlay extends FrontierData {
 
     private record PolygonRenderGeometry(MapPolygon polygon,
                                          @Nullable List<MapPolygon> holes,
-                                         int minZoom) {
+                                         int minZoom,
+                                         PolygonGeometryKey geometryKey) {
+    }
+
+    private record PolygonGeometryKey(long revision, int ordinal) {
+    }
+
+    private record PolygonStyleKey(int strokeColor,
+                                   int fillColor,
+                                   float strokeWidth,
+                                   float strokeOpacity,
+                                   float fillOpacity,
+                                   ShapeProperties.StrokePosition strokePosition) {
     }
 
     private record PathLayoutCache(List<PathPointLayout> pointLayouts,

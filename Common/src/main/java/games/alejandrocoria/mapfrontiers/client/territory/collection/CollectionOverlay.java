@@ -36,8 +36,10 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @ParametersAreNonnullByDefault
 public class CollectionOverlay {
@@ -287,10 +289,7 @@ public class CollectionOverlay {
             }
 
             for (CollectionGeometryIsland island : variant.getIslands()) {
-                CollectionIslandRenderGeometry geometry = buildIslandRenderGeometry(island);
-                if (geometry == null) {
-                    continue;
-                }
+                CollectionIslandRenderGeometry geometry = island.getRenderGeometry();
 
                 PolygonOverlay overlay = new PolygonOverlay(MapFrontiers.MODID, key.dimension(),
                         borderShapeProperties, geometry.polygon(), geometry.holes());
@@ -853,10 +852,7 @@ public class CollectionOverlay {
         List<CollectionGeometryIsland> islands = extractGeometryIslands(unionArea, sourceIslands);
         List<CollectionHighlightRenderGeometry> geometries = new ArrayList<>(islands.size());
         for (CollectionGeometryIsland island : islands) {
-            CollectionHighlightRenderGeometry geometry = buildHighlightRenderGeometry(island);
-            if (geometry != null) {
-                geometries.add(geometry);
-            }
+            geometries.add(buildHighlightRenderGeometry(island));
         }
 
         return List.copyOf(geometries);
@@ -872,107 +868,188 @@ public class CollectionOverlay {
         return null;
     }
 
-    private static List<CollectionGeometryIsland> extractGeometryIslands(Area unionArea, List<CollectionSourceIsland> sourceIslands) {
-        List<Area> extractedAreas = extractRegionAreas(unionArea);
-        List<CollectionGeometryIsland> islands = new ArrayList<>();
+    static List<CollectionGeometryIsland> extractGeometryIslands(Area unionArea, List<CollectionSourceIsland> sourceIslands) {
+        List<CollectionRegionGeometry> regions = extractRegionGeometries(unionArea);
+        List<Rectangle2D> sourceBounds = new ArrayList<>(sourceIslands.size());
+        for (CollectionSourceIsland sourceIsland : sourceIslands) {
+            sourceBounds.add(sourceIsland.effectiveArea().getBounds2D());
+        }
 
-        for (Area extractedArea : extractedAreas) {
-            if (extractedArea.isEmpty()) {
-                continue;
-            }
-
+        List<CollectionGeometryIsland> islands = new ArrayList<>(regions.size());
+        for (CollectionRegionGeometry region : regions) {
+            Rectangle2D regionBounds = region.effectiveArea().getBounds2D();
             int minZoom = Integer.MAX_VALUE;
-            for (CollectionSourceIsland sourceIsland : sourceIslands) {
-                if (intersects(extractedArea, sourceIsland.effectiveArea())) {
+            for (int sourceIndex = 0; sourceIndex < sourceIslands.size(); ++sourceIndex) {
+                if (!regionBounds.intersects(sourceBounds.get(sourceIndex))) {
+                    continue;
+                }
+
+                CollectionSourceIsland sourceIsland = sourceIslands.get(sourceIndex);
+                if (intersects(region.effectiveArea(), sourceIsland.effectiveArea())) {
                     minZoom = Math.min(minZoom, sourceIsland.minZoom());
                 }
             }
 
             if (minZoom != Integer.MAX_VALUE) {
-                islands.add(new CollectionGeometryIsland(extractedArea, minZoom));
+                islands.add(new CollectionGeometryIsland(region.effectiveArea(), minZoom, region.renderGeometry()));
             }
         }
 
         return List.copyOf(islands);
     }
 
-    private static List<Area> extractRegionAreas(Area area) {
+    private static List<CollectionRegionGeometry> extractRegionGeometries(Area area) {
         List<RingPath> rings = extractRingPaths(area);
         if (rings.isEmpty()) {
             return List.of();
         }
 
         double outerSign = resolveOuterRingSign(rings);
-        List<Area> islandAreas = new ArrayList<>();
-
+        List<RingPath> outerRings = new ArrayList<>();
+        List<RingPath> holeRings = new ArrayList<>();
         for (RingPath ring : rings) {
-            if (!hasSameSign(ring.signedArea(), outerSign)) {
-                continue;
+            if (hasSameSign(ring.signedArea(), outerSign)) {
+                outerRings.add(ring);
+            } else {
+                holeRings.add(ring);
             }
+        }
 
-            Area islandArea = new Area(ring.path());
-            Rectangle2D outerBounds = islandArea.getBounds2D();
-            for (RingPath holeCandidate : rings) {
-                if (hasSameSign(holeCandidate.signedArea(), outerSign)) {
+        List<RingPath> mergedOuterRings = mergeTouchingRings(outerRings);
+        List<RingPath> mergedHoleRings = mergeTouchingRings(holeRings);
+        List<CollectionRegionGeometry> regions = new ArrayList<>(mergedOuterRings.size());
+        for (RingPath outerRing : mergedOuterRings) {
+            Area effectiveArea = new Area(outerRing.path());
+            Rectangle2D outerBounds = effectiveArea.getBounds2D();
+            List<MapPolygon> holes = new ArrayList<>();
+            for (RingPath holeRing : mergedHoleRings) {
+                Rectangle2D holeBounds = holeRing.area().getBounds2D();
+                if (!outerBounds.contains(holeBounds)) {
                     continue;
                 }
 
-                Rectangle2D holeBounds = holeCandidate.area().getBounds2D();
-                if (outerBounds.contains(holeBounds)) {
-                    islandArea.subtract(new Area(holeCandidate.path()));
+                Area holeArea = new Area(holeRing.path());
+                Area outsideArea = new Area(holeArea);
+                outsideArea.subtract(effectiveArea);
+                if (!outsideArea.isEmpty()) {
+                    continue;
                 }
-            }
 
-            if (!islandArea.isEmpty()) {
-                islandAreas.add(islandArea);
-            }
-        }
-
-        return List.copyOf(islandAreas);
-    }
-
-    private static @Nullable CollectionHighlightRenderGeometry buildHighlightRenderGeometry(CollectionGeometryIsland island) {
-        CollectionIslandRenderGeometry geometry = buildIslandRenderGeometry(island);
-        if (geometry == null) {
-            return null;
-        }
-
-        return new CollectionHighlightRenderGeometry(geometry.polygon(), geometry.holes(), island.getMinZoom());
-    }
-
-    private static @Nullable CollectionIslandRenderGeometry buildIslandRenderGeometry(CollectionGeometryIsland island) {
-        List<RingPath> rings = extractRingPaths(island.copyEffectiveArea());
-        if (rings.isEmpty()) {
-            return null;
-        }
-
-        double outerSign = resolveOuterRingSign(rings);
-        RingPath outerRing = null;
-        List<MapPolygon> holes = new ArrayList<>();
-
-        for (RingPath ring : rings) {
-            if (hasSameSign(ring.signedArea(), outerSign)) {
-                if (outerRing == null || Math.abs(ring.signedArea()) > Math.abs(outerRing.signedArea())) {
-                    outerRing = ring;
-                }
-            } else {
-                MapPolygon holePolygon = toMapPolygon(ring.points());
+                effectiveArea.subtract(holeArea);
+                MapPolygon holePolygon = toMapPolygon(holeRing.points());
                 if (holePolygon != null) {
                     holes.add(holePolygon);
                 }
             }
+
+            MapPolygon polygon = toMapPolygon(outerRing.points());
+            if (polygon != null && !effectiveArea.isEmpty()) {
+                CollectionIslandRenderGeometry renderGeometry = new CollectionIslandRenderGeometry(
+                        polygon, holes.isEmpty() ? null : List.copyOf(holes));
+                regions.add(new CollectionRegionGeometry(effectiveArea, renderGeometry));
+            }
         }
 
-        if (outerRing == null) {
+        return List.copyOf(regions);
+    }
+
+    static List<RingPath> mergeTouchingRings(List<RingPath> rings) {
+        // Area may represent one connected region as non-overlapping subpaths with shared outlines.
+        // Removing opposite edge pairs restores the actual boundary without changing its coordinates.
+        Set<DirectedEdge> boundaryEdges = new LinkedHashSet<>();
+        Map<DirectedEdge, Integer> edgeOwners = new HashMap<>();
+        for (int ringIndex = 0; ringIndex < rings.size(); ++ringIndex) {
+            RingPath ring = rings.get(ringIndex);
+            List<Point2D.Double> points = ring.points();
+            for (int i = 0; i < points.size(); ++i) {
+                DirectedEdge edge = new DirectedEdge(points.get(i), points.get((i + 1) % points.size()));
+                DirectedEdge reverse = edge.reverse();
+                if (boundaryEdges.remove(reverse)) {
+                    edgeOwners.remove(reverse);
+                } else {
+                    if (!boundaryEdges.add(edge)) {
+                        return List.copyOf(rings);
+                    }
+                    edgeOwners.put(edge, ringIndex);
+                }
+            }
+        }
+
+        Map<Point2D.Double, List<DirectedEdge>> outgoingEdges = new HashMap<>();
+        for (DirectedEdge edge : boundaryEdges) {
+            outgoingEdges.computeIfAbsent(edge.from(), ignored -> new ArrayList<>()).add(edge);
+        }
+
+        Set<DirectedEdge> remainingEdges = new LinkedHashSet<>(boundaryEdges);
+        List<RingPath> mergedRings = new ArrayList<>();
+        while (!remainingEdges.isEmpty()) {
+            DirectedEdge firstEdge = remainingEdges.iterator().next();
+            List<Point2D.Double> points = new ArrayList<>();
+            DirectedEdge edge = firstEdge;
+            boolean closed = false;
+            while (edge != null && remainingEdges.remove(edge)) {
+                points.add(edge.from());
+                if (edge.to().equals(firstEdge.from())) {
+                    closed = true;
+                    break;
+                }
+                edge = nextBoundaryEdge(outgoingEdges.get(edge.to()), remainingEdges,
+                        edgeOwners.get(edge), edgeOwners);
+            }
+
+            if (!closed) {
+                return List.copyOf(rings);
+            }
+            RingPath mergedRing = createRingPath(points);
+            if (mergedRing != null) {
+                mergedRings.add(mergedRing);
+            }
+        }
+
+        return List.copyOf(mergedRings);
+    }
+
+    private static @Nullable DirectedEdge nextBoundaryEdge(@Nullable List<DirectedEdge> candidates,
+                                                            Set<DirectedEdge> remainingEdges,
+                                                            int preferredOwner,
+                                                            Map<DirectedEdge, Integer> edgeOwners) {
+        if (candidates == null) {
             return null;
         }
 
-        MapPolygon outerPolygon = toMapPolygon(outerRing.points());
-        if (outerPolygon == null) {
+        for (DirectedEdge candidate : candidates) {
+            if (remainingEdges.contains(candidate) && edgeOwners.get(candidate) == preferredOwner) {
+                return candidate;
+            }
+        }
+        for (DirectedEdge candidate : candidates) {
+            if (remainingEdges.contains(candidate)) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    static @Nullable RingPath createRingPath(List<Point2D.Double> points) {
+        if (points.size() < 3) {
             return null;
         }
 
-        return new CollectionIslandRenderGeometry(outerPolygon, holes.isEmpty() ? null : List.copyOf(holes));
+        Path2D.Double path = new Path2D.Double(Path2D.WIND_NON_ZERO);
+        Point2D.Double first = points.getFirst();
+        path.moveTo(first.x, first.y);
+        for (int i = 1; i < points.size(); ++i) {
+            Point2D.Double point = points.get(i);
+            path.lineTo(point.x, point.y);
+        }
+        path.closePath();
+        return new RingPath(path, new Area(path), List.copyOf(points), computeSignedArea(points));
+    }
+
+    private static CollectionHighlightRenderGeometry buildHighlightRenderGeometry(CollectionGeometryIsland island) {
+        CollectionIslandRenderGeometry geometry = island.getRenderGeometry();
+
+        return new CollectionHighlightRenderGeometry(geometry.polygon(), geometry.holes(), island.getMinZoom());
     }
 
     private static List<RingPath> extractRingPaths(Area area) {
@@ -1036,18 +1113,11 @@ public class CollectionOverlay {
     }
 
     private static double resolveOuterRingSign(List<RingPath> rings) {
-        RingPath outerRing = rings.getFirst();
-        double maxAreaMagnitude = Math.abs(outerRing.signedArea());
-
+        double totalSignedArea = 0.0;
         for (RingPath ring : rings) {
-            double areaMagnitude = Math.abs(ring.signedArea());
-            if (areaMagnitude > maxAreaMagnitude) {
-                outerRing = ring;
-                maxAreaMagnitude = areaMagnitude;
-            }
+            totalSignedArea += ring.signedArea();
         }
-
-        return outerRing.signedArea();
+        return totalSignedArea != 0.0 ? totalSignedArea : rings.getFirst().signedArea();
     }
 
     private static boolean hasSameSign(double value, double reference) {
@@ -1126,13 +1196,16 @@ public class CollectionOverlay {
         }
     }
 
-    private static final class CollectionGeometryIsland {
+    static final class CollectionGeometryIsland {
         private final Area effectiveArea;
         private final int minZoom;
+        private final CollectionIslandRenderGeometry renderGeometry;
 
-        public CollectionGeometryIsland(Area effectiveArea, int minZoom) {
+        public CollectionGeometryIsland(Area effectiveArea, int minZoom,
+                                        CollectionIslandRenderGeometry renderGeometry) {
             this.effectiveArea = new Area(effectiveArea);
             this.minZoom = minZoom;
+            this.renderGeometry = renderGeometry;
         }
 
         public Area copyEffectiveArea() {
@@ -1142,15 +1215,28 @@ public class CollectionOverlay {
         public int getMinZoom() {
             return minZoom;
         }
+
+        public CollectionIslandRenderGeometry getRenderGeometry() {
+            return renderGeometry;
+        }
     }
 
     private record VisibleMemberGeometry(FrontierOverlay frontier, List<FrontierOverlay.CollectionGeometryIslandSnapshot> islands) {
     }
 
-    private record CollectionSourceIsland(Area effectiveArea, int minZoom) {
+    record CollectionSourceIsland(Area effectiveArea, int minZoom) {
     }
 
-    private record RingPath(Path2D.Double path, Area area, List<Point2D.Double> points, double signedArea) {
+    record RingPath(Path2D.Double path, Area area, List<Point2D.Double> points, double signedArea) {
+    }
+
+    private record DirectedEdge(Point2D.Double from, Point2D.Double to) {
+        public DirectedEdge reverse() {
+            return new DirectedEdge(to, from);
+        }
+    }
+
+    private record CollectionRegionGeometry(Area effectiveArea, CollectionIslandRenderGeometry renderGeometry) {
     }
 
     private record CollectionHighlightRenderGeometry(MapPolygon polygon,
@@ -1158,8 +1244,8 @@ public class CollectionOverlay {
                                                      int minZoom) {
     }
 
-    private record CollectionIslandRenderGeometry(MapPolygon polygon,
-                                                  @Nullable List<MapPolygon> holes) {
+    record CollectionIslandRenderGeometry(MapPolygon polygon,
+                                          @Nullable List<MapPolygon> holes) {
     }
 
     private record CollectionLabelPlacementKey(CollectionGeometryIsland island,
