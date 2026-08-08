@@ -46,23 +46,35 @@ final class OverlayTestStates {
     }
 
     static PolygonOverlayState polygon(int offset, int geometryRevision, int styleRevision) {
+        return createPolygon(offset, geometryRevision, styleRevision, true,
+                displayState(offset, "polygon-" + offset));
+    }
+
+    static PolygonOverlayState barePolygon(int offset, Object geometryKey, Object styleKey, boolean withHole,
+                                           OverlayActivation activation, int minZoom, int maxZoom) {
+        OverlayDisplayState displayState = new OverlayDisplayState(TEST_DIMENSION, activation,
+                minZoom, maxZoom, 0, null, null, null, null, null, null);
+        return createPolygon(offset, geometryKey, styleKey, withHole, displayState);
+    }
+
+    private static PolygonOverlayState createPolygon(int offset, Object geometryKey, Object styleKey,
+                                                     boolean withHole, OverlayDisplayState displayState) {
         MapPolygon outerArea = new MapPolygon(
                 new BlockPos(offset, 70, offset),
                 new BlockPos(offset + 4, 70, offset),
                 new BlockPos(offset + 4, 70, offset + 4),
                 new BlockPos(offset, 70, offset + 4));
-        MapPolygon hole = new MapPolygon(
+        List<MapPolygon> holes = withHole ? List.of(new MapPolygon(
                 new BlockPos(offset + 1, 70, offset + 1),
                 new BlockPos(offset + 2, 70, offset + 1),
-                new BlockPos(offset + 2, 70, offset + 2));
+                new BlockPos(offset + 2, 70, offset + 2))) : null;
         ShapeProperties shapeProperties = new ShapeProperties()
-                .setStrokeColor(styleRevision)
-                .setFillColor(styleRevision + 1)
+                .setStrokeColor(styleKey.hashCode())
+                .setFillColor(styleKey.hashCode() + 1)
                 .setStrokeOpacity(0.8f)
                 .setFillOpacity(0.3f)
                 .setStrokeWidth(2f);
-        return new PolygonOverlayState(outerArea, List.of(hole), shapeProperties,
-                geometryRevision, styleRevision, displayState(offset, "polygon-" + offset));
+        return new PolygonOverlayState(outerArea, holes, shapeProperties, geometryKey, styleKey, displayState);
     }
 
     private static OverlayDisplayState displayState(int revision, String label) {
