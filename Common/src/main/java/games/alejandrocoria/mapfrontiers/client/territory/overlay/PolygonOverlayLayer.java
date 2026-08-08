@@ -32,6 +32,12 @@ public final class PolygonOverlayLayer {
         slots.finishReconcile(result, layerName);
     }
 
+    public void setVisible(boolean visible, OverlayRefreshResult result) {
+        for (int index = 0; index < slots.size(); index++) {
+            slots.get(index).reconcileVisibility(visible, result, layerName);
+        }
+    }
+
     public void clear(OverlayRefreshResult result) {
         slots.clear(result, layerName);
     }
