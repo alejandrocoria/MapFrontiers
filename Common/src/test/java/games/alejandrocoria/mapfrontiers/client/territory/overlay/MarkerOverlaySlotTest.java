@@ -72,6 +72,10 @@ class MarkerOverlaySlotTest {
         assertNull(overlay.getTitle());
         assertNull(overlay.getLabel());
         assertNull(overlay.getTextProperties());
+
+        slot.reconcile(OverlayTestStates.bareMarker(3, "bare"), true, new OverlayRefreshResult(), LAYER);
+        assertEquals(3, overlay.getPoint().getX());
+        assertNull(overlay.getTextProperties());
     }
 
     @Test
