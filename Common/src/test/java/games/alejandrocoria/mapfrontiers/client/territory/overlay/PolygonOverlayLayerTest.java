@@ -129,6 +129,27 @@ class PolygonOverlayLayerTest {
         assertSame(first, next.get(0));
     }
 
+    @Test
+    void setVisible_existingSlots_hidesAndShowsWithoutReplacingIdentity() {
+        FakeOverlayPublisher publisher = new FakeOverlayPublisher();
+        PolygonOverlayLayer layer = new PolygonOverlayLayer("mapfrontiers", "highlight", publisher);
+        reconcile(layer, 2, true, new OverlayRefreshResult(), 2, 4096);
+        List<PolygonOverlay> overlays = layer.getOverlays();
+        publisher.clearOperations();
+
+        layer.setVisible(false, new OverlayRefreshResult());
+        layer.setVisible(true, new OverlayRefreshResult());
+
+        assertSame(overlays.get(0), layer.getOverlays().get(0));
+        assertSame(overlays.get(1), layer.getOverlays().get(1));
+        assertEquals(List.of(
+                        FakeOverlayPublisher.OperationType.REMOVE,
+                        FakeOverlayPublisher.OperationType.REMOVE,
+                        FakeOverlayPublisher.OperationType.SHOW,
+                        FakeOverlayPublisher.OperationType.SHOW),
+                publisher.operations().stream().map(FakeOverlayPublisher.Operation::type).toList());
+    }
+
     private static void reconcile(PolygonOverlayLayer layer, int count, boolean visible,
                                   OverlayRefreshResult result, int minZoom, int maxZoom) {
         layer.beginReconcile();

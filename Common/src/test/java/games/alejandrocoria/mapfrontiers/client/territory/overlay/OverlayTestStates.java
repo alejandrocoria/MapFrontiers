@@ -45,6 +45,15 @@ final class OverlayTestStates {
         return new MarkerOverlayState(new BlockPos(x, 70, x), icon, visualKey, displayState);
     }
 
+    static MarkerOverlayState labelMarker(int x, MapImage icon, Object visualKey, String label,
+                                          TextProperties textProperties, Object textPropertiesKey) {
+        OverlayDisplayState displayState = new OverlayDisplayState(TEST_DIMENSION,
+                OverlayActivation.of(Context.UI.Fullscreen, Context.MapType.Day),
+                textProperties.getMinZoom(), textProperties.getMaxZoom(), 0,
+                "frontier", null, label, textProperties, textPropertiesKey, null);
+        return new MarkerOverlayState(new BlockPos(x, 70, x), icon, visualKey, displayState);
+    }
+
     static PolygonOverlayState polygon(int offset, int geometryRevision, int styleRevision) {
         return createPolygon(offset, geometryRevision, styleRevision, true,
                 displayState(offset, "polygon-" + offset));

@@ -41,6 +41,7 @@ public class BannerRenderer {
     private final int textureInstanceId = NEXT_TEXTURE_INSTANCE_ID.incrementAndGet();
     private ResourceLocation textureLocation;
     private int rotation;
+    private long textureRevision;
 
     public void createTexture(UUID id, BannerData bannerData) {
         releaseTexture();
@@ -102,6 +103,7 @@ public class BannerRenderer {
             mc.getTextureManager().register(newTextureLocation, texture);
             textureLocation = newTextureLocation;
             texture = null;
+            textureRevision++;
         } finally {
             if (texture != null) {
                 texture.close();
@@ -174,14 +176,23 @@ public class BannerRenderer {
         if (textureLocation != null) {
             Minecraft.getInstance().getTextureManager().release(textureLocation);
             textureLocation = null;
+            textureRevision++;
         }
     }
 
     public void setRotation(int rotation) {
+        if (this.rotation == rotation) {
+            return;
+        }
         this.rotation = rotation;
+        textureRevision++;
     }
 
     public int getRotation() {
         return rotation;
+    }
+
+    public long getTextureRevision() {
+        return textureRevision;
     }
 }
