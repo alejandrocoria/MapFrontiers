@@ -1,7 +1,12 @@
 package games.alejandrocoria.mapfrontiers.client.territory.overlay;
 
 import journeymap.api.v2.client.display.MarkerOverlay;
+import journeymap.api.v2.client.model.MapImage;
+import journeymap.api.v2.client.model.TextProperties;
+import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -142,7 +147,7 @@ class MarkerOverlaySlotTest {
         assertEquals(1, failedResult.getFailureCount(OverlayRefreshResult.Operation.REMOVE, LAYER));
 
         publisher.clearOperations();
-        slot.reconcile(OverlayTestStates.marker(1, "first"), true, new OverlayRefreshResult(), LAYER);
+        slot.reconcileVisibility(true, new OverlayRefreshResult(), LAYER);
         assertEquals(PublicationState.PUBLISHED, slot.getPublicationState());
         assertEquals(1, publisher.operations().size());
     }
@@ -157,12 +162,85 @@ class MarkerOverlaySlotTest {
         publisher.failNextRemove();
         OverlayRefreshResult failedResult = new OverlayRefreshResult();
 
-        slot.reconcile(state, false, failedResult, LAYER);
+        slot.reconcileVisibility(false, failedResult, LAYER);
         assertEquals(PublicationState.UNKNOWN, slot.getPublicationState());
         assertTrue(failedResult.isRetryNeeded());
 
-        slot.reconcile(state, false, new OverlayRefreshResult(), LAYER);
+        slot.reconcileVisibility(false, new OverlayRefreshResult(), LAYER);
         assertEquals(PublicationState.UNPUBLISHED, slot.getPublicationState());
         assertEquals(2, publisher.operations().size());
+    }
+
+    @Test
+    void reconcileVisibility_uninitializedSlot_doesNotPublish() {
+        FakeOverlayPublisher publisher = new FakeOverlayPublisher();
+        MarkerOverlaySlot slot = new MarkerOverlaySlot("mapfrontiers", publisher);
+
+        slot.reconcileVisibility(true, new OverlayRefreshResult(), LAYER);
+        slot.reconcileVisibility(false, new OverlayRefreshResult(), LAYER);
+
+        assertNull(slot.getOverlay());
+        assertTrue(publisher.operations().isEmpty());
+    }
+
+    @Test
+    void reconcileVisibility_publishedSlot_hidesAndShowsSameIdentity() {
+        FakeOverlayPublisher publisher = new FakeOverlayPublisher();
+        MarkerOverlaySlot slot = new MarkerOverlaySlot("mapfrontiers", publisher);
+        slot.reconcile(OverlayTestStates.marker(1, "first"), true, new OverlayRefreshResult(), LAYER);
+        MarkerOverlay overlay = slot.getOverlay();
+        publisher.clearOperations();
+
+        slot.reconcileVisibility(false, new OverlayRefreshResult(), LAYER);
+        slot.reconcileVisibility(true, new OverlayRefreshResult(), LAYER);
+
+        assertSame(overlay, slot.getOverlay());
+        assertEquals(List.of(FakeOverlayPublisher.OperationType.REMOVE, FakeOverlayPublisher.OperationType.SHOW),
+                publisher.operations().stream().map(FakeOverlayPublisher.Operation::type).toList());
+    }
+
+    @Test
+    void reconcile_semanticKeysChange_replacesCompleteLabelPresentation() {
+        FakeOverlayPublisher publisher = new FakeOverlayPublisher();
+        MarkerOverlaySlot slot = new MarkerOverlaySlot("mapfrontiers", publisher);
+        ResourceLocation texture = ResourceLocation.fromNamespaceAndPath("mapfrontiers", "textures/test/shared.png");
+        MapImage firstIcon = new MapImage(texture, 16, 16);
+        TextProperties firstText = new TextProperties().setScale(2).setColor(0x112233).setOffsetY(3);
+        slot.reconcile(OverlayTestStates.labelMarker(1, firstIcon, "icon-1", "first", firstText, "text-1"),
+                true, new OverlayRefreshResult(), LAYER);
+        MarkerOverlay overlay = slot.getOverlay();
+        publisher.clearOperations();
+
+        MapImage secondIcon = new MapImage(texture, 16, 16);
+        TextProperties secondText = new TextProperties().setScale(3).setColor(0x445566).setOffsetY(7);
+        slot.reconcile(OverlayTestStates.labelMarker(1, secondIcon, "icon-2", "", secondText, "text-2"),
+                true, new OverlayRefreshResult(), LAYER);
+
+        assertSame(overlay, slot.getOverlay());
+        assertSame(secondIcon, overlay.getIcon());
+        assertSame(secondText, overlay.getTextProperties());
+        assertEquals("", overlay.getLabel());
+        assertEquals(1, publisher.operations().size());
+
+        publisher.clearOperations();
+        MapImage equivalentIcon = new MapImage(texture, 16, 16);
+        TextProperties equivalentText = new TextProperties().setScale(3).setColor(0x445566).setOffsetY(7);
+        slot.reconcile(OverlayTestStates.labelMarker(1, equivalentIcon, "icon-2", "", equivalentText, "text-2"),
+                true, new OverlayRefreshResult(), LAYER);
+
+        assertSame(secondIcon, overlay.getIcon());
+        assertSame(secondText, overlay.getTextProperties());
+        assertTrue(publisher.operations().isEmpty());
+
+        publisher.clearOperations();
+        MapImage transparentIcon = new MapImage(
+                ResourceLocation.fromNamespaceAndPath("mapfrontiers", "textures/test/transparent.png"), 1, 1);
+        slot.reconcile(OverlayTestStates.labelMarker(1, transparentIcon, "transparent", "label", firstText, "text-1"),
+                true, new OverlayRefreshResult(), LAYER);
+
+        assertSame(transparentIcon, overlay.getIcon());
+        assertSame(firstText, overlay.getTextProperties());
+        assertEquals("label", overlay.getLabel());
+        assertEquals(1, publisher.operations().size());
     }
 }
