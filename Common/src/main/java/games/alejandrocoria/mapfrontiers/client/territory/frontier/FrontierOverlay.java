@@ -48,7 +48,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec2;
@@ -84,10 +83,8 @@ public class FrontierOverlay extends FrontierData {
     private static final double CHUNK_LABEL_SOLVER_PRECISION = 2.0;
     private static final int PATH_LABEL_OFFSET_PADDING_PX = 4;
     private static final int INCOMPLETE_VERTEX_FRONTIER_MIN_ZOOM = 512;
-    private static final int PATH_REPEATED_MARKER_BASE_MARKER_SIZE = 2;
     private static final int PATH_REPEATED_MARKER_MIN_ZOOM = 2;
     private static final int PATH_REPEATED_MARKER_MAX_ZOOM = 16384;
-    private static final double PATH_REPEATED_MARKER_SPACING_ZOOM_REFERENCE = 8192.0;
     private static final Context.MapType[] HIGHLIGHT_MAP_TYPES = {
             Context.MapType.Day,
             Context.MapType.Night,
@@ -95,7 +92,7 @@ public class FrontierOverlay extends FrontierData {
             Context.MapType.Topo,
             Context.MapType.Biome
     };
-    private static final MapImage transparentLabelMarker = createTransparentLabelMarker();
+    private static @Nullable MapImage transparentLabelMarker;
 
     public BlockPos topLeft;
     public BlockPos bottomRight;
@@ -112,13 +109,13 @@ public class FrontierOverlay extends FrontierData {
     private final PolygonOverlayLayer polygonCollectionLayer;
     private final PolygonOverlayLayer polygonHighlightLayer;
     private final MarkerOverlayLayer polygonLabelLayer;
+    private final PathMarkerOverlayLayer pathBaseLayer;
     private final OverlayRetryLimiter overlayRetryLimiter = new OverlayRetryLimiter();
     private final List<PolygonRenderGeometry> polygonRenderGeometries = new ArrayList<>();
     private long polygonGeometryRevision;
     private @Nullable FrontierShape renderedBaseShape;
     private @Nullable FrontierShape renderedHighlightShape;
     private Area polygonArea;
-    private final List<MarkerOverlay> markerOverlays = new ArrayList<>();
     private final List<MarkerOverlay> highlightMarkerOverlays = new ArrayList<>();
     private final List<MarkerOverlay> pathLabelOverlays = new ArrayList<>();
     private final BannerRenderer bannerRenderer = new BannerRenderer();
@@ -157,6 +154,8 @@ public class FrontierOverlay extends FrontierData {
         polygonCollectionLayer = new PolygonOverlayLayer(MapFrontiers.MODID, "polygon-collection", overlayPublisher);
         polygonHighlightLayer = new PolygonOverlayLayer(MapFrontiers.MODID, "polygon-highlight", overlayPublisher);
         polygonLabelLayer = new MarkerOverlayLayer(MapFrontiers.MODID, "polygon-label", overlayPublisher);
+        pathBaseLayer = new PathMarkerOverlayLayer(MapFrontiers.MODID, "path-base", overlayPublisher,
+                PathMarkerOverlayLayer.Mode.BASE);
         setVisibilityOverride(MapFrontiersClient.getLocalOverrides().getVisibility(id));
         refreshEffectiveBannerRenderer(false);
         rebuildOverlayNow();
@@ -255,7 +254,7 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public List<MarkerOverlay> getMarkerOverlays() {
-        return markerOverlays;
+        return frontierShape == FrontierShape.Path ? pathBaseLayer.getOverlays() : List.of();
     }
 
     public List<MarkerOverlay> getLabelOverlays() {
@@ -328,8 +327,7 @@ public class FrontierOverlay extends FrontierData {
             polygonBaseLayer.clear(refreshResult);
             polygonCollectionLayer.clear(refreshResult);
             polygonLabelLayer.clear(refreshResult);
-            hideMarkerOverlays(markerOverlays);
-            markerOverlays.clear();
+            pathBaseLayer.clear(refreshResult);
             hideMarkerOverlays(pathLabelOverlays);
             pathLabelOverlays.clear();
         }
@@ -522,10 +520,7 @@ public class FrontierOverlay extends FrontierData {
             polygonCollectionLayer.clear(result);
             polygonHighlightLayer.clear(result);
             polygonLabelLayer.clear(result);
-
-            for (MarkerOverlay marker : markerOverlays) {
-                removeMarkerOverlay(marker);
-            }
+            pathBaseLayer.clear(result);
 
             for (MarkerOverlay marker : highlightMarkerOverlays) {
                 removeMarkerOverlay(marker);
@@ -535,7 +530,6 @@ public class FrontierOverlay extends FrontierData {
                 removeMarkerOverlay(label);
             }
         } finally {
-            markerOverlays.clear();
             highlightMarkerOverlays.clear();
             pathLabelOverlays.clear();
             renderedBaseShape = null;
@@ -1644,7 +1638,7 @@ public class FrontierOverlay extends FrontierData {
         }
 
         if (pathPoints.size() == 1) {
-            ResourceLocation markerId = getPathSinglePointMarkerId();
+            ResourceLocation markerId = resolvePathSinglePointMarkerId(pathStyle);
             PathPointLayout pointLayout = new PathPointLayout(pathPoints.get(0), markerId, 0.f, getPathMarkerClearancePx(markerId));
             List<PathLabelAnchor> labelAnchors = List.of();
             if (pathStyle.labelAtStart || pathStyle.labelAtMiddle || pathStyle.labelAtEnd) {
@@ -1672,7 +1666,7 @@ public class FrontierOverlay extends FrontierData {
 
         List<PathPointLayout> pointLayouts = new ArrayList<>(pathPoints.size());
         for (int i = 0; i < pathPoints.size(); ++i) {
-            ResourceLocation markerId = getPathPointMarkerId(pathPoints.size(), i);
+            ResourceLocation markerId = resolvePathPointMarkerId(pathStyle, pathPoints.size(), i);
             float rotation = i < segmentLayouts.size()
                     ? segmentLayouts.get(i).rotation()
                     : segmentLayouts.get(segmentLayouts.size() - 1).rotation();
@@ -1701,7 +1695,7 @@ public class FrontierOverlay extends FrontierData {
 
     private void rebuildBaseOverlays(OverlayRefreshResult result) {
         if (frontierShape == FrontierShape.Path) {
-            rebuildPathBaseOverlays();
+            rebuildPathBaseOverlays(result);
         } else {
             rebuildPolygonBaseOverlays(result);
         }
@@ -1822,25 +1816,21 @@ public class FrontierOverlay extends FrontierData {
         }
     }
 
-    private void rebuildPathBaseOverlays() {
-        hideMarkerOverlays(markerOverlays);
-        markerOverlays.clear();
-
+    private void rebuildPathBaseOverlays(OverlayRefreshResult result) {
         PathLayoutCache layoutCache = ensurePathLayoutCache();
-        if (layoutCache == null || layoutCache.pointLayouts().isEmpty()) {
-            return;
-        }
-
         VisualConfigSnapshot visualConfig = ensureVisualConfigSnapshot();
+        List<PathMarkerOverlayLayer.UiState> uiStates = new ArrayList<>(3);
         for (UiVisualConfig uiConfig : visualConfig.uiConfigs()) {
-            if (uiConfig.baseVisible()) {
-                createPathMarkers(layoutCache, uiConfig.ui(), uiConfig.activeMapTypes());
-            }
+            uiStates.add(new PathMarkerOverlayLayer.UiState(
+                    uiConfig.ui(), uiConfig.baseVisible(), uiConfig.activeMapTypes()));
         }
 
-        if (isFrontierVisible()) {
-            showMarkerOverlaysQuietly(markerOverlays);
-        }
+        List<PathPointLayout> pointLayouts = layoutCache == null ? List.of() : layoutCache.pointLayouts();
+        List<PathSegmentLayout> segmentLayouts = layoutCache == null ? List.of() : layoutCache.segmentLayouts();
+        pathBaseLayer.reconcile(pointLayouts, segmentLayouts, uiStates, dimension, color,
+                ClientConfig.PATH_MARKER_OPACITY.get().floatValue(), MarkerImageConstants.getMapDisplaySize(),
+                ClientConfig.PATH_MARKER_SIZE.get(),
+                isFrontierVisible(), result);
     }
 
     private void rebuildPathLabels() {
@@ -2086,30 +2076,6 @@ public class FrontierOverlay extends FrontierData {
                 Math.atan2(b.getZ() - finalCenterZ, b.getX() - finalCenterX)));
     }
 
-    private void createPathMarkers(PathLayoutCache layoutCache, Context.UI uiArray, Context.MapType[] mapTypesArray) {
-        if (layoutCache.pointLayouts().isEmpty()) {
-            return;
-        }
-
-        if (layoutCache.segmentLayouts().isEmpty()) {
-            PathPointLayout pointLayout = layoutCache.pointLayouts().get(0);
-            addSingleMarker(pointLayout.pos(), resolvePathMarkerImage(pointLayout.markerId(), pointLayout.rotation()), 100, uiArray, mapTypesArray);
-            return;
-        }
-
-        for (int i = 0; i < layoutCache.segmentLayouts().size(); ++i) {
-            PathSegmentLayout segmentLayout = layoutCache.segmentLayouts().get(i);
-            addRepeatedMarkers(markerOverlays, segmentLayout, uiArray, mapTypesArray,
-                    resolvePathMarkerImage(segmentLayout.segmentMarkerId(), segmentLayout.rotation()), 99);
-
-            PathPointLayout pointLayout = layoutCache.pointLayouts().get(i);
-            addSingleMarker(pointLayout.pos(), resolvePathMarkerImage(pointLayout.markerId(), pointLayout.rotation()), 100, uiArray, mapTypesArray);
-        }
-
-        PathPointLayout lastPointLayout = layoutCache.pointLayouts().get(layoutCache.pointLayouts().size() - 1);
-        addSingleMarker(lastPointLayout.pos(), resolvePathMarkerImage(lastPointLayout.markerId(), lastPointLayout.rotation()), 100, uiArray, mapTypesArray);
-    }
-
     private void createPathHighlightMarkers(PathLayoutCache layoutCache) {
         if (layoutCache.pointLayouts().isEmpty()) {
             return;
@@ -2137,7 +2103,7 @@ public class FrontierOverlay extends FrontierData {
                 Context.UI.Fullscreen, HIGHLIGHT_MAP_TYPES);
     }
 
-    private ResourceLocation getPathPointMarkerId(int pointCount, int pointIndex) {
+    static ResourceLocation resolvePathPointMarkerId(PathStyle pathStyle, int pointCount, int pointIndex) {
         ResourceLocation markerId;
         if (pointIndex == 0) {
             markerId = pathStyle.startMarker;
@@ -2495,7 +2461,7 @@ public class FrontierOverlay extends FrontierData {
     private LabelIconState createPolygonLabelIcon(LabelContentMetrics metrics,
                                                   Map<BannerIconKey, MapImage> bannerIconCache) {
         if (!metrics.hasBanner() || !bannerRenderer.hasBanner()) {
-            return new LabelIconState(transparentLabelMarker, LabelIconType.TRANSPARENT);
+            return new LabelIconState(getTransparentLabelMarker(), LabelIconType.TRANSPARENT);
         }
 
         double anchorX = metrics.bannerWidthPx() / 2.0;
@@ -2509,7 +2475,7 @@ public class FrontierOverlay extends FrontierData {
             image = bannerRenderer.createJourneyMapImage(anchorX, anchorY,
                     metrics.bannerWidthPx(), metrics.bannerHeightPx(), opacity);
             if (image == null) {
-                return new LabelIconState(transparentLabelMarker, LabelIconType.TRANSPARENT);
+                return new LabelIconState(getTransparentLabelMarker(), LabelIconType.TRANSPARENT);
             }
             bannerIconCache.put(visualKey, image);
         }
@@ -2518,7 +2484,7 @@ public class FrontierOverlay extends FrontierData {
 
     private MapImage createLabelAnchorIcon(LabelContentMetrics metrics, int offsetX, int offsetY) {
         if (!metrics.hasBanner() || !bannerRenderer.hasBanner()) {
-            return transparentLabelMarker;
+            return getTransparentLabelMarker();
         }
 
         MapImage bannerIcon = bannerRenderer.createJourneyMapImage(
@@ -2527,7 +2493,7 @@ public class FrontierOverlay extends FrontierData {
                 metrics.bannerWidthPx(),
                 metrics.bannerHeightPx(),
                 ClientConfig.BANNER_OPACITY.get().floatValue());
-        return bannerIcon == null ? transparentLabelMarker : bannerIcon;
+        return bannerIcon == null ? getTransparentLabelMarker() : bannerIcon;
     }
 
     private int getTextSize() {
@@ -2754,6 +2720,15 @@ public class FrontierOverlay extends FrontierData {
         return mapImage;
     }
 
+    private static MapImage getTransparentLabelMarker() {
+        MapImage marker = transparentLabelMarker;
+        if (marker == null) {
+            marker = createTransparentLabelMarker();
+            transparentLabelMarker = marker;
+        }
+        return marker;
+    }
+
     private void updateBounds() {
         if (frontierShape == FrontierShape.Vertex) {
             if (vertices.isEmpty()) {
@@ -2850,19 +2825,19 @@ public class FrontierOverlay extends FrontierData {
 
         for (int minZoom = PATH_REPEATED_MARKER_MIN_ZOOM; minZoom <= PATH_REPEATED_MARKER_MAX_ZOOM; minZoom *= 2) {
             int maxZoom = minZoom == PATH_REPEATED_MARKER_MAX_ZOOM ? 0 : minZoom * 2 - 1;
-            int markerCount = getRepeatedMarkerCount(getRepeatedMarkerTargetSpacing(minZoom) * spacingMultiplier, length,
+            int markerCount = PathRepeatedMarkerSelector.getMarkerCount(
+                    PathRepeatedMarkerSelector.getTargetSpacing(
+                            minZoom, ClientConfig.PATH_MARKER_SIZE.get(), spacingMultiplier), length,
                     repeatedMarkerPositions.size());
-            double step = (repeatedMarkerPositions.size() + 1) / (double) (markerCount + 1);
-            Set<Long> addedPositions = new HashSet<>();
-
+            int previousIndex = -1;
             for (int marker = 1; marker <= markerCount; ++marker) {
-                int markerIndex = Mth.clamp(Math.round((float) (marker * step)) - 1, 0, repeatedMarkerPositions.size() - 1);
-                BlockPos pos = repeatedMarkerPositions.get(markerIndex);
-                long positionKey = getBlockPos2DKey(pos.getX(), pos.getZ());
-                if (!addedPositions.add(positionKey)) {
+                int markerIndex = PathRepeatedMarkerSelector.getMarkerIndex(
+                        marker, markerCount, repeatedMarkerPositions.size());
+                if (markerIndex == previousIndex) {
                     continue;
                 }
-
+                previousIndex = markerIndex;
+                BlockPos pos = repeatedMarkerPositions.get(markerIndex);
                 addRepeatedMarker(overlays, pos, uiArray, mapTypesArray, markerImage, displayOrder, minZoom, maxZoom);
             }
         }
@@ -2902,15 +2877,6 @@ public class FrontierOverlay extends FrontierData {
         return positions;
     }
 
-    private static int getRepeatedMarkerCount(double targetSpacing, double length, int availableMarkerPositions) {
-        if (targetSpacing <= 0.0 || availableMarkerPositions <= 0) {
-            return 0;
-        }
-
-        int intervalCount = (int) Math.round(length / targetSpacing);
-        return Mth.clamp(intervalCount - 1, 0, availableMarkerPositions);
-    }
-
     private void addRepeatedMarker(List<MarkerOverlay> overlays, BlockPos pos, Context.UI uiArray, Context.MapType[] mapTypesArray,
                                    MapImage markerImage, int displayOrder, int minZoom, int maxZoom) {
         MarkerOverlay dot = new MarkerOverlay(MapFrontiers.MODID, pos, markerImage);
@@ -2923,20 +2889,6 @@ public class FrontierOverlay extends FrontierData {
             dot.setMaxZoom(maxZoom);
         }
         overlays.add(dot);
-    }
-
-    private static long getBlockPos2DKey(int x, int z) {
-        return (long) x & 0xFFFFFFFFL | ((long) z & 0xFFFFFFFFL) << 32;
-    }
-
-    private static double getRepeatedMarkerTargetSpacing(int minZoom) {
-        return PATH_REPEATED_MARKER_SPACING_ZOOM_REFERENCE / minZoom
-                * ClientConfig.PATH_MARKER_SIZE.get()
-                / PATH_REPEATED_MARKER_BASE_MARKER_SIZE;
-    }
-
-    private void addSingleMarker(BlockPos pos, @Nullable MapImage markerImage, int displayOrder, Context.UI uiArray, Context.MapType[] mapTypesArray) {
-        addSingleMarker(markerOverlays, pos, markerImage, displayOrder, uiArray, mapTypesArray);
     }
 
     private void addSingleMarker(List<MarkerOverlay> overlays, BlockPos pos, @Nullable MapImage markerImage, int displayOrder,
@@ -2953,7 +2905,7 @@ public class FrontierOverlay extends FrontierData {
         overlays.add(marker);
     }
 
-    private ResourceLocation getPathSinglePointMarkerId() {
+    static ResourceLocation resolvePathSinglePointMarkerId(PathStyle pathStyle) {
         if (isPathMarkerVisible(pathStyle.startMarker)) {
             return pathStyle.startMarker;
         }
@@ -3003,23 +2955,6 @@ public class FrontierOverlay extends FrontierData {
 
             return distance;
         }
-    }
-
-    private @Nullable MapImage resolvePathMarkerImage(ResourceLocation markerId, float rotation) {
-        if (FrontierData.PathStyle.NONE.equals(markerId)) {
-            return null;
-        }
-
-        PathMarkerCatalog.Entry entry = PathMarkerCatalog.get(markerId);
-        if (entry == null || entry.texture() == null) {
-            return null;
-        }
-
-        MapImage markerImage = createMarkerImage(entry.texture(), color, ClientConfig.PATH_MARKER_OPACITY.get().floatValue());
-        if (entry.directional()) {
-            markerImage.setRotation(Math.round(rotation));
-        }
-        return markerImage;
     }
 
     private @Nullable MapImage resolvePathMarkerHighlightImage(ResourceLocation markerId, float rotation) {
@@ -3184,19 +3119,19 @@ public class FrontierOverlay extends FrontierData {
                                    List<PathLabelAnchor> labelAnchors) {
     }
 
-    private record PathPointLayout(BlockPos pos,
-                                   ResourceLocation markerId,
-                                   float rotation,
-                                   double markerClearancePx) {
+    record PathPointLayout(BlockPos pos,
+                           ResourceLocation markerId,
+                           float rotation,
+                           double markerClearancePx) {
     }
 
-    private record PathSegmentLayout(BlockPos from,
-                                     BlockPos to,
-                                     float rotation,
-                                     ResourceLocation segmentMarkerId,
-                                     double segmentSpacingMultiplier,
-                                     double length,
-                                     List<BlockPos> repeatedMarkerPositions) {
+    record PathSegmentLayout(BlockPos from,
+                             BlockPos to,
+                             float rotation,
+                             ResourceLocation segmentMarkerId,
+                             double segmentSpacingMultiplier,
+                             double length,
+                             List<BlockPos> repeatedMarkerPositions) {
     }
 
     private record PathLabelAnchor(double x,

@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.territory.overlay;
 import journeymap.api.v2.client.display.MarkerOverlay;
 import journeymap.api.v2.client.model.MapImage;
 import journeymap.api.v2.client.model.TextProperties;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
@@ -10,6 +11,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -67,8 +69,10 @@ class MarkerOverlaySlotTest {
         FakeOverlayPublisher publisher = new FakeOverlayPublisher();
         MarkerOverlaySlot slot = new MarkerOverlaySlot("mapfrontiers", publisher);
         slot.reconcile(OverlayTestStates.marker(1, "first"), true, new OverlayRefreshResult(), LAYER);
+        TextProperties labeledText = slot.getOverlay().getTextProperties();
 
-        slot.reconcile(OverlayTestStates.bareMarker(2, "bare"), true, new OverlayRefreshResult(), LAYER);
+        MarkerOverlayState bareState = OverlayTestStates.bareMarker(2, "bare");
+        slot.reconcile(bareState, true, new OverlayRefreshResult(), LAYER);
 
         MarkerOverlay overlay = slot.getOverlay();
         assertEquals(2, overlay.getMinZoom());
@@ -76,11 +80,16 @@ class MarkerOverlaySlotTest {
         assertNull(overlay.getOverlayGroupName());
         assertNull(overlay.getTitle());
         assertNull(overlay.getLabel());
-        assertNull(overlay.getTextProperties());
+        TextProperties neutralText = overlay.getTextProperties();
+        assertNotNull(neutralText);
+        assertNotSame(labeledText, neutralText);
+        assertEquals(1.f, neutralText.getScale());
 
-        slot.reconcile(OverlayTestStates.bareMarker(3, "bare"), true, new OverlayRefreshResult(), LAYER);
+        MarkerOverlayState movedState = new MarkerOverlayState(new BlockPos(3, 70, 3),
+                bareState.getIcon(), bareState.getVisualKey(), bareState.getDisplayState());
+        slot.reconcile(movedState, true, new OverlayRefreshResult(), LAYER);
         assertEquals(3, overlay.getPoint().getX());
-        assertNull(overlay.getTextProperties());
+        assertSame(neutralText, overlay.getTextProperties());
     }
 
     @Test
