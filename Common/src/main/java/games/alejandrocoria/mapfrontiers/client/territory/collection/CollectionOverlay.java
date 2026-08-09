@@ -8,12 +8,15 @@ import games.alejandrocoria.mapfrontiers.client.territory.BannerRenderer;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierLabelPlacementSolver;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.territory.overlay.CollectionBorderOverlayLayer;
+import games.alejandrocoria.mapfrontiers.client.territory.overlay.CollectionLabelOverlayLayer;
+import games.alejandrocoria.mapfrontiers.client.territory.overlay.MarkerOverlayState;
 import games.alejandrocoria.mapfrontiers.client.territory.overlay.OverlayActivation;
 import games.alejandrocoria.mapfrontiers.client.territory.overlay.OverlayDisplayState;
 import games.alejandrocoria.mapfrontiers.client.territory.overlay.OverlayPublisher;
 import games.alejandrocoria.mapfrontiers.client.territory.overlay.OverlayPublishers;
 import games.alejandrocoria.mapfrontiers.client.territory.overlay.OverlayRefreshResult;
 import games.alejandrocoria.mapfrontiers.client.territory.overlay.OverlayRetryLimiter;
+import games.alejandrocoria.mapfrontiers.client.territory.overlay.PolygonOverlayLayer;
 import games.alejandrocoria.mapfrontiers.client.territory.overlay.PolygonOverlayState;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
@@ -43,6 +46,7 @@ import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -71,8 +75,9 @@ public class CollectionOverlay {
 
     private final CollectionOverlayKey key;
     private final @Nullable IClientAPI jmAPI;
-    private final OverlayPublisher overlayPublisher;
     private final CollectionBorderOverlayLayer collectionBorderLayer;
+    private final CollectionLabelOverlayLayer collectionLabelLayer;
+    private final PolygonOverlayLayer collectionHighlightLayer;
     private final OverlayRetryLimiter overlayRetryLimiter = new OverlayRetryLimiter();
     private @Nullable CollectionData collection;
     private int collectionColorSnapshot;
@@ -86,30 +91,32 @@ public class CollectionOverlay {
     private boolean geometryDirty = true;
     private boolean bordersDirty = true;
     private boolean labelsDirty = true;
-    private boolean labelVisibilityDirty = true;
     private boolean highlighted = false;
     private boolean highlightStructureDirty = true;
+    private boolean highlightLayerDirty;
     private boolean highlightVisibilityDirty = true;
     private List<CollectionVisibilityVariant> visibleVariants = List.of();
     private long collectionGeometryRevision;
-    private final List<MarkerOverlay> labelOverlays = new ArrayList<>();
-    private final List<PolygonOverlay> highlightPolygonOverlays = new ArrayList<>();
+    private long highlightGeometryRevision;
     private List<CollectionHighlightRenderGeometry> highlightRenderGeometries = List.of();
     private final Map<CollectionLabelPlacementKey, FrontierLabelPlacementSolver.LabelPlacement> placementCache = new HashMap<>();
+    private List<CollectionLabelLayoutKey> labelLayoutFingerprint = List.of();
     private final BannerRenderer bannerRenderer = new BannerRenderer();
+    private @Nullable BannerData renderedBannerData;
     private @Nullable Runnable dirtyOverlayListener;
 
     public CollectionOverlay(CollectionOverlayKey key, @Nullable IClientAPI jmAPI, CollectionData collection, List<FrontierOverlay> members) {
         this.key = key;
         this.jmAPI = jmAPI;
-        overlayPublisher = OverlayPublishers.create(jmAPI);
+        OverlayPublisher overlayPublisher = OverlayPublishers.create(jmAPI);
         collectionBorderLayer = new CollectionBorderOverlayLayer(MapFrontiers.MODID, "collection-border", overlayPublisher);
+        collectionLabelLayer = new CollectionLabelOverlayLayer(MapFrontiers.MODID, "collection-label", overlayPublisher);
+        collectionHighlightLayer = new PolygonOverlayLayer(MapFrontiers.MODID, "collection-highlight", overlayPublisher);
         this.collection = collection;
         collectionColorSnapshot = collection.getColor();
         collectionLabelContentSnapshot = resolveLabelContentKey(collection);
         memberFrontiers = List.copyOf(members);
         refreshEffectiveVisibility();
-        refreshBannerRenderer();
     }
 
     public CollectionOverlayKey getKey() {
@@ -117,7 +124,7 @@ public class CollectionOverlay {
     }
 
     public List<MarkerOverlay> getLabelOverlays() {
-        return labelOverlays;
+        return collectionLabelLayer.getOverlays();
     }
 
     public List<PolygonOverlay> getBorderPolygonOverlays() {
@@ -130,10 +137,8 @@ public class CollectionOverlay {
         CollectionVariantVisibilityKey previousVariantVisibility = resolveVariantVisibilityKey();
         CollectionLabelVisibilityKey previousLabelVisibility = resolveLabelVisibilityKey();
         CollectionLabelContentKey previousLabelContent = collectionLabelContentSnapshot;
-        boolean previousBannerVisible = hasVisibleBannerOnAnyUi();
         CollectionLabelContentKey updatedLabelContent = resolveLabelContentKey(collection);
         boolean colorChanged = collectionColorSnapshot != collection.getColor();
-        boolean bannerChanged = !Objects.equals(previousLabelContent.banner(), updatedLabelContent.banner());
 
         this.collection = collection;
         collectionColorSnapshot = collection.getColor();
@@ -141,10 +146,6 @@ public class CollectionOverlay {
         refreshEffectiveVisibility();
         CollectionVariantVisibilityKey updatedVariantVisibility = resolveVariantVisibilityKey();
         CollectionLabelVisibilityKey updatedLabelVisibility = resolveLabelVisibilityKey();
-        boolean updatedBannerVisible = hasVisibleBannerOnAnyUi();
-        boolean visibleBannerUnavailable = updatedBannerVisible
-                && collection.getBannerData() != null
-                && !bannerRenderer.hasBanner();
 
         if (!previousVariantVisibility.equals(updatedVariantVisibility)) {
             geometryDirty = true;
@@ -158,13 +159,6 @@ public class CollectionOverlay {
         if (!previousLabelContent.equals(updatedLabelContent)
                 || !previousLabelVisibility.equals(updatedLabelVisibility)) {
             labelsDirty = true;
-            labelVisibilityDirty = true;
-            dirty = true;
-        }
-        if (bannerChanged || previousBannerVisible != updatedBannerVisible || visibleBannerUnavailable) {
-            refreshBannerRenderer();
-            labelsDirty = true;
-            labelVisibilityDirty = true;
             dirty = true;
         }
 
@@ -174,7 +168,6 @@ public class CollectionOverlay {
             membershipDirty = true;
             geometryDirty = true;
             labelsDirty = true;
-            labelVisibilityDirty = true;
             highlightStructureDirty = true;
             dirty = true;
         }
@@ -193,14 +186,12 @@ public class CollectionOverlay {
 
         CollectionVariantVisibilityKey previousVariantVisibility = resolveVariantVisibilityKey();
         CollectionLabelVisibilityKey previousLabelVisibility = resolveLabelVisibilityKey();
-        boolean previousBannerVisible = hasVisibleBannerOnAnyUi();
 
         visibilityOverrideData = newOverrideData;
         visibilityOverrideMask = newOverrideMask;
         refreshEffectiveVisibility();
         CollectionVariantVisibilityKey updatedVariantVisibility = resolveVariantVisibilityKey();
         CollectionLabelVisibilityKey updatedLabelVisibility = resolveLabelVisibilityKey();
-        boolean updatedBannerVisible = hasVisibleBannerOnAnyUi();
         boolean dirty = false;
 
         if (!previousVariantVisibility.equals(updatedVariantVisibility)) {
@@ -209,13 +200,6 @@ public class CollectionOverlay {
         }
         if (!previousLabelVisibility.equals(updatedLabelVisibility)) {
             labelsDirty = true;
-            labelVisibilityDirty = true;
-            dirty = true;
-        }
-        if (previousBannerVisible != updatedBannerVisible) {
-            refreshBannerRenderer();
-            labelsDirty = true;
-            labelVisibilityDirty = true;
             dirty = true;
         }
         if (dirty) {
@@ -234,11 +218,9 @@ public class CollectionOverlay {
         geometryDirty = true;
         bordersDirty = true;
         labelsDirty = true;
-        labelVisibilityDirty = true;
         highlightStructureDirty = true;
         highlightVisibilityDirty = true;
         overlayRetryLimiter.resetForFunctionalInvalidation();
-        refreshBannerRenderer();
         refreshOverlay();
     }
 
@@ -250,24 +232,27 @@ public class CollectionOverlay {
     }
 
     public void setHighlighted(boolean highlighted) {
+        if (this.highlighted == highlighted) {
+            return;
+        }
         this.highlighted = highlighted;
         invalidateHighlightVisibility();
     }
 
     public void deleted() {
-        hideMarkerOverlays(labelOverlays);
-        hidePolygonOverlays(highlightPolygonOverlays);
         OverlayRefreshResult result = new OverlayRefreshResult();
         collectionBorderLayer.clear(result);
-        labelOverlays.clear();
-        highlightPolygonOverlays.clear();
+        collectionLabelLayer.clear(result);
+        collectionHighlightLayer.clear(result);
         highlightRenderGeometries = List.of();
         placementCache.clear();
+        labelLayoutFingerprint = List.of();
         visibleVariants = List.of();
         bannerRenderer.releaseTexture();
+        renderedBannerData = null;
         dirtyOverlayListener = null;
         if (result.hasFailures()) {
-            MapFrontiers.LOGGER.error("Failed to remove JourneyMap collection borders for {}: {}",
+            MapFrontiers.LOGGER.error("Failed to remove JourneyMap collection overlays for {}: {}",
                     key, result.getFailureSummaries(), result.getFirstFailure());
         }
     }
@@ -291,24 +276,29 @@ public class CollectionOverlay {
             rebuildBorderOverlays(refreshResult);
         }
 
-        if (labelsDirty || labelVisibilityDirty) {
-            rebuildLabelOverlays();
+        if (labelsDirty) {
+            rebuildLabelOverlays(refreshResult);
+            labelsDirty = false;
         }
 
         if (highlighted && highlightStructureDirty) {
-            rebuildHighlightOverlays();
+            highlightRenderGeometries = rebuildHighlightRenderGeometries();
+            highlightGeometryRevision++;
             highlightStructureDirty = false;
+            highlightLayerDirty = true;
+        }
+        if (highlighted && highlightLayerDirty) {
+            rebuildHighlightOverlays(refreshResult);
+            highlightLayerDirty = false;
             highlightVisibilityDirty = false;
         } else if (highlightVisibilityDirty) {
-            refreshHighlightVisibility();
+            refreshHighlightVisibility(refreshResult);
             highlightVisibilityDirty = false;
         }
 
         membershipDirty = false;
         geometryDirty = false;
         bordersDirty = false;
-        labelsDirty = false;
-        labelVisibilityDirty = false;
         finishOverlayRefresh(refreshResult);
     }
 
@@ -386,99 +376,115 @@ public class CollectionOverlay {
         collectionBorderLayer.finishReconcile(result);
     }
 
-    private void rebuildHighlightOverlays() {
-        hidePolygonOverlays(highlightPolygonOverlays);
-        highlightPolygonOverlays.clear();
-        highlightRenderGeometries = rebuildHighlightRenderGeometries();
-
-        if (!highlighted) {
-            return;
+    private void rebuildHighlightOverlays(OverlayRefreshResult result) {
+        CollectionHighlightStyleKey styleKey = new CollectionHighlightStyleKey(
+                HIGHLIGHT_STROKE_WIDTH, ColorConstants.WHITE, 1.f,
+                ShapeProperties.StrokePosition.OUTSIDE, 0.f);
+        ShapeProperties highlightShapeProperties = createHighlightShapeProperties(styleKey);
+        OverlayActivation activation = OverlayActivation.of(Context.UI.Fullscreen, ALL_MAP_TYPES);
+        collectionHighlightLayer.beginReconcile();
+        for (int geometryOrdinal = 0; geometryOrdinal < highlightRenderGeometries.size(); geometryOrdinal++) {
+            CollectionHighlightRenderGeometry geometry = highlightRenderGeometries.get(geometryOrdinal);
+            OverlayDisplayState displayState = new OverlayDisplayState(
+                    key.dimension(), activation, geometry.minZoom(), 0,
+                    0, null, null, null, null, null, null);
+            PolygonOverlayState state = new PolygonOverlayState(
+                    geometry.polygon(), geometry.holes(), highlightShapeProperties,
+                    new CollectionHighlightGeometryKey(highlightGeometryRevision, geometryOrdinal),
+                    styleKey, displayState);
+            collectionHighlightLayer.reconcileNext(state, true, result);
         }
-
-        ShapeProperties highlightShapeProperties = createHighlightShapeProperties();
-        for (CollectionHighlightRenderGeometry geometry : highlightRenderGeometries) {
-            PolygonOverlay overlay = new PolygonOverlay(MapFrontiers.MODID, key.dimension(),
-                    highlightShapeProperties, geometry.polygon(), geometry.holes());
-            overlay.setActiveUIs(Context.UI.Fullscreen);
-            overlay.setActiveMapTypes(ALL_MAP_TYPES);
-            if (geometry.minZoom() > 0) {
-                overlay.setMinZoom(geometry.minZoom());
-            }
-            highlightPolygonOverlays.add(overlay);
-        }
-
-        showPolygonOverlaysQuietly(highlightPolygonOverlays);
+        collectionHighlightLayer.finishReconcile(result);
     }
 
-    private void rebuildLabelOverlays() {
-        hideMarkerOverlays(labelOverlays);
-        labelOverlays.clear();
-
-        if (collection == null || visibleVariants.isEmpty()) {
-            return;
+    private void rebuildLabelOverlays(OverlayRefreshResult result) {
+        refreshEffectiveBannerRenderer();
+        Map<Context.UI, CollectionLabelContentMetrics> metricsByUi = buildLabelMetricsByUi();
+        List<CollectionLabelLayoutKey> updatedLayoutFingerprint = buildLabelLayoutFingerprint(metricsByUi);
+        if (!labelLayoutFingerprint.equals(updatedLayoutFingerprint)) {
+            placementCache.clear();
+            labelLayoutFingerprint = updatedLayoutFingerprint;
         }
 
+        Map<CollectionBannerIconKey, MapImage> bannerIconCache = new HashMap<>();
+        collectionLabelLayer.beginReconcile();
         for (CollectionVisibilityVariant variant : visibleVariants) {
-            CollectionLabelContentMetrics metrics = buildLabelContentMetrics(variant.getUi());
-            if (metrics.isEmpty()) {
-                continue;
-            }
-
-            int collectionMaxZoom = variant.getMaxZoom();
+            CollectionLabelContentMetrics metrics = metricsByUi.get(variant.getUi());
+            collectionLabelLayer.beginVariant(variant.getUi());
             for (CollectionGeometryIsland island : variant.getIslands()) {
-                CollectionLabelPlacementKey placementKey = new CollectionLabelPlacementKey(island, metrics.contentWidthPx(), metrics.contentHeightPx());
-                FrontierLabelPlacementSolver.LabelPlacement placement = placementCache.computeIfAbsent(placementKey,
-                        ignored -> {
-                            Area effectiveArea = island.copyEffectiveArea();
-                            double adaptiveLabelSolverPrecision = FrontierLabelPlacementSolver.getAdaptiveChunkOrCollectionPrecision(effectiveArea,
-                                    LABEL_SOLVER_PRECISION);
-                            return FrontierLabelPlacementSolver.solve(effectiveArea,
-                                    metrics.contentWidthPx(),
-                                    metrics.contentHeightPx(),
-                                    adaptiveLabelSolverPrecision);
-                        });
-                if (placement.availableWidthBlocks() <= 0.0 || placement.availableHeightBlocks() <= 0.0) {
-                    continue;
-                }
+                collectionLabelLayer.reconcileNext(
+                        createLabelState(variant, metrics, island, bannerIconCache), result);
+            }
+            collectionLabelLayer.finishVariant(result);
+        }
+        collectionLabelLayer.finishReconcile(result);
+    }
 
-                addLabelOverlay(variant.getUi(), variant.getMapTypes(), metrics, island, placement, collectionMaxZoom);
+    private Map<Context.UI, CollectionLabelContentMetrics> buildLabelMetricsByUi() {
+        Map<Context.UI, CollectionLabelContentMetrics> metricsByUi = new EnumMap<>(Context.UI.class);
+        for (CollectionVisibilityVariant variant : visibleVariants) {
+            metricsByUi.computeIfAbsent(variant.getUi(), this::buildLabelContentMetrics);
+        }
+        return metricsByUi;
+    }
+
+    private List<CollectionLabelLayoutKey> buildLabelLayoutFingerprint(
+            Map<Context.UI, CollectionLabelContentMetrics> metricsByUi) {
+        List<CollectionLabelLayoutKey> fingerprint = new ArrayList<>(metricsByUi.size());
+        for (Context.UI ui : getSupportedUis()) {
+            CollectionLabelContentMetrics metrics = metricsByUi.get(ui);
+            if (metrics != null) {
+                fingerprint.add(new CollectionLabelLayoutKey(
+                        ui, metrics.contentWidthPx(), metrics.contentHeightPx()));
             }
         }
-        showMarkerOverlaysQuietly(labelOverlays);
+        return List.copyOf(fingerprint);
     }
 
-    private void addLabelOverlay(Context.UI ui, Context.MapType[] mapTypes, CollectionLabelContentMetrics metrics, CollectionGeometryIsland island,
-                                 FrontierLabelPlacementSolver.LabelPlacement placement,
-                                 int collectionMaxZoom) {
-        TextProperties textProperties = createBaseTextProperties().setOffsetY(metrics.textOffsetY());
-        int minZoom = Math.max(2, island.getMinZoom());
-        BlockPos anchor = BlockPos.containing(placement.centerX(), OVERLAY_Y, placement.centerZ());
-        MarkerOverlay labelOverlay = new MarkerOverlay(MapFrontiers.MODID, anchor, createLabelAnchorIcon(metrics));
-        labelOverlay.setActiveUIs(ui);
-        labelOverlay.setActiveMapTypes(mapTypes);
-        labelOverlay.setDimension(key.dimension());
-        labelOverlay.setMinZoom(minZoom);
-        labelOverlay.setMaxZoom(collectionMaxZoom);
-        labelOverlay.setOverlayGroupName("collection");
-        labelOverlay.setTextProperties(textProperties.setMinZoom(minZoom).setMaxZoom(collectionMaxZoom)).setLabel(metrics.label());
-        labelOverlays.add(labelOverlay);
-    }
-
-    private @Nullable String getEffectiveCollectionName() {
-        if (collection == null) {
+    private @Nullable MarkerOverlayState createLabelState(
+            CollectionVisibilityVariant variant,
+            CollectionLabelContentMetrics metrics,
+            CollectionGeometryIsland island,
+            Map<CollectionBannerIconKey, MapImage> bannerIconCache) {
+        if (metrics.isEmpty()) {
             return null;
         }
 
-        String name = collection.getName().trim();
-        return name.isEmpty() ? null : name;
+        CollectionLabelPlacementKey placementKey = new CollectionLabelPlacementKey(
+                island, metrics.contentWidthPx(), metrics.contentHeightPx());
+        FrontierLabelPlacementSolver.LabelPlacement placement = placementCache.computeIfAbsent(placementKey,
+                ignored -> {
+                    Area effectiveArea = island.copyEffectiveArea();
+                    double adaptiveLabelSolverPrecision =
+                            FrontierLabelPlacementSolver.getAdaptiveChunkOrCollectionPrecision(
+                                    effectiveArea, LABEL_SOLVER_PRECISION);
+                    return FrontierLabelPlacementSolver.solve(effectiveArea,
+                            metrics.contentWidthPx(), metrics.contentHeightPx(), adaptiveLabelSolverPrecision);
+                });
+        if (placement.availableWidthBlocks() <= 0.0 || placement.availableHeightBlocks() <= 0.0) {
+            return null;
+        }
+
+        int minZoom = Math.max(2, island.getMinZoom());
+        TextProperties textProperties = createBaseTextProperties()
+                .setOffsetY(metrics.textOffsetY())
+                .setMinZoom(minZoom)
+                .setMaxZoom(variant.getMaxZoom());
+        CollectionLabelIconState iconState = createLabelIcon(metrics, bannerIconCache);
+        OverlayDisplayState displayState = new OverlayDisplayState(
+                key.dimension(), variant.getActivation(), minZoom, variant.getMaxZoom(),
+                0, "collection", null, metrics.label(), textProperties,
+                CollectionLabelTextKey.from(textProperties), null);
+        BlockPos anchor = BlockPos.containing(placement.centerX(), OVERLAY_Y, placement.centerZ());
+        return new MarkerOverlayState(anchor, iconState.image(), iconState.visualKey(), displayState);
     }
 
     private CollectionLabelContentMetrics buildLabelContentMetrics(Context.UI ui) {
         boolean nameVisible = resolveNameVisibility(ui);
         boolean ownerVisible = resolveOwnerVisibility(ui);
         boolean bannerVisible = resolveBannerVisibility(ui);
-        String effectiveName = nameVisible ? getEffectiveCollectionName() : null;
-        String effectiveOwner = ownerVisible && collection != null ? SettingsUserFormatter.getDisplayName(collection.getOwner(), "") : "";
+        String effectiveName = nameVisible ? collectionLabelContentSnapshot.name() : null;
+        String effectiveOwner = ownerVisible ? collectionLabelContentSnapshot.owner() : "";
         boolean hasName = effectiveName != null;
         boolean hasOwner = !effectiveOwner.isEmpty();
         boolean hasBanner = bannerVisible && bannerRenderer.hasBanner();
@@ -540,7 +546,7 @@ public class CollectionOverlay {
                 .setOpacity(ClientConfig.COLLECTION_TEXT_OPACITY.get().floatValue())
                 .setScale(ClientConfig.COLLECTION_TEXT_SIZE.get())
                 .setBackgroundOpacity(0.f);
-        int collectionColor = collection == null ? ColorConstants.WHITE : collection.getColor();
+        int collectionColor = collectionColorSnapshot;
         switch (ClientConfig.COLLECTION_TEXT_COLOR.get()) {
             case FrontierColor -> textProperties.setColor(collectionColor);
             case FrontierColorBright -> textProperties.setColor(colorMaxBrightness(collectionColor));
@@ -549,38 +555,75 @@ public class CollectionOverlay {
         return textProperties;
     }
 
-    private MapImage createLabelAnchorIcon(CollectionLabelContentMetrics metrics) {
-        if (!metrics.hasBanner()) {
-            return getTransparentLabelMarker();
+    private CollectionLabelIconState createLabelIcon(
+            CollectionLabelContentMetrics metrics,
+            Map<CollectionBannerIconKey, MapImage> bannerIconCache) {
+        if (!metrics.hasBanner() || !bannerRenderer.hasBanner()) {
+            return new CollectionLabelIconState(getTransparentLabelMarker(), CollectionLabelIconType.TRANSPARENT);
         }
 
-        MapImage bannerIcon = bannerRenderer.createJourneyMapImage(
-                metrics.bannerWidthPx() / 2.0,
-                metrics.bannerOffsetY(),
-                metrics.bannerWidthPx(),
-                metrics.bannerHeightPx(),
-                ClientConfig.COLLECTION_BANNER_OPACITY.get().floatValue());
-        return bannerIcon == null ? getTransparentLabelMarker() : bannerIcon;
+        double anchorX = metrics.bannerWidthPx() / 2.0;
+        double anchorY = metrics.bannerOffsetY();
+        float opacity = ClientConfig.COLLECTION_BANNER_OPACITY.get().floatValue();
+        CollectionBannerIconKey visualKey = new CollectionBannerIconKey(
+                bannerRenderer.getTextureRevision(), bannerRenderer.getRotation(), opacity,
+                anchorX, anchorY, metrics.bannerWidthPx(), metrics.bannerHeightPx());
+        MapImage bannerIcon = bannerIconCache.get(visualKey);
+        if (bannerIcon == null) {
+            bannerIcon = bannerRenderer.createJourneyMapImage(
+                    anchorX, anchorY, metrics.bannerWidthPx(), metrics.bannerHeightPx(), opacity);
+            if (bannerIcon == null) {
+                return new CollectionLabelIconState(
+                        getTransparentLabelMarker(), CollectionLabelIconType.TRANSPARENT);
+            }
+            bannerIconCache.put(visualKey, bannerIcon);
+        }
+        return new CollectionLabelIconState(bannerIcon, visualKey);
     }
 
     private int getBannerSize() {
         return ClientConfig.COLLECTION_BANNER_SIZE.get();
     }
 
-    private void refreshBannerRenderer() {
-        bannerRenderer.releaseTexture();
-        if (hasVisibleBannerOnAnyUi() && collection != null && collection.getBannerData() != null) {
-            bannerRenderer.createTexture(collection.getId(), collection.getBannerData());
+    private void refreshEffectiveBannerRenderer() {
+        BannerData effectiveBanner = hasBannerEligibleVariant()
+                ? collectionLabelContentSnapshot.banner()
+                : null;
+        boolean converged = effectiveBanner == null
+                ? !bannerRenderer.hasBanner()
+                : bannerRenderer.hasBanner() && effectiveBanner.equals(renderedBannerData);
+        if (converged) {
+            if (effectiveBanner == null) {
+                renderedBannerData = null;
+            }
+            return;
+        }
+
+        if (effectiveBanner == null) {
+            bannerRenderer.releaseTexture();
+            renderedBannerData = null;
+        } else {
+            bannerRenderer.createTexture(key.collectionId(), effectiveBanner);
+            renderedBannerData = bannerRenderer.hasBanner() ? new BannerData(effectiveBanner) : null;
         }
     }
 
-    private static ShapeProperties createHighlightShapeProperties() {
+    private boolean hasBannerEligibleVariant() {
+        for (CollectionVisibilityVariant variant : visibleVariants) {
+            if (resolveBannerVisibility(variant.getUi())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static ShapeProperties createHighlightShapeProperties(CollectionHighlightStyleKey styleKey) {
         return new ShapeProperties()
-                .setStrokeWidth(HIGHLIGHT_STROKE_WIDTH)
-                .setStrokeColor(ColorConstants.WHITE)
-                .setStrokeOpacity(1.f)
-                .setStrokePosition(ShapeProperties.StrokePosition.OUTSIDE)
-                .setFillOpacity(0.f);
+                .setStrokeWidth(styleKey.strokeWidth())
+                .setStrokeColor(styleKey.strokeColor())
+                .setStrokeOpacity(styleKey.strokeOpacity())
+                .setStrokePosition(styleKey.strokePosition())
+                .setFillOpacity(styleKey.fillOpacity());
     }
 
     private CollectionBorderStyleKey resolveCollectionBorderStyleKey() {
@@ -709,16 +752,6 @@ public class CollectionOverlay {
         };
     }
 
-    private boolean hasVisibleBannerOnAnyUi() {
-        for (Context.UI ui : getSupportedUis()) {
-            if (resolveVisibility(ui) && resolveBannerVisibility(ui)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private List<Context.MapType> getMapTypesForUi(Context.UI ui) {
         List<Context.MapType> mapTypes = new ArrayList<>(ALL_MAP_TYPES.length);
         for (Context.MapType mapType : ALL_MAP_TYPES) {
@@ -810,78 +843,6 @@ public class CollectionOverlay {
         return new CollectionLabelContentKey(name.isEmpty() ? null : name,
                 SettingsUserFormatter.getDisplayName(collection.getOwner(), ""),
                 banner == null ? null : new BannerData(banner));
-    }
-
-    private void hideMarkerOverlays(List<MarkerOverlay> overlays) {
-        for (MarkerOverlay marker : overlays) {
-            removeMarkerOverlay(marker);
-        }
-    }
-
-    private void showMarkerOverlaysQuietly(List<MarkerOverlay> overlays) {
-        try {
-            showMarkerOverlays(overlays);
-        } catch (Exception e) {
-            MapFrontiers.LOGGER.error("Error showing collection label overlays", e);
-        }
-    }
-
-    private void showMarkerOverlays(List<MarkerOverlay> overlays) throws Exception {
-        if (jmAPI == null) {
-            return;
-        }
-
-        for (MarkerOverlay marker : overlays) {
-            jmAPI.show(marker);
-        }
-    }
-
-    private void hidePolygonOverlays(List<PolygonOverlay> overlays) {
-        for (PolygonOverlay polygon : overlays) {
-            removePolygonOverlay(polygon);
-        }
-    }
-
-    private void showPolygonOverlaysQuietly(List<PolygonOverlay> overlays) {
-        try {
-            showPolygonOverlays(overlays);
-        } catch (Exception e) {
-            MapFrontiers.LOGGER.error("Error showing collection highlight overlays", e);
-        }
-    }
-
-    private void showPolygonOverlays(List<PolygonOverlay> overlays) throws Exception {
-        if (jmAPI == null) {
-            return;
-        }
-
-        for (PolygonOverlay polygon : overlays) {
-            jmAPI.show(polygon);
-        }
-    }
-
-    private void removePolygonOverlay(PolygonOverlay polygon) {
-        if (jmAPI == null) {
-            return;
-        }
-
-        try {
-            jmAPI.remove(polygon);
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to remove collection highlight overlay for {}", key, t);
-        }
-    }
-
-    private void removeMarkerOverlay(MarkerOverlay marker) {
-        if (jmAPI == null) {
-            return;
-        }
-
-        try {
-            jmAPI.remove(marker);
-        } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to remove collection label overlay for {}", key, t);
-        }
     }
 
     private static int colorMaxBrightness(int color) {
@@ -1283,13 +1244,8 @@ public class CollectionOverlay {
         return !intersection.isEmpty();
     }
 
-    private void refreshHighlightVisibility() {
-        hidePolygonOverlays(highlightPolygonOverlays);
-        if (!highlighted) {
-            return;
-        }
-
-        showPolygonOverlaysQuietly(highlightPolygonOverlays);
+    private void refreshHighlightVisibility(OverlayRefreshResult result) {
+        collectionHighlightLayer.setVisible(highlighted, result);
     }
 
     private void invalidateHighlightVisibility() {
@@ -1329,6 +1285,9 @@ public class CollectionOverlay {
 
     private void scheduleOverlayRetry() {
         bordersDirty = true;
+        labelsDirty = true;
+        highlightLayerDirty = true;
+        highlightVisibilityDirty = true;
         needUpdateOverlay = true;
         if (dirtyOverlayListener != null) {
             dirtyOverlayListener.run();
@@ -1424,10 +1383,20 @@ public class CollectionOverlay {
     private record CollectionGeometryKey(long revision, int islandOrdinal) {
     }
 
+    private record CollectionHighlightGeometryKey(long revision, int geometryOrdinal) {
+    }
+
     private record CollectionBorderStyleKey(int strokeColor,
                                             float strokeWidth,
                                             float strokeOpacity,
                                             ShapeProperties.StrokePosition strokePosition) {
+    }
+
+    private record CollectionHighlightStyleKey(float strokeWidth,
+                                               int strokeColor,
+                                               float strokeOpacity,
+                                               ShapeProperties.StrokePosition strokePosition,
+                                               float fillOpacity) {
     }
 
     private record CollectionVariantVisibilityKey(boolean visible,
@@ -1459,6 +1428,45 @@ public class CollectionOverlay {
     private record CollectionLabelPlacementKey(CollectionGeometryIsland island,
                                                int contentWidthPx,
                                                int contentHeightPx) {
+    }
+
+    private record CollectionLabelLayoutKey(Context.UI ui,
+                                            int contentWidthPx,
+                                            int contentHeightPx) {
+    }
+
+    private record CollectionLabelTextKey(float scale,
+                                          int color,
+                                          int backgroundColor,
+                                          float opacity,
+                                          float backgroundOpacity,
+                                          boolean fontShadow,
+                                          int minZoom,
+                                          int maxZoom,
+                                          int offsetX,
+                                          int offsetY) {
+        private static CollectionLabelTextKey from(TextProperties properties) {
+            return new CollectionLabelTextKey(properties.getScale(), properties.getColor(),
+                    properties.getBackgroundColor(), properties.getOpacity(), properties.getBackgroundOpacity(),
+                    properties.hasFontShadow(), properties.getMinZoom(), properties.getMaxZoom(),
+                    properties.getOffsetX(), properties.getOffsetY());
+        }
+    }
+
+    private enum CollectionLabelIconType {
+        TRANSPARENT
+    }
+
+    private record CollectionBannerIconKey(long textureRevision,
+                                           int rotation,
+                                           float opacity,
+                                           double anchorX,
+                                           double anchorY,
+                                           int displayWidth,
+                                           int displayHeight) {
+    }
+
+    private record CollectionLabelIconState(MapImage image, Object visualKey) {
     }
 
     private record CollectionLabelContentMetrics(String label,
