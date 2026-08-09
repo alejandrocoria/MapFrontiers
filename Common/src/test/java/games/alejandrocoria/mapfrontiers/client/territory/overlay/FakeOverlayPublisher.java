@@ -5,13 +5,13 @@ import journeymap.api.v2.client.display.Displayable;
 import java.util.ArrayList;
 import java.util.List;
 
-final class FakeOverlayPublisher implements OverlayPublisher {
-    enum OperationType {
+public final class FakeOverlayPublisher implements OverlayPublisher {
+    public enum OperationType {
         SHOW,
         REMOVE
     }
 
-    record Operation(OperationType type, Displayable overlay) {
+    public record Operation(OperationType type, Displayable overlay) {
     }
 
     private final List<Operation> operations = new ArrayList<>();
@@ -42,23 +42,23 @@ final class FakeOverlayPublisher implements OverlayPublisher {
         }
     }
 
-    void setAvailable(boolean available) {
+    public void setAvailable(boolean available) {
         this.available = available;
     }
 
-    void failNextShow() {
+    public void failNextShow() {
         showFailuresRemaining++;
     }
 
-    void failNextRemove() {
+    public void failNextRemove() {
         removeFailuresRemaining++;
     }
 
-    List<Operation> operations() {
+    public List<Operation> operations() {
         return operations;
     }
 
-    void clearOperations() {
+    public void clearOperations() {
         operations.clear();
     }
 

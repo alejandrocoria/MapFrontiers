@@ -32,27 +32,36 @@ public final class MarkerOverlaySlot extends OverlaySlot<MarkerOverlay> {
         Objects.requireNonNull(result, "result");
         Objects.requireNonNull(layer, "layer");
 
-        boolean stateChanged = desiredPoint == null
-                || !desiredPoint.equals(point)
-                || !Objects.equals(desiredVisualKey, visualKey)
-                || desiredDisplayState == null
-                || !desiredDisplayState.sameAs(displayState);
+        boolean pointChanged = desiredPoint == null || !desiredPoint.equals(point);
+        boolean visualChanged = !Objects.equals(desiredVisualKey, visualKey);
+        boolean displayStateChanged = desiredDisplayState == null || !desiredDisplayState.sameAs(displayState);
         MarkerOverlay overlay = getOverlay();
         if (overlay == null) {
             overlay = new MarkerOverlay(modId, point, icon);
             initializeOverlay(overlay);
-            stateChanged = true;
+            pointChanged = true;
+            visualChanged = true;
+            displayStateChanged = true;
         }
 
-        if (stateChanged) {
+        if (pointChanged) {
             overlay.setPoint(point);
-            overlay.setIcon(icon);
-            displayState.applyTo(overlay);
             desiredPoint = point;
+        }
+        if (visualChanged) {
+            overlay.setIcon(icon);
             desiredVisualKey = visualKey;
+        }
+        if (displayStateChanged) {
+            // JourneyMap's marker renderer dereferences TextProperties even when the marker has no label.
+            boolean resetNeutralTextProperties = desiredDisplayState != null
+                    && desiredDisplayState.hasTextProperties()
+                    && !displayState.hasTextProperties();
+            displayState.applyTo(overlay, resetNeutralTextProperties);
             desiredDisplayState = displayState;
         }
 
+        boolean stateChanged = pointChanged || visualChanged || displayStateChanged;
         reconcilePublication(visible, stateChanged, result, layer);
     }
 

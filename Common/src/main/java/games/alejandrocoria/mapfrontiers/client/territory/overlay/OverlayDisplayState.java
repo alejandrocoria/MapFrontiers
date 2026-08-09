@@ -48,13 +48,9 @@ public final class OverlayDisplayState {
         this.listener = listener;
     }
 
-    void applyTo(Overlay overlay) {
-        applyTo(overlay, false);
-    }
-
-    void applyTo(Overlay overlay, boolean retainNeutralTextProperties) {
+    void applyTo(Overlay overlay, boolean resetNeutralTextProperties) {
         // JourneyMap mirrors several overlay values into TextProperties and expects an instance while doing so.
-        if (textProperties == null && (retainNeutralTextProperties || overlay.getTextProperties() == null)) {
+        if (overlay.getTextProperties() == null || (textProperties == null && resetNeutralTextProperties)) {
             overlay.setTextProperties(new TextProperties());
         }
         overlay.setDimension(dimension);
@@ -66,10 +62,14 @@ public final class OverlayDisplayState {
         overlay.setOverlayGroupName(groupName);
         overlay.setTitle(title);
         overlay.setLabel(label);
-        if (textProperties != null || !retainNeutralTextProperties) {
+        if (textProperties != null) {
             overlay.setTextProperties(textProperties);
         }
         overlay.setOverlayListener(listener);
+    }
+
+    boolean hasTextProperties() {
+        return textProperties != null;
     }
 
     boolean sameAs(OverlayDisplayState other) {
