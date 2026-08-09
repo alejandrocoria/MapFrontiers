@@ -1,8 +1,9 @@
 package games.alejandrocoria.mapfrontiers.client.territory.overlay;
 
 import journeymap.api.v2.client.display.Context;
-import journeymap.api.v2.client.display.PolygonOverlay;
+import journeymap.api.v2.client.display.MarkerOverlay;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -12,9 +13,9 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Keeps collection border slots isolated by UI and visibility-variant ordinal.
+ * Keeps optional collection label slots isolated by UI and visibility-variant ordinal.
  */
-public final class CollectionBorderOverlayLayer {
+public final class CollectionLabelOverlayLayer {
     private static final Context.UI[] UI_ORDER = {
             Context.UI.Fullscreen,
             Context.UI.Minimap,
@@ -24,12 +25,12 @@ public final class CollectionBorderOverlayLayer {
     private final String modId;
     private final String layerName;
     private final OverlayPublisher publisher;
-    private final Map<Context.UI, List<PolygonOverlayLayer>> variantLayers = new EnumMap<>(Context.UI.class);
+    private final Map<Context.UI, List<MarkerOverlayLayer>> variantLayers = new EnumMap<>(Context.UI.class);
     private final int[] variantCursors = new int[Context.UI.values().length];
     private boolean reconciling;
-    private PolygonOverlayLayer activeVariantLayer;
+    private MarkerOverlayLayer activeVariantLayer;
 
-    public CollectionBorderOverlayLayer(String modId, String layerName, OverlayPublisher publisher) {
+    public CollectionLabelOverlayLayer(String modId, String layerName, OverlayPublisher publisher) {
         this.modId = Objects.requireNonNull(modId, "modId");
         this.layerName = Objects.requireNonNull(layerName, "layerName");
         this.publisher = Objects.requireNonNull(publisher, "publisher");
@@ -37,7 +38,7 @@ public final class CollectionBorderOverlayLayer {
 
     public void beginReconcile() {
         if (reconciling) {
-            throw new IllegalStateException("Collection border layer is already being reconciled");
+            throw new IllegalStateException("Collection label layer is already being reconciled");
         }
         reconciling = true;
         Arrays.fill(variantCursors, 0);
@@ -46,16 +47,14 @@ public final class CollectionBorderOverlayLayer {
     public void beginVariant(Context.UI ui) {
         requireReconcile();
         if (activeVariantLayer != null) {
-            throw new IllegalStateException("Previous collection border variant is still being reconciled");
+            throw new IllegalStateException("Previous collection label variant is still being reconciled");
         }
 
         requireSupportedUi(ui);
-
-        List<PolygonOverlayLayer> uiLayers = variantLayers.computeIfAbsent(
-                ui, ignored -> new ArrayList<>());
+        List<MarkerOverlayLayer> uiLayers = variantLayers.computeIfAbsent(ui, ignored -> new ArrayList<>());
         int variantOrdinal = variantCursors[ui.ordinal()]++;
         if (variantOrdinal == uiLayers.size()) {
-            uiLayers.add(new PolygonOverlayLayer(modId,
+            uiLayers.add(new MarkerOverlayLayer(modId,
                     layerName + "-" + ui.name().toLowerCase(Locale.ROOT) + "-" + variantOrdinal, publisher));
         }
 
@@ -63,16 +62,16 @@ public final class CollectionBorderOverlayLayer {
         activeVariantLayer.beginReconcile();
     }
 
-    public void reconcileNext(PolygonOverlayState state, OverlayRefreshResult result) {
+    public void reconcileNext(@Nullable MarkerOverlayState state, OverlayRefreshResult result) {
         if (activeVariantLayer == null) {
-            throw new IllegalStateException("Collection border variant is not being reconciled");
+            throw new IllegalStateException("Collection label variant is not being reconciled");
         }
         activeVariantLayer.reconcileNext(state, true, Objects.requireNonNull(result, "result"));
     }
 
     public void finishVariant(OverlayRefreshResult result) {
         if (activeVariantLayer == null) {
-            throw new IllegalStateException("Collection border variant is not being reconciled");
+            throw new IllegalStateException("Collection label variant is not being reconciled");
         }
         activeVariantLayer.finishReconcile(Objects.requireNonNull(result, "result"));
         activeVariantLayer = null;
@@ -82,11 +81,11 @@ public final class CollectionBorderOverlayLayer {
         requireReconcile();
         Objects.requireNonNull(result, "result");
         if (activeVariantLayer != null) {
-            throw new IllegalStateException("Collection border variant is still being reconciled");
+            throw new IllegalStateException("Collection label variant is still being reconciled");
         }
 
         for (Context.UI ui : UI_ORDER) {
-            List<PolygonOverlayLayer> uiLayers = variantLayers.get(ui);
+            List<MarkerOverlayLayer> uiLayers = variantLayers.get(ui);
             if (uiLayers == null) {
                 continue;
             }
@@ -109,25 +108,25 @@ public final class CollectionBorderOverlayLayer {
 
     public void clear(OverlayRefreshResult result) {
         if (reconciling) {
-            throw new IllegalStateException("Collection border layer cannot be cleared during reconciliation");
+            throw new IllegalStateException("Collection label layer cannot be cleared during reconciliation");
         }
         Objects.requireNonNull(result, "result");
-        for (List<PolygonOverlayLayer> uiLayers : variantLayers.values()) {
-            for (PolygonOverlayLayer layer : uiLayers) {
+        for (List<MarkerOverlayLayer> uiLayers : variantLayers.values()) {
+            for (MarkerOverlayLayer layer : uiLayers) {
                 layer.clear(result);
             }
         }
         variantLayers.clear();
     }
 
-    public List<PolygonOverlay> getOverlays() {
-        List<PolygonOverlay> overlays = new ArrayList<>();
+    public List<MarkerOverlay> getOverlays() {
+        List<MarkerOverlay> overlays = new ArrayList<>();
         for (Context.UI ui : UI_ORDER) {
-            List<PolygonOverlayLayer> uiLayers = variantLayers.get(ui);
+            List<MarkerOverlayLayer> uiLayers = variantLayers.get(ui);
             if (uiLayers == null) {
                 continue;
             }
-            for (PolygonOverlayLayer layer : uiLayers) {
+            for (MarkerOverlayLayer layer : uiLayers) {
                 overlays.addAll(layer.getOverlays());
             }
         }
@@ -136,14 +135,14 @@ public final class CollectionBorderOverlayLayer {
 
     private void requireReconcile() {
         if (!reconciling) {
-            throw new IllegalStateException("Collection border layer is not being reconciled");
+            throw new IllegalStateException("Collection label layer is not being reconciled");
         }
     }
 
     private static void requireSupportedUi(Context.UI ui) {
         Objects.requireNonNull(ui, "ui");
         if (ui != Context.UI.Fullscreen && ui != Context.UI.Minimap && ui != Context.UI.Webmap) {
-            throw new IllegalArgumentException("Unsupported collection border UI: " + ui);
+            throw new IllegalArgumentException("Unsupported collection label UI: " + ui);
         }
     }
 }

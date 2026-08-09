@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.territory.overlay;
 
+import journeymap.api.v2.client.display.Context;
 import journeymap.api.v2.client.display.PolygonOverlay;
-import journeymap.api.v2.common.Context;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
