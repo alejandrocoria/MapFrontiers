@@ -129,9 +129,9 @@ public class CollectionOverlayManager {
         CollectionOverlay overlay = overlaysByKey.get(key);
         if (overlay == null) {
             overlay = new CollectionOverlay(key, journeyMapApi, collection, eligibleMembers);
-            registerOverlay(overlay);
             overlay.setVisibilityOverride(visibilityOverride);
             overlay.rebuildOverlayNow();
+            registerOverlay(overlay);
             return;
         }
 
