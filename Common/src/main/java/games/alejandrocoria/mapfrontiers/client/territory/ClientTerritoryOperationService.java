@@ -216,7 +216,7 @@ public class ClientTerritoryOperationService {
         frontier.applyChange(change);
         getManager(frontier.getPersonal()).refreshFrontierDerivedIndexes(frontier);
         collectionRuntime.onFrontierUpdated(previousState, frontier);
-        notifyCollectionOverlayFrontierUpdated(previousState.collectionId(), frontier);
+        notifyCollectionOverlayFrontierUpdated(previousState.collectionId(), frontier, change);
         postAffectedCollectionsUpdated(previousState.collectionId(), frontier.getCollectionId());
         markLocalPersonalDataDirtyIfPersistent(frontier);
         frontierEvents.postUpdated(frontier, mc.player.getId());
@@ -596,7 +596,7 @@ public class ClientTerritoryOperationService {
             }
             if (previousState != null) {
                 collectionRuntime.onFrontierUpdated(previousState, frontierOverlay);
-                notifyCollectionOverlayFrontierUpdated(previousState.collectionId(), frontierOverlay);
+                notifyCollectionOverlayFrontierUpdated(previousState.collectionId(), frontierOverlay, change);
                 postAffectedCollectionsUpdated(previousState.collectionId(), frontierOverlay.getCollectionId());
             }
             if (personal && frontierOverlay.isPersistent()) {
@@ -856,7 +856,26 @@ public class ClientTerritoryOperationService {
     }
 
     private void notifyCollectionOverlayFrontierUpdated(@Nullable UUID previousCollectionId, FrontierOverlay frontier) {
+        getCollectionOverlayManager().markFrontierMembershipDirty(frontier);
         getCollectionOverlayManager().markFrontierGeometryDirty(frontier, previousCollectionId);
+    }
+
+    private void notifyCollectionOverlayFrontierUpdated(@Nullable UUID previousCollectionId,
+                                                        FrontierOverlay frontier,
+                                                        FrontierChange change) {
+        if (affectsCollectionMembership(change)) {
+            notifyCollectionOverlayFrontierUpdated(previousCollectionId, frontier);
+        } else if (affectsCollectionVariants(change)) {
+            getCollectionOverlayManager().markFrontierGeometryDirty(frontier, previousCollectionId);
+        }
+    }
+
+    static boolean affectsCollectionMembership(FrontierChange change) {
+        return change.hasShapeChange() || change.hasCollectionIdChange();
+    }
+
+    static boolean affectsCollectionVariants(FrontierChange change) {
+        return affectsCollectionMembership(change) || change.hasVisibilityChange();
     }
 
     private CollectionData createCollectionData(boolean personal, String pluginModId, CollectionCreateRequest request) {
