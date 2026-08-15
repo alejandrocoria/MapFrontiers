@@ -25,8 +25,6 @@ import java.util.Objects;
  * every enabled UI can share the same immutable-by-convention MapImage without sharing overlay identities.
  */
 final class PathMarkerOverlayLayer {
-    private static final int REPEATED_MARKER_MIN_ZOOM = 2;
-    private static final int REPEATED_MARKER_MAX_ZOOM = 16384;
     private static final List<Context.UI> UI_ORDER = List.of(
             Context.UI.Fullscreen,
             Context.UI.Minimap,
@@ -95,9 +93,12 @@ final class PathMarkerOverlayLayer {
             updateVisual(pointVisuals.get(index), layout.markerId(), layout.rotation(), tint, opacity, markerSize);
         }
         resizeVisuals(segmentVisuals, segmentLayouts.size());
+        List<PathMarkerBandPlan> segmentBandPlans = new ArrayList<>(segmentLayouts.size());
         for (int index = 0; index < segmentLayouts.size(); index++) {
             FrontierOverlay.PathSegmentLayout layout = segmentLayouts.get(index);
             updateVisual(segmentVisuals.get(index), layout.segmentMarkerId(), layout.rotation(), tint, opacity, markerSize);
+            segmentBandPlans.add(PathMarkerBandPlan.create(layout.length(), layout.repeatedMarkerPositions().size(),
+                    markerScale, layout.segmentSpacingMultiplier()));
         }
 
         for (UiBucket bucket : uiBuckets) {
@@ -105,8 +106,8 @@ final class PathMarkerOverlayLayer {
             if (uiState == null || !uiState.enabled()) {
                 bucket.clear(result);
             } else {
-                bucket.reconcile(pointLayouts, segmentLayouts, pointVisuals, segmentVisuals,
-                        dimension, uiState.mapTypes(), markerScale, visible, result);
+                bucket.reconcile(pointLayouts, segmentLayouts, segmentBandPlans, pointVisuals, segmentVisuals,
+                        dimension, uiState.mapTypes(), visible, result);
             }
         }
     }
@@ -244,11 +245,11 @@ final class PathMarkerOverlayLayer {
 
         private void reconcile(List<FrontierOverlay.PathPointLayout> pointLayouts,
                                List<FrontierOverlay.PathSegmentLayout> segmentLayouts,
+                               List<PathMarkerBandPlan> segmentBandPlans,
                                List<VisualReference> pointVisuals,
                                List<VisualReference> segmentVisuals,
                                ResourceKey<Level> dimension,
                                Context.MapType[] mapTypes,
-                               int markerScale,
                                boolean visible,
                                OverlayRefreshResult result) {
             OverlayActivation desiredActivation = OverlayActivation.of(ui, mapTypes);
@@ -260,8 +261,8 @@ final class PathMarkerOverlayLayer {
             resizeSegmentBuckets(segmentLayouts.size(), result);
             OverlayDisplayState desiredPointDisplayState = getPointDisplayState(dimension);
             for (int index = 0; index < segmentLayouts.size(); index++) {
-                segmentBuckets.get(index).reconcile(segmentLayouts.get(index), segmentVisuals.get(index),
-                        dimension, activation, markerScale, visible, result);
+                segmentBuckets.get(index).reconcile(segmentLayouts.get(index), segmentBandPlans.get(index),
+                        segmentVisuals.get(index), dimension, activation, visible, result);
                 pointBuckets.get(index).reconcile(pointLayouts.get(index).pos(), pointVisuals.get(index),
                         desiredPointDisplayState, visible, result);
             }
@@ -392,19 +393,32 @@ final class PathMarkerOverlayLayer {
         private final List<BandBucket> bands;
 
         private SegmentBucket(String modId, String layerName, OverlayPublisher publisher, int displayOrder) {
-            List<BandBucket> createdBands = new ArrayList<>();
-            for (int minZoom = REPEATED_MARKER_MIN_ZOOM; minZoom <= REPEATED_MARKER_MAX_ZOOM; minZoom *= 2) {
-                int maxZoom = minZoom == REPEATED_MARKER_MAX_ZOOM ? 0 : minZoom * 2 - 1;
-                createdBands.add(new BandBucket(modId, layerName, publisher, minZoom, maxZoom, displayOrder));
+            List<BandBucket> createdBands = new ArrayList<>(PathMarkerBandPlan.originalBandCount());
+            for (int index = 0; index < PathMarkerBandPlan.originalBandCount(); index++) {
+                createdBands.add(new BandBucket(modId, layerName, publisher, displayOrder));
             }
             bands = List.copyOf(createdBands);
         }
 
-        private void reconcile(FrontierOverlay.PathSegmentLayout layout, VisualReference visual,
+        private void reconcile(FrontierOverlay.PathSegmentLayout layout, PathMarkerBandPlan plan,
+                               VisualReference visual,
                                ResourceKey<Level> dimension, OverlayActivation activation,
-                               int markerScale, boolean visible, OverlayRefreshResult result) {
-            for (BandBucket band : bands) {
-                band.reconcile(layout, visual, dimension, activation, markerScale, visible, result);
+                               boolean visible, OverlayRefreshResult result) {
+            // Fixed buckets keep stable owners when effective bands are inserted, removed, merged, or split.
+            List<PathMarkerBandPlan.Entry> entries = plan.entries();
+            int entryIndex = 0;
+            for (int bandIndex = 0; bandIndex < bands.size(); bandIndex++) {
+                BandBucket band = bands.get(bandIndex);
+                if (entryIndex < entries.size() && entries.get(entryIndex).ownerIndex() == bandIndex) {
+                    PathMarkerBandPlan.Entry entry = entries.get(entryIndex++);
+                    band.reconcile(layout, visual, dimension, activation,
+                            entry.minZoom(), entry.maxZoom(), entry.markerCount(), visible, result);
+                } else {
+                    band.clear(result);
+                }
+            }
+            if (entryIndex != entries.size()) {
+                throw new IllegalStateException("Path marker band plan references an unavailable owner");
             }
         }
 
@@ -429,45 +443,39 @@ final class PathMarkerOverlayLayer {
 
     private static final class BandBucket {
         private final String layerName;
-        private final int minZoom;
-        private final int maxZoom;
         private final int displayOrder;
         private final ReconciledOverlayList<MarkerOverlaySlot> slots;
         private @Nullable ResourceKey<Level> displayDimension;
         private @Nullable OverlayActivation displayActivation;
+        private int displayMinZoom;
+        private int displayMaxZoom;
         private @Nullable OverlayDisplayState displayState;
 
-        private BandBucket(String modId, String layerName, OverlayPublisher publisher,
-                           int minZoom, int maxZoom, int displayOrder) {
+        private BandBucket(String modId, String layerName, OverlayPublisher publisher, int displayOrder) {
             this.layerName = layerName;
-            this.minZoom = minZoom;
-            this.maxZoom = maxZoom;
             this.displayOrder = displayOrder;
             slots = new ReconciledOverlayList<>(() -> new MarkerOverlaySlot(modId, publisher));
         }
 
         private void reconcile(FrontierOverlay.PathSegmentLayout layout, VisualReference visual,
                                ResourceKey<Level> dimension, OverlayActivation activation,
-                               int markerScale, boolean visible, OverlayRefreshResult result) {
+                               int minZoom, int maxZoom, int markerCount,
+                               boolean visible, OverlayRefreshResult result) {
             List<BlockPos> positions = layout.repeatedMarkerPositions();
-            if (visual.key == null || visual.image == null || positions.isEmpty()) {
-                clear(result);
-                return;
-            }
-
-            double targetSpacing = PathRepeatedMarkerSelector.getTargetSpacing(
-                    minZoom, markerScale, layout.segmentSpacingMultiplier());
-            int markerCount = PathRepeatedMarkerSelector.getMarkerCount(targetSpacing, layout.length(), positions.size());
-            if (markerCount == 0) {
+            if (visual.key == null || visual.image == null || positions.isEmpty() || markerCount == 0) {
                 clear(result);
                 return;
             }
 
             if (displayState == null
                     || !dimension.equals(displayDimension)
-                    || !activation.equals(displayActivation)) {
+                    || !activation.equals(displayActivation)
+                    || minZoom != displayMinZoom
+                    || maxZoom != displayMaxZoom) {
                 displayDimension = dimension;
                 displayActivation = activation;
+                displayMinZoom = minZoom;
+                displayMaxZoom = maxZoom;
                 displayState = new OverlayDisplayState(dimension, activation, minZoom, maxZoom,
                         displayOrder, null, null, null, null, null, null);
             }
@@ -498,6 +506,8 @@ final class PathMarkerOverlayLayer {
             slots.clear(result, layerName);
             displayDimension = null;
             displayActivation = null;
+            displayMinZoom = 0;
+            displayMaxZoom = 0;
             displayState = null;
         }
 

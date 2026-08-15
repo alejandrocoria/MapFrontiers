@@ -214,7 +214,7 @@ class PathMarkerOverlayLayerTest {
 
         reconcile(layer, layout, fullscreen(true), true, new OverlayRefreshResult());
         List<MarkerOverlay> original = layer.getOverlays();
-        assertTrue(original.size() > 1_000);
+        assertTrue(original.size() > 500);
         assertEquals(original.size(), publisher.operations().size());
         publisher.clearOperations();
 
@@ -222,6 +222,93 @@ class PathMarkerOverlayLayerTest {
 
         assertSameOverlays(original, layer.getOverlays());
         assertTrue(publisher.operations().isEmpty());
+    }
+
+    @Test
+    void reconcile_saturatedBands_materializesOneCombinedRange() {
+        FakeOverlayPublisher publisher = new FakeOverlayPublisher();
+        PathMarkerOverlayLayer layer = createLayer(publisher);
+        PathLayout layout = oneSegmentWithVolume(256, 100_000.0);
+        FrontierOverlay.PathSegmentLayout segment = layout.segments().getFirst();
+        PathMarkerBandPlan plan = PathMarkerBandPlan.create(segment.length(),
+                segment.repeatedMarkerPositions().size(), 1, segment.segmentSpacingMultiplier());
+
+        reconcile(layer, layout, fullscreen(true), true, new OverlayRefreshResult());
+
+        List<MarkerOverlay> repeated = repeatedOverlays(layer);
+        assertEquals(plan.entries().stream().mapToInt(PathMarkerBandPlan.Entry::markerCount).sum(), repeated.size());
+        PathMarkerBandPlan.Entry combined = plan.entries().getLast();
+        List<MarkerOverlay> combinedOverlays = repeated.stream()
+                .filter(overlay -> overlay.getMinZoom() == combined.minZoom()
+                        && overlay.getMaxZoom() == 16384)
+                .toList();
+        assertEquals(combined.markerCount(), combinedOverlays.size());
+        assertEquals(0, combined.maxZoom());
+        for (int minZoom = 2; minZoom <= 16384; minZoom *= 2) {
+            int zoom = minZoom;
+            List<BlockPos> expectedPositions = expectedRepeatedPositions(segment, minZoom, 1);
+            List<BlockPos> actualPositions = repeated.stream()
+                    .filter(overlay -> zoom >= overlay.getMinZoom() && zoom <= overlay.getMaxZoom())
+                    .map(MarkerOverlay::getPoint)
+                    .toList();
+            assertEquals(expectedPositions, actualPositions, "Unexpected positions at zoom " + minZoom);
+        }
+    }
+
+    @Test
+    void reconcile_earlyBandAppears_doesNotTouchStableLaterOwner() {
+        FakeOverlayPublisher publisher = new FakeOverlayPublisher();
+        PathMarkerOverlayLayer layer = createLayer(publisher);
+        reconcile(layer, oneSegmentWithVolume(256, 3_000.0), fullscreen(true),
+                true, new OverlayRefreshResult());
+        List<MarkerOverlay> stableBand = repeatedOverlays(layer).stream()
+                .filter(overlay -> overlay.getMinZoom() == 4 && overlay.getMaxZoom() == 7)
+                .toList();
+        assertFalse(stableBand.isEmpty());
+        publisher.clearOperations();
+
+        reconcile(layer, oneSegmentWithVolume(256, 3_200.0), fullscreen(true),
+                true, new OverlayRefreshResult());
+
+        List<MarkerOverlay> currentStableBand = repeatedOverlays(layer).stream()
+                .filter(overlay -> overlay.getMinZoom() == 4 && overlay.getMaxZoom() == 7)
+                .toList();
+        assertSameOverlays(stableBand, currentStableBand);
+        assertTrue(publisher.operations().stream().noneMatch(operation ->
+                stableBand.contains(operation.overlay())));
+    }
+
+    @Test
+    void reconcile_saturationBoundaryMoves_reusesNewFirstOwnerAndRetiresAbsorbedOwner() {
+        FakeOverlayPublisher publisher = new FakeOverlayPublisher();
+        PathMarkerOverlayLayer layer = createLayer(publisher);
+        reconcile(layer, oneSegmentWithVolume(256, 500.0), fullscreen(true),
+                true, new OverlayRefreshResult());
+        List<MarkerOverlay> firstOwner = repeatedOverlays(layer).stream()
+                .filter(overlay -> overlay.getMinZoom() == 2048 && overlay.getMaxZoom() == 4095)
+                .toList();
+        List<MarkerOverlay> absorbedOwner = repeatedOverlays(layer).stream()
+                .filter(overlay -> overlay.getMinZoom() == 4096 && overlay.getMaxZoom() == 16384)
+                .toList();
+        assertEquals(249, firstOwner.size());
+        assertEquals(256, absorbedOwner.size());
+        publisher.clearOperations();
+
+        reconcile(layer, oneSegmentWithVolume(256, 520.0), fullscreen(true),
+                true, new OverlayRefreshResult());
+
+        List<MarkerOverlay> combined = repeatedOverlays(layer).stream()
+                .filter(overlay -> overlay.getMinZoom() == 2048 && overlay.getMaxZoom() == 16384)
+                .toList();
+        assertEquals(256, combined.size());
+        for (int index = 0; index < firstOwner.size(); index++) {
+            assertSame(firstOwner.get(index), combined.get(index));
+        }
+        assertTrue(publisher.operations().stream().filter(operation ->
+                        absorbedOwner.contains(operation.overlay()))
+                .allMatch(operation -> operation.type() == FakeOverlayPublisher.OperationType.REMOVE));
+        assertEquals(absorbedOwner.size(), publisher.operations().stream().filter(operation ->
+                absorbedOwner.contains(operation.overlay())).count());
     }
 
     @Test
@@ -429,6 +516,27 @@ class PathMarkerOverlayLayerTest {
         return layer.getOverlays().stream()
                 .filter(overlay -> overlay.getActiveUIs().equals(Set.of(ui)))
                 .toList();
+    }
+
+    private static List<MarkerOverlay> repeatedOverlays(PathMarkerOverlayLayer layer) {
+        return layer.getOverlays().stream()
+                .filter(overlay -> overlay.getDisplayOrder() == 99)
+                .toList();
+    }
+
+    private static List<BlockPos> expectedRepeatedPositions(FrontierOverlay.PathSegmentLayout segment,
+                                                            int minZoom, int markerScale) {
+        List<BlockPos> available = segment.repeatedMarkerPositions();
+        double targetSpacing = PathRepeatedMarkerSelector.getTargetSpacing(
+                minZoom, markerScale, segment.segmentSpacingMultiplier());
+        int markerCount = PathRepeatedMarkerSelector.getMarkerCount(
+                targetSpacing, segment.length(), available.size());
+        List<BlockPos> selected = new ArrayList<>(markerCount);
+        for (int ordinal = 1; ordinal <= markerCount; ordinal++) {
+            selected.add(available.get(PathRepeatedMarkerSelector.getMarkerIndex(
+                    ordinal, markerCount, available.size())));
+        }
+        return selected;
     }
 
     private static int indexOfPoint(List<MarkerOverlay> overlays, int x) {
