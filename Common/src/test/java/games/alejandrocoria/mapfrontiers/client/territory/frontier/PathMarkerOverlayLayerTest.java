@@ -18,7 +18,9 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PathMarkerOverlayLayerTest {
@@ -312,28 +314,240 @@ class PathMarkerOverlayLayerTest {
     }
 
     @Test
-    void reconcile_disabledUi_retiresOnlyThatUi() {
+    void reconcile_compatibleUis_sharePhysicalOverlays() {
         FakeOverlayPublisher publisher = new FakeOverlayPublisher();
         PathMarkerOverlayLayer layer = createLayer(publisher);
         PathLayout layout = oneSegment(FrontierData.PathStyle.BIG_DOT, 0.f, 0);
-        List<PathMarkerOverlayLayer.UiState> bothUis = List.of(
-                new PathMarkerOverlayLayer.UiState(Context.UI.Fullscreen, true, new Context.MapType[]{Context.MapType.Day}),
-                new PathMarkerOverlayLayer.UiState(Context.UI.Minimap, true, new Context.MapType[]{Context.MapType.Day}));
-        reconcile(layer, layout, bothUis, true, new OverlayRefreshResult());
-        List<MarkerOverlay> minimap = overlaysForUi(layer, Context.UI.Minimap);
+
+        reconcile(layer, layout, compatibleUis(), true, new OverlayRefreshResult());
+
+        assertFalse(layer.getOverlays().isEmpty());
+        assertTrue(layer.getOverlays().stream().allMatch(overlay ->
+                overlay.getActiveUIs().equals(Set.of(Context.UI.Fullscreen, Context.UI.Minimap))));
+        assertEquals(layer.getOverlays().size(), publisher.operations().size());
+    }
+
+    @Test
+    void reconcile_differentMapTypes_keepUisSeparate() {
+        PathMarkerOverlayLayer layer = createLayer(new FakeOverlayPublisher());
+
+        reconcile(layer, oneSegment(FrontierData.PathStyle.BIG_DOT, 0.f, 0), List.of(
+                        uiState(Context.UI.Fullscreen, Context.MapType.Day),
+                        uiState(Context.UI.Minimap, Context.MapType.Night)),
+                true, new OverlayRefreshResult());
+
+        List<MarkerOverlay> fullscreen = overlaysOnlyForUi(layer, Context.UI.Fullscreen);
+        List<MarkerOverlay> minimap = overlaysOnlyForUi(layer, Context.UI.Minimap);
+        assertFalse(fullscreen.isEmpty());
+        assertEquals(fullscreen.size(), minimap.size());
+        assertTrue(fullscreen.stream().allMatch(overlay ->
+                overlay.getActiveMapTypes().equals(Set.of(Context.MapType.Day))));
+        assertTrue(minimap.stream().allMatch(overlay ->
+                overlay.getActiveMapTypes().equals(Set.of(Context.MapType.Night))));
+    }
+
+    @Test
+    void reconcile_equivalentMapTypeArrays_shareUis() {
+        PathMarkerOverlayLayer layer = createLayer(new FakeOverlayPublisher());
+
+        reconcile(layer, oneSegment(FrontierData.PathStyle.BIG_DOT, 0.f, 0), List.of(
+                        new PathMarkerOverlayLayer.UiState(Context.UI.Fullscreen, true,
+                                new Context.MapType[]{Context.MapType.Day, Context.MapType.Night, Context.MapType.Day}),
+                        new PathMarkerOverlayLayer.UiState(Context.UI.Minimap, true,
+                                new Context.MapType[]{Context.MapType.Night, Context.MapType.Day})),
+                true, new OverlayRefreshResult());
+
+        assertTrue(layer.getOverlays().stream().allMatch(overlay ->
+                overlay.getActiveUIs().equals(Set.of(Context.UI.Fullscreen, Context.UI.Minimap))
+                        && overlay.getActiveMapTypes().equals(Set.of(Context.MapType.Day, Context.MapType.Night))));
+    }
+
+    @Test
+    void reconcile_firstUiStateWinsAndInputOrderDoesNotChangeOwnerOrder() {
+        FakeOverlayPublisher publisher = new FakeOverlayPublisher();
+        PathMarkerOverlayLayer layer = createLayer(publisher);
+        PathLayout layout = oneSegment(FrontierData.PathStyle.BIG_DOT, 0.f, 0);
+        List<PathMarkerOverlayLayer.UiState> unordered = List.of(
+                uiState(Context.UI.Minimap, Context.MapType.Night),
+                uiState(Context.UI.Fullscreen, Context.MapType.Day),
+                uiState(Context.UI.Fullscreen, Context.MapType.Night));
+
+        reconcile(layer, layout, unordered, true, new OverlayRefreshResult());
+        List<MarkerOverlay> original = layer.getOverlays();
+        assertTrue(original.getFirst().getActiveUIs().equals(Set.of(Context.UI.Fullscreen)));
+        assertTrue(overlaysOnlyForUi(layer, Context.UI.Fullscreen).stream().allMatch(overlay ->
+                overlay.getActiveMapTypes().equals(Set.of(Context.MapType.Day))));
         publisher.clearOperations();
 
         reconcile(layer, layout, List.of(
-                        new PathMarkerOverlayLayer.UiState(Context.UI.Fullscreen, false, new Context.MapType[]{Context.MapType.Day}),
-                        new PathMarkerOverlayLayer.UiState(Context.UI.Minimap, true, new Context.MapType[]{Context.MapType.Day})),
+                        uiState(Context.UI.Fullscreen, Context.MapType.Day),
+                        uiState(Context.UI.Fullscreen, Context.MapType.Night),
+                        uiState(Context.UI.Minimap, Context.MapType.Night)),
                 true, new OverlayRefreshResult());
 
-        assertSameOverlays(minimap, overlaysForUi(layer, Context.UI.Minimap));
-        assertTrue(overlaysForUi(layer, Context.UI.Fullscreen).isEmpty());
+        assertSameOverlays(original, layer.getOverlays());
+        assertTrue(publisher.operations().isEmpty());
+    }
+
+    @Test
+    void reconcile_nullMapTypeIsRejected() {
+        PathMarkerOverlayLayer layer = createLayer(new FakeOverlayPublisher());
+        List<PathMarkerOverlayLayer.UiState> uiStates = List.of(new PathMarkerOverlayLayer.UiState(
+                Context.UI.Fullscreen, true, new Context.MapType[]{Context.MapType.Day, null}));
+
+        assertThrows(NullPointerException.class, () -> reconcile(layer,
+                oneSegment(FrontierData.PathStyle.BIG_DOT, 0.f, 0), uiStates,
+                true, new OverlayRefreshResult()));
+    }
+
+    @Test
+    void reconcile_disableNonOwner_preservesOwnerIdentities() {
+        FakeOverlayPublisher publisher = new FakeOverlayPublisher();
+        PathMarkerOverlayLayer layer = createLayer(publisher);
+        PathLayout layout = oneSegment(FrontierData.PathStyle.BIG_DOT, 0.f, 0);
+        reconcile(layer, layout, compatibleUis(), true, new OverlayRefreshResult());
+        List<MarkerOverlay> original = layer.getOverlays();
+        publisher.clearOperations();
+
+        reconcile(layer, layout, List.of(
+                        uiState(Context.UI.Fullscreen, Context.MapType.Day),
+                        new PathMarkerOverlayLayer.UiState(Context.UI.Minimap, false,
+                                new Context.MapType[]{Context.MapType.Day})),
+                true, new OverlayRefreshResult());
+
+        assertSameOverlays(original, layer.getOverlays());
+        assertTrue(layer.getOverlays().stream().allMatch(overlay ->
+                overlay.getActiveUIs().equals(Set.of(Context.UI.Fullscreen))));
+        assertEquals(original.size(), publisher.operations().size());
         assertTrue(publisher.operations().stream().allMatch(operation ->
-                        operation.type() == FakeOverlayPublisher.OperationType.REMOVE
-                        && operation.overlay() instanceof MarkerOverlay marker
-                        && marker.getActiveUIs().equals(Set.of(Context.UI.Fullscreen))));
+                operation.type() == FakeOverlayPublisher.OperationType.SHOW));
+    }
+
+    @Test
+    void reconcile_disableOwner_recreatesUnderNextOwner() {
+        FakeOverlayPublisher publisher = new FakeOverlayPublisher();
+        PathMarkerOverlayLayer layer = createLayer(publisher);
+        PathLayout layout = oneSegment(FrontierData.PathStyle.BIG_DOT, 0.f, 0);
+        reconcile(layer, layout, compatibleUis(), true, new OverlayRefreshResult());
+        List<MarkerOverlay> original = layer.getOverlays();
+        publisher.clearOperations();
+
+        reconcile(layer, layout, List.of(
+                        new PathMarkerOverlayLayer.UiState(Context.UI.Fullscreen, false,
+                                new Context.MapType[]{Context.MapType.Day}),
+                        uiState(Context.UI.Minimap, Context.MapType.Day)),
+                true, new OverlayRefreshResult());
+
+        List<MarkerOverlay> remaining = layer.getOverlays();
+        assertEquals(original.size(), remaining.size());
+        assertNotSame(original.getFirst(), remaining.getFirst());
+        assertTrue(remaining.stream().allMatch(overlay ->
+                overlay.getActiveUIs().equals(Set.of(Context.UI.Minimap))));
+        assertEquals(original.size(), publisher.operations().stream().filter(operation ->
+                operation.type() == FakeOverlayPublisher.OperationType.REMOVE).count());
+        assertEquals(remaining.size(), publisher.operations().stream().filter(operation ->
+                operation.type() == FakeOverlayPublisher.OperationType.SHOW).count());
+    }
+
+    @Test
+    void reconcile_splitAndRejoinNonOwner_preservesOriginalOwner() {
+        FakeOverlayPublisher publisher = new FakeOverlayPublisher();
+        PathMarkerOverlayLayer layer = createLayer(publisher);
+        PathLayout layout = oneSegment(FrontierData.PathStyle.BIG_DOT, 0.f, 0);
+        reconcile(layer, layout, compatibleUis(), true, new OverlayRefreshResult());
+        List<MarkerOverlay> originalOwner = layer.getOverlays();
+
+        reconcile(layer, layout, List.of(
+                        uiState(Context.UI.Fullscreen, Context.MapType.Day),
+                        uiState(Context.UI.Minimap, Context.MapType.Night)),
+                true, new OverlayRefreshResult());
+        assertSameOverlays(originalOwner, overlaysOnlyForUi(layer, Context.UI.Fullscreen));
+        List<MarkerOverlay> splitOwner = overlaysOnlyForUi(layer, Context.UI.Minimap);
+        assertFalse(splitOwner.isEmpty());
+        publisher.clearOperations();
+
+        reconcile(layer, layout, compatibleUis(), true, new OverlayRefreshResult());
+
+        assertSameOverlays(originalOwner, layer.getOverlays());
+        assertTrue(layer.getOverlays().stream().allMatch(overlay ->
+                overlay.getActiveUIs().equals(Set.of(Context.UI.Fullscreen, Context.UI.Minimap))));
+        assertEquals(splitOwner.size(), publisher.operations().stream().filter(operation ->
+                operation.type() == FakeOverlayPublisher.OperationType.REMOVE
+                        && splitOwner.contains(operation.overlay())).count());
+    }
+
+    @Test
+    void reconcile_ownerChangesMapTypes_keepsOwnerAndCreatesRemainingGroup() {
+        PathMarkerOverlayLayer layer = createLayer(new FakeOverlayPublisher());
+        PathLayout layout = oneSegment(FrontierData.PathStyle.BIG_DOT, 0.f, 0);
+        reconcile(layer, layout, compatibleUis(), true, new OverlayRefreshResult());
+        List<MarkerOverlay> originalOwner = layer.getOverlays();
+
+        reconcile(layer, layout, List.of(
+                        uiState(Context.UI.Fullscreen, Context.MapType.Night),
+                        uiState(Context.UI.Minimap, Context.MapType.Day)),
+                true, new OverlayRefreshResult());
+
+        assertSameOverlays(originalOwner, overlaysOnlyForUi(layer, Context.UI.Fullscreen));
+        assertTrue(overlaysOnlyForUi(layer, Context.UI.Fullscreen).stream().allMatch(overlay ->
+                overlay.getActiveMapTypes().equals(Set.of(Context.MapType.Night))));
+        assertFalse(overlaysOnlyForUi(layer, Context.UI.Minimap).isEmpty());
+    }
+
+    @Test
+    void reconcile_unaffectedThirdGroup_isNotPublished() {
+        FakeOverlayPublisher publisher = new FakeOverlayPublisher();
+        PathMarkerOverlayLayer layer = createLayer(publisher);
+        PathLayout layout = oneSegment(FrontierData.PathStyle.BIG_DOT, 0.f, 0);
+        reconcile(layer, layout, List.of(
+                        uiState(Context.UI.Fullscreen, Context.MapType.Day),
+                        uiState(Context.UI.Minimap, Context.MapType.Day),
+                        uiState(Context.UI.Webmap, Context.MapType.Night)),
+                true, new OverlayRefreshResult());
+        List<MarkerOverlay> webmap = overlaysOnlyForUi(layer, Context.UI.Webmap);
+        publisher.clearOperations();
+
+        reconcile(layer, layout, List.of(
+                        uiState(Context.UI.Fullscreen, Context.MapType.Day),
+                        new PathMarkerOverlayLayer.UiState(Context.UI.Minimap, false,
+                                new Context.MapType[]{Context.MapType.Day}),
+                        uiState(Context.UI.Webmap, Context.MapType.Night)),
+                true, new OverlayRefreshResult());
+
+        assertSameOverlays(webmap, overlaysOnlyForUi(layer, Context.UI.Webmap));
+        assertTrue(publisher.operations().stream().noneMatch(operation -> webmap.contains(operation.overlay())));
+    }
+
+    @Test
+    void reconcile_geometryChangeWithSharedUis_publishesEachPhysicalOverlayOnce() {
+        FakeOverlayPublisher publisher = new FakeOverlayPublisher();
+        PathMarkerOverlayLayer layer = createLayer(publisher);
+        reconcile(layer, oneSegment(FrontierData.PathStyle.BIG_DOT, 0.f, 0), compatibleUis(),
+                true, new OverlayRefreshResult());
+        List<MarkerOverlay> original = layer.getOverlays();
+        publisher.clearOperations();
+
+        reconcile(layer, oneSegment(FrontierData.PathStyle.BIG_DOT, 0.f, 1), compatibleUis(),
+                true, new OverlayRefreshResult());
+
+        assertSameOverlays(original, layer.getOverlays());
+        assertEquals(original.size(), publisher.operations().size());
+        assertTrue(publisher.operations().stream().allMatch(operation ->
+                operation.type() == FakeOverlayPublisher.OperationType.SHOW));
+    }
+
+    @Test
+    void reconcile_webmapJoinsCompatibleGroup() {
+        PathMarkerOverlayLayer layer = createLayer(new FakeOverlayPublisher());
+
+        reconcile(layer, oneSegment(FrontierData.PathStyle.BIG_DOT, 0.f, 0), List.of(
+                        uiState(Context.UI.Fullscreen, Context.MapType.Day),
+                        uiState(Context.UI.Minimap, Context.MapType.Day),
+                        uiState(Context.UI.Webmap, Context.MapType.Day)),
+                true, new OverlayRefreshResult());
+
+        assertTrue(layer.getOverlays().stream().allMatch(overlay -> overlay.getActiveUIs().equals(
+                Set.of(Context.UI.Fullscreen, Context.UI.Minimap, Context.UI.Webmap))));
     }
 
     @Test
@@ -377,19 +591,21 @@ class PathMarkerOverlayLayerTest {
     }
 
     @Test
-    void reconcile_showFailure_retriesOnlyUnpublishedSlot() {
+    void reconcile_sharedOverlayShowFailure_retriesOnlyUnpublishedSlot() {
         FakeOverlayPublisher publisher = new FakeOverlayPublisher();
         publisher.failNextShow();
         PathMarkerOverlayLayer layer = createLayer(publisher);
         PathLayout layout = oneSegment(FrontierData.PathStyle.BIG_DOT, 0.f, 0);
         OverlayRefreshResult failed = new OverlayRefreshResult();
 
-        reconcile(layer, layout, fullscreen(true), true, failed);
+        reconcile(layer, layout, compatibleUis(), true, failed);
         List<MarkerOverlay> original = layer.getOverlays();
         assertTrue(failed.isRetryNeeded());
+        assertTrue(original.stream().allMatch(overlay ->
+                overlay.getActiveUIs().equals(Set.of(Context.UI.Fullscreen, Context.UI.Minimap))));
         publisher.clearOperations();
 
-        reconcile(layer, layout, fullscreen(true), true, new OverlayRefreshResult());
+        reconcile(layer, layout, compatibleUis(), true, new OverlayRefreshResult());
 
         assertSameOverlays(original, layer.getOverlays());
         assertEquals(1, publisher.operations().size());
@@ -397,14 +613,20 @@ class PathMarkerOverlayLayerTest {
     }
 
     @Test
-    void getOverlays_twoSegments_preservesLegacyPreviewOrder() {
+    void getOverlays_compatibleUis_preservesPreviewOrderWithoutPhysicalDuplicates() {
         FakeOverlayPublisher publisher = new FakeOverlayPublisher();
         publisher.setAvailable(false);
         PathMarkerOverlayLayer layer = createLayer(publisher);
+        PathMarkerOverlayLayer control = createLayer(publisher);
 
-        reconcile(layer, twoSegments(12, 12), fullscreen(true), true, new OverlayRefreshResult());
+        PathLayout layout = twoSegments(12, 12);
+        reconcile(layer, layout, compatibleUis(), true, new OverlayRefreshResult());
+        reconcile(control, layout, fullscreen(true), true, new OverlayRefreshResult());
 
         List<MarkerOverlay> overlays = layer.getOverlays();
+        assertEquals(control.getOverlays().size(), overlays.size());
+        assertTrue(overlays.stream().allMatch(overlay ->
+                overlay.getActiveUIs().equals(Set.of(Context.UI.Fullscreen, Context.UI.Minimap))));
         int firstPoint = indexOfPoint(overlays, 0);
         int secondPoint = indexOfPoint(overlays, 1000);
         int lastPoint = indexOfPoint(overlays, 2000);
@@ -464,6 +686,16 @@ class PathMarkerOverlayLayerTest {
                 Context.UI.Fullscreen, enabled, new Context.MapType[]{Context.MapType.Day}));
     }
 
+    private static List<PathMarkerOverlayLayer.UiState> compatibleUis() {
+        return List.of(
+                uiState(Context.UI.Fullscreen, Context.MapType.Day),
+                uiState(Context.UI.Minimap, Context.MapType.Day));
+    }
+
+    private static PathMarkerOverlayLayer.UiState uiState(Context.UI ui, Context.MapType... mapTypes) {
+        return new PathMarkerOverlayLayer.UiState(ui, true, mapTypes);
+    }
+
     private static PathLayout oneSegment(ResourceLocation markerId, float rotation, int offset) {
         return new PathLayout(
                 List.of(
@@ -512,7 +744,7 @@ class PathMarkerOverlayLayerTest {
                 rotation, markerId, 1.0, length, List.copyOf(positions));
     }
 
-    private static List<MarkerOverlay> overlaysForUi(PathMarkerOverlayLayer layer, Context.UI ui) {
+    private static List<MarkerOverlay> overlaysOnlyForUi(PathMarkerOverlayLayer layer, Context.UI ui) {
         return layer.getOverlays().stream()
                 .filter(overlay -> overlay.getActiveUIs().equals(Set.of(ui)))
                 .toList();
