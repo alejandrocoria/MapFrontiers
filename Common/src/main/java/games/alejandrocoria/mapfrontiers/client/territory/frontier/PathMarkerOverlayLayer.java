@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Owns persistent marker slots for one path representation. Point and segment visuals live above the UI buckets so
- * every enabled UI can share the same immutable-by-convention MapImage without sharing overlay identities.
+ * Owns persistent marker slots for one path representation. UIs with the same map-type configuration share physical
+ * overlays, while incompatible UIs and the base/highlight representations retain independent identities.
  */
 final class PathMarkerOverlayLayer {
     private static final List<Context.UI> UI_ORDER = List.of(
@@ -51,7 +51,7 @@ final class PathMarkerOverlayLayer {
     }
 
     private final Mode mode;
-    private final List<UiBucket> uiBuckets;
+    private final List<ActivationBucket> activationBuckets;
     private final List<VisualReference> pointVisuals = new ArrayList<>();
     private final List<VisualReference> segmentVisuals = new ArrayList<>();
 
@@ -61,11 +61,11 @@ final class PathMarkerOverlayLayer {
         Objects.requireNonNull(publisher, "publisher");
         this.mode = Objects.requireNonNull(mode, "mode");
 
-        List<UiBucket> buckets = new ArrayList<>(UI_ORDER.size());
-        for (Context.UI ui : UI_ORDER) {
-            buckets.add(new UiBucket(modId, layerName, publisher, ui, mode));
+        List<ActivationBucket> buckets = new ArrayList<>(UI_ORDER.size());
+        for (int index = 0; index < UI_ORDER.size(); index++) {
+            buckets.add(new ActivationBucket(modId, layerName, publisher, mode));
         }
-        uiBuckets = List.copyOf(buckets);
+        activationBuckets = List.copyOf(buckets);
     }
 
     void reconcile(List<FrontierOverlay.PathPointLayout> pointLayouts,
@@ -101,27 +101,34 @@ final class PathMarkerOverlayLayer {
                     markerScale, layout.segmentSpacingMultiplier()));
         }
 
-        for (UiBucket bucket : uiBuckets) {
-            UiState uiState = findUiState(uiStates, bucket.ui);
-            if (uiState == null || !uiState.enabled()) {
-                bucket.clear(result);
-            } else {
+        List<ActivationGroup> activationGroups = createActivationGroups(uiStates);
+        int groupIndex = 0;
+        for (int bucketIndex = 0; bucketIndex < activationBuckets.size(); bucketIndex++) {
+            ActivationBucket bucket = activationBuckets.get(bucketIndex);
+            if (groupIndex < activationGroups.size()
+                    && activationGroups.get(groupIndex).ownerIndex() == bucketIndex) {
+                OverlayActivation activation = activationGroups.get(groupIndex++).activation();
                 bucket.reconcile(pointLayouts, segmentLayouts, segmentBandPlans, pointVisuals, segmentVisuals,
-                        dimension, uiState.mapTypes(), visible, result);
+                        dimension, activation, visible, result);
+            } else {
+                bucket.clear(result);
             }
+        }
+        if (groupIndex != activationGroups.size()) {
+            throw new IllegalStateException("Path marker activation plan references an unavailable owner");
         }
     }
 
     void setVisible(boolean visible, OverlayRefreshResult result) {
         Objects.requireNonNull(result, "result");
-        for (UiBucket bucket : uiBuckets) {
+        for (ActivationBucket bucket : activationBuckets) {
             bucket.setVisible(visible, result);
         }
     }
 
     void clear(OverlayRefreshResult result) {
         Objects.requireNonNull(result, "result");
-        for (UiBucket bucket : uiBuckets) {
+        for (ActivationBucket bucket : activationBuckets) {
             bucket.clear(result);
         }
         pointVisuals.clear();
@@ -130,7 +137,7 @@ final class PathMarkerOverlayLayer {
 
     List<MarkerOverlay> getOverlays() {
         List<MarkerOverlay> overlays = new ArrayList<>();
-        for (UiBucket bucket : uiBuckets) {
+        for (ActivationBucket bucket : activationBuckets) {
             bucket.addOverlays(overlays);
         }
         return overlays;
@@ -143,6 +150,46 @@ final class PathMarkerOverlayLayer {
             }
         }
         return null;
+    }
+
+    private List<ActivationGroup> createActivationGroups(List<UiState> uiStates) {
+        List<ActivationGroupBuilder> builders = new ArrayList<>(UI_ORDER.size());
+        for (int uiIndex = 0; uiIndex < UI_ORDER.size(); uiIndex++) {
+            Context.UI ui = UI_ORDER.get(uiIndex);
+            UiState uiState = findUiState(uiStates, ui);
+            if (uiState == null || !uiState.enabled()) {
+                continue;
+            }
+
+            int mapTypeMask = getMapTypeMask(uiState.mapTypes());
+            ActivationGroupBuilder matching = null;
+            for (ActivationGroupBuilder builder : builders) {
+                if (builder.mapTypeMask == mapTypeMask) {
+                    matching = builder;
+                    break;
+                }
+            }
+            if (matching == null) {
+                matching = new ActivationGroupBuilder(uiIndex, mapTypeMask, uiState.mapTypes());
+                builders.add(matching);
+            }
+            matching.uis.add(ui);
+        }
+
+        List<ActivationGroup> groups = new ArrayList<>(builders.size());
+        for (ActivationGroupBuilder builder : builders) {
+            groups.add(new ActivationGroup(builder.ownerIndex,
+                    OverlayActivation.of(builder.uis.toArray(Context.UI[]::new), builder.mapTypes)));
+        }
+        return groups;
+    }
+
+    private static int getMapTypeMask(Context.MapType[] mapTypes) {
+        int mask = 0;
+        for (Context.MapType mapType : mapTypes) {
+            mask |= 1 << Objects.requireNonNull(mapType, "mapType").ordinal();
+        }
+        return mask;
     }
 
     private static void resizeVisuals(List<VisualReference> visuals, int desiredSize) {
@@ -200,6 +247,22 @@ final class PathMarkerOverlayLayer {
     private record PathMarkerVisualKey(ResourceLocation texture, int tint, float opacity, int markerSize, int rotation) {
     }
 
+    private record ActivationGroup(int ownerIndex, OverlayActivation activation) {
+    }
+
+    private static final class ActivationGroupBuilder {
+        private final int ownerIndex;
+        private final int mapTypeMask;
+        private final Context.MapType[] mapTypes;
+        private final List<Context.UI> uis = new ArrayList<>(UI_ORDER.size());
+
+        private ActivationGroupBuilder(int ownerIndex, int mapTypeMask, Context.MapType[] mapTypes) {
+            this.ownerIndex = ownerIndex;
+            this.mapTypeMask = mapTypeMask;
+            this.mapTypes = mapTypes;
+        }
+    }
+
     private static final class VisualReference {
         private @Nullable PathMarkerVisualKey key;
         private @Nullable MapImage image;
@@ -222,8 +285,7 @@ final class PathMarkerOverlayLayer {
         }
     }
 
-    private static final class UiBucket {
-        private final Context.UI ui;
+    private static final class ActivationBucket {
         private final String layerName;
         private final OverlayPublisher publisher;
         private final Mode mode;
@@ -235,11 +297,10 @@ final class PathMarkerOverlayLayer {
         private @Nullable OverlayActivation pointDisplayActivation;
         private @Nullable OverlayDisplayState pointDisplayState;
 
-        private UiBucket(String modId, String layerName, OverlayPublisher publisher, Context.UI ui, Mode mode) {
+        private ActivationBucket(String modId, String layerName, OverlayPublisher publisher, Mode mode) {
             this.modId = modId;
             this.layerName = layerName;
             this.publisher = publisher;
-            this.ui = ui;
             this.mode = mode;
         }
 
@@ -249,10 +310,9 @@ final class PathMarkerOverlayLayer {
                                List<VisualReference> pointVisuals,
                                List<VisualReference> segmentVisuals,
                                ResourceKey<Level> dimension,
-                               Context.MapType[] mapTypes,
+                               OverlayActivation desiredActivation,
                                boolean visible,
                                OverlayRefreshResult result) {
-            OverlayActivation desiredActivation = OverlayActivation.of(ui, mapTypes);
             if (!desiredActivation.equals(activation)) {
                 activation = desiredActivation;
             }
