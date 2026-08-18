@@ -177,7 +177,17 @@ public class ClientTerritorySyncService {
 
     private void replaceCollectionRuntimeFrontierIndexes() {
         collectionRuntime.replaceFrontierIndexes(globalManager, personalManager);
+        markIndexedCollectionPresentationsDirty();
         runtime.getCollectionOverlayManager().syncFromCurrentRuntime();
+    }
+
+    private void markIndexedCollectionPresentationsDirty() {
+        for (CollectionScope scope : CollectionScope.values()) {
+            for (CollectionData collection : collectionRuntime.getCollections(scope)) {
+                globalManager.markCollectionPresentationDirty(collection.getId());
+                personalManager.markCollectionPresentationDirty(collection.getId());
+            }
+        }
     }
 
     private void markOwnedPersonalDataDirty() {
