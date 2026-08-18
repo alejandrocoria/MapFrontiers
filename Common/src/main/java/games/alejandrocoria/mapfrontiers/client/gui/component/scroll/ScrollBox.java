@@ -699,12 +699,12 @@ public class ScrollBox extends AbstractContainerWidget {
     }
 
     @Override
-    public void onDrag(double mouseX, double mouseY, double dragX, double dragY) {
-        if (scrollBarHeight > 0 && scrollBarGrabbed) {
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (isValidClickButton(button) && scrollBarHeight > 0 && scrollBarGrabbed) {
             int delta = (int) mouseY - getY() - scrollBarPos - scrollBarGrabbedYPos;
 
             if (delta == 0) {
-                return;
+                return true;
             }
 
             scrollBarPos += delta;
@@ -721,7 +721,10 @@ public class ScrollBox extends AbstractContainerWidget {
             }
             clampScrollOffset();
             updateScrollWindow();
+            return true;
         }
+
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
     protected boolean isHoveredOrKeyboardFocused() {
