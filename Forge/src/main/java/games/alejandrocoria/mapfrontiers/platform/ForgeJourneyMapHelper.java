@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.platform;
 
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionOverlay;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.ReflectionHelper;
@@ -214,6 +215,13 @@ public class ForgeJourneyMapHelper implements IJourneyMapHelper {
 
 
     private static class CustomPreviewRenderer implements ICustomPreviewRenderer {
+        private static final ResourceLocation TRANSPARENT_MARKER_TEXTURE = ResourceLocation.fromNamespaceAndPath(
+                MapFrontiers.MODID, "textures/markers/path/small_dot.png");
+        // Custom previews bypass IClientAPI.show(); newer JourneyMap versions therefore require the draw step
+        // to adopt its texture and be disposed explicitly. Older loader artifacts still manage both internally.
+        private static final boolean EXPLICIT_DRAW_STEP_LIFECYCLE = ReflectionHelper.hasPublicMethod(
+                DrawMarkerStep.class, "setTextureSource", 2);
+
         private final MapRenderer mapRenderer;
         private final List<DrawStep> drawSteps = new ArrayList<>();
 
@@ -229,17 +237,17 @@ public class ForgeJourneyMapHelper implements IJourneyMapHelper {
 
         @Override
         public void setTerritories(List<FrontierOverlay> frontierOverlays, List<CollectionOverlay> collectionOverlays) {
-            drawSteps.clear();
+            clearDrawSteps();
 
             for (FrontierOverlay frontierOverlay : frontierOverlays) {
                 for (PolygonOverlay polygon : frontierOverlay.getPolygonOverlays()) {
                     drawSteps.add(new DrawPolygonStep(polygon));
                 }
                 for (MarkerOverlay marker : frontierOverlay.getMarkerOverlays()) {
-                    drawSteps.add(new DrawMarkerStep(marker));
+                    drawSteps.add(createMarkerDrawStep(marker));
                 }
                 for (MarkerOverlay label : frontierOverlay.getLabelOverlays()) {
-                    drawSteps.add(new DrawMarkerStep(label));
+                    drawSteps.add(createMarkerDrawStep(label));
                 }
             }
 
@@ -248,9 +256,34 @@ public class ForgeJourneyMapHelper implements IJourneyMapHelper {
                     drawSteps.add(new DrawPolygonStep(polygon));
                 }
                 for (MarkerOverlay marker : collectionOverlay.getLabelOverlays()) {
-                    drawSteps.add(new DrawMarkerStep(marker));
+                    drawSteps.add(createMarkerDrawStep(marker));
                 }
             }
+        }
+
+        private void clearDrawSteps() {
+            if (EXPLICIT_DRAW_STEP_LIFECYCLE) {
+                drawSteps.forEach(drawStep -> ReflectionHelper.invokePublicMethodIfPresent(drawStep, "dispose"));
+            }
+            drawSteps.clear();
+        }
+
+        private static DrawMarkerStep createMarkerDrawStep(MarkerOverlay marker) {
+            DrawMarkerStep drawStep = new DrawMarkerStep(marker);
+            if (!EXPLICIT_DRAW_STEP_LIFECYCLE) {
+                return drawStep;
+            }
+
+            ResourceLocation texture = marker.getIcon().getImageLocation();
+            if (texture == null) {
+                if (marker.getIcon().getOpacity() != 0.f) {
+                    throw new IllegalArgumentException("Preview markers with native images must be fully transparent");
+                }
+                texture = TRANSPARENT_MARKER_TEXTURE;
+            }
+
+            ReflectionHelper.invokePublicMethodIfPresent(drawStep, "setTextureSource", texture, null);
+            return drawStep;
         }
 
         @Override
