@@ -1,6 +1,7 @@
 **Beta 12:**
 * Changed: Significantly improved client performance when creating, editing, selecting, hiding, or updating frontiers and collections, especially very long Path frontiers and collections containing many frontiers.
 * Fixed: Collection members could initially keep their individual fill colors while using the collection border color when opening the fullscreen map.
+* Fixed: Forge and NeoForge clients crashing during startup due to a mixin error.
 
 **Beta 11:**
 * Fixed: Some lists could appear cut off or disappear when using larger GUI scale settings.
