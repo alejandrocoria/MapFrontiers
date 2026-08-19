@@ -20,16 +20,6 @@ public class GuiGraphicsMixin {
         return mapfrontiers$scaleScissorCoordinate(y);
     }
 
-    @ModifyArg(method = "tooltip", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;positionTooltip(IIIIII)Lorg/joml/Vector2ic;"), index = 0)
-    private int mapfrontiers$scaleTooltipScreenWidth(int width) {
-        return mapfrontiers$scaleTooltipScreenDimension(width);
-    }
-
-    @ModifyArg(method = "tooltip", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;positionTooltip(IIIIII)Lorg/joml/Vector2ic;"), index = 1)
-    private int mapfrontiers$scaleTooltipScreenHeight(int height) {
-        return mapfrontiers$scaleTooltipScreenDimension(height);
-    }
-
     private static int mapfrontiers$scaleScissorCoordinate(int coordinate) {
         Screen screen = Minecraft.getInstance().gui.screen();
         if (screen instanceof AutoScaledScreen autoScaledScreen && autoScaledScreen.getScaleFactor() != 1.f) {
@@ -37,14 +27,5 @@ public class GuiGraphicsMixin {
         }
 
         return coordinate;
-    }
-
-    private static int mapfrontiers$scaleTooltipScreenDimension(int dimension) {
-        Screen screen = Minecraft.getInstance().gui.screen();
-        if (screen instanceof AutoScaledScreen autoScaledScreen && autoScaledScreen.getScaleFactor() != 1.f) {
-            return (int) (dimension * autoScaledScreen.getScaleFactor());
-        }
-
-        return dimension;
     }
 }

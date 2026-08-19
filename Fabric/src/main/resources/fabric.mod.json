@@ -18,7 +18,8 @@
     "icon": "${mod_logo}",
 
     "mixins": [
-        "${mod_id}.mixins.json"
+        "${mod_id}.mixins.json",
+        "${mod_id}.tooltip.mixins.json"
     ],
 
     "environment": "*",

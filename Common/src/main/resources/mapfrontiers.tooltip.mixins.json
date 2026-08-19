@@ -1,12 +1,11 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "games.alejandrocoria.mapfrontiers.client.mixin",
+  "package": "games.alejandrocoria.mapfrontiers.mixin",
   "compatibilityLevel": "JAVA_17",
   "client": [
-    "ForgeTooltipGuiGraphicsMixin"
+    "client.TooltipGuiGraphicsMixin"
   ],
-  "server": [],
   "injectors": {
     "defaultRequire": 1
   }

@@ -59,13 +59,10 @@ minecraft {
             args "--mixin.config=${mod_id}.mixins.json"
             args "--mixin.config=${mod_id}.forge.mixins.json"
             systemProperty "mixin.debug.export", "true"
-            systemProperty "mixin.env.remapRefMap", "true"
-            systemProperty "mixin.env.refMapRemappingFile", "${buildDir}/createSrgToMcp/output.srg"
         }
 
         register('client') {
             workingDir.convention layout.projectDirectory.dir("runs/client")
-            systemProperty "mixin.debug.export", "true"
         }
 
         register('server') {
