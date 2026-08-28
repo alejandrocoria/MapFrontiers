@@ -44,6 +44,7 @@ import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChangeApplicationResult;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreationFactory;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
@@ -79,6 +80,7 @@ public class ClientTerritoryOperationService {
     private final ClientFrontierEvents frontierEvents;
     private final ClientCollectionEvents collectionEvents;
     private final Set<UUID> collectionIdsWithPendingCreatedMembershipSync = new HashSet<>();
+    private final Set<UUID> awaitingFrontierResync = new HashSet<>();
 
     private static class SharingActionContext {
         private final @Nullable FrontierOverlay frontier;
@@ -191,35 +193,47 @@ public class ClientTerritoryOperationService {
         frontierEvents.postDeleted(frontier.getId());
     }
 
-    public void updateFrontier(FrontierOverlay frontier, FrontierChange change) {
+    public FrontierChangeApplicationResult updateFrontier(FrontierOverlay frontier, FrontierChange change) {
         if (change.isEmpty()) {
-            return;
+            return FrontierChangeApplicationResult.noChange(frontier);
         }
         if (!isValidLocalCollectionChange(frontier, change)) {
-            return;
+            return FrontierChangeApplicationResult.rejected("Invalid collection assignment");
         }
 
-        MapFrontiersClient.markFrontierActivationDirty();
-
         if (usesAuthoritativeMutationFlow(frontier)) {
-            FrontierData expectedFrontier = new FrontierData(frontier);
-            expectedFrontier.applyChange(change);
-            PacketHandler.sendToServer(new PacketUpdateFrontier(frontier.getId(), change, expectedFrontier.computeSyncHash()));
-            return;
+            long baseSyncHash = frontier.computeSyncHash();
+            FrontierChangeApplicationResult stagedResult = frontier.stageChange(change);
+            if (!stagedResult.isApplied()) {
+                return stagedResult;
+            }
+            PacketHandler.sendToServer(new PacketUpdateFrontier(frontier.getId(), stagedResult.effectiveChange(), baseSyncHash));
+            return stagedResult;
         }
 
         if (!frontier.getPersonal() || mc.player == null || !frontier.getOwner().equals(new SettingsUser(mc.player))) {
-            return;
+            return FrontierChangeApplicationResult.rejected("Local frontier is not owned by the current player");
         }
 
+        FrontierChangeApplicationResult stagedResult = frontier.stageChange(change);
+        if (!stagedResult.isApplied()) {
+            return stagedResult;
+        }
+
+        FrontierChange effectiveChange = stagedResult.effectiveChange();
+        effectiveChange.setModifiedTime(new Date().getTime());
         ClientCollectionRuntime.FrontierIndexState previousState = collectionRuntime.snapshotFrontier(frontier);
-        frontier.applyChange(change);
+        FrontierChangeApplicationResult appliedResult = frontier.applyChange(effectiveChange);
+        if (!appliedResult.isApplied()) {
+            return appliedResult;
+        }
         getManager(frontier.getPersonal()).refreshFrontierDerivedIndexes(frontier);
         collectionRuntime.onFrontierUpdated(previousState, frontier);
-        notifyCollectionOverlayFrontierUpdated(previousState.collectionId(), frontier, change);
+        notifyCollectionOverlayFrontierUpdated(previousState.collectionId(), frontier, appliedResult.effectiveChange());
         postAffectedCollectionsUpdated(previousState.collectionId(), frontier.getCollectionId());
         markLocalPersonalDataDirtyIfPersistent(frontier);
         frontierEvents.postUpdated(frontier, mc.player.getId());
+        return appliedResult;
     }
 
     public void shareFrontier(UUID frontierId, SettingsUser targetUser) {
@@ -380,9 +394,15 @@ public class ClientTerritoryOperationService {
             if (!isValidLocalCollectionAssignment(frontier.getPersonal(), frontier.getLifetime(), frontier.getOwner(), updatedCollectionId)) {
                 return FrontierActionResult.rejected();
             }
-            FrontierData expectedFrontier = new FrontierData(frontier);
-            expectedFrontier.applyChange(change);
-            PacketHandler.sendToServer(new PacketUpdateFrontier(frontierId.value(), change, expectedFrontier.computeSyncHash()));
+            long baseSyncHash = frontier.computeSyncHash();
+            FrontierChangeApplicationResult stagedResult = frontier.stageChange(change);
+            if (stagedResult.isRejected()) {
+                return FrontierActionResult.rejected();
+            }
+            if (stagedResult.isNoChange()) {
+                return FrontierActionResult.applied(ApiConverters.fromFrontier(frontier));
+            }
+            PacketHandler.sendToServer(new PacketUpdateFrontier(frontierId.value(), stagedResult.effectiveChange(), baseSyncHash));
             return FrontierActionResult.acceptedAsync(frontierId);
         }
 
@@ -390,7 +410,10 @@ public class ClientTerritoryOperationService {
             return FrontierActionResult.rejected();
         }
 
-        updateFrontier(frontier, change);
+        FrontierChangeApplicationResult applicationResult = updateFrontier(frontier, change);
+        if (applicationResult.isRejected()) {
+            return FrontierActionResult.rejected();
+        }
         return FrontierActionResult.applied(ApiConverters.fromFrontier(frontier));
     }
 
@@ -579,26 +602,50 @@ public class ClientTerritoryOperationService {
                                      FrontierChange change,
                                      long authoritativeSyncHash,
                                      int playerId) {
+        if (awaitingFrontierResync.contains(frontierId)) {
+            return;
+        }
+
         FrontiersOverlayManager manager = getManager(personal);
         FrontierOverlay existingFrontier = manager.getFrontier(frontierId);
-        ClientCollectionRuntime.FrontierIndexState previousState = existingFrontier == null
-                ? null
-                : collectionRuntime.snapshotFrontier(existingFrontier);
-        FrontierOverlay frontierOverlay = manager.applyFrontierChange(dimension, frontierId, change);
+        if (existingFrontier == null || !existingFrontier.getDimension().equals(dimension)) {
+            requestFrontierResync(frontierId, "frontier is missing or in a different dimension");
+            return;
+        }
+
+        FrontierChangeApplicationResult stagedResult = existingFrontier.stageChange(change);
+        if (stagedResult.isRejected()) {
+            requestFrontierResync(frontierId, stagedResult.rejectionReason());
+            return;
+        }
+
+        FrontierData stagedFrontier = stagedResult.frontier();
+        long stagedSyncHash = stagedFrontier == null ? existingFrontier.computeSyncHash() : stagedFrontier.computeSyncHash();
+        if (stagedSyncHash != authoritativeSyncHash) {
+            MapFrontiers.LOGGER.warn(
+                    "Frontier sync hash mismatch before client update commit. frontierId={}, personal={}, authoritativeHash={}, stagedHash={}",
+                    frontierId, personal, authoritativeSyncHash, stagedSyncHash
+            );
+            requestFrontierResync(frontierId, "authoritative sync hash mismatch");
+            return;
+        }
+        if (stagedResult.isNoChange()) {
+            return;
+        }
+
+        ClientCollectionRuntime.FrontierIndexState previousState = collectionRuntime.snapshotFrontier(existingFrontier);
+        FrontierChangeApplicationResult appliedResult = manager.applyFrontierChange(dimension, frontierId, stagedResult.effectiveChange());
+        if (appliedResult == null || !appliedResult.isApplied()) {
+            requestFrontierResync(frontierId, appliedResult == null ? "frontier disappeared before commit" : appliedResult.rejectionReason());
+            return;
+        }
+
+        FrontierOverlay frontierOverlay = manager.getFrontier(frontierId);
         if (frontierOverlay != null) {
-            long localSyncHash = frontierOverlay.computeSyncHash();
-            if (localSyncHash != authoritativeSyncHash) {
-                MapFrontiers.LOGGER.warn(
-                        "Frontier sync hash mismatch after client update apply. frontierId={}, personal={}, expectedHash={}, localHash={}",
-                        frontierId, personal, authoritativeSyncHash, localSyncHash
-                );
-                PacketHandler.sendToServer(new PacketRequestFrontierResync(frontierId));
-            }
-            if (previousState != null) {
-                collectionRuntime.onFrontierUpdated(previousState, frontierOverlay);
-                notifyCollectionOverlayFrontierUpdated(previousState.collectionId(), frontierOverlay, change);
-                postAffectedCollectionsUpdated(previousState.collectionId(), frontierOverlay.getCollectionId());
-            }
+            FrontierChange effectiveChange = appliedResult.effectiveChange();
+            collectionRuntime.onFrontierUpdated(previousState, frontierOverlay);
+            notifyCollectionOverlayFrontierUpdated(previousState.collectionId(), frontierOverlay, effectiveChange);
+            postAffectedCollectionsUpdated(previousState.collectionId(), frontierOverlay.getCollectionId());
             if (personal && frontierOverlay.isPersistent()) {
                 markLocalPersonalDataDirty();
             }
@@ -630,7 +677,6 @@ public class ClientTerritoryOperationService {
             targetManager.refreshFrontierDerivedIndexes(currentFrontier);
             collectionRuntime.onFrontierUpdated(previousState, currentFrontier);
             notifyCollectionOverlayFrontierUpdated(previousState.collectionId(), currentFrontier);
-            postAffectedCollectionsUpdated(previousState.collectionId(), currentFrontier.getCollectionId());
             appliedFrontier = currentFrontier;
         } else {
             if (currentFrontier != null) {
@@ -642,8 +688,10 @@ public class ClientTerritoryOperationService {
             appliedFrontier = targetManager.addFrontier(frontier);
             collectionRuntime.onFrontierAdded(appliedFrontier);
             notifyCollectionOverlayFrontierMembershipDirty(appliedFrontier);
-            postAffectedCollectionsUpdated(previousCollectionId, appliedFrontier.getCollectionId());
         }
+
+        awaitingFrontierResync.remove(frontier.getId());
+        postAffectedCollectionsUpdated(previousCollectionId, appliedFrontier.getCollectionId());
 
         if (frontier.getPersonal() && frontier.isPersistent()) {
             markLocalPersonalDataDirty();
@@ -670,6 +718,7 @@ public class ClientTerritoryOperationService {
     }
 
     public void applyFrontierDeleted(ResourceKey<Level> dimension, UUID frontierId, boolean personal) {
+        awaitingFrontierResync.remove(frontierId);
         FrontierOverlay deletedFrontier = getManager(personal).deleteFrontier(dimension, frontierId);
         if (deletedFrontier != null) {
             collectionRuntime.onFrontierRemoved(deletedFrontier);
@@ -851,6 +900,14 @@ public class ClientTerritoryOperationService {
         return runtime.getCollectionOverlayManager();
     }
 
+    private void requestFrontierResync(UUID frontierId, @Nullable String reason) {
+        if (!awaitingFrontierResync.add(frontierId)) {
+            return;
+        }
+        MapFrontiers.LOGGER.warn("Requesting frontier resync. frontierId={}, reason={}", frontierId, reason);
+        PacketHandler.sendToServer(new PacketRequestFrontierResync(frontierId));
+    }
+
     private void notifyCollectionOverlayFrontierMembershipDirty(FrontierOverlay frontier) {
         getCollectionOverlayManager().markFrontierMembershipDirty(frontier);
     }
@@ -871,7 +928,7 @@ public class ClientTerritoryOperationService {
     }
 
     static boolean affectsCollectionMembership(FrontierChange change) {
-        return change.hasShapeChange() || change.hasCollectionIdChange();
+        return change.affectsGeometry() || change.hasCollectionIdChange();
     }
 
     static boolean affectsCollectionVariants(FrontierChange change) {

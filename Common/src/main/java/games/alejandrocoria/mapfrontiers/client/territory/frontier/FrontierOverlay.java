@@ -27,6 +27,7 @@ import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionD
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityMask;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChangeApplicationResult;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
@@ -182,38 +183,46 @@ public class FrontierOverlay extends FrontierData {
         }
     }
 
-    public void applyChange(FrontierChange change) {
+    @Override
+    public FrontierChangeApplicationResult applyChange(FrontierChange change) {
+        FrontierChangeApplicationResult result = stageChange(change);
+        if (!result.isApplied()) {
+            return result;
+        }
+
+        FrontierChange effectiveChange = result.effectiveChange();
         suppressDirtyOverlayListener = true;
         try {
-            super.applyChange(change);
+            super.updateFromData(Objects.requireNonNull(result.frontier()));
             setVisibilityOverride(MapFrontiersClient.getLocalOverrides().getVisibility(id));
 
             clampSelectedEditablePoint();
 
-            if (change.hasBannerChange() || change.hasCollectionIdChange()) {
+            if (effectiveChange.hasBannerChange() || effectiveChange.hasCollectionIdChange()) {
                 refreshEffectiveBannerRenderer(false);
             }
 
-            if (change.hasShapeChange()) {
+            if (effectiveChange.affectsGeometry()) {
                 invalidateFromGeometry();
             } else {
-                if (change.hasColorChange() || change.hasVisibilityChange()) {
+                if (effectiveChange.hasColorChange() || effectiveChange.hasVisibilityChange()) {
                     invalidateBasePresentation();
                 }
-                if (change.hasPathStyleChange()) {
+                if (effectiveChange.hasPathStyleChange()) {
                     invalidateFromDiscretization();
                 }
-                if (change.hasNameChange() || change.hasCollectionIdChange() || change.hasBannerChange()) {
+                if (effectiveChange.hasNameChange() || effectiveChange.hasCollectionIdChange() || effectiveChange.hasBannerChange()) {
                     invalidateLabels();
                 }
             }
             processDirtyOverlay();
-            if (change.hasShapeChange() || change.hasVisibilityChange()) {
+            if (effectiveChange.affectsGeometry() || effectiveChange.hasVisibilityChange()) {
                 markFrontierActivationDirty();
             }
         } finally {
             suppressDirtyOverlayListener = false;
         }
+        return FrontierChangeApplicationResult.applied(this, effectiveChange);
     }
 
     public void applySharingChange(FrontierSharingChange sharingChange) {

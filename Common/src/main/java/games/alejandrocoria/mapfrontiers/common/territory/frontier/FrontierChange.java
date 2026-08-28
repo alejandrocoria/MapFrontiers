@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers.common.territory.frontier;
 
 import games.alejandrocoria.mapfrontiers.api.model.ChunkCoord;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
+import games.alejandrocoria.mapfrontiers.api.model.GeometryEdit;
 import games.alejandrocoria.mapfrontiers.api.model.Point2i;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
@@ -27,6 +28,7 @@ public class FrontierChange {
     private @Nullable ColorChange color;
     private @Nullable BannerChange banner;
     private @Nullable ShapeChange shape;
+    private List<GeometryChange> geometryChanges = List.of();
     private @Nullable PathStyleChange pathStyle;
     private @Nullable CollectionIdChange collectionId;
     private @Nullable Long modifiedTime;
@@ -50,6 +52,7 @@ public class FrontierChange {
         if (other.shape != null) {
             shape = new ShapeChange(other.shape.vertices, other.shape.chunks, other.shape.points, other.shape.frontierShape);
         }
+        geometryChanges = List.copyOf(other.geometryChanges);
         if (other.pathStyle != null) {
             pathStyle = new PathStyleChange(other.pathStyle.pathStyle);
         }
@@ -117,6 +120,13 @@ public class FrontierChange {
         }
 
         if (buf.readBoolean()) {
+            geometryChanges = GeometryChange.readList(buf);
+            if (shape != null) {
+                throw new IllegalArgumentException("Shape replacement and incremental geometry changes cannot coexist");
+            }
+        }
+
+        if (buf.readBoolean()) {
             FrontierData.PathStyle value = new FrontierData.PathStyle();
             value.fromBytes(buf);
             pathStyle = new PathStyleChange(value);
@@ -181,6 +191,12 @@ public class FrontierChange {
                     }
                 }
             }
+        }
+
+        if (!mutation.geometryEdits().isEmpty()) {
+            change.setGeometryChanges(mutation.geometryEdits().stream()
+                    .map(FrontierChange::fromGeometryEdit)
+                    .toList());
         }
 
         if (mutation.visibility().isPresent() || !mutation.visibilityToAdd().isEmpty() || !mutation.visibilityToRemove().isEmpty()) {
@@ -287,6 +303,11 @@ public class FrontierChange {
             }
         }
 
+        buf.writeBoolean(!geometryChanges.isEmpty());
+        if (!geometryChanges.isEmpty()) {
+            GeometryChange.writeList(buf, geometryChanges);
+        }
+
         buf.writeBoolean(pathStyle != null);
         if (pathStyle != null) {
             pathStyle.pathStyle.toBytes(buf);
@@ -309,7 +330,7 @@ public class FrontierChange {
     }
 
     public boolean isEmpty() {
-        return name == null && visibility == null && color == null && banner == null && shape == null && pathStyle == null
+        return name == null && visibility == null && color == null && banner == null && shape == null && geometryChanges.isEmpty() && pathStyle == null
                 && collectionId == null && modifiedTime == null;
     }
 
@@ -331,6 +352,10 @@ public class FrontierChange {
 
     public @Nullable ShapeChange getShape() {
         return shape;
+    }
+
+    List<GeometryChange> getGeometryChanges() {
+        return geometryChanges;
     }
 
     public @Nullable PathStyleChange getPathStyle() {
@@ -365,6 +390,14 @@ public class FrontierChange {
         return shape != null;
     }
 
+    public boolean hasGeometryChanges() {
+        return !geometryChanges.isEmpty();
+    }
+
+    public boolean affectsGeometry() {
+        return shape != null || !geometryChanges.isEmpty();
+    }
+
     public boolean hasPathStyleChange() {
         return pathStyle != null;
     }
@@ -394,7 +427,32 @@ public class FrontierChange {
     }
 
     public void setShape(List<BlockPos> vertices, Set<ChunkPos> chunks, List<BlockPos> points, FrontierShape frontierShape) {
+        if (!geometryChanges.isEmpty()) {
+            throw new IllegalStateException("Shape replacement and incremental geometry changes cannot coexist");
+        }
         shape = new ShapeChange(vertices, chunks, points, frontierShape);
+    }
+
+    void setGeometryChanges(List<GeometryChange> geometryChanges) {
+        Objects.requireNonNull(geometryChanges, "geometryChanges");
+        if (shape != null && !geometryChanges.isEmpty()) {
+            throw new IllegalStateException("Shape replacement and incremental geometry changes cannot coexist");
+        }
+        this.geometryChanges = List.copyOf(geometryChanges);
+    }
+
+    void addGeometryChange(GeometryChange geometryChange) {
+        Objects.requireNonNull(geometryChange, "geometryChange");
+        if (shape != null) {
+            throw new IllegalStateException("Shape replacement and incremental geometry changes cannot coexist");
+        }
+        List<GeometryChange> updatedChanges = new ArrayList<>(geometryChanges);
+        updatedChanges.add(geometryChange);
+        geometryChanges = List.copyOf(updatedChanges);
+    }
+
+    void clearGeometryChanges() {
+        geometryChanges = List.of();
     }
 
     public void setPathStyle(FrontierData.PathStyle pathStyle) {
@@ -529,5 +587,35 @@ public class FrontierChange {
 
     private static ChunkPos toChunkPos(ChunkCoord chunk) {
         return new ChunkPos(chunk.x(), chunk.z());
+    }
+
+    private static GeometryChange fromGeometryEdit(GeometryEdit edit) {
+        return switch (edit) {
+            case GeometryEdit.InsertPathPointAt value ->
+                    new GeometryChange.InsertPathPointAt(value.index(), toBlockPos(value.point()));
+            case GeometryEdit.InsertPathPointBeforeFirst value ->
+                    new GeometryChange.InsertPathPointBeforeFirst(toBlockPos(value.point()));
+            case GeometryEdit.InsertPathPointAfterLast value ->
+                    new GeometryChange.InsertPathPointAfterLast(toBlockPos(value.point()));
+            case GeometryEdit.InsertPathPointAutomatically value ->
+                    new GeometryChange.InsertPathPointAutomatically(toBlockPos(value.point()));
+            case GeometryEdit.SetPathPointAt value ->
+                    new GeometryChange.SetPathPointAt(value.index(), toBlockPos(value.point()));
+            case GeometryEdit.RemovePathPointAt value -> new GeometryChange.RemovePathPointAt(value.index());
+            case GeometryEdit.ReversePath ignored -> new GeometryChange.ReversePath();
+            case GeometryEdit.InsertVertexAt value ->
+                    new GeometryChange.InsertVertexAt(value.index(), toBlockPos(value.vertex()));
+            case GeometryEdit.InsertVertexAutomatically value ->
+                    new GeometryChange.InsertVertexAutomatically(toBlockPos(value.vertex()));
+            case GeometryEdit.SetVertexAt value ->
+                    new GeometryChange.SetVertexAt(value.index(), toBlockPos(value.vertex()));
+            case GeometryEdit.RemoveVertexAt value -> new GeometryChange.RemoveVertexAt(value.index());
+            case GeometryEdit.AddChunks value -> new GeometryChange.AddChunks(value.chunks().stream()
+                    .map(FrontierChange::toChunkPos)
+                    .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new)));
+            case GeometryEdit.RemoveChunks value -> new GeometryChange.RemoveChunks(value.chunks().stream()
+                    .map(FrontierChange::toChunkPos)
+                    .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new)));
+        };
     }
 }

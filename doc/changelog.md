@@ -1,3 +1,6 @@
+**Beta 13:**
+* API - Added: Incremental Path, Vertex, and Chunk geometry editing operations to frontier mutations, allowing small edits without replacing the full shape.
+
 **Beta 12:**
 * Changed: Significantly improved client performance when creating, editing, selecting, hiding, or updating frontiers and collections, especially very long Path frontiers and collections containing many frontiers.
 * Fixed: Collection members could initially keep their individual fill colors while using the collection border color when opening the fullscreen map.
