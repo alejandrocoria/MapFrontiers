@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChangeApplicationResult;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreationFactory;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
@@ -383,44 +384,60 @@ public class TerritoriesManager {
         return deleted;
     }
 
-    public boolean applyGlobalFrontierChange(UUID frontierId, FrontierChange change) {
+    public FrontierChangeApplicationResult applyGlobalFrontierChange(UUID frontierId, FrontierChange change) {
         FrontierData frontier = allFrontiers.get(frontierId);
         if (frontier == null || frontier.getPersonal()) {
-            return false;
+            return FrontierChangeApplicationResult.rejected("Global frontier not found");
+        }
+
+        FrontierChangeApplicationResult stagedResult = frontier.stageChange(change);
+        if (!stagedResult.isApplied()) {
+            return stagedResult;
         }
 
         FrontierIndexSnapshot previousState = captureFrontierIndexSnapshot(frontier);
-        frontier.setModified(new Date());
-        change.setModifiedTime(frontier.getModified().getTime());
-        frontier.applyChange(change);
+        FrontierData stagedFrontier = Objects.requireNonNull(stagedResult.frontier());
+        Date modified = new Date();
+        stagedFrontier.setModified(modified);
+        FrontierChange effectiveChange = stagedResult.effectiveChange();
+        effectiveChange.setModifiedTime(modified.getTime());
+        frontier.updateFromData(stagedFrontier);
         reindexFrontierAfterMutation(frontier, previousState);
         markDirty();
-        return true;
+        return FrontierChangeApplicationResult.applied(frontier, effectiveChange);
     }
 
-    public boolean applyPersonalFrontierChange(SettingsUser user, UUID frontierId, FrontierChange change) {
+    public FrontierChangeApplicationResult applyPersonalFrontierChange(SettingsUser user, UUID frontierId, FrontierChange change) {
         Map<ResourceKey<Level>, ArrayList<FrontierData>> dimensionsPersonalFrontiers = usersDimensionsPersonalFrontiers.get(user);
         if (dimensionsPersonalFrontiers == null) {
-            return false;
+            return FrontierChangeApplicationResult.rejected("Personal frontier owner not found");
         }
 
         FrontierData frontier = allFrontiers.get(frontierId);
         if (frontier == null || !frontier.getPersonal()) {
-            return false;
+            return FrontierChangeApplicationResult.rejected("Personal frontier not found");
         }
 
         List<FrontierData> frontiers = dimensionsPersonalFrontiers.get(frontier.getDimension());
         if (frontiers == null || frontiers.stream().noneMatch(existing -> existing.getId().equals(frontierId))) {
-            return false;
+            return FrontierChangeApplicationResult.rejected("Personal frontier not found in owner dimension");
+        }
+
+        FrontierChangeApplicationResult stagedResult = frontier.stageChange(change);
+        if (!stagedResult.isApplied()) {
+            return stagedResult;
         }
 
         FrontierIndexSnapshot previousState = captureFrontierIndexSnapshot(frontier);
-        frontier.setModified(new Date());
-        change.setModifiedTime(frontier.getModified().getTime());
-        frontier.applyChange(change);
+        FrontierData stagedFrontier = Objects.requireNonNull(stagedResult.frontier());
+        Date modified = new Date();
+        stagedFrontier.setModified(modified);
+        FrontierChange effectiveChange = stagedResult.effectiveChange();
+        effectiveChange.setModifiedTime(modified.getTime());
+        frontier.updateFromData(stagedFrontier);
         reindexFrontierAfterMutation(frontier, previousState);
         markDirty();
-        return true;
+        return FrontierChangeApplicationResult.applied(frontier, effectiveChange);
     }
 
     public boolean changePersonalFrontierToGlobal(SettingsUser user, ResourceKey<Level> dimension, UUID id) {
