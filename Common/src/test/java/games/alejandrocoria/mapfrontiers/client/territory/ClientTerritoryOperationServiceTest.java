@@ -2,6 +2,8 @@ package games.alejandrocoria.mapfrontiers.client.territory;
 
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.Point2i;
+import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
@@ -17,6 +19,32 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClientTerritoryOperationServiceTest {
+    @Test
+    void sessionOnlyOperationsNeverUseAuthoritativeFlow() {
+        FrontierData frontier = personalEntity(new FrontierData(), TerritoryLifetime.SESSION_ONLY);
+        CollectionData collection = personalEntity(new CollectionData(), TerritoryLifetime.SESSION_ONLY);
+
+        assertFalse(ClientTerritoryOperationService.usesAuthoritativeCreateFlow(TerritoryLifetime.SESSION_ONLY, false));
+        assertFalse(ClientTerritoryOperationService.usesAuthoritativeCreateFlow(TerritoryLifetime.SESSION_ONLY, true));
+        assertFalse(ClientTerritoryOperationService.usesAuthoritativeMutationFlow(frontier, false));
+        assertFalse(ClientTerritoryOperationService.usesAuthoritativeMutationFlow(frontier, true));
+        assertFalse(ClientTerritoryOperationService.usesAuthoritativeCollectionMutationFlow(collection, false));
+        assertFalse(ClientTerritoryOperationService.usesAuthoritativeCollectionMutationFlow(collection, true));
+    }
+
+    @Test
+    void persistentOperationsUseAuthoritativeFlowOnlyWithServerSupport() {
+        FrontierData frontier = personalEntity(new FrontierData(), TerritoryLifetime.PERSISTENT);
+        CollectionData collection = personalEntity(new CollectionData(), TerritoryLifetime.PERSISTENT);
+
+        assertFalse(ClientTerritoryOperationService.usesAuthoritativeCreateFlow(TerritoryLifetime.PERSISTENT, false));
+        assertTrue(ClientTerritoryOperationService.usesAuthoritativeCreateFlow(TerritoryLifetime.PERSISTENT, true));
+        assertFalse(ClientTerritoryOperationService.usesAuthoritativeMutationFlow(frontier, false));
+        assertTrue(ClientTerritoryOperationService.usesAuthoritativeMutationFlow(frontier, true));
+        assertFalse(ClientTerritoryOperationService.usesAuthoritativeCollectionMutationFlow(collection, false));
+        assertTrue(ClientTerritoryOperationService.usesAuthoritativeCollectionMutationFlow(collection, true));
+    }
+
     @Test
     void affectsCollectionVariants_presentationOnlyChange_returnsFalse() {
         FrontierChange change = new FrontierChange();
@@ -63,5 +91,17 @@ class ClientTerritoryOperationServiceTest {
 
         assertTrue(ClientTerritoryOperationService.affectsCollectionMembership(change));
         assertTrue(ClientTerritoryOperationService.affectsCollectionVariants(change));
+    }
+
+    private static FrontierData personalEntity(FrontierData frontier, TerritoryLifetime lifetime) {
+        frontier.setPersonal(true);
+        frontier.setLifetime(lifetime);
+        return frontier;
+    }
+
+    private static CollectionData personalEntity(CollectionData collection, TerritoryLifetime lifetime) {
+        collection.setPersonal(true);
+        collection.setLifetime(lifetime);
+        return collection;
     }
 }

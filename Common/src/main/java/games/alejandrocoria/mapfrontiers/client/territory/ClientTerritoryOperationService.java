@@ -1092,11 +1092,19 @@ public class ClientTerritoryOperationService {
     }
 
     private static boolean usesAuthoritativeCreateFlow(TerritoryLifetime lifetime) {
-        return lifetime != TerritoryLifetime.SESSION_ONLY && MapFrontiersClient.isModOnServer();
+        return usesAuthoritativeCreateFlow(lifetime, MapFrontiersClient.isModOnServer());
+    }
+
+    static boolean usesAuthoritativeCreateFlow(TerritoryLifetime lifetime, boolean modOnServer) {
+        return lifetime != TerritoryLifetime.SESSION_ONLY && modOnServer;
     }
 
     private static boolean usesAuthoritativeCollectionMutationFlow(CollectionData collection) {
-        return collection.isPersistent() && MapFrontiersClient.isModOnServer();
+        return usesAuthoritativeCollectionMutationFlow(collection, MapFrontiersClient.isModOnServer());
+    }
+
+    static boolean usesAuthoritativeCollectionMutationFlow(CollectionData collection, boolean modOnServer) {
+        return collection.isPersistent() && modOnServer;
     }
 
     private boolean canMutateLocalCollection(CollectionData collection) {
@@ -1108,7 +1116,11 @@ public class ClientTerritoryOperationService {
     }
 
     private static boolean usesAuthoritativeMutationFlow(FrontierData frontier) {
-        return frontier.isPersistent() && MapFrontiersClient.isModOnServer();
+        return usesAuthoritativeMutationFlow(frontier, MapFrontiersClient.isModOnServer());
+    }
+
+    static boolean usesAuthoritativeMutationFlow(FrontierData frontier, boolean modOnServer) {
+        return frontier.isPersistent() && modOnServer;
     }
 
     private SharingActionContext resolveSharingActionContext(String operationName,

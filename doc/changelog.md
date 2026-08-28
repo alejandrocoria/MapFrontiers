@@ -1,5 +1,6 @@
 **Beta 13:**
 * API - Added: Incremental Path, Vertex, and Chunk geometry editing operations to frontier mutations, allowing small edits without replacing the full shape.
+* API - Added: Immediate client-local creation, update, and deletion guarantees for temporary personal frontiers and collections, independent of server support.
 
 **Beta 12:**
 * Changed: Significantly improved client performance when creating, editing, selecting, hiding, or updating frontiers and collections, especially very long Path frontiers and collections containing many frontiers.
