@@ -5,6 +5,7 @@ import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChangeApplicationResult;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
@@ -111,18 +112,23 @@ public class FrontiersOverlayManager {
     }
 
     @Nullable
-    public FrontierOverlay applyFrontierChange(ResourceKey<Level> dimension, UUID id, FrontierChange change) {
+    public FrontierChangeApplicationResult applyFrontierChange(ResourceKey<Level> dimension, UUID id, FrontierChange change) {
         FrontierOverlay frontierOverlay = frontiersById.get(id);
         if (frontierOverlay == null || !frontierOverlay.getDimension().equals(dimension)) {
             return null;
         }
 
-        frontierOverlay.applyChange(change);
-        if (change.hasShapeChange() || change.hasCollectionIdChange()) {
+        FrontierChangeApplicationResult result = frontierOverlay.applyChange(change);
+        if (!result.isApplied()) {
+            return result;
+        }
+
+        FrontierChange effectiveChange = result.effectiveChange();
+        if (effectiveChange.affectsGeometry() || effectiveChange.hasCollectionIdChange()) {
             refreshFrontierDerivedIndexes(frontierOverlay);
         }
         MapFrontiersClient.markFrontierActivationDirty();
-        return frontierOverlay;
+        return FrontierChangeApplicationResult.applied(frontierOverlay, effectiveChange);
     }
 
     @Nullable

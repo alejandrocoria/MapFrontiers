@@ -17,6 +17,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChangeApplicationResult;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
@@ -358,7 +359,7 @@ public class ServerTerritoryOperationService {
         return createdGlobalFrontier(frontier, SYSTEM_ACTOR_ID, null, targetCollection);
     }
 
-    public ServerTerritoryOperationResult updateFrontier(ServerPlayer player, UUID frontierId, FrontierChange change, long expectedSyncHash) {
+    public ServerTerritoryOperationResult updateFrontier(ServerPlayer player, UUID frontierId, FrontierChange change, long baseSyncHash) {
         FrontierData currentFrontier = territoriesManager.getFrontierFromID(frontierId);
         if (currentFrontier == null) {
             return ServerTerritoryOperationResult.notFound();
@@ -376,6 +377,10 @@ public class ServerTerritoryOperationService {
         if (currentFrontier.getPersonal()) {
             if (!permissionEvaluator.canUpdatePersonalFrontier(player, currentFrontier)) {
                 return ServerTerritoryOperationResult.ignored(currentFrontier);
+            }
+
+            if (baseSyncHash != currentFrontier.computeSyncHash()) {
+                return resyncWithoutApplying(player, currentFrontier, baseSyncHash);
             }
 
             if (collectionMembershipChanged && !permissionEvaluator.canUpdatePersonalCollection(player, sourceCollection != null ? sourceCollection : buildPersonalCollectionContext(currentFrontier))) {
@@ -399,19 +404,18 @@ public class ServerTerritoryOperationService {
                 }
             }
 
-            boolean updated = territoriesManager.applyPersonalFrontierChange(currentFrontier.getOwner(), frontierId, change);
-            if (!updated) {
-                return ServerTerritoryOperationResult.notFound();
+            FrontierChangeApplicationResult applicationResult = territoriesManager.applyPersonalFrontierChange(currentFrontier.getOwner(), frontierId, change);
+            if (applicationResult.isRejected()) {
+                return rejectedWithFrontierResync(player, currentFrontier, applicationResult.rejectionReason());
+            }
+            if (applicationResult.isNoChange()) {
+                return ServerTerritoryOperationResult.success(currentFrontier);
             }
 
             long authoritativeSyncHash = currentFrontier.computeSyncHash();
-            boolean syncHashMismatch = logSyncHashMismatchIfNeeded(player, currentFrontier, expectedSyncHash, authoritativeSyncHash);
             PacketFrontierUpdated frontierUpdatedPacket = new PacketFrontierUpdated(frontierId, currentFrontier.getDimension(),
-                    true, new FrontierChange(change), authoritativeSyncHash, player.getId());
+                    true, new FrontierChange(applicationResult.effectiveChange()), authoritativeSyncHash, player.getId());
             ServerTerritoryOperationResult result = ServerTerritoryOperationResult.success(currentFrontier);
-            if (syncHashMismatch) {
-                result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierResync(currentFrontier), player));
-            }
             if (collectionMembershipChanged) {
                 Date modified = currentFrontier.getModified();
                 if (sourceCollection != null) {
@@ -436,6 +440,10 @@ public class ServerTerritoryOperationService {
             return rejectedWithProfileRefresh(player, currentFrontier);
         }
 
+        if (baseSyncHash != currentFrontier.computeSyncHash()) {
+            return resyncWithoutApplying(player, currentFrontier, baseSyncHash);
+        }
+
         if (collectionMembershipChanged) {
             targetCollection = validateTargetCollectionAssignment(currentFrontier.getId(), currentFrontier.getPersonal(),
                     currentFrontier.getLifetime(), currentFrontier.getOwner(), change.getCollectionIdChange().getCollectionId());
@@ -453,17 +461,17 @@ public class ServerTerritoryOperationService {
             }
         }
 
-        boolean updated = territoriesManager.applyGlobalFrontierChange(frontierId, change);
-        if (!updated) {
-            return ServerTerritoryOperationResult.notFound();
+        FrontierChangeApplicationResult applicationResult = territoriesManager.applyGlobalFrontierChange(frontierId, change);
+        if (applicationResult.isRejected()) {
+            return rejectedWithFrontierResync(player, currentFrontier, applicationResult.rejectionReason());
+        }
+        if (applicationResult.isNoChange()) {
+            return ServerTerritoryOperationResult.success(currentFrontier);
         }
 
         long authoritativeSyncHash = currentFrontier.computeSyncHash();
-        boolean syncHashMismatch = logSyncHashMismatchIfNeeded(player, currentFrontier, expectedSyncHash, authoritativeSyncHash);
-        ServerTerritoryOperationResult result = updatedGlobalFrontier(currentFrontier, new FrontierChange(change), authoritativeSyncHash, player.getId());
-        if (syncHashMismatch) {
-            result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierResync(currentFrontier), player));
-        }
+        ServerTerritoryOperationResult result = updatedGlobalFrontier(currentFrontier, new FrontierChange(applicationResult.effectiveChange()),
+                authoritativeSyncHash, player.getId());
         if (collectionMembershipChanged) {
             Date modified = currentFrontier.getModified();
             if (sourceCollection != null) {
@@ -521,12 +529,16 @@ public class ServerTerritoryOperationService {
             }
         }
 
-        boolean updated = territoriesManager.applyGlobalFrontierChange(frontierId, change);
-        if (!updated) {
-            return ServerTerritoryOperationResult.notFound();
+        FrontierChangeApplicationResult applicationResult = territoriesManager.applyGlobalFrontierChange(frontierId, change);
+        if (applicationResult.isRejected()) {
+            return ServerTerritoryOperationResult.rejected(frontier);
+        }
+        if (applicationResult.isNoChange()) {
+            return ServerTerritoryOperationResult.success(frontier);
         }
 
-        ServerTerritoryOperationResult result = updatedGlobalFrontier(frontier, new FrontierChange(change), frontier.computeSyncHash(), SYSTEM_ACTOR_ID);
+        ServerTerritoryOperationResult result = updatedGlobalFrontier(frontier, new FrontierChange(applicationResult.effectiveChange()),
+                frontier.computeSyncHash(), SYSTEM_ACTOR_ID);
         if (collectionMembershipChanged) {
             Date modified = frontier.getModified();
             if (sourceCollection != null) {
@@ -1014,16 +1026,22 @@ public class ServerTerritoryOperationService {
         return left.equals(right);
     }
 
-    private boolean logSyncHashMismatchIfNeeded(ServerPlayer player, FrontierData frontier, long expectedSyncHash, long authoritativeSyncHash) {
-        if (expectedSyncHash == authoritativeSyncHash) {
-            return false;
-        }
-
+    private ServerTerritoryOperationResult resyncWithoutApplying(ServerPlayer player, FrontierData frontier, long baseSyncHash) {
         MapFrontiers.LOGGER.warn(
-                "Frontier sync hash mismatch after server update apply. frontierId={}, player={}, expectedHash={}, authoritativeHash={}",
-                frontier.getId(), player.getName().getString(), expectedSyncHash, authoritativeSyncHash
+                "Rejected frontier update because the base sync hash is stale. frontierId={}, player={}, baseHash={}, authoritativeHash={}",
+                frontier.getId(), player.getName().getString(), baseSyncHash, frontier.computeSyncHash()
         );
-        return true;
+        ServerTerritoryOperationResult result = ServerTerritoryOperationResult.ignored(frontier);
+        result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierResync(frontier), player));
+        return result;
+    }
+
+    private ServerTerritoryOperationResult rejectedWithFrontierResync(ServerPlayer player, FrontierData frontier, @Nullable String reason) {
+        MapFrontiers.LOGGER.warn("Rejected invalid frontier update. frontierId={}, player={}, reason={}",
+                frontier.getId(), player.getName().getString(), reason);
+        ServerTerritoryOperationResult result = ServerTerritoryOperationResult.rejected(frontier);
+        result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierResync(frontier), player));
+        return result;
     }
 
     private boolean canReceivePersonalFrontier(ServerPlayer player, FrontierData frontier) {

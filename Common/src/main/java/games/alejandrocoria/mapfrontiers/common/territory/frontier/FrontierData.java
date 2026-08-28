@@ -159,10 +159,42 @@ public class FrontierData {
 
         validateTypeAndLifetime(personal, lifetime);
         sanitizeSharedUsers();
-        invalidateSyncHash();
+        invalidateChunksSyncHash();
     }
 
-    public void applyChange(FrontierChange change) {
+    public FrontierChangeApplicationResult stageChange(FrontierChange change) {
+        if (change.hasShapeChange() && change.hasGeometryChanges()) {
+            return FrontierChangeApplicationResult.rejected("Shape replacement and incremental geometry changes cannot coexist");
+        }
+
+        FrontierData stagedFrontier = new FrontierData(this);
+        try {
+            stagedFrontier.applyChangeUnchecked(change);
+        } catch (IllegalArgumentException exception) {
+            return FrontierChangeApplicationResult.rejected(exception.getMessage());
+        }
+
+        FrontierChange effectiveChange = new FrontierChange(change);
+        if (change.hasGeometryChanges() && hasSameGeometry(stagedFrontier)) {
+            effectiveChange.clearGeometryChanges();
+        }
+        if (hasSameFunctionalState(stagedFrontier)) {
+            return FrontierChangeApplicationResult.noChange(this);
+        }
+        return FrontierChangeApplicationResult.applied(stagedFrontier, effectiveChange);
+    }
+
+    public FrontierChangeApplicationResult applyChange(FrontierChange change) {
+        FrontierChangeApplicationResult result = stageChange(change);
+        if (!result.isApplied()) {
+            return result;
+        }
+
+        updateFromData(Objects.requireNonNull(result.frontier()));
+        return FrontierChangeApplicationResult.applied(this, result.effectiveChange());
+    }
+
+    private void applyChangeUnchecked(FrontierChange change) {
         if (change.hasVisibilityChange()) {
             visibilityData = change.getVisibility().getVisibilityData();
         }
@@ -187,6 +219,10 @@ public class FrontierData {
             applyShapeData(shapeChange.getShape(), shapeChange.getVertices(), shapeChange.getChunks(), shapeChange.getPoints());
         }
 
+        if (change.hasGeometryChanges()) {
+            GeometryChangeApplier.apply(this, change.getGeometryChanges());
+        }
+
         if (change.hasPathStyleChange()) {
             pathStyle = change.getPathStyle().getPathStyle();
         }
@@ -200,6 +236,25 @@ public class FrontierData {
         }
 
         invalidateSyncHash();
+    }
+
+    private boolean hasSameGeometry(FrontierData other) {
+        return frontierShape == other.frontierShape
+                && vertices.equals(other.vertices)
+                && chunks.equals(other.chunks)
+                && points.equals(other.points);
+    }
+
+    private boolean hasSameFunctionalState(FrontierData other) {
+        return hasSameGeometry(other)
+                && Objects.equals(visibilityData, other.visibilityData)
+                && color == other.color
+                && Objects.equals(name1, other.name1)
+                && Objects.equals(name2, other.name2)
+                && Objects.equals(banner, other.banner)
+                && inheritCollectionBanner == other.inheritCollectionBanner
+                && Objects.equals(pathStyle, other.pathStyle)
+                && Objects.equals(collectionId, other.collectionId);
     }
 
     public void applySharingChange(FrontierSharingChange sharingChange) {
@@ -1265,6 +1320,10 @@ public class FrontierData {
 
     private void invalidateSyncHash() {
         syncHashDirty = true;
+    }
+
+    void invalidateGeometryHash() {
+        invalidateSyncHash();
     }
 
     private void invalidateChunksSyncHash() {
