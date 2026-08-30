@@ -110,6 +110,15 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
                 .toList();
     }
 
+    @Override
+    public List<FrontierDataView> listGlobalFrontiersInCollection(String pluginModId, CollectionId collectionId) {
+        return operationService.getFrontiersInCollection(collectionId.value()).stream()
+                .filter(frontier -> !frontier.getPersonal())
+                .filter(FrontierData::isPersistent)
+                .map(ApiConverters::fromFrontier)
+                .toList();
+    }
+
     private static FrontierCreateSpec createGlobalFrontierSpec(String pluginModId, UserRef owner, FrontierCreateRequest request) {
         if (request.defaultValuesProfile() == DefaultValuesProfile.CONFIGURED) {
             throw new IllegalArgumentException("CONFIGURED defaults are not supported by the server API");
