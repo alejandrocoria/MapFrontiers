@@ -376,6 +376,14 @@ public class ClientTerritoryOperationService {
         return getManager(personal).getAllFrontiers(resourceKey).stream().map(ApiConverters::fromFrontier).toList();
     }
 
+    public List<FrontierDataView> listFrontiersInCollectionAction(boolean personal, CollectionId collectionId) {
+        return collectionRuntime.getFrontiersInCollection(collectionId.value()).stream()
+                .filter(frontier -> frontier.getPersonal() == personal)
+                .filter(frontier -> personal || frontier.isPersistent())
+                .map(ApiConverters::fromFrontier)
+                .toList();
+    }
+
     public FrontierActionResult updateFrontierAction(boolean personal, FrontierId frontierId, FrontierMutation mutation) {
         FrontierOverlay frontier = getManager(personal).getFrontier(frontierId.value());
         if (frontier == null || frontier.getPersonal() != personal) {
