@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.api;
 
 import games.alejandrocoria.mapfrontiers.api.client.FrontierActionResult;
 import games.alejandrocoria.mapfrontiers.api.internal.PluginScopedClientFrontierService;
+import games.alejandrocoria.mapfrontiers.api.model.CollectionId;
 import games.alejandrocoria.mapfrontiers.api.model.DimensionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierCreateRequest;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
@@ -62,8 +63,18 @@ public class ClientFrontierServiceImpl implements PluginScopedClientFrontierServ
     }
 
     @Override
+    public List<FrontierDataView> listPersonalFrontiersInCollection(String pluginModId, CollectionId collectionId) {
+        return MapFrontiersClient.getOperationService().listFrontiersInCollectionAction(true, collectionId);
+    }
+
+    @Override
     public List<FrontierDataView> listGlobalFrontiers(String pluginModId, DimensionId dimension) {
         return MapFrontiersClient.getOperationService().listFrontiersAction(false, dimension);
+    }
+
+    @Override
+    public List<FrontierDataView> listGlobalFrontiersInCollection(String pluginModId, CollectionId collectionId) {
+        return MapFrontiersClient.getOperationService().listFrontiersInCollectionAction(false, collectionId);
     }
 
     @Override
