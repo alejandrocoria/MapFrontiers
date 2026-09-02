@@ -8,6 +8,8 @@ import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.hud.HUD;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.page.ModSettingsPage;
+import games.alejandrocoria.mapfrontiers.client.network.ClientPacketDelivery;
+import games.alejandrocoria.mapfrontiers.client.network.ClientRequestIdSequence;
 import games.alejandrocoria.mapfrontiers.client.settings.ClientSettingsProfileEvents;
 import games.alejandrocoria.mapfrontiers.client.territory.ClientTerritoryOperationService;
 import games.alejandrocoria.mapfrontiers.client.territory.ClientTerritoryRuntime;
@@ -20,6 +22,7 @@ import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierLocal
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.common.api.MapFrontiersApiLogAdapter;
+import games.alejandrocoria.mapfrontiers.common.network.OperationResolution;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
@@ -80,6 +83,7 @@ public class MapFrontiersClient {
 
     private static IClientAPI jmAPI;
     private static final ClientConnectionState connectionState = new ClientConnectionState();
+    private static final ClientRequestIdSequence requestIdSequence = new ClientRequestIdSequence();
     private static ClientTerritoryRuntime territoryRuntime;
     private static ModSettingsPage.Tab lastSettingsTab = ModSettingsPage.Tab.Credits;
 
@@ -109,6 +113,8 @@ public class MapFrontiersClient {
         ClientGlobalEvents.subscribeClientConnectedEvent(MapFrontiersClient.class, MapFrontiersClient::handleClientConnected);
         ClientGlobalEvents.subscribeClientDisconnectedEvent(MapFrontiersClient.class, MapFrontiersClient::handleClientDisconnected);
         ClientGlobalEvents.subscribeUpdatedConfigEvent(MapFrontiersClient.class, MapFrontiersClient::markFrontierActivationDirty);
+
+        ClientPacketDelivery.logIfEnabled();
     }
 
     private static void handleClientTick(Minecraft client) {
@@ -116,11 +122,13 @@ public class MapFrontiersClient {
             return;
         }
 
+        handleWorldChange(client);
+        ClientPacketDelivery.tick();
+
         if (!isJourneyMapPluginAvailable()) {
             return;
         }
 
-        handleWorldChange(client);
         processHandshake();
         updateOverlayManagers();
         tickHud();
@@ -147,6 +155,9 @@ public class MapFrontiersClient {
 
     private static void handleWorldChange(Minecraft client) {
         if (client.level != lastClientLevel) {
+            if (lastClientLevel != null) {
+                ClientPacketDelivery.changeWorld();
+            }
             clearFrontierActivationState();
             if (connectionState.restartHandshakeIfUnresolved()) {
                 if (lastClientLevel != null) {
@@ -249,6 +260,8 @@ public class MapFrontiersClient {
     }
 
     private static void handleClientConnected() {
+        ClientPacketDelivery.beginConnection();
+
         if (!isJourneyMapPluginAvailable()) {
             MapFrontiers.LOGGER.warn(
                     "JourneyMap did not initialize the MapFrontiers client plugin. World features are disabled for this session. Check mod version compatibility."
@@ -263,6 +276,9 @@ public class MapFrontiersClient {
     }
 
     private static void handleClientDisconnected() {
+        ClientPacketDelivery.endConnection();
+        requestIdSequence.reset();
+
         ClientTerritoryRuntime runtime = territoryRuntime;
         territoryRuntime = null;
 
@@ -446,12 +462,13 @@ public class MapFrontiersClient {
         requireTerritoryRuntime().getOperationService().applyCollectionCreated(collection);
     }
 
-    public static void applyCollectionUpdated(CollectionData collection) {
+    public static void applyCollectionUpdated(CollectionData collection, int playerId, long requestId,
+                                              OperationResolution resolution) {
         if (!isJourneyMapPluginAvailable()) {
             return;
         }
 
-        requireTerritoryRuntime().getOperationService().applyCollectionUpdated(collection);
+        requireTerritoryRuntime().getOperationService().applyCollectionUpdated(collection, playerId, requestId, resolution);
     }
 
     public static void applyCollectionDeleted(UUID collectionId) {
@@ -622,6 +639,10 @@ public class MapFrontiersClient {
 
     public static SettingsProfile getSettingsProfile() {
         return connectionState.getSettingsProfile();
+    }
+
+    public static long nextRequestId() {
+        return requestIdSequence.next();
     }
 
     public static void setLastSettingsTab(ModSettingsPage.Tab tab) {

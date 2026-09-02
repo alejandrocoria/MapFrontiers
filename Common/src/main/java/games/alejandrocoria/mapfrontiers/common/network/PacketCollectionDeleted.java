@@ -4,6 +4,7 @@ import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
+import games.alejandrocoria.mapfrontiers.client.network.ClientPacketDelivery;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -42,7 +43,8 @@ public class PacketCollectionDeleted implements CustomPacketPayload {
 
     public static void handle(PacketContext<PacketCollectionDeleted> ctx) {
         if (Side.CLIENT.equals(ctx.side())) {
-            MapFrontiersClient.applyCollectionDeleted(ctx.message().collectionId);
+            PacketCollectionDeleted message = ctx.message();
+            ClientPacketDelivery.submit(() -> MapFrontiersClient.applyCollectionDeleted(message.collectionId));
         }
     }
 }

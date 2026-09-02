@@ -14,6 +14,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @ParametersAreNonnullByDefault
@@ -35,6 +36,18 @@ public class SettingsGroup {
         users = new ArrayList<>();
         actions = EnumSet.noneOf(FrontierSettings.Action.class);
         this.special = special;
+    }
+
+    public SettingsGroup(SettingsGroup other) {
+        name = other.name;
+        users = new ArrayList<>(other.users.size());
+        for (SettingsUser user : other.users) {
+            users.add(new SettingsUser(user));
+        }
+        actions = other.actions.isEmpty()
+                ? EnumSet.noneOf(FrontierSettings.Action.class)
+                : EnumSet.copyOf(other.actions);
+        special = other.special;
     }
 
     public void setName(String name) {
@@ -79,6 +92,22 @@ public class SettingsGroup {
 
     public boolean isSpecial() {
         return special;
+    }
+
+    public boolean hasSameFunctionalState(SettingsGroup other) {
+        if (!name.equals(other.name) || special != other.special || !actions.equals(other.actions)
+                || users.size() != other.users.size()) {
+            return false;
+        }
+
+        for (int i = 0; i < users.size(); ++i) {
+            SettingsUser user = users.get(i);
+            SettingsUser otherUser = other.users.get(i);
+            if (!Objects.equals(user.username, otherUser.username) || !Objects.equals(user.uuid, otherUser.uuid)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public void readFromNBT(CompoundTag nbt, int version) {

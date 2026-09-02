@@ -4,6 +4,7 @@ import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
+import games.alejandrocoria.mapfrontiers.client.network.ClientPacketDelivery;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -55,7 +56,8 @@ public class PacketFrontierCreated implements CustomPacketPayload {
                 return;
             }
             PacketFrontierCreated message = ctx.message();
-            MapFrontiersClient.getOperationService().applyFrontierCreated(message.frontier, message.playerID);
+            ClientPacketDelivery.submit(() -> MapFrontiersClient.getOperationService()
+                    .applyFrontierCreated(message.frontier, message.playerID));
         }
     }
 }

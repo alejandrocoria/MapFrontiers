@@ -28,7 +28,6 @@ import net.minecraft.network.chat.Component;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.Date;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
@@ -205,11 +204,8 @@ public class SharedAccessPage extends PageScreen {
     }
 
     private void deleteUserPressed(ScrollElement element) {
-        users.removeElement(element);
         SettingsUser user = ((UserSharedElement) element).getUser();
-        frontier.removeUserShared(user);
-        MapFrontiersClient.getOperationService().removeSharedUser(frontier.getId(), user);
-        resetLabels();
+        MapFrontiersClient.getOperationService().submitOptimisticRemoveSharedUser(frontier.getId(), user);
     }
 
     private void buttonNewUserPressed() {
@@ -274,17 +270,10 @@ public class SharedAccessPage extends PageScreen {
             return;
         }
 
-        SettingsUserShared userShared = new SettingsUserShared(user, true);
-
-        frontier.addUserShared(userShared);
-        MapFrontiersClient.getOperationService().shareFrontier(frontier.getId(), user);
-
-        UserSharedElement element = new UserSharedElement(font, userShared, canUpdate, true, this::actionChanged);
-        users.addElement(element);
-        users.scrollBottom();
-
-        textNewUser.setValue("");
-        resetLabels();
+        if (MapFrontiersClient.getOperationService().submitOptimisticShareFrontier(frontier.getId(), user)) {
+            users.scrollBottom();
+            textNewUser.setValue("");
+        }
     }
 
     private void clearTextBoxFocus(TextBox textBox) {
@@ -320,24 +309,16 @@ public class SharedAccessPage extends PageScreen {
             return;
         }
 
+        SettingsUserShared desiredUser = new SettingsUserShared(user);
         if (checked) {
-            user.addAction(action);
+            desiredUser.addAction(action);
         } else {
-            user.removeAction(action);
+            desiredUser.removeAction(action);
         }
 
-        if (user.getUser().equals(new SettingsUser(minecraft.player))) {
-            if (action == SettingsUserShared.Action.UpdateSettings) {
-                updateCanUpdate();
-                updateUsers();
-                refreshControlState();
-            }
-
-            frontier.setModified(new Date());
-            MapFrontiersClient.getOperationService().notifyLocalFrontierUpdated(frontier);
+        if (!MapFrontiersClient.getOperationService().submitOptimisticUpdateSharedUser(frontier.getId(), desiredUser)) {
+            updateUsers();
         }
-
-        MapFrontiersClient.getOperationService().updateSharedUser(frontier.getId(), user);
     }
 
     private void updateUsers() {

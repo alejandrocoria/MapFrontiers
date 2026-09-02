@@ -589,7 +589,7 @@ public class CollectionInfoPage extends PageScreen {
     @Override
     public void onClose() {
         if (saveChangesOnClose && hasChanges() && canUpdateCollection()) {
-            MapFrontiersClient.getOperationService().updateCollection(collection);
+            MapFrontiersClient.getOperationService().submitCollectionUpdate(collection);
         }
 
         bannerRenderer.releaseTexture();

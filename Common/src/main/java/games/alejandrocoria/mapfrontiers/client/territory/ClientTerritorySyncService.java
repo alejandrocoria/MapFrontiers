@@ -61,6 +61,7 @@ public class ClientTerritorySyncService {
                                     List<FrontierData> personalFrontiers,
                                     List<CollectionData> globalCollections,
                                     List<CollectionData> personalCollections) {
+        runtime.getOperationService().clearPendingOptimisticUpdates();
         ensureLocalPersonalDataLoadedWithoutRebuild();
 
         List<CollectionData> persistentGlobalCollections = globalCollections.stream()

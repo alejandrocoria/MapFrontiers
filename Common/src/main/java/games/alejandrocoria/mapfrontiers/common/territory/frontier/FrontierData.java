@@ -70,6 +70,7 @@ public class FrontierData {
     protected PathStyle pathStyle;
     protected Date created;
     protected Date modified;
+    private long sharingRevision;
     private boolean syncHashDirty = true;
     private long cachedSyncHash;
     private boolean chunksSyncHashDirty = true;
@@ -101,7 +102,7 @@ public class FrontierData {
         }
         inheritCollectionBanner = other.inheritCollectionBanner;
 
-        usersShared = other.usersShared;
+        usersShared = copyUsersShared(other.usersShared);
 
         vertices.clear();
         vertices.addAll(other.vertices);
@@ -118,6 +119,7 @@ public class FrontierData {
 
         created = other.created;
         modified = other.modified;
+        sharingRevision = other.sharingRevision;
 
         validateTypeAndLifetime(personal, lifetime);
         sanitizeSharedUsers();
@@ -140,7 +142,7 @@ public class FrontierData {
         name2 = other.name2;
         banner = other.banner == null ? null : new BannerData(other.banner);
         inheritCollectionBanner = other.inheritCollectionBanner;
-        usersShared = other.usersShared;
+        usersShared = copyUsersShared(other.usersShared);
         vertices.clear();
         vertices.addAll(other.vertices);
         chunks.clear();
@@ -156,6 +158,7 @@ public class FrontierData {
         created = other.created;
 
         modified = other.modified;
+        sharingRevision = other.sharingRevision;
 
         validateTypeAndLifetime(personal, lifetime);
         sanitizeSharedUsers();
@@ -259,6 +262,7 @@ public class FrontierData {
 
     public void applySharingChange(FrontierSharingChange sharingChange) {
         usersShared = sharingChange.getUsersShared();
+        sharingRevision = sharingChange.getSharingRevision();
         sanitizeSharedUsers();
         invalidateSyncHash();
     }
@@ -646,6 +650,18 @@ public class FrontierData {
         invalidateSyncHash();
     }
 
+    private static @Nullable List<SettingsUserShared> copyUsersShared(@Nullable List<SettingsUserShared> usersShared) {
+        if (usersShared == null) {
+            return null;
+        }
+
+        List<SettingsUserShared> copy = new ArrayList<>(usersShared.size());
+        for (SettingsUserShared userShared : usersShared) {
+            copy.add(new SettingsUserShared(userShared));
+        }
+        return copy;
+    }
+
     public void removeUserShared(SettingsUser user) {
         if (usersShared == null) {
             return;
@@ -838,6 +854,7 @@ public class FrontierData {
         usersShared = null;
         banner = null;
         inheritCollectionBanner = true;
+        sharingRevision = 0L;
 
         id = UUID.fromString(NbtReadHelper.requireString(nbt, "id"));
         color = NbtReadHelper.requireInt(nbt, "color");
@@ -1160,6 +1177,7 @@ public class FrontierData {
         } else {
             modified = null;
         }
+        sharingRevision = buf.readLong();
 
         normalizeDataForMode();
         sanitizeSharedUsers();
@@ -1256,6 +1274,19 @@ public class FrontierData {
             buf.writeBoolean(true);
             buf.writeLong(modified.getTime());
         }
+        buf.writeLong(sharingRevision);
+    }
+
+    public long getSharingRevision() {
+        return sharingRevision;
+    }
+
+    public void setSharingRevision(long sharingRevision) {
+        this.sharingRevision = sharingRevision;
+    }
+
+    public void advanceSharingRevision() {
+        ++sharingRevision;
     }
 
     private void applyShapeData(FrontierShape frontierShape, List<BlockPos> vertices, Set<ChunkPos> chunks, List<BlockPos> points) {

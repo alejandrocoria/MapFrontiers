@@ -38,12 +38,18 @@ public class SettingsUserShared {
         this.pending = pending;
     }
 
+    public SettingsUserShared(SettingsUserShared other) {
+        user = new SettingsUser(other.user);
+        actions = copyActions(other.actions);
+        pending = other.pending;
+    }
+
     public SettingsUser getUser() {
         return user;
     }
 
     public void setActions(Set<Action> actions) {
-        this.actions = actions;
+        this.actions = copyActions(actions);
     }
 
     public void addAction(Action action) {
@@ -60,6 +66,10 @@ public class SettingsUserShared {
 
     public Set<Action> getActions() {
         return actions;
+    }
+
+    private static Set<Action> copyActions(Set<Action> actions) {
+        return actions.isEmpty() ? EnumSet.noneOf(Action.class) : EnumSet.copyOf(actions);
     }
 
     public void setPending(boolean pending) {

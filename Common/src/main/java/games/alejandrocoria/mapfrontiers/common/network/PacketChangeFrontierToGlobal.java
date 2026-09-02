@@ -4,6 +4,7 @@ import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
+import games.alejandrocoria.mapfrontiers.client.network.ClientPacketDelivery;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationResult;
 import net.minecraft.network.FriendlyByteBuf;
@@ -73,7 +74,8 @@ public class PacketChangeFrontierToGlobal implements CustomPacketPayload {
             if (!MapFrontiersClient.isJourneyMapPluginAvailable()) {
                 return;
             }
-            MapFrontiersClient.getOperationService().applyFrontierChangeToGlobal(message.frontierID, message.modified);
+            ClientPacketDelivery.submit(() -> MapFrontiersClient.getOperationService()
+                    .applyFrontierChangeToGlobal(message.frontierID, message.modified));
         }
     }
 }

@@ -4,6 +4,7 @@ import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
+import games.alejandrocoria.mapfrontiers.client.network.ClientPacketDelivery;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -46,8 +47,8 @@ public class PacketFrontierResync implements CustomPacketPayload {
             if (!MapFrontiersClient.isJourneyMapPluginAvailable()) {
                 return;
             }
-
-            MapFrontiersClient.getOperationService().applyFrontierResync(ctx.message().frontier);
+            PacketFrontierResync message = ctx.message();
+            ClientPacketDelivery.submit(() -> MapFrontiersClient.getOperationService().applyFrontierResync(message.frontier));
         }
     }
 }

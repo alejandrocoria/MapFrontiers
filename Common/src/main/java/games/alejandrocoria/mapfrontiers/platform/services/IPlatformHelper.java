@@ -8,4 +8,5 @@ public interface IPlatformHelper {
     String getModVersion();
     @Nullable String getModDisplayName(String modId);
     Path getConfigDirectory();
+    boolean isDevelopmentEnvironment();
 }

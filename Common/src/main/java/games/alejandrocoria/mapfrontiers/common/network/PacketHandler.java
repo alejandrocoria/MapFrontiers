@@ -9,8 +9,10 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
+import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class PacketHandler {
@@ -27,6 +29,7 @@ public class PacketHandler {
         CommonNetworkMod.registerPacket(PacketFrontierSharingUpdated.TYPE, PacketFrontierSharingUpdated.STREAM_CODEC, PacketFrontierSharingUpdated::handle);
         CommonNetworkMod.registerPacket(PacketSettingsProfile.TYPE, PacketSettingsProfile.STREAM_CODEC, PacketSettingsProfile::handle);
         CommonNetworkMod.registerPacket(PacketPersonalFrontierShared.TYPE, PacketPersonalFrontierShared.STREAM_CODEC, PacketPersonalFrontierShared::handle);
+        CommonNetworkMod.registerPacket(PacketFrontierSettings.TYPE, PacketFrontierSettings.STREAM_CODEC, PacketFrontierSettings::handle);
 
         // client to server
         CommonNetworkMod.registerPacket(PacketPersonalFrontier.TYPE, PacketPersonalFrontier.STREAM_CODEC, PacketPersonalFrontier::handle);
@@ -39,20 +42,25 @@ public class PacketHandler {
         CommonNetworkMod.registerPacket(PacketUpdateFrontier.TYPE, PacketUpdateFrontier.STREAM_CODEC, PacketUpdateFrontier::handle);
         CommonNetworkMod.registerPacket(PacketRequestFrontierResync.TYPE, PacketRequestFrontierResync.STREAM_CODEC, PacketRequestFrontierResync::handle);
         CommonNetworkMod.registerPacket(PacketRequestFrontierSettings.TYPE, PacketRequestFrontierSettings.STREAM_CODEC, PacketRequestFrontierSettings::handle);
+        CommonNetworkMod.registerPacket(PacketUpdateFrontierSettings.TYPE, PacketUpdateFrontierSettings.STREAM_CODEC, PacketUpdateFrontierSettings::handle);
         CommonNetworkMod.registerPacket(PacketSharePersonalFrontier.TYPE, PacketSharePersonalFrontier.STREAM_CODEC, PacketSharePersonalFrontier::handle);
         CommonNetworkMod.registerPacket(PacketRemoveSharedUserPersonalFrontier.TYPE, PacketRemoveSharedUserPersonalFrontier.STREAM_CODEC, PacketRemoveSharedUserPersonalFrontier::handle);
         CommonNetworkMod.registerPacket(PacketUpdateSharedUserPersonalFrontier.TYPE, PacketUpdateSharedUserPersonalFrontier.STREAM_CODEC, PacketUpdateSharedUserPersonalFrontier::handle);
 
         // both
         CommonNetworkMod.registerPacket(PacketHandshake.TYPE, PacketHandshake.STREAM_CODEC, PacketHandshake::handle);
-        CommonNetworkMod.registerPacket(PacketFrontierSettings.TYPE, PacketFrontierSettings.STREAM_CODEC, PacketFrontierSettings::handle);
         CommonNetworkMod.registerPacket(PacketChangeFrontierToGlobal.TYPE, PacketChangeFrontierToGlobal.STREAM_CODEC, PacketChangeFrontierToGlobal::handle);
         CommonNetworkMod.registerPacket(PacketChangeFrontierToPersonal.TYPE, PacketChangeFrontierToPersonal.STREAM_CODEC, PacketChangeFrontierToPersonal::handle);
     }
 
     public static void sendToUsersWithAccess(CustomPacketPayload message, FrontierData frontier, MinecraftServer server) {
+        sendToUsersWithAccessExcept(message, frontier, server, null);
+    }
+
+    public static void sendToUsersWithAccessExcept(CustomPacketPayload message, FrontierData frontier,
+                                                   MinecraftServer server, @Nullable UUID excludedUserId) {
         ServerPlayer player = server.getPlayerList().getPlayer(frontier.getOwner().uuid);
-        if (player != null) {
+        if (player != null && !player.getUUID().equals(excludedUserId)) {
             sendTo(message, player);
         }
 
@@ -60,7 +68,7 @@ public class PacketHandler {
             for (SettingsUserShared userShared : frontier.getUsersShared()) {
                 if (!userShared.isPending()) {
                     player = server.getPlayerList().getPlayer(userShared.getUser().uuid);
-                    if (player != null) {
+                    if (player != null && !player.getUUID().equals(excludedUserId)) {
                         sendTo(message, player);
                     }
                 }

@@ -40,13 +40,22 @@ public class FrontierSettings {
     private final SettingsGroup owners;
     private final SettingsGroup everyone;
     private List<SettingsGroup> customGroups;
-    private int changeCounter = 1;
 
     public FrontierSettings() {
         OPs = new SettingsGroup("OPs", true);
         owners = new SettingsGroup("Owner", true);
         everyone = new SettingsGroup("Everyone", true);
         customGroups = new ArrayList<>();
+    }
+
+    public FrontierSettings(FrontierSettings other) {
+        OPs = new SettingsGroup(other.OPs);
+        owners = new SettingsGroup(other.owners);
+        everyone = new SettingsGroup(other.everyone);
+        customGroups = new ArrayList<>(other.customGroups.size());
+        for (SettingsGroup group : other.customGroups) {
+            customGroups.add(new SettingsGroup(group));
+        }
     }
 
     public void resetToDefault() {
@@ -266,16 +275,24 @@ public class FrontierSettings {
         return actions;
     }
 
-    public void setChangeCounter(int changeCounter) {
-        this.changeCounter = changeCounter;
+    public boolean hasSameFunctionalState(FrontierSettings other) {
+        return OPs.hasSameFunctionalState(other.OPs)
+                && owners.hasSameFunctionalState(other.owners)
+                && everyone.hasSameFunctionalState(other.everyone)
+                && groupsHaveSameFunctionalState(customGroups, other.customGroups);
     }
 
-    public int getChangeCounter() {
-        return changeCounter;
-    }
+    private static boolean groupsHaveSameFunctionalState(List<SettingsGroup> first, List<SettingsGroup> second) {
+        if (first.size() != second.size()) {
+            return false;
+        }
 
-    public void advanceChangeCounter() {
-        ++changeCounter;
+        for (int i = 0; i < first.size(); ++i) {
+            if (!first.get(i).hasSameFunctionalState(second.get(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void ensureUpdateSettingsAction() {

@@ -27,6 +27,11 @@ public class SettingsUser implements Comparable<SettingsUser> {
         uuid = player.getUUID();
     }
 
+    public SettingsUser(SettingsUser other) {
+        username = other.username;
+        uuid = other.uuid;
+    }
+
     public boolean isEmpty() {
         return uuid == null && StringUtils.isBlank(username);
     }

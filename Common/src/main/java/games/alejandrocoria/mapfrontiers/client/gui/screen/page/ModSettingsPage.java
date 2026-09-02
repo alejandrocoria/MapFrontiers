@@ -30,12 +30,14 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.FrontierVisibi
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.NewCollectionDefaultsDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.NewFrontierDefaultsDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.util.DefaultValueBinding;
+import games.alejandrocoria.mapfrontiers.client.settings.PendingOptimisticSettingsUpdates;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.config.BooleanConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
-import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSettings;
+import games.alejandrocoria.mapfrontiers.common.network.OperationResolution;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketRequestFrontierSettings;
+import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateFrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings.Action;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
@@ -119,6 +121,8 @@ public class ModSettingsPage extends PageScreen {
     private static final Component UPDATE_SETTINGS_LABEL = Component.translatable("mapfrontiers.update_settings");
     private static final Component SHARE_PERSONAL_FRONTIER_LABEL = Component.translatable("mapfrontiers.share_personal_frontier");
     private static final Component DONE_LABEL = Component.translatable("gui.done");
+    private static final Component SETTINGS_RELOADED_LABEL = Component.translatable("mapfrontiers.settings_server_state_reloaded");
+    private static final Component SETTINGS_PERMISSION_LOST_LABEL = Component.translatable("mapfrontiers.settings_permission_lost");
     private static final Tooltip ADD_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.add.tooltip"));
     private static final int BUTTON_HORIZONTAL_PADDING = 8;
     private static final int WIDE_LINK_EXTRA_WIDTH = 200;
@@ -135,10 +139,15 @@ public class ModSettingsPage extends PageScreen {
     private static final int GROUPS_VERTICAL_MARGIN = 120;
     private static final int USERS_VERTICAL_MARGIN = 159;
     private static final int ACTIONS_VERTICAL_MARGIN = 138;
+    private static final int SETTINGS_RELOAD_NOTICE_TICKS = 100;
 
     private final boolean showKeyHint;
 
     private FrontierSettings settings;
+    private long settingsRevision = PacketRequestFrontierSettings.UNKNOWN_REVISION;
+    private final PendingOptimisticSettingsUpdates pendingOptimisticSettingsUpdates = new PendingOptimisticSettingsUpdates();
+    private Component settingsReloadNotice = SETTINGS_RELOADED_LABEL;
+    private int settingsReloadNoticeTicks;
     private TabbedBox tabbedBox;
     private SimpleButton buttonFrontierAppearance;
     private SimpleButton buttonCollectionAppearance;
@@ -231,7 +240,11 @@ public class ModSettingsPage extends PageScreen {
     }
 
     private void onSettingsProfileUpdated() {
+        boolean couldEditGroups = canEditGroups;
         resolveInitialState();
+        if (couldEditGroups && !canEditGroups && settingsReloadNoticeTicks > 0) {
+            settingsReloadNotice = SETTINGS_PERMISSION_LOST_LABEL;
+        }
         refreshPermissionsState();
     }
 
@@ -579,7 +592,7 @@ public class ModSettingsPage extends PageScreen {
 
         groups.removeElement(element);
         settings.removeCustomGroup(((GroupElement) element).getGroup());
-        sendChangesToServer();
+        submitOptimisticSettingsUpdate();
     }
 
     private void onUserDeletePressed(ScrollElement element) {
@@ -603,7 +616,7 @@ public class ModSettingsPage extends PageScreen {
     private void deleteUser(SettingsGroup group, ScrollElement element) {
         users.removeElement(element);
         group.removeUser(((UserElement) element).getUser());
-        sendChangesToServer();
+        submitOptimisticSettingsUpdate();
     }
 
     private void onGroupNameLostFocus(String value) {
@@ -611,7 +624,7 @@ public class ModSettingsPage extends PageScreen {
             GroupElement groupElement = (GroupElement) groups.getSelectedElement();
             if (groupElement != null) {
                 groupElement.getGroup().setName(value);
-                sendChangesToServer();
+                submitOptimisticSettingsUpdate();
             }
         }
     }
@@ -701,6 +714,10 @@ public class ModSettingsPage extends PageScreen {
 
     @Override
     public void tick() {
+        if (settingsReloadNoticeTicks > 0) {
+            --settingsReloadNoticeTicks;
+        }
+
         if (!canEditGroups || settings == null) {
             return;
         }
@@ -709,7 +726,7 @@ public class ModSettingsPage extends PageScreen {
 
         if (ticksSinceLastUpdate >= 100) {
             ticksSinceLastUpdate = 0;
-            PacketHandler.sendToServer(new PacketRequestFrontierSettings(settings.getChangeCounter()));
+            PacketHandler.sendToServer(new PacketRequestFrontierSettings(settingsRevision));
 
             ClientPacketListener handler = minecraft.getConnection();
             if (handler == null) {
@@ -753,7 +770,7 @@ public class ModSettingsPage extends PageScreen {
     protected void renderScaledBackgroundScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         tabbedBox.renderBackground(graphics, mouseX, mouseY, partialTicks);
 
-        if (tabSelected == Tab.Credits || tabSelected == Tab.General) {
+        if (settingsReloadNoticeTicks == 0 && (tabSelected == Tab.Credits || tabSelected == Tab.General)) {
             int y = tabbedBox.getY() + tabbedBox.getHeight() - 19;
             graphics.text(font, CREDITS_TRANSLATION_LABEL, tabbedBox.getX() + 10, y, ColorConstants.TEXT_HIGHLIGHT);
             graphics.text(font, VERSION_LABEL, tabbedBox.getX() + tabbedBox.getWidth() - font.width(VERSION_LABEL) - 10, y, ColorConstants.TEXT_HIGHLIGHT);
@@ -763,6 +780,15 @@ public class ModSettingsPage extends PageScreen {
                     graphics.centeredText(font, Component.translatable(KEY_HINT_KEY, key), tabbedBox.getX() + tabbedBox.getWidth() / 2, y, ColorConstants.TEXT_HIGHLIGHT);
                 }
             }
+        }
+    }
+
+    @Override
+    protected void renderScaledScreen(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        if (settingsReloadNoticeTicks > 0) {
+            int y = tabbedBox.getY() + tabbedBox.getHeight() - 19;
+            graphics.centeredText(font, settingsReloadNotice.copy().withStyle(ColorConstants.WARNING),
+                    tabbedBox.getX() + tabbedBox.getWidth() / 2, y, ColorConstants.TEXT_HIGHLIGHT);
         }
     }
 
@@ -1002,7 +1028,7 @@ public class ModSettingsPage extends PageScreen {
             groupClicked(element);
             groupsActions.scrollBottom();
 
-            sendChangesToServer();
+            submitOptimisticSettingsUpdate();
         }
     }
 
@@ -1049,7 +1075,7 @@ public class ModSettingsPage extends PageScreen {
 
         textNewUser.setValue("");
 
-        sendChangesToServer();
+        submitOptimisticSettingsUpdate();
     }
 
     private void clearTextBoxFocus(TextBox textBox) {
@@ -1060,6 +1086,7 @@ public class ModSettingsPage extends PageScreen {
 
     @Override
     public void onClose() {
+        pendingOptimisticSettingsUpdates.clear();
         ClientGlobalEvents.postUpdatedConfigEvent();
         MapFrontiersClient.setLastSettingsTab(tabSelected);
         if (subscribeToSettingsProfileEvents) {
@@ -1069,18 +1096,31 @@ public class ModSettingsPage extends PageScreen {
         super.onClose();
     }
 
-    public void setFrontierSettings(FrontierSettings settings) {
-        this.settings = settings;
+    public void setFrontierSettings(FrontierSettings settings, long settingsRevision, long requestId,
+                                    OperationResolution resolution) {
+        PendingOptimisticSettingsUpdates.Reconciliation reconciliation = pendingOptimisticSettingsUpdates.reconcile(
+                settings, settingsRevision, requestId, resolution, this.settings, this.settingsRevision,
+                MapFrontiersClient::nextRequestId);
+        if (reconciliation.ignored()) {
+            return;
+        }
+
+        this.settings = reconciliation.visibleSnapshot();
+        this.settingsRevision = reconciliation.authoritativeRevision();
+        if (reconciliation.discardedLocalChanges()) {
+            settingsReloadNotice = canEditGroups ? SETTINGS_RELOADED_LABEL : SETTINGS_PERMISSION_LOST_LABEL;
+            settingsReloadNoticeTicks = SETTINGS_RELOAD_NOTICE_TICKS;
+        }
 
         GroupElement selectedElement = (GroupElement) groups.getSelectedElement();
         int selectedIndex = groups.getSelectedIndex();
 
         groups.removeAll();
-        groups.addElement(new GroupElement(font, settings.getOPsGroup()));
-        groups.addElement(new GroupElement(font, settings.getOwnersGroup()));
-        groups.addElement(new GroupElement(font, settings.getEveryoneGroup()));
+        groups.addElement(new GroupElement(font, this.settings.getOPsGroup()));
+        groups.addElement(new GroupElement(font, this.settings.getOwnersGroup()));
+        groups.addElement(new GroupElement(font, this.settings.getEveryoneGroup()));
 
-        for (SettingsGroup group : settings.getCustomGroups()) {
+        for (SettingsGroup group : this.settings.getCustomGroups()) {
             groups.addElement(new GroupElement(font, group));
         }
 
@@ -1103,6 +1143,10 @@ public class ModSettingsPage extends PageScreen {
 
         if (groups.getSelectedElement() != null) {
             groupClicked((GroupElement) groups.getSelectedElement());
+        }
+
+        if (reconciliation.nextOutbound() != null) {
+            sendSettingsUpdate(reconciliation.nextOutbound());
         }
     }
 
@@ -1139,11 +1183,19 @@ public class ModSettingsPage extends PageScreen {
         updateUsers();
     }
 
-    private void sendChangesToServer() {
+    private void submitOptimisticSettingsUpdate() {
         if (settings != null) {
-            settings.advanceChangeCounter();
-            PacketHandler.sendToServer(new PacketFrontierSettings(settings));
+            PendingOptimisticSettingsUpdates.Outbound outbound = pendingOptimisticSettingsUpdates.submit(
+                    settings, settingsRevision, MapFrontiersClient::nextRequestId);
+            if (outbound != null) {
+                sendSettingsUpdate(outbound);
+            }
         }
+    }
+
+    private void sendSettingsUpdate(PendingOptimisticSettingsUpdates.Outbound outbound) {
+        PacketHandler.sendToServer(new PacketUpdateFrontierSettings(outbound.snapshot(), outbound.baseRevision(),
+                outbound.requestId()));
     }
 
     private void updateUsers() {
@@ -1179,7 +1231,7 @@ public class ModSettingsPage extends PageScreen {
             group.removeAction(action);
         }
 
-        sendChangesToServer();
+        submitOptimisticSettingsUpdate();
     }
 
     private boolean canAddNewUser() {

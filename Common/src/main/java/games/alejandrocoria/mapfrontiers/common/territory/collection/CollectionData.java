@@ -34,6 +34,7 @@ public class CollectionData {
     protected @Nullable CopiedFromInfo copiedFrom;
     protected @Nullable Date created;
     protected @Nullable Date modified;
+    private long collectionRevision;
 
     public CollectionData() {
         id = new UUID(0, 0);
@@ -52,6 +53,7 @@ public class CollectionData {
         copiedFrom = other.copiedFrom == null ? null : new CopiedFromInfo(other.copiedFrom);
         created = other.created;
         modified = other.modified;
+        collectionRevision = other.collectionRevision;
 
         validateTypeAndLifetime(personal, lifetime);
     }
@@ -73,12 +75,14 @@ public class CollectionData {
         copiedFrom = other.copiedFrom == null ? null : new CopiedFromInfo(other.copiedFrom);
         created = other.created;
         modified = other.modified;
+        collectionRevision = other.collectionRevision;
 
         validateTypeAndLifetime(personal, lifetime);
     }
 
     public boolean readFromNBT(CompoundTag nbt, int version) {
         boolean changedDuringLoad = false;
+        collectionRevision = 0L;
         id = UUID.fromString(NbtReadHelper.requireString(nbt, "id"));
         personal = nbt.getBooleanOr("personal", true);
         lifetime = readLifetimeFromNbt(nbt);
@@ -200,6 +204,7 @@ public class CollectionData {
         } else {
             modified = null;
         }
+        collectionRevision = buf.readLong();
     }
 
     public void toBytes(FriendlyByteBuf buf) {
@@ -245,6 +250,7 @@ public class CollectionData {
             buf.writeBoolean(true);
             buf.writeLong(modified.getTime());
         }
+        buf.writeLong(collectionRevision);
     }
 
     public UUID getId() {
@@ -361,6 +367,38 @@ public class CollectionData {
         return modified;
     }
 
+    public long getCollectionRevision() {
+        return collectionRevision;
+    }
+
+    public void setCollectionRevision(long collectionRevision) {
+        this.collectionRevision = collectionRevision;
+    }
+
+    public void advanceCollectionRevision() {
+        ++collectionRevision;
+    }
+
+    public boolean hasSameEditableState(CollectionData other) {
+        return name.equals(other.name)
+                && color == other.color
+                && visibilityData.equals(other.visibilityData)
+                && Objects.equals(banner, other.banner);
+    }
+
+    public boolean hasSameSynchronizedState(CollectionData other) {
+        return id.equals(other.id)
+                && personal == other.personal
+                && lifetime == other.lifetime
+                && usersHaveSameState(owner, other.owner)
+                && hasSameEditableState(other)
+                && Objects.equals(sourcePluginId, other.sourcePluginId)
+                && copiedFromHasSameState(other)
+                && Objects.equals(created, other.created)
+                && Objects.equals(modified, other.modified)
+                && collectionRevision == other.collectionRevision;
+    }
+
     public boolean wasCopied() {
         return copiedFrom != null;
     }
@@ -395,6 +433,18 @@ public class CollectionData {
             return owner;
         }
         return copiedFrom.getUser();
+    }
+
+    private boolean copiedFromHasSameState(CollectionData other) {
+        if (wasCopied() != other.wasCopied()) {
+            return false;
+        }
+        return !wasCopied() || getCopiedFromId().equals(other.getCopiedFromId())
+                && usersHaveSameState(getCopiedFromUser(), other.getCopiedFromUser());
+    }
+
+    private static boolean usersHaveSameState(SettingsUser first, SettingsUser second) {
+        return Objects.equals(first.username, second.username) && Objects.equals(first.uuid, second.uuid);
     }
 
     private static void validateTypeAndLifetime(boolean personal, TerritoryLifetime lifetime) {

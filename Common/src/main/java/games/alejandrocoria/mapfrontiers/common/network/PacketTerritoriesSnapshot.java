@@ -4,6 +4,7 @@ import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
+import games.alejandrocoria.mapfrontiers.client.network.ClientPacketDelivery;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import net.minecraft.network.FriendlyByteBuf;
@@ -128,11 +129,13 @@ public class PacketTerritoriesSnapshot implements CustomPacketPayload {
     public static void handle(PacketContext<PacketTerritoriesSnapshot> ctx) {
         if (Side.CLIENT.equals(ctx.side())) {
             PacketTerritoriesSnapshot message = ctx.message();
-            MapFrontiers.LOGGER.debug("Handling PacketTerritoriesSnapshot. globalFrontiers={}, personalFrontiers={}, globalCollections={}, personalCollections={}",
-                    message.globalFrontiers.size(), message.personalFrontiers.size(),
-                    message.globalCollections.size(), message.personalCollections.size());
-            MapFrontiersClient.applyTerritoriesSnapshot(message.globalFrontiers, message.personalFrontiers,
-                    message.globalCollections, message.personalCollections);
+            ClientPacketDelivery.submit(() -> {
+                MapFrontiers.LOGGER.debug("Handling PacketTerritoriesSnapshot. globalFrontiers={}, personalFrontiers={}, globalCollections={}, personalCollections={}",
+                        message.globalFrontiers.size(), message.personalFrontiers.size(),
+                        message.globalCollections.size(), message.personalCollections.size());
+                MapFrontiersClient.applyTerritoriesSnapshot(message.globalFrontiers, message.personalFrontiers,
+                        message.globalCollections, message.personalCollections);
+            });
         }
     }
 }
