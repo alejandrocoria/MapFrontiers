@@ -23,10 +23,15 @@ public class PacketUpdateSharedUserPersonalFrontier {
 
     private UUID frontierID;
     private final SettingsUserShared userShared;
+    private long baseRevision;
+    private long requestId;
 
-    public PacketUpdateSharedUserPersonalFrontier(UUID frontierID, SettingsUserShared user) {
+    public PacketUpdateSharedUserPersonalFrontier(UUID frontierID, SettingsUserShared user,
+                                                  long baseRevision, long requestId) {
         this.frontierID = frontierID;
-        userShared = user;
+        userShared = new SettingsUserShared(user);
+        this.baseRevision = baseRevision;
+        this.requestId = requestId;
     }
 
     public static CustomPacketPayload.Type<CustomPacketPayload> type() {
@@ -38,12 +43,16 @@ public class PacketUpdateSharedUserPersonalFrontier {
         if (buf.readableBytes() > 1) {
             this.frontierID = UUIDHelper.fromBytes(buf);
             this.userShared.fromBytes(buf);
+            baseRevision = buf.readLong();
+            requestId = buf.readLong();
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
         UUIDHelper.toBytes(buf, frontierID);
         userShared.toBytes(buf);
+        buf.writeLong(baseRevision);
+        buf.writeLong(requestId);
     }
 
     public static void handle(PacketContext<PacketUpdateSharedUserPersonalFrontier> ctx) {
@@ -58,7 +67,8 @@ public class PacketUpdateSharedUserPersonalFrontier {
             }
 
             ServerTerritoryOperationResult result = MapFrontiers.getServerRuntime().getShareService()
-                    .updateSharedUserPersonalFrontier(player, message.frontierID, message.userShared);
+                    .updateSharedUserPersonalFrontier(player, message.frontierID, message.userShared,
+                            message.baseRevision, message.requestId);
             result.dispatchNetworkActions();
         }
     }

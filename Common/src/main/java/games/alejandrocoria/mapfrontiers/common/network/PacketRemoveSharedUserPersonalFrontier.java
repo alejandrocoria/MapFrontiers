@@ -23,10 +23,15 @@ public class PacketRemoveSharedUserPersonalFrontier {
 
     private UUID frontierID;
     private final SettingsUser targetUser;
+    private long baseRevision;
+    private long requestId;
 
-    public PacketRemoveSharedUserPersonalFrontier(UUID frontierID, SettingsUser user) {
+    public PacketRemoveSharedUserPersonalFrontier(UUID frontierID, SettingsUser user,
+                                                  long baseRevision, long requestId) {
         this.frontierID = frontierID;
-        targetUser = user;
+        targetUser = new SettingsUser(user);
+        this.baseRevision = baseRevision;
+        this.requestId = requestId;
     }
 
     public static CustomPacketPayload.Type<CustomPacketPayload> type() {
@@ -38,12 +43,16 @@ public class PacketRemoveSharedUserPersonalFrontier {
         if (buf.readableBytes() > 1) {
             this.frontierID = UUIDHelper.fromBytes(buf);
             this.targetUser.fromBytes(buf);
+            baseRevision = buf.readLong();
+            requestId = buf.readLong();
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
         UUIDHelper.toBytes(buf, frontierID);
         targetUser.toBytes(buf);
+        buf.writeLong(baseRevision);
+        buf.writeLong(requestId);
     }
 
     public static void handle(PacketContext<PacketRemoveSharedUserPersonalFrontier> ctx) {
@@ -58,7 +67,8 @@ public class PacketRemoveSharedUserPersonalFrontier {
             }
 
             ServerTerritoryOperationResult result = MapFrontiers.getServerRuntime().getShareService()
-                    .removeSharedUserPersonalFrontier(player, message.frontierID, message.targetUser);
+                    .removeSharedUserPersonalFrontier(player, message.frontierID, message.targetUser,
+                            message.baseRevision, message.requestId);
             result.dispatchNetworkActions();
         }
     }

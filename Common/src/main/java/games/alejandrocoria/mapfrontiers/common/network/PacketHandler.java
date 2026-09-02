@@ -8,8 +8,10 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
+import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class PacketHandler {
@@ -26,6 +28,7 @@ public class PacketHandler {
         CommonNetworkMod.registerPacket(PacketFrontierSharingUpdated.type(), PacketFrontierSharingUpdated.class, PacketFrontierSharingUpdated.STREAM_CODEC, PacketFrontierSharingUpdated::handle);
         CommonNetworkMod.registerPacket(PacketSettingsProfile.type(), PacketSettingsProfile.class, PacketSettingsProfile.STREAM_CODEC, PacketSettingsProfile::handle);
         CommonNetworkMod.registerPacket(PacketPersonalFrontierShared.type(), PacketPersonalFrontierShared.class, PacketPersonalFrontierShared.STREAM_CODEC, PacketPersonalFrontierShared::handle);
+        CommonNetworkMod.registerPacket(PacketFrontierSettings.type(), PacketFrontierSettings.class, PacketFrontierSettings.STREAM_CODEC, PacketFrontierSettings::handle);
 
         // client to server
         CommonNetworkMod.registerPacket(PacketPersonalFrontier.type(), PacketPersonalFrontier.class, PacketPersonalFrontier.STREAM_CODEC, PacketPersonalFrontier::handle);
@@ -38,20 +41,24 @@ public class PacketHandler {
         CommonNetworkMod.registerPacket(PacketUpdateFrontier.type(), PacketUpdateFrontier.class, PacketUpdateFrontier.STREAM_CODEC, PacketUpdateFrontier::handle);
         CommonNetworkMod.registerPacket(PacketRequestFrontierResync.type(), PacketRequestFrontierResync.class, PacketRequestFrontierResync.STREAM_CODEC, PacketRequestFrontierResync::handle);
         CommonNetworkMod.registerPacket(PacketRequestFrontierSettings.type(), PacketRequestFrontierSettings.class, PacketRequestFrontierSettings.STREAM_CODEC, PacketRequestFrontierSettings::handle);
+        CommonNetworkMod.registerPacket(PacketUpdateFrontierSettings.type(), PacketUpdateFrontierSettings.class, PacketUpdateFrontierSettings.STREAM_CODEC, PacketUpdateFrontierSettings::handle);
         CommonNetworkMod.registerPacket(PacketSharePersonalFrontier.type(), PacketSharePersonalFrontier.class, PacketSharePersonalFrontier.STREAM_CODEC, PacketSharePersonalFrontier::handle);
         CommonNetworkMod.registerPacket(PacketRemoveSharedUserPersonalFrontier.type(), PacketRemoveSharedUserPersonalFrontier.class, PacketRemoveSharedUserPersonalFrontier.STREAM_CODEC, PacketRemoveSharedUserPersonalFrontier::handle);
         CommonNetworkMod.registerPacket(PacketUpdateSharedUserPersonalFrontier.type(), PacketUpdateSharedUserPersonalFrontier.class, PacketUpdateSharedUserPersonalFrontier.STREAM_CODEC, PacketUpdateSharedUserPersonalFrontier::handle);
 
         // both
         CommonNetworkMod.registerPacket(PacketHandshake.type(), PacketHandshake.class, PacketHandshake.STREAM_CODEC, PacketHandshake::handle);
-        CommonNetworkMod.registerPacket(PacketFrontierSettings.type(), PacketFrontierSettings.class, PacketFrontierSettings.STREAM_CODEC, PacketFrontierSettings::handle);
         CommonNetworkMod.registerPacket(PacketChangeFrontierToGlobal.type(), PacketChangeFrontierToGlobal.class, PacketChangeFrontierToGlobal.STREAM_CODEC, PacketChangeFrontierToGlobal::handle);
         CommonNetworkMod.registerPacket(PacketChangeFrontierToPersonal.type(), PacketChangeFrontierToPersonal.class, PacketChangeFrontierToPersonal.STREAM_CODEC, PacketChangeFrontierToPersonal::handle);
     }
 
     public static <MSG> void sendToUsersWithAccess(MSG message, FrontierData frontier, MinecraftServer server) {
+        sendToUsersWithAccessExcept(message, frontier, server, null);
+    }
+
+    public static <MSG> void sendToUsersWithAccessExcept(MSG message, FrontierData frontier, MinecraftServer server, @Nullable UUID excludedUserId) {
         ServerPlayer player = server.getPlayerList().getPlayer(frontier.getOwner().uuid);
-        if (player != null) {
+        if (player != null && !player.getUUID().equals(excludedUserId)) {
             sendTo(message, player);
         }
 
@@ -59,7 +66,7 @@ public class PacketHandler {
             for (SettingsUserShared userShared : frontier.getUsersShared()) {
                 if (!userShared.isPending()) {
                     player = server.getPlayerList().getPlayer(userShared.getUser().uuid);
-                    if (player != null) {
+                    if (player != null && !player.getUUID().equals(excludedUserId)) {
                         sendTo(message, player);
                     }
                 }

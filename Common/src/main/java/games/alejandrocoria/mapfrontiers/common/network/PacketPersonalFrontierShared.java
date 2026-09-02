@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.client.network.ClientPacketDelivery;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
@@ -66,37 +67,41 @@ public class PacketPersonalFrontierShared {
 
     public static void handle(PacketContext<PacketPersonalFrontierShared> ctx) {
         if (Side.CLIENT.equals(ctx.side())) {
-            LocalPlayer player = Minecraft.getInstance().player;
-            if (player == null) {
-                return;
-            }
-
             PacketPersonalFrontierShared message = ctx.message();
-            String frontierName;
-            if (message.name1.isEmpty() && message.name2.isEmpty()) {
-                frontierName = "Unnamed Frontier";
-            } else if (message.name1.isEmpty()) {
-                frontierName = message.name2;
-            } else if (message.name2.isEmpty()) {
-                frontierName = message.name1;
-            } else {
-                frontierName = message.name1 + " " + message.name2;
-            }
-
-            MutableComponent button = Component.literal(frontierName);
-            button.withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to accept or use command /mfaccept " + message.shareMessageID))));
-            button.withStyle(style -> style.withBold(true));
-            button.withStyle(style -> style.withClickEvent(new ClickEvent.RunCommand("/mapfrontiersaccept " + message.shareMessageID)));
-
-            MutableComponent text = Component.literal(SettingsUserFormatter.getDisplayName(message.playerSharing, "User not found") + " ");
-            if (message.playerSharing.equals(message.owner)) {
-                text.append("want to share a frontier with you: ");
-            } else {
-                text.append("want to share a frontier of " + SettingsUserFormatter.getDisplayName(message.owner, "User not found") + " with you: ");
-            }
-
-            text.append(button);
-            player.sendSystemMessage(text);
+            ClientPacketDelivery.submit(() -> applyClient(message));
         }
+    }
+
+    private static void applyClient(PacketPersonalFrontierShared message) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player == null) {
+            return;
+        }
+
+        String frontierName;
+        if (message.name1.isEmpty() && message.name2.isEmpty()) {
+            frontierName = "Unnamed Frontier";
+        } else if (message.name1.isEmpty()) {
+            frontierName = message.name2;
+        } else if (message.name2.isEmpty()) {
+            frontierName = message.name1;
+        } else {
+            frontierName = message.name1 + " " + message.name2;
+        }
+
+        MutableComponent button = Component.literal(frontierName);
+        button.withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to accept or use command /mfaccept " + message.shareMessageID))));
+        button.withStyle(style -> style.withBold(true));
+        button.withStyle(style -> style.withClickEvent(new ClickEvent.RunCommand("/mapfrontiersaccept " + message.shareMessageID)));
+
+        MutableComponent text = Component.literal(SettingsUserFormatter.getDisplayName(message.playerSharing, "User not found") + " ");
+        if (message.playerSharing.equals(message.owner)) {
+            text.append("want to share a frontier with you: ");
+        } else {
+            text.append("want to share a frontier of " + SettingsUserFormatter.getDisplayName(message.owner, "User not found") + " with you: ");
+        }
+
+        text.append(button);
+        player.sendSystemMessage(text);
     }
 }

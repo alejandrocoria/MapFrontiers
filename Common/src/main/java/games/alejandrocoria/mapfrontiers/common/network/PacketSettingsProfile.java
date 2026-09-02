@@ -4,6 +4,7 @@ import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
+import games.alejandrocoria.mapfrontiers.client.network.ClientPacketDelivery;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -41,7 +42,8 @@ public class PacketSettingsProfile {
 
     public static void handle(PacketContext<PacketSettingsProfile> ctx) {
         if (Side.CLIENT.equals(ctx.side())) {
-            MapFrontiersClient.receiveSettingsProfile(ctx.message().profile);
+            PacketSettingsProfile message = ctx.message();
+            ClientPacketDelivery.submit(() -> MapFrontiersClient.receiveSettingsProfile(message.profile));
         }
     }
 }

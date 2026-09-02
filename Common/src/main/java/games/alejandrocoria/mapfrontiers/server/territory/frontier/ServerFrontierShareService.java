@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.server.territory.frontier;
 
+import games.alejandrocoria.mapfrontiers.common.network.OperationResolution;
 import games.alejandrocoria.mapfrontiers.common.network.PacketCollectionCreated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketCollectionDeleted;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierCreated;
@@ -17,6 +18,7 @@ import games.alejandrocoria.mapfrontiers.server.territory.TerritoriesManager;
 import games.alejandrocoria.mapfrontiers.server.territory.TerritoryPermissionEvaluator;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -49,106 +51,132 @@ public class ServerFrontierShareService {
         return permissionEvaluator.canSendCommandAcceptFrontier(player);
     }
 
-    public ServerTerritoryOperationResult sharePersonalFrontier(ServerPlayer player, UUID frontierId, SettingsUserShared userShared) {
+    public ServerTerritoryOperationResult sharePersonalFrontier(ServerPlayer player, UUID frontierId,
+                                                                SettingsUserShared userShared, long baseRevision,
+                                                                long requestId) {
+        FrontierData frontier = territoriesManager.getFrontierFromID(frontierId);
+        if (frontier == null || !frontier.getPersonal()) {
+            return missingSharingState(player, frontierId);
+        }
+        if (!canReceivePersonalFrontier(player, frontier)) {
+            return missingSharingState(player, frontierId);
+        }
+
+        if (!permissionEvaluator.canSharePersonalFrontier(player, frontier)
+                || !permissionEvaluator.canManagePersonalSharedAccess(player, frontier)) {
+            return rejectedSharingRequest(player, frontier, requestId, true);
+        }
+
+        if (baseRevision != frontier.getSharingRevision()) {
+            return rejectedSharingRequest(player, frontier, requestId, false);
+        }
+
         userShared.getUser().fillMissingInfo(false, server);
-        if (userShared.getUser().uuid == null) {
-            return ServerTerritoryOperationResult.ignored(null);
+        if (userShared.getUser().uuid == null || frontier.getOwner().equals(userShared.getUser())) {
+            return rejectedSharingRequest(player, frontier, requestId, false);
+        }
+        if (frontier.hasUserShared(userShared.getUser())) {
+            return acceptedSharingNoOp(player, frontier, requestId);
         }
 
         ServerPlayer targetPlayer = server.getPlayerList().getPlayer(userShared.getUser().uuid);
         if (targetPlayer == null) {
-            return ServerTerritoryOperationResult.ignored(null);
-        }
-
-        FrontierData frontier = territoriesManager.getFrontierFromID(frontierId);
-        if (frontier == null || !frontier.getPersonal()) {
-            return ServerTerritoryOperationResult.ignored(frontier);
-        }
-
-        if (frontier.getOwner().equals(userShared.getUser()) || frontier.hasUserShared(userShared.getUser())) {
-            return ServerTerritoryOperationResult.ignored(frontier);
-        }
-
-        if (!permissionEvaluator.canSharePersonalFrontier(player, frontier)) {
-            return rejectedWithProfileRefresh(player, frontier);
-        }
-
-        if (!permissionEvaluator.canManagePersonalSharedAccess(player, frontier)) {
-            return ServerTerritoryOperationResult.ignored(frontier);
+            return rejectedSharingRequest(player, frontier, requestId, false);
         }
 
         SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
+        if (!territoriesManager.addPendingPersonalFrontierShare(frontierId, userShared)) {
+            return rejectedSharingRequest(player, frontier, requestId, false);
+        }
         int shareMessageId = createPendingShare(userShared.getUser(), frontier.getId());
 
-        if (!territoriesManager.addPendingPersonalFrontierShare(frontierId, userShared)) {
-            return ServerTerritoryOperationResult.ignored(frontier);
-        }
-
         ServerTerritoryOperationResult result = ServerTerritoryOperationResult.success(frontier);
-        result.addNetworkAction(() -> PacketHandler.sendTo(new PacketPersonalFrontierShared(shareMessageId, playerUser,
-                frontier.getOwner(), frontier.getName1(), frontier.getName2()), targetPlayer));
+        enqueueDirectSharingResponse(result, player, frontier, requestId, OperationResolution.Accepted);
+        PacketPersonalFrontierShared invitation = new PacketPersonalFrontierShared(shareMessageId, playerUser,
+                frontier.getOwner(), frontier.getName1(), frontier.getName2());
+        result.addNetworkAction(() -> PacketHandler.sendTo(invitation, targetPlayer));
+        enqueueSharingBroadcast(result, player, frontier);
         return result;
     }
 
     public ServerTerritoryOperationResult updateSharedUserPersonalFrontier(ServerPlayer player, UUID frontierId,
-                                                                           SettingsUserShared userShared) {
+                                                                           SettingsUserShared userShared,
+                                                                           long baseRevision, long requestId) {
         FrontierData frontier = territoriesManager.getFrontierFromID(frontierId);
         if (frontier == null || !frontier.getPersonal()) {
-            return ServerTerritoryOperationResult.ignored(frontier);
+            return missingSharingState(player, frontierId);
+        }
+        if (!canReceivePersonalFrontier(player, frontier)) {
+            return missingSharingState(player, frontierId);
         }
 
-        if (!permissionEvaluator.canSharePersonalFrontier(player, frontier)) {
-            return rejectedWithProfileRefresh(player, frontier);
+        if (!permissionEvaluator.canSharePersonalFrontier(player, frontier)
+                || !permissionEvaluator.canManagePersonalSharedAccess(player, frontier)) {
+            return rejectedSharingRequest(player, frontier, requestId, true);
+        }
+
+        if (baseRevision != frontier.getSharingRevision()) {
+            return rejectedSharingRequest(player, frontier, requestId, false);
         }
 
         SettingsUserShared currentUserShared = frontier.getUserShared(userShared.getUser());
         if (currentUserShared == null) {
-            return ServerTerritoryOperationResult.ignored(frontier);
+            return rejectedSharingRequest(player, frontier, requestId, false);
+        }
+        if (currentUserShared.getActions().equals(userShared.getActions())) {
+            return acceptedSharingNoOp(player, frontier, requestId);
         }
 
         if (!territoriesManager.updatePersonalFrontierShare(frontierId, userShared)) {
-            return ServerTerritoryOperationResult.ignored(frontier);
+            return rejectedSharingRequest(player, frontier, requestId, false);
         }
 
-        PacketFrontierSharingUpdated frontierSharingUpdatedPacket = createSharingUpdatedPacket(frontier, player.getId());
-
         ServerTerritoryOperationResult result = ServerTerritoryOperationResult.success(frontier);
-        result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(frontierSharingUpdatedPacket, frontier, server));
+        enqueueDirectSharingResponse(result, player, frontier, requestId, OperationResolution.Accepted);
+        enqueueSharingBroadcast(result, player, frontier);
         return result;
     }
 
-    public ServerTerritoryOperationResult removeSharedUserPersonalFrontier(ServerPlayer player, UUID frontierId, SettingsUser targetUser) {
-        targetUser.fillMissingInfo(false, server);
-        if (targetUser.uuid == null) {
-            return ServerTerritoryOperationResult.ignored(null);
-        }
-
+    public ServerTerritoryOperationResult removeSharedUserPersonalFrontier(ServerPlayer player, UUID frontierId,
+                                                                           SettingsUser targetUser,
+                                                                           long baseRevision, long requestId) {
         FrontierData frontier = territoriesManager.getFrontierFromID(frontierId);
         if (frontier == null || !frontier.getPersonal()) {
-            return ServerTerritoryOperationResult.ignored(frontier);
+            return missingSharingState(player, frontierId);
+        }
+        if (!canReceivePersonalFrontier(player, frontier)) {
+            return missingSharingState(player, frontierId);
         }
 
-        if (!permissionEvaluator.canSharePersonalFrontier(player, frontier)) {
-            return rejectedWithProfileRefresh(player, frontier);
+        if (!permissionEvaluator.canSharePersonalFrontier(player, frontier)
+                || !permissionEvaluator.canManagePersonalSharedAccess(player, frontier)) {
+            return rejectedSharingRequest(player, frontier, requestId, true);
+        }
+
+        if (baseRevision != frontier.getSharingRevision()) {
+            return rejectedSharingRequest(player, frontier, requestId, false);
+        }
+
+        targetUser.fillMissingInfo(false, server);
+        if (targetUser.uuid == null) {
+            return rejectedSharingRequest(player, frontier, requestId, false);
         }
 
         SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
         SettingsUserShared userShared = frontier.getUserShared(targetUser);
-        if (userShared == null || userShared.getUser().equals(playerUser)) {
-            return ServerTerritoryOperationResult.ignored(frontier);
+        if (userShared == null) {
+            return acceptedSharingNoOp(player, frontier, requestId);
         }
-
-        if (!permissionEvaluator.canManagePersonalSharedAccess(player, frontier)) {
-            return ServerTerritoryOperationResult.ignored(frontier);
+        if (userShared.getUser().equals(playerUser)) {
+            return rejectedSharingRequest(player, frontier, requestId, false);
         }
 
         if (!territoriesManager.removePersonalFrontierShare(frontierId, targetUser)) {
-            return ServerTerritoryOperationResult.ignored(frontier);
+            return rejectedSharingRequest(player, frontier, requestId, false);
         }
 
-        PacketFrontierSharingUpdated frontierSharingUpdatedPacket = createSharingUpdatedPacket(frontier, player.getId());
-
         ServerTerritoryOperationResult result = ServerTerritoryOperationResult.success(frontier);
+        enqueueDirectSharingResponse(result, player, frontier, requestId, OperationResolution.Accepted);
         if (userShared.isPending()) {
             removePendingSharesForTarget(targetUser);
         } else {
@@ -161,7 +189,7 @@ public class ServerFrontierShareService {
             }
         }
 
-        result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(frontierSharingUpdatedPacket, frontier, server));
+        enqueueSharingBroadcast(result, player, frontier);
         return result;
     }
 
@@ -269,10 +297,53 @@ public class ServerFrontierShareService {
         return currentMessageId;
     }
 
-    private ServerTerritoryOperationResult rejectedWithProfileRefresh(ServerPlayer player, @Nullable FrontierData frontier) {
-        ServerTerritoryOperationResult result = ServerTerritoryOperationResult.rejected(frontier);
-        result.addNetworkAction(() -> PacketHandler.sendTo(permissionEvaluator.createProfilePacket(player), player));
+    private ServerTerritoryOperationResult missingSharingState(ServerPlayer player, UUID frontierId) {
+        ServerTerritoryOperationResult result = ServerTerritoryOperationResult.notFound();
+        PacketFrontierDeleted deleted = new PacketFrontierDeleted(Level.OVERWORLD, frontierId, true, -1);
+        result.addNetworkAction(() -> PacketHandler.sendTo(deleted, player));
         return result;
+    }
+
+    private boolean canReceivePersonalFrontier(ServerPlayer player, FrontierData frontier) {
+        SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
+        if (frontier.getOwner().equals(playerUser)) {
+            return true;
+        }
+
+        SettingsUserShared userShared = frontier.getUserShared(playerUser);
+        return userShared != null && !userShared.isPending();
+    }
+
+    private ServerTerritoryOperationResult rejectedSharingRequest(ServerPlayer player, FrontierData frontier,
+                                                                   long requestId, boolean refreshProfile) {
+        ServerTerritoryOperationResult result = ServerTerritoryOperationResult.rejected(frontier);
+        enqueueDirectSharingResponse(result, player, frontier, requestId, OperationResolution.Rejected);
+        if (refreshProfile) {
+            result.addNetworkAction(() -> PacketHandler.sendTo(permissionEvaluator.createProfilePacket(player), player));
+        }
+        return result;
+    }
+
+    private ServerTerritoryOperationResult acceptedSharingNoOp(ServerPlayer player, FrontierData frontier,
+                                                                long requestId) {
+        ServerTerritoryOperationResult result = ServerTerritoryOperationResult.success(frontier);
+        enqueueDirectSharingResponse(result, player, frontier, requestId, OperationResolution.Accepted);
+        return result;
+    }
+
+    private void enqueueDirectSharingResponse(ServerTerritoryOperationResult result, ServerPlayer player,
+                                              FrontierData frontier, long requestId,
+                                              OperationResolution resolution) {
+        PacketFrontierSharingUpdated response = createSharingUpdatedPacket(frontier, player.getId(), requestId, resolution);
+        result.addNetworkAction(() -> PacketHandler.sendTo(response, player));
+    }
+
+    private void enqueueSharingBroadcast(ServerTerritoryOperationResult result, ServerPlayer actor,
+                                         FrontierData frontier) {
+        PacketFrontierSharingUpdated broadcast = createSharingUpdatedPacket(frontier, actor.getId(), 0L,
+                OperationResolution.Accepted);
+        result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccessExcept(broadcast, frontier, server,
+                actor.getUUID()));
     }
 
     private static PacketFrontierSharingUpdated createSharingUpdatedPacket(FrontierData frontier) {
@@ -280,6 +351,13 @@ public class ServerFrontierShareService {
     }
 
     private static PacketFrontierSharingUpdated createSharingUpdatedPacket(FrontierData frontier, int playerId) {
-        return new PacketFrontierSharingUpdated(frontier.getId(), frontier.getDimension(), FrontierSharingChange.fromFrontierData(frontier), playerId);
+        return createSharingUpdatedPacket(frontier, playerId, 0L, OperationResolution.Accepted);
+    }
+
+    private static PacketFrontierSharingUpdated createSharingUpdatedPacket(FrontierData frontier, int playerId,
+                                                                            long requestId,
+                                                                            OperationResolution resolution) {
+        return new PacketFrontierSharingUpdated(frontier.getId(), frontier.getDimension(),
+                FrontierSharingChange.fromFrontierData(frontier), playerId, requestId, resolution);
     }
 }

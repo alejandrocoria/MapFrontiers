@@ -489,15 +489,16 @@ public class TerritoryListPage extends PageScreen {
     }
 
     private void onFrontierVisibilityPressed(FrontierOverlay frontier) {
+        long baseSyncHash = frontier.computeSyncHash();
         frontier.toggleVisibility(FrontierVisibility.Frontier);
         FrontierChange change = new FrontierChange();
         change.setVisibility(frontier.getVisibilityData());
-        MapFrontiersClient.getOperationService().updateFrontier(frontier, change);
+        MapFrontiersClient.getOperationService().submitOptimisticFrontierChange(frontier, change, baseSyncHash);
     }
 
     private void onCollectionVisibilityPressed(CollectionData collection) {
         collection.getVisibilityData().setVisible(!collection.getVisibilityData().isVisible());
-        MapFrontiersClient.getOperationService().updateCollection(collection);
+        MapFrontiersClient.getOperationService().submitOptimisticCollectionUpdate(collection);
     }
 
     private void onFrontierDeletePressed(FrontierOverlay frontier) {
