@@ -13,6 +13,7 @@ import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientFrontie
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientLocalPersonalFrontierStore;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierLocalOverrides;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
 import journeymap.api.v2.client.IClientAPI;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -20,6 +21,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 public class ClientTerritoryRuntime {
     private final IClientAPI journeyMapApi;
+    private PlayerNameRepository playerNameRepository;
     private FrontiersOverlayManager globalFrontiersOverlayManager;
     private FrontiersOverlayManager personalFrontiersOverlayManager;
     private CollectionOverlayManager collectionOverlayManager;
@@ -42,6 +44,10 @@ public class ClientTerritoryRuntime {
     }
 
     public void ensureInitialized() {
+        if (playerNameRepository == null) {
+            playerNameRepository = new PlayerNameRepository();
+        }
+
         if (globalFrontiersOverlayManager == null) {
             globalFrontiersOverlayManager = new FrontiersOverlayManager(journeyMapApi);
         }
@@ -118,6 +124,11 @@ public class ClientTerritoryRuntime {
     public FrontiersOverlayManager getGlobalFrontiersOverlayManager() {
         ensureInitialized();
         return globalFrontiersOverlayManager;
+    }
+
+    public PlayerNameRepository getPlayerNameRepository() {
+        ensureInitialized();
+        return playerNameRepository;
     }
 
     public FrontiersOverlayManager getPersonalFrontiersOverlayManager() {
@@ -213,6 +224,7 @@ public class ClientTerritoryRuntime {
         ClientCollectionEvents collectionEventsState = collectionEvents;
         ClientSettingsProfileEvents settingsEvents = settingsProfileEvents;
         ClientTerritoryOperationService operations = operationService;
+        PlayerNameRepository names = playerNameRepository;
 
         if (operations != null) {
             operations.clearPendingOptimisticUpdates();
@@ -238,6 +250,7 @@ public class ClientTerritoryRuntime {
         localOverrides = null;
         collectionLocalOverrides = null;
         collectionUiStateStore = null;
+        playerNameRepository = null;
 
         closeStep("global frontier overlays", () -> {
             if (globalManager != null) {
@@ -287,6 +300,11 @@ public class ClientTerritoryRuntime {
         closeStep("settings profile events", () -> {
             if (settingsEvents != null) {
                 settingsEvents.close();
+            }
+        });
+        closeStep("player name repository", () -> {
+            if (names != null) {
+                names.close();
             }
         });
     }

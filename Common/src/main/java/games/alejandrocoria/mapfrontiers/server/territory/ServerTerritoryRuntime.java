@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.server.territory;
 
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.network.PacketTerritoriesSnapshot;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -21,6 +22,7 @@ import java.util.UUID;
 @ParametersAreNonnullByDefault
 public class ServerTerritoryRuntime {
     private final MinecraftServer server;
+    private final PlayerNameRepository playerNameRepository;
     private final TerritoriesManager territoriesManager;
     private final TerritoryPermissionEvaluator permissionEvaluator;
     private final ServerTerritoryOperationService operationService;
@@ -32,6 +34,7 @@ public class ServerTerritoryRuntime {
 
     public ServerTerritoryRuntime(MinecraftServer server) {
         this.server = server;
+        this.playerNameRepository = new PlayerNameRepository();
         this.territoriesManager = new TerritoriesManager();
         this.territoriesManager.loadOrCreateData(server);
         this.permissionEvaluator = new TerritoryPermissionEvaluator(territoriesManager);
@@ -45,6 +48,10 @@ public class ServerTerritoryRuntime {
 
     public ServerTerritoryOperationService getOperationService() {
         return operationService;
+    }
+
+    public PlayerNameRepository getPlayerNameRepository() {
+        return playerNameRepository;
     }
 
     public ServerFrontierShareService getShareService() {
@@ -118,5 +125,6 @@ public class ServerTerritoryRuntime {
         serverApi.close();
         frontierEvents.close();
         collectionEvents.close();
+        playerNameRepository.close();
     }
 }
